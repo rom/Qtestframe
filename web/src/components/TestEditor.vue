@@ -1,0 +1,366 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import InputText from 'primevue/inputtext'
+import InputNumber from 'primevue/inputnumber'
+import Textarea from 'primevue/textarea'
+import Select from 'primevue/select'
+import SelectButton from 'primevue/selectbutton'
+import Button from 'primevue/button'
+import Message from 'primevue/message'
+import ProgressSpinner from 'primevue/progressspinner'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import StatusTag from './StatusTag.vue'
+import TagsInput from './TagsInput.vue'
+import CategorySelect from './CategorySelect.vue'
+import ItemPickerDialog from './ItemPickerDialog.vue'
+import { api, asItems, errorMessage } from '@/lib/api'
+import { moveItem } from '@/lib/collections'
+import { formatDateTime, options } from '@/lib/format'
+import { buildTree, flatten } from '@/lib/tree'
+import type { Category, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
+import { useMetaStore } from '@/stores/meta'
+import { useNotify } from '@/composables/notify'
+
+const props = defineProps<{
+  projectId: string
+  itemId: string | null
+  folderId?: string | null
+  categories: Category[]
+  folders: Folder[]
+  canWrite: boolean
+  canLink: boolean
+}>()
+const emit = defineEmits<{ saved: [item: TestCase]; deleted: [id: string]; copied: [item: TestCase]; close: [] }>()
+const meta = useMetaStore()
+const notify = useNotify()
+
+interface StepRow {
+  uid: number
+  id?: string
+  action: string
+  expected: string
+  data: string
+}
+let uid = 0
+
+function blank() {
+  return {
+    title: '',
+    description: '',
+    preconditions: '',
+    execution_type: 'manual',
+    script_language: 'sh',
+    script: '',
+    expected_result: '',
+    priority: 'medium',
+    status: 'draft',
+    estimated_minutes: 0 as number | null,
+    tags: [] as string[],
+    category_ids: [] as string[],
+    folder_id: (props.folderId ?? null) as string | null,
+    steps: [] as StepRow[],
+  }
+}
+
+const form = ref(blank())
+const item = ref<TestCase | null>(null)
+const loading = ref(false)
+const saving = ref(false)
+const error = ref('')
+const links = ref<TraceLink[]>([])
+const reqs = ref<Requirement[]>([])
+const pickReqs = ref(false)
+const isNew = computed(() => !props.itemId)
+
+const folderOptions = computed(() => [
+  { id: null as string | null, label: '— top level —' },
+  ...flatten(buildTree(props.folders)).map((f) => ({ id: f.id as string | null, label: '  '.repeat(f.depth) + f.label })),
+])
+
+async function load() {
+  error.value = ''
+  links.value = []
+  if (!props.itemId) {
+    item.value = null
+    form.value = blank()
+    return
+  }
+  loading.value = true
+  try {
+    const t = await api.get<TestCase>(`/tests/${props.itemId}`)
+    item.value = t
+    form.value = {
+      title: t.title,
+      description: t.description,
+      preconditions: t.preconditions,
+      execution_type: t.execution_type || 'manual',
+      script_language: t.script_language || 'sh',
+      script: t.script,
+      expected_result: t.expected_result,
+      priority: t.priority,
+      status: t.status,
+      estimated_minutes: t.estimated_minutes,
+      tags: [...(t.tags ?? [])],
+      category_ids: [...(t.category_ids ?? [])],
+      folder_id: t.folder_id,
+      steps: [...(t.steps ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .map((s) => ({ uid: ++uid, id: s.id, action: s.action, expected: s.expected, data: s.data })),
+    }
+    await loadLinks()
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    loading.value = false
+  }
+}
+async function loadLinks() {
+  if (!props.itemId) return
+  try {
+    links.value = asItems(await api.get<TraceLink[]>(`/tests/${props.itemId}/links`))
+    if (links.value.length && !reqs.value.length) {
+      reqs.value = asItems(await api.get<{ items: Requirement[] }>(`/projects/${props.projectId}/requirements`))
+    }
+  } catch (e) {
+    notify.fail(e, 'Could not load links')
+  }
+}
+watch(() => props.itemId, load, { immediate: true })
+
+// ---------- steps ----------
+function addStep(after?: number) {
+  const row = { uid: ++uid, action: '', expected: '', data: '' }
+  if (after === undefined) form.value.steps.push(row)
+  else form.value.steps.splice(after + 1, 0, row)
+}
+function removeStep(i: number) {
+  form.value.steps.splice(i, 1)
+}
+function moveStep(i: number, d: number) {
+  form.value.steps = moveItem(form.value.steps, i, i + d)
+}
+function onReorder(e: { value: StepRow[] }) {
+  form.value.steps = e.value
+}
+
+// ---------- save ----------
+async function save() {
+  saving.value = true
+  error.value = ''
+  const f = form.value
+  const body = {
+    ...f,
+    estimated_minutes: f.estimated_minutes ?? 0,
+    steps: f.steps
+      .filter((s) => s.action.trim() || s.expected.trim() || s.data.trim())
+      .map((s, i) => ({ ...(s.id ? { id: s.id } : {}), position: i + 1, action: s.action, expected: s.expected, data: s.data })),
+  }
+  try {
+    const saved = isNew.value
+      ? await api.post<TestCase>(`/projects/${props.projectId}/tests`, body)
+      : await api.patch<TestCase>(`/tests/${props.itemId}`, body)
+    notify.ok(isNew.value ? 'Test created' : 'Test saved', saved?.key)
+    emit('saved', saved)
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    saving.value = false
+  }
+}
+
+async function copy() {
+  if (!item.value) return
+  try {
+    const c = await api.post<TestCase>(`/tests/${item.value.id}/copy`)
+    notify.ok('Test copied', c?.key)
+    emit('copied', c)
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+
+function remove() {
+  if (!item.value) return
+  const it = item.value
+  notify.confirmDanger(`Delete test ${it.key}?`, async () => {
+    try {
+      await api.del(`/tests/${it.id}`)
+      notify.ok('Test deleted')
+      emit('deleted', it.id)
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
+
+// ---------- links ----------
+const reqById = computed(() => new Map(reqs.value.map((r) => [r.id, r])))
+async function addLinks(picked: { id: string }[]) {
+  try {
+    for (const r of picked) await api.post(`/projects/${props.projectId}/links`, { requirement_id: r.id, test_case_id: props.itemId })
+    reqs.value = []
+    await loadLinks()
+    notify.ok(`${picked.length} link(s) added`)
+  } catch (e) {
+    notify.fail(e, 'Could not add link')
+  }
+}
+async function removeLink(l: TraceLink) {
+  try {
+    await api.del(`/links/${l.id}`)
+    links.value = links.value.filter((x) => x.id !== l.id)
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+const execOptions = [
+  { label: 'Manual', value: 'manual', icon: 'pi pi-user' },
+  { label: 'Automated', value: 'automated', icon: 'pi pi-bolt' },
+]
+const scriptPlaceholder = computed(() => {
+  switch (form.value.script_language) {
+    case 'python':
+      return 'import sys\n# exit code 0 = passed, non-zero = failed\nsys.exit(0)'
+    case 'javascript':
+      return '// exit code 0 = passed\nprocess.exit(0)'
+    default:
+      return '#!/bin/sh\nset -e\n# exit code 0 = passed, non-zero = failed\ncurl -fsS http://localhost:8080/healthz'
+  }
+})
+</script>
+
+<template>
+  <div v-if="loading" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
+  <form v-else class="grid" style="gap: 14px" @submit.prevent="save">
+    <div class="row">
+      <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
+      <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
+      <span v-if="item" class="muted small">Updated {{ formatDateTime(item.updated_at) }}{{ item.created_by ? ' · created by ' + item.created_by : '' }}</span>
+    </div>
+    <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+
+    <div class="field">
+      <label>Title</label>
+      <InputText v-model="form.title" required autofocus :disabled="!canWrite" />
+    </div>
+    <div class="row">
+      <SelectButton v-model="form.execution_type" :options="execOptions" option-label="label" option-value="value" :allow-empty="false" :disabled="!canWrite">
+        <template #option="{ option }"><i :class="option.icon" /> {{ option.label }}</template>
+      </SelectButton>
+    </div>
+    <div class="form-grid">
+      <div class="field full">
+        <label>Description</label>
+        <Textarea v-model="form.description" rows="2" auto-resize :disabled="!canWrite" />
+      </div>
+      <div class="field full">
+        <label>Preconditions</label>
+        <Textarea v-model="form.preconditions" rows="2" auto-resize :disabled="!canWrite" />
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <Select v-model="form.status" :options="options(meta.meta.test_statuses)" option-label="label" option-value="value" :disabled="!canWrite" />
+      </div>
+      <div class="field">
+        <label>Priority</label>
+        <Select v-model="form.priority" :options="options(meta.meta.priorities)" option-label="label" option-value="value" :disabled="!canWrite" />
+      </div>
+      <div class="field">
+        <label>Estimate (minutes)</label>
+        <InputNumber v-model="form.estimated_minutes" :min="0" show-buttons :disabled="!canWrite" fluid />
+      </div>
+      <div class="field">
+        <label>Folder</label>
+        <Select v-model="form.folder_id" :options="folderOptions" option-label="label" option-value="id" filter :disabled="!canWrite" />
+      </div>
+      <div class="field full">
+        <label>Categories</label>
+        <CategorySelect v-model="form.category_ids" :categories="categories" :disabled="!canWrite" />
+      </div>
+      <div class="field full">
+        <label>Tags</label>
+        <TagsInput v-model="form.tags" :disabled="!canWrite" />
+      </div>
+    </div>
+
+    <template v-if="form.execution_type === 'automated'">
+      <div class="section-title"><i class="pi pi-code" /> Script</div>
+      <div class="row">
+        <Select v-model="form.script_language" :options="meta.meta.script_languages" :disabled="!canWrite" style="width: 160px" />
+        <span class="small muted">Executed by the server runner; exit code 0 means passed. Output is captured.</span>
+      </div>
+      <Textarea v-model="form.script" class="code-input w-full" rows="12" :placeholder="scriptPlaceholder" spellcheck="false" :disabled="!canWrite" style="font-family: var(--qtf-mono)" />
+    </template>
+
+    <div>
+      <div class="section-title">
+        <i class="pi pi-list" /> Steps ({{ form.steps.length }})
+        <span class="grow" />
+        <Button v-if="canWrite" size="small" label="Add step" icon="pi pi-plus" text @click="addStep()" />
+      </div>
+      <DataTable v-if="form.steps.length" :value="form.steps" data-key="uid" size="small" :reorderable-rows="canWrite" @row-reorder="onReorder">
+        <Column v-if="canWrite" row-reorder style="width: 2rem" />
+        <Column header="#" style="width: 2.5rem"><template #body="{ index }"><b>{{ index + 1 }}</b></template></Column>
+        <Column header="Action">
+          <template #body="{ data }"><Textarea v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Do…" /></template>
+        </Column>
+        <Column header="Expected result">
+          <template #body="{ data }"><Textarea v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Then…" /></template>
+        </Column>
+        <Column header="Data" style="width: 22%">
+          <template #body="{ data }"><Textarea v-model="data.data" rows="1" auto-resize class="w-full mono" :disabled="!canWrite" /></template>
+        </Column>
+        <Column v-if="canWrite" style="width: 7.5rem">
+          <template #body="{ index }">
+            <div class="row nowrap" style="gap: 0">
+              <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="index === 0" aria-label="Up" @click="moveStep(index, -1)" />
+              <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="index === form.steps.length - 1" aria-label="Down" @click="moveStep(index, 1)" />
+              <Button icon="pi pi-plus" text rounded size="small" severity="secondary" aria-label="Insert below" @click="addStep(index)" />
+              <Button icon="pi pi-trash" text rounded size="small" severity="danger" aria-label="Remove" @click="removeStep(index)" />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+      <div v-else class="muted small">No steps. {{ form.execution_type === 'manual' ? 'Manual tests are executed step by step.' : 'Optional for automated tests.' }}</div>
+    </div>
+
+    <div class="field">
+      <label>Overall expected result</label>
+      <Textarea v-model="form.expected_result" rows="2" auto-resize :disabled="!canWrite" />
+    </div>
+
+    <div v-if="item">
+      <div class="section-title">
+        <i class="pi pi-link" /> Linked requirements ({{ links.length }})
+        <span class="grow" />
+        <Button v-if="canLink" size="small" label="Link requirements" icon="pi pi-plus" text @click="pickReqs = true" />
+      </div>
+      <div v-if="!links.length" class="muted small">This test does not verify any requirement yet.</div>
+      <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
+        <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" class="key">{{ l.requirement_key || reqById.get(l.requirement_id)?.key }}</RouterLink>
+        <span class="grow ellipsis">{{ reqById.get(l.requirement_id)?.title }}</span>
+        <StatusTag :value="reqById.get(l.requirement_id)?.obligation" kind="obligation" empty="" />
+        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" aria-label="Unlink" @click="removeLink(l)" />
+      </div>
+    </div>
+
+    <div class="row" style="justify-content: flex-end; position: sticky; bottom: -1px; background: var(--p-drawer-background, var(--qtf-card)); padding: 10px 0; border-top: 1px solid var(--qtf-border)">
+      <Button v-if="item && canWrite" label="Delete" icon="pi pi-trash" severity="danger" text @click="remove" />
+      <Button v-if="item && canWrite" label="Copy" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
+      <span v-else style="margin-right: auto" />
+      <Button label="Close" severity="secondary" text @click="emit('close')" />
+      <Button v-if="canWrite" type="submit" :label="isNew ? 'Create' : 'Save'" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
+    </div>
+    <ItemPickerDialog
+      v-if="item"
+      v-model:visible="pickReqs"
+      kind="requirement"
+      :project-id="projectId"
+      :exclude="links.map((l) => l.requirement_id)"
+      header="Link requirements"
+      confirm-label="Link"
+      @pick="addLinks"
+    />
+  </form>
+</template>

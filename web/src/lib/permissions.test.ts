@@ -1,0 +1,54 @@
+import { describe, expect, it } from 'vitest'
+import { can, canAny, grantableRoles, P, roleRank } from './permissions'
+import type { Me } from './types'
+
+function me(perms: string[], superAdmin = false, role = 'tester'): Me {
+  return {
+    user: { id: 'u', email: 'a@b', display_name: 'A', super_admin: superAdmin, auth_provider: 'local', disabled: false, created_at: '' },
+    tenant: null,
+    role,
+    permissions: perms,
+    memberships: [],
+    csrf_token: '',
+  }
+}
+
+describe('can', () => {
+  it('returns false without user', () => {
+    expect(can(null, P.projectRead)).toBe(false)
+    expect(can(undefined, P.projectRead)).toBe(false)
+  })
+  it('checks single and multiple permissions', () => {
+    const m = me([P.projectRead, P.testWrite])
+    expect(can(m, P.projectRead)).toBe(true)
+    expect(can(m, P.projectDelete)).toBe(false)
+    expect(can(m, [P.projectRead, P.testWrite])).toBe(true)
+    expect(can(m, [P.projectRead, P.runWrite])).toBe(false)
+  })
+  it('super admins hold everything', () => {
+    expect(can(me([], true), P.tenantManage)).toBe(true)
+  })
+  it('tolerates a missing permissions list', () => {
+    const m = me([])
+    // @ts-expect-error simulate null from API
+    m.permissions = null
+    expect(can(m, P.projectRead)).toBe(false)
+  })
+  it('canAny', () => {
+    expect(canAny(me([P.auditRead]), [P.memberManage, P.auditRead])).toBe(true)
+    expect(canAny(me([]), [P.memberManage])).toBe(false)
+  })
+})
+
+describe('roles', () => {
+  it('ranks roles', () => {
+    expect(roleRank('admin')).toBe(4)
+    expect(roleRank('viewer')).toBe(1)
+    expect(roleRank('nobody')).toBe(0)
+  })
+  it('grantable roles never exceed own role', () => {
+    expect(grantableRoles('tester')).toEqual(['tester', 'viewer'])
+    expect(grantableRoles('viewer', true)).toEqual(['admin', 'manager', 'tester', 'viewer'])
+    expect(grantableRoles('')).toEqual([])
+  })
+})

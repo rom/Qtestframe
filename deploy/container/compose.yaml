@@ -1,0 +1,153 @@
+# Qtestframe + PostgreSQL 16 with docker compose / podman compose.
+#
+# One-time preparation (from this directory):
+#   mkdir -p secrets tls
+#   # database password and the DSN that contains it
+#   openssl rand -base64 32 | tr -d '\n/+=' > secrets/db_password
+#   printf 'postgres://qtestframe:%s@db:5432/qtestframe?sslmode=disable' \
+#       "$(cat secrets/db_password)" > secrets/db_dsn
+#   # initial super-admin password
+#   openssl rand -base64 24 > secrets/admin_password
+#   chmod 0600 secrets/*
+#   # TLS certificate (or copy a real one to tls/server.crt + tls/server.key)
+#   ../../scripts/certs/gen-server-cert.sh --self-signed --cn localhost \
+#       --san DNS:localhost,IP:127.0.0.1 --out tls
+#   # the container user is 65532 (distroless "nonroot"):
+#   sudo chown 65532:65532 secrets/db_dsn secrets/admin_password tls/server.key
+#   # (rootless podman: podman unshare chown 65532:65532 ... instead)
+#
+# Start:   docker compose up -d --build      (or: podman compose up -d --build)
+# Logs:    docker compose logs -f qtestframe
+# Admin:   login as admin@example.com with the password in secrets/admin_password
+#
+# The database traffic stays on an internal network (no route outside), so
+# sslmode=disable is acceptable here; use verify-full for external servers.
+
+name: qtestframe
+
+services:
+  db:
+    image: docker.io/library/postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: qtestframe
+      POSTGRES_USER: qtestframe
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --data-checksums"
+    secrets:
+      - db_password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks: [backend]
+    # Hardening: the entrypoint needs a few capabilities to chown the data
+    # directory and drop to the postgres user; everything else is removed.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /run/postgresql:size=8m,uid=999,gid=999,mode=2775
+    shm_size: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qtestframe -d qtestframe"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    pids_limit: 256
+    mem_limit: 1g
+
+  # One-shot schema migration before the server starts (same image, same
+  # restrictions as the server).
+  migrate:
+    build: &qtf-build
+      context: ../..
+      dockerfile: deploy/container/Containerfile
+      args:
+        VERSION: ${QTF_VERSION:-dev}
+    image: localhost/qtestframe:${QTF_VERSION:-dev}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["migrate", "--config", "/etc/qtestframe/config.yaml"]
+    restart: "no"
+    secrets:
+      - source: db_dsn
+        target: /run/secrets/db_dsn
+      - source: admin_password
+        target: /run/secrets/admin_password
+    volumes:
+      - ./config.compose.yaml:/etc/qtestframe/config.yaml:ro
+    networks: [backend]
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+      - seccomp=../seccomp/qtestframe-seccomp.json
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+
+  qtestframe:
+    build: *qtf-build
+    image: localhost/qtestframe:${QTF_VERSION:-dev}
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # The entrypoint is /usr/bin/qtestframe.
+    command: ["serve", "--config", "/etc/qtestframe/config.yaml"]
+    environment:
+      QTF_CONFIG: /etc/qtestframe/config.yaml
+      QTF_SERVER_BASE_URL: ${QTF_BASE_URL:-https://localhost:8443}
+    ports:
+      - "8443:8443"
+    secrets:
+      - source: db_dsn
+        target: /run/secrets/db_dsn
+      - source: admin_password
+        target: /run/secrets/admin_password
+    volumes:
+      - ./config.compose.yaml:/etc/qtestframe/config.yaml:ro
+      - ./tls:/etc/qtestframe/tls:ro
+      - qtf-data:/var/lib/qtestframe
+    networks: [frontend, backend]
+    # --- hardening ---------------------------------------------------------
+    user: "65532:65532"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+      # Relative paths are resolved against the directory compose is run
+      # from: run compose inside deploy/container or use an absolute path.
+      - seccomp=../seccomp/qtestframe-seccomp.json
+      # On AppArmor hosts you may additionally load deploy/apparmor and use:
+      # - apparmor=qtestframe
+      # On SELinux hosts the default container_t confinement applies.
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /run/qtestframe:size=8m,uid=65532,gid=65532,mode=0750
+    pids_limit: 256
+    mem_limit: 1g
+    ulimits:
+      nofile: {soft: 65536, hard: 65536}
+      core: 0
+    stop_grace_period: 30s
+
+networks:
+  frontend: {}
+  backend:
+    internal: true
+
+volumes:
+  db-data: {}
+  qtf-data: {}
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  db_dsn:
+    file: ./secrets/db_dsn
+  admin_password:
+    file: ./secrets/admin_password

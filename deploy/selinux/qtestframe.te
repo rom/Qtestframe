@@ -1,0 +1,308 @@
+policy_module(qtestframe, 1.0.0)
+
+########################################
+#
+# Qtestframe — SELinux policy module (targeted / refpolicy).
+#
+# Confines /usr/bin/qtestframe (started by systemd) in qtestframe_t.
+# Optional capabilities are controlled by booleans (all default off):
+#
+#   qtestframe_connect_postgresql  TCP + unix socket connections to PostgreSQL
+#   qtestframe_remote_syslog       send logs to a remote syslog server
+#   qtestframe_connect_http        outbound HTTPS to IdPs (OIDC discovery,
+#                                  JWKS, SAML metadata, token endpoint)
+#   qtestframe_bind_http_port      listen on 443 (http_port_t) instead of 8443
+#   qtestframe_run_scripts         enable the script runner: scripts run in
+#                                  the separate qtestframe_runner_t domain
+#   qtestframe_runner_execmem      allow JIT interpreters (Node.js) in the
+#                                  runner domain
+#
+# Build/install: deploy/selinux/build.sh
+#
+
+## <desc>
+##	<p>
+##	Allow qtestframe to connect to PostgreSQL over TCP and the local
+##	unix socket.
+##	</p>
+## </desc>
+gen_tunable(qtestframe_connect_postgresql, false)
+
+## <desc>
+##	<p>
+##	Allow qtestframe to send log messages to a remote syslog server
+##	(UDP/TCP 514, TCP 601, TLS 6514).
+##	</p>
+## </desc>
+gen_tunable(qtestframe_remote_syslog, false)
+
+## <desc>
+##	<p>
+##	Allow qtestframe to connect to HTTP(S) ports, required for OIDC
+##	discovery, JWKS and token endpoints and SAML metadata URLs.
+##	</p>
+## </desc>
+gen_tunable(qtestframe_connect_http, false)
+
+## <desc>
+##	<p>
+##	Allow qtestframe to bind HTTP ports (443) in addition to
+##	qtestframe_port_t.
+##	</p>
+## </desc>
+gen_tunable(qtestframe_bind_http_port, false)
+
+## <desc>
+##	<p>
+##	Allow qtestframe to execute test scripts through the configured
+##	interpreters. Scripts run in the qtestframe_runner_t domain which has
+##	no network access and can only write below the runner work directory.
+##	</p>
+## </desc>
+gen_tunable(qtestframe_run_scripts, false)
+
+## <desc>
+##	<p>
+##	Allow scripts in qtestframe_runner_t to map writable+executable
+##	memory (needed by JIT based interpreters such as Node.js).
+##	</p>
+## </desc>
+gen_tunable(qtestframe_runner_execmem, false)
+
+gen_require(`
+	role system_r;
+')
+
+########################################
+#
+# Declarations
+#
+
+type qtestframe_t;
+type qtestframe_exec_t;
+init_daemon_domain(qtestframe_t, qtestframe_exec_t)
+
+# /etc/qtestframe (config.yaml, secrets/)
+type qtestframe_conf_t;
+files_config_file(qtestframe_conf_t)
+
+# /etc/qtestframe/tls (certificates and private keys)
+type qtestframe_cert_t;
+miscfiles_cert_type(qtestframe_cert_t)
+
+# /var/lib/qtestframe (SQLite database)
+type qtestframe_var_lib_t;
+files_type(qtestframe_var_lib_t)
+
+# /var/lib/qtestframe/runner (script runner scratch space)
+type qtestframe_runner_rw_t;
+files_type(qtestframe_runner_rw_t)
+
+# /run/qtestframe
+type qtestframe_var_run_t;
+ifdef(`files_runtime_file',`
+	files_runtime_file(qtestframe_var_run_t)
+',`
+	files_pid_file(qtestframe_var_run_t)
+')
+
+# /var/log/qtestframe
+type qtestframe_log_t;
+logging_log_file(qtestframe_log_t)
+
+# private /tmp files
+type qtestframe_tmp_t;
+files_tmp_file(qtestframe_tmp_t)
+
+# listening port (tcp/8443, assigned by build.sh with semanage)
+type qtestframe_port_t;
+corenet_port(qtestframe_port_t)
+
+# Script runner sandbox domain. Entered when qtestframe_t executes one of the
+# interpreters (bin_t / shell_exec_t) while qtestframe_run_scripts is on.
+type qtestframe_runner_t;
+domain_type(qtestframe_runner_t)
+role system_r types qtestframe_runner_t;
+
+########################################
+#
+# qtestframe_t local policy
+#
+
+# Only net_bind_service; everything else is denied (and audited).
+allow qtestframe_t self:capability net_bind_service;
+# setcap: capset()/prctl capability dropping; setrlimit: prlimit64 for the
+# runner child; getsched: sched_getaffinity (Go runtime).
+allow qtestframe_t self:process { getsched getcap setcap setrlimit signal_perms };
+allow qtestframe_t self:fifo_file rw_fifo_file_perms;
+allow qtestframe_t self:unix_stream_socket create_stream_socket_perms;
+allow qtestframe_t self:unix_dgram_socket create_socket_perms;
+allow qtestframe_t self:tcp_socket { accept listen create_stream_socket_perms };
+allow qtestframe_t self:udp_socket create_socket_perms;
+
+# Configuration (read only).
+files_search_etc(qtestframe_t)
+list_dirs_pattern(qtestframe_t, qtestframe_conf_t, qtestframe_conf_t)
+read_files_pattern(qtestframe_t, qtestframe_conf_t, qtestframe_conf_t)
+read_lnk_files_pattern(qtestframe_t, qtestframe_conf_t, qtestframe_conf_t)
+
+# TLS material (read only) and the system CA bundle.
+list_dirs_pattern(qtestframe_t, qtestframe_cert_t, qtestframe_cert_t)
+read_files_pattern(qtestframe_t, qtestframe_cert_t, qtestframe_cert_t)
+read_lnk_files_pattern(qtestframe_t, qtestframe_cert_t, qtestframe_cert_t)
+miscfiles_read_generic_certs(qtestframe_t)
+
+# State directory: database, WAL, journal files.
+files_search_var_lib(qtestframe_t)
+manage_dirs_pattern(qtestframe_t, qtestframe_var_lib_t, qtestframe_var_lib_t)
+manage_files_pattern(qtestframe_t, qtestframe_var_lib_t, qtestframe_var_lib_t)
+files_var_lib_filetrans(qtestframe_t, qtestframe_var_lib_t, { dir file })
+
+# Runner work directory (the daemon creates and removes job directories).
+manage_dirs_pattern(qtestframe_t, qtestframe_runner_rw_t, qtestframe_runner_rw_t)
+manage_files_pattern(qtestframe_t, qtestframe_runner_rw_t, qtestframe_runner_rw_t)
+filetrans_pattern(qtestframe_t, qtestframe_var_lib_t, qtestframe_runner_rw_t, dir, "runner")
+
+# Runtime directory.
+manage_dirs_pattern(qtestframe_t, qtestframe_var_run_t, qtestframe_var_run_t)
+manage_files_pattern(qtestframe_t, qtestframe_var_run_t, qtestframe_var_run_t)
+manage_sock_files_pattern(qtestframe_t, qtestframe_var_run_t, qtestframe_var_run_t)
+ifdef(`files_runtime_filetrans',`
+	files_runtime_filetrans(qtestframe_t, qtestframe_var_run_t, { dir file sock_file })
+',`
+	files_pid_filetrans(qtestframe_t, qtestframe_var_run_t, { dir file sock_file })
+')
+
+# Optional log files.
+logging_search_logs(qtestframe_t)
+manage_dirs_pattern(qtestframe_t, qtestframe_log_t, qtestframe_log_t)
+append_files_pattern(qtestframe_t, qtestframe_log_t, qtestframe_log_t)
+create_files_pattern(qtestframe_t, qtestframe_log_t, qtestframe_log_t)
+setattr_files_pattern(qtestframe_t, qtestframe_log_t, qtestframe_log_t)
+logging_log_filetrans(qtestframe_t, qtestframe_log_t, { dir file })
+
+# Temporary files (exports are rendered in memory or in private /tmp).
+manage_dirs_pattern(qtestframe_t, qtestframe_tmp_t, qtestframe_tmp_t)
+manage_files_pattern(qtestframe_t, qtestframe_tmp_t, qtestframe_tmp_t)
+files_tmp_filetrans(qtestframe_t, qtestframe_tmp_t, { dir file })
+
+# Go runtime / standard library needs.
+kernel_read_system_state(qtestframe_t)
+kernel_read_kernel_sysctls(qtestframe_t)
+kernel_read_net_sysctls(qtestframe_t)
+dev_read_sysfs(qtestframe_t)
+dev_read_urand(qtestframe_t)
+files_read_etc_files(qtestframe_t)
+files_read_usr_files(qtestframe_t)
+miscfiles_read_localization(qtestframe_t)
+
+# Listening socket.
+corenet_tcp_bind_generic_node(qtestframe_t)
+corenet_tcp_sendrecv_generic_if(qtestframe_t)
+corenet_tcp_sendrecv_generic_node(qtestframe_t)
+allow qtestframe_t qtestframe_port_t:tcp_socket name_bind;
+
+# DNS resolution (/etc/resolv.conf, /etc/hosts, UDP/TCP 53).
+sysnet_dns_name_resolve(qtestframe_t)
+sysnet_read_config(qtestframe_t)
+
+# Local syslog (/dev/log) and journald.
+logging_send_syslog_msg(qtestframe_t)
+
+# Re-execution of the own binary for `qtestframe sandbox-exec` happens only
+# when the runner is enabled (see below).
+
+tunable_policy(`qtestframe_bind_http_port',`
+	corenet_tcp_bind_http_port(qtestframe_t)
+')
+
+tunable_policy(`qtestframe_connect_postgresql',`
+	corenet_tcp_connect_postgresql_port(qtestframe_t)
+')
+
+optional_policy(`
+	tunable_policy(`qtestframe_connect_postgresql',`
+		postgresql_stream_connect(qtestframe_t)
+	')
+')
+
+tunable_policy(`qtestframe_remote_syslog',`
+	corenet_tcp_connect_syslogd_port(qtestframe_t)
+	corenet_udp_sendrecv_generic_if(qtestframe_t)
+	corenet_udp_sendrecv_generic_node(qtestframe_t)
+')
+
+ifdef(`corenet_tcp_connect_syslog_tls_port',`
+	tunable_policy(`qtestframe_remote_syslog',`
+		corenet_tcp_connect_syslog_tls_port(qtestframe_t)
+	')
+')
+
+tunable_policy(`qtestframe_connect_http',`
+	corenet_tcp_connect_http_port(qtestframe_t)
+')
+
+########################################
+#
+# Script runner
+#
+
+tunable_policy(`qtestframe_run_scripts',`
+	# Re-exec of /usr/bin/qtestframe sandbox-exec stays in qtestframe_t.
+	can_exec(qtestframe_t, qtestframe_exec_t)
+
+	# Executing an interpreter transitions to qtestframe_runner_t.
+	corecmd_search_bin(qtestframe_t)
+	domtrans_pattern(qtestframe_t, bin_t, qtestframe_runner_t)
+	domtrans_pattern(qtestframe_t, shell_exec_t, qtestframe_runner_t)
+	# The service runs with NoNewPrivileges=yes / PR_SET_NO_NEW_PRIVS: the
+	# transition must be explicitly permitted (Linux >= 4.14).
+	allow qtestframe_t qtestframe_runner_t:process2 { nnp_transition nosuid_transition };
+
+	# Timeout handling: kill the process group of the script.
+	allow qtestframe_t qtestframe_runner_t:process { sigkill signal };
+')
+
+# Interpreters are entrypoints of the runner domain.
+corecmd_bin_entry_type(qtestframe_runner_t)
+corecmd_shell_entry_type(qtestframe_runner_t)
+
+########################################
+#
+# qtestframe_runner_t local policy: no network, no IPC with other domains,
+# read-only system files, read/write only in the runner work directory.
+#
+
+allow qtestframe_runner_t self:process { getsched signal_perms };
+allow qtestframe_runner_t self:fifo_file rw_fifo_file_perms;
+allow qtestframe_runner_t self:unix_stream_socket create_stream_socket_perms;
+
+# stdin (/dev/null), stdout/stderr pipes inherited from the daemon.
+allow qtestframe_runner_t qtestframe_t:fd use;
+allow qtestframe_runner_t qtestframe_t:fifo_file rw_fifo_file_perms;
+allow qtestframe_runner_t qtestframe_t:process sigchld;
+dev_rw_null(qtestframe_runner_t)
+dev_read_urand(qtestframe_runner_t)
+
+# Interpreters, their libraries and helper programs.
+corecmd_exec_bin(qtestframe_runner_t)
+corecmd_exec_shell(qtestframe_runner_t)
+libs_use_ld_so(qtestframe_runner_t)
+libs_use_shared_libs(qtestframe_runner_t)
+files_read_usr_files(qtestframe_runner_t)
+files_read_etc_files(qtestframe_runner_t)
+miscfiles_read_localization(qtestframe_runner_t)
+kernel_read_system_state(qtestframe_runner_t)
+
+# Job directory (script file, HOME/TMPDIR of the script).
+files_search_var_lib(qtestframe_runner_t)
+search_dirs_pattern(qtestframe_runner_t, qtestframe_var_lib_t, qtestframe_var_lib_t)
+manage_dirs_pattern(qtestframe_runner_t, qtestframe_runner_rw_t, qtestframe_runner_rw_t)
+manage_files_pattern(qtestframe_runner_t, qtestframe_runner_rw_t, qtestframe_runner_rw_t)
+
+tunable_policy(`qtestframe_runner_execmem',`
+	allow qtestframe_runner_t self:process execmem;
+')
+
+# Do not flood the audit log with probes typical for interpreters.
+dontaudit qtestframe_runner_t self:capability { dac_override dac_read_search };

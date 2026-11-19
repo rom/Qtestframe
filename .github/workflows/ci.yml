@@ -1,0 +1,72 @@
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: qtf
+          POSTGRES_PASSWORD: qtf
+          POSTGRES_DB: qtf
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U qtf" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      QTF_TEST_POSTGRES_DSN: postgres://qtf:qtf@localhost:5432/qtf?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: vet (linux + darwin)
+        run: make vet
+      - name: gofmt
+        run: test -z "$(gofmt -l cmd internal)"
+      - name: tests with 85% coverage floor (SQLite + PostgreSQL)
+        run: make coverage-go
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-coverage
+          path: coverage.out
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - name: type-check and build
+        run: npm run build
+        working-directory: web
+      - name: unit tests with 85% coverage floor
+        run: npm run coverage
+        working-directory: web
+
+  build:
+    needs: [go, web]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: make build
+      - run: ./bin/qtestframe version
