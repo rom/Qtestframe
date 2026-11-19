@@ -4,9 +4,11 @@ import MultiSelect from 'primevue/multiselect'
 import type { Category } from '@/lib/types'
 import { groupBy } from '@/lib/collections'
 import { normalizeHex, defaultCategoryColor } from '@/lib/colors'
+import { useI18n } from 'vue-i18n'
 
 const model = defineModel<string[]>({ default: () => [] })
 const props = defineProps<{ categories: Category[]; disabled?: boolean; placeholder?: string; valueKey?: 'id' | 'path' }>()
+const { t } = useI18n()
 
 const groups = computed(() =>
   groupBy(
@@ -31,7 +33,7 @@ const groups = computed(() =>
     option-value="value"
     option-group-label="label"
     option-group-children="items"
-    :placeholder="placeholder ?? 'Categories'"
+    :placeholder="placeholder ?? t('common.categories')"
     :disabled="disabled"
     display="chip"
     filter

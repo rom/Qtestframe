@@ -13,12 +13,14 @@ import { allKeys, ancestorKeys, buildTree, canMoveFolder, folderPath, type Folde
 import type { Folder, ItemKind, Project } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
 import { decodeIds, FOLDER_MIME, ITEMS_MIME } from '@/lib/dnd'
+import { useI18n } from 'vue-i18n'
 
 
 const props = defineProps<{ kind: ItemKind; projectId: string; folders: Folder[]; canWrite: boolean }>()
 const selected = defineModel<string | null>('selected', { default: null })
 const emit = defineEmits<{ changed: []; dropItems: [ids: string[], folderId: string | null] }>()
 const notify = useNotify()
+const { t } = useI18n()
 
 const nodes = computed(() => buildTree(props.folders))
 const expanded = ref<Record<string, boolean>>({})
@@ -92,10 +94,10 @@ async function onDrop(e: DragEvent, target: string | null) {
   try {
     await api.post(`/folders/${fid}/move`, { parent_id: target })
     if (target) expanded.value[target] = true
-    notify.ok('Folder moved')
+    notify.ok(t('folders.moved'))
     emit('changed')
   } catch (err) {
-    notify.fail(err, 'Could not move folder')
+    notify.fail(err, t('folders.moveFailed'))
   }
 }
 
@@ -103,15 +105,15 @@ async function onDrop(e: DragEvent, target: string | null) {
 const menu = ref<InstanceType<typeof ContextMenu>>()
 const ctxNode = ref<FolderNode | null>(null)
 const menuItems = computed(() => [
-  { label: 'New subfolder', icon: 'pi pi-folder-plus', command: () => openCreate(ctxNode.value?.key ?? null), disabled: !props.canWrite },
-  { label: 'Rename', icon: 'pi pi-pencil', command: () => ctxNode.value && openRename(ctxNode.value.data), disabled: !props.canWrite },
-  { label: 'Move to project…', icon: 'pi pi-send', command: () => ctxNode.value && openMoveProject(ctxNode.value.data), disabled: !props.canWrite },
-  { label: 'Move to top level', icon: 'pi pi-arrow-up', command: () => ctxNode.value && moveToRoot(ctxNode.value.data), disabled: !props.canWrite || !ctxNode.value?.data.parent_id },
+  { label: t('folders.newSubfolder'), icon: 'pi pi-folder-plus', command: () => openCreate(ctxNode.value?.key ?? null), disabled: !props.canWrite },
+  { label: t('folders.rename'), icon: 'pi pi-pencil', command: () => ctxNode.value && openRename(ctxNode.value.data), disabled: !props.canWrite },
+  { label: t('folders.moveToProject'), icon: 'pi pi-send', command: () => ctxNode.value && openMoveProject(ctxNode.value.data), disabled: !props.canWrite },
+  { label: t('folders.moveToTop'), icon: 'pi pi-arrow-up', command: () => ctxNode.value && moveToRoot(ctxNode.value.data), disabled: !props.canWrite || !ctxNode.value?.data.parent_id },
   { separator: true },
-  { label: 'Expand all', icon: 'pi pi-plus', command: () => (expanded.value = allKeys(nodes.value)) },
-  { label: 'Collapse all', icon: 'pi pi-minus', command: () => (expanded.value = {}) },
+  { label: t('folders.expandAll'), icon: 'pi pi-plus', command: () => (expanded.value = allKeys(nodes.value)) },
+  { label: t('folders.collapseAll'), icon: 'pi pi-minus', command: () => (expanded.value = {}) },
   { separator: true },
-  { label: 'Delete…', icon: 'pi pi-trash', class: 'p-error', command: () => ctxNode.value && openDelete(ctxNode.value.data), disabled: !props.canWrite },
+  { label: t('folders.deleteEllipsis'), icon: 'pi pi-trash', class: 'p-error', command: () => ctxNode.value && openDelete(ctxNode.value.data), disabled: !props.canWrite },
 ])
 function onContext(e: MouseEvent, node: FolderNode) {
   ctxNode.value = node
@@ -183,7 +185,7 @@ async function doDelete(cascade: boolean) {
     await api.del(`/folders/${deleting.value.id}${cascade ? '?cascade=true' : ''}`)
     if (selected.value && (selected.value === deleting.value.id || cascade)) selected.value = null
     deleteDialog.value = false
-    notify.ok('Folder deleted')
+    notify.ok(t('folders.deleted'))
     emit('changed')
   } catch (e) {
     notify.fail(e)
@@ -214,7 +216,7 @@ async function doMoveProject() {
     await api.post(`/folders/${moving.value.id}/move`, { parent_id: null, project_id: targetProject.value })
     moveDialog.value = false
     if (selected.value === moving.value.id) selected.value = null
-    notify.ok('Folder moved to project', 'Contained items were moved as well.')
+    notify.ok(t('folders.movedToProject'), t('folders.movedToProjectDetail'))
     emit('changed')
   } catch (e) {
     dialogError.value = errorMessage(e)
@@ -229,11 +231,11 @@ defineExpose({ openCreate })
 <template>
   <div>
     <div class="row nowrap" style="justify-content: space-between; margin-bottom: 6px">
-      <span class="section-title" style="margin: 4px 0">Folders</span>
+      <span class="section-title" style="margin: 4px 0">{{ t('folders.title') }}</span>
       <span class="row nowrap">
-        <Button icon="pi pi-plus" text rounded size="small" severity="secondary" v-tooltip="'Expand all'" aria-label="Expand all" @click="expanded = allKeys(nodes)" />
-        <Button icon="pi pi-minus" text rounded size="small" severity="secondary" v-tooltip="'Collapse all'" aria-label="Collapse all" @click="expanded = {}" />
-        <Button v-if="canWrite" icon="pi pi-folder-plus" text rounded size="small" v-tooltip="'New folder'" aria-label="New folder" @click="openCreate(selected)" />
+        <Button icon="pi pi-plus" text rounded size="small" severity="secondary" v-tooltip="t('folders.expandAll')" :aria-label="t('folders.expandAll')" @click="expanded = allKeys(nodes)" />
+        <Button icon="pi pi-minus" text rounded size="small" severity="secondary" v-tooltip="t('folders.collapseAll')" :aria-label="t('folders.collapseAll')" @click="expanded = {}" />
+        <Button v-if="canWrite" icon="pi pi-folder-plus" text rounded size="small" v-tooltip="t('folders.newFolder')" :aria-label="t('folders.newFolder')" @click="openCreate(selected)" />
       </span>
     </div>
     <div
@@ -244,7 +246,7 @@ defineExpose({ openCreate })
       @dragleave="onDragLeave(null)"
       @drop="onDrop($event, null)"
     >
-      <i class="pi pi-inbox" /> All {{ kind === 'requirement' ? 'requirements' : 'tests' }}
+      <i class="pi pi-inbox" /> {{ kind === 'requirement' ? t('workspace.allRequirements') : t('workspace.allTests') }}
     </div>
     <Tree
       v-model:expanded-keys="expanded"
@@ -274,60 +276,54 @@ defineExpose({ openCreate })
       </template>
     </Tree>
     <div v-if="!folders.length" class="muted small" style="padding: 8px 10px">
-      No folders yet.<template v-if="canWrite"> Use <i class="pi pi-folder-plus" /> to create one.</template>
+      {{ t('folders.none') }}<template v-if="canWrite">
+        <i18n-t keypath="folders.createHint" tag="span"><template #icon><i class="pi pi-folder-plus" /></template></i18n-t>
+      </template>
     </div>
-    <div v-if="canWrite" class="muted small" style="padding: 8px 10px">Drag folders to nest them; drag rows here to file them. Right-click for more.</div>
+    <div v-if="canWrite" class="muted small" style="padding: 8px 10px">{{ t('folders.dragHint') }}</div>
     <ContextMenu ref="menu" :model="menuItems" />
 
-    <Dialog v-model:visible="nameDialog" :header="nameMode === 'create' ? 'New folder' : 'Rename folder'" modal style="width: min(440px, 95vw)">
+    <Dialog v-model:visible="nameDialog" :header="nameMode === 'create' ? t('folders.newFolder') : t('folders.renameFolder')" modal style="width: min(440px, 95vw)">
       <form class="grid" style="gap: 12px" @submit.prevent="saveName">
         <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
         <div v-if="nameMode === 'create'" class="small muted">
-          Parent: {{ nameForm.parent ? folderPath(folders, nameForm.parent) : 'top level' }}
+          {{ t('folders.parent', { path: nameForm.parent ? folderPath(folders, nameForm.parent) : t('folders.topLevel') }) }}
         </div>
-        <div class="field"><label>Name</label><InputText v-model="nameForm.name" autofocus required /></div>
-        <div class="field"><label>Description</label><Textarea v-model="nameForm.description" rows="2" auto-resize /></div>
+        <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="nameForm.name" autofocus required /></div>
+        <div class="field"><label>{{ t('common.description') }}</label><Textarea v-model="nameForm.description" rows="2" auto-resize /></div>
         <div class="row" style="justify-content: flex-end">
-          <Button label="Cancel" text severity="secondary" @click="nameDialog = false" />
-          <Button type="submit" label="Save" icon="pi pi-check" :loading="busy" :disabled="!nameForm.name.trim()" />
+          <Button :label="t('common.cancel')" text severity="secondary" @click="nameDialog = false" />
+          <Button type="submit" :label="t('common.save')" icon="pi pi-check" :loading="busy" :disabled="!nameForm.name.trim()" />
         </div>
       </form>
     </Dialog>
 
-    <Dialog v-model:visible="deleteDialog" header="Delete folder" modal style="width: min(480px, 95vw)">
-      <p>
-        Delete <b>{{ deleting?.name }}</b>?
-      </p>
-      <p class="muted small">
-        Keep content moves subfolders and items to the parent folder. Delete everything removes all subfolders and contained
-        {{ kind === 'requirement' ? 'requirements' : 'tests' }}.
-      </p>
+    <Dialog v-model:visible="deleteDialog" :header="t('folders.deleteFolder')" modal style="width: min(520px, 95vw)">
+      <i18n-t keypath="folders.confirmDelete" tag="p"><template #name><b>{{ deleting?.name }}</b></template></i18n-t>
+      <p class="muted small">{{ kind === 'requirement' ? t('folders.deleteHintRequirements') : t('folders.deleteHintTests') }}</p>
       <div class="row" style="justify-content: flex-end">
-        <Button label="Cancel" text severity="secondary" @click="deleteDialog = false" />
-        <Button label="Delete, keep content" severity="warn" outlined :loading="busy" @click="doDelete(false)" />
-        <Button label="Delete everything" severity="danger" icon="pi pi-trash" :loading="busy" @click="doDelete(true)" />
+        <Button :label="t('common.cancel')" text severity="secondary" @click="deleteDialog = false" />
+        <Button :label="t('folders.deleteKeep')" severity="warn" outlined :loading="busy" @click="doDelete(false)" />
+        <Button :label="t('folders.deleteAll')" severity="danger" icon="pi pi-trash" :loading="busy" @click="doDelete(true)" />
       </div>
     </Dialog>
 
-    <Dialog v-model:visible="moveDialog" header="Move folder to project" modal style="width: min(460px, 95vw)">
+    <Dialog v-model:visible="moveDialog" :header="t('folders.moveFolderToProject')" modal style="width: min(460px, 95vw)">
       <div class="grid" style="gap: 12px">
         <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
-        <div>
-          Move <b>{{ moving?.name }}</b> including all subfolders and items to another project. Links to items that stay behind may
-          be removed by the server.
-        </div>
+        <i18n-t keypath="folders.moveHint" tag="div"><template #name><b>{{ moving?.name }}</b></template></i18n-t>
         <Select
           v-model="targetProject"
           :options="projects"
           option-value="id"
           :option-label="(p: Project) => `${p.key} · ${p.name}`"
-          placeholder="Target project"
+          :placeholder="t('folders.targetProject')"
           filter
           class="w-full"
         />
         <div class="row" style="justify-content: flex-end">
-          <Button label="Cancel" text severity="secondary" @click="moveDialog = false" />
-          <Button label="Move" icon="pi pi-send" :disabled="!targetProject" :loading="busy" @click="doMoveProject" />
+          <Button :label="t('common.cancel')" text severity="secondary" @click="moveDialog = false" />
+          <Button :label="t('common.move')" icon="pi pi-send" :disabled="!targetProject" :loading="busy" @click="doMoveProject" />
         </div>
       </div>
     </Dialog>

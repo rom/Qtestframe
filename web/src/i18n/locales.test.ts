@@ -1,0 +1,121 @@
+// Message catalogue checks: sv has exactly the keys of en, nothing is empty,
+// placeholders and plural forms match, and every key the code uses exists.
+import { describe, expect, it } from 'vitest'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+import en from './locales/en'
+import sv from './locales/sv'
+
+type Tree = { [k: string]: string | Tree }
+
+function flatten(obj: Tree, prefix = '', out: Record<string, string> = {}): Record<string, string> {
+  for (const [k, v] of Object.entries(obj)) {
+    const key = prefix ? `${prefix}.${k}` : k
+    if (typeof v === 'string') out[key] = v
+    else flatten(v, key, out)
+  }
+  return out
+}
+const placeholders = (s: string) => [...new Set([...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]))].sort()
+const forms = (s: string) => s.split(/\s\|\s/).length
+
+const EN = flatten(en as unknown as Tree)
+const SV = flatten(sv as unknown as Tree)
+
+describe('en / sv parity', () => {
+  it('has the same keys', () => {
+    const missing = Object.keys(EN).filter((k) => !(k in SV))
+    const extra = Object.keys(SV).filter((k) => !(k in EN))
+    expect(missing).toEqual([])
+    expect(extra).toEqual([])
+  })
+  it('has no empty messages', () => {
+    const empty = [...Object.entries(EN), ...Object.entries(SV)].filter(([, v]) => !v.trim()).map(([k]) => k)
+    expect(empty).toEqual([])
+  })
+  it('uses the same placeholders', () => {
+    const diff = Object.keys(EN).filter((k) => placeholders(EN[k]).join() !== placeholders(SV[k] ?? '').join())
+    expect(diff).toEqual([])
+  })
+  it('has the same number of plural forms', () => {
+    const diff = Object.keys(EN).filter((k) => forms(EN[k]) !== forms(SV[k] ?? ''))
+    expect(diff).toEqual([])
+  })
+  it('avoids characters with special meaning in vue-i18n', () => {
+    // @ starts a linked message, $ and unbalanced braces break the parser
+    const bad = [...Object.entries(EN), ...Object.entries(SV)].filter(([, v]) => /[@$]/.test(v) || (v.match(/\{/g)?.length ?? 0) !== (v.match(/\}/g)?.length ?? 0))
+    expect(bad).toEqual([])
+  })
+  it('keeps RFC 2119 keywords in English in the Swedish obligation labels', () => {
+    for (const k of ['must', 'shall', 'should', 'may']) expect(SV[`enums.obligation.${k}`]).toContain(k.toUpperCase())
+  })
+})
+
+// ---------- keys used in the source ----------
+
+// vitest runs from web/
+const SRC = join(process.cwd(), 'src') + '/'
+function files(dir: string): string[] {
+  return readdirSync(dir).flatMap((f) => {
+    const p = join(dir, f)
+    if (statSync(p).isDirectory()) return f === 'locales' ? [] : files(p)
+    return /\.(vue|ts)$/.test(f) && !/\.test\.ts$/.test(f) ? [p] : []
+  })
+}
+const sections = Object.keys(en).join('|')
+// single-quoted literals ('nav.projects', also in ternaries) and i18n-t keypath="…"
+const KEY_RE = new RegExp(`(?:'|keypath=")((?:${sections})\\.[\\w-]+(?:\\.[\\w-]+)*)['"]`, 'g')
+// permission names look like keys ('run.read') but are not messages
+const SKIP = /lib\/permissions\.ts$/
+
+describe('keys used in the code', () => {
+  const used = new Map<string, string>()
+  for (const f of files(SRC).filter((f) => !SKIP.test(f))) {
+    for (const m of readFileSync(f, 'utf8').matchAll(KEY_RE)) used.set(m[1], f.slice(SRC.length))
+  }
+  it('finds a reasonable number of keys', () => {
+    expect(used.size).toBeGreaterThan(300)
+  })
+  it('all exist in the catalogue', () => {
+    const unknown = [...used].filter(([k]) => !(k in EN)).map(([k, f]) => `${k} (${f})`)
+    expect(unknown).toEqual([])
+  })
+  it('has a page title for every named route', () => {
+    const router = readFileSync(join(SRC, 'router.ts'), 'utf8')
+    const names = [...router.matchAll(/name: '(\w+)', component/g)].map((m) => m[1]).filter((n) => n !== 'home')
+    expect(names.length).toBeGreaterThan(15)
+    expect(names.filter((n) => !(`titles.${n}` in EN))).toEqual([])
+  })
+})
+
+describe('dynamic keys', () => {
+  it('cover the query help', async () => {
+    const { QUERY_HELP, QUERY_OPERATORS } = await import('@/lib/query')
+    const missing = [...QUERY_HELP, ...QUERY_OPERATORS].filter((h) => !(`query.meaning.${h.id}` in EN)).map((h) => h.id)
+    expect(missing).toEqual([])
+  })
+  it('cover every enum value the API knows', async () => {
+    const { RELATION_TYPES } = await import('@/lib/relations')
+    // values mirror internal/model (stores/meta.ts DEFAULT_META)
+    const groups: Record<string, string[]> = {
+      obligation: ['must', 'must_not', 'shall', 'shall_not', 'should', 'should_not', 'may', 'optional', 'will', 'describe'],
+      obligationHint: ['must', 'must_not', 'shall', 'shall_not', 'should', 'should_not', 'may', 'optional', 'will', 'describe'],
+      status: ['draft', 'review', 'approved', 'implemented', 'verified', 'rejected', 'obsolete', 'ready', 'deprecated', 'planned', 'in_progress', 'completed', 'aborted'],
+      requirementType: ['functional', 'non_functional', 'security', 'performance', 'usability', 'interface', 'constraint', 'business', 'regulatory'],
+      priority: ['critical', 'high', 'medium', 'low'],
+      scriptLanguage: ['sh', 'bash', 'python', 'javascript'],
+      evaluationMethod: ['test', 'inspection', 'analysis', 'demonstration', 'review'],
+      result: ['not_run', 'in_progress', 'passed', 'failed', 'blocked', 'skipped'],
+      coverage: ['none', 'not_run', 'passed', 'failed', 'partial'],
+      role: ['admin', 'manager', 'tester', 'viewer'],
+      executionType: ['manual', 'automated'],
+    }
+    const missing = Object.entries(groups).flatMap(([g, vs]) => vs.filter((v) => !(`enums.${g}.${v}` in EN)).map((v) => `${g}.${v}`))
+    expect(missing).toEqual([])
+    expect(RELATION_TYPES.filter((r) => !(`enums.relation.${r}.incoming` in EN))).toEqual([])
+  })
+  it('cover all analysis rules', async () => {
+    const { ANALYSIS_RULES } = await import('./analysis')
+    expect(ANALYSIS_RULES.filter((r) => !(`analysis.rules.${r}` in EN))).toEqual([])
+  })
+})

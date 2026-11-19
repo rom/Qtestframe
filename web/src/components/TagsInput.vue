@@ -2,10 +2,12 @@
 import { ref } from 'vue'
 import InputText from 'primevue/inputtext'
 import { parseTags } from '@/lib/query'
+import { useI18n } from 'vue-i18n'
 
 const model = defineModel<string[]>({ default: () => [] })
 defineProps<{ disabled?: boolean; placeholder?: string; icon?: string }>()
 const text = ref('')
+const { t } = useI18n()
 
 function commit() {
   const add = parseTags(text.value).filter((t) => !model.value.includes(t))
@@ -27,14 +29,14 @@ function remove(t: string) {
 
 <template>
   <div class="row" style="gap: 6px; border: 1px solid var(--p-inputtext-border-color, var(--qtf-border)); border-radius: 6px; padding: 4px 6px; min-height: 38px">
-    <span v-for="t in model" :key="t" class="tag-chip">
-      <i :class="icon ?? 'pi pi-tag'" class="small muted" />{{ t }}
-      <i v-if="!disabled" class="pi pi-times small clickable" role="button" :aria-label="'Remove ' + t" @click="remove(t)" />
+    <span v-for="tag in model" :key="tag" class="tag-chip">
+      <i :class="icon ?? 'pi pi-tag'" class="small muted" />{{ tag }}
+      <i v-if="!disabled" class="pi pi-times small clickable" role="button" :aria-label="t('tagsInput.remove', { tag })" @click="remove(tag)" />
     </span>
     <InputText
       v-if="!disabled"
       v-model="text"
-      :placeholder="model.length ? '' : placeholder ?? 'Add tag and press Enter'"
+      :placeholder="model.length ? '' : placeholder ?? t('tagsInput.placeholder')"
       class="grow"
       style="border: none; box-shadow: none; padding: 4px; min-width: 120px; background: transparent"
       @keydown="onKey"

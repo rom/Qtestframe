@@ -11,11 +11,13 @@ import { P } from '@/lib/permissions'
 import type { Comment } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ entity: 'requirement' | 'test'; entityId: string }>()
 const emit = defineEmits<{ count: [n: number] }>()
 const auth = useAuthStore()
 const notify = useNotify()
+const { t } = useI18n()
 
 const MAX = 10000
 const comments = ref<Comment[]>([])
@@ -56,7 +58,7 @@ async function post() {
     draft.value = ''
     emit('count', comments.value.length)
   } catch (e) {
-    notify.fail(e, 'Could not add comment')
+    notify.fail(e, t('comments.addFailed'))
   } finally {
     posting.value = false
   }
@@ -73,11 +75,11 @@ async function saveEdit(c: Comment) {
     Object.assign(c, u ?? { body })
     editing.value = null
   } catch (e) {
-    notify.fail(e, 'Could not update comment')
+    notify.fail(e, t('comments.updateFailed'))
   }
 }
 function remove(c: Comment) {
-  notify.confirmDanger('Delete this comment?', async () => {
+  notify.confirmDanger(t('comments.confirmDelete'), async () => {
     try {
       await api.del(`/comments/${c.id}`)
       comments.value = comments.value.filter((x) => x.id !== c.id)
@@ -97,36 +99,36 @@ function onKey(e: KeyboardEvent) {
 
 <template>
   <div>
-    <Message v-if="error" severity="error" :closable="false">Comments are unavailable: {{ error }}</Message>
+    <Message v-if="error" severity="error" :closable="false">{{ t('comments.unavailable', { error }) }}</Message>
     <div v-else-if="loading && !comments.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" /></div>
     <template v-else>
-      <div v-if="!comments.length" class="muted small" style="padding: 8px 0">No comments yet. Start the discussion below.</div>
+      <div v-if="!comments.length" class="muted small" style="padding: 8px 0">{{ t('comments.none') }}</div>
       <div v-for="c in comments" :key="c.id" class="comment">
         <Avatar :label="initials(c.user_name || c.user_email)" shape="circle" size="normal" style="flex: none" />
         <div class="grow">
           <div class="row" style="gap: 6px">
-            <b>{{ c.user_name || c.user_email || 'Unknown' }}</b>
+            <b>{{ c.user_name || c.user_email || t('common.unknown') }}</b>
             <span class="muted small" :title="formatFullDateTime(c.created_at)">{{ formatDateTime(c.created_at) }}</span>
-            <span v-if="edited(c)" class="muted small" :title="'Edited ' + formatFullDateTime(c.updated_at)">(edited)</span>
+            <span v-if="edited(c)" class="muted small" :title="t('comments.editedAt', { date: formatFullDateTime(c.updated_at) })">{{ t('comments.edited') }}</span>
             <span class="grow" />
-            <Button v-if="mine(c) && editing !== c.id" icon="pi pi-pencil" text rounded size="small" severity="secondary" aria-label="Edit comment" @click="startEdit(c)" />
-            <Button v-if="canDelete(c)" icon="pi pi-trash" text rounded size="small" severity="danger" aria-label="Delete comment" @click="remove(c)" />
+            <Button v-if="mine(c) && editing !== c.id" icon="pi pi-pencil" text rounded size="small" severity="secondary" :aria-label="t('comments.edit')" v-tooltip="t('comments.edit')" @click="startEdit(c)" />
+            <Button v-if="canDelete(c)" icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('comments.delete')" v-tooltip="t('comments.delete')" @click="remove(c)" />
           </div>
           <div v-if="editing === c.id" class="grid" style="gap: 6px; margin-top: 4px">
             <Textarea v-model="editText" rows="2" auto-resize :maxlength="MAX" />
             <div class="row" style="justify-content: flex-end">
-              <Button label="Cancel" text size="small" severity="secondary" @click="editing = null" />
-              <Button label="Save" icon="pi pi-check" size="small" :disabled="!editText.trim()" @click="saveEdit(c)" />
+              <Button :label="t('common.cancel')" text size="small" severity="secondary" @click="editing = null" />
+              <Button :label="t('common.save')" icon="pi pi-check" size="small" :disabled="!editText.trim()" @click="saveEdit(c)" />
             </div>
           </div>
           <div v-else class="body">{{ c.body }}</div>
         </div>
       </div>
       <div class="grid" style="gap: 6px; margin-top: 12px">
-        <Textarea v-model="draft" rows="3" auto-resize placeholder="Write a comment… (Ctrl+Enter to post)" :maxlength="MAX" @keydown="onKey" />
+        <Textarea v-model="draft" rows="3" auto-resize :placeholder="t('comments.placeholder')" :aria-label="t('comments.post')" :maxlength="MAX" @keydown="onKey" />
         <div class="row" style="justify-content: flex-end">
           <span v-if="draft.length > MAX - 500" class="small muted">{{ draft.length }}/{{ MAX }}</span>
-          <Button label="Comment" icon="pi pi-send" size="small" :loading="posting" :disabled="!draft.trim()" @click="post" />
+          <Button :label="t('comments.post')" icon="pi pi-send" size="small" :loading="posting" :disabled="!draft.trim()" @click="post" />
         </div>
       </div>
     </template>

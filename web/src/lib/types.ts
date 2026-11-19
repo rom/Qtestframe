@@ -22,6 +22,8 @@ export interface User {
 /** Per-user settings (all optional; empty = default). */
 export interface Preferences {
   theme?: string
+  /** en | sv; empty = browser language */
+  language?: string | null
   start_page?: string
   default_project_id?: string
   default_tenant_id?: string

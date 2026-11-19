@@ -17,10 +17,12 @@ import type { User } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
+import { useI18n } from 'vue-i18n'
 const prefs = usePrefsStore()
 
 const auth = useAuthStore()
 const notify = useNotify()
+const { t } = useI18n()
 const users = ref<User[]>([])
 const loading = ref(false)
 const filter = ref('')
@@ -81,40 +83,40 @@ async function save() {
 <template>
   <div class="card">
     <div class="filterbar">
-      <IconField><InputIcon class="pi pi-filter" /><InputText v-model="filter" placeholder="Filter users" /></IconField>
+      <IconField><InputIcon class="pi pi-filter" /><InputText v-model="filter" :placeholder="t('admin.filterUsers')" :aria-label="t('admin.filterUsers')" /></IconField>
       <span class="grow" />
-      <Button label="New user" icon="pi pi-user-plus" @click="openCreate" />
+      <Button :label="t('admin.newUser')" icon="pi pi-user-plus" @click="openCreate" />
     </div>
     <DataTable :value="filtered" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
-      <Column field="email" header="E-mail" sortable />
-      <Column field="display_name" header="Name" sortable />
-      <Column field="auth_provider" header="Provider" sortable style="width: 120px" />
-      <Column header="Flags" style="width: 200px">
+      <Column field="email" :header="t('common.email')" sortable />
+      <Column field="display_name" :header="t('common.name')" sortable />
+      <Column field="auth_provider" :header="t('admin.provider')" sortable style="width: 130px" />
+      <Column :header="t('admin.flags')" style="width: 220px">
         <template #body="{ data }">
           <div class="row" style="gap: 4px">
-            <Tag v-if="data.super_admin" value="Super admin" severity="danger" />
-            <Tag v-if="data.disabled" value="Disabled" severity="contrast" />
+            <Tag v-if="data.super_admin" :value="t('admin.superAdmin')" severity="danger" />
+            <Tag v-if="data.disabled" :value="t('admin.disabled')" severity="contrast" />
           </div>
         </template>
       </Column>
-      <Column field="created_at" header="Created" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-pencil" text rounded severity="secondary" aria-label="Edit" @click="openEdit(data)" /></template></Column>
+      <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
+      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit(data)" /></template></Column>
     </DataTable>
   </div>
-  <Dialog v-model:visible="dialog" :header="editing ? 'Edit user' : 'New user'" modal style="width: min(460px, 95vw)">
+  <Dialog v-model:visible="dialog" :header="editing ? t('admin.editUser') : t('admin.newUser')" modal style="width: min(460px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>E-mail</label><InputText v-model="form.email" type="email" :disabled="!!editing" required /></div>
-      <div class="field"><label>Display name</label><InputText v-model="form.display_name" /></div>
+      <div class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" :disabled="!!editing" required /></div>
+      <div class="field"><label>{{ t('admin.displayName') }}</label><InputText v-model="form.display_name" /></div>
       <div class="field">
-        <label>{{ editing ? 'Reset password (optional)' : 'Password' }}</label>
+        <label>{{ editing ? t('admin.resetPassword') : t('admin.password') }}</label>
         <Password v-model="form.password" toggle-mask fluid autocomplete="new-password" />
       </div>
-      <div class="row"><Checkbox v-model="form.super_admin" input-id="sa" binary :disabled="editing?.id === auth.user?.id" /><label for="sa">Super administrator</label></div>
-      <div v-if="editing" class="row"><Checkbox v-model="form.disabled" input-id="dis" binary :disabled="editing.id === auth.user?.id" /><label for="dis">Disabled</label></div>
+      <div class="row"><Checkbox v-model="form.super_admin" input-id="sa" binary :disabled="editing?.id === auth.user?.id" /><label for="sa">{{ t('admin.superAdministrator') }}</label></div>
+      <div v-if="editing" class="row"><Checkbox v-model="form.disabled" input-id="dis" binary :disabled="editing.id === auth.user?.id" /><label for="dis">{{ t('admin.disabled') }}</label></div>
       <div class="row" style="justify-content: flex-end">
-        <Button label="Cancel" text severity="secondary" @click="dialog = false" />
-        <Button type="submit" label="Save" icon="pi pi-check" :disabled="!form.email || (!editing && !form.password)" />
+        <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
+        <Button type="submit" :label="t('common.save')" icon="pi pi-check" :disabled="!form.email || (!editing && !form.password)" />
       </div>
     </form>
   </Dialog>

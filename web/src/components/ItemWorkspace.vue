@@ -22,7 +22,9 @@ import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
 import { dragIds, encodeIds, ITEMS_MIME } from '@/lib/dnd'
 import { folderPath } from '@/lib/tree'
-import { formatDate, humanize, options, pluralize } from '@/lib/format'
+import { formatDate } from '@/lib/format'
+import { useI18n } from 'vue-i18n'
+import { enumLabel, enumOptions } from '@/i18n/labels'
 import { P } from '@/lib/permissions'
 import type { ItemKind, Requirement, TestCase } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
@@ -42,6 +44,7 @@ const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
+const { t } = useI18n()
 
 const isReq = computed(() => props.kind === 'requirement')
 const plural = computed(() => (isReq.value ? 'requirements' : 'tests'))
@@ -78,7 +81,7 @@ async function load() {
     selection.value = selection.value.filter((s) => ids.has(s.id))
   } catch (e) {
     queryError.value = e
-    if (!(e instanceof ApiError && e.code === 'invalid_query')) notify.fail(e, `Could not load ${plural.value}`)
+    if (!(e instanceof ApiError && e.code === 'invalid_query')) notify.fail(e, isReq.value ? t('workspace.loadRequirementsFailed') : t('workspace.loadTestsFailed'))
   } finally {
     loading.value = false
   }
@@ -117,32 +120,32 @@ interface Col {
 const allColumns = computed<Col[]>(() =>
   isReq.value
     ? [
-        { field: 'obligation', header: 'Obligation', width: '120px' },
-        { field: 'status', header: 'Status', width: '120px' },
-        { field: 'priority', header: 'Priority', width: '100px' },
-        { field: 'type', header: 'Type', width: '120px' },
-        { field: 'coverage', header: 'Coverage', width: '110px' },
-        { field: 'linked_tests', header: 'Tests', width: '80px' },
-        { field: 'category_ids', header: 'Categories', sortable: false },
-        { field: 'folder_path', header: 'Folder' },
-        { field: 'owner', header: 'Owner' },
-        { field: 'version', header: 'Ver.', width: '70px' },
-        { field: 'relation_count', header: 'Relations', width: '95px' },
-        { field: 'comment_count', header: 'Comments', width: '100px' },
-        { field: 'updated_at', header: 'Updated', width: '110px' },
+        { field: 'obligation', header: t('workspace.colObligation'), width: '120px' },
+        { field: 'status', header: t('workspace.colStatus'), width: '120px' },
+        { field: 'priority', header: t('workspace.colPriority'), width: '100px' },
+        { field: 'type', header: t('workspace.colType'), width: '130px' },
+        { field: 'coverage', header: t('workspace.colCoverage'), width: '120px' },
+        { field: 'linked_tests', header: t('workspace.colTests'), width: '85px' },
+        { field: 'category_ids', header: t('workspace.colCategories'), sortable: false },
+        { field: 'folder_path', header: t('workspace.colFolder') },
+        { field: 'owner', header: t('workspace.colOwner') },
+        { field: 'version', header: t('workspace.colVersion'), width: '70px' },
+        { field: 'relation_count', header: t('workspace.colRelations'), width: '105px' },
+        { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
       ]
     : [
-        { field: 'execution_type', header: 'Type', width: '120px' },
-        { field: 'status', header: 'Status', width: '110px' },
-        { field: 'priority', header: 'Priority', width: '100px' },
-        { field: 'last_result', header: 'Last result', width: '120px' },
-        { field: 'linked_requirements', header: 'Reqs', width: '80px' },
-        { field: 'category_ids', header: 'Categories', sortable: false },
-        { field: 'folder_path', header: 'Folder' },
-        { field: 'estimated_minutes', header: 'Est. min', width: '90px' },
-        { field: 'version', header: 'Ver.', width: '70px' },
-        { field: 'comment_count', header: 'Comments', width: '100px' },
-        { field: 'updated_at', header: 'Updated', width: '110px' },
+        { field: 'execution_type', header: t('workspace.colExecution'), width: '135px' },
+        { field: 'status', header: t('workspace.colStatus'), width: '110px' },
+        { field: 'priority', header: t('workspace.colPriority'), width: '100px' },
+        { field: 'last_result', header: t('workspace.colLastResult'), width: '130px' },
+        { field: 'linked_requirements', header: t('workspace.colReqs'), width: '80px' },
+        { field: 'category_ids', header: t('workspace.colCategories'), sortable: false },
+        { field: 'folder_path', header: t('workspace.colFolder') },
+        { field: 'estimated_minutes', header: t('workspace.colEstimate'), width: '100px' },
+        { field: 'version', header: t('workspace.colVersion'), width: '70px' },
+        { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
       ],
 )
 const defaultCols = computed(() =>
@@ -169,17 +172,17 @@ function onRowDrag(e: DragEvent, row: Item) {
   if (!e.dataTransfer || !canWrite.value) return
   const ids = dragIds(row.id, selection.value)
   e.dataTransfer.setData(ITEMS_MIME, encodeIds(ids))
-  e.dataTransfer.setData('text/plain', ids.length > 1 ? `${ids.length} ${plural.value}` : row.key)
+  e.dataTransfer.setData('text/plain', ids.length > 1 ? t(isReq.value ? 'workspace.dragRequirements' : 'workspace.dragTests', { count: ids.length }) : row.key)
   e.dataTransfer.effectAllowed = 'move'
 }
 
 async function moveItems(ids: string[], folderId: string | null) {
   try {
     await api.post(`/projects/${pid.value}/${plural.value}/move`, { ids, folder_id: folderId })
-    notify.ok(`Moved ${pluralize(ids.length, isReq.value ? 'requirement' : 'test')}`, folderId ? folderPath(folders.value, folderId) : 'Top level')
+    notify.ok(t(isReq.value ? 'workspace.movedRequirements' : 'workspace.movedTests', ids.length), folderId ? folderPath(folders.value, folderId) : t('common.topLevel'))
     await load()
   } catch (e) {
-    notify.fail(e, 'Move failed')
+    notify.fail(e, t('workspace.moveFailed'))
   }
 }
 
@@ -195,19 +198,19 @@ async function bulkSet(set: Record<string, unknown>) {
   if (!selectedIds.value.length) return
   try {
     await api.post(`/projects/${pid.value}/${plural.value}/bulk`, { ids: selectedIds.value, set })
-    notify.ok(`Updated ${pluralize(selectedIds.value.length, isReq.value ? 'requirement' : 'test')}`)
+    notify.ok(t(isReq.value ? 'workspace.updatedRequirements' : 'workspace.updatedTests', selectedIds.value.length))
     await load()
   } catch (e) {
-    notify.fail(e, 'Bulk update failed')
+    notify.fail(e, t('workspace.bulkFailed'))
   }
 }
 function bulkDelete() {
   const n = selectedIds.value.length
-  notify.confirmDanger(`Delete ${pluralize(n, isReq.value ? 'requirement' : 'test')}? This cannot be undone.`, async () => {
+  notify.confirmDanger(t(isReq.value ? 'workspace.confirmDeleteRequirements' : 'workspace.confirmDeleteTests', n), async () => {
     try {
       await api.del(`/projects/${pid.value}/${plural.value}/bulk`, { ids: selectedIds.value })
       selection.value = []
-      notify.ok(`Deleted ${n}`)
+      notify.ok(t('workspace.deletedCount', { count: n }))
       await load()
     } catch (e) {
       notify.fail(e)
@@ -238,8 +241,12 @@ watch(bulkStatus, (v) => v && bulkSet({ status: v }).then(() => (bulkStatus.valu
 watch(bulkPriority, (v) => v && bulkSet({ priority: v }).then(() => (bulkPriority.value = null)))
 watch(bulkThird, (v) => v && bulkSet(isReq.value ? { obligation: v } : { execution_type: v }).then(() => (bulkThird.value = null)))
 
-const statusOptions = computed(() => options(isReq.value ? meta.meta.requirement_statuses : meta.meta.test_statuses))
-const thirdOptions = computed(() => (isReq.value ? options(meta.meta.obligations) : options(['manual', 'automated'])))
+const statusOptions = computed(() => enumOptions('status', isReq.value ? meta.meta.requirement_statuses : meta.meta.test_statuses))
+const thirdOptions = computed(() => (isReq.value ? enumOptions('obligation', meta.meta.obligations) : enumOptions('executionType', ['manual', 'automated'])))
+const priorityOptions = computed(() => enumOptions('priority', meta.meta.priorities))
+const coverageOptions = computed(() => enumOptions('coverage', ['none', 'not_run', 'passed', 'failed', 'partial']))
+const resultOptions = computed(() => enumOptions('result', meta.meta.result_statuses))
+const pageReport = computed(() => t('common.pageReport', { first: '{first}', last: '{last}', total: '{totalRecords}' }))
 
 // ---------- editor ----------
 const editorOpen = ref(false)
@@ -268,11 +275,11 @@ function onCopied(it: TestCase) {
   if (it?.id) openEditor(it.id)
 }
 const editorTitle = computed(() => {
-  if (!editorId.value) return isReq.value ? 'New requirement' : 'New test'
+  if (!editorId.value) return isReq.value ? t('workspace.newRequirement') : t('workspace.newTest')
   const it = items.value.find((i) => i.id === editorId.value)
-  return it ? `${it.key} · ${it.title}` : isReq.value ? 'Requirement' : 'Test'
+  return it ? `${it.key} · ${it.title}` : isReq.value ? t('workspace.requirement') : t('workspace.test')
 })
-const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.value, selectedFolder.value) : `All ${plural.value}`))
+const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.value, selectedFolder.value) : isReq.value ? t('workspace.allRequirements') : t('workspace.allTests')))
 </script>
 
 <template>
@@ -292,25 +299,25 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       <div class="page-header" style="margin-bottom: 10px">
         <div>
           <h1 style="font-size: 17px">{{ folderLabel }}</h1>
-          <div class="sub">{{ pluralize(items.length, isReq ? 'requirement' : 'test') }}</div>
+          <div class="sub">{{ t(isReq ? 'counts.requirements' : 'counts.tests', items.length) }}</div>
         </div>
         <div class="actions">
           <span v-if="selectedFolder" class="row small">
-            <ToggleSwitch v-model="recursive" input-id="rec" /><label for="rec">Include subfolders</label>
+            <ToggleSwitch v-model="recursive" input-id="rec" /><label for="rec">{{ t('workspace.includeSubfolders') }}</label>
           </span>
           <MultiSelect
             v-model="visibleFields"
             :options="allColumns"
             option-label="header"
             option-value="field"
-            placeholder="Columns"
+            :placeholder="t('common.columns')"
             :max-selected-labels="0"
-            selected-items-label="Columns"
-            style="width: 130px"
-            aria-label="Columns"
+            :selected-items-label="t('common.columns')"
+            style="min-width: 130px"
+            :aria-label="t('common.columns')"
           />
-          <Button icon="pi pi-refresh" severity="secondary" text rounded aria-label="Refresh" v-tooltip="'Refresh'" @click="load" />
-          <Button v-if="canWrite" :label="isReq ? 'New requirement' : 'New test'" icon="pi pi-plus" @click="openEditor(null)" />
+          <Button icon="pi pi-refresh" severity="secondary" text rounded :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
+          <Button v-if="canWrite" :label="isReq ? t('workspace.newRequirement') : t('workspace.newTest')" icon="pi pi-plus" @click="openEditor(null)" />
         </div>
       </div>
 
@@ -318,14 +325,14 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <QueryInput v-model="q" :scope="kind" :error="queryError" :composed="composed" @submit="load" />
       </div>
       <div class="filterbar">
-        <MultiSelect v-model="quick.status" :options="statusOptions" option-label="label" option-value="value" placeholder="Status" :max-selected-labels="2" style="min-width: 140px" show-clear />
+        <MultiSelect v-model="quick.status" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.filterStatus')" :max-selected-labels="2" style="min-width: 140px" show-clear />
         <MultiSelect
           v-if="isReq"
           v-model="quick.obligation"
-          :options="options(meta.meta.obligations)"
+          :options="thirdOptions"
           option-label="label"
           option-value="value"
-          placeholder="Obligation"
+          :placeholder="t('workspace.filterObligation')"
           :max-selected-labels="2"
           style="min-width: 140px"
           show-clear
@@ -333,51 +340,51 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <MultiSelect
           v-else
           v-model="quick.execution_type"
-          :options="options(['manual', 'automated'])"
+          :options="thirdOptions"
           option-label="label"
           option-value="value"
-          placeholder="Execution"
+          :placeholder="t('workspace.filterExecution')"
           style="min-width: 140px"
           show-clear
         />
-        <MultiSelect v-model="quick.priority" :options="options(meta.meta.priorities)" option-label="label" option-value="value" placeholder="Priority" :max-selected-labels="2" style="min-width: 130px" show-clear />
+        <MultiSelect v-model="quick.priority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.filterPriority')" :max-selected-labels="2" style="min-width: 130px" show-clear />
         <MultiSelect
           v-if="isReq"
           v-model="quick.coverage"
-          :options="options(['none', 'not_run', 'passed', 'failed', 'partial'])"
+          :options="coverageOptions"
           option-label="label"
           option-value="value"
-          placeholder="Coverage"
+          :placeholder="t('workspace.filterCoverage')"
           style="min-width: 130px"
           show-clear
         />
         <MultiSelect
           v-else
           v-model="quick.last_result"
-          :options="options(meta.meta.result_statuses)"
+          :options="resultOptions"
           option-label="label"
           option-value="value"
-          placeholder="Last result"
+          :placeholder="t('workspace.filterLastResult')"
           style="min-width: 130px"
           show-clear
         />
         <div style="min-width: 180px; max-width: 280px">
-          <CategorySelect v-model="quick.categories" :categories="categories" value-key="path" placeholder="Category" />
+          <CategorySelect v-model="quick.categories" :categories="categories" value-key="path" :placeholder="t('workspace.filterCategory')" />
         </div>
-        <Button v-if="activeFilterCount(quick) || q" label="Clear" icon="pi pi-filter-slash" text severity="secondary" @click="clearFilters" />
+        <Button v-if="activeFilterCount(quick) || q" :label="t('workspace.clearFilters')" icon="pi pi-filter-slash" text severity="secondary" @click="clearFilters" />
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
 
       <div v-if="selection.length && canWrite" class="bulkbar">
-        <b>{{ selection.length }} selected</b>
-        <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" placeholder="Set status" size="small" style="width: 140px" />
-        <Select v-model="bulkPriority" :options="options(meta.meta.priorities)" option-label="label" option-value="value" placeholder="Set priority" size="small" style="width: 140px" />
-        <Select v-model="bulkThird" :options="thirdOptions" option-label="label" option-value="value" :placeholder="isReq ? 'Set obligation' : 'Set execution'" size="small" style="width: 150px" />
-        <Button label="Categories" icon="pi pi-plus" size="small" severity="secondary" outlined @click="openCatDialog('add')" />
-        <Button label="Categories" icon="pi pi-minus" size="small" severity="secondary" outlined @click="openCatDialog('remove')" />
-        <Button label="Move" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
-        <Button label="Delete" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
-        <Button icon="pi pi-times" size="small" text rounded severity="secondary" aria-label="Clear selection" @click="selection = []" />
+        <b>{{ t('common.selected', { count: selection.length }) }}</b>
+        <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.setStatus')" size="small" style="min-width: 140px" />
+        <Select v-model="bulkPriority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.setPriority')" size="small" style="min-width: 140px" />
+        <Select v-model="bulkThird" :options="thirdOptions" option-label="label" option-value="value" :placeholder="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" size="small" style="min-width: 150px" />
+        <Button :label="t('workspace.categoriesButton')" icon="pi pi-plus" size="small" severity="secondary" outlined v-tooltip.bottom="t('workspace.addCategories')" @click="openCatDialog('add')" />
+        <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
+        <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
+        <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+        <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
 
       <DataTable
@@ -397,19 +404,19 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         striped-rows
         :meta-key-selection="false"
         paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
-        current-page-report-template="{first}–{last} of {totalRecords}"
+        :current-page-report-template="pageReport"
         @row-click="(e) => openEditor((e.data as Item).id)"
       >
         <Column selection-mode="multiple" style="width: 2.6rem" />
         <Column v-if="canWrite" style="width: 2rem">
           <template #body="{ data }">
-            <i class="pi pi-bars drag-handle" draggable="true" title="Drag to a folder" @dragstart="onRowDrag($event, data as Item)" @click.stop />
+            <i class="pi pi-bars drag-handle" draggable="true" :title="t('workspace.dragToFolder')" @dragstart="onRowDrag($event, data as Item)" @click.stop />
           </template>
         </Column>
-        <Column field="key" header="Key" sortable style="width: 130px">
+        <Column field="key" :header="t('workspace.colKey')" sortable style="width: 130px">
           <template #body="{ data }"><span class="key">{{ data.key }}</span></template>
         </Column>
-        <Column field="title" header="Title" sortable style="min-width: 240px">
+        <Column field="title" :header="t('workspace.colTitle')" sortable style="min-width: 240px">
           <template #body="{ data }"><span class="clickable" style="font-weight: 500">{{ data.title }}</span></template>
         </Column>
         <Column v-for="c in visibleColumns" :key="c.field" :field="c.field" :header="c.header" :sortable="c.sortable !== false" :style="c.width ? { width: c.width } : {}">
@@ -420,11 +427,11 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <StatusTag v-else-if="c.field === 'coverage'" :value="data.coverage" kind="coverage" />
             <StatusTag v-else-if="c.field === 'last_result'" :value="data.last_result" kind="result" />
             <span v-else-if="c.field === 'execution_type'" class="row nowrap small">
-              <i :class="data.execution_type === 'automated' ? 'pi pi-bolt' : 'pi pi-user'" class="muted" />{{ humanize(data.execution_type) }}
+              <i :class="data.execution_type === 'automated' ? 'pi pi-bolt' : 'pi pi-user'" class="muted" />{{ enumLabel('executionType', data.execution_type) }}
             </span>
             <CategoryChips v-else-if="c.field === 'category_ids'" :ids="data.category_ids" :categories="categories" />
             <span v-else-if="c.field === 'updated_at'" class="small muted">{{ formatDate(data.updated_at) }}</span>
-            <span v-else-if="c.field === 'type'" class="small">{{ humanize(data.type) }}</span>
+            <span v-else-if="c.field === 'type'" class="small">{{ enumLabel('requirementType', data.type) }}</span>
             <span v-else-if="c.field === 'folder_path'" class="small muted">{{ data.folder_path }}</span>
             <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">
               <i :class="c.field === 'comment_count' ? 'pi pi-comments' : 'pi pi-sitemap'" class="muted" style="font-size: 11px" /> {{ data[c.field] ?? 0 }}
@@ -435,7 +442,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <template #empty>
           <div class="empty">
             <i class="pi pi-inbox" />
-            <div>No {{ plural }} {{ composed ? 'match the filter' : 'here yet' }}.</div>
+            <div>{{ isReq ? (composed ? t('workspace.emptyRequirementsFilter') : t('workspace.emptyRequirements')) : composed ? t('workspace.emptyTestsFilter') : t('workspace.emptyTests') }}</div>
           </div>
         </template>
       </DataTable>
@@ -472,25 +479,25 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     />
   </Drawer>
 
-  <Dialog v-model:visible="catDialog" :header="catMode === 'add' ? 'Add categories' : 'Remove categories'" modal style="width: min(480px, 95vw)">
+  <Dialog v-model:visible="catDialog" :header="catMode === 'add' ? t('workspace.addCategories') : t('workspace.removeCategories')" modal style="width: min(480px, 95vw)">
     <div class="grid" style="gap: 12px">
       <SelectButton
         v-model="catMode"
         :options="[
-          { l: 'Add', v: 'add' },
-          { l: 'Remove', v: 'remove' },
+          { l: t('common.add'), v: 'add' },
+          { l: t('common.remove'), v: 'remove' },
         ]"
         option-label="l"
         option-value="v"
         :allow-empty="false"
       />
       <CategorySelect v-model="catIds" :categories="categories" />
-      <div class="small muted">Applies to {{ pluralize(selection.length, isReq ? 'requirement' : 'test') }}.</div>
+      <div class="small muted">{{ t(isReq ? 'workspace.appliesToRequirements' : 'workspace.appliesToTests', selection.length) }}</div>
     </div>
     <template #footer>
-      <Button label="Cancel" text severity="secondary" @click="catDialog = false" />
-      <Button label="Apply" icon="pi pi-check" :disabled="!catIds.length" @click="applyCats" />
+      <Button :label="t('common.cancel')" text severity="secondary" @click="catDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!catIds.length" @click="applyCats" />
     </template>
   </Dialog>
-  <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" header="Move selection to folder" @pick="onPickFolder" />
+  <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />
 </template>

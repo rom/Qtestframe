@@ -9,10 +9,12 @@ import QueryHelp from './QueryHelp.vue'
 import { ApiError } from '@/lib/api'
 import { positionToIndex } from '@/lib/highlight'
 import type { QUERY_FIELDS } from '@/lib/query'
+import { useI18n } from 'vue-i18n'
 
 const model = defineModel<string>({ default: '' })
 const props = defineProps<{ scope: keyof typeof QUERY_FIELDS; error?: unknown; placeholder?: string; composed?: string }>()
 const emit = defineEmits<{ submit: [] }>()
+const { t } = useI18n()
 const help = ref<InstanceType<typeof Popover>>()
 
 /** Show `invalid_query` errors with a caret under the reported position. */
@@ -35,13 +37,13 @@ const queryError = computed(() => {
           v-model="model"
           class="w-full mono"
           :invalid="!!queryError"
-          :placeholder="placeholder ?? 'Filter, e.g. status:approved obligation:must -tag:legacy'"
-          aria-label="Filter expression"
+          :placeholder="placeholder ?? t('query.placeholder', { example: 'status:approved obligation:must -tag:legacy' })"
+          :aria-label="t('query.label')"
           @keydown.enter.prevent="emit('submit')"
         />
       </IconField>
-      <Button icon="pi pi-question-circle" text rounded severity="secondary" aria-label="Query help" v-tooltip.bottom="'Query syntax'" @click="help?.toggle($event)" />
-      <Button v-if="model" icon="pi pi-times" text rounded severity="secondary" aria-label="Clear" @click="model = ''; emit('submit')" />
+      <Button icon="pi pi-question-circle" text rounded severity="secondary" :aria-label="t('query.help')" v-tooltip.bottom="t('query.syntax')" @click="help?.toggle($event)" />
+      <Button v-if="model" icon="pi pi-times" text rounded severity="secondary" :aria-label="t('common.clear')" @click="model = ''; emit('submit')" />
     </div>
     <div v-if="queryError" class="query-error">
       <div>{{ queryError.message }}</div>

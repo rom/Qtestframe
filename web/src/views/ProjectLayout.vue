@@ -7,12 +7,14 @@ import { useProjectStore } from '@/stores/project'
 import { usePrefsStore } from '@/stores/prefs'
 import { errorMessage } from '@/lib/api'
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ projectId: string }>()
 const proj = useProjectStore()
 const prefs = usePrefsStore()
 const route = useRoute()
 const error = ref('')
+const { t } = useI18n()
 
 watch(
   () => props.projectId,
@@ -28,16 +30,16 @@ watch(
   { immediate: true },
 )
 
-const tabs = [
-  { to: 'dashboard', icon: 'pi pi-chart-bar', label: 'Dashboard' },
-  { to: 'requirements', icon: 'pi pi-list-check', label: 'Requirements' },
-  { to: 'tests', icon: 'pi pi-check-square', label: 'Tests' },
-  { to: 'runs', icon: 'pi pi-play-circle', label: 'Operations' },
-  { to: 'traceability', icon: 'pi pi-th-large', label: 'Traceability' },
-  { to: 'baselines', icon: 'pi pi-flag', label: 'Baselines' },
-  { to: 'settings', icon: 'pi pi-tags', label: 'Categories & settings' },
-  { to: 'export', icon: 'pi pi-download', label: 'Export' },
-]
+const tabs = computed(() => [
+  { to: 'dashboard', icon: 'pi pi-chart-bar', label: t('nav.dashboard') },
+  { to: 'requirements', icon: 'pi pi-list-check', label: t('nav.requirements') },
+  { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
+  { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
+  { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
+  { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
+  { to: 'settings', icon: 'pi pi-tags', label: t('nav.settings') },
+  { to: 'export', icon: 'pi pi-download', label: t('nav.export') },
+])
 const ready = computed(() => proj.project?.id === props.projectId)
 const isRunsChild = computed(() => route.name === 'run' || route.name === 'execute')
 </script>
@@ -47,7 +49,7 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
   <div v-else-if="!ready" class="empty"><ProgressSpinner style="width: 40px; height: 40px" /></div>
   <template v-else>
     <div class="row" style="margin-bottom: 4px">
-      <RouterLink :to="{ name: 'projects' }" class="muted small">Projects</RouterLink>
+      <RouterLink :to="{ name: 'projects' }" class="muted small">{{ t('nav.breadcrumbProjects') }}</RouterLink>
       <i class="pi pi-angle-right muted small" />
       <span class="small" style="font-weight: 600">{{ proj.project?.name }}</span>
       <span class="key">{{ proj.project?.key }}</span>

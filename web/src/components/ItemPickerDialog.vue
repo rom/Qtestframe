@@ -9,12 +9,15 @@ import StatusTag from './StatusTag.vue'
 import { api, asItems } from '@/lib/api'
 import type { Requirement, TestCase } from '@/lib/types'
 import { usePrefsStore } from '@/stores/prefs'
+import { useI18n } from 'vue-i18n'
+import { enumLabel } from '@/i18n/labels'
 const prefs = usePrefsStore()
 
 type Item = Requirement | TestCase
 const visible = defineModel<boolean>('visible', { default: false })
 const props = defineProps<{ kind: 'requirement' | 'test'; projectId: string; exclude?: string[]; header?: string; confirmLabel?: string }>()
 const emit = defineEmits<{ pick: [items: Item[]] }>()
+const { t } = useI18n()
 
 const q = ref('')
 const items = ref<Item[]>([])
@@ -52,10 +55,10 @@ function confirm() {
 </script>
 
 <template>
-  <Dialog v-model:visible="visible" :header="header ?? (kind === 'requirement' ? 'Select requirements' : 'Select tests')" modal maximizable style="width: min(900px, 96vw)">
+  <Dialog v-model:visible="visible" :header="header ?? (kind === 'requirement' ? t('picker.selectRequirements') : t('picker.selectTests'))" modal maximizable style="width: min(900px, 96vw)">
     <div class="filterbar">
       <QueryInput v-model="q" :scope="kind" :error="error" @submit="load" />
-      <Button label="Apply" icon="pi pi-search" severity="secondary" @click="load" />
+      <Button :label="t('common.apply')" icon="pi pi-search" severity="secondary" @click="load" />
     </div>
     <DataTable
       v-model:selection="selection"
@@ -71,17 +74,17 @@ function confirm() {
       :sort-order="1"
     >
       <Column selection-mode="multiple" style="width: 3rem" />
-      <Column field="key" header="Key" sortable style="width: 140px"><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
-      <Column field="title" header="Title" sortable />
-      <Column v-if="kind === 'test'" field="execution_type" header="Type" sortable style="width: 110px" />
-      <Column field="status" header="Status" sortable style="width: 120px"><template #body="{ data }"><StatusTag :value="data.status" /></template></Column>
-      <Column field="folder_path" header="Folder" sortable />
-      <template #empty><div class="empty">Nothing found.</div></template>
+      <Column field="key" :header="t('common.key')" sortable style="width: 140px"><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
+      <Column field="title" :header="t('common.title')" sortable />
+      <Column v-if="kind === 'test'" field="execution_type" :header="t('common.type')" sortable style="width: 130px"><template #body="{ data }">{{ enumLabel('executionType', data.execution_type) }}</template></Column>
+      <Column field="status" :header="t('common.status')" sortable style="width: 120px"><template #body="{ data }"><StatusTag :value="data.status" /></template></Column>
+      <Column field="folder_path" :header="t('common.folder')" sortable />
+      <template #empty><div class="empty">{{ t('picker.nothingFound') }}</div></template>
     </DataTable>
     <template #footer>
-      <span class="muted small" style="margin-right: auto">{{ selection.length }} selected</span>
-      <Button label="Cancel" text severity="secondary" @click="visible = false" />
-      <Button :label="confirmLabel ?? 'Add'" icon="pi pi-check" :disabled="!selection.length" @click="confirm" />
+      <span class="muted small" style="margin-right: auto">{{ t('common.selected', { count: selection.length }) }}</span>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="visible = false" />
+      <Button :label="confirmLabel ?? t('common.add')" icon="pi pi-check" :disabled="!selection.length" @click="confirm" />
     </template>
   </Dialog>
 </template>

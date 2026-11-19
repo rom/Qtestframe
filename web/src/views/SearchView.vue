@@ -10,15 +10,17 @@ import QueryInput from '@/components/QueryInput.vue'
 import { api, ApiError, asItems } from '@/lib/api'
 import { groupBy } from '@/lib/collections'
 import { queryTerms, splitByTerms } from '@/lib/highlight'
-import { humanize, pluralize } from '@/lib/format'
 import type { Project, SearchHit } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
+import { enumLabel } from '@/i18n/labels'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const notify = useNotify()
+const { t } = useI18n()
 
 const q = ref((route.query.q as string) || '')
 const types = ref<string[]>(((route.query.types as string) || 'requirement,test,run').split(','))
@@ -57,7 +59,7 @@ async function search() {
   } catch (e) {
     error.value = e
     hits.value = []
-    if (!(e instanceof ApiError && e.code === 'invalid_query')) notify.fail(e, 'Search failed')
+    if (!(e instanceof ApiError && e.code === 'invalid_query')) notify.fail(e, t('search.failed'))
   } finally {
     loading.value = false
   }
@@ -76,11 +78,11 @@ watch(
   { immediate: true },
 )
 
-const typeMeta: Record<string, { label: string; icon: string }> = {
-  requirement: { label: 'Requirements', icon: 'pi pi-list-check' },
-  test: { label: 'Tests', icon: 'pi pi-check-square' },
-  run: { label: 'Runs', icon: 'pi pi-play-circle' },
-}
+const typeMeta = computed<Record<string, { label: string; icon: string }>>(() => ({
+  requirement: { label: enumLabel('searchType', 'requirement'), icon: 'pi pi-list-check' },
+  test: { label: enumLabel('searchType', 'test'), icon: 'pi pi-check-square' },
+  run: { label: enumLabel('searchType', 'run'), icon: 'pi pi-play-circle' },
+}))
 const groups = computed(() => groupBy(hits.value, (h) => h.type))
 function link(h: SearchHit) {
   if (h.type === 'requirement') return { name: 'requirements', params: { projectId: h.project_id }, query: { item: h.id } }
@@ -93,27 +95,27 @@ const terms = computed(() => queryTerms(q.value))
 <template>
   <div class="page-header">
     <div>
-      <h1>Search</h1>
-      <div class="sub">Across all projects of {{ auth.tenant?.name ?? 'the current tenant' }}. Free text and the full query language are supported.</div>
+      <h1>{{ t('search.title') }}</h1>
+      <div class="sub">{{ t('search.subtitle', { tenant: auth.tenant?.name ?? t('search.currentTenant') }) }}</div>
     </div>
   </div>
   <div class="card" style="margin-bottom: 16px">
     <div class="filterbar" style="margin: 0">
-      <QueryInput v-model="q" scope="requirement" :error="error" placeholder='e.g. "time out" or title~/login/i status:approved' @submit="submit" />
-      <Select v-model="projectId" :options="projects" option-value="id" :option-label="(p: Project) => `${p.key} · ${p.name}`" placeholder="All projects" show-clear style="min-width: 180px" />
+      <QueryInput v-model="q" scope="requirement" :error="error" :placeholder="t('search.placeholder', { example: '&quot;time out&quot; title~/login/i status:approved' })" @submit="submit" />
+      <Select v-model="projectId" :options="projects" option-value="id" :option-label="(p: Project) => `${p.key} · ${p.name}`" :placeholder="t('search.allProjects')" show-clear style="min-width: 180px" />
       <span v-for="(m, t) in typeMeta" :key="t" class="row nowrap">
         <Checkbox v-model="types" :input-id="'t-' + t" :value="t" />
         <label :for="'t-' + t">{{ m.label }}</label>
       </span>
-      <Button label="Search" icon="pi pi-search" @click="submit" />
+      <Button :label="t('common.search')" icon="pi pi-search" @click="submit" />
     </div>
   </div>
   <div v-if="loading" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
   <template v-else-if="searched">
-    <div class="small muted" style="margin-bottom: 8px">{{ pluralize(total, 'result') }}</div>
-    <div v-if="!hits.length" class="card empty"><i class="pi pi-search" />Nothing found.</div>
+    <div class="small muted" style="margin-bottom: 8px">{{ t('counts.results', total) }}</div>
+    <div v-if="!hits.length" class="card empty"><i class="pi pi-search" />{{ t('search.nothingFound') }}</div>
     <div v-for="g in groups" :key="g.key" class="card" style="margin-bottom: 16px">
-      <h3><i :class="typeMeta[g.key]?.icon ?? 'pi pi-file'" /> {{ typeMeta[g.key]?.label ?? humanize(g.key) }} <span class="muted">({{ g.items.length }})</span></h3>
+      <h3><i :class="typeMeta[g.key]?.icon ?? 'pi pi-file'" /> {{ typeMeta[g.key]?.label ?? enumLabel('searchType', g.key) }} <span class="muted">({{ g.items.length }})</span></h3>
       <RouterLink v-for="h in g.items" :key="h.id" :to="link(h)" style="display: block; padding: 10px 0; border-top: 1px solid var(--qtf-border); color: inherit; text-decoration: none">
         <div class="row nowrap">
           <Tag :value="h.project_key" severity="secondary" />
@@ -124,11 +126,11 @@ const terms = computed(() => queryTerms(q.value))
           <template v-for="(p, i) in splitByTerms(h.snippet, terms)" :key="i"><mark v-if="p.mark" style="background: rgba(250, 204, 21, 0.35); color: inherit; border-radius: 3px">{{ p.text }}</mark><template v-else>{{ p.text }}</template></template>
         </div>
         <div v-if="h.matched_fields?.length" class="row" style="gap: 4px; margin-top: 4px">
-          <span class="small muted">matched:</span>
+          <span class="small muted">{{ t('search.matched') }}</span>
           <span v-for="f in h.matched_fields" :key="f" class="tag-chip" style="font-size: 11px; padding: 0 6px">{{ f }}</span>
         </div>
       </RouterLink>
     </div>
   </template>
-  <div v-else class="card empty"><i class="pi pi-search" />Type a query and press Enter.</div>
+  <div v-else class="card empty"><i class="pi pi-search" />{{ t('search.prompt') }}</div>
 </template>

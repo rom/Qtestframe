@@ -12,24 +12,27 @@ import Tag from 'primevue/tag'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { formatDate, humanize, options } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import { P } from '@/lib/permissions'
 import type { Membership, RbacInfo } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
+import { useI18n } from 'vue-i18n'
+import { enumLabel, enumOptions } from '@/i18n/labels'
 const prefs = usePrefsStore()
 
 const auth = useAuthStore()
 const meta = useMetaStore()
 const notify = useNotify()
+const { t } = useI18n()
 const members = ref<Membership[]>([])
 const rbac = ref<RbacInfo | null>(null)
 const loading = ref(false)
 const filter = ref('')
 const canManage = computed(() => auth.can(P.memberManage))
-const roles = computed(() => options(rbac.value?.roles ?? meta.meta.roles))
+const roles = computed(() => enumOptions('role', rbac.value?.roles ?? meta.meta.roles))
 const filtered = computed(() => {
   const f = filter.value.trim().toLowerCase()
   return f ? members.value.filter((m) => `${m.email} ${m.display_name} ${m.role}`.toLowerCase().includes(f)) : members.value
@@ -58,13 +61,13 @@ async function setRole(m: Membership, role: string) {
   try {
     await api.patch(`/members/${m.user_id}`, { role })
     m.role = role
-    notify.ok('Role changed', `${m.email}: ${humanize(role)}`)
+    notify.ok(t('admin.roleChanged'), `${m.email}: ${enumLabel('role', role)}`)
   } catch (e) {
     notify.fail(e)
   }
 }
 function remove(m: Membership) {
-  notify.confirmDanger(`Remove ${m.email} from ${auth.tenant?.name}?`, async () => {
+  notify.confirmDanger(t('admin.confirmRemoveMember', { email: m.email, tenant: auth.tenant?.name ?? '' }), async () => {
     try {
       await api.del(`/members/${m.user_id}`)
       load()
@@ -94,7 +97,7 @@ async function add() {
       ...(form.value.password ? { password: form.value.password } : {}),
     })
     dialog.value = false
-    notify.ok('Member added', form.value.email)
+    notify.ok(t('admin.memberAdded'), form.value.email)
     load()
   } catch (e) {
     formError.value = errorMessage(e)
@@ -109,15 +112,15 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
 <template>
   <div class="card">
     <div class="filterbar">
-      <IconField><InputIcon class="pi pi-filter" /><InputText v-model="filter" placeholder="Filter members" /></IconField>
+      <IconField><InputIcon class="pi pi-filter" /><InputText v-model="filter" :placeholder="t('admin.filterMembers')" :aria-label="t('admin.filterMembers')" /></IconField>
       <span class="grow" />
-      <Button v-if="rbac" label="Role matrix" icon="pi pi-table" severity="secondary" text @click="showMatrix = true" />
-      <Button v-if="canManage" label="Add member" icon="pi pi-user-plus" @click="openAdd" />
+      <Button v-if="rbac" :label="t('admin.roleMatrix')" icon="pi pi-table" severity="secondary" text @click="showMatrix = true" />
+      <Button v-if="canManage" :label="t('admin.addMember')" icon="pi pi-user-plus" @click="openAdd" />
     </div>
     <DataTable :value="filtered" data-key="user_id" :loading="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
-      <Column field="email" header="E-mail" sortable />
-      <Column field="display_name" header="Name" sortable />
-      <Column field="role" header="Role" sortable style="width: 200px">
+      <Column field="email" :header="t('common.email')" sortable />
+      <Column field="display_name" :header="t('common.name')" sortable />
+      <Column field="role" :header="t('common.role')" sortable style="width: 200px">
         <template #body="{ data }">
           <Select
             v-if="canManage && data.user_id !== auth.user?.id"
@@ -127,44 +130,45 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
             option-value="value"
             size="small"
             class="w-full"
+            :aria-label="t('common.role')"
             @update:model-value="(r: string) => setRole(data, r)"
           />
-          <Tag v-else :value="humanize(data.role)" severity="secondary" />
+          <Tag v-else :value="enumLabel('role', data.role)" severity="secondary" />
         </template>
       </Column>
-      <Column field="created_at" header="Member since" sortable style="width: 140px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
+      <Column field="created_at" :header="t('admin.memberSince')" sortable style="width: 150px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column v-if="canManage" style="width: 60px">
         <template #body="{ data }">
-          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-user-minus" text rounded severity="danger" aria-label="Remove" @click="remove(data)" />
+          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('common.remove')" v-tooltip="t('common.remove')" @click="remove(data)" />
         </template>
       </Column>
     </DataTable>
   </div>
 
-  <Dialog v-model:visible="dialog" header="Add member" modal style="width: min(460px, 95vw)">
+  <Dialog v-model:visible="dialog" :header="t('admin.addMember')" modal style="width: min(460px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="add">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>E-mail</label><InputText v-model="form.email" type="email" required autofocus /></div>
-      <div class="field"><label>Role</label><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
-      <div class="field"><label>Display name (new users)</label><InputText v-model="form.display_name" /></div>
+      <div class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" required autofocus /></div>
+      <div class="field"><label>{{ t('common.role') }}</label><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
+      <div class="field"><label>{{ t('admin.displayNameNew') }}</label><InputText v-model="form.display_name" /></div>
       <div class="field">
-        <label>Initial password (new local users)</label>
+        <label>{{ t('admin.initialPassword') }}</label>
         <Password v-model="form.password" toggle-mask fluid autocomplete="new-password" />
-        <small class="muted">Existing users are added with the chosen role; a local account is created if the e-mail is unknown.</small>
+        <small class="muted">{{ t('admin.addMemberHint') }}</small>
       </div>
       <div class="row" style="justify-content: flex-end">
-        <Button label="Cancel" text severity="secondary" @click="dialog = false" />
-        <Button type="submit" label="Add" icon="pi pi-check" :loading="busy" :disabled="!form.email" />
+        <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
+        <Button type="submit" :label="t('common.add')" icon="pi pi-check" :loading="busy" :disabled="!form.email" />
       </div>
     </form>
   </Dialog>
 
-  <Dialog v-model:visible="showMatrix" header="Roles and permissions" modal style="width: min(720px, 96vw)">
+  <Dialog v-model:visible="showMatrix" :header="t('admin.rolesAndPermissions')" modal style="width: min(720px, 96vw)">
     <table v-if="rbac" style="width: 100%; border-collapse: collapse; font-size: 13px">
       <thead>
         <tr>
-          <th style="text-align: left; padding: 6px">Permission</th>
-          <th v-for="r in rbac.roles" :key="r" style="padding: 6px">{{ humanize(r) }}</th>
+          <th style="text-align: left; padding: 6px">{{ t('admin.permission') }}</th>
+          <th v-for="r in rbac.roles" :key="r" style="padding: 6px">{{ enumLabel('role', r) }}</th>
         </tr>
       </thead>
       <tbody>

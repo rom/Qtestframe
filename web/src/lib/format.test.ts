@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDatePref, formatDateTime, formatDateTimePref, formatDuration, formatFullDateTime, getDatePrefs, humanize, initials, isValidTimeZone, options, percent, pluralize, relativeTime, setDatePrefs, truncate } from './format'
+import {
+  formatDate,
+  formatDatePref,
+  formatDateTime,
+  formatDateTimePref,
+  formatDuration,
+  formatFullDateTime,
+  formatNumber,
+  getDatePrefs,
+  getFormatLocale,
+  humanize,
+  initials,
+  isValidTimeZone,
+  options,
+  percent,
+  pluralize,
+  relativeTime,
+  setDatePrefs,
+  setFormatLocale,
+  truncate,
+} from './format'
 
 describe('humanize', () => {
   it('turns identifiers into labels', () => {
@@ -125,5 +145,62 @@ describe('preference based dates', () => {
       setDatePrefs(null)
     }
     expect(getDatePrefs()).toEqual({ date_format: '', timezone: '' })
+  })
+})
+
+describe('Swedish formatting', () => {
+  const now = new Date('2026-01-10T12:00:00Z')
+  it('relative times use Intl in the given locale', () => {
+    expect(relativeTime('2026-01-10T11:59:50Z', now, false, 'sv-SE')).toBe('just nu')
+    expect(relativeTime('2026-01-10T11:55:00Z', now, false, 'sv-SE')).toBe('för 5 minuter sedan')
+    expect(relativeTime('2026-01-10T11:59:00Z', now, false, 'sv')).toBe('för 1 minut sedan')
+    expect(relativeTime('2026-01-10T09:00:00Z', now, false, 'sv')).toBe('för 3 timmar sedan')
+    expect(relativeTime('2026-01-12T12:00:00Z', now, false, 'sv')).toBe('om 2 dagar')
+    expect(relativeTime('2025-01-10T12:00:00Z', now, false, 'sv')).toBe('för 1 år sedan')
+    // short form only abbreviates in English; Swedish stays complete
+    expect(relativeTime('2026-01-10T11:55:00Z', now, true, 'sv')).toBe('för 5 minuter sedan')
+    expect(relativeTime('2026-01-10T12:05:00Z', now, true, 'en')).toBe('in 5 min')
+    // other locales fall back to Intl's own "now"
+    expect(relativeTime('2026-01-10T11:59:50Z', now, false, 'de')).toBe('jetzt')
+  })
+  it('preference based dates in sv', () => {
+    const d = '2026-01-10T11:55:00Z'
+    expect(formatDateTimePref(d, { date_format: 'relative' }, now, 'sv-SE')).toBe('för 5 minuter sedan')
+    expect(formatDatePref('2026-01-08T12:00:00Z', { date_format: 'relative' }, now, 'sv-SE')).toBe('för 2 dagar sedan')
+    expect(formatDateTimePref(d, { date_format: 'locale', timezone: 'UTC' }, now, 'sv-SE')).toBe('10 jan. 2026 11:55')
+    expect(formatDatePref(d, { date_format: 'locale', timezone: 'UTC' }, now, 'sv-SE')).toBe('10 jan. 2026')
+    // ISO stays ISO in every language
+    expect(formatDateTimePref(d, { date_format: 'iso', timezone: 'UTC' }, now, 'sv-SE')).toBe('2026-01-10 11:55')
+  })
+  it('durations and numbers in sv', () => {
+    expect(formatDuration(1500, 'sv-SE')).toBe('1,5 s')
+    expect(formatDuration(250, 'sv-SE')).toBe('250 ms')
+    expect(formatDuration(65000, 'sv-SE')).toBe('1 min 5 s')
+    expect(formatDuration(120000, 'sv-SE')).toBe('2 min')
+    expect(formatDuration(3_900_000, 'sv-SE')).toBe('1 h 5 min')
+    expect(formatNumber(1234.5, 'sv-SE').replace(/\s/g, ' ')).toBe('1 234,5')
+    expect(formatNumber(1234.5, 'en-GB')).toBe('1,234.5')
+    expect(formatNumber(0.45, 'sv-SE', { style: 'percent' }).replace(/\s/g, ' ')).toBe('45 %')
+    expect(formatNumber(null)).toBe('')
+    expect(formatNumber(Number.NaN)).toBe('')
+    expect(formatNumber(5, 'not a locale!!')).toBe('5')
+  })
+  it('the active locale drives the stateful helpers', () => {
+    try {
+      setFormatLocale('sv-SE')
+      expect(getFormatLocale()).toBe('sv-SE')
+      expect(relativeTime(new Date(Date.now() - 120000))).toBe('för 2 minuter sedan')
+      expect(formatDuration(1500)).toBe('1,5 s')
+      setDatePrefs({ date_format: 'relative' })
+      expect(formatDateTime(new Date(Date.now() - 120000))).toBe('för 2 minuter sedan')
+      expect(formatDate(new Date(Date.now() - 2 * 86400000))).toBe('för 2 dagar sedan')
+    } finally {
+      setDatePrefs(null)
+      setFormatLocale(null)
+    }
+    expect(getFormatLocale()).toBe('en')
+  })
+  it('options take a labeller', () => {
+    expect(options(['passed'], (v) => v.toUpperCase())).toEqual([{ label: 'PASSED', value: 'passed' }])
   })
 })

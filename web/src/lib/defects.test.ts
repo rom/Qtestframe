@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defectLabel, defectLinks, defectUrl, isUrl, normalizeDefects, validateTemplate } from './defects'
+import { defectLabel, defectLinks, defectUrl, isUrl, normalizeDefects, templateProblem, validateTemplate } from './defects'
 
 const T = 'https://jira.example.com/browse/{id}'
 
@@ -54,5 +54,9 @@ describe('defects', () => {
     expect(validateTemplate(T)).toBeNull()
     expect(validateTemplate('jira/{id}')).toMatch(/http/)
     expect(validateTemplate('https://x.org/')).toMatch(/appended/)
+    expect(templateProblem('')).toBeNull()
+    expect(templateProblem(T)).toBeNull()
+    expect(templateProblem('jira/{id}')).toBe('not_url')
+    expect(templateProblem('https://x.org/')).toBe('no_placeholder')
   })
 })

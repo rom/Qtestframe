@@ -5,6 +5,8 @@ import { api, asItems } from './lib/api'
 import { startRoute } from './lib/prefs'
 import { usePrefsStore } from './stores/prefs'
 import type { Project } from './lib/types'
+import { watch } from 'vue'
+import { i18n, t } from './i18n'
 
 const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true } },
@@ -58,6 +60,19 @@ const routes: RouteRecordRaw[] = [
 ]
 
 export const router = createRouter({ history: createWebHistory(), routes })
+
+/** Page title from the route name (titles.<name>), in the active language. */
+export function pageTitle(name: unknown): string {
+  const key = `titles.${String(name ?? '')}`
+  const app = t('app.name')
+  return name && i18n.global.te(key) ? `${t(key)} · ${app}` : app
+}
+
+function updateTitle() {
+  if (typeof document !== 'undefined') document.title = pageTitle(router.currentRoute.value.name)
+}
+router.afterEach(updateTitle)
+watch(i18n.global.locale, updateTitle)
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()

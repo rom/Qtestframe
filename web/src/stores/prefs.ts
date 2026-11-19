@@ -2,10 +2,23 @@ import { defineStore } from 'pinia'
 import { computed, watch } from 'vue'
 import { api } from '@/lib/api'
 import { setDatePrefs } from '@/lib/format'
-import { createLinkedTestDefault, normalizePrefs, pageSize, readLastProject, resolveDark, rowsOptions, writeLastProject } from '@/lib/prefs'
+import {
+  createLinkedTestDefault,
+  LOCAL_DECOR_KEY,
+  LOCAL_SCHEME_KEY,
+  localThemeEntries,
+  normalizePrefs,
+  pageSize,
+  pickLocalTheme,
+  readLastProject,
+  resolveTheme,
+  rowsOptions,
+  writeLastProject,
+} from '@/lib/prefs'
+import type { ThemeId } from '@/themes/registry'
 import type { Me, Preferences } from '@/lib/types'
 import { useAuthStore } from './auth'
-import { useUiStore, readPref, writePref } from './ui'
+import { useUiStore, readPref, writePref, removePref } from './ui'
 
 function systemDark(): boolean {
   try {
@@ -37,13 +50,29 @@ export const usePrefsStore = defineStore('prefs', () => {
     return pageSize(prefs.value, fallback)
   }
 
+  /** The theme preference ('' = not set: this device's last theme or the OS). */
+  const themePref = computed<ThemeId | ''>(() => (prefs.value.theme as ThemeId | undefined) ?? '')
+  /** The painted theme (never "system"). */
+  const theme = computed(() => ui.theme)
+
+  function localTheme() {
+    return pickLocalTheme(readPref(LOCAL_DECOR_KEY), readPref(LOCAL_SCHEME_KEY))
+  }
+
+  /** Remember a theme on this device (theme-init.js reads the scheme before first paint). */
+  function rememberLocal(id: ThemeId) {
+    const { scheme, decor } = localThemeEntries(id)
+    if (scheme) writePref(LOCAL_SCHEME_KEY, scheme)
+    else removePref(LOCAL_SCHEME_KEY)
+    if (decor) writePref(LOCAL_DECOR_KEY, decor)
+    else removePref(LOCAL_DECOR_KEY)
+  }
+
   function applyTheme() {
     const p = prefs.value.theme
-    const dark = resolveDark(p, readPref('qtf.theme'), systemDark())
-    ui.setDark(dark)
+    ui.setTheme(resolveTheme(p, localTheme(), systemDark()))
     // keep theme-init.js (first paint) in line with the preference
-    if (p === 'light' || p === 'dark') writePref('qtf.theme', p)
-    else if (p === 'system') removeLocalTheme()
+    if (p) rememberLocal(p as ThemeId)
   }
 
   function apply() {
@@ -72,17 +101,24 @@ export const usePrefsStore = defineStore('prefs', () => {
     return me
   }
 
-  /** Top-bar toggle: switch now, remember locally and store as preference. */
-  async function toggleTheme() {
-    const dark = !ui.dark
-    ui.setDark(dark)
-    writePref('qtf.theme', dark ? 'dark' : 'light')
+  /**
+   * Choose a theme (any preference value, "system" included): paint it now,
+   * remember it on this device and store it as preference (PATCH /auth/me).
+   */
+  async function setTheme(id: ThemeId) {
+    ui.setTheme(resolveTheme(id, null, systemDark()))
+    rememberLocal(id)
     if (!auth.me) return
     try {
-      await save({ theme: dark ? 'dark' : 'light' })
+      await save({ theme: id })
     } catch (e) {
       console.warn('saving theme preference failed', e)
     }
+  }
+
+  /** Top-bar toggle: light ↔ dark (from a decorative theme: to the opposite plain scheme). */
+  async function toggleTheme() {
+    await setTheme(ui.dark ? 'light' : 'dark')
   }
 
   function rememberProject(projectId: string) {
@@ -92,13 +128,5 @@ export const usePrefsStore = defineStore('prefs', () => {
     return readLastProject(auth.tenant?.id)
   }
 
-  return { prefs, rows, rowsPerPage, hideAnalysis, createLinkedTest, rowsFor, apply, start, save, toggleTheme, rememberProject, lastProject }
+  return { prefs, rows, rowsPerPage, hideAnalysis, themePref, theme, createLinkedTest, rowsFor, apply, start, save, setTheme, toggleTheme, rememberProject, lastProject }
 })
-
-function removeLocalTheme() {
-  try {
-    localStorage.removeItem('qtf.theme')
-  } catch {
-    /* ignore */
-  }
-}

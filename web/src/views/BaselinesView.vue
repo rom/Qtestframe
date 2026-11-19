@@ -17,13 +17,14 @@ import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
 import QueryInput from '@/components/QueryInput.vue'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
-import { formatDateTime, formatFullDateTime, pluralize } from '@/lib/format'
+import { formatDateTime, formatFullDateTime } from '@/lib/format'
 import { P } from '@/lib/permissions'
 import type { Baseline, BaselineChange, BaselineDiff, BaselineItem } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -31,6 +32,7 @@ const prefs = usePrefsStore()
 const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
+const { t } = useI18n()
 const canWrite = computed(() => auth.can(P.requirementWrite))
 
 const baselines = ref<Baseline[]>([])
@@ -98,11 +100,11 @@ const items = computed<BaselineItem[]>(() =>
     .filter((i) => typeFilter.value === 'all' || i.entity_type === typeFilter.value)
     .sort((a, b) => a.entity_type.localeCompare(b.entity_type) || a.key.localeCompare(b.key, undefined, { numeric: true })),
 )
-const typeOptions = [
-  { label: 'All', value: 'all' },
-  { label: 'Requirements', value: 'requirement' },
-  { label: 'Tests', value: 'test' },
-]
+const typeOptions = computed(() => [
+  { label: t('baselines.all'), value: 'all' },
+  { label: t('baselines.requirements'), value: 'requirement' },
+  { label: t('baselines.tests'), value: 'test' },
+])
 
 function itemRoute(type: string, id: string) {
   return { name: type === 'test' ? 'tests' : 'requirements', params: { projectId: proj.pid }, query: { item: id } }
@@ -110,7 +112,7 @@ function itemRoute(type: string, id: string) {
 
 // ---------- compare ----------
 const compareOptions = computed(() => [
-  { label: 'Current state', value: 'current' },
+  { label: t('baselines.currentState'), value: 'current' },
   ...baselines.value.filter((b) => b.id !== selectedId.value).map((b) => ({ label: `${b.name} (${formatDateTime(b.created_at)})`, value: b.id })),
 ])
 async function compare() {
@@ -138,9 +140,9 @@ const sections = computed(() => {
   if (!d) return []
   const sort = (l: BaselineChange[] | null) => [...(l ?? [])].sort((a, b) => a.entity_type.localeCompare(b.entity_type) || a.key.localeCompare(b.key, undefined, { numeric: true }))
   return [
-    { kind: 'added', label: 'Added', icon: 'pi pi-plus-circle', color: 'var(--p-green-500)', severity: 'success', items: sort(d.added) },
-    { kind: 'removed', label: 'Removed', icon: 'pi pi-minus-circle', color: 'var(--p-red-500)', severity: 'danger', items: sort(d.removed) },
-    { kind: 'changed', label: 'Changed', icon: 'pi pi-pencil', color: 'var(--p-amber-500)', severity: 'warn', items: sort(d.changed) },
+    { kind: 'added', label: t('baselines.added'), count: t('baselines.addedCount', { count: (d.added ?? []).length }), icon: 'pi pi-plus-circle', color: 'var(--p-green-500)', severity: 'success', items: sort(d.added) },
+    { kind: 'removed', label: t('baselines.removed'), count: t('baselines.removedCount', { count: (d.removed ?? []).length }), icon: 'pi pi-minus-circle', color: 'var(--p-red-500)', severity: 'danger', items: sort(d.removed) },
+    { kind: 'changed', label: t('baselines.changed'), count: t('baselines.changedCount', { count: (d.changed ?? []).length }), icon: 'pi pi-pencil', color: 'var(--p-amber-500)', severity: 'warn', items: sort(d.changed) },
   ]
 })
 
@@ -164,7 +166,7 @@ async function create() {
       ...(form.value.query.trim() ? { query: form.value.query.trim() } : {}),
     })
     dialog.value = false
-    notify.ok('Baseline created', b ? `${b.name}: ${pluralize(b.requirement_count ?? 0, 'requirement')}, ${pluralize(b.test_count ?? 0, 'test')}` : undefined)
+    notify.ok(t('baselines.created'), b ? t('baselines.createdDetail', { name: b.name, requirements: t('counts.requirements', b.requirement_count ?? 0), tests: t('counts.tests', b.test_count ?? 0) }) : undefined)
     await load()
     if (b?.id) open(b)
   } catch (e) {
@@ -175,10 +177,10 @@ async function create() {
 }
 const formMessage = computed(() => (formError.value && !(formError.value instanceof ApiError && formError.value.code === 'invalid_query') ? errorMessage(formError.value) : ''))
 function remove(b: Baseline) {
-  notify.confirmDanger(`Delete baseline "${b.name}"? The items themselves are not affected.`, async () => {
+  notify.confirmDanger(t('baselines.confirmDelete', { name: b.name }), async () => {
     try {
       await api.del(`/baselines/${b.id}`)
-      notify.ok('Baseline deleted')
+      notify.ok(t('baselines.deleted'))
       if (selectedId.value === b.id) closeDetail()
       await load()
     } catch (e) {
@@ -191,16 +193,16 @@ function remove(b: Baseline) {
 <template>
   <div class="page-header">
     <div>
-      <h1>Baselines</h1>
-      <div class="sub">Frozen versions of the project's requirements and tests, e.g. for a release or an audit. Compare them with each other or with the current state.</div>
+      <h1>{{ t('baselines.title') }}</h1>
+      <div class="sub">{{ t('baselines.subtitle') }}</div>
     </div>
     <div class="actions">
-      <Button icon="pi pi-refresh" text rounded severity="secondary" aria-label="Refresh" @click="load" />
-      <Button v-if="canWrite" label="New baseline" icon="pi pi-plus" @click="openCreate" />
+      <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
+      <Button v-if="canWrite" :label="t('baselines.new')" icon="pi pi-plus" @click="openCreate" />
     </div>
   </div>
 
-  <Message v-if="error" severity="error" :closable="false">Baselines are unavailable: {{ error }}</Message>
+  <Message v-if="error" severity="error" :closable="false">{{ t('baselines.unavailable', { error }) }}</Message>
   <div v-else class="card">
     <DataTable
       :value="baselines"
@@ -214,27 +216,27 @@ function remove(b: Baseline) {
       :row-class="(b: Baseline) => (b.id === selectedId ? 'p-datatable-row-selected' : '')"
       @row-click="(e) => open(e.data as Baseline)"
     >
-      <Column field="name" header="Name" sortable>
+      <Column field="name" :header="t('common.name')" sortable>
         <template #body="{ data }"><span class="clickable" style="font-weight: 600"><i class="pi pi-flag muted" /> {{ data.name }}</span></template>
       </Column>
-      <Column field="description" header="Description"><template #body="{ data }"><span class="small muted">{{ data.description }}</span></template></Column>
-      <Column field="requirement_count" header="Requirements" sortable style="width: 120px" />
-      <Column field="test_count" header="Tests" sortable style="width: 90px" />
-      <Column field="created_by" header="Created by" sortable style="width: 170px"><template #body="{ data }"><span class="small">{{ data.created_by }}</span></template></Column>
-      <Column field="created_at" header="Created" sortable style="width: 150px">
+      <Column field="description" :header="t('common.description')"><template #body="{ data }"><span class="small muted">{{ data.description }}</span></template></Column>
+      <Column field="requirement_count" :header="t('baselines.requirements')" sortable style="width: 120px" />
+      <Column field="test_count" :header="t('baselines.tests')" sortable style="width: 100px" />
+      <Column field="created_by" :header="t('baselines.createdBy')" sortable style="width: 170px"><template #body="{ data }"><span class="small">{{ data.created_by }}</span></template></Column>
+      <Column field="created_at" :header="t('common.created')" sortable style="width: 150px">
         <template #body="{ data }"><span class="small muted" :title="formatFullDateTime(data.created_at)">{{ formatDateTime(data.created_at) }}</span></template>
       </Column>
       <Column style="width: 120px">
         <template #body="{ data }">
           <div class="row nowrap" style="gap: 0">
-            <Button icon="pi pi-list" text rounded size="small" severity="secondary" v-tooltip="'Items'" aria-label="Items" @click.stop="open(data, 'items')" />
-            <Button icon="pi pi-arrow-right-arrow-left" text rounded size="small" v-tooltip="'Compare'" aria-label="Compare" @click.stop="open(data, 'compare')" />
-            <Button v-if="canWrite" icon="pi pi-trash" text rounded size="small" severity="danger" v-tooltip="'Delete'" aria-label="Delete" @click.stop="remove(data)" />
+            <Button icon="pi pi-list" text rounded size="small" severity="secondary" v-tooltip="t('baselines.items')" :aria-label="t('baselines.items')" @click.stop="open(data, 'items')" />
+            <Button icon="pi pi-arrow-right-arrow-left" text rounded size="small" v-tooltip="t('baselines.compare')" :aria-label="t('baselines.compare')" @click.stop="open(data, 'compare')" />
+            <Button v-if="canWrite" icon="pi pi-trash" text rounded size="small" severity="danger" v-tooltip="t('common.delete')" :aria-label="t('common.delete')" @click.stop="remove(data)" />
           </div>
         </template>
       </Column>
       <template #empty>
-        <div class="empty"><i class="pi pi-flag" />No baselines yet.{{ canWrite ? ' Create one to freeze the current versions.' : '' }}</div>
+        <div class="empty"><i class="pi pi-flag" />{{ canWrite ? t('baselines.noneCreate') : t('baselines.none') }}</div>
       </template>
     </DataTable>
   </div>
@@ -245,17 +247,17 @@ function remove(b: Baseline) {
     <template v-else>
       <div class="row" style="margin-bottom: 6px">
         <h3 style="margin: 0"><i class="pi pi-flag" /> {{ detail.name }}</h3>
-        <Tag :value="pluralize(detail.requirement_count ?? 0, 'requirement')" severity="secondary" />
-        <Tag :value="pluralize(detail.test_count ?? 0, 'test')" severity="secondary" />
-        <span class="small muted">created {{ formatDateTime(detail.created_at) }}{{ detail.created_by ? ' by ' + detail.created_by : '' }}</span>
+        <Tag :value="t('counts.requirements', detail.requirement_count ?? 0)" severity="secondary" />
+        <Tag :value="t('counts.tests', detail.test_count ?? 0)" severity="secondary" />
+        <span class="small muted">{{ t('baselines.createdAt', { date: formatDateTime(detail.created_at) }) }}{{ detail.created_by ? t('baselines.createdByUser', { user: detail.created_by }) : '' }}</span>
         <span class="grow" />
-        <Button icon="pi pi-times" text rounded severity="secondary" aria-label="Close" @click="closeDetail" />
+        <Button icon="pi pi-times" text rounded severity="secondary" :aria-label="t('common.close')" v-tooltip="t('common.close')" @click="closeDetail" />
       </div>
       <p v-if="detail.description" class="muted" style="margin: 0 0 8px">{{ detail.description }}</p>
       <Tabs v-model:value="tab" class="editor-tabs" style="margin-top: 4px">
         <TabList>
-          <Tab value="items"><i class="pi pi-list" /> Items <span class="count">{{ detail.items?.length ?? 0 }}</span></Tab>
-          <Tab value="compare"><i class="pi pi-arrow-right-arrow-left" /> Compare</Tab>
+          <Tab value="items"><i class="pi pi-list" /> {{ t('baselines.items') }} <span class="count">{{ detail.items?.length ?? 0 }}</span></Tab>
+          <Tab value="compare"><i class="pi pi-arrow-right-arrow-left" /> {{ t('baselines.compare') }}</Tab>
         </TabList>
       </Tabs>
 
@@ -264,39 +266,39 @@ function remove(b: Baseline) {
           <SelectButton v-model="typeFilter" :options="typeOptions" option-label="label" option-value="value" :allow-empty="false" size="small" />
         </div>
         <DataTable :value="items" data-key="entity_id" size="small" paginator :rows="prefs.rowsFor(50)" :always-show-paginator="false" row-hover>
-          <Column field="entity_type" header="Type" style="width: 130px">
+          <Column field="entity_type" :header="t('common.type')" style="width: 130px">
             <template #body="{ data }">
-              <span class="row nowrap small"><i :class="data.entity_type === 'test' ? 'pi pi-check-square' : 'pi pi-list-check'" class="muted" />{{ data.entity_type === 'test' ? 'Test' : 'Requirement' }}</span>
+              <span class="row nowrap small"><i :class="data.entity_type === 'test' ? 'pi pi-check-square' : 'pi pi-list-check'" class="muted" />{{ data.entity_type === 'test' ? t('baselines.typeTest') : t('baselines.typeRequirement') }}</span>
             </template>
           </Column>
-          <Column field="key" header="Key" style="width: 150px">
+          <Column field="key" :header="t('common.key')" style="width: 150px">
             <template #body="{ data }"><RouterLink :to="itemRoute(data.entity_type, data.entity_id)" class="key">{{ data.key }}</RouterLink></template>
           </Column>
-          <Column field="title" header="Title" />
-          <Column field="version" header="Version" style="width: 90px"><template #body="{ data }">v{{ data.version }}</template></Column>
-          <template #empty><div class="empty">This baseline holds no items.</div></template>
+          <Column field="title" :header="t('common.title')" />
+          <Column field="version" :header="t('common.version')" style="width: 90px"><template #body="{ data }">{{ t('common.versionShort', { version: data.version }) }}</template></Column>
+          <template #empty><div class="empty">{{ t('baselines.noItems') }}</div></template>
         </DataTable>
       </template>
 
       <template v-else>
         <div class="filterbar">
-          <span class="small muted">Compare <b>{{ detail.name }}</b> with</span>
-          <Select v-model="compareTo" :options="compareOptions" option-label="label" option-value="value" style="min-width: 240px" aria-label="Compare with" />
-          <Button icon="pi pi-refresh" text rounded severity="secondary" aria-label="Compare again" :loading="diffLoading" @click="compare" />
+          <i18n-t keypath="baselines.compareWith" tag="span" class="small muted"><template #name><b>{{ detail.name }}</b></template></i18n-t>
+          <Select v-model="compareTo" :options="compareOptions" option-label="label" option-value="value" style="min-width: 240px" :aria-label="t('baselines.compare')" />
+          <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('baselines.compareAgain')" v-tooltip="t('baselines.compareAgain')" :loading="diffLoading" @click="compare" />
         </div>
-        <Message v-if="diffError" severity="error" :closable="false">Comparison failed: {{ diffError }}</Message>
+        <Message v-if="diffError" severity="error" :closable="false">{{ t('baselines.compareFailed', { error: diffError }) }}</Message>
         <div v-else-if="diffLoading && !diff" class="empty"><ProgressSpinner style="width: 30px; height: 30px" /></div>
         <template v-else-if="diff">
           <div class="row" style="margin-bottom: 12px">
-            <Tag v-for="s in sections" :key="s.kind" :value="`${s.items.length} ${s.label.toLowerCase()}`" :severity="s.severity" />
-            <Tag :value="`${diff.unchanged} unchanged`" severity="secondary" />
+            <Tag v-for="s in sections" :key="s.kind" :value="s.count" :severity="s.severity" />
+            <Tag :value="t('baselines.unchangedCount', { count: diff.unchanged })" severity="secondary" />
             <span class="small muted">{{ detail.name }} → {{ toLabel }}</span>
           </div>
-          <div v-if="!sections.some((s) => s.items.length)" class="muted small"><i class="pi pi-check-circle" style="color: var(--p-green-500)" /> No differences.</div>
+          <div v-if="!sections.some((s) => s.items.length)" class="muted small"><i class="pi pi-check-circle" style="color: var(--p-green-500)" /> {{ t('baselines.noDifferences') }}</div>
           <div v-for="s in sections" v-show="s.items.length" :key="s.kind" class="bl-section" style="margin-bottom: 14px">
             <h4><i :class="s.icon" :style="{ color: s.color }" /> {{ s.label }} ({{ s.items.length }})</h4>
             <div v-for="c in s.items" :key="c.entity_type + c.entity_id" class="bl-row" :class="'bl-' + s.kind">
-              <i :class="c.entity_type === 'test' ? 'pi pi-check-square' : 'pi pi-list-check'" class="muted" :title="c.entity_type" />
+              <i :class="c.entity_type === 'test' ? 'pi pi-check-square' : 'pi pi-list-check'" class="muted" :title="c.entity_type === 'test' ? t('baselines.typeTest') : t('baselines.typeRequirement')" />
               <RouterLink v-if="s.kind !== 'removed' || compareTo === 'current'" :to="itemRoute(c.entity_type, c.entity_id)" class="key">{{ c.key }}</RouterLink>
               <span v-else class="key">{{ c.key }}</span>
               <span class="grow ellipsis">{{ c.title }}</span>
@@ -308,25 +310,25 @@ function remove(b: Baseline) {
               </span>
             </div>
           </div>
-          <div v-if="compareTo === 'current'" class="small muted">The current state includes all items of the project, also those outside the baseline's filter.</div>
+          <div v-if="compareTo === 'current'" class="small muted">{{ t('baselines.currentHint') }}</div>
         </template>
       </template>
     </template>
   </div>
 
-  <Dialog v-model:visible="dialog" header="New baseline" modal style="width: min(620px, 96vw)">
+  <Dialog v-model:visible="dialog" :header="t('baselines.new')" modal style="width: min(620px, 96vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="create">
       <Message v-if="formMessage" severity="error" :closable="false">{{ formMessage }}</Message>
-      <div class="field"><label for="bl-name">Name</label><InputText id="bl-name" v-model="form.name" placeholder="e.g. Release 2.0" autofocus /></div>
-      <div class="field"><label for="bl-desc">Description</label><Textarea id="bl-desc" v-model="form.description" rows="2" auto-resize /></div>
+      <div class="field"><label for="bl-name">{{ t('common.name') }}</label><InputText id="bl-name" v-model="form.name" :placeholder="t('baselines.namePlaceholder')" autofocus /></div>
+      <div class="field"><label for="bl-desc">{{ t('common.description') }}</label><Textarea id="bl-desc" v-model="form.description" rows="2" auto-resize /></div>
       <div class="field">
-        <label>Filter (optional)</label>
-        <QueryInput v-model="form.query" scope="requirement" :error="formError" placeholder="e.g. status:approved  (empty = all requirements and tests)" @submit="create" />
-        <span class="small muted">Applied to requirements and tests like the export filter.</span>
+        <label>{{ t('baselines.filter') }}</label>
+        <QueryInput v-model="form.query" scope="requirement" :error="formError" :placeholder="t('baselines.filterPlaceholder', { example: 'status:approved' })" @submit="create" />
+        <span class="small muted">{{ t('baselines.filterHint') }}</span>
       </div>
       <div class="row" style="justify-content: flex-end">
-        <Button label="Cancel" text severity="secondary" @click="dialog = false" />
-        <Button type="submit" label="Create baseline" icon="pi pi-flag" :loading="busy" :disabled="!form.name.trim()" />
+        <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
+        <Button type="submit" :label="t('baselines.create')" icon="pi pi-flag" :loading="busy" :disabled="!form.name.trim()" />
       </div>
     </form>
   </Dialog>

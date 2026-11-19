@@ -4,12 +4,16 @@ import {
   createLinkedTestDefault,
   FALLBACK_TIMEZONES,
   lastProjectKey,
+  localThemeEntries,
   normalizePrefs,
+  pickLocalTheme,
   pageSize,
   preferencesPatch,
   readLastProject,
   resolveDark,
+  resolveTheme,
   rowsOptions,
+  THEMES,
   startRoute,
   timeZones,
   writeLastProject,
@@ -81,6 +85,44 @@ describe('resolveDark', () => {
     expect(resolveDark(undefined, 'light', true)).toBe(false)
     expect(resolveDark(null, null, true)).toBe(true)
     expect(resolveDark(null, 'junk', false)).toBe(false)
+  })
+})
+
+describe('decorative themes', () => {
+  it('accepts every theme value', () => {
+    expect(THEMES).toHaveLength(11)
+    for (const t of ['spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy']) {
+      expect(normalizePrefs({ theme: t }).theme).toBe(t)
+    }
+  })
+  it('resolves the painted theme', () => {
+    expect(resolveTheme('navy', 'light', false)).toBe('navy')
+    expect(resolveTheme('system', 'navy', true)).toBe('dark')
+    expect(resolveTheme('system', null, false)).toBe('light')
+    expect(resolveTheme('', 'crazy', true)).toBe('crazy')
+    expect(resolveTheme(undefined, 'system', true)).toBe('dark')
+    expect(resolveTheme('pink', 'junk', true)).toBe('dark')
+    expect(resolveTheme(null, null, false)).toBe('light')
+  })
+  it('knows the scheme of decorative themes', () => {
+    expect(resolveDark('navy', null, false)).toBe(true)
+    expect(resolveDark('green_console', null, false)).toBe(true)
+    expect(resolveDark('spring', null, true)).toBe(false)
+    expect(resolveDark(null, 'camouflage', false)).toBe(true)
+  })
+  it('picks the local theme', () => {
+    expect(pickLocalTheme('navy', 'dark')).toBe('navy')
+    expect(pickLocalTheme('light', 'dark')).toBe('dark')
+    expect(pickLocalTheme(null, 'light')).toBe('light')
+    expect(pickLocalTheme('junk', 'junk')).toBeNull()
+    expect(pickLocalTheme(undefined, undefined)).toBeNull()
+  })
+  it('says what to remember locally', () => {
+    expect(localThemeEntries('system')).toEqual({ scheme: null, decor: null })
+    expect(localThemeEntries('light')).toEqual({ scheme: 'light', decor: null })
+    expect(localThemeEntries('dark')).toEqual({ scheme: 'dark', decor: null })
+    expect(localThemeEntries('navy')).toEqual({ scheme: 'dark', decor: 'navy' })
+    expect(localThemeEntries('crazy')).toEqual({ scheme: 'light', decor: 'crazy' })
   })
 })
 

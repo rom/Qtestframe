@@ -118,31 +118,33 @@ export function parseTags(input: string): string[] {
 
 export interface QueryHelpEntry {
   example: string
+  /** English text (the UI shows the translation `query.meaning.<id>`) */
   meaning: string
+  id: string
 }
 
 /** Syntax reference shown in the filter help popover (docs/api.md). */
 export const QUERY_HELP: QueryHelpEntry[] = [
-  { example: 'status:approved priority=high', meaning: 'Implicit AND between terms' },
-  { example: 'obligation:must OR obligation:shall', meaning: 'Either term matches' },
-  { example: 'NOT status:obsolete   -status:obsolete', meaning: 'Negation' },
-  { example: 'title~/^login.*(fail|error)/i', meaning: 'Regular expression (RE2)' },
-  { example: 'description!~/TBD/', meaning: 'Regex must not match' },
-  { example: '"exact phrase"', meaning: 'Free text over all fields' },
-  { example: '/time[- ]?out/', meaning: 'Regex over all fields' },
-  { example: 'key:REQ-1*', meaning: 'Glob (* and ?)' },
-  { example: 'version>=2 created_at<2026-01-01', meaning: 'Numeric / date comparison' },
-  { example: 'category:Negative  category:"Network based"', meaning: 'Category name' },
-  { example: 'dimension:"Polarity/Negative"', meaning: 'Category as Dimension/Name' },
-  { example: 'has:criteria   (or field:*)', meaning: 'Field not empty' },
-  { example: '(a OR b) AND c', meaning: 'Grouping' },
+  { example: 'status:approved priority=high', meaning: 'Implicit AND between terms', id: 'and' },
+  { example: 'obligation:must OR obligation:shall', meaning: 'Either term matches', id: 'or' },
+  { example: 'NOT status:obsolete   -status:obsolete', meaning: 'Negation', id: 'not' },
+  { example: 'title~/^login.*(fail|error)/i', meaning: 'Regular expression (RE2)', id: 'regex' },
+  { example: 'description!~/TBD/', meaning: 'Regex must not match', id: 'notRegex' },
+  { example: '"exact phrase"', meaning: 'Free text over all fields', id: 'phrase' },
+  { example: '/time[- ]?out/', meaning: 'Regex over all fields', id: 'regexAll' },
+  { example: 'key:REQ-1*', meaning: 'Glob (* and ?)', id: 'glob' },
+  { example: 'version>=2 created_at<2026-01-01', meaning: 'Numeric / date comparison', id: 'compare' },
+  { example: 'category:Negative  category:"Network based"', meaning: 'Category name', id: 'category' },
+  { example: 'dimension:"Polarity/Negative"', meaning: 'Category as Dimension/Name', id: 'dimension' },
+  { example: 'has:criteria   (or field:*)', meaning: 'Field not empty', id: 'has' },
+  { example: '(a OR b) AND c', meaning: 'Grouping', id: 'group' },
 ]
 
 export const QUERY_OPERATORS: QueryHelpEntry[] = [
-  { example: ':', meaning: 'contains (case-insensitive; glob with * / ?)' },
-  { example: '=  !=', meaning: 'equals / not equals (case-insensitive)' },
-  { example: '~  !~', meaning: 'regex matches / does not match' },
-  { example: '>  >=  <  <=', meaning: 'numeric or date comparison' },
+  { example: ':', meaning: 'contains (case-insensitive; glob with * / ?)', id: 'opContains' },
+  { example: '=  !=', meaning: 'equals / not equals (case-insensitive)', id: 'opEquals' },
+  { example: '~  !~', meaning: 'regex matches / does not match', id: 'opRegex' },
+  { example: '>  >=  <  <=', meaning: 'numeric or date comparison', id: 'opCompare' },
 ]
 
 export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution', string[]> = {
