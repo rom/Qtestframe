@@ -371,6 +371,12 @@ func TestProfileAndSessions(t *testing.T) {
 		t.Fatal(u)
 	}
 	// merge + reset with null
+	for _, th := range []string{"spring", "autumn", "desert", "camouflage", "city_camouflage", "navy", "green_console", "crazy"} {
+		a.m("PATCH", "/api/v1/auth/me", map[string]any{"preferences": map[string]any{"theme": th}}, 200)
+	}
+	if me := a.m("PATCH", "/api/v1/auth/me", map[string]any{"preferences": map[string]any{"language": "sv"}}, 200); me["user"].(map[string]any)["preferences"].(map[string]any)["language"] != "sv" {
+		t.Fatal(me)
+	}
 	me = a.m("PATCH", "/api/v1/auth/me", map[string]any{"preferences": map[string]any{"theme": nil, "hide_analysis": true}}, 200)
 	prefs = me["user"].(map[string]any)["preferences"].(map[string]any)
 	if _, ok := prefs["theme"]; ok || prefs["hide_analysis"] != true || prefs["date_format"] != "iso" {
@@ -382,7 +388,7 @@ func TestProfileAndSessions(t *testing.T) {
 		{"preferences": map[string]any{"date_format": "x"}}, {"preferences": map[string]any{"timezone": "Mars/Base"}},
 		{"preferences": map[string]any{"start_page": "x"}}, {"preferences": map[string]any{"unknown": 1}},
 		{"preferences": map[string]any{"default_tenant_id": "nope"}}, {"preferences": map[string]any{"default_project_id": strings.Repeat("p", 65)}},
-		{"preferences": map[string]any{"page_size": "big"}},
+		{"preferences": map[string]any{"page_size": "big"}}, {"preferences": map[string]any{"language": "de"}},
 	} {
 		a.m("PATCH", "/api/v1/auth/me", bad, 400)
 	}

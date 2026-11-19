@@ -8,7 +8,9 @@ import StatusTag from '@/components/StatusTag.vue'
 import { api } from '@/lib/api'
 import { COVERAGE_COLORS, OBLIGATION_COLORS, RESULT_COLORS, STATUS_COLORS, colorFor } from '@/lib/colors'
 import { entriesByCount } from '@/lib/collections'
-import { humanize, percent, relativeTime } from '@/lib/format'
+import { formatNumber, percent, relativeTime } from '@/lib/format'
+import { useI18n } from 'vue-i18n'
+import { enumLabel, type EnumGroup } from '@/i18n/labels'
 import { RESULT_ORDER, summarize } from '@/lib/summary'
 import type { Dashboard } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
@@ -20,6 +22,7 @@ const proj = useProjectStore()
 const meta = useMetaStore()
 const theme = useChartTheme()
 const notify = useNotify()
+const { t } = useI18n()
 const data = ref<Dashboard | null>(null)
 const loading = ref(true)
 
@@ -28,7 +31,7 @@ async function load() {
   try {
     data.value = await api.get<Dashboard>(`/projects/${proj.pid}/dashboard`)
   } catch (e) {
-    notify.fail(e, 'Could not load dashboard')
+    notify.fail(e, t('dashboard.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -42,17 +45,17 @@ const results = computed(() => summarize(data.value?.results))
 const kpis = computed(() => {
   const d = data.value
   return [
-    { label: 'Requirements', value: reqTotal.value, sub: `${d?.requirements.uncovered ?? 0} uncovered`, icon: 'pi pi-list-check', color: '#6366f1' },
-    { label: 'Coverage', value: coveredPct.value + '%', sub: `${d?.requirements.covered ?? 0} covered by tests`, icon: 'pi pi-shield', color: '#22c55e' },
+    { label: t('dashboard.kpiRequirements'), value: formatNumber(reqTotal.value), sub: t('dashboard.kpiUncovered', { count: d?.requirements.uncovered ?? 0 }), icon: 'pi pi-list-check', color: '#6366f1' },
+    { label: t('dashboard.kpiCoverage'), value: formatNumber(coveredPct.value / 100, undefined, { style: 'percent' }), sub: t('dashboard.kpiCovered', { count: d?.requirements.covered ?? 0 }), icon: 'pi pi-shield', color: '#22c55e' },
     {
-      label: 'Tests',
-      value: d?.tests.total ?? 0,
-      sub: `${d?.tests.by_execution_type?.manual ?? 0} manual · ${d?.tests.by_execution_type?.automated ?? 0} automated`,
+      label: t('dashboard.kpiTests'),
+      value: formatNumber(d?.tests.total ?? 0),
+      sub: t('dashboard.kpiTestsSplit', { manual: d?.tests.by_execution_type?.manual ?? 0, automated: d?.tests.by_execution_type?.automated ?? 0 }),
       icon: 'pi pi-check-square',
       color: '#0ea5e9',
     },
-    { label: 'Test runs', value: d?.runs.total ?? 0, sub: `${d?.runs.by_status?.in_progress ?? 0} in progress`, icon: 'pi pi-play-circle', color: '#f59e0b' },
-    { label: 'Pass rate', value: results.value.passRate + '%', sub: `${results.value.executed} executions`, icon: 'pi pi-chart-line', color: '#ec4899' },
+    { label: t('dashboard.kpiRuns'), value: formatNumber(d?.runs.total ?? 0), sub: t('dashboard.kpiInProgress', { count: d?.runs.by_status?.in_progress ?? 0 }), icon: 'pi pi-play-circle', color: '#f59e0b' },
+    { label: t('dashboard.kpiPassRate'), value: formatNumber(results.value.passRate / 100, undefined, { style: 'percent' }), sub: t('dashboard.kpiExecutions', results.value.executed), icon: 'pi pi-chart-line', color: '#ec4899' },
   ]
 })
 
@@ -74,36 +77,36 @@ const doughnutOptions = computed(() => ({
   plugins: { legend: { position: 'right', labels: { color: theme.value.text, usePointStyle: true, boxWidth: 8 } } },
 }))
 
-function bar(rec: Record<string, number> | undefined, colors: Record<string, string>, order?: readonly string[]) {
+function bar(group: EnumGroup, rec: Record<string, number> | undefined, colors: Record<string, string>, order?: readonly string[]) {
   const entries = entriesByCount(rec, order)
   return {
-    labels: entries.map(([k]) => humanize(k)),
+    labels: entries.map(([k]) => (group === 'obligation' ? k.replace(/_/g, ' ').toUpperCase() : enumLabel(group, k))),
     datasets: [{ data: entries.map(([, v]) => v), backgroundColor: entries.map(([k], i) => colorFor(colors, k, i)), borderRadius: 6, maxBarThickness: 34 }],
   }
 }
-function doughnut(rec: Record<string, number> | undefined, colors: Record<string, string>, order?: readonly string[]) {
+function doughnut(group: EnumGroup, rec: Record<string, number> | undefined, colors: Record<string, string>, order?: readonly string[]) {
   const entries = entriesByCount(rec, order).filter(([, v]) => v > 0)
   return {
-    labels: entries.map(([k]) => humanize(k)),
+    labels: entries.map(([k]) => enumLabel(group, k)),
     datasets: [{ data: entries.map(([, v]) => v), backgroundColor: entries.map(([k], i) => colorFor(colors, k, i)), borderWidth: 0 }],
   }
 }
 
-const coverageChart = computed(() => doughnut(data.value?.coverage, COVERAGE_COLORS, ['passed', 'failed', 'partial', 'not_run', 'none']))
-const statusChart = computed(() => bar(data.value?.requirements.by_status, STATUS_COLORS, meta.meta.requirement_statuses))
-const obligationChart = computed(() => bar(data.value?.requirements.by_obligation, OBLIGATION_COLORS, meta.meta.obligations))
-const resultsChart = computed(() => doughnut(data.value?.results, RESULT_COLORS, RESULT_ORDER))
-const testStatusChart = computed(() => bar(data.value?.tests.by_status, STATUS_COLORS, meta.meta.test_statuses))
+const coverageChart = computed(() => doughnut('coverage', data.value?.coverage, COVERAGE_COLORS, ['passed', 'failed', 'partial', 'not_run', 'none']))
+const statusChart = computed(() => bar('status', data.value?.requirements.by_status, STATUS_COLORS, meta.meta.requirement_statuses))
+const obligationChart = computed(() => bar('obligation', data.value?.requirements.by_obligation, OBLIGATION_COLORS, meta.meta.obligations))
+const resultsChart = computed(() => doughnut('result', data.value?.results, RESULT_COLORS, RESULT_ORDER))
+const testStatusChart = computed(() => bar('status', data.value?.tests.by_status, STATUS_COLORS, meta.meta.test_statuses))
 const hasData = (c: { datasets: { data: number[] }[] }) => c.datasets[0].data.some((v) => v > 0)
 </script>
 
 <template>
   <div class="page-header">
     <div>
-      <h1>Dashboard</h1>
+      <h1>{{ t('dashboard.title') }}</h1>
       <div class="sub">{{ proj.project?.description }}</div>
     </div>
-    <div class="actions"><Button icon="pi pi-refresh" text rounded severity="secondary" aria-label="Refresh" @click="load" /></div>
+    <div class="actions"><Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" /></div>
   </div>
 
   <div v-if="loading && !data" class="grid">
@@ -124,37 +127,37 @@ const hasData = (c: { datasets: { data: number[] }[] }) => c.datasets[0].data.so
 
     <div class="charts">
       <div class="card">
-        <h3>Requirement coverage</h3>
+        <h3>{{ t('dashboard.requirementCoverage') }}</h3>
         <div style="height: 240px">
           <Chart v-if="hasData(coverageChart)" type="doughnut" :data="coverageChart" :options="doughnutOptions" style="height: 100%" />
-          <div v-else class="empty">No requirements yet.</div>
+          <div v-else class="empty">{{ t('dashboard.noRequirements') }}</div>
         </div>
       </div>
       <div class="card">
-        <h3>Execution results</h3>
+        <h3>{{ t('dashboard.executionResults') }}</h3>
         <div style="height: 240px">
           <Chart v-if="hasData(resultsChart)" type="doughnut" :data="resultsChart" :options="doughnutOptions" style="height: 100%" />
-          <div v-else class="empty">No executions yet.</div>
+          <div v-else class="empty">{{ t('dashboard.noExecutions') }}</div>
         </div>
       </div>
       <div class="card">
-        <h3>Requirements by status</h3>
+        <h3>{{ t('dashboard.requirementsByStatus') }}</h3>
         <div style="height: 240px"><Chart type="bar" :data="statusChart" :options="baseOptions()" style="height: 100%" /></div>
       </div>
       <div class="card">
-        <h3>Requirements by obligation</h3>
+        <h3>{{ t('dashboard.requirementsByObligation') }}</h3>
         <div style="height: 240px"><Chart type="bar" :data="obligationChart" :options="baseOptions(false, 'y')" style="height: 100%" /></div>
       </div>
       <div class="card">
-        <h3>Tests by status</h3>
+        <h3>{{ t('dashboard.testsByStatus') }}</h3>
         <div style="height: 240px"><Chart type="bar" :data="testStatusChart" :options="baseOptions()" style="height: 100%" /></div>
       </div>
       <div class="card">
         <div class="row" style="justify-content: space-between; margin-bottom: 8px">
-          <h3 style="margin: 0">Recent runs</h3>
-          <RouterLink :to="{ name: 'runs', params: { projectId: proj.pid } }" class="small">All runs →</RouterLink>
+          <h3 style="margin: 0">{{ t('dashboard.recentRuns') }}</h3>
+          <RouterLink :to="{ name: 'runs', params: { projectId: proj.pid } }" class="small">{{ t('dashboard.allRuns') }}</RouterLink>
         </div>
-        <div v-if="!(data.recent_runs ?? []).length" class="empty">No runs yet.</div>
+        <div v-if="!(data.recent_runs ?? []).length" class="empty">{{ t('dashboard.noRuns') }}</div>
         <RouterLink
           v-for="r in data.recent_runs ?? []"
           :key="r.id"

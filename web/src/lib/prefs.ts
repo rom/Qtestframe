@@ -1,8 +1,10 @@
 // User preferences (Me.user.preferences): normalisation, defaults and the
 // pure decisions the app derives from them.
 import type { Preferences } from './types'
+import { THEME_IDS, concreteTheme, isDecorative, isThemeId, schemeOf, type ConcreteThemeId, type ThemeId } from '@/themes/registry'
 
-export const THEMES = ['light', 'dark', 'system'] as const
+/** All values of the theme preference: light, dark, system and the decorative themes. */
+export const THEMES = THEME_IDS
 export const START_PAGES = ['projects', 'last_project', 'default_project', 'search'] as const
 export const PAGE_SIZES = [10, 25, 50, 100] as const
 export const DATE_FORMATS = ['locale', 'iso', 'relative'] as const
@@ -56,14 +58,41 @@ export function preferencesPatch(form: Partial<Preferences>): Record<string, unk
   return out
 }
 
+/**
+ * Effective (painted) theme: preference first, then this device's last
+ * theme, then the OS. "system" and unknown values resolve to light/dark.
+ */
+export function resolveTheme(pref: string | null | undefined, local: string | null | undefined, systemDark: boolean): ConcreteThemeId {
+  if (isThemeId(pref)) return concreteTheme(pref, systemDark)
+  if (isThemeId(local)) return concreteTheme(local, systemDark)
+  return systemDark ? 'dark' : 'light'
+}
+
 /** Effective dark mode: preference first, then this device's toggle, then the OS. */
 export function resolveDark(pref: string | null | undefined, local: string | null | undefined, systemDark: boolean): boolean {
-  if (pref === 'dark') return true
-  if (pref === 'light') return false
-  if (pref === 'system') return systemDark
-  if (local === 'dark') return true
-  if (local === 'light') return false
-  return systemDark
+  return schemeOf(resolveTheme(pref, local, systemDark)) === 'dark'
+}
+
+/** localStorage key of the light/dark scheme (read by public/theme-init.js before first paint). */
+export const LOCAL_SCHEME_KEY = 'qtf.theme'
+/** localStorage key of the decorative theme, if any. */
+export const LOCAL_DECOR_KEY = 'qtf.decor'
+
+/** This device's remembered theme from the two localStorage entries. */
+export function pickLocalTheme(decor: string | null | undefined, scheme: string | null | undefined): ConcreteThemeId | null {
+  if (isDecorative(decor)) return decor
+  if (scheme === 'light' || scheme === 'dark') return scheme
+  return null
+}
+
+/**
+ * What to remember locally for a theme preference: the scheme (so the first
+ * paint is light or dark correctly) and the decorative theme. null = remove.
+ * "system" removes both so the OS decides.
+ */
+export function localThemeEntries(id: ThemeId): { scheme: 'light' | 'dark' | null; decor: string | null } {
+  if (id === 'system') return { scheme: null, decor: null }
+  return { scheme: schemeOf(id), decor: isDecorative(id) ? id : null }
 }
 
 /** Default rows per page. */

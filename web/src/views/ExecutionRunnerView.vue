@@ -15,7 +15,7 @@ import DefectLinks from '@/components/DefectLinks.vue'
 import { normalizeDefects } from '@/lib/defects'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { RESULT_COLORS } from '@/lib/colors'
-import { formatDateTime, formatDuration, humanize, options } from '@/lib/format'
+import { formatDateTime, formatDuration } from '@/lib/format'
 import { deriveStatus } from '@/lib/summary'
 import { P } from '@/lib/permissions'
 import type { Execution, TestRun } from '@/lib/types'
@@ -23,6 +23,8 @@ import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
+import { enumLabel, enumOptions } from '@/i18n/labels'
 
 const props = defineProps<{ runId: string; executionId: string }>()
 const proj = useProjectStore()
@@ -30,6 +32,7 @@ const auth = useAuthStore()
 const meta = useMetaStore()
 const router = useRouter()
 const notify = useNotify()
+const { t } = useI18n()
 
 interface StepState {
   id: string
@@ -164,10 +167,10 @@ async function save(): Promise<boolean> {
     const row = list.value.find((e) => e.id === ex.value?.id)
     if (row) row.status = updated?.status ?? effectiveStatus.value
     snapshot.value = stateKey()
-    notify.ok('Execution saved', humanize(updated?.status ?? effectiveStatus.value))
+    notify.ok(t('runner.saved'), enumLabel('result', updated?.status ?? effectiveStatus.value))
     return true
   } catch (e) {
-    notify.fail(e, 'Could not save')
+    notify.fail(e, t('runner.saveFailed'))
     return false
   } finally {
     saving.value = false
@@ -195,26 +198,30 @@ async function runScript() {
       const row = list.value.find((e) => e.id === updated.id)
       if (row) row.status = updated.status
     }
-    notify.ok('Script finished', humanize(updated?.status))
+    notify.ok(t('runner.scriptFinished'), enumLabel('result', updated?.status))
   } catch (e) {
-    notify.fail(e, 'Script execution failed')
+    notify.fail(e, t('runner.scriptFailed'))
   } finally {
     running.value = false
   }
 }
 
-const stepButtons = [
-  { status: 'passed', label: 'Pass', icon: 'pi pi-check', severity: 'success', key: 'P' },
-  { status: 'failed', label: 'Fail', icon: 'pi pi-times', severity: 'danger', key: 'F' },
-  { status: 'blocked', label: 'Blocked', icon: 'pi pi-ban', severity: 'warn', key: 'B' },
-  { status: 'skipped', label: 'Skip', icon: 'pi pi-forward', severity: 'secondary', key: 'S' },
-] as const
+// keyboard shortcuts stay P / F / B / S in every language
+const stepButtons = computed(() => [
+  { status: 'passed', label: t('runner.pass'), icon: 'pi pi-check', severity: 'success', key: 'P' },
+  { status: 'failed', label: t('runner.fail'), icon: 'pi pi-times', severity: 'danger', key: 'F' },
+  { status: 'blocked', label: t('runner.blocked'), icon: 'pi pi-ban', severity: 'warn', key: 'B' },
+  { status: 'skipped', label: t('runner.skip'), icon: 'pi pi-forward', severity: 'secondary', key: 'S' },
+] as const)
 function dotColor(status: string) {
   return RESULT_COLORS[status] ?? RESULT_COLORS.not_run
 }
 const statusOptions = computed(() => [
-  { label: steps.value.length ? `Derived from steps (${humanize(derived.value)})` : `Unchanged (${humanize(ex.value?.status || 'not_run')})`, value: AUTO },
-  ...options(meta.meta.result_statuses),
+  {
+    label: steps.value.length ? t('runner.derived', { status: enumLabel('result', derived.value) }) : t('runner.unchanged', { status: enumLabel('result', ex.value?.status || 'not_run') }),
+    value: AUTO,
+  },
+  ...enumOptions('result', meta.meta.result_statuses),
 ])
 </script>
 
@@ -222,9 +229,9 @@ const statusOptions = computed(() => [
   <div class="page-header">
     <div>
       <div class="row small" style="margin-bottom: 2px">
-        <RouterLink :to="{ name: 'runs', params: { projectId: proj.pid } }" class="muted">Operations</RouterLink>
+        <RouterLink :to="{ name: 'runs', params: { projectId: proj.pid } }" class="muted">{{ t('nav.operations') }}</RouterLink>
         <i class="pi pi-angle-right muted" />
-        <RouterLink :to="{ name: 'run', params: { projectId: proj.pid, runId } }" class="muted">{{ run?.name ?? 'Run' }}</RouterLink>
+        <RouterLink :to="{ name: 'run', params: { projectId: proj.pid, runId } }" class="muted">{{ run?.name ?? t('runner.runFallback') }}</RouterLink>
         <i class="pi pi-angle-right muted" />
       </div>
       <h1 class="row">
@@ -232,15 +239,15 @@ const statusOptions = computed(() => [
         {{ ex?.test_title }}
       </h1>
       <div class="sub row">
-        <Tag v-if="test" :value="isAutomated ? 'Automated' : 'Manual'" :icon="isAutomated ? 'pi pi-bolt' : 'pi pi-user'" severity="secondary" />
-        <span v-if="index >= 0">Execution {{ index + 1 }} of {{ list.length }}</span>
-        <span v-if="ex?.executed_by">· last executed by {{ ex.executed_by }} {{ formatDateTime(ex.finished_at) }}</span>
+        <Tag v-if="test" :value="enumLabel('executionType', isAutomated ? 'automated' : 'manual')" :icon="isAutomated ? 'pi pi-bolt' : 'pi pi-user'" severity="secondary" />
+        <span v-if="index >= 0">{{ t('runner.executionOf', { n: index + 1, total: list.length }) }}</span>
+        <span v-if="ex?.executed_by">{{ t('runner.lastExecuted', { user: ex.executed_by, date: formatDateTime(ex.finished_at) }) }}</span>
         <span v-if="ex?.duration_ms">· {{ formatDuration(ex.duration_ms) }}</span>
       </div>
     </div>
     <div class="actions">
-      <Button icon="pi pi-chevron-left" label="Previous" severity="secondary" outlined :disabled="!prevEx" @click="go(prevEx)" />
-      <Button icon="pi pi-chevron-right" icon-pos="right" label="Next" severity="secondary" outlined :disabled="!nextEx" @click="go(nextEx)" />
+      <Button icon="pi pi-chevron-left" :label="t('common.previous')" severity="secondary" outlined :disabled="!prevEx" @click="go(prevEx)" />
+      <Button icon="pi pi-chevron-right" icon-pos="right" :label="t('common.next')" severity="secondary" outlined :disabled="!nextEx" @click="go(nextEx)" />
     </div>
   </div>
 
@@ -250,7 +257,7 @@ const statusOptions = computed(() => [
     <div v-if="test?.preconditions || test?.description" class="card" style="margin-bottom: 16px">
       <div v-if="test?.description" style="white-space: pre-wrap">{{ test.description }}</div>
       <div v-if="test?.preconditions" style="margin-top: 8px">
-        <b class="small">Preconditions</b>
+        <b class="small">{{ t('runner.preconditions') }}</b>
         <div style="white-space: pre-wrap">{{ test.preconditions }}</div>
       </div>
     </div>
@@ -259,26 +266,26 @@ const statusOptions = computed(() => [
     <div v-if="isAutomated" class="grid">
       <div class="card">
         <div class="row" style="justify-content: space-between; margin-bottom: 8px">
-          <h3 style="margin: 0"><i class="pi pi-code" /> Script <span class="muted small">({{ test?.script_language || 'sh' }})</span></h3>
+          <h3 style="margin: 0"><i class="pi pi-code" /> {{ t('runner.script') }} <span class="muted small">({{ test?.script_language || 'sh' }})</span></h3>
           <Button
             v-if="canScript"
-            label="Run script"
+            :label="t('runner.runScript')"
             icon="pi pi-play"
             :loading="running"
             :disabled="!test?.script"
             @click="runScript"
           />
-          <span v-else class="small muted">Running scripts requires the script.execute permission.</span>
+          <span v-else class="small muted">{{ t('runner.needsPermission') }}</span>
         </div>
-        <pre class="console" style="color: #e2e8f0">{{ test?.script || '# no script' }}</pre>
+        <pre class="console" style="color: #e2e8f0">{{ test?.script || t('runner.noScript') }}</pre>
       </div>
       <div class="card">
         <div class="row" style="justify-content: space-between; margin-bottom: 8px">
-          <h3 style="margin: 0"><i class="pi pi-desktop" /> Output</h3>
+          <h3 style="margin: 0"><i class="pi pi-desktop" /> {{ t('runner.output') }}</h3>
           <StatusTag :value="ex.status" kind="result" />
         </div>
         <ProgressBar v-if="running" mode="indeterminate" style="height: 4px; margin-bottom: 8px" />
-        <pre class="console">{{ output || 'No output yet.' }}</pre>
+        <pre class="console">{{ output || t('runner.noOutput') }}</pre>
       </div>
     </div>
 
@@ -286,7 +293,7 @@ const statusOptions = computed(() => [
     <div v-else-if="steps.length" class="runner">
       <div class="card">
         <div class="row" style="justify-content: space-between; margin-bottom: 8px">
-          <b>Steps</b><span class="small muted">{{ doneSteps }}/{{ steps.length }}</span>
+          <b>{{ t('runner.steps') }}</b><span class="small muted">{{ doneSteps }}/{{ steps.length }}</span>
         </div>
         <ProgressBar :value="Math.round((doneSteps / steps.length) * 100)" :show-value="false" style="height: 6px; margin-bottom: 10px" />
         <div class="step-list">
@@ -296,22 +303,22 @@ const statusOptions = computed(() => [
               <i v-else-if="s.status === 'failed'" class="pi pi-times" style="font-size: 10px" />
               <template v-else>{{ i + 1 }}</template>
             </span>
-            <span class="ellipsis">{{ s.action || 'Step ' + (i + 1) }}</span>
+            <span class="ellipsis">{{ s.action || t('runner.stepN', { n: i + 1 }) }}</span>
           </button>
         </div>
       </div>
       <div class="card" v-if="steps[current]">
         <div class="row" style="justify-content: space-between">
-          <h3 style="margin: 0">Step {{ current + 1 }} of {{ steps.length }}</h3>
+          <h3 style="margin: 0">{{ t('runner.stepOf', { n: current + 1, total: steps.length }) }}</h3>
           <StatusTag :value="steps[current].status" kind="result" />
         </div>
         <div class="grid" style="gap: 12px; margin-top: 12px">
-          <div class="field"><label>Action</label><div class="step-box">{{ steps[current].action || '—' }}</div></div>
-          <div class="field"><label>Expected result</label><div class="step-box">{{ steps[current].expected || '—' }}</div></div>
-          <div v-if="steps[current].data" class="field"><label>Test data</label><div class="step-box mono">{{ steps[current].data }}</div></div>
+          <div class="field"><label>{{ t('runner.action') }}</label><div class="step-box">{{ steps[current].action || '—' }}</div></div>
+          <div class="field"><label>{{ t('runner.expected') }}</label><div class="step-box">{{ steps[current].expected || '—' }}</div></div>
+          <div v-if="steps[current].data" class="field"><label>{{ t('runner.testData') }}</label><div class="step-box mono">{{ steps[current].data }}</div></div>
           <div class="field">
-            <label>Actual result</label>
-            <Textarea v-model="steps[current].actual" rows="3" auto-resize :disabled="!canExecute" placeholder="What happened?" />
+            <label>{{ t('runner.actual') }}</label>
+            <Textarea v-model="steps[current].actual" rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.actualPlaceholder')" />
           </div>
           <div v-if="canExecute" class="row">
             <Button
@@ -321,49 +328,49 @@ const statusOptions = computed(() => [
               :icon="b.icon"
               :severity="b.severity"
               :outlined="steps[current].status !== b.status"
-              v-tooltip.bottom="'Shortcut: ' + b.key"
+              v-tooltip.bottom="t('runner.shortcut', { key: b.key })"
               @click="mark(b.status)"
             />
             <span class="grow" />
-            <Button icon="pi pi-arrow-up" text rounded severity="secondary" :disabled="current === 0" aria-label="Previous step" @click="current--" />
-            <Button icon="pi pi-arrow-down" text rounded severity="secondary" :disabled="current === steps.length - 1" aria-label="Next step" @click="current++" />
+            <Button icon="pi pi-arrow-up" text rounded severity="secondary" :disabled="current === 0" :aria-label="t('runner.prevStep')" v-tooltip="t('runner.prevStep')" @click="current--" />
+            <Button icon="pi pi-arrow-down" text rounded severity="secondary" :disabled="current === steps.length - 1" :aria-label="t('runner.nextStep')" v-tooltip="t('runner.nextStep')" @click="current++" />
           </div>
         </div>
       </div>
     </div>
     <div v-else class="card">
-      <div class="muted">This test has no steps. Record the overall result below.</div>
-      <div v-if="test?.expected_result" style="margin-top: 8px"><b class="small">Expected result</b><div class="step-box">{{ test.expected_result }}</div></div>
+      <div class="muted">{{ t('runner.noSteps') }}</div>
+      <div v-if="test?.expected_result" style="margin-top: 8px"><b class="small">{{ t('runner.expected') }}</b><div class="step-box">{{ test.expected_result }}</div></div>
     </div>
 
     <div class="card" style="margin-top: 16px">
       <div class="form-grid">
         <div class="field">
-          <label>Overall status</label>
+          <label>{{ t('runner.overallStatus') }}</label>
           <Select v-model="override" :options="statusOptions" option-label="label" option-value="value" :disabled="!canExecute" />
-          <span class="small">Will be saved as <StatusTag :value="effectiveStatus" kind="result" /></span>
+          <span class="small">{{ t('runner.savedAs') }} <StatusTag :value="effectiveStatus" kind="result" /></span>
         </div>
         <div class="field">
-          <label>Assignee</label>
-          <InputText v-model="assignee" :disabled="!canExecute" placeholder="Unassigned" />
+          <label>{{ t('runner.assignee') }}</label>
+          <InputText v-model="assignee" :disabled="!canExecute" :placeholder="t('runner.unassigned')" />
         </div>
         <div class="field full">
-          <label>Defects</label>
-          <TagsInput v-model="defects" :disabled="!canExecute" icon="pi pi-exclamation-circle" placeholder="Defect ID (e.g. JIRA-123) or URL, then Enter" />
+          <label>{{ t('runner.defects') }}</label>
+          <TagsInput v-model="defects" :disabled="!canExecute" icon="pi pi-exclamation-circle" :placeholder="t('runner.defectsPlaceholder')" />
           <span class="small row" style="gap: 4px">
             <DefectLinks :defects="defects" />
-            <span v-if="defects.length && !proj.project?.defect_url_template" class="muted">Set a defect tracker URL template in the project settings to link IDs.</span>
+            <span v-if="defects.length && !proj.project?.defect_url_template" class="muted">{{ t('runner.defectsHint') }}</span>
           </span>
         </div>
         <div class="field full">
-          <label>Notes</label>
-          <Textarea v-model="notes" rows="3" auto-resize :disabled="!canExecute" placeholder="Defects, observations, links…" />
+          <label>{{ t('runner.notes') }}</label>
+          <Textarea v-model="notes" rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.notesPlaceholder')" />
         </div>
       </div>
       <div v-if="canExecute" class="row" style="justify-content: flex-end; margin-top: 12px">
-        <span v-if="dirty" class="small muted" style="margin-right: auto"><i class="pi pi-circle-fill" style="font-size: 8px; color: var(--p-amber-500)" /> Unsaved changes</span>
-        <Button label="Save" icon="pi pi-save" severity="secondary" :loading="saving" @click="save" />
-        <Button label="Save & next" icon="pi pi-angle-double-right" icon-pos="right" :loading="saving" :disabled="!nextEx" @click="go(nextEx, true)" />
+        <span v-if="dirty" class="small muted" style="margin-right: auto"><i class="pi pi-circle-fill" style="font-size: 8px; color: var(--p-amber-500)" /> {{ t('runner.unsaved') }}</span>
+        <Button :label="t('common.save')" icon="pi pi-save" severity="secondary" :loading="saving" @click="save" />
+        <Button :label="t('runner.saveNext')" icon="pi pi-angle-double-right" icon-pos="right" :loading="saving" :disabled="!nextEx" @click="go(nextEx, true)" />
       </div>
     </div>
   </template>

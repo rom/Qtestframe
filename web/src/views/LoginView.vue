@@ -9,10 +9,17 @@ import Divider from 'primevue/divider'
 import { api, errorMessage } from '@/lib/api'
 import type { AuthProvider, Providers } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
+import { chooseLocal, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
 
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
+/** Language switch before sign-in: stored on this device (qtf.lang). */
+function setLang(l: Lang) {
+  chooseLocal(l)
+}
 
 const email = ref('')
 const password = ref('')
@@ -62,43 +69,54 @@ async function submit() {
         Qtestframe
       </div>
       <div>
-        <h1>Requirements and tests,<br />traced end to end.</h1>
-        <p style="max-width: 460px; line-height: 1.6; opacity: 0.85">
-          Capture requirements with obligation-aware language analysis, design manual and automated tests, run campaigns and
-          prove coverage, all in one multi-tenant workspace.
-        </p>
+        <h1>{{ t('auth.heroTitle') }}<br />{{ t('auth.heroTitle2') }}</h1>
+        <p style="max-width: 460px; line-height: 1.6; opacity: 0.85">{{ t('auth.heroText') }}</p>
         <div class="row" style="gap: 18px; margin-top: 24px; opacity: 0.85">
-          <span><i class="pi pi-list-check" /> Requirements</span>
-          <span><i class="pi pi-check-square" /> Test design</span>
-          <span><i class="pi pi-play-circle" /> Operations</span>
-          <span><i class="pi pi-th-large" /> Traceability</span>
+          <span><i class="pi pi-list-check" /> {{ t('auth.featureRequirements') }}</span>
+          <span><i class="pi pi-check-square" /> {{ t('auth.featureTestDesign') }}</span>
+          <span><i class="pi pi-play-circle" /> {{ t('auth.featureOperations') }}</span>
+          <span><i class="pi pi-th-large" /> {{ t('auth.featureTraceability') }}</span>
         </div>
       </div>
       <div class="small" style="opacity: 0.6">© Qtestframe</div>
     </section>
     <section class="login-form">
       <div class="box">
-        <h2 style="margin: 0 0 4px">Sign in</h2>
-        <p class="muted" style="margin: 0 0 20px">Welcome back. Please enter your details.</p>
+        <div class="lang-switch" role="group" :aria-label="t('language.label')">
+          <i class="pi pi-globe muted" aria-hidden="true" />
+          <button
+            v-for="l in LANGUAGES"
+            :key="l"
+            type="button"
+            :lang="l"
+            :class="{ active: locale === l }"
+            :aria-pressed="locale === l"
+            @click="setLang(l)"
+          >
+            {{ LANGUAGE_NAMES[l] }}
+          </button>
+        </div>
+        <h2 style="margin: 0 0 4px">{{ t('auth.signIn') }}</h2>
+        <p class="muted" style="margin: 0 0 20px">{{ t('auth.welcome') }}</p>
         <Message v-if="error" severity="error" :closable="false" style="margin-bottom: 14px">{{ error }}</Message>
         <form v-if="providers.local !== false" class="grid" style="gap: 14px" @submit.prevent="submit">
           <div class="field">
-            <label for="email">E-mail</label>
+            <label for="email">{{ t('auth.email') }}</label>
             <InputText id="email" v-model="email" type="email" autocomplete="username" required autofocus />
           </div>
           <div class="field">
-            <label for="pw">Password</label>
+            <label for="pw">{{ t('auth.password') }}</label>
             <Password input-id="pw" v-model="password" :feedback="false" toggle-mask autocomplete="current-password" required fluid />
           </div>
           <div v-if="showTenant" class="field">
-            <label for="tenant">Tenant (slug, optional)</label>
-            <InputText id="tenant" v-model="tenant" placeholder="e.g. acme" />
+            <label for="tenant">{{ t('auth.tenant') }}</label>
+            <InputText id="tenant" v-model="tenant" :placeholder="t('auth.tenantPlaceholder')" />
           </div>
-          <a v-else href="#" class="small" @click.prevent="showTenant = true">Sign in to a specific tenant…</a>
-          <Button type="submit" label="Sign in" icon="pi pi-sign-in" :loading="busy" :disabled="!email || !password" />
+          <a v-else href="#" class="small" @click.prevent="showTenant = true">{{ t('auth.signInToTenant') }}</a>
+          <Button type="submit" :label="t('auth.signIn')" icon="pi pi-sign-in" :loading="busy" :disabled="!email || !password" />
         </form>
         <template v-if="sso.length">
-          <Divider align="center"><span class="muted small">or continue with</span></Divider>
+          <Divider align="center"><span class="muted small">{{ t('auth.orContinueWith') }}</span></Divider>
           <div class="grid" style="gap: 8px">
             <Button
               v-for="p in sso"
@@ -117,3 +135,29 @@ async function submit() {
     </section>
   </div>
 </template>
+
+<style scoped>
+.lang-switch {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.lang-switch button {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: var(--qtf-muted, inherit);
+}
+.lang-switch button:hover,
+.lang-switch button:focus-visible {
+  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
+}
+.lang-switch button.active {
+  color: var(--p-primary-color);
+  font-weight: 600;
+}
+</style>

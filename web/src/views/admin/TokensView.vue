@@ -10,17 +10,20 @@ import InputNumber from 'primevue/inputnumber'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { formatDate, formatDateTime, humanize, options, relativeTime } from '@/lib/format'
+import { formatDate, formatDateTime, relativeTime } from '@/lib/format'
 import { grantableRoles } from '@/lib/permissions'
 import type { APIToken } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
+import { enumLabel, enumOptions } from '@/i18n/labels'
 
 const auth = useAuthStore()
 const notify = useNotify()
+const { t } = useI18n()
 const tokens = ref<APIToken[]>([])
 const loading = ref(false)
-const roles = computed(() => options(grantableRoles(auth.me?.role ?? '', auth.isSuperAdmin)))
+const roles = computed(() => enumOptions('role', grantableRoles(auth.me?.role ?? '', auth.isSuperAdmin)))
 
 async function load() {
   loading.value = true
@@ -66,20 +69,21 @@ async function copy() {
   if (!created.value) return
   try {
     await navigator.clipboard.writeText(created.value)
-    notify.ok('Token copied')
+    notify.ok(t('admin.tokenCopied'))
   } catch {
-    notify.info('Copy failed', 'Select the token and copy it manually.')
+    notify.info(t('errors.copyFailed'), t('admin.copyTokenManually'))
   }
 }
-function revoke(t: APIToken) {
-  notify.confirmDanger(`Revoke token "${t.name}"? Clients using it lose access immediately.`, async () => {
+function revoke(tok: APIToken) {
+  const accept = async () => {
     try {
-      await api.del(`/tokens/${t.id}`)
+      await api.del(`/tokens/${tok.id}`)
       load()
     } catch (e) {
       notify.fail(e)
     }
-  })
+  }
+  notify.confirmDanger(t('admin.confirmRevoke', { name: tok.name }), accept, undefined, t('admin.revoke'))
 }
 const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTime() < Date.now()
 </script>
@@ -87,54 +91,54 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
 <template>
   <div class="card">
     <div class="filterbar">
-      <span class="muted small">Tokens authenticate CI pipelines and scripts with <code>Authorization: Bearer qtf_…</code>. They are bound to this tenant.</span>
+      <i18n-t keypath="admin.tokensHint" tag="span" class="muted small"><template #header><code>Authorization: Bearer qtf_…</code></template></i18n-t>
       <span class="grow" />
-      <Button label="New token" icon="pi pi-plus" @click="openCreate" />
+      <Button :label="t('admin.newToken')" icon="pi pi-plus" @click="openCreate" />
     </div>
     <DataTable :value="tokens" data-key="id" :loading="loading" sort-field="created_at" :sort-order="-1">
-      <Column field="name" header="Name" sortable />
-      <Column field="prefix" header="Token" style="width: 160px"><template #body="{ data }"><span class="mono">{{ data.prefix }}…</span></template></Column>
-      <Column field="role" header="Role" sortable style="width: 120px"><template #body="{ data }"><Tag :value="humanize(data.role)" severity="secondary" /></template></Column>
-      <Column field="created_at" header="Created" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column field="expires_at" header="Expires" sortable style="width: 140px">
+      <Column field="name" :header="t('common.name')" sortable />
+      <Column field="prefix" :header="t('admin.token')" style="width: 160px"><template #body="{ data }"><span class="mono">{{ data.prefix }}…</span></template></Column>
+      <Column field="role" :header="t('common.role')" sortable style="width: 140px"><template #body="{ data }"><Tag :value="enumLabel('role', data.role)" severity="secondary" /></template></Column>
+      <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
+      <Column field="expires_at" :header="t('admin.expires')" sortable style="width: 140px">
         <template #body="{ data }">
-          <Tag v-if="expired(data)" value="Expired" severity="danger" />
+          <Tag v-if="expired(data)" :value="t('admin.expired')" severity="danger" />
           <span v-else-if="data.expires_at">{{ formatDate(data.expires_at) }}</span>
-          <span v-else class="muted">Never</span>
+          <span v-else class="muted">{{ t('admin.neverExpires') }}</span>
         </template>
       </Column>
-      <Column field="last_used" header="Last used" sortable style="width: 150px">
-        <template #body="{ data }"><span :title="formatDateTime(data.last_used)">{{ relativeTime(data.last_used) || 'never' }}</span></template>
+      <Column field="last_used" :header="t('admin.lastUsed')" sortable style="width: 170px">
+        <template #body="{ data }"><span :title="formatDateTime(data.last_used)">{{ relativeTime(data.last_used) || t('common.never') }}</span></template>
       </Column>
-      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-trash" text rounded severity="danger" aria-label="Revoke" @click="revoke(data)" /></template></Column>
-      <template #empty><div class="empty"><i class="pi pi-key" />No tokens.</div></template>
+      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('admin.revoke')" v-tooltip="t('admin.revoke')" @click="revoke(data)" /></template></Column>
+      <template #empty><div class="empty"><i class="pi pi-key" />{{ t('admin.noTokens') }}</div></template>
     </DataTable>
   </div>
 
-  <Dialog v-model:visible="dialog" :header="created ? 'Token created' : 'New API token'" modal style="width: min(520px, 95vw)" :closable="true">
+  <Dialog v-model:visible="dialog" :header="created ? t('admin.tokenCreated') : t('admin.newApiToken')" modal style="width: min(520px, 95vw)" :closable="true">
     <div v-if="created" class="grid" style="gap: 12px">
-      <Message severity="warn" :closable="false">Copy the token now. It will not be shown again.</Message>
+      <Message severity="warn" :closable="false">{{ t('admin.copyNow') }}</Message>
       <div class="row nowrap">
-        <InputText :model-value="created" readonly class="grow mono" @focus="(e: FocusEvent) => (e.target as HTMLInputElement).select()" />
-        <Button icon="pi pi-copy" aria-label="Copy" @click="copy" />
+        <InputText :model-value="created" readonly class="grow mono" :aria-label="t('admin.token')" @focus="(e: FocusEvent) => (e.target as HTMLInputElement).select()" />
+        <Button icon="pi pi-copy" :aria-label="t('common.copy')" v-tooltip="t('common.copy')" @click="copy" />
       </div>
-      <div class="row" style="justify-content: flex-end"><Button label="Done" @click="dialog = false" /></div>
+      <div class="row" style="justify-content: flex-end"><Button :label="t('admin.done')" @click="dialog = false" /></div>
     </div>
     <form v-else class="grid" style="gap: 12px" @submit.prevent="create">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>Name</label><InputText v-model="form.name" placeholder="e.g. GitLab CI" autofocus required /></div>
+      <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tokenNamePlaceholder')" autofocus required /></div>
       <div class="field">
-        <label>Role</label>
+        <label>{{ t('common.role') }}</label>
         <Select v-model="form.role" :options="roles" option-label="label" option-value="value" />
-        <small class="muted">A token cannot exceed your own role.</small>
+        <small class="muted">{{ t('admin.tokenRoleHint') }}</small>
       </div>
       <div class="field">
-        <label>Expires after (days, empty = never)</label>
+        <label>{{ t('admin.expiresAfter') }}</label>
         <InputNumber v-model="form.expires_days" :min="1" :max="3650" show-buttons fluid />
       </div>
       <div class="row" style="justify-content: flex-end">
-        <Button label="Cancel" text severity="secondary" @click="dialog = false" />
-        <Button type="submit" label="Create" icon="pi pi-check" :loading="busy" :disabled="!form.name.trim()" />
+        <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
+        <Button type="submit" :label="t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!form.name.trim()" />
       </div>
     </form>
   </Dialog>

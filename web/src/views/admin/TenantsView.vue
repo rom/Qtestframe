@@ -11,9 +11,11 @@ import { formatDate } from '@/lib/format'
 import type { Tenant } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
 
 const auth = useAuthStore()
 const notify = useNotify()
+const { t } = useI18n()
 const tenants = ref<Tenant[]>([])
 const loading = ref(false)
 
@@ -56,20 +58,20 @@ async function save() {
     formError.value = errorMessage(e)
   }
 }
-function remove(t: Tenant) {
-  notify.confirmDanger(`Delete tenant "${t.name}" (${t.slug}) with ALL projects and data?`, async () => {
+function remove(tn: Tenant) {
+  notify.confirmDanger(t('admin.confirmDeleteTenant', { name: tn.name, slug: tn.slug }), async () => {
     try {
-      await api.del(`/tenants/${t.id}`)
+      await api.del(`/tenants/${tn.id}`)
       load()
     } catch (e) {
       notify.fail(e)
     }
   })
 }
-async function switchTo(t: Tenant) {
+async function switchTo(tn: Tenant) {
   try {
-    await auth.switchTenant(t.id)
-    notify.ok('Switched tenant', t.name)
+    await auth.switchTenant(tn.id)
+    notify.ok(t('admin.switchedTenant'), tn.name)
   } catch (e) {
     notify.fail(e)
   }
@@ -79,33 +81,33 @@ async function switchTo(t: Tenant) {
 <template>
   <div class="card">
     <div class="filterbar">
-      <span class="muted small">Tenants are isolated organisations. Only super administrators manage them.</span>
+      <span class="muted small">{{ t('admin.tenantsHint') }}</span>
       <span class="grow" />
-      <Button label="New tenant" icon="pi pi-plus" @click="openCreate" />
+      <Button :label="t('admin.newTenant')" icon="pi pi-plus" @click="openCreate" />
     </div>
     <DataTable :value="tenants" data-key="id" :loading="loading" sort-field="slug" :sort-order="1">
-      <Column field="slug" header="Slug" sortable><template #body="{ data }"><span class="mono">{{ data.slug }}</span></template></Column>
-      <Column field="name" header="Name" sortable />
-      <Column field="created_at" header="Created" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
+      <Column field="slug" :header="t('admin.slug')" sortable><template #body="{ data }"><span class="mono">{{ data.slug }}</span></template></Column>
+      <Column field="name" :header="t('common.name')" sortable />
+      <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column style="width: 170px">
         <template #body="{ data }">
           <div class="row nowrap" style="gap: 0">
-            <Button v-if="auth.tenant?.id !== data.id" icon="pi pi-sign-in" text rounded v-tooltip="'Switch to tenant'" aria-label="Switch" @click="switchTo(data)" />
-            <Button icon="pi pi-pencil" text rounded severity="secondary" aria-label="Edit" @click="openEdit(data)" />
-            <Button icon="pi pi-trash" text rounded severity="danger" aria-label="Delete" @click="remove(data)" />
+            <Button v-if="auth.tenant?.id !== data.id" icon="pi pi-sign-in" text rounded v-tooltip="t('admin.switchToTenant')" :aria-label="t('admin.switchToTenant')" @click="switchTo(data)" />
+            <Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit(data)" />
+            <Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('common.delete')" v-tooltip="t('common.delete')" @click="remove(data)" />
           </div>
         </template>
       </Column>
     </DataTable>
   </div>
-  <Dialog v-model:visible="dialog" :header="editing ? 'Rename tenant' : 'New tenant'" modal style="width: min(440px, 95vw)">
+  <Dialog v-model:visible="dialog" :header="editing ? t('admin.renameTenant') : t('admin.newTenant')" modal style="width: min(440px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>Slug</label><InputText v-model="form.slug" :disabled="!!editing" placeholder="acme" required /></div>
-      <div class="field"><label>Name</label><InputText v-model="form.name" placeholder="ACME Corp." required /></div>
+      <div class="field"><label>{{ t('admin.slug') }}</label><InputText v-model="form.slug" :disabled="!!editing" placeholder="acme" required /></div>
+      <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tenantNamePlaceholder')" required /></div>
       <div class="row" style="justify-content: flex-end">
-        <Button label="Cancel" text severity="secondary" @click="dialog = false" />
-        <Button type="submit" label="Save" icon="pi pi-check" :disabled="!form.slug || !form.name" />
+        <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
+        <Button type="submit" :label="t('common.save')" icon="pi pi-check" :disabled="!form.slug || !form.name" />
       </div>
     </form>
   </Dialog>

@@ -518,6 +518,9 @@ func validatePreferences(pr model.Preferences, memberOf func(tenantID string) bo
 	if pr.Theme != "" && !model.Valid(model.Themes, pr.Theme) {
 		return badRequest("theme must be one of %s", strings.Join(model.Themes, ", "))
 	}
+	if pr.Language != "" && !model.Valid(model.Languages, pr.Language) {
+		return badRequest("language must be one of %s", strings.Join(model.Languages, ", "))
+	}
 	if pr.StartPage != "" && !model.Valid(model.StartPages, pr.StartPage) {
 		return badRequest("start_page must be one of %s", strings.Join(model.StartPages, ", "))
 	}

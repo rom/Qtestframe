@@ -23,7 +23,9 @@ import Tab from 'primevue/tab'
 import Tag from 'primevue/tag'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { moveItem } from '@/lib/collections'
-import { formatDateTime, options } from '@/lib/format'
+import { formatDateTime } from '@/lib/format'
+import { useI18n } from 'vue-i18n'
+import { enumLabel, enumOptions } from '@/i18n/labels'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Category, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
@@ -41,6 +43,10 @@ const props = defineProps<{
 const emit = defineEmits<{ saved: [item: TestCase]; deleted: [id: string]; copied: [item: TestCase]; close: [] }>()
 const meta = useMetaStore()
 const notify = useNotify()
+const { t } = useI18n()
+const statusOptions = computed(() => enumOptions('status', meta.meta.test_statuses))
+const priorityOptions = computed(() => enumOptions('priority', meta.meta.priorities))
+const languageOptions = computed(() => enumOptions('scriptLanguage', meta.meta.script_languages))
 
 interface StepRow {
   uid: number
@@ -84,7 +90,7 @@ const pickReqs = ref(false)
 const isNew = computed(() => !props.itemId)
 
 const folderOptions = computed(() => [
-  { id: null as string | null, label: '— top level —' },
+  { id: null as string | null, label: t('common.topLevelOption') },
   ...flatten(buildTree(props.folders)).map((f) => ({ id: f.id as string | null, label: '  '.repeat(f.depth) + f.label })),
 ])
 
@@ -144,7 +150,7 @@ async function loadLinks() {
       reqs.value = asItems(await api.get<{ items: Requirement[] }>(`/projects/${props.projectId}/requirements`))
     }
   } catch (e) {
-    notify.fail(e, 'Could not load links')
+    notify.fail(e, t('editor.loadLinksFailed'))
   }
 }
 watch(() => props.itemId, load, { immediate: true })
@@ -218,7 +224,7 @@ async function save() {
     const saved = isNew.value
       ? await api.post<TestCase>(`/projects/${props.projectId}/tests`, body)
       : await api.patch<TestCase>(`/tests/${props.itemId}`, body)
-    notify.ok(isNew.value ? 'Test created' : 'Test saved', saved?.key)
+    notify.ok(isNew.value ? t('tests.created') : t('tests.saved'), saved?.key)
     emit('saved', saved)
     if (!isNew.value) await load() // refresh version, call-step keys and called_by
   } catch (e) {
@@ -232,7 +238,7 @@ async function copy() {
   if (!item.value) return
   try {
     const c = await api.post<TestCase>(`/tests/${item.value.id}/copy`)
-    notify.ok('Test copied', c?.key)
+    notify.ok(t('tests.copied'), c?.key)
     emit('copied', c)
   } catch (e) {
     notify.fail(e)
@@ -242,10 +248,10 @@ async function copy() {
 function remove() {
   if (!item.value) return
   const it = item.value
-  notify.confirmDanger(`Delete test ${it.key}?`, async () => {
+  notify.confirmDanger(t('tests.confirmDelete', { key: it.key }), async () => {
     try {
       await api.del(`/tests/${it.id}`)
-      notify.ok('Test deleted')
+      notify.ok(t('tests.deleted'))
       emit('deleted', it.id)
     } catch (e) {
       notify.fail(e)
@@ -260,9 +266,9 @@ async function addLinks(picked: { id: string }[]) {
     for (const r of picked) await api.post(`/projects/${props.projectId}/links`, { requirement_id: r.id, test_case_id: props.itemId })
     reqs.value = []
     await loadLinks()
-    notify.ok(`${picked.length} link(s) added`)
+    notify.ok(t('editor.linksAdded', picked.length))
   } catch (e) {
-    notify.fail(e, 'Could not add link')
+    notify.fail(e, t('editor.addLinkFailed'))
   }
 }
 async function removeLink(l: TraceLink) {
@@ -273,18 +279,18 @@ async function removeLink(l: TraceLink) {
     notify.fail(e)
   }
 }
-const execOptions = [
-  { label: 'Manual', value: 'manual', icon: 'pi pi-user' },
-  { label: 'Automated', value: 'automated', icon: 'pi pi-bolt' },
-]
+const execOptions = computed(() => [
+  { label: enumLabel('executionType', 'manual'), value: 'manual', icon: 'pi pi-user' },
+  { label: enumLabel('executionType', 'automated'), value: 'automated', icon: 'pi pi-bolt' },
+])
 const scriptPlaceholder = computed(() => {
   switch (form.value.script_language) {
     case 'python':
-      return 'import sys\n# exit code 0 = passed, non-zero = failed\nsys.exit(0)'
+      return `import sys\n# ${t('tests.scriptComment')}\nsys.exit(0)`
     case 'javascript':
-      return '// exit code 0 = passed\nprocess.exit(0)'
+      return `// ${t('tests.scriptCommentShort')}\nprocess.exit(0)`
     default:
-      return '#!/bin/sh\nset -e\n# exit code 0 = passed, non-zero = failed\ncurl -fsS http://localhost:8080/healthz'
+      return `#!/bin/sh\nset -e\n# ${t('tests.scriptComment')}\ncurl -fsS http://localhost:8080/healthz`
   }
 })
 </script>
@@ -294,10 +300,10 @@ const scriptPlaceholder = computed(() => {
   <template v-else>
   <Tabs v-if="item" v-model:value="tab" class="editor-tabs">
     <TabList>
-      <Tab value="details"><i class="pi pi-file-edit" /> Details</Tab>
-      <Tab value="executions"><i class="pi pi-play-circle" /> Executions <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
-      <Tab value="comments"><i class="pi pi-comments" /> Comments <span class="count">{{ commentCount }}</span></Tab>
-      <Tab value="history"><i class="pi pi-history" /> History</Tab>
+      <Tab value="details"><i class="pi pi-file-edit" /> {{ t('common.details') }}</Tab>
+      <Tab value="executions"><i class="pi pi-play-circle" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="history"><i class="pi pi-history" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <TestExecutionsPanel v-if="item && tab === 'executions'" :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" />
@@ -314,14 +320,14 @@ const scriptPlaceholder = computed(() => {
   <form v-show="!item || tab === 'details'" class="grid" style="gap: 14px" @submit.prevent="save">
     <div class="row">
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
-      <Tag v-if="item?.version" :value="'v' + item.version" severity="secondary" />
+      <Tag v-if="item?.version" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
       <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
-      <span v-if="item" class="muted small">Updated {{ formatDateTime(item.updated_at) }}{{ item.created_by ? ' · created by ' + item.created_by : '' }}</span>
+      <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
     <div class="field">
-      <label>Title</label>
+      <label>{{ t('common.title') }}</label>
       <InputText v-model="form.title" required autofocus :disabled="!canWrite" />
     </div>
     <div class="row">
@@ -331,94 +337,94 @@ const scriptPlaceholder = computed(() => {
     </div>
     <div class="form-grid">
       <div class="field full">
-        <label>Description</label>
+        <label>{{ t('common.description') }}</label>
         <Textarea v-model="form.description" rows="2" auto-resize :disabled="!canWrite" />
       </div>
       <div class="field full">
-        <label>Preconditions</label>
+        <label>{{ t('tests.preconditions') }}</label>
         <Textarea v-model="form.preconditions" rows="2" auto-resize :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Status</label>
-        <Select v-model="form.status" :options="options(meta.meta.test_statuses)" option-label="label" option-value="value" :disabled="!canWrite" />
+        <label>{{ t('common.status') }}</label>
+        <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Priority</label>
-        <Select v-model="form.priority" :options="options(meta.meta.priorities)" option-label="label" option-value="value" :disabled="!canWrite" />
+        <label>{{ t('common.priority') }}</label>
+        <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Estimate (minutes)</label>
+        <label>{{ t('tests.estimate') }}</label>
         <InputNumber v-model="form.estimated_minutes" :min="0" show-buttons :disabled="!canWrite" fluid />
       </div>
       <div class="field">
-        <label>Folder</label>
+        <label>{{ t('common.folder') }}</label>
         <Select v-model="form.folder_id" :options="folderOptions" option-label="label" option-value="id" filter :disabled="!canWrite" />
       </div>
       <div class="field full">
-        <label>Categories</label>
+        <label>{{ t('common.categories') }}</label>
         <CategorySelect v-model="form.category_ids" :categories="categories" :disabled="!canWrite" />
       </div>
       <div class="field full">
-        <label>Tags</label>
+        <label>{{ t('common.tags') }}</label>
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
       </div>
     </div>
 
     <template v-if="form.execution_type === 'automated'">
-      <div class="section-title"><i class="pi pi-code" /> Script</div>
+      <div class="section-title"><i class="pi pi-code" /> {{ t('tests.script') }}</div>
       <div class="row">
-        <Select v-model="form.script_language" :options="meta.meta.script_languages" :disabled="!canWrite" style="width: 160px" />
-        <span class="small muted">Executed by the server runner; exit code 0 means passed. Output is captured.</span>
+        <Select v-model="form.script_language" :options="languageOptions" option-label="label" option-value="value" :disabled="!canWrite" style="width: 160px" :aria-label="t('fields.script_language')" />
+        <span class="small muted">{{ t('tests.scriptHint') }}</span>
       </div>
       <Textarea v-model="form.script" class="code-input w-full" rows="12" :placeholder="scriptPlaceholder" spellcheck="false" :disabled="!canWrite" style="font-family: var(--qtf-mono)" />
     </template>
 
     <div>
       <div class="section-title">
-        <i class="pi pi-list" /> Steps ({{ form.steps.length }})
+        <i class="pi pi-list" /> {{ t('tests.steps', { count: form.steps.length }) }}
         <span class="grow" />
-        <Button v-if="canWrite" size="small" label="Insert call to test…" icon="pi pi-directions" text v-tooltip.bottom="'Reuse the steps of another test (shared steps)'" @click="openCallPicker()" />
-        <Button v-if="canWrite" size="small" label="Add step" icon="pi pi-plus" text @click="addStep()" />
+        <Button v-if="canWrite" size="small" :label="t('tests.insertCall')" icon="pi pi-directions" text v-tooltip.bottom="t('tests.insertCallHint')" @click="openCallPicker()" />
+        <Button v-if="canWrite" size="small" :label="t('tests.addStep')" icon="pi pi-plus" text @click="addStep()" />
       </div>
       <DataTable v-if="form.steps.length" :value="form.steps" data-key="uid" size="small" :reorderable-rows="canWrite" @row-reorder="onReorder">
         <Column v-if="canWrite" row-reorder style="width: 2rem" />
         <Column header="#" style="width: 2.5rem"><template #body="{ index }"><b>{{ index + 1 }}</b></template></Column>
-        <Column header="Action" style="width: 40%">
+        <Column :header="t('tests.action')" style="width: 40%">
           <template #body="{ data }">
-            <div v-if="data.call_test_id" class="call-step" :title="'The steps of ' + (data.call_test_key || 'the called test') + ' are inserted here when a run is created'">
+            <div v-if="data.call_test_id" class="call-step" :title="t('tests.callsHint', { test: data.call_test_key || t('tests.calledTest') })">
               <i class="pi pi-directions" style="color: var(--p-primary-color)" />
               <span>
-                Calls
-                <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" class="key">{{ data.call_test_key || 'test' }}</RouterLink>
+                {{ t('tests.calls') }}
+                <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" class="key">{{ data.call_test_key || t('tests.callTestFallback') }}</RouterLink>
                 <template v-if="data.call_test_title"> – {{ data.call_test_title }}</template>
               </span>
             </div>
-            <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Do…" />
+            <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.actionPlaceholder')" />
           </template>
         </Column>
-        <Column header="Expected result" style="width: 32%">
+        <Column :header="t('tests.expectedResult')" style="width: 32%">
           <template #body="{ data }">
-            <span v-if="data.call_test_id" class="small muted">Expected results of the called test</span>
-            <Textarea v-else v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Then…" />
+            <span v-if="data.call_test_id" class="small muted">{{ t('tests.calledExpected') }}</span>
+            <Textarea v-else v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.expectedPlaceholder')" />
           </template>
         </Column>
-        <Column header="Data" style="width: 22%">
+        <Column :header="t('tests.data')" style="width: 22%">
           <template #body="{ data }"><Textarea v-if="!data.call_test_id" v-model="data.data" rows="1" auto-resize class="w-full mono" :disabled="!canWrite" /></template>
         </Column>
         <Column v-if="canWrite" style="width: 7.5rem">
           <template #body="{ index }">
             <div class="row nowrap" style="gap: 0">
-              <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="index === 0" aria-label="Up" @click="moveStep(index, -1)" />
-              <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="index === form.steps.length - 1" aria-label="Down" @click="moveStep(index, 1)" />
-              <Button icon="pi pi-plus" text rounded size="small" severity="secondary" aria-label="Insert below" @click="addStep(index)" />
-              <Button icon="pi pi-trash" text rounded size="small" severity="danger" aria-label="Remove" @click="removeStep(index)" />
+              <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="index === 0" :aria-label="t('common.moveUp')" v-tooltip="t('common.moveUp')" @click="moveStep(index, -1)" />
+              <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="index === form.steps.length - 1" :aria-label="t('common.moveDown')" v-tooltip="t('common.moveDown')" @click="moveStep(index, 1)" />
+              <Button icon="pi pi-plus" text rounded size="small" severity="secondary" :aria-label="t('common.insertBelow')" v-tooltip="t('common.insertBelow')" @click="addStep(index)" />
+              <Button icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('common.remove')" v-tooltip="t('common.remove')" @click="removeStep(index)" />
             </div>
           </template>
         </Column>
       </DataTable>
-      <div v-else class="muted small">No steps. {{ form.execution_type === 'manual' ? 'Manual tests are executed step by step.' : 'Optional for automated tests.' }}</div>
+      <div v-else class="muted small">{{ form.execution_type === 'manual' ? t('tests.noStepsManual') : t('tests.noStepsAutomated') }}</div>
       <div v-if="calledBy.length" class="row small" style="margin-top: 8px; gap: 6px">
-        <i class="pi pi-share-alt muted" /><span class="muted">Used by:</span>
+        <i class="pi pi-share-alt muted" /><span class="muted">{{ t('tests.usedBy') }}</span>
         <span v-for="(c, i) in calledBy" :key="c.id">
           <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: c.id } }" class="key" :title="c.title">{{ c.key }}</RouterLink>
           <span class="muted">&nbsp;{{ c.title }}</span>{{ i < calledBy.length - 1 ? ',' : '' }}
@@ -427,31 +433,31 @@ const scriptPlaceholder = computed(() => {
     </div>
 
     <div class="field">
-      <label>Overall expected result</label>
+      <label>{{ t('tests.overallExpected') }}</label>
       <Textarea v-model="form.expected_result" rows="2" auto-resize :disabled="!canWrite" />
     </div>
 
     <div v-if="item">
       <div class="section-title">
-        <i class="pi pi-link" /> Linked requirements ({{ links.length }})
+        <i class="pi pi-link" /> {{ t('tests.linkedRequirements', { count: links.length }) }}
         <span class="grow" />
-        <Button v-if="canLink" size="small" label="Link requirements" icon="pi pi-plus" text @click="pickReqs = true" />
+        <Button v-if="canLink" size="small" :label="t('tests.linkRequirements')" icon="pi pi-plus" text @click="pickReqs = true" />
       </div>
-      <div v-if="!links.length" class="muted small">This test does not verify any requirement yet.</div>
+      <div v-if="!links.length" class="muted small">{{ t('tests.verifiesNothing') }}</div>
       <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
         <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" class="key">{{ l.requirement_key || reqById.get(l.requirement_id)?.key }}</RouterLink>
         <span class="grow ellipsis">{{ reqById.get(l.requirement_id)?.title }}</span>
         <StatusTag :value="reqById.get(l.requirement_id)?.obligation" kind="obligation" empty="" />
-        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" aria-label="Unlink" @click="removeLink(l)" />
+        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlink')" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
     </div>
 
     <div class="row" style="justify-content: flex-end; position: sticky; bottom: -1px; background: var(--p-drawer-background, var(--qtf-card)); padding: 10px 0; border-top: 1px solid var(--qtf-border)">
-      <Button v-if="item && canWrite" label="Delete" icon="pi pi-trash" severity="danger" text @click="remove" />
-      <Button v-if="item && canWrite" label="Copy" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
+      <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
+      <Button v-if="item && canWrite" :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
       <span v-else style="margin-right: auto" />
-      <Button label="Close" severity="secondary" text @click="emit('close')" />
-      <Button v-if="canWrite" type="submit" :label="isNew ? 'Create' : 'Save'" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
+      <Button :label="t('common.close')" severity="secondary" text @click="emit('close')" />
+      <Button v-if="canWrite" type="submit" :label="isNew ? t('common.create') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
     </div>
     <ItemPickerDialog
       v-if="item"
@@ -459,8 +465,8 @@ const scriptPlaceholder = computed(() => {
       kind="requirement"
       :project-id="projectId"
       :exclude="links.map((l) => l.requirement_id)"
-      header="Link requirements"
-      confirm-label="Link"
+      :header="t('tests.linkRequirements')"
+      :confirm-label="t('common.link')"
       @pick="addLinks"
     />
     <ItemPickerDialog
@@ -468,8 +474,8 @@ const scriptPlaceholder = computed(() => {
       kind="test"
       :project-id="projectId"
       :exclude="item ? [item.id] : []"
-      header="Insert call to test"
-      confirm-label="Insert call"
+      :header="t('tests.insertCallHeader')"
+      :confirm-label="t('tests.insertCallConfirm')"
       @pick="(p) => insertCalls(p as TestCase[])"
     />
   </form>

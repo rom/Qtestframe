@@ -67,11 +67,23 @@ export function defectLinks(list: readonly string[] | null | undefined, template
   return normalizeDefects(list).map((value) => ({ value, label: defectLabel(value), url: defectUrl(value, template) }))
 }
 
-/** Whether a template is usable: empty, or an http(s) URL (ideally containing {id}). */
-export function validateTemplate(template: string | null | undefined): string | null {
+/** Problem with a template: `not_url` (invalid), `no_placeholder` (works, ID appended) or null. */
+export function templateProblem(template: string | null | undefined): 'not_url' | 'no_placeholder' | null {
   const t = (template ?? '').trim()
   if (!t) return null
-  if (!isUrl(t.replace(/\{id\}/g, 'x'))) return 'The template must be an http(s) URL, e.g. https://jira.example.com/browse/{id}'
-  if (!t.includes('{id}')) return 'Without {id} the defect ID is appended to the URL.'
+  if (!isUrl(t.replace(/\{id\}/g, 'x'))) return 'not_url'
+  if (!t.includes('{id}')) return 'no_placeholder'
   return null
+}
+
+/** Whether a template is usable: empty, or an http(s) URL (ideally containing {id}); English message. */
+export function validateTemplate(template: string | null | undefined): string | null {
+  switch (templateProblem(template)) {
+    case 'not_url':
+      return 'The template must be an http(s) URL, e.g. https://jira.example.com/browse/{id}'
+    case 'no_placeholder':
+      return 'Without {id} the defect ID is appended to the URL.'
+    default:
+      return null
+  }
 }

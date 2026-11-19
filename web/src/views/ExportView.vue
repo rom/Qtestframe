@@ -9,26 +9,28 @@ import { P } from '@/lib/permissions'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
 const notify = useNotify()
+const { t } = useI18n()
 
-const formats = [
-  { value: 'xlsx', label: 'Excel', icon: 'pi pi-file-excel', desc: 'One sheet per aspect' },
-  { value: 'csv', label: 'CSV', icon: 'pi pi-file', desc: 'ZIP of CSV files when several aspects' },
-  { value: 'pdf', label: 'PDF', icon: 'pi pi-file-pdf', desc: 'Printable report' },
-  { value: 'docx', label: 'Word', icon: 'pi pi-file-word', desc: 'Editable specification document' },
-]
-const aspects = [
-  { value: 'requirements', label: 'Requirements' },
-  { value: 'criteria', label: 'Evaluation criteria' },
-  { value: 'tests', label: 'Tests (with steps)' },
-  { value: 'runs', label: 'Runs & executions' },
-  { value: 'traceability', label: 'Traceability matrix' },
-]
+const formats = computed(() => [
+  { value: 'xlsx', label: 'Excel', icon: 'pi pi-file-excel', desc: t('export.formatXlsx') },
+  { value: 'csv', label: 'CSV', icon: 'pi pi-file', desc: t('export.formatCsv') },
+  { value: 'pdf', label: 'PDF', icon: 'pi pi-file-pdf', desc: t('export.formatPdf') },
+  { value: 'docx', label: 'Word', icon: 'pi pi-file-word', desc: t('export.formatDocx') },
+])
+const aspects = computed(() => [
+  { value: 'requirements', label: t('export.aspectRequirements') },
+  { value: 'criteria', label: t('export.aspectCriteria') },
+  { value: 'tests', label: t('export.aspectTests') },
+  { value: 'runs', label: t('export.aspectRuns') },
+  { value: 'traceability', label: t('export.aspectTraceability') },
+])
 const format = ref('xlsx')
-const selected = ref<string[]>(aspects.map((a) => a.value))
+const selected = ref<string[]>(aspects.value.map((a) => a.value))
 const q = ref('')
 const busy = ref(false)
 const error = ref<unknown>(null)
@@ -40,13 +42,13 @@ async function download() {
   try {
     const name = await api.download(
       `/projects/${proj.pid}/export`,
-      { format: format.value, aspects: selected.value.length === aspects.length ? undefined : selected.value, q: q.value.trim() },
+      { format: format.value, aspects: selected.value.length === aspects.value.length ? undefined : selected.value, q: q.value.trim() },
       `${proj.project?.key ?? 'export'}.${willZip.value ? 'zip' : format.value}`,
     )
-    notify.ok('Export downloaded', name)
+    notify.ok(t('export.downloaded'), name)
   } catch (e) {
     error.value = e
-    notify.fail(e, 'Export failed')
+    notify.fail(e, t('export.failed'))
   } finally {
     busy.value = false
   }
@@ -56,13 +58,13 @@ async function download() {
 <template>
   <div class="page-header">
     <div>
-      <h1>Export</h1>
-      <div class="sub">Download project data for reviews, audits or offline work.</div>
+      <h1>{{ t('export.title') }}</h1>
+      <div class="sub">{{ t('export.subtitle') }}</div>
     </div>
   </div>
-  <Message v-if="!auth.can(P.export)" severity="warn" :closable="false">You do not have the export permission.</Message>
+  <Message v-if="!auth.can(P.export)" severity="warn" :closable="false">{{ t('export.noPermission') }}</Message>
   <div v-else class="card" style="max-width: 820px">
-    <div class="section-title" style="margin-top: 0">Format</div>
+    <div class="section-title" style="margin-top: 0">{{ t('export.format') }}</div>
     <div class="charts" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px">
       <button
         v-for="f in formats"
@@ -83,19 +85,19 @@ async function download() {
         <div class="small muted" style="margin-top: 4px">{{ f.desc }}</div>
       </button>
     </div>
-    <div class="section-title">Aspects</div>
+    <div class="section-title">{{ t('export.aspects') }}</div>
     <div class="row" style="gap: 18px">
       <span v-for="a in aspects" :key="a.value" class="row nowrap">
         <Checkbox v-model="selected" :input-id="'a-' + a.value" :value="a.value" />
         <label :for="'a-' + a.value">{{ a.label }}</label>
       </span>
     </div>
-    <div class="section-title">Filter (optional, applies to requirements and tests)</div>
-    <QueryInput v-model="q" scope="requirement" :error="error" placeholder="e.g. status:approved OR obligation:must" @submit="download" />
+    <div class="section-title">{{ t('export.filter') }}</div>
+    <QueryInput v-model="q" scope="requirement" :error="error" :placeholder="t('export.filterPlaceholder', { example: 'status:approved OR obligation:must' })" @submit="download" />
     <div class="row" style="margin-top: 18px">
-      <span v-if="willZip" class="small muted"><i class="pi pi-info-circle" /> Several CSV aspects are delivered as a ZIP archive.</span>
+      <span v-if="willZip" class="small muted"><i class="pi pi-info-circle" /> {{ t('export.zipHint') }}</span>
       <span class="grow" />
-      <Button label="Download" icon="pi pi-download" :loading="busy" :disabled="!selected.length" @click="download" />
+      <Button :label="t('export.download')" icon="pi pi-download" :loading="busy" :disabled="!selected.length" @click="download" />
     </div>
   </div>
 </template>

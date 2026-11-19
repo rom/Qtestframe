@@ -37,7 +37,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 
 ## Quick start
 
-Works on Linux and macOS. You need Go (the version in `go.mod`, currently 1.26), Node.js ≥ 20 and `make`.
+Works on Linux and macOS. You need Go 1.26 (the `toolchain` line in `go.mod` pins 1.26.11; `go` downloads it automatically), Node.js ≥ 20 and `make`.
 
 **1. Build** the web client and the server binary (`bin/qtestframe`):
 

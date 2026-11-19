@@ -21,7 +21,10 @@ import Tab from 'primevue/tab'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { debounce, moveItem } from '@/lib/collections'
 import { segments } from '@/lib/highlight'
-import { formatDateTime, humanize, options } from '@/lib/format'
+import { formatDateTime } from '@/lib/format'
+import { useI18n } from 'vue-i18n'
+import { enumOptions, obligationHint, obligationKeyword } from '@/i18n/labels'
+import { issueMessage } from '@/i18n/analysis'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Analysis, Category, EvaluationCriterion, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
@@ -41,6 +44,7 @@ const emit = defineEmits<{ saved: [item: Requirement]; deleted: [id: string]; cl
 const meta = useMetaStore()
 const notify = useNotify()
 const prefs = usePrefsStore()
+const { t } = useI18n()
 
 interface CriterionRow {
   id?: string
@@ -102,10 +106,14 @@ async function onRestored(r: unknown) {
   if (r && typeof r === 'object') emit('saved', r as Requirement)
 }
 const folderOptions = computed(() => [
-  { id: null as string | null, label: '— top level —' },
+  { id: null as string | null, label: t('common.topLevelOption') },
   ...flatten(buildTree(props.folders)).map((f) => ({ id: f.id as string | null, label: '  '.repeat(f.depth) + f.label })),
 ])
-const obligationOptions = computed(() => [{ label: 'Auto-detect from text', value: '' }, ...options(meta.meta.obligations)])
+const obligationOptions = computed(() => [{ label: t('requirements.autoDetect'), value: '' }, ...enumOptions('obligation', meta.meta.obligations)])
+const statusOptions = computed(() => enumOptions('status', meta.meta.requirement_statuses))
+const typeOptions = computed(() => enumOptions('requirementType', meta.meta.requirement_types))
+const priorityOptions = computed(() => enumOptions('priority', meta.meta.priorities))
+const methodOptions = computed(() => enumOptions('evaluationMethod', meta.meta.evaluation_methods))
 
 async function load() {
   error.value = ''
@@ -156,7 +164,7 @@ async function loadLinks() {
       tests.value = asItems(await api.get<{ items: TestCase[] }>(`/projects/${props.projectId}/tests`))
     }
   } catch (e) {
-    notify.fail(e, 'Could not load links')
+    notify.fail(e, t('editor.loadLinksFailed'))
   }
 }
 
@@ -200,8 +208,8 @@ const highlighted = computed(() => {
   return segments(
     text,
     [
-      ...(a.keywords ?? []).map((k) => ({ offset: k.offset, length: k.length, kind: strength(k.level), title: humanize(k.level) })),
-      ...(a.issues ?? []).map((i) => ({ offset: i.offset, length: i.length, kind: 'kw-issue', title: i.message })),
+      ...(a.keywords ?? []).map((k) => ({ offset: k.offset, length: k.length, kind: strength(k.level), title: [obligationKeyword(k.level), obligationHint(k.level)].filter(Boolean).join(' – ') })),
+      ...(a.issues ?? []).map((i) => ({ offset: i.offset, length: i.length, kind: 'kw-issue', title: issueText(i) })),
     ],
   )
 })
@@ -209,9 +217,13 @@ const issues = computed(() => {
   const text = form.value.description
   return (analysis.value?.issues ?? []).map((i) => {
     const seg = segments(text, [{ offset: i.offset, length: i.length }]).find((s) => s.mark)
-    return { ...i, fragment: seg?.text ?? '' }
+    return { ...i, fragment: seg?.text ?? '', text: issueText(i) }
   })
 })
+/** Issue message in the active language (known rules), else the API's English text. */
+function issueText(i: { rule: string; message: string; offset: number; length: number }): string {
+  return issueMessage(i, form.value.description ?? '', (key, params) => t(key, params))
+}
 const detectedDiffers = computed(() => !!analysis.value?.obligation && analysis.value.obligation !== form.value.obligation)
 function applyDetected() {
   if (analysis.value?.obligation) form.value.obligation = analysis.value.obligation
@@ -249,8 +261,8 @@ async function save() {
       : await api.patch<Requirement>(`/requirements/${props.itemId}`, body)
     const linked = isNew.value ? (saved as Requirement & { linked_test?: TestCase })?.linked_test : undefined
     notify.ok(
-      isNew.value ? 'Requirement created' : 'Requirement saved',
-      linked ? `${saved?.key} with linked test ${linked.key}` : saved?.key,
+      isNew.value ? t('requirements.created') : t('requirements.saved'),
+      linked ? t('requirements.withLinkedTest', { key: saved?.key ?? '', test: linked.key }) : saved?.key,
     )
     emit('saved', saved)
     if (!isNew.value) await load() // refresh version and counts
@@ -264,10 +276,10 @@ async function save() {
 function remove() {
   if (!item.value) return
   const it = item.value
-  notify.confirmDanger(`Delete requirement ${it.key}?`, async () => {
+  notify.confirmDanger(t('requirements.confirmDelete', { key: it.key }), async () => {
     try {
       await api.del(`/requirements/${it.id}`)
-      notify.ok('Requirement deleted')
+      notify.ok(t('requirements.deleted'))
       emit('deleted', it.id)
     } catch (e) {
       notify.fail(e)
@@ -288,9 +300,9 @@ async function addLinks(picked: { id: string }[]) {
     }
     tests.value = []
     await loadLinks()
-    notify.ok(`${picked.length} link(s) added`)
+    notify.ok(t('editor.linksAdded', picked.length))
   } catch (e) {
-    notify.fail(e, 'Could not add link')
+    notify.fail(e, t('editor.addLinkFailed'))
   }
 }
 async function removeLink(l: TraceLink) {
@@ -302,13 +314,13 @@ async function removeLink(l: TraceLink) {
   }
 }
 const criterionOptions = computed(() => [
-  { label: 'Whole requirement', value: null as string | null },
+  { label: t('requirements.wholeRequirement'), value: null as string | null },
   ...(item.value?.criteria ?? []).map((c, i) => ({ label: `#${i + 1} ${c.description}`.slice(0, 60), value: c.id as string | null })),
 ])
 function criterionLabel(id: string | null) {
   if (!id) return ''
   const i = (item.value?.criteria ?? []).findIndex((c) => c.id === id)
-  return i >= 0 ? `criterion #${i + 1}` : 'criterion'
+  return i >= 0 ? t('requirements.criterionNumber', { n: i + 1 }) : t('requirements.criterionGeneric')
 }
 </script>
 
@@ -317,10 +329,10 @@ function criterionLabel(id: string | null) {
   <template v-else>
   <Tabs v-if="item" v-model:value="tab" class="editor-tabs">
     <TabList>
-      <Tab value="details"><i class="pi pi-file-edit" /> Details</Tab>
-      <Tab value="relations"><i class="pi pi-sitemap" /> Relations <span class="count">{{ relationCount }}</span></Tab>
-      <Tab value="comments"><i class="pi pi-comments" /> Comments <span class="count">{{ commentCount }}</span></Tab>
-      <Tab value="history"><i class="pi pi-history" /> History</Tab>
+      <Tab value="details"><i class="pi pi-file-edit" /> {{ t('common.details') }}</Tab>
+      <Tab value="relations"><i class="pi pi-sitemap" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="history"><i class="pi pi-history" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <RelationsPanel v-if="item && tab === 'relations'" :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" />
@@ -337,33 +349,33 @@ function criterionLabel(id: string | null) {
   <form v-show="!item || tab === 'details'" class="grid" style="gap: 14px" @submit.prevent="save">
     <div class="row">
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
-      <Tag v-if="item" :value="'v' + item.version" severity="secondary" />
+      <Tag v-if="item" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
       <StatusTag v-if="item?.coverage" :value="item.coverage" kind="coverage" />
-      <span v-if="item" class="muted small">Updated {{ formatDateTime(item.updated_at) }}{{ item.created_by ? ' · created by ' + item.created_by : '' }}</span>
+      <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
     <div class="field">
-      <label>Title</label>
+      <label>{{ t('common.title') }}</label>
       <InputText v-model="form.title" :disabled="!canWrite" required autofocus />
     </div>
     <div class="field">
-      <label>Description</label>
-      <Textarea v-model="form.description" rows="5" auto-resize :disabled="!canWrite" placeholder="The system SHALL …" />
+      <label>{{ t('common.description') }}</label>
+      <Textarea v-model="form.description" rows="5" auto-resize :disabled="!canWrite" :placeholder="t('requirements.descriptionPlaceholder')" />
     </div>
 
     <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis">
       <div class="row" style="justify-content: space-between; margin-bottom: 8px">
         <span class="row">
           <i class="pi pi-sparkles" style="color: var(--p-primary-color)" />
-          <b class="small">Requirement language analysis</b>
+          <b class="small">{{ t('analysis.title') }}</b>
           <ProgressSpinner v-if="analyzing" style="width: 14px; height: 14px" stroke-width="6" />
         </span>
         <span v-if="analysis" class="row">
-          <span class="small muted">Detected</span>
+          <span class="small muted">{{ t('analysis.detected') }}</span>
           <StatusTag :value="analysis.obligation || 'describe'" kind="obligation" />
-          <Tag :value="'Score ' + analysis.score" :severity="scoreSeverity" />
-          <Button v-if="detectedDiffers && canWrite" size="small" label="Apply detected obligation" icon="pi pi-check" text @click="applyDetected" />
+          <Tag :value="t('analysis.score', { score: analysis.score })" :severity="scoreSeverity" />
+          <Button v-if="detectedDiffers && canWrite" size="small" :label="t('analysis.applyDetected')" icon="pi pi-check" text @click="applyDetected" />
         </span>
       </div>
       <div v-if="analysis" class="text">
@@ -373,113 +385,113 @@ function criterionLabel(id: string | null) {
         </template>
       </div>
       <div v-if="!analysis?.keywords?.length && analysis" class="small muted" style="margin-top: 6px">
-        No obligation keyword (MUST, SHALL, SHOULD, MAY …) found; the requirement reads as descriptive.
+        {{ t('analysis.noKeyword') }}
       </div>
       <ul v-if="issues.length" style="margin: 8px 0 0; padding-left: 18px">
         <li v-for="(i, n) in issues" :key="n" class="small">
           <i class="pi" :class="i.severity === 'error' ? 'pi-times-circle' : 'pi-exclamation-triangle'" :style="{ color: i.severity === 'error' ? 'var(--p-red-500)' : 'var(--p-amber-500)' }" />
-          <b v-if="i.fragment"> “{{ i.fragment }}”</b> {{ i.message }} <span class="muted">({{ i.rule }})</span>
+          <b v-if="i.fragment"> “{{ i.fragment }}”</b> {{ i.text }} <span class="muted">({{ i.rule }})</span>
         </li>
       </ul>
     </div>
 
     <div class="form-grid">
       <div class="field">
-        <label>Obligation</label>
+        <label>{{ t('requirements.obligation') }}</label>
         <Select v-model="form.obligation" :options="obligationOptions" option-label="label" option-value="value" :disabled="!canWrite">
           <template #value="{ value }">
             <StatusTag v-if="value" :value="value" kind="obligation" />
-            <span v-else class="muted">Auto-detect from text</span>
+            <span v-else class="muted">{{ t('requirements.autoDetect') }}</span>
           </template>
         </Select>
       </div>
       <div class="field">
-        <label>Status</label>
-        <Select v-model="form.status" :options="options(meta.meta.requirement_statuses)" option-label="label" option-value="value" :disabled="!canWrite" />
+        <label>{{ t('common.status') }}</label>
+        <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Type</label>
-        <Select v-model="form.type" :options="options(meta.meta.requirement_types)" option-label="label" option-value="value" :disabled="!canWrite" />
+        <label>{{ t('common.type') }}</label>
+        <Select v-model="form.type" :options="typeOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Priority</label>
-        <Select v-model="form.priority" :options="options(meta.meta.priorities)" option-label="label" option-value="value" :disabled="!canWrite" />
+        <label>{{ t('common.priority') }}</label>
+        <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Owner</label>
+        <label>{{ t('common.owner') }}</label>
         <InputText v-model="form.owner" :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Source</label>
-        <InputText v-model="form.source" :disabled="!canWrite" placeholder="e.g. Customer spec §4.2" />
+        <label>{{ t('common.source') }}</label>
+        <InputText v-model="form.source" :disabled="!canWrite" :placeholder="t('requirements.sourcePlaceholder')" />
       </div>
       <div class="field full">
-        <label>Rationale</label>
+        <label>{{ t('requirements.rationale') }}</label>
         <Textarea v-model="form.rationale" rows="2" auto-resize :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Folder</label>
+        <label>{{ t('common.folder') }}</label>
         <Select v-model="form.folder_id" :options="folderOptions" option-label="label" option-value="id" filter :disabled="!canWrite" />
       </div>
       <div class="field">
-        <label>Categories</label>
+        <label>{{ t('common.categories') }}</label>
         <CategorySelect v-model="form.category_ids" :categories="categories" :disabled="!canWrite" />
       </div>
       <div class="field full">
-        <label>Tags</label>
+        <label>{{ t('common.tags') }}</label>
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
       </div>
     </div>
 
     <div>
       <div class="section-title">
-        <i class="pi pi-verified" /> Evaluation criteria
+        <i class="pi pi-verified" /> {{ t('requirements.criteria') }}
         <span class="grow" />
-        <Button v-if="canWrite" size="small" label="Add criterion" icon="pi pi-plus" text @click="addCriterion" />
+        <Button v-if="canWrite" size="small" :label="t('requirements.addCriterion')" icon="pi pi-plus" text @click="addCriterion" />
       </div>
-      <div v-if="!form.criteria.length" class="muted small">No evaluation criteria. Add how fulfilment is judged (method + threshold).</div>
+      <div v-if="!form.criteria.length" class="muted small">{{ t('requirements.noCriteria') }}</div>
       <div v-for="(c, i) in form.criteria" :key="i" class="row nowrap" style="align-items: flex-start; margin-bottom: 8px">
         <span class="step-dot" style="background: var(--p-primary-color); margin-top: 8px">{{ i + 1 }}</span>
-        <div class="grow grid" style="gap: 6px; grid-template-columns: minmax(0, 1fr) 150px 160px">
-          <Textarea v-model="c.description" rows="1" auto-resize placeholder="Criterion" :disabled="!canWrite" />
-          <Select v-model="c.method" :options="options(meta.meta.evaluation_methods)" option-label="label" option-value="value" :disabled="!canWrite" />
-          <InputText v-model="c.threshold" placeholder="Threshold, e.g. ≤ 200 ms" :disabled="!canWrite" />
+        <div class="grow grid" style="gap: 6px; grid-template-columns: minmax(0, 1fr) 150px 170px">
+          <Textarea v-model="c.description" rows="1" auto-resize :placeholder="t('requirements.criterion')" :aria-label="t('requirements.criterion')" :disabled="!canWrite" />
+          <Select v-model="c.method" :options="methodOptions" option-label="label" option-value="value" :disabled="!canWrite" />
+          <InputText v-model="c.threshold" :placeholder="t('requirements.thresholdPlaceholder')" :disabled="!canWrite" />
         </div>
         <div v-if="canWrite" class="row nowrap">
-          <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="i === 0" aria-label="Move up" @click="moveCriterion(i, -1)" />
-          <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="i === form.criteria.length - 1" aria-label="Move down" @click="moveCriterion(i, 1)" />
-          <Button icon="pi pi-trash" text rounded size="small" severity="danger" aria-label="Remove" @click="removeCriterion(i)" />
+          <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="i === 0" :aria-label="t('common.moveUp')" @click="moveCriterion(i, -1)" />
+          <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="i === form.criteria.length - 1" :aria-label="t('common.moveDown')" @click="moveCriterion(i, 1)" />
+          <Button icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('common.remove')" @click="removeCriterion(i)" />
         </div>
       </div>
     </div>
 
     <div v-if="item">
       <div class="section-title">
-        <i class="pi pi-link" /> Linked tests ({{ links.length }})
+        <i class="pi pi-link" /> {{ t('requirements.linkedTests', { count: links.length }) }}
         <span class="grow" />
         <template v-if="canLink">
           <Select v-if="(item.criteria ?? []).length" v-model="linkCriterion" :options="criterionOptions" option-label="label" option-value="value" size="small" style="max-width: 220px" />
-          <Button size="small" label="Link tests" icon="pi pi-plus" text @click="pickTests = true" />
+          <Button size="small" :label="t('requirements.linkTests')" icon="pi pi-plus" text @click="pickTests = true" />
         </template>
       </div>
-      <div v-if="!links.length" class="muted small">Not covered by any test yet.</div>
+      <div v-if="!links.length" class="muted small">{{ t('requirements.notCovered') }}</div>
       <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
         <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: l.test_case_id } }" class="key">{{ l.test_case_key || testById.get(l.test_case_id)?.key }}</RouterLink>
         <span class="grow ellipsis">{{ testById.get(l.test_case_id)?.title }}</span>
         <span v-if="l.criterion_id" class="small muted">{{ criterionLabel(l.criterion_id) }}</span>
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />
-        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" aria-label="Unlink" @click="removeLink(l)" />
+        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlink')" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
     </div>
 
     <div class="row" style="justify-content: flex-end; position: sticky; bottom: -1px; background: var(--p-drawer-background, var(--qtf-card)); padding: 10px 0; border-top: 1px solid var(--qtf-border)">
-      <Button v-if="item && canWrite" label="Delete" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove" />
-      <label v-if="isNew && canWrite && canLink" class="row nowrap small" style="gap: 6px" title="Creates a draft manual test (one step per evaluation criterion) in the mirrored test folder and links it">
+      <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove" />
+      <label v-if="isNew && canWrite && canLink" class="row nowrap small" style="gap: 6px" :title="t('editor.alsoCreateTestHint')">
         <Checkbox v-model="createTest" binary input-id="create-test" />
-        Also create linked test
+        {{ t('editor.alsoCreateTest') }}
       </label>
-      <Button label="Close" severity="secondary" text @click="emit('close')" />
-      <Button v-if="canWrite" type="submit" :label="isNew ? 'Create' : 'Save'" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
+      <Button :label="t('common.close')" severity="secondary" text @click="emit('close')" />
+      <Button v-if="canWrite" type="submit" :label="isNew ? t('common.create') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
     </div>
     <ItemPickerDialog
       v-if="item"
@@ -487,8 +499,8 @@ function criterionLabel(id: string | null) {
       kind="test"
       :project-id="projectId"
       :exclude="links.map((l) => l.test_case_id)"
-      header="Link tests"
-      confirm-label="Link"
+      :header="t('requirements.linkTests')"
+      :confirm-label="t('common.link')"
       @pick="addLinks"
     />
   </form>

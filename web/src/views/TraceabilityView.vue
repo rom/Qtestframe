@@ -11,16 +11,20 @@ import StatusTag from '@/components/StatusTag.vue'
 import { api } from '@/lib/api'
 import { linkKey } from '@/lib/collections'
 import { COVERAGE_COLORS } from '@/lib/colors'
-import { options, percent, pluralize } from '@/lib/format'
+import { percent } from '@/lib/format'
 import { P } from '@/lib/permissions'
 import type { TraceLink, Traceability } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { useI18n } from 'vue-i18n'
+import { enumLabel, enumOptions } from '@/i18n/labels'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
 const notify = useNotify()
+const { t } = useI18n()
+const coverageOptions = computed(() => enumOptions('coverage', ['none', 'not_run', 'passed', 'failed', 'partial']))
 
 const data = ref<Traceability | null>(null)
 const loading = ref(false)
@@ -36,7 +40,7 @@ async function load() {
   try {
     data.value = await api.get<Traceability>(`/projects/${proj.pid}/traceability`)
   } catch (e) {
-    notify.fail(e, 'Could not load traceability')
+    notify.fail(e, t('traceability.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -84,7 +88,7 @@ async function toggle(reqId: string, testId: string) {
       if (!l?.id) await load()
     }
   } catch (e) {
-    notify.fail(e, 'Could not change link')
+    notify.fail(e, t('traceability.linkFailed'))
   } finally {
     busy.value = null
   }
@@ -94,47 +98,47 @@ async function toggle(reqId: string, testId: string) {
 <template>
   <div class="page-header">
     <div>
-      <h1>Traceability matrix</h1>
+      <h1>{{ t('traceability.title') }}</h1>
       <div class="sub" v-if="data">
-        {{ coveredCount }}/{{ data.requirements.length }} requirements linked ({{ percent(coveredCount, data.requirements.length) }}%) ·
-        {{ pluralize(data.links.length, 'link') }}
-        <template v-if="canEdit"> · click a cell to toggle a link</template>
+        {{ t('traceability.linked', { covered: coveredCount, total: data.requirements.length, pct: percent(coveredCount, data.requirements.length) }) }} ·
+        {{ t('counts.links', data.links.length) }}
+        <template v-if="canEdit">{{ t('traceability.toggleHint') }}</template>
       </div>
     </div>
     <div class="actions">
-      <Button icon="pi pi-refresh" text rounded severity="secondary" aria-label="Refresh" @click="load" />
+      <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
     </div>
   </div>
   <div class="filterbar">
     <IconField>
       <InputIcon class="pi pi-filter" />
-      <InputText v-model="reqFilter" placeholder="Filter requirements" />
+      <InputText v-model="reqFilter" :placeholder="t('traceability.filterRequirements')" :aria-label="t('traceability.filterRequirements')" />
     </IconField>
     <IconField>
       <InputIcon class="pi pi-filter" />
-      <InputText v-model="testFilter" placeholder="Filter tests" />
+      <InputText v-model="testFilter" :placeholder="t('traceability.filterTests')" :aria-label="t('traceability.filterTests')" />
     </IconField>
-    <MultiSelect v-model="coverage" :options="options(['none', 'not_run', 'passed', 'failed', 'partial'])" option-label="label" option-value="value" placeholder="Coverage" style="min-width: 150px" show-clear />
-    <span class="row small"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">Only linked tests</label></span>
+    <MultiSelect v-model="coverage" :options="coverageOptions" option-label="label" option-value="value" :placeholder="t('traceability.coverage')" style="min-width: 150px" show-clear />
+    <span class="row small"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">{{ t('traceability.onlyLinked') }}</label></span>
     <span class="row small muted" style="margin-left: auto">
-      <span v-for="(c, k) in COVERAGE_COLORS" :key="k" class="row nowrap" style="gap: 4px"><span :style="{ width: '10px', height: '10px', borderRadius: '3px', background: c }" />{{ k }}</span>
+      <span v-for="(c, k) in COVERAGE_COLORS" :key="k" class="row nowrap" style="gap: 4px"><span :style="{ width: '10px', height: '10px', borderRadius: '3px', background: c }" />{{ enumLabel('coverage', String(k)) }}</span>
     </span>
   </div>
   <div v-if="loading && !data" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
   <div v-else-if="data && (!data.requirements.length || !data.tests.length)" class="card empty">
-    <i class="pi pi-th-large" />The matrix needs at least one requirement and one test.
+    <i class="pi pi-th-large" />{{ t('traceability.needsData') }}
   </div>
   <div v-else-if="data" class="matrix-wrap">
     <table class="matrix">
       <thead>
         <tr>
           <th class="sticky-col req-cell" style="text-align: left; vertical-align: bottom">
-            <span class="small muted">{{ rows.length }} requirements × {{ cols.length }} tests</span>
+            <span class="small muted">{{ t('traceability.size', { rows: rows.length, cols: cols.length }) }}</span>
           </th>
-          <th style="vertical-align: bottom; padding: 4px 8px" class="small">Coverage</th>
-          <th v-for="t in cols" :key="t.id" class="vert" :title="`${t.key} — ${t.title}${t.last_result ? ' (' + t.last_result + ')' : ''}`">
+          <th style="vertical-align: bottom; padding: 4px 8px" class="small">{{ t('traceability.coverage') }}</th>
+          <th v-for="tc in cols" :key="tc.id" class="vert" :title="`${tc.key} — ${tc.title}${tc.last_result ? ' (' + enumLabel('result', tc.last_result) + ')' : ''}`">
             <div>
-              <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: t.id } }" style="color: inherit">{{ t.key }}</RouterLink>
+              <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: tc.id } }" style="color: inherit">{{ tc.key }}</RouterLink>
             </div>
           </th>
         </tr>
@@ -150,15 +154,15 @@ async function toggle(reqId: string, testId: string) {
           </td>
           <td style="padding: 2px 8px; text-align: center"><StatusTag :value="r.coverage || 'none'" kind="coverage" /></td>
           <td
-            v-for="t in cols"
-            :key="t.id"
+            v-for="tc in cols"
+            :key="tc.id"
             class="cell"
-            :class="{ linked: linkMap.has(linkKey(r.id, t.id)), editable: canEdit }"
-            :title="`${r.key} ↔ ${t.key}`"
-            @click="toggle(r.id, t.id)"
+            :class="{ linked: linkMap.has(linkKey(r.id, tc.id)), editable: canEdit }"
+            :title="`${r.key} ↔ ${tc.key}`"
+            @click="toggle(r.id, tc.id)"
           >
-            <i v-if="busy === linkKey(r.id, t.id)" class="pi pi-spin pi-spinner" style="font-size: 11px" />
-            <i v-else-if="linkMap.has(linkKey(r.id, t.id))" class="pi pi-check" style="font-size: 11px; font-weight: 700" />
+            <i v-if="busy === linkKey(r.id, tc.id)" class="pi pi-spin pi-spinner" style="font-size: 11px" />
+            <i v-else-if="linkMap.has(linkKey(r.id, tc.id))" class="pi pi-check" style="font-size: 11px; font-weight: 700" />
           </td>
         </tr>
       </tbody>

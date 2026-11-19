@@ -5,10 +5,12 @@ import Tree from 'primevue/tree'
 import Button from 'primevue/button'
 import { allKeys, buildTree, folderPath } from '@/lib/tree'
 import type { Folder } from '@/lib/types'
+import { useI18n } from 'vue-i18n'
 
 const visible = defineModel<boolean>('visible', { default: false })
 const props = defineProps<{ folders: Folder[]; header?: string; allowRoot?: boolean }>()
 const emit = defineEmits<{ pick: [folderId: string | null] }>()
+const { t } = useI18n()
 
 const nodes = computed(() => buildTree(props.folders))
 const expanded = ref<Record<string, boolean>>({})
@@ -28,9 +30,9 @@ function confirm() {
 </script>
 
 <template>
-  <Dialog v-model:visible="visible" :header="header ?? 'Choose folder'" modal style="width: min(460px, 95vw)">
+  <Dialog v-model:visible="visible" :header="header ?? t('folders.chooseFolder')" modal style="width: min(460px, 95vw)">
     <div v-if="allowRoot !== false" class="tree-root" :class="{ active: choice === null }" @click="choice = null">
-      <i class="pi pi-inbox" /> Top level (no folder)
+      <i class="pi pi-inbox" /> {{ t('folders.topLevelNoFolder') }}
     </div>
     <Tree
       v-model:expanded-keys="expanded"
@@ -41,11 +43,11 @@ function confirm() {
       @node-select="(n) => (choice = String(n.key))"
     />
     <div class="small muted" style="margin-top: 8px">
-      Target: <b>{{ choice === undefined ? '—' : choice === null ? 'Top level' : folderPath(folders, choice) }}</b>
+      {{ t('folders.target') }} <b>{{ choice === undefined ? '—' : choice === null ? t('common.topLevel') : folderPath(folders, choice) }}</b>
     </div>
     <template #footer>
-      <Button label="Cancel" text severity="secondary" @click="visible = false" />
-      <Button label="Select" icon="pi pi-check" :disabled="choice === undefined" @click="confirm" />
+      <Button :label="t('common.cancel')" text severity="secondary" @click="visible = false" />
+      <Button :label="t('folders.select')" icon="pi pi-check" :disabled="choice === undefined" @click="confirm" />
     </template>
   </Dialog>
 </template>

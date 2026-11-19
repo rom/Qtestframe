@@ -111,7 +111,8 @@ type User struct {
 // Preferences are per-user settings edited on the profile page. Empty
 // values mean "use the default".
 type Preferences struct {
-	Theme            string `json:"theme,omitempty"`      // light | dark | system
+	Theme            string `json:"theme,omitempty"`      // see Themes
+	Language         string `json:"language,omitempty"`   // en | sv; "" = browser
 	StartPage        string `json:"start_page,omitempty"` // projects | last_project | default_project | search
 	DefaultProject   string `json:"default_project_id,omitempty"`
 	DefaultTenant    string `json:"default_tenant_id,omitempty"` // tenant selected at login
@@ -125,7 +126,11 @@ type Preferences struct {
 
 // Preference value sets.
 var (
-	Themes      = []string{"light", "dark", "system"}
+	// Themes: light/dark/system plus decorative colour themes.
+	Themes = []string{"light", "dark", "system", "spring", "autumn", "desert", "camouflage",
+		"city_camouflage", "navy", "green_console", "crazy"}
+	// Languages of the web client ("" = browser language).
+	Languages   = []string{"en", "sv"}
 	StartPages  = []string{"projects", "last_project", "default_project", "search"}
 	PageSizes   = []int{10, 25, 50, 100}
 	DateFormats = []string{"locale", "iso", "relative"}

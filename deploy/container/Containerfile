@@ -12,7 +12,7 @@
 # file system; only /var/lib/qtestframe (volume) and /tmp (tmpfs) need to be
 # writable.
 
-ARG GO_VERSION=1.26
+ARG GO_VERSION=1.26.11
 ARG NODE_VERSION=22
 
 ############################
