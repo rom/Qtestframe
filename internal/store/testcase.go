@@ -27,6 +27,7 @@ func scanTest(r interface{ Scan(...any) error }) (*model.TestCase, error) {
 
 // ValidateTest normalises and checks test case fields.
 func ValidateTest(t *model.TestCase) error {
+	t.Tags = cleanTags(t.Tags)
 	t.Title = strings.TrimSpace(t.Title)
 	if t.Title == "" {
 		return Invalidf("test title is required")

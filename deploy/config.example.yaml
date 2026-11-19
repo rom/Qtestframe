@@ -1,0 +1,217 @@
+# /etc/qtestframe/config.yaml — Qtestframe server configuration (example)
+#
+# Install as root:root or root:qtestframe with mode 0640. The service only
+# needs read access. Secrets should NOT be written inline: use the *_file
+# variants and point them at files under /etc/qtestframe/secrets/ (0640
+# root:qtestframe) or at systemd credentials
+# (/run/credentials/qtestframe.service/<name>, see LoadCredential= in the unit).
+#
+# Environment overrides (take precedence over this file):
+#   QTF_CONFIG            path of this file (default /etc/qtestframe/config.yaml)
+#   QTF_DATABASE_DRIVER   database.driver
+#   QTF_DATABASE_DSN      database.dsn
+#   QTF_SERVER_LISTEN     server.listen
+#   QTF_LOG_LEVEL         logging.level
+#   QTF_LOG_FORMAT        logging.format
+#   QTF_SERVER_BASE_URL   server.base_url
+#   QTF_COOKIE_SECURE     auth.cookie_secure (true/1 or false/0)
+#   QTF_BOOTSTRAP_ADMIN_EMAIL / QTF_BOOTSTRAP_ADMIN_PASSWORD   bootstrap.*
+#   QTF_OIDC_<NAME>_CLIENT_SECRET   client secret of OIDC provider <name>
+#
+# Secret file paths (*_file) that are RELATIVE are resolved against
+# $CREDENTIALS_DIRECTORY, i.e. with `LoadCredential=oidc-corp:...` in the unit
+# you can simply write `client_secret_file: oidc-corp`.
+#
+# Durations use Go syntax: 300ms, 30s, 5m, 12h.
+
+server:
+  # Address to listen on. ":8443" = all interfaces, port 8443.
+  # Ports < 1024 (e.g. ":443") need CAP_NET_BIND_SERVICE, which the systemd
+  # unit grants as an ambient capability.
+  listen: ":8443"
+  # PEM certificate (leaf first, followed by intermediates = full chain) and
+  # PEM private key. Re-read on SIGHUP (systemctl reload qtestframe).
+  # Leave both empty ONLY when TLS is terminated by a reverse proxy on the
+  # same host / a trusted network (then listen on 127.0.0.1 only).
+  tls_cert: /etc/qtestframe/tls/server.crt
+  tls_key: /etc/qtestframe/tls/server.key
+  # Public URL users reach the server under. Used for OIDC redirect URIs
+  # (<base_url>/api/v1/auth/oidc/<name>/callback), SAML ACS/metadata URLs,
+  # links in exports and the CSRF origin check. No trailing slash.
+  base_url: "https://qtf.example.com"
+  # Maximum time to read a whole request (incl. body) / to write a response.
+  # Large exports may need a larger write_timeout.
+  read_timeout: 30s
+  write_timeout: 60s
+  # Reverse proxies whose X-Forwarded-For / X-Forwarded-Proto headers are
+  # trusted (CIDRs or IPs). Empty = headers are ignored and the TCP peer
+  # address is used for audit logging and login rate limiting.
+  trusted_proxies: []
+  #  - 127.0.0.1/32
+  #  - 10.0.0.0/8
+  # Send Strict-Transport-Security (max-age=63072000; includeSubDomains).
+  # Only disable for plain-HTTP development setups.
+  hsts: true
+
+database:
+  # sqlite   – single file, zero administration, good for small/medium teams
+  #            (single server instance only).
+  # postgres – recommended for production, HA and many concurrent users.
+  driver: sqlite
+  # sqlite:   path of the database file (WAL mode, created on first start)
+  # postgres: libpq-style URL, e.g.
+  #   "postgres://qtestframe:PASSWORD@db.example.com:5432/qtestframe?sslmode=verify-full&sslrootcert=/etc/qtestframe/tls/db-ca.crt"
+  #   With client certificates:
+  #   "...?sslmode=verify-full&sslrootcert=...&sslcert=/etc/qtestframe/tls/db-client.crt&sslkey=/etc/qtestframe/tls/db-client.key"
+  dsn: "/var/lib/qtestframe/qtestframe.db"
+  # Read the DSN (which contains the password) from a file instead.
+  # Takes precedence over `dsn` when non-empty.
+  #   dsn_file: db-dsn      # relative = $CREDENTIALS_DIRECTORY/db-dsn
+  dsn_file: ""
+  # Upper bound of open connections in the pool (postgres). SQLite uses a
+  # single writer regardless.
+  max_open_conns: 20
+
+logging:
+  # debug | info | warn | error
+  level: info
+  # json (recommended for log shipping) | text (human readable)
+  format: json
+  # Additionally send logs (including the audit trail) to a syslog server.
+  # stdout/stderr always go to the journal when run under systemd.
+  syslog:
+    enabled: false
+    # udp | tcp | tls | unix | unixgram.  Use "tls" for anything leaving the host
+    # (RFC 5425, usually port 6514). "unix" with address /dev/log sends to the
+    # local syslog daemon.
+    network: tls
+    address: "logs.example.com:6514"
+    # APP-NAME / tag field.
+    tag: qtestframe
+    # kern|user|daemon|auth|authpriv|local0..local7
+    facility: local0
+    # CA bundle to verify the syslog server (empty = system trust store).
+    ca_file: ""
+    # Client certificate + key for mutual TLS (see scripts/certs/gen-client-cert.sh).
+    cert_file: ""
+    key_file: ""
+    # rfc5424 (structured, recommended) | rfc3164 (legacy BSD)
+    format: rfc5424
+
+auth:
+  # Allow email + password login (bcrypt hashed). Can be disabled once SSO
+  # works; super admins can still be managed with the CLI.
+  local: true
+  # Lifetime of a login session (absolute). Sessions are server-side and
+  # revoked on logout / password change.
+  session_ttl: 12h
+  # Set the Secure flag on the session cookie. Only disable for plain-HTTP
+  # local development.
+  cookie_secure: true
+
+  # OpenID Connect providers (authorization code flow with PKCE S256, state
+  # and nonce). Redirect URI to register at the IdP:
+  #   <server.base_url>/api/v1/auth/oidc/<name>/callback
+  oidc: []
+  #  - name: corp                       # URL-safe identifier
+  #    display_name: "Corporate SSO"    # login button label
+  #    issuer: "https://idp.example.com/realms/x"   # discovery: <issuer>/.well-known/openid-configuration
+  #    client_id: qtf
+  #    client_secret: ""                # prefer client_secret_file
+  #    client_secret_file: oidc-corp     # relative = $CREDENTIALS_DIRECTORY/oidc-corp
+  #    scopes: [openid, email, profile, groups]
+  #    # Create users on first login. Otherwise users must be created first.
+  #    auto_provision: true
+  #    # Tenant (slug) and role given to newly provisioned users when no
+  #    # role_mapping entry matches.
+  #    default_tenant: acme
+  #    default_role: viewer
+  #    # Claims to read from the ID token / userinfo.
+  #    email_claim: email
+  #    name_claim: name
+  #    groups_claim: groups
+  #    # IdP group -> tenant role (applied to default_tenant on every login;
+  #    # highest matching role wins).
+  #    role_mapping:
+  #      "qtf-admins": admin
+  #      "qtf-managers": manager
+  #      "qtf-testers": tester
+
+  # SAML 2.0 service-provider configurations (HTTP-POST binding, signed
+  # assertions required). SP URLs:
+  #   metadata: <base_url>/api/v1/auth/saml/<name>/metadata
+  #   ACS:      <base_url>/api/v1/auth/saml/<name>/acs
+  saml: []
+  #  - name: adfs
+  #    display_name: "ADFS"
+  #    # One of the two: fetched over HTTPS at start-up, or a local file.
+  #    idp_metadata_url: "https://adfs.example.com/FederationMetadata/2007-06/FederationMetadata.xml"
+  #    idp_metadata_file: ""
+  #    entity_id: "https://qtf.example.com/api/v1/auth/saml/adfs/metadata"
+  #    # SP signing/decryption key pair (scripts/certs/gen-saml-sp-cert.sh).
+  #    sp_cert_file: /etc/qtestframe/tls/saml-sp.crt
+  #    sp_key_file: /etc/qtestframe/tls/saml-sp.key
+  #    auto_provision: true
+  #    default_tenant: acme
+  #    default_role: viewer
+  #    email_attr: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+  #    name_attr: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
+  #    groups_attr: "http://schemas.microsoft.com/ws/2008/06/identity/claims/groups"
+  #    role_mapping:
+  #      "QTF-Admins": admin
+  #      "QTF-Testers": tester
+
+runner:
+  # Execute automated test scripts attached to test cases. DISABLED by
+  # default: enabling it means users with the script.execute permission
+  # (manager, admin) can run code on this host – inside the sandbox
+  # (Landlock + seccomp + rlimits + no_new_privs), but still.
+  # On SELinux hosts also: setsebool -P qtestframe_run_scripts on
+  enabled: false
+  # Wall-clock limit per script; the process group is killed afterwards.
+  timeout: 60s
+  # Per-run scratch directories are created below this path (mode 0700) and
+  # removed afterwards. Must be below /var/lib/qtestframe (Landlock/systemd).
+  work_dir: /var/lib/qtestframe/runner
+  # stdout+stderr are truncated after this many bytes.
+  max_output_bytes: 1048576
+  # Language -> interpreter. Only languages listed here can be run. Remove
+  # the ones you do not need. Interpreters must live below /usr (or /bin on
+  # non-merged-usr systems); everything else is noexec for the service.
+  # Node.js needs W^X relaxed or --jitless (see docs/security.md).
+  interpreters:
+    sh: /bin/sh
+    bash: /bin/bash
+    python: /usr/bin/python3
+    javascript: /usr/bin/node
+  # Run each script through `qtestframe sandbox-exec` (Landlock + seccomp +
+  # rlimits + no_new_privs). Never disable in production.
+  sandbox: true
+
+# In-process self-sandboxing applied at start-up. Keep all enabled; turn
+# single items off only to diagnose problems on unusual kernels (Landlock
+# needs Linux >= 5.13 and is skipped automatically if unsupported).
+hardening:
+  no_new_privs: true       # prctl(PR_SET_NO_NEW_PRIVS)
+  landlock: true           # file system access restricted to the paths it needs
+  seccomp: true            # deny-list of dangerous syscalls (EPERM)
+  drop_capabilities: true  # bounding set reduced to CAP_NET_BIND_SERVICE
+  # Extra paths for the Landlock rule set, in addition to the built-in ones
+  # (ro: /etc/qtestframe /usr /etc/ssl /etc/pki /etc/resolv.conf /etc/hosts;
+  #  rw: /var/lib/qtestframe /run/qtestframe /tmp). E.g. a PostgreSQL client
+  # certificate stored elsewhere, or /run/postgresql for the unix socket.
+  read_only_paths: []
+  read_write_paths: []
+
+# First-start bootstrap: creates the tenant and a super-admin when the user
+# table is empty. Ignored afterwards. Alternatively use the CLI:
+#   qtestframe user create --email admin@example.com --password-stdin --super-admin
+bootstrap:
+  tenant_slug: default
+  tenant_name: "Default"
+  admin_email: ""
+  # Inline password: avoid outside of throw-away setups (use the file).
+  admin_password: ""
+  # File containing the initial password (single line). Delete it after the
+  # first start, or use a systemd credential.
+  admin_password_file: ""

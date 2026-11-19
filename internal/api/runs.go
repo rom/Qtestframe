@@ -5,6 +5,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
+	"github.com/rom/qtestframe/internal/runner"
 	"github.com/rom/qtestframe/internal/store"
 )
 
@@ -265,6 +266,10 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, badRequest("test has no automated script"))
 		return
 	}
+	if !s.Runner.Enabled() {
+		s.fail(w, r, runner.ErrDisabled)
+		return
+	}
 	run, err := s.Store.GetRun(r.Context(), p.TenantID(), d.RunID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -284,8 +289,11 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 		"environment": run.Environment, "build": run.Build,
 	})
 	if err != nil {
-		notRun := model.ResultNotRun
-		_, _ = s.Store.UpdateExecution(r.Context(), p.TenantID(), d.ID, p.User.Email, store.ExecutionUpdate{Status: &notRun})
+		prev := d.Status
+		if prev == model.ResultInProgress {
+			prev = model.ResultNotRun
+		}
+		_, _ = s.Store.UpdateExecution(r.Context(), p.TenantID(), d.ID, p.User.Email, store.ExecutionUpdate{Status: &prev})
 		s.fail(w, r, err)
 		return
 	}

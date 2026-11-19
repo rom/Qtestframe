@@ -26,6 +26,7 @@ func scanRequirement(r interface{ Scan(...any) error }) (*model.Requirement, err
 
 // ValidateRequirement normalises and checks requirement fields.
 func ValidateRequirement(r *model.Requirement) error {
+	r.Tags = cleanTags(r.Tags)
 	r.Title = strings.TrimSpace(r.Title)
 	if r.Title == "" {
 		return Invalidf("requirement title is required")

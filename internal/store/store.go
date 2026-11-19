@@ -103,6 +103,12 @@ func mapErr(err error, what string) error {
 }
 
 func encodeTags(tags []string) string {
+	b, _ := json.Marshal(cleanTags(tags))
+	return string(b)
+}
+
+// cleanTags trims, drops empty and duplicate tags.
+func cleanTags(tags []string) []string {
 	clean := make([]string, 0, len(tags))
 	seen := map[string]bool{}
 	for _, t := range tags {
@@ -113,8 +119,7 @@ func encodeTags(tags []string) string {
 		seen[t] = true
 		clean = append(clean, t)
 	}
-	b, _ := json.Marshal(clean)
-	return string(b)
+	return clean
 }
 
 func decodeTags(s string) []string {

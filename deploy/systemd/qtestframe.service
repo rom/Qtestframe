@@ -1,0 +1,214 @@
+# /usr/lib/systemd/system/qtestframe.service  (or /etc/systemd/system/)
+#
+# Qtestframe — requirements & test management server.
+#
+# This unit is hardened as far as a network daemon that
+#   * binds a TCP port (optionally <1024 via CAP_NET_BIND_SERVICE),
+#   * talks to PostgreSQL / IdPs / a remote syslog server, and
+#   * (optionally) re-executes itself ("qtestframe sandbox-exec") to run
+#     user-supplied test scripts through an interpreter
+# can be. `systemd-analyze security qtestframe.service` should report an
+# exposure level of roughly 1.x ("OK"). See docs/security.md for the
+# rationale of every directive and how to verify the result.
+#
+# Requires systemd >= 248 for every directive to take effect (RHEL/Alma 9,
+# Debian 12, Ubuntu 22.04 or newer). Older versions ignore unknown
+# directives with a warning, i.e. the unit still starts, less confined.
+#
+# Local adjustments belong in a drop-in, never in this file:
+#   systemctl edit qtestframe
+# (creates /etc/systemd/system/qtestframe.service.d/override.conf)
+
+[Unit]
+Description=Qtestframe requirements and test management server
+Documentation=file:///usr/share/doc/qtestframe/security.md file:///usr/share/doc/qtestframe/operations.md
+# Wait for the network to be configured so OIDC discovery / Postgres / syslog
+# connections succeed on the first try.
+Wants=network-online.target
+After=network-online.target
+# Uncomment when PostgreSQL runs on the same host:
+#After=postgresql.service
+#Wants=postgresql.service
+# Do not restart forever if the configuration is broken.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+# --- Process lifecycle -------------------------------------------------------
+# Type=exec: the unit is "started" once execve() of the binary succeeded
+# (stricter than Type=simple, no sd_notify integration required).
+Type=exec
+Environment=QTF_CONFIG=/etc/qtestframe/config.yaml
+# Apply pending schema migrations before serving. Runs with the same sandbox
+# as the main process. Idempotent: no-op when the schema is current.
+ExecStartPre=/usr/bin/qtestframe migrate --config ${QTF_CONFIG}
+ExecStart=/usr/bin/qtestframe serve --config ${QTF_CONFIG}
+# SIGHUP: re-read TLS certificate/key (used after certificate renewal, see
+# scripts/certs/letsencrypt.sh) without dropping connections.
+ExecReload=/bin/kill -HUP $MAINPID
+# SIGTERM -> graceful shutdown (drain in-flight requests).
+KillSignal=SIGTERM
+KillMode=mixed
+TimeoutStartSec=120
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5s
+
+# --- Identity ----------------------------------------------------------------
+# Static system user created by qtestframe.sysusers.conf. (DynamicUser= is not
+# used because operators place TLS keys / secrets owned by this group.)
+User=qtestframe
+Group=qtestframe
+# Files created by the service are private (0600 / 0700).
+UMask=0077
+
+# --- Directories (created and chowned by systemd, mode 0750) ------------------
+# /var/lib/qtestframe : SQLite DB + runner workdir     (writable)
+StateDirectory=qtestframe
+StateDirectoryMode=0750
+# /run/qtestframe     : runtime files / unix sockets   (writable, wiped on stop)
+RuntimeDirectory=qtestframe
+RuntimeDirectoryMode=0750
+# /etc/qtestframe     : config + tls/ (read-only for the service)
+ConfigurationDirectory=qtestframe
+ConfigurationDirectoryMode=0750
+# /var/log/qtestframe : only used if file logging is configured
+LogsDirectory=qtestframe
+LogsDirectoryMode=0750
+
+# --- Filesystem sandbox ------------------------------------------------------
+# Entire file system hierarchy read-only, except API filesystems and the
+# *Directory= paths above.
+ProtectSystem=strict
+# /home, /root, /run/user are inaccessible.
+ProtectHome=yes
+# Private /tmp and /var/tmp (also used as the runner's scratch space).
+PrivateTmp=yes
+# Minimal /dev (null, zero, random, urandom, tty...); no physical devices.
+PrivateDevices=yes
+# Explicit, in case the defaults change; StateDirectory= already implies it.
+ReadWritePaths=/var/lib/qtestframe /run/qtestframe
+# Nothing outside /usr (and the classic /bin,/lib on non-merged-/usr systems)
+# may be executed. In particular the runner work dir is noexec: scripts are
+# always passed as an argument to an interpreter, never exec'd directly.
+NoExecPaths=/
+ExecPaths=/usr -/bin -/lib -/lib64 -/sbin
+# Hide other processes in /proc and only expose the per-process subset.
+ProtectProc=invisible
+ProcSubset=pid
+# /proc/sys, /sys, /proc/sysrq-trigger, ... read-only.
+ProtectKernelTunables=yes
+# No module loading, /usr/lib/modules inaccessible.
+ProtectKernelModules=yes
+# No access to the kernel log ring buffer (/dev/kmsg, /proc/kmsg).
+ProtectKernelLogs=yes
+# /sys/fs/cgroup read-only.
+ProtectControlGroups=yes
+# Cannot change the hostname/domainname.
+ProtectHostname=yes
+# Cannot change the system clock (also removes @clock syscalls).
+ProtectClock=yes
+# Private SysV IPC / POSIX message queue namespace.
+PrivateIPC=yes
+# Remove SysV IPC objects owned by the user when the service stops.
+RemoveIPC=yes
+# Do not share the session keyring with other services.
+KeyringMode=private
+
+# --- Privileges / capabilities -------------------------------------------------
+# No setuid/setgid/file-capability elevation for the daemon or anything it
+# executes (runner interpreters included).
+NoNewPrivileges=yes
+# The only capability that may ever be held: binding ports < 1024.
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+# ...and it is passed to the (non-root) daemon so `listen: ":443"` works.
+# If you listen on :8443 (the default) you may empty both lines – see the
+# "strict" drop-in example in docs/security.md.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+# No setuid/setgid bits can be created.
+RestrictSUIDSGID=yes
+# No realtime scheduling (DoS vector).
+RestrictRealtime=yes
+# No new namespaces of any kind (user, net, mount, ...). The runner sandbox
+# relies on Landlock + seccomp + rlimits, not on namespaces.
+RestrictNamespaces=yes
+# personality(2) locked (no READ_IMPLIES_EXEC etc.).
+LockPersonality=yes
+# W^X: no writable+executable mappings. Go binaries are fine with this.
+# NOTE: interpreters with a JIT break under it: Node.js must run with
+# --jitless (or this must be relaxed in a drop-in when the javascript runner
+# is enabled). Python, sh and bash are unaffected.
+MemoryDenyWriteExecute=yes
+# PrivateUsers=yes would add another layer, but capabilities inside a user
+# namespace cannot bind privileged ports of the host network namespace.
+# Enable it in a drop-in together with an empty CapabilityBoundingSet= when
+# you do not bind :443.
+#PrivateUsers=yes
+
+# --- Network -----------------------------------------------------------------
+# IPv4/IPv6 sockets and unix sockets (/dev/log, Postgres unix socket).
+# AF_NETLINK is deliberately not allowed: Go's net package does not need it
+# for listening/dialing (interface enumeration is not used).
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# Optional eBPF-based IP firewall for the service (requires cgroup v2).
+# Deny everything, then allow what is needed:
+#IPAddressDeny=any
+#IPAddressAllow=localhost
+#IPAddressAllow=10.0.0.0/8 192.168.0.0/16
+# Clients (only works when clients come from known networks):
+#IPAddressAllow=203.0.113.0/24
+#
+# Optional: bind only to selected ports (defence in depth for the listener).
+#SocketBindAllow=tcp:8443
+#SocketBindDeny=any
+
+# --- System call filtering --------------------------------------------------
+SystemCallArchitectures=native
+# Allow-list: the set every ordinary service needs (includes execve/clone
+# needed by the script runner's re-exec of `qtestframe sandbox-exec` and of
+# the interpreters) ...
+SystemCallFilter=@system-service
+# ... plus @sandbox: landlock_create_ruleset/landlock_add_rule/
+# landlock_restrict_self and seccomp(2), used by the in-process hardening and
+# the runner sandbox. Without it the Go hardening code gets EPERM.
+SystemCallFilter=@sandbox
+# ... minus everything a web server never needs.
+SystemCallFilter=~@privileged @resources @mount @debug @cpu-emulation @obsolete @raw-io @reboot @swap @module @clock
+# Note: setrlimit(2) is in @resources and therefore denied. The runner sets
+# RLIMIT_CPU/AS/NPROC/FSIZE/NOFILE for its child through prlimit64(2) (Go's
+# syscall.Setrlimit / unix.Prlimit use it), which is part of @default.
+# Blocked syscalls fail with EPERM instead of killing the process, so the
+# Go code can degrade gracefully (e.g. capset() inside sandbox-exec).
+SystemCallErrorNumber=EPERM
+
+# --- Device / resource limits -------------------------------------------------
+DevicePolicy=closed
+LimitNOFILE=65536
+# Core dumps could contain session secrets / DB contents.
+LimitCORE=0
+# Upper bound for threads+processes (Go threads + runner children).
+TasksMax=512
+MemoryMax=2G
+MemoryHigh=1536M
+# Keep the box responsive under load.
+CPUWeight=100
+IOWeight=100
+
+# --- Secrets via systemd credentials -------------------------------------------
+# Credentials are copied to /run/credentials/qtestframe.service/<name>
+# ($CREDENTIALS_DIRECTORY), readable only by the service, on a non-swappable
+# ramfs. Reference them from config.yaml, e.g.
+#   client_secret_file: /run/credentials/qtestframe.service/oidc-corp
+#LoadCredential=oidc-corp:/etc/qtestframe/secrets/oidc-corp
+#LoadCredential=db-dsn:/etc/qtestframe/secrets/db-dsn
+#LoadCredential=bootstrap-admin:/etc/qtestframe/secrets/bootstrap-admin
+# Encrypted (TPM2/host key) credentials created with `systemd-creds encrypt`:
+#LoadCredentialEncrypted=db-dsn:/etc/credstore.encrypted/qtestframe-db-dsn
+
+# --- Logging -----------------------------------------------------------------
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=qtestframe
+
+[Install]
+WantedBy=multi-user.target

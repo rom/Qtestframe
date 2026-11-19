@@ -137,10 +137,10 @@ func (s *Server) routes() {
 	h("POST /api/v1/folders/{id}/move", s.handleMoveFolder)
 	h("DELETE /api/v1/folders/{id}", s.handleDeleteFolder)
 	h("GET /api/v1/projects/{pid}/categories", s.handleListCategories, "project.read")
-	h("POST /api/v1/projects/{pid}/categories", s.handleCreateCategory, "project.update")
-	h("POST /api/v1/projects/{pid}/categories/move", s.handleMoveDimension, "project.update")
-	h("PATCH /api/v1/categories/{id}", s.handleUpdateCategory, "project.update")
-	h("DELETE /api/v1/categories/{id}", s.handleDeleteCategory, "project.update")
+	h("POST /api/v1/projects/{pid}/categories", s.handleCreateCategory)
+	h("POST /api/v1/projects/{pid}/categories/move", s.handleMoveDimension)
+	h("PATCH /api/v1/categories/{id}", s.handleUpdateCategory)
+	h("DELETE /api/v1/categories/{id}", s.handleDeleteCategory)
 
 	// requirements
 	h("GET /api/v1/projects/{pid}/requirements", s.handleListRequirements, "requirement.read")

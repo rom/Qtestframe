@@ -17,6 +17,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -57,6 +58,7 @@ Usage:
   qtestframe member add  [--config FILE] --tenant SLUG --email E --role admin|manager|tester|viewer
   qtestframe seed-demo   [--config FILE] [--tenant SLUG]
   qtestframe check-config [--config FILE]
+  qtestframe healthcheck [--config FILE] [--url URL]
   qtestframe version
 `
 
@@ -83,6 +85,8 @@ func Run(args []string, env Env) int {
 		err = sub(args[1:], env, "add", cmdMemberAdd)
 	case "seed-demo":
 		err = cmdSeedDemo(args[1:], env)
+	case "healthcheck":
+		err = cmdHealthcheck(args[1:], env)
 	case "check-config":
 		err = cmdCheckConfig(args[1:], env)
 	case "sandbox-exec":
@@ -432,14 +436,15 @@ func cmdServe(args []string, env Env) error {
 	}
 	tlsOn := cfg.Server.TLSCert != ""
 	if tlsOn {
-		kp, err := tls.LoadX509KeyPair(cfg.Server.TLSCert, cfg.Server.TLSKey)
+		certs, err := newCertReloader(cfg.Server.TLSCert, cfg.Server.TLSKey)
 		if err != nil {
 			ln.Close()
-			return fmt.Errorf("tls: %w", err)
+			return err
 		}
+		go certs.watch(ctx, log)
 		ln = tls.NewListener(ln, &tls.Config{
-			MinVersion:   tls.VersionTLS12,
-			Certificates: []tls.Certificate{kp},
+			MinVersion:     tls.VersionTLS12,
+			GetCertificate: certs.get,
 			CipherSuites: []uint16{
 				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305, tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
@@ -447,6 +452,9 @@ func cmdServe(args []string, env Env) error {
 			},
 			NextProtos: []string{"h2", "http/1.1"},
 		})
+	}
+	if !tlsOn {
+		signal.Ignore(syscall.SIGHUP) // reload is a no-op without TLS
 	}
 	// All files needed at start-up are open: lock the process down.
 	rep, err := hardening.Apply(hardeningOptions(cfg))
@@ -481,6 +489,90 @@ func cmdServe(args []string, env Env) error {
 	sctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	return hs.Shutdown(sctx)
+}
+
+// certReloader serves the current key pair and reloads it on SIGHUP
+// (e.g. after a Let's Encrypt renewal).
+type certReloader struct {
+	certFile, keyFile string
+	cur               atomic.Pointer[tls.Certificate]
+}
+
+func newCertReloader(certFile, keyFile string) (*certReloader, error) {
+	c := &certReloader{certFile: certFile, keyFile: keyFile}
+	return c, c.reload()
+}
+
+func (c *certReloader) reload() error {
+	kp, err := tls.LoadX509KeyPair(c.certFile, c.keyFile)
+	if err != nil {
+		return fmt.Errorf("tls: %w", err)
+	}
+	c.cur.Store(&kp)
+	return nil
+}
+
+func (c *certReloader) get(*tls.ClientHelloInfo) (*tls.Certificate, error) { return c.cur.Load(), nil }
+
+func (c *certReloader) watch(ctx context.Context, log *slog.Logger) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGHUP)
+	defer signal.Stop(ch)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ch:
+			if err := c.reload(); err != nil {
+				log.Error("tls reload failed; keeping previous certificate", "err", err)
+			} else {
+				log.Info("tls certificate reloaded")
+			}
+		}
+	}
+}
+
+// cmdHealthcheck probes /healthz of the local server (for container
+// HEALTHCHECK directives where no curl is available).
+func cmdHealthcheck(args []string, env Env) error {
+	fs, cfgPath := newFlags("healthcheck", env)
+	rawURL := fs.String("url", "", "URL to probe (default derived from server.listen)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	u := *rawURL
+	if u == "" {
+		cfg, err := config.Load(*cfgPath)
+		if err != nil {
+			return err
+		}
+		host, port, err := net.SplitHostPort(cfg.Server.Listen)
+		if err != nil {
+			return err
+		}
+		if host == "" || host == "0.0.0.0" || host == "::" {
+			host = "127.0.0.1"
+		}
+		scheme := "http"
+		if cfg.Server.TLSCert != "" {
+			scheme = "https"
+		}
+		u = scheme + "://" + net.JoinHostPort(host, port) + "/healthz"
+	}
+	client := &http.Client{Timeout: 5 * time.Second, Transport: &http.Transport{
+		// local probe of our own listener; certificate names rarely match 127.0.0.1
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12}, //nolint:gosec
+	}}
+	res, err := client.Get(u)
+	if err != nil {
+		return err
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("healthcheck: status %d", res.StatusCode)
+	}
+	fmt.Fprintln(env.Stdout, "ok")
+	return nil
 }
 
 func purgeSessions(ctx context.Context, st *store.Store, log *slog.Logger) {

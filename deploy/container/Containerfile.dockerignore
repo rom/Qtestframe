@@ -1,0 +1,18 @@
+# Build-context exclusions for deploy/container/Containerfile
+# (BuildKit picks up "<Dockerfile name>.dockerignore" next to the file;
+# for podman/buildah copy this to /.containerignore or /.dockerignore).
+.git
+**/node_modules
+web/coverage
+web/dist
+internal/webui/dist/*
+!internal/webui/dist/.gitkeep
+bin
+dist
+certs
+data
+**/*.db
+**/*.db-*
+**/.DS_Store
+deploy/container/secrets
+deploy/container/tls

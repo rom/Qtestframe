@@ -1,0 +1,35 @@
+# Qtestframe configuration used by deploy/container/compose.yaml.
+# See deploy/config.example.yaml for every option and its documentation.
+server:
+  listen: ":8443"
+  tls_cert: /etc/qtestframe/tls/server.crt
+  tls_key: /etc/qtestframe/tls/server.key
+  # overridden by QTF_SERVER_BASE_URL from compose.yaml
+  base_url: "https://localhost:8443"
+  hsts: true
+database:
+  driver: postgres
+  # compose secret: postgres://qtestframe:<pw>@db:5432/qtestframe?...
+  dsn_file: /run/secrets/db_dsn
+  max_open_conns: 20
+logging:
+  level: info
+  format: json
+auth:
+  local: true
+  session_ttl: 12h
+  cookie_secure: true
+runner:
+  # Script execution stays disabled in the container image: the distroless
+  # image ships no interpreters.
+  enabled: false
+hardening:
+  no_new_privs: true
+  landlock: true
+  seccomp: true
+  drop_capabilities: true
+bootstrap:
+  tenant_slug: default
+  tenant_name: "Default"
+  admin_email: admin@example.com
+  admin_password_file: /run/secrets/admin_password

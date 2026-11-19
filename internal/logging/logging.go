@@ -105,8 +105,8 @@ func (f fanout) WithGroup(n string) slog.Handler {
 // SyslogHandler formats records as JSON and sends each as one syslog
 // message with a severity derived from the slog level.
 type SyslogHandler struct {
-	h   slog.Handler
-	st  *syslogState
+	h  slog.Handler
+	st *syslogState
 }
 
 type syslogState struct {

@@ -1,0 +1,142 @@
+## <summary>Qtestframe requirements and test management server.</summary>
+
+########################################
+## <summary>
+##	Execute qtestframe in the qtestframe domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed to transition.
+##	</summary>
+## </param>
+#
+interface(`qtestframe_domtrans',`
+	gen_require(`
+		type qtestframe_t, qtestframe_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	domtrans_pattern($1, qtestframe_exec_t, qtestframe_t)
+')
+
+########################################
+## <summary>
+##	Execute the qtestframe CLI (migrate, user create, ...) in the
+##	caller domain.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`qtestframe_exec',`
+	gen_require(`
+		type qtestframe_exec_t;
+	')
+
+	corecmd_search_bin($1)
+	can_exec($1, qtestframe_exec_t)
+')
+
+########################################
+## <summary>
+##	Read qtestframe configuration files.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`qtestframe_read_config',`
+	gen_require(`
+		type qtestframe_conf_t;
+	')
+
+	files_search_etc($1)
+	list_dirs_pattern($1, qtestframe_conf_t, qtestframe_conf_t)
+	read_files_pattern($1, qtestframe_conf_t, qtestframe_conf_t)
+')
+
+########################################
+## <summary>
+##	Manage qtestframe TLS certificates and keys (e.g. a certbot or
+##	lego deploy hook).
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`qtestframe_manage_certs',`
+	gen_require(`
+		type qtestframe_cert_t;
+	')
+
+	files_search_etc($1)
+	manage_dirs_pattern($1, qtestframe_cert_t, qtestframe_cert_t)
+	manage_files_pattern($1, qtestframe_cert_t, qtestframe_cert_t)
+')
+
+########################################
+## <summary>
+##	Read qtestframe state files (e.g. for a backup agent).
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+#
+interface(`qtestframe_read_lib_files',`
+	gen_require(`
+		type qtestframe_var_lib_t;
+	')
+
+	files_search_var_lib($1)
+	list_dirs_pattern($1, qtestframe_var_lib_t, qtestframe_var_lib_t)
+	read_files_pattern($1, qtestframe_var_lib_t, qtestframe_var_lib_t)
+')
+
+########################################
+## <summary>
+##	All of the rules required to administrate a qtestframe environment.
+## </summary>
+## <param name="domain">
+##	<summary>
+##	Domain allowed access.
+##	</summary>
+## </param>
+## <param name="role">
+##	<summary>
+##	Role allowed access.
+##	</summary>
+## </param>
+## <rolecap/>
+#
+interface(`qtestframe_admin',`
+	gen_require(`
+		type qtestframe_t, qtestframe_conf_t, qtestframe_cert_t;
+		type qtestframe_var_lib_t, qtestframe_runner_rw_t;
+		type qtestframe_var_run_t, qtestframe_log_t;
+	')
+
+	allow $1 qtestframe_t:process { ptrace signal_perms };
+	ps_process_pattern($1, qtestframe_t)
+
+	files_search_etc($1)
+	admin_pattern($1, qtestframe_conf_t)
+	admin_pattern($1, qtestframe_cert_t)
+
+	files_search_var_lib($1)
+	admin_pattern($1, qtestframe_var_lib_t)
+	admin_pattern($1, qtestframe_runner_rw_t)
+
+	files_search_pids($1)
+	admin_pattern($1, qtestframe_var_run_t)
+
+	logging_search_logs($1)
+	admin_pattern($1, qtestframe_log_t)
+')

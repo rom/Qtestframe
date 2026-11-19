@@ -198,9 +198,9 @@ type Requirement struct {
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
 	// Derived fields (not stored).
-	FolderPath     string `json:"folder_path,omitempty"`
-	LinkedTests    int    `json:"linked_tests"`
-	Coverage       string `json:"coverage,omitempty"` // none | not_run | passed | failed | partial
+	FolderPath  string `json:"folder_path,omitempty"`
+	LinkedTests int    `json:"linked_tests"`
+	Coverage    string `json:"coverage,omitempty"` // none | not_run | passed | failed | partial
 }
 
 // EvaluationCriterion describes how a requirement is judged fulfilled.
@@ -246,9 +246,9 @@ type TestCase struct {
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 	// Derived.
-	FolderPath     string `json:"folder_path,omitempty"`
-	LinkedReqs     int    `json:"linked_requirements"`
-	LastResult     string `json:"last_result,omitempty"`
+	FolderPath string `json:"folder_path,omitempty"`
+	LinkedReqs int    `json:"linked_requirements"`
+	LastResult string `json:"last_result,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.

@@ -1,0 +1,86 @@
+# syntax=docker/dockerfile:1.7
+#
+# Qtestframe container image (OCI; works with podman and docker).
+#
+# Build from the repository root:
+#   podman build -f deploy/container/Containerfile -t qtestframe:dev .
+#   docker build -f deploy/container/Containerfile --build-arg VERSION=$(git describe --tags --always) -t qtestframe:dev .
+#
+# The final image contains nothing but the static binary, CA certificates,
+# tzdata and /etc/passwd entries of the distroless base. It runs as the
+# unprivileged "nonroot" user (65532:65532) and works with a read-only root
+# file system; only /var/lib/qtestframe (volume) and /tmp (tmpfs) need to be
+# writable.
+
+ARG GO_VERSION=1.26
+ARG NODE_VERSION=22
+
+############################
+# 1. Web UI (Vue/Vite) -> internal/webui/dist
+############################
+FROM docker.io/library/node:${NODE_VERSION}-bookworm-slim AS web
+WORKDIR /src/web
+# Dependency layer (cached as long as the lock file does not change).
+COPY web/package.json web/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+COPY web/ ./
+# vite.config.ts writes to ../internal/webui/dist
+RUN mkdir -p /src/internal/webui/dist && npm run build
+
+############################
+# 2. Go binary (static, CGO disabled, pure-Go SQLite)
+############################
+FROM docker.io/library/golang:${GO_VERSION}-bookworm AS build
+ARG VERSION=dev
+ARG TARGETOS=linux
+ARG TARGETARCH
+WORKDIR /src
+ENV CGO_ENABLED=0 GOFLAGS=-mod=readonly
+# go.sum* : tolerate a module without dependencies
+COPY go.mod go.sum* ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+COPY . .
+COPY --from=web /src/internal/webui/dist/ ./internal/webui/dist/
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -trimpath -buildvcs=false \
+      -ldflags "-s -w -X main.version=${VERSION}" \
+      -o /out/qtestframe ./cmd/qtestframe
+# Directory skeleton owned by the runtime user (distroless has no shell to
+# create it later).
+RUN mkdir -p /out/root/var/lib/qtestframe/runner /out/root/etc/qtestframe/tls /out/root/run/qtestframe \
+ && chmod 0750 /out/root/var/lib/qtestframe /out/root/run/qtestframe \
+ && chmod 0700 /out/root/var/lib/qtestframe/runner
+
+############################
+# 3. Runtime
+############################
+FROM gcr.io/distroless/static-debian12:nonroot
+ARG VERSION=dev
+LABEL org.opencontainers.image.title="qtestframe" \
+      org.opencontainers.image.description="Multi-tenant requirements and test management server" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.licenses="NOASSERTION"
+
+COPY --from=build /out/qtestframe /usr/bin/qtestframe
+COPY --from=build --chown=65532:65532 /out/root/var/lib/qtestframe /var/lib/qtestframe
+COPY --from=build --chown=65532:65532 /out/root/run/qtestframe /run/qtestframe
+COPY --from=build /out/root/etc/qtestframe /etc/qtestframe
+
+# Sensible container defaults; override with a mounted config file
+# (/etc/qtestframe/config.yaml + QTF_CONFIG) or further QTF_* variables.
+ENV QTF_DATABASE_DRIVER=sqlite \
+    QTF_DATABASE_DSN=/var/lib/qtestframe/qtestframe.db \
+    QTF_SERVER_LISTEN=:8443 \
+    QTF_LOG_FORMAT=json
+
+USER 65532:65532
+VOLUME ["/var/lib/qtestframe"]
+EXPOSE 8443
+
+# The image has no shell/curl; the binary probes its own /healthz.
+# Orchestrators can also use HTTP probes on /healthz and /readyz.
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD ["/usr/bin/qtestframe", "healthcheck"]
+ENTRYPOINT ["/usr/bin/qtestframe"]
+CMD ["serve"]

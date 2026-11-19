@@ -25,11 +25,11 @@ const (
 
 // Principal is the authenticated caller.
 type Principal struct {
-	User     *model.User
-	Tenant   *model.Tenant
-	Role     string
-	Session  *model.Session
-	Token    *model.APIToken
+	User    *model.User
+	Tenant  *model.Tenant
+	Role    string
+	Session *model.Session
+	Token   *model.APIToken
 }
 
 // Can reports whether the principal holds permission p in its tenant.
@@ -76,6 +76,10 @@ func (s *Server) authed(fn handlerFunc, perms ...string) http.Handler {
 			got := r.Header.Get("X-CSRF-Token")
 			if got == "" || subtle.ConstantTimeCompare([]byte(got), []byte(p.Session.CSRF)) != 1 {
 				writeError(w, http.StatusForbidden, "forbidden", "missing or invalid CSRF token")
+				return
+			}
+			if !s.sameOrigin(r) {
+				writeError(w, http.StatusForbidden, "forbidden", "cross-origin request rejected")
 				return
 			}
 		}
@@ -142,6 +146,27 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 		}
 	}
 	return p, nil
+}
+
+// sameOrigin rejects browser requests whose Origin header names another
+// site (defence in depth on top of the CSRF token). Requests without an
+// Origin header (non-browser clients) are accepted.
+func (s *Server) sameOrigin(r *http.Request) bool {
+	o := r.Header.Get("Origin")
+	if o == "" {
+		return true
+	}
+	ou, err := url.Parse(o)
+	if err != nil {
+		return false
+	}
+	if ou.Host == r.Host {
+		return true
+	}
+	if b, err := url.Parse(s.Cfg.Server.BaseURL); err == nil && b.Host != "" && strings.EqualFold(b.Scheme+"://"+b.Host, ou.Scheme+"://"+ou.Host) {
+		return true
+	}
+	return false
 }
 
 // audit records an action of the principal (errors are only logged).
@@ -578,7 +603,7 @@ func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisio
 				return nil, "", errors.New("user not provisioned")
 			}
 			u = &model.User{Email: id.Email, DisplayName: id.Name, AuthProvider: id.Provider, ExternalID: id.Subject}
-			if err := s.Store.CreateUser(ctx, u); err != nil {
+			if err = s.Store.CreateUser(ctx, u); err != nil {
 				return nil, "", err
 			}
 		}

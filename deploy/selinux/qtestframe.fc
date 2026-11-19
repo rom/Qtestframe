@@ -1,0 +1,17 @@
+# Qtestframe file contexts
+
+/usr/bin/qtestframe		--	gen_context(system_u:object_r:qtestframe_exec_t,s0)
+/usr/local/bin/qtestframe	--	gen_context(system_u:object_r:qtestframe_exec_t,s0)
+
+/usr/lib/systemd/system/qtestframe.*	--	gen_context(system_u:object_r:systemd_unit_file_t,s0)
+
+/etc/qtestframe(/.*)?			gen_context(system_u:object_r:qtestframe_conf_t,s0)
+/etc/qtestframe/tls(/.*)?		gen_context(system_u:object_r:qtestframe_cert_t,s0)
+
+/var/lib/qtestframe(/.*)?		gen_context(system_u:object_r:qtestframe_var_lib_t,s0)
+/var/lib/qtestframe/runner(/.*)?	gen_context(system_u:object_r:qtestframe_runner_rw_t,s0)
+
+/run/qtestframe(/.*)?			gen_context(system_u:object_r:qtestframe_var_run_t,s0)
+/var/run/qtestframe(/.*)?		gen_context(system_u:object_r:qtestframe_var_run_t,s0)
+
+/var/log/qtestframe(/.*)?		gen_context(system_u:object_r:qtestframe_log_t,s0)

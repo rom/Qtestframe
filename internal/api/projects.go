@@ -292,6 +292,15 @@ func (s *Server) handleDeleteFolder(w http.ResponseWriter, r *http.Request, p *P
 
 // ---------------------------------------------------------------- categories
 
+// canEditCategories: project.update, or write access to the scope's items.
+func canEditCategories(w http.ResponseWriter, p *Principal, scope string) bool {
+	if p.Can(rbac.ProjectUpdate) || (scope != "" && p.Can(kindPerm(scope))) {
+		return true
+	}
+	writeError(w, http.StatusForbidden, "forbidden", "permission project.update required")
+	return false
+}
+
 func (s *Server) handleListCategories(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
 	if !ok {
@@ -315,6 +324,9 @@ func (s *Server) handleCreateCategory(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
+	if !canEditCategories(w, p, c.Scope) {
+		return
+	}
 	c.ProjectID = pr.ID
 	if err := s.Store.CreateCategory(r.Context(), p.TenantID(), &c); err != nil {
 		s.fail(w, r, err)
@@ -328,6 +340,9 @@ func (s *Server) handleUpdateCategory(w http.ResponseWriter, r *http.Request, p 
 	c, err := s.Store.GetCategory(r.Context(), p.TenantID(), r.PathValue("id"))
 	if err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if !canEditCategories(w, p, c.Scope) {
 		return
 	}
 	body, err := readBody(r)
@@ -348,6 +363,14 @@ func (s *Server) handleUpdateCategory(w http.ResponseWriter, r *http.Request, p 
 
 func (s *Server) handleDeleteCategory(w http.ResponseWriter, r *http.Request, p *Principal) {
 	id := r.PathValue("id")
+	c, err := s.Store.GetCategory(r.Context(), p.TenantID(), id)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if !canEditCategories(w, p, c.Scope) {
+		return
+	}
 	if err := s.Store.DeleteCategory(r.Context(), p.TenantID(), id); err != nil {
 		s.fail(w, r, err)
 		return
@@ -368,6 +391,9 @@ func (s *Server) handleMoveDimension(w http.ResponseWriter, r *http.Request, p *
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if !canEditCategories(w, p, req.Scope) {
 		return
 	}
 	n, err := s.Store.RenameDimension(r.Context(), p.TenantID(), pr.ID, req.Scope, req.Dimension, req.NewDimension)

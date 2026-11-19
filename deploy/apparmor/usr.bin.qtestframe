@@ -1,0 +1,146 @@
+# AppArmor profile for /usr/bin/qtestframe (Debian / Ubuntu / SUSE).
+#
+# Install:
+#   install -m 0644 deploy/apparmor/usr.bin.qtestframe /etc/apparmor.d/usr.bin.qtestframe
+#   apparmor_parser -r /etc/apparmor.d/usr.bin.qtestframe
+#   aa-status | grep qtestframe
+# Start in complain mode first if you have an unusual layout:
+#   aa-complain /usr/bin/qtestframe     (then aa-enforce after checking logs)
+#
+# Local additions (extra interpreters, cert paths, ...) go into
+# /etc/apparmor.d/local/usr.bin.qtestframe so package upgrades keep them.
+
+abi <abi/3.0>,
+
+include <tunables/global>
+
+profile qtestframe /usr/bin/qtestframe flags=(enforce) {
+  include <abstractions/base>
+  include <abstractions/nameservice>
+  include <abstractions/ssl_certs>
+
+  # Only the one capability it may need (binding :443). Everything else
+  # (dac_override, setuid, sys_admin, ...) is denied.
+  capability net_bind_service,
+  deny capability sys_admin,
+  deny capability sys_ptrace,
+  deny capability dac_override,
+  deny capability dac_read_search,
+
+  # Network: TCP/UDP over IPv4/IPv6 and unix sockets (/dev/log, Postgres).
+  network inet stream,
+  network inet6 stream,
+  network inet dgram,
+  network inet6 dgram,
+  network unix stream,
+  network unix dgram,
+  deny network raw,
+  deny network packet,
+  deny network netlink,
+
+  # Never ptrace or mount anything.
+  deny ptrace,
+  deny mount,
+  deny umount,
+  deny pivot_root,
+
+  # Signals from systemd (TERM/HUP) and to own runner children.
+  signal (receive) peer=unconfined,
+  signal (send) peer=qtestframe//runner,
+  signal (send, receive) peer=qtestframe,
+
+  # The binary itself (also re-executed as `qtestframe sandbox-exec`).
+  /usr/bin/qtestframe mrix,
+
+  # Go runtime and standard library reads.
+  @{PROC}/sys/kernel/random/boot_id r,
+  @{PROC}/sys/net/core/somaxconn r,
+  @{PROC}/@{pid}/stat r,
+  @{PROC}/@{pid}/status r,
+  @{PROC}/@{pid}/maps r,
+  @{PROC}/@{pid}/cgroup r,
+  @{PROC}/@{pid}/mountinfo r,
+  /sys/kernel/mm/transparent_hugepage/hpage_pmd_size r,
+  /sys/fs/cgroup/** r,
+  /etc/localtime r,
+  /usr/share/zoneinfo/** r,
+  /etc/mime.types r,
+  /dev/null rw,
+  /dev/urandom r,
+
+  # Configuration and secrets (read only).
+  /etc/qtestframe/ r,
+  /etc/qtestframe/** r,
+  # systemd credentials (LoadCredential=).
+  /run/credentials/qtestframe.service/ r,
+  /run/credentials/qtestframe.service/* r,
+
+  # State: SQLite database (+ -wal, -shm, -journal) and runner work dir.
+  /var/lib/qtestframe/ rw,
+  /var/lib/qtestframe/** rwk,
+  # Runtime and log directories.
+  /run/qtestframe/ rw,
+  /run/qtestframe/** rwk,
+  /var/log/qtestframe/ rw,
+  /var/log/qtestframe/** w,
+  # Private /tmp (PrivateTmp=yes), exports and runner scratch space.
+  owner /tmp/** rwk,
+  owner /var/tmp/** rwk,
+
+  # Local syslog / journald.
+  /dev/log w,
+  /run/systemd/journal/socket w,
+  /run/systemd/journal/stdout w,
+
+  # PostgreSQL over the local unix socket.
+  /run/postgresql/.s.PGSQL.* rw,
+  /var/run/postgresql/.s.PGSQL.* rw,
+
+  # Script runner: interpreters execute in a child profile with no network
+  # and write access only to the runner work directory. Remove these lines
+  # to make script execution impossible regardless of the config file.
+  /{usr/,}bin/sh        Cx -> runner,
+  /{usr/,}bin/dash      Cx -> runner,
+  /{usr/,}bin/bash      Cx -> runner,
+  /usr/bin/python3*     Cx -> runner,
+  /usr/bin/node         Cx -> runner,
+  /usr/bin/nodejs       Cx -> runner,
+
+  profile runner flags=(enforce) {
+    include <abstractions/base>
+    include <abstractions/bash>
+    include <abstractions/python>
+
+    # No network, no capabilities, no IPC to other processes.
+    deny network,
+    deny capability,
+    deny ptrace,
+    deny mount,
+    signal (receive) peer=qtestframe,
+    signal (send, receive) peer=qtestframe//runner,
+
+    # Interpreters, coreutils and libraries.
+    /{usr/,}bin/** mrix,
+    /usr/lib/** mr,
+    /usr/local/lib/python3*/** mr,
+    /usr/share/** r,
+    /etc/** r,
+    deny /etc/qtestframe/** rwklx,
+    deny /etc/shadow* r,
+    deny /etc/gshadow* r,
+    /dev/null rw,
+    /dev/urandom r,
+    /dev/tty rw,
+    @{PROC}/@{pid}/** r,
+    @{PROC}/sys/kernel/** r,
+
+    # Only the job directory is writable. The database next to it is not
+    # even readable.
+    /var/lib/qtestframe/runner/ r,
+    /var/lib/qtestframe/runner/** rwk,
+    deny /var/lib/qtestframe/*.db* rwk,
+    owner /tmp/** rwk,
+  }
+
+  include if exists <local/usr.bin.qtestframe>
+}

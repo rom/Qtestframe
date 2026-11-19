@@ -27,7 +27,7 @@ var (
 			"desc": "description", "language": "script_language", "result": "last_result"},
 	}
 	runSchema = &query.Schema{
-		Fields: []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
+		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
 		Aliases: map[string]string{"env": "environment"},
 	}
 	executionSchema = &query.Schema{
