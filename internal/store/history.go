@@ -608,6 +608,23 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 	if len(ids) == 0 {
 		return nil
 	}
+	if err := removeAttachments(ctx, c, entityType, ids); err != nil {
+		return err
+	}
+	if entityType == model.KindTest {
+		// executions of deleted tests are removed by the FK cascade
+		rows, err := c.query(ctx, `SELECT id FROM test_executions WHERE test_case_id IN (`+placeholders(len(ids))+`)`, anySlice(ids)...)
+		if err != nil {
+			return err
+		}
+		execs, err := scanStrings(rows)
+		if err != nil {
+			return err
+		}
+		if err := removeAttachments(ctx, c, "execution", execs); err != nil {
+			return err
+		}
+	}
 	for _, tbl := range []string{"comments", "revisions"} {
 		args := append([]any{entityType}, anySlice(ids)...)
 		if _, err := c.exec(ctx, `DELETE FROM `+tbl+` WHERE entity_type = ? AND entity_id IN (`+placeholders(len(ids))+`)`, args...); err != nil {

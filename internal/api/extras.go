@@ -561,6 +561,7 @@ func (s *Server) handleUpdateMe(w http.ResponseWriter, r *http.Request, p *Princ
 		return
 	}
 	var req struct {
+		Avatar      *string                    `json:"avatar"`
 		DisplayName *string                    `json:"display_name"`
 		Preferences map[string]json.RawMessage `json:"preferences"`
 	}
@@ -570,6 +571,14 @@ func (s *Server) handleUpdateMe(w http.ResponseWriter, r *http.Request, p *Princ
 	}
 	ctx := r.Context()
 	u := p.User
+	if req.Avatar != nil {
+		if !validPreset(*req.Avatar) {
+			s.fail(w, r, badRequest(`avatar must be "" or "preset:<name>"; upload images with PUT /auth/me/avatar`))
+			return
+		}
+		s.dropOldPicture(ctx, "", u.Avatar)
+		u.Avatar = *req.Avatar
+	}
 	if req.DisplayName != nil {
 		name := strings.TrimSpace(*req.DisplayName)
 		if name == "" || len([]rune(name)) > 100 {

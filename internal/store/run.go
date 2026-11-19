@@ -254,14 +254,30 @@ func (s *Store) UpdateRun(ctx context.Context, tenantID string, run *model.TestR
 
 // DeleteRun removes a run and its executions.
 func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID)
-	if err != nil {
-		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return mapErr(sql.ErrNoRows, "run")
-	}
-	return nil
+	return s.tx(ctx, func(c conn) error {
+		rows, err := c.query(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND tenant_id = ?`, id, tenantID)
+		if err != nil {
+			return err
+		}
+		execs, err := scanStrings(rows)
+		if err != nil {
+			return err
+		}
+		if err := removeAttachments(ctx, c, "execution", execs); err != nil {
+			return err
+		}
+		if err := removeAttachments(ctx, c, "run", []string{id}); err != nil {
+			return err
+		}
+		res, err := c.exec(ctx, `DELETE FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return mapErr(sql.ErrNoRows, "run")
+		}
+		return nil
+	})
 }
 
 const execCols = `e.id, e.run_id, e.test_case_id, t.key, t.title, e.status, e.assignee, e.executed_by, e.started_at, e.finished_at, e.duration_ms, e.output, e.notes, e.position, e.defects`

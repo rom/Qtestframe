@@ -121,6 +121,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/members", s.handleAddMember, "member.manage")
 	h("PATCH /api/v1/members/{uid}", s.handleUpdateMember, "member.manage")
 	h("DELETE /api/v1/members/{uid}", s.handleRemoveMember, "member.manage")
+	h("POST /api/v1/members/{uid}/reset-password", s.handleResetPassword, "member.manage")
 	h("GET /api/v1/tokens", s.handleListTokens, "token.manage")
 	h("POST /api/v1/tokens", s.handleCreateToken, "token.manage")
 	h("DELETE /api/v1/tokens/{id}", s.handleDeleteToken, "token.manage")
@@ -212,6 +213,12 @@ func (s *Server) routes() {
 	// search & export
 	h("GET /api/v1/search", s.handleSearch, "project.read")
 	h("GET /api/v1/projects/{pid}/export", s.handleExport, "export")
+
+	// files, attachments, archive, avatars (files.go)
+	s.routesFiles(h)
+	// reports (reports.go) and backup/restore (backup.go)
+	s.routesReports(h)
+	s.routesBackup(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

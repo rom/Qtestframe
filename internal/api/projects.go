@@ -62,10 +62,19 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request, p *
 		Name              *string `json:"name"`
 		Description       *string `json:"description"`
 		DefectURLTemplate *string `json:"defect_url_template"`
+		Icon              *string `json:"icon"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if req.Icon != nil {
+		if !validPreset(*req.Icon) {
+			s.fail(w, r, badRequest(`icon must be "" or "preset:<name>"; upload images with PUT /projects/{pid}/icon`))
+			return
+		}
+		s.dropOldPicture(r.Context(), p.TenantID(), pr.Icon)
+		pr.Icon = *req.Icon
 	}
 	if req.DefectURLTemplate != nil {
 		pr.DefectURLTemplate = *req.DefectURLTemplate
