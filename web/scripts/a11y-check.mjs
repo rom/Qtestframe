@@ -12,8 +12,9 @@
 //   QTF_A11Y_KEYBOARD  0 skips the keyboard/focus checks (skip link, route focus, drawers, runner)
 //   QTF_A11Y_SHOTS     directory: also save a screenshot per route, viewport and configuration
 //
-// Exits 1 on any serious or critical axe violation or any horizontal
-// overflow, 2 when the server cannot be reached or the login fails.
+// Exits 1 on any serious or critical axe violation, any horizontal overflow
+// or a failed keyboard/focus check, 2 when the server cannot be reached or
+// the login fails.
 import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { chromium } from 'playwright-core'
@@ -376,11 +377,11 @@ async function main() {
   if (DISABLED_RULES.length) console.log(`Disabled axe rules: ${DISABLED_RULES.map((r) => `${r.id} (${r.why})`).join(', ')}`)
   console.log(`Summary: ${checks} page checks, ${axeRuns} axe runs (${TAGS.join(', ')}), ${CONFIGS.length} configurations × ${VIEWPORTS.length} viewports`)
   if (problems.length) {
-    console.log(`FAILED: ${problems.length} problem(s) (serious/critical axe violations or horizontal overflow):`)
+    console.log(`FAILED: ${problems.length} problem(s) (serious/critical axe violations, horizontal overflow or keyboard checks):`)
     for (const p of problems) console.log('  ' + p)
     process.exitCode = 1
   } else {
-    console.log('OK: no serious or critical axe violations and no horizontal overflow')
+    console.log('OK: no serious or critical axe violations, no horizontal overflow, keyboard checks passed')
   }
 }
 

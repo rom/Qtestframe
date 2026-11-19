@@ -7,6 +7,7 @@ const sv: Messages = {
     name: 'Qtestframe',
   },
   common: {
+    toggleMaximize: 'Växla helskärm',
     save: 'Spara',
     cancel: 'Avbryt',
     delete: 'Ta bort',

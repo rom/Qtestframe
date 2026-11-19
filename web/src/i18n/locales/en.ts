@@ -5,6 +5,7 @@ const en = {
     name: 'Qtestframe',
   },
   common: {
+    toggleMaximize: 'Toggle full screen',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',

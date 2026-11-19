@@ -180,14 +180,25 @@ administration pages:
 * in five configurations: light theme in English, dark theme in Swedish and
   the decorative themes navy, crazy and green_console (the theme and
   language are set as the admin's preferences and restored afterwards);
-* at the viewports 390×844 (phone), 820×1180 (tablet) and 1440×900
-  (desktop), with touch emulation on the first two;
+* at the viewports 390×844 (phone), 820×1180 (tablet), 1024×768 (tablet
+  landscape) and 1440×900 (desktop), with touch emulation on the tablets
+  and the phone;
+* including open states: the editor drawer, the "new run" dialog, the role
+  matrix dialog and the off-canvas navigation (phone and tablet);
 * with the axe tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, and
   asserting `document.documentElement.scrollWidth <= innerWidth` (no
   horizontal page scroll).
 
-It exits non-zero on any serious or critical violation or any overflow and
-prints a summary; minor and moderate findings are listed but do not fail.
+It then checks keyboard and focus behaviour in the light theme: the skip
+link is the first focusable element and moves focus to the page heading, a
+route change focuses the new `h1` and announces the page title, the editor
+drawer and the off-canvas navigation keep focus inside and give it back on
+close (Escape), and the execution runner's P/F/B/S shortcuts do not fire
+while typing.
+
+It exits non-zero on any serious or critical violation, any overflow or a
+failed keyboard check, and prints a summary; minor and moderate findings
+are listed but do not fail. No axe rule is disabled.
 
 ```sh
 # terminal 1: a scratch directory with the demo data
@@ -206,7 +217,10 @@ npm run a11y
 | `QTF_URL` | `http://127.0.0.1:8080` | server to test |
 | `QTF_EMAIL`, `QTF_PASSWORD` | `admin@example.com`, `Change-me-1234` | sign-in |
 | `QTF_CHROME` | Playwright's Chromium, else a system Chrome | browser executable |
-| `QTF_A11Y_ONLY` | all | comma-separated route names, e.g. `login,dashboard` |
+| `QTF_A11Y_ONLY` | all | comma-separated route names, e.g. `login,dashboard` (skips the keyboard checks) |
+| `QTF_A11Y_CONFIGS` | all | e.g. `light/en,navy/en` |
+| `QTF_A11Y_VIEWPORTS` | all | e.g. `phone,desktop` |
+| `QTF_A11Y_KEYBOARD` | – | `0` skips the keyboard checks |
 | `QTF_A11Y_SHOTS` | – | directory for a screenshot of every page, viewport and configuration |
 
 The script needs a Chrome or Chromium (`npx playwright install chromium`

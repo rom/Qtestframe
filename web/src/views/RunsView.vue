@@ -179,7 +179,7 @@ const progress = (r: TestRun) => summarize(r.summary)
     </DataTable>
   </div>
 
-  <Dialog v-model:visible="dialog" :header="t('runs.newHeader')" modal maximizable style="width: min(760px, 96vw)">
+  <Dialog v-model:visible="dialog" :header="t('runs.newHeader')" modal maximizable :maximize-button-props="{ 'aria-label': t('common.toggleMaximize') }" style="width: min(760px, 96vw)">
     <div class="grid" style="gap: 14px">
       <Message v-if="createError" severity="error" :closable="false">{{ createError }}</Message>
       <div class="form-grid">
