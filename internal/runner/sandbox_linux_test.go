@@ -39,7 +39,9 @@ func runSandboxHelper(t *testing.T, workdir, argv0 string) string {
 		parentCov = f.Value.String()
 	}
 	childCov := filepath.Join(workdir, "cov")
-	if parentCov != "" {
+	// A coverage-instrumented child always needs a writable coverage
+	// directory: under Landlock it cannot create one in $TMPDIR itself.
+	if testing.CoverMode() != "" {
 		if err := os.MkdirAll(childCov, 0o700); err != nil {
 			t.Fatal(err)
 		}

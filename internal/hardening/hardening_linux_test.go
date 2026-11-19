@@ -116,6 +116,11 @@ func runChild(t *testing.T, spec childSpec) map[string]string {
 	if f := flag.Lookup("test.gocoverdir"); f != nil {
 		covDir = f.Value.String()
 	}
+	if covDir == "" && testing.CoverMode() != "" {
+		// Instrumented binary run without -test.gocoverdir: the child must
+		// still be able to write its counters somewhere it is allowed to.
+		covDir = t.TempDir()
+	}
 	if covDir != "" {
 		spec.Opts.ReadWritePaths = append(spec.Opts.ReadWritePaths, covDir)
 	}
@@ -285,6 +290,9 @@ func TestChildSeccompDenyNetwork(t *testing.T) {
 func TestChildDropCapabilities(t *testing.T) {
 	res := runChild(t, childSpec{Opts: Options{DropCapabilities: true, KeepCapabilities: []int{unix.CAP_NET_BIND_SERVICE, 99, -1}}})
 	r := report(t, res)
+	if contains(r.Skipped, "capabilities: capset on all threads requires a CGO_ENABLED=0 build") {
+		t.Skip("cgo build: AllThreadsSyscall unsupported (run with CGO_ENABLED=0)")
+	}
 	if !contains(r.Applied, "capabilities") {
 		t.Fatalf("capabilities not applied: %+v", r)
 	}
