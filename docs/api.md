@@ -22,6 +22,8 @@ is unreachable); all other paths serve the web client.
 * **Tenant** – the session has a *current tenant*; all project data is scoped
   to it. Switch with `POST /auth/switch-tenant`. Bearer tokens are bound to
   one tenant; their role is capped at the user's current role.
+* **Language** – the API itself is English (error messages, export
+  headers); the web client translates its own texts.
 * **Errors** – non-2xx responses have the body
   `{"error": "<message>", "code": "<machine_code>"}`. Codes: `bad_request`
   (400), `unauthorized` (401), `forbidden` (403), `not_found` (404),
@@ -224,7 +226,8 @@ import) `run.execute`.
 
 | Key | Values | Effect |
 |---|---|---|
-| `theme` | `light`, `dark`, `system` | colour theme (applied on every device) |
+| `theme` | `light`, `dark`, `system`, `spring`, `autumn`, `desert`, `camouflage`, `city_camouflage`, `navy`, `green_console`, `crazy` | colour theme (applied on every device) |
+| `language` | `en`, `sv`; empty = browser language | language of the web client |
 | `start_page` | `projects`, `last_project`, `default_project`, `search` | page shown after login / on `/` |
 | `default_project_id` | project id | used by `start_page: default_project` |
 | `default_tenant_id` | tenant id (must be a membership) | tenant selected at login when no tenant is given |
