@@ -66,10 +66,16 @@ func (r *Runner) Run(ctx context.Context, lang, script string, env map[string]st
 	if !ok || interp == "" {
 		return nil, fmt.Errorf("runner: no interpreter configured for %q", lang)
 	}
-	if err := os.MkdirAll(r.Cfg.WorkDir, 0o700); err != nil {
+	// The child runs inside its job directory, so every path handed to it
+	// must be absolute (a relative work_dir would be resolved twice).
+	workDir, err := filepath.Abs(r.Cfg.WorkDir)
+	if err != nil {
 		return nil, fmt.Errorf("runner: work dir: %w", err)
 	}
-	dir, err := os.MkdirTemp(r.Cfg.WorkDir, "run-")
+	if err := os.MkdirAll(workDir, 0o700); err != nil {
+		return nil, fmt.Errorf("runner: work dir: %w", err)
+	}
+	dir, err := os.MkdirTemp(workDir, "run-")
 	if err != nil {
 		return nil, fmt.Errorf("runner: temp dir: %w", err)
 	}

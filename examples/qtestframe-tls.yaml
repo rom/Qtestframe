@@ -1,0 +1,55 @@
+# Qtestframe – working example configuration with HTTPS.
+#
+# 1. Create a self-signed certificate for localhost (files go to ./certs):
+#
+#      make certs-dev
+#      # = scripts/certs/gen-server-cert.sh --cn localhost \
+#      #     --san DNS:localhost,IP:127.0.0.1 --self-signed --out certs
+#
+# 2. Start the server from the repository root:
+#
+#      ./bin/qtestframe serve --config examples/qtestframe-tls.yaml
+#
+# 3. Open https://localhost:8443 (accept the self-signed certificate) and
+#    sign in as admin@example.com with the bootstrap password below.
+#
+# Reload a renewed certificate without a restart: kill -HUP <pid>.
+# For a real host name use scripts/certs/letsencrypt.sh instead.
+
+server:
+  listen: ":8443"
+  base_url: "https://localhost:8443"
+  tls_cert: "./certs/server.crt"
+  tls_key: "./certs/server.key"
+  hsts: true
+
+database:
+  driver: sqlite
+  dsn: "./data/qtestframe-tls.db"
+
+logging:
+  level: info
+  format: text
+
+auth:
+  local: true
+  session_ttl: 8h
+  cookie_secure: true   # HTTPS: session cookies are Secure
+
+requirements:
+  auto_create_test: true
+
+runner:
+  enabled: false        # enable as in examples/qtestframe.yaml if needed
+
+hardening:
+  no_new_privs: true
+  landlock: true
+  seccomp: true
+  drop_capabilities: true
+
+bootstrap:
+  tenant_slug: default
+  tenant_name: "Default"
+  admin_email: "admin@example.com"
+  admin_password: "Change-me-1234"

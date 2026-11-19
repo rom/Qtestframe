@@ -250,6 +250,28 @@ An evaluation criterion states how a requirement is judged fulfilled:
   verifies. Coverage is computed per requirement, not per criterion.
 * Creating and deleting links requires `test.write`.
 
+### Automatic requirement ↔ test correlation
+
+By default every new requirement gets a **linked test case** (server setting
+`requirements.auto_create_test: true`; per request `"create_test": false`
+opts out, `true` opts in when the server default is off; the web editor has
+an "Also create linked test" checkbox). The test (`createLinkedTest` in
+`internal/api/items.go`):
+
+* is titled `Verify <REQ-KEY>: <requirement title>`, manual, `draft`, with
+  the requirement's priority and the tag `auto-generated`;
+* gets one step per evaluation criterion (`Verify (<method>): <criterion>`,
+  expected = threshold or "Criterion is met"), or a single step derived from
+  the requirement text when there are no criteria;
+* is placed in the test folder whose name path mirrors the requirement's
+  folder path (e.g. requirement in `Security / Auth` → test in test folder
+  `Security / Auth`), creating missing folders;
+* is linked to the requirement, so the requirement starts with coverage
+  `not_run` instead of `none`.
+
+If creating the test or link fails, the requirement is deleted again and the
+request fails, so the client never sees a half-done result.
+
 ## 7. Coverage calculation
 
 Derived on every read, never stored (`store.LastResults`, `store.Coverage`).

@@ -14,6 +14,7 @@ export const DEFAULT_META: Meta = {
   run_statuses: ['planned', 'in_progress', 'completed', 'aborted'],
   result_statuses: ['not_run', 'in_progress', 'passed', 'failed', 'blocked', 'skipped'],
   roles: ['admin', 'manager', 'tester', 'viewer'],
+  auto_create_test: true,
 }
 
 export const useMetaStore = defineStore('meta', {
@@ -26,8 +27,9 @@ export const useMetaStore = defineStore('meta', {
         const merged = { ...DEFAULT_META } as Meta
         for (const k of Object.keys(DEFAULT_META) as (keyof Meta)[]) {
           const v = m?.[k]
-          if (Array.isArray(v) && v.length) merged[k] = v
+          if (Array.isArray(v) && v.length) (merged as unknown as Record<string, unknown>)[k] = v
         }
+        if (typeof m?.auto_create_test === 'boolean') merged.auto_create_test = m.auto_create_test
         this.meta = merged
         this.loaded = true
       } catch {

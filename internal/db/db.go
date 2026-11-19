@@ -12,6 +12,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -50,6 +52,9 @@ func Open(ctx context.Context, driver, dsn string, maxOpen int) (*DB, error) {
 	switch driver {
 	case "sqlite":
 		d = SQLite
+		if err := ensureSQLiteDir(dsn); err != nil {
+			return nil, err
+		}
 		sdb, err = sql.Open("sqlite", sqliteDSN(dsn))
 		if err == nil {
 			// A single connection serialises writers and avoids SQLITE_BUSY.
@@ -78,6 +83,23 @@ func Open(ctx context.Context, driver, dsn string, maxOpen int) (*DB, error) {
 		return nil, fmt.Errorf("db: ping: %w", err)
 	}
 	return &DB{DB: sdb, Dialect: d}, nil
+}
+
+// ensureSQLiteDir creates the parent directory of a file database (mode
+// 0700) so that a fresh install can point at e.g. ./data/qtestframe.db.
+func ensureSQLiteDir(dsn string) error {
+	path := strings.TrimPrefix(strings.SplitN(dsn, "?", 2)[0], "file:")
+	if path == "" || path == ":memory:" || strings.HasPrefix(path, ":memory:") {
+		return nil
+	}
+	dir := filepath.Dir(path)
+	if dir == "." || dir == "/" {
+		return nil
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return fmt.Errorf("db: create directory for %s: %w", path, err)
+	}
+	return nil
 }
 
 func sqliteDSN(dsn string) string {

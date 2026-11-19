@@ -52,6 +52,9 @@ func newEnv(t *testing.T, mut ...func(*config.Config)) *env {
 	cfg.Runner.Sandbox = false
 	cfg.Runner.WorkDir = t.TempDir()
 	cfg.Runner.Timeout = 10 * time.Second
+	// Most tests assert exact item counts; the automatic linked test is
+	// covered separately in TestAutoCreateLinkedTest.
+	cfg.Requirements.AutoCreateTest = false
 	for _, m := range mut {
 		m(&cfg)
 	}
@@ -964,4 +967,73 @@ func TestPasswordChangeEndsOtherSessions(t *testing.T) {
 	a.call("POST", "/api/v1/auth/password", map[string]string{"current_password": testPassword, "new_password": "Brand-new-pass-9"}, 204, nil)
 	a.m("GET", "/api/v1/auth/me", nil, 200)
 	other.m("GET", "/api/v1/auth/me", nil, 401)
+}
+
+func TestAutoCreateLinkedTest(t *testing.T) {
+	e := newEnv(t, func(c *config.Config) { c.Requirements.AutoCreateTest = true })
+	a := e.login("admin@example.com")
+	pid := a.project("AUTO")
+	if m := a.m("GET", "/api/v1/meta", nil, 200); m["auto_create_test"] != true {
+		t.Fatal(m)
+	}
+	top := a.m("POST", "/api/v1/projects/"+pid+"/folders", map[string]any{"kind": "requirement", "name": "Security"}, 201)
+	sub := a.m("POST", "/api/v1/projects/"+pid+"/folders", map[string]any{"kind": "requirement", "name": "Auth", "parent_id": top["id"]}, 201)
+
+	// default: a linked test is created in a mirrored folder, one step per criterion
+	r := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{
+		"title": "Login", "description": "The system MUST authenticate users.", "folder_id": sub["id"], "priority": "high",
+		"criteria": []map[string]any{{"description": "valid login works"}, {"description": "p95 latency", "method": "analysis", "threshold": "< 1 s"}},
+	}, 201)
+	lt, ok := r["linked_test"].(map[string]any)
+	if !ok || r["linked_tests"].(float64) != 1 || r["coverage"] != "not_run" {
+		t.Fatal(r)
+	}
+	tc := a.m("GET", "/api/v1/tests/"+lt["id"].(string), nil, 200)
+	steps := tc["steps"].([]any)
+	if tc["folder_path"] != "Security / Auth" || tc["priority"] != "high" || tc["status"] != "draft" || len(steps) != 2 ||
+		!strings.HasPrefix(tc["title"].(string), "Verify AUTO-REQ-1: Login") || steps[1].(map[string]any)["expected"] != "< 1 s" {
+		t.Fatal(tc)
+	}
+	links := items(a.m("GET", "/api/v1/requirements/"+r["id"].(string)+"/links", nil, 200))
+	if len(links) != 1 || links[0]["test_case_id"] != lt["id"] {
+		t.Fatal(links)
+	}
+	// a second requirement in the same folder reuses the mirrored test folders
+	r2 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Logout", "folder_id": sub["id"]}, 201)
+	tc2 := a.m("GET", "/api/v1/tests/"+r2["linked_test"].(map[string]any)["id"].(string), nil, 200)
+	if tc2["folder_id"] != tc["folder_id"] || len(tc2["steps"].([]any)) != 1 {
+		t.Fatal(tc2)
+	}
+	if n := len(items(a.m("GET", "/api/v1/projects/"+pid+"/folders?kind=test", nil, 200))); n != 2 {
+		t.Fatal(n)
+	}
+	// top-level requirement -> top-level test
+	r3 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Top"}, 201)
+	if r3["linked_test"].(map[string]any)["folder_id"] != nil {
+		t.Fatal(r3)
+	}
+	// opt out per request
+	r4 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "No test", "create_test": false}, 201)
+	if r4["linked_test"] != nil || r4["linked_tests"].(float64) != 0 {
+		t.Fatal(r4)
+	}
+	if n := len(items(a.m("GET", "/api/v1/projects/"+pid+"/tests", nil, 200))); n != 3 {
+		t.Fatal(n)
+	}
+
+	// a second writer role also gets the linked test
+	e.st.SetMembership(context.Background(), e.tenant.ID, mkUser(t, e.st, "w@example.com", false).ID, rbac.RoleManager)
+	m := e.login("w@example.com")
+	if r := m.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "M"}, 201); r["linked_test"] == nil {
+		t.Fatal("manager has test.write and should get a linked test")
+	}
+
+	// opt-in when the server default is off
+	e.srv.Cfg.Requirements.AutoCreateTest = false
+	if r := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Off"}, 201); r["linked_test"] != nil {
+		t.Fatal(r)
+	}
+	if r := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Opt in", "create_test": true}, 201); r["linked_test"] == nil {
+		t.Fatal(r)
+	}
 }

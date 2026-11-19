@@ -51,15 +51,20 @@ type Env struct {
 const usage = `qtestframe – requirements and test management server
 
 Usage:
-  qtestframe serve       [--config FILE]          run the HTTP(S) server
+  qtestframe serve       [--config FILE] [--port N | -p N] [--listen HOST:PORT]
+                                                  run the HTTP(S) server
   qtestframe migrate     [--config FILE]          apply database migrations
   qtestframe user create [--config FILE] --email E [--name N] [--password-stdin] [--super-admin]
   qtestframe tenant create [--config FILE] --slug S --name N
   qtestframe member add  [--config FILE] --tenant SLUG --email E --role admin|manager|tester|viewer
   qtestframe seed-demo   [--config FILE] [--tenant SLUG]
-  qtestframe check-config [--config FILE]
-  qtestframe healthcheck [--config FILE] [--url URL]
+  qtestframe check-config [--config FILE] [--port N] [--listen HOST:PORT]
+  qtestframe healthcheck [--config FILE] [--port N] [--url URL]
   qtestframe version
+
+The configuration file is YAML (see deploy/config.example.yaml); unknown keys
+are rejected. Precedence: command line flags > QTF_* environment variables >
+YAML file > built-in defaults.
 `
 
 // Run executes the command line and returns the exit code.
@@ -126,6 +131,15 @@ func newFlags(name string, env Env) (*flag.FlagSet, *string) {
 	return fs, cfg
 }
 
+// listenFlags registers --listen and --port (-p) on fs.
+func listenFlags(fs *flag.FlagSet) *config.Overrides {
+	o := &config.Overrides{}
+	fs.StringVar(&o.Listen, "listen", "", "listen address host:port (overrides server.listen)")
+	fs.IntVar(&o.Port, "port", 0, "listen port (overrides the port of server.listen)")
+	fs.IntVar(&o.Port, "p", 0, "shorthand for --port")
+	return o
+}
+
 // openStore loads configuration, opens and migrates the database.
 func openStore(ctx context.Context, cfgPath string) (config.Config, *store.Store, error) {
 	cfg, err := config.Load(cfgPath)
@@ -145,13 +159,15 @@ func openStore(ctx context.Context, cfgPath string) (config.Config, *store.Store
 
 func cmdCheckConfig(args []string, env Env) error {
 	fs, cfgPath := newFlags("check-config", env)
+	ov := listenFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if _, err := config.Load(*cfgPath); err != nil {
+	cfg, err := config.LoadWith(*cfgPath, *ov)
+	if err != nil {
 		return err
 	}
-	fmt.Fprintln(env.Stdout, "configuration OK")
+	fmt.Fprintf(env.Stdout, "configuration OK (listen %s, database %s)\n", cfg.Server.Listen, cfg.Database.Driver)
 	return nil
 }
 
@@ -388,10 +404,11 @@ func hardeningOptions(cfg config.Config) hardening.Options {
 
 func cmdServe(args []string, env Env) error {
 	fs, cfgPath := newFlags("serve", env)
+	ov := listenFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	cfg, err := config.Load(*cfgPath)
+	cfg, err := config.LoadWith(*cfgPath, *ov)
 	if err != nil {
 		return err
 	}
@@ -537,12 +554,13 @@ func (c *certReloader) watch(ctx context.Context, log *slog.Logger) {
 func cmdHealthcheck(args []string, env Env) error {
 	fs, cfgPath := newFlags("healthcheck", env)
 	rawURL := fs.String("url", "", "URL to probe (default derived from server.listen)")
+	ov := listenFlags(fs)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	u := *rawURL
 	if u == "" {
-		cfg, err := config.Load(*cfgPath)
+		cfg, err := config.LoadWith(*cfgPath, *ov)
 		if err != nil {
 			return err
 		}

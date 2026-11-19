@@ -1,0 +1,93 @@
+# Qtestframe – working example configuration (local evaluation).
+#
+# Runs as-is from the repository root after `make build`:
+#
+#   ./bin/qtestframe serve --config examples/qtestframe.yaml
+#
+# then open http://localhost:8080 and sign in as admin@example.com with the
+# bootstrap password below (change it under Profile after the first login).
+#
+# Everything is relative to the directory you start the server from:
+# the SQLite database and the script runner live in ./data (created on start).
+#
+# This file is plain HTTP on purpose. For HTTPS see
+# examples/qtestframe-tls.yaml; for a production server see
+# deploy/config.example.yaml and docs/operations.md.
+#
+# Unknown keys are rejected, so a typo shows up as an error at start-up.
+# Command line flags override this file, e.g. `--port 9090` or `-p 9090`.
+
+server:
+  # Address and port to listen on. ":8080" = all interfaces; use
+  # "127.0.0.1:8080" to accept local connections only.
+  listen: ":8080"
+  # URL users type in the browser (used for OIDC/SAML callbacks).
+  base_url: "http://localhost:8080"
+  read_timeout: 30s
+  write_timeout: 120s
+  # No TLS here: HSTS is only sent over TLS anyway.
+  hsts: false
+
+database:
+  # sqlite (single file, zero setup) or postgres. To use PostgreSQL:
+  #   driver: postgres
+  #   dsn: "postgres://qtf:qtf@localhost:5432/qtf?sslmode=disable"
+  # (scripts/dev-postgres.sh starts a throwaway PostgreSQL in a container).
+  driver: sqlite
+  dsn: "./data/qtestframe.db"
+
+logging:
+  level: info        # debug | info | warn | error
+  format: text       # text (readable) | json (for log shippers)
+  syslog:
+    # Set enabled: true to also ship logs to a syslog server, e.g. a local
+    # rsyslog listening on UDP 514.
+    enabled: false
+    network: udp     # udp | tcp | tls | unix
+    address: "127.0.0.1:514"
+    tag: qtestframe
+    facility: local0
+    format: rfc5424
+
+auth:
+  local: true          # e-mail + password login
+  session_ttl: 12h
+  # Browsers only send Secure cookies over HTTPS (http://localhost is an
+  # exception in most browsers). Plain HTTP therefore needs false.
+  cookie_secure: false
+  oidc: []             # see deploy/config.example.yaml for OIDC providers
+  saml: []             # see deploy/config.example.yaml for SAML providers
+
+requirements:
+  # Create a linked draft test case for every new requirement.
+  auto_create_test: true
+
+runner:
+  # Allow "Run script" for automated test cases. Scripts run on this machine
+  # in a sandbox (Landlock + seccomp + rlimits); keep it off on shared hosts.
+  enabled: true
+  sandbox: true
+  deny_network: false
+  timeout: 60s
+  work_dir: "./data/runner"
+  max_output_bytes: 1048576
+  interpreters:
+    sh: /bin/sh
+    bash: /bin/bash
+    python: /usr/bin/python3
+    javascript: /usr/bin/node
+
+hardening:
+  # In-process Linux hardening; ignored (reported as skipped) on macOS.
+  no_new_privs: true
+  landlock: true
+  seccomp: true
+  drop_capabilities: true
+
+bootstrap:
+  # Created on the very first start, when the database has no users.
+  # The administrator is a super admin and admin of this tenant.
+  tenant_slug: default
+  tenant_name: "Default"
+  admin_email: "admin@example.com"
+  admin_password: "Change-me-1234"

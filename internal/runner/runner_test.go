@@ -290,3 +290,25 @@ func TestSandboxedRunDenyNetwork(t *testing.T) {
 		t.Errorf("network unexpectedly blocked: %q", out)
 	}
 }
+
+func TestRunRelativeWorkDir(t *testing.T) {
+	base := t.TempDir()
+	wd, _ := os.Getwd()
+	if err := os.Chdir(base); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(wd)
+	for _, sandbox := range []bool{false, true} {
+		if sandbox && runtime.GOOS != "linux" {
+			continue
+		}
+		r := newRunner(t)
+		r.Cfg.WorkDir = "./rel/runner"
+		r.Cfg.Sandbox = sandbox
+		r.Self = os.Args[0]
+		res, err := r.Run(context.Background(), "sh", "echo hi > out.txt && cat out.txt", nil)
+		if err != nil || !res.Passed || !strings.Contains(res.Output, "hi") {
+			t.Fatalf("sandbox=%v: %+v %v", sandbox, res, err)
+		}
+	}
+}
