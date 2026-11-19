@@ -12,14 +12,21 @@ import StatusTag from './StatusTag.vue'
 import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
+import CommentsPanel from './CommentsPanel.vue'
+import HistoryPanel from './HistoryPanel.vue'
+import RelationsPanel from './RelationsPanel.vue'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { debounce, moveItem } from '@/lib/collections'
 import { segments } from '@/lib/highlight'
 import { formatDateTime, humanize, options } from '@/lib/format'
-import { buildTree, flatten } from '@/lib/tree'
+import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Analysis, Category, EvaluationCriterion, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
+import { usePrefsStore } from '@/stores/prefs'
 
 const props = defineProps<{
   projectId: string
@@ -33,6 +40,7 @@ const props = defineProps<{
 const emit = defineEmits<{ saved: [item: Requirement]; deleted: [id: string]; close: [] }>()
 const meta = useMetaStore()
 const notify = useNotify()
+const prefs = usePrefsStore()
 
 interface CriterionRow {
   id?: string
@@ -70,9 +78,29 @@ const pickTests = ref(false)
 const linkCriterion = ref<string | null>(null)
 
 const isNew = computed(() => !props.itemId)
-// New requirements get a linked test by default (server setting requirements.auto_create_test).
-const createTest = ref(meta.meta.auto_create_test !== false)
-watch(() => meta.meta.auto_create_test, (v) => { if (isNew.value) createTest.value = v !== false })
+// New requirements get a linked test by default: personal preference
+// create_linked_test, else the server setting requirements.auto_create_test.
+const createTest = ref(prefs.createLinkedTest(meta.meta.auto_create_test))
+watch([() => meta.meta.auto_create_test, () => prefs.prefs.create_linked_test], () => {
+  if (isNew.value) createTest.value = prefs.createLinkedTest(meta.meta.auto_create_test)
+})
+
+// ---------- tabs ----------
+const tab = ref('details')
+const commentCount = ref(0)
+const relationCount = ref(0)
+function resolveId(field: string, id: string): string | undefined {
+  if (field === 'category_ids') {
+    const c = props.categories.find((x) => x.id === id)
+    return c ? `${c.dimension}/${c.name}` : undefined
+  }
+  if (field === 'folder_id') return folderPath(props.folders, id) || undefined
+  return undefined
+}
+async function onRestored(r: unknown) {
+  await load()
+  if (r && typeof r === 'object') emit('saved', r as Requirement)
+}
 const folderOptions = computed(() => [
   { id: null as string | null, label: '— top level —' },
   ...flatten(buildTree(props.folders)).map((f) => ({ id: f.id as string | null, label: '  '.repeat(f.depth) + f.label })),
@@ -86,12 +114,15 @@ async function load() {
   if (!props.itemId) {
     item.value = null
     form.value = blank()
+    tab.value = 'details'
     return
   }
   loading.value = true
   try {
     const r = await api.get<Requirement>(`/requirements/${props.itemId}`)
     item.value = r
+    commentCount.value = r.comment_count ?? 0
+    relationCount.value = r.relation_count ?? 0
     form.value = {
       title: r.title,
       description: r.description,
@@ -133,7 +164,7 @@ async function loadLinks() {
 const analysis = ref<Analysis | null>(null)
 const analyzing = ref(false)
 const runAnalysis = debounce(async (text: string) => {
-  if (!text.trim()) {
+  if (!text.trim() || prefs.hideAnalysis) {
     analysis.value = null
     return
   }
@@ -222,6 +253,7 @@ async function save() {
       linked ? `${saved?.key} with linked test ${linked.key}` : saved?.key,
     )
     emit('saved', saved)
+    if (!isNew.value) await load() // refresh version and counts
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -282,7 +314,27 @@ function criterionLabel(id: string | null) {
 
 <template>
   <div v-if="loading" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
-  <form v-else class="grid" style="gap: 14px" @submit.prevent="save">
+  <template v-else>
+  <Tabs v-if="item" v-model:value="tab" class="editor-tabs">
+    <TabList>
+      <Tab value="details"><i class="pi pi-file-edit" /> Details</Tab>
+      <Tab value="relations"><i class="pi pi-sitemap" /> Relations <span class="count">{{ relationCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" /> Comments <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="history"><i class="pi pi-history" /> History</Tab>
+    </TabList>
+  </Tabs>
+  <RelationsPanel v-if="item && tab === 'relations'" :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" />
+  <CommentsPanel v-if="item && tab === 'comments'" entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" />
+  <HistoryPanel
+    v-if="item && tab === 'history'"
+    entity="requirement"
+    :entity-id="item.id"
+    :can-restore="canWrite"
+    :current-version="item.version"
+    :resolve="resolveId"
+    @restored="onRestored"
+  />
+  <form v-show="!item || tab === 'details'" class="grid" style="gap: 14px" @submit.prevent="save">
     <div class="row">
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item" :value="'v' + item.version" severity="secondary" />
@@ -300,7 +352,7 @@ function criterionLabel(id: string | null) {
       <Textarea v-model="form.description" rows="5" auto-resize :disabled="!canWrite" placeholder="The system SHALL …" />
     </div>
 
-    <div v-if="form.description.trim()" class="analysis">
+    <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis">
       <div class="row" style="justify-content: space-between; margin-bottom: 8px">
         <span class="row">
           <i class="pi pi-sparkles" style="color: var(--p-primary-color)" />
@@ -440,4 +492,5 @@ function criterionLabel(id: string | null) {
       @pick="addLinks"
     />
   </form>
+  </template>
 </template>

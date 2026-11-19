@@ -286,7 +286,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			return nil, err
 		}
 		sort.SliceStable(runs, func(i, j int) bool { return runs[i].CreatedAt.Before(runs[j].CreatedAt) })
-		sec := export.Section{Name: "runs", Title: "Test runs", Columns: []string{"Run", "Run status", "Environment", "Build", "Created", "Test", "Title", "Result", "Executed by", "Duration (ms)", "Notes"}}
+		sec := export.Section{Name: "runs", Title: "Test runs", Columns: []string{"Run", "Run status", "Environment", "Build", "Created", "Test", "Title", "Result", "Executed by", "Duration (ms)", "Defects", "Notes"}}
 		for _, run := range runs {
 			es, err := s.Store.ListExecutions(ctx, p.TenantID(), run.ID)
 			if err != nil {
@@ -294,7 +294,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			}
 			for _, e := range es {
 				sec.Rows = append(sec.Rows, []string{run.Name, run.Status, run.Environment, run.Build, ts(run.CreatedAt), e.TestKey, e.TestTitle,
-					e.Status, e.ExecutedBy, strconv.FormatInt(e.DurationMS, 10), e.Notes})
+					e.Status, e.ExecutedBy, strconv.FormatInt(e.DurationMS, 10), strings.Join(e.Defects, ", "), e.Notes})
 			}
 		}
 		ds.Sections = append(ds.Sections, sec)

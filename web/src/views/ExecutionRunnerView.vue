@@ -10,6 +10,9 @@ import ProgressSpinner from 'primevue/progressspinner'
 import ProgressBar from 'primevue/progressbar'
 import Tag from 'primevue/tag'
 import StatusTag from '@/components/StatusTag.vue'
+import TagsInput from '@/components/TagsInput.vue'
+import DefectLinks from '@/components/DefectLinks.vue'
+import { normalizeDefects } from '@/lib/defects'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { RESULT_COLORS } from '@/lib/colors'
 import { formatDateTime, formatDuration, humanize, options } from '@/lib/format'
@@ -46,6 +49,7 @@ const current = ref(0)
 const notes = ref('')
 const assignee = ref('')
 const output = ref('')
+const defects = ref<string[]>([])
 const AUTO = 'auto'
 const override = ref<string>(AUTO)
 const loading = ref(false)
@@ -53,7 +57,7 @@ const saving = ref(false)
 const running = ref(false)
 const snapshot = ref('')
 function stateKey() {
-  return JSON.stringify([notes.value, assignee.value, output.value, override.value, steps.value.map((x) => [x.status, x.actual])])
+  return JSON.stringify([notes.value, assignee.value, output.value, override.value, normalizeDefects(defects.value), steps.value.map((x) => [x.status, x.actual])])
 }
 const dirty = computed(() => !!ex.value && stateKey() !== snapshot.value)
 const error = ref('')
@@ -110,6 +114,7 @@ async function load() {
     notes.value = e.notes || ''
     assignee.value = e.assignee || ''
     output.value = e.output || ''
+    defects.value = normalizeDefects(e.defects)
     override.value = steps.value.length || !e.status ? AUTO : e.status
     snapshot.value = stateKey()
   } catch (e) {
@@ -150,7 +155,7 @@ async function save(): Promise<boolean> {
   if (!ex.value) return false
   saving.value = true
   try {
-    const body: Record<string, unknown> = { notes: notes.value, assignee: assignee.value }
+    const body: Record<string, unknown> = { notes: notes.value, assignee: assignee.value, defects: normalizeDefects(defects.value) }
     if (steps.value.length) body.step_results = steps.value.map((s) => ({ id: s.id, status: s.status, actual: s.actual }))
     if (override.value !== AUTO || !steps.value.length) body.status = effectiveStatus.value
     if (isAutomated.value) body.output = output.value
@@ -341,6 +346,14 @@ const statusOptions = computed(() => [
         <div class="field">
           <label>Assignee</label>
           <InputText v-model="assignee" :disabled="!canExecute" placeholder="Unassigned" />
+        </div>
+        <div class="field full">
+          <label>Defects</label>
+          <TagsInput v-model="defects" :disabled="!canExecute" icon="pi pi-exclamation-circle" placeholder="Defect ID (e.g. JIRA-123) or URL, then Enter" />
+          <span class="small row" style="gap: 4px">
+            <DefectLinks :defects="defects" />
+            <span v-if="defects.length && !proj.project?.defect_url_template" class="muted">Set a defect tracker URL template in the project settings to link IDs.</span>
+          </span>
         </div>
         <div class="field full">
           <label>Notes</label>

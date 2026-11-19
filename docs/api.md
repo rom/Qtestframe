@@ -211,6 +211,105 @@ import) `run.execute`.
 | PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual"}]}` – status derived from steps when omitted and steps given |
 | POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled) → execution with embedded `test` |
 
+## Profile and sessions
+
+| Method | Path | Notes |
+|---|---|---|
+| PATCH | `/auth/me` | `{"display_name"?, "preferences"?}` → `Me`. `preferences` keys present in the body replace the stored ones; `null` resets a key. Invalid values → 400 |
+| GET | `/auth/sessions` | own active sessions: `[{id, created_at, expires_at, last_seen, ip, user_agent, tenant_id, current}]` (newest first) |
+| DELETE | `/auth/sessions/{id}` | revoke one own session (revoking `current` logs out) |
+| POST | `/auth/sessions/revoke-others` | revoke all own sessions except the current one → `{"revoked": n}` |
+
+`Me.user.preferences` (all optional; empty = default):
+
+| Key | Values | Effect |
+|---|---|---|
+| `theme` | `light`, `dark`, `system` | colour theme (applied on every device) |
+| `start_page` | `projects`, `last_project`, `default_project`, `search` | page shown after login / on `/` |
+| `default_project_id` | project id | used by `start_page: default_project` |
+| `default_tenant_id` | tenant id (must be a membership) | tenant selected at login when no tenant is given |
+| `page_size` | `10`, `25`, `50`, `100` | default rows per table page |
+| `date_format` | `locale`, `iso`, `relative` | how timestamps are shown |
+| `timezone` | IANA name, e.g. `Europe/Stockholm`; `""` = browser | time zone for timestamps |
+| `compact_tables` | bool | denser tables |
+| `hide_analysis` | bool | hide the live requirement-language analysis in the editor |
+| `create_linked_test` | bool | personal default for "Also create linked test" (overrides the server default) |
+
+## Revision history
+
+Every create, update, restore, move and bulk update of a requirement or test
+stores a revision (a full JSON snapshot). Tests now also have a `version`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/requirements/{id}/history` | `[Revision]` newest first: `{id, entity_type, entity_id, version, action, changed_fields, snapshot, user_email, created_at}` |
+| GET | `/tests/{id}/history` | same for tests |
+| POST | `/requirements/{id}/restore` | `{"revision_id"}` → restores the snapshot's fields (title, description, obligation, type, priority, status, source, rationale, owner, tags, categories, criteria) as a new version → Requirement |
+| POST | `/tests/{id}/restore` | `{"revision_id"}` → restores fields and steps as a new version → TestCase |
+
+`changed_fields` lists top-level keys that differ from the previous revision
+(derived fields and timestamps ignored).
+
+## Requirement relations
+
+Types: `refines` (source is a child/decomposition of target), `depends_on`,
+`derived_from`, `conflicts_with`, `duplicates`, `relates_to`. Both
+requirements must be in the same project; self-relations and `refines`
+cycles are rejected (400); duplicates → 409.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/requirements/{id}/relations` | requirement.read | `[Relation]` both directions; `direction` = `outgoing` (this is source) or `incoming` |
+| POST | `/requirements/{id}/relations` | requirement.write | `{"target_id", "type"}` → Relation |
+| DELETE | `/relations/{id}` | requirement.write | |
+| GET | `/projects/{pid}/relations` | requirement.read | all relations of the project |
+
+Requirement lists add `relation_count`. Query fields: `related` (keys of all
+related requirements), `parent` (keys this requirement refines), `child`
+(keys refining this requirement).
+
+## Baselines
+
+A baseline freezes the current version of all (or filtered) requirements
+and tests of a project.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/baselines` | requirement.read | `[Baseline]` without items, newest first |
+| POST | `/projects/{pid}/baselines` | requirement.write | `{"name", "description", "query"?}` (`query` filters requirements and tests like the export filter) → Baseline |
+| GET | `/baselines/{id}` | requirement.read | Baseline with `items` |
+| GET | `/baselines/{id}/compare?to=current\|<baseline_id>` | requirement.read | BaselineDiff `{from, to, added, removed, changed, unchanged}`; each entry `{entity_type, entity_id, key, title, from_version, to_version, changed_fields}` |
+| DELETE | `/baselines/{id}` | requirement.write | |
+
+## Comments
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/requirements/{id}/comments`, `/tests/{id}/comments` | `[Comment]` oldest first: `{id, entity_type, entity_id, user_id, user_email, user_name, body, created_at, updated_at}` |
+| POST | same | `{"body"}` (1–10000 chars); any member who can read the item |
+| PATCH | `/comments/{id}` | `{"body"}`, author only |
+| DELETE | `/comments/{id}` | author, or `member.manage` |
+
+Requirement and test lists add `comment_count`.
+
+## Test execution history, defects and shared steps
+
+* `GET /tests/{id}/executions` (run.read) → all executions of the test across
+  runs, newest first, with `run_name`, `run_status`, `run_environment`,
+  `run_build`, `run_created_at`.
+* Executions have `defects: [string]` (IDs such as `JIRA-123` or URLs),
+  settable with `PATCH /executions/{id}` `{"defects": [...]}`. Projects have
+  `defect_url_template` (e.g. `https://jira.example.com/browse/{id}`, set via
+  `PATCH /projects/{pid}`); clients render links by replacing `{id}`.
+  Execution query field `defect`; test query field `defect` (defects of the
+  latest executions).
+* **Shared steps:** a test step may set `call_test_id` (another test of the
+  same project) instead of action/expected. `GET /tests/{id}` returns
+  `call_test_key`/`call_test_title` on such steps and `called_by`
+  (`[{id,key,title}]`). When a run is created the called test's steps are
+  inserted in place (recursively, max depth 5), prefixed with `[KEY] `.
+  Self-calls and cycles → 400.
+
 ## Search
 
 `GET /search?q=<expr>&types=requirement,test,run&project_id=&limit=` –

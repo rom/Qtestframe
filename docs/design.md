@@ -16,6 +16,8 @@ details are in [api.md](api.md).
 - [10. Search](#10-search)
 - [11. Export formats](#11-export-formats)
 - [12. RBAC matrix](#12-rbac-matrix)
+- [13. Change history, relations, baselines and collaboration](#13-change-history-relations-baselines-and-collaboration)
+- [14. Profile and preferences](#14-profile-and-preferences)
 
 ## 1. Concepts
 
@@ -556,3 +558,81 @@ Additional rules:
   cannot demote or disable themselves (409).
 * Any authenticated user may call `GET /auth/me`, `/meta`, `/rbac`,
   `/tenants` (own tenants) and `POST /reqlang/analyze`.
+
+## 13. Change history, relations, baselines and collaboration
+
+### Revision history (`internal/store/history.go`, `internal/api/extras.go`)
+
+Every create, update, restore, move and bulk update of a requirement or test
+stores a **revision**: the version number, the action, the user, and a full
+JSON snapshot. Derived fields (coverage, counts, folder path) are left out.
+`changed_fields` is computed against the previous revision. Step IDs and
+positions are ignored, so re-saving identical steps is not a change.
+
+* Tests now carry a `version` like requirements; both are incremented on every
+  change, including bulk updates.
+* Items created before history tracking get an `import` revision (their state
+  before the first tracked change), so their first diff is meaningful.
+* **Restore** copies the content fields of a revision back as a new version.
+  The item's folder and project stay as they are. Categories that no longer
+  exist are dropped; for tests, steps get new IDs and calls to deleted tests
+  are dropped.
+
+### Requirement relations
+
+Directed links between requirements of the same project:
+
+| Type | Meaning (source → target) |
+|---|---|
+| `refines` | source is a child (decomposition) of target; cycles are rejected |
+| `depends_on` | source needs target |
+| `derived_from` | source was derived from target |
+| `conflicts_with` | the two cannot both be satisfied |
+| `duplicates` | source duplicates target |
+| `relates_to` | informal relation |
+
+Query fields: `related`, `parent` (targets of `refines`) and `child`
+(sources of `refines`), e.g. `child:*` finds requirements that have been
+decomposed.
+
+### Baselines
+
+A baseline freezes the current version and snapshot of all requirements and
+tests, or those matching a filter. Baselines can be compared with the current
+state or with another baseline of the same project. Items are matched by ID,
+so moved or re-keyed items show as *changed*, not removed and added. The diff
+lists added, removed and changed items (with versions and changed fields)
+and counts unchanged ones. Comparing with *current* uses all current items.
+
+### Comments
+
+Requirements and tests have comment threads. Anyone who can read the item can
+comment. Authors can edit and delete their own comments; members with
+`member.manage` can delete any comment. Comments and revisions are removed
+together with their item.
+
+### Shared steps
+
+A test step can **call** another test of the same project (`call_test_id`).
+When a run is created, call steps are replaced by the called test's steps,
+recursively up to 5 levels, with the action prefixed by `[KEY] `. Self-calls,
+cycles and deeper nesting are rejected when saving. `called_by` shows where a
+test is reused. Deleting a called test turns the call into an empty step.
+
+### Defects and execution history
+
+Executions can carry defect references (IDs such as `JIRA-123` or URLs). A
+project-level `defect_url_template` (`https://…{id}`) turns IDs into links.
+Query field `defect` exists on executions and on tests (any execution of the
+test). `GET /tests/{id}/executions` lists a test's results across all runs.
+
+## 14. Profile and preferences
+
+Users edit their display name and **preferences** on the profile page
+(`PATCH /auth/me`): theme, start page, default project, default tenant
+(selected at login), table page size, date format, time zone, compact tables,
+hiding the live requirement analysis, and a personal default for "create
+linked test". Values are validated on the server, and unknown keys are
+rejected. The **sessions** list shows each login (IP, browser, last activity,
+refreshed at most once a minute). Users can revoke a single session or all
+other sessions.

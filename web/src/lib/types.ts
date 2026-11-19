@@ -16,6 +16,32 @@ export interface User {
   external_id?: string
   disabled: boolean
   created_at: string
+  preferences?: Preferences | null
+}
+
+/** Per-user settings (all optional; empty = default). */
+export interface Preferences {
+  theme?: string
+  start_page?: string
+  default_project_id?: string
+  default_tenant_id?: string
+  page_size?: number
+  date_format?: string
+  timezone?: string
+  compact_tables?: boolean
+  hide_analysis?: boolean
+  create_linked_test?: boolean | null
+}
+
+export interface SessionInfo {
+  id: string
+  created_at: string
+  expires_at: string
+  last_seen: string | null
+  ip: string
+  user_agent: string
+  tenant_id: string
+  current: boolean
 }
 
 export interface Membership {
@@ -68,6 +94,7 @@ export interface Project {
   key: string
   name: string
   description: string
+  defect_url_template?: string
   created_at: string
   updated_at: string
 }
@@ -129,6 +156,8 @@ export interface Requirement {
   folder_path?: string
   linked_tests: number
   coverage?: string
+  comment_count?: number
+  relation_count?: number
 }
 
 export interface TestStep {
@@ -137,6 +166,16 @@ export interface TestStep {
   action: string
   expected: string
   data: string
+  /** Shared step: the referenced test's steps are inserted here in runs. */
+  call_test_id?: string | null
+  call_test_key?: string
+  call_test_title?: string
+}
+
+export interface TestRef {
+  id: string
+  key: string
+  title: string
 }
 
 export interface TestCase {
@@ -158,12 +197,15 @@ export interface TestCase {
   position: number
   category_ids: string[] | null
   steps: TestStep[] | null
+  version?: number
   created_by: string
   created_at: string
   updated_at: string
   folder_path?: string
   linked_requirements: number
   last_result?: string
+  comment_count?: number
+  called_by?: TestRef[] | null
 }
 
 export interface TraceLink {
@@ -219,8 +261,93 @@ export interface Execution {
   output: string
   notes: string
   position: number
+  defects?: string[] | null
   step_results?: StepResult[]
   test?: TestCase
+  run_name?: string
+  run_status?: string
+  run_environment?: string
+  run_build?: string
+  run_created_at?: string | null
+}
+
+export interface Relation {
+  id: string
+  project_id: string
+  source_id: string
+  target_id: string
+  type: string
+  created_by: string
+  created_at: string
+  source_key: string
+  source_title: string
+  target_key: string
+  target_title: string
+  direction?: 'outgoing' | 'incoming' | string
+}
+
+export interface Revision {
+  id: string
+  entity_type: 'requirement' | 'test' | string
+  entity_id: string
+  version: number
+  action: string
+  changed_fields: string[] | null
+  snapshot: Record<string, unknown> | string | null
+  user_email: string
+  created_at: string
+}
+
+export interface BaselineItem {
+  entity_type: 'requirement' | 'test' | string
+  entity_id: string
+  key: string
+  title: string
+  version: number
+  snapshot?: unknown
+}
+
+export interface Baseline {
+  id: string
+  project_id: string
+  name: string
+  description: string
+  created_by: string
+  created_at: string
+  requirement_count: number
+  test_count: number
+  items?: BaselineItem[] | null
+}
+
+export interface BaselineChange {
+  entity_type: 'requirement' | 'test' | string
+  entity_id: string
+  key: string
+  title: string
+  from_version?: number
+  to_version?: number
+  changed_fields?: string[] | null
+}
+
+export interface BaselineDiff {
+  from: string
+  to: string
+  added: BaselineChange[] | null
+  removed: BaselineChange[] | null
+  changed: BaselineChange[] | null
+  unchanged: number
+}
+
+export interface Comment {
+  id: string
+  entity_type: string
+  entity_id: string
+  user_id: string
+  user_email: string
+  user_name: string
+  body: string
+  created_at: string
+  updated_at: string
 }
 
 export interface AuditEntry {

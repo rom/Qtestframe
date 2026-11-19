@@ -59,12 +59,16 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	var req struct {
-		Name        *string `json:"name"`
-		Description *string `json:"description"`
+		Name              *string `json:"name"`
+		Description       *string `json:"description"`
+		DefectURLTemplate *string `json:"defect_url_template"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if req.DefectURLTemplate != nil {
+		pr.DefectURLTemplate = *req.DefectURLTemplate
 	}
 	if req.Name != nil {
 		pr.Name = *req.Name

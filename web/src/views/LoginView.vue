@@ -41,8 +41,9 @@ async function submit() {
   busy.value = true
   try {
     await auth.login(email.value.trim(), password.value, tenant.value.trim())
-    const target = (route.query.redirect as string) || '/projects'
-    router.replace(target.startsWith('/') && !target.startsWith('//') ? target : '/projects')
+    // without an explicit redirect, '/' leads to the preferred start page
+    const target = (route.query.redirect as string) || '/'
+    router.replace(target.startsWith('/') && !target.startsWith('//') ? target : '/')
   } catch (e) {
     error.value = errorMessage(e)
   } finally {

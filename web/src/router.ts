@@ -1,6 +1,10 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { P } from './lib/permissions'
+import { api, asItems } from './lib/api'
+import { startRoute } from './lib/prefs'
+import { usePrefsStore } from './stores/prefs'
+import type { Project } from './lib/types'
 
 const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true } },
@@ -8,7 +12,8 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('./layouts/AppLayout.vue'),
     children: [
-      { path: '', redirect: { name: 'projects' } },
+      // '/' resolves to the user's start page (see beforeEach)
+      { path: '', name: 'home', component: () => import('./views/ProjectsView.vue') },
       { path: 'projects', name: 'projects', component: () => import('./views/ProjectsView.vue') },
       {
         path: 'p/:projectId',
@@ -30,6 +35,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'traceability', name: 'traceability', component: () => import('./views/TraceabilityView.vue') },
           { path: 'settings', name: 'settings', component: () => import('./views/SettingsView.vue') },
           { path: 'export', name: 'export', component: () => import('./views/ExportView.vue') },
+          { path: 'baselines', name: 'baselines', component: () => import('./views/BaselinesView.vue'), meta: { perm: P.requirementRead } },
         ],
       },
       { path: 'search', name: 'search', component: () => import('./views/SearchView.vue') },
@@ -57,11 +63,28 @@ router.beforeEach(async (to) => {
   const auth = useAuthStore()
   if (!auth.loaded) await auth.fetchMe()
   if (to.meta.public) {
-    if (to.name === 'login' && auth.me) return { path: (to.query.redirect as string) || '/projects' }
+    if (to.name === 'login' && auth.me) return { path: (to.query.redirect as string) || '/' }
     return true
   }
   if (!auth.me) return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
+  if (to.name === 'home') return await homeRoute()
   if (to.meta.superAdmin && !auth.me.user.super_admin) return { name: 'projects' }
   if (typeof to.meta.perm === 'string' && !auth.can(to.meta.perm)) return { name: 'projects' }
   return true
 })
+
+/** Start page from the user's preferences (start_page). */
+async function homeRoute() {
+  const prefs = usePrefsStore()
+  const p = prefs.prefs
+  const needsProject = p.start_page === 'last_project' || p.start_page === 'default_project'
+  let projectIds: string[] | null = null
+  if (needsProject) {
+    try {
+      projectIds = asItems(await api.get<{ items: Project[] }>('/projects')).map((x) => x.id)
+    } catch {
+      projectIds = null
+    }
+  }
+  return startRoute(p, { lastProjectId: prefs.lastProject(), projectIds })
+}

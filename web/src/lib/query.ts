@@ -149,13 +149,13 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution', 
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
-    'updated_at', 'criteria',
+    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments',
   ],
   test: [
     'key', 'title', 'description', 'preconditions', 'execution_type', 'type', 'script_language', 'script',
     'expected', 'step', 'priority', 'status', 'estimate', 'tag', 'folder', 'category', 'dimension', 'linked',
-    'last_result', 'created_by', 'created_at', 'updated_at',
+    'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'version',
   ],
   run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at'],
-  execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'notes', 'output'],
+  execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'notes', 'output', 'defect'],
 }

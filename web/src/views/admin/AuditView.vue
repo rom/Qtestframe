@@ -12,6 +12,8 @@ import { api, asItems } from '@/lib/api'
 import { formatDateTime } from '@/lib/format'
 import type { AuditEntry } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
+import { usePrefsStore } from '@/stores/prefs'
+const prefs = usePrefsStore()
 
 const notify = useNotify()
 const entries = ref<AuditEntry[]>([])
@@ -48,7 +50,7 @@ function severity(action: string) {
       <Select v-model="limit" :options="[100, 200, 500, 1000]" style="width: 110px" @change="load" />
       <Button label="Apply" icon="pi pi-search" severity="secondary" @click="load" />
     </div>
-    <DataTable :value="entries" data-key="id" :loading="loading" paginator :rows="50" size="small" sort-field="created_at" :sort-order="-1">
+    <DataTable :value="entries" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(50)" size="small" sort-field="created_at" :sort-order="-1">
       <Column field="created_at" header="Time" sortable style="width: 160px"><template #body="{ data }"><span class="small">{{ formatDateTime(data.created_at) }}</span></template></Column>
       <Column field="user_email" header="User" sortable style="width: 220px" />
       <Column field="action" header="Action" sortable style="width: 170px"><template #body="{ data }"><Tag :value="data.action" :severity="severity(data.action)" /></template></Column>

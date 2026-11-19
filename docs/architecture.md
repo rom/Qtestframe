@@ -381,6 +381,25 @@ Notes:
 * **Migrations** are tracked in `schema_migrations(version, name)`; each
   file is applied in one transaction and they are forward-only.
 
+`0002_history_relations_baselines.sql` adds:
+
+| Table / column | Purpose |
+|---|---|
+| `revisions(entity_type, entity_id, version, action, changed_fields, snapshot JSON, user_email)` | version history of requirements and tests |
+| `requirement_relations(source_id, target_id, type)` | typed requirement-to-requirement links, `UNIQUE(source, target, type)` |
+| `baselines(project_id, name)` + `baseline_items(entity_type, entity_id, key, title, version, snapshot)` | frozen project states |
+| `comments(entity_type, entity_id, user_id, body)` | discussion threads |
+| `test_steps.call_test_id` (FK, `ON DELETE SET NULL`) | shared steps |
+| `test_executions.defects` (JSON array) | defect references |
+| `test_cases.version` | test versioning |
+| `projects.defect_url_template` | issue tracker links |
+| `users.preferences` (JSON) | profile settings |
+| `sessions.ip`, `user_agent`, `last_seen` | session list on the profile page |
+
+`revisions` and `comments` reference items polymorphically (no foreign
+key); the store deletes them together with their items, projects and
+tenants (`deleteEntityData` in `internal/store/history.go`).
+
 ## 6. Deployment topologies
 
 ### Single node with SQLite (default)

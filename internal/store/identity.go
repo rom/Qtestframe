@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -100,7 +101,7 @@ func (s *Store) UpdateTenant(ctx context.Context, id, name string) (*model.Tenan
 func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 	return s.tx(ctx, func(c conn) error {
 		// Tables carrying tenant_id without FK to tenants.
-		for _, t := range []string{"audit_log", "sessions"} {
+		for _, t := range []string{"audit_log", "sessions", "comments", "revisions"} {
 			if _, err := c.exec(ctx, `DELETE FROM `+t+` WHERE tenant_id = ?`, id); err != nil {
 				return err
 			}
@@ -118,15 +119,22 @@ func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 
 // ---------------------------------------------------------------- users
 
-const userCols = `id, email, display_name, password_hash, super_admin, auth_provider, external_id, disabled, created_at`
+const userCols = `id, email, display_name, password_hash, super_admin, auth_provider, external_id, disabled, created_at, preferences`
 
 func scanUser(r interface{ Scan(...any) error }) (*model.User, error) {
 	var u model.User
-	if err := r.Scan(&u.ID, &u.Email, &u.DisplayName, &u.PasswordHash, &u.SuperAdmin, &u.AuthProvider, &u.ExternalID, &u.Disabled, &u.CreatedAt); err != nil {
+	var prefs string
+	if err := r.Scan(&u.ID, &u.Email, &u.DisplayName, &u.PasswordHash, &u.SuperAdmin, &u.AuthProvider, &u.ExternalID, &u.Disabled, &u.CreatedAt, &prefs); err != nil {
 		return nil, err
 	}
 	u.CreatedAt = u.CreatedAt.UTC()
+	_ = json.Unmarshal([]byte(prefs), &u.Preferences) // unknown/old keys are ignored
 	return &u, nil
+}
+
+func encodePrefs(p model.Preferences) string {
+	b, _ := json.Marshal(p)
+	return string(b)
 }
 
 // NormalizeEmail lowercases and trims an e-mail address.
@@ -148,8 +156,8 @@ func (s *Store) CreateUser(ctx context.Context, u *model.User) error {
 		u.DisplayName = strings.Split(u.Email, "@")[0]
 	}
 	u.CreatedAt = s.now()
-	_, err := s.c().exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		u.ID, u.Email, u.DisplayName, u.PasswordHash, u.SuperAdmin, u.AuthProvider, u.ExternalID, u.Disabled, u.CreatedAt)
+	_, err := s.c().exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.ID, u.Email, u.DisplayName, u.PasswordHash, u.SuperAdmin, u.AuthProvider, u.ExternalID, u.Disabled, u.CreatedAt, encodePrefs(u.Preferences))
 	return mapErr(err, "user")
 }
 
@@ -191,8 +199,8 @@ func (s *Store) ListUsers(ctx context.Context) ([]model.User, error) {
 
 // UpdateUser stores mutable user fields.
 func (s *Store) UpdateUser(ctx context.Context, u *model.User) error {
-	res, err := s.c().exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ? WHERE id = ?`,
-		u.DisplayName, u.PasswordHash, u.SuperAdmin, u.Disabled, u.AuthProvider, u.ExternalID, u.ID)
+	res, err := s.c().exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ?, preferences = ? WHERE id = ?`,
+		u.DisplayName, u.PasswordHash, u.SuperAdmin, u.Disabled, u.AuthProvider, u.ExternalID, encodePrefs(u.Preferences), u.ID)
 	if err != nil {
 		return err
 	}
@@ -290,16 +298,19 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 // CreateSession stores a session.
 func (s *Store) CreateSession(ctx context.Context, sess *model.Session) error {
 	sess.CreatedAt = s.now()
-	_, err := s.c().exec(ctx, `INSERT INTO sessions (id, user_id, tenant_id, csrf, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)`,
-		sess.ID, sess.UserID, sess.TenantID, sess.CSRF, sess.CreatedAt, sess.ExpiresAt.UTC())
+	sess.LastSeen = &sess.CreatedAt
+	_, err := s.c().exec(ctx, `INSERT INTO sessions (id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		sess.ID, sess.UserID, sess.TenantID, sess.CSRF, sess.CreatedAt, sess.ExpiresAt.UTC(), sess.IP, truncate(sess.UserAgent, 512), sess.CreatedAt)
 	return mapErr(err, "session")
 }
 
 // GetSession returns a non-expired session.
 func (s *Store) GetSession(ctx context.Context, id string) (*model.Session, error) {
 	var sess model.Session
-	err := s.c().row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at FROM sessions WHERE id = ?`, id).
-		Scan(&sess.ID, &sess.UserID, &sess.TenantID, &sess.CSRF, &sess.CreatedAt, &sess.ExpiresAt)
+	var seen sql.NullTime
+	err := s.c().row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen FROM sessions WHERE id = ?`, id).
+		Scan(&sess.ID, &sess.UserID, &sess.TenantID, &sess.CSRF, &sess.CreatedAt, &sess.ExpiresAt, &sess.IP, &sess.UserAgent, &seen)
+	sess.LastSeen = timePtr(seen)
 	if err != nil {
 		return nil, mapErr(err, "session")
 	}
@@ -308,6 +319,50 @@ func (s *Store) GetSession(ctx context.Context, id string) (*model.Session, erro
 		return nil, mapErr(sql.ErrNoRows, "session")
 	}
 	return &sess, nil
+}
+
+// TouchSession records activity, at most once per minute per session.
+func (s *Store) TouchSession(ctx context.Context, sess *model.Session, ip string) error {
+	now := s.now()
+	if sess.LastSeen != nil && now.Sub(*sess.LastSeen) < time.Minute && sess.IP == ip {
+		return nil
+	}
+	sess.LastSeen, sess.IP = &now, ip
+	_, err := s.c().exec(ctx, `UPDATE sessions SET last_seen = ?, ip = ? WHERE id = ?`, now, ip, sess.ID)
+	return err
+}
+
+// ListUserSessions returns the active sessions of a user, newest first.
+// IDs are the stored session hashes, which cannot be used to log in.
+func (s *Store) ListUserSessions(ctx context.Context, userID string) ([]model.SessionInfo, error) {
+	rows, err := s.c().query(ctx, `SELECT id, tenant_id, created_at, expires_at, ip, user_agent, last_seen FROM sessions WHERE user_id = ? AND expires_at > ? ORDER BY created_at DESC`, userID, s.now())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []model.SessionInfo{}
+	for rows.Next() {
+		var si model.SessionInfo
+		var seen sql.NullTime
+		if err := rows.Scan(&si.ID, &si.TenantID, &si.CreatedAt, &si.ExpiresAt, &si.IP, &si.UserAgent, &seen); err != nil {
+			return nil, err
+		}
+		si.LastSeen = timePtr(seen)
+		out = append(out, si)
+	}
+	return out, rows.Err()
+}
+
+// DeleteUserSession revokes one session of a user.
+func (s *Store) DeleteUserSession(ctx context.Context, userID, id string) error {
+	res, err := s.c().exec(ctx, `DELETE FROM sessions WHERE id = ? AND user_id = ?`, id, userID)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return mapErr(sql.ErrNoRows, "session")
+	}
+	return nil
 }
 
 // SetSessionTenant changes the current tenant of a session.
@@ -328,10 +383,15 @@ func (s *Store) DeleteUserSessions(ctx context.Context, userID string) error {
 	return err
 }
 
-// DeleteOtherSessions removes all sessions of a user except keep.
-func (s *Store) DeleteOtherSessions(ctx context.Context, userID, keep string) error {
-	_, err := s.c().exec(ctx, `DELETE FROM sessions WHERE user_id = ? AND id <> ?`, userID, keep)
-	return err
+// DeleteOtherSessions removes all sessions of a user except keep and
+// returns how many were removed.
+func (s *Store) DeleteOtherSessions(ctx context.Context, userID, keep string) (int, error) {
+	res, err := s.c().exec(ctx, `DELETE FROM sessions WHERE user_id = ? AND id <> ?`, userID, keep)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return int(n), nil
 }
 
 // PurgeExpiredSessions deletes expired sessions and returns the count.

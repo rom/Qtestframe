@@ -4,11 +4,13 @@ import { useRoute } from 'vue-router'
 import ProgressSpinner from 'primevue/progressspinner'
 import Message from 'primevue/message'
 import { useProjectStore } from '@/stores/project'
+import { usePrefsStore } from '@/stores/prefs'
 import { errorMessage } from '@/lib/api'
 import { ref } from 'vue'
 
 const props = defineProps<{ projectId: string }>()
 const proj = useProjectStore()
+const prefs = usePrefsStore()
 const route = useRoute()
 const error = ref('')
 
@@ -18,6 +20,7 @@ watch(
     error.value = ''
     try {
       await proj.open(id)
+      prefs.rememberProject(id)
     } catch (e) {
       error.value = errorMessage(e)
     }
@@ -31,6 +34,7 @@ const tabs = [
   { to: 'tests', icon: 'pi pi-check-square', label: 'Tests' },
   { to: 'runs', icon: 'pi pi-play-circle', label: 'Operations' },
   { to: 'traceability', icon: 'pi pi-th-large', label: 'Traceability' },
+  { to: 'baselines', icon: 'pi pi-flag', label: 'Baselines' },
   { to: 'settings', icon: 'pi pi-tags', label: 'Categories & settings' },
   { to: 'export', icon: 'pi pi-download', label: 'Export' },
 ]

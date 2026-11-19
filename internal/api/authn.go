@@ -136,6 +136,9 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 		return nil, errors.New("user disabled")
 	}
 	p := &Principal{User: u, Session: sess}
+	if err := s.Store.TouchSession(ctx, sess, s.clientIP(r)); err != nil {
+		s.Log.Warn("session touch failed", "err", err)
+	}
 	if sess.TenantID != "" {
 		if t, err := s.Store.GetTenant(ctx, sess.TenantID); err == nil {
 			if m, err := s.Store.GetMembership(ctx, t.ID, u.ID); err == nil {
@@ -191,11 +194,25 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 		if len(ms) > 0 {
 			tenantID = ms[0].TenantID
 		}
+		// the user's preferred tenant, if still valid
+		if pref := u.Preferences.DefaultTenant; pref != "" {
+			for _, m := range ms {
+				if m.TenantID == pref {
+					tenantID = pref
+				}
+			}
+			if u.SuperAdmin {
+				if _, err := s.Store.GetTenant(ctx, pref); err == nil {
+					tenantID = pref
+				}
+			}
+		}
 	}
 	tok := auth.RandomToken(32)
 	sess := &model.Session{
 		ID: auth.HashToken(tok), UserID: u.ID, TenantID: tenantID,
 		CSRF: auth.RandomToken(24), ExpiresAt: time.Now().Add(s.Cfg.Auth.SessionTTL),
+		IP: s.clientIP(r), UserAgent: r.UserAgent(),
 	}
 	if err := s.Store.CreateSession(ctx, sess); err != nil {
 		return nil, err
@@ -439,7 +456,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request, p 
 	if p.Session != nil {
 		keep = p.Session.ID
 	}
-	if err := s.Store.DeleteOtherSessions(r.Context(), p.User.ID, keep); err != nil {
+	if _, err := s.Store.DeleteOtherSessions(r.Context(), p.User.ID, keep); err != nil {
 		s.fail(w, r, err)
 		return
 	}

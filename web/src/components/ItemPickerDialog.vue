@@ -8,6 +8,8 @@ import QueryInput from './QueryInput.vue'
 import StatusTag from './StatusTag.vue'
 import { api, asItems } from '@/lib/api'
 import type { Requirement, TestCase } from '@/lib/types'
+import { usePrefsStore } from '@/stores/prefs'
+const prefs = usePrefsStore()
 
 type Item = Requirement | TestCase
 const visible = defineModel<boolean>('visible', { default: false })
@@ -64,7 +66,7 @@ function confirm() {
       scroll-height="50vh"
       size="small"
       paginator
-      :rows="50"
+      :rows="prefs.rowsFor(50)"
       sort-field="key"
       :sort-order="1"
     >

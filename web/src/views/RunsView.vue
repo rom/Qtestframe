@@ -30,6 +30,8 @@ import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
+import { usePrefsStore } from '@/stores/prefs'
+const prefs = usePrefsStore()
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -147,7 +149,7 @@ const progress = (r: TestRun) => summarize(r.summary)
       <QueryInput v-model="q" scope="run" :error="queryError" :composed="composed" placeholder="Filter runs, e.g. environment:staging build:1.4*" @submit="load" />
       <MultiSelect v-model="statuses" :options="options(meta.meta.run_statuses)" option-label="label" option-value="value" placeholder="Status" style="min-width: 150px" show-clear @change="load" />
     </div>
-    <DataTable :value="runs" data-key="id" :loading="loading" paginator :rows="25" row-hover sort-field="created_at" :sort-order="-1" class="clickable" @row-click="(e) => router.push({ name: 'run', params: { projectId: proj.pid, runId: (e.data as TestRun).id } })">
+    <DataTable :value="runs" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(25)" row-hover sort-field="created_at" :sort-order="-1" class="clickable" @row-click="(e) => router.push({ name: 'run', params: { projectId: proj.pid, runId: (e.data as TestRun).id } })">
       <Column field="name" header="Name" sortable>
         <template #body="{ data }">
           <div style="font-weight: 600">{{ data.name }}</div>
