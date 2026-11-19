@@ -73,6 +73,8 @@ func TestHelperProcess(t *testing.T) {
 	out["socket"] = errString(err)
 	b, _ = json.Marshal(out)
 	fmt.Println("RESULT " + string(b))
+	// Exit directly: the sandboxed child may not write coverage data.
+	os.Exit(0)
 }
 
 func errnoErr(e syscall.Errno) error {

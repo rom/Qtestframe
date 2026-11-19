@@ -9,7 +9,11 @@ OUT="${COVERAGE_OUT:-coverage.out}"
 export CGO_ENABLED=0
 # internal/testutil is test scaffolding; cmd/ is a three-line main.
 PKGS=$(go list ./internal/... | grep -v /internal/testutil | paste -sd, -)
-go test -count=1 -coverpkg="$PKGS" -coverprofile="$OUT" ./...
+# Only packages with tests are run (avoids the covdata tool requirement for
+# test-less packages); their code is still measured through -coverpkg.
+TESTED=$(go list -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./... | grep .)
+# shellcheck disable=SC2086
+go test -count=1 -coverpkg="$PKGS" -coverprofile="$OUT" $TESTED
 TOTAL=$(go tool cover -func="$OUT" | awk '/^total:/ {sub("%","",$3); print $3}')
 echo "total coverage: ${TOTAL}% (floor ${FLOOR}%)"
 if awk -v t="$TOTAL" -v f="$FLOOR" 'BEGIN { exit !(t+0 < f+0) }'; then
