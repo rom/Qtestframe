@@ -11,6 +11,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Test cases:**
   - Manual tests are executed step by step (action, expected result, data).
   - Automated tests can be shell, bash, Python or JavaScript scripts, run server-side in a sandbox. CI systems can also import results.
+- **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder (`requirements.auto_create_test`, or untick "Also create linked test").
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
 - **Grouping:** requirements and tests are organised in nested folders. Drag and drop moves single items, whole folders, or entire category dimensions. Items can also be moved to another project.
 - **Views:**
@@ -45,7 +46,7 @@ make build
 QTF_BOOTSTRAP_ADMIN_EMAIL=admin@example.com QTF_BOOTSTRAP_ADMIN_PASSWORD='change-me-now-1' QTF_COOKIE_SECURE=false ./bin/qtestframe serve
 ```
 
-Then open http://localhost:8080. The default configuration uses `./qtestframe.db` (SQLite) on `:8080`. To load sample data:
+Then open http://localhost:8080. Use `--port 9090` (or `-p 9090`) to listen on another port. The configuration file is YAML, passed with `--config FILE`; see [deploy/config.example.yaml](deploy/config.example.yaml). The default configuration uses `./qtestframe.db` (SQLite) on `:8080`. To load sample data:
 
 ```bash
 ./bin/qtestframe seed-demo

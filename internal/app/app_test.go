@@ -19,6 +19,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -484,13 +485,13 @@ func (s *syncBuffer) String() string {
 	return s.b.String()
 }
 
-func startServe(t *testing.T, cfgPath string) *server {
+func startServe(t *testing.T, cfgPath string, extra ...string) *server {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &server{cancel: cancel, done: make(chan int, 1), stderr: newSyncBuffer()}
 	ready := make(chan string, 1)
 	go func() {
-		s.done <- Run([]string{"serve", "--config", cfgPath}, Env{
+		s.done <- Run(append([]string{"serve", "--config", cfgPath}, extra...), Env{
 			Stdin: strings.NewReader(""), Stdout: io.Discard, Stderr: s.stderr, Ctx: ctx,
 			Ready: func(addr string) { ready <- addr },
 		})
@@ -652,12 +653,41 @@ func TestHealthcheck(t *testing.T) {
 		"non-200":     {[]string{"--url", failing.URL + "/healthz"}, "status 503"},
 		"404":         {[]string{"--url", ok.URL + "/other"}, "status 404"},
 		"refused":     {[]string{"--url", "http://127.0.0.1:1/healthz"}, "error:"},
-		"bad listen":  {[]string{"--config", cfgListen("nonsense", false)}, "missing port"},
+		"bad listen":  {[]string{"--config", cfgListen("nonsense", false)}, "must be host:port"},
 		"bad config":  {[]string{"--config", writeConfig(t, "auth: {session_ttl: 0s}")}, "session_ttl"},
 		"http on tls": {[]string{"--config", cfgListen("127.0.0.1:"+okPort, true)}, "error:"},
 	} {
 		if r := run(t, "", append([]string{"healthcheck"}, c.args...)...); r.code != 1 || !strings.Contains(r.stderr, c.want) {
 			t.Errorf("%s: %+v", name, r)
 		}
+	}
+}
+
+func TestServePortFlag(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := l.Addr().(*net.TCPAddr).Port
+	l.Close()
+	s := startServe(t, writeConfig(t, ""), "-p", strconv.Itoa(port))
+	if want := fmt.Sprintf("127.0.0.1:%d", port); s.addr != want {
+		t.Fatalf("listening on %s, want %s", s.addr, want)
+	}
+	c := &http.Client{Timeout: 5 * time.Second}
+	if code := get(t, c, "http://"+s.addr+"/healthz"); code != http.StatusOK {
+		t.Fatal(code)
+	}
+	// healthcheck derives the URL from the same flag
+	if r := run(t, "", "healthcheck", "--config", writeConfig(t, ""), "--port", strconv.Itoa(port)); r.code != 0 {
+		t.Errorf("healthcheck --port: %+v", r)
+	}
+	s.stop(t)
+	// --listen and invalid ports
+	if r := run(t, "", "check-config", "--config", writeConfig(t, ""), "--listen", "0.0.0.0:9443"); r.code != 0 || !strings.Contains(r.stdout, "listen 0.0.0.0:9443") {
+		t.Errorf("check-config --listen: %+v", r)
+	}
+	if r := run(t, "", "serve", "--config", writeConfig(t, ""), "--port", "70000"); r.code != 1 || !strings.Contains(r.stderr, "out of range") {
+		t.Errorf("serve --port 70000: %+v", r)
 	}
 }

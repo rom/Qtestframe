@@ -110,8 +110,27 @@ Edit `/etc/qtestframe/config.yaml` (fully commented example:
 `deploy/config.example.yaml`), then `sudo systemctl restart qtestframe`.
 `systemctl reload qtestframe` (SIGHUP) only re-reads the TLS certificate/key.
 
+The file is YAML and is decoded strictly: unknown keys (typos such as
+`listn:`) and multiple YAML documents are rejected at start-up. Validate a
+file without starting the server with
+`qtestframe check-config --config /etc/qtestframe/config.yaml`.
+
+Precedence: **command line flags > `QTF_*` environment variables > YAML file
+> built-in defaults.**
+
+The listen port can be given on the command line of `serve` (and of
+`check-config`/`healthcheck`): `--port N` / `-p N` replaces only the port of
+`server.listen` (keeping the host), `--listen HOST:PORT` replaces the whole
+address:
+
+```sh
+qtestframe serve --config /etc/qtestframe/config.yaml --port 9443
+qtestframe serve --listen 127.0.0.1:8080
+```
+
 Environment overrides (e.g. in a drop-in `Environment=` line or a container):
 `QTF_CONFIG`, `QTF_DATABASE_DRIVER`, `QTF_DATABASE_DSN`, `QTF_SERVER_LISTEN`,
+`QTF_SERVER_PORT` (port only),
 `QTF_SERVER_BASE_URL`, `QTF_LOG_LEVEL`, `QTF_LOG_FORMAT`, `QTF_COOKIE_SECURE`,
 `QTF_BOOTSTRAP_ADMIN_EMAIL`, `QTF_BOOTSTRAP_ADMIN_PASSWORD`,
 `QTF_OIDC_<NAME>_CLIENT_SECRET`.
@@ -520,7 +539,7 @@ environment overrides.
 
 | Command | Purpose |
 |---|---|
-| `serve` | run the HTTP(S) server (migrates and bootstraps first) |
+| `serve` | run the HTTP(S) server (migrates and bootstraps first); `--port N`/`-p N`, `--listen HOST:PORT` |
 | `migrate` | apply pending database migrations, print how many were applied |
 | `user create --email E [--name N] [--password-stdin] [--super-admin]` | create a user; the password is read as one line from stdin (without `--password-stdin` the user has no password and can only use SSO) |
 | `tenant create --slug S --name N` | create a tenant (slug: 2–63 characters `a-z0-9-`) |

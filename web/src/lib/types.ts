@@ -251,6 +251,8 @@ export interface Meta {
   run_statuses: string[]
   result_statuses: string[]
   roles: string[]
+  /** Server default for creating a linked test with each new requirement. */
+  auto_create_test?: boolean
 }
 
 export interface Dashboard {

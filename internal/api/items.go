@@ -1,12 +1,14 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
+	"github.com/rom/qtestframe/internal/rbac"
 	"github.com/rom/qtestframe/internal/reqlang"
 	"github.com/rom/qtestframe/internal/store"
 )
@@ -82,22 +84,151 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 	if !ok {
 		return
 	}
-	var rq model.Requirement
-	if err := decode(r, &rq); err != nil {
+	var req struct {
+		model.Requirement
+		// CreateTest overrides requirements.auto_create_test for this request.
+		CreateTest *bool `json:"create_test"`
+	}
+	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	rq := req.Requirement
+	createTest := s.Cfg.Requirements.AutoCreateTest
+	if req.CreateTest != nil {
+		createTest = *req.CreateTest
+	}
+	if createTest && !p.Can(rbac.TestWrite) {
+		if req.CreateTest != nil {
+			writeError(w, http.StatusForbidden, "forbidden", "permission test.write required to create a linked test")
+			return
+		}
+		createTest = false // default behaviour degrades silently
 	}
 	rq.ProjectID = pr.ID
 	rq.CreatedBy = p.User.Email
 	if rq.Obligation == "" {
 		rq.Obligation = reqlang.DetectObligation(rq.Title + "\n" + rq.Description)
 	}
-	if err := s.Store.CreateRequirement(r.Context(), p.TenantID(), &rq); err != nil {
+	ctx := r.Context()
+	if err := s.Store.CreateRequirement(ctx, p.TenantID(), &rq); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "requirement.create", "requirement", rq.ID, rq.Key)
-	writeJSON(w, http.StatusCreated, rq)
+	s.audit(ctx, p, "requirement.create", "requirement", rq.ID, rq.Key)
+	res := createdRequirement{Requirement: rq}
+	if createTest {
+		t, err := s.createLinkedTest(ctx, p, &rq)
+		if err != nil {
+			// keep the operation atomic from the client's point of view
+			_, _ = s.Store.DeleteRequirements(ctx, p.TenantID(), pr.ID, []string{rq.ID})
+			s.fail(w, r, err)
+			return
+		}
+		s.audit(ctx, p, "test.create", "test", t.ID, t.Key+" (linked to "+rq.Key+")")
+		res.LinkedTests = 1
+		res.Coverage = "not_run"
+		res.LinkedTest = t
+	}
+	writeJSON(w, http.StatusCreated, res)
+}
+
+// createdRequirement is the create response: the requirement plus the
+// automatically created linked test, if any.
+type createdRequirement struct {
+	model.Requirement
+	LinkedTest *model.TestCase `json:"linked_test,omitempty"`
+}
+
+// createLinkedTest creates a draft manual test verifying rq and links it.
+// The test goes into a test folder whose path mirrors the requirement's
+// folder path (created on demand). Each evaluation criterion becomes a step.
+func (s *Server) createLinkedTest(ctx context.Context, p *Principal, rq *model.Requirement) (*model.TestCase, error) {
+	folderID, err := s.mirrorFolder(ctx, p.TenantID(), rq.ProjectID, rq.FolderID)
+	if err != nil {
+		return nil, err
+	}
+	title := "Verify " + rq.Key + ": " + rq.Title
+	if r := []rune(title); len(r) > 500 {
+		title = string(r[:500])
+	}
+	t := &model.TestCase{
+		ProjectID: rq.ProjectID, FolderID: folderID, Title: title,
+		Description:   "Verifies requirement " + rq.Key + ".\n\n" + rq.Description,
+		ExecutionType: model.ExecManual, Status: "draft", Priority: rq.Priority,
+		Tags: []string{"auto-generated"}, CreatedBy: p.User.Email,
+	}
+	for _, c := range rq.Criteria {
+		expected := c.Threshold
+		if expected == "" {
+			expected = "Criterion is met"
+		}
+		t.Steps = append(t.Steps, model.TestStep{Action: "Verify (" + c.Method + "): " + c.Description, Expected: expected})
+	}
+	if len(t.Steps) == 0 {
+		t.Steps = []model.TestStep{{Action: "Verify that the requirement is fulfilled: " + rq.Title, Expected: rq.Description}}
+	}
+	if err := s.Store.CreateTest(ctx, p.TenantID(), t); err != nil {
+		return nil, err
+	}
+	link := &model.TraceLink{RequirementID: rq.ID, TestCaseID: t.ID}
+	if err := s.Store.CreateLink(ctx, p.TenantID(), link); err != nil {
+		_, _ = s.Store.DeleteTests(ctx, p.TenantID(), rq.ProjectID, []string{t.ID})
+		return nil, err
+	}
+	t.LinkedReqs = 1
+	t.LastResult = model.ResultNotRun
+	return t, nil
+}
+
+// mirrorFolder returns the id of the test folder with the same name path as
+// requirement folder reqFolder, creating missing folders. nil means top level.
+func (s *Server) mirrorFolder(ctx context.Context, tenantID, projectID string, reqFolder *string) (*string, error) {
+	if reqFolder == nil {
+		return nil, nil
+	}
+	reqFolders, err := s.Store.ListFolders(ctx, tenantID, projectID, model.KindRequirement)
+	if err != nil {
+		return nil, err
+	}
+	byID := map[string]model.Folder{}
+	for _, f := range reqFolders {
+		byID[f.ID] = f
+	}
+	var names []string
+	for id := reqFolder; id != nil && len(names) < 64; {
+		f, ok := byID[*id]
+		if !ok {
+			break
+		}
+		names = append([]string{f.Name}, names...)
+		id = f.ParentID
+	}
+	testFolders, err := s.Store.ListFolders(ctx, tenantID, projectID, model.KindTest)
+	if err != nil {
+		return nil, err
+	}
+	var parent *string
+	for _, name := range names {
+		var found *string
+		for i := range testFolders {
+			f := testFolders[i]
+			if f.Name == name && ((parent == nil && f.ParentID == nil) || (parent != nil && f.ParentID != nil && *f.ParentID == *parent)) {
+				found = &testFolders[i].ID
+				break
+			}
+		}
+		if found == nil {
+			nf := &model.Folder{ProjectID: projectID, Kind: model.KindTest, Name: name, ParentID: parent}
+			if err := s.Store.CreateFolder(ctx, tenantID, nf); err != nil {
+				return nil, err
+			}
+			testFolders = append(testFolders, *nf)
+			found = &nf.ID
+		}
+		parent = found
+	}
+	return parent, nil
 }
 
 func (s *Server) decoratedRequirement(r *http.Request, p *Principal, id string) (*model.Requirement, error) {

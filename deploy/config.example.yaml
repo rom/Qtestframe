@@ -11,6 +11,7 @@
 #   QTF_DATABASE_DRIVER   database.driver
 #   QTF_DATABASE_DSN      database.dsn
 #   QTF_SERVER_LISTEN     server.listen
+#   QTF_SERVER_PORT       only the port of server.listen
 #   QTF_LOG_LEVEL         logging.level
 #   QTF_LOG_FORMAT        logging.format
 #   QTF_SERVER_BASE_URL   server.base_url
@@ -21,6 +22,10 @@
 # Secret file paths (*_file) that are RELATIVE are resolved against
 # $CREDENTIALS_DIRECTORY, i.e. with `LoadCredential=oidc-corp:...` in the unit
 # you can simply write `client_secret_file: oidc-corp`.
+#
+# Command line flags take precedence over both: `qtestframe serve --port 9443`
+# (or -p 9443) replaces the port of server.listen, `--listen HOST:PORT` the
+# whole address. Unknown keys in this file are rejected (strict YAML).
 #
 # Durations use Go syntax: 300ms, 30s, 5m, 12h.
 
@@ -160,6 +165,13 @@ auth:
   #    role_mapping:
   #      "QTF-Admins": admin
   #      "QTF-Testers": tester
+
+requirements:
+  # Create a linked test case automatically when a requirement is created.
+  # The test is placed in a test folder mirroring the requirement's folder
+  # path and gets one step per evaluation criterion. Clients can opt out per
+  # request with "create_test": false (a checkbox in the web UI).
+  auto_create_test: true
 
 runner:
   # Execute automated test scripts attached to test cases. DISABLED by

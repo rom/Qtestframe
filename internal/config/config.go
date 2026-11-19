@@ -2,10 +2,14 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,13 +18,15 @@ import (
 
 // Config is the complete server configuration.
 type Config struct {
-	Server    Server    `yaml:"server"`
-	Database  Database  `yaml:"database"`
-	Logging   Logging   `yaml:"logging"`
-	Auth      Auth      `yaml:"auth"`
-	Runner    Runner    `yaml:"runner"`
-	Hardening Hardening `yaml:"hardening"`
-	Bootstrap Bootstrap `yaml:"bootstrap"`
+	Server   Server   `yaml:"server"`
+	Database Database `yaml:"database"`
+	Logging  Logging  `yaml:"logging"`
+	Auth     Auth     `yaml:"auth"`
+	Runner   Runner   `yaml:"runner"`
+	// Requirements holds behaviour defaults for requirement management.
+	Requirements Requirements `yaml:"requirements"`
+	Hardening    Hardening    `yaml:"hardening"`
+	Bootstrap    Bootstrap    `yaml:"bootstrap"`
 }
 
 // Server holds HTTP listener settings.
@@ -110,6 +116,14 @@ type SAML struct {
 	Provisioning    `yaml:",inline"`
 }
 
+// Requirements configures requirement behaviour.
+type Requirements struct {
+	// AutoCreateTest creates a linked test case (one step per evaluation
+	// criterion) whenever a requirement is created, unless the request
+	// says "create_test": false.
+	AutoCreateTest bool `yaml:"auto_create_test"`
+}
+
 // Runner configures server side execution of automated test scripts.
 type Runner struct {
 	Enabled        bool              `yaml:"enabled"`
@@ -165,14 +179,48 @@ func Default() Config {
 				"python": "/usr/bin/python3", "javascript": "/usr/bin/node",
 			},
 		},
-		Hardening: Hardening{NoNewPrivs: true, Landlock: true, Seccomp: true, DropCapabilities: true},
-		Bootstrap: Bootstrap{TenantSlug: "default", TenantName: "Default"},
+		Requirements: Requirements{AutoCreateTest: true},
+		Hardening:    Hardening{NoNewPrivs: true, Landlock: true, Seccomp: true, DropCapabilities: true},
+		Bootstrap:    Bootstrap{TenantSlug: "default", TenantName: "Default"},
 	}
 }
 
-// Load reads path (if non-empty) over the defaults and applies environment
-// overrides.
+// Overrides are command line settings; they take precedence over the
+// configuration file and the environment.
+type Overrides struct {
+	// Listen replaces server.listen (host:port, e.g. "0.0.0.0:8443").
+	Listen string
+	// Port replaces only the port of server.listen (0 = unchanged).
+	Port int
+}
+
+// Apply applies the overrides to c.
+func (o Overrides) Apply(c *Config) error {
+	if o.Listen != "" {
+		c.Server.Listen = o.Listen
+	}
+	if o.Port != 0 {
+		if o.Port < 1 || o.Port > 65535 {
+			return fmt.Errorf("config: port %d out of range 1-65535", o.Port)
+		}
+		host, _, err := net.SplitHostPort(c.Server.Listen)
+		if err != nil {
+			host = ""
+		}
+		c.Server.Listen = net.JoinHostPort(host, strconv.Itoa(o.Port))
+	}
+	return nil
+}
+
+// Load reads the YAML file at path (if non-empty) over the defaults and
+// applies environment overrides.
 func Load(path string) (Config, error) {
+	return LoadWith(path, Overrides{})
+}
+
+// LoadWith is Load followed by command line overrides.
+// Precedence: command line > environment > YAML file > defaults.
+func LoadWith(path string, o Overrides) (Config, error) {
 	cfg := Default()
 	if path == "" {
 		path = os.Getenv("QTF_CONFIG")
@@ -182,15 +230,33 @@ func Load(path string) (Config, error) {
 		if err != nil {
 			return cfg, fmt.Errorf("config: %w", err)
 		}
-		if err := yaml.Unmarshal(b, &cfg); err != nil {
+		if err := decodeYAML(b, &cfg); err != nil {
 			return cfg, fmt.Errorf("config: parse %s: %w", path, err)
 		}
 	}
 	applyEnv(&cfg)
+	if err := o.Apply(&cfg); err != nil {
+		return cfg, err
+	}
 	if err := cfg.resolveSecrets(); err != nil {
 		return cfg, err
 	}
 	return cfg, cfg.Validate()
+}
+
+// decodeYAML strictly decodes a single YAML document: unknown keys (e.g.
+// typos such as "listn") are errors instead of being silently ignored.
+func decodeYAML(b []byte, cfg *Config) error {
+	dec := yaml.NewDecoder(bytes.NewReader(b))
+	dec.KnownFields(true)
+	if err := dec.Decode(cfg); err != nil && !errors.Is(err, io.EOF) {
+		return err
+	}
+	var extra any
+	if err := dec.Decode(&extra); !errors.Is(err, io.EOF) {
+		return errors.New("only one YAML document is allowed")
+	}
+	return nil
 }
 
 func applyEnv(c *Config) {
@@ -202,6 +268,11 @@ func applyEnv(c *Config) {
 	set("QTF_DATABASE_DRIVER", &c.Database.Driver)
 	set("QTF_DATABASE_DSN", &c.Database.DSN)
 	set("QTF_SERVER_LISTEN", &c.Server.Listen)
+	if v, ok := os.LookupEnv("QTF_SERVER_PORT"); ok {
+		if host, _, err := net.SplitHostPort(c.Server.Listen); err == nil {
+			c.Server.Listen = net.JoinHostPort(host, v)
+		}
+	}
 	set("QTF_SERVER_BASE_URL", &c.Server.BaseURL)
 	set("QTF_LOG_LEVEL", &c.Logging.Level)
 	set("QTF_LOG_FORMAT", &c.Logging.Format)
@@ -256,6 +327,11 @@ func (c *Config) resolveSecrets() error {
 // Validate checks semantic constraints.
 func (c *Config) Validate() error {
 	var errs []error
+	if _, port, err := net.SplitHostPort(c.Server.Listen); err != nil {
+		errs = append(errs, fmt.Errorf("server.listen %q must be host:port (e.g. \":8443\")", c.Server.Listen))
+	} else if n, err := strconv.Atoi(port); err != nil || n < 0 || n > 65535 {
+		errs = append(errs, fmt.Errorf("server.listen %q has an invalid port", c.Server.Listen))
+	}
 	switch c.Database.Driver {
 	case "sqlite", "postgres":
 	default:

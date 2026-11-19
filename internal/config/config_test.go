@@ -287,3 +287,76 @@ func TestValidate(t *testing.T) {
 		t.Errorf("joined: %v", err)
 	}
 }
+
+func TestCommandLineOverrides(t *testing.T) {
+	clearEnv(t)
+	dir := t.TempDir()
+	p := writeFile(t, dir, "c.yaml", "server:\n  listen: \"127.0.0.1:8443\"\n")
+	cases := []struct {
+		o    Overrides
+		env  string
+		want string
+	}{
+		{Overrides{}, "", "127.0.0.1:8443"},
+		{Overrides{Port: 9000}, "", "127.0.0.1:9000"},
+		{Overrides{Listen: ":7000"}, "", ":7000"},
+		{Overrides{Listen: "[::1]:7000", Port: 7001}, "", "[::1]:7001"},
+		{Overrides{}, "9100", "127.0.0.1:9100"},           // QTF_SERVER_PORT beats the file
+		{Overrides{Port: 9200}, "9100", "127.0.0.1:9200"}, // flag beats the environment
+	}
+	for _, c := range cases {
+		if c.env != "" {
+			t.Setenv("QTF_SERVER_PORT", c.env)
+		} else {
+			os.Unsetenv("QTF_SERVER_PORT")
+		}
+		cfg, err := LoadWith(p, c.o)
+		if err != nil {
+			t.Fatalf("%+v: %v", c, err)
+		}
+		if cfg.Server.Listen != c.want {
+			t.Errorf("%+v: listen %q, want %q", c, cfg.Server.Listen, c.want)
+		}
+	}
+	os.Unsetenv("QTF_SERVER_PORT")
+	for _, port := range []int{-1, 65536} {
+		if _, err := LoadWith(p, Overrides{Port: port}); err == nil || !strings.Contains(err.Error(), "out of range") {
+			t.Errorf("port %d: %v", port, err)
+		}
+	}
+	// a listen value without a port is replaced entirely by host-less --port
+	var c Config
+	c.Server.Listen = "garbage"
+	if err := (Overrides{Port: 80}).Apply(&c); err != nil || c.Server.Listen != ":80" {
+		t.Fatal(c.Server.Listen, err)
+	}
+	for _, bad := range []string{"nonsense", "host:notaport", "host:99999"} {
+		if _, err := LoadWith("", Overrides{Listen: bad}); err == nil {
+			t.Errorf("listen %q accepted", bad)
+		}
+	}
+}
+
+func TestStrictYAML(t *testing.T) {
+	clearEnv(t)
+	dir := t.TempDir()
+	for name, content := range map[string]string{
+		"typo":      "server:\n  listn: \":1\"\n",
+		"top-level": "srever: {}\n",
+		"two docs":  "server: {listen: \":1\"}\n---\nserver: {listen: \":2\"}\n",
+		"not yaml":  "server: [unclosed\n",
+	} {
+		if _, err := Load(writeFile(t, dir, "x.yaml", content)); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	// empty and comment-only files give the defaults
+	cfg, err := Load(writeFile(t, dir, "e.yaml", "# nothing here\n"))
+	if err != nil || cfg.Server.Listen != ":8080" || !cfg.Requirements.AutoCreateTest {
+		t.Fatal(cfg.Server.Listen, err)
+	}
+	cfg, err = Load(writeFile(t, dir, "r.yaml", "requirements:\n  auto_create_test: false\n"))
+	if err != nil || cfg.Requirements.AutoCreateTest {
+		t.Fatal(err)
+	}
+}

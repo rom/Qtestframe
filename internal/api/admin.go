@@ -26,6 +26,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"result_statuses":      model.ResultStatuses,
 		"roles":                rbac.Roles,
 		"runner_enabled":       s.Runner.Enabled(),
+		"auto_create_test":     s.Cfg.Requirements.AutoCreateTest,
 		"version":              Version,
 	})
 }

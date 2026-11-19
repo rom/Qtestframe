@@ -7,6 +7,7 @@ import Button from 'primevue/button'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import Tag from 'primevue/tag'
+import Checkbox from 'primevue/checkbox'
 import StatusTag from './StatusTag.vue'
 import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
@@ -69,6 +70,9 @@ const pickTests = ref(false)
 const linkCriterion = ref<string | null>(null)
 
 const isNew = computed(() => !props.itemId)
+// New requirements get a linked test by default (server setting requirements.auto_create_test).
+const createTest = ref(meta.meta.auto_create_test !== false)
+watch(() => meta.meta.auto_create_test, (v) => { if (isNew.value) createTest.value = v !== false })
 const folderOptions = computed(() => [
   { id: null as string | null, label: '— top level —' },
   ...flatten(buildTree(props.folders)).map((f) => ({ id: f.id as string | null, label: '  '.repeat(f.depth) + f.label })),
@@ -210,9 +214,13 @@ async function save() {
   }
   try {
     const saved = isNew.value
-      ? await api.post<Requirement>(`/projects/${props.projectId}/requirements`, body)
+      ? await api.post<Requirement & { linked_test?: TestCase }>(`/projects/${props.projectId}/requirements`, { ...body, create_test: createTest.value })
       : await api.patch<Requirement>(`/requirements/${props.itemId}`, body)
-    notify.ok(isNew.value ? 'Requirement created' : 'Requirement saved', saved?.key)
+    const linked = isNew.value ? (saved as Requirement & { linked_test?: TestCase })?.linked_test : undefined
+    notify.ok(
+      isNew.value ? 'Requirement created' : 'Requirement saved',
+      linked ? `${saved?.key} with linked test ${linked.key}` : saved?.key,
+    )
     emit('saved', saved)
   } catch (e) {
     error.value = errorMessage(e)
@@ -414,6 +422,10 @@ function criterionLabel(id: string | null) {
 
     <div class="row" style="justify-content: flex-end; position: sticky; bottom: -1px; background: var(--p-drawer-background, var(--qtf-card)); padding: 10px 0; border-top: 1px solid var(--qtf-border)">
       <Button v-if="item && canWrite" label="Delete" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove" />
+      <label v-if="isNew && canWrite && canLink" class="row nowrap small" style="gap: 6px" title="Creates a draft manual test (one step per evaluation criterion) in the mirrored test folder and links it">
+        <Checkbox v-model="createTest" binary input-id="create-test" />
+        Also create linked test
+      </label>
       <Button label="Close" severity="secondary" text @click="emit('close')" />
       <Button v-if="canWrite" type="submit" :label="isNew ? 'Create' : 'Save'" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
     </div>
