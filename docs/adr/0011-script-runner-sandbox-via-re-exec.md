@@ -20,11 +20,13 @@ between `fork` and `exec`.
 * The runner (`internal/runner`) is **off by default** (`runner.enabled:
   false`) and its endpoint requires `script.execute` (manager, admin).
 * With `runner.sandbox: true` (default) the server re-executes its own
-  binary as `qtestframe sandbox-exec --workdir DIR --cpu N -- INTERPRETER
-  SCRIPT`. That process applies rlimits (CPU, file size 64 MiB, 256 open
-  files, no core dumps), no_new_privs, capability dropping, Landlock
+  binary as `qtestframe sandbox-exec --workdir DIR --cpu N [--no-network]
+  -- INTERPRETER SCRIPT` (`--no-network` when `runner.deny_network: true`).
+  That process applies rlimits (CPU, file size 64 MiB, 256 open files, no
+  core dumps), no_new_privs, capability dropping, Landlock
   (read-only system directories, read-write only the job directory) and the
-  seccomp deny-list, then `execve`s the interpreter.
+  seccomp deny-list (plus `socket`, `connect`, `bind`, `listen`, `accept*`
+  with `--no-network`), then `execve`s the interpreter.
 * Each run gets a fresh directory below `runner.work_dir`; the script is
   written there and passed as an argument, never executed directly. The
   environment is reduced to `PATH`, `HOME`, `TMPDIR`, `LANG` and `QTF_*`
@@ -39,9 +41,10 @@ between `fork` and `exec`.
 * The sandbox needs no extra binary or privileges and works wherever the
   server's own hardening works; it also inherits the server's Landlock
   domain and seccomp filter.
-* The in-process layer does not block network access for scripts:
-  `sandbox-exec` supports `--no-network`, but the runner does not pass it.
-  Network isolation comes from SELinux/AppArmor (or a firewall).
+* Network access of scripts is blocked in process only with
+  `runner.deny_network: true` (default `false`, because many test scripts
+  talk to the system under test); otherwise network isolation comes from
+  SELinux/AppArmor or a firewall.
 * Landlock leaves `/etc` readable to scripts, including
   `/etc/qtestframe`; file permissions and MAC must protect configuration
   and keys. The database directory is not readable.

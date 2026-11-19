@@ -329,7 +329,8 @@ permission `script.execute`, `runner.enabled: true`):
 2. The execution is set to `in_progress`; the script is written to a fresh
    directory below `runner.work_dir` and run with the interpreter configured
    for its language (`runner.interpreters`, default language `sh`),
-   through `qtestframe sandbox-exec` when `runner.sandbox` is true.
+   through `qtestframe sandbox-exec` when `runner.sandbox` is true (with
+   socket creation denied when `runner.deny_network` is true).
 3. Environment: `PATH`, `HOME`/`TMPDIR` (the job directory), `LANG`, and
    `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`,
    `QTF_BUILD`.

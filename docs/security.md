@@ -28,7 +28,7 @@ or PostgreSQL.
 
 | Asset | Why it matters |
 |---|---|
-| Requirements, test specifications, results, attachments | confidential engineering data of each tenant; integrity matters for certification/compliance evidence |
+| Requirements, test specifications, results, exports | confidential engineering data of each tenant; integrity matters for certification/compliance evidence |
 | User accounts, password hashes, sessions, API tokens | account takeover → data access in every tenant the user belongs to |
 | IdP client secrets, SAML SP key, DB credentials, TLS key | lateral movement / impersonation of the service |
 | Audit trail | accountability, forensic evidence; must be tamper-evident (shipped off-host) |
@@ -51,95 +51,165 @@ volumetric network attacks (use upstream filtering).
 
 | | Threat | Main mitigations |
 |---|---|---|
-| **S**poofing | credential stuffing / brute force on local login | bcrypt (cost ≥ 12), per-IP and per-account login rate limiting with back-off, generic error messages, SSO preferred (local login can be disabled: `auth.local: false`) |
-| | session hijacking | random 256-bit session IDs stored server-side, cookie `qtf_session` `HttpOnly; Secure; SameSite=Lax`, absolute TTL (`auth.session_ttl`), rotation on login and tenant switch, revocation on logout/password change, HSTS |
-| | forged SSO responses | OIDC: authorization code + PKCE (S256), `state` and `nonce` bound to a short-lived cookie, ID token signature/issuer/audience/expiry checked against the discovered JWKS. SAML: signed assertions/responses required, audience/recipient/`InResponseTo`/time window validated, replay cache |
+| **S**poofing | credential stuffing / brute force on local login | bcrypt (cost 12), login rate limit of 10 attempts per 5 minutes per client IP + e-mail (HTTP 429), generic error messages, SSO preferred (local login can be disabled: `auth.local: false`) |
+| | session hijacking | random 256-bit session tokens, only their SHA-256 hash stored server-side, cookie `qtf_session` `HttpOnly; Secure; SameSite=Lax`, absolute TTL (`auth.session_ttl`), new session at every login, revocation on logout and on admin password reset/disable, HSTS |
+| | forged SSO responses | OIDC: authorization code + PKCE (S256), `state` and `nonce` kept in a signed, single-use, 10-minute cookie, ID token signature/issuer/audience/expiry checked against the discovered JWKS. SAML (crewjam/saml): signed response or signed assertions required, audience/destination/recipient/time window validated, `InResponseTo` must equal the AuthnRequest ID from the signed single-use state cookie (no assertion replay cache, see §3) |
 | | TLS interception | TLS 1.2+ only, modern AEAD suites, HSTS; outbound connections verify certificates (`sslmode=verify-full` for PostgreSQL, CA pinning for syslog) |
-| **T**ampering | CSRF | session-authenticated state-changing requests require `X-CSRF-Token` (per-session token, constant-time compare) plus `SameSite` cookies and an Origin check against `server.base_url`; bearer-token requests are exempt (no ambient credentials) |
-| | SQL injection | parameterised queries only; the query language (`q=`) is parsed into an AST and compiled to bound parameters, unknown fields are rejected |
-| | modification of evidence | audit log of all changes (who/what/when/before→after), shipped to a central syslog server; results are versioned |
+| **T**ampering | CSRF | session-authenticated requests with any method other than GET/HEAD require `X-CSRF-Token` (per-session token, constant-time compare) and pass an Origin check (`sameOrigin`); plus `SameSite=Lax` cookies; bearer-token requests are exempt (no ambient credentials) |
+| | SQL injection | parameterised queries only; the query language (`q=`) is parsed into an AST and evaluated in process against loaded records, never translated to SQL; unknown fields are rejected |
+| | modification of evidence | audit log of changes (who, action, entity, short details, when), also emitted as log records that can be shipped to a central syslog server; requirements carry a version counter; run executions keep step snapshots |
 | | binary/config tampering | binary and config owned by root and read-only for the service (`ProtectSystem=strict`, Landlock, SELinux/AppArmor) |
-| **R**epudiation | users denying actions | append-only audit log with user, tenant, source IP (from `trusted_proxies` only), user agent, request ID; forwarded via RFC 5424 syslog over TLS |
+| **R**epudiation | users denying actions | audit log with tenant, user ID and e-mail, action, entity and timestamp; the request log line carries the client IP (from `X-Forwarded-For` only for `trusted_proxies`); both forwarded via RFC 5424 syslog, over TLS if configured |
 | **I**nformation disclosure | cross-tenant data access (IDOR) | every query is scoped by `tenant_id` taken from the authenticated session/token, never from the request; object lookups by ID include the tenant predicate and return 404 (not 403) on mismatch |
-| | XSS | Vue templates auto-escape; no `v-html` with user data; strict CSP without `unsafe-inline`/`unsafe-eval`; `X-Content-Type-Options: nosniff`; attachments served with `Content-Disposition: attachment` |
-| | CSV/spreadsheet formula injection in exports | cells starting with `=`, `+`, `-`, `@`, TAB or CR are prefixed with `'` in CSV/XLSX exports; PDF/DOCX are generated, not templated from user HTML |
-| | secrets in logs | passwords, tokens, cookies and `Authorization` headers are never logged; API tokens are stored as SHA-256 hashes and shown once |
-| | verbose errors | generic error bodies `{"error","code"}`; details only in the server log with a request ID |
-| **D**enial of service | resource exhaustion | read/write timeouts, header/body size limits, pagination limits, RE2 regular expressions (linear time, no ReDoS), DB connection pool cap, login rate limits; systemd `MemoryMax`, `TasksMax`, `LimitNOFILE` |
-| | runaway test scripts | runner disabled by default; wall-clock timeout, rlimits (CPU, address space, processes, file size, open files), output cap |
-| **E**levation of privilege | role escalation | RBAC checked server-side on every endpoint; API tokens cannot exceed the creator's role; only super admins manage users/tenants; members cannot change their own role |
-| | RCE via script runner / parser bug | sandbox re-exec (no_new_privs + Landlock + seccomp + rlimits + dropped capabilities), separate SELinux domain / AppArmor child profile without network, systemd sandbox, unprivileged user |
+| | XSS | Vue templates auto-escape; no `v-html` in the client; CSP `script-src 'self'` (no inline scripts, no `unsafe-eval`; `style-src` needs `'unsafe-inline'` for PrimeVue); `X-Content-Type-Options: nosniff`; exports served with `Content-Disposition: attachment` |
+| | CSV/spreadsheet formula injection in exports | CSV cells starting with `=`, `+`, `-`, `@`, TAB or CR are prefixed with `'`; XLSX cells are written as string values, never formulas; PDF/DOCX are generated, not templated from user HTML |
+| | secrets in logs | passwords, tokens, cookies and `Authorization` headers are not logged (failed logins log the e-mail and client IP); API tokens are stored as SHA-256 hashes and shown once |
+| | verbose errors | error bodies `{"error","code"}`; unexpected errors return only "internal server error", details go to the server log (method, path, error) |
+| **D**enial of service | resource exhaustion | read/write/idle timeouts, 1 MiB header and 8 MiB JSON body limit (1 MiB for SAML ACS), query limits (4096 bytes, 64 regexes, depth 128), RE2 regular expressions (linear time, no ReDoS), search `limit` ≤ 1000, DB connection pool cap, login rate limit; systemd `MemoryMax`, `TasksMax`, `LimitNOFILE` |
+| | runaway test scripts | runner disabled by default; wall-clock timeout with process-group kill, rlimits (CPU, file size, open files, no core), output cap; process count bounded by systemd `TasksMax` |
+| **E**levation of privilege | role escalation | RBAC checked server-side on every endpoint; API tokens cannot exceed the creator's role and are capped at the current membership role; tokens cannot create tokens and never carry super-admin rights; only super admins manage users/tenants; the last admin of a tenant cannot be demoted or removed |
+| | RCE via script runner / parser bug | sandbox re-exec (no_new_privs + Landlock + seccomp + rlimits + dropped capabilities, optional socket deny), separate SELinux domain / AppArmor child profile without network, systemd sandbox, unprivileged user |
 | | kernel exploitation | seccomp deny-list in-process and `SystemCallFilter=` in systemd, `RestrictNamespaces`, no capabilities but `CAP_NET_BIND_SERVICE`, `MemoryDenyWriteExecute` |
 
 ## 3. Authentication
 
 ### Local accounts
 
-* Passwords are hashed with **bcrypt** (cost 12 or higher; hashes are
-  upgraded transparently on login when the cost is raised). Minimum length
-  is enforced; the maximum length is capped at 72 bytes (bcrypt limit) and
-  rejected rather than silently truncated.
-* Login: `POST /api/v1/auth/login`. Failures return the same message and
-  comparable timing whether the user exists or not.
-* **Rate limiting**: failed logins are throttled per source IP and per
-  account (token bucket with exponential back-off); excess attempts get
-  HTTP 429 and an audit/log entry. Behind a reverse proxy configure
-  `server.trusted_proxies`, otherwise all clients share the proxy's address.
+* Passwords are hashed with **bcrypt**, cost 12 (`auth.BcryptCost`).
+  Existing hashes are not re-hashed when the cost changes. Policy
+  (`auth.ValidatePassword`): 10 to 72 bytes (longer passwords are rejected
+  rather than silently truncated by bcrypt), at least one letter and at
+  least one non-letter.
+* Login: `POST /api/v1/auth/login`. Unknown users, SSO-only users, wrong
+  passwords and disabled users all get the same `401 invalid credentials`.
+  For a missing hash a bcrypt comparison against a dummy hash is still
+  performed; note that the dummy hash uses the minimum bcrypt cost, so the
+  response time for unknown accounts is shorter than for existing local
+  accounts.
+* **Rate limiting** (`rateLimiter` in `internal/api/server.go`): at most 10
+  login attempts per 5-minute sliding window per key *client IP + normalised
+  e-mail*; further attempts get **HTTP 429** `rate_limited`. A successful
+  login resets the key. The limiter is in memory (per process, lost on
+  restart). Failed logins are logged at WARN (`login failed`, e-mail,
+  client IP). Behind a reverse proxy configure `server.trusted_proxies`,
+  otherwise all clients share the proxy's address.
 * Disable local login entirely when SSO is in place: `auth.local: false`
   (super admins can still be managed with the CLI on the host).
 * First administrator: `qtestframe user create --email E --password-stdin
-  --super-admin` (password from stdin, never from argv/ps) or the
-  `bootstrap` section with `admin_password_file`.
+  --super-admin` (password from stdin, never from argv/ps) plus
+  `qtestframe member add`, or the `bootstrap` section with
+  `admin_password_file`, which creates a super admin and an admin
+  membership in `bootstrap.tenant_slug` when the database has no users.
 
 ### Sessions
 
 * Server-side sessions; the browser only holds the opaque cookie
-  `qtf_session` (`HttpOnly`, `Secure` unless `auth.cookie_secure: false`,
-  `SameSite=Lax`, `Path=/`).
-* Absolute lifetime `auth.session_ttl` (default 12 h); a new session ID is
-  issued at login and on tenant switch; logout and password change revoke
-  sessions server-side.
-* **CSRF**: every state-changing request (POST/PUT/PATCH/DELETE) that is
-  authenticated by the cookie must send `X-CSRF-Token` with the value
-  returned as `csrf_token` by `/auth/login` or `/auth/me`.
-* **API tokens** (`Authorization: Bearer qtf_...`) for CI systems: bound to
-  one tenant, carry a role that cannot exceed the creator's role, optional
-  expiry, stored hashed, revocable (`DELETE /tokens/{id}`).
+  `qtf_session` (32 random bytes, `HttpOnly`, `Secure` unless
+  `auth.cookie_secure: false`, `SameSite=Lax`, `Path=/`). The `sessions`
+  table stores the SHA-256 hash of the cookie value as session ID, so a
+  database leak does not reveal usable sessions.
+* Absolute lifetime `auth.session_ttl` (default 12 h); expired sessions are
+  rejected and deleted on access and purged hourly.
+* A new session is created at every login. Switching tenants
+  (`POST /auth/switch-tenant`, membership re-checked) updates the current
+  tenant of the existing session; the session ID is not rotated.
+* Revocation: logout deletes the session; a super admin disabling a user or
+  setting a password via `PATCH /api/v1/users/{id}` deletes all sessions of
+  that user. Changing one's own password (`POST /auth/password`) does not
+  end other sessions.
+* **CSRF** (`authed` in `internal/api/authn.go`): every request with a
+  method other than GET/HEAD that is authenticated by the cookie must send
+  `X-CSRF-Token` with the session's CSRF token (24 random bytes, returned as
+  `csrf_token` by `/auth/login` and `/auth/me`; constant-time compare).
+  In addition **`sameOrigin`** rejects the request if an `Origin` header is
+  present and names neither the request `Host` nor the scheme+host of
+  `server.base_url`. Requests without `Origin` (non-browser clients) pass
+  this check. Failures return 403. Public endpoints (login, logout, SSO
+  callbacks) are not CSRF-checked.
+* **API tokens** (`Authorization: Bearer qtf_...`) for CI systems:
+  `qtf_` + 32 random bytes (base64url); the prefix makes them recognisable
+  to secret scanners. Only the SHA-256 hash and a 10-character display
+  prefix are stored; the token is shown once. A token is bound to one
+  tenant, carries a role that may not exceed the creator's role at creation,
+  and on every request its role is **capped at the user's current
+  membership role** (a demoted user's tokens are demoted too). Optional
+  expiry (`expires_days`), `last_used` is recorded, revocable
+  (`DELETE /tokens/{id}`). Tokens cannot create tokens, and a super admin's
+  token has only the token's role.
 
 ### OpenID Connect
 
 * Authorization code flow with **PKCE (S256)**, a random **state** (CSRF of
-  the login itself) and **nonce** (ID token replay), both bound to a
-  short-lived, HttpOnly cookie and single use.
-* Provider metadata from `<issuer>/.well-known/openid-configuration`; ID token
-  signature verified against the provider's JWKS (keys refreshed on unknown
-  `kid`), `iss`, `aud`, `exp`, `iat`, `nonce` validated; `alg=none` and
-  symmetric algorithms with public keys are rejected.
-* Redirect URI is fixed: `<base_url>/api/v1/auth/oidc/<name>/callback`; no
-  open redirects (post-login target restricted to same-origin paths).
-* Optional just-in-time provisioning (`auto_provision`) into
-  `default_tenant` with `default_role`, and group → role mapping
-  (`groups_claim`, `role_mapping`). The email claim is only trusted when the
-  IdP asserts `email_verified` (or the provider is configured as
-  authoritative for its domain).
+  the login itself) and **nonce** (ID token replay). State, nonce and PKCE
+  verifier are kept in the cookie `qtf_login_state` (`HttpOnly`,
+  `SameSite=Lax`, `Path=/api/v1/auth/`), HMAC-SHA256-signed with a key
+  generated at process start, valid for 10 minutes and cleared when the
+  callback reads it (single use).
+* Provider metadata from `<issuer>/.well-known/openid-configuration`
+  (`coreos/go-oidc`); the ID token signature is verified against the
+  provider's JWKS, and issuer, audience (`client_id`) and expiry are
+  validated by the library; the nonce is compared by Qtestframe.
+* Redirect URI is fixed: `<base_url>/api/v1/auth/oidc/<name>/callback`.
+  After login the browser is always redirected to `/` (no user-controlled
+  redirect target); errors redirect to `/login?error=Sign-in failed`.
+* The ID token must contain an e-mail claim (`email_claim`); if it contains
+  `email_verified: false` the login is rejected (an absent
+  `email_verified` claim is accepted).
+* Just-in-time provisioning, see below.
 
 ### SAML 2.0
 
-* SP-initiated login with HTTP-POST binding to
+* SP-initiated login only (`crewjam/saml`): the AuthnRequest is sent with
+  the HTTP-Redirect binding, the response is POSTed to
   `<base_url>/api/v1/auth/saml/<name>/acs`; SP metadata at
-  `/api/v1/auth/saml/<name>/metadata`.
-* **Signed assertions (or a signed response) are mandatory**; signature
-  validated against the IdP metadata certificate, XML signature wrapping
-  defended by validating the signed element is the one consumed. Audience,
-  `Recipient`, `Destination`, `InResponseTo`, `NotBefore`/`NotOnOrAfter`
-  (small clock skew allowance) are checked; assertion IDs are cached to
-  prevent replay. Encrypted assertions are supported with the SP key.
+  `/api/v1/auth/saml/<name>/metadata`. AuthnRequests are not signed.
+* Validation by `crewjam/saml` (`ServiceProvider.ParseResponse`): the
+  response or every assertion must carry a valid XML signature from the IdP
+  metadata certificate; destination, issuer, audience (SP entity ID),
+  subject-confirmation recipient and the `NotBefore`/`NotOnOrAfter`
+  validity window (with crewjam's clock-skew allowance, 180 s by default)
+  are checked. Encrypted assertions are decrypted with the SP key when
+  `sp_key_file` is configured. The ACS body is limited to 1 MiB.
+* **Replay protection:** there is **no assertion replay cache**
+  (crewjam's `ReplayCache` is not configured). Instead, the AuthnRequest ID
+  is stored in the signed state cookie `qtf_login_state`
+  (`SameSite=None; Secure`, because the ACS POST is cross-site; 10-minute
+  expiry), and `ParseResponse` accepts only a response whose `InResponseTo`
+  equals that ID. The cookie is cleared when the ACS reads it, so each
+  AuthnRequest can complete at most one login in that browser;
+  IdP-initiated (unsolicited) responses are rejected. A captured response
+  could only be replayed together with the matching, still valid state
+  cookie and within the assertion's validity window.
+* The e-mail is taken from `email_attr` (or the NameID if it contains `@`);
+  an assertion without e-mail is rejected.
 * SP key pair: `scripts/certs/gen-saml-sp-cert.sh` (RSA 3072).
+
+### Just-in-time provisioning (OIDC and SAML)
+
+`provision` in `internal/api/authn.go`:
+
+1. Find the user by (provider, subject). Otherwise find a user with the same
+   e-mail: if it is a local account or already bound to this provider, it is
+   **linked** (provider and subject stored, local password hash cleared); if
+   it is bound to another provider the login fails. Otherwise create the
+   user only if `auto_provision: true`.
+2. Disabled users are rejected.
+3. With `default_tenant` set, the role is the highest-ranked role that
+   `role_mapping` assigns to one of the user's groups (`groups_claim` /
+   `groups_attr`), else `default_role` (an invalid value falls back to
+   `viewer`). A membership is created if missing and `auto_provision` is
+   on; if `role_mapping` is configured, an existing membership is updated to
+   the mapped role at every login (the IdP is authoritative).
+
+Because accounts are linked by e-mail, only connect IdPs whose e-mail
+addresses are verified and controlled by your organisation.
 
 ## 4. Authorization and tenant isolation
 
 * Every user has exactly **one role per tenant**; a global **super admin**
-  flag grants every permission in every tenant plus user/tenant management.
+  flag grants every permission in every tenant plus user/tenant management
+  (for session logins only; API tokens are limited to their role). A super
+  admin without membership in the current tenant acts as `admin` there.
 * Roles and permissions (`internal/rbac/rbac.go`, served at `GET /api/v1/rbac`):
 
 | Permission | viewer | tester | manager | admin |
@@ -149,16 +219,21 @@ volumetric network attacks (use upstream filtering).
 | requirement.write, project.create, project.update, script.execute, audit.read | | | ✔ | ✔ |
 | project.delete, member.manage, tenant.manage | | | | ✔ |
 
+* Full matrix with the endpoints using each permission:
+  [design.md §12](design.md#12-rbac-matrix). Guards: a tenant keeps at
+  least one admin; a super admin cannot demote or disable themselves.
 * **Tenant isolation**: the tenant is derived from the session's *current
   tenant* (switch with `POST /auth/switch-tenant`, membership re-checked) or
-  from the API token. Every repository/store query includes
-  `tenant_id = $current` — including lookups by UUID, joins and search —
-  so a guessed ID from another tenant yields 404. Cross-tenant operations
-  (moving folders to another project) verify both ends belong to the same
-  tenant.
-* Authorization is enforced in the API layer for every endpoint and again
-  in the store layer through the mandatory tenant predicate (defence in
-  depth against a forgotten check).
+  from the API token, never from the request. Store entry points take the
+  tenant ID explicitly and every lookup by ID includes
+  `tenant_id = ?`, so a guessed ID from another tenant yields 404. Follow-up
+  queries on child rows (criteria, steps, positions) run only after the
+  parent was loaded with the tenant predicate. Operations spanning projects
+  (moving items or folders to another project, links, adding tests to a run)
+  verify that both ends belong to the principal's tenant.
+* Authorization is enforced in the API layer (route permissions in
+  `internal/api/server.go`, data-dependent checks in handlers) and tenant
+  scoping in the store layer.
 
 ## 5. Web application protections
 
@@ -166,37 +241,49 @@ Response headers set on every response:
 
 | Header | Value |
 |---|---|
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self' <IdP SAML/OIDC endpoints>; frame-ancestors 'none'` |
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains` (when `server.hsts: true` and TLS is on) |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https:; object-src 'none'` (constant `contentSecurityPolicy` in `internal/api/server.go`; `'unsafe-inline'` styles are needed because PrimeVue injects styles at runtime; `form-action https:` allows the SAML/OIDC redirects) |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains`, only when `server.hsts: true` **and** the request arrived over TLS at the binary (set HSTS at a TLS-terminating proxy yourself) |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` (legacy companion of `frame-ancestors 'none'`) |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` (`no-referrer` on auth endpoints) |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` |
 | `Cross-Origin-Opener-Policy` | `same-origin` |
 | `Cross-Origin-Resource-Policy` | `same-origin` |
 | `Cache-Control` | `no-store` for `/api/*` responses |
 
 Further measures:
 
-* JSON only (`Content-Type: application/json` required for bodies), body
-  size limits, strict decoding (unknown fields rejected where sensible).
+* JSON bodies are limited to 8 MiB (`MaxBodyBytes`), headers to 1 MiB;
+  bodies are decoded with `encoding/json` (unknown fields are ignored, the
+  `Content-Type` header is not enforced). `ReadHeaderTimeout` 10 s,
+  `IdleTimeout` 120 s, read/write timeouts from `server.read_timeout` /
+  `write_timeout`.
 * Query language and search use **RE2** (Go `regexp`): linear time, no
-  catastrophic backtracking.
-* **Export injection protection**: CSV and XLSX exports neutralise formula
-  injection (values starting with `=`, `+`, `-`, `@`, `\t`, `\r` are
-  prefixed with `'`); file names in `Content-Disposition` are sanitised;
-  DOCX/PDF are generated programmatically.
+  catastrophic backtracking; expressions are limited to 4096 bytes, 64
+  regexes/globs and nesting depth 128.
+* **Export injection protection** (`internal/export`): CSV cells starting
+  with `=`, `+`, `-`, `@`, TAB or CR are prefixed with `'`; XLSX cells are
+  written as string values (never formulas); DOCX text is XML-escaped; PDF
+  and DOCX are generated programmatically. The download file name is built
+  from the project key and a timestamp only.
 * Static UI assets are embedded in the binary (no file system path
-  traversal surface), served with hashed file names and long cache times.
+  traversal surface); `assets/*` (hashed names) are served
+  `Cache-Control: public, max-age=31536000, immutable`, other files
+  `no-cache`.
+* Panics are recovered and answered with a generic 500.
 
 ## 6. TLS
 
-* Minimum **TLS 1.2**, TLS 1.3 preferred. TLS 1.2 suites limited to ECDHE +
-  AEAD: `ECDHE-ECDSA/RSA-AES128-GCM-SHA256`, `-AES256-GCM-SHA384`,
-  `-CHACHA20-POLY1305`. Curves X25519, P-256 (and the hybrid post-quantum
-  X25519MLKEM768 when the Go runtime offers it).
-* Certificate and key are re-read on **SIGHUP** (`systemctl reload
-  qtestframe`), so renewals do not drop connections.
+* Configured in `cmdServe` (`internal/app/app.go`) when `server.tls_cert`
+  and `tls_key` are set: `MinVersion: TLS 1.2`; TLS 1.2 cipher suites
+  limited to ECDHE + AEAD (`TLS_ECDHE_{ECDSA,RSA}_WITH_AES_256_GCM_SHA384`,
+  `_CHACHA20_POLY1305`, `_AES_128_GCM_SHA256`); TLS 1.3 suites and curve
+  preferences are Go's defaults; ALPN `h2`, `http/1.1`.
+* The key pair is served through `GetCertificate` from an atomically
+  swapped value and re-read on **SIGHUP** (`systemctl reload qtestframe`),
+  so renewals do not drop connections; if the reload fails, the previous
+  certificate stays in use and an error is logged. Without TLS, SIGHUP is
+  ignored.
 * Certificates: Let's Encrypt (`scripts/certs/letsencrypt.sh`), an internal
   CA (`gen-ca.sh` + `gen-server-cert.sh`), or self-signed for labs. Check with
   `scripts/certs/verify-cert.sh`. ECDSA P-256 is the default key type.
@@ -204,41 +291,58 @@ Further measures:
   `ca_file` (and optional client certificate), IdP endpoints over HTTPS with
   the system trust store.
 * Running behind a TLS-terminating reverse proxy is supported: listen on
-  `127.0.0.1`, set `trusted_proxies`, keep `cookie_secure: true` and
-  `hsts: true` (the proxy sets HTTPS for the browser).
+  `127.0.0.1`, set `trusted_proxies`, keep `cookie_secure: true`, and let
+  the proxy send `Strict-Transport-Security` (Qtestframe emits HSTS only on
+  its own TLS connections).
 
 ## 7. Secrets handling
 
-* Never write secrets inline in `config.yaml`. Use the `*_file` options
-  (`database.dsn_file`, `auth.oidc[].client_secret_file`,
-  `bootstrap.admin_password_file`, SAML `sp_key_file`, syslog `key_file`).
+* Never write secrets inline in `config.yaml`. Use the secret-file options
+  `database.dsn_file`, `auth.oidc[].client_secret_file` and
+  `bootstrap.admin_password_file` (contents are trimmed), and key files
+  (`server.tls_key`, SAML `sp_key_file`, syslog `key_file`).
 * **systemd credentials** (recommended): `LoadCredential=name:/path` in a
   drop-in copies the secret to `/run/credentials/qtestframe.service/name`
-  (ramfs, not swappable, only readable by the service). Relative `*_file`
-  paths are resolved against `$CREDENTIALS_DIRECTORY`, so
-  `client_secret_file: oidc-corp` is enough. With TPM2/host key:
-  `systemd-creds encrypt` + `LoadCredentialEncrypted=`.
+  (ramfs, not swappable, only readable by the service). Relative paths of
+  the three secret-file options are resolved against
+  `$CREDENTIALS_DIRECTORY` (`readSecret` in `internal/config/config.go`), so
+  `client_secret_file: oidc-corp` is enough; key file paths are used as
+  given. The credentials directory is added to the Landlock read-only
+  paths. With TPM2/host key: `systemd-creds encrypt` +
+  `LoadCredentialEncrypted=`.
 * File permissions: `/etc/qtestframe` `0750 root:qtestframe`, config `0640`,
   keys `0640 root:qtestframe` (or `0600` owned by the reader). The service
   cannot modify its own configuration or keys.
-* Environment variables (`QTF_OIDC_<NAME>_CLIENT_SECRET`,
+* Environment variables (`QTF_DATABASE_DSN`, `QTF_OIDC_<NAME>_CLIENT_SECRET`,
   `QTF_BOOTSTRAP_ADMIN_PASSWORD`) are supported for containers but are
   visible in `/proc/<pid>/environ` to the same user; prefer files/secrets.
-* Secrets are read once at start-up (before Landlock is applied) and on
-  SIGHUP; they are never logged. Core dumps are disabled (`LimitCORE=0`).
+* Secret files are read once at start-up, before Landlock is applied
+  (SIGHUP re-reads only the TLS key pair); they are not logged. Core dumps
+  are disabled (`LimitCORE=0`).
 
 ## 8. Audit log and central logging
 
-* The audit log records authentication events (login success/failure,
-  logout, SSO provisioning, token use/creation/revocation), all
-  create/update/delete operations with before/after values, role and
-  membership changes, exports and script executions, each with timestamp,
-  tenant, user, source IP, user agent and request ID. Readable per tenant
-  with `audit.read` (`GET /api/v1/audit`).
+* `Server.audit` writes an `audit_log` row (tenant, user ID, user e-mail,
+  action, entity type, entity ID, short details, timestamp) and an INFO log
+  record `audit` with the same fields. Audited actions: successful logins
+  (`login`, with the method `local` or the provider), `password.change`,
+  create/update/delete/move/bulk operations on projects, folders,
+  categories, requirements, tests and links, run and execution changes
+  (including CI imports and script runs), member and token changes, tenant
+  and user administration, and exports. Old/new values, client IP, user
+  agent and request IDs are not recorded in the audit entry; failed logins
+  and logouts appear only in the server log (`login failed` at WARN).
+  Readable per tenant with `audit.read` (`GET /api/v1/audit?limit=&q=`,
+  newest first, default 500, maximum 5000).
 * Logs are structured (`logging.format: json`) to stdout → journald.
-* **Central syslog over TLS** (`logging.syslog`): RFC 5424 framing over TCP
-  with TLS (RFC 5425, port 6514), server verified with `ca_file`, optional
-  client certificate (`gen-client-cert.sh`) for mutual TLS. Shipping the
+* **Central syslog** (`logging.syslog`, `internal/logging`): every log
+  record (including the `audit` records) is also sent as JSON in a syslog
+  message, RFC 5424 (default) or RFC 3164, over `udp`, `tcp`, `tls`, `unix`
+  or `unixgram`; stream transports use RFC 6587 octet counting. With `tls`
+  (RFC 5425, port 6514) the server is verified against `ca_file` (or the
+  system roots) with the host name from `address`, TLS 1.2 minimum, and an
+  optional client certificate (`gen-client-cert.sh`) for mutual TLS.
+  Delivery is best effort (one reconnect, no disk queue). Shipping the
   audit trail off-host makes it tamper-evident even if the host is
   compromised. Receiver configuration: see operations.md.
 
@@ -250,22 +354,37 @@ server can execute. This is remote code execution by design, so it is
 independent layers when enabled:
 
 1. **Permission**: only roles with `script.execute` (manager, admin).
-2. **Re-exec**: the server never runs the interpreter directly. It starts
-   `/usr/bin/qtestframe sandbox-exec` as a child (new process group, empty
-   environment except `PATH`, `HOME`/`TMPDIR` = job directory, stdin
-   `/dev/null`), which, before `execve` of the interpreter:
+2. **Re-exec** (`runner.sandbox: true`, the default; `internal/runner`):
+   the server does not run the interpreter directly. It starts its own
+   binary as `qtestframe sandbox-exec --workdir DIR --cpu N
+   [--no-network] -- INTERPRETER SCRIPT` (new process group; environment
+   only `PATH`, `HOME`/`TMPDIR` = job directory, `LANG`, `QTF_TEST_KEY`,
+   `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD`; stdin
+   `/dev/null`). `sandbox-exec` (`SandboxExec`), before `execve` of the
+   interpreter:
+   * applies **rlimits** (`hardening.SetResourceLimits`): `RLIMIT_CPU` =
+     timeout + 1 s, `RLIMIT_FSIZE` 64 MiB, `RLIMIT_NOFILE` 256,
+     `RLIMIT_CORE` 0 (`RLIMIT_AS` unlimited; no `RLIMIT_NPROC`, the process
+     count is bounded by systemd `TasksMax`);
    * sets `PR_SET_NO_NEW_PRIVS` (no setuid/file-capability elevation);
-   * clears the ambient capability set and drops the bounding set (no
-     capabilities survive the exec);
-   * applies **rlimits** with `prlimit64`: `RLIMIT_CPU`, `RLIMIT_AS`,
-     `RLIMIT_NPROC`, `RLIMIT_FSIZE`, `RLIMIT_NOFILE`, `RLIMIT_CORE=0`;
-   * applies a **Landlock** rule set: read/execute only `/usr`, `/bin`,
-     `/lib*`, `/etc` essentials; read/write only the per-job directory below
-     `runner.work_dir` (the database and configuration are invisible);
-   * installs a **seccomp** filter (the in-process deny-list plus network
-     socket creation for the script).
-3. **Timeout** (`runner.timeout`): the whole process group is killed;
-   **output cap** (`runner.max_output_bytes`) truncates stdout/stderr.
+   * drops capabilities (bounding set if `CAP_SETPCAP` is held, all
+     effective/permitted/inheritable capabilities, ambient set cleared);
+   * applies a **Landlock** rule set: read-only `/etc`, `/usr`, `/lib`,
+     `/lib64`, `/bin`, `/sbin`, `/opt` (plus `hardening.DefaultReadOnly`),
+     execute from `/usr`, `/bin`, `/lib*`, `/opt`, read/write only the
+     per-job directory below `runner.work_dir`. The domain stacks on the
+     server's own Landlock domain. The database directory is not
+     accessible, but **`/etc` (including `/etc/qtestframe`) is readable**:
+     protect configuration and keys with file permissions and MAC;
+   * installs the **seccomp** deny-list (`hardening.DeniedSyscalls`); with
+     `runner.deny_network: true` (default `false`) also `socket`,
+     `socketpair`, `connect`, `bind`, `listen`, `accept`, `accept4`.
+   With `runner.sandbox: false` the interpreter is started directly (only
+   the remaining layers apply).
+3. **Timeout** (`runner.timeout`, default 60 s): the whole process group is
+   killed with SIGKILL and the execution is marked failed; **output cap**
+   (`runner.max_output_bytes`, default 1 MiB) truncates combined
+   stdout/stderr.
 4. **Scripts are data**: written to the job directory and passed as an
    argument to the interpreter; the directory is `noexec` for the service
    (`NoExecPaths=/`, `ExecPaths=/usr ...`).
@@ -332,8 +451,8 @@ flowchart LR
 | systemd | `deploy/systemd/qtestframe.service` | a compromised process reading/writing the host, using privileged syscalls, namespaces, devices |
 | SELinux | `deploy/selinux/` | file/network access outside policy even for root bugs; booleans for optional features |
 | AppArmor | `deploy/apparmor/usr.bin.qtestframe` | same, on Debian/Ubuntu/SUSE |
-| seccomp (container) | `deploy/seccomp/qtestframe-seccomp.json` | allow-list of ~200 syscalls for container deployments |
-| Landlock / seccomp / caps (in-process) | Go `internal/hardening` | works on any Linux ≥ 5.13 even without systemd/MAC (containers, other init systems) |
+| seccomp (container) | `deploy/seccomp/qtestframe-seccomp.json` | allow-list of about 210 syscalls (default action `SCMP_ACT_ERRNO`) for container deployments |
+| Landlock / seccomp / caps (in-process) | Go `internal/hardening` | works on Linux even without systemd/MAC (containers, other init systems); Landlock needs Linux ≥ 5.13 with Landlock enabled, applied best effort up to ABI v5; seccomp deny-list `hardening.DeniedSyscalls` |
 
 ### systemd unit
 
@@ -365,9 +484,10 @@ points:
 * `ExecStartPre=qtestframe migrate`, `ExecReload=kill -HUP` (TLS reload),
   `Restart=on-failure`, `Type=exec`.
 
-**Exposure score.** `systemd-analyze security qtestframe.service` reports
-**1.4 "OK"** (measured with systemd 255). The remaining points are inherent
-to a network service and accepted deliberately:
+**Exposure score.** `systemd-analyze security qtestframe.service` should
+report an exposure of roughly 1.x ("OK"); the exact value depends on the
+systemd version. The remaining points are inherent to a network service and
+accepted deliberately:
 
 | Check | Why it stays |
 |---|---|
@@ -394,8 +514,8 @@ SocketBindAllow=tcp:8443
 SocketBindDeny=any
 ```
 
-This brings the score to 0.9 "SAFE". Use nftables (`redirect to :8443`) to
-publish port 443.
+This lowers the score further (below 1, "SAFE"). Use nftables
+(`redirect to :8443`) to publish port 443.
 
 ### SELinux
 
@@ -482,8 +602,8 @@ cat /proc/$PID/attr/current          # qtestframe (enforce)
 # Landlock: is it supported/enabled by the kernel?
 grep -w landlock /sys/kernel/security/lsm && dmesg | grep -i landlock
 # ...and is it applied? There is no /proc interface for Landlock domains;
-# the start-up log reports the applied ABI and rules:
-journalctl -u qtestframe | grep -i -E 'landlock|seccomp|hardening'
+# the start-up log line lists applied and skipped protections:
+journalctl -u qtestframe | grep -i 'msg=hardening'
 
 # TLS configuration seen by clients
 scripts/certs/verify-cert.sh --connect qtf.example.com:8443
@@ -491,15 +611,18 @@ openssl s_client -connect qtf.example.com:8443 -tls1_1 </dev/null   # must fail
 curl -sI https://qtf.example.com:8443/ | grep -i -E 'strict-transport|content-security|x-content-type|referrer|permissions'
 ```
 
-The service logs at start-up which in-process protections were applied
-(no_new_privs, Landlock ABI version, number of seccomp rules, remaining
-capabilities); a missing feature (e.g. Landlock on an old kernel) is logged
-as a warning, not an error.
+At start-up the service logs one INFO record `hardening` with
+`applied=[no_new_privs capabilities landlock seccomp]` and
+`skipped=[…]`, where each skipped entry carries the reason (for example
+`landlock: …` on a kernel without Landlock). A skipped feature is not
+fatal; only a failing `no_new_privs` aborts the start.
 
 The runner can be tested end-to-end with a script that tries to escape:
-reading `/etc/qtestframe/config.yaml`, writing outside the job dir, opening
-a socket, forking many processes, or looping forever must all fail or be
-killed.
+writing outside the job directory, reading the database, or looping forever
+must fail or be killed; opening a socket must fail with
+`runner.deny_network: true` or under the SELinux/AppArmor runner policy;
+reading `/etc/qtestframe/config.yaml` must be blocked by MAC and file
+permissions (Landlock allows `/etc`); fork bombs are stopped by `TasksMax`.
 
 ## 12. Hardening checklist
 
@@ -509,7 +632,7 @@ killed.
 - [ ] secrets via `*_file` / `LoadCredential=`, permissions `0640 root:qtestframe`
 - [ ] PostgreSQL with `sslmode=verify-full`, least-privilege DB role
 - [ ] `logging.syslog` to a central server over `tls`
-- [ ] `runner.enabled: false` unless needed; if enabled, only trusted roles, SELinux/AppArmor enforced
+- [ ] `runner.enabled: false` unless needed; if enabled, only trusted roles, SELinux/AppArmor enforced, `runner.deny_network: true` if scripts need no network
 - [ ] SELinux module loaded (RHEL family) or AppArmor profile enforced (Debian family)
 - [ ] `systemd-analyze security qtestframe` ≤ 2.0
 - [ ] nftables policy; only 443/8443 public; SSH restricted

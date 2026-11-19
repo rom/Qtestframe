@@ -17,7 +17,7 @@ untested code from accumulating and makes reviewers ask for tests.
 ## Decision
 
 * Go: `make coverage-go` runs `scripts/coverage.sh`, which executes
-  `go test -count=1 -coverpkg=<all internal packages except internal/testutil> -coverprofile=coverage.out ./...`
+  `go test -count=1 -coverpkg=<all internal packages except internal/testutil> -coverprofile=coverage.out <packages with tests>`
   and fails if the total statement coverage is below 85 %
   (`COVERAGE_FLOOR`, or the first script argument). Cross-package coverage
   counts code exercised by the API integration tests in every package.
