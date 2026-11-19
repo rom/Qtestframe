@@ -298,18 +298,38 @@ func (s *Store) deleteItems(ctx context.Context, table, tenantID, projectID stri
 	if len(ids) == 0 {
 		return 0, nil
 	}
-	q := `DELETE FROM ` + table + ` WHERE tenant_id = ? AND id IN (` + placeholders(len(ids)) + `)`
+	where := ` WHERE tenant_id = ? AND id IN (` + placeholders(len(ids)) + `)`
 	args := append([]any{tenantID}, anySlice(ids)...)
 	if projectID != "" {
-		q += ` AND project_id = ?`
+		where += ` AND project_id = ?`
 		args = append(args, projectID)
 	}
-	res, err := s.c().exec(ctx, q, args...)
-	if err != nil {
-		return 0, err
+	kind := model.KindRequirement
+	if table == "test_cases" {
+		kind = model.KindTest
 	}
-	n, _ := res.RowsAffected()
-	return int(n), nil
+	n := 0
+	err := s.tx(ctx, func(c conn) error {
+		rows, err := c.query(ctx, `SELECT id FROM `+table+where, args...)
+		if err != nil {
+			return err
+		}
+		found, err := scanStrings(rows)
+		if err != nil {
+			return err
+		}
+		if err := deleteEntityData(ctx, c, kind, found); err != nil {
+			return err
+		}
+		res, err := c.exec(ctx, `DELETE FROM `+table+where, args...)
+		if err != nil {
+			return err
+		}
+		m, _ := res.RowsAffected()
+		n = int(m)
+		return nil
+	})
+	return n, err
 }
 
 // MoveItems moves requirements or tests into a folder (or the root) and
@@ -528,9 +548,7 @@ func (s *Store) BulkUpdateItems(ctx context.Context, tenantID, kind, projectID s
 			}
 			if len(sets) > 0 {
 				q := `UPDATE ` + table + ` SET ` + strings.Join(sets, ", ") + `, updated_at = ?`
-				if kind == model.KindRequirement {
-					q += `, version = version + 1`
-				}
+				q += `, version = version + 1`
 				if _, err := c.exec(ctx, q+` WHERE id = ?`, append(append(append([]any{}, args...), s.now()), id)...); err != nil {
 					return err
 				}

@@ -8,14 +8,14 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 )
 
-const testCols = `id, project_id, folder_id, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at`
+const testCols = `id, project_id, folder_id, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, version`
 
 func scanTest(r interface{ Scan(...any) error }) (*model.TestCase, error) {
 	var t model.TestCase
 	var folder sql.NullString
 	var tags string
 	if err := r.Scan(&t.ID, &t.ProjectID, &folder, &t.Key, &t.Title, &t.Description, &t.Preconditions, &t.ExecutionType, &t.ScriptLanguage, &t.Script,
-		&t.ExpectedResult, &t.Priority, &t.Status, &t.EstimatedMin, &tags, &t.Position, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		&t.ExpectedResult, &t.Priority, &t.Status, &t.EstimatedMin, &tags, &t.Position, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt, &t.Version); err != nil {
 		return nil, err
 	}
 	t.FolderID = strPtr(folder)
@@ -77,6 +77,10 @@ func (s *Store) CreateTest(ctx context.Context, tenantID string, t *model.TestCa
 		return err
 	}
 	t.ID = newID()
+	if err := s.validateCalls(ctx, tenantID, t.ProjectID, t.ID, t.Steps); err != nil {
+		return err
+	}
+	t.Version = 1
 	t.CreatedAt = s.now()
 	t.UpdatedAt = t.CreatedAt
 	if t.FolderID != nil && *t.FolderID == "" {
@@ -117,7 +121,10 @@ func replaceSteps(ctx context.Context, c conn, t *model.TestCase) error {
 			st.ID = newID()
 		}
 		st.Position = i
-		if _, err := c.exec(ctx, `INSERT INTO test_steps (id, test_case_id, position, action, expected, data) VALUES (?, ?, ?, ?, ?, ?)`, st.ID, t.ID, i, st.Action, st.Expected, st.Data); err != nil {
+		if st.CallTestID != nil && *st.CallTestID == "" {
+			st.CallTestID = nil
+		}
+		if _, err := c.exec(ctx, `INSERT INTO test_steps (id, test_case_id, position, action, expected, data, call_test_id) VALUES (?, ?, ?, ?, ?, ?, ?)`, st.ID, t.ID, i, st.Action, st.Expected, st.Data, nullStr(st.CallTestID)); err != nil {
 			return mapErr(err, "step")
 		}
 	}
@@ -125,7 +132,8 @@ func replaceSteps(ctx context.Context, c conn, t *model.TestCase) error {
 }
 
 func (s *Store) listSteps(ctx context.Context, where string, args ...any) (map[string][]model.TestStep, error) {
-	rows, err := s.c().query(ctx, `SELECT id, test_case_id, position, action, expected, data FROM test_steps `+where+` ORDER BY position`, args...)
+	rows, err := s.c().query(ctx, `SELECT s.id, s.test_case_id, s.position, s.action, s.expected, s.data, s.call_test_id, COALESCE(c.key, ''), COALESCE(c.title, '')
+		FROM test_steps s LEFT JOIN test_cases c ON c.id = s.call_test_id `+where+` ORDER BY s.position`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,9 +142,11 @@ func (s *Store) listSteps(ctx context.Context, where string, args ...any) (map[s
 	for rows.Next() {
 		var st model.TestStep
 		var tc string
-		if err := rows.Scan(&st.ID, &tc, &st.Position, &st.Action, &st.Expected, &st.Data); err != nil {
+		var call sql.NullString
+		if err := rows.Scan(&st.ID, &tc, &st.Position, &st.Action, &st.Expected, &st.Data, &call, &st.CallTestKey, &st.CallTestTitle); err != nil {
 			return nil, err
 		}
+		st.CallTestID = strPtr(call)
 		out[tc] = append(out[tc], st)
 	}
 	return out, rows.Err()
@@ -158,14 +168,103 @@ func (s *Store) GetTest(ctx context.Context, tenantID, id string) (*model.TestCa
 	if t.CategoryIDs == nil {
 		t.CategoryIDs = []string{}
 	}
-	steps, err := s.listSteps(ctx, `WHERE test_case_id = ?`, id)
+	steps, err := s.listSteps(ctx, `WHERE s.test_case_id = ?`, id)
 	if err != nil {
 		return nil, err
 	}
 	if st := steps[id]; st != nil {
 		t.Steps = st
 	}
+	if t.CalledBy, err = s.calledBy(ctx, id); err != nil {
+		return nil, err
+	}
 	return t, nil
+}
+
+// calledBy lists tests that contain a call step to test id.
+func (s *Store) calledBy(ctx context.Context, id string) ([]model.TestRef, error) {
+	rows, err := s.c().query(ctx, `SELECT DISTINCT t.id, t.key, t.title, t.seq FROM test_steps s JOIN test_cases t ON t.id = s.test_case_id WHERE s.call_test_id = ? ORDER BY t.seq`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.TestRef
+	for rows.Next() {
+		var r model.TestRef
+		var seq int
+		if err := rows.Scan(&r.ID, &r.Key, &r.Title, &seq); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// MaxCallDepth bounds the nesting of shared (call) steps.
+const MaxCallDepth = 5
+
+// validateCalls checks that call steps reference tests of the same project
+// and do not create a cycle (including self-calls).
+func (s *Store) validateCalls(ctx context.Context, tenantID, projectID, testID string, steps []model.TestStep) error {
+	var targets []string
+	for _, st := range steps {
+		if st.CallTestID != nil && *st.CallTestID != "" {
+			if *st.CallTestID == testID {
+				return Invalidf("a test cannot call itself")
+			}
+			targets = append(targets, *st.CallTestID)
+		}
+	}
+	if len(targets) == 0 {
+		return nil
+	}
+	for _, id := range uniq(targets) {
+		var n int
+		if err := s.c().row(ctx, `SELECT COUNT(*) FROM test_cases WHERE id = ? AND tenant_id = ? AND project_id = ?`, id, tenantID, projectID).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			return Invalidf("called test %s not found in project", id)
+		}
+	}
+	rows, err := s.c().query(ctx, `SELECT s.test_case_id, s.call_test_id FROM test_steps s JOIN test_cases t ON t.id = s.test_case_id WHERE t.project_id = ? AND s.call_test_id IS NOT NULL AND s.test_case_id <> ?`, projectID, testID)
+	if err != nil {
+		return err
+	}
+	edges := map[string][]string{testID: targets}
+	for rows.Next() {
+		var from, to string
+		if err := rows.Scan(&from, &to); err != nil {
+			rows.Close()
+			return err
+		}
+		edges[from] = append(edges[from], to)
+	}
+	rows.Close()
+	// depth-first search for a path back to testID, also bounding depth
+	var walk func(id string, depth int, seen map[string]bool) error
+	walk = func(id string, depth int, seen map[string]bool) error {
+		// depth counts call hops from the saved test; a test reached at
+		// depth MaxCallDepth+1 may exist but must not call further tests
+		if depth > MaxCallDepth && len(edges[id]) > 0 {
+			return Invalidf("shared steps are nested deeper than %d levels", MaxCallDepth)
+		}
+		for _, next := range edges[id] {
+			if next == testID {
+				return Invalidf("shared steps would form a cycle")
+			}
+			if seen[next] {
+				continue
+			}
+			seen[next] = true
+			if err := walk(next, depth+1, seen); err != nil {
+				return err
+			}
+			delete(seen, next)
+		}
+		return nil
+	}
+	return walk(testID, 1, map[string]bool{})
 }
 
 // ListTests returns all tests of a project with categories and steps.
@@ -191,7 +290,7 @@ func (s *Store) ListTests(ctx context.Context, tenantID, projectID string) ([]mo
 	if err != nil {
 		return nil, err
 	}
-	steps, err := s.listSteps(ctx, `WHERE test_case_id IN (SELECT id FROM test_cases WHERE project_id = ?)`, projectID)
+	steps, err := s.listSteps(ctx, `WHERE s.test_case_id IN (SELECT id FROM test_cases WHERE project_id = ?)`, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +317,12 @@ func (s *Store) UpdateTest(ctx context.Context, tenantID string, t *model.TestCa
 	t.ProjectID, t.Key = old.ProjectID, old.Key
 	t.CreatedAt, t.CreatedBy = old.CreatedAt, old.CreatedBy
 	t.UpdatedAt = s.now()
+	t.Version = old.Version + 1
+	if withSteps {
+		if err := s.validateCalls(ctx, tenantID, t.ProjectID, t.ID, t.Steps); err != nil {
+			return err
+		}
+	}
 	if t.FolderID != nil && *t.FolderID == "" {
 		t.FolderID = nil
 	}
@@ -225,8 +330,8 @@ func (s *Store) UpdateTest(ctx context.Context, tenantID string, t *model.TestCa
 		if err := s.checkFolder(ctx, c, tenantID, t.ProjectID, model.KindTest, t.FolderID); err != nil {
 			return err
 		}
-		if _, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, updated_at = ? WHERE id = ?`,
-			nullStr(t.FolderID), t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script, t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.UpdatedAt, t.ID); err != nil {
+		if _, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, updated_at = ?, version = ? WHERE id = ?`,
+			nullStr(t.FolderID), t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script, t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.UpdatedAt, t.Version, t.ID); err != nil {
 			return err
 		}
 		if err := setCategories(ctx, c, model.KindTest, t.ProjectID, t.ID, t.CategoryIDs); err != nil {

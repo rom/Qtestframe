@@ -13,6 +13,18 @@ import (
 	"github.com/rom/qtestframe/internal/store"
 )
 
+func uniqStrings(in []string) []string {
+	seen := map[string]bool{}
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		if !seen[s] {
+			seen[s] = true
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 // jsonMerge overlays the fields present in body onto v.
 func jsonMerge(body []byte, v any) error {
 	if len(body) == 0 {
@@ -116,6 +128,7 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	s.audit(ctx, p, "requirement.create", "requirement", rq.ID, rq.Key)
+	s.recordRequirement(ctx, p, rq.ID, "create")
 	res := createdRequirement{Requirement: rq}
 	if createTest {
 		t, err := s.createLinkedTest(ctx, p, &rq)
@@ -126,6 +139,7 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 			return
 		}
 		s.audit(ctx, p, "test.create", "test", t.ID, t.Key+" (linked to "+rq.Key+")")
+		s.recordTest(ctx, p, t.ID, "create")
 		res.LinkedTests = 1
 		res.Coverage = "not_run"
 		res.LinkedTest = t
@@ -283,11 +297,13 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	rq.ID, rq.ProjectID, rq.Key = id, project, key
+	s.ensureInitialRevision(ctx, p, model.KindRequirement, rq.ID)
 	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), rq, keys["criteria"]); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(ctx, p, "requirement.update", "requirement", rq.ID, rq.Key)
+	s.recordRequirement(ctx, p, rq.ID, "update")
 	out, err := s.decoratedRequirement(r, p, rq.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -343,9 +359,15 @@ func (s *Server) handleMoveItems(kind string) handlerFunc {
 		if req.Position != nil {
 			pos = *req.Position
 		}
+		for _, id := range uniqStrings(req.IDs) {
+			s.ensureInitialRevision(r.Context(), p, kind, id)
+		}
 		if err := s.Store.MoveItems(r.Context(), p.TenantID(), kind, pr.ID, req.IDs, req.FolderID, pos, req.ProjectID); err != nil {
 			s.fail(w, r, err)
 			return
+		}
+		for _, id := range uniqStrings(req.IDs) {
+			s.record(r.Context(), p, kind, id, "move")
 		}
 		s.audit(r.Context(), p, kind+".move", kind, strings.Join(req.IDs, ","), req.ProjectID)
 		writeJSON(w, http.StatusOK, map[string]int{"moved": len(req.IDs)})
@@ -366,10 +388,16 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 			s.fail(w, r, err)
 			return
 		}
+		for _, id := range uniqStrings(req.IDs) {
+			s.ensureInitialRevision(r.Context(), p, kind, id)
+		}
 		n, err := s.Store.BulkUpdateItems(r.Context(), p.TenantID(), kind, pr.ID, req.IDs, req.Set)
 		if err != nil {
 			s.fail(w, r, err)
 			return
+		}
+		for _, id := range uniqStrings(req.IDs) {
+			s.record(r.Context(), p, kind, id, "bulk_update")
 		}
 		s.audit(r.Context(), p, kind+".bulk_update", kind, strings.Join(req.IDs, ","), "")
 		writeJSON(w, http.StatusOK, map[string]int{"updated": n})
@@ -464,6 +492,7 @@ func (s *Server) handleCreateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.audit(r.Context(), p, "test.create", "test", t.ID, t.Key)
+	s.recordTest(r.Context(), p, t.ID, "create")
 	writeJSON(w, http.StatusCreated, t)
 }
 
@@ -519,11 +548,13 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	t.ID, t.ProjectID, t.Key = id, project, key
+	s.ensureInitialRevision(ctx, p, model.KindTest, t.ID)
 	if err := s.Store.UpdateTest(ctx, p.TenantID(), t, keys["steps"]); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(ctx, p, "test.update", "test", t.ID, t.Key)
+	s.recordTest(ctx, p, t.ID, "update")
 	out, err := s.decoratedTest(r, p, t.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -553,6 +584,7 @@ func (s *Server) handleCopyTest(w http.ResponseWriter, r *http.Request, p *Princ
 		return
 	}
 	s.audit(r.Context(), p, "test.copy", "test", t.ID, t.Key)
+	s.recordTest(r.Context(), p, t.ID, "create")
 	writeJSON(w, http.StatusCreated, t)
 }
 

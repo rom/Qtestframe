@@ -77,24 +77,14 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 		if _, err := c.exec(ctx, `INSERT INTO test_executions (id, tenant_id, run_id, test_case_id, status, position) VALUES (?, ?, ?, ?, 'not_run', ?)`, eid, tenantID, runID, tid, next); err != nil {
 			return added, err
 		}
-		// snapshot the steps
-		rows, err := c.query(ctx, `SELECT id, position, action, expected FROM test_steps WHERE test_case_id = ? ORDER BY position`, tid)
+		// snapshot the steps, expanding shared (call) steps in place
+		steps, err := expandSteps(ctx, c, tid, "", 0, map[string]bool{tid: true})
 		if err != nil {
 			return added, err
 		}
-		var steps []model.TestStep
-		for rows.Next() {
-			var st model.TestStep
-			if err := rows.Scan(&st.ID, &st.Position, &st.Action, &st.Expected); err != nil {
-				rows.Close()
-				return added, err
-			}
-			steps = append(steps, st)
-		}
-		rows.Close()
-		for _, st := range steps {
+		for i, st := range steps {
 			if _, err := c.exec(ctx, `INSERT INTO step_results (id, execution_id, step_id, position, action, expected, status, actual) VALUES (?, ?, ?, ?, ?, ?, 'not_run', '')`,
-				newID(), eid, st.ID, st.Position, st.Action, st.Expected); err != nil {
+				newID(), eid, st.ID, i, st.Action, st.Expected); err != nil {
 				return added, err
 			}
 		}
@@ -102,6 +92,51 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 		added++
 	}
 	return added, nil
+}
+
+// expandSteps returns the steps of test tid with call steps replaced by the
+// called test's steps (recursively), prefixed with "[KEY] ".
+func expandSteps(ctx context.Context, c conn, tid, prefix string, depth int, onPath map[string]bool) ([]model.TestStep, error) {
+	rows, err := c.query(ctx, `SELECT s.id, s.action, s.expected, s.call_test_id, COALESCE(t.key, '') FROM test_steps s LEFT JOIN test_cases t ON t.id = s.call_test_id WHERE s.test_case_id = ? ORDER BY s.position`, tid)
+	if err != nil {
+		return nil, err
+	}
+	type raw struct {
+		step model.TestStep
+		call sql.NullString
+		key  string
+	}
+	var list []raw
+	for rows.Next() {
+		var r raw
+		if err := rows.Scan(&r.step.ID, &r.step.Action, &r.step.Expected, &r.call, &r.key); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		list = append(list, r)
+	}
+	rows.Close()
+	var out []model.TestStep
+	for _, r := range list {
+		if !r.call.Valid {
+			st := r.step
+			st.Action = prefix + st.Action
+			out = append(out, st)
+			continue
+		}
+		// cycles and excessive depth are rejected on save; guard anyway
+		if depth >= MaxCallDepth || onPath[r.call.String] {
+			continue
+		}
+		onPath[r.call.String] = true
+		sub, err := expandSteps(ctx, c, r.call.String, prefix+"["+r.key+"] ", depth+1, onPath)
+		delete(onPath, r.call.String)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, sub...)
+	}
+	return out, nil
 }
 
 // AddExecutions appends tests to an existing run.
@@ -229,16 +264,45 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 	return nil
 }
 
-const execCols = `e.id, e.run_id, e.test_case_id, t.key, t.title, e.status, e.assignee, e.executed_by, e.started_at, e.finished_at, e.duration_ms, e.output, e.notes, e.position`
+const execCols = `e.id, e.run_id, e.test_case_id, t.key, t.title, e.status, e.assignee, e.executed_by, e.started_at, e.finished_at, e.duration_ms, e.output, e.notes, e.position, e.defects`
 
-func scanExecution(r interface{ Scan(...any) error }) (*model.Execution, error) {
+func scanExecution(r interface{ Scan(...any) error }, extra ...any) (*model.Execution, error) {
 	var e model.Execution
 	var st, ft sql.NullTime
-	if err := r.Scan(&e.ID, &e.RunID, &e.TestCaseID, &e.TestKey, &e.TestTitle, &e.Status, &e.Assignee, &e.ExecutedBy, &st, &ft, &e.DurationMS, &e.Output, &e.Notes, &e.Position); err != nil {
+	var defects string
+	dest := append([]any{&e.ID, &e.RunID, &e.TestCaseID, &e.TestKey, &e.TestTitle, &e.Status, &e.Assignee, &e.ExecutedBy, &st, &ft, &e.DurationMS, &e.Output, &e.Notes, &e.Position, &defects}, extra...)
+	if err := r.Scan(dest...); err != nil {
 		return nil, err
 	}
 	e.StartedAt, e.FinishedAt = timePtr(st), timePtr(ft)
+	e.Defects = decodeTags(defects)
 	return &e, nil
+}
+
+// ListTestExecutions returns the executions of a test across all runs,
+// newest run first.
+func (s *Store) ListTestExecutions(ctx context.Context, tenantID, testID string) ([]model.Execution, error) {
+	rows, err := s.c().query(ctx, `SELECT `+execCols+`, r.name, r.status, r.environment, r.build, r.created_at
+		FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id JOIN test_runs r ON r.id = e.run_id
+		WHERE e.test_case_id = ? AND e.tenant_id = ? ORDER BY r.created_at DESC`, testID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []model.Execution{}
+	for rows.Next() {
+		var created time.Time
+		var x model.Execution
+		e, err := scanExecution(rows, &x.RunName, &x.RunStatus, &x.RunEnvironment, &x.RunBuild, &created)
+		if err != nil {
+			return nil, err
+		}
+		e.RunName, e.RunStatus, e.RunEnvironment, e.RunBuild = x.RunName, x.RunStatus, x.RunEnvironment, x.RunBuild
+		c := created.UTC()
+		e.RunCreatedAt = &c
+		out = append(out, *e)
+	}
+	return out, rows.Err()
 }
 
 // ListExecutions lists executions of a run in order.
@@ -288,6 +352,7 @@ type ExecutionUpdate struct {
 	Assignee    *string            `json:"assignee"`
 	Output      *string            `json:"output"`
 	DurationMS  *int64             `json:"duration_ms"`
+	Defects     *[]string          `json:"defects"`
 	StepResults []model.StepResult `json:"step_results"`
 }
 
@@ -379,8 +444,16 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 	if u.Output != nil {
 		e.Output = *u.Output
 	}
+	if u.Defects != nil {
+		e.Defects = cleanTags(*u.Defects)
+		for _, d := range e.Defects {
+			if len(d) > 500 {
+				return nil, Invalidf("defect reference too long")
+			}
+		}
+	}
 	err = s.tx(ctx, func(c conn) error {
-		if _, err := c.exec(ctx, `UPDATE test_executions SET status = ?, notes = ?, assignee = ?, output = ?, executed_by = ?, started_at = ?, finished_at = ?, duration_ms = ? WHERE id = ?`,
+		if _, err := c.exec(ctx, `UPDATE test_executions SET defects = ?, status = ?, notes = ?, assignee = ?, output = ?, executed_by = ?, started_at = ?, finished_at = ?, duration_ms = ? WHERE id = ?`, encodeTags(e.Defects),
 			e.Status, e.Notes, e.Assignee, e.Output, e.ExecutedBy, nullTime(e.StartedAt), nullTime(e.FinishedAt), e.DurationMS, e.ID); err != nil {
 			return err
 		}

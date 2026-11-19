@@ -16,22 +16,24 @@ var (
 	requirementSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
-			"created_at", "updated_at", "criteria", "id"},
-		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria"},
+			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments"},
+		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
+			"relation": "related", "parents": "parent", "children": "child"},
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
-			"last_result", "created_by", "created_at", "updated_at", "id"},
+			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
-			"desc": "description", "language": "script_language", "result": "last_result"},
+			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect"},
 	}
 	runSchema = &query.Schema{
 		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
 		Aliases: map[string]string{"env": "environment"},
 	}
 	executionSchema = &query.Schema{
-		Fields: []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id"},
+		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect"},
+		Aliases: map[string]string{"defects": "defect"},
 	}
 )
 
@@ -46,6 +48,11 @@ type projectContext struct {
 	links      []model.TraceLink
 	r2t, t2r   map[string][]string
 	last       map[string]string
+	comments   map[string]int
+	relCount   map[string]int
+	defects    map[string][]string
+	// requirement id → related keys; parent/child keys of refines relations
+	related, parents, children map[string][]string
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -68,6 +75,25 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	pc.r2t, pc.t2r = store.LinkIndex(pc.links)
 	if pc.last, err = s.Store.LastResults(ctx, tenantID, p.ID); err != nil {
 		return nil, err
+	}
+	if pc.comments, pc.relCount, err = s.Store.ProjectCounts(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.defects, err = s.Store.TestDefects(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	rels, err := s.Store.ListRelations(ctx, tenantID, p.ID, "")
+	if err != nil {
+		return nil, err
+	}
+	pc.related, pc.parents, pc.children = map[string][]string{}, map[string][]string{}, map[string][]string{}
+	for _, r := range rels {
+		pc.related[r.SourceID] = append(pc.related[r.SourceID], r.TargetKey)
+		pc.related[r.TargetID] = append(pc.related[r.TargetID], r.SourceKey)
+		if r.Type == "refines" {
+			pc.parents[r.SourceID] = append(pc.parents[r.SourceID], r.TargetKey)
+			pc.children[r.TargetID] = append(pc.children[r.TargetID], r.SourceKey)
+		}
 	}
 	return pc, nil
 }
@@ -94,6 +120,8 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.FolderPath = pc.folderPath(r.FolderID)
 	r.LinkedTests = len(pc.r2t[r.ID])
 	r.Coverage = store.Coverage(pc.r2t[r.ID], pc.last)
+	r.CommentCount = pc.comments[r.ID]
+	r.Relations = pc.relCount[r.ID]
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
@@ -103,6 +131,7 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	if t.LastResult == "" {
 		t.LastResult = model.ResultNotRun
 	}
+	t.CommentCount = pc.comments[t.ID]
 }
 
 func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecord {
@@ -124,14 +153,19 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"folder": {r.FolderPath}, "category": names, "dimension": dims, "coverage": {r.Coverage},
 		"linked": linkedKeys, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)},
 		"updated_at": {ts(r.UpdatedAt)}, "criteria": crit,
+		"related": pc.related[r.ID], "parent": pc.parents[r.ID], "child": pc.children[r.ID],
+		"comments": {strconv.Itoa(r.CommentCount)},
 	}
 }
 
 func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 	names, dims := pc.catValues(t.CategoryIDs)
-	var steps []string
+	var steps, calls []string
 	for _, st := range t.Steps {
 		steps = append(steps, st.Action, st.Expected, st.Data)
+		if st.CallTestKey != "" {
+			calls = append(calls, st.CallTestKey)
+		}
 	}
 	var linkedKeys []string
 	for _, l := range pc.links {
@@ -146,7 +180,8 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"step": steps, "priority": {t.Priority}, "status": {t.Status}, "estimate": {strconv.Itoa(t.EstimatedMin)},
 		"tag": t.Tags, "folder": {t.FolderPath}, "category": names, "dimension": dims, "linked": linkedKeys,
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
-		"updated_at": {ts(t.UpdatedAt)},
+		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
+		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)},
 	}
 }
 
@@ -157,7 +192,7 @@ func runRecord(r *model.TestRun) query.MapRecord {
 
 func executionRecord(e *model.Execution) query.MapRecord {
 	return query.MapRecord{"id": {e.ID}, "key": {e.TestKey}, "title": {e.TestTitle}, "status": {e.Status},
-		"assignee": {e.Assignee}, "executed_by": {e.ExecutedBy}, "notes": {e.Notes}, "output": {e.Output}}
+		"assignee": {e.Assignee}, "executed_by": {e.ExecutedBy}, "notes": {e.Notes}, "output": {e.Output}, "defect": e.Defects}
 }
 
 // folderFilter returns a predicate selecting items in folder (and

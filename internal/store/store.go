@@ -102,6 +102,16 @@ func mapErr(err error, what string) error {
 	return err
 }
 
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && (s[n]&0xC0) == 0x80 {
+		n--
+	}
+	return s[:n]
+}
+
 func encodeTags(tags []string) string {
 	b, _ := json.Marshal(cleanTags(tags))
 	return string(b)

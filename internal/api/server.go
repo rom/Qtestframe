@@ -102,6 +102,10 @@ func (s *Server) routes() {
 	h("GET /api/v1/auth/me", s.handleMe)
 	h("POST /api/v1/auth/switch-tenant", s.handleSwitchTenant)
 	h("POST /api/v1/auth/password", s.handleChangePassword)
+	h("PATCH /api/v1/auth/me", s.handleUpdateMe)
+	h("GET /api/v1/auth/sessions", s.handleListSessions)
+	h("DELETE /api/v1/auth/sessions/{id}", s.handleDeleteSession)
+	h("POST /api/v1/auth/sessions/revoke-others", s.handleRevokeOtherSessions)
 
 	// admin
 	h("GET /api/v1/meta", s.handleMeta)
@@ -152,6 +156,21 @@ func (s *Server) routes() {
 	h("PATCH /api/v1/requirements/{id}", s.handleUpdateRequirement, "requirement.write")
 	h("DELETE /api/v1/requirements/{id}", s.handleDeleteRequirement, "requirement.write")
 	h("GET /api/v1/requirements/{id}/links", s.handleItemLinks(model.KindRequirement), "requirement.read")
+	h("GET /api/v1/requirements/{id}/history", s.handleHistory(model.KindRequirement), "requirement.read")
+	h("POST /api/v1/requirements/{id}/restore", s.handleRestoreRequirement, "requirement.write")
+	h("GET /api/v1/requirements/{id}/relations", s.handleListRequirementRelations, "requirement.read")
+	h("POST /api/v1/requirements/{id}/relations", s.handleCreateRelation, "requirement.write")
+	h("DELETE /api/v1/relations/{id}", s.handleDeleteRelation, "requirement.write")
+	h("GET /api/v1/projects/{pid}/relations", s.handleListProjectRelations, "requirement.read")
+	h("GET /api/v1/requirements/{id}/comments", s.handleListComments(model.KindRequirement), "requirement.read")
+	h("POST /api/v1/requirements/{id}/comments", s.handleAddComment(model.KindRequirement), "requirement.read")
+	h("PATCH /api/v1/comments/{id}", s.handleUpdateComment)
+	h("DELETE /api/v1/comments/{id}", s.handleDeleteComment)
+	h("GET /api/v1/projects/{pid}/baselines", s.handleListBaselines, "requirement.read")
+	h("POST /api/v1/projects/{pid}/baselines", s.handleCreateBaseline, "requirement.write")
+	h("GET /api/v1/baselines/{id}", s.handleGetBaseline, "requirement.read")
+	h("GET /api/v1/baselines/{id}/compare", s.handleCompareBaseline, "requirement.read")
+	h("DELETE /api/v1/baselines/{id}", s.handleDeleteBaseline, "requirement.write")
 	h("POST /api/v1/reqlang/analyze", s.handleAnalyze)
 
 	// tests
@@ -165,6 +184,11 @@ func (s *Server) routes() {
 	h("DELETE /api/v1/tests/{id}", s.handleDeleteTest, "test.write")
 	h("POST /api/v1/tests/{id}/copy", s.handleCopyTest, "test.write")
 	h("GET /api/v1/tests/{id}/links", s.handleItemLinks(model.KindTest), "test.read")
+	h("GET /api/v1/tests/{id}/history", s.handleHistory(model.KindTest), "test.read")
+	h("POST /api/v1/tests/{id}/restore", s.handleRestoreTest, "test.write")
+	h("GET /api/v1/tests/{id}/comments", s.handleListComments(model.KindTest), "test.read")
+	h("POST /api/v1/tests/{id}/comments", s.handleAddComment(model.KindTest), "test.read")
+	h("GET /api/v1/tests/{id}/executions", s.handleTestExecutions, "run.read")
 
 	// traceability
 	h("GET /api/v1/projects/{pid}/links", s.handleListLinks, "project.read")

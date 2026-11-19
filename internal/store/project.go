@@ -14,11 +14,11 @@ var projectKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,15}$`)
 
 // ---------------------------------------------------------------- projects
 
-const projectCols = `id, tenant_id, key, name, description, created_at, updated_at`
+const projectCols = `id, tenant_id, key, name, description, defect_url_template, created_at, updated_at`
 
 func scanProject(r interface{ Scan(...any) error }) (*model.Project, error) {
 	var p model.Project
-	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &p, nil
@@ -115,8 +115,12 @@ func (s *Store) UpdateProject(ctx context.Context, tenantID string, p *model.Pro
 		return Invalidf("project name is required")
 	}
 	p.UpdatedAt = s.now()
-	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		strings.TrimSpace(p.Name), p.Description, p.UpdatedAt, p.ID, tenantID)
+	p.DefectURLTemplate = strings.TrimSpace(p.DefectURLTemplate)
+	if t := p.DefectURLTemplate; t != "" && (!strings.Contains(t, "{id}") || !(strings.HasPrefix(t, "https://") || strings.HasPrefix(t, "http://"))) {
+		return Invalidf("defect URL template must be an http(s) URL containing {id}")
+	}
+	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.UpdatedAt, p.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -128,14 +132,29 @@ func (s *Store) UpdateProject(ctx context.Context, tenantID string, p *model.Pro
 
 // DeleteProject deletes a project and everything in it.
 func (s *Store) DeleteProject(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM projects WHERE id = ? AND tenant_id = ?`, id, tenantID)
-	if err != nil {
-		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return mapErr(sql.ErrNoRows, "project")
-	}
-	return nil
+	return s.tx(ctx, func(c conn) error {
+		for kind, table := range map[string]string{model.KindRequirement: "requirements", model.KindTest: "test_cases"} {
+			rows, err := c.query(ctx, `SELECT id FROM `+table+` WHERE project_id = ? AND tenant_id = ?`, id, tenantID)
+			if err != nil {
+				return err
+			}
+			ids, err := scanStrings(rows)
+			if err != nil {
+				return err
+			}
+			if err := deleteEntityData(ctx, c, kind, ids); err != nil {
+				return err
+			}
+		}
+		res, err := c.exec(ctx, `DELETE FROM projects WHERE id = ? AND tenant_id = ?`, id, tenantID)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return mapErr(sql.ErrNoRows, "project")
+		}
+		return nil
+	})
 }
 
 // nextKey allocates the next sequential key for kind in a project.
@@ -468,6 +487,17 @@ func (s *Store) DeleteFolder(ctx context.Context, tenantID, id string, cascade b
 	sub := Descendants(all, id)
 	return s.tx(ctx, func(c conn) error {
 		if cascade {
+			rows, err := c.query(ctx, `SELECT id FROM `+table+` WHERE folder_id IN (`+placeholders(len(sub))+`)`, anySlice(sub)...)
+			if err != nil {
+				return err
+			}
+			ids, err := scanStrings(rows)
+			if err != nil {
+				return err
+			}
+			if err := deleteEntityData(ctx, c, f.Kind, ids); err != nil {
+				return err
+			}
 			if _, err := c.exec(ctx, `DELETE FROM `+table+` WHERE folder_id IN (`+placeholders(len(sub))+`)`, anySlice(sub)...); err != nil {
 				return err
 			}
