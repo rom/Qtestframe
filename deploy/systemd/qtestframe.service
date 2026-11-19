@@ -175,7 +175,7 @@ SystemCallFilter=@sandbox
 # ... minus everything a web server never needs.
 SystemCallFilter=~@privileged @resources @mount @debug @cpu-emulation @obsolete @raw-io @reboot @swap @module @clock
 # Note: setrlimit(2) is in @resources and therefore denied. The runner sets
-# RLIMIT_CPU/AS/NPROC/FSIZE/NOFILE for its child through prlimit64(2) (Go's
+# RLIMIT_CPU/FSIZE/NOFILE/CORE for its child through prlimit64(2) (Go's
 # syscall.Setrlimit / unix.Prlimit use it), which is part of @default.
 # Blocked syscalls fail with EPERM instead of killing the process, so the
 # Go code can degrade gracefully (e.g. capset() inside sandbox-exec).

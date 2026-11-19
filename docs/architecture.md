@@ -57,7 +57,7 @@ flowchart LR
   HTTP --> EXP
   HTTP --> ST
   HTTP --> RUN
-  AUTH <-- "redirect / POST" --> IdP
+  AUTH <-->|"redirect / POST"| IdP
   ST --> DB --> SQL
   RUN -- "fork/exec (re-exec)" --> CHILD
   CLI --> HTTP
@@ -236,94 +236,128 @@ erDiagram
   test_cases ||--o{ test_executions : executed_as
   test_executions ||--o{ step_results : snapshots
 
-  tenants { text id PK
+  tenants {
+    text id PK
     text slug UK
-    text name }
-  users { text id PK
+    text name
+  }
+  users {
+    text id PK
     text email UK
     text password_hash
     bool super_admin
     text auth_provider
     text external_id
-    bool disabled }
-  memberships { text tenant_id PK,FK
+    bool disabled
+  }
+  memberships {
+    text tenant_id PK,FK
     text user_id PK,FK
-    text role }
-  sessions { text id PK "SHA-256 of cookie"
+    text role
+  }
+  sessions {
+    text id PK "SHA-256 of cookie"
     text user_id FK
     text tenant_id "current tenant"
     text csrf
-    ts expires_at }
-  api_tokens { text id PK
+    ts expires_at
+  }
+  api_tokens {
+    text id PK
     text tenant_id FK
     text user_id FK
     text role
     text hash UK "SHA-256"
     text prefix
-    ts expires_at }
-  projects { text id PK
+    ts expires_at
+  }
+  projects {
+    text id PK
     text tenant_id FK
     text proj_key "UNIQUE(tenant_id,key)"
     int req_seq
-    int test_seq }
-  folders { text id PK
+    int test_seq
+  }
+  folders {
+    text id PK
     text project_id FK
     text parent_id FK
     text kind "requirement|test"
-    int position }
-  categories { text id PK
+    int position
+  }
+  categories {
+    text id PK
     text project_id FK
     text scope "requirement|test"
     text dimension
-    text name "UNIQUE(project,scope,dimension,name)" }
-  requirements { text id PK
+    text name "UNIQUE(project,scope,dimension,name)"
+  }
+  requirements {
+    text id PK
     text project_id FK
     text folder_id FK
     text item_key "UNIQUE(project_id,key)"
     text obligation
     text status
-    int version }
-  evaluation_criteria { text id PK
+    int version
+  }
+  evaluation_criteria {
+    text id PK
     text requirement_id FK
     text method
-    text threshold }
-  test_cases { text id PK
+    text threshold
+  }
+  test_cases {
+    text id PK
     text project_id FK
     text folder_id FK
     text item_key "UNIQUE(project_id,key)"
     text execution_type
     text script_language
-    text script }
-  test_steps { text id PK
+    text script
+  }
+  test_steps {
+    text id PK
     text test_case_id FK
-    int position }
-  trace_links { text id PK
+    int position
+  }
+  trace_links {
+    text id PK
     text requirement_id FK
     text test_case_id FK
     text criterion_id FK
-    text pair "UNIQUE(requirement_id,test_case_id)" }
-  test_runs { text id PK
+    text pair "UNIQUE(requirement_id,test_case_id)"
+  }
+  test_runs {
+    text id PK
     text project_id FK
     text status
     text environment
-    text build }
-  test_executions { text id PK
+    text build
+  }
+  test_executions {
+    text id PK
     text run_id FK
     text test_case_id FK
     text status
     bigint duration_ms
-    text pair "UNIQUE(run_id,test_case_id)" }
-  step_results { text id PK
+    text pair "UNIQUE(run_id,test_case_id)"
+  }
+  step_results {
+    text id PK
     text execution_id FK
     text step_id "copy, no FK"
     text action
     text expected
-    text status }
-  audit_log { text id PK
+    text status
+  }
+  audit_log {
+    text id PK
     text tenant_id "no FK"
     text action
     text entity_type
-    text entity_id }
+    text entity_id
+  }
 ```
 
 (`proj_key`, `item_key` and `pair` stand for the `key` column and composite

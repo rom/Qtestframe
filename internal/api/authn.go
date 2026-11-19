@@ -435,6 +435,14 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
+	keep := ""
+	if p.Session != nil {
+		keep = p.Session.ID
+	}
+	if err := s.Store.DeleteOtherSessions(r.Context(), p.User.ID, keep); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	s.audit(r.Context(), p, "password.change", "user", p.User.ID, "")
 	w.WriteHeader(http.StatusNoContent)
 }

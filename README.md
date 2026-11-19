@@ -35,7 +35,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 
 ## Quick start (Linux or macOS)
 
-Requirements: Go ≥ 1.24, Node ≥ 20, make.
+Requirements: Go (version in `go.mod`, currently 1.26), Node ≥ 20, make.
 
 ```bash
 make build

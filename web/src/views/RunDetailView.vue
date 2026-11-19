@@ -156,7 +156,7 @@ const ciSnippet = computed(
   () => `curl -X POST ${origin}/api/v1/runs/${props.runId}/results \\
   -H "Authorization: Bearer qtf_<api-token>" \\
   -H "Content-Type: application/json" \\
-  -d '{"results":[{"test_key":"${executions.value[0]?.test_key ?? 'KEY-T-1'}","status":"passed","duration_ms":1234,"output":"ok"}]}'`,
+  -d '{"results":[{"test_key":"${executions.value[0]?.test_key ?? 'PROJ-TC-1'}","status":"passed","duration_ms":1234,"output":"ok"}]}'`,
 )
 async function copySnippet() {
   try {

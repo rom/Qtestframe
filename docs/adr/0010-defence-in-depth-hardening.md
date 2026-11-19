@@ -63,4 +63,4 @@ systems all of this is a no-op.
 * Release builds must use `CGO_ENABLED=0` so that prctl/capset reach every
   thread.
 * The hardening is verified in tests that run in child processes
-  ([testing.md](../testing.md#hardening-tests-in-child-processes)).
+  ([testing.md](../testing.md#5-hardening-tests-in-child-processes)).

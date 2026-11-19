@@ -33,9 +33,10 @@ security design behind these defaults is described in
 | `/var/log/qtestframe/` | qtestframe 0750 | optional file logs (default: journald) |
 | `/etc/systemd/system/qtestframe.service` | root 0644 | unit ([source](../deploy/systemd/qtestframe.service)) |
 
-The service runs as the system user/group `qtestframe` and listens on
-`:8443` (HTTPS). Health endpoints: `/healthz` (process alive), `/readyz`
-(database reachable).
+The service runs as the system user/group `qtestframe` and, with the
+example configuration, listens on `:8443` (HTTPS); the built-in default
+without a configuration file is `:8080`. Health endpoints: `/healthz`
+(process alive, returns the version), `/readyz` (database reachable).
 
 ## 2. Installation
 
@@ -87,6 +88,9 @@ UID 65532 with a read-only root file system; state lives in the
 `no-new-privileges`, the seccomp profile `deploy/seccomp/qtestframe-seccomp.json`
 and runs `qtestframe migrate` as a one-shot service before `serve`.
 Run compose from `deploy/container` (the seccomp path is relative).
+The image's `HEALTHCHECK` runs `qtestframe healthcheck`, which requests
+`/healthz` of the local listener (derived from `server.listen`, HTTPS when
+TLS is configured, certificate not verified) and needs no shell or curl.
 Kubernetes: use the same image with `runAsNonRoot`, `readOnlyRootFilesystem`,
 `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`,
 `seccompProfile: {type: Localhost, localhostProfile: qtestframe-seccomp.json}`
@@ -125,7 +129,13 @@ MemoryMax=4G
 ```
 
 Secret files referenced with a **relative** path are looked up in
-`$CREDENTIALS_DIRECTORY` (`client_secret_file: oidc-corp`).
+`$CREDENTIALS_DIRECTORY` (`client_secret_file: oidc-corp`). This applies to
+`database.dsn_file`, `auth.oidc[].client_secret_file` and
+`bootstrap.admin_password_file`; key and certificate paths (`tls_key`,
+`sp_key_file`, syslog `key_file`, ...) are used as given.
+
+`qtestframe check-config [--config FILE]` validates a configuration
+(including secret files) without touching the database.
 
 Always set `server.base_url` to the URL users type (it is used for SSO
 redirect URIs, SAML entity/ACS URLs and the CSRF origin check). Behind a
@@ -136,7 +146,7 @@ reverse proxy also set `server.trusted_proxies`.
 | | SQLite (default) | PostgreSQL |
 |---|---|---|
 | Setup | none — file `/var/lib/qtestframe/qtestframe.db` is created on first start | separate server |
-| Scale | one instance, tens of concurrent users, comfortably up to a few GB | many users, several app instances behind a load balancer |
+| Scale | one instance (single connection, writes serialised), tens of concurrent users, comfortably up to a few GB | many users, several app instances behind a load balancer (see below) |
 | Backup | file copy via SQLite online backup | `pg_dump` / PITR |
 | HA | no | yes (replication) |
 
@@ -148,8 +158,10 @@ database:
   dsn: "/var/lib/qtestframe/qtestframe.db"
 ```
 
-The database runs in WAL mode (`qtestframe.db-wal`, `-shm` next to it). Keep
-it on a local file system (not NFS).
+The database runs in WAL mode (`qtestframe.db-wal`, `-shm` next to it) with
+foreign keys on and a 5 s busy timeout, through a single connection
+(`max_open_conns` is ignored for SQLite). Keep it on a local file system
+(not NFS) and never point two server processes at the same file.
 
 ### PostgreSQL
 
@@ -190,6 +202,15 @@ database:
 Client certificate variant:
 `...?sslmode=verify-full&sslrootcert=/etc/qtestframe/tls/db-ca.crt&sslcert=/etc/qtestframe/tls/db-client.crt&sslkey=/etc/qtestframe/tls/db-client.key`
 (key `0640 root:qtestframe`).
+
+Several instances against one PostgreSQL database: sessions, tokens and
+data are shared, but each process keeps its own SSO login-state signing key
+and its own login rate limiter. Configure session affinity (sticky
+sessions) at the load balancer at least for `/api/v1/auth/`, so that the
+OIDC/SAML redirect and callback reach the same instance; a restarted
+instance invalidates logins in progress. Set `server.trusted_proxies` to
+the load balancer addresses and let the load balancer send HSTS when it
+terminates TLS.
 
 Local PostgreSQL on the same host: uncomment `After=postgresql.service` in
 a drop-in; for the unix socket (`host=/run/postgresql`) add
@@ -376,8 +397,9 @@ auth:
    import the SP metadata XML.
 2. Valid redirect URIs / Master SAML processing URL:
    `https://qtf.example.com/api/v1/auth/saml/kc/acs`.
-3. Settings: *Sign assertions* on, *Name ID format* email; Keys: import
-   `saml-kc.crt` if *Client signature required* is on.
+3. Settings: *Sign assertions* on, *Name ID format* email. Keys: turn
+   *Client signature required* **off** — Qtestframe does not sign
+   AuthnRequests. Import `saml-kc.crt` only for assertion encryption.
 4. Client scopes → dedicated → mappers: *User Property* `email` → SAML
    attribute `email`; *User Property* `firstName`/`lastName` or *User
    Attribute* → `name`; *Group list* → attribute `groups`, full path off.
@@ -491,8 +513,27 @@ syslog-ng `json-parser()` for forwarding to Elasticsearch/Loki/Splunk.
 
 ## 9. Users, tenants and the CLI
 
-The CLI reads the same configuration and talks to the database directly; run
-it as the service user so file ownership stays correct:
+The CLI (`internal/app/app.go`) reads the same configuration and talks to
+the database directly. Every command takes `--config FILE`; without it,
+`$QTF_CONFIG` is used (`config.Load`), then built-in defaults plus `QTF_*`
+environment overrides.
+
+| Command | Purpose |
+|---|---|
+| `serve` | run the HTTP(S) server (migrates and bootstraps first) |
+| `migrate` | apply pending database migrations, print how many were applied |
+| `user create --email E [--name N] [--password-stdin] [--super-admin]` | create a user; the password is read as one line from stdin (without `--password-stdin` the user has no password and can only use SSO) |
+| `tenant create --slug S --name N` | create a tenant (slug: 2–63 characters `a-z0-9-`) |
+| `member add --tenant SLUG --email E --role admin\|manager\|tester\|viewer` | add a user to a tenant or change their role (default role `viewer`) |
+| `seed-demo [--tenant SLUG]` | create the demo project (`DEMO`, `DEMO2`, ...) in the tenant, default `bootstrap.tenant_slug`; the tenant is created if missing |
+| `check-config` | load and validate the configuration, print `configuration OK` |
+| `healthcheck [--url URL]` | GET `/healthz` of the local server (URL derived from `server.listen`), exit 0 on 200 |
+| `version` | print the version |
+| `sandbox-exec ...` | internal: entry point of the script runner sandbox, started by the server itself |
+
+`user create`, `tenant create`, `member add` and `seed-demo` migrate the
+database before they run. Run the CLI as the service user so file
+ownership stays correct:
 
 ```sh
 alias qtf='sudo -u qtestframe env QTF_CONFIG=/etc/qtestframe/config.yaml /usr/bin/qtestframe'
@@ -501,10 +542,11 @@ qtf migrate
 qtf tenant create --slug acme --name "ACME Corp"
 read -rs PW && printf '%s' "$PW" | qtf user create --email alice@example.com --password-stdin --super-admin
 qtf member add --tenant acme --email bob@example.com --role tester
-qtf seed-demo      # demo tenant/projects — never on production
+qtf seed-demo      # demo project — never on production
+qtf check-config
 ```
 
-(`QTF_CONFIG` selects the configuration; `--config PATH` works as well.) Everything else
+Everything else
 (projects, members, roles, API tokens) is managed in the web UI or via the
 REST API (`docs/api.md`).
 
@@ -515,11 +557,17 @@ Disabled by default. To enable:
 ```yaml
 runner:
   enabled: true
-  timeout: 60s
+  timeout: 60s                      # keep below server.write_timeout (default 120s)
+  work_dir: /var/lib/qtestframe/runner
   max_output_bytes: 1048576
   interpreters: {sh: /bin/sh, python: /usr/bin/python3}   # only what you need
-  sandbox: true
+  sandbox: true                     # run through `qtestframe sandbox-exec`
+  deny_network: false               # true: scripts cannot create sockets
 ```
+
+Without `work_dir` the runner uses `$TMPDIR/qtestframe-runner` (the private
+`/tmp` under systemd). The server creates the directory with mode 0700 and
+adds it to its Landlock read-write paths.
 
 SELinux: `setsebool -P qtestframe_run_scripts on`. AppArmor: the profile
 already contains the `runner` child profile. Only managers and admins
@@ -610,7 +658,7 @@ Containers: `docker compose pull`/`build`, `docker compose up -d` (the
 | Liveness | `GET /healthz` → 200 |
 | Readiness (DB) | `GET /readyz` → 200, 503 when the database is unreachable |
 | Service state | `systemctl is-active qtestframe`, `Restart=on-failure` restarts crashes |
-| Logs / errors | journald or central syslog; alert on `level=ERROR` and repeated login failures (audit events) |
+| Logs / errors | journald or central syslog; alert on `level=ERROR` and repeated `login failed` warnings (failed logins are log records, not audit entries) |
 | Certificate expiry | `scripts/certs/verify-cert.sh -q --connect qtf.example.com:8443 --warn-days 21` (exit 2 = expiring) |
 | Resources | `systemctl status qtestframe` (memory/tasks vs. `MemoryMax`/`TasksMax`), disk space of `/var/lib/qtestframe` |
 | Backups | age of the newest backup file |
@@ -627,7 +675,7 @@ curl -fsS --max-time 5 https://qtf.example.com:8443/readyz >/dev/null || echo "q
 
 | Symptom | Check |
 |---|---|
-| service does not start | `journalctl -u qtestframe -b -e`; `sudo -u qtestframe qtestframe migrate --config /etc/qtestframe/config.yaml` shows config errors |
+| service does not start | `journalctl -u qtestframe -b -e`; `sudo -u qtestframe qtestframe check-config --config /etc/qtestframe/config.yaml` shows config errors |
 | `permission denied` on config/keys | `ls -l /etc/qtestframe /etc/qtestframe/tls` (group `qtestframe`, 0640), SELinux labels `ls -Z`, `restorecon -RF /etc/qtestframe` |
 | `Operation not permitted` in logs | a syscall blocked by `SystemCallFilter`: `journalctl -k \| grep -i audit` / `ausearch -m SECCOMP`; test with a drop-in `SystemCallFilter=` (empty) to confirm, then report |
 | SELinux denials | `ausearch -m AVC -ts recent -c qtestframe`; missing boolean? `getsebool -a \| grep qtestframe` |
@@ -636,7 +684,9 @@ curl -fsS --max-time 5 https://qtf.example.com:8443/readyz >/dev/null || echo "q
 | SSO login loops / `state mismatch` | `base_url` must match the URL in the browser; cookies blocked by `cookie_secure` on plain HTTP; clock skew (NTP) |
 | OIDC discovery fails | outbound HTTPS blocked (nftables egress, `IPAddressDeny=`, SELinux `qtestframe_connect_http`) |
 | PostgreSQL TLS errors | `sslrootcert` path readable by `qtestframe`; `sslmode=verify-full` requires the server name in the certificate SAN |
-| landlock warnings on start | kernel < 5.13 or `lsm=` without landlock: protection is skipped; add `landlock` to the `lsm=` boot parameter |
+| `landlock: …` in the `skipped` list of the `hardening` start-up log line | kernel < 5.13 or `lsm=` without landlock: protection is skipped; add `landlock` to the `lsm=` boot parameter |
+| `permission denied` for a file after start-up | Landlock: the path is not in the rule set; add it to `hardening.read_only_paths` / `read_write_paths` |
+| `429 rate_limited` on login | 10 attempts per 5 minutes per client IP and e-mail; wait, or check `trusted_proxies` if all users appear with the proxy's IP |
 
 ## 15. Development setup
 

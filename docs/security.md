@@ -83,9 +83,8 @@ volumetric network attacks (use upstream filtering).
 * Login: `POST /api/v1/auth/login`. Unknown users, SSO-only users, wrong
   passwords and disabled users all get the same `401 invalid credentials`.
   For a missing hash a bcrypt comparison against a dummy hash is still
-  performed; note that the dummy hash uses the minimum bcrypt cost, so the
-  response time for unknown accounts is shorter than for existing local
-  accounts.
+  performed. The dummy hash uses the configured bcrypt cost, so failed
+  logins take the same time whether or not the account exists.
 * **Rate limiting** (`rateLimiter` in `internal/api/server.go`): at most 10
   login attempts per 5-minute sliding window per key *client IP + normalised
   e-mail*; further attempts get **HTTP 429** `rate_limited`. A successful
@@ -115,8 +114,8 @@ volumetric network attacks (use upstream filtering).
   tenant of the existing session; the session ID is not rotated.
 * Revocation: logout deletes the session; a super admin disabling a user or
   setting a password via `PATCH /api/v1/users/{id}` deletes all sessions of
-  that user. Changing one's own password (`POST /auth/password`) does not
-  end other sessions.
+  that user. Changing one's own password (`POST /auth/password`) ends all
+  other sessions of that user and keeps the current one.
 * **CSRF** (`authed` in `internal/api/authn.go`): every request with a
   method other than GET/HEAD that is authenticated by the cookie must send
   `X-CSRF-Token` with the session's CSRF token (24 random bytes, returned as
@@ -603,7 +602,7 @@ cat /proc/$PID/attr/current          # qtestframe (enforce)
 grep -w landlock /sys/kernel/security/lsm && dmesg | grep -i landlock
 # ...and is it applied? There is no /proc interface for Landlock domains;
 # the start-up log line lists applied and skipped protections:
-journalctl -u qtestframe | grep -i 'msg=hardening'
+journalctl -u qtestframe | grep -i hardening
 
 # TLS configuration seen by clients
 scripts/certs/verify-cert.sh --connect qtf.example.com:8443

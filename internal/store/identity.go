@@ -328,6 +328,12 @@ func (s *Store) DeleteUserSessions(ctx context.Context, userID string) error {
 	return err
 }
 
+// DeleteOtherSessions removes all sessions of a user except keep.
+func (s *Store) DeleteOtherSessions(ctx context.Context, userID, keep string) error {
+	_, err := s.c().exec(ctx, `DELETE FROM sessions WHERE user_id = ? AND id <> ?`, userID, keep)
+	return err
+}
+
 // PurgeExpiredSessions deletes expired sessions and returns the count.
 func (s *Store) PurgeExpiredSessions(ctx context.Context) (int64, error) {
 	res, err := s.c().exec(ctx, `DELETE FROM sessions WHERE expires_at <= ?`, s.now())

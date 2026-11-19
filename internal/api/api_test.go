@@ -956,3 +956,12 @@ func TestHelpers(t *testing.T) {
 	}
 	_ = fmt.Sprint(listOf[int](nil))
 }
+
+func TestPasswordChangeEndsOtherSessions(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	other := e.login("admin@example.com")
+	a.call("POST", "/api/v1/auth/password", map[string]string{"current_password": testPassword, "new_password": "Brand-new-pass-9"}, 204, nil)
+	a.m("GET", "/api/v1/auth/me", nil, 200)
+	other.m("GET", "/api/v1/auth/me", nil, 401)
+}

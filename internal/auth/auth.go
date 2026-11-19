@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -55,15 +56,26 @@ func HashPassword(p string) (string, error) {
 	return string(b), nil
 }
 
-// dummyHash is compared against when a user does not exist to make the
-// timing of failed logins uniform.
-var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("qtestframe-dummy-password"), bcrypt.MinCost)
+// dummyHash is compared against when a user does not exist so that failed
+// logins for unknown accounts take as long as for real ones. It is created
+// lazily with the configured cost (tests lower BcryptCost before first use).
+var (
+	dummyOnce sync.Once
+	dummyHash []byte
+)
+
+func dummy() []byte {
+	dummyOnce.Do(func() {
+		dummyHash, _ = bcrypt.GenerateFromPassword([]byte("qtestframe-dummy-password"), BcryptCost)
+	})
+	return dummyHash
+}
 
 // CheckPassword reports whether p matches hash. An empty hash never matches
 // but still costs a bcrypt comparison.
 func CheckPassword(hash, p string) bool {
 	if hash == "" {
-		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(p))
+		_ = bcrypt.CompareHashAndPassword(dummy(), []byte(p))
 		return false
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(p)) == nil
