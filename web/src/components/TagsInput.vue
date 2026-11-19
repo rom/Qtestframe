@@ -5,7 +5,7 @@ import { parseTags } from '@/lib/query'
 import { useI18n } from 'vue-i18n'
 
 const model = defineModel<string[]>({ default: () => [] })
-defineProps<{ disabled?: boolean; placeholder?: string; icon?: string }>()
+defineProps<{ disabled?: boolean; placeholder?: string; icon?: string; ariaLabel?: string }>()
 const text = ref('')
 const { t } = useI18n()
 
@@ -28,17 +28,18 @@ function remove(t: string) {
 </script>
 
 <template>
-  <div class="row" style="gap: 6px; border: 1px solid var(--p-inputtext-border-color, var(--qtf-border)); border-radius: 6px; padding: 4px 6px; min-height: 38px">
+  <div class="row tags-input" style="gap: 6px; border: 1px solid var(--p-inputtext-border-color, var(--qtf-border)); border-radius: 6px; padding: 4px 6px; min-height: 38px">
     <span v-for="tag in model" :key="tag" class="tag-chip">
-      <i :class="icon ?? 'pi pi-tag'" class="small muted" />{{ tag }}
-      <i v-if="!disabled" class="pi pi-times small clickable" role="button" :aria-label="t('tagsInput.remove', { tag })" @click="remove(tag)" />
+      <i :class="icon ?? 'pi pi-tag'" class="small muted" aria-hidden="true" />{{ tag }}
+      <button v-if="!disabled" type="button" class="tag-remove" :aria-label="t('tagsInput.remove', { tag })" @click="remove(tag)"><i class="pi pi-times small" aria-hidden="true" /></button>
     </span>
     <InputText
       v-if="!disabled"
       v-model="text"
       :placeholder="model.length ? '' : placeholder ?? t('tagsInput.placeholder')"
       class="grow"
-      style="border: none; box-shadow: none; padding: 4px; min-width: 120px; background: transparent"
+      :aria-label="ariaLabel"
+      style="border: none; box-shadow: none; padding: 4px; min-width: 0; flex-basis: 120px; background: transparent"
       @keydown="onKey"
       @blur="commit"
     />

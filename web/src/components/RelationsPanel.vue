@@ -77,7 +77,7 @@ async function remove(r: Relation) {
       <Button :label="t('relations.add')" icon="pi pi-plus" size="small" text @click="picker = true" />
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ t('relations.unavailable', { error }) }}</Message>
-    <div v-else-if="loading && !relations.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" /></div>
+    <div v-else-if="loading && !relations.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" :aria-label="t('common.loading')" /></div>
     <div v-else-if="!relations.length" class="muted small">{{ t('relations.none') }}</div>
     <div v-for="g in groups" :key="g.type + g.direction" style="margin-bottom: 12px">
       <div class="section-title" style="margin-top: 6px">

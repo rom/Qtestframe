@@ -37,7 +37,7 @@ const when = (e: Execution) => e.finished_at || e.started_at || e.run_created_at
 
 <template>
   <Message v-if="error" severity="error" :closable="false">{{ t('testExecutions.unavailable', { error }) }}</Message>
-  <DataTable v-else :value="items" data-key="id" :loading="loading" size="small" paginator :rows="prefs.rowsFor(10)" :always-show-paginator="false">
+  <DataTable v-else v-stack :value="items" data-key="id" :loading="loading" :aria-busy="loading" size="small" paginator :rows="prefs.rowsFor(10)" :always-show-paginator="false">
     <Column :header="t('testExecutions.run')" style="min-width: 160px">
       <template #body="{ data }">
         <RouterLink :to="{ name: 'run', params: { projectId, runId: data.run_id } }">{{ data.run_name || t('testExecutions.run') }}</RouterLink>

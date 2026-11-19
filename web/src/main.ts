@@ -13,6 +13,7 @@ import { router } from './router'
 import { i18n } from './i18n'
 import { setUnauthorizedHandler } from './lib/api'
 import { useAuthStore } from './stores/auth'
+import { vField, vStack } from './directives'
 
 // paints this device's last theme and picks its preset (see src/themes)
 const boot = bootTheme()
@@ -28,10 +29,19 @@ app.use(PrimeVue, {
     options: { darkModeSelector: '.app-dark', cssLayer: false },
   },
   ripple: false,
+  pt: {
+    // a password field is a textbox, not a popup button (aria-expanded is not allowed on it)
+    password: { pcInputText: { root: { 'aria-expanded': undefined, 'aria-haspopup': undefined, 'aria-controls': undefined } } },
+    // tree items are named by their content (as in the WAI-ARIA tree pattern); the expand
+    // button is mouse-only (tabindex -1), keyboard users use the arrow keys on the item
+    tree: { node: { 'aria-label': undefined }, nodeToggleButton: { 'aria-hidden': 'true' } },
+  },
 })
 app.use(ToastService)
 app.use(ConfirmationService)
 app.directive('tooltip', Tooltip)
+app.directive('field', vField)
+app.directive('stack', vStack)
 
 setUnauthorizedHandler(() => {
   const auth = useAuthStore(pinia)

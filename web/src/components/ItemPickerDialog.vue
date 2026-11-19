@@ -61,10 +61,12 @@ function confirm() {
       <Button :label="t('common.apply')" icon="pi pi-search" severity="secondary" @click="load" />
     </div>
     <DataTable
+      v-stack
       v-model:selection="selection"
       :value="items"
       data-key="id"
       :loading="loading"
+      :aria-busy="loading"
       scrollable
       scroll-height="50vh"
       size="small"

@@ -633,6 +633,12 @@ export function contrastPairs(c: ThemeColors): ContrastPair[] {
     { name: 'sidebar heading', fg: c.sidebarHeading, bg: c.sidebarBg, kind: 'text' },
     { name: 'sidebar brand / hovered item', fg: c.sidebarStrong, bg: c.sidebarBg, kind: 'text' },
     { name: 'sidebar active item', fg: c.sidebarActiveText, bg: c.sidebarActiveBg, kind: 'text' },
+    // :focus-visible ring (styles.css): an outline 2px outside the element, the gap filled by an
+    // inner ring in the card (sidebar: sidebar) colour, so the outline only touches these colours
+    { name: 'focus ring on card', fg: c.primary, bg: c.card, kind: 'ui' },
+    { name: 'focus ring on background', fg: c.primary, bg: c.bg, kind: 'ui' },
+    { name: 'focus ring on top bar', fg: c.primary, bg: c.topbarBg, kind: 'ui' },
+    { name: 'focus ring in the sidebar', fg: c.sidebarStrong, bg: c.sidebarBg, kind: 'ui' },
   ]
   for (const p of c.sidebarPattern ?? []) {
     pairs.push({ name: `sidebar text on pattern ${p}`, fg: c.sidebarText, bg: p, kind: 'text' })

@@ -151,7 +151,7 @@ function deleteProject() {
       <div class="sub">{{ t('settings.subtitle') }}</div>
     </div>
   </div>
-  <Tabs v-model:value="tab">
+  <Tabs v-model:value="tab" scrollable>
     <TabList>
       <Tab value="requirement"><i class="pi pi-list-check" /> {{ t('settings.requirementCategories') }}</Tab>
       <Tab value="test"><i class="pi pi-check-square" /> {{ t('settings.testCategories') }}</Tab>
@@ -163,13 +163,13 @@ function deleteProject() {
           <Button v-if="canEdit(scope)" :label="t('settings.newDimension')" icon="pi pi-plus" @click="openCreate(scope)" />
         </div>
         <div v-if="!(scope === 'requirement' ? reqGroups : testGroups).length" class="card empty"><i class="pi pi-tags" />{{ t('settings.noCategories') }}</div>
-        <div class="charts" style="grid-template-columns: repeat(auto-fill, minmax(340px, 1fr))">
-          <div v-for="g in scope === 'requirement' ? reqGroups : testGroups" :key="g.key" class="card">
+        <div class="category-grid">
+          <section v-for="g in scope === 'requirement' ? reqGroups : testGroups" :key="g.key" class="card" :aria-label="g.key">
             <div class="row" style="justify-content: space-between; margin-bottom: 8px">
-              <h3 style="margin: 0">{{ g.key }}</h3>
+              <h2 class="plain-heading">{{ g.key }}</h2>
               <span v-if="canEdit(scope)" class="row nowrap">
-                <Button icon="pi pi-pencil" text rounded size="small" severity="secondary" v-tooltip="t('settings.renameDimension')" :aria-label="t('settings.renameDimension')" @click="openRename(scope, g.key)" />
-                <Button icon="pi pi-plus" text rounded size="small" v-tooltip="t('settings.addValue')" :aria-label="t('settings.addValue')" @click="openCreate(scope, g.key)" />
+                <Button icon="pi pi-pencil" text rounded size="small" severity="secondary" v-tooltip="t('settings.renameDimension')" :aria-label="t('settings.renameNamed', { name: g.key })" @click="openRename(scope, g.key)" />
+                <Button icon="pi pi-plus" text rounded size="small" v-tooltip="t('settings.addValue')" :aria-label="t('settings.addValueTo', { dimension: g.key })" @click="openCreate(scope, g.key)" />
               </span>
             </div>
             <div v-for="c in g.items" :key="c.id" class="row nowrap" style="padding: 4px 0">
@@ -185,30 +185,30 @@ function deleteProject() {
                 :model-value="c.name"
                 size="small"
                 class="grow"
-                :aria-label="t('common.name')"
+                :aria-label="t('settings.nameOf', { dimension: g.key })"
                 :disabled="!canEdit(scope)"
                 @change="(e: Event) => patch(c, { name: (e.target as HTMLInputElement).value })"
               />
-              <span class="chip-cat" :style="{ background: color(c), color: readableTextColor(color(c)) }">{{ c.name }}</span>
-              <Button v-if="canEdit(scope)" icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('common.delete')" v-tooltip="t('common.delete')" @click="remove(c)" />
+              <span class="chip-cat" aria-hidden="true" :style="{ background: color(c), color: readableTextColor(color(c)) }">{{ c.name }}</span>
+              <Button v-if="canEdit(scope)" icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('settings.deleteNamed', { name: c.name })" v-tooltip="t('common.delete')" @click="remove(c)" />
             </div>
-          </div>
+          </section>
         </div>
       </TabPanel>
       <TabPanel value="project">
         <div class="card" style="max-width: 640px">
           <div class="grid" style="gap: 12px">
-            <div class="field"><label>{{ t('common.key') }}</label><InputText :model-value="proj.project?.key" disabled /></div>
-            <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="pform.name" :disabled="!auth.can(P.projectUpdate)" /></div>
-            <div class="field"><label>{{ t('common.description') }}</label><Textarea v-model="pform.description" rows="3" auto-resize :disabled="!auth.can(P.projectUpdate)" /></div>
-            <div class="field">
+            <div v-field class="field"><label>{{ t('common.key') }}</label><InputText :model-value="proj.project?.key" disabled /></div>
+            <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="pform.name" :disabled="!auth.can(P.projectUpdate)" /></div>
+            <div v-field class="field"><label>{{ t('common.description') }}</label><Textarea v-model="pform.description" rows="3" auto-resize :disabled="!auth.can(P.projectUpdate)" /></div>
+            <div v-field class="field">
               <label for="defect-tpl">{{ t('settings.defectTemplate') }}</label>
-              <InputText id="defect-tpl" v-model="pform.defect_url_template" class="mono" :placeholder="defectPlaceholder" :disabled="!auth.can(P.projectUpdate)" :invalid="templateIssue === 'not_url'" />
-              <span class="small muted">
+              <InputText id="defect-tpl" v-model="pform.defect_url_template" class="mono" :placeholder="defectPlaceholder" :disabled="!auth.can(P.projectUpdate)" :invalid="templateIssue === 'not_url'" :aria-describedby="templateHint ? 'defect-tpl-hint defect-tpl-issue' : 'defect-tpl-hint'" />
+              <span id="defect-tpl-hint" class="small muted">
                 <i18n-t keypath="settings.defectTemplateHint" tag="span"><template #placeholder><code>{id}</code></template></i18n-t>
                 <template v-if="templateExample"><br />{{ t('settings.example') }} ABC-123 → <a :href="templateExample" target="_blank" rel="noopener noreferrer">{{ templateExample }}</a></template>
               </span>
-              <span v-if="templateHint" class="small" style="color: var(--p-amber-600)">{{ templateHint }}</span>
+              <span v-if="templateHint" id="defect-tpl-issue" class="small warn-text" aria-live="polite">{{ templateHint }}</span>
             </div>
             <div class="row">
               <Button v-if="auth.can(P.projectUpdate)" :label="t('common.save')" icon="pi pi-check" @click="saveProject" />
@@ -224,13 +224,13 @@ function deleteProject() {
   <Dialog v-model:visible="createDialog" :header="createForm.fixedDimension ? t('settings.addValueTo', { dimension: createForm.dimension }) : t('settings.newCategoryDimension')" modal style="width: min(460px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="create">
       <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
-      <div v-if="!createForm.fixedDimension" class="field"><label>{{ t('settings.dimension') }}</label><InputText v-model="createForm.dimension" :placeholder="t('settings.dimensionPlaceholder')" autofocus /></div>
-      <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="createForm.name" :placeholder="t('settings.namePlaceholder')" /></div>
-      <div class="field">
+      <div v-if="!createForm.fixedDimension" v-field class="field"><label>{{ t('settings.dimension') }}</label><InputText v-model="createForm.dimension" :placeholder="t('settings.dimensionPlaceholder')" autofocus /></div>
+      <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="createForm.name" :placeholder="t('settings.namePlaceholder')" /></div>
+      <div v-field class="field">
         <label>{{ t('settings.color') }}</label>
         <div class="row"><input v-model="createForm.color" :aria-label="t('settings.color')" type="color" style="width: 40px; height: 32px; border: none; background: none" /><span class="mono">{{ createForm.color }}</span></div>
       </div>
-      <div class="field"><label>{{ t('common.description') }}</label><Textarea v-model="createForm.description" rows="2" auto-resize /></div>
+      <div v-field class="field"><label>{{ t('common.description') }}</label><Textarea v-model="createForm.description" rows="2" auto-resize /></div>
       <div class="row" style="justify-content: flex-end">
         <Button :label="t('common.cancel')" text severity="secondary" @click="createDialog = false" />
         <Button type="submit" :label="t('common.create')" icon="pi pi-check" :loading="busy" :disabled="!createForm.dimension.trim() || !createForm.name.trim()" />
@@ -241,7 +241,7 @@ function deleteProject() {
     <form class="grid" style="gap: 12px" @submit.prevent="rename">
       <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
       <div class="small muted">{{ t('settings.renameHint', { dimension: renameForm.dimension }) }}</div>
-      <div class="field"><label>{{ t('settings.newName') }}</label><InputText v-model="renameForm.new_dimension" autofocus /></div>
+      <div v-field class="field"><label>{{ t('settings.newName') }}</label><InputText v-model="renameForm.new_dimension" autofocus /></div>
       <div class="row" style="justify-content: flex-end">
         <Button :label="t('common.cancel')" text severity="secondary" @click="renameDialog = false" />
         <Button type="submit" :label="t('settings.rename')" icon="pi pi-check" :loading="busy" :disabled="!renameForm.new_dimension.trim() || renameForm.new_dimension === renameForm.dimension" />

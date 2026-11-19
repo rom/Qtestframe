@@ -31,18 +31,19 @@ function confirm() {
 
 <template>
   <Dialog v-model:visible="visible" :header="header ?? t('folders.chooseFolder')" modal style="width: min(460px, 95vw)">
-    <div v-if="allowRoot !== false" class="tree-root" :class="{ active: choice === null }" @click="choice = null">
-      <i class="pi pi-inbox" /> {{ t('folders.topLevelNoFolder') }}
-    </div>
+    <button v-if="allowRoot !== false" type="button" class="tree-root" :class="{ active: choice === null }" :aria-pressed="choice === null" @click="choice = null">
+      <i class="pi pi-inbox" aria-hidden="true" /> {{ t('folders.topLevelNoFolder') }}
+    </button>
     <Tree
       v-model:expanded-keys="expanded"
       :value="nodes"
       selection-mode="single"
       :selection-keys="keys"
+      :aria-label="header ?? t('folders.chooseFolder')"
       style="max-height: 50vh; overflow: auto; padding: 0; border: none"
       @node-select="(n) => (choice = String(n.key))"
     />
-    <div class="small muted" style="margin-top: 8px">
+    <div class="small muted" style="margin-top: 8px" aria-live="polite">
       {{ t('folders.target') }} <b>{{ choice === undefined ? '—' : choice === null ? t('common.topLevel') : folderPath(folders, choice) }}</b>
     </div>
     <template #footer>

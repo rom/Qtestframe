@@ -23,6 +23,7 @@ import { debounce, moveItem } from '@/lib/collections'
 import { segments } from '@/lib/highlight'
 import { formatDateTime } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
+import { uid } from '@/lib/a11y'
 import { enumOptions, obligationHint, obligationKeyword } from '@/i18n/labels'
 import { issueMessage } from '@/i18n/analysis'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
@@ -45,6 +46,11 @@ const meta = useMetaStore()
 const notify = useNotify()
 const prefs = usePrefsStore()
 const { t } = useI18n()
+const tabsId = uid('req-tabs')
+/** tab panel attributes for the content of a tab (only when the tabs are shown) */
+function panel(value: string) {
+  return item.value ? { role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` } : {}
+}
 
 interface CriterionRow {
   id?: string
@@ -325,20 +331,20 @@ function criterionLabel(id: string | null) {
 </script>
 
 <template>
-  <div v-if="loading" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
+  <div v-if="loading" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
-  <Tabs v-if="item" v-model:value="tab" class="editor-tabs">
+  <Tabs v-if="item" :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>
     <TabList>
-      <Tab value="details"><i class="pi pi-file-edit" /> {{ t('common.details') }}</Tab>
-      <Tab value="relations"><i class="pi pi-sitemap" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
-      <Tab value="comments"><i class="pi pi-comments" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
-      <Tab value="history"><i class="pi pi-history" /> {{ t('common.history') }}</Tab>
+      <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
+      <Tab value="relations"><i class="pi pi-sitemap" aria-hidden="true" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
-  <RelationsPanel v-if="item && tab === 'relations'" :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" />
-  <CommentsPanel v-if="item && tab === 'comments'" entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" />
+  <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
+  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
+  <div v-if="item && tab === 'history'" v-bind="panel('history')">
   <HistoryPanel
-    v-if="item && tab === 'history'"
     entity="requirement"
     :entity-id="item.id"
     :can-restore="canWrite"
@@ -346,7 +352,8 @@ function criterionLabel(id: string | null) {
     :resolve="resolveId"
     @restored="onRestored"
   />
-  <form v-show="!item || tab === 'details'" class="grid" style="gap: 14px" @submit.prevent="save">
+  </div>
+  <form v-show="!item || tab === 'details'" v-bind="panel('details')" class="grid" style="gap: 14px" @submit.prevent="save">
     <div class="row">
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
@@ -355,23 +362,23 @@ function criterionLabel(id: string | null) {
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <div class="field">
+    <div v-field class="field">
       <label>{{ t('common.title') }}</label>
       <InputText v-model="form.title" :disabled="!canWrite" required autofocus />
     </div>
-    <div class="field">
+    <div v-field class="field">
       <label>{{ t('common.description') }}</label>
       <Textarea v-model="form.description" rows="5" auto-resize :disabled="!canWrite" :placeholder="t('requirements.descriptionPlaceholder')" />
     </div>
 
-    <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis">
+    <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis" role="region" :aria-label="t('analysis.title')" :aria-busy="analyzing">
       <div class="row" style="justify-content: space-between; margin-bottom: 8px">
         <span class="row">
           <i class="pi pi-sparkles" style="color: var(--p-primary-color)" />
           <b class="small">{{ t('analysis.title') }}</b>
-          <ProgressSpinner v-if="analyzing" style="width: 14px; height: 14px" stroke-width="6" />
+          <ProgressSpinner v-if="analyzing" style="width: 14px; height: 14px" stroke-width="6" :aria-label="t('common.loading')" />
         </span>
-        <span v-if="analysis" class="row">
+        <span v-if="analysis" class="row" aria-live="polite" aria-atomic="true">
           <span class="small muted">{{ t('analysis.detected') }}</span>
           <StatusTag :value="analysis.obligation || 'describe'" kind="obligation" />
           <Tag :value="t('analysis.score', { score: analysis.score })" :severity="scoreSeverity" />
@@ -387,16 +394,17 @@ function criterionLabel(id: string | null) {
       <div v-if="!analysis?.keywords?.length && analysis" class="small muted" style="margin-top: 6px">
         {{ t('analysis.noKeyword') }}
       </div>
-      <ul v-if="issues.length" style="margin: 8px 0 0; padding-left: 18px">
+      <ul v-if="issues.length" style="margin: 8px 0 0; padding-left: 18px" aria-live="polite" :aria-label="t('analysis.issues')">
         <li v-for="(i, n) in issues" :key="n" class="small">
-          <i class="pi" :class="i.severity === 'error' ? 'pi-times-circle' : 'pi-exclamation-triangle'" :style="{ color: i.severity === 'error' ? 'var(--p-red-500)' : 'var(--p-amber-500)' }" />
+          <i class="pi" :class="i.severity === 'error' ? 'pi-times-circle' : 'pi-exclamation-triangle'" :style="{ color: i.severity === 'error' ? 'var(--p-red-500)' : 'var(--p-amber-500)' }" aria-hidden="true" />
+          <span class="sr-only">{{ i.severity === 'error' ? t('analysis.error') : t('analysis.warning') }}:</span>
           <b v-if="i.fragment"> “{{ i.fragment }}”</b> {{ i.text }} <span class="muted">({{ i.rule }})</span>
         </li>
       </ul>
     </div>
 
     <div class="form-grid">
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('requirements.obligation') }}</label>
         <Select v-model="form.obligation" :options="obligationOptions" option-label="label" option-value="value" :disabled="!canWrite">
           <template #value="{ value }">
@@ -405,39 +413,39 @@ function criterionLabel(id: string | null) {
           </template>
         </Select>
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.status') }}</label>
         <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.type') }}</label>
         <Select v-model="form.type" :options="typeOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.priority') }}</label>
         <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.owner') }}</label>
         <InputText v-model="form.owner" :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.source') }}</label>
         <InputText v-model="form.source" :disabled="!canWrite" :placeholder="t('requirements.sourcePlaceholder')" />
       </div>
-      <div class="field full">
+      <div v-field class="field full">
         <label>{{ t('requirements.rationale') }}</label>
         <Textarea v-model="form.rationale" rows="2" auto-resize :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.folder') }}</label>
         <Select v-model="form.folder_id" :options="folderOptions" option-label="label" option-value="id" filter :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.categories') }}</label>
         <CategorySelect v-model="form.category_ids" :categories="categories" :disabled="!canWrite" />
       </div>
-      <div class="field full">
+      <div v-field class="field full">
         <label>{{ t('common.tags') }}</label>
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
       </div>
@@ -450,17 +458,17 @@ function criterionLabel(id: string | null) {
         <Button v-if="canWrite" size="small" :label="t('requirements.addCriterion')" icon="pi pi-plus" text @click="addCriterion" />
       </div>
       <div v-if="!form.criteria.length" class="muted small">{{ t('requirements.noCriteria') }}</div>
-      <div v-for="(c, i) in form.criteria" :key="i" class="row nowrap" style="align-items: flex-start; margin-bottom: 8px">
-        <span class="step-dot" style="background: var(--p-primary-color); margin-top: 8px">{{ i + 1 }}</span>
-        <div class="grow grid" style="gap: 6px; grid-template-columns: minmax(0, 1fr) 150px 170px">
-          <Textarea v-model="c.description" rows="1" auto-resize :placeholder="t('requirements.criterion')" :aria-label="t('requirements.criterion')" :disabled="!canWrite" />
-          <Select v-model="c.method" :options="methodOptions" option-label="label" option-value="value" :disabled="!canWrite" />
-          <InputText v-model="c.threshold" :placeholder="t('requirements.thresholdPlaceholder')" :disabled="!canWrite" />
+      <div v-for="(c, i) in form.criteria" :key="i" class="criterion-row">
+        <span class="step-dot" style="background: var(--p-primary-color); margin-top: 8px" aria-hidden="true">{{ i + 1 }}</span>
+        <div class="grow criterion-fields">
+          <Textarea v-model="c.description" rows="1" auto-resize :placeholder="t('requirements.criterion')" :aria-label="t('requirements.criterionN', { n: i + 1 })" :disabled="!canWrite" />
+          <Select v-model="c.method" :options="methodOptions" option-label="label" option-value="value" :aria-label="t('requirements.criterionMethodN', { n: i + 1 })" :disabled="!canWrite" />
+          <InputText v-model="c.threshold" :placeholder="t('requirements.thresholdPlaceholder')" :aria-label="t('requirements.criterionThresholdN', { n: i + 1 })" :disabled="!canWrite" />
         </div>
-        <div v-if="canWrite" class="row nowrap">
-          <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="i === 0" :aria-label="t('common.moveUp')" @click="moveCriterion(i, -1)" />
-          <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="i === form.criteria.length - 1" :aria-label="t('common.moveDown')" @click="moveCriterion(i, 1)" />
-          <Button icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('common.remove')" @click="removeCriterion(i)" />
+        <div v-if="canWrite" class="row nowrap criterion-actions">
+          <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="i === 0" :aria-label="t('requirements.moveCriterionUp', { n: i + 1 })" @click="moveCriterion(i, -1)" />
+          <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="i === form.criteria.length - 1" :aria-label="t('requirements.moveCriterionDown', { n: i + 1 })" @click="moveCriterion(i, 1)" />
+          <Button icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('requirements.removeCriterion', { n: i + 1 })" @click="removeCriterion(i)" />
         </div>
       </div>
     </div>
@@ -470,7 +478,7 @@ function criterionLabel(id: string | null) {
         <i class="pi pi-link" /> {{ t('requirements.linkedTests', { count: links.length }) }}
         <span class="grow" />
         <template v-if="canLink">
-          <Select v-if="(item.criteria ?? []).length" v-model="linkCriterion" :options="criterionOptions" option-label="label" option-value="value" size="small" style="max-width: 220px" />
+          <Select v-if="(item.criteria ?? []).length" v-model="linkCriterion" :options="criterionOptions" option-label="label" option-value="value" size="small" style="max-width: 220px" :aria-label="t('requirements.linkCriterion')" />
           <Button size="small" :label="t('requirements.linkTests')" icon="pi pi-plus" text @click="pickTests = true" />
         </template>
       </div>
@@ -480,11 +488,11 @@ function criterionLabel(id: string | null) {
         <span class="grow ellipsis">{{ testById.get(l.test_case_id)?.title }}</span>
         <span v-if="l.criterion_id" class="small muted">{{ criterionLabel(l.criterion_id) }}</span>
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />
-        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlink')" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
+        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.test_case_key || testById.get(l.test_case_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
     </div>
 
-    <div class="row" style="justify-content: flex-end; position: sticky; bottom: -1px; background: var(--p-drawer-background, var(--qtf-card)); padding: 10px 0; border-top: 1px solid var(--qtf-border)">
+    <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove" />
       <label v-if="isNew && canWrite && canLink" class="row nowrap small" style="gap: 6px" :title="t('editor.alsoCreateTestHint')">
         <Checkbox v-model="createTest" binary input-id="create-test" />

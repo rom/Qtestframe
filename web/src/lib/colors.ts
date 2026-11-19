@@ -137,15 +137,27 @@ export function normalizeHex(color: string | null | undefined): string | null {
   return '#' + c.toLowerCase()
 }
 
-/** Black or white text, whichever is more readable on the background. */
+/** WCAG relative luminance of a "#rrggbb" colour. */
+function relLuminance(hex: string): number {
+  const ch = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+}
+const ratio = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+
+/**
+ * Dark or white text, whichever has the higher WCAG contrast on the
+ * background (falls back to pure black when the dark text stays below 4.5:1).
+ */
 export function readableTextColor(bg: string | null | undefined): string {
   const hex = normalizeHex(bg)
   if (!hex) return '#ffffff'
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return lum > 0.6 ? '#111827' : '#ffffff'
+  const l = relLuminance(hex)
+  const white = ratio(1, l)
+  const dark = ratio(relLuminance('#111827'), l)
+  if (white >= 4.5 && white >= dark) return '#ffffff'
+  if (dark >= 4.5) return '#111827'
+  // mid-tones: pure black or white, whichever is better
+  return ratio(0, l) > white ? '#000000' : '#ffffff'
 }
 
 /** Default colour for a new category, chosen by dimension name. */

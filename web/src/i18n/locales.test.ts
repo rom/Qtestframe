@@ -114,6 +114,15 @@ describe('dynamic keys', () => {
     expect(missing).toEqual([])
     expect(RELATION_TYPES.filter((r) => !(`enums.relation.${r}.incoming` in EN))).toEqual([])
   })
+  it('cover every colour theme and the theme picker', async () => {
+    const { THEME_IDS } = await import('@/themes/registry')
+    expect(THEME_IDS.filter((id) => !(`theme.${id}` in EN))).toEqual([])
+    expect(['theme.picker', 'theme.unset'].filter((k) => !(k in EN))).toEqual([])
+  })
+  it('cover the runner keyboard help', async () => {
+    const { RUNNER_SHORTCUTS } = await import('@/lib/shortcuts')
+    expect(RUNNER_SHORTCUTS.filter((s) => !(`runner.keys.${s.action}` in EN)).map((s) => s.action)).toEqual([])
+  })
   it('cover all analysis rules', async () => {
     const { ANALYSIS_RULES } = await import('./analysis')
     expect(ANALYSIS_RULES.filter((r) => !(`analysis.rules.${r}` in EN))).toEqual([])

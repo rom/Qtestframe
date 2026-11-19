@@ -64,8 +64,8 @@ async function download() {
   </div>
   <Message v-if="!auth.can(P.export)" severity="warn" :closable="false">{{ t('export.noPermission') }}</Message>
   <div v-else class="card" style="max-width: 820px">
-    <div class="section-title" style="margin-top: 0">{{ t('export.format') }}</div>
-    <div class="charts" style="grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px">
+    <div id="export-format" class="section-title" style="margin-top: 0">{{ t('export.format') }}</div>
+    <div class="format-grid" role="group" aria-labelledby="export-format">
       <button
         v-for="f in formats"
         :key="f.value"
@@ -81,17 +81,19 @@ async function download() {
         :aria-pressed="format === f.value"
         @click="format = f.value"
       >
-        <div class="row"><i :class="f.icon" style="font-size: 20px; color: var(--p-primary-color)" /><b>{{ f.label }}</b></div>
+        <div class="row"><i :class="f.icon" style="font-size: 20px; color: var(--p-primary-color)" aria-hidden="true" /><b>{{ f.label }}</b></div>
         <div class="small muted" style="margin-top: 4px">{{ f.desc }}</div>
       </button>
     </div>
-    <div class="section-title">{{ t('export.aspects') }}</div>
+    <fieldset class="plain-fieldset">
+    <legend class="section-title">{{ t('export.aspects') }}</legend>
     <div class="row" style="gap: 18px">
       <span v-for="a in aspects" :key="a.value" class="row nowrap">
         <Checkbox v-model="selected" :input-id="'a-' + a.value" :value="a.value" />
         <label :for="'a-' + a.value">{{ a.label }}</label>
       </span>
     </div>
+    </fieldset>
     <div class="section-title">{{ t('export.filter') }}</div>
     <QueryInput v-model="q" scope="requirement" :error="error" :placeholder="t('export.filterPlaceholder', { example: 'status:approved OR obligation:must' })" @submit="download" />
     <div class="row" style="margin-top: 18px">

@@ -87,8 +87,8 @@ async function save() {
       <span class="grow" />
       <Button :label="t('admin.newUser')" icon="pi pi-user-plus" @click="openCreate" />
     </div>
-    <DataTable :value="filtered" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
-      <Column field="email" :header="t('common.email')" sortable />
+    <DataTable v-stack :value="filtered" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
+      <Column field="email" :header="t('common.email')" sortable body-class="stack-main" />
       <Column field="display_name" :header="t('common.name')" sortable />
       <Column field="auth_provider" :header="t('admin.provider')" sortable style="width: 130px" />
       <Column :header="t('admin.flags')" style="width: 220px">
@@ -100,15 +100,15 @@ async function save() {
         </template>
       </Column>
       <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit(data)" /></template></Column>
+      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('admin.editNamed', { name: data.email })" v-tooltip="t('common.edit')" @click="openEdit(data)" /></template></Column>
     </DataTable>
   </div>
   <Dialog v-model:visible="dialog" :header="editing ? t('admin.editUser') : t('admin.newUser')" modal style="width: min(460px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" :disabled="!!editing" required /></div>
-      <div class="field"><label>{{ t('admin.displayName') }}</label><InputText v-model="form.display_name" /></div>
-      <div class="field">
+      <div v-field class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" :disabled="!!editing" required /></div>
+      <div v-field class="field"><label>{{ t('admin.displayName') }}</label><InputText v-model="form.display_name" /></div>
+      <div v-field class="field">
         <label>{{ editing ? t('admin.resetPassword') : t('admin.password') }}</label>
         <Password v-model="form.password" toggle-mask fluid autocomplete="new-password" />
       </div>

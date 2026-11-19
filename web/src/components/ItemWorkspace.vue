@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -33,7 +33,24 @@ import { useAuthStore } from '@/stores/auth'
 import { readPref, writePref } from '@/stores/ui'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
+import { useBreakpoint } from '@/lib/breakpoint'
+import { rememberFocus } from '@/lib/a11y'
 const prefs = usePrefsStore()
+/** below 1024 px the folder tree lives in a drawer opened by a "Folders" button */
+const treeInDrawer = useBreakpoint('tablet')
+const foldersOpen = ref(false)
+let restoreFoldersFocus: ReturnType<typeof rememberFocus> | null = null
+watch(foldersOpen, (open) => {
+  if (open) restoreFoldersFocus = rememberFocus()
+  else
+    void nextTick(() => {
+      restoreFoldersFocus?.(() => document.getElementById('ws-title'))
+      restoreFoldersFocus = null
+    })
+})
+watch(treeInDrawer, (v) => {
+  if (!v) foldersOpen.value = false
+})
 
 type Item = Requirement & TestCase
 
@@ -88,6 +105,9 @@ async function load() {
 }
 
 watch([selectedFolder, recursive, () => quick.value], () => load(), { deep: true })
+watch(selectedFolder, () => {
+  foldersOpen.value = false
+})
 watch(recursive, (v) => writePref('qtf.recursive', String(v)))
 watch([selectedFolder, q], () => {
   const query = { ...route.query, folder: selectedFolder.value || undefined, q: q.value || undefined }
@@ -251,13 +271,21 @@ const pageReport = computed(() => t('common.pageReport', { first: '{first}', las
 // ---------- editor ----------
 const editorOpen = ref(false)
 const editorId = ref<string | null>(null)
+// PrimeVue's Drawer does not give focus back on close: do it here
+let restoreFocus: ReturnType<typeof rememberFocus> | null = null
+const pageHeading = () => document.getElementById('ws-title')
 function openEditor(id: string | null) {
+  if (!editorOpen.value) restoreFocus = rememberFocus()
   editorId.value = id
   editorOpen.value = true
   if (id && route.query.item !== id) router.replace({ query: { ...route.query, item: id } })
 }
 watch(editorOpen, (open) => {
   if (!open) {
+    void nextTick(() => {
+      restoreFocus?.(pageHeading)
+      restoreFocus = null
+    })
     editorId.value = null
     if (route.query.item) router.replace({ query: { ...route.query, item: undefined } })
   }
@@ -284,7 +312,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
 
 <template>
   <div class="workspace">
-    <aside class="card tree-pane">
+    <aside v-if="!treeInDrawer" class="card tree-pane" :aria-label="t('folders.title')">
       <FolderTree
         v-model:selected="selectedFolder"
         :kind="kind"
@@ -295,14 +323,24 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         @drop-items="moveItems"
       />
     </aside>
-    <section class="card" style="min-width: 0">
+    <section class="card" style="min-width: 0" :aria-busy="loading" aria-labelledby="ws-title">
       <div class="page-header" style="margin-bottom: 10px">
         <div>
-          <h1 style="font-size: 17px">{{ folderLabel }}</h1>
+          <h1 id="ws-title" class="ws-title" tabindex="-1">{{ folderLabel }}</h1>
           <div class="sub">{{ t(isReq ? 'counts.requirements' : 'counts.tests', items.length) }}</div>
         </div>
         <div class="actions">
-          <span v-if="selectedFolder" class="row small">
+          <Button
+            v-if="treeInDrawer"
+            :label="t('workspace.folders')"
+            icon="pi pi-folder"
+            severity="secondary"
+            outlined
+            aria-haspopup="dialog"
+            :aria-expanded="foldersOpen"
+            @click="foldersOpen = true"
+          />
+          <span v-if="selectedFolder" class="row small nowrap">
             <ToggleSwitch v-model="recursive" input-id="rec" /><label for="rec">{{ t('workspace.includeSubfolders') }}</label>
           </span>
           <MultiSelect
@@ -325,14 +363,14 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <QueryInput v-model="q" :scope="kind" :error="queryError" :composed="composed" @submit="load" />
       </div>
       <div class="filterbar">
-        <MultiSelect v-model="quick.status" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.filterStatus')" :max-selected-labels="2" style="min-width: 140px" show-clear />
+        <MultiSelect v-model="quick.status" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.filterStatus')" :aria-label="t('workspace.filterStatus')" :max-selected-labels="2" style="min-width: 140px" show-clear />
         <MultiSelect
           v-if="isReq"
           v-model="quick.obligation"
           :options="thirdOptions"
           option-label="label"
           option-value="value"
-          :placeholder="t('workspace.filterObligation')"
+          :placeholder="t('workspace.filterObligation')" :aria-label="t('workspace.filterObligation')"
           :max-selected-labels="2"
           style="min-width: 140px"
           show-clear
@@ -343,18 +381,18 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           :options="thirdOptions"
           option-label="label"
           option-value="value"
-          :placeholder="t('workspace.filterExecution')"
+          :placeholder="t('workspace.filterExecution')" :aria-label="t('workspace.filterExecution')"
           style="min-width: 140px"
           show-clear
         />
-        <MultiSelect v-model="quick.priority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.filterPriority')" :max-selected-labels="2" style="min-width: 130px" show-clear />
+        <MultiSelect v-model="quick.priority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.filterPriority')" :aria-label="t('workspace.filterPriority')" :max-selected-labels="2" style="min-width: 130px" show-clear />
         <MultiSelect
           v-if="isReq"
           v-model="quick.coverage"
           :options="coverageOptions"
           option-label="label"
           option-value="value"
-          :placeholder="t('workspace.filterCoverage')"
+          :placeholder="t('workspace.filterCoverage')" :aria-label="t('workspace.filterCoverage')"
           style="min-width: 130px"
           show-clear
         />
@@ -364,24 +402,24 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           :options="resultOptions"
           option-label="label"
           option-value="value"
-          :placeholder="t('workspace.filterLastResult')"
+          :placeholder="t('workspace.filterLastResult')" :aria-label="t('workspace.filterLastResult')"
           style="min-width: 130px"
           show-clear
         />
         <div style="min-width: 180px; max-width: 280px">
-          <CategorySelect v-model="quick.categories" :categories="categories" value-key="path" :placeholder="t('workspace.filterCategory')" />
+          <CategorySelect v-model="quick.categories" :categories="categories" value-key="path" :placeholder="t('workspace.filterCategory')" :aria-label="t('workspace.filterCategory')" />
         </div>
         <Button v-if="activeFilterCount(quick) || q" :label="t('workspace.clearFilters')" icon="pi pi-filter-slash" text severity="secondary" @click="clearFilters" />
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
 
-      <div v-if="selection.length && canWrite" class="bulkbar">
+      <div v-if="selection.length && canWrite" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
-        <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.setStatus')" size="small" style="min-width: 140px" />
-        <Select v-model="bulkPriority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.setPriority')" size="small" style="min-width: 140px" />
-        <Select v-model="bulkThird" :options="thirdOptions" option-label="label" option-value="value" :placeholder="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" size="small" style="min-width: 150px" />
-        <Button :label="t('workspace.categoriesButton')" icon="pi pi-plus" size="small" severity="secondary" outlined v-tooltip.bottom="t('workspace.addCategories')" @click="openCatDialog('add')" />
-        <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
+        <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.setStatus')" :aria-label="t('workspace.setStatus')" size="small" style="min-width: 140px" />
+        <Select v-model="bulkPriority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.setPriority')" :aria-label="t('workspace.setPriority')" size="small" style="min-width: 140px" />
+        <Select v-model="bulkThird" :options="thirdOptions" option-label="label" option-value="value" :placeholder="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" :aria-label="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" size="small" style="min-width: 150px" />
+        <Button :label="t('workspace.categoriesButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addCategories')" v-tooltip.bottom="t('workspace.addCategories')" @click="openCatDialog('add')" />
+        <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeCategories')" v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
@@ -389,6 +427,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
 
       <DataTable
         v-model:selection="selection"
+        v-stack
         :value="items"
         data-key="id"
         :loading="loading"
@@ -410,14 +449,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Column selection-mode="multiple" style="width: 2.6rem" />
         <Column v-if="canWrite" style="width: 2rem">
           <template #body="{ data }">
-            <i class="pi pi-bars drag-handle" draggable="true" :title="t('workspace.dragToFolder')" @dragstart="onRowDrag($event, data as Item)" @click.stop />
+            <i class="pi pi-bars drag-handle" draggable="true" aria-hidden="true" :title="t('workspace.dragToFolder')" @dragstart="onRowDrag($event, data as Item)" @click.stop />
           </template>
         </Column>
         <Column field="key" :header="t('workspace.colKey')" sortable style="width: 130px">
           <template #body="{ data }"><span class="key">{{ data.key }}</span></template>
         </Column>
-        <Column field="title" :header="t('workspace.colTitle')" sortable style="min-width: 240px">
-          <template #body="{ data }"><span class="clickable" style="font-weight: 500">{{ data.title }}</span></template>
+        <Column field="title" :header="t('workspace.colTitle')" sortable style="min-width: 240px" body-class="stack-main">
+          <template #body="{ data }">
+            <button type="button" class="link-button item-title" :aria-label="t('workspace.openItem', { key: data.key, title: data.title })" @click.stop="openEditor((data as Item).id)">{{ data.title }}</button>
+          </template>
         </Column>
         <Column v-for="c in visibleColumns" :key="c.field" :field="c.field" :header="c.header" :sortable="c.sortable !== false" :style="c.width ? { width: c.width } : {}">
           <template #body="{ data }">
@@ -449,6 +490,18 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     </section>
   </div>
 
+  <Drawer v-if="treeInDrawer" v-model:visible="foldersOpen" position="left" class="folders-drawer" :header="t('folders.title')" block-scroll>
+    <FolderTree
+      v-model:selected="selectedFolder"
+      :kind="kind"
+      :project-id="pid"
+      :folders="folders"
+      :can-write="canWrite"
+      hide-title
+      @changed="onFoldersChanged"
+      @drop-items="moveItems"
+    />
+  </Drawer>
   <Drawer v-model:visible="editorOpen" position="right" class="editor-drawer" :header="editorTitle" block-scroll>
     <RequirementEditor
       v-if="isReq && editorOpen"
@@ -491,7 +544,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         option-value="v"
         :allow-empty="false"
       />
-      <CategorySelect v-model="catIds" :categories="categories" />
+      <CategorySelect v-model="catIds" :categories="categories" :aria-label="t('common.categories')" />
       <div class="small muted">{{ t(isReq ? 'workspace.appliesToRequirements' : 'workspace.appliesToTests', selection.length) }}</div>
     </div>
     <template #footer>

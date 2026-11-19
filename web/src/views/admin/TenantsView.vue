@@ -85,16 +85,16 @@ async function switchTo(tn: Tenant) {
       <span class="grow" />
       <Button :label="t('admin.newTenant')" icon="pi pi-plus" @click="openCreate" />
     </div>
-    <DataTable :value="tenants" data-key="id" :loading="loading" sort-field="slug" :sort-order="1">
+    <DataTable v-stack :value="tenants" data-key="id" :loading="loading" :aria-busy="loading" sort-field="slug" :sort-order="1">
       <Column field="slug" :header="t('admin.slug')" sortable><template #body="{ data }"><span class="mono">{{ data.slug }}</span></template></Column>
-      <Column field="name" :header="t('common.name')" sortable />
+      <Column field="name" :header="t('common.name')" sortable body-class="stack-main" />
       <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column style="width: 170px">
         <template #body="{ data }">
           <div class="row nowrap" style="gap: 0">
-            <Button v-if="auth.tenant?.id !== data.id" icon="pi pi-sign-in" text rounded v-tooltip="t('admin.switchToTenant')" :aria-label="t('admin.switchToTenant')" @click="switchTo(data)" />
-            <Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit(data)" />
-            <Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('common.delete')" v-tooltip="t('common.delete')" @click="remove(data)" />
+            <Button v-if="auth.tenant?.id !== data.id" icon="pi pi-sign-in" text rounded v-tooltip="t('admin.switchToTenant')" :aria-label="t('admin.switchToNamed', { name: data.name })" @click="switchTo(data)" />
+            <Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('admin.editNamed', { name: data.name })" v-tooltip="t('common.edit')" @click="openEdit(data)" />
+            <Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('admin.deleteNamed', { name: data.name })" v-tooltip="t('common.delete')" @click="remove(data)" />
           </div>
         </template>
       </Column>
@@ -103,8 +103,8 @@ async function switchTo(tn: Tenant) {
   <Dialog v-model:visible="dialog" :header="editing ? t('admin.renameTenant') : t('admin.newTenant')" modal style="width: min(440px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>{{ t('admin.slug') }}</label><InputText v-model="form.slug" :disabled="!!editing" placeholder="acme" required /></div>
-      <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tenantNamePlaceholder')" required /></div>
+      <div v-field class="field"><label>{{ t('admin.slug') }}</label><InputText v-model="form.slug" :disabled="!!editing" placeholder="acme" required /></div>
+      <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tenantNamePlaceholder')" required /></div>
       <div class="row" style="justify-content: flex-end">
         <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
         <Button type="submit" :label="t('common.save')" icon="pi pi-check" :disabled="!form.slug || !form.name" />

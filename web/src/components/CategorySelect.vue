@@ -7,7 +7,7 @@ import { normalizeHex, defaultCategoryColor } from '@/lib/colors'
 import { useI18n } from 'vue-i18n'
 
 const model = defineModel<string[]>({ default: () => [] })
-const props = defineProps<{ categories: Category[]; disabled?: boolean; placeholder?: string; valueKey?: 'id' | 'path' }>()
+const props = defineProps<{ categories: Category[]; disabled?: boolean; placeholder?: string; valueKey?: 'id' | 'path'; ariaLabel?: string }>()
 const { t } = useI18n()
 
 const groups = computed(() =>
@@ -34,6 +34,7 @@ const groups = computed(() =>
     option-group-label="label"
     option-group-children="items"
     :placeholder="placeholder ?? t('common.categories')"
+    :aria-label="ariaLabel"
     :disabled="disabled"
     display="chip"
     filter

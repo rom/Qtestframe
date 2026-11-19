@@ -143,13 +143,13 @@ function open(p: Project) {
         :aria-label="t('projects.layout')"
         @update:model-value="setLayout"
       >
-        <template #option="{ option }"><i :class="option.i" :title="option.l" :aria-label="option.l" /></template>
+        <template #option="{ option }"><i :class="option.i" :title="option.l" aria-hidden="true" /><span class="sr-only">{{ option.l }}</span></template>
       </SelectButton>
       <Button v-if="auth.can(P.projectCreate)" :label="t('projects.new')" icon="pi pi-plus" @click="openCreate" />
     </div>
   </div>
 
-  <div v-if="loading" class="charts">
+  <div v-if="loading" class="charts" aria-busy="true" :aria-label="t('common.loading')">
     <Skeleton v-for="i in 3" :key="i" height="140px" />
   </div>
   <div v-else-if="!filtered.length" class="card empty">
@@ -158,38 +158,40 @@ function open(p: Project) {
     <div v-else>{{ t('projects.none') }}</div>
     <Button v-if="!projects.length && auth.can(P.projectCreate)" :label="t('projects.createFirst')" icon="pi pi-plus" style="margin-top: 12px" @click="openCreate" />
   </div>
-  <div v-else-if="layout === 'cards'" class="charts" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))">
-    <div v-for="p in filtered" :key="p.id" class="card clickable" style="display: flex; flex-direction: column; gap: 8px" @click="open(p)">
+  <ul v-else-if="layout === 'cards'" class="project-cards plain-list" :aria-label="t('projects.title')">
+    <li v-for="p in filtered" :key="p.id" class="card clickable" style="display: flex; flex-direction: column; gap: 8px" @click="open(p)">
       <div class="row nowrap">
-        <div style="width: 40px; height: 40px; border-radius: 10px; background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); color: var(--p-primary-color); display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: none">
+        <div aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); color: var(--p-primary-color); display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: none">
           {{ p.key.slice(0, 4) }}
         </div>
         <div class="grow">
-          <div style="font-weight: 650" class="ellipsis">{{ p.name }}</div>
+          <RouterLink :to="{ name: 'dashboard', params: { projectId: p.id } }" class="project-link ellipsis" @click.stop>{{ p.name }}</RouterLink>
           <div class="key">{{ p.key }}</div>
         </div>
         <div class="row nowrap" @click.stop>
-          <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('common.edit')" v-tooltip="t('common.edit')" @click="openEdit(p)" />
-          <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('common.delete')" v-tooltip="t('common.delete')" @click="remove(p)" />
+          <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: p.name })" v-tooltip="t('common.edit')" @click="openEdit(p)" />
+          <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: p.name })" v-tooltip="t('common.delete')" @click="remove(p)" />
         </div>
       </div>
       <div class="muted" style="min-height: 38px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">
         {{ p.description || t('common.noDescription') }}
       </div>
       <div class="small muted">{{ t('projects.updatedAgo', { time: relativeTime(p.updated_at || p.created_at) }) }}</div>
-    </div>
-  </div>
+    </li>
+  </ul>
   <div v-else class="card" style="padding: 0">
-    <DataTable :value="filtered" data-key="id" sort-field="key" :sort-order="1" row-hover @row-click="open($event.data)" class="clickable">
+    <DataTable v-stack :value="filtered" data-key="id" sort-field="key" :sort-order="1" row-hover @row-click="open($event.data)" class="clickable">
       <Column field="key" :header="t('common.key')" sortable><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
-      <Column field="name" :header="t('common.name')" sortable />
+      <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
+        <template #body="{ data }"><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink></template>
+      </Column>
       <Column field="description" :header="t('common.description')" />
       <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column header="" style="width: 100px">
         <template #body="{ data }">
           <div class="row nowrap" @click.stop>
-            <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('common.edit')" @click="openEdit(data)" />
-            <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('common.delete')" @click="remove(data)" />
+            <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: data.name })" @click="openEdit(data)" />
+            <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: data.name })" @click="remove(data)" />
           </div>
         </template>
       </Column>
@@ -199,16 +201,16 @@ function open(p: Project) {
   <Dialog v-model:visible="dialog" :header="editing ? t('projects.edit') : t('projects.new')" modal style="width: min(520px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.name') }}</label>
         <InputText v-model="form.name" required autofocus @blur="suggestKey" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.key') }}</label>
         <InputText v-model="form.key" :disabled="!!editing" required :placeholder="t('projects.keyPlaceholder')" style="text-transform: uppercase" />
         <small class="muted">{{ t('projects.keyHint', { example: (form.key || 'KEY') + '-REQ-1' }) }}</small>
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.description') }}</label>
         <Textarea v-model="form.description" rows="3" auto-resize />
       </div>

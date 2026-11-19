@@ -100,7 +100,7 @@ function onKey(e: KeyboardEvent) {
 <template>
   <div>
     <Message v-if="error" severity="error" :closable="false">{{ t('comments.unavailable', { error }) }}</Message>
-    <div v-else-if="loading && !comments.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" /></div>
+    <div v-else-if="loading && !comments.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" :aria-label="t('common.loading')" /></div>
     <template v-else>
       <div v-if="!comments.length" class="muted small" style="padding: 8px 0">{{ t('comments.none') }}</div>
       <div v-for="c in comments" :key="c.id" class="comment">
@@ -115,7 +115,7 @@ function onKey(e: KeyboardEvent) {
             <Button v-if="canDelete(c)" icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('comments.delete')" v-tooltip="t('comments.delete')" @click="remove(c)" />
           </div>
           <div v-if="editing === c.id" class="grid" style="gap: 6px; margin-top: 4px">
-            <Textarea v-model="editText" rows="2" auto-resize :maxlength="MAX" />
+            <Textarea v-model="editText" rows="2" auto-resize :maxlength="MAX" :aria-label="t('comments.edit')" />
             <div class="row" style="justify-content: flex-end">
               <Button :label="t('common.cancel')" text size="small" severity="secondary" @click="editing = null" />
               <Button :label="t('common.save')" icon="pi pi-check" size="small" :disabled="!editText.trim()" @click="saveEdit(c)" />
