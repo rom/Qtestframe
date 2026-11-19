@@ -154,8 +154,8 @@ func Rebind(d Dialect, q string) string {
 // Render substitutes dialect tokens in a migration template.
 func Render(d Dialect, tmpl string) string {
 	r := map[Dialect]*strings.Replacer{
-		SQLite:   strings.NewReplacer("{{TS}}", "TIMESTAMP", "{{BOOL}}", "INTEGER", "{{FALSE}}", "0", "{{TRUE}}", "1"),
-		Postgres: strings.NewReplacer("{{TS}}", "TIMESTAMPTZ", "{{BOOL}}", "BOOLEAN", "{{FALSE}}", "FALSE", "{{TRUE}}", "TRUE"),
+		SQLite:   strings.NewReplacer("{{TS}}", "TIMESTAMP", "{{BOOL}}", "INTEGER", "{{FALSE}}", "0", "{{TRUE}}", "1", "{{BLOB}}", "BLOB"),
+		Postgres: strings.NewReplacer("{{TS}}", "TIMESTAMPTZ", "{{BOOL}}", "BOOLEAN", "{{FALSE}}", "FALSE", "{{TRUE}}", "TRUE", "{{BLOB}}", "BYTEA"),
 	}[d]
 	return r.Replace(tmpl)
 }

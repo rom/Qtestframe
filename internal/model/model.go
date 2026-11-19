@@ -106,6 +106,66 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	// Preferences are the user's personal settings (see Preferences).
 	Preferences Preferences `json:"preferences"`
+	// Avatar is "" (initials), "preset:<name>" or "file:<file id>".
+	Avatar string `json:"avatar"`
+	// MustChangePassword is set after an administrator reset the password.
+	MustChangePassword bool `json:"must_change_password"`
+}
+
+// LoginEvent records a sign-in attempt.
+type LoginEvent struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Success   bool      `json:"success"`
+	Method    string    `json:"method"`
+	IP        string    `json:"ip"`
+	UserAgent string    `json:"user_agent"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// File kinds.
+const (
+	FileAttachment = "attachment"
+	FileDocument   = "document"
+	FileReport     = "report"
+	FileAvatar     = "avatar"
+	FileIcon       = "icon"
+)
+
+// FileInfo is the metadata of a stored file.
+type FileInfo struct {
+	ID          string     `json:"id"`
+	ProjectID   *string    `json:"project_id"`
+	Kind        string     `json:"kind"`
+	Name        string     `json:"name"`
+	ContentType string     `json:"content_type"`
+	Size        int64      `json:"size"`
+	SHA256      string     `json:"sha256"`
+	Description string     `json:"description"`
+	Tags        []string   `json:"tags"`
+	UploadedBy  string     `json:"uploaded_by"`
+	CreatedAt   time.Time  `json:"created_at"`
+	URL         string     `json:"url"` // download URL
+	Links       []FileLink `json:"links"`
+}
+
+// FileLink is an item a file is attached to.
+type FileLink struct {
+	EntityType string `json:"entity_type"` // requirement | test | run | execution
+	EntityID   string `json:"entity_id"`
+	Key        string `json:"key"` // item key or run name
+}
+
+// ReportDefinition is a saved custom report.
+type ReportDefinition struct {
+	ID          string          `json:"id"`
+	ProjectID   string          `json:"project_id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Config      json.RawMessage `json:"config"`
+	CreatedBy   string          `json:"created_by"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
 // Preferences are per-user settings edited on the profile page. Empty
@@ -120,8 +180,9 @@ type Preferences struct {
 	DateFormat       string `json:"date_format,omitempty"`       // locale | iso | relative
 	Timezone         string `json:"timezone,omitempty"`          // IANA name, "" = browser
 	CompactTables    bool   `json:"compact_tables,omitempty"`
-	HideAnalysis     bool   `json:"hide_analysis,omitempty"`      // hide live requirement language analysis
-	CreateLinkedTest *bool  `json:"create_linked_test,omitempty"` // personal default for the editor checkbox
+	HideAnalysis     bool   `json:"hide_analysis,omitempty"` // hide live requirement language analysis
+	CreateLinkedTest *bool  `json:"create_linked_test,omitempty"`
+	IntroDone        bool   `json:"intro_done,omitempty"` // first-login intro tour finished or skipped // personal default for the editor checkbox
 }
 
 // Preference value sets.
@@ -196,9 +257,11 @@ type Project struct {
 	Description string `json:"description"`
 	// DefectURLTemplate turns defect IDs into links, e.g.
 	// "https://jira.example.com/browse/{id}".
-	DefectURLTemplate string    `json:"defect_url_template"`
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
+	DefectURLTemplate string `json:"defect_url_template"`
+	// Icon is "" (initials), "preset:<name>" or "file:<file id>".
+	Icon      string    `json:"icon"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // Folder is a node in the requirement or test hierarchy ("group").
