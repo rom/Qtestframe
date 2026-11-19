@@ -204,8 +204,12 @@ func TestCheckConfigAndMigrate(t *testing.T) {
 	if r := run(t, "", "migrate", "--config", bad); r.code != 1 {
 		t.Errorf("migrate bad config: %+v", r)
 	}
-	// DSN in a directory that does not exist.
-	missingDir := writeConfig(t, fmt.Sprintf("database: {dsn: %q}", filepath.Join(t.TempDir(), "no/such/dir/qtf.db")))
+	// DSN whose parent "directory" is a regular file: it cannot be created.
+	blocker := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(blocker, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	missingDir := writeConfig(t, fmt.Sprintf("database: {dsn: %q}", filepath.Join(blocker, "dir", "qtf.db")))
 	if r := run(t, "", "migrate", "--config", missingDir); r.code != 1 || !strings.Contains(r.stderr, "db:") {
 		t.Errorf("migrate bad db: %+v", r)
 	}

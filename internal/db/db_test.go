@@ -103,7 +103,8 @@ func TestOpenErrors(t *testing.T) {
 	if _, err := Open(ctx, "mysql", "x", 0); err == nil || !strings.Contains(err.Error(), "unsupported driver") {
 		t.Errorf("unsupported: %v", err)
 	}
-	bad := filepath.Join(t.TempDir(), "no", "such", "dir", "q.db")
+	// A directory where the database file should be: the ping fails.
+	bad := t.TempDir()
 	if _, err := Open(ctx, "sqlite", bad, 0); err == nil || !strings.Contains(err.Error(), "ping") {
 		t.Errorf("bad sqlite path: %v", err)
 	}
@@ -319,4 +320,31 @@ func TestPostgres(t *testing.T) {
 		t.Fatalf("current_schema = %q (%v)", got, err)
 	}
 	checkUniqueAndNoRows(t, d)
+}
+
+func TestOpenSQLiteCreatesParentDir(t *testing.T) {
+	base := t.TempDir()
+	p := filepath.Join(base, "nested", "deeper", "q.db")
+	d, err := Open(context.Background(), "sqlite", "file:"+p+"?_pragma=foreign_keys(1)", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.Close()
+	st, err := os.Stat(filepath.Dir(p))
+	if err != nil || st.Mode().Perm() != 0o700 {
+		t.Fatalf("dir: %v %v", st, err)
+	}
+	// a parent that is a regular file cannot be created
+	blocker := filepath.Join(base, "file")
+	if err := os.WriteFile(blocker, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Open(context.Background(), "sqlite", filepath.Join(blocker, "x", "q.db"), 1); err == nil {
+		t.Fatal("expected error")
+	}
+	for _, dsn := range []string{":memory:", "file::memory:", "q.db", "/q.db"} {
+		if err := ensureSQLiteDir(dsn); err != nil {
+			t.Errorf("%s: %v", dsn, err)
+		}
+	}
 }

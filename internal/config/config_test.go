@@ -360,3 +360,18 @@ func TestStrictYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// The YAML files shipped in the repository must stay valid (strict keys).
+func TestShippedConfigFilesLoad(t *testing.T) {
+	clearEnv(t)
+	for _, p := range []string{"../../examples/qtestframe.yaml", "../../examples/qtestframe-tls.yaml", "../../deploy/config.example.yaml"} {
+		cfg, err := Load(p)
+		if err != nil {
+			t.Errorf("%s: %v", p, err)
+			continue
+		}
+		if cfg.Bootstrap.TenantSlug == "" || cfg.Server.Listen == "" {
+			t.Errorf("%s: unexpected %+v", p, cfg.Server)
+		}
+	}
+}
