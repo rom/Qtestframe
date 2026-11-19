@@ -1,0 +1,13 @@
+/bin/
+/dist/
+*.db
+*.db-*
+coverage.out
+coverage.html
+/web/node_modules/
+/web/coverage/
+/internal/webui/dist/*
+!/internal/webui/dist/.gitkeep
+/certs/
+/data/
+.DS_Store
