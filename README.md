@@ -23,6 +23,9 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Test cases**
   - Manual tests are executed step by step (action, expected result, data).
   - Automated tests are shell, bash, Python or JavaScript scripts, run server-side in a sandbox. CI systems can also import results.
+- **Change history:** every change of a requirement or test is versioned, with a field-level diff and one-click restore. **Baselines** freeze a project's state for a release and compare it with the current state or another baseline.
+- **Relations** between requirements (refines/decomposition, depends on, derived from, conflicts with, duplicates, relates to) and **comment threads** on requirements and tests.
+- **Test reuse and results:** shared steps (a step can call another test), execution history across runs, and defects linked to failed executions (with links into your issue tracker).
 - **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder.
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
 - **Grouping:** nested folders for requirements and tests. Drag and drop moves items, whole folders, or entire category dimensions, also to another project.
@@ -179,12 +182,25 @@ Every table has a filter bar, and the search box at the top searches all project
 | `version>=2 updated_at>2026-01-01` | comparisons |
 | `category:Security coverage:none` | requirements in the Security area without any linked test |
 | `has:criteria` | field is not empty |
+| `child:*` | requirements that have been decomposed into children |
+| `defect:JIRA-*` (tests) | tests with a JIRA defect on any execution |
 
 The full syntax and field list is in [docs/api.md](docs/api.md#query-language).
 
 ### 7. Export
 
 **Export** downloads the project, or chosen parts (requirements, criteria, tests, traceability, runs), as **XLSX, CSV (ZIP), PDF or DOCX**, optionally filtered with a query.
+
+### Collaborate and track changes
+
+- The requirement and test editors have tabs for **Comments**, **History** (field-level diff of every version, **Restore this version**) and, for requirements, **Relations** (e.g. *refines* to build a requirement hierarchy).
+- **Baselines** (project tab) freezes the current requirements and tests, e.g. *Release 1.0*. **Compare** shows what was added, removed or changed since then.
+- In a test's steps, **Insert call to test…** reuses another test's steps (e.g. a common login sequence). The test's **Executions** tab shows its results across all runs.
+- While executing, record **defects** (e.g. `JIRA-123`). Set the *Defect tracker URL template* under **Categories & settings** to turn them into links.
+
+### Your profile
+
+The user menu → **Profile & password** has your display name and preferences: theme, start page, default project and tenant, rows per page, date format and time zone, compact tables, and whether new requirements get a linked test by default. It also lists your active sessions (browser, IP, last activity), each of which can be signed out.
 
 ### Categories & settings
 
