@@ -58,6 +58,10 @@ Usage:
   qtestframe tenant create [--config FILE] --slug S --name N
   qtestframe member add  [--config FILE] --tenant SLUG --email E --role admin|manager|tester|viewer
   qtestframe seed-demo   [--config FILE] [--tenant SLUG]
+  qtestframe backup      [--config FILE] --out FILE.zip
+                                                  write a logical backup of all data
+  qtestframe restore     [--config FILE] --in FILE.zip --yes
+                                                  replace ALL data with a backup
   qtestframe check-config [--config FILE] [--port N] [--listen HOST:PORT]
   qtestframe healthcheck [--config FILE] [--port N] [--url URL]
   qtestframe version
@@ -90,6 +94,10 @@ func Run(args []string, env Env) int {
 		err = sub(args[1:], env, "add", cmdMemberAdd)
 	case "seed-demo":
 		err = cmdSeedDemo(args[1:], env)
+	case "backup":
+		err = cmdBackup(args[1:], env)
+	case "restore":
+		err = cmdRestore(args[1:], env)
 	case "healthcheck":
 		err = cmdHealthcheck(args[1:], env)
 	case "check-config":
@@ -314,6 +322,90 @@ func cmdSeedDemo(args []string, env Env) error {
 		return err
 	}
 	fmt.Fprintf(env.Stdout, "seeded demo project %s in tenant %s\n", p.Key, t.Slug)
+	return nil
+}
+
+// cmdBackup writes a logical, database-agnostic backup (see
+// store.Backup). The file is written to a temporary name and renamed
+// once complete.
+func cmdBackup(args []string, env Env) error {
+	fs, cfgPath := newFlags("backup", env)
+	out := fs.String("out", "", "backup file to write (ZIP)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *out == "" {
+		return errors.New("--out is required")
+	}
+	_, st, err := openStore(env.Ctx, *cfgPath)
+	if err != nil {
+		return err
+	}
+	defer st.DB.Close()
+	tmp, err := os.CreateTemp(filepath.Dir(*out), ".qtf-backup-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name()) // no-op after the rename
+	m, err := st.Backup(env.Ctx, tmp, Version)
+	if err == nil {
+		err = tmp.Sync()
+	}
+	if cerr := tmp.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		return err
+	}
+	if err := os.Rename(tmp.Name(), *out); err != nil {
+		return err
+	}
+	details := fmt.Sprintf("%d rows in %d tables, schema %d (command line)", m.Rows(), len(m.Tables), m.SchemaVersion)
+	_ = st.Audit(env.Ctx, model.AuditEntry{UserEmail: "cli", Action: "admin.backup", EntityType: "system", Details: details})
+	fmt.Fprintf(env.Stdout, "backup written to %s: %d rows in %d tables (schema version %d)\n", *out, m.Rows(), len(m.Tables), m.SchemaVersion)
+	return nil
+}
+
+// cmdRestore replaces all data with a backup (see store.Restore).
+func cmdRestore(args []string, env Env) error {
+	fs, cfgPath := newFlags("restore", env)
+	in := fs.String("in", "", "backup file to restore (ZIP)")
+	yes := fs.Bool("yes", false, "confirm that ALL existing data is replaced")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *in == "" {
+		return errors.New("--in is required")
+	}
+	if !*yes {
+		return errors.New("restore replaces ALL data and signs everyone out; pass --yes to confirm")
+	}
+	f, err := os.Open(*in)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	_, st, err := openStore(env.Ctx, *cfgPath)
+	if err != nil {
+		return err
+	}
+	defer st.DB.Close()
+	counts, err := st.Restore(env.Ctx, f, fi.Size())
+	if err != nil {
+		return err
+	}
+	total := 0
+	for _, t := range store.SortedTables(counts) {
+		total += counts[t]
+		fmt.Fprintf(env.Stdout, "  %-24s %d\n", t, counts[t])
+	}
+	details := fmt.Sprintf("%d rows in %d tables from %s (command line)", total, len(counts), filepath.Base(*in))
+	_ = st.Audit(env.Ctx, model.AuditEntry{UserEmail: "cli", Action: "admin.restore", EntityType: "system", Details: details})
+	fmt.Fprintf(env.Stdout, "restored %d rows in %d tables from %s\n", total, len(counts), *in)
 	return nil
 }
 
