@@ -23,7 +23,8 @@ to run the suites on Linux and macOS.
 | API integration | `net/http/httptest` server around `api.Server.Handler()` | every route through the full middleware chain with real sessions, CSRF, RBAC and a real database |
 | CLI / process | `internal/app` tests | `serve` (HTTP and TLS with certificate reload), `migrate`, admin commands, bootstrap, `healthcheck`, hardening option mapping |
 | OS hardening | child processes of the test binary | no_new_privs, capabilities, Landlock, seccomp, rlimits, `sandbox-exec` |
-| Frontend | Vitest (jsdom) | `web/src/lib` modules |
+| Frontend | Vitest (jsdom) | `web/src/lib`, `web/src/i18n` and `web/src/themes` modules |
+| Accessibility / responsive | Playwright + axe-core (`npm run a11y`) | every main route in five theme/language configurations at phone, tablet and desktop sizes against a running server |
 
 No test needs network access: identity providers, syslog receivers and TLS
 endpoints are started in process on loopback.
@@ -159,6 +160,72 @@ npm test            # vitest run
 npm run coverage    # with V8 coverage and thresholds
 npm run typecheck   # vue-tsc --noEmit
 ```
+
+Accessibility helpers (`a11y.ts`: label association, typing detection,
+focus after route changes, stacked-table labels), the `useBreakpoint`
+composable (`breakpoint.ts`), the execution runner shortcuts
+(`shortcuts.ts`) and the per-theme chart colours (`src/themes/chart.ts`)
+have their own tests.
+
+### Accessibility and responsive checks
+
+`web/scripts/a11y-check.mjs` (`npm run a11y`) drives a headless Chrome
+with Playwright and runs [axe-core](https://github.com/dequelabs/axe-core)
+against a running server with the demo data. It signs in as the bootstrap
+administrator and visits the login page, projects, dashboard, requirements
+(list and with the editor open), tests, runs, a run, the execution runner,
+traceability, baselines, settings, export, search, profile and the
+administration pages:
+
+* in five configurations: light theme in English, dark theme in Swedish and
+  the decorative themes navy, crazy and green_console (the theme and
+  language are set as the admin's preferences and restored afterwards);
+* at the viewports 390×844 (phone), 820×1180 (tablet), 1024×768 (tablet
+  landscape) and 1440×900 (desktop), with touch emulation on the tablets
+  and the phone;
+* including open states: the editor drawer, the "new run" dialog, the role
+  matrix dialog and the off-canvas navigation (phone and tablet);
+* with the axe tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, and
+  asserting `document.documentElement.scrollWidth <= innerWidth` (no
+  horizontal page scroll).
+
+It then checks keyboard and focus behaviour in the light theme: the skip
+link is the first focusable element and moves focus to the page heading, a
+route change focuses the new `h1` and announces the page title, the editor
+drawer and the off-canvas navigation keep focus inside and give it back on
+close (Escape), and the execution runner's P/F/B/S shortcuts do not fire
+while typing.
+
+It exits non-zero on any serious or critical violation, any overflow or a
+failed keyboard check, and prints a summary; minor and moderate findings
+are listed but do not fail. No axe rule is disabled.
+
+```sh
+# terminal 1: a scratch directory with the demo data
+make build                    # or: (cd web && npm ci && npm run build) && CGO_ENABLED=0 go build -o bin/qtestframe ./cmd/qtestframe
+mkdir -p /tmp/a11y && cp -r examples bin /tmp/a11y && cd /tmp/a11y
+./bin/qtestframe seed-demo --config examples/qtestframe.yaml
+./bin/qtestframe serve --config examples/qtestframe.yaml
+
+# terminal 2
+cd web
+npm run a11y
+```
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `QTF_URL` | `http://127.0.0.1:8080` | server to test |
+| `QTF_EMAIL`, `QTF_PASSWORD` | `admin@example.com`, `Change-me-1234` | sign-in |
+| `QTF_CHROME` | Playwright's Chromium, else a system Chrome | browser executable |
+| `QTF_A11Y_ONLY` | all | comma-separated route names, e.g. `login,dashboard` (skips the keyboard checks) |
+| `QTF_A11Y_CONFIGS` | all | e.g. `light/en,navy/en` |
+| `QTF_A11Y_VIEWPORTS` | all | e.g. `phone,desktop` |
+| `QTF_A11Y_KEYBOARD` | – | `0` skips the keyboard checks |
+| `QTF_A11Y_SHOTS` | – | directory for a screenshot of every page, viewport and configuration |
+
+The script needs a Chrome or Chromium (`npx playwright install chromium`
+or a system browser). Each run signs in once; the login rate limit (10
+attempts) is not an issue for repeated runs.
 
 ## 8. Coverage floor
 

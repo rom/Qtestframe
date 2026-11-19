@@ -7,8 +7,8 @@ const { t } = useI18n()
 
 <template>
   <div class="empty">
-    <i class="pi pi-compass" />
-    <h2>{{ t('notFound.title') }}</h2>
-    <RouterLink :to="{ name: 'projects' }"><Button :label="t('notFound.back')" icon="pi pi-arrow-left" /></RouterLink>
+    <i class="pi pi-compass" aria-hidden="true" />
+    <h1 style="font-size: 20px">{{ t('notFound.title') }}</h1>
+    <Button as="router-link" :to="{ name: 'projects' }" :label="t('notFound.back')" icon="pi pi-arrow-left" />
   </div>
 </template>

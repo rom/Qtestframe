@@ -55,16 +55,18 @@ function confirm() {
 </script>
 
 <template>
-  <Dialog v-model:visible="visible" :header="header ?? (kind === 'requirement' ? t('picker.selectRequirements') : t('picker.selectTests'))" modal maximizable style="width: min(900px, 96vw)">
+  <Dialog v-model:visible="visible" :header="header ?? (kind === 'requirement' ? t('picker.selectRequirements') : t('picker.selectTests'))" modal maximizable :maximize-button-props="{ 'aria-label': t('common.toggleMaximize') }" style="width: min(900px, 96vw)">
     <div class="filterbar">
       <QueryInput v-model="q" :scope="kind" :error="error" @submit="load" />
       <Button :label="t('common.apply')" icon="pi pi-search" severity="secondary" @click="load" />
     </div>
     <DataTable
+      v-stack
       v-model:selection="selection"
       :value="items"
       data-key="id"
       :loading="loading"
+      :aria-busy="loading"
       scrollable
       scroll-height="50vh"
       size="small"

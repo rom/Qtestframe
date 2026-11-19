@@ -151,13 +151,15 @@ const progress = (r: TestRun) => summarize(r.summary)
   <div class="card">
     <div class="filterbar">
       <QueryInput v-model="q" scope="run" :error="queryError" :composed="composed" :placeholder="t('runs.filterPlaceholder', { example: 'environment:staging build:1.4*' })" @submit="load" />
-      <MultiSelect v-model="statuses" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('common.status')" style="min-width: 150px" show-clear @change="load" />
+      <MultiSelect v-model="statuses" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('common.status')" :aria-label="t('common.status')" style="min-width: 150px" show-clear @change="load" />
     </div>
-    <DataTable :value="runs" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(25)" row-hover sort-field="created_at" :sort-order="-1" class="clickable" @row-click="(e) => router.push({ name: 'run', params: { projectId: proj.pid, runId: (e.data as TestRun).id } })">
-      <Column field="name" :header="t('common.name')" sortable>
+    <DataTable v-stack :value="runs" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(25)" row-hover sort-field="created_at" :sort-order="-1" class="clickable" @row-click="(e) => router.push({ name: 'run', params: { projectId: proj.pid, runId: (e.data as TestRun).id } })">
+      <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
         <template #body="{ data }">
-          <div style="font-weight: 600">{{ data.name }}</div>
-          <div class="small muted ellipsis" style="max-width: 360px">{{ data.description }}</div>
+          <div style="min-width: 0">
+            <RouterLink :to="{ name: 'run', params: { projectId: proj.pid, runId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink>
+            <div class="small muted ellipsis" style="max-width: 360px">{{ data.description }}</div>
+          </div>
         </template>
       </Column>
       <Column field="status" :header="t('common.status')" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" /></template></Column>
@@ -171,23 +173,23 @@ const progress = (r: TestRun) => summarize(r.summary)
         <template #body="{ data }"><span class="small muted">{{ formatDateTime(data.created_at) }}</span></template>
       </Column>
       <Column v-if="auth.can(P.runWrite)" style="width: 60px">
-        <template #body="{ data }"><Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('common.delete')" v-tooltip="t('common.delete')" @click.stop="remove(data)" /></template>
+        <template #body="{ data }"><Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('runs.deleteNamed', { name: data.name })" v-tooltip="t('common.delete')" @click.stop="remove(data)" /></template>
       </Column>
       <template #empty><div class="empty"><i class="pi pi-play-circle" />{{ t('runs.none') }}</div></template>
     </DataTable>
   </div>
 
-  <Dialog v-model:visible="dialog" :header="t('runs.newHeader')" modal maximizable style="width: min(760px, 96vw)">
+  <Dialog v-model:visible="dialog" :header="t('runs.newHeader')" modal maximizable :maximize-button-props="{ 'aria-label': t('common.toggleMaximize') }" style="width: min(760px, 96vw)">
     <div class="grid" style="gap: 14px">
       <Message v-if="createError" severity="error" :closable="false">{{ createError }}</Message>
       <div class="form-grid">
-        <div class="field full"><label>{{ t('common.name') }}</label><InputText v-model="form.name" autofocus /></div>
-        <div class="field"><label>{{ t('common.environment') }}</label><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
-        <div class="field"><label>{{ t('common.build') }}</label><InputText v-model="form.build" :placeholder="t('runs.buildPlaceholder')" /></div>
-        <div class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>
+        <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="form.name" autofocus /></div>
+        <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
+        <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="form.build" :placeholder="t('runs.buildPlaceholder')" /></div>
+        <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>
       </div>
       <div class="section-title" style="margin: 0">{{ t('runs.include') }}</div>
-      <Tabs value="tests">
+      <Tabs value="tests" scrollable>
         <TabList>
           <Tab value="tests">{{ t('runs.tabTests', { count: pickedTests.length }) }}</Tab>
           <Tab value="folders">{{ t('runs.tabFolders', { count: selectedFolderIds.length }) }}</Tab>
@@ -202,18 +204,18 @@ const progress = (r: TestRun) => summarize(r.summary)
             <div style="max-height: 220px; overflow: auto">
               <div v-for="tc in pickedTests" :key="tc.id" class="row nowrap" style="padding: 4px 0; border-bottom: 1px solid var(--qtf-border)">
                 <span class="key">{{ tc.key }}</span><span class="grow ellipsis">{{ tc.title }}</span>
-                <Button icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.remove')" @click="pickedTests = pickedTests.filter((x) => x.id !== tc.id)" />
+                <Button icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.removeItem', { key: tc.key })" @click="pickedTests = pickedTests.filter((x) => x.id !== tc.id)" />
               </div>
               <div v-if="!pickedTests.length" class="muted small">{{ t('runs.noneSelectedTests') }}</div>
             </div>
           </TabPanel>
           <TabPanel value="folders">
             <div v-if="!testFolders.length" class="muted small">{{ t('runs.noFolders') }}</div>
-            <Tree v-else v-model:selection-keys="folderKeys" v-model:expanded-keys="folderExpanded" :value="testFolders" selection-mode="checkbox" style="max-height: 260px; overflow: auto; padding: 0; border: none" />
+            <Tree v-else v-model:selection-keys="folderKeys" v-model:expanded-keys="folderExpanded" :value="testFolders" selection-mode="checkbox" :aria-label="t('runs.tabFolders', { count: selectedFolderIds.length })" style="max-height: 260px; overflow: auto; padding: 0; border: none" />
             <div class="small muted">{{ t('runs.foldersHint') }}</div>
           </TabPanel>
           <TabPanel value="query">
-            <div class="row nowrap">
+            <div class="row">
               <QueryInput v-model="form.query" scope="test" :error="previewError" :placeholder="t('runs.queryPlaceholder', { example: 'category:Negative priority=high' })" @submit="preview" />
               <Button :label="t('runs.preview')" severity="secondary" outlined @click="preview" />
             </div>

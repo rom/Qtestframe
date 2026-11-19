@@ -11,6 +11,8 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Avatar from 'primevue/avatar'
+import ThemePicker from '@/components/ThemePicker.vue'
+import { isThemeId, type ThemeId } from '@/themes/registry'
 import { useConfirm } from 'primevue/useconfirm'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
@@ -62,7 +64,7 @@ async function saveName() {
 // ---------- preferences ----------
 function toForm(p: Preferences) {
   return {
-    theme: p.theme ?? '',
+    theme: (isThemeId(p.theme) ? p.theme : '') as ThemeId | '',
     start_page: p.start_page ?? '',
     default_project_id: p.default_project_id ?? '',
     default_tenant_id: p.default_tenant_id ?? '',
@@ -114,12 +116,6 @@ function resetPrefs() {
   langForm.value = storedLang.value
 }
 
-const themeOptions = computed(() => [
-  { label: t('profile.themeNotSet'), value: '' },
-  { label: t('profile.themeLight'), value: 'light' },
-  { label: t('profile.themeDark'), value: 'dark' },
-  { label: t('profile.themeSystem'), value: 'system' },
-])
 const startOptions = computed(() => [
   { label: t('profile.startDefault'), value: '' },
   { label: t('profile.startProjects'), value: 'projects' },
@@ -290,7 +286,7 @@ onMounted(() => {
 
 <template>
   <div class="page-header">
-    <Avatar :label="initials(auth.user?.display_name || auth.user?.email)" shape="circle" size="large" style="background: var(--p-primary-color); color: var(--p-primary-contrast-color)" />
+    <Avatar :label="initials(auth.user?.display_name || auth.user?.email)" shape="circle" size="large" aria-hidden="true" style="background: var(--p-primary-color); color: var(--p-primary-contrast-color)" />
     <div>
       <h1>{{ auth.user?.display_name || auth.user?.email }}</h1>
       <div class="sub">{{ t('profile.subtitle') }}</div>
@@ -300,11 +296,11 @@ onMounted(() => {
   <div class="profile-grid">
     <!-- account -->
     <section class="card" aria-labelledby="h-account">
-      <h3 id="h-account"><i class="pi pi-user" /> {{ t('profile.account') }}</h3>
+      <h2 id="h-account"><i class="pi pi-user" aria-hidden="true" /> {{ t('profile.account') }}</h2>
       <Message v-if="nameError" severity="error" :closable="false" style="margin-bottom: 10px">{{ nameError }}</Message>
       <div class="kv">
         <label for="dn" class="small muted">{{ t('profile.displayName') }}</label>
-        <form class="row nowrap" @submit.prevent="saveName">
+        <form class="row nowrap" style="min-width: 0" @submit.prevent="saveName">
           <InputText id="dn" v-model="displayName" class="grow" :placeholder="t('profile.yourName')" />
           <Button type="submit" :label="t('common.save')" icon="pi pi-check" size="small" :loading="savingName" :disabled="displayName.trim() === (auth.user?.display_name ?? '')" />
         </form>
@@ -319,7 +315,7 @@ onMounted(() => {
 
     <!-- memberships -->
     <section class="card" aria-labelledby="h-members">
-      <h3 id="h-members"><i class="pi pi-building" /> {{ t('profile.memberships') }}</h3>
+      <h2 id="h-members"><i class="pi pi-building" aria-hidden="true" /> {{ t('profile.memberships') }}</h2>
       <div v-if="!(auth.me?.memberships ?? []).length" class="muted">{{ t('profile.noMemberships') }}</div>
       <div v-for="m in auth.me?.memberships ?? []" :key="m.tenant_id" style="padding: 8px 0; border-bottom: 1px solid var(--qtf-border)">
         <div class="row">
@@ -338,42 +334,42 @@ onMounted(() => {
     <!-- preferences -->
     <section class="card" aria-labelledby="h-prefs" style="grid-column: 1 / -1">
       <div class="row" style="margin-bottom: 12px">
-        <h3 id="h-prefs" style="margin: 0"><i class="pi pi-sliders-h" /> {{ t('profile.preferences') }}</h3>
+        <h2 id="h-prefs" style="margin: 0"><i class="pi pi-sliders-h" aria-hidden="true" /> {{ t('profile.preferences') }}</h2>
         <span class="small muted">{{ t('profile.preferencesHint') }}</span>
       </div>
       <Message v-if="prefsError" severity="error" :closable="false" style="margin-bottom: 10px">{{ prefsError }}</Message>
       <form class="form-grid" @submit.prevent="savePrefs">
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-theme">{{ t('profile.theme') }}</label>
-          <Select v-model="pform.theme" input-id="pf-theme" :placeholder="t('profile.themeNotSet')" :options="themeOptions" option-label="label" option-value="value" />
+          <ThemePicker v-model="pform.theme" :save="false" allow-unset input-id="pf-theme" :t="t" />
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-lang">{{ t('language.label') }}</label>
           <Select v-model="langForm" input-id="pf-lang" :placeholder="t('language.browserDefault')" :options="languageOptions" option-label="label" option-value="value">
             <template #option="{ option }"><span :lang="option.value || undefined">{{ option.label }}</span></template>
           </Select>
           <span class="small muted">{{ t('profile.languageHint') }}</span>
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-start">{{ t('profile.startPage') }}</label>
           <Select v-model="pform.start_page" input-id="pf-start" :placeholder="t('profile.startDefault')" :options="startOptions" option-label="label" option-value="value" />
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-project">{{ t('profile.defaultProject') }}</label>
           <Select v-model="pform.default_project_id" input-id="pf-project" :placeholder="t('common.none')" :options="projectOptions" option-label="label" option-value="value" filter :disabled="!auth.tenant" />
-          <span v-if="projectsError" class="small" style="color: var(--p-red-500)">{{ projectsError }}</span>
+          <span v-if="projectsError" class="small error-text" role="alert">{{ projectsError }}</span>
           <span v-else class="small muted">{{ t('profile.defaultProjectHint') }}</span>
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-tenant">{{ t('profile.defaultTenant') }}</label>
           <Select v-model="pform.default_tenant_id" input-id="pf-tenant" :placeholder="t('profile.defaultTenantNone')" :options="tenantOptions" option-label="label" option-value="value" />
           <span class="small muted">{{ t('profile.defaultTenantHint') }}</span>
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-rows">{{ t('profile.rowsPerPage') }}</label>
           <Select v-model="pform.page_size" input-id="pf-rows" :options="pageSizeOptions" option-label="label" option-value="value" />
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-date">{{ t('profile.dateFormat') }}</label>
           <Select v-model="pform.date_format" input-id="pf-date" :placeholder="t('profile.dateDefault')" :options="dateOptions" option-label="label" option-value="value">
             <template #option="{ option }">
@@ -384,20 +380,20 @@ onMounted(() => {
           </Select>
           <span class="small muted">{{ t('common.example', { value: formatDateTimePref(sampleDate, pform, new Date(), getFormatLocale()) }) }}</span>
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-tz">{{ t('profile.timeZone') }}</label>
           <Select v-model="pform.timezone" input-id="pf-tz" :placeholder="tzOptions[0].label" :options="tzOptions" option-label="label" option-value="value" filter :filter-placeholder="t('profile.searchZones')" :virtual-scroller-options="{ itemSize: 38 }" />
         </div>
-        <div class="field">
+        <div v-field class="field">
           <label for="pf-linked">{{ t('profile.linkedTest') }}</label>
           <Select v-model="pform.create_linked_test" input-id="pf-linked" :placeholder="t('profile.serverDefault')" :options="linkedTestOptions" option-label="label" option-value="value" />
         </div>
-        <div class="field">
-          <label>{{ t('profile.tables') }}</label>
+        <div v-field class="field" role="group" aria-labelledby="pf-tables-l">
+          <span id="pf-tables-l" class="field-label">{{ t('profile.tables') }}</span>
           <label class="row nowrap small" for="pf-compact"><ToggleSwitch v-model="pform.compact_tables" input-id="pf-compact" /> {{ t('profile.compactTables') }}</label>
         </div>
-        <div class="field">
-          <label>{{ t('profile.requirementEditor') }}</label>
+        <div v-field class="field" role="group" aria-labelledby="pf-editor-l">
+          <span id="pf-editor-l" class="field-label">{{ t('profile.requirementEditor') }}</span>
           <label class="row nowrap small" for="pf-analysis"><ToggleSwitch v-model="pform.hide_analysis" input-id="pf-analysis" /> {{ t('profile.hideAnalysis') }}</label>
         </div>
         <div class="full row" style="justify-content: flex-end">
@@ -410,17 +406,17 @@ onMounted(() => {
 
     <!-- security -->
     <section class="card" aria-labelledby="h-security" style="grid-column: 1 / -1">
-      <h3 id="h-security"><i class="pi pi-lock" /> {{ t('profile.security') }}</h3>
-      <div class="charts" style="grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); align-items: start">
+      <h2 id="h-security"><i class="pi pi-lock" aria-hidden="true" /> {{ t('profile.security') }}</h2>
+      <div class="security-grid">
         <div>
           <div class="section-title" style="margin-top: 0">{{ t('profile.password') }}</div>
           <Message v-if="!isLocal" severity="info" :closable="false">{{ t('profile.managedByIdp', { provider: auth.user?.auth_provider ?? '' }) }}</Message>
           <template v-else>
-            <Message v-if="pwError" severity="error" :closable="false" style="margin-bottom: 12px">{{ pwError }}</Message>
+            <Message v-if="pwError" id="pw-error" severity="error" :closable="false" style="margin-bottom: 12px">{{ pwError }}</Message>
             <form class="grid" style="gap: 12px" @submit.prevent="changePassword">
-              <div class="field"><label for="pw-cur">{{ t('profile.currentPassword') }}</label><Password v-model="current" input-id="pw-cur" :feedback="false" toggle-mask fluid autocomplete="current-password" /></div>
-              <div class="field"><label for="pw-new">{{ t('profile.newPassword') }}</label><Password v-model="next" input-id="pw-new" toggle-mask fluid autocomplete="new-password" /></div>
-              <div class="field"><label for="pw-rep">{{ t('profile.repeatPassword') }}</label><Password v-model="repeat" input-id="pw-rep" :feedback="false" toggle-mask fluid autocomplete="new-password" /></div>
+              <div v-field class="field"><label for="pw-cur">{{ t('profile.currentPassword') }}</label><Password v-model="current" input-id="pw-cur" :feedback="false" toggle-mask fluid autocomplete="current-password" required /></div>
+              <div v-field class="field"><label for="pw-new">{{ t('profile.newPassword') }}</label><Password v-model="next" input-id="pw-new" toggle-mask fluid autocomplete="new-password" required :invalid="!!pwError" :input-props="{ 'aria-describedby': pwError ? 'pw-error' : undefined }" /></div>
+              <div v-field class="field"><label for="pw-rep">{{ t('profile.repeatPassword') }}</label><Password v-model="repeat" input-id="pw-rep" :feedback="false" toggle-mask fluid autocomplete="new-password" :invalid="pwError === t('profile.passwordsDiffer')" :input-props="{ 'aria-describedby': pwError ? 'pw-error' : undefined }" /></div>
               <div><Button type="submit" :label="t('profile.changePassword')" icon="pi pi-lock" :loading="pwBusy" :disabled="!current || !next" /></div>
             </form>
           </template>
@@ -440,7 +436,7 @@ onMounted(() => {
             <Button :label="t('profile.signOutOthers')" icon="pi pi-sign-out" size="small" severity="danger" outlined :disabled="!others" :loading="revokingOthers" @click="revokeOthers" />
           </div>
           <Message v-if="sessionsError" severity="error" :closable="false">{{ t('profile.sessionsUnavailable', { error: sessionsError }) }}</Message>
-          <DataTable v-else :value="sessionRows" data-key="id" :loading="sessionsLoading" size="small" scrollable>
+          <DataTable v-else v-stack :value="sessionRows" data-key="id" :loading="sessionsLoading" size="small" scrollable :aria-busy="sessionsLoading">
             <Column :header="t('profile.device')" style="min-width: 220px">
               <template #body="{ data }">
                 <div class="row nowrap">

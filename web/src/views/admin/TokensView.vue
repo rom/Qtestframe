@@ -95,8 +95,8 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
       <span class="grow" />
       <Button :label="t('admin.newToken')" icon="pi pi-plus" @click="openCreate" />
     </div>
-    <DataTable :value="tokens" data-key="id" :loading="loading" sort-field="created_at" :sort-order="-1">
-      <Column field="name" :header="t('common.name')" sortable />
+    <DataTable v-stack :value="tokens" data-key="id" :loading="loading" :aria-busy="loading" sort-field="created_at" :sort-order="-1">
+      <Column field="name" :header="t('common.name')" sortable body-class="stack-main" />
       <Column field="prefix" :header="t('admin.token')" style="width: 160px"><template #body="{ data }"><span class="mono">{{ data.prefix }}…</span></template></Column>
       <Column field="role" :header="t('common.role')" sortable style="width: 140px"><template #body="{ data }"><Tag :value="enumLabel('role', data.role)" severity="secondary" /></template></Column>
       <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
@@ -110,7 +110,7 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
       <Column field="last_used" :header="t('admin.lastUsed')" sortable style="width: 170px">
         <template #body="{ data }"><span :title="formatDateTime(data.last_used)">{{ relativeTime(data.last_used) || t('common.never') }}</span></template>
       </Column>
-      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('admin.revoke')" v-tooltip="t('admin.revoke')" @click="revoke(data)" /></template></Column>
+      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('admin.revokeNamed', { name: data.name })" v-tooltip="t('admin.revoke')" @click="revoke(data)" /></template></Column>
       <template #empty><div class="empty"><i class="pi pi-key" />{{ t('admin.noTokens') }}</div></template>
     </DataTable>
   </div>
@@ -126,13 +126,13 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
     </div>
     <form v-else class="grid" style="gap: 12px" @submit.prevent="create">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tokenNamePlaceholder')" autofocus required /></div>
-      <div class="field">
+      <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tokenNamePlaceholder')" autofocus required /></div>
+      <div v-field class="field">
         <label>{{ t('common.role') }}</label>
         <Select v-model="form.role" :options="roles" option-label="label" option-value="value" />
         <small class="muted">{{ t('admin.tokenRoleHint') }}</small>
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('admin.expiresAfter') }}</label>
         <InputNumber v-model="form.expires_days" :min="1" :max="3650" show-buttons fluid />
       </div>

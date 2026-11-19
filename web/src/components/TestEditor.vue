@@ -25,6 +25,7 @@ import { api, asItems, errorMessage } from '@/lib/api'
 import { moveItem } from '@/lib/collections'
 import { formatDateTime } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
+import { uid as newId } from '@/lib/a11y'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Category, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
@@ -44,6 +45,11 @@ const emit = defineEmits<{ saved: [item: TestCase]; deleted: [id: string]; copie
 const meta = useMetaStore()
 const notify = useNotify()
 const { t } = useI18n()
+const tabsId = newId('test-tabs')
+/** tab panel attributes for the content of a tab (only when the tabs are shown) */
+function panel(value: string) {
+  return item.value ? { role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` } : {}
+}
 const statusOptions = computed(() => enumOptions('status', meta.meta.test_statuses))
 const priorityOptions = computed(() => enumOptions('priority', meta.meta.priorities))
 const languageOptions = computed(() => enumOptions('scriptLanguage', meta.meta.script_languages))
@@ -296,20 +302,20 @@ const scriptPlaceholder = computed(() => {
 </script>
 
 <template>
-  <div v-if="loading" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
+  <div v-if="loading" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
-  <Tabs v-if="item" v-model:value="tab" class="editor-tabs">
+  <Tabs v-if="item" :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>
     <TabList>
-      <Tab value="details"><i class="pi pi-file-edit" /> {{ t('common.details') }}</Tab>
-      <Tab value="executions"><i class="pi pi-play-circle" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
-      <Tab value="comments"><i class="pi pi-comments" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
-      <Tab value="history"><i class="pi pi-history" /> {{ t('common.history') }}</Tab>
+      <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
+      <Tab value="executions"><i class="pi pi-play-circle" aria-hidden="true" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
-  <TestExecutionsPanel v-if="item && tab === 'executions'" :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" />
-  <CommentsPanel v-if="item && tab === 'comments'" entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" />
+  <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
+  <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
+  <div v-if="item && tab === 'history'" v-bind="panel('history')">
   <HistoryPanel
-    v-if="item && tab === 'history'"
     entity="test"
     :entity-id="item.id"
     :can-restore="canWrite"
@@ -317,7 +323,8 @@ const scriptPlaceholder = computed(() => {
     :resolve="resolveId"
     @restored="onRestored"
   />
-  <form v-show="!item || tab === 'details'" class="grid" style="gap: 14px" @submit.prevent="save">
+  </div>
+  <form v-show="!item || tab === 'details'" v-bind="panel('details')" class="grid" style="gap: 14px" @submit.prevent="save">
     <div class="row">
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item?.version" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
@@ -326,45 +333,45 @@ const scriptPlaceholder = computed(() => {
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 
-    <div class="field">
+    <div v-field class="field">
       <label>{{ t('common.title') }}</label>
       <InputText v-model="form.title" required autofocus :disabled="!canWrite" />
     </div>
     <div class="row">
-      <SelectButton v-model="form.execution_type" :options="execOptions" option-label="label" option-value="value" :allow-empty="false" :disabled="!canWrite">
+      <SelectButton v-model="form.execution_type" :options="execOptions" option-label="label" option-value="value" :allow-empty="false" :disabled="!canWrite" :aria-label="t('tests.executionType')">
         <template #option="{ option }"><i :class="option.icon" /> {{ option.label }}</template>
       </SelectButton>
     </div>
     <div class="form-grid">
-      <div class="field full">
+      <div v-field class="field full">
         <label>{{ t('common.description') }}</label>
         <Textarea v-model="form.description" rows="2" auto-resize :disabled="!canWrite" />
       </div>
-      <div class="field full">
+      <div v-field class="field full">
         <label>{{ t('tests.preconditions') }}</label>
         <Textarea v-model="form.preconditions" rows="2" auto-resize :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.status') }}</label>
         <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.priority') }}</label>
         <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('tests.estimate') }}</label>
         <InputNumber v-model="form.estimated_minutes" :min="0" show-buttons :disabled="!canWrite" fluid />
       </div>
-      <div class="field">
+      <div v-field class="field">
         <label>{{ t('common.folder') }}</label>
         <Select v-model="form.folder_id" :options="folderOptions" option-label="label" option-value="id" filter :disabled="!canWrite" />
       </div>
-      <div class="field full">
+      <div v-field class="field full">
         <label>{{ t('common.categories') }}</label>
         <CategorySelect v-model="form.category_ids" :categories="categories" :disabled="!canWrite" />
       </div>
-      <div class="field full">
+      <div v-field class="field full">
         <label>{{ t('common.tags') }}</label>
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
       </div>
@@ -376,7 +383,7 @@ const scriptPlaceholder = computed(() => {
         <Select v-model="form.script_language" :options="languageOptions" option-label="label" option-value="value" :disabled="!canWrite" style="width: 160px" :aria-label="t('fields.script_language')" />
         <span class="small muted">{{ t('tests.scriptHint') }}</span>
       </div>
-      <Textarea v-model="form.script" class="code-input w-full" rows="12" :placeholder="scriptPlaceholder" spellcheck="false" :disabled="!canWrite" style="font-family: var(--qtf-mono)" />
+      <Textarea v-model="form.script" class="code-input w-full" rows="12" :placeholder="scriptPlaceholder" :aria-label="t('tests.script')" spellcheck="false" :disabled="!canWrite" style="font-family: var(--qtf-mono)" />
     </template>
 
     <div>
@@ -386,11 +393,11 @@ const scriptPlaceholder = computed(() => {
         <Button v-if="canWrite" size="small" :label="t('tests.insertCall')" icon="pi pi-directions" text v-tooltip.bottom="t('tests.insertCallHint')" @click="openCallPicker()" />
         <Button v-if="canWrite" size="small" :label="t('tests.addStep')" icon="pi pi-plus" text @click="addStep()" />
       </div>
-      <DataTable v-if="form.steps.length" :value="form.steps" data-key="uid" size="small" :reorderable-rows="canWrite" @row-reorder="onReorder">
+      <DataTable v-if="form.steps.length" v-stack :value="form.steps" data-key="uid" size="small" :reorderable-rows="canWrite" class="steps-table" @row-reorder="onReorder">
         <Column v-if="canWrite" row-reorder style="width: 2rem" />
         <Column header="#" style="width: 2.5rem"><template #body="{ index }"><b>{{ index + 1 }}</b></template></Column>
         <Column :header="t('tests.action')" style="width: 40%">
-          <template #body="{ data }">
+          <template #body="{ data, index }">
             <div v-if="data.call_test_id" class="call-step" :title="t('tests.callsHint', { test: data.call_test_key || t('tests.calledTest') })">
               <i class="pi pi-directions" style="color: var(--p-primary-color)" />
               <span>
@@ -399,25 +406,25 @@ const scriptPlaceholder = computed(() => {
                 <template v-if="data.call_test_title"> – {{ data.call_test_title }}</template>
               </span>
             </div>
-            <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.actionPlaceholder')" />
+            <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.actionPlaceholder')" :aria-label="t('tests.stepActionN', { n: index + 1 })" />
           </template>
         </Column>
         <Column :header="t('tests.expectedResult')" style="width: 32%">
-          <template #body="{ data }">
+          <template #body="{ data, index }">
             <span v-if="data.call_test_id" class="small muted">{{ t('tests.calledExpected') }}</span>
-            <Textarea v-else v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.expectedPlaceholder')" />
+            <Textarea v-else v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.expectedPlaceholder')" :aria-label="t('tests.stepExpectedN', { n: index + 1 })" />
           </template>
         </Column>
         <Column :header="t('tests.data')" style="width: 22%">
-          <template #body="{ data }"><Textarea v-if="!data.call_test_id" v-model="data.data" rows="1" auto-resize class="w-full mono" :disabled="!canWrite" /></template>
+          <template #body="{ data, index }"><Textarea v-if="!data.call_test_id" v-model="data.data" rows="1" auto-resize class="w-full mono" :disabled="!canWrite" :aria-label="t('tests.stepDataN', { n: index + 1 })" /></template>
         </Column>
         <Column v-if="canWrite" style="width: 7.5rem">
           <template #body="{ index }">
             <div class="row nowrap" style="gap: 0">
-              <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="index === 0" :aria-label="t('common.moveUp')" v-tooltip="t('common.moveUp')" @click="moveStep(index, -1)" />
-              <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="index === form.steps.length - 1" :aria-label="t('common.moveDown')" v-tooltip="t('common.moveDown')" @click="moveStep(index, 1)" />
-              <Button icon="pi pi-plus" text rounded size="small" severity="secondary" :aria-label="t('common.insertBelow')" v-tooltip="t('common.insertBelow')" @click="addStep(index)" />
-              <Button icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('common.remove')" v-tooltip="t('common.remove')" @click="removeStep(index)" />
+              <Button icon="pi pi-arrow-up" text rounded size="small" severity="secondary" :disabled="index === 0" :aria-label="t('tests.moveStepUp', { n: index + 1 })" v-tooltip="t('common.moveUp')" @click="moveStep(index, -1)" />
+              <Button icon="pi pi-arrow-down" text rounded size="small" severity="secondary" :disabled="index === form.steps.length - 1" :aria-label="t('tests.moveStepDown', { n: index + 1 })" v-tooltip="t('common.moveDown')" @click="moveStep(index, 1)" />
+              <Button icon="pi pi-plus" text rounded size="small" severity="secondary" :aria-label="t('tests.insertStepBelow', { n: index + 1 })" v-tooltip="t('common.insertBelow')" @click="addStep(index)" />
+              <Button icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('tests.removeStep', { n: index + 1 })" v-tooltip="t('common.remove')" @click="removeStep(index)" />
             </div>
           </template>
         </Column>
@@ -432,7 +439,7 @@ const scriptPlaceholder = computed(() => {
       </div>
     </div>
 
-    <div class="field">
+    <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>
       <Textarea v-model="form.expected_result" rows="2" auto-resize :disabled="!canWrite" />
     </div>
@@ -448,11 +455,11 @@ const scriptPlaceholder = computed(() => {
         <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" class="key">{{ l.requirement_key || reqById.get(l.requirement_id)?.key }}</RouterLink>
         <span class="grow ellipsis">{{ reqById.get(l.requirement_id)?.title }}</span>
         <StatusTag :value="reqById.get(l.requirement_id)?.obligation" kind="obligation" empty="" />
-        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlink')" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
+        <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.requirement_key || reqById.get(l.requirement_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
     </div>
 
-    <div class="row" style="justify-content: flex-end; position: sticky; bottom: -1px; background: var(--p-drawer-background, var(--qtf-card)); padding: 10px 0; border-top: 1px solid var(--qtf-border)">
+    <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <Button v-if="item && canWrite" :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
       <span v-else style="margin-right: auto" />

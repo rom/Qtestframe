@@ -24,8 +24,8 @@ const tabs = computed(() =>
       <div class="sub">{{ auth.tenant?.name ?? t('admin.noTenant') }}</div>
     </div>
   </div>
-  <nav class="tabs-nav">
-    <RouterLink v-for="t in tabs" :key="t.to" :to="{ name: t.to }"><i :class="t.icon" />{{ t.label }}</RouterLink>
+  <nav class="tabs-nav" :aria-label="t('admin.sections')">
+    <RouterLink v-for="tab in tabs" :key="tab.to" :to="{ name: tab.to }"><i :class="tab.icon" aria-hidden="true" />{{ tab.label }}</RouterLink>
   </nav>
   <RouterView />
 </template>

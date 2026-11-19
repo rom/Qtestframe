@@ -96,7 +96,7 @@ function restore() {
 
 <template>
   <Message v-if="error" severity="error" :closable="false">{{ t('history.unavailable', { error }) }}</Message>
-  <div v-else-if="loading && !revisions.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" /></div>
+  <div v-else-if="loading && !revisions.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" :aria-label="t('common.loading')" /></div>
   <div v-else-if="!revisions.length" class="muted small">{{ t('history.none') }}</div>
   <div v-else class="history">
     <div class="rev-list" role="listbox" :aria-label="t('history.revisions')">
@@ -134,7 +134,7 @@ function restore() {
       <div class="small muted">{{ previous ? t('history.comparedWith', { version: previous.version }) : t('history.initial') }}</div>
       <div v-if="!changes.length" class="muted small">{{ t('history.noChanges') }}</div>
       <div v-for="c in changes" :key="c.field" class="field">
-        <label>{{ fieldLabel(c.field) }}</label>
+        <span class="field-label">{{ fieldLabel(c.field) }}</span>
         <div v-if="c.segments" class="diff">
           <template v-for="(s, i) in c.segments" :key="i">
             <ins v-if="s.op === 'insert'">{{ s.text }}</ins>

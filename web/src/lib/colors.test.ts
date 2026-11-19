@@ -49,6 +49,13 @@ describe('colours', () => {
     expect(readableTextColor('#ffffff')).toBe('#111827')
     expect(readableTextColor('#000')).toBe('#ffffff')
     expect(readableTextColor('bogus')).toBe('#ffffff')
+    // mid-tones pick the colour with the better WCAG contrast
+    expect(readableTextColor('#ef4444')).toBe('#111827')
+    expect(readableTextColor('#4f46e5')).toBe('#ffffff')
+    expect(readableTextColor('#2563eb')).toBe('#ffffff')
+    expect(readableTextColor('#e0484d')).toBe('#000000')
+    expect(readableTextColor('#8b5cf6')).toBe('#000000')
+    expect(readableTextColor('#767676')).toBe('#ffffff')
   })
   it('defaultCategoryColor is stable', () => {
     expect(defaultCategoryColor('Polarity')).toBe(defaultCategoryColor('Polarity'))

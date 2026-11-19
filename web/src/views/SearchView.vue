@@ -102,35 +102,38 @@ const terms = computed(() => queryTerms(q.value))
   <div class="card" style="margin-bottom: 16px">
     <div class="filterbar" style="margin: 0">
       <QueryInput v-model="q" scope="requirement" :error="error" :placeholder="t('search.placeholder', { example: '&quot;time out&quot; title~/login/i status:approved' })" @submit="submit" />
-      <Select v-model="projectId" :options="projects" option-value="id" :option-label="(p: Project) => `${p.key} · ${p.name}`" :placeholder="t('search.allProjects')" show-clear style="min-width: 180px" />
-      <span v-for="(m, t) in typeMeta" :key="t" class="row nowrap">
-        <Checkbox v-model="types" :input-id="'t-' + t" :value="t" />
-        <label :for="'t-' + t">{{ m.label }}</label>
-      </span>
+      <Select v-model="projectId" :options="projects" option-value="id" :option-label="(p: Project) => `${p.key} · ${p.name}`" :placeholder="t('search.allProjects')" :aria-label="t('search.project')" show-clear style="min-width: 180px" />
+      <fieldset class="row nowrap plain-fieldset">
+        <legend class="sr-only">{{ t('search.types') }}</legend>
+        <span v-for="(m, typ) in typeMeta" :key="typ" class="row nowrap">
+          <Checkbox v-model="types" :input-id="'t-' + typ" :value="typ" />
+          <label :for="'t-' + typ">{{ m.label }}</label>
+        </span>
+      </fieldset>
       <Button :label="t('common.search')" icon="pi pi-search" @click="submit" />
     </div>
   </div>
-  <div v-if="loading" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
+  <div v-if="loading" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else-if="searched">
-    <div class="small muted" style="margin-bottom: 8px">{{ t('counts.results', total) }}</div>
+    <div class="small muted" style="margin-bottom: 8px" role="status">{{ t('counts.results', total) }}</div>
     <div v-if="!hits.length" class="card empty"><i class="pi pi-search" />{{ t('search.nothingFound') }}</div>
-    <div v-for="g in groups" :key="g.key" class="card" style="margin-bottom: 16px">
-      <h3><i :class="typeMeta[g.key]?.icon ?? 'pi pi-file'" /> {{ typeMeta[g.key]?.label ?? enumLabel('searchType', g.key) }} <span class="muted">({{ g.items.length }})</span></h3>
-      <RouterLink v-for="h in g.items" :key="h.id" :to="link(h)" style="display: block; padding: 10px 0; border-top: 1px solid var(--qtf-border); color: inherit; text-decoration: none">
+    <section v-for="g in groups" :key="g.key" class="card" style="margin-bottom: 16px" :aria-labelledby="'sg-' + g.key">
+      <h2 :id="'sg-' + g.key"><i :class="typeMeta[g.key]?.icon ?? 'pi pi-file'" aria-hidden="true" /> {{ typeMeta[g.key]?.label ?? enumLabel('searchType', g.key) }} <span class="muted">({{ g.items.length }})</span></h2>
+      <RouterLink v-for="h in g.items" :key="h.id" :to="link(h)" class="search-hit">
         <div class="row nowrap">
           <Tag :value="h.project_key" severity="secondary" />
           <span class="key">{{ h.key }}</span>
-          <b class="ellipsis">{{ h.title }}</b>
+          <b class="ellipsis" style="min-width: 0">{{ h.title }}</b>
         </div>
-        <div v-if="h.snippet" class="small" style="margin-top: 4px; color: var(--qtf-muted)">
-          <template v-for="(p, i) in splitByTerms(h.snippet, terms)" :key="i"><mark v-if="p.mark" style="background: rgba(250, 204, 21, 0.35); color: inherit; border-radius: 3px">{{ p.text }}</mark><template v-else>{{ p.text }}</template></template>
+        <div v-if="h.snippet" class="small muted" style="margin-top: 4px">
+          <template v-for="(p, i) in splitByTerms(h.snippet, terms)" :key="i"><mark v-if="p.mark" class="hit">{{ p.text }}</mark><template v-else>{{ p.text }}</template></template>
         </div>
         <div v-if="h.matched_fields?.length" class="row" style="gap: 4px; margin-top: 4px">
           <span class="small muted">{{ t('search.matched') }}</span>
           <span v-for="f in h.matched_fields" :key="f" class="tag-chip" style="font-size: 11px; padding: 0 6px">{{ f }}</span>
         </div>
       </RouterLink>
-    </div>
+    </section>
   </template>
   <div v-else class="card empty"><i class="pi pi-search" />{{ t('search.prompt') }}</div>
 </template>

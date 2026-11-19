@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import Tree from 'primevue/tree'
 import ContextMenu from 'primevue/contextmenu'
+import Menu from 'primevue/menu'
+import FolderPickerDialog from './FolderPickerDialog.vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -9,14 +11,14 @@ import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Message from 'primevue/message'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { allKeys, ancestorKeys, buildTree, canMoveFolder, folderPath, type FolderNode } from '@/lib/tree'
+import { allKeys, ancestorKeys, buildTree, canMoveFolder, descendantIds, folderPath, type FolderNode } from '@/lib/tree'
 import type { Folder, ItemKind, Project } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
 import { decodeIds, FOLDER_MIME, ITEMS_MIME } from '@/lib/dnd'
 import { useI18n } from 'vue-i18n'
 
 
-const props = defineProps<{ kind: ItemKind; projectId: string; folders: Folder[]; canWrite: boolean }>()
+const props = defineProps<{ kind: ItemKind; projectId: string; folders: Folder[]; canWrite: boolean; hideTitle?: boolean }>()
 const selected = defineModel<string | null>('selected', { default: null })
 const emit = defineEmits<{ changed: []; dropItems: [ids: string[], folderId: string | null] }>()
 const notify = useNotify()
@@ -78,6 +80,18 @@ function onDragOver(e: DragEvent, target: string | null) {
 function onDragLeave(target: string | null) {
   if (dropTarget.value === target) dropTarget.value = undefined
 }
+async function moveFolder(fid: string, target: string | null) {
+  if (!canMoveFolder(props.folders, fid, target)) return
+  try {
+    await api.post(`/folders/${fid}/move`, { parent_id: target })
+    if (target) expanded.value[target] = true
+    notify.ok(t('folders.moved'))
+    emit('changed')
+  } catch (err) {
+    notify.fail(err, t('folders.moveFailed'))
+  }
+}
+
 async function onDrop(e: DragEvent, target: string | null) {
   e.preventDefault()
   dropTarget.value = undefined
@@ -90,15 +104,24 @@ async function onDrop(e: DragEvent, target: string | null) {
   }
   const fid = dt.getData(FOLDER_MIME) || dragFolder.value
   dragFolder.value = null
-  if (!fid || !canMoveFolder(props.folders, fid, target)) return
-  try {
-    await api.post(`/folders/${fid}/move`, { parent_id: target })
-    if (target) expanded.value[target] = true
-    notify.ok(t('folders.moved'))
-    emit('changed')
-  } catch (err) {
-    notify.fail(err, t('folders.moveFailed'))
-  }
+  if (fid) await moveFolder(fid, target)
+}
+
+// keyboard alternative to dragging a folder: "Move to folder…" picks the new parent
+const moveFolderDialog = ref(false)
+const movingFolder = ref<Folder | null>(null)
+const moveTargets = computed(() => {
+  const f = movingFolder.value
+  if (!f) return props.folders
+  const skip = descendantIds(props.folders, f.id)
+  return props.folders.filter((x) => x.id !== f.id && !skip.has(x.id))
+})
+function openMoveFolder(f: Folder) {
+  movingFolder.value = f
+  moveFolderDialog.value = true
+}
+function onPickParent(target: string | null) {
+  if (movingFolder.value) void moveFolder(movingFolder.value.id, target)
 }
 
 // ---------- context menu & dialogs ----------
@@ -107,6 +130,7 @@ const ctxNode = ref<FolderNode | null>(null)
 const menuItems = computed(() => [
   { label: t('folders.newSubfolder'), icon: 'pi pi-folder-plus', command: () => openCreate(ctxNode.value?.key ?? null), disabled: !props.canWrite },
   { label: t('folders.rename'), icon: 'pi pi-pencil', command: () => ctxNode.value && openRename(ctxNode.value.data), disabled: !props.canWrite },
+  { label: t('folders.moveToFolder'), icon: 'pi pi-folder-open', command: () => ctxNode.value && openMoveFolder(ctxNode.value.data), disabled: !props.canWrite },
   { label: t('folders.moveToProject'), icon: 'pi pi-send', command: () => ctxNode.value && openMoveProject(ctxNode.value.data), disabled: !props.canWrite },
   { label: t('folders.moveToTop'), icon: 'pi pi-arrow-up', command: () => ctxNode.value && moveToRoot(ctxNode.value.data), disabled: !props.canWrite || !ctxNode.value?.data.parent_id },
   { separator: true },
@@ -118,6 +142,21 @@ const menuItems = computed(() => [
 function onContext(e: MouseEvent, node: FolderNode) {
   ctxNode.value = node
   menu.value?.show(e)
+}
+/** the same actions from a button, for keyboard and touch users */
+const actionsMenu = ref<InstanceType<typeof Menu>>()
+function findNode(list: FolderNode[], key: string): FolderNode | null {
+  for (const n of list) {
+    if (n.key === key) return n
+    const c = findNode((n.children ?? []) as FolderNode[], key)
+    if (c) return c
+  }
+  return null
+}
+const selectedNode = computed(() => (selected.value ? findNode(nodes.value, selected.value) : null))
+function openActions(e: Event) {
+  ctxNode.value = selectedNode.value
+  actionsMenu.value?.toggle(e)
 }
 
 const nameDialog = ref(false)
@@ -231,23 +270,38 @@ defineExpose({ openCreate })
 <template>
   <div>
     <div class="row nowrap" style="justify-content: space-between; margin-bottom: 6px">
-      <span class="section-title" style="margin: 4px 0">{{ t('folders.title') }}</span>
+      <h2 v-if="!hideTitle" class="section-title" style="margin: 4px 0">{{ t('folders.title') }}</h2>
+      <span v-else />
       <span class="row nowrap">
+        <Button
+          v-if="selectedNode && canWrite"
+          icon="pi pi-ellipsis-v"
+          text
+          rounded
+          size="small"
+          severity="secondary"
+          aria-haspopup="menu"
+          v-tooltip="t('folders.actions', { name: selectedNode.label })"
+          :aria-label="t('folders.actions', { name: selectedNode.label })"
+          @click="openActions"
+        />
         <Button icon="pi pi-plus" text rounded size="small" severity="secondary" v-tooltip="t('folders.expandAll')" :aria-label="t('folders.expandAll')" @click="expanded = allKeys(nodes)" />
         <Button icon="pi pi-minus" text rounded size="small" severity="secondary" v-tooltip="t('folders.collapseAll')" :aria-label="t('folders.collapseAll')" @click="expanded = {}" />
         <Button v-if="canWrite" icon="pi pi-folder-plus" text rounded size="small" v-tooltip="t('folders.newFolder')" :aria-label="t('folders.newFolder')" @click="openCreate(selected)" />
       </span>
     </div>
-    <div
+    <button
+      type="button"
       class="tree-root"
       :class="{ active: !selected, 'drop-target': dropTarget === null }"
+      :aria-pressed="!selected"
       @click="selected = null"
       @dragover="onDragOver($event, null)"
       @dragleave="onDragLeave(null)"
       @drop="onDrop($event, null)"
     >
-      <i class="pi pi-inbox" /> {{ kind === 'requirement' ? t('workspace.allRequirements') : t('workspace.allTests') }}
-    </div>
+      <i class="pi pi-inbox" aria-hidden="true" /> {{ kind === 'requirement' ? t('workspace.allRequirements') : t('workspace.allTests') }}
+    </button>
     <Tree
       v-model:expanded-keys="expanded"
       :selection-keys="selectionKeys"
@@ -255,6 +309,7 @@ defineExpose({ openCreate })
       selection-mode="single"
       :meta-key-selection="false"
       class="w-full"
+      :aria-label="t('folders.title')"
       style="padding: 0; background: transparent; border: none"
       @node-select="onSelect"
     >
@@ -280,8 +335,10 @@ defineExpose({ openCreate })
         <i18n-t keypath="folders.createHint" tag="span"><template #icon><i class="pi pi-folder-plus" /></template></i18n-t>
       </template>
     </div>
-    <div v-if="canWrite" class="muted small" style="padding: 8px 10px">{{ t('folders.dragHint') }}</div>
+    <div v-if="canWrite" class="muted small" style="padding: 8px 10px">{{ t('folders.dragHint') }} {{ t('folders.keyboardHint') }}</div>
     <ContextMenu ref="menu" :model="menuItems" />
+    <Menu ref="actionsMenu" :model="menuItems" popup />
+    <FolderPickerDialog v-model:visible="moveFolderDialog" :folders="moveTargets" :header="t('folders.moveFolderTo', { name: movingFolder?.name ?? '' })" @pick="onPickParent" />
 
     <Dialog v-model:visible="nameDialog" :header="nameMode === 'create' ? t('folders.newFolder') : t('folders.renameFolder')" modal style="width: min(440px, 95vw)">
       <form class="grid" style="gap: 12px" @submit.prevent="saveName">
@@ -289,8 +346,8 @@ defineExpose({ openCreate })
         <div v-if="nameMode === 'create'" class="small muted">
           {{ t('folders.parent', { path: nameForm.parent ? folderPath(folders, nameForm.parent) : t('folders.topLevel') }) }}
         </div>
-        <div class="field"><label>{{ t('common.name') }}</label><InputText v-model="nameForm.name" autofocus required /></div>
-        <div class="field"><label>{{ t('common.description') }}</label><Textarea v-model="nameForm.description" rows="2" auto-resize /></div>
+        <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="nameForm.name" autofocus required /></div>
+        <div v-field class="field"><label>{{ t('common.description') }}</label><Textarea v-model="nameForm.description" rows="2" auto-resize /></div>
         <div class="row" style="justify-content: flex-end">
           <Button :label="t('common.cancel')" text severity="secondary" @click="nameDialog = false" />
           <Button type="submit" :label="t('common.save')" icon="pi pi-check" :loading="busy" :disabled="!nameForm.name.trim()" />
@@ -318,6 +375,7 @@ defineExpose({ openCreate })
           option-value="id"
           :option-label="(p: Project) => `${p.key} · ${p.name}`"
           :placeholder="t('folders.targetProject')"
+          :aria-label="t('folders.targetProject')"
           filter
           class="w-full"
         />

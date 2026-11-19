@@ -117,8 +117,8 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
       <Button v-if="rbac" :label="t('admin.roleMatrix')" icon="pi pi-table" severity="secondary" text @click="showMatrix = true" />
       <Button v-if="canManage" :label="t('admin.addMember')" icon="pi pi-user-plus" @click="openAdd" />
     </div>
-    <DataTable :value="filtered" data-key="user_id" :loading="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
-      <Column field="email" :header="t('common.email')" sortable />
+    <DataTable v-stack :value="filtered" data-key="user_id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
+      <Column field="email" :header="t('common.email')" sortable body-class="stack-main" />
       <Column field="display_name" :header="t('common.name')" sortable />
       <Column field="role" :header="t('common.role')" sortable style="width: 200px">
         <template #body="{ data }">
@@ -130,7 +130,7 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
             option-value="value"
             size="small"
             class="w-full"
-            :aria-label="t('common.role')"
+            :aria-label="t('admin.roleOf', { user: data.email })"
             @update:model-value="(r: string) => setRole(data, r)"
           />
           <Tag v-else :value="enumLabel('role', data.role)" severity="secondary" />
@@ -139,7 +139,7 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
       <Column field="created_at" :header="t('admin.memberSince')" sortable style="width: 150px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column v-if="canManage" style="width: 60px">
         <template #body="{ data }">
-          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('common.remove')" v-tooltip="t('common.remove')" @click="remove(data)" />
+          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('admin.removeMember', { user: data.email })" v-tooltip="t('common.remove')" @click="remove(data)" />
         </template>
       </Column>
     </DataTable>
@@ -148,10 +148,10 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
   <Dialog v-model:visible="dialog" :header="t('admin.addMember')" modal style="width: min(460px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="add">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
-      <div class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" required autofocus /></div>
-      <div class="field"><label>{{ t('common.role') }}</label><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
-      <div class="field"><label>{{ t('admin.displayNameNew') }}</label><InputText v-model="form.display_name" /></div>
-      <div class="field">
+      <div v-field class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" required autofocus /></div>
+      <div v-field class="field"><label>{{ t('common.role') }}</label><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
+      <div v-field class="field"><label>{{ t('admin.displayNameNew') }}</label><InputText v-model="form.display_name" /></div>
+      <div v-field class="field">
         <label>{{ t('admin.initialPassword') }}</label>
         <Password v-model="form.password" toggle-mask fluid autocomplete="new-password" />
         <small class="muted">{{ t('admin.addMemberHint') }}</small>
@@ -164,21 +164,25 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
   </Dialog>
 
   <Dialog v-model:visible="showMatrix" :header="t('admin.rolesAndPermissions')" modal style="width: min(720px, 96vw)">
-    <table v-if="rbac" style="width: 100%; border-collapse: collapse; font-size: 13px">
+    <div v-if="rbac" class="table-scroll" tabindex="0" role="region" :aria-label="t('admin.rolesAndPermissions')">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+      <caption class="sr-only">{{ t('admin.rolesAndPermissions') }}</caption>
       <thead>
         <tr>
-          <th style="text-align: left; padding: 6px">{{ t('admin.permission') }}</th>
-          <th v-for="r in rbac.roles" :key="r" style="padding: 6px">{{ enumLabel('role', r) }}</th>
+          <th scope="col" style="text-align: left; padding: 6px">{{ t('admin.permission') }}</th>
+          <th v-for="r in rbac.roles" :key="r" scope="col" style="padding: 6px">{{ enumLabel('role', r) }}</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="p in allPerms" :key="p" style="border-top: 1px solid var(--qtf-border)">
-          <td style="padding: 5px 6px" class="mono">{{ p }}</td>
+          <th scope="row" style="padding: 5px 6px; text-align: left; font-weight: normal" class="mono">{{ p }}</th>
           <td v-for="r in rbac.roles" :key="r" style="text-align: center">
-            <i v-if="rbac.matrix[r]?.includes(p)" class="pi pi-check" style="color: var(--p-green-500)" />
+            <template v-if="rbac.matrix[r]?.includes(p)"><i class="pi pi-check" style="color: var(--p-green-600)" aria-hidden="true" /><span class="sr-only">{{ t('common.yes') }}</span></template>
+            <span v-else class="sr-only">{{ t('common.no') }}</span>
           </td>
         </tr>
       </tbody>
     </table>
+    </div>
   </Dialog>
 </template>

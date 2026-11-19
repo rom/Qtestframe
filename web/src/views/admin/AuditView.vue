@@ -49,10 +49,10 @@ function severity(action: string) {
         <InputIcon class="pi pi-filter" />
         <InputText v-model="q" class="w-full" :placeholder="t('admin.auditFilter')" :aria-label="t('admin.auditFilter')" @keydown.enter="load" />
       </IconField>
-      <Select v-model="limit" :options="[100, 200, 500, 1000]" style="width: 110px" :aria-label="t('common.count')" @change="load" />
+      <Select v-model="limit" :options="[100, 200, 500, 1000]" style="width: 110px" :aria-label="t('admin.auditLimit')" @change="load" />
       <Button :label="t('common.apply')" icon="pi pi-search" severity="secondary" @click="load" />
     </div>
-    <DataTable :value="entries" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(50)" size="small" sort-field="created_at" :sort-order="-1">
+    <DataTable v-stack :value="entries" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" size="small" sort-field="created_at" :sort-order="-1">
       <Column field="created_at" :header="t('common.time')" sortable style="width: 160px"><template #body="{ data }"><span class="small">{{ formatDateTime(data.created_at) }}</span></template></Column>
       <Column field="user_email" :header="t('common.user')" sortable style="width: 220px" />
       <Column field="action" :header="t('admin.action')" sortable style="width: 170px"><template #body="{ data }"><Tag :value="data.action" :severity="severity(data.action)" /></template></Column>

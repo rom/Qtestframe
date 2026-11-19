@@ -178,7 +178,7 @@ async function copySnippet() {
 
 <template>
   <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-  <div v-else-if="!run" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
+  <div v-else-if="!run" class="empty"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
     <div class="page-header">
       <div>
@@ -188,8 +188,8 @@ async function copySnippet() {
         </div>
         <h1>{{ run.name }}</h1>
         <div class="sub row">
-          <span v-if="run.environment"><i class="pi pi-server" /> {{ run.environment }}</span>
-          <span v-if="run.build" class="mono"><i class="pi pi-box" /> {{ run.build }}</span>
+          <span v-if="run.environment"><i class="pi pi-server" aria-hidden="true" /><span class="sr-only">{{ t('common.environment') }}:</span> {{ run.environment }}</span>
+          <span v-if="run.build" class="mono"><i class="pi pi-box" aria-hidden="true" /><span class="sr-only">{{ t('common.build') }}:</span> {{ run.build }}</span>
           <span>{{ t('run.createdAt', { date: formatDateTime(run.created_at) }) }}{{ run.created_by ? t('run.createdBy', { user: run.created_by }) : '' }}</span>
           <span v-if="run.started_at">{{ t('run.startedAt', { date: formatDateTime(run.started_at) }) }}</span>
           <span v-if="run.completed_at">{{ t('run.completedAt', { date: formatDateTime(run.completed_at) }) }}</span>
@@ -229,7 +229,7 @@ async function copySnippet() {
         <div class="value" style="font-size: 24px; font-weight: 700">{{ formatNumber(summary.passRate / 100, undefined, { style: 'percent' }) }}</div>
       </div>
       <div v-for="s in summary.segments" :key="s.status" class="card">
-        <div class="small muted row nowrap"><span :style="{ width: '10px', height: '10px', borderRadius: '50%', background: RESULT_COLORS[s.status] ?? s.color }" />{{ enumLabel('result', s.status) }}</div>
+        <div class="small muted row nowrap"><span aria-hidden="true" :style="{ width: '10px', height: '10px', borderRadius: '50%', background: RESULT_COLORS[s.status] ?? s.color }" />{{ enumLabel('result', s.status) }}</div>
         <div class="value" style="font-size: 24px; font-weight: 700">{{ s.count }}</div>
       </div>
     </div>
@@ -237,21 +237,21 @@ async function copySnippet() {
     <div class="card">
       <div class="filterbar">
         <QueryInput v-model="q" scope="execution" :error="queryError" :composed="composed" :placeholder="t('run.filterPlaceholder', { example: 'assignee:alice title:login' })" @submit="loadExecutions" />
-        <MultiSelect v-model="statusFilter" :options="resultOptions" option-label="label" option-value="value" :placeholder="t('common.status')" style="min-width: 150px" show-clear @change="loadExecutions" />
+        <MultiSelect v-model="statusFilter" :options="resultOptions" option-label="label" option-value="value" :placeholder="t('common.status')" :aria-label="t('common.status')" style="min-width: 150px" show-clear @change="loadExecutions" />
         <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="reload" />
       </div>
-      <DataTable :value="executions" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(50)" :rows-per-page-options="prefs.rowsPerPage" row-hover sort-field="position" :sort-order="1" size="small">
+      <DataTable v-stack :value="executions" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" :rows-per-page-options="prefs.rowsPerPage" row-hover sort-field="position" :sort-order="1" size="small">
         <Column field="position" header="#" sortable style="width: 60px" />
         <Column field="test_key" :header="t('run.test')" sortable style="width: 140px">
           <template #body="{ data }">
             <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: data.test_case_id } }" class="key">{{ data.test_key }}</RouterLink>
           </template>
         </Column>
-        <Column field="test_title" :header="t('common.title')" sortable style="min-width: 200px" />
+        <Column field="test_title" :header="t('common.title')" sortable style="min-width: 200px" body-class="stack-main" />
         <Column field="status" :header="t('common.status')" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
         <Column field="assignee" :header="t('run.assignee')" sortable style="width: 180px">
           <template #body="{ data }">
-            <InputText v-if="canWrite" :model-value="data.assignee" size="small" :placeholder="t('run.unassigned')" :aria-label="t('run.assignee')" class="w-full" @change="(e: Event) => setAssignee(data, (e.target as HTMLInputElement).value)" />
+            <InputText v-if="canWrite" :model-value="data.assignee" size="small" :placeholder="t('run.unassigned')" :aria-label="t('run.assigneeOf', { key: data.test_key })" class="w-full" @change="(e: Event) => setAssignee(data, (e.target as HTMLInputElement).value)" />
             <span v-else>{{ data.assignee || '—' }}</span>
           </template>
         </Column>
@@ -263,10 +263,10 @@ async function copySnippet() {
           <template #body="{ data }">
             <div class="row nowrap" style="gap: 0">
               <template v-if="canExecute">
-                <Button icon="pi pi-check" text rounded size="small" severity="success" v-tooltip="t('run.markPassed')" :aria-label="t('run.markPassed')" @click="quickStatus(data, 'passed')" />
-                <Button icon="pi pi-times" text rounded size="small" severity="danger" v-tooltip="t('run.markFailed')" :aria-label="t('run.markFailed')" @click="quickStatus(data, 'failed')" />
+                <Button icon="pi pi-check" text rounded size="small" severity="success" v-tooltip="t('run.markPassed')" :aria-label="t('run.markPassedKey', { key: data.test_key })" @click="quickStatus(data, 'passed')" />
+                <Button icon="pi pi-times" text rounded size="small" severity="danger" v-tooltip="t('run.markFailed')" :aria-label="t('run.markFailedKey', { key: data.test_key })" @click="quickStatus(data, 'failed')" />
               </template>
-              <Button :icon="canExecute ? 'pi pi-play' : 'pi pi-eye'" text rounded size="small" v-tooltip="canExecute ? t('run.execute') : t('run.view')" :aria-label="canExecute ? t('run.execute') : t('run.view')" @click="execute(data)" />
+              <Button :icon="canExecute ? 'pi pi-play' : 'pi pi-eye'" text rounded size="small" v-tooltip="canExecute ? t('run.execute') : t('run.view')" :aria-label="canExecute ? t('run.executeKey', { key: data.test_key }) : t('run.viewKey', { key: data.test_key })" @click="execute(data)" />
             </div>
           </template>
         </Column>
@@ -276,10 +276,10 @@ async function copySnippet() {
 
     <Dialog v-model:visible="editDialog" :header="t('run.edit')" modal style="width: min(560px, 95vw)">
       <div class="form-grid">
-        <div class="field full"><label>{{ t('common.name') }}</label><InputText v-model="editForm.name" /></div>
-        <div class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
-        <div class="field"><label>{{ t('common.build') }}</label><InputText v-model="editForm.build" /></div>
-        <div class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="editForm.description" rows="3" auto-resize /></div>
+        <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="editForm.name" /></div>
+        <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
+        <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="editForm.build" /></div>
+        <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="editForm.description" rows="3" auto-resize /></div>
       </div>
       <template #footer>
         <Button :label="t('common.cancel')" text severity="secondary" @click="editDialog = false" />
@@ -291,7 +291,7 @@ async function copySnippet() {
       <i18n-t keypath="run.ciIntro" tag="p">
         <template #link><RouterLink :to="{ name: 'tokens' }">{{ t('run.ciLink') }}</RouterLink></template>
       </i18n-t>
-      <pre class="console">{{ ciSnippet }}</pre>
+      <pre class="console" tabindex="0" :aria-label="t('run.ciHeader')">{{ ciSnippet }}</pre>
       <i18n-t keypath="run.ciStatus" tag="p" class="small muted">
         <template #status><code>status</code></template>
         <template #values>{{ meta.meta.result_statuses.join(', ') }}</template>

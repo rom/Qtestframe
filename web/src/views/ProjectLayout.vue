@@ -46,22 +46,23 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
 
 <template>
   <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-  <div v-else-if="!ready" class="empty"><ProgressSpinner style="width: 40px; height: 40px" /></div>
+  <div v-else-if="!ready" class="empty" aria-busy="true"><ProgressSpinner style="width: 40px; height: 40px" :aria-label="t('common.loading')" /></div>
   <template v-else>
-    <div class="row" style="margin-bottom: 4px">
+    <nav class="row breadcrumb" style="margin-bottom: 4px" :aria-label="t('nav.breadcrumb')">
       <RouterLink :to="{ name: 'projects' }" class="muted small">{{ t('nav.breadcrumbProjects') }}</RouterLink>
-      <i class="pi pi-angle-right muted small" />
-      <span class="small" style="font-weight: 600">{{ proj.project?.name }}</span>
+      <i class="pi pi-angle-right muted small" aria-hidden="true" />
+      <span class="small" style="font-weight: 600" aria-current="page">{{ proj.project?.name }}</span>
       <span class="key">{{ proj.project?.key }}</span>
-    </div>
-    <nav class="tabs-nav">
+    </nav>
+    <nav class="tabs-nav" :aria-label="t('nav.projectSections')">
       <RouterLink
-        v-for="t in tabs"
-        :key="t.to"
-        :to="{ name: t.to, params: { projectId } }"
-        :class="{ 'router-link-active': t.to === 'runs' && isRunsChild }"
+        v-for="tab in tabs"
+        :key="tab.to"
+        :to="{ name: tab.to, params: { projectId } }"
+        :class="{ 'router-link-active': tab.to === 'runs' && isRunsChild }"
+        :aria-current="tab.to === 'runs' && isRunsChild ? 'page' : undefined"
       >
-        <i :class="t.icon" />{{ t.label }}
+        <i :class="tab.icon" aria-hidden="true" />{{ tab.label }}
       </RouterLink>
     </nav>
     <RouterView :key="projectId" />
