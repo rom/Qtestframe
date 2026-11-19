@@ -23,9 +23,13 @@ export const useUiStore = defineStore('ui', {
   }),
   actions: {
     toggleDark() {
-      this.dark = !this.dark
-      document.documentElement.classList.toggle('app-dark', this.dark)
+      this.setDark(!this.dark)
       write('qtf.theme', this.dark ? 'dark' : 'light')
+    },
+    /** Apply the colour theme without persisting it. */
+    setDark(dark: boolean) {
+      this.dark = dark
+      if (typeof document !== 'undefined') document.documentElement.classList.toggle('app-dark', dark)
     },
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed

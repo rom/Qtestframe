@@ -19,6 +19,7 @@ import type { Category, ItemKind, Project } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { defectUrl, validateTemplate } from '@/lib/defects'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -107,10 +108,12 @@ async function rename() {
 }
 
 // ---------- project ----------
-const pform = ref({ name: proj.project?.name ?? '', description: proj.project?.description ?? '' })
+const pform = ref({ name: proj.project?.name ?? '', description: proj.project?.description ?? '', defect_url_template: proj.project?.defect_url_template ?? '' })
+const templateHint = computed(() => validateTemplate(pform.value.defect_url_template))
+const templateExample = computed(() => defectUrl('ABC-123', pform.value.defect_url_template))
 async function saveProject() {
   try {
-    const p = await api.patch<Project>(`/projects/${proj.pid}`, pform.value)
+    const p = await api.patch<Project>(`/projects/${proj.pid}`, { ...pform.value, defect_url_template: pform.value.defect_url_template.trim() })
     if (proj.project) Object.assign(proj.project, p ?? pform.value)
     notify.ok('Project saved')
   } catch (e) {
@@ -186,6 +189,15 @@ function deleteProject() {
             <div class="field"><label>Key</label><InputText :model-value="proj.project?.key" disabled /></div>
             <div class="field"><label>Name</label><InputText v-model="pform.name" :disabled="!auth.can(P.projectUpdate)" /></div>
             <div class="field"><label>Description</label><Textarea v-model="pform.description" rows="3" auto-resize :disabled="!auth.can(P.projectUpdate)" /></div>
+            <div class="field">
+              <label for="defect-tpl">Defect tracker URL template</label>
+              <InputText id="defect-tpl" v-model="pform.defect_url_template" class="mono" placeholder="https://jira.example.com/browse/{id}" :disabled="!auth.can(P.projectUpdate)" :invalid="!!templateHint && !templateHint.startsWith('Without')" />
+              <span class="small muted">
+                Defect IDs recorded on executions link to this URL; <code>{id}</code> is replaced by the ID. Values that are URLs are linked directly.
+                <template v-if="templateExample"><br />Example: ABC-123 → <a :href="templateExample" target="_blank" rel="noopener noreferrer">{{ templateExample }}</a></template>
+              </span>
+              <span v-if="templateHint" class="small" style="color: var(--p-amber-600)">{{ templateHint }}</span>
+            </div>
             <div class="row">
               <Button v-if="auth.can(P.projectUpdate)" label="Save" icon="pi pi-check" @click="saveProject" />
               <span class="grow" />

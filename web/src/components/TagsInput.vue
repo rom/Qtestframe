@@ -4,7 +4,7 @@ import InputText from 'primevue/inputtext'
 import { parseTags } from '@/lib/query'
 
 const model = defineModel<string[]>({ default: () => [] })
-defineProps<{ disabled?: boolean; placeholder?: string }>()
+defineProps<{ disabled?: boolean; placeholder?: string; icon?: string }>()
 const text = ref('')
 
 function commit() {
@@ -28,7 +28,7 @@ function remove(t: string) {
 <template>
   <div class="row" style="gap: 6px; border: 1px solid var(--p-inputtext-border-color, var(--qtf-border)); border-radius: 6px; padding: 4px 6px; min-height: 38px">
     <span v-for="t in model" :key="t" class="tag-chip">
-      <i class="pi pi-tag small muted" />{{ t }}
+      <i :class="icon ?? 'pi pi-tag'" class="small muted" />{{ t }}
       <i v-if="!disabled" class="pi pi-times small clickable" role="button" :aria-label="'Remove ' + t" @click="remove(t)" />
     </span>
     <InputText

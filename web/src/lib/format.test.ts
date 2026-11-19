@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateTime, formatDuration, humanize, initials, options, percent, pluralize, relativeTime, truncate } from './format'
+import { formatDate, formatDatePref, formatDateTime, formatDateTimePref, formatDuration, formatFullDateTime, getDatePrefs, humanize, initials, isValidTimeZone, options, percent, pluralize, relativeTime, setDatePrefs, truncate } from './format'
 
 describe('humanize', () => {
   it('turns identifiers into labels', () => {
@@ -73,5 +73,57 @@ describe('strings', () => {
   it('options', () => {
     expect(options(['must_not'])).toEqual([{ label: 'Must not', value: 'must_not' }])
     expect(options(null)).toEqual([])
+  })
+})
+
+describe('preference based dates', () => {
+  const d = '2026-01-10T11:55:00Z'
+  const now = new Date('2026-01-10T12:00:00Z')
+  it('formats iso in a time zone', () => {
+    expect(formatDateTimePref(d, { timezone: 'UTC' }, now)).toBe('2026-01-10 11:55')
+    expect(formatDateTimePref(d, { date_format: 'iso', timezone: 'Asia/Tokyo' }, now)).toBe('2026-01-10 20:55')
+    expect(formatDateTimePref('2026-01-10T23:30:00Z', { timezone: 'Europe/Stockholm' })).toBe('2026-01-11 00:30')
+    expect(formatDatePref('2026-01-10T23:30:00Z', { timezone: 'Europe/Stockholm' })).toBe('2026-01-11')
+    expect(formatDatePref(d, { timezone: 'UTC', date_format: 'iso' })).toBe('2026-01-10')
+  })
+  it('falls back to the browser zone for unknown zones', () => {
+    const local = new Date(2026, 0, 2, 3, 4)
+    expect(formatDateTimePref(local, { timezone: 'Nowhere/Land' })).toBe('2026-01-02 03:04')
+    expect(formatDateTimePref(local, {})).toBe('2026-01-02 03:04')
+    expect(formatDatePref(local, null)).toBe('2026-01-02')
+    expect(isValidTimeZone('UTC')).toBe(true)
+    expect(isValidTimeZone('Nowhere/Land')).toBe(false)
+    expect(isValidTimeZone('')).toBe(false)
+  })
+  it('formats relative', () => {
+    expect(formatDateTimePref(d, { date_format: 'relative' }, now)).toBe('5 min ago')
+    expect(formatDatePref('2026-01-08T12:00:00Z', { date_format: 'relative' }, now)).toBe('2 days ago')
+    expect(relativeTime('2026-01-10T11:59:00Z', now, true)).toBe('1 min ago')
+  })
+  it('formats locale', () => {
+    const s = formatDateTimePref(d, { date_format: 'locale', timezone: 'UTC' }, now)
+    expect(s).toMatch(/2026/)
+    expect(s).toMatch(/11/)
+    expect(formatDatePref(d, { date_format: 'locale', timezone: 'UTC' })).toMatch(/2026/)
+  })
+  it('returns empty for missing values', () => {
+    expect(formatDateTimePref(null, {})).toBe('')
+    expect(formatDatePref('', {})).toBe('')
+    expect(formatFullDateTime(null)).toBe('')
+  })
+  it('applies active preferences to formatDate / formatDateTime', () => {
+    try {
+      setDatePrefs({ timezone: 'Asia/Tokyo' })
+      expect(getDatePrefs()).toEqual({ date_format: '', timezone: 'Asia/Tokyo' })
+      expect(formatDateTime(d)).toBe('2026-01-10 20:55')
+      expect(formatDate('2026-01-10T20:00:00Z')).toBe('2026-01-11')
+      expect(formatFullDateTime(d)).toBe('2026-01-10 20:55 (Asia/Tokyo)')
+      setDatePrefs({ date_format: 'relative' })
+      expect(formatDateTime(new Date(Date.now() - 120000))).toBe('2 min ago')
+      expect(formatFullDateTime(new Date(2026, 0, 2, 3, 4))).toBe('2026-01-02 03:04')
+    } finally {
+      setDatePrefs(null)
+    }
+    expect(getDatePrefs()).toEqual({ date_format: '', timezone: '' })
   })
 })

@@ -14,10 +14,17 @@ import StatusTag from './StatusTag.vue'
 import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
+import CommentsPanel from './CommentsPanel.vue'
+import HistoryPanel from './HistoryPanel.vue'
+import TestExecutionsPanel from './TestExecutionsPanel.vue'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
+import Tag from 'primevue/tag'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { moveItem } from '@/lib/collections'
 import { formatDateTime, options } from '@/lib/format'
-import { buildTree, flatten } from '@/lib/tree'
+import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Category, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
@@ -41,6 +48,9 @@ interface StepRow {
   action: string
   expected: string
   data: string
+  call_test_id?: string | null
+  call_test_key?: string
+  call_test_title?: string
 }
 let uid = 0
 
@@ -84,12 +94,14 @@ async function load() {
   if (!props.itemId) {
     item.value = null
     form.value = blank()
+    tab.value = 'details'
     return
   }
   loading.value = true
   try {
     const t = await api.get<TestCase>(`/tests/${props.itemId}`)
     item.value = t
+    commentCount.value = t.comment_count ?? 0
     form.value = {
       title: t.title,
       description: t.description,
@@ -106,7 +118,16 @@ async function load() {
       folder_id: t.folder_id,
       steps: [...(t.steps ?? [])]
         .sort((a, b) => a.position - b.position)
-        .map((s) => ({ uid: ++uid, id: s.id, action: s.action, expected: s.expected, data: s.data })),
+        .map((s) => ({
+          uid: ++uid,
+          id: s.id,
+          action: s.action,
+          expected: s.expected,
+          data: s.data,
+          call_test_id: s.call_test_id || null,
+          call_test_key: s.call_test_key,
+          call_test_title: s.call_test_title,
+        })),
     }
     await loadLinks()
   } catch (e) {
@@ -134,6 +155,37 @@ function addStep(after?: number) {
   if (after === undefined) form.value.steps.push(row)
   else form.value.steps.splice(after + 1, 0, row)
 }
+// ---------- shared steps (call another test) ----------
+const pickCall = ref(false)
+const callAfter = ref<number | undefined>(undefined)
+function openCallPicker(after?: number) {
+  callAfter.value = after
+  pickCall.value = true
+}
+function insertCalls(picked: { id: string; key: string; title: string }[]) {
+  const rows = picked.map((t) => ({ uid: ++uid, action: '', expected: '', data: '', call_test_id: t.id, call_test_key: t.key, call_test_title: t.title }))
+  if (callAfter.value === undefined) form.value.steps.push(...rows)
+  else form.value.steps.splice(callAfter.value + 1, 0, ...rows)
+}
+const calledBy = computed(() => item.value?.called_by ?? [])
+
+// ---------- tabs ----------
+const tab = ref('details')
+const commentCount = ref(0)
+const execCount = ref<number | null>(null)
+function resolveId(field: string, id: string): string | undefined {
+  if (field === 'category_ids') {
+    const c = props.categories.find((x) => x.id === id)
+    return c ? `${c.dimension}/${c.name}` : undefined
+  }
+  if (field === 'folder_id') return folderPath(props.folders, id) || undefined
+  return undefined
+}
+async function onRestored(t: unknown) {
+  await load()
+  if (t && typeof t === 'object') emit('saved', t as TestCase)
+}
+
 function removeStep(i: number) {
   form.value.steps.splice(i, 1)
 }
@@ -151,10 +203,16 @@ async function save() {
   const f = form.value
   const body = {
     ...f,
+    // only automated tests have a script language (avoids spurious history changes)
+    script_language: f.execution_type === 'automated' ? f.script_language : item.value?.script_language ?? '',
     estimated_minutes: f.estimated_minutes ?? 0,
     steps: f.steps
-      .filter((s) => s.action.trim() || s.expected.trim() || s.data.trim())
-      .map((s, i) => ({ ...(s.id ? { id: s.id } : {}), position: i + 1, action: s.action, expected: s.expected, data: s.data })),
+      .filter((s) => s.call_test_id || s.action.trim() || s.expected.trim() || s.data.trim())
+      .map((s, i) =>
+        s.call_test_id
+          ? { ...(s.id ? { id: s.id } : {}), position: i + 1, action: '', expected: '', data: '', call_test_id: s.call_test_id }
+          : { ...(s.id ? { id: s.id } : {}), position: i + 1, action: s.action, expected: s.expected, data: s.data, call_test_id: null },
+      ),
   }
   try {
     const saved = isNew.value
@@ -162,6 +220,7 @@ async function save() {
       : await api.patch<TestCase>(`/tests/${props.itemId}`, body)
     notify.ok(isNew.value ? 'Test created' : 'Test saved', saved?.key)
     emit('saved', saved)
+    if (!isNew.value) await load() // refresh version, call-step keys and called_by
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -232,9 +291,30 @@ const scriptPlaceholder = computed(() => {
 
 <template>
   <div v-if="loading" class="empty"><ProgressSpinner style="width: 36px; height: 36px" /></div>
-  <form v-else class="grid" style="gap: 14px" @submit.prevent="save">
+  <template v-else>
+  <Tabs v-if="item" v-model:value="tab" class="editor-tabs">
+    <TabList>
+      <Tab value="details"><i class="pi pi-file-edit" /> Details</Tab>
+      <Tab value="executions"><i class="pi pi-play-circle" /> Executions <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
+      <Tab value="comments"><i class="pi pi-comments" /> Comments <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="history"><i class="pi pi-history" /> History</Tab>
+    </TabList>
+  </Tabs>
+  <TestExecutionsPanel v-if="item && tab === 'executions'" :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" />
+  <CommentsPanel v-if="item && tab === 'comments'" entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" />
+  <HistoryPanel
+    v-if="item && tab === 'history'"
+    entity="test"
+    :entity-id="item.id"
+    :can-restore="canWrite"
+    :current-version="item.version"
+    :resolve="resolveId"
+    @restored="onRestored"
+  />
+  <form v-show="!item || tab === 'details'" class="grid" style="gap: 14px" @submit.prevent="save">
     <div class="row">
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
+      <Tag v-if="item?.version" :value="'v' + item.version" severity="secondary" />
       <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
       <span v-if="item" class="muted small">Updated {{ formatDateTime(item.updated_at) }}{{ item.created_by ? ' · created by ' + item.created_by : '' }}</span>
     </div>
@@ -297,19 +377,33 @@ const scriptPlaceholder = computed(() => {
       <div class="section-title">
         <i class="pi pi-list" /> Steps ({{ form.steps.length }})
         <span class="grow" />
+        <Button v-if="canWrite" size="small" label="Insert call to test…" icon="pi pi-directions" text v-tooltip.bottom="'Reuse the steps of another test (shared steps)'" @click="openCallPicker()" />
         <Button v-if="canWrite" size="small" label="Add step" icon="pi pi-plus" text @click="addStep()" />
       </div>
       <DataTable v-if="form.steps.length" :value="form.steps" data-key="uid" size="small" :reorderable-rows="canWrite" @row-reorder="onReorder">
         <Column v-if="canWrite" row-reorder style="width: 2rem" />
         <Column header="#" style="width: 2.5rem"><template #body="{ index }"><b>{{ index + 1 }}</b></template></Column>
-        <Column header="Action">
-          <template #body="{ data }"><Textarea v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Do…" /></template>
+        <Column header="Action" style="width: 40%">
+          <template #body="{ data }">
+            <div v-if="data.call_test_id" class="call-step" :title="'The steps of ' + (data.call_test_key || 'the called test') + ' are inserted here when a run is created'">
+              <i class="pi pi-directions" style="color: var(--p-primary-color)" />
+              <span>
+                Calls
+                <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" class="key">{{ data.call_test_key || 'test' }}</RouterLink>
+                <template v-if="data.call_test_title"> – {{ data.call_test_title }}</template>
+              </span>
+            </div>
+            <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Do…" />
+          </template>
         </Column>
-        <Column header="Expected result">
-          <template #body="{ data }"><Textarea v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Then…" /></template>
+        <Column header="Expected result" style="width: 32%">
+          <template #body="{ data }">
+            <span v-if="data.call_test_id" class="small muted">Expected results of the called test</span>
+            <Textarea v-else v-model="data.expected" rows="1" auto-resize class="w-full" :disabled="!canWrite" placeholder="Then…" />
+          </template>
         </Column>
         <Column header="Data" style="width: 22%">
-          <template #body="{ data }"><Textarea v-model="data.data" rows="1" auto-resize class="w-full mono" :disabled="!canWrite" /></template>
+          <template #body="{ data }"><Textarea v-if="!data.call_test_id" v-model="data.data" rows="1" auto-resize class="w-full mono" :disabled="!canWrite" /></template>
         </Column>
         <Column v-if="canWrite" style="width: 7.5rem">
           <template #body="{ index }">
@@ -323,6 +417,13 @@ const scriptPlaceholder = computed(() => {
         </Column>
       </DataTable>
       <div v-else class="muted small">No steps. {{ form.execution_type === 'manual' ? 'Manual tests are executed step by step.' : 'Optional for automated tests.' }}</div>
+      <div v-if="calledBy.length" class="row small" style="margin-top: 8px; gap: 6px">
+        <i class="pi pi-share-alt muted" /><span class="muted">Used by:</span>
+        <span v-for="(c, i) in calledBy" :key="c.id">
+          <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: c.id } }" class="key" :title="c.title">{{ c.key }}</RouterLink>
+          <span class="muted">&nbsp;{{ c.title }}</span>{{ i < calledBy.length - 1 ? ',' : '' }}
+        </span>
+      </div>
     </div>
 
     <div class="field">
@@ -362,5 +463,15 @@ const scriptPlaceholder = computed(() => {
       confirm-label="Link"
       @pick="addLinks"
     />
+    <ItemPickerDialog
+      v-model:visible="pickCall"
+      kind="test"
+      :project-id="projectId"
+      :exclude="item ? [item.id] : []"
+      header="Insert call to test"
+      confirm-label="Insert call"
+      @pick="(p) => insertCalls(p as TestCase[])"
+    />
   </form>
+  </template>
 </template>

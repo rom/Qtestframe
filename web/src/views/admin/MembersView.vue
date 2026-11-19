@@ -18,6 +18,8 @@ import type { Membership, RbacInfo } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
+import { usePrefsStore } from '@/stores/prefs'
+const prefs = usePrefsStore()
 
 const auth = useAuthStore()
 const meta = useMetaStore()
@@ -112,7 +114,7 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
       <Button v-if="rbac" label="Role matrix" icon="pi pi-table" severity="secondary" text @click="showMatrix = true" />
       <Button v-if="canManage" label="Add member" icon="pi pi-user-plus" @click="openAdd" />
     </div>
-    <DataTable :value="filtered" data-key="user_id" :loading="loading" paginator :rows="50" sort-field="email" :sort-order="1">
+    <DataTable :value="filtered" data-key="user_id" :loading="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
       <Column field="email" header="E-mail" sortable />
       <Column field="display_name" header="Name" sortable />
       <Column field="role" header="Role" sortable style="width: 200px">

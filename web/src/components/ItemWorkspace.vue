@@ -30,6 +30,8 @@ import { useMetaStore } from '@/stores/meta'
 import { useAuthStore } from '@/stores/auth'
 import { readPref, writePref } from '@/stores/ui'
 import { useNotify } from '@/composables/notify'
+import { usePrefsStore } from '@/stores/prefs'
+const prefs = usePrefsStore()
 
 type Item = Requirement & TestCase
 
@@ -125,6 +127,8 @@ const allColumns = computed<Col[]>(() =>
         { field: 'folder_path', header: 'Folder' },
         { field: 'owner', header: 'Owner' },
         { field: 'version', header: 'Ver.', width: '70px' },
+        { field: 'relation_count', header: 'Relations', width: '95px' },
+        { field: 'comment_count', header: 'Comments', width: '100px' },
         { field: 'updated_at', header: 'Updated', width: '110px' },
       ]
     : [
@@ -136,6 +140,8 @@ const allColumns = computed<Col[]>(() =>
         { field: 'category_ids', header: 'Categories', sortable: false },
         { field: 'folder_path', header: 'Folder' },
         { field: 'estimated_minutes', header: 'Est. min', width: '90px' },
+        { field: 'version', header: 'Ver.', width: '70px' },
+        { field: 'comment_count', header: 'Comments', width: '100px' },
         { field: 'updated_at', header: 'Updated', width: '110px' },
       ],
 )
@@ -380,8 +386,8 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         data-key="id"
         :loading="loading"
         paginator
-        :rows="25"
-        :rows-per-page-options="[25, 50, 100, 250]"
+        :rows="prefs.rows"
+        :rows-per-page-options="prefs.rowsPerPage"
         removable-sort
         sort-field="key"
         :sort-order="1"
@@ -420,6 +426,9 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <span v-else-if="c.field === 'updated_at'" class="small muted">{{ formatDate(data.updated_at) }}</span>
             <span v-else-if="c.field === 'type'" class="small">{{ humanize(data.type) }}</span>
             <span v-else-if="c.field === 'folder_path'" class="small muted">{{ data.folder_path }}</span>
+            <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">
+              <i :class="c.field === 'comment_count' ? 'pi pi-comments' : 'pi pi-sitemap'" class="muted" style="font-size: 11px" /> {{ data[c.field] ?? 0 }}
+            </span>
             <span v-else>{{ data[c.field] }}</span>
           </template>
         </Column>

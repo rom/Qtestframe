@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { useProjectStore } from '@/stores/project'
 import { useMetaStore } from '@/stores/meta'
+import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
 import { api, asItems } from '@/lib/api'
 import { P } from '@/lib/permissions'
@@ -22,6 +23,7 @@ const auth = useAuthStore()
 const ui = useUiStore()
 const proj = useProjectStore()
 const meta = useMetaStore()
+const prefs = usePrefsStore()
 const route = useRoute()
 const router = useRouter()
 const notify = useNotify()
@@ -83,6 +85,7 @@ const projectNav = computed(() => [
   { to: 'tests', icon: 'pi pi-check-square', label: 'Tests' },
   { to: 'runs', icon: 'pi pi-play-circle', label: 'Operations' },
   { to: 'traceability', icon: 'pi pi-th-large', label: 'Traceability' },
+  { to: 'baselines', icon: 'pi pi-flag', label: 'Baselines' },
   { to: 'settings', icon: 'pi pi-tags', label: 'Categories & settings' },
   { to: 'export', icon: 'pi pi-download', label: 'Export' },
 ])
@@ -93,7 +96,7 @@ const userItems = computed(() => [
   { label: auth.user?.email ?? '', disabled: true, icon: 'pi pi-user' },
   { separator: true },
   { label: 'Profile & password', icon: 'pi pi-id-card', command: () => router.push({ name: 'profile' }) },
-  { label: ui.dark ? 'Light mode' : 'Dark mode', icon: ui.dark ? 'pi pi-sun' : 'pi pi-moon', command: () => ui.toggleDark() },
+  { label: ui.dark ? 'Light mode' : 'Dark mode', icon: ui.dark ? 'pi pi-sun' : 'pi pi-moon', command: () => prefs.toggleTheme() },
   { separator: true },
   { label: 'Sign out', icon: 'pi pi-sign-out', command: logout },
 ])
@@ -194,7 +197,7 @@ function doSearch() {
           severity="secondary"
           :aria-label="ui.dark ? 'Light mode' : 'Dark mode'"
           v-tooltip.bottom="ui.dark ? 'Light mode' : 'Dark mode'"
-          @click="ui.toggleDark()"
+          @click="prefs.toggleTheme()"
         />
         <button class="row nowrap" style="all: unset; cursor: pointer; display: flex; gap: 8px; align-items: center" aria-label="User menu" @click="userMenu?.toggle($event)">
           <Avatar :label="initials(auth.user?.display_name || auth.user?.email)" shape="circle" style="background: var(--p-primary-color); color: var(--p-primary-contrast-color)" />

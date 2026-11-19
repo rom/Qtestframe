@@ -16,6 +16,7 @@ import QueryInput from '@/components/QueryInput.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import SummaryBar from '@/components/SummaryBar.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
+import DefectLinks from '@/components/DefectLinks.vue'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { anyOf, and } from '@/lib/query'
 import { formatDateTime, formatDuration, humanize, options, pluralize } from '@/lib/format'
@@ -27,6 +28,8 @@ import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
+import { usePrefsStore } from '@/stores/prefs'
+const prefs = usePrefsStore()
 
 const props = defineProps<{ runId: string }>()
 const proj = useProjectStore()
@@ -232,14 +235,14 @@ async function copySnippet() {
         <MultiSelect v-model="statusFilter" :options="options(meta.meta.result_statuses)" option-label="label" option-value="value" placeholder="Status" style="min-width: 150px" show-clear @change="loadExecutions" />
         <Button icon="pi pi-refresh" text rounded severity="secondary" aria-label="Refresh" @click="reload" />
       </div>
-      <DataTable :value="executions" data-key="id" :loading="loading" paginator :rows="50" :rows-per-page-options="[50, 100, 250]" row-hover sort-field="position" :sort-order="1" size="small">
+      <DataTable :value="executions" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(50)" :rows-per-page-options="prefs.rowsPerPage" row-hover sort-field="position" :sort-order="1" size="small">
         <Column field="position" header="#" sortable style="width: 60px" />
         <Column field="test_key" header="Test" sortable style="width: 140px">
           <template #body="{ data }">
             <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: data.test_case_id } }" class="key">{{ data.test_key }}</RouterLink>
           </template>
         </Column>
-        <Column field="test_title" header="Title" sortable />
+        <Column field="test_title" header="Title" sortable style="min-width: 200px" />
         <Column field="status" header="Status" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
         <Column field="assignee" header="Assignee" sortable style="width: 180px">
           <template #body="{ data }">
@@ -248,6 +251,7 @@ async function copySnippet() {
           </template>
         </Column>
         <Column field="executed_by" header="Executed by" sortable style="width: 150px" />
+        <Column header="Defects" style="min-width: 120px"><template #body="{ data }"><DefectLinks :defects="data.defects" /></template></Column>
         <Column field="duration_ms" header="Duration" sortable style="width: 100px"><template #body="{ data }">{{ formatDuration(data.duration_ms) }}</template></Column>
         <Column field="finished_at" header="Finished" sortable style="width: 150px"><template #body="{ data }"><span class="small muted">{{ formatDateTime(data.finished_at) }}</span></template></Column>
         <Column style="width: 150px">

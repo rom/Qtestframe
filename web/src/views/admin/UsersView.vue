@@ -16,6 +16,8 @@ import { formatDate } from '@/lib/format'
 import type { User } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
+import { usePrefsStore } from '@/stores/prefs'
+const prefs = usePrefsStore()
 
 const auth = useAuthStore()
 const notify = useNotify()
@@ -83,7 +85,7 @@ async function save() {
       <span class="grow" />
       <Button label="New user" icon="pi pi-user-plus" @click="openCreate" />
     </div>
-    <DataTable :value="filtered" data-key="id" :loading="loading" paginator :rows="50" sort-field="email" :sort-order="1">
+    <DataTable :value="filtered" data-key="id" :loading="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
       <Column field="email" header="E-mail" sortable />
       <Column field="display_name" header="Name" sortable />
       <Column field="auth_provider" header="Provider" sortable style="width: 120px" />
