@@ -31,8 +31,9 @@ describe('steps', () => {
 })
 
 describe('shouldStartTour', () => {
-  it('starts on first sign-in', () => {
-    expect(shouldStartTour(me({ intro_done: true }, true))).toBe(true)
+  it('starts on first sign-in, unless intro_done is already stored', () => {
+    expect(shouldStartTour(me({}, true))).toBe(true)
+    expect(shouldStartTour(me({ intro_done: true }, true))).toBe(false)
   })
   it('starts until the tour was finished or skipped', () => {
     expect(shouldStartTour(me())).toBe(true)

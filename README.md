@@ -27,12 +27,16 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Relations** between requirements (refines/decomposition, depends on, derived from, conflicts with, duplicates, relates to) and **comment threads** on requirements and tests.
 - **Test reuse and results:** shared steps (a step can call another test), execution history across runs, and defects linked to failed executions (with links into your issue tracker).
 - **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder.
+- **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
+- **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
+- **Personal touches:** avatars for users and icons for projects (presets or uploaded images), a "last signed in" notice with failed attempts, and a first-login intro tour.
+- **Built-in user guide** in English and Swedish with a tutorial and FAQ, available under Help in the tool ([docs/user-guide](docs/user-guide/en/index.md)).
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
 - **Grouping:** nested folders for requirements and tests. Drag and drop moves items, whole folders, or entire category dimensions, also to another project.
 - **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dashboard, global search, administration.
 - **Filtering and search on every field** with a query language: field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
 - **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**.
-- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, tester, viewer + super admin), API tokens, audit log, in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
+- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, tester, viewer + super admin), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
 
 ## Quick start
@@ -318,3 +322,4 @@ make coverage
 | [docs/testing.md](docs/testing.md) | test strategy and coverage |
 | [docs/api.md](docs/api.md) | REST API and query language reference |
 | [docs/operations.md](docs/operations.md) | installation, TLS, OIDC/SAML, syslog, backup |
+| [docs/user-guide](docs/user-guide/en/index.md) | user guide with tutorial and FAQ (also [in Swedish](docs/user-guide/sv/index.md) and in the tool under Help) |

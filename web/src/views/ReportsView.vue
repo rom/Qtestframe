@@ -128,8 +128,16 @@ const custom = reactive({ busy: '', error: null as unknown })
 const fields = ref<ReportField[]>([])
 const fieldsError = ref('')
 const entityOptions = computed(() => REPORT_ENTITIES.map((e) => ({ label: t(`reports.entity.${e}`), value: e })))
-const fieldLabel = (id: string) => fields.value.find((f) => f.id === id)?.label ?? id
-const fieldOptions = computed(() => [{ label: t('common.none'), value: '' }, ...fields.value.map((f) => ({ label: f.label, value: f.id }))])
+// Column labels: translated per entity where the meaning differs (e.g. an
+// execution's status is its result), then generally, else the server label.
+function translatedField(id: string, fallback: string): string {
+  for (const k of [`reportFields.${form.value.entity}_${id}`, `reportFields.${id}`]) {
+    if (te(k)) return t(k)
+  }
+  return fallback
+}
+const fieldLabel = (id: string) => translatedField(id, fields.value.find((f) => f.id === id)?.label ?? id)
+const fieldOptions = computed(() => [{ label: t('common.none'), value: '' }, ...fields.value.map((f) => ({ label: translatedField(f.id, f.label), value: f.id }))])
 async function loadFields() {
   fieldsError.value = ''
   const entity = form.value.entity || 'requirement'
@@ -341,7 +349,7 @@ onMounted(() => {
             <div class="col-pick">
               <span v-for="f in fields" :key="f.id" class="row nowrap small">
                 <Checkbox :model-value="form.columns.includes(f.id)" binary :input-id="`${colsId}-${f.id}`" @update:model-value="form.columns = toggleColumn(form.columns, f.id)" />
-                <label :for="`${colsId}-${f.id}`">{{ f.label }}</label>
+                <label :for="`${colsId}-${f.id}`">{{ fieldLabel(f.id) }}</label>
               </span>
             </div>
           </fieldset>

@@ -597,7 +597,36 @@ considerations in security.md §9 before enabling.
 ## 11. Backup and restore
 
 What to back up: the database, `/etc/qtestframe` (config, keys, secrets —
-encrypt the backup!). The runner directory is scratch space.
+encrypt the backup!). The runner directory is scratch space. Uploaded
+files (attachments, documents, reports, avatars) live in the database, so
+any database backup contains them.
+
+### Built-in logical backup (recommended for moving data)
+
+Qtestframe can export all data — every tenant, user, project, history,
+comment and file — as one ZIP and restore it into SQLite *or* PostgreSQL.
+This is also the way to migrate from SQLite to PostgreSQL. Only super
+administrators can do it; sessions are not included.
+
+```sh
+sudo -u qtestframe qtestframe backup --config /etc/qtestframe/config.yaml --out /var/backups/qtf-$(date +%F).zip
+sudo systemctl stop qtestframe
+sudo -u qtestframe qtestframe restore --config /etc/qtestframe/config.yaml --in /var/backups/qtf-2026-11-19.zip --yes
+sudo systemctl start qtestframe
+```
+
+The same is available in the web client under **Administration → Backup and
+restore** (`GET /api/v1/admin/backup`, `POST /api/v1/admin/restore`). A
+restore replaces **all** data in one transaction, signs everyone out and
+only accepts backups of the same schema version (run `qtestframe migrate`
+on the old installation first, or restore into the matching version and
+upgrade afterwards). On SQLite the server is busy while a backup streams.
+
+Developers: a migration that adds a table must also add it to
+`store.BackupTables` (in foreign-key order) — backups refuse to run while
+the database has tables the backup does not know.
+
+### Database-level backup
 
 ### SQLite
 

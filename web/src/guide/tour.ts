@@ -23,10 +23,14 @@ export const TOUR_STEPS: readonly TourStep[] = [
   { id: 'help', targets: ['.topbar .qtf-help-button'] },
 ]
 
-/** Whether the tour should start for this user: first sign-in, or never finished/skipped. */
+/**
+ * Whether the tour should start for this user: until it was finished or
+ * skipped (preference intro_done). A first sign-in has no intro_done yet, so
+ * it starts then; once intro_done is stored (by the tour, or by an
+ * administrator or script via the API) it never starts automatically.
+ */
 export function shouldStartTour(me: Pick<Me, 'user' | 'first_login'> | null | undefined): boolean {
   if (!me?.user) return false
-  if (me.first_login === true) return true
   return me.user.preferences?.intro_done !== true
 }
 
