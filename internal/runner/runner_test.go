@@ -263,3 +263,30 @@ func TestSandboxExecBadArgs(t *testing.T) {
 		t.Errorf("result %+v", res)
 	}
 }
+
+func TestSandboxedRunDenyNetwork(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("sandbox requires linux")
+	}
+	if _, err := os.Stat("/bin/bash"); err != nil {
+		t.Skip("bash not available")
+	}
+	run := func(deny bool) string {
+		r := newRunner(t)
+		r.Cfg.Sandbox = true
+		r.Cfg.DenyNetwork = deny
+		r.Self = os.Args[0]
+		r.Cfg.Interpreters["bash"] = "/bin/bash"
+		res, err := r.Run(context.Background(), "bash", "(exec 3<>/dev/tcp/127.0.0.1/9) 2>&1; true", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res.Output
+	}
+	if out := run(true); !strings.Contains(out, "not permitted") {
+		t.Errorf("deny_network: socket was not blocked: %q", out)
+	}
+	if out := run(false); strings.Contains(out, "not permitted") {
+		t.Errorf("network unexpectedly blocked: %q", out)
+	}
+}

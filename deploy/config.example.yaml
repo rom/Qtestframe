@@ -187,6 +187,9 @@ runner:
   # Run each script through `qtestframe sandbox-exec` (Landlock + seccomp +
   # rlimits + no_new_privs). Never disable in production.
   sandbox: true
+  # Block socket creation for sandboxed scripts (seccomp). Leave false if
+  # network-based tests must reach services.
+  deny_network: false
 
 # In-process self-sandboxing applied at start-up. Keep all enabled; turn
 # single items off only to diagnose problems on unusual kernels (Landlock

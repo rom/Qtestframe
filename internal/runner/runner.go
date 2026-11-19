@@ -87,7 +87,11 @@ func (r *Runner) Run(ctx context.Context, lang, script string, env map[string]st
 
 	var cmd *exec.Cmd
 	if r.Cfg.Sandbox {
-		args := []string{"sandbox-exec", "--workdir", dir, "--cpu", strconv.Itoa(int(timeout.Seconds()) + 1), "--", interp, file}
+		args := []string{"sandbox-exec", "--workdir", dir, "--cpu", strconv.Itoa(int(timeout.Seconds()) + 1)}
+		if r.Cfg.DenyNetwork {
+			args = append(args, "--no-network")
+		}
+		args = append(args, "--", interp, file)
 		cmd = exec.CommandContext(cctx, r.Self, args...)
 	} else {
 		cmd = exec.CommandContext(cctx, interp, file)

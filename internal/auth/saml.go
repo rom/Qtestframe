@@ -147,6 +147,10 @@ func (p *SAMLProvider) ParseResponse(r *http.Request, st SAMLState) (*Identity, 
 	if err != nil {
 		return nil, err
 	}
+	// crewjam/saml reads r.PostForm, which is only populated by ParseForm.
+	if err := r.ParseForm(); err != nil {
+		return nil, fmt.Errorf("saml: %w", err)
+	}
 	a, err := sp.ParseResponse(r, []string{st.RequestID})
 	if err != nil {
 		var ie *saml.InvalidResponseError

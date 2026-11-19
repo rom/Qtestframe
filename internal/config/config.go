@@ -118,6 +118,8 @@ type Runner struct {
 	MaxOutputBytes int               `yaml:"max_output_bytes"`
 	Interpreters   map[string]string `yaml:"interpreters"`
 	Sandbox        bool              `yaml:"sandbox"`
+	// DenyNetwork blocks socket creation for sandboxed scripts (seccomp).
+	DenyNetwork bool `yaml:"deny_network"`
 }
 
 // Hardening toggles in-process Linux hardening.

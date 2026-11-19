@@ -320,15 +320,9 @@ func TestSAMLFullFlow(t *testing.T) {
 	if _, err := post(SAMLState{RequestID: "id-other"}, true); err == nil || !strings.Contains(err.Error(), "saml") {
 		t.Errorf("wrong request id: %v", err)
 	}
-	// crewjam's ServiceProvider.ParseResponse reads req.PostForm, which is
-	// only populated after ParseForm. SAMLProvider.ParseResponse does not
-	// call it itself (and the ACS handler does not either), so a plain POST
-	// fails. Tolerate this here so the test also passes once it is fixed.
+	// A plain POST (form not pre-parsed, as in the real ACS handler) must work:
+	// regression test for ParseResponse not calling r.ParseForm.
 	id, err := post(st, false)
-	if err != nil {
-		t.Logf("BUG: ParseResponse without prior ParseForm fails: %v", err)
-		id, err = post(st, true)
-	}
 	if err != nil {
 		t.Fatal(err)
 	}
