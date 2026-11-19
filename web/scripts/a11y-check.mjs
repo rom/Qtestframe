@@ -116,10 +116,16 @@ async function discover(request) {
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'settings', path: `${p}/settings` },
     { name: 'export', path: `${p}/export` },
+    { name: 'documents', path: `${p}/documents` },
+    { name: 'reports', path: `${p}/reports` },
+    { name: 'requirement-attachments', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
+    run && { name: 'run-attachments', path: `${p}/runs/${run.id}`, open: '[role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     { name: 'search', path: '/search?q=login' },
+    { name: 'help', path: '/help' },
     { name: 'profile', path: '/profile' },
     { name: 'members', path: '/admin/members' },
-    { name: 'role-matrix-dialog', path: '/admin/members', open: '.filterbar button:has(.pi-table)', wait: '.p-dialog' },
+    { name: 'rbac', path: '/admin/roles' },
+    { name: 'backup', path: '/admin/backup' },
     { name: 'tokens', path: '/admin/tokens' },
     { name: 'audit', path: '/admin/audit' },
     { name: 'tenants', path: '/admin/tenants' },
@@ -302,7 +308,7 @@ async function main() {
 
     for (const cfg of CONFIGS) {
       // the user's preferences decide theme and language once signed in
-      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: cfg.theme, language: cfg.lang } }, csrf)
+      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: cfg.theme, language: cfg.lang, intro_done: true } }, csrf)
       for (const vp of VIEWPORTS) {
         const opts = { viewport: { width: vp.width, height: vp.height }, isMobile: vp.mobile, hasTouch: vp.mobile, reducedMotion: 'reduce', locale: cfg.lang === 'sv' ? 'sv-SE' : 'en-GB' }
         const local = ({ lang, theme }) => {
@@ -355,14 +361,14 @@ async function main() {
     }
     // ---- keyboard and focus behaviour (light/en) ----
     if (!ONLY.length && process.env.QTF_A11Y_KEYBOARD !== '0') {
-      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: 'light', language: 'en' } }, csrf)
+      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: 'light', language: 'en', intro_done: true } }, csrf)
       const results = await keyboardChecks(browser, state, routes)
       checks += results.length
       for (const r of results) if (!r.ok) problems.push(`keyboard: ${r.name}: ${r.detail}`)
       console.log(`keyboard checks: ${results.filter((r) => r.ok).length}/${results.length} passed`)
     }
     // restore the admin's own preferences
-    await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: original.theme ?? null, language: original.language ?? null } }, csrf).catch(() => undefined)
+    await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: original.theme ?? null, language: original.language ?? null, intro_done: original.intro_done ?? null } }, csrf).catch(() => undefined)
     await authCtx.close()
   } finally {
     await browser.close()

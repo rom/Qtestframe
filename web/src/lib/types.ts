@@ -17,6 +17,10 @@ export interface User {
   disabled: boolean
   created_at: string
   preferences?: Preferences | null
+  /** "" (initials), "preset:<name>" or "file:<id>" */
+  avatar?: string
+  /** set after an administrator reset the password */
+  must_change_password?: boolean
 }
 
 /** Per-user settings (all optional; empty = default). */
@@ -33,6 +37,8 @@ export interface Preferences {
   compact_tables?: boolean
   hide_analysis?: boolean
   create_linked_test?: boolean | null
+  /** first-login intro tour finished or skipped */
+  intro_done?: boolean
 }
 
 export interface SessionInfo {
@@ -55,6 +61,16 @@ export interface Membership {
   display_name?: string
   role: string
   created_at: string
+  /** avatar of the member (when the server includes it) */
+  avatar?: string
+}
+
+/** The sign-in before the current one (Me.previous_login). */
+export interface PreviousLogin {
+  created_at: string
+  ip: string
+  user_agent: string
+  method: string
 }
 
 export interface Me {
@@ -64,6 +80,60 @@ export interface Me {
   permissions: string[]
   memberships: Membership[]
   csrf_token: string
+  previous_login?: PreviousLogin | null
+  failed_logins_since_previous?: number
+  first_login?: boolean
+}
+
+/** GET /auth/logins */
+export interface LoginEvent {
+  id: string
+  user_id?: string
+  success: boolean
+  method: string
+  ip: string
+  user_agent: string
+  created_at: string
+}
+
+export type FileKind = 'attachment' | 'document' | 'report' | 'avatar' | 'icon'
+
+/** An item a file is attached to. */
+export interface FileLink {
+  entity_type: 'requirement' | 'test' | 'run' | 'execution' | string
+  entity_id: string
+  key: string
+  /** Run of an execution link. */
+  run_id?: string
+}
+
+/** Metadata of a stored file (FileInfo). */
+export interface FileInfo {
+  id: string
+  project_id: string | null
+  kind: FileKind | string
+  name: string
+  content_type: string
+  size: number
+  sha256: string
+  description: string
+  tags: string[] | null
+  uploaded_by: string
+  created_at: string
+  url: string
+  links: FileLink[] | null
+}
+
+/** A saved custom report. */
+export interface ReportDefinition {
+  id: string
+  project_id: string
+  name: string
+  description: string
+  config: unknown
+  created_by: string
+  created_at: string
+  updated_at: string
 }
 
 export interface AuthProvider {
@@ -97,6 +167,8 @@ export interface Project {
   name: string
   description: string
   defect_url_template?: string
+  /** "" (initials), "preset:<name>" or "file:<id>" */
+  icon?: string
   created_at: string
   updated_at: string
 }
@@ -347,6 +419,8 @@ export interface Comment {
   user_id: string
   user_email: string
   user_name: string
+  /** avatar of the author (when the server includes it) */
+  user_avatar?: string
   body: string
   created_at: string
   updated_at: string

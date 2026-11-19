@@ -3,10 +3,11 @@ import { computed, ref, watch } from 'vue'
 import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
-import Avatar from 'primevue/avatar'
+import UserAvatar from './UserAvatar.vue'
+import { usePeopleStore } from '@/stores/people'
 import ProgressSpinner from 'primevue/progressspinner'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { formatDateTime, formatFullDateTime, initials } from '@/lib/format'
+import { formatDateTime, formatFullDateTime } from '@/lib/format'
 import { P } from '@/lib/permissions'
 import type { Comment } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
@@ -17,6 +18,7 @@ const props = defineProps<{ entity: 'requirement' | 'test'; entityId: string }>(
 const emit = defineEmits<{ count: [n: number] }>()
 const auth = useAuthStore()
 const notify = useNotify()
+usePeopleStore().ensure()
 const { t } = useI18n()
 
 const MAX = 10000
@@ -104,7 +106,7 @@ function onKey(e: KeyboardEvent) {
     <template v-else>
       <div v-if="!comments.length" class="muted small" style="padding: 8px 0">{{ t('comments.none') }}</div>
       <div v-for="c in comments" :key="c.id" class="comment">
-        <Avatar :label="initials(c.user_name || c.user_email)" shape="circle" size="normal" style="flex: none" />
+        <UserAvatar :avatar="c.user_avatar" :user-id="c.user_id" :email="c.user_email" :name="c.user_name || c.user_email" :size="32" />
         <div class="grow">
           <div class="row" style="gap: 6px">
             <b>{{ c.user_name || c.user_email || t('common.unknown') }}</b>

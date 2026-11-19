@@ -276,7 +276,7 @@ func (s *Store) CountTenantAdmins(ctx context.Context, tenantID string) (int, er
 }
 
 func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]model.Membership, error) {
-	rows, err := s.c().query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, m.role, m.created_at
+	rows, err := s.c().query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at
 		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id `+where, arg)
 	if err != nil {
 		return nil, err
@@ -285,7 +285,7 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 	out := []model.Membership{}
 	for rows.Next() {
 		var m model.Membership
-		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Role, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &m.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, m)

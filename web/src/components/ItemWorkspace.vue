@@ -35,6 +35,7 @@ import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { rememberFocus } from '@/lib/a11y'
+import HelpLink from '@/guide/HelpLink.vue'
 const prefs = usePrefsStore()
 /** below 1200 px the folder tree lives in a drawer opened by a "Folders" button */
 const treeInDrawer = useBreakpoint('wide')
@@ -330,6 +331,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           <div class="sub">{{ t(isReq ? 'counts.requirements' : 'counts.tests', items.length) }}</div>
         </div>
         <div class="actions">
+          <HelpLink :page="isReq ? 'requirements' : 'tests'" />
           <Button
             v-if="treeInDrawer"
             :label="t('workspace.folders')"

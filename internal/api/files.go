@@ -112,6 +112,7 @@ func (s *Server) serveFile(w http.ResponseWriter, r *http.Request, f *model.File
 	}
 	disp := "attachment"
 	ct := "application/octet-stream"
+	pdf := inline && f.ContentType == "application/pdf"
 	if inline && inlineTypes[f.ContentType] {
 		disp, ct = "inline", f.ContentType
 		if ct == "text/plain" {
@@ -123,8 +124,14 @@ func (s *Server) serveFile(w http.ResponseWriter, r *http.Request, f *model.File
 	hd.Set("Content-Disposition", disp+`; filename="`+asciiName(f.Name)+`"; filename*=UTF-8''`+url.PathEscape(f.Name))
 	hd.Set("Content-Length", strconv.Itoa(len(data)))
 	hd.Set("X-Content-Type-Options", "nosniff")
-	// files are untrusted: sandbox them; same-origin framing allows the PDF preview
-	hd.Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors 'self'")
+	// files are untrusted: sandbox them; same-origin framing allows previews.
+	// Chromium refuses to render PDFs in a sandboxed document, so inline PDFs
+	// get a CSP without "sandbox" (the viewer runs in its own isolated origin).
+	if pdf {
+		hd.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'self'")
+	} else {
+		hd.Set("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors 'self'")
+	}
 	hd.Set("X-Frame-Options", "SAMEORIGIN")
 	hd.Set("Cache-Control", "private, max-age=300")
 	hd.Set("ETag", `"`+f.SHA256+`"`)

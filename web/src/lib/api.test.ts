@@ -6,6 +6,8 @@ import {
   buildUrl,
   errorMessage,
   getCsrfToken,
+  isPasswordChangeRequired,
+  setPasswordChangeHandler,
   request,
   setCsrfToken,
   setUnauthorizedHandler,
@@ -153,6 +155,40 @@ describe('download', () => {
     expect(await api.download('/x', undefined, 'export.bin')).toBe('export.bin')
     fetchMock.mockResolvedValueOnce(res(403, { error: 'denied', code: 'forbidden' }))
     await expect(api.download('/x')).rejects.toMatchObject({ code: 'forbidden' })
+  })
+})
+
+describe('password change required', () => {
+  afterEach(() => setPasswordChangeHandler(null))
+  it('calls the handler on 403 password_change_required only', async () => {
+    const h = vi.fn()
+    setPasswordChangeHandler(h)
+    fetchMock.mockResolvedValueOnce(res(403, { error: 'change', code: 'password_change_required' }))
+    const err = await api.get('/projects').catch((e) => e)
+    expect(isPasswordChangeRequired(err)).toBe(true)
+    expect(h).toHaveBeenCalledTimes(1)
+    fetchMock.mockResolvedValueOnce(res(403, { error: 'no', code: 'forbidden' }))
+    const other = await api.get('/projects').catch((e) => e)
+    expect(isPasswordChangeRequired(other)).toBe(false)
+    expect(isPasswordChangeRequired(new Error('x'))).toBe(false)
+    expect(h).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('postDownload / getBlob', () => {
+  it('posts JSON and saves the response', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:2') as unknown as typeof URL.createObjectURL
+    URL.revokeObjectURL = vi.fn()
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    setCsrfToken('c')
+    fetchMock.mockResolvedValueOnce(res(200, 'pdf', { 'Content-Disposition': 'attachment; filename="R.pdf"' }))
+    expect(await api.postDownload('/projects/1/reports/generate', { format: 'pdf' }, 'fallback.pdf')).toBe('R.pdf')
+    const [, init] = fetchMock.mock.calls[0]
+    expect(init.method).toBe('POST')
+    expect(init.body).toBe('{"format":"pdf"}')
+    expect(init.headers['X-CSRF-Token']).toBe('c')
+    fetchMock.mockResolvedValueOnce(res(200, 'img'))
+    expect(await (await api.getBlob('/files/1/content', { inline: 1 })).text()).toBe('img')
   })
 })
 

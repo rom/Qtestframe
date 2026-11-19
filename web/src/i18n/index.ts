@@ -3,6 +3,8 @@ import { createI18n } from 'vue-i18n'
 import { setFormatLocale } from '@/lib/format'
 import en from './locales/en'
 import sv from './locales/sv'
+import guideEn from './locales/guide.en'
+import guideSv from './locales/guide.sv'
 import { PRIMEVUE_LOCALES, type PrimeVueLocale } from './primevue'
 import { chooseLanguage, DEFAULT_LANG, intlLocale, navigatorLanguages, normalizeLang, readStoredLang, writeStoredLang, type Lang } from './select'
 
@@ -14,7 +16,11 @@ export const i18n = createI18n({
   globalInjection: true,
   locale: DEFAULT_LANG as Lang,
   fallbackLocale: 'en',
-  messages: { en, sv },
+  // user guide and intro tour texts (own files; titles.help is merged into titles)
+  messages: {
+    en: { ...en, ...guideEn, titles: { ...en.titles, ...guideEn.titles } },
+    sv: { ...sv, ...guideSv, titles: { ...sv.titles, ...guideSv.titles } },
+  },
   missingWarn: false,
   fallbackWarn: false,
 })

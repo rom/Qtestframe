@@ -33,6 +33,7 @@ import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
 import { enumOptions } from '@/i18n/labels'
+import HelpLink from '@/guide/HelpLink.vue'
 const prefs = usePrefsStore()
 
 const proj = useProjectStore()
@@ -145,6 +146,7 @@ const progress = (r: TestRun) => summarize(r.summary)
       <div class="sub">{{ t('runs.subtitle') }}</div>
     </div>
     <div class="actions">
+      <HelpLink page="runs" />
       <Button v-if="auth.can(P.runWrite)" :label="t('runs.new')" icon="pi pi-plus" @click="openCreate" />
     </div>
   </div>

@@ -29,6 +29,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"roles":                rbac.Roles,
 		"runner_enabled":       s.Runner.Enabled(),
 		"auto_create_test":     s.Cfg.Requirements.AutoCreateTest,
+		"max_upload_mb":        s.Cfg.Files.MaxUploadMB,
 		"themes":               model.Themes,
 		"languages":            model.Languages,
 		"version":              Version,

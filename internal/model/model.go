@@ -154,6 +154,8 @@ type FileLink struct {
 	EntityType string `json:"entity_type"` // requirement | test | run | execution
 	EntityID   string `json:"entity_id"`
 	Key        string `json:"key"` // item key or run name
+	// RunID is set for execution links (the run containing the execution).
+	RunID string `json:"run_id,omitempty"`
 }
 
 // ReportDefinition is a saved custom report.
@@ -217,6 +219,7 @@ type Membership struct {
 	UserID     string    `json:"user_id"`
 	Email      string    `json:"email,omitempty"`
 	Name       string    `json:"display_name,omitempty"`
+	Avatar     string    `json:"avatar,omitempty"`
 	Role       string    `json:"role"`
 	CreatedAt  time.Time `json:"created_at"`
 }
@@ -535,6 +538,7 @@ type Comment struct {
 	UserID     string    `json:"user_id"`
 	UserEmail  string    `json:"user_email"`
 	UserName   string    `json:"user_name"`
+	UserAvatar string    `json:"user_avatar"`
 	Body       string    `json:"body"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`

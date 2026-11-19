@@ -13,6 +13,7 @@ import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import CommentsPanel from './CommentsPanel.vue'
+import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import RelationsPanel from './RelationsPanel.vue'
 import Tabs from 'primevue/tabs'
@@ -98,6 +99,7 @@ watch([() => meta.meta.auto_create_test, () => prefs.prefs.create_linked_test], 
 // ---------- tabs ----------
 const tab = ref('details')
 const commentCount = ref(0)
+const attachmentCount = ref<number | null>(null)
 const relationCount = ref(0)
 function resolveId(field: string, id: string): string | undefined {
   if (field === 'category_ids') {
@@ -136,6 +138,7 @@ async function load() {
     const r = await api.get<Requirement>(`/requirements/${props.itemId}`)
     item.value = r
     commentCount.value = r.comment_count ?? 0
+    attachmentCount.value = null
     relationCount.value = r.relation_count ?? 0
     form.value = {
       title: r.title,
@@ -338,11 +341,13 @@ function criterionLabel(id: string | null) {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="relations"><i class="pi pi-sitemap" aria-hidden="true" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
+  <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="requirement" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
   <HistoryPanel
     entity="requirement"

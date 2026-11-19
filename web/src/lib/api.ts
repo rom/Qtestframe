@@ -46,6 +46,28 @@ export function setUnauthorizedHandler(fn: UnauthorizedHandler | null): void {
   onUnauthorized = fn ?? defaultUnauthorized
 }
 
+export type PasswordChangeHandler = () => void
+let onPasswordChange: PasswordChangeHandler | null = null
+
+/** Called when any request answers 403 `password_change_required`. */
+export function setPasswordChangeHandler(fn: PasswordChangeHandler | null): void {
+  onPasswordChange = fn
+}
+
+/** Code the server uses while the user must change a reset password. */
+export const PASSWORD_CHANGE_REQUIRED = 'password_change_required'
+
+/** Whether an error means the user has to change the password first. */
+export function isPasswordChangeRequired(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 403 && e.code === PASSWORD_CHANGE_REQUIRED
+}
+
+/** Global reactions to an error response (used by fetch and upload requests). */
+export function handleErrorResponse(err: ApiError, opts: { noAuthRedirect?: boolean } = {}): void {
+  if (err.status === 401 && !opts.noAuthRedirect) onUnauthorized()
+  else if (isPasswordChangeRequired(err)) onPasswordChange?.()
+}
+
 export type ParamValue = string | number | boolean | null | undefined | string[]
 
 /** Build "/api/v1/<path>?a=b", skipping empty parameters; arrays are comma joined. */
@@ -123,8 +145,9 @@ async function send(method: string, path: string, opts: RequestOptions = {}): Pr
   if (method !== 'GET' && method !== 'HEAD' && csrfToken) headers['X-CSRF-Token'] = csrfToken
   const res = await fetch(buildUrl(path, opts.params), init)
   if (!res.ok) {
-    if (res.status === 401 && !opts.noAuthRedirect) onUnauthorized()
-    throw await toError(res)
+    const err = await toError(res)
+    handleErrorResponse(err, opts)
+    throw err
   }
   return res
 }
@@ -149,6 +172,21 @@ export async function download(path: string, params?: Record<string, ParamValue>
   return name
 }
 
+/** GET a binary response as a Blob (e.g. a preview). */
+export async function getBlob(path: string, params?: Record<string, ParamValue>): Promise<Blob> {
+  const res = await send('GET', path, { params })
+  return res.blob()
+}
+
+/** POST JSON and save the binary response as a file (report generation). Returns the filename. */
+export async function postDownload(path: string, body: unknown, fallbackName = 'download'): Promise<string> {
+  const res = await send('POST', path, { body })
+  const blob = await res.blob()
+  const name = filenameFromDisposition(res.headers.get('Content-Disposition'), fallbackName)
+  saveBlob(blob, name)
+  return name
+}
+
 export const api = {
   get: <T = unknown>(path: string, params?: Record<string, ParamValue>, opts: RequestOptions = {}) =>
     request<T>('GET', path, { ...opts, params }),
@@ -160,6 +198,8 @@ export const api = {
   del: <T = unknown>(path: string, body?: unknown, opts: RequestOptions = {}) =>
     request<T>('DELETE', path, { ...opts, body }),
   download,
+  postDownload,
+  getBlob,
 }
 
 /** Normalise list responses: accepts `{items,total}`, a bare array or null. */

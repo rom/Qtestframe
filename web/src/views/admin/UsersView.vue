@@ -11,6 +11,9 @@ import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
+import UserAvatar from '@/components/UserAvatar.vue'
+import TempPasswordDialog from '@/components/TempPasswordDialog.vue'
+import { generatePassword } from '@/lib/signin'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDate } from '@/lib/format'
 import type { User } from '@/lib/types'
@@ -78,6 +81,31 @@ async function save() {
     formError.value = errorMessage(e)
   }
 }
+
+// ---------- password reset (generated temporary password) ----------
+const tempOpen = ref(false)
+const tempPassword = ref('')
+const tempUser = ref('')
+const isLocal = (u: User) => !u.auth_provider || u.auth_provider === 'local'
+function resetPassword(u: User) {
+  notify.confirmDanger(
+    t('admin.confirmResetPassword', { user: u.email }),
+    async () => {
+      const pw = generatePassword(16)
+      try {
+        await api.patch(`/users/${u.id}`, { password: pw, must_change_password: true })
+        u.must_change_password = true
+        tempPassword.value = pw
+        tempUser.value = u.email
+        tempOpen.value = true
+      } catch (e) {
+        notify.fail(e, t('admin.resetFailed'))
+      }
+    },
+    t('admin.resetPasswordHeader'),
+    t('admin.resetPasswordAction'),
+  )
+}
 </script>
 
 <template>
@@ -88,7 +116,9 @@ async function save() {
       <Button :label="t('admin.newUser')" icon="pi pi-user-plus" @click="openCreate" />
     </div>
     <DataTable v-stack :value="filtered" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
-      <Column field="email" :header="t('common.email')" sortable body-class="stack-main" />
+      <Column field="email" :header="t('common.email')" sortable body-class="stack-main">
+        <template #body="{ data }"><span class="row nowrap" style="gap: 8px; min-width: 0"><UserAvatar :avatar="data.avatar" :email="data.email" :name="data.display_name || data.email" :size="28" /><span class="ellipsis">{{ data.email }}</span></span></template>
+      </Column>
       <Column field="display_name" :header="t('common.name')" sortable />
       <Column field="auth_provider" :header="t('admin.provider')" sortable style="width: 130px" />
       <Column :header="t('admin.flags')" style="width: 220px">
@@ -96,11 +126,12 @@ async function save() {
           <div class="row" style="gap: 4px">
             <Tag v-if="data.super_admin" :value="t('admin.superAdmin')" severity="danger" />
             <Tag v-if="data.disabled" :value="t('admin.disabled')" severity="contrast" />
+            <Tag v-if="data.must_change_password" :value="t('admin.mustChange')" severity="warn" />
           </div>
         </template>
       </Column>
       <Column field="created_at" :header="t('common.created')" sortable style="width: 130px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column style="width: 60px"><template #body="{ data }"><Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('admin.editNamed', { name: data.email })" v-tooltip="t('common.edit')" @click="openEdit(data)" /></template></Column>
+      <Column style="width: 100px"><template #body="{ data }"><Button v-if="isLocal(data) && data.id !== auth.user?.id" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" /><Button icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('admin.editNamed', { name: data.email })" v-tooltip="t('common.edit')" @click="openEdit(data)" /></template></Column>
     </DataTable>
   </div>
   <Dialog v-model:visible="dialog" :header="editing ? t('admin.editUser') : t('admin.newUser')" modal style="width: min(460px, 95vw)">
@@ -120,4 +151,5 @@ async function save() {
       </div>
     </form>
   </Dialog>
+  <TempPasswordDialog v-model:visible="tempOpen" :password="tempPassword" :user="tempUser" />
 </template>

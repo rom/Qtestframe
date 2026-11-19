@@ -56,3 +56,15 @@ export function grantableRoles(role: string, superAdmin = false): string[] {
   const r = roleRank(role)
   return ROLES.filter((x) => roleRank(x) <= r)
 }
+
+/** Message key suffix of a permission ("member.read" → "member_read"). */
+export function permissionKey(perm: string): string {
+  return perm.replace(/[^a-z0-9]+/gi, '_')
+}
+
+/** Every permission of a role matrix: the known ones in their order, then unknown ones sorted. */
+export function matrixPermissions(matrix: Record<string, readonly string[] | null> | null | undefined): string[] {
+  const known = Object.values(P) as string[]
+  const seen = new Set(Object.values(matrix ?? {}).flatMap((x) => x ?? []))
+  return [...known.filter((p) => seen.has(p)), ...[...seen].filter((p) => !known.includes(p)).sort()]
+}

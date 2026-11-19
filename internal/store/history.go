@@ -476,12 +476,12 @@ func validComment(body string) (string, error) {
 	return body, nil
 }
 
-const commentSelect = `SELECT c.id, c.entity_type, c.entity_id, c.user_id, COALESCE(u.email, ''), COALESCE(u.display_name, ''), c.body, c.created_at, c.updated_at
+const commentSelect = `SELECT c.id, c.entity_type, c.entity_id, c.user_id, COALESCE(u.email, ''), COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), c.body, c.created_at, c.updated_at
 	FROM comments c LEFT JOIN users u ON u.id = c.user_id`
 
 func scanComment(r interface{ Scan(...any) error }) (*model.Comment, error) {
 	var c model.Comment
-	if err := r.Scan(&c.ID, &c.EntityType, &c.EntityID, &c.UserID, &c.UserEmail, &c.UserName, &c.Body, &c.CreatedAt, &c.UpdatedAt); err != nil {
+	if err := r.Scan(&c.ID, &c.EntityType, &c.EntityID, &c.UserID, &c.UserEmail, &c.UserName, &c.UserAvatar, &c.Body, &c.CreatedAt, &c.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &c, nil

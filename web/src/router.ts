@@ -10,6 +10,8 @@ import { i18n, t } from './i18n'
 
 const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true } },
+  // forced password change after an administrator reset (see beforeEach)
+  { path: '/change-password', name: 'changePassword', component: () => import('./views/ChangePasswordView.vue'), meta: { passwordChange: true } },
   {
     path: '/',
     component: () => import('./layouts/AppLayout.vue'),
@@ -38,6 +40,8 @@ const routes: RouteRecordRaw[] = [
           { path: 'settings', name: 'settings', component: () => import('./views/SettingsView.vue') },
           { path: 'export', name: 'export', component: () => import('./views/ExportView.vue') },
           { path: 'baselines', name: 'baselines', component: () => import('./views/BaselinesView.vue'), meta: { perm: P.requirementRead } },
+          { path: 'documents', name: 'documents', component: () => import('./views/DocumentsView.vue') },
+          { path: 'reports', name: 'reports', component: () => import('./views/ReportsView.vue') },
         ],
       },
       { path: 'search', name: 'search', component: () => import('./views/SearchView.vue') },
@@ -51,9 +55,13 @@ const routes: RouteRecordRaw[] = [
           { path: 'audit', name: 'audit', component: () => import('./views/admin/AuditView.vue'), meta: { perm: P.auditRead } },
           { path: 'tenants', name: 'tenants', component: () => import('./views/admin/TenantsView.vue'), meta: { superAdmin: true } },
           { path: 'users', name: 'users', component: () => import('./views/admin/UsersView.vue'), meta: { superAdmin: true } },
+          { path: 'roles', name: 'rbac', component: () => import('./views/admin/RbacView.vue') },
+          { path: 'backup', name: 'backup', component: () => import('./views/admin/BackupView.vue'), meta: { superAdmin: true } },
         ],
       },
       { path: 'profile', name: 'profile', component: () => import('./views/ProfileView.vue') },
+      // user guide (src/guide); its page title titles.help comes from i18n/locales/guide.*.ts
+      { path: 'help/:page?', component: () => import('./guide/HelpView.vue'), name: 'help' },
       { path: ':pathMatch(.*)*', name: 'notfound', component: () => import('./views/NotFoundView.vue') },
     ],
   },
@@ -82,6 +90,9 @@ router.beforeEach(async (to) => {
     return true
   }
   if (!auth.me) return { name: 'login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
+  // a reset password must be changed before anything else
+  if (auth.me.user?.must_change_password) return to.meta.passwordChange ? true : { name: 'changePassword' }
+  if (to.meta.passwordChange) return { path: '/' }
   if (to.name === 'home') return await homeRoute()
   if (to.meta.superAdmin && !auth.me.user.super_admin) return { name: 'projects' }
   if (typeof to.meta.perm === 'string' && !auth.can(to.meta.perm)) return { name: 'projects' }

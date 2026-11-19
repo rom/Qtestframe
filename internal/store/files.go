@@ -155,7 +155,7 @@ func (s *Store) fileLinks(ctx context.Context, ids []string) (map[string][]model
 	if len(ids) == 0 {
 		return out, nil
 	}
-	rows, err := s.c().query(ctx, `SELECT a.file_id, a.entity_type, a.entity_id, COALESCE(r.key, t.key, ru.name, et.key, '')
+	rows, err := s.c().query(ctx, `SELECT a.file_id, a.entity_type, a.entity_id, COALESCE(r.key, t.key, ru.name, et.key, ''), COALESCE(e.run_id, '')
 		FROM attachments a
 		LEFT JOIN requirements r ON a.entity_type = 'requirement' AND r.id = a.entity_id
 		LEFT JOIN test_cases t ON a.entity_type = 'test' AND t.id = a.entity_id
@@ -170,7 +170,7 @@ func (s *Store) fileLinks(ctx context.Context, ids []string) (map[string][]model
 	for rows.Next() {
 		var fid string
 		var l model.FileLink
-		if err := rows.Scan(&fid, &l.EntityType, &l.EntityID, &l.Key); err != nil {
+		if err := rows.Scan(&fid, &l.EntityType, &l.EntityID, &l.Key, &l.RunID); err != nil {
 			return nil, err
 		}
 		out[fid] = append(out[fid], l)

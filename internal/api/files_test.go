@@ -343,3 +343,45 @@ func TestAuditRangeAndCSV(t *testing.T) {
 		t.Fatal(res.Header, string(body))
 	}
 }
+
+func TestFileIntegrationDetails(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	pid := a.project("FID")
+	if m := a.m("GET", "/api/v1/meta", nil, 200); m["max_upload_mb"].(float64) != 25 {
+		t.Fatal(m)
+	}
+	// inline PDFs are not sandboxed (Chromium refuses to render them), others are
+	doc := a.upload("POST", "/api/v1/projects/"+pid+"/documents", "file", "p.pdf", "application/pdf", []byte("%PDF-1.4"), nil, 201)
+	res := a.raw("GET", "/api/v1/files/"+doc["id"].(string)+"/content?inline=1", nil)
+	res.Body.Close()
+	if csp := res.Header.Get("Content-Security-Policy"); strings.Contains(csp, "sandbox") || !strings.Contains(csp, "default-src 'none'") {
+		t.Fatal(csp)
+	}
+	res = a.raw("GET", "/api/v1/files/"+doc["id"].(string)+"/content", nil)
+	res.Body.Close()
+	if !strings.Contains(res.Header.Get("Content-Security-Policy"), "sandbox") {
+		t.Fatal(res.Header)
+	}
+	// execution links carry their run id
+	tc := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "T"}, 201)
+	run := a.m("POST", "/api/v1/projects/"+pid+"/runs", map[string]any{"name": "R", "test_ids": []string{tc["id"].(string)}}, 201)
+	ex := items(a.m("GET", "/api/v1/runs/"+run["id"].(string)+"/executions", nil, 200))[0]["id"].(string)
+	f := a.upload("POST", "/api/v1/executions/"+ex+"/attachments", "file", "s.txt", "", []byte("x"), nil, 201)
+	l := f["links"].([]any)[0].(map[string]any)
+	if l["run_id"] != run["id"] || l["key"] != "FID-TC-1" {
+		t.Fatal(l)
+	}
+	// avatars of other people appear on members and comments
+	a.m("PATCH", "/api/v1/auth/me", map[string]any{"avatar": "preset:owl"}, 200)
+	for _, m := range items(a.m("GET", "/api/v1/members", nil, 200)) {
+		if m["email"] == "admin@example.com" && m["avatar"] != "preset:owl" {
+			t.Fatal(m)
+		}
+	}
+	rid := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "R"}, 201)["id"].(string)
+	a.m("POST", "/api/v1/requirements/"+rid+"/comments", map[string]any{"body": "hi"}, 201)
+	if c := items(a.m("GET", "/api/v1/requirements/"+rid+"/comments", nil, 200))[0]; c["user_avatar"] != "preset:owl" {
+		t.Fatal(c)
+	}
+}

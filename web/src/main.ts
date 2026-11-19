@@ -11,7 +11,7 @@ import './styles.css'
 import App from './App.vue'
 import { router } from './router'
 import { i18n } from './i18n'
-import { setUnauthorizedHandler } from './lib/api'
+import { setPasswordChangeHandler, setUnauthorizedHandler } from './lib/api'
 import { useAuthStore } from './stores/auth'
 import { vField, vStack } from './directives'
 
@@ -48,6 +48,13 @@ setUnauthorizedHandler(() => {
   auth.clear()
   const cur = router.currentRoute.value
   if (cur.name !== 'login') router.push({ name: 'login', query: { redirect: cur.fullPath } })
+})
+
+// an administrator reset the password: everything but /auth/* answers 403 password_change_required
+setPasswordChangeHandler(() => {
+  const auth = useAuthStore(pinia)
+  if (auth.me?.user) auth.me.user.must_change_password = true
+  if (router.currentRoute.value.name !== 'changePassword') router.push({ name: 'changePassword' })
 })
 
 app.mount('#app')

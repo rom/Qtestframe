@@ -64,6 +64,19 @@ export const A11Y_COMPONENTS = {
       },
     },
   },
+  // Aura's warn text (yellow.600) and dark-scheme info text (blue.500) miss 4.5:1
+  message: {
+    colorScheme: {
+      light: { warn: { color: '{yellow.800}' } },
+      dark: { info: { color: '{blue.300}' } },
+    },
+  },
+  toast: {
+    colorScheme: {
+      light: { warn: { color: '{yellow.800}', detailColor: '{yellow.900}' } },
+      dark: { info: { color: '{blue.300}', detailColor: '{blue.200}' } },
+    },
+  },
   togglebutton: {
     colorScheme: {
       light: { root: { color: '{text.muted.color}' }, icon: { color: '{text.muted.color}' } },
