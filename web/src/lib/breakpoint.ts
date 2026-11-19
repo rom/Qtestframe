@@ -6,8 +6,10 @@ import { getCurrentScope, onScopeDispose, readonly, ref, type Ref } from 'vue'
 export const BREAKPOINTS = {
   /** phones: stacked tables, single-column forms, full-screen drawers */
   phone: 640,
-  /** below this the sidebar is off-canvas and the folder tree a drawer */
+  /** below this the sidebar is off-canvas */
   tablet: 1023,
+  /** below this the folder tree of the requirement/test workspace is a drawer */
+  wide: 1199,
 } as const
 
 export type BreakpointName = keyof typeof BREAKPOINTS

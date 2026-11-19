@@ -426,9 +426,12 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
 .nav-close {
   margin-left: auto;
 }
-@media (max-width: 1023px) {
+@media (max-width: 1279px) {
   .user-text {
     display: none !important;
+  }
+  .tenant-select {
+    max-width: 200px;
   }
 }
 </style>

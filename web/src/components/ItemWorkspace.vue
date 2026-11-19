@@ -36,8 +36,8 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { rememberFocus } from '@/lib/a11y'
 const prefs = usePrefsStore()
-/** below 1024 px the folder tree lives in a drawer opened by a "Folders" button */
-const treeInDrawer = useBreakpoint('tablet')
+/** below 1200 px the folder tree lives in a drawer opened by a "Folders" button */
+const treeInDrawer = useBreakpoint('wide')
 const foldersOpen = ref(false)
 let restoreFoldersFocus: ReturnType<typeof rememberFocus> | null = null
 watch(foldersOpen, (open) => {
