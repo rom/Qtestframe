@@ -161,12 +161,37 @@ Varje ändring skapar en ny **version**. Fliken **Versionshistorik** listar vers
 
 **Återställ den här versionen** kopierar tillbaka innehållet i en gammal version som en **ny** version: titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, kategorier och kriterier. Inget går förlorat; de nyare versionerna finns kvar i historiken. Mapp och projekt ändras inte. Kategorier som inte längre finns tas bort.
 
+## Godkänn många krav på en gång
+
+Den som har granskningsbehörighet (`requirement.review`) kan godkänna eller avslå många krav i ett steg. Kryssa i kraven och välj **Godkänn eller avslå…** i verktygsfältet, eller välj **Massgranskning** ovanför listan när inget är markerat. Välj sedan:
+
+- **Vilka poster**: de markerade, alla som visas i listan (aktuell mapp och filter, så filtrera först för ett urval, t.ex. `folder:Betalningar obligation:must`) eller alla krav i projektet.
+- **Beslut**: godkänn eller avslå.
+- **Bara poster med status**: som standard bara krav i *Granskning*. Lägg till *Utkast* för att godkänna utkast direkt.
+- **Ta med ändå, trots**: se nedan.
+- **Kommentar**: läggs till på varje krav som ändras, till exempel "Godkänt på granskningsmötet 12 mars".
+- **Slutför också mina öppna granskningsförfrågningar**: visas när [granskningsförfrågningar](reviews-and-notifications.md) till dig är öppna för några av kraven; påslaget som standard. Dina förfrågningar beslutas då tillsammans med kraven (*Godkänd* när du godkänner, *Ändringar begärda* när du avslår), och de som frågade får en notis. Checklistorna bockas inte för; granskningen sparar att den beslutades i en massgranskning. Förfrågningar till andra granskare håller fortfarande kravet utanför.
+
+Förhandsgranskningen visar vilka krav som ändras och vilka som hoppas över, grupperade efter orsak:
+
+| Orsak | Betydelse |
+|---|---|
+| Har redan den här statusen | inget att göra |
+| Statusen är inte vald ovan | statusen är inte en av dem du valde |
+| Den senaste granskningen begärde ändringar | en [granskningsförfrågan](reviews-and-notifications.md) besvarades med *Begär ändringar* |
+| Granskningsförfrågningar är fortfarande öppna | någon har inte granskat klart |
+| Har misstänkta länkar | ett länkat test har ändrats sedan länken bekräftades |
+| Saknar kravnivå | för att godkänna krävs en kravnivå (inte för att avslå) |
+
+Välj en kontroll under **Ta med ändå, trots** för att godkänna de kraven ändå. Inget sparas förrän du väljer knappen längst ner. Varje ändring registreras i kravets versionshistorik och i granskningsloggen, och hela steget kan ångras med ångra-knappen i övre fältet (för att ångra krävs skrivbehörighet; slutförda granskningsförfrågningar förblir beslutade).
+
 ## Massändring
 
 Kryssa i rutorna för flera krav (eller rubrikens kryssruta för hela sidan). Ett verktygsfält visas:
 
 - **Ange status**, **Ange prioritet**, **Ange kravnivå**: tillämpas direkt på alla markerade krav;
 - **Kategorier +** / **Kategorier −**: lägg till eller ta bort kategorivärden;
+- **Taggar +** / **Taggar −**: lägg till eller ta bort taggar (vid borttagning spelar stora och små bokstäver ingen roll);
 - **Flytta**: flytta dem till en mapp;
 - **Ta bort**: ta bort dem efter bekräftelse;
 - **×**: rensa markeringen.
@@ -186,6 +211,8 @@ Varje massändring registreras i varje kravs versionshistorik.
   - kriterier och historik följer med.
 
 Utan mus använder du mappens åtgärdsknapp **⋮** eller knappen **Flytta** för markeringen.
+
+**Flera mappar på en gång:** välj **Markera flera mappar** (☑) ovanför trädet. Varje mapp får en kryssruta; en ikryssad mapp omfattar sina undermappar. Verktygsfältet flyttar sedan de ikryssade mapparna **till** en annan mapp, till **översta nivån** eller till **ett annat projekt** (med allt innehåll, som ovan), eller **tar bort** dem (och behåller deras krav i den överordnade mappen, eller tar bort dem också). En flytt in i någon av de ikryssade mapparna nekas innan något ändras. **Klar** återgår till det vanliga trädet.
 
 **När du tar bort en mapp** frågar Qtestframe vad som ska hända med innehållet: **Ta bort, behåll innehållet** flyttar undermappar och krav till den överordnade mappen; **Ta bort allt** tar bort hela delträdet med alla krav i det.
 
@@ -214,6 +241,51 @@ Fliken **Bilagor** i redigeraren innehåller filer som hör till kravet: ritning
 Du kan också välja **Bifoga från arkivet**: en fil som redan finns i projektets [dokumentarkiv](documents.md) länkas i stället för att kopieras, så att en specifikation kan bifogas till många krav. Att ta bort en bilaga tar bara bort länken; en uppladdad bilaga som inte längre är länkad någonstans tas bort.
 
 Att ladda upp och ta bort bilagor kräver rollen **Ansvarig** (samma som att redigera kravet); att läsa dem kräver **Läsare**.
+
+## Importera krav
+
+Kunder skickar ofta sina krav som ett kalkylark, en ReqIF-export från sitt kravverktyg eller ett Word-dokument. **Importera** i sidhuvudet på kravsidan läser en sådan fil och skapar alla krav på en gång. Import kräver behörighet att redigera krav (**Manager** som standard).
+
+1. Dra filen till dialogrutan eller välj den. Filformat som stöds är **CSV** (separerad med komma, semikolon eller tabb; UTF-8 med eller utan BOM, UTF-16 och Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` och den zippade `.reqifz`) och **Word** (`.docx`), högst 20 MB och 5 000 krav per fil.
+2. Granska **förhandsvisningen**: det upptäckta formatet, hur varje kolumn läses och de första 50 kraven med anmärkningar (härledd rubrik, okänt värde, dubblett). Inget har sparats än.
+3. Byt fält för en kolumn om gissningen blev fel, eller välj *ignorera*. Avmarkera **Importera** för rader du inte vill ha.
+4. Välj alternativ och klicka på **Importera**. Listan laddas om och dialogrutan visar hur många krav, mappar och tester som skapades och vad som hoppades över.
+
+**Kolumner (CSV, Excel och tabeller i Word).** Den första av de inledande raderna som namnger en rubrik- eller beskrivningskolumn är rubrikraden; rader ovanför den ignoreras. Kolumnnamn känns igen på svenska och engelska, oavsett versaler:
+
+| Fält | Kolumnnamn |
+|---|---|
+| Rubrik | Titel, Namn, Rubrik · Title, Name, Heading, Summary |
+| Beskrivning | Beskrivning, Krav, Kravtext · Description, Text, Requirement, Statement |
+| ID | Nyckel, Referens, Nummer, Krav-ID · ID, Key, Ref, Number |
+| Kravnivå | Kravnivå, Nivå · Obligation, Level |
+| Typ | Typ, Kravtyp · Type |
+| Prioritet | Prioritet · Priority |
+| Status | Status, Tillstånd · State |
+| Källa | Källa, Ursprung · Source, Origin |
+| Motivering | Motivering, Kommentar · Rationale, Justification, Comment |
+| Ägare | Ägare, Ansvarig · Owner, Responsible |
+| Taggar | Taggar, Etiketter · Tags, Labels (separerade med komma) |
+| Mapp | Mapp, Avsnitt, Kapitel · Folder, Section, Chapter (en sökväg som `Säkerhet / Inloggning`) |
+| Acceptanskriterier | Kriterier, Acceptanskriterier · Criteria, Acceptance criteria (ett per rad; en rad kan börja med en metod, t.ex. `inspektion: …`) |
+
+Värden för typ, prioritet, status och kravnivå kan skrivas på svenska eller engelska (*Hög*/*High*, *Godkänd*/*Approved*, *Säkerhet*/*Security*). Ett okänt värde noteras och standardvärdet används. En rad utan rubrik får en av de första orden i beskrivningen. En fil som exporterats från Qtestframe (krav som CSV eller Excel) kan importeras igen; från en Excel-export följer utvärderingskriterierna på kriteriebladet med.
+
+**ReqIF.** Varje SPEC-OBJECT blir ett krav: *ReqIF.Name* (eller ett attribut som heter title eller name) ger rubriken, *ReqIF.Text* beskrivningen och *ReqIF.ForeignID* ID:t; övriga attribut matchas på namn som kolumner. Formaterad text (XHTML) importeras som ren text med sina radbrytningar. Objekt som bara har ett *ReqIF.ChapterName* är rubriker: specifikationshierarkin under dem blir mappar.
+
+**Word.** Rubriker (formatmallarna *Rubrik 1*, *Rubrik 2* … eller *Heading 1* …) blir mappar. Varje annat stycke eller listpunkt som innehåller ett kravord blir ett krav: stycket blir beskrivningen och rubriken dess första åtta ord. En inledande beteckning som `REQ-12:` eller `[SRS-7]` blir ID:t. Listpunkter direkt efter ett krav som slutar med kolon läggs till i kravet. Tabeller med en rubrikrad läses som ett kalkylark. Om dokumentet skriver sina engelska kravord med versaler (MUST, SHALL) räknas inte gemena *may* eller *should* i löptext som krav.
+
+**Kravnivåer.** En kravnivåkolumn (SKA, BÖR, FÅR, FÅR INTE, MUST, SHALL …) har företräde; annars upptäcks nivån i rubriken och beskrivningen som i redigeraren, se [Kravnivåer](#kravnivåer).
+
+**Alternativ.**
+
+- **Målmapp:** dit kraven hamnar (mappen som är vald i trädet, eller översta nivån).
+- **Skapa mappar från filen:** mappsökvägar, avsnitt och rubriker skapas under målmappen; befintliga mappar med samma namn återanvänds. Utan alternativet hamnar allt i målmappen.
+- **Status:** för krav som saknar status i filen (standard *Utkast*). *Godkänd* och *Avvisad* kräver granskningsbehörighet.
+- **Skapa ett länkat test för varje krav**, som i redigeraren (kräver behörighet att redigera tester).
+- **Hoppa över dubbletter:** en rad hoppas över när dess ID redan finns registrerat i ett krav i projektet, eller när ett krav med samma rubrik (oavsett versaler) finns; rader som upprepas i filen räknas också.
+
+Ett importerat kravs ID sparas i fältet **Källa** som `ID: REQ-12` (efter filens källa, om den finns), och det är så dubbletter hittas nästa gång. Importen är allt eller inget: kan ett krav inte sparas, sparas inget. Varje import loggas i granskningsloggen.
 
 ## Kopiera ett krav
 

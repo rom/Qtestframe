@@ -209,3 +209,73 @@ func TestEmptyAndLimits(t *testing.T) {
 		t.Fatal("families")
 	}
 }
+
+func TestLanguagesAndRFCCasing(t *testing.T) {
+	reqs := []Requirement{
+		req(1, "must", "The system MUST log every sign-in of the user."),
+		req(2, "must", "The system MUST lock the account after five failed attempts."),
+		req(3, "must", "The user must be able to reset the password by e-mail."),                        // lowercase only
+		req(4, "should", "The system SHOULD respond within 2 seconds, and it should cache the result."), // mixed casing
+		req(5, "shall", "Systemet SKA spara loggar i fem år och de ska kunna exporteras."),              // Swedish
+		req(6, "must", "Systemet MUST kryptera all data som lagras på disk."),                           // English keyword in Swedish
+		req(7, "must", "The system MUST show a receipt. Kvittot ska skickas till kunden med e-post."),   // mixed in one text
+		req(8, "will", "The vendor WILL deliver the test data for the system."),
+	}
+	reqs[4].Title, reqs[5].Title = "Loggar för revision", "Kryptering av data"
+	rep := Analyze(Input{Requirements: reqs})
+	check := func(code, key, note string) *Finding {
+		t.Helper()
+		f := find(rep, code)
+		if f == nil {
+			t.Fatalf("%s missing: %+v", code, rep.Findings)
+		}
+		for _, it := range f.Items {
+			if it.Key == key && (note == "" || it.Note == note) {
+				return f
+			}
+		}
+		t.Fatalf("%s: %s/%s not in %+v", code, key, note, f.Items)
+		return nil
+	}
+	check(CodeRFCNotNormative, "P-REQ-3", "must")
+	check(CodeRFCCasing, "P-REQ-4", "should")
+	if f := find(rep, CodeRFCCasing); len(f.Items) != 1 {
+		t.Fatal("only requirements with both forms", f.Items)
+	}
+	check(CodeEnglishKeywords, "P-REQ-6", "MUST")
+	check(CodeMixedLanguageText, "P-REQ-7", "en + sv")
+	check(CodeNonRFCKeyword, "P-REQ-8", "WILL")
+	f := check(CodeMixedLanguages, "P-REQ-5", "sv")
+	if f.Params["dominant"] != "en" || !strings.Contains(f.Params["languages"], "sv") {
+		t.Fatal(f.Params)
+	}
+	if len(rep.Languages) != 2 || rep.Languages[0].Value != "en" {
+		t.Fatal(rep.Languages)
+	}
+	// casing is reported on its own, not again as a language rule
+	for _, x := range rep.Findings {
+		if x.Code == CodeLanguageRule && x.Params["rule"] == "lowercase-keyword" {
+			t.Fatal("lowercase keywords counted twice")
+		}
+	}
+	// one language: no language findings
+	rep = Analyze(Input{Requirements: reqs[:2]})
+	if find(rep, CodeMixedLanguages) != nil || find(rep, CodeMixedLanguageText) != nil || len(rep.Languages) != 1 {
+		t.Fatalf("%+v", rep.Findings)
+	}
+	if got := textLanguages("Login", ""); len(got) != 0 {
+		t.Fatal(got)
+	}
+	if got := uniq([]string{"a", "b", "a"}); len(got) != 2 {
+		t.Fatal(got)
+	}
+}
+
+func TestSuspectLinksFinding(t *testing.T) {
+	r := req(1, "must", "The system MUST log every sign-in.")
+	r.Suspect = 2
+	f := find(Analyze(Input{Requirements: []Requirement{r}}), CodeSuspectLinks)
+	if f == nil || f.Items[0].Note != "2" || f.Severity != Warning {
+		t.Fatal(f)
+	}
+}

@@ -16,6 +16,17 @@ En **körning** (testkörning, kampanj) är en uppsättning testfall som du exek
 
 ![Sidan Testkörningar med listan över körningar, deras förlopp och andel godkända](../images/sv-runs-list.png)
 
+## Ändra många körningar på en gång
+
+Kryssa i körningarna i listan (eller rubrikens kryssruta för hela sidan). Verktygsfältet som visas ändrar alla på en gång (behörighet att ändra körningar):
+
+- **Ange status**: till exempel avbryta gamla körningar, eller avsluta körningar som i praktiken är klara.
+- **Ange release**: lägg körningarna i en [release](releases-and-risks.md), eller ta bort dem ur en.
+- **Miljö / bygge**: ange miljö, bygge eller båda (ett tomt fält rensar).
+- **Ta bort**: ta bort körningarna med alla resultat, efter bekräftelse.
+
+Ändringar av status, release, miljö och bygge kan ångras med ångra-knappen i övre fältet; borttagning kan inte ångras.
+
 ## Skapa en körning
 
 Välj **Ny körning** och fyll i:
@@ -41,6 +52,18 @@ När ett testfall läggs till kopieras dess aktuella steg (med delade steg utvec
 - **Lägg till testfall** lägger till fler testfall; **CI-import** visar hur en pipeline rapporterar utfall; **Redigera körning** ändrar namn, beskrivning, miljö och bygge; **Ta bort** tar bort körningen med alla dess utfall.
 - Tabellen listar varje exekvering med testfall, utfall, **Tilldelad**, **Exekverad av**, **Defekter**, tidpunkten **Avslutad** och tidsåtgången. Filtrera den, till exempel `status:failed` eller `assignee:anna`.
 - Per rad: **Markera som godkänd** och **Markera som underkänd** registrerar ett utfall direkt; uppspelningsknappen öppnar exekveringen i exekveringsvyn.
+
+## Spara många utfall på en gång
+
+På körningens sida kryssar du i tester i exekveringstabellen (rubrikens kryssruta markerar hela sidan). Verktygsfältet erbjuder då:
+
+- **Ange resultat**: *Godkänd*, *Underkänd*, *Blockerad*, *Överhoppad* eller *Ej körd* för alla markerade tester.
+- **Resultat, ansvarig, anteckning…**: en dialog för att i ett steg ange resultat, tilldela testerna till någon (tomt tar bort tilldelningen) och lägga till en anteckning under de anteckningar de redan har. **Bara tester som inte har körts än** lämnar tester som redan har ett utfall orörda, till exempel för att markera resten *Överhoppad* i slutet av en körning.
+- **Ta bort ur körningen** (behörighet att ändra körningar): tar ut testerna ur körningen, med utfall, stegresultat och bevis, efter bekräftelse.
+
+Samma [exekveringsinställningar](administration.md) gäller som för ett test i taget: *Godkänd* och *Underkänd* sparas bara för tester som får köras. Tester som inte får det listas med orsaken, och resten sparas. Förutsättningar i samma urval hanteras: när du markerar ett test och dess förutsättning *Godkänd* samtidigt sparas förutsättningen först. *Blockerad*, *Överhoppad*, *Ej körd*, tilldelningar och anteckningar går alltid.
+
+Stegresultaten ändras inte: ett massresultat är varje tests samlade utfall. Körningen avslutas av sig själv när alla tester har ett slutligt utfall, och krav vars status följer bevisen uppdateras. Resultat, tilldelningar och anteckningar kan ångras med ångra-knappen; att ta bort tester kan inte ångras.
 
 ## Exekveringsvyn
 
@@ -143,6 +166,64 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 - En ogiltig status stoppar importen med ett fel; utfall före den förblir sparade.
 
 Förvara nyckeln i CI-systemets hemlighetslager, aldrig i kodförrådet. En API-nyckel är knuten till en organisation och har aldrig fler rättigheter än sin ägare.
+
+Utöver det här JSON-formatet finns tre enklare vägar för testverktyg som redan skriver rapporter: JUnit XML, kommandot `qtestframe report` och Playwright-rapportören.
+
+### Koppla automatiserade tester till testnycklar
+
+Varje automatiserat test måste ange vilket testfall i Qtestframe det exekverar. Skriv testnyckeln (till exempel `SHOP-TC-12`) på något av följande ställen:
+
+- **i testets namn**, till exempel `test_login[SHOP-TC-12]`, `TestCart/SHOP-TC-12_add` eller `SHOP-TC-12 betalar med kort`. Där ett namn inte får innehålla bindestreck fungerar även `SHOP_TC_12`. Nyckeln kan också stå i klassnamnet.
+- **som egenskap på testfallet** i JUnit-rapporten, med namnet `qtestframe.key` eller `test_key`. Med pytest: `record_property("test_key", "SHOP-TC-12")`.
+- **med Playwright** som taggen `@SHOP-TC-12` eller annoteringen `{ type: 'qtestframe', description: 'SHOP-TC-12' }`.
+
+Flera testfall med samma nyckel (till exempel samma test i två webbläsare) ger ett gemensamt utfall: *underkänt* går före *godkänt*, och tiderna summeras.
+
+### JUnit XML
+
+Nästan alla testverktyg skriver JUnit XML: Playwright (rapportören `junit`), pytest (`--junitxml`), Go (med go-junit-report), Maven Surefire och Gradle, Jest (jest-junit) och Vitest (`--reporter=junit`). Skicka filen till körningen:
+
+```bash
+curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/junit" \
+  -H "Authorization: Bearer $QTF_TOKEN" \
+  -H "Content-Type: application/xml" \
+  --data-binary @results/junit.xml
+```
+
+- Ett testfall med `<failure>` eller `<error>` registreras som *underkänt*, ett med `<skipped>` som *överhoppat* och alla andra som *godkända*. Tiden hämtas från `time`; utdata innehåller felmeddelandet och `system-out`/`system-err`.
+- Svaret listar, förutom `updated`, `unknown` och `rejected`, namnen på testfall utan nyckel under `unmapped`.
+- Lägg till `?create_missing=true` för att skapa ett automatiserat testfall i utkastläge för varje testfall utan nyckel (med testfallets namn som titel) och registrera dess utfall. Vid nästa import hittas testfallet igen via titeln. Det kräver behörighet att skriva testfall.
+- Flera filer kan skickas samtidigt som en multipart-uppladdning (`-F file=@a.xml -F file=@b.xml`); tillsammans får de vara högst 20 MB.
+
+### Kommandot qtestframe report
+
+Programmet `qtestframe` kan själv ladda upp rapporter. Det hittar körningen via namnet i projektet, eller skapar den:
+
+```bash
+export QTF_URL=https://qtf.example.com QTF_TOKEN=qtf_…
+qtestframe report --project SHOP --run "Nattlig $BUILD_NUMBER" --create-run \
+  --build "$BUILD_NUMBER" --environment staging \
+  --junit 'results/*.xml'
+```
+
+- `--run-id ID` rapporterar till en känd körning i stället för `--project`/`--run`.
+- `--junit` och `--json` (JSON-formatet ovan) tar filer eller mönster och kan anges flera gånger.
+- `--create-missing` skapar testfall för testfall utan nyckel, som ovan.
+- Kommandot skriver ut hur många utfall som registrerades och listar okända nycklar, testfall utan nyckel och avvisade utfall med orsaken. Det avslutas med en felkod när uppladdningen misslyckas, och med `--fail-on-unknown` även när utfall inte matchade något testfall.
+
+### Playwright-rapportören
+
+För Playwright finns en rapportör (`@qtestframe/playwright-reporter`, i `integrations/playwright-reporter` i Qtestframes källkod) som rapporterar medan testerna körs, utan någon JUnit-fil:
+
+```ts
+// playwright.config.ts
+reporter: [
+  ['list'],
+  ['@qtestframe/playwright-reporter', { project: 'SHOP', run: 'Nattlig', createRun: true }],
+],
+```
+
+Den läser serverns adress och API-nyckeln från `QTF_URL` och `QTF_TOKEN`, hämtar nyckeln från annoteringen, taggen eller titeln, skriver felet och rubrikerna från `test.step()` med deras utfall i utdata och laddar upp skärmbilder, spår (traces) och andra bilagor från underkända tester som bilagor till exekveringen. Om rapporteringen misslyckas loggas bara ett meddelande; testkörningen påverkas inte.
 
 ## Länkar för en körning
 

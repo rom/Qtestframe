@@ -17,7 +17,7 @@ var (
 	requirementSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
-			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention"},
+			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention"},
 	}
@@ -25,7 +25,7 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on"},
+			"depends_on", "suspect"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on"},
@@ -50,10 +50,15 @@ type projectContext struct {
 	categories map[string]model.Category
 	links      []model.TraceLink
 	r2t, t2r   map[string][]string
-	last       map[string]string
-	comments   map[string]int
-	relCount   map[string]int
-	defects    map[string][]string
+	// suspect: requirement or test id → number of its suspect links
+	suspect map[string]int
+	// requirement id → open defects / highest open risk level
+	openDefects map[string]int
+	riskLevel   map[string]string
+	last        map[string]string
+	comments    map[string]int
+	relCount    map[string]int
+	defects     map[string][]string
 	// requirement id → related keys; parent/child keys of refines relations
 	related, parents, children map[string][]string
 	// item id → references to related items (both directions)
@@ -83,7 +88,20 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 		return nil, err
 	}
 	pc.r2t, pc.t2r = store.LinkIndex(pc.links)
+	pc.suspect = map[string]int{}
+	for _, l := range pc.links {
+		if l.SuspectSince != nil {
+			pc.suspect[l.RequirementID]++
+			pc.suspect[l.TestCaseID]++
+		}
+	}
 	if pc.last, err = s.Store.LastResults(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.openDefects, err = s.Store.OpenDefectCounts(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.riskLevel, err = s.Store.RequirementRiskLevels(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
 	if pc.comments, pc.relCount, err = s.Store.ProjectCounts(ctx, tenantID, p.ID); err != nil {
@@ -165,6 +183,9 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.Relations = pc.relCount[r.ID]
 	r.RelationRefs = pc.refs[r.ID]
 	r.CriteriaCount = len(r.Criteria)
+	r.SuspectLinks = pc.suspect[r.ID]
+	r.OpenDefects = pc.openDefects[r.ID]
+	r.RiskLevel = pc.riskLevel[r.ID]
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
@@ -177,6 +198,7 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	t.CommentCount = pc.comments[t.ID]
 	t.StepCount = len(t.Steps)
 	t.Defects = pc.defects[t.ID]
+	t.SuspectLinks = pc.suspect[t.ID]
 	refs := append([]model.ItemRef{}, pc.refs[t.ID]...)
 	seen := map[string]bool{}
 	for _, st := range t.Steps {
@@ -217,6 +239,9 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"updated_at": {ts(r.UpdatedAt)}, "criteria": crit,
 		"related": pc.related[r.ID], "parent": pc.parents[r.ID], "child": pc.children[r.ID],
 		"comments": {strconv.Itoa(r.CommentCount)},
+		"suspect":  {strconv.Itoa(r.SuspectLinks)},
+		"defects":  {strconv.Itoa(r.OpenDefects)},
+		"risk":     {r.RiskLevel},
 		"mention":  mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
 	}
 }
@@ -254,7 +279,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"tag": t.Tags, "folder": {t.FolderPath}, "category": names, "dimension": dims, "linked": linkedKeys,
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
 		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
-		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)},
+		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)}, "suspect": {strconv.Itoa(t.SuspectLinks)},
 		"mention":    mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
 		"depends_on": pc.prereqKeys[t.ID],
 	}

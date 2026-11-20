@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { allKeys, ancestorKeys, buildTree, canMoveFolder, descendantIds, flatten, folderPath } from './tree'
+import { allKeys, ancestorKeys, buildTree, canMoveFolder, checkedIds, descendantIds, flatten, folderPath, topMostFolders } from './tree'
 import type { Folder } from './types'
 
 function f(id: string, parent: string | null, name = id, position = 0): Folder {
@@ -68,5 +68,17 @@ describe('paths', () => {
       { id: 'a1x', label: 'Deep', depth: 2 },
       { id: 'a2', label: 'Two', depth: 1 },
     ])
+  })
+})
+
+describe('bulk selection', () => {
+  const f = (id: string, parent: string | null) => ({ id, parent_id: parent, name: id }) as unknown as Folder
+  const folders = [f('a', null), f('a1', 'a'), f('a11', 'a1'), f('b', null)]
+  it('keeps the top-most folders', () => {
+    expect(topMostFolders(folders, ['a1', 'a', 'a11', 'b'])).toEqual(['a', 'b'])
+    expect(topMostFolders(folders, ['a11', 'b'])).toEqual(['a11', 'b'])
+  })
+  it('reads checked keys', () => {
+    expect(checkedIds({ a: { checked: true, partialChecked: false }, b: { checked: false, partialChecked: true }, c: true, d: undefined })).toEqual(['a', 'c'])
   })
 })

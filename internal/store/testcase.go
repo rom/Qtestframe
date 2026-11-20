@@ -411,7 +411,7 @@ func (s *Store) CreateLink(ctx context.Context, tenantID string, l *model.TraceL
 // ListLinks returns links of a project, optionally restricted to one
 // requirement or test.
 func (s *Store) ListLinks(ctx context.Context, tenantID, projectID, requirementID, testID string) ([]model.TraceLink, error) {
-	q := `SELECT l.id, l.project_id, l.requirement_id, l.test_case_id, l.criterion_id, l.created_at, r.key, t.key
+	q := `SELECT l.id, l.project_id, l.requirement_id, l.test_case_id, l.criterion_id, l.created_at, l.suspect_since, l.suspect_reason, r.key, t.key
 		FROM trace_links l JOIN requirements r ON r.id = l.requirement_id JOIN test_cases t ON t.id = l.test_case_id
 		WHERE l.tenant_id = ?`
 	args := []any{tenantID}
@@ -436,10 +436,15 @@ func (s *Store) ListLinks(ctx context.Context, tenantID, projectID, requirementI
 	for rows.Next() {
 		var l model.TraceLink
 		var crit sql.NullString
-		if err := rows.Scan(&l.ID, &l.ProjectID, &l.RequirementID, &l.TestCaseID, &crit, &l.CreatedAt, &l.RequirementKey, &l.TestCaseKey); err != nil {
+		var since sql.NullTime
+		if err := rows.Scan(&l.ID, &l.ProjectID, &l.RequirementID, &l.TestCaseID, &crit, &l.CreatedAt, &since, &l.SuspectReason, &l.RequirementKey, &l.TestCaseKey); err != nil {
 			return nil, err
 		}
 		l.CriterionID = strPtr(crit)
+		if since.Valid {
+			t := since.Time
+			l.SuspectSince = &t
+		}
 		out = append(out, l)
 	}
 	return out, rows.Err()
@@ -449,12 +454,17 @@ func (s *Store) ListLinks(ctx context.Context, tenantID, projectID, requirementI
 func (s *Store) GetLink(ctx context.Context, tenantID, id string) (*model.TraceLink, error) {
 	var l model.TraceLink
 	var crit sql.NullString
-	err := s.c().row(ctx, `SELECT id, project_id, requirement_id, test_case_id, criterion_id, created_at FROM trace_links WHERE id = ? AND tenant_id = ?`, id, tenantID).
-		Scan(&l.ID, &l.ProjectID, &l.RequirementID, &l.TestCaseID, &crit, &l.CreatedAt)
+	var since sql.NullTime
+	err := s.c().row(ctx, `SELECT id, project_id, requirement_id, test_case_id, criterion_id, created_at, suspect_since, suspect_reason FROM trace_links WHERE id = ? AND tenant_id = ?`, id, tenantID).
+		Scan(&l.ID, &l.ProjectID, &l.RequirementID, &l.TestCaseID, &crit, &l.CreatedAt, &since, &l.SuspectReason)
 	if err != nil {
 		return nil, mapErr(err, "link")
 	}
 	l.CriterionID = strPtr(crit)
+	if since.Valid {
+		t := since.Time
+		l.SuspectSince = &t
+	}
 	return &l, nil
 }
 

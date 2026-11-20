@@ -246,6 +246,12 @@ export interface Requirement {
   /** Related items in both directions (requirement relations and verifying tests). */
   relations?: ItemRef[] | null
   criteria_count?: number
+  /** links to tests that are suspect (changed since the link was confirmed) */
+  suspect_links?: number
+  /** highest level of the open risks it addresses */
+  risk_level?: string
+  /** open defects linked to it or its tests */
+  open_defects?: number
 }
 
 /** A reference from a list item to a related item (see lib/itemRefs.ts). */
@@ -306,6 +312,8 @@ export interface TestCase {
   last_result?: string
   comment_count?: number
   called_by?: TestRef[] | null
+  /** links to requirements that are suspect */
+  suspect_links?: number
   /** Requirements it verifies, tests it calls and tests that call it. */
   relations?: ItemRef[] | null
   step_count?: number
@@ -319,6 +327,9 @@ export interface TraceLink {
   test_case_id: string
   criterion_id: string | null
   created_at: string
+  /** set when the requirement or test changed after the link was confirmed */
+  suspect_since?: string | null
+  suspect_reason?: string
   requirement_key?: string
   test_case_key?: string
 }
@@ -335,6 +346,8 @@ export interface TestRun {
   created_at: string
   started_at: string | null
   completed_at: string | null
+  release_id?: string | null
+  release_name?: string
   summary?: Record<string, number>
 }
 
@@ -649,4 +662,219 @@ export interface TenantSettings {
   allow_unready_requirements: boolean
   ready_requirement_statuses: string[]
   allow_unmet_dependencies: boolean
+  /** true turns off "requirement status follows test results" */
+  manual_verification?: boolean
+}
+
+// ---------------------------------------------------------------- releases
+
+export interface ExitCriterion {
+  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated */
+  type: string
+  /** percent for percentage criteria */
+  threshold?: number
+  /** minimum severity (defects) or risk level (risks) */
+  level?: string
+}
+
+export interface Release {
+  id: string
+  project_id: string
+  name: string
+  version: string
+  description: string
+  /** planned, active, released, cancelled */
+  status: string
+  target_date: string
+  exit_criteria: ExitCriterion[]
+  released_at: string | null
+  released_by: string
+  release_note: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  requirement_ids?: string[]
+  requirement_count: number
+  run_count: number
+}
+
+export interface ReleaseItem {
+  kind: string
+  id: string
+  key: string
+  title: string
+  note?: string
+}
+
+export interface CriterionResult extends ExitCriterion {
+  met: boolean
+  actual: number
+  total: number
+  items: ReleaseItem[] | null
+  available: boolean
+}
+
+export interface ReleaseStatusReport {
+  release: Release
+  go: boolean
+  criteria: CriterionResult[]
+  summary: Record<string, number>
+}
+
+// ---------------------------------------------------------------- defects
+
+export interface DefectLink {
+  entity_type: string
+  entity_id: string
+  key?: string
+  title?: string
+}
+
+export interface Defect {
+  id: string
+  project_id: string
+  key: string
+  title: string
+  description: string
+  /** open, in_progress, resolved, closed, rejected */
+  status: string
+  /** critical, major, minor, trivial */
+  severity: string
+  priority: string
+  assignee: string
+  external_system: string
+  external_key: string
+  external_url: string
+  external_status: string
+  synced_at: string | null
+  created_by: string
+  created_at: string
+  updated_at: string
+  resolved_at: string | null
+  links?: DefectLink[]
+}
+
+export interface LinkedDefect extends Defect {
+  /** how it is linked: requirement, test or execution */
+  via: string
+}
+
+export interface DefectTracker {
+  /** "", jira or github */
+  type: string
+  url: string
+  project_key: string
+  repo: string
+  issue_type: string
+  labels: string
+  user: string
+  /** write-only */
+  token?: string
+  has_token: boolean
+}
+
+// ---------------------------------------------------------------- risks
+
+export interface Risk {
+  id: string
+  project_id: string
+  key: string
+  title: string
+  description: string
+  category: string
+  likelihood: number
+  impact: number
+  /** identified, mitigating, mitigated, accepted, closed */
+  status: string
+  mitigation: string
+  owner: string
+  created_by: string
+  created_at: string
+  updated_at: string
+  score: number
+  /** low, medium, high, critical */
+  level: string
+  requirement_ids: string[]
+  covered: number
+  verified: number
+}
+
+// ---------------------------------------------------------------- notifications
+
+export interface AppNotification {
+  id: string
+  user_id: string
+  project_id: string
+  event: string
+  title: string
+  body: string
+  entity_type: string
+  entity_id: string
+  actor: string
+  read_at: string | null
+  created_at: string
+}
+
+export interface Webhook {
+  id: string
+  project_id: string
+  name: string
+  url: string
+  /** only returned when created or rotated */
+  secret?: string
+  has_secret: boolean
+  events: string[]
+  enabled: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+  last_delivery_at: string | null
+  last_status: number
+  last_error: string
+}
+
+// ---------------------------------------------------------------- reviews
+
+export interface ChecklistItem {
+  text: string
+  checked: boolean
+  note?: string
+}
+
+export interface ReviewRequest {
+  id: string
+  project_id: string
+  entity_type: string
+  entity_id: string
+  entity_key: string
+  entity_title: string
+  entity_version: number
+  reviewer_id: string
+  reviewer_email: string
+  reviewer_name: string
+  requested_by: string
+  message: string
+  checklist: ChecklistItem[]
+  /** pending, approved, changes_requested, cancelled */
+  status: string
+  comment: string
+  due_date: string
+  decided_at: string | null
+  created_at: string
+  updated_at: string
+  outdated: boolean
+}
+
+export interface Signoff {
+  id: string
+  baseline_id: string
+  user_id: string
+  user_email: string
+  user_name: string
+  /** authored, reviewed, approved, released */
+  meaning: string
+  comment: string
+  content_hash: string
+  signed_at: string
+  valid: boolean
 }

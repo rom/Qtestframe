@@ -10,6 +10,7 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import MultiSelect from 'primevue/multiselect'
 import Select from 'primevue/select'
+import Tag from 'primevue/tag'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Drawer from 'primevue/drawer'
 import Dialog from 'primevue/dialog'
@@ -21,13 +22,18 @@ import StatusTag from './StatusTag.vue'
 import CategoryChips from './CategoryChips.vue'
 import DefectLinks from './DefectLinks.vue'
 import CategorySelect from './CategorySelect.vue'
+import TagsInput from './TagsInput.vue'
 import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
+import RequirementImportDialog from './RequirementImportDialog.vue'
+import BulkReviewDialog from './BulkReviewDialog.vue'
+import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
 import { dragIds, encodeIds, ITEMS_MIME } from '@/lib/dnd'
 import { folderPath } from '@/lib/tree'
 import { formatDate } from '@/lib/format'
+import { levelRank, riskLevelSeverity } from '@/lib/risks'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { P } from '@/lib/permissions'
@@ -77,6 +83,9 @@ const isReq = computed(() => props.kind === 'requirement')
 const plural = computed(() => (isReq.value ? 'requirements' : 'tests'))
 const pid = computed(() => proj.pid)
 const canWrite = computed(() => auth.can(isReq.value ? P.requirementWrite : P.testWrite))
+const canReview = computed(() => auth.can(isReq.value ? P.requirementReview : P.testReview))
+const bulkReviewOpen = ref(false)
+const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
 const folders = computed(() => proj.folders[props.kind])
 const categories = computed(() => proj.categoriesFor(props.kind))
@@ -147,7 +156,7 @@ interface Col {
   width?: string
   sortable?: boolean
   /** field to sort by when it differs from the displayed one */
-  sortField?: string
+  sortField?: string | ((item: any) => string)
 }
 const allColumns = computed<Col[]>(() =>
   isReq.value
@@ -168,6 +177,9 @@ const allColumns = computed<Col[]>(() =>
         { field: 'criteria_count', header: t('workspace.colCriteria'), width: '90px' },
         { field: 'version', header: t('workspace.colVersion'), width: '70px' },
         { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'suspect_links', header: t('workspace.colSuspect'), width: '110px' },
+        { field: 'risk_level', header: t('risksView.colRisk'), width: '105px', sortField: (r: Item) => String(levelRank((r as Requirement).risk_level)) },
+        { field: 'open_defects', header: t('risksView.colOpenDefects'), width: '115px' },
         { field: 'created_by', header: t('workspace.colCreatedBy') },
         { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
@@ -188,6 +200,7 @@ const allColumns = computed<Col[]>(() =>
         { field: 'defects', header: t('workspace.colDefects'), sortable: false },
         { field: 'version', header: t('workspace.colVersion'), width: '70px' },
         { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'suspect_links', header: t('workspace.colSuspect'), width: '110px' },
         { field: 'created_by', header: t('workspace.colCreatedBy') },
         { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
@@ -246,6 +259,13 @@ watch(
   },
 )
 
+// ---------- import (requirements only) ----------
+const importOpen = ref(false)
+async function onImported(res: ImportResult) {
+  if (res.folders_created) await proj.loadFolders(props.kind)
+  await load()
+}
+
 async function onFoldersChanged() {
   await proj.loadFolders(props.kind)
   if (selectedFolder.value && !folders.value.some((f) => f.id === selectedFolder.value)) selectedFolder.value = null
@@ -253,11 +273,15 @@ async function onFoldersChanged() {
 }
 
 // ---------- bulk actions ----------
+async function onBulkReviewed() {
+  selection.value = []
+  await load()
+}
 const selectedIds = computed(() => selection.value.map((s) => s.id))
 async function bulkSet(set: Record<string, unknown>) {
   if (!selectedIds.value.length) return
   const ids = [...selectedIds.value]
-  const field = (k: string) => (k === 'add_category_ids' || k === 'remove_category_ids' ? 'category_ids' : k)
+  const field = (k: string) => (k === 'add_category_ids' || k === 'remove_category_ids' ? 'category_ids' : k === 'add_tags' || k === 'remove_tags' ? 'tags' : k)
   const before = ids.map((id) => {
     const row = (items.value.find((x) => x.id === id) ?? {}) as Record<string, unknown>
     const old: Record<string, unknown> = {}
@@ -300,6 +324,18 @@ function bulkDelete() {
       notify.fail(e)
     }
   })
+}
+const tagDialog = ref(false)
+const tagMode = ref<'add' | 'remove'>('add')
+const tagValues = ref<string[]>([])
+function openTagDialog(mode: 'add' | 'remove') {
+  tagMode.value = mode
+  tagValues.value = []
+  tagDialog.value = true
+}
+async function applyTags() {
+  tagDialog.value = false
+  if (tagValues.value.length) await bulkSet(tagMode.value === 'add' ? { add_tags: tagValues.value } : { remove_tags: tagValues.value })
 }
 const catDialog = ref(false)
 const catMode = ref<'add' | 'remove'>('add')
@@ -416,6 +452,26 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             @reset="layout.reset()"
           />
           <Button icon="pi pi-refresh" severity="secondary" text rounded :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
+          <Button
+            v-if="isReq && canWrite"
+            :label="t('reqImport.button')"
+            icon="pi pi-upload"
+            severity="secondary"
+            outlined
+            aria-haspopup="dialog"
+            v-tooltip.bottom="t('reqImport.buttonHint')"
+            @click="importOpen = true"
+          />
+          <Button
+            v-if="canReview && !selection.length && items.length"
+            :label="t('bulkReview.toolbar')"
+            icon="pi pi-verified"
+            severity="secondary"
+            outlined
+            aria-haspopup="dialog"
+            v-tooltip.bottom="isReq ? t('bulkReview.toolbarHintRequirement') : t('bulkReview.toolbarHintTest')"
+            @click="bulkReviewOpen = true"
+          />
           <Button v-if="canWrite" :label="isReq ? t('workspace.newRequirement') : t('workspace.newTest')" icon="pi pi-plus" @click="openEditor(null)" />
         </div>
       </div>
@@ -474,13 +530,26 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
 
-      <div v-if="selection.length && canWrite" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
+      <div v-if="selection.length && (canWrite || canReview)" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
+        <Button
+          v-if="canReview"
+          :label="isReq ? t('bulkReview.buttonRequirement') : t('bulkReview.buttonTest')"
+          icon="pi pi-verified"
+          size="small"
+          severity="success"
+          outlined
+          aria-haspopup="dialog"
+          @click="bulkReviewOpen = true"
+        />
+        <template v-if="canWrite">
         <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.setStatus')" :aria-label="t('workspace.setStatus')" size="small" style="min-width: 140px" />
         <Select v-model="bulkPriority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.setPriority')" :aria-label="t('workspace.setPriority')" size="small" style="min-width: 140px" />
         <Select v-model="bulkThird" :options="thirdOptions" option-label="label" option-value="value" :placeholder="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" :aria-label="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" size="small" style="min-width: 150px" />
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addCategories')" v-tooltip.bottom="t('workspace.addCategories')" @click="openCatDialog('add')" />
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeCategories')" v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
+        <Button :label="t('workspace.tagsButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addTags')" v-tooltip.bottom="t('workspace.addTags')" @click="openTagDialog('add')" />
+        <Button :label="t('workspace.tagsButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeTags')" v-tooltip.bottom="t('workspace.removeTags')" @click="openTagDialog('remove')" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button
           v-if="isSoftware(proj.project)"
@@ -492,6 +561,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           @click="$router.push({ name: 'prompts', params: { projectId: pid }, query: { kind: isReq ? 'implement' : 'automate_tests', ids: selectedIds.join(',') } })"
         />
         <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+        </template>
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
 
@@ -556,6 +626,14 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <span v-else-if="c.field === 'created_by' || c.field === 'source'" class="small">{{ data[c.field] }}</span>
             <span v-else-if="c.field === 'type'" class="small">{{ enumLabel('requirementType', data.type) }}</span>
             <span v-else-if="c.field === 'folder_path'" class="small muted">{{ data.folder_path }}</span>
+            <span v-else-if="c.field === 'suspect_links'" class="small" :class="data.suspect_links ? 'suspect' : 'muted'">
+              <i v-if="data.suspect_links" class="pi pi-exclamation-triangle" aria-hidden="true" /> {{ data.suspect_links ?? 0 }}
+            </span>
+            <Tag v-else-if="c.field === 'risk_level' && data.risk_level" :value="t(`risksView.level.${data.risk_level}`)" :severity="riskLevelSeverity(data.risk_level)" />
+            <span v-else-if="c.field === 'risk_level'" class="muted small">—</span>
+            <span v-else-if="c.field === 'open_defects'" class="small" :class="data.open_defects ? 'suspect' : 'muted'">
+              <i v-if="data.open_defects" class="pi pi-exclamation-circle" aria-hidden="true" /> {{ data.open_defects ?? 0 }}
+            </span>
             <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">
               <i :class="c.field === 'comment_count' ? 'pi pi-comments' : 'pi pi-sitemap'" class="muted" style="font-size: 11px" /> {{ data[c.field] ?? 0 }}
             </span>
@@ -615,6 +693,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     />
   </Drawer>
 
+  <Dialog v-model:visible="tagDialog" :header="tagMode === 'add' ? t('workspace.addTags') : t('workspace.removeTags')" modal style="width: min(480px, 95vw)">
+    <div class="grid" style="gap: 10px">
+      <TagsInput v-model="tagValues" :aria-label="t('common.tags')" />
+      <div class="small muted">{{ t(isReq ? 'workspace.appliesToRequirements' : 'workspace.appliesToTests', selection.length) }}<template v-if="tagMode === 'remove'"> · {{ t('workspace.removeTagsHint') }}</template></div>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="tagDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!tagValues.length" @click="applyTags" />
+    </template>
+  </Dialog>
   <Dialog v-model:visible="catDialog" :header="catMode === 'add' ? t('workspace.addCategories') : t('workspace.removeCategories')" modal style="width: min(480px, 95vw)">
     <div class="grid" style="gap: 12px">
       <SelectButton
@@ -636,4 +724,13 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     </template>
   </Dialog>
   <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />
+  <RequirementImportDialog v-if="isReq && canWrite" v-model:visible="importOpen" :project-id="pid" :folders="folders" :folder-id="selectedFolder" @imported="onImported" />
+  <BulkReviewDialog
+    v-model:visible="bulkReviewOpen"
+    :kind="isReq ? 'requirement' : 'test'"
+    :project-id="pid"
+    :selected="selectedIds"
+    :shown="shownIds"
+    @done="onBulkReviewed"
+  />
 </template>

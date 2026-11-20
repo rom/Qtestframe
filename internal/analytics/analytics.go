@@ -63,6 +63,13 @@ const (
 	CodeTestsNotReady       = "tests_not_ready"
 	CodeManyDrafts          = "many_drafts"
 	CodeNoOwner             = "no_owner"
+	CodeSuspectLinks        = "suspect_links"
+	CodeMixedLanguages      = "mixed_languages"
+	CodeMixedLanguageText   = "mixed_language_text"
+	CodeEnglishKeywords     = "english_keywords"
+	CodeRFCCasing           = "rfc_casing"
+	CodeRFCNotNormative     = "rfc_not_normative"
+	CodeNonRFCKeyword       = "non_rfc_keyword"
 )
 
 // Thresholds (variables so tests and callers can tune them).
@@ -76,6 +83,8 @@ var (
 	MaxItems = 200
 	// LowScore: the language analysis score below which a requirement is flagged.
 	LowScore = 60
+	// LanguageEvidence: marker words a text needs before its language counts.
+	LanguageEvidence = 2
 )
 
 // Requirement is the analytics view of a requirement.
@@ -93,6 +102,8 @@ type Requirement struct {
 	TestsReady int
 	// Conflicts: keys of requirements it conflicts with.
 	Conflicts []string
+	// Suspect: number of its links to tests that are suspect.
+	Suspect int
 }
 
 // Test is the analytics view of a test.
@@ -168,12 +179,14 @@ type Summary struct {
 
 // Report is the result of Analyze.
 type Report struct {
-	Summary     Summary   `json:"summary"`
-	Obligations []Count   `json:"obligations"`
-	Families    []Family  `json:"families"`
-	Statuses    []Count   `json:"statuses"`
-	Coverage    []Count   `json:"coverage"`
-	Findings    []Finding `json:"findings"`
+	Summary     Summary  `json:"summary"`
+	Obligations []Count  `json:"obligations"`
+	Families    []Family `json:"families"`
+	Statuses    []Count  `json:"statuses"`
+	Coverage    []Count  `json:"coverage"`
+	// Languages of the requirement texts (only texts whose language is clear).
+	Languages []Count   `json:"languages"`
+	Findings  []Finding `json:"findings"`
 }
 
 // family of an obligation level: keywords in one family mean the same.
@@ -272,8 +285,10 @@ func Analyze(in Input) Report {
 	// per requirement: language analysis and the keyword used
 	type info struct {
 		a       reqlang.Analysis
+		text    string // the analysed text
 		keyword string // canonical keyword of the stored level's family (text first)
 		level   string
+		lang    string // language of title and description ("" when unclear)
 	}
 	infos := make([]info, n)
 	scoreSum := 0
@@ -296,7 +311,8 @@ func Analyze(in Input) Report {
 		if kw == "" {
 			kw = defaultKeyword(level)
 		}
-		infos[i] = info{a: a, keyword: kw, level: level}
+		lang, _ := reqlang.DetectConfident(r.Title+". "+r.Description, LanguageEvidence)
+		infos[i] = info{a: a, text: text, keyword: kw, level: level, lang: lang}
 		scoreSum += a.Score
 	}
 	if n > 0 {
@@ -379,6 +395,7 @@ func Analyze(in Input) Report {
 
 	// ---- per requirement checks
 	var missing, kwMissing, mismatch, multi, noTestsM, noTests, failing, notRun, noCrit, empty, low, noOwner, conflicts, notReady []Item
+	var mixedText, englishKw, casing, notNormative, nonRFC, suspect []Item
 	byRule := map[string][]Item{}
 	covered, active, drafts := 0, 0, 0
 	for i := range reqs {
@@ -411,12 +428,47 @@ func Analyze(in Input) Report {
 		if strings.TrimSpace(r.Description) == "" {
 			empty = append(empty, reqItem(r, ""))
 		}
+		// languages within one requirement: the title and every sentence
+		if langs := textLanguages(r.Title, r.Description); len(langs) > 1 {
+			mixedText = append(mixedText, reqItem(r, strings.Join(langs, " + ")))
+		}
+		// RFC 2119 / 8174: keywords in capitals, English keywords in other languages
+		var lower, english []string
+		rfc, upper := 0, 0
+		for _, k := range a.Keywords {
+			if !reqlang.IsRFCKeyword(k.Keyword) {
+				if k.Level == reqlang.LevelWill && a.Language == "en" && inf.text[k.Offset:k.Offset+k.Length] == "WILL" {
+					nonRFC = append(nonRFC, reqItem(r, "WILL"))
+				}
+				continue
+			}
+			rfc++
+			word := inf.text[k.Offset : k.Offset+k.Length]
+			if word == strings.ToUpper(word) {
+				upper++
+				if inf.lang != "" && inf.lang != "en" {
+					english = append(english, word)
+				}
+			} else {
+				lower = append(lower, word)
+			}
+		}
+		if len(lower) > 0 {
+			if upper == 0 {
+				notNormative = append(notNormative, reqItem(r, strings.Join(uniq(lower), ", ")))
+			} else {
+				casing = append(casing, reqItem(r, strings.Join(uniq(lower), ", ")))
+			}
+		}
+		if len(english) > 0 {
+			englishKw = append(englishKw, reqItem(r, strings.Join(uniq(english), ", ")))
+		}
 		if a.Score < LowScore {
 			low = append(low, reqItem(r, itoa(a.Score)))
 		}
 		seenRule := map[string]bool{}
 		for _, is := range a.Issues {
-			if is.Rule == reqlang.RuleMissingKeyword || is.Rule == reqlang.RuleMultipleObligations || seenRule[is.Rule] {
+			if is.Rule == reqlang.RuleMissingKeyword || is.Rule == reqlang.RuleMultipleObligations || is.Rule == reqlang.RuleLowercaseKeyword || seenRule[is.Rule] {
 				continue // reported above
 			}
 			seenRule[is.Rule] = true
@@ -424,6 +476,9 @@ func Analyze(in Input) Report {
 		}
 		if strings.TrimSpace(r.Owner) == "" {
 			noOwner = append(noOwner, reqItem(r, ""))
+		}
+		if r.Suspect > 0 {
+			suspect = append(suspect, reqItem(r, itoa(r.Suspect)))
 		}
 		if len(r.Conflicts) > 0 {
 			conflicts = append(conflicts, reqItem(r, strings.Join(r.Conflicts, ", ")))
@@ -461,6 +516,45 @@ func Analyze(in Input) Report {
 	b.add(CodeKeywordMissing, Warning, CatObligations, map[string]string{"count": itoa(len(kwMissing))}, kwMissing)
 	b.add(CodeObligationMismatch, Warning, CatObligations, map[string]string{"count": itoa(len(mismatch))}, mismatch)
 	b.add(CodeMultipleLevels, Info, CatObligations, map[string]string{"count": itoa(len(multi))}, multi)
+	b.add(CodeRFCNotNormative, Warning, CatObligations, map[string]string{"count": itoa(len(notNormative))}, notNormative)
+	b.add(CodeRFCCasing, Warning, CatObligations, map[string]string{"count": itoa(len(casing))}, casing)
+	b.add(CodeNonRFCKeyword, Info, CatObligations, map[string]string{"count": itoa(len(nonRFC)), "keyword": "WILL"}, nonRFC)
+
+	// ---- languages
+	langCount := map[string][]int{}
+	known := 0
+	for i, inf := range infos {
+		if inf.lang != "" {
+			langCount[inf.lang] = append(langCount[inf.lang], i)
+			known++
+		}
+	}
+	for l, idx := range langCount {
+		rep.Languages = append(rep.Languages, Count{Value: l, Count: len(idx), Percent: pct(len(idx), known)})
+	}
+	sort.Slice(rep.Languages, func(i, j int) bool {
+		if rep.Languages[i].Count != rep.Languages[j].Count {
+			return rep.Languages[i].Count > rep.Languages[j].Count
+		}
+		return rep.Languages[i].Value < rep.Languages[j].Value
+	})
+	if len(rep.Languages) > 1 {
+		top := rep.Languages[0]
+		var names []string
+		for _, l := range rep.Languages {
+			names = append(names, fmt.Sprintf("%s %s%%", l.Value, fmtPct(l.Percent)))
+		}
+		var items []Item
+		for _, l := range rep.Languages[1:] {
+			for _, i := range langCount[l.Value] {
+				items = append(items, reqItem(&reqs[i], l.Value))
+			}
+		}
+		b.add(CodeMixedLanguages, Warning, CatConsistency, map[string]string{"dominant": top.Value, "dominantPercent": fmtPct(top.Percent),
+			"languages": strings.Join(names, ", "), "count": itoa(len(items))}, items)
+	}
+	b.add(CodeMixedLanguageText, Warning, CatConsistency, map[string]string{"count": itoa(len(mixedText))}, mixedText)
+	b.add(CodeEnglishKeywords, Info, CatConsistency, map[string]string{"count": itoa(len(englishKw))}, englishKw)
 
 	// ---- spread of obligation levels
 	if n >= MinForSpread {
@@ -500,6 +594,7 @@ func Analyze(in Input) Report {
 	b.add(CodeNoTestsMandatory, Problem, CatCoverage, map[string]string{"count": itoa(len(noTestsM))}, noTestsM)
 	b.add(CodeNoTests, Warning, CatCoverage, map[string]string{"count": itoa(len(noTests))}, noTests)
 	b.add(CodeTestsFailing, Problem, CatCoverage, map[string]string{"count": itoa(len(failing))}, failing)
+	b.add(CodeSuspectLinks, Warning, CatCoverage, map[string]string{"count": itoa(len(suspect))}, suspect)
 	b.add(CodeTestsNotRun, Info, CatCoverage, map[string]string{"count": itoa(len(notRun))}, notRun)
 	b.add(CodeNoCriteria, Warning, CatCoverage, map[string]string{"count": itoa(len(noCrit))}, noCrit)
 	if in.Tests != nil {
@@ -597,6 +692,9 @@ func Analyze(in Input) Report {
 	if rep.Families == nil {
 		rep.Families = []Family{}
 	}
+	if rep.Languages == nil {
+		rep.Languages = []Count{}
+	}
 	return rep
 }
 
@@ -645,4 +743,32 @@ func normalizeTitle(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// textLanguages returns the clear languages of a title and of each sentence
+// of a description, in order of appearance.
+func textLanguages(title, description string) []string {
+	parts := []string{title}
+	parts = append(parts, strings.FieldsFunc(description, func(r rune) bool { return r == '.' || r == '!' || r == '?' || r == '\n' })...)
+	var out []string
+	seen := map[string]bool{}
+	for _, p := range parts {
+		if l, ok := reqlang.DetectConfident(p, LanguageEvidence); ok && !seen[l] {
+			seen[l] = true
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+func uniq(v []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, x := range v {
+		if !seen[x] {
+			seen[x] = true
+			out = append(out, x)
+		}
+	}
+	return out
 }

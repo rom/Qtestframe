@@ -20,6 +20,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
   - Obligation levels based on RFC 2119/8174: `MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, `OPTIONAL`, `WILL` and `DESCRIBE`. The level is detected automatically from the text.
   - Live language checks while you write: ambiguous terms, TBDs, compound requirements, escape clauses, and/or, and more.
   - Status, type, priority, rationale, source (a per-project list of sources with free text), owner, tags (each tag in a colour of its own), version and **evaluation criteria** (test, inspection, analysis, demonstration, review).
+  - **Import** from the files customers send: CSV, Excel, ReqIF (`.reqif`, `.reqifz`) and Word, with English and Swedish column names, a preview with an editable column mapping, folders from sections and headings, obligation detection and duplicate checks.
 - **Test cases**
   - Manual tests are executed step by step (action, expected result, data).
   - Automated tests are shell, bash, Python or JavaScript scripts, run server-side in a sandbox. CI systems can also import results.
@@ -36,6 +37,13 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Requirement analytics:** the spread of obligation levels, inconsistent keywords (MUST in 95 % of the requirements but SHALL in a few), requirements without an obligation, tests or acceptance criteria, failing coverage, tests that verify nothing, duplicates, conflicts and the language findings per rule, with advice and the requirements concerned. While writing a requirement, a help panel explains the obligation levels and keywords in the interface language.
 - **Test flow:** a flowchart of a test's steps (checks of the expected results, shared steps expandable in place, automated tests as script → exit code) and the run order of a test run in stages derived from the test dependencies; both with a text view.
 - **Dependency graphs and tag cloud:** layered graphs of requirement relations and of test dependencies and shared steps, with filters and a list view; a tag cloud that lists the requirements, tests and documents carrying the selected tags.
+- **Suspect links and evidence:** when a requirement or test changes, its links become *suspect* until someone confirms them; a requirement's status follows the evidence (implemented → verified when all its tests pass, back when one fails or a link is suspect).
+- **Releases with exit criteria:** a release has a scope of requirements, the runs that test it and exit criteria (coverage, passed, mandatory requirements passed, no failures, no suspect links, no open defects of a severity, risks mitigated …) that give a go / no-go; releasing creates a baseline, and releasing despite a no-go needs a recorded reason.
+- **Defects** as items with status, severity, assignee and links to requirements, tests and executions (report one straight from a failed execution), with **Jira and GitHub** push, status sync and import.
+- **Risks:** a risk register with likelihood × impact, a heat map, mitigation, status and the requirements that address each risk, with risk coverage and a release criterion.
+- **Reviews and sign-off:** ask named people to review a requirement or test with a checklist, record their decision, and sign baselines electronically (password re-check, content fingerprint, audit).
+- **Notifications and webhooks:** in-app notifications for assignments, @mentions, review requests and defect changes; signed (HMAC-SHA256) webhooks per project for requirement, test, run, defect, risk, release, review and sign-off events.
+- **Automated results:** import JSON or **JUnit XML** results into a run, the `qtestframe report` command-line uploader for CI, and a **Playwright reporter** package ([integrations/playwright-reporter](integrations/playwright-reporter/README.md)).
 - **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder.
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
 - **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
@@ -340,6 +348,28 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 
 The run page has a **CI import** button that shows this command with the right run ID. Results of tests that may not be executed yet (see [Test execution settings](#test-execution-settings)) are not recorded; the response lists them under `rejected` with the reasons.
 
+### Reporting automated test results
+
+Tests are matched by a test key such as `SHOP-TC-7` in the test name (`test_login[SHOP-TC-7]`, `SHOP_TC_7` where hyphens are not allowed), the class name, a JUnit property `qtestframe.key`/`test_key`, or a Playwright tag/annotation.
+
+- **JUnit XML** – any tool that writes JUnit XML (Playwright, pytest, Go with go-junit-report, Maven Surefire, Gradle, Jest, Vitest …):
+
+  ```bash
+  curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/junit?create_missing=true" \
+    -H "Authorization: Bearer $QTF_TOKEN" -H "Content-Type: application/xml" --data-binary @junit.xml
+  ```
+
+  Failures and errors become `failed`, `<skipped>` `skipped`, the rest `passed`; several test cases with one key combine (failed wins, durations add up). `create_missing=true` creates draft automated tests for test cases without a key; otherwise they are listed under `unmapped`.
+- **Command line** – `qtestframe report` finds or creates the run and uploads JUnit XML or JSON files:
+
+  ```bash
+  QTF_URL=https://qtf.example.com QTF_TOKEN=qtf_… \
+    qtestframe report --project SHOP --run "Nightly $BUILD" --create-run --build "$BUILD" --junit 'reports/*.xml'
+  ```
+
+  It prints updated, unknown, unmapped and rejected results and exits non-zero on errors (and with `--fail-on-unknown` when results matched no test).
+- **Playwright reporter** – [`integrations/playwright-reporter`](integrations/playwright-reporter/README.md) (`@qtestframe/playwright-reporter`) reports while Playwright runs, includes `test.step()` results in the output and uploads screenshots and traces of failed tests as execution attachments.
+
 ## Command line reference
 
 | Command | Purpose |
@@ -352,6 +382,7 @@ The run page has a **CI import** button that shows this command with the right r
 | `qtestframe user create --email E [--name N] [--password-stdin] [--super-admin]` | create a local user |
 | `qtestframe member add --tenant S --email E --role R` | grant a role in a tenant |
 | `qtestframe healthcheck [--config F] [-p PORT] [--url U]` | probe `/healthz` (exit code 0 = healthy) |
+| `qtestframe report --url U --token T (--project KEY --run NAME [--create-run] \| --run-id ID) --junit F… \| --json F…` | upload automated test results (`QTF_URL`, `QTF_TOKEN`); see [Reporting automated test results](#reporting-automated-test-results) |
 | `qtestframe version` | print the version |
 
 Health endpoints for load balancers: `/healthz` (process alive) and `/readyz` (database reachable).

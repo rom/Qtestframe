@@ -21,6 +21,8 @@ var derivedFields = map[string]bool{
 	"coverage": true, "comment_count": true, "relation_count": true,
 	"linked_requirements": true, "last_result": true, "called_by": true,
 	"created_at": true, "created_by": true, "position": true,
+	// evidence and quality state, not content
+	"suspect_links": true, "risk_level": true, "open_defects": true,
 }
 
 // SnapshotRequirement returns the JSON snapshot stored for a requirement.
@@ -28,6 +30,7 @@ func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 	c := *r
 	c.FolderPath, c.LinkedTests, c.Coverage, c.CommentCount, c.Relations = "", 0, "", 0, 0
 	c.RelationRefs, c.CriteriaCount = nil, 0
+	c.SuspectLinks, c.RiskLevel, c.OpenDefects = 0, "", 0
 	if c.Criteria == nil {
 		c.Criteria = []model.EvaluationCriterion{}
 	}
@@ -40,6 +43,7 @@ func SnapshotTest(t *model.TestCase) json.RawMessage {
 	c := *t
 	c.FolderPath, c.LinkedReqs, c.LastResult, c.CommentCount, c.CalledBy = "", 0, "", 0, nil
 	c.RelationRefs, c.StepCount, c.Defects = nil, 0, nil
+	c.SuspectLinks = 0
 	steps := make([]model.TestStep, len(c.Steps))
 	for i, st := range c.Steps {
 		st.CallTestKey, st.CallTestTitle = "", ""
@@ -628,8 +632,17 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 		if err := removeExecutionAttachments(ctx, c, execs); err != nil {
 			return err
 		}
+		if err := deleteDefectLinks(ctx, c, "execution", execs); err != nil {
+			return err
+		}
+	}
+	if _, err := c.exec(ctx, `DELETE FROM review_requests WHERE entity_type = ? AND entity_id IN (`+placeholders(len(ids))+`)`, append([]any{entityType}, anySlice(ids)...)...); err != nil {
+		return err
 	}
 	if err := deleteItemLinks(ctx, c, entityType, ids); err != nil {
+		return err
+	}
+	if err := deleteDefectLinks(ctx, c, entityType, ids); err != nil {
 		return err
 	}
 	for _, tbl := range []string{"comments", "revisions"} {

@@ -19,6 +19,19 @@ Select **Traceability** in the project sidebar.
 
 The matrix scrolls in both directions; the requirement column stays visible.
 
+### Link several at once
+
+With the **Tester** role, a toolbar above the matrix (and the list) works on many links at once:
+
+1. Tick requirements with the checkbox at the start of their row, or **Select all shown requirements** (use the filters first to narrow them down).
+2. Optionally choose tests in **Tests for the selected requirements**; with none chosen, the actions take all tests.
+3. Choose an action; the number on each button says how many links it affects:
+   - **Link** links every selected requirement to every chosen test; existing links are kept.
+   - **Unlink** removes the links between the selected requirements and the chosen tests (after a confirmation).
+   - **Confirm suspect** confirms the suspect links among them (cells with a warning sign: the requirement or test changed after the link was confirmed).
+
+Ticking only tests (no requirements) lets **Unlink** and **Confirm suspect** act on all links of those tests. Linking and unlinking can be undone with **Undo**; the status that follows evidence is updated once for all affected requirements.
+
 ## How coverage is calculated
 
 Coverage is derived from the **last result** of every linked test. It is computed every time you look at it and never stored, so it is always current.
@@ -94,11 +107,13 @@ Cycles (for example two requirements that depend on each other) are drawn, but o
 
 | Category | Findings |
 |---|---|
-| Obligation levels | requirements without an obligation level; a level in the field but no keyword in the text; field and text disagree; several levels in one requirement; the spread: almost everything mandatory, no mandatory requirements, many optional (MAY) or many SHOULD or descriptive requirements |
-| Consistency | a keyword used by a few requirements while another with the same meaning dominates, for example *SHALL is used in 1 requirement, while MUST is used in 95 %*; keywords with the same meaning used about equally |
+| Obligation levels | keywords not written in capitals as RFC 2119 and RFC 8174 require ("must", "Should"), and requirements whose keywords are *only* in lower case and so have no normative keyword at all; WILL used as an obligation (it is not an RFC 2119 keyword); requirements without an obligation level; a level in the field but no keyword in the text; field and text disagree; several levels in one requirement; the spread: almost everything mandatory, no mandatory requirements, many optional (MAY) or many SHOULD or descriptive requirements |
+| Consistency | requirements in more than one language (for example mostly English with a few Swedish ones), a requirement whose title and sentences are in different languages, and English keywords in a requirement written in another language (MUST in a Swedish sentence); a keyword used by a few requirements while another with the same meaning dominates, for example *SHALL is used in 1 requirement, while MUST is used in 95 %*; keywords with the same meaning used about equally |
 | Coverage | mandatory and other requirements without tests; failing or not yet run tests; requirements without acceptance criteria |
 | Tests | tests that verify no requirement; accepted requirements without a test that is Ready |
 | Quality | empty descriptions, duplicate titles, conflicting requirements, low language scores, many drafts, requirements without an owner |
 | Language | the findings of the [language analysis](requirements.md#the-language-analysis) summed up per rule: ambiguous terms, TBDs, escape clauses … |
+
+**Languages of the requirements** shows how many requirements are written in each language. Only texts long enough to tell the language are counted; a title of one or two words is not enough.
 
 **Language** chooses the language of the analysis (detected per requirement by default). Test findings are shown when you may read tests.

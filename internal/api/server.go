@@ -40,6 +40,9 @@ type Server struct {
 	Log    *slog.Logger
 	Runner *runner.Runner
 	UI     fs.FS // embedded SPA (may be nil)
+	// HTTPClient is used for outgoing calls (defect trackers, webhooks);
+	// nil means a default client with a timeout.
+	HTTPClient *http.Client
 
 	OIDC   map[string]*auth.OIDCProvider
 	SAML   map[string]*auth.SAMLProvider
@@ -48,6 +51,8 @@ type Server struct {
 	limiter *rateLimiter
 	mux     *http.ServeMux
 	once    sync.Once
+	// hooks tracks webhook deliveries in flight (see WaitWebhooks).
+	hooks sync.WaitGroup
 }
 
 // New creates a server and its identity providers.
@@ -138,12 +143,14 @@ func (s *Server) routes() {
 	// folders & categories
 	h("GET /api/v1/projects/{pid}/folders", s.handleListFolders, "project.read")
 	h("POST /api/v1/projects/{pid}/folders", s.handleCreateFolder)
+	h("POST /api/v1/projects/{pid}/folders/bulk", s.handleBulkFolders)
 	h("PATCH /api/v1/folders/{id}", s.handleUpdateFolder)
 	h("POST /api/v1/folders/{id}/move", s.handleMoveFolder)
 	h("DELETE /api/v1/folders/{id}", s.handleDeleteFolder)
 	h("GET /api/v1/projects/{pid}/categories", s.handleListCategories, "project.read")
 	h("POST /api/v1/projects/{pid}/categories", s.handleCreateCategory)
 	h("POST /api/v1/projects/{pid}/categories/move", s.handleMoveDimension)
+	h("POST /api/v1/projects/{pid}/categories/bulk", s.handleBulkCategories)
 	h("PATCH /api/v1/categories/{id}", s.handleUpdateCategory)
 	h("DELETE /api/v1/categories/{id}", s.handleDeleteCategory)
 
@@ -157,6 +164,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/move", s.handleMoveItems(model.KindRequirement), "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/bulk", s.handleBulk(model.KindRequirement), "requirement.read")
+	h("POST /api/v1/projects/{pid}/requirements/review", s.handleBulkReview(model.KindRequirement), "requirement.read")
 	h("DELETE /api/v1/projects/{pid}/requirements/bulk", s.handleBulkDelete(model.KindRequirement), "requirement.write")
 	h("GET /api/v1/requirements/{id}", s.handleGetRequirement, "requirement.read")
 	h("PATCH /api/v1/requirements/{id}", s.handleUpdateRequirement, "requirement.read") // write or review: see review.go
@@ -175,8 +183,11 @@ func (s *Server) routes() {
 	h("DELETE /api/v1/comments/{id}", s.handleDeleteComment)
 	h("GET /api/v1/projects/{pid}/baselines", s.handleListBaselines, "requirement.read")
 	h("POST /api/v1/projects/{pid}/baselines", s.handleCreateBaseline, "requirement.write")
+	h("DELETE /api/v1/projects/{pid}/baselines/bulk", s.handleBulkDeleteBaselines, "requirement.write")
+	h("POST /api/v1/projects/{pid}/baselines/signoffs", s.handleBulkSignBaselines, "requirement.read")
 	h("GET /api/v1/baselines/{id}", s.handleGetBaseline, "requirement.read")
 	h("GET /api/v1/baselines/{id}/compare", s.handleCompareBaseline, "requirement.read")
+	h("POST /api/v1/baselines/{id}/restore", s.handleRestoreFromBaseline, "requirement.read")
 	h("DELETE /api/v1/baselines/{id}", s.handleDeleteBaseline, "requirement.write")
 	h("POST /api/v1/reqlang/analyze", s.handleAnalyze)
 
@@ -185,6 +196,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/tests", s.handleCreateTest, "test.write")
 	h("POST /api/v1/projects/{pid}/tests/move", s.handleMoveItems(model.KindTest), "test.write")
 	h("POST /api/v1/projects/{pid}/tests/bulk", s.handleBulk(model.KindTest), "test.read")
+	h("POST /api/v1/projects/{pid}/tests/review", s.handleBulkReview(model.KindTest), "test.read")
 	h("DELETE /api/v1/projects/{pid}/tests/bulk", s.handleBulkDelete(model.KindTest), "test.write")
 	h("GET /api/v1/tests/{id}", s.handleGetTest, "test.read")
 	h("PATCH /api/v1/tests/{id}", s.handleUpdateTest, "test.read") // write or review: see review.go
@@ -211,16 +223,25 @@ func (s *Server) routes() {
 	h("GET /api/v1/projects/{pid}/links", s.handleListLinks, "project.read")
 	h("POST /api/v1/projects/{pid}/links", s.handleCreateLink, "test.write")
 	h("DELETE /api/v1/links/{id}", s.handleDeleteLink, "test.write")
+	h("POST /api/v1/projects/{pid}/links/bulk", s.handleBulkCreateLinks, "test.write")
+	h("DELETE /api/v1/projects/{pid}/links/bulk", s.handleBulkDeleteLinks, "test.write")
+	h("POST /api/v1/projects/{pid}/links/confirm", s.handleBulkConfirmLinks, "test.write")
+	h("POST /api/v1/links/{id}/confirm", s.handleConfirmLink, "test.write")
+	h("POST /api/v1/requirements/{id}/links/confirm", s.handleConfirmItemLinks(model.KindRequirement), "test.write")
+	h("POST /api/v1/tests/{id}/links/confirm", s.handleConfirmItemLinks(model.KindTest), "test.write")
 	h("GET /api/v1/projects/{pid}/traceability", s.handleTraceability, "project.read")
 
 	// operations
 	h("GET /api/v1/projects/{pid}/runs", s.handleListRuns, "run.read")
 	h("POST /api/v1/projects/{pid}/runs", s.handleCreateRun, "run.write")
+	h("POST /api/v1/projects/{pid}/runs/bulk", s.handleBulkRuns, "run.write")
+	h("DELETE /api/v1/projects/{pid}/runs/bulk", s.handleBulkDeleteRuns, "run.write")
 	h("GET /api/v1/runs/{id}", s.handleGetRun, "run.read")
 	h("PATCH /api/v1/runs/{id}", s.handleUpdateRun, "run.write")
 	h("DELETE /api/v1/runs/{id}", s.handleDeleteRun, "run.write")
 	h("GET /api/v1/runs/{id}/executions", s.handleListExecutions, "run.read")
 	h("POST /api/v1/runs/{id}/executions", s.handleAddExecutions, "run.write")
+	h("POST /api/v1/runs/{id}/executions/bulk", s.handleBulkExecutions, "run.read")
 	h("POST /api/v1/runs/{id}/results", s.handleImportResults, "run.execute")
 	h("GET /api/v1/executions/{id}", s.handleGetExecution, "run.read")
 	h("PATCH /api/v1/executions/{id}", s.handleUpdateExecution, "run.execute")
@@ -237,6 +258,13 @@ func (s *Server) routes() {
 	s.routesBackup(h)
 	s.routesRoles(h)
 	s.routesDependencies(h)
+	s.routesReleases(h)
+	s.routesDefects(h)
+	s.routesRisks(h)
+	s.routesNotifications(h)
+	s.routesReviews(h)
+	s.routesJUnit(h)
+	s.routesReqImport(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

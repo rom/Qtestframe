@@ -16,6 +16,17 @@ A **run** (test run, campaign) is a set of tests that you execute together, for 
 
 ![The Operations page with the list of runs, their progress and pass rate](../images/en-runs-list.png)
 
+## Change many runs at once
+
+Tick the runs in the list (or the header checkbox for the whole page). The toolbar that appears changes all of them at once (permission to change runs):
+
+- **Set status**: for example abort old runs, or close runs that are finished in practice.
+- **Set release**: put the runs in a [release](releases-and-risks.md), or take them out of one.
+- **Environment / build**: set the environment, the build or both (an empty field clears it).
+- **Delete**: delete the runs with all their results, after confirmation.
+
+Status, release, environment and build changes can be undone with the undo button in the top bar; deleting cannot.
+
 ## Create a run
 
 Select **New run** and fill in:
@@ -41,6 +52,18 @@ When a test is added, its current steps (with shared steps expanded) are copied 
 - **Add tests** adds more tests; **CI import** shows how a pipeline reports results; **Edit run** changes name, description, environment and build; **Delete** removes the run with all its results.
 - The table lists every execution with test, result, **Assignee**, **Executed by**, **Defects**, **Finished** time and duration. Filter it, for example `status:failed` or `assignee:anna`.
 - Per row: **Mark passed** and **Mark failed** record a result directly; the play button opens the execution in the runner.
+
+## Record many results at once
+
+On the run page, tick tests in the execution table (the header checkbox ticks the whole page). The toolbar then offers:
+
+- **Set result**: *Passed*, *Failed*, *Blocked*, *Skipped* or *Not run* for all ticked tests.
+- **Result, assignee, note…**: a dialog to set a result, assign the tests to someone (empty removes the assignee) and add a note below the notes they already have, in one step. **Only tests that have not been run yet** leaves tests that already have a result alone, for example to mark the rest *Skipped* at the end of a run.
+- **Remove from run** (permission to change runs): takes the tests out of the run, with their results, step results and evidence, after confirmation.
+
+The same [execution settings](administration.md) apply as for one test at a time: *Passed* and *Failed* are only recorded for tests that may be executed. Tests that may not are listed with the reason, and the rest are recorded. Prerequisites in the same selection are handled: when you mark a test and its prerequisite *Passed* together, the prerequisite is recorded first. *Blocked*, *Skipped*, *Not run*, assignees and notes are always possible.
+
+Step results are not changed: a bulk result is the overall result of each test. The run completes by itself when every test has a final result, and requirements whose status follows the evidence are updated. Results, assignees and notes can be undone with the undo button; removing tests cannot.
 
 ## The execution runner
 
@@ -141,6 +164,64 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 - An invalid status stops the import with an error; results before it stay applied.
 
 Keep the token in your CI system's secret store, never in the repository. A token is bound to one organisation and never has more rights than its owner.
+
+Besides this JSON format there are three easier ways for test tools that already write reports: JUnit XML, the `qtestframe report` command and the Playwright reporter.
+
+### Link automated tests to test keys
+
+Every automated test must say which Qtestframe test it executes. Put the test key (for example `SHOP-TC-12`) in one of these places:
+
+- **in the test name**, e.g. `test_login[SHOP-TC-12]`, `TestCart/SHOP-TC-12_add` or `SHOP-TC-12 pays by card`. Where a name may not contain hyphens, `SHOP_TC_12` works as well. The key may also be part of the class name.
+- **as a property of the test case** in the JUnit report, named `qtestframe.key` or `test_key`. With pytest: `record_property("test_key", "SHOP-TC-12")`.
+- **with Playwright** as a tag `@SHOP-TC-12` or an annotation `{ type: 'qtestframe', description: 'SHOP-TC-12' }`.
+
+Several test cases with the same key (for example the same test in two browsers) give one result: *failed* wins over *passed*, and the durations add up.
+
+### JUnit XML
+
+Almost every test tool writes JUnit XML: Playwright (`junit` reporter), pytest (`--junitxml`), Go (with go-junit-report), Maven Surefire and Gradle, Jest (jest-junit) and Vitest (`--reporter=junit`). Post the file to the run:
+
+```bash
+curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/junit" \
+  -H "Authorization: Bearer $QTF_TOKEN" \
+  -H "Content-Type: application/xml" \
+  --data-binary @results/junit.xml
+```
+
+- A test case with `<failure>` or `<error>` is recorded as *failed*, one with `<skipped>` as *skipped*, all others as *passed*. The duration comes from `time`; the output holds the failure message and `system-out`/`system-err`.
+- The answer lists, besides `updated`, `unknown` and `rejected`, the names of test cases without a key under `unmapped`.
+- Add `?create_missing=true` to create a draft automated test for every test case without a key (titled like the test case) and record its result. A later import finds the test again by its title. This needs the right to write tests.
+- Several files can be sent at once as a multipart upload (`-F file=@a.xml -F file=@b.xml`); together they may be at most 20 MB.
+
+### The qtestframe report command
+
+The `qtestframe` program can upload reports itself. It finds the run by name in the project, or creates it:
+
+```bash
+export QTF_URL=https://qtf.example.com QTF_TOKEN=qtf_…
+qtestframe report --project SHOP --run "Nightly $BUILD_NUMBER" --create-run \
+  --build "$BUILD_NUMBER" --environment staging \
+  --junit 'results/*.xml'
+```
+
+- `--run-id ID` reports into a known run instead of `--project`/`--run`.
+- `--junit` and `--json` (the JSON format above) take files or patterns and can be repeated.
+- `--create-missing` creates tests for test cases without a key, as above.
+- The command prints how many results were recorded and lists unknown keys, test cases without a key and rejected results with the reason. It ends with an error code when the upload fails, and with `--fail-on-unknown` also when results matched no test.
+
+### Playwright reporter
+
+For Playwright there is a reporter (`@qtestframe/playwright-reporter`, in `integrations/playwright-reporter` of the Qtestframe sources) that reports while the tests run, without a JUnit file:
+
+```ts
+// playwright.config.ts
+reporter: [
+  ['list'],
+  ['@qtestframe/playwright-reporter', { project: 'SHOP', run: 'Nightly', createRun: true }],
+],
+```
+
+It reads the server address and token from `QTF_URL` and `QTF_TOKEN`, takes the key from the annotation, tag or title, writes the error and the `test.step()` titles with their result into the output and uploads screenshots, traces and other attachments of failed tests as attachments of the execution. If reporting fails, it only logs a message; your test run is not affected.
 
 ## Links of a run
 

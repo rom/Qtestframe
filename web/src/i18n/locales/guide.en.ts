@@ -68,6 +68,7 @@ const guideEn = {
     settings_readiness: "Whether tests may be executed when they are not ready, when their requirements are not approved, or when a prerequisite has not passed. Blocked results are refused; allowed ones show a warning.",
     runner_notes: "Free notes about this execution, such as observations or the reason for a block.",
     baseline_filter: "An optional query that limits which requirements and tests are frozen in the baseline, for example status:approved.",
+    trace_bulk: "Tick requirements, optionally choose tests, then link, unlink or confirm suspect links for all of them at once. With no tests chosen, the actions take all tests.",
     trace_onlyLinked: "Show only tests that are linked to at least one requirement, which makes large matrices easier to read.",
     trace_coverage: "Coverage comes from the latest result of every linked test: none (no tests), not run, passed (all passed), failed (any failed) or partial.",
     token_role: "The highest role the token may use. It is also limited by your own current role in the organisation.",

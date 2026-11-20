@@ -105,23 +105,29 @@ func (s *Store) CreateRequirement(ctx context.Context, tenantID string, r *model
 		if err := s.checkFolder(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.FolderID); err != nil {
 			return err
 		}
-		seq, key, err := nextKey(ctx, c, r.ProjectID, model.KindRequirement)
-		if err != nil {
-			return err
-		}
-		r.Key = key
-		r.Position = seq
-		if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			r.ID, tenantID, r.ProjectID, nullStr(r.FolderID), seq, r.Key, r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status,
-			r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt); err != nil {
-			return mapErr(err, "requirement")
-		}
-		if err := setCategories(ctx, c, model.KindRequirement, r.ProjectID, r.ID, r.CategoryIDs); err != nil {
-			return err
-		}
-		return replaceCriteria(ctx, c, r)
+		return insertRequirement(ctx, c, tenantID, r)
 	})
+}
+
+// insertRequirement allocates the key of a validated requirement and
+// inserts it with its categories and criteria.
+func insertRequirement(ctx context.Context, c conn, tenantID string, r *model.Requirement) error {
+	seq, key, err := nextKey(ctx, c, r.ProjectID, model.KindRequirement)
+	if err != nil {
+		return err
+	}
+	r.Key = key
+	r.Position = seq
+	if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		r.ID, tenantID, r.ProjectID, nullStr(r.FolderID), seq, r.Key, r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status,
+		r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt); err != nil {
+		return mapErr(err, "requirement")
+	}
+	if err := setCategories(ctx, c, model.KindRequirement, r.ProjectID, r.ID, r.CategoryIDs); err != nil {
+		return err
+	}
+	return replaceCriteria(ctx, c, r)
 }
 
 func replaceCriteria(ctx context.Context, c conn, r *model.Requirement) error {
@@ -499,6 +505,8 @@ type BulkUpdate struct {
 	ExecutionType     *string  `json:"execution_type"`
 	AddCategoryIDs    []string `json:"add_category_ids"`
 	RemoveCategoryIDs []string `json:"remove_category_ids"`
+	AddTags           []string `json:"add_tags"`
+	RemoveTags        []string `json:"remove_tags"`
 }
 
 // BulkUpdateItems applies field changes to many requirements or tests.
@@ -567,6 +575,23 @@ func (s *Store) BulkUpdateItems(ctx context.Context, tenantID, kind, projectID s
 			if err := removeCategories(ctx, c, kind, id, u.RemoveCategoryIDs); err != nil {
 				return err
 			}
+			if len(u.AddTags) > 0 || len(u.RemoveTags) > 0 {
+				var raw string
+				if err := c.row(ctx, `SELECT tags FROM `+table+` WHERE id = ?`, id).Scan(&raw); err != nil {
+					return err
+				}
+				old := decodeTags(raw)
+				next := editTags(old, u.AddTags, u.RemoveTags)
+				if encodeTags(next) != encodeTags(old) {
+					q := `UPDATE ` + table + ` SET tags = ?, updated_at = ?`
+					if len(sets) == 0 {
+						q += `, version = version + 1`
+					}
+					if _, err := c.exec(ctx, q+` WHERE id = ?`, encodeTags(next), s.now(), id); err != nil {
+						return err
+					}
+				}
+			}
 			n++
 		}
 		return nil
@@ -597,4 +622,102 @@ func (s *Store) CopyRequirement(ctx context.Context, tenantID, id, title, userID
 		return nil, err
 	}
 	return rq, nil
+}
+
+// editTags adds and removes tags (removal ignores case; added tags already
+// present in another case are not added twice).
+func editTags(tags, add, remove []string) []string {
+	drop := map[string]bool{}
+	for _, t := range remove {
+		drop[strings.ToLower(strings.TrimSpace(t))] = true
+	}
+	out := []string{}
+	have := map[string]bool{}
+	for _, t := range tags {
+		if !drop[strings.ToLower(t)] {
+			out = append(out, t)
+			have[strings.ToLower(t)] = true
+		}
+	}
+	for _, t := range add {
+		t = strings.TrimSpace(t)
+		if t != "" && !have[strings.ToLower(t)] {
+			out = append(out, t)
+			have[strings.ToLower(t)] = true
+		}
+	}
+	return out
+}
+
+// ReplaceTags renames the tags from (exact names) to to in a project's
+// requirements, tests and, with files, documents; an empty to removes
+// them. It returns the ids changed per kind ("requirement", "test", "file").
+func (s *Store) ReplaceTags(ctx context.Context, tenantID, projectID string, from []string, to string, files bool) (map[string][]string, error) {
+	to = strings.TrimSpace(to)
+	if len(from) == 0 {
+		return nil, Invalidf("choose at least one tag")
+	}
+	if len(to) > 100 {
+		return nil, Invalidf("a tag is at most 100 characters")
+	}
+	match := map[string]bool{}
+	for _, t := range from {
+		match[t] = true
+	}
+	tables := []struct{ kind, table string }{{model.KindRequirement, "requirements"}, {model.KindTest, "test_cases"}}
+	if files {
+		tables = append(tables, struct{ kind, table string }{"file", "files"})
+	}
+	out := map[string][]string{}
+	err := s.tx(ctx, func(c conn) error {
+		for _, tb := range tables {
+			rows, err := c.query(ctx, `SELECT id, tags FROM `+tb.table+` WHERE tenant_id = ? AND project_id = ?`, tenantID, projectID)
+			if err != nil {
+				return err
+			}
+			type change struct{ id, tags string }
+			var changes []change
+			for rows.Next() {
+				var id, raw string
+				if err := rows.Scan(&id, &raw); err != nil {
+					rows.Close()
+					return err
+				}
+				old := decodeTags(raw)
+				var next []string
+				hit := false
+				for _, t := range old {
+					if match[t] {
+						hit = true
+						if to != "" {
+							next = append(next, to)
+						}
+						continue
+					}
+					next = append(next, t)
+				}
+				if hit {
+					changes = append(changes, change{id, encodeTags(next)})
+				}
+			}
+			rows.Close()
+			if err := rows.Err(); err != nil {
+				return err
+			}
+			for _, ch := range changes {
+				q := `UPDATE ` + tb.table + ` SET tags = ?`
+				args := []any{ch.tags}
+				if tb.kind != "file" {
+					q += `, updated_at = ?, version = version + 1`
+					args = append(args, s.now())
+				}
+				if _, err := c.exec(ctx, q+` WHERE id = ?`, append(args, ch.id)...); err != nil {
+					return err
+				}
+				out[tb.kind] = append(out[tb.kind], ch.id)
+			}
+		}
+		return nil
+	})
+	return out, err
 }

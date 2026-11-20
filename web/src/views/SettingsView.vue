@@ -12,10 +12,15 @@ import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
+import Checkbox from 'primevue/checkbox'
+import Select from 'primevue/select'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { api, errorMessage } from '@/lib/api'
 import AvatarPicker from '@/components/AvatarPicker.vue'
 import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
+import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
+import WebhooksCard from '@/components/WebhooksCard.vue'
 import { groupBy } from '@/lib/collections'
 import { defaultCategoryColor, normalizeHex, readableTextColor } from '@/lib/colors'
 import { P } from '@/lib/permissions'
@@ -67,6 +72,71 @@ function remove(c: Category) {
       notify.fail(e)
     }
   })
+}
+
+// ---------- bulk ----------
+const picked = ref<Record<ItemKind, string[]>>({ requirement: [], test: [] })
+const pickedCats = (scope: ItemKind) => proj.categoriesFor(scope).filter((c) => picked.value[scope].includes(c.id))
+const bulkScope = ref<ItemKind>('requirement')
+const bulkDialog = ref<'' | 'move' | 'color' | 'merge'>('')
+const bulkDimension = ref('')
+const bulkColor = ref('#6366f1')
+const bulkTarget = ref<string | null>(null)
+const bulkBusy = ref(false)
+const dimensionsOf = (scope: ItemKind) => [...new Set(proj.categoriesFor(scope).map((c) => c.dimension))].sort((a, b) => a.localeCompare(b))
+function openBulk(scope: ItemKind, kind: 'move' | 'color' | 'merge') {
+  bulkScope.value = scope
+  bulkDimension.value = ''
+  bulkColor.value = color(pickedCats(scope)[0])
+  bulkTarget.value = pickedCats(scope)[0]?.id ?? null
+  dialogError.value = ''
+  bulkDialog.value = kind
+}
+async function bulkCall(scope: ItemKind, body: Record<string, unknown>, done: string) {
+  const ids = [...picked.value[scope]]
+  const before = body.action === 'color' ? pickedCats(scope).map((c) => ({ c: { ...c }, color: c.color })) : []
+  bulkBusy.value = true
+  dialogError.value = ''
+  try {
+    const res = await api.post<{ changed: number }>(`/projects/${proj.pid}/categories/bulk`, { ids, ...body })
+    if (before.length) {
+      recordUndo(
+        entry(
+          t('settings.bulk.undoColor', { n: before.length }),
+          async () => {
+            for (const b of before) await api.patch(`/categories/${b.c.id}`, { ...b.c, color: b.color })
+            await proj.loadCategories()
+          },
+          async () => {
+            await api.post(`/projects/${proj.pid}/categories/bulk`, { ids, ...body })
+            await proj.loadCategories()
+          },
+        ),
+      )
+    }
+    bulkDialog.value = ''
+    picked.value[scope] = []
+    notify.ok(t(done, { n: res.changed }, res.changed))
+    await proj.loadCategories()
+  } catch (e) {
+    if (bulkDialog.value) dialogError.value = errorMessage(e)
+    else notify.fail(e)
+  } finally {
+    bulkBusy.value = false
+  }
+}
+function applyBulk() {
+  const scope = bulkScope.value
+  if (bulkDialog.value === 'move') void bulkCall(scope, { action: 'move', dimension: bulkDimension.value.trim() }, 'settings.bulk.moved')
+  else if (bulkDialog.value === 'color') void bulkCall(scope, { action: 'color', color: bulkColor.value }, 'settings.bulk.colored')
+  else if (bulkDialog.value === 'merge') void bulkCall(scope, { action: 'merge', target_id: bulkTarget.value }, 'settings.bulk.merged')
+}
+function bulkCopy(scope: ItemKind) {
+  void bulkCall(scope, { action: 'copy' }, scope === 'requirement' ? 'settings.bulk.copiedToTests' : 'settings.bulk.copiedToRequirements')
+}
+function bulkDelete(scope: ItemKind) {
+  const n = picked.value[scope].length
+  notify.confirmDanger(t('settings.bulk.confirmDelete', { n }, n), () => bulkCall(scope, { action: 'delete' }, 'settings.bulk.deleted'))
 }
 
 // ---------- create ----------
@@ -192,6 +262,23 @@ function deleteProject() {
         <div class="row" style="margin-bottom: 12px">
           <Button v-if="canEdit(scope)" :label="t('settings.newDimension')" icon="pi pi-plus" @click="openCreate(scope)" />
         </div>
+        <div v-if="canEdit(scope) && picked[scope].length" class="bulkbar" role="toolbar" :aria-label="t('settings.bulk.toolbar')">
+          <b>{{ t('common.selected', { count: picked[scope].length }) }}</b>
+          <Button :label="t('settings.bulk.move')" icon="pi pi-arrow-right" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulk(scope, 'move')" />
+          <Button :label="t('settings.bulk.color')" icon="pi pi-palette" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulk(scope, 'color')" />
+          <Button v-if="picked[scope].length > 1" :label="t('settings.bulk.merge')" icon="pi pi-sitemap" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulk(scope, 'merge')" />
+          <Button
+            v-if="canEdit(scope === 'requirement' ? 'test' : 'requirement')"
+            :label="scope === 'requirement' ? t('settings.bulk.copyToTests') : t('settings.bulk.copyToRequirements')"
+            icon="pi pi-copy"
+            size="small"
+            severity="secondary"
+            outlined
+            @click="bulkCopy(scope)"
+          />
+          <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete(scope)" />
+          <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="picked[scope] = []" />
+        </div>
         <div v-if="!(scope === 'requirement' ? reqGroups : testGroups).length" class="card empty"><i class="pi pi-tags" />{{ t('settings.noCategories') }}</div>
         <div class="category-grid">
           <section v-for="g in scope === 'requirement' ? reqGroups : testGroups" :key="g.key" class="card" :aria-label="g.key">
@@ -203,6 +290,7 @@ function deleteProject() {
               </span>
             </div>
             <div v-for="c in g.items" :key="c.id" class="row nowrap" style="padding: 4px 0">
+              <Checkbox v-if="canEdit(scope)" v-model="picked[scope]" :value="c.id" :input-id="`cat-pick-${c.id}`" :aria-label="t('settings.bulk.selectOne', { dimension: g.key, name: c.name })" />
               <input
                 type="color"
                 :value="color(c)"
@@ -276,6 +364,8 @@ function deleteProject() {
           <h2 id="h-icon" class="plain-heading" style="margin-bottom: 10px">{{ t('settings.projectIcon') }}</h2>
           <AvatarPicker kind="icon" :value="proj.project?.icon" :name="proj.project?.key ?? ''" :upload-path="`/projects/${proj.pid}/icon`" :save="saveIcon" :disabled="!auth.can(P.projectUpdate)" @uploaded="onIconUploaded" />
         </section>
+        <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
+        <WebhooksCard v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
       </TabPanel>
     </TabPanels>
   </Tabs>
@@ -306,5 +396,28 @@ function deleteProject() {
         <Button type="submit" :label="t('settings.rename')" icon="pi pi-check" :loading="busy" :disabled="!renameForm.new_dimension.trim() || renameForm.new_dimension === renameForm.dimension" />
       </div>
     </form>
+  </Dialog>
+  <Dialog :visible="!!bulkDialog" modal :header="bulkDialog ? t(`settings.bulk.header.${bulkDialog}`, { n: picked[bulkScope].length }, picked[bulkScope].length) : ''" :style="{ width: 'min(460px, 96vw)' }" @update:visible="(v: boolean) => !v && (bulkDialog = '')">
+    <div class="grid" style="gap: 10px">
+      <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
+      <template v-if="bulkDialog === 'move'">
+        <label for="bk-cat-dim" class="small" style="font-weight: 600">{{ t('settings.bulk.toDimension') }}</label>
+        <Select v-model="bulkDimension" input-id="bk-cat-dim" :options="dimensionsOf(bulkScope)" editable fluid :placeholder="t('settings.bulk.dimensionPlaceholder')" aria-describedby="bk-cat-dim-help" />
+        <small id="bk-cat-dim-help" class="muted">{{ t('settings.bulk.moveHelp') }}</small>
+      </template>
+      <template v-if="bulkDialog === 'color'">
+        <label for="bk-cat-color" class="small" style="font-weight: 600">{{ t('settings.bulk.color') }}</label>
+        <input id="bk-cat-color" v-model="bulkColor" type="color" style="width: 64px; height: 36px; border: none; background: none; padding: 0" />
+      </template>
+      <template v-if="bulkDialog === 'merge'">
+        <label for="bk-cat-target" class="small" style="font-weight: 600">{{ t('settings.bulk.keep') }}</label>
+        <Select v-model="bulkTarget" input-id="bk-cat-target" :options="pickedCats(bulkScope).map((c) => ({ label: `${c.dimension} / ${c.name}`, value: c.id }))" option-label="label" option-value="value" fluid aria-describedby="bk-cat-merge-help" />
+        <small id="bk-cat-merge-help" class="muted">{{ t('settings.bulk.mergeHelp') }}</small>
+      </template>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="bulkDialog = ''" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :loading="bulkBusy" :disabled="(bulkDialog === 'move' && !bulkDimension.trim()) || (bulkDialog === 'merge' && !bulkTarget)" @click="applyBulk" />
+    </template>
   </Dialog>
 </template>

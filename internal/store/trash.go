@@ -246,6 +246,21 @@ func snapshotItems(ctx context.Context, c conn, kind string, ids []string) (*tra
 			return nil, err
 		}
 	}
+	if _, err := add("defect_links", `entity_type = ? AND entity_id IN (`+in+`)`, append([]any{kind}, idArgs...)...); err != nil {
+		return nil, err
+	}
+	if ex := attachEntities["execution"]; len(ex) > 0 {
+		if _, err := add("defect_links", `entity_type = 'execution' AND entity_id IN (`+placeholders(len(ex))+`)`, anySlice(ex)...); err != nil {
+			return nil, err
+		}
+	}
+	if kind == model.KindRequirement {
+		for _, tbl := range []string{"release_requirements", "risk_requirements"} {
+			if _, err := add(tbl, `requirement_id IN (`+in+`)`, idArgs...); err != nil {
+				return nil, err
+			}
+		}
+	}
 	if _, err := add("item_links", `(source_type = ? AND source_id IN (`+in+`)) OR (target_type = ? AND target_id IN (`+in+`))`,
 		append(append(append([]any{kind}, idArgs...), kind), idArgs...)...); err != nil {
 		return nil, err
@@ -534,6 +549,15 @@ func (s *Store) RestoreTrash(ctx context.Context, tenantID, id string) (*TrashEn
 					ok, err = need(row, "requirements", "source_id", "requirements", "target_id")
 				case "test_dependencies":
 					ok, err = need(row, "test_cases", "test_id", "test_cases", "depends_on_id")
+				case "defect_links":
+					ignoreConflict = true
+					ok, err = need(row, "defects", "defect_id")
+				case "release_requirements":
+					ignoreConflict = true
+					ok, err = need(row, "releases", "release_id", "requirements", "requirement_id")
+				case "risk_requirements":
+					ignoreConflict = true
+					ok, err = need(row, "risks", "risk_id", "requirements", "requirement_id")
 				case "item_links":
 					ok, err = linkEndsExist(row, exists)
 				case "test_executions":

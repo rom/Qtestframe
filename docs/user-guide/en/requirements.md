@@ -144,12 +144,37 @@ Every change creates a new **version**. The **History** tab lists the versions w
 
 **Restore this version** copies the content of an old version back as a **new** version: title, description, obligation, type, priority, status, source, rationale, owner, tags, categories and criteria. Nothing is lost; the newer versions stay in the history. The folder and project are not changed. Categories that no longer exist are dropped.
 
+## Approve many requirements at once
+
+Holders of the review permission (`requirement.review`) can approve or reject many requirements in one step. Tick the requirements and choose **Approve or reject…** in the toolbar, or, with nothing ticked, choose **Bulk review** above the list. Then choose:
+
+- **Which items**: the selected ones, all shown in the list (the current folder and filters, so filter first for a subset, e.g. `folder:Payments obligation:must`), or all requirements of the project.
+- **Decision**: approve or reject.
+- **Only items with status**: by default only requirements in *Review*. Add *Draft* to approve drafts directly.
+- **Include anyway, despite**: see below.
+- **Comment**: added to every requirement that changes, for example "Approved in the review meeting of 12 March".
+- **Also complete my open review requests**: shown when [review requests](reviews-and-notifications.md) to you are open for some of the requirements; on by default. Your requests are then decided together with the requirements (*Approved* when you approve, *Changes requested* when you reject), and the people who asked are notified. Their checklists are not ticked; the review records that it was decided in bulk. Requests to other reviewers still keep a requirement out.
+
+The preview shows which requirements change and which are skipped, grouped by the reason:
+
+| Reason | Meaning |
+|---|---|
+| Already has this status | nothing to do |
+| Status not chosen above | its status is not one of those you chose |
+| The latest review asked for changes | a [review request](reviews-and-notifications.md) was answered with *Request changes* |
+| Review requests are still open | someone has not finished reviewing it |
+| Has suspect links | a linked test changed since the link was confirmed |
+| No obligation level | approving needs an obligation level (rejecting does not) |
+
+Choose a check under **Include anyway, despite** to approve those requirements anyway. Nothing is saved until you choose the button at the bottom. Each change is recorded in the requirement's history and the audit log, and the whole step can be undone with the undo button in the top bar (undo needs write permission; completed review requests stay decided).
+
 ## Bulk edit
 
 Tick the checkboxes of several requirements (or the header checkbox for the whole page). A toolbar appears:
 
 - **Set status**, **Set priority**, **Set obligation**: applied at once to all selected requirements;
 - **Categories +** / **Categories −**: add or remove category values;
+- **Tags +** / **Tags −**: add or remove tags (removing ignores upper and lower case);
 - **Move**: move them to a folder;
 - **Delete**: delete them after confirmation;
 - **×**: clear the selection.
@@ -169,6 +194,8 @@ Every bulk change is recorded in each requirement's history.
   - criteria and history move along.
 
 Without a mouse, use the folder's **⋮** actions button or the **Move** button of the selection.
+
+**Several folders at once:** choose **Select several folders** (☑) above the tree. Each folder gets a checkbox; a ticked folder includes its subfolders. The toolbar then moves the ticked folders **into** another folder, to the **top level** or to **another project** (with everything in them, as above), or **deletes** them (keeping their requirements in the parent folder, or deleting them too). A move into one of the ticked folders is refused before anything changes. **Done** returns to the normal tree.
 
 **Deleting a folder** asks what to do with the content: **Delete, keep content** moves subfolders and requirements to the parent folder; **Delete everything** deletes the subtree including all requirements in it.
 
@@ -197,6 +224,51 @@ The **Attachments** tab of the editor holds files that belong to the requirement
 You can also select **Attach from archive**: a file that is already in the project's [document archive](documents.md) is linked rather than copied, so one specification can be attached to many requirements. Removing an attachment only unlinks it; an uploaded attachment that is no longer linked anywhere is deleted.
 
 Uploading and removing attachments needs the **Manager** role (the same as editing the requirement); reading them needs **Viewer**.
+
+## Import requirements
+
+Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import** in the header of the requirements page reads such a file and creates the requirements in one go. Importing needs the permission to edit requirements (**Manager** by default).
+
+1. Drag the file onto the dialog or choose it. Supported are **CSV** (comma, semicolon or tab separated; UTF-8 with or without byte order mark, UTF-16 and Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` and the zipped `.reqifz`) and **Word** (`.docx`), up to 20 MB and 5,000 requirements per file.
+2. Check the **preview**: the detected format, how each column is read and the first 50 requirements with notes (a derived title, an unknown value, a duplicate). Nothing is stored yet.
+3. Change the field of a column if it was guessed wrongly, or set it to *ignore*. Clear the **Import** box of rows you do not want.
+4. Choose the options and select **Import**. The list reloads and the dialog shows how many requirements, folders and tests were created and what was skipped.
+
+**Columns (CSV, Excel and tables in Word).** The first of the leading rows that names a title or description column is the header row; rows above it are ignored. Column names are recognised in English and Swedish, regardless of case:
+
+| Field | Column names |
+|---|---|
+| Title | Title, Name, Heading, Summary · Titel, Namn, Rubrik |
+| Description | Description, Text, Requirement, Statement · Beskrivning, Krav, Kravtext |
+| ID | ID, Key, Ref, Number · Nyckel, Referens, Nummer, Krav-ID |
+| Obligation | Obligation, Level · Kravnivå, Nivå |
+| Type | Type · Typ, Kravtyp |
+| Priority | Priority · Prioritet |
+| Status | Status, State · Tillstånd |
+| Source | Source, Origin · Källa, Ursprung |
+| Rationale | Rationale, Justification, Comment · Motivering, Kommentar |
+| Owner | Owner, Responsible · Ägare, Ansvarig |
+| Tags | Tags, Labels · Taggar, Etiketter (separated by commas) |
+| Folder | Folder, Section, Chapter · Mapp, Avsnitt, Kapitel (a path such as `Security / Login`) |
+| Acceptance criteria | Criteria, Acceptance criteria · Kriterier, Acceptanskriterier (one per line; a line may start with a method, e.g. `inspection: …`) |
+
+Values of type, priority, status and obligation may be written in English or Swedish (*High*/*Hög*, *Approved*/*Godkänd*, *Security*/*Säkerhet*). An unknown value is noted and the default is used. A row without a title gets one from the first words of its description. A file exported from Qtestframe (requirements as CSV or Excel) can be imported again; in an Excel export the evaluation criteria of the criteria sheet come along.
+
+**ReqIF.** Every SPEC-OBJECT becomes a requirement: *ReqIF.Name* (or an attribute named title or name) gives the title, *ReqIF.Text* the description and *ReqIF.ForeignID* the ID; other attributes are matched by name like columns. Formatted text (XHTML) is imported as plain text with its line breaks. Objects with only a *ReqIF.ChapterName* are headings: the specification hierarchy below them becomes folders.
+
+**Word.** Headings (the styles *Heading 1*, *Heading 2* … or *Rubrik 1* …) become folders. Every other paragraph or list item that contains an obligation keyword becomes a requirement: the paragraph is the description and the title is its first eight words. A leading identifier such as `REQ-12:` or `[SRS-7]` becomes the ID. List items right after a requirement ending with a colon are added to it. Tables with a header row are read like a spreadsheet. If the document writes its keywords in uppercase (MUST, SHALL), lowercase *may* or *should* in running text are not taken as requirements.
+
+**Obligation levels.** An obligation column (MUST, SHALL NOT, SKA, BÖR, FÅR …) wins; otherwise the level is detected from the title and description as in the editor, see [Obligation levels](#obligation-levels).
+
+**Options.**
+
+- **Target folder:** where the requirements go (the folder selected in the tree, or the top level).
+- **Create folders from the file:** folder paths, sections and headings are created below the target folder; existing folders with the same name are reused. Without it everything goes into the target folder.
+- **Status:** for requirements without a status in the file (default *Draft*). *Approved* and *Rejected* need the review permission.
+- **Create a linked test for each requirement**, as in the editor (needs the permission to edit tests).
+- **Skip duplicates:** a row is skipped when its ID is already recorded in a requirement of the project, or when a requirement with the same title (ignoring case) exists; rows repeated within the file count too.
+
+The ID of an imported requirement is kept in its **Source** field as `ID: REQ-12` (after the source of the file, if there is one), which is how duplicates are found the next time. The import is all or nothing: if one requirement cannot be stored, none is. Every import is recorded in the audit log.
 
 ## Copy a requirement
 

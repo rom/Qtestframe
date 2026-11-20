@@ -103,6 +103,16 @@ async function save() {
           </div>
         </div>
       </fieldset>
+      <fieldset class="plain-fieldset setting">
+        <legend class="setting-title">{{ t('execSettings.evidenceTitle') }}</legend>
+        <div class="row nowrap" style="gap: 10px; align-items: flex-start">
+          <ToggleSwitch :model-value="!form.manual_verification" input-id="s-evidence" :disabled="!canEdit" aria-describedby="s-evidence-desc" @update:model-value="(v: boolean) => (form!.manual_verification = !v)" />
+          <div>
+            <label for="s-evidence"><b>{{ t('execSettings.statusFollowsEvidence') }}</b></label>
+            <p id="s-evidence-desc" class="small muted" style="margin: 2px 0 0">{{ form.manual_verification ? t('execSettings.evidenceOff') : t('execSettings.evidenceOn') }}</p>
+          </div>
+        </div>
+      </fieldset>
       <div v-if="canEdit" class="row" style="justify-content: flex-end">
         <span v-if="dirty" class="small muted" style="margin-right: auto">{{ t('execSettings.unsaved') }}</span>
         <Button :label="t('common.cancel')" text severity="secondary" type="button" :disabled="!dirty" @click="load" />

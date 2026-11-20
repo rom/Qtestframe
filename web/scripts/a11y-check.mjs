@@ -105,6 +105,15 @@ async function discover(request) {
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
+  const hasDefects = items(await api(request, 'GET', `/projects/${pid}/defects`)).length > 0
+  const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
+  const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
+  const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
+  const firstBaseline = hasBaselines ? items(await api(request, 'GET', `/projects/${pid}/baselines`))[0] : null
+  const hasDocuments = items(await api(request, 'GET', `/projects/${pid}/documents`)).length > 0
+  const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
+  const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
+  const hasNotifications = items(await api(request, 'GET', '/notifications').catch(() => [])).length > 0
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -113,15 +122,19 @@ async function discover(request) {
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },
     { name: 'runs', path: `${p}/runs` },
+    { name: 'runs-bulk', path: `${p}/runs`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     // open states: dialogs and the off-canvas navigation
     { name: 'run-new-dialog', path: `${p}/runs`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'nav-drawer', path: `${p}/dashboard`, open: 'button[aria-controls="app-sidebar"]', wait: '.sidebar.open', narrow: true },
     run && { name: 'run', path: `${p}/runs/${run.id}` },
+    run && { name: 'run-bulk', path: `${p}/runs/${run.id}`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     run && ex && { name: 'execute', path: `${p}/runs/${run.id}/exec/${ex.id}` },
     { name: 'traceability', path: `${p}/traceability` },
+    { name: 'traceability-selected', path: `${p}/traceability`, open: '.trace-bulk .p-checkbox', wait: '.trace-bulk' },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
+    { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
     { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },
     run && { name: 'flow-run', path: `${p}/flow?run=${run.id}`, wait: '.stages, .empty' },
@@ -134,15 +147,40 @@ async function discover(request) {
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },
     { name: 'baselines', path: `${p}/baselines` },
+    { name: 'releases', path: `${p}/releases` },
+    { name: 'risks', path: `${p}/risks`, wait: '.heat' },
+    { name: 'defects', path: `${p}/defects` },
+    // with a selected row (bulk toolbar); only when the project has defects / risks
+    hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    hasNotifications && { name: 'notifications-bulk', path: '/notifications', open: '.list li .p-checkbox', wait: '.bulkbar' },
+    hasRequested && { name: 'reviews-bulk', path: '/reviews', open: ['.page-header .actions .p-selectbutton:first-child .p-togglebutton:nth-child(2)', '.p-datatable-tbody .p-checkbox'], wait: '.bulkbar' },
+    hasWebhooks && { name: 'webhooks-bulk', path: `${p}/settings?tab=project`, open: 'section.webhooks .p-datatable-tbody .p-checkbox', wait: 'section.webhooks .bulkbar' },
+    hasDocuments && { name: 'documents-bulk', path: `${p}/documents`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    // the comparison with restore checkboxes (needs items changed since the baseline)
+    firstBaseline && { name: 'baseline-compare', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, wait: '.bl-section, [role="status"]' },
+    hasBaselines && { name: 'baselines-bulk', path: `${p}/baselines`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    hasReleases && { name: 'releases-bulk', path: `${p}/releases`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    hasRisks && { name: 'risks-bulk', path: `${p}/risks`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    { name: 'defect-dialog', path: `${p}/defects`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
+    { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },
+    { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
+    // the folder tree is a side panel from 1200 px (a drawer below)
+    { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', minWidth: 1200 },
+    { name: 'folders-bulk-drawer', path: `${p}/requirements`, open: ['.page-header .actions button:has(.pi-folder)', '.p-drawer button.p-button:has(.pi-check-square)', '.p-drawer .p-tree .p-checkbox'], wait: '.p-drawer .folder-bulk', maxWidth: 1199 },
+    { name: 'categories-bulk', path: `${p}/settings?tab=requirement`, open: '.category-grid .p-checkbox', wait: '.bulkbar' },
     { name: 'export', path: `${p}/export` },
     { name: 'documents', path: `${p}/documents` },
     { name: 'reports', path: `${p}/reports` },
+    { name: 'reports-batch', path: `${p}/reports`, open: 'section:has(#h-batch) .p-datatable-tbody .p-checkbox', wait: 'section:has(#h-batch) .bulkbar' },
     { name: 'requirement-attachments', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     run && { name: 'run-attachments', path: `${p}/runs/${run.id}`, open: '[role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     { name: 'search', path: '/search?q=login' },
     { name: 'help', path: '/help' },
     { name: 'profile', path: '/profile' },
+    { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
+    { name: 'notifications', path: '/notifications' },
+    { name: 'reviews', path: '/reviews' },
     { name: 'members', path: '/admin/members' },
     { name: 'rbac', path: '/admin/roles' },
     { name: 'execution-settings', path: '/admin/execution', wait: '.setting' },
@@ -346,6 +384,8 @@ async function main() {
         await anon.addInitScript(local, { lang: cfg.lang, theme: cfg.theme })
         for (const r of pages) {
           if (r.narrow && vp.width > 1023) continue
+          if (r.minWidth && vp.width < r.minWidth) continue
+          if (r.maxWidth && vp.width > r.maxWidth) continue
           const page = await (r.anon ? anon : ctx).newPage()
           const label = `${cfg.name} ${vp.name} ${r.name}`
           const errors = []

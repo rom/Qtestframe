@@ -26,6 +26,8 @@ Quick filters (status, priority and so on) are turned into a query for you and s
 
 Select one or more tags to list the items that carry them, grouped into requirements, tests and documents. With several tags, choose whether items need **All tags** or **Any tag**. **Open as filtered list** opens the requirements or tests page with the same query (for example `tag=gdpr AND tag=login`), and the address of the page keeps the selection, so you can bookmark it.
 
+With permission to edit both requirements and tests, the selected tags can also be changed in the whole project: **Rename** (one tag), **Merge** (several tags into one, which can be one of them or a new name, for example to clean up *gdpr*, *GDPR* and *privacy*) or **Remove from all items**. Documents are changed too if you may change the project. Each change is recorded in the history of the requirements and tests it touches.
+
 ## Syntax in five minutes
 
 | You write | It finds |
@@ -66,7 +68,7 @@ Keywords and field names are case-insensitive. Values with spaces need quotes: `
 
 ### Requirements
 
-`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `mention` (`mentions`: [@handles](requirements.md#mention-people) in owner, title, description, rationale and source), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold).
+`id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder` (the folder path, e.g. `Checkout / Payment`), `category` (`categories`, value names), `dimension` (`Dimension/Name`), `coverage`, `linked` (keys of linked tests), `related`, `parent`, `child` (keys of related, parent and child requirements), `comments`, `mention` (`mentions`: [@handles](requirements.md#mention-people) in owner, title, description, rationale and source), `created_by`, `created_at`, `updated_at`, `criteria` (`criterion`: description, method and threshold), `risk` (the highest level of the open [risks](releases-and-risks.md#risk-levels) it addresses: `risk:high`), `defects` (number of open defects on it or its tests: `defects>0`).
 
 ### Tests
 

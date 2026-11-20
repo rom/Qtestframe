@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import DefectsPanel from '@/components/DefectsPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
@@ -64,7 +66,10 @@ const tabsId = newId('test-tabs')
 const linkCount = ref<number | null>(null)
 watch(
   () => props.itemId,
-  () => (linkCount.value = null),
+  () => {
+    linkCount.value = null
+    openDefects.value = 0
+  },
 )
 /** tab panel attributes for the content of a tab (only when the tabs are shown) */
 function panel(value: string) {
@@ -184,6 +189,19 @@ async function load() {
     loading.value = false
   }
 }
+const suspectCount = computed(() => links.value.filter((l) => l.suspect_since).length)
+async function onSuspectConfirmed() {
+  await load()
+}
+async function confirmAll() {
+  try {
+    await api.post(`/tests/${props.itemId}/links/confirm`)
+    notify.ok(t('suspect.confirmed'))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
 async function loadLinks() {
   if (!props.itemId) return
   try {
@@ -222,6 +240,8 @@ const tab = ref('details')
 const commentCount = ref(0)
 const attachmentCount = ref<number | null>(null)
 const execCount = ref<number | null>(null)
+/** open defects of the test and its executions (known once the tab was opened) */
+const openDefects = ref(0)
 function resolveId(field: string, id: string): string | undefined {
   if (field === 'category_ids') {
     const c = props.categories.find((x) => x.id === id)
@@ -385,12 +405,14 @@ const scriptPlaceholder = computed(() => {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="executions"><i class="pi pi-play-circle" aria-hidden="true" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+      <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
+  <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
@@ -536,12 +558,14 @@ const scriptPlaceholder = computed(() => {
       <div class="section-title">
         <i class="pi pi-link" /> {{ t('tests.linkedRequirements', { count: links.length }) }}
         <span class="grow" />
+        <Button v-if="canLink && suspectCount" size="small" :label="t('suspect.confirmAll', { n: suspectCount })" icon="pi pi-check" text @click="confirmAll" />
         <Button v-if="canLink" size="small" :label="t('tests.linkRequirements')" icon="pi pi-plus" text @click="pickReqs = true" />
       </div>
       <div v-if="!links.length" class="muted small">{{ t('tests.verifiesNothing') }}</div>
       <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
         <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" class="key">{{ l.requirement_key || reqById.get(l.requirement_id)?.key }}</RouterLink>
         <span class="grow ellipsis">{{ reqById.get(l.requirement_id)?.title }}</span>
+        <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="reqById.get(l.requirement_id)?.obligation" kind="obligation" empty="" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.requirement_key || reqById.get(l.requirement_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>

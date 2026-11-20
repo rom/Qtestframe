@@ -339,6 +339,25 @@ Further measures:
 * Secret files are read once at start-up, before Landlock is applied
   (SIGHUP re-reads only the TLS key pair); they are not logged. Core dumps
   are disabled (`LimitCORE=0`).
+* **Secrets stored in the database.** Defect tracker tokens (Jira, GitHub)
+  and webhook signing secrets are stored per project in the database, in
+  plain text, so that the server can use them; protect the database and
+  its backups accordingly. The API never returns a tracker token
+  (`has_token` only), and returns a webhook secret only once, when it is
+  created or rotated. Use tracker tokens with the smallest scope that works
+  (GitHub fine-grained token with Issues read/write on one repository; a
+  Jira user that can only create and browse issues in the project).
+* **Outgoing requests.** Tracker calls and webhook deliveries go to URLs
+  that project administrators (`project.update`) configure, from the
+  server's network. Restrict who has that permission, and if the server
+  can reach internal services, filter its egress (firewall or proxy).
+  Webhook deliveries never follow redirects, send no credentials other
+  than the HMAC signature (`X-Qtestframe-Signature: sha256=…`), and time
+  out after 10 seconds. Receivers should verify the signature.
+* **Electronic signatures.** Signing a baseline re-checks the user's
+  password (or needs a single sign-on session under 15 minutes old);
+  API tokens cannot sign. Each signature stores a SHA-256 fingerprint of
+  the baseline content and is audited; signed baselines cannot be deleted.
 
 ## 8. Audit log and central logging
 

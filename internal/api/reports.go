@@ -29,6 +29,8 @@ func (s *Server) routesReports(h routeFunc) {
 	h("GET /api/v1/reports/definitions/{id}", s.handleGetReportDefinition, "export")
 	h("PATCH /api/v1/reports/definitions/{id}", s.handleUpdateReportDefinition)
 	h("DELETE /api/v1/reports/definitions/{id}", s.handleDeleteReportDefinition)
+	h("POST /api/v1/projects/{pid}/reports/batch", s.handleReportBatch, "export")
+	h("DELETE /api/v1/projects/{pid}/reports/definitions/bulk", s.handleBulkDeleteReportDefinitions)
 	h("POST /api/v1/reports/definitions/{id}/generate", s.handleGenerateReportDefinition, "export")
 }
 
@@ -286,33 +288,35 @@ type reportJob struct {
 	stem     string // default file name stem
 }
 
-func (s *Server) generate(w http.ResponseWriter, r *http.Request, p *Principal, pr *model.Project, job reportJob) {
+// renderedReport is a rendered report file.
+type renderedReport struct {
+	name, contentType, title, details string
+	data                              []byte
+}
+
+// render builds a report into memory.
+func (s *Server) render(r *http.Request, p *Principal, pr *model.Project, job reportJob) (*renderedReport, error) {
 	f, err := export.ParseFormat(job.format)
 	if err != nil {
-		s.fail(w, r, badRequest("%v", err))
-		return
+		return nil, badRequest("%v", err)
 	}
 	var ds *export.Dataset
 	if job.custom != nil {
 		if err := s.validateCustom(r, p, pr, job.custom); err != nil {
-			s.fail(w, r, err)
-			return
+			return nil, err
 		}
 		recs, err := s.customRecords(r, p, pr, job.custom)
 		if err != nil {
-			s.fail(w, r, err)
-			return
+			return nil, err
 		}
 		ds = report.BuildCustom(*job.custom, recs, pr.Key+" – "+pr.Name, time.Now().UTC())
 	} else {
 		d, err := s.reportData(r, p, pr, job.template, job.params)
 		if err != nil {
-			s.fail(w, r, err)
-			return
+			return nil, err
 		}
 		if ds, err = report.Build(job.template, d, job.params); err != nil {
-			s.fail(w, r, reportError(err))
-			return
+			return nil, reportError(err)
 		}
 	}
 	multi := len(ds.Sections) > 1
@@ -323,30 +327,42 @@ func (s *Server) generate(w http.ResponseWriter, r *http.Request, p *Principal, 
 	} else if !strings.HasSuffix(strings.ToLower(name), "."+ext) {
 		name += "." + ext
 	}
-	name = store.CleanFileName(name)
-	details := job.stem + " " + string(f)
-	if !job.archive {
-		w.Header().Set("Content-Type", f.ContentTypeFor(multi))
-		w.Header().Set("Content-Disposition", contentDisposition(name))
-		if err := export.Write(w, f, *ds); err != nil {
-			s.Log.Error("report failed", "err", err)
-			return
-		}
-		s.audit(r.Context(), p, "report.generate", "project", pr.ID, details)
-		return
-	}
 	var buf bytes.Buffer
 	if err := export.Write(&buf, f, *ds); err != nil {
+		return nil, err
+	}
+	return &renderedReport{name: store.CleanFileName(name), contentType: f.ContentTypeFor(multi), title: ds.Title, details: job.stem + " " + string(f), data: buf.Bytes()}, nil
+}
+
+// archiveReport saves a rendered report in the project's document archive.
+func (s *Server) archiveReport(r *http.Request, p *Principal, pr *model.Project, rep *renderedReport) (*model.FileInfo, error) {
+	fi := &model.FileInfo{ProjectID: &pr.ID, Kind: model.FileReport, Name: rep.name, ContentType: rep.contentType,
+		Description: rep.title, Tags: []string{"report"}, UploadedBy: p.User.Email}
+	if err := s.Store.CreateFile(r.Context(), p.TenantID(), fi, rep.data); err != nil {
+		return nil, err
+	}
+	s.audit(r.Context(), p, "report.archive", "file", fi.ID, rep.details+" "+fi.Name)
+	return fi, nil
+}
+
+func (s *Server) generate(w http.ResponseWriter, r *http.Request, p *Principal, pr *model.Project, job reportJob) {
+	rep, err := s.render(r, p, pr, job)
+	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	fi := &model.FileInfo{ProjectID: &pr.ID, Kind: model.FileReport, Name: name, ContentType: f.ContentTypeFor(multi),
-		Description: ds.Title, Tags: []string{"report"}, UploadedBy: p.User.Email}
-	if err := s.Store.CreateFile(r.Context(), p.TenantID(), fi, buf.Bytes()); err != nil {
+	if !job.archive {
+		w.Header().Set("Content-Type", rep.contentType)
+		w.Header().Set("Content-Disposition", contentDisposition(rep.name))
+		_, _ = w.Write(rep.data)
+		s.audit(r.Context(), p, "report.generate", "project", pr.ID, rep.details)
+		return
+	}
+	fi, err := s.archiveReport(r, p, pr, rep)
+	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "report.archive", "file", fi.ID, details+" "+fi.Name)
 	writeJSON(w, http.StatusCreated, fi)
 }
 

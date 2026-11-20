@@ -254,6 +254,7 @@ table.matrix .cell-button { all: unset; box-sizing: border-box; display: grid; p
 @media (pointer: coarse) { table.matrix td.cell { width: 44px; min-width: 44px; height: 44px; } table.matrix .cell-button { min-height: 44px; } table.matrix th.vert { width: 44px; min-width: 44px; } }
 .matrix-wrap:focus-visible { outline: 2px solid var(--qtf-focus); outline-offset: 2px; }
 .trace-legend { margin-left: auto; gap: 10px; }
+.trace-bulk-tests { width: 260px; max-width: 100%; }
 .trace-list { display: grid; gap: 10px; }
 .trace-item { padding: 12px; }
 .trace-item-head { align-items: flex-start; }

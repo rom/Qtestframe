@@ -4,7 +4,7 @@ import MentionText from '@/components/MentionText.vue'
 import ColumnsMenu from '@/components/ColumnsMenu.vue'
 import { useColumnLayout, type ColumnDef } from '@/composables/columns'
 import MentionInput from '@/components/MentionInput.vue'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -16,6 +16,9 @@ import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import Panel from 'primevue/panel'
+import Tag from 'primevue/tag'
+import { useReleaseOptions } from '@/composables/releases'
+import { runReleaseName } from '@/lib/releases'
 import Popover from 'primevue/popover'
 import ReadinessBanner from '@/components/ReadinessBanner.vue'
 import { readinessOfError, readinessSummary as explainReadiness } from '@/lib/readiness'
@@ -43,6 +46,9 @@ import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, enumOptions } from '@/i18n/labels'
+import Checkbox from 'primevue/checkbox'
+import { BULK_RESULTS, execCounts, execUndo, rejectedText, type ExecBulkResult } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 const prefs = usePrefsStore()
 
 const props = defineProps<{ runId: string }>()
@@ -93,7 +99,11 @@ async function loadExecutions() {
 async function reload() {
   await Promise.all([loadRun(), loadExecutions()])
 }
-onMounted(reload)
+const rel = useReleaseOptions(() => proj.pid)
+onMounted(() => {
+  reload()
+  if (auth.can(P.projectRead)) rel.load()
+})
 
 const summary = computed(() => summarize(run.value?.summary))
 
@@ -110,11 +120,11 @@ async function setStatus(status: string) {
 
 // ---------- edit ----------
 const editDialog = ref(false)
-const editForm = ref({ name: '', description: '', environment: '', build: '' })
+const editForm = ref({ name: '', description: '', environment: '', build: '', release_id: '' })
 function openEdit() {
   if (!run.value) return
   const r = run.value
-  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build }
+  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '' }
   editDialog.value = true
 }
 async function saveEdit() {
@@ -138,6 +148,76 @@ function remove() {
 }
 
 // ---------- executions ----------
+// ---------- bulk ----------
+const selection = ref<Execution[]>([])
+const selectedIds = computed(() => selection.value.map((e) => e.id))
+const bulkResultOptions = computed(() => enumOptions('result', [...BULK_RESULTS]))
+const bulkResult = ref<string | null>(null)
+const bulkDialog = ref(false)
+const bulkForm = reactive({ status: '' as string, assigneeOn: false, assignee: '', note: '', onlyNotRun: false })
+watch(executions, (list) => {
+  const ids = new Set(list.map((e) => e.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+watch(bulkResult, (v) => v && bulkUpdate({ status: v }, false).then(() => (bulkResult.value = null)))
+function openBulk() {
+  Object.assign(bulkForm, { status: '', assigneeOn: false, assignee: '', note: '', onlyNotRun: false })
+  bulkDialog.value = true
+}
+async function applyBulk() {
+  const set: { status?: string; assignee?: string; notes_append?: string } = {}
+  if (bulkForm.status) set.status = bulkForm.status
+  if (bulkForm.assigneeOn) set.assignee = bulkForm.assignee.trim()
+  if (bulkForm.note.trim()) set.notes_append = bulkForm.note.trim()
+  bulkDialog.value = false
+  await bulkUpdate(set, bulkForm.onlyNotRun)
+}
+async function bulkUpdate(set: { status?: string; assignee?: string; notes_append?: string }, onlyNotRun: boolean) {
+  const ids = [...selectedIds.value]
+  if (!ids.length || !Object.keys(set).length) return
+  const notesBefore = new Map(executions.value.map((e) => [e.id, e.notes ?? '']))
+  const path = `/runs/${props.runId}/executions/bulk`
+  try {
+    const res = await api.post<ExecBulkResult>(path, { ids, set, ...(onlyNotRun ? { from: ['not_run'] } : {}) })
+    const c = execCounts(res)
+    const undo = execUndo(res.updated ?? [], set, notesBefore)
+    if (undo.length) {
+      recordUndo(
+        entry(
+          t('run.bulk.undo', { n: undo.length }),
+          async () => {
+            for (const u of undo) await api.patch(`/executions/${u.id}`, u.body)
+          },
+          () => api.post(path, { ids: undo.map((u) => u.id), set }),
+        ),
+      )
+    }
+    const extra = c.skipped ? t('run.bulk.skipped', { n: c.skipped }, c.skipped) : undefined
+    if (c.rejected) notify.failText(t('run.bulk.rejected', { n: c.rejected, updated: c.updated }, c.rejected), rejectedText(res.rejected ?? []))
+    else notify.ok(t('run.bulk.updated', { n: c.updated }, c.updated), extra)
+    await reload()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+function bulkRemove() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(
+    t('run.bulk.confirmRemove', { n: ids.length }, ids.length),
+    async () => {
+      try {
+        const res = await api.post<ExecBulkResult>(`/runs/${props.runId}/executions/bulk`, { ids, remove: true })
+        notify.ok(t('run.bulk.removed', { n: res.removed ?? 0 }, res.removed ?? 0))
+        selection.value = []
+        await reload()
+      } catch (e) {
+        notify.fail(e)
+      }
+    },
+    undefined,
+    t('run.bulk.remove'),
+  )
+}
 /** assignee being edited per execution id (committed on blur or Enter) */
 const assigneeDraft = reactive<Record<string, string>>({})
 
@@ -226,9 +306,19 @@ const ciSnippet = computed(
   -H "Content-Type: application/json" \\
   -d '{"results":[{"test_key":"${executions.value[0]?.test_key ?? 'PROJ-TC-1'}","status":"passed","duration_ms":1234,"output":"ok"}]}'`,
 )
-async function copySnippet() {
+const ciJunitSnippet = computed(
+  () => `curl -X POST ${origin}/api/v1/runs/${props.runId}/junit \\
+  -H "Authorization: Bearer qtf_<api-token>" \\
+  -H "Content-Type: application/xml" \\
+  --data-binary @results/junit.xml`,
+)
+const ciCliSnippet = computed(
+  () => `QTF_URL=${origin} QTF_TOKEN=qtf_<api-token> \\
+  qtestframe report --run-id ${props.runId} --junit 'results/*.xml'`,
+)
+async function copySnippet(text: string = ciSnippet.value) {
   try {
-    await navigator.clipboard.writeText(ciSnippet.value)
+    await navigator.clipboard.writeText(text)
     notify.ok(t('run.copied'))
   } catch {
     notify.info(t('errors.copyFailed'), t('errors.copyManually'))
@@ -249,6 +339,9 @@ async function copySnippet() {
         <h1>{{ run.name }}</h1>
         <div class="sub row">
           <span v-if="run.environment"><i class="pi pi-server" aria-hidden="true" /><span class="sr-only">{{ t('common.environment') }}:</span> {{ run.environment }}</span>
+          <RouterLink v-if="runReleaseName(run, rel.names.value)" :to="{ name: 'releases', params: { projectId: proj.pid }, query: { r: run.release_id } }">
+            <Tag :value="runReleaseName(run, rel.names.value)" icon="pi pi-box" severity="secondary" :aria-label="t('releasesView.runRelease', { name: runReleaseName(run, rel.names.value) })" />
+          </RouterLink>
           <span v-if="run.build" class="mono"><i class="pi pi-box" aria-hidden="true" /><span class="sr-only">{{ t('common.build') }}:</span> {{ run.build }}</span>
           <span>{{ t('run.createdAt', { date: formatDateTime(run.created_at) }) }}{{ run.created_by ? t('run.createdBy', { user: run.created_by }) : '' }}</span>
           <span v-if="run.started_at">{{ t('run.startedAt', { date: formatDateTime(run.started_at) }) }}</span>
@@ -325,8 +418,16 @@ async function copySnippet() {
         {{ t('readiness.runSummary', { blocked: readinessSummary.blocked, total: executions.length, warned: readinessSummary.warned }) }}
         <RouterLink v-if="auth.can(P.settingsManage)" :to="{ name: 'executionSettings' }">{{ t('readiness.settingsLink') }}</RouterLink>
       </Message>
+      <div v-if="selection.length && canExecute" class="bulkbar" role="toolbar" :aria-label="t('run.bulk.toolbar')">
+        <b>{{ t('common.selected', { count: selection.length }) }}</b>
+        <Select v-model="bulkResult" :options="bulkResultOptions" option-label="label" option-value="value" :placeholder="t('run.bulk.setResult')" :aria-label="t('run.bulk.setResult')" size="small" style="min-width: 150px" />
+        <Button :label="t('run.bulk.more')" icon="pi pi-pencil" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulk" />
+        <Button v-if="canWrite" :label="t('run.bulk.remove')" icon="pi pi-minus-circle" size="small" severity="danger" outlined @click="bulkRemove" />
+        <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+      </div>
       <DataTable
         :ref="execLayout.bind"
+        v-model:selection="selection"
         v-stack
         :value="executions"
         data-key="id"
@@ -342,6 +443,7 @@ async function copySnippet() {
         reorderable-columns
         @column-reorder="execLayout.onReorder()"
       >
+        <Column v-if="canExecute" selection-mode="multiple" column-key="_select" :reorderable-column="false" style="width: 2.6rem" />
         <Column field="position" header="#" sortable :reorderable-column="false" style="width: 60px" />
         <Column field="test_key" :header="t('run.test')" sortable :reorderable-column="false" style="width: 140px">
           <template #body="{ data }">
@@ -431,6 +533,10 @@ async function copySnippet() {
         <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="editForm.name" /></div>
         <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="editForm.build" /></div>
+        <div v-if="rel.releases.value.length" v-field class="field full">
+          <label for="run-edit-release">{{ t('releasesView.release') }}</label>
+          <Select v-model="editForm.release_id" input-id="run-edit-release" :options="rel.options.value" option-label="label" option-value="value" />
+        </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="editForm.description" rows="3" auto-resize /></div>
       </div>
       <template #footer>
@@ -452,9 +558,23 @@ async function copySnippet() {
       </i18n-t>
       <Panel :header="t('run.endpoint')" toggleable collapsed>
         <div class="mono">POST /api/v1/runs/{{ runId }}/results</div>
+        <div class="mono">POST /api/v1/runs/{{ runId }}/junit</div>
+      </Panel>
+      <Panel :header="t('run.ciJunitHeader')" toggleable collapsed>
+        <p class="small">{{ t('run.ciJunitIntro') }}</p>
+        <pre class="console" tabindex="0" :aria-label="t('run.ciJunitHeader')">{{ ciJunitSnippet }}</pre>
+        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text size="small" @click="copySnippet(ciJunitSnippet)" />
+      </Panel>
+      <Panel :header="t('run.ciCliHeader')" toggleable collapsed>
+        <p class="small">{{ t('run.ciCliIntro') }}</p>
+        <pre class="console" tabindex="0" :aria-label="t('run.ciCliHeader')">{{ ciCliSnippet }}</pre>
+        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text size="small" @click="copySnippet(ciCliSnippet)" />
+        <i18n-t keypath="run.ciPlaywright" tag="p" class="small muted">
+          <template #pkg><code>@qtestframe/playwright-reporter</code></template>
+        </i18n-t>
       </Panel>
       <template #footer>
-        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" @click="copySnippet" />
+        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" @click="copySnippet()" />
         <Button :label="t('common.close')" @click="ciDialog = false" />
       </template>
     </Dialog>
@@ -463,5 +583,45 @@ async function copySnippet() {
   <Popover ref="readinessPop" class="readiness-pop" :aria-label="t('readiness.column')">
     <ReadinessBanner v-if="readinessOf" :readiness="readinessOf.readiness" :project-id="proj.pid" />
   </Popover>
+  <Dialog v-model:visible="bulkDialog" :header="t('run.bulk.dialogTitle', { n: selection.length }, selection.length)" modal style="width: min(520px, 96vw)">
+    <div class="bulk-form">
+      <label for="bk-result">{{ t('run.bulk.result') }}</label>
+      <Select v-model="bulkForm.status" input-id="bk-result" :options="[{ label: t('run.bulk.unchanged'), value: '' }, ...bulkResultOptions]" option-label="label" option-value="value" fluid />
+      <div class="row">
+        <Checkbox v-model="bulkForm.assigneeOn" binary input-id="bk-assign-on" />
+        <label for="bk-assign-on">{{ t('run.bulk.assignTo') }}</label>
+      </div>
+      <MentionInput v-model="bulkForm.assignee" :project-id="proj.pid" :disabled="!bulkForm.assigneeOn" :placeholder="t('run.bulk.emptyUnassigns')" :aria-label="t('run.bulk.assignTo')" />
+      <label for="bk-note">{{ t('run.bulk.note') }}</label>
+      <Textarea id="bk-note" v-model="bulkForm.note" rows="2" auto-resize fluid aria-describedby="bk-note-help" />
+      <small id="bk-note-help" class="muted">{{ t('run.bulk.noteHelp') }}</small>
+      <div class="row">
+        <Checkbox v-model="bulkForm.onlyNotRun" binary input-id="bk-only" />
+        <label for="bk-only">{{ t('run.bulk.onlyNotRun') }}</label>
+      </div>
+      <small class="muted">{{ t('run.bulk.readinessHelp') }}</small>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="bulkDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!bulkForm.status && !bulkForm.assigneeOn && !bulkForm.note.trim()" @click="applyBulk" />
+    </template>
+  </Dialog>
 </template>
 
+
+<style scoped>
+.bulk-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bulk-form > label {
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 6px;
+}
+.bulk-form .row {
+  gap: 8px;
+  margin-top: 6px;
+}
+</style>

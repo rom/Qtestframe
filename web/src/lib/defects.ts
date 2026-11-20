@@ -1,4 +1,6 @@
-// Defect references on executions (IDs such as JIRA-123 or URLs).
+// Defect references on executions (IDs such as JIRA-123 or URLs). Values
+// that are defect keys of this tool (SHOP-BUG-3) link to the defect itself.
+import { isDefectKey } from './defectTracker'
 
 const URL_RE = /^https?:\/\/\S+$/i
 
@@ -60,11 +62,15 @@ export interface DefectLink {
   value: string
   label: string
   url: string | null
+  /** set when the value is a defect key of this tool (opens the defect) */
+  key?: string
 }
 
 /** Defects prepared for rendering. */
 export function defectLinks(list: readonly string[] | null | undefined, template?: string | null): DefectLink[] {
-  return normalizeDefects(list).map((value) => ({ value, label: defectLabel(value), url: defectUrl(value, template) }))
+  return normalizeDefects(list).map((value) =>
+    isDefectKey(value) ? { value, label: value.toUpperCase(), url: null, key: value.toUpperCase() } : { value, label: defectLabel(value), url: defectUrl(value, template) },
+  )
 }
 
 /** Problem with a template: `not_url` (invalid), `no_placeholder` (works, ID appended) or null. */

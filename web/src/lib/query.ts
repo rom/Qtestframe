@@ -147,19 +147,20 @@ export const QUERY_OPERATORS: QueryHelpEntry[] = [
   { example: '>  >=  <  <=', meaning: 'numeric or date comparison', id: 'opCompare' },
 ]
 
-export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit', string[]> = {
+export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' | 'document' | 'audit' | 'defect', string[]> = {
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
-    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'mention',
+    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'mention', 'suspect', 'risk', 'defects',
   ],
   test: [
     'key', 'title', 'description', 'preconditions', 'execution_type', 'type', 'script_language', 'script',
     'expected', 'step', 'priority', 'status', 'estimate', 'tag', 'folder', 'category', 'dimension', 'linked',
-    'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'version', 'mention', 'depends_on',
+    'last_result', 'created_by', 'created_at', 'updated_at', 'defect', 'calls', 'comments', 'version', 'mention', 'depends_on', 'suspect',
   ],
   run: ['name', 'description', 'status', 'environment', 'build', 'created_by', 'created_at'],
   execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'notes', 'output', 'defect', 'mention'],
   document: ['name', 'description', 'tag', 'kind', 'type', 'uploaded_by', 'created_at', 'size', 'linked'],
   audit: ['action', 'entity', 'entity_id', 'user', 'details', 'created_at'],
+  defect: ['key', 'title', 'description', 'status', 'severity', 'priority', 'assignee', 'external', 'created_by', 'open', 'linked'],
 }

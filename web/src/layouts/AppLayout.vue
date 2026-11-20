@@ -13,6 +13,7 @@ import Dialog from 'primevue/dialog'
 import ThemePicker from '@/components/ThemePicker.vue'
 import HelpMenu from '@/guide/HelpMenu.vue'
 import UndoControls from '@/components/UndoControls.vue'
+import NotificationBell from '@/components/NotificationBell.vue'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -255,6 +256,9 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
         <RouterLink class="nav-item" :to="{ name: 'search' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.search') : ''">
           <i class="pi pi-search" aria-hidden="true" /><span class="label">{{ t('nav.search') }}</span>
         </RouterLink>
+        <RouterLink class="nav-item" :to="{ name: 'reviews' }" v-tooltip.right="ui.sidebarCollapsed && !overlayNav ? t('nav.reviews') : ''">
+          <i class="pi pi-eye" aria-hidden="true" /><span class="label">{{ t('nav.reviews') }}</span>
+        </RouterLink>
         <template v-if="inProject">
           <div class="section project-section" :title="proj.project?.name"><ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :color="proj.project?.color" :size="18" /><span class="ellipsis">{{ proj.project?.key }} · {{ proj.project?.name }}</span></div>
           <RouterLink
@@ -355,6 +359,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
           @click="searchOpen = true"
         />
         <UndoControls />
+        <NotificationBell />
         <HelpMenu />
         <ThemePicker compact :t="t" />
         <Button

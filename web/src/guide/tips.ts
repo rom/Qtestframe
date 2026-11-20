@@ -53,6 +53,7 @@ export const TIPS = {
   'settings.readiness': { page: 'administration', anchor: { en: 'test-execution-settings', sv: 'inställningar-för-testexekvering' } },
   'baseline.filter': { page: 'baselines', anchor: { en: 'create-a-baseline', sv: 'skapa-en-baslinje' } },
   'trace.onlyLinked': { page: 'traceability-and-coverage', anchor: { en: 'the-traceability-matrix', sv: 'spårbarhetsmatrisen' } },
+  'trace.bulk': { page: 'traceability-and-coverage', anchor: { en: 'link-several-at-once', sv: 'länka-flera-på-en-gång' } },
   'trace.coverage': { page: 'traceability-and-coverage', anchor: { en: 'how-coverage-is-calculated', sv: 'så-beräknas-täckningen' } },
   'token.role': { page: 'administration', anchor: { en: 'api-tokens', sv: 'api-nycklar' } },
   'token.expires': { page: 'administration', anchor: { en: 'api-tokens', sv: 'api-nycklar' } },

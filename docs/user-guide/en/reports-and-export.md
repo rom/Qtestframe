@@ -79,6 +79,16 @@ Generate the report in any format, as above. To reuse it, select **Save report d
 - *Failed tests this sprint*: executions of the run *Sprint 12*, filter `status:failed`, columns key, title, executed by, defects, notes.
 - *Automation status*: tests, grouped by execution type, columns key, title, status, last result.
 
+## Several reports at once
+
+**Several reports at once**, at the bottom of the Reports page, lists the standard reports and your saved custom reports. Tick the ones you need, for example a weekly pack of *Project status*, *Run summary* and two saved reports, then:
+
+- choose the **format** (only formats that every ticked report supports are offered),
+- for *Run summary*, choose the **run**,
+- **Download as ZIP** to get all of them in one file, or **Save to archive** to store each of them in the [document archive](documents.md) (tagged *report*). When saving, a report that cannot be created is listed with the reason and the others are still saved.
+
+**Delete saved reports** removes the ticked saved custom reports (standard reports cannot be deleted). Saving to the archive and deleting need permission to edit requirements or tests; downloading needs the export permission.
+
 ## Which one to use?
 
 | Need | Use |

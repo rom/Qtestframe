@@ -225,3 +225,38 @@ export const FALLBACK_FIELDS: Record<ReportEntity, string[]> = {
   run: ['name', 'status', 'environment', 'build', 'created_by', 'created_at'],
   execution: ['key', 'title', 'status', 'assignee', 'executed_by', 'duration_ms'],
 }
+
+// ---------------------------------------------------------------- batch
+
+/** A row of the "several reports at once" list. */
+export interface BatchRow {
+  kind: 'template' | 'definition'
+  id: string
+  name: string
+  description: string
+  /** formats it can be rendered in */
+  formats: readonly ReportFormat[]
+  /** parameters that must be given (e.g. run_id) */
+  required: string[]
+}
+
+/** Formats every selected row supports (all formats when nothing is selected). */
+export function batchFormats(rows: Pick<BatchRow, 'formats'>[]): ReportFormat[] {
+  return REPORT_FORMATS.filter((f) => rows.every((r) => r.formats.includes(f)))
+}
+
+/** The body of POST /projects/{pid}/reports/batch. */
+export function batchBody(rows: BatchRow[], format: ReportFormat, archive: boolean, params: Record<string, string>) {
+  const pick = (r: BatchRow) => Object.fromEntries(r.required.filter((n) => params[n]).map((n) => [n, params[n]]))
+  return {
+    templates: rows.filter((r) => r.kind === 'template').map((r) => ({ template: r.id, params: pick(r) })),
+    definitions: rows.filter((r) => r.kind === 'definition').map((r) => r.id),
+    format,
+    archive,
+  }
+}
+
+/** Required parameters of the selected rows that have no value yet. */
+export function batchMissing(rows: Pick<BatchRow, 'required'>[], params: Record<string, string>): string[] {
+  return [...new Set(rows.flatMap((r) => r.required))].filter((n) => !params[n])
+}

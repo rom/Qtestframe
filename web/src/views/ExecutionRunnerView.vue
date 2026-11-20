@@ -18,6 +18,8 @@ import StatusTag from '@/components/StatusTag.vue'
 import TagsInput from '@/components/TagsInput.vue'
 import DefectLinks from '@/components/DefectLinks.vue'
 import AttachmentsPanel from '@/components/AttachmentsPanel.vue'
+import DefectsPanel from '@/components/DefectsPanel.vue'
+import { draftFromExecution } from '@/lib/defectTracker'
 import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
@@ -88,7 +90,29 @@ const resultTab = ref('result')
 const attachmentCount = ref<number | null>(null)
 const rTabs = 'runner-tabs'
 const rPanel = (v: string) => ({ role: 'tabpanel', id: `${rTabs}_tabpanel_${v}`, 'aria-labelledby': `${rTabs}_tab_${v}` })
-watch(() => props.executionId, () => (attachmentCount.value = null))
+watch(
+  () => props.executionId,
+  () => {
+    attachmentCount.value = null
+    defectCount.value = 0
+  },
+)
+// ---------- defects ----------
+const defectCount = ref(0)
+const defectsPanel = ref<InstanceType<typeof DefectsPanel> | null>(null)
+/** a new defect prefilled with the test, the failed steps, the notes and the execution */
+function defectDraft() {
+  return draftFromExecution(ex.value!, {
+    notes: notes.value,
+    runName: run.value?.name,
+    failedSteps: steps.value.map((s, i) => ({ ...s, n: i + 1 })).filter((s) => s.status === 'failed'),
+    labels: { steps: t('defectsView.draftSteps'), expected: t('runner.expected'), actual: t('runner.actual'), notes: t('runner.notes'), run: t('defectsView.run') },
+  })
+}
+function reportDefect() {
+  resultTab.value = 'defects'
+  defectsPanel.value?.report()
+}
 const canScript = computed(() => auth.can(P.scriptExecute))
 const test = computed(() => ex.value?.test)
 const isAutomated = computed(() => test.value?.execution_type === 'automated')
@@ -510,12 +534,22 @@ const statusOptions = computed(() => [
       <TabList>
         <Tab value="result"><i class="pi pi-check-circle" aria-hidden="true" /> {{ t('runner.resultTab') }}</Tab>
         <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
+        <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="defectCount" class="count" :title="t('defectsView.openCount', { n: defectCount }, defectCount)">{{ defectCount }}</span></Tab>
       </TabList>
     </Tabs>
+    <div v-show="resultTab === 'defects'" v-bind="rPanel('defects')" class="card">
+      <DefectsPanel ref="defectsPanel" entity-type="execution" :entity-id="executionId" :project-id="proj.pid" :draft="defectDraft" @count="(n) => (defectCount = n)" />
+    </div>
     <div v-if="resultTab === 'attachments'" v-bind="rPanel('attachments')" class="card">
       <AttachmentsPanel type="execution" :entity-id="executionId" :project-id="proj.pid" :can-write="canExecute" @count="(n) => (attachmentCount = n)" />
     </div>
     <div v-show="resultTab === 'result'" v-bind="rPanel('result')" class="card">
+      <Message v-if="canExecute && effectiveStatus === 'failed'" severity="warn" :closable="false" style="margin-bottom: 12px">
+        <span class="row" style="justify-content: space-between">
+          <span>{{ defectCount ? t('defectsView.failedHasDefects', { n: defectCount }, defectCount) : t('defectsView.failedHint') }}</span>
+          <Button :label="t('defectsView.report')" icon="pi pi-exclamation-circle" size="small" severity="danger" @click="reportDefect" />
+        </span>
+      </Message>
       <div class="form-grid">
         <div v-field class="field">
           <label>{{ t('runner.overallStatus') }}</label>

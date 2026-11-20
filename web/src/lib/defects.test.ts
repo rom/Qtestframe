@@ -47,6 +47,8 @@ describe('defects', () => {
       { value: 'https://x.org/i/2', label: '2', url: 'https://x.org/i/2' },
     ])
     expect(defectLinks(undefined)).toEqual([])
+    // keys of this tool's defects open the defect, not the external template
+    expect(defectLinks(['shop-bug-3'], T)).toEqual([{ value: 'shop-bug-3', label: 'SHOP-BUG-3', url: null, key: 'SHOP-BUG-3' }])
   })
   it('validates templates', () => {
     expect(validateTemplate('')).toBeNull()

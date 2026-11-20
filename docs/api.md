@@ -180,12 +180,14 @@ Reading needs `project.read`. Writing folders needs `requirement.write` or
 | POST | `/projects/{pid}/folders` | `{"kind","name","description","parent_id"}` |
 | PATCH | `/folders/{id}` | `{"name","description"}` |
 | POST | `/folders/{id}/move` | `{"parent_id": id\|null, "position": n, "project_id"?: id}` – moving to another project moves contained items too. Cycles are rejected (409). |
+| POST | `/projects/{pid}/folders/bulk` | `{"ids":[...], "action": "move\|delete", "parent_id"?, "project_id"?, "cascade"?}` – folders of one kind (write permission of that kind). Folders inside another selected folder go with it; a move into a selected folder is refused (409) before anything moves → `{"moved": n}` / `{"deleted": n}` |
 | DELETE | `/folders/{id}?cascade=true` | without cascade children/items are moved to the parent |
 | GET | `/projects/{pid}/categories?scope=` | list |
 | POST | `/projects/{pid}/categories` | `{"scope","dimension","name","color","description"}` |
 | PATCH | `/categories/{id}` | same fields |
 | DELETE | `/categories/{id}` | |
 | POST | `/projects/{pid}/categories/move` | `{"scope","dimension","new_dimension"}` – rename/move a whole category dimension |
+| POST | `/projects/{pid}/categories/bulk` | `{"ids":[...], "action": "move\|color\|merge\|copy\|delete", "dimension"?, "color"?, "target_id"?}` – values of one scope, all or nothing → `{"changed": n}`. `move`: to `dimension` (a value with the same name there absorbs the moved one); `color`: `#rrggbb`; `merge`: into `target_id` (assignments move, the others are deleted); `copy`: to the other scope (existing ones skipped; needs edit rights there too) |
 
 Default categories seeded for new projects (scope `test`): dimension
 `Polarity` (Positive, Negative), `Interface` (External, Internal), `Medium`
@@ -215,8 +217,9 @@ missing permission). Decisions are audited as `requirement.review` /
 | DELETE | `/requirements/{id}` | 204; the response header `X-Trash-Id` names the [trash](#trash-undo-a-deletion) entry |
 | POST | `/requirements/{id}/copy` | requirement.write – `{"title"?, "relation"?}` → 201 Requirement: a copy as `draft` titled *Copy of …* (or `title`) with fields, tags, categories and new criteria; `relation` (a relation type, e.g. `derived_from`) also relates the copy to the original |
 | POST | `/projects/{pid}/requirements/move` | `{"ids":[...],"folder_id": id\|null, "position"?: n, "project_id"?: id}`; another `project_id` re-keys the items, remaps categories by dimension/name and drops their links ([design.md §5](design.md#5-move-semantics)) |
-| POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?}}` |
+| POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?, "add_tags"?, "remove_tags"?}}` (tag removal ignores case) |
 | DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/requirements/review` | bulk review, see below |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
 | POST | `/reqlang/analyze` | `{"text", "language"?}` → `Analysis` (below). `language` is a pack code from `/meta` `analysis_languages` (`en`, `sv`); empty or `auto` detects it from the text; anything else → 400 |
 
@@ -236,6 +239,155 @@ translate it by `rule`: `term` (the matched text), `keyword`, `keywords`,
 `words`/`max` (`long-sentence`) and `examples` (`missing-keyword`, the
 pack's typical keywords). `language` is the pack that was used.
 
+### Import requirements
+
+Requirements from customer files: CSV, XLSX, ReqIF and DOCX. Both routes
+need `requirement.write` and take a `multipart/form-data` upload: field
+`file` (at most 20 MB; at most 5,000 requirements per file, else 400) and
+
+| Field | Meaning |
+|---|---|
+| `format` | `csv`, `xlsx`, `reqif` (also `reqifz`) or `docx`; default from the file extension (`.csv .tsv .txt .xlsx .xlsm .reqif .reqifz .docx`), else sniffed from the content. `.xls`/`.doc` → 400 |
+| `sheet` | XLSX sheet name (case-insensitive); default: a sheet named *requirements*/*krav*, else the first sheet with a header row |
+| `mapping` | JSON object `{"<column header>": "<field>"}` overriding the guessed field of a column (case-insensitive header; `"ignore"` or `""` ignores it). Fields: `title`, `description`, `external_id`, `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tags`, `folder`, `criteria`. For ReqIF the headers are the attribute long names |
+| `folder_id` | target requirement folder (root of the imported folder paths); default top level; unknown → 400 |
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/projects/{pid}/requirements/import/preview` | parses only, nothing is stored → `{format, sheet?, sheets?, columns:[{index, header, field}], candidates:[Candidate], warnings:[], errors:[], fields:[], total, duplicates, target_folder}` |
+| POST | `/projects/{pid}/requirements/import` | 201 (200 with `dry_run`) `{created, skipped, folders_created, tests_created, dry_run, format, items:[{id, key, title, row, location, folder_id, test_id?, test_key?}], skipped_items:[{title, row, location, reason}], warnings, errors}`; audited as `requirement.import` |
+
+Import options (form fields): `create_folders` (default `true`: create the
+candidates' folder paths below `folder_id`, reusing folders with the same
+name, case-insensitive; `false` puts everything in `folder_id`), `status`
+(default `draft`; used for candidates without a status), `create_tests`
+(default `false`; a linked draft test per requirement as with `create_test`,
+needs `test.write`), `skip_duplicates` (default `true`), `dry_run` (default
+`false`: everything is done in a transaction that is rolled back, so keys and
+counts show what would happen) and `exclude` (JSON array of candidate indexes
+of the preview to leave out). Importing a candidate with status `approved` or
+`rejected` (from the file or `status`) needs `requirement.review` → else 403.
+All requirements are stored in one transaction: if one fails validation
+(→ 400 naming its `location`), none is stored. Linked tests are created
+afterwards; if that fails, the imported requirements are deleted again.
+
+`Candidate`: `{title, description, obligation, obligation_from, type,
+priority, status, source, rationale, owner, tags, folder, criteria:[{description,
+method, threshold}], external_id, row, location, warnings, duplicate?}`.
+Enumerations are model codes or `""` (default on import). `obligation_from`
+is `column`, `text` (detected with the requirement language analysis from title
+and description, as on create) or `""`. `folder` is a path `A/B` relative to
+the target folder. `row`/`location` point into the file (`row 5`,
+`table 2, row 3`, `paragraph 12`, `SPEC-OBJECT …`). `errors` lists parts of
+the file that were left out (e.g. a row without title or description);
+problems that make the file unusable (no header row, broken XML/ZIP, unknown
+mapping field) → 400.
+
+**External ID and duplicates.** There is no external-ID column: the ID is
+recorded in `source` as `ID: <id>` (appended as `<source>, ID: <id>` when the
+file has a source). With `skip_duplicates` a candidate is skipped
+(`reason` `duplicate_external_id`) when a requirement of the project has
+`ID: <id>` in its source or an earlier candidate has the same ID, else
+(`duplicate_title`) when a requirement or earlier candidate has the same
+title, ignoring case. The preview marks these as `duplicate`.
+
+**Formats.**
+
+- **CSV / XLSX:** the header row is the first of the first 20 non-empty rows
+  that has a known title or description column (or two recognised columns
+  including one of them, or a column named in `mapping`); rows above it are
+  ignored. CSV: delimiter `,` `;` or tab (sniffed, or Excel's `sep=` line);
+  UTF-8 with or without BOM, UTF-16 with BOM, otherwise Windows-1252. The
+  export's formula guard (a leading `'` before `= + - @`) is removed. XLSX:
+  merged cells repeat their value over the merged range; a criteria sheet as
+  in the export (`Requirement`, `Criterion`, `Method`, `Threshold`) adds
+  criteria to the candidates with that ID.
+- **Column names** (case-insensitive, decoration such as `(optional)` or `*`
+  ignored), English · Swedish: title `Title, Name, Heading, Summary · Titel,
+  Namn, Rubrik`; description `Description, Text, Requirement, Statement ·
+  Beskrivning, Krav, Kravtext`; external_id `ID, Key, Ref, Reference, Number,
+  Requirement ID · Nyckel, Referens, Nummer, Krav-ID`; obligation `Obligation,
+  Level · Kravnivå, Nivå`; type `Type · Typ, Kravtyp`; priority `Priority ·
+  Prioritet`; status `Status, State · Tillstånd`; source `Source, Origin ·
+  Källa, Ursprung`; rationale `Rationale, Justification, Comment · Motivering,
+  Kommentar`; owner `Owner, Responsible · Ägare, Ansvarig`; tags `Tags, Labels
+  · Taggar, Etiketter` (split on `,` `;` `|`); folder `Folder, Section, Chapter,
+  Path · Mapp, Avsnitt, Kapitel` (path split on `/`, `\` or `>`); criteria
+  `Criteria, Acceptance criteria · Kriterier, Acceptanskriterier` (one per
+  line, bullets removed; `method: text` or `[method] text` sets the method).
+  The export columns `Key`, `Version`, `Linked tests`, `Coverage` and
+  `Categories` are recognised (`Key` → external_id, the others ignored).
+  Values: obligation `MUST`, `MUST NOT`, `SHALL`, `SHOULD`, `MAY`, `OPTIONAL`,
+  `WILL`, `SKA`, `SKA INTE`, `MÅSTE`, `BÖR`, `FÅR`, `FÅR INTE` … or the model
+  codes; type, priority, status and method in English or Swedish (`Hög`,
+  `Godkänd`, `Säkerhet`, `Inspektion` …) or as codes; an unknown value is a
+  candidate warning and the default applies.
+- **ReqIF 1.x** (`.reqif`, `.reqifz` = ZIP of `.reqif` files): each
+  SPEC-OBJECT is a candidate. STRING, XHTML (converted to text with line
+  breaks; list items as `- `), ENUMERATION (long names) and other values are
+  read; attributes map by long name: `ReqIF.Name`/title/name → title,
+  `ReqIF.Text`/text/description → description, `ReqIF.ForeignID`/ID →
+  external_id, others like column names. An object with a
+  `ReqIF.ChapterName` and no text is a heading: its name becomes a folder of
+  the objects below it in the SPECIFICATION hierarchy. With several
+  specifications their long names are the top folders. Objects outside every
+  hierarchy follow at the end.
+- **DOCX:** paragraphs with a heading style (style name `heading N` in
+  `styles.xml`, style IDs `Heading1`/`Rubrik1` …, or an outline level) set
+  the folder path. Every other paragraph or list item with a normative
+  keyword (MUST/SHALL/SHOULD/MAY/OPTIONAL and negations, SKA/BÖR/FÅR …,
+  detected with `reqlang`) is a candidate: the paragraph is the description,
+  the title its first eight words, and a leading `REQ-12:`, `[SRS-7]` or
+  `K12 -` identifier the external ID. If the document uses uppercase English
+  keywords anywhere, lowercase English keywords are not normative (RFC 8174).
+  Numbered list items after a candidate ending with `:` are appended to it.
+  Tables with a header row are parsed like CSV (vertically merged cells repeat
+  the value above); tables without one are scanned like paragraphs. Tracked
+  deletions and field codes are ignored.
+
+### Bulk review
+
+`POST /projects/{pid}/requirements/review` approves or rejects many
+requirements, `POST /projects/{pid}/tests/review` marks many tests ready.
+Needs `requirement.review` / `test.review` (write permission is not
+needed).
+
+```json
+{"decision": "approved", "ids": ["…"], "query": "folder:Payments", "all": false,
+ "from": ["review"], "ignore": ["no_obligation"], "comment": "…",
+ "complete_reviews": true, "dry_run": true}
+```
+
+- `decision`: `approved` or `rejected` for requirements, `ready` for tests.
+- The items: `ids`, else the matches of `query`, else every item of the
+  project with `all: true` (one of them is required; at most 5000 items).
+- `from`: the statuses an item may have (default `["review"]`).
+- Items are skipped with a `reason`: `already`, `status` (not in `from`),
+  `changes_requested` (the latest decided review request asked for
+  changes), `pending_review` (a review request is open), `suspect` (suspect
+  links; not checked when rejecting), `no_obligation` (approving a
+  requirement without obligation), `no_steps` (manual test without steps),
+  `no_script` (automated test without script). The last six can be listed
+  in `ignore` to include such items anyway.
+- `comment` is added as a comment to every changed item.
+- `complete_reviews`: the caller's own open review requests no longer
+  count as `pending_review`, and after the change those of the changed
+  items are decided: `approved` for approve / ready, `changes_requested`
+  for reject, with the comment "Approved in a bulk review." (or
+  "Rejected …") plus `comment`. Checklists are left as they are; the
+  requester is notified, and each is audited (`review.approved` /
+  `review.changes_requested`) and sent as a `review.completed` webhook.
+  Other reviewers' open requests still skip the item.
+- `dry_run` returns the preview without changing anything.
+
+Response: `{"decision", "dry_run", "updated": [{id, key, title, status}],
+"skipped": [{id, key, title, status, reason}], "my_reviews",
+"reviews_completed"}` (`status` is the status before; `my_reviews` counts
+the caller's open review requests for the chosen items,
+`reviews_completed` those completed, or in a dry run to be completed). Each change gets a revision (`bulk_update`), an audit entry
+`requirement.review` / `test.review` and a `requirement.updated` /
+`test.updated` webhook; the call is audited as `…bulk_review`.
+
 ## Test cases
 
 Reading needs `test.read`, writing `test.write`.
@@ -251,6 +403,7 @@ Reading needs `test.read`, writing `test.write`.
 | POST | `/projects/{pid}/tests/move` | like requirements |
 | POST | `/projects/{pid}/tests/bulk` | like requirements (`status`, `priority`, `execution_type`, categories) |
 | DELETE | `/projects/{pid}/tests/bulk` | → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/tests/review` | bulk review: mark tests ready (see [Bulk review](#bulk-review)) |
 | GET | `/tests/{id}/links` | `[TraceLink]` |
 | GET | `/tests/{id}/dependencies` | `[TestDependency]` both directions: `direction` = `outgoing` (this test depends on the other) or `incoming`; `other_last_result` is the latest result of the other test |
 | POST | `/tests/{id}/dependencies` | `{"depends_on_id"}` → 201 TestDependency; same project only; self-dependencies and cycles → 400, duplicates → 409 |
@@ -310,13 +463,14 @@ an analysis language. Test findings are included with `test.read`.
  "obligations": [{"value": "must", "count": 19, "percent": 95}, {"value": "shall", "count": 1, "percent": 5}],
  "families": [{"family": "mandatory", "total": 20, "dominant": "MUST", "keywords": [{"value": "MUST", "count": 19, "percent": 95}, …]}],
  "statuses": [{"value": "approved", "count": 12, "percent": 60}, …], "coverage": [{"value": "passed", …}],
+ "languages": [{"value": "en", "count": 18, "percent": 90}, {"value": "sv", "count": 2, "percent": 10}],
  "findings": [{"code": "inconsistent_keyword", "severity": "warning", "category": "consistency",
                "params": {"family": "mandatory", "dominant": "MUST", "dominantPercent": "95", "keyword": "SHALL", "count": "1", …},
                "items": [{"kind": "requirement", "id": "…", "key": "SHOP-REQ-7", "title": "…", "note": "SHALL"}], "total": 1}]}
 ```
 
 Findings carry a `code` and `params` for clients to phrase, and are ordered
-problems, warnings, infos. Codes: `obligation_missing`, `keyword_missing`,
+problems, warnings, infos. Codes: `rfc_not_normative` (keywords only in lower case), `rfc_casing` (keywords also in lower or mixed case), `non_rfc_keyword` (WILL), `mixed_languages`, `mixed_language_text`, `english_keywords`, `obligation_missing`, `keyword_missing`,
 `obligation_mismatch`, `multiple_levels`, `spread_all_mandatory`,
 `spread_no_mandatory`, `spread_many_optional`, `spread_many_should`,
 `spread_many_descriptive`, `inconsistent_keyword` (a keyword used where
@@ -336,6 +490,9 @@ Reading needs `project.read`; creating and deleting links needs
 |---|---|---|
 | GET | `/projects/{pid}/links` | all links |
 | POST | `/projects/{pid}/links` | `{"requirement_id","test_case_id","criterion_id"?}` |
+| POST | `/projects/{pid}/links/bulk` | `{"links":[{requirement_id, test_case_id, criterion_id?}]}` (max 1000) → `{"created":[TraceLink], "skipped":[{requirement_id, test_case_id, reason}], "status_changes"}`; reasons `exists`, `not_found` (not in the project), `invalid` (e.g. a criterion of another requirement) |
+| DELETE | `/projects/{pid}/links/bulk` | `{"ids":[...]}` (max 1000) → `{"deleted":[TraceLink], "skipped":[{id, reason: "not_found"}], "status_changes"}`; the deleted links are returned so they can be recreated |
+| POST | `/projects/{pid}/links/confirm` | `{"ids":[...]}` → `{"confirmed": n, "status_changes"}`; confirms the suspect ones among the project's links |
 | DELETE | `/links/{id}` | |
 | GET | `/projects/{pid}/traceability?q=&tq=` | `{"requirements":[{id,key,title,obligation,coverage}], "tests":[{id,key,title,last_result}], "links":[TraceLink]}`; `q` filters requirements, `tq` tests |
 
@@ -352,12 +509,37 @@ import) `run.execute`.
 | GET | `/runs/{id}` | `TestRun` |
 | PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. |
 | DELETE | `/runs/{id}` | |
+| POST | `/projects/{pid}/runs/bulk` | `{"ids":[...], "set": {"status"?, "release_id"? ("" removes), "environment"?, "build"?}}` → `{"updated": n}` (run.write) |
+| DELETE | `/projects/{pid}/runs/bulk` | `{"ids":[...]}` → `{"deleted": n}` (run.write) |
 | GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness` |
 | POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` |
-| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness"}]}`; results of tests that may not be executed (see below) are not recorded |
+| POST | `/runs/{id}/executions/bulk` | `{"ids":[...] \| "all": true, "from": [results]?, "set": {"status"?, "assignee"?, "notes_append"?}}` (run.execute) → `{"updated", "rejected", "skipped"}`, each `[{id, key, title, status, assignee, reason}]` with the values before; or `{"ids" \| "all", "from"?, "remove": true}` (run.write) → `{"removed": n, "skipped"}`. `status` is `passed`, `failed`, `blocked`, `skipped` or `not_run`; `from` keeps only executions with those results (others are `skipped` with reason `status`, unchanged ones with `already`). Results that record an execution go through the readiness check; refusals are `rejected` with the blocking issues as `reason`. Executions are applied in passes, so prerequisites in the same request are recorded first. Step results are not changed. |
+| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
+| POST | `/runs/{id}/junit?create_missing=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
 | GET | `/executions/{id}` | `Execution` with `step_results`, `readiness` and embedded `test` (TestCase incl. steps & script) |
 | PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}]}` – status derived from steps when omitted and steps given; 409 `not_ready` when the update records an execution that the settings forbid |
 | POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test` |
+
+**JUnit XML import.** `POST /runs/{id}/junit` reads `<testsuites>` or
+`<testsuite>` documents (suites may nest) as written by Playwright, pytest,
+go-junit-report, Maven Surefire, Gradle, Jest and Vitest. Each `<testcase>`
+is mapped to a test key: a testcase property named `qtestframe.key`,
+`test_key` or `qtestframe` (Playwright annotations with
+`embedAnnotationsAsProperties`), else the first match of
+`[A-Z][A-Z0-9]{1,15}[-_]TC[-_][0-9]+` in the name, then in the classname
+(underscores become hyphens, so `test_SHOP_TC_3` is `SHOP-TC-3`). Status:
+`<failure>` or `<error>` → `failed`, `<skipped>` → `skipped`, otherwise
+`passed`; `time` (seconds) becomes `duration_ms`; the output holds the
+failure/error/skipped messages and texts and `system-out`/`system-err`
+(at most 64 KiB). Several testcases with one key give one result: `failed`
+wins over `passed` (and `passed` over `skipped`), durations add up and the
+outputs are joined. Results then go through the same readiness check, run
+auto-completion and response as `/results`; `unmapped` lists the names of
+testcases without a key. With `create_missing=true` (needs `test.write`
+in addition to `run.execute`, else 403) every testcase without a key gets a
+test: an automated test of the run's project with exactly that title, or a
+new draft automated test titled after the testcase (listed in `created`);
+its result is recorded and the test added to the run.
 
 **Readiness.** Before a result is recorded the server checks the test:
 status `ready`; every linked requirement in one of
@@ -402,6 +584,7 @@ document archive with link `entity_type: "step"`, `run_id` and
 |---|---|---|---|
 | GET | `/projects/{pid}/graph?kind=requirement\|test` | project.read and requirement.read / test.read | `{"kind","nodes":[{id,key,title,status,result,folder}],"edges":[{id,source,target,type}]}`; `result` is the coverage of a requirement or the last result of a test. Requirement edges are relations; test edges are `depends_on` (test → prerequisite) and `calls` (shared steps) |
 | GET | `/projects/{pid}/tags` | project.read | `[{tag, requirements, tests, documents, total}]`, most used first |
+| POST | `/projects/{pid}/tags/bulk` | requirement.write and test.write | `{"tags":[...], "action": "rename\|merge\|delete", "to"}` – rename one tag, merge several into `to`, or remove them from every requirement and test (and document, with project.update) → `{"requirements","tests","documents"}` (items changed) |
 
 ## Profile and sessions
 
@@ -527,7 +710,163 @@ and tests of a project.
 | POST | `/projects/{pid}/baselines` | requirement.write | `{"name", "description", "query"?}` (`query` filters requirements and tests like the export filter) → Baseline |
 | GET | `/baselines/{id}` | requirement.read | Baseline with `items` |
 | GET | `/baselines/{id}/compare?to=current\|<baseline_id>` | requirement.read | BaselineDiff `{from, to, added, removed, changed, unchanged}`; each entry `{entity_type, entity_id, key, title, from_version, to_version, changed_fields}` |
-| DELETE | `/baselines/{id}` | requirement.write | |
+| DELETE | `/baselines/{id}` | requirement.write | 409 when the baseline is signed |
+| POST | `/baselines/{id}/restore` | requirement.read, plus write permission for each item's kind | bulk restore to the baseline's version: `{"items":[{entity_type, entity_id}]}` (max 1000) → `{"restored":[{entity_type, entity_id, key}], "skipped":[{entity_type, entity_id, key, reason}]}`; reasons `not_in_baseline`, `deleted`, `unchanged`, `not_allowed`, `needs_review` (restoring a review decision needs the review permission). Each restore is a new version with history action `restore`; audited as `baseline.restore` |
+| GET | `/baselines/{id}/signoffs` | requirement.read | `[Signoff]` `{id, user_email, user_name, meaning, comment, content_hash, signed_at, valid}`; `valid` is false when the content no longer has the signed hash |
+| DELETE | `/projects/{pid}/baselines/bulk` | requirement.write | `{"ids":[...]}` → `{"deleted": n, "skipped":[{id, name, reason: "signed"}]}`; signed baselines are kept |
+| POST | `/projects/{pid}/baselines/signoffs` | requirement.review or test.review | bulk sign-off: `{"ids":[...], "meaning", "comment", "password"}` with the same identity checks as below → `{"signed":[{id, name, content_hash}], "skipped":[{id, name, reason: "already"}]}` |
+| POST | `/baselines/{id}/signoffs` | requirement.review or test.review | electronic signature `{"meaning": "authored\|reviewed\|approved\|released", "comment", "password"}`. The password is checked again (403 `reauth_failed`); single sign-on accounts need a session less than 15 minutes old (403 `reauth_required`); API tokens cannot sign. `content_hash` is the SHA-256 of the baseline's items. 409 when the user already signed with that meaning. Audited as `baseline.signed`. |
+
+## Releases
+
+A release is a version of the product: the requirements it contains
+(scope), the runs that test it and exit criteria that decide go / no-go.
+Reading needs `project.read`, changing `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/releases` | `[Release]` with `requirement_count`, `run_count` |
+| POST | `/projects/{pid}/releases` | `{"name","version","description","status","target_date":"YYYY-MM-DD","exit_criteria":[ExitCriterion]}`; without `exit_criteria` the defaults are used |
+| GET | `/releases/{id}` | Release with `requirement_ids` |
+| PATCH | `/releases/{id}` | any of the fields above, plus `release_note`, `override`. Setting `status` to `released` needs a go; without it 409 `{"code":"no_go","status":ReleaseStatusReport}` unless `override: true` and a `release_note`. Releasing sets `released_at`/`released_by` and creates the baseline "Release <name>" of the scope and its tests |
+| DELETE | `/releases/{id}` | runs keep their results and lose the release |
+| POST | `/projects/{pid}/releases/bulk` | `{"ids":[...], "set": {"status"?, "target_date"?, "exit_criteria"?}, "add_requirement_ids"?, "remove_requirement_ids"?, "query"?}` → `{"updated":[names], "skipped":[{id, name, reason}]}`. Setting `released` releases only the releases with a go (each with its baseline); the others are skipped with reason `no_go` (no override in bulk). Releasing cannot be combined with a scope change. Every release is validated before any is saved |
+| DELETE | `/projects/{pid}/releases/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
+| POST | `/releases/{id}/requirements` | `{"add":[ids],"remove":[ids],"query":"<filter expr>"}` (the query adds its matches) → `{"added","removed","release"}` |
+| GET | `/releases/{id}/status` | `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}` |
+
+Runs belong to a release with `release_id` on `POST /projects/{pid}/runs`
+and `PATCH /runs/{id}` (`""` removes it). The results of a release are the
+latest result of each test in its runs.
+
+A percentage criterion with nothing to measure (an empty scope; no
+executions for `executed`) is not met and has `available: false`. A release
+without exit criteria is always a go.
+
+Exit criterion types (`threshold` in percent, default 100):
+
+| Type | Met when |
+|---|---|
+| `coverage` | at least `threshold` % of the scope requirements have tests |
+| `passed` | at least `threshold` % of the scope requirements have all their tests passed |
+| `mandatory_passed` | every MUST/SHALL requirement has all tests passed |
+| `executed` | at least `threshold` % of the release executions have a result |
+| `no_failed` | no test of the release failed or is blocked |
+| `approved` | at least `threshold` % of the scope requirements are approved, implemented or verified |
+| `no_suspect` | no scope requirement has a suspect link |
+| `no_open_defects` | no open defect of at least severity `level` (critical, major, minor, trivial) is linked to the scope |
+| `risks_mitigated` | no identified or mitigating risk of at least `level` (low, medium, high, critical) addresses a scope requirement |
+
+## Defects
+
+Defects have keys like `SHOP-BUG-3`. Reading needs `project.read`; creating,
+changing and linking `run.execute`; deleting `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/defects?q=` | `[Defect]`; query fields `key, title, description, status, severity, priority, assignee, external, created_by, open, linked` |
+| POST | `/projects/{pid}/defects` | `{"title","description","status","severity","priority","assignee","external_key","external_url","links":[{"entity_type":"requirement\|test\|execution","entity_id"}]}` |
+| GET | `/defects/{id}` | Defect with `links` (key and title of each item) |
+| PATCH | `/defects/{id}` | any field above |
+| DELETE | `/defects/{id}` | |
+| POST | `/projects/{pid}/defects/bulk` | `{"ids":[...], "set": {"status"?, "severity"?, "priority"?, "assignee"?}}` → `{"updated": n}`; every defect is validated before any is saved |
+| DELETE | `/projects/{pid}/defects/bulk` | `{"ids":[...]}` → `{"deleted": n}` (project.update) |
+| POST / DELETE | `/defects/{id}/links` | `{"entity_type","entity_id"}` (same project) |
+| GET | `/requirements/{id}/defects`, `/tests/{id}/defects`, `/executions/{id}/defects` | `[LinkedDefect]` with `via`; a requirement includes the defects of its tests and their executions |
+
+Statuses: `open`, `in_progress` (open), `resolved`, `closed`, `rejected`.
+Severities: `critical`, `major`, `minor`, `trivial`. Requirements carry
+`open_defects` (query field `defects`).
+
+**Jira and GitHub.** Each project can be connected to one tracker.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github, url, project_key, repo, issue_type, labels, user, has_token}`; the token is never returned |
+| PUT | `/projects/{pid}/defect-tracker` | project.update | same fields plus `token` (write-only; empty keeps the saved one) and `clear_token` |
+| POST | `/projects/{pid}/defect-tracker/check` | project.update | 200 or 502 `tracker_error` |
+| POST | `/defects/{id}/push` | run.execute | creates the issue → Defect with `external_key`, `external_url`; 409 when already linked |
+| POST | `/defects/{id}/sync` | run.execute | reads the issue status and maps it onto the defect |
+| POST | `/projects/{pid}/defects/sync` | run.execute | all linked defects, or only `{"ids":[...]}` → `{"synced","changed","failed":[{key,error}]}` |
+| POST | `/projects/{pid}/defects/push` | run.execute | `{"ids":[...]}`: creates issues for those without one → `{"pushed":[{key,external_key}],"skipped":[keys already linked],"failed":[{key,error}]}` |
+| POST | `/projects/{pid}/defects/import` | run.execute | `{"external_key","severity","links"}` creates a defect from an existing issue |
+
+Jira uses REST API v2 at the site URL with e-mail + API token (basic
+auth), or a personal access token when `user` is empty. GitHub uses
+`https://api.github.com` (or a GitHub Enterprise API URL) and `repo`
+`owner/name`; a fine-grained token needs Issues read and write. Status
+mapping: Jira status categories To Do → `open`, In Progress →
+`in_progress`, Done → `closed` (a resolution such as Won't Do or Duplicate
+→ `rejected`); GitHub open → `open`, closed → `closed`, closed as not
+planned → `rejected`.
+
+## Risks
+
+Reading needs `requirement.read`, changing `requirement.write`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
+| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3) |
+| GET / PATCH / DELETE | `/risks/{id}` | |
+| POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
+| DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
+| POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
+| GET | `/requirements/{id}/risks` | the risks a requirement addresses |
+
+`score` is likelihood × impact; `level` is `low` (1–4), `medium` (5–9),
+`high` (10–16) or `critical` (17–25). Statuses: `identified`, `mitigating`
+(open), `mitigated`, `accepted`, `closed`. `covered` and `verified` count
+the linked requirements with tests and with all tests passed. Requirements
+carry `risk_level`, the highest level of their open risks (query field
+`risk`).
+
+## Reviews
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/review-checklists` | default checklist texts per kind |
+| GET | `/reviews?project_id=&entity_type=&entity_id=&status=&reviewer=me&requested_by=me` | review requests; without a project or item, the caller's own; `requested_by=me` lists the requests the caller sent |
+| POST | `/reviews/bulk` | `{"ids":[...], "action": "approve\|request_changes\|cancel\|remind\|due_date", "comment"?, "due_date"?}` → `{"updated":[{id,key}], "skipped":[{id,key,reason}]}`. `approve` / `request_changes`: the caller's own pending requests, without the checklist rule (the comment records the bulk decision; `request_changes` needs a comment). `cancel`, `remind` (a `review.reminder` notification) and `due_date`: pending requests the caller sent, or with write permission on the item. Reasons: `not_pending`, `not_reviewer`, `not_requester` |
+| POST | `/reviews` | `{"entity_type":"requirement\|test","entity_id","reviewers":[user id, e-mail or handle],"message","due_date","checklist":[{"text"}]}` (write permission on the item) → the new requests; reviewers with a pending request for the item are skipped |
+| GET | `/reviews/{id}` | ReviewRequest with `entity_key`, `entity_title`, `outdated` (the item changed since) |
+| PATCH | `/reviews/{id}` | reviewer: `{"checklist":[{"checked","note"}],"comment","decision":"approved\|changes_requested"}`. Approving needs every point checked or noted; requesting changes needs a comment. Requester (or write permission): `{"cancel":true}`. 409 once decided |
+
+## Notifications and webhooks
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/notifications?unread=1&limit=` | signed in | `{"items":[Notification],"unread":n}` |
+| POST | `/notifications/read` | signed in | `{"ids":[...]}`, or `{}` for all |
+| POST | `/notifications/unread` | signed in | `{"ids":[...]}` → `{"marked": n}` |
+| DELETE | `/notifications` | signed in | `{"ids":[...]}`, or `{"read": true}` for all read ones → `{"deleted": n}`; only the caller's own notifications are affected |
+| GET | `/webhook-events` | signed in | event names |
+| GET | `/projects/{pid}/webhooks` | project.update | `[Webhook]` without secrets (`has_secret`) |
+| POST | `/projects/{pid}/webhooks` | project.update | `{"name","url","events":["*"\|event...],"enabled","secret"?}` → Webhook with `secret` (shown only here) |
+| PATCH | `/webhooks/{id}` | project.update | the same fields; `"rotate_secret": true` returns a new secret |
+| DELETE | `/webhooks/{id}` | project.update | |
+| POST | `/webhooks/{id}/test` | project.update | sends `ping` now → `{"ok","status","error"}` |
+| POST | `/projects/{pid}/webhooks/bulk` | project.update | `{"ids":[...], "enabled"?, "add_events"?, "remove_events"?}` → `{"updated": n}`; every webhook must keep an event (else 400, nothing saved); secrets are kept |
+| DELETE | `/projects/{pid}/webhooks/bulk` | project.update | `{"ids":[...]}` → `{"deleted": n}` |
+| POST | `/projects/{pid}/webhooks/test` | project.update | `{"ids":[...]}` (at most 50) sends `ping` to each → `{"results":[{id, name, ok, status, error}]}` |
+
+Users are notified (never about their own actions) when they are made
+owner, assignee of an execution or a defect, are @mentioned in a
+description, comment or execution notes, get a review request or a
+decision on one, and when a defect assigned to them changes status.
+
+A webhook delivery is `POST <url>` with `Content-Type: application/json`,
+headers `X-Qtestframe-Event`, `X-Qtestframe-Webhook` and
+`X-Qtestframe-Signature: sha256=<hex HMAC-SHA256 of the body with the
+secret>`, and body
+`{"id","event","project_id","actor","time","data"}`. Events:
+`requirement.created/updated`, `test.created/updated`,
+`run.created/updated/completed`, `execution.updated`,
+`defect.created/updated/status/assigned`, `risk.created/updated`,
+`release.created/updated/released`, `comment.created`,
+`review.requested/completed`, `baseline.signed`. Deliveries run in the
+background with a 10 s timeout, are not retried and do not follow
+redirects; the latest outcome is stored as `last_status`, `last_error`.
 
 ## Comments
 
@@ -581,6 +920,9 @@ with `kind` = `attachment` | `document` | `report` | `avatar` | `icon`.
 | DELETE | `/{type}/{id}/attachments/{file_id}` | same | unlink; an `attachment` file without remaining links is deleted |
 | GET | `/projects/{pid}/documents?q=&kind=` | project.read | document archive: every file of the project (attachments, documents, reports) |
 | POST | `/projects/{pid}/documents` | `requirement.write` or `test.write` | multipart upload → File (`kind: document`) |
+| POST | `/projects/{pid}/documents/bulk` | project.read + uploader or project.update per file | `{"ids":[...], "add_tags"?, "remove_tags"?, "description"?}` → `{"updated":[{id,name}], "skipped":[{id,name,reason:"not_allowed"}]}` |
+| DELETE | `/projects/{pid}/documents/bulk` | as above | `{"ids":[...]}` → `{"deleted": n, "skipped"}` |
+| POST | `/projects/{pid}/documents/zip` | project.read | `{"ids":[...]}` → `application/zip` with the files (unique names; at most 512 MB together, else 400) |
 
 Archive query fields: `name`, `description`, `tag`, `kind`, `type`
 (content type), `uploaded_by`, `created_at`, `size`, `linked` (keys of
@@ -661,6 +1003,8 @@ Custom report config (`CustomConfig`):
 | POST | `/projects/{pid}/reports/definitions` | requirement.write or test.write | `{name, description, config}` |
 | GET / PATCH / DELETE | `/reports/definitions/{id}` | export / write | |
 | POST | `/reports/definitions/{id}/generate` | export | `{format, archive?}` |
+| POST | `/projects/{pid}/reports/batch` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
+| DELETE | `/projects/{pid}/reports/definitions/bulk` | requirement.write or test.write | `{"ids":[...]}` → `{"deleted": n}` |
 
 ## Search
 

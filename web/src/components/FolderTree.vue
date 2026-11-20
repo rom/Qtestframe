@@ -12,7 +12,7 @@ import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Message from 'primevue/message'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { allKeys, ancestorKeys, buildTree, canMoveFolder, descendantIds, folderPath, type FolderNode } from '@/lib/tree'
+import { allKeys, ancestorKeys, buildTree, canMoveFolder, checkedIds, descendantIds, folderPath, topMostFolders, type FolderNode } from '@/lib/tree'
 import type { Folder, ItemKind, Project } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
 import { decodeIds, FOLDER_MIME, ITEMS_MIME } from '@/lib/dnd'
@@ -278,6 +278,56 @@ async function doMoveProject() {
   }
 }
 
+// ---------- several folders at once ----------
+const multi = ref(false)
+const checkKeys = ref<Record<string, { checked: boolean; partialChecked: boolean }>>({})
+/** the checked folders that are not inside another checked folder */
+const bulkIds = computed(() => topMostFolders(props.folders, checkedIds(checkKeys.value)))
+const bulkPicker = ref(false)
+const bulkDeleteDialog = ref(false)
+const bulkProjectDialog = ref(false)
+const bulkBusy = ref(false)
+const bulkTargets = computed(() => {
+  const skip = new Set<string>()
+  for (const id of bulkIds.value) for (const d of descendantIds(props.folders, id)) skip.add(d)
+  return props.folders.filter((f) => !skip.has(f.id))
+})
+function toggleMulti() {
+  multi.value = !multi.value
+  checkKeys.value = {}
+}
+async function bulkPost(body: Record<string, unknown>, done: string) {
+  bulkBusy.value = true
+  dialogError.value = ''
+  try {
+    const res = await api.post<{ moved?: number; deleted?: number }>(`/projects/${props.projectId}/folders/bulk`, { ids: bulkIds.value, ...body })
+    const n = res.moved ?? res.deleted ?? 0
+    notify.ok(t(done, { n }, n))
+    if (selected.value && checkedIds(checkKeys.value).includes(selected.value) && (body.action === 'delete' || body.project_id)) selected.value = null
+    checkKeys.value = {}
+    bulkPicker.value = bulkDeleteDialog.value = bulkProjectDialog.value = false
+    emit('changed')
+  } catch (e) {
+    if (bulkProjectDialog.value) dialogError.value = errorMessage(e)
+    else notify.fail(e)
+  } finally {
+    bulkBusy.value = false
+  }
+}
+function onBulkPick(target: string | null) {
+  void bulkPost({ action: 'move', parent_id: target ?? '' }, 'folders.bulk.moved')
+}
+async function openBulkProject() {
+  targetProject.value = null
+  dialogError.value = ''
+  bulkProjectDialog.value = true
+  try {
+    projects.value = asItems(await api.get<{ items: Project[] }>('/projects')).filter((p) => p.id !== props.projectId)
+  } catch (e) {
+    dialogError.value = errorMessage(e)
+  }
+}
+
 defineExpose({ openCreate })
 </script>
 
@@ -302,7 +352,30 @@ defineExpose({ openCreate })
         <Button icon="pi pi-plus" text rounded size="small" severity="secondary" v-tooltip="t('folders.expandAll')" :aria-label="t('folders.expandAll')" @click="expanded = allKeys(nodes)" />
         <Button icon="pi pi-minus" text rounded size="small" severity="secondary" v-tooltip="t('folders.collapseAll')" :aria-label="t('folders.collapseAll')" @click="expanded = {}" />
         <Button v-if="canWrite" icon="pi pi-folder-plus" text rounded size="small" v-tooltip="t('folders.newFolder')" :aria-label="t('folders.newFolder')" @click="openCreate(selected)" />
+        <Button
+          v-if="canWrite && folders.length"
+          icon="pi pi-check-square"
+          text
+          rounded
+          size="small"
+          :severity="multi ? undefined : 'secondary'"
+          :aria-pressed="multi"
+          v-tooltip="t('folders.bulk.selectSeveral')"
+          :aria-label="t('folders.bulk.selectSeveral')"
+          @click="toggleMulti"
+        />
       </span>
+    </div>
+    <div v-if="multi" class="bulkbar folder-bulk" role="toolbar" :aria-label="t('folders.bulk.toolbar')">
+      <b>{{ t('folders.bulk.selected', { n: bulkIds.length }, bulkIds.length) }}</b>
+      <template v-if="bulkIds.length">
+        <Button :label="t('folders.bulk.moveInto')" icon="pi pi-folder-open" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkPicker = true" />
+        <Button :label="t('folders.moveToTop')" icon="pi pi-arrow-up" size="small" severity="secondary" outlined :loading="bulkBusy" @click="bulkPost({ action: 'move', parent_id: '' }, 'folders.bulk.moved')" />
+        <Button :label="t('folders.moveToProject')" icon="pi pi-send" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulkProject" />
+        <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined aria-haspopup="dialog" @click="bulkDeleteDialog = true" />
+      </template>
+      <span v-else class="small muted">{{ t('folders.bulk.hint') }}</span>
+      <Button :label="t('folders.bulk.done')" size="small" text @click="toggleMulti" />
     </div>
     <button
       type="button"
@@ -318,14 +391,16 @@ defineExpose({ openCreate })
     </button>
     <Tree
       v-model:expanded-keys="expanded"
-      :selection-keys="selectionKeys"
+      :selection-keys="multi ? checkKeys : selectionKeys"
       :value="nodes"
-      selection-mode="single"
+      :selection-mode="multi ? 'checkbox' : 'single'"
+      :pt="{ rootChildren: { 'aria-multiselectable': multi ? 'true' : undefined }, pcNodeCheckbox: { input: { 'aria-hidden': 'true', tabindex: '-1' } } }"
+      @update:selection-keys="(k: Record<string, { checked: boolean; partialChecked: boolean }>) => multi && (checkKeys = k)"
       :meta-key-selection="false"
       class="w-full"
       :aria-label="t('folders.title')"
       style="padding: 0; background: transparent; border: none"
-      @node-select="onSelect"
+      @node-select="(n: { key?: string | number }) => !multi && onSelect(n)"
     >
       <template #default="{ node }">
         <span
@@ -352,6 +427,36 @@ defineExpose({ openCreate })
     <div v-if="canWrite" class="muted small" style="padding: 8px 10px">{{ t('folders.dragHint') }} {{ t('folders.keyboardHint') }}</div>
     <ContextMenu ref="menu" :model="menuItems" />
     <Menu ref="actionsMenu" :model="menuItems" popup />
+    <FolderPickerDialog v-model:visible="bulkPicker" :folders="bulkTargets" :header="t('folders.bulk.moveHeader', { n: bulkIds.length }, bulkIds.length)" @pick="onBulkPick" />
+    <Dialog v-model:visible="bulkDeleteDialog" :header="t('folders.bulk.deleteHeader', { n: bulkIds.length }, bulkIds.length)" modal style="width: min(520px, 95vw)">
+      <p>{{ t('folders.bulk.confirmDelete', { n: bulkIds.length }, bulkIds.length) }}</p>
+      <p class="muted small">{{ kind === 'requirement' ? t('folders.deleteHintRequirements') : t('folders.deleteHintTests') }}</p>
+      <div class="row" style="justify-content: flex-end">
+        <Button :label="t('common.cancel')" text severity="secondary" @click="bulkDeleteDialog = false" />
+        <Button :label="t('folders.deleteKeep')" severity="warn" outlined :loading="bulkBusy" @click="bulkPost({ action: 'delete', cascade: false }, 'folders.bulk.deleted')" />
+        <Button :label="t('folders.deleteAll')" severity="danger" icon="pi pi-trash" :loading="bulkBusy" @click="bulkPost({ action: 'delete', cascade: true }, 'folders.bulk.deleted')" />
+      </div>
+    </Dialog>
+    <Dialog v-model:visible="bulkProjectDialog" :header="t('folders.bulk.projectHeader', { n: bulkIds.length }, bulkIds.length)" modal style="width: min(460px, 95vw)">
+      <div class="grid" style="gap: 12px">
+        <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
+        <p class="small" style="margin: 0">{{ t('folders.bulk.projectHint') }}</p>
+        <Select
+          v-model="targetProject"
+          :options="projects"
+          option-value="id"
+          :option-label="(p: Project) => `${p.key} · ${p.name}`"
+          :placeholder="t('folders.targetProject')"
+          :aria-label="t('folders.targetProject')"
+          filter
+          class="w-full"
+        />
+        <div class="row" style="justify-content: flex-end">
+          <Button :label="t('common.cancel')" text severity="secondary" @click="bulkProjectDialog = false" />
+          <Button :label="t('common.move')" icon="pi pi-send" :disabled="!targetProject" :loading="bulkBusy" @click="bulkPost({ action: 'move', parent_id: '', project_id: targetProject }, 'folders.bulk.movedToProject')" />
+        </div>
+      </div>
+    </Dialog>
     <FolderPickerDialog v-model:visible="moveFolderDialog" :folders="moveTargets" :header="t('folders.moveFolderTo', { name: movingFolder?.name ?? '' })" @pick="onPickParent" />
 
     <Dialog v-model:visible="nameDialog" :header="nameMode === 'create' ? t('folders.newFolder') : t('folders.renameFolder')" modal style="width: min(440px, 95vw)">
@@ -401,3 +506,10 @@ defineExpose({ openCreate })
     </Dialog>
   </div>
 </template>
+
+<style scoped>
+.folder-bulk {
+  padding: 6px 8px;
+  gap: 6px;
+}
+</style>

@@ -48,6 +48,7 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		TestIDs     []string `json:"test_ids"`
 		FolderIDs   []string `json:"folder_ids"`
 		Query       string   `json:"query"`
+		ReleaseID   *string  `json:"release_id"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -82,12 +83,13 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 	}
 	run := &model.TestRun{ProjectID: pr.ID, Name: req.Name, Description: req.Description,
-		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email}
+		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID}
 	if err := s.Store.CreateRun(r.Context(), p.TenantID(), run, ids); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(r.Context(), p, "run.create", "run", run.ID, run.Name)
+	s.notifyEvent(r, p, run.ProjectID, "run.created", map[string]any{"run": run})
 	out, err := s.Store.GetRun(r.Context(), p.TenantID(), run.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -117,17 +119,26 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		Status      *string `json:"status"`
 		Environment *string `json:"environment"`
 		Build       *string `json:"build"`
+		// ReleaseID: "" removes the run from its release.
+		ReleaseID *string `json:"release_id"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
+	oldRunStatus := run.Status
 	for _, f := range []struct {
 		src *string
 		dst *string
 	}{{req.Name, &run.Name}, {req.Description, &run.Description}, {req.Status, &run.Status}, {req.Environment, &run.Environment}, {req.Build, &run.Build}} {
 		if f.src != nil {
 			*f.dst = *f.src
+		}
+	}
+	if req.ReleaseID != nil {
+		run.ReleaseID = req.ReleaseID
+		if *req.ReleaseID == "" {
+			run.ReleaseID = nil
 		}
 	}
 	if err := s.Store.UpdateRun(r.Context(), p.TenantID(), run); err != nil {
@@ -139,6 +150,10 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	s.notifyEvent(r, p, out.ProjectID, "run.updated", map[string]any{"run": out})
+	if oldRunStatus != "completed" && out.Status == "completed" {
+		s.notifyEvent(r, p, out.ProjectID, "run.completed", map[string]any{"run": out})
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -222,6 +237,22 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
+	s.recordResults(w, r, p, run, req.Results, "run.import", nil)
+}
+
+// rejectedResult is a result that was not recorded because the test may
+// not be executed.
+type rejectedResult struct {
+	TestKey   string     `json:"test_key"`
+	Readiness *Readiness `json:"readiness"`
+	// Reason spells out the blocking issues.
+	Reason string `json:"reason"`
+}
+
+// recordResults applies the readiness rules to CI results, records the
+// accepted ones and writes {"updated","unknown","rejected"} merged with
+// extra.
+func (s *Server) recordResults(w http.ResponseWriter, r *http.Request, p *Principal, run *model.TestRun, results []store.ImportResult, action string, extra map[string]any) {
 	rc, err := s.loadReadiness(r.Context(), p.TenantID(), run.ProjectID, run.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -232,16 +263,18 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		byKey[strings.ToUpper(t.Key)] = id
 	}
 	// results of tests that may not be executed are not recorded
-	type rejected struct {
-		TestKey   string     `json:"test_key"`
-		Readiness *Readiness `json:"readiness"`
-	}
-	rejects := []rejected{}
-	accepted := make([]store.ImportResult, 0, len(req.Results))
-	for _, res := range req.Results {
+	rejects := []rejectedResult{}
+	accepted := make([]store.ImportResult, 0, len(results))
+	for _, res := range results {
 		if id, ok := byKey[strings.ToUpper(strings.TrimSpace(res.TestKey))]; ok && activeResult(res.Status) {
 			if rd := rc.check(id); !rd.Allowed {
-				rejects = append(rejects, rejected{TestKey: res.TestKey, Readiness: rd})
+				var why []string
+				for _, i := range rd.Issues {
+					if i.Blocking {
+						why = append(why, issueText(i))
+					}
+				}
+				rejects = append(rejects, rejectedResult{TestKey: res.TestKey, Readiness: rd, Reason: strings.Join(why, "; ")})
 				continue
 			}
 		}
@@ -252,8 +285,16 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "run.import", "run", run.ID, fmt.Sprintf("%d updated, %d rejected", n, len(rejects)))
-	writeJSON(w, http.StatusOK, map[string]any{"updated": n, "unknown": unknown, "rejected": rejects})
+	s.audit(r.Context(), p, action, "run", run.ID, fmt.Sprintf("%d updated, %d rejected", n, len(rejects)))
+	s.syncEvidence(r.Context(), p, run.ProjectID, nil)
+	if after, err := s.Store.GetRun(r.Context(), p.TenantID(), run.ID); err == nil && after.Status == "completed" && run.Status != "completed" {
+		s.notifyEvent(r, p, run.ProjectID, "run.completed", map[string]any{"run": after})
+	}
+	out := map[string]any{"updated": n, "unknown": unknown, "rejected": rejects}
+	for k, v := range extra {
+		out[k] = v
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 type executionDetail struct {
@@ -311,12 +352,22 @@ func (s *Server) handleUpdateExecution(w http.ResponseWriter, r *http.Request, p
 			return
 		}
 	}
+	runBefore := ""
+	if run, err := s.Store.GetRun(r.Context(), p.TenantID(), cur.RunID); err == nil {
+		runBefore = run.Status
+	}
 	e, err := s.Store.UpdateExecution(r.Context(), p.TenantID(), r.PathValue("id"), p.User.Email, u)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(r.Context(), p, "execution.update", "execution", e.ID, e.TestKey+" "+e.Status)
+	s.afterExecutionChange(r, p, cur, e, runBefore)
+	if run, err := s.Store.GetRun(r.Context(), p.TenantID(), e.RunID); err == nil {
+		if reqs := s.requirementsOfTests(r.Context(), p, run.ProjectID, []string{e.TestCaseID}); len(reqs) > 0 {
+			s.syncEvidence(r.Context(), p, run.ProjectID, reqs)
+		}
+	}
 	d, err := s.executionDetail(r, p, e.ID)
 	if err != nil {
 		s.fail(w, r, err)

@@ -108,6 +108,11 @@ type TenantSettings struct {
 	// AllowUnmetDependencies permits starting a test before the tests it
 	// depends on have passed.
 	AllowUnmetDependencies bool `json:"allow_unmet_dependencies"`
+	// ManualVerification turns off "status follows evidence": by default an
+	// implemented requirement becomes verified when all its linked tests
+	// pass and no link is suspect, and a verified one goes back to
+	// implemented when that no longer holds.
+	ManualVerification bool `json:"manual_verification"`
 }
 
 // DefaultReadyRequirementStatuses are the requirement statuses ready for
@@ -368,6 +373,12 @@ type Requirement struct {
 	Coverage     string `json:"coverage,omitempty"` // none | not_run | passed | failed | partial
 	CommentCount int    `json:"comment_count"`
 	Relations    int    `json:"relation_count"`
+	// SuspectLinks: links to tests that are suspect.
+	SuspectLinks int `json:"suspect_links"`
+	// RiskLevel: the highest level of the open risks it addresses ("" none).
+	RiskLevel string `json:"risk_level,omitempty"`
+	// OpenDefects: open defects linked to it or to its tests.
+	OpenDefects int `json:"open_defects"`
 	// RelationRefs lists the related items in both directions: requirement
 	// relations and the tests that verify it ("verifies", incoming).
 	RelationRefs  []ItemRef `json:"relations,omitempty"`
@@ -453,7 +464,9 @@ type TestCase struct {
 	// RelationRefs: requirements it verifies, tests it calls and tests that call it.
 	RelationRefs []ItemRef `json:"relations,omitempty"`
 	StepCount    int       `json:"step_count,omitempty"`
-	Defects      []string  `json:"defects,omitempty"`
+	// SuspectLinks: links to requirements that are suspect.
+	SuspectLinks int      `json:"suspect_links"`
+	Defects      []string `json:"defects,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -464,6 +477,10 @@ type TraceLink struct {
 	TestCaseID    string    `json:"test_case_id"`
 	CriterionID   *string   `json:"criterion_id"`
 	CreatedAt     time.Time `json:"created_at"`
+	// SuspectSince is set when the requirement or test changed after the
+	// link was made or last confirmed; SuspectReason says what changed.
+	SuspectSince  *time.Time `json:"suspect_since"`
+	SuspectReason string     `json:"suspect_reason,omitempty"`
 	// Derived.
 	RequirementKey string `json:"requirement_key,omitempty"`
 	TestCaseKey    string `json:"test_case_key,omitempty"`
@@ -482,8 +499,11 @@ type TestRun struct {
 	CreatedAt   time.Time  `json:"created_at"`
 	StartedAt   *time.Time `json:"started_at"`
 	CompletedAt *time.Time `json:"completed_at"`
+	// ReleaseID is the release this run tests (optional).
+	ReleaseID *string `json:"release_id"`
 	// Derived.
-	Summary map[string]int `json:"summary,omitempty"`
+	Summary     map[string]int `json:"summary,omitempty"`
+	ReleaseName string         `json:"release_name,omitempty"`
 }
 
 // StepResult is the outcome of one manual step.
@@ -548,6 +568,282 @@ type Relation struct {
 	TargetTitle string    `json:"target_title"`
 	// Direction relative to the requirement queried: outgoing | incoming.
 	Direction string `json:"direction,omitempty"`
+}
+
+// KindDefect and KindRisk name defects and risks (keys PROJ-BUG-n, PROJ-RISK-n).
+const (
+	KindDefect = "defect"
+	KindRisk   = "risk"
+)
+
+// DefectStatuses are the states of a defect; DefectOpenStatuses count as open.
+var (
+	DefectStatuses     = []string{"open", "in_progress", "resolved", "closed", "rejected"}
+	DefectOpenStatuses = []string{"open", "in_progress"}
+	// DefectSeverities from most to least severe.
+	DefectSeverities = []string{"critical", "major", "minor", "trivial"}
+	// DefectLinkTypes are the items a defect can be linked to.
+	DefectLinkTypes = []string{KindRequirement, KindTest, "execution", "run"}
+)
+
+// Defect is a problem found while testing, optionally mirrored in an
+// external tracker (Jira, GitHub Issues).
+type Defect struct {
+	ID             string     `json:"id"`
+	ProjectID      string     `json:"project_id"`
+	Key            string     `json:"key"`
+	Title          string     `json:"title"`
+	Description    string     `json:"description"`
+	Status         string     `json:"status"`
+	Severity       string     `json:"severity"`
+	Priority       string     `json:"priority"`
+	Assignee       string     `json:"assignee"`
+	ExternalSystem string     `json:"external_system"`
+	ExternalKey    string     `json:"external_key"`
+	ExternalURL    string     `json:"external_url"`
+	ExternalStatus string     `json:"external_status"`
+	SyncedAt       *time.Time `json:"synced_at"`
+	CreatedBy      string     `json:"created_by"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	ResolvedAt     *time.Time `json:"resolved_at"`
+	// Links to requirements, tests, executions and runs.
+	Links []DefectLink `json:"links,omitempty"`
+}
+
+// DefectLink connects a defect to an item.
+type DefectLink struct {
+	EntityType string `json:"entity_type"`
+	EntityID   string `json:"entity_id"`
+	// Derived: key (or run name) and title of the item.
+	Key   string `json:"key,omitempty"`
+	Title string `json:"title,omitempty"`
+}
+
+// DefectTracker is a project's connection to an external issue tracker.
+type DefectTracker struct {
+	// Type: "" (none), "jira" or "github".
+	Type string `json:"type"`
+	// URL: Jira base URL (https://example.atlassian.net) or the GitHub API
+	// URL (default https://api.github.com).
+	URL string `json:"url"`
+	// ProjectKey: Jira project key; Repo: GitHub owner/repo.
+	ProjectKey string `json:"project_key"`
+	Repo       string `json:"repo"`
+	// IssueType for Jira (default Bug); Labels added to GitHub issues.
+	IssueType string `json:"issue_type"`
+	Labels    string `json:"labels"`
+	// User: Jira account e-mail (with an API token) — empty for a bearer token.
+	User string `json:"user"`
+	// Token is write-only: the API reports only HasToken.
+	Token    string `json:"token,omitempty"`
+	HasToken bool   `json:"has_token"`
+}
+
+// RiskStatuses are the states of a risk; RiskOpenStatuses still need action.
+var (
+	RiskStatuses     = []string{"identified", "mitigating", "mitigated", "accepted", "closed"}
+	RiskOpenStatuses = []string{"identified", "mitigating"}
+	// RiskLevels from lowest to highest.
+	RiskLevels = []string{"low", "medium", "high", "critical"}
+)
+
+// RiskLevel is the level of a likelihood × impact score (1–25).
+func RiskLevel(likelihood, impact int) string {
+	switch score := likelihood * impact; {
+	case score >= 17:
+		return "critical"
+	case score >= 10:
+		return "high"
+	case score >= 5:
+		return "medium"
+	}
+	return "low"
+}
+
+// Risk is something that could go wrong, scored by likelihood and impact,
+// and addressed by requirements.
+type Risk struct {
+	ID          string    `json:"id"`
+	ProjectID   string    `json:"project_id"`
+	Key         string    `json:"key"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Category    string    `json:"category"`
+	Likelihood  int       `json:"likelihood"`
+	Impact      int       `json:"impact"`
+	Status      string    `json:"status"`
+	Mitigation  string    `json:"mitigation"`
+	Owner       string    `json:"owner"`
+	CreatedBy   string    `json:"created_by"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	// Derived.
+	Score          int      `json:"score"`
+	Level          string   `json:"level"`
+	RequirementIDs []string `json:"requirement_ids"`
+	// Requirements with tests, and with all tests passed.
+	Covered  int `json:"covered"`
+	Verified int `json:"verified"`
+}
+
+// Notification is an in-app message to one user.
+type Notification struct {
+	ID         string     `json:"id"`
+	UserID     string     `json:"user_id"`
+	ProjectID  string     `json:"project_id"`
+	Event      string     `json:"event"`
+	Title      string     `json:"title"`
+	Body       string     `json:"body"`
+	EntityType string     `json:"entity_type"`
+	EntityID   string     `json:"entity_id"`
+	Actor      string     `json:"actor"`
+	ReadAt     *time.Time `json:"read_at"`
+	CreatedAt  time.Time  `json:"created_at"`
+}
+
+// WebhookEvents are the events a webhook can subscribe to ("*" = all).
+var WebhookEvents = []string{
+	"requirement.created", "requirement.updated", "test.created", "test.updated",
+	"run.created", "run.updated", "run.completed", "execution.updated",
+	"defect.created", "defect.updated", "defect.status", "defect.assigned",
+	"risk.created", "risk.updated", "release.created", "release.updated", "release.released",
+	"comment.created", "review.requested", "review.completed", "baseline.signed",
+}
+
+// Webhook posts events of a project to a URL, signed with HMAC-SHA256.
+type Webhook struct {
+	ID             string     `json:"id"`
+	ProjectID      string     `json:"project_id"`
+	Name           string     `json:"name"`
+	URL            string     `json:"url"`
+	Secret         string     `json:"secret,omitempty"` // only returned when created
+	HasSecret      bool       `json:"has_secret"`
+	Events         []string   `json:"events"`
+	Enabled        bool       `json:"enabled"`
+	CreatedBy      string     `json:"created_by"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	LastDeliveryAt *time.Time `json:"last_delivery_at"`
+	LastStatus     int        `json:"last_status"`
+	LastError      string     `json:"last_error"`
+}
+
+// Review request statuses and decisions.
+var (
+	ReviewStatuses  = []string{"pending", "approved", "changes_requested", "cancelled"}
+	ReviewDecisions = []string{"approved", "changes_requested"}
+	// SignoffMeanings say what a signature on a baseline means.
+	SignoffMeanings = []string{"authored", "reviewed", "approved", "released"}
+)
+
+// DefaultReviewChecklists are the checklist items a new review gets per kind.
+var DefaultReviewChecklists = map[string][]string{
+	KindRequirement: {"Clear and unambiguous", "Verifiable (can be tested)", "Obligation level is right (MUST/SHOULD/MAY)", "No conflict or duplicate with other requirements", "Acceptance criteria are complete"},
+	KindTest:        {"Preconditions and test data are stated", "Steps can be repeated by someone else", "Every step has an expected result", "Linked to the requirements it verifies"},
+}
+
+// ChecklistItem is one point of a review checklist.
+type ChecklistItem struct {
+	Text    string `json:"text"`
+	Checked bool   `json:"checked"`
+	Note    string `json:"note,omitempty"`
+}
+
+// ReviewRequest asks one person to review a requirement or test.
+type ReviewRequest struct {
+	ID            string          `json:"id"`
+	ProjectID     string          `json:"project_id"`
+	EntityType    string          `json:"entity_type"`
+	EntityID      string          `json:"entity_id"`
+	EntityKey     string          `json:"entity_key"`
+	EntityTitle   string          `json:"entity_title"`
+	EntityVersion int             `json:"entity_version"`
+	ReviewerID    string          `json:"reviewer_id"`
+	ReviewerEmail string          `json:"reviewer_email"`
+	ReviewerName  string          `json:"reviewer_name"`
+	RequestedBy   string          `json:"requested_by"`
+	Message       string          `json:"message"`
+	Checklist     []ChecklistItem `json:"checklist"`
+	Status        string          `json:"status"`
+	Comment       string          `json:"comment"`
+	DueDate       string          `json:"due_date"`
+	DecidedAt     *time.Time      `json:"decided_at"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+	// Outdated: the item changed after the review was requested.
+	Outdated bool `json:"outdated"`
+}
+
+// Signoff is an electronic signature on a baseline.
+type Signoff struct {
+	ID          string    `json:"id"`
+	BaselineID  string    `json:"baseline_id"`
+	UserID      string    `json:"user_id"`
+	UserEmail   string    `json:"user_email"`
+	UserName    string    `json:"user_name"`
+	Meaning     string    `json:"meaning"`
+	Comment     string    `json:"comment"`
+	ContentHash string    `json:"content_hash"`
+	SignedAt    time.Time `json:"signed_at"`
+	// Valid: the baseline content still has the hash that was signed.
+	Valid bool `json:"valid"`
+}
+
+// ReleaseStatuses are the states of a release.
+var ReleaseStatuses = []string{"planned", "active", "released", "cancelled"}
+
+// ExitCriterionTypes are the kinds of exit criteria of a release.
+var ExitCriterionTypes = []string{
+	"coverage",         // % of scope requirements with at least one test
+	"passed",           // % of scope requirements whose tests all passed in the release's runs
+	"mandatory_passed", // every MUST/SHALL requirement in scope passed
+	"executed",         // % of the executions of the release's runs that have a result
+	"no_failed",        // no failed or blocked test in the release's runs
+	"approved",         // % of scope requirements approved, implemented or verified
+	"no_suspect",       // no suspect links in scope
+	"no_open_defects",  // no open defects (of at least the given severity) on the scope
+	"risks_mitigated",  // every risk of at least the given level linked to scope requirements is mitigated or accepted
+}
+
+// ExitCriterion is one condition a release must meet.
+type ExitCriterion struct {
+	Type string `json:"type"`
+	// Threshold in percent for the percentage criteria (default 100).
+	Threshold float64 `json:"threshold,omitempty"`
+	// Severity / level for no_open_defects and risks_mitigated.
+	Level string `json:"level,omitempty"`
+}
+
+// Release is a version of the product with its scope and exit criteria.
+type Release struct {
+	ID           string          `json:"id"`
+	ProjectID    string          `json:"project_id"`
+	Name         string          `json:"name"`
+	Version      string          `json:"version"`
+	Description  string          `json:"description"`
+	Status       string          `json:"status"`
+	TargetDate   string          `json:"target_date"`
+	ExitCriteria []ExitCriterion `json:"exit_criteria"`
+	ReleasedAt   *time.Time      `json:"released_at"`
+	ReleasedBy   string          `json:"released_by"`
+	ReleaseNote  string          `json:"release_note"`
+	CreatedBy    string          `json:"created_by"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+	// Derived.
+	RequirementIDs []string `json:"requirement_ids,omitempty"`
+	Requirements   int      `json:"requirement_count"`
+	Runs           int      `json:"run_count"`
+}
+
+// DefaultExitCriteria are given to new releases.
+var DefaultExitCriteria = []ExitCriterion{
+	{Type: "coverage", Threshold: 100},
+	{Type: "mandatory_passed"},
+	{Type: "passed", Threshold: 95},
+	{Type: "no_failed"},
+	{Type: "no_suspect"},
 }
 
 // ItemLinkSourceTypes are the items that can carry links.
