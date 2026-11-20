@@ -2321,6 +2321,21 @@ const sv: Messages = {
   },
   baselines: {
     bulk: {
+      selectAll: 'Markera alla ändrade poster',
+      selectOne: 'Markera {key}',
+      restoreN: 'Återställ baslinjens version | Återställ baslinjens version ({n}) | Återställ baslinjens version ({n})',
+      restore: 'Återställ',
+      restoreHeader: 'Återställ från baslinjen',
+      confirmRestore: 'Ge den markerade posten innehållet den hade i {name}? | Ge de {n} markerade posterna innehållet de hade i {name}?',
+      restored: '{n} post återställd | {n} poster återställda',
+      restoredSome: '{n} återställda, {skipped} hoppades över',
+      reason: {
+        not_in_baseline: 'finns inte i baslinjen',
+        deleted: 'borttagen sedan dess',
+        unchanged: 'oförändrad',
+        not_allowed: 'du får inte ändra den',
+        needs_review: 'att återställa dess status kräver granskningsbehörighet',
+      },
       toolbar: 'Åtgärder för de markerade baslinjerna',
       sign: 'Signera…',
       signHeader: 'Signera {n} baslinje | Signera {n} baslinjer',

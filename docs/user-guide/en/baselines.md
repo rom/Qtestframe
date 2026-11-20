@@ -42,6 +42,12 @@ Items are matched by their identity, not by key: a requirement that was moved or
 
 The **current state** includes all items of the project, also those outside the baseline's filter. Use **Compare again** after further changes.
 
+### Restore the baseline version
+
+When you compare with the current state and may edit requirements or tests, each changed item has a checkbox. Tick the items to roll back (or **Select all changed items**) and select **Restore baseline version**. Each ticked item gets the content it had in the baseline (title, text, fields, status, categories) as a new version; its history shows a *restore* entry, so the change can itself be undone.
+
+Items are skipped, with the reason shown, when they are no longer in the baseline, have been deleted, already have the baseline version, you may not edit them, or restoring would set a review status (such as *Approved*) without your having review permission.
+
 To see the details of a change, open the item and look at its **History** tab; it shows the field-by-field difference of every version.
 
 ## Sign or delete many baselines

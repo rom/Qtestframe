@@ -109,6 +109,7 @@ async function discover(request) {
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
   const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
+  const firstBaseline = hasBaselines ? items(await api(request, 'GET', `/projects/${pid}/baselines`))[0] : null
   const hasDocuments = items(await api(request, 'GET', `/projects/${pid}/documents`)).length > 0
   const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
   const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
@@ -154,6 +155,8 @@ async function discover(request) {
     hasRequested && { name: 'reviews-bulk', path: '/reviews', open: ['.page-header .actions .p-selectbutton:first-child .p-togglebutton:nth-child(2)', '.p-datatable-tbody .p-checkbox'], wait: '.bulkbar' },
     hasWebhooks && { name: 'webhooks-bulk', path: `${p}/settings?tab=project`, open: 'section.webhooks .p-datatable-tbody .p-checkbox', wait: 'section.webhooks .bulkbar' },
     hasDocuments && { name: 'documents-bulk', path: `${p}/documents`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    // the comparison with restore checkboxes (needs items changed since the baseline)
+    firstBaseline && { name: 'baseline-compare', path: `${p}/baselines?b=${firstBaseline.id}&tab=compare`, wait: '.bl-section, [role="status"]' },
     hasBaselines && { name: 'baselines-bulk', path: `${p}/baselines`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasReleases && { name: 'releases-bulk', path: `${p}/releases`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasRisks && { name: 'risks-bulk', path: `${p}/risks`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },

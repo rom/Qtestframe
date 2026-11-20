@@ -2319,6 +2319,21 @@ const en = {
   },
   baselines: {
     bulk: {
+      selectAll: 'Select all changed items',
+      selectOne: 'Select {key}',
+      restoreN: 'Restore baseline version | Restore baseline version ({n}) | Restore baseline version ({n})',
+      restore: 'Restore',
+      restoreHeader: 'Restore from the baseline',
+      confirmRestore: 'Give the selected item the content it had in {name}? | Give the {n} selected items the content they had in {name}?',
+      restored: '{n} item restored | {n} items restored',
+      restoredSome: '{n} restored, {skipped} skipped',
+      reason: {
+        not_in_baseline: 'not in the baseline',
+        deleted: 'deleted since',
+        unchanged: 'unchanged',
+        not_allowed: 'you may not change it',
+        needs_review: 'restoring its status needs the review permission',
+      },
       toolbar: 'Actions for the selected baselines',
       sign: 'Sign…',
       signHeader: 'Sign {n} baseline | Sign {n} baselines',

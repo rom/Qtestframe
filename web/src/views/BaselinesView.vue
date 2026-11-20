@@ -19,6 +19,7 @@ import Tab from 'primevue/tab'
 import QueryInput from '@/components/QueryInput.vue'
 import BaselineSignoffs from '@/components/BaselineSignoffs.vue'
 import Password from 'primevue/password'
+import Checkbox from 'primevue/checkbox'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { formatDateTime, formatFullDateTime } from '@/lib/format'
 import { P } from '@/lib/permissions'
@@ -140,6 +141,44 @@ watch(tab, (t) => {
   if (t === 'compare' && !diff.value && !diffLoading.value) compare()
 })
 const toLabel = computed(() => compareOptions.value.find((o) => o.value === compareTo.value)?.label ?? compareTo.value)
+
+// ---------- restore changed items to the baseline version ----------
+const restoreSel = ref<string[]>([])
+const changedKeys = computed(() => (diff.value?.changed ?? []).filter((c) => c.changed_fields?.length).map((c) => `${c.entity_type}:${c.entity_id}`))
+const canRestore = computed(() => compareTo.value === 'current' && (auth.can(P.requirementWrite) || auth.can(P.testWrite)))
+const allChanged = computed({
+  get: () => changedKeys.value.length > 0 && restoreSel.value.length === changedKeys.value.length,
+  set: (v: boolean) => (restoreSel.value = v ? [...changedKeys.value] : []),
+})
+watch(diff, () => (restoreSel.value = restoreSel.value.filter((k) => changedKeys.value.includes(k))))
+const restoring = ref(false)
+function restoreSelected() {
+  const items = restoreSel.value.map((k) => {
+    const [entity_type, entity_id] = k.split(':')
+    return { entity_type, entity_id }
+  })
+  const n = items.length
+  notify.confirmDanger(
+    t('baselines.bulk.confirmRestore', { n, name: detail.value?.name ?? '' }, n),
+    async () => {
+      restoring.value = true
+      try {
+        const res = await api.post<{ restored: unknown[]; skipped: { key: string; reason: string }[] }>(`/baselines/${selectedId.value}/restore`, { items })
+        const skipped = res.skipped.map((s) => `${s.key}: ${t(`baselines.bulk.reason.${s.reason}`)}`).join('\n')
+        if (res.skipped.length) notify.failText(t('baselines.bulk.restoredSome', { n: res.restored.length, skipped: res.skipped.length }), skipped)
+        else notify.ok(t('baselines.bulk.restored', { n: res.restored.length }, res.restored.length))
+        restoreSel.value = []
+        await compare()
+      } catch (e) {
+        notify.fail(e)
+      } finally {
+        restoring.value = false
+      }
+    },
+    t('baselines.bulk.restoreHeader'),
+    t('baselines.bulk.restore'),
+  )
+}
 const sections = computed(() => {
   const d = diff.value
   if (!d) return []
@@ -384,7 +423,29 @@ function remove(b: Baseline) {
           <div v-if="!sections.some((s) => s.items.length)" class="muted small" role="status"><i class="pi pi-check-circle" style="color: var(--p-green-500)" aria-hidden="true" /> {{ t('baselines.noDifferences') }}</div>
           <div v-for="s in sections" v-show="s.items.length" :key="s.kind" class="bl-section" style="margin-bottom: 14px">
             <h3><i :class="s.icon" :style="{ color: s.color }" aria-hidden="true" /> {{ s.label }} ({{ s.items.length }})</h3>
+            <div v-if="s.kind === 'changed' && canRestore && changedKeys.length" class="row restore-bar">
+              <Checkbox v-model="allChanged" binary input-id="bl-all-changed" />
+              <label for="bl-all-changed" class="small">{{ t('baselines.bulk.selectAll') }}</label>
+              <span class="grow" />
+              <Button
+                :label="t('baselines.bulk.restoreN', { n: restoreSel.length }, restoreSel.length)"
+                icon="pi pi-history"
+                size="small"
+                severity="warn"
+                outlined
+                :disabled="!restoreSel.length"
+                :loading="restoring"
+                @click="restoreSelected"
+              />
+            </div>
             <div v-for="c in s.items" :key="c.entity_type + c.entity_id" class="bl-row" :class="'bl-' + s.kind">
+              <Checkbox
+                v-if="s.kind === 'changed' && canRestore && c.changed_fields?.length"
+                v-model="restoreSel"
+                :value="`${c.entity_type}:${c.entity_id}`"
+                :input-id="`bl-r-${c.entity_id}`"
+                :aria-label="t('baselines.bulk.selectOne', { key: c.key })"
+              />
               <i :class="c.entity_type === 'test' ? 'pi pi-check-square' : 'pi pi-list-check'" class="muted" :title="c.entity_type === 'test' ? t('baselines.typeTest') : t('baselines.typeRequirement')" aria-hidden="true" /><span class="sr-only">{{ c.entity_type === 'test' ? t('baselines.typeTest') : t('baselines.typeRequirement') }}</span>
               <RouterLink v-if="s.kind !== 'removed' || compareTo === 'current'" :to="itemRoute(c.entity_type, c.entity_id)" class="key">{{ c.key }}</RouterLink>
               <span v-else class="key">{{ c.key }}</span>
@@ -445,6 +506,13 @@ function remove(b: Baseline) {
 </template>
 
 <style scoped>
+.restore-bar {
+  gap: 8px;
+  margin: 2px 0 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--qtf-hover, rgba(127, 127, 127, 0.08));
+}
 .sign-list {
   margin: 0 0 8px;
   padding-left: 4px;

@@ -42,6 +42,12 @@ Objekten matchas på sin identitet, inte på nyckeln: ett krav som har flyttats 
 
 **Nuläget** omfattar alla objekt i projektet, även de utanför baslinjens filter. Använd **Jämför igen** efter fler ändringar.
 
+### Återställ baslinjens version
+
+När du jämför med nuläget och får ändra krav eller testfall har varje ändrad post en kryssruta. Kryssa i posterna som ska rullas tillbaka (eller **Markera alla ändrade poster**) och välj **Återställ baslinjens version**. Varje markerad post får innehållet den hade i baslinjen (titel, text, fält, status, kategorier) som en ny version; versionshistoriken visar en *återställning*, så ändringen kan i sin tur ångras.
+
+Poster hoppas över, med orsaken angiven, när de inte längre finns i baslinjen, har tagits bort, redan har baslinjens version, du inte får ändra dem, eller när återställningen skulle sätta en granskningsstatus (som *Godkänd*) utan att du har granskningsbehörighet.
+
 För att se detaljerna i en ändring öppnar du objektet och tittar på fliken **Versionshistorik**; den visar skillnaden fält för fält för varje version.
 
 ## Signera eller ta bort många baslinjer

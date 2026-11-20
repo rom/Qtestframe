@@ -187,6 +187,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/baselines/signoffs", s.handleBulkSignBaselines, "requirement.read")
 	h("GET /api/v1/baselines/{id}", s.handleGetBaseline, "requirement.read")
 	h("GET /api/v1/baselines/{id}/compare", s.handleCompareBaseline, "requirement.read")
+	h("POST /api/v1/baselines/{id}/restore", s.handleRestoreFromBaseline, "requirement.read")
 	h("DELETE /api/v1/baselines/{id}", s.handleDeleteBaseline, "requirement.write")
 	h("POST /api/v1/reqlang/analyze", s.handleAnalyze)
 

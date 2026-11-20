@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -109,22 +110,10 @@ func (s *Server) handleRestoreRequirement(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusForbidden, "forbidden", "permission requirement.review required to restore a version with status "+old.Status)
 		return
 	}
-	s.ensureInitialRevision(ctx, p, model.KindRequirement, cur.ID)
-	before := store.SnapshotRequirement(cur)
-	cur.Title, cur.Description, cur.Obligation, cur.Type = old.Title, old.Description, old.Obligation, old.Type
-	cur.Priority, cur.Status, cur.Source, cur.Rationale = old.Priority, old.Status, old.Source, old.Rationale
-	cur.Owner, cur.Tags, cur.Criteria = old.Owner, old.Tags, old.Criteria
-	if cur.CategoryIDs, err = s.existingCategories(ctx, p, cur.ProjectID, old.CategoryIDs); err != nil {
+	if err := s.restoreRequirementTo(ctx, p, cur, &old, "version "+itoa(rev.Version)); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), cur, true); err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	s.recordRequirement(ctx, p, cur.ID, "restore")
-	s.afterContentChange(ctx, p, model.KindRequirement, cur.ID, cur.Key, cur.ProjectID, before)
-	s.audit(ctx, p, "requirement.restore", "requirement", cur.ID, cur.Key+" to version "+itoa(rev.Version))
 	out, err := s.decoratedRequirement(r, p, cur.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -161,14 +150,49 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 		writeError(w, http.StatusForbidden, "forbidden", "permission test.review required to restore a version with status "+old.Status)
 		return
 	}
+	if err := s.restoreTestTo(ctx, p, cur, &old, "version "+itoa(rev.Version)); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	out, err := s.decoratedTest(r, p, cur.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// restoreRequirementTo gives a requirement the content of an older version
+// (from a revision or a baseline); what names the source for the audit.
+func (s *Server) restoreRequirementTo(ctx context.Context, p *Principal, cur, old *model.Requirement, what string) error {
+	s.ensureInitialRevision(ctx, p, model.KindRequirement, cur.ID)
+	before := store.SnapshotRequirement(cur)
+	cur.Title, cur.Description, cur.Obligation, cur.Type = old.Title, old.Description, old.Obligation, old.Type
+	cur.Priority, cur.Status, cur.Source, cur.Rationale = old.Priority, old.Status, old.Source, old.Rationale
+	cur.Owner, cur.Tags, cur.Criteria = old.Owner, old.Tags, old.Criteria
+	var err error
+	if cur.CategoryIDs, err = s.existingCategories(ctx, p, cur.ProjectID, old.CategoryIDs); err != nil {
+		return err
+	}
+	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), cur, true); err != nil {
+		return err
+	}
+	s.recordRequirement(ctx, p, cur.ID, "restore")
+	s.afterContentChange(ctx, p, model.KindRequirement, cur.ID, cur.Key, cur.ProjectID, before)
+	s.audit(ctx, p, "requirement.restore", "requirement", cur.ID, cur.Key+" to "+what)
+	return nil
+}
+
+// restoreTestTo gives a test the content of an older version.
+func (s *Server) restoreTestTo(ctx context.Context, p *Principal, cur, old *model.TestCase, what string) error {
 	s.ensureInitialRevision(ctx, p, model.KindTest, cur.ID)
 	before := store.SnapshotTest(cur)
 	cur.Title, cur.Description, cur.Preconditions, cur.ExecutionType = old.Title, old.Description, old.Preconditions, old.ExecutionType
 	cur.ScriptLanguage, cur.Script, cur.ExpectedResult = old.ScriptLanguage, old.Script, old.ExpectedResult
 	cur.Priority, cur.Status, cur.EstimatedMin, cur.Tags = old.Priority, old.Status, old.EstimatedMin, old.Tags
+	var err error
 	if cur.CategoryIDs, err = s.existingCategories(ctx, p, cur.ProjectID, old.CategoryIDs); err != nil {
-		s.fail(w, r, err)
-		return
+		return err
 	}
 	// steps get fresh IDs; calls to tests that no longer exist are dropped
 	cur.Steps = cur.Steps[:0]
@@ -182,18 +206,12 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 		cur.Steps = append(cur.Steps, st)
 	}
 	if err := s.Store.UpdateTest(ctx, p.TenantID(), cur, true); err != nil {
-		s.fail(w, r, err)
-		return
+		return err
 	}
 	s.recordTest(ctx, p, cur.ID, "restore")
 	s.afterContentChange(ctx, p, model.KindTest, cur.ID, cur.Key, cur.ProjectID, before)
-	s.audit(ctx, p, "test.restore", "test", cur.ID, cur.Key+" to version "+itoa(rev.Version))
-	out, err := s.decoratedTest(r, p, cur.ID)
-	if err != nil {
-		s.fail(w, r, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, out)
+	s.audit(ctx, p, "test.restore", "test", cur.ID, cur.Key+" to "+what)
+	return nil
 }
 
 // existingCategories filters category ids to those still in the project.
@@ -693,4 +711,119 @@ func (s *Server) handleRevokeOtherSessions(w http.ResponseWriter, r *http.Reques
 	}
 	s.audit(r.Context(), p, "session.revoke_others", "user", p.User.ID, itoa(n))
 	writeJSON(w, http.StatusOK, map[string]int{"revoked": n})
+}
+
+// handleRestoreFromBaseline: POST /baselines/{id}/restore
+// {"items": [{"entity_type", "entity_id"}]} gives each item the content it
+// had in the baseline. Items not in the baseline, deleted, unchanged since,
+// or that the caller may not change are skipped with a reason.
+func (s *Server) handleRestoreFromBaseline(w http.ResponseWriter, r *http.Request, p *Principal) {
+	ctx := r.Context()
+	b, err := s.Store.GetBaseline(ctx, p.TenantID(), r.PathValue("id"))
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	var req struct {
+		Items []struct {
+			EntityType string `json:"entity_type"`
+			EntityID   string `json:"entity_id"`
+		} `json:"items"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if len(req.Items) == 0 {
+		s.fail(w, r, badRequest("choose at least one item"))
+		return
+	}
+	if len(req.Items) > maxBulkQuality {
+		s.fail(w, r, badRequest("at most %d items at a time", maxBulkQuality))
+		return
+	}
+	snap := map[string]model.BaselineItem{}
+	for _, it := range b.Items {
+		snap[it.EntityType+":"+it.EntityID] = it
+	}
+	type item struct {
+		EntityType string `json:"entity_type"`
+		EntityID   string `json:"entity_id"`
+		Key        string `json:"key"`
+		Reason     string `json:"reason,omitempty"`
+	}
+	restored, skipped := []item{}, []item{}
+	what := "baseline " + b.Name
+	for _, x := range req.Items {
+		bi, ok := snap[x.EntityType+":"+x.EntityID]
+		if !ok {
+			skipped = append(skipped, item{x.EntityType, x.EntityID, "", "not_in_baseline"})
+			continue
+		}
+		out := item{bi.EntityType, bi.EntityID, bi.Key, ""}
+		if !p.Can(writePerm(bi.EntityType)) {
+			out.Reason = "not_allowed"
+			skipped = append(skipped, out)
+			continue
+		}
+		switch bi.EntityType {
+		case model.KindRequirement:
+			cur, err := s.Store.GetRequirement(ctx, p.TenantID(), bi.EntityID)
+			if err != nil {
+				out.Reason = "deleted"
+				skipped = append(skipped, out)
+				continue
+			}
+			if cur.Version == bi.Version {
+				out.Reason = "unchanged"
+				skipped = append(skipped, out)
+				continue
+			}
+			var old model.Requirement
+			if err := json.Unmarshal(bi.Snapshot, &old); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			if isReviewDecision(model.KindRequirement, cur.Status, old.Status) && !p.Can(rbac.RequirementRev) {
+				out.Reason = "needs_review"
+				skipped = append(skipped, out)
+				continue
+			}
+			if err := s.restoreRequirementTo(ctx, p, cur, &old, what); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+		case model.KindTest:
+			cur, err := s.Store.GetTest(ctx, p.TenantID(), bi.EntityID)
+			if err != nil {
+				out.Reason = "deleted"
+				skipped = append(skipped, out)
+				continue
+			}
+			if cur.Version == bi.Version {
+				out.Reason = "unchanged"
+				skipped = append(skipped, out)
+				continue
+			}
+			var old model.TestCase
+			if err := json.Unmarshal(bi.Snapshot, &old); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			if isReviewDecision(model.KindTest, cur.Status, old.Status) && !p.Can(rbac.TestReview) {
+				out.Reason = "needs_review"
+				skipped = append(skipped, out)
+				continue
+			}
+			if err := s.restoreTestTo(ctx, p, cur, &old, what); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+		default:
+			continue
+		}
+		restored = append(restored, out)
+	}
+	s.audit(ctx, p, "baseline.restore", "baseline", b.ID, fmt.Sprintf("%s: %d restored, %d skipped", b.Name, len(restored), len(skipped)))
+	writeJSON(w, http.StatusOK, map[string]any{"restored": restored, "skipped": skipped})
 }
