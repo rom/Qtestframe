@@ -253,6 +253,9 @@ type Membership struct {
 	Avatar     string    `json:"avatar,omitempty"`
 	Role       string    `json:"role"`
 	CreatedAt  time.Time `json:"created_at"`
+	// SCIM is set when the identity provider manages the membership
+	// (SCIM provisioning); its role follows the provider's groups.
+	SCIM bool `json:"scim,omitempty"`
 }
 
 // Session is a server-side login session.

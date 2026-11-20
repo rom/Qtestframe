@@ -49,8 +49,12 @@ type Server struct {
 	signer *auth.Signer
 
 	limiter *rateLimiter
-	mux     *http.ServeMux
-	once    sync.Once
+	// scimLimiter bounds the requests of one SCIM token, scimAuthLimiter
+	// the failed SCIM authentications of one client address.
+	scimLimiter     *rateLimiter
+	scimAuthLimiter *rateLimiter
+	mux             *http.ServeMux
+	once            sync.Once
 	// hooks tracks webhook deliveries in flight (see WaitWebhooks).
 	hooks sync.WaitGroup
 }
@@ -63,6 +67,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		SAML:    map[string]*auth.SAMLProvider{},
 		signer:  auth.NewSigner(nil),
 		limiter: newRateLimiter(10, 5*time.Minute),
+		// identity providers sync in bursts (Entra ID: initial cycle)
+		scimLimiter:     newRateLimiter(1200, time.Minute),
+		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
 	}
 	base := strings.TrimSuffix(cfg.Server.BaseURL, "/")
 	for _, o := range cfg.Auth.OIDC {
@@ -271,6 +278,9 @@ func (s *Server) routes() {
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
+	// SCIM provisioning: its own token authentication (scim.go)
+	s.routesSCIM(m)
+	s.routesSCIMAdmin(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -576,6 +586,21 @@ func (l *rateLimiter) allow(key string) bool {
 		}
 	}
 	return true
+}
+
+// blocked reports whether key has used up its attempts, without recording
+// one.
+func (l *rateLimiter) blocked(key string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	cut := time.Now().Add(-l.window)
+	n := 0
+	for _, t := range l.hits[key] {
+		if t.After(cut) {
+			n++
+		}
+	}
+	return n >= l.max
 }
 
 func (l *rateLimiter) reset(key string) {

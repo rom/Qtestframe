@@ -18,8 +18,9 @@ type bulkMember struct {
 // {"user_ids": [...], "action": "role"|"remove", "role"?} changes the role
 // of, or removes, several members at once (all or nothing). Your own
 // membership is skipped (reason "self"), as are users who are not members
-// ("not_found") and members who already have the role ("unchanged"). A
-// change that would leave the tenant without an admin is refused (409).
+// ("not_found"), members provisioned by SCIM ("scim") and members who
+// already have the role ("unchanged"). A change that would leave the
+// tenant without an admin is refused (409).
 func (s *Server) handleBulkMembers(w http.ResponseWriter, r *http.Request, p *Principal) {
 	var req struct {
 		UserIDs []string `json:"user_ids"`
@@ -54,10 +55,14 @@ func (s *Server) handleBulkMembers(w http.ResponseWriter, r *http.Request, p *Pr
 	}
 	admins := 0
 	byID := map[string]bulkMember{}
+	scim := map[string]bool{} // provisioned by SCIM: managed in the identity provider
 	for _, m := range members {
 		byID[m.UserID] = bulkMember{UserID: m.UserID, Email: m.Email, Role: m.Role}
 		if m.Role == rbac.RoleAdmin {
 			admins++
+		}
+		if m.SCIM {
+			scim[m.UserID] = true
 		}
 	}
 	changed, skipped := []bulkMember{}, []bulkMember{}
@@ -70,6 +75,10 @@ func (s *Server) handleBulkMembers(w http.ResponseWriter, r *http.Request, p *Pr
 			continue
 		case id == p.User.ID:
 			m.Reason = "self"
+			skipped = append(skipped, m)
+			continue
+		case scim[id]:
+			m.Reason = "scim"
 			skipped = append(skipped, m)
 			continue
 		case req.Action == "role" && m.Role == req.Role:

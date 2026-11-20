@@ -7,6 +7,7 @@
 | **Members** | everyone (Viewer and up) can see the member list; **Admins** manage it |
 | **Role matrix** (roles and permissions) | everyone |
 | **API tokens** | Tester and up (your own tokens) |
+| **Provisioning (SCIM)** | Admins |
 | **Audit log** | Manager and up |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
@@ -70,6 +71,7 @@ Buttons for actions you may not perform are hidden. If you are missing a button 
 - **Remove** *(Admin)*: removes the membership; the account itself remains.
 - **Several members at once** *(Admin)*: tick members (or the box in the header for all shown), then choose a role under **Set role** or select **Remove**, and confirm. Your own membership is left as it is, as are members who already have the role; the message says which were skipped. Both can be undone (removed members are added back with their old roles).
 - An organisation must keep at least **one admin**: the last admin cannot be demoted or removed, and a change of several members that would leave no admin is refused as a whole.
+- Members marked **SCIM** are [provisioned by your identity provider](#provisioning-with-scim): their role follows their groups there, so their role cannot be changed and they cannot be removed here (a change of several members skips them).
 
 ### Reset a password
 
@@ -107,6 +109,31 @@ API tokens let scripts and CI pipelines use the REST API without a password, for
 5. Select **Create** and **copy the token now**: it starts with `qtf_` and is shown only once.
 
 Use it as a bearer token: `Authorization: Bearer qtf_…`. A token belongs to one organisation, and on every request it is limited to the role you currently have there: if your role is lowered, so is the token's. Tokens cannot create tokens. **Revoke** a token as soon as it is no longer needed or may have leaked; clients using it lose access immediately. The list shows when each token was **Last used**.
+
+## Provisioning with SCIM
+
+*(Admin)* With SCIM 2.0 your identity provider (Microsoft Entra ID, Okta, OneLogin, JumpCloud and others) creates, updates and deactivates the members of the organisation for you: when someone joins the Qtestframe application in the provider they become a member here, and when they leave they lose access.
+
+How it works:
+
+- **Users.** A provisioned user is matched by e-mail address. New users get an account **without a password**: they sign in with the organisation's single sign-on (OpenID Connect or SAML), which links the account at the first sign-in. An existing account with the same e-mail (for example a member you added by hand) is taken over.
+- **Deactivation.** When the provider deactivates a user, the membership is removed and the person's sessions and API tokens in this organisation end at once. When the provider activates the user again, the membership comes back with the role from the groups. Deleting the user in the provider removes the membership; the account itself remains.
+- **Roles from groups.** The provider can also push groups. Under **Roles of provisioned members** you choose for each group the role its members get, or **Not mapped**. A member in several mapped groups gets the most privileged of their roles. Members without a mapped group get the **Default role** (*Viewer* unless you change it), or nothing with **No access**.
+- **Protected rules.** SCIM never makes anyone a super admin or removes that status, and the organisation always keeps one admin: a change that would remove the last admin is refused. The e-mail and name of a person who also belongs to other organisations are not changed by this organisation's provider.
+- **Members list.** Provisioned members are marked **SCIM** in **Administration → Members**. Change their role through their groups in the provider (or the group mapping here); their role cannot be changed and they cannot be removed by hand, because the next synchronisation would undo it.
+
+### Connect your identity provider
+
+1. Open **Administration → Provisioning (SCIM)** and select **New SCIM token**. Give it a **Name** such as *Entra ID*, optionally an expiry, and select **Create**.
+2. **Copy the token now**: it starts with `qtfscim_` and is shown only once. A SCIM token only works for provisioning this organisation; it is not an API token, and API tokens do not work for provisioning.
+3. Copy the **SCIM base URL** from the same page (it ends with `/scim/v2`).
+4. Set up provisioning in the provider:
+   - **Microsoft Entra ID**: in the enterprise application for Qtestframe open **Provisioning**, set the mode to **Automatic**, enter the base URL as **Tenant URL** and the token as **Secret Token**, select **Test Connection**, then save. Assign users and groups to the application and start provisioning. Entra ID matches users on `userName` (the user principal name or e-mail) and synchronises about every 40 minutes.
+   - **Okta**: in the Qtestframe app integration enable **SCIM provisioning**, enter the base URL as **SCIM connector base URL**, choose `email` as **Unique identifier field for users**, select **Push New Users**, **Push Profile Updates** and **Push Groups**, and choose **HTTP Header** authentication with the token. Under **To App** enable *Create Users*, *Update User Attributes* and *Deactivate Users*, then assign people and push groups.
+   - Other providers work the same way: base URL, bearer token, and users and groups to push.
+5. When the first groups arrive, map them to roles under **Roles of provisioned members** and choose the **Default role**.
+
+**Recent provisioning events** on the same page shows the latest changes; each is also in the [audit log](#audit-log), with the actor *SCIM: token name*. **Revoke** a token when you replace it or it may have leaked; the provider then stops provisioning until it gets a new one. Every change of a request is saved together or not at all, and a provider that sends too many requests is slowed down (HTTP 429).
 
 ## Audit log
 

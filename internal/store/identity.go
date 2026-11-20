@@ -276,8 +276,10 @@ func (s *Store) CountTenantAdmins(ctx context.Context, tenantID string) (int, er
 }
 
 func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]model.Membership, error) {
-	rows, err := s.c(ctx).query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at
-		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id `+where, arg)
+	rows, err := s.c(ctx).query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at,
+		CASE WHEN su.user_id IS NULL THEN 0 ELSE 1 END
+		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id
+		LEFT JOIN scim_users su ON su.tenant_id = m.tenant_id AND su.user_id = m.user_id `+where, arg)
 	if err != nil {
 		return nil, err
 	}
@@ -285,9 +287,11 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 	out := []model.Membership{}
 	for rows.Next() {
 		var m model.Membership
-		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &m.CreatedAt); err != nil {
+		var scim int
+		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &m.CreatedAt, &scim); err != nil {
 			return nil, err
 		}
+		m.SCIM = scim == 1
 		out = append(out, m)
 	}
 	return out, rows.Err()

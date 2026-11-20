@@ -200,6 +200,8 @@ async function discover(request) {
     { name: 'execution-settings', path: '/admin/execution', wait: '.setting' },
     { name: 'backup', path: '/admin/backup' },
     { name: 'tokens', path: '/admin/tokens' },
+    { name: 'provisioning', path: '/admin/provisioning', wait: '#h-scim-events' },
+    { name: 'provisioning-token-dialog', path: '/admin/provisioning', open: 'section:has(#h-scim-tokens) .filterbar button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'audit', path: '/admin/audit' },
     { name: 'tenants', path: '/admin/tenants' },
     { name: 'users', path: '/admin/users' },
