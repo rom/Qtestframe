@@ -17,7 +17,7 @@ var (
 	requirementSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
-			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect"},
+			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention"},
 	}
@@ -51,11 +51,14 @@ type projectContext struct {
 	links      []model.TraceLink
 	r2t, t2r   map[string][]string
 	// suspect: requirement or test id → number of its suspect links
-	suspect  map[string]int
-	last     map[string]string
-	comments map[string]int
-	relCount map[string]int
-	defects  map[string][]string
+	suspect map[string]int
+	// requirement id → open defects / highest open risk level
+	openDefects map[string]int
+	riskLevel   map[string]string
+	last        map[string]string
+	comments    map[string]int
+	relCount    map[string]int
+	defects     map[string][]string
 	// requirement id → related keys; parent/child keys of refines relations
 	related, parents, children map[string][]string
 	// item id → references to related items (both directions)
@@ -93,6 +96,12 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 		}
 	}
 	if pc.last, err = s.Store.LastResults(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.openDefects, err = s.Store.OpenDefectCounts(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.riskLevel, err = s.Store.RequirementRiskLevels(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
 	if pc.comments, pc.relCount, err = s.Store.ProjectCounts(ctx, tenantID, p.ID); err != nil {
@@ -175,6 +184,8 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.RelationRefs = pc.refs[r.ID]
 	r.CriteriaCount = len(r.Criteria)
 	r.SuspectLinks = pc.suspect[r.ID]
+	r.OpenDefects = pc.openDefects[r.ID]
+	r.RiskLevel = pc.riskLevel[r.ID]
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
@@ -229,6 +240,8 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"related": pc.related[r.ID], "parent": pc.parents[r.ID], "child": pc.children[r.ID],
 		"comments": {strconv.Itoa(r.CommentCount)},
 		"suspect":  {strconv.Itoa(r.SuspectLinks)},
+		"defects":  {strconv.Itoa(r.OpenDefects)},
+		"risk":     {r.RiskLevel},
 		"mention":  mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
 	}
 }
