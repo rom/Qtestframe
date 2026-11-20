@@ -449,6 +449,7 @@ func (s *Server) handleAddComment(kind string) handlerFunc {
 		}
 		c.UserEmail, c.UserName = p.User.Email, p.User.DisplayName
 		s.audit(r.Context(), p, "comment.create", kind, id, "")
+		s.afterComment(r, p, kind, id, c)
 		writeJSON(w, http.StatusCreated, c)
 	}
 }

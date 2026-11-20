@@ -48,6 +48,7 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		TestIDs     []string `json:"test_ids"`
 		FolderIDs   []string `json:"folder_ids"`
 		Query       string   `json:"query"`
+		ReleaseID   *string  `json:"release_id"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -82,12 +83,13 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 	}
 	run := &model.TestRun{ProjectID: pr.ID, Name: req.Name, Description: req.Description,
-		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email}
+		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID}
 	if err := s.Store.CreateRun(r.Context(), p.TenantID(), run, ids); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(r.Context(), p, "run.create", "run", run.ID, run.Name)
+	s.notifyEvent(r, p, run.ProjectID, "run.created", map[string]any{"run": run})
 	out, err := s.Store.GetRun(r.Context(), p.TenantID(), run.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -117,17 +119,26 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		Status      *string `json:"status"`
 		Environment *string `json:"environment"`
 		Build       *string `json:"build"`
+		// ReleaseID: "" removes the run from its release.
+		ReleaseID *string `json:"release_id"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
+	oldRunStatus := run.Status
 	for _, f := range []struct {
 		src *string
 		dst *string
 	}{{req.Name, &run.Name}, {req.Description, &run.Description}, {req.Status, &run.Status}, {req.Environment, &run.Environment}, {req.Build, &run.Build}} {
 		if f.src != nil {
 			*f.dst = *f.src
+		}
+	}
+	if req.ReleaseID != nil {
+		run.ReleaseID = req.ReleaseID
+		if *req.ReleaseID == "" {
+			run.ReleaseID = nil
 		}
 	}
 	if err := s.Store.UpdateRun(r.Context(), p.TenantID(), run); err != nil {
@@ -139,6 +150,10 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	s.notifyEvent(r, p, out.ProjectID, "run.updated", map[string]any{"run": out})
+	if oldRunStatus != "completed" && out.Status == "completed" {
+		s.notifyEvent(r, p, out.ProjectID, "run.completed", map[string]any{"run": out})
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -312,12 +327,17 @@ func (s *Server) handleUpdateExecution(w http.ResponseWriter, r *http.Request, p
 			return
 		}
 	}
+	runBefore := ""
+	if run, err := s.Store.GetRun(r.Context(), p.TenantID(), cur.RunID); err == nil {
+		runBefore = run.Status
+	}
 	e, err := s.Store.UpdateExecution(r.Context(), p.TenantID(), r.PathValue("id"), p.User.Email, u)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(r.Context(), p, "execution.update", "execution", e.ID, e.TestKey+" "+e.Status)
+	s.afterExecutionChange(r, p, cur, e, runBefore)
 	if run, err := s.Store.GetRun(r.Context(), p.TenantID(), e.RunID); err == nil {
 		if reqs := s.requirementsOfTests(r.Context(), p, run.ProjectID, []string{e.TestCaseID}); len(reqs) > 0 {
 			s.syncEvidence(r.Context(), p, run.ProjectID, reqs)

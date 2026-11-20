@@ -40,6 +40,9 @@ type Server struct {
 	Log    *slog.Logger
 	Runner *runner.Runner
 	UI     fs.FS // embedded SPA (may be nil)
+	// HTTPClient is used for outgoing calls (defect trackers, webhooks);
+	// nil means a default client with a timeout.
+	HTTPClient *http.Client
 
 	OIDC   map[string]*auth.OIDCProvider
 	SAML   map[string]*auth.SAMLProvider
@@ -48,6 +51,8 @@ type Server struct {
 	limiter *rateLimiter
 	mux     *http.ServeMux
 	once    sync.Once
+	// hooks tracks webhook deliveries in flight (see WaitWebhooks).
+	hooks sync.WaitGroup
 }
 
 // New creates a server and its identity providers.
@@ -240,6 +245,10 @@ func (s *Server) routes() {
 	s.routesBackup(h)
 	s.routesRoles(h)
 	s.routesDependencies(h)
+	s.routesReleases(h)
+	s.routesDefects(h)
+	s.routesRisks(h)
+	s.routesNotifications(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

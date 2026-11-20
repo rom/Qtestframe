@@ -132,6 +132,7 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	s.audit(ctx, p, "requirement.create", "requirement", rq.ID, rq.Key)
+	s.afterItemChange(r, p, model.KindRequirement, rq.ID, rq.ProjectID, rq.Key, rq.Title, "", rq.Owner, rq.Description, true)
 	s.recordRequirement(ctx, p, rq.ID, "create")
 	res := createdRequirement{Requirement: rq}
 	if createTest {
@@ -293,6 +294,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	id, project, key, oldStatus := rq.ID, rq.ProjectID, rq.Key, rq.Status
+	oldOwner, oldDesc := rq.Owner, rq.Description
 	before := store.SnapshotRequirement(rq)
 	if keys["criteria"] {
 		rq.Criteria = nil
@@ -311,6 +313,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	s.audit(ctx, p, "requirement.update", "requirement", rq.ID, rq.Key)
+	s.afterItemChange(r, p, model.KindRequirement, rq.ID, rq.ProjectID, rq.Key, rq.Title, oldOwner, rq.Owner, newText(oldDesc, rq.Description), false)
 	if a := reviewAction(model.KindRequirement, oldStatus, rq.Status); a != "" {
 		s.audit(ctx, p, a, "requirement", rq.ID, rq.Key+" "+oldStatus+" → "+rq.Status)
 	}
@@ -527,6 +530,7 @@ func (s *Server) handleCreateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.audit(r.Context(), p, "test.create", "test", t.ID, t.Key)
+	s.afterItemChange(r, p, model.KindTest, t.ID, t.ProjectID, t.Key, t.Title, "", "", t.Description, true)
 	s.recordTest(r.Context(), p, t.ID, "create")
 	writeJSON(w, http.StatusCreated, t)
 }
@@ -575,6 +579,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	id, project, key, oldStatus := t.ID, t.ProjectID, t.Key, t.Status
+	oldDesc := t.Description
 	if keys["steps"] {
 		t.Steps = nil
 	}
@@ -593,6 +598,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.audit(ctx, p, "test.update", "test", t.ID, t.Key)
+	s.afterItemChange(r, p, model.KindTest, t.ID, t.ProjectID, t.Key, t.Title, "", "", newText(oldDesc, t.Description), false)
 	if a := reviewAction(model.KindTest, oldStatus, t.Status); a != "" {
 		s.audit(ctx, p, a, "test", t.ID, t.Key+" "+oldStatus+" → "+t.Status)
 	}

@@ -30,12 +30,12 @@ const BackupFormatVersion = 1
 // BackupTables lists the backed up tables in foreign-key-safe order
 // (parents first). sessions and schema_migrations are not backed up.
 var BackupTables = []string{
-	"tenants", "users", "memberships", "api_tokens", "projects", "folders", "categories",
+	"tenants", "users", "memberships", "api_tokens", "projects", "releases", "folders", "categories",
 	"requirements", "requirement_categories", "evaluation_criteria", "test_cases", "test_steps",
 	"test_case_categories", "trace_links", "test_runs", "test_executions", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
 	"files", "file_blobs", "attachments", "report_definitions", "login_events", "roles", "test_dependencies",
-	"trash", "item_links",
+	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks",
 }
 
 // tables that exist but are deliberately not part of a backup.

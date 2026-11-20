@@ -628,8 +628,14 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 		if err := removeExecutionAttachments(ctx, c, execs); err != nil {
 			return err
 		}
+		if err := deleteDefectLinks(ctx, c, "execution", execs); err != nil {
+			return err
+		}
 	}
 	if err := deleteItemLinks(ctx, c, entityType, ids); err != nil {
+		return err
+	}
+	if err := deleteDefectLinks(ctx, c, entityType, ids); err != nil {
 		return err
 	}
 	for _, tbl := range []string{"comments", "revisions"} {

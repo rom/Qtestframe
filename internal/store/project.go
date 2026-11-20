@@ -274,8 +274,13 @@ func (s *Store) DeleteProject(ctx context.Context, tenantID, id string) error {
 // nextKey allocates the next sequential key for kind in a project.
 func nextKey(ctx context.Context, c conn, projectID, kind string) (int, string, error) {
 	col, infix := "req_seq", "REQ"
-	if kind == model.KindTest {
+	switch kind {
+	case model.KindTest:
 		col, infix = "test_seq", "TC"
+	case model.KindDefect:
+		col, infix = "defect_seq", "BUG"
+	case model.KindRisk:
+		col, infix = "risk_seq", "RISK"
 	}
 	var seq int
 	var key string

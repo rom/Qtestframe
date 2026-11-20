@@ -10,15 +10,17 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 )
 
-const runCols = `id, project_id, name, description, status, environment, build, created_by, created_at, started_at, completed_at`
+const runCols = `id, project_id, name, description, status, environment, build, created_by, created_at, started_at, completed_at, release_id`
 
 func scanRun(r interface{ Scan(...any) error }) (*model.TestRun, error) {
 	var run model.TestRun
 	var st, ct sql.NullTime
-	if err := r.Scan(&run.ID, &run.ProjectID, &run.Name, &run.Description, &run.Status, &run.Environment, &run.Build, &run.CreatedBy, &run.CreatedAt, &st, &ct); err != nil {
+	var rel sql.NullString
+	if err := r.Scan(&run.ID, &run.ProjectID, &run.Name, &run.Description, &run.Status, &run.Environment, &run.Build, &run.CreatedBy, &run.CreatedAt, &st, &ct, &rel); err != nil {
 		return nil, err
 	}
 	run.StartedAt, run.CompletedAt = timePtr(st), timePtr(ct)
+	run.ReleaseID = strPtr(rel)
 	return &run, nil
 }
 
@@ -40,8 +42,11 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 	run.ID = newID()
 	run.CreatedAt = s.now()
 	return s.tx(ctx, func(c conn) error {
-		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt); err != nil {
+		if err := checkRelease(ctx, c, tenantID, run.ProjectID, run.ReleaseID); err != nil {
+			return err
+		}
+		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID)); err != nil {
 			return err
 		}
 		_, err := s.addExecutions(ctx, c, tenantID, run.ProjectID, run.ID, testIDs)
@@ -267,8 +272,11 @@ func (s *Store) UpdateRun(ctx context.Context, tenantID string, run *model.TestR
 	if run.Status == "planned" || run.Status == "in_progress" {
 		run.CompletedAt = nil
 	}
-	res, err := s.c().exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ? WHERE id = ? AND tenant_id = ?`,
-		run.Name, run.Description, run.Status, run.Environment, run.Build, nullTime(run.StartedAt), nullTime(run.CompletedAt), run.ID, tenantID)
+	if err := checkRelease(ctx, s.c(), tenantID, run.ProjectID, run.ReleaseID); err != nil {
+		return err
+	}
+	res, err := s.c().exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ?, release_id = ? WHERE id = ? AND tenant_id = ?`,
+		run.Name, run.Description, run.Status, run.Environment, run.Build, nullTime(run.StartedAt), nullTime(run.CompletedAt), nullStr(run.ReleaseID), run.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -292,10 +300,16 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 		if err := removeExecutionAttachments(ctx, c, execs); err != nil {
 			return err
 		}
+		if err := deleteDefectLinks(ctx, c, "execution", execs); err != nil {
+			return err
+		}
 		if err := removeAttachments(ctx, c, "run", []string{id}); err != nil {
 			return err
 		}
 		if err := deleteItemLinks(ctx, c, "run", []string{id}); err != nil {
+			return err
+		}
+		if err := deleteDefectLinks(ctx, c, "run", []string{id}); err != nil {
 			return err
 		}
 		res, err := c.exec(ctx, `DELETE FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID)
