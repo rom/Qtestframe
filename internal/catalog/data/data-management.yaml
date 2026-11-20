@@ -1,0 +1,577 @@
+area: data-management
+prefix: DATA
+group: functional
+name: {en: Data management, sv: Datahantering}
+description:
+  en: Creating, reading, updating and deleting data, field validation, mandatory fields, uniqueness, concurrent edits, soft delete and restore, change history and bulk operations.
+  sv: Skapa, läsa, uppdatera och ta bort data, fältvalidering, tvingande fält, unikhet, samtidiga ändringar, mjuk borttagning och återställning, ändringshistorik och massåtgärder.
+
+requirements:
+  - id: DATA-01
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [crud]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    tests: [DATA-T01]
+    en:
+      title: Create, read, update and delete for each item type
+      description: The system MUST let an authorised user create, read, update and delete each type of item it manages, both in the user interface and through the API.
+      rationale: Missing operations force users into workarounds such as asking an administrator or editing exports.
+      criteria:
+        - method: test
+          text: For each item type the four operations succeed in the user interface and through the API for a user with the matching permission.
+    sv:
+      title: Skapa, läsa, uppdatera och ta bort för varje objekttyp
+      description: Systemet SKA låta en behörig användare skapa, läsa, uppdatera och ta bort varje typ av objekt som det hanterar, både i användargränssnittet och via API:et.
+      rationale: Saknade åtgärder tvingar användare till nödlösningar som att be en administratör om hjälp eller redigera exporter.
+      criteria:
+        - method: test
+          text: För varje objekttyp lyckas de fyra åtgärderna i användargränssnittet och via API:et för en användare med motsvarande behörighet.
+
+  - id: DATA-02
+    type: functional
+    obligation: must
+    priority: high
+    tags: [metadata, traceability]
+    refs: ["ISO/IEC 25012:2008 traceability"]
+    tests: [DATA-T01]
+    en:
+      title: Creation and modification metadata
+      description: The system MUST store for each item the user and UTC time of its creation and of its last modification.
+      rationale: Users need to see who is responsible for an item and how recent it is.
+      criteria:
+        - method: test
+          text: After a create and an update by two different users, the item shows the creator, the creation time, the last editor and the time of the update.
+    sv:
+      title: Uppgifter om skapande och ändring
+      description: Systemet SKA för varje objekt lagra användare och UTC-tid för när objektet skapades och senast ändrades.
+      rationale: Användare behöver se vem som ansvarar för ett objekt och hur aktuellt det är.
+      criteria:
+        - method: test
+          text: Efter att två olika användare har skapat respektive uppdaterat objektet visar det vem som skapade det, när, vem som senast ändrade det och när.
+
+  - id: DATA-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [validation]
+    refs: ["OWASP ASVS 4.0.3 V5.1", "OWASP Top 10 2021 A03"]
+    tests: [DATA-T02]
+    en:
+      title: Server-side validation of every field
+      description: The server MUST validate each submitted field against its type, length and format rules regardless of any validation in the client.
+      rationale: Client-side checks are bypassed easily, so only the server can protect data integrity.
+      criteria:
+        - method: test
+          text: API requests with a wrong type, a value one character over the maximum length and an invalid format are each rejected with a field-level error.
+    sv:
+      title: Validering av varje fält på servern
+      description: Servern SKA validera varje inskickat fält mot dess regler för typ, längd och format oberoende av validering i klienten.
+      rationale: Kontroller i klienten går lätt att kringgå, så bara servern kan skydda dataintegriteten.
+      criteria:
+        - method: test
+          text: API-anrop med fel typ, ett värde som är ett tecken över maxlängden och ett ogiltigt format avvisas vart och ett med ett fel per fält.
+
+  - id: DATA-04
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [mandatory-fields, forms]
+    refs: ["WCAG 2.2 SC 3.3.2", "ISO 9241-110:2020 self-descriptiveness"]
+    tests: [DATA-T03]
+    en:
+      title: Mandatory fields marked before input
+      description: Each form MUST mark its mandatory fields with a visible indicator that is explained at the top of the form.
+      rationale: Users who know in advance which fields are mandatory make fewer submission errors.
+      criteria:
+        - method: inspection
+          text: Every mandatory field carries the indicator, every form explains it, and the indicator is also exposed to assistive technology.
+    sv:
+      title: Tvingande fält markeras före inmatning
+      description: Varje formulär SKA markera sina tvingande fält med en synlig markering som förklaras överst i formuläret.
+      rationale: Användare som i förväg vet vilka fält som måste fyllas i gör färre fel när de skickar formuläret.
+      criteria:
+        - method: inspection
+          text: Varje tvingande fält har markeringen, varje formulär förklarar den, och markeringen exponeras även för hjälpmedel.
+
+  - id: DATA-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [uniqueness, validation]
+    refs: ["ISO/IEC 25012:2008 consistency"]
+    tests: [DATA-T04]
+    en:
+      title: Duplicate unique values rejected
+      description: The system MUST reject a new or changed item whose unique key matches an existing item, ignoring differences in letter case.
+      rationale: Duplicate identifiers break references, imports and reports.
+      criteria:
+        - method: test
+          text: Saving an item with the key "req-001" when "REQ-001" exists is rejected with a message that links to the existing item.
+    sv:
+      title: Dubbletter av unika värden avvisas
+      description: Systemet SKA avvisa ett nytt eller ändrat objekt vars unika nyckel stämmer med ett befintligt objekt, oavsett skillnader mellan versaler och gemener.
+      rationale: Dubbla identiteter förstör referenser, importer och rapporter.
+      criteria:
+        - method: test
+          text: Att spara ett objekt med nyckeln "req-001" när "REQ-001" finns avvisas med ett meddelande som länkar till det befintliga objektet.
+
+  - id: DATA-06
+    type: functional
+    obligation: must_not
+    priority: critical
+    tags: [concurrency, optimistic-locking]
+    refs: ["RFC 9110 §13.1.1", "RFC 9110 §15.5.13", "ISO/IEC 25010:2023 integrity"]
+    tests: [DATA-T05]
+    en:
+      title: No silent overwrite of concurrent edits
+      description: The system MUST NOT save a change to an item that another user has modified since the editing user loaded it.
+      rationale: The last-save-wins approach silently destroys the other user's work.
+      criteria:
+        - method: test
+          text: When two users edit the same item and both save, the second save is rejected with a conflict and the first user's change is preserved.
+    sv:
+      title: Samtidiga ändringar skrivs inte över i tysthet
+      description: Systemet SKA INTE spara en ändring av ett objekt som en annan användare har ändrat sedan den redigerande användaren läste in det.
+      rationale: Att den senaste sparningen vinner förstör i tysthet den andra användarens arbete.
+      criteria:
+        - method: test
+          text: När två användare redigerar samma objekt och båda sparar avvisas den andra sparningen med en konflikt, och den första användarens ändring finns kvar.
+
+  - id: DATA-07
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [concurrency, conflict-resolution]
+    refs: ["ISO 9241-110:2020 use error robustness"]
+    tests: [DATA-T06]
+    en:
+      title: Edit conflicts shown with both versions
+      description: On an edit conflict the user interface SHOULD show the user's version and the saved version side by side and let the user keep either value per field.
+      rationale: The user can resolve the conflict without retyping and without losing either change.
+      criteria:
+        - method: test
+          text: After a conflict the user sees both versions with the differing fields marked and can save a combination of values from both.
+    sv:
+      title: Redigeringskonflikter visas med båda versionerna
+      description: Vid en redigeringskonflikt BÖR användargränssnittet visa användarens version och den sparade versionen sida vid sida och låta användaren behålla det ena eller andra värdet per fält.
+      rationale: Användaren kan lösa konflikten utan att skriva om och utan att någon av ändringarna går förlorad.
+      criteria:
+        - method: test
+          text: Efter en konflikt ser användaren båda versionerna med de fält som skiljer sig markerade och kan spara en kombination av värden från båda.
+
+  - id: DATA-08
+    type: functional
+    obligation: must
+    priority: high
+    tags: [soft-delete, recycle-bin]
+    refs: ["ISO 9241-110:2020 use error robustness", "ISO/IEC 25010:2023 recoverability"]
+    tests: [DATA-T07]
+    en:
+      title: Deleted items kept in a recycle bin for 30 days
+      description: The system MUST keep each deleted item in a recycle bin for 30 days before it erases the item permanently.
+      rationale: Accidental deletions are frequent, and a recycle bin avoids restoring entire backups.
+      criteria:
+        - method: test
+          text: A deleted item is listed in the recycle bin on day 30 and is permanently erased on day 31.
+          threshold: "30 days"
+    sv:
+      title: Borttagna objekt finns kvar i papperskorgen i 30 dagar
+      description: Systemet SKA behålla varje borttaget objekt i en papperskorg i 30 dagar innan det raderar objektet permanent.
+      rationale: Borttagningar av misstag är vanliga, och en papperskorg gör att hela säkerhetskopior inte behöver återställas.
+      criteria:
+        - method: test
+          text: Ett borttaget objekt finns i papperskorgen dag 30 och är permanent raderat dag 31.
+          threshold: "30 dagar"
+
+  - id: DATA-09
+    type: functional
+    obligation: must
+    priority: high
+    tags: [soft-delete, restore]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
+    tests: [DATA-T07]
+    en:
+      title: Restore with relations and history
+      description: The system MUST restore an item from the recycle bin together with its attachments, links to other items and change history.
+      rationale: A restore that loses links or history leaves the user with a damaged item.
+      criteria:
+        - method: test
+          text: An item with 2 attachments, 3 links and 5 history entries is deleted and restored and then has the same attachments, links and history.
+    sv:
+      title: Återställning med relationer och historik
+      description: Systemet SKA återställa ett objekt från papperskorgen tillsammans med dess bilagor, länkar till andra objekt och ändringshistorik.
+      rationale: En återställning som tappar länkar eller historik lämnar användaren med ett skadat objekt.
+      criteria:
+        - method: test
+          text: Ett objekt med 2 bilagor, 3 länkar och 5 historikposter tas bort och återställs och har sedan samma bilagor, länkar och historik.
+
+  - id: DATA-10
+    type: functional
+    obligation: must
+    priority: high
+    tags: [history, audit-trail]
+    refs: ["ISO/IEC 25012:2008 traceability", "ISO/IEC 27001:2022 Annex A 8.15"]
+    tests: [DATA-T08]
+    en:
+      title: History of changes per item
+      description: The system MUST record each change to an item with the changed fields, the old and new values, the user and the UTC time.
+      rationale: A change history answers who changed what and when, and supports reviews and audits.
+      criteria:
+        - method: test
+          text: After 3 edits by 2 users the history holds 3 entries with fields, old and new values, user and time.
+    sv:
+      title: Ändringshistorik per objekt
+      description: Systemet SKA registrera varje ändring av ett objekt med ändrade fält, gamla och nya värden, användare och UTC-tid.
+      rationale: En ändringshistorik svarar på vem som ändrade vad och när, och stöder granskningar och revisioner.
+      criteria:
+        - method: test
+          text: Efter 3 ändringar av 2 användare innehåller historiken 3 poster med fält, gamla och nya värden, användare och tid.
+
+  - id: DATA-11
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [history, comparison]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    tests: [DATA-T08]
+    en:
+      title: History shown with differences highlighted
+      description: The item view SHOULD show the change history with newest entries first and highlight added and removed text in each changed field.
+      rationale: Highlighted differences let reviewers see the effect of a change at a glance.
+      criteria:
+        - method: demonstration
+          text: The history tab lists entries newest first, and a changed description shows added text and removed text in distinct styles.
+    sv:
+      title: Historiken visas med markerade skillnader
+      description: Objektvyn BÖR visa ändringshistoriken med de senaste posterna först och markera tillagd och borttagen text i varje ändrat fält.
+      rationale: Markerade skillnader gör att granskare direkt ser vad en ändring innebär.
+      criteria:
+        - method: demonstration
+          text: Historikfliken listar posterna med den senaste först, och en ändrad beskrivning visar tillagd och borttagen text i olika stilar.
+
+  - id: DATA-12
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [bulk-operations]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [DATA-T09]
+    en:
+      title: Bulk edit, move and delete
+      description: The system SHOULD let a user apply an edit of one field, a move or a deletion to up to 1000 selected items in one action.
+      rationale: Repeating the same change item by item is slow and error-prone for users who maintain large sets of data.
+      criteria:
+        - method: test
+          text: Selecting 1000 items and applying a status change completes as one action, and every selected item has the new status.
+          threshold: "1000 items"
+    sv:
+      title: Massredigering, flytt och borttagning
+      description: Systemet BÖR låta en användare tillämpa en ändring av ett fält, en flytt eller en borttagning på upp till 1000 markerade objekt i en åtgärd.
+      rationale: Att upprepa samma ändring objekt för objekt är långsamt och felbenäget för användare som underhåller omfattande datamängder.
+      criteria:
+        - method: test
+          text: När 1000 objekt markeras och en statusändring tillämpas genomförs den som en åtgärd, och varje markerat objekt får den nya statusen.
+          threshold: "1000 objekt"
+
+  - id: DATA-13
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [bulk-operations, feedback]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1"]
+    tests: [DATA-T09]
+    en:
+      title: Result report for bulk operations
+      description: After a bulk operation the system MUST report the number of items that succeeded and list each failed item with the reason.
+      rationale: Without a report users cannot tell which items still need attention.
+      criteria:
+        - method: test
+          text: A bulk change of 10 items, 2 of them locked, reports 8 succeeded and lists the 2 locked items with the reason.
+    sv:
+      title: Resultatrapport för massåtgärder
+      description: Efter en massåtgärd SKA systemet rapportera antalet objekt som lyckades och lista varje misslyckat objekt med orsaken.
+      rationale: Utan rapport kan användaren inte se vilka objekt som fortfarande behöver åtgärdas.
+      criteria:
+        - method: test
+          text: En massändring av 10 objekt, varav 2 är låsta, rapporterar 8 lyckade och listar de 2 låsta objekten med orsaken.
+
+tests:
+  - id: DATA-T01
+    priority: critical
+    execution: automated
+    tags: [crud, api]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    en:
+      title: CRUD and metadata for each item type
+      description: An API test suite runs create, read, update and delete for each item type with two different users.
+      preconditions: A test environment with two users, A and B, who both have write permission.
+      expected: All four operations succeed for each item type and the creation and modification metadata is correct.
+      steps:
+        - action: As user A, create one item of each type and read it back.
+          expected: Each item is returned with the submitted values, creator A and a creation time within 5 seconds of the request.
+        - action: As user B, update a field of each item and read it back.
+          expected: Each item shows the new value, last editor B and a modification time later than the creation time.
+        - action: As user A, delete each item and read it again.
+          expected: The delete succeeds and the read returns HTTP status 404.
+    sv:
+      title: Skapa, läsa, uppdatera, ta bort och metadata för varje objekttyp
+      description: En svit API-tester kör skapa, läsa, uppdatera och ta bort för varje objekttyp med två olika användare.
+      preconditions: En testmiljö med två användare, A och B, som båda har skrivbehörighet.
+      expected: Alla fyra åtgärderna lyckas för varje objekttyp och uppgifterna om skapande och ändring är korrekta.
+      steps:
+        - action: Skapa som användare A ett objekt av varje typ och läs tillbaka det.
+          expected: Varje objekt returneras med de inskickade värdena, A som skapare och en tidpunkt för skapandet inom 5 sekunder från anropet.
+        - action: Uppdatera som användare B ett fält i varje objekt och läs tillbaka det.
+          expected: Varje objekt visar det nya värdet, B som senaste redigerare och en ändringstid som är senare än tiden för skapandet.
+        - action: Ta som användare A bort varje objekt och läs det igen.
+          expected: Borttagningen lyckas och läsningen returnerar HTTP-status 404.
+
+  - id: DATA-T02
+    priority: critical
+    execution: automated
+    tags: [validation, api]
+    refs: ["OWASP ASVS 4.0.3 V5.1"]
+    en:
+      title: Server rejects invalid field values
+      description: An API test sends values that break the type, length and format rules directly to the server, bypassing the client.
+      preconditions: A test environment, an API token and the field rules of one item type, with a title of at most 200 characters.
+      expected: Each invalid value is rejected with an error that names the field, and nothing is saved.
+      steps:
+        - action: Send a number where a text is expected and a text where a date is expected.
+          expected: The request is rejected with HTTP status 422 and an error per field.
+          data: '{"title": 123, "due": "tomorrow"}'
+        - action: Send a title of 201 characters.
+          expected: The request is rejected with an error that states the maximum of 200 characters.
+        - action: Send a title of exactly 200 characters.
+          expected: The item is created.
+    sv:
+      title: Servern avvisar ogiltiga fältvärden
+      description: Ett API-test skickar värden som bryter mot reglerna för typ, längd och format direkt till servern och förbi klienten.
+      preconditions: En testmiljö, en API-token och fältreglerna för en objekttyp där titeln får vara högst 200 tecken.
+      expected: Varje ogiltigt värde avvisas med ett fel som anger fältet, och inget sparas.
+      steps:
+        - action: Skicka ett tal där en text förväntas och en text där ett datum förväntas.
+          expected: Anropet avvisas med HTTP-status 422 och ett fel per fält.
+          data: '{"title": 123, "due": "tomorrow"}'
+        - action: Skicka en titel på 201 tecken.
+          expected: Anropet avvisas med ett fel som anger maxgränsen 200 tecken.
+        - action: Skicka en titel på exakt 200 tecken.
+          expected: Objektet skapas.
+
+  - id: DATA-T03
+    priority: medium
+    execution: manual
+    tags: [mandatory-fields, forms]
+    refs: ["WCAG 2.2 SC 3.3.2"]
+    en:
+      title: Mandatory fields are marked and explained
+      description: Checks the marking of mandatory fields in every form.
+      preconditions: A list of the forms in the system with their mandatory fields.
+      expected: Every mandatory field is marked, the marking is explained and it is announced by a screen reader.
+      steps:
+        - action: Open each form and compare the marked fields with the list.
+          expected: Exactly the mandatory fields carry the indicator.
+        - action: Look for the explanation of the indicator at the top of each form.
+          expected: Each form explains the indicator, for example "* = mandatory".
+        - action: Move to a mandatory field with a screen reader.
+          expected: The field is announced as mandatory.
+    sv:
+      title: Tvingande fält är markerade och förklarade
+      description: Kontrollerar markeringen av tvingande fält i varje formulär.
+      preconditions: En förteckning över formulären i systemet med deras tvingande fält.
+      expected: Varje tvingande fält är markerat, markeringen förklaras och den läses upp av skärmläsare.
+      steps:
+        - action: Öppna varje formulär och jämför de markerade fälten med förteckningen.
+          expected: Exakt de tvingande fälten har markeringen.
+        - action: Leta efter förklaringen av markeringen överst i varje formulär.
+          expected: Varje formulär förklarar markeringen, till exempel "* = måste fyllas i".
+        - action: Gå till ett tvingande fält med en skärmläsare.
+          expected: Fältet läses upp som tvingande.
+
+  - id: DATA-T04
+    priority: high
+    execution: automated
+    tags: [uniqueness, api]
+    refs: ["ISO/IEC 25012:2008 consistency"]
+    en:
+      title: Unique key enforced regardless of letter case
+      description: An API test creates and changes items so that their unique keys collide.
+      preconditions: An item with the key REQ-001 exists.
+      expected: Every collision is rejected with a reference to the existing item.
+      steps:
+        - action: Create a new item with the key req-001.
+          expected: The request is rejected with HTTP status 409 and the error refers to the existing item REQ-001.
+          data: req-001
+        - action: Create an item with the key REQ-002 and then change its key to Req-001.
+          expected: The creation succeeds and the change is rejected with HTTP status 409.
+        - action: Send two create requests with the key REQ-003 at the same time.
+          expected: Exactly one request succeeds.
+    sv:
+      title: Unik nyckel upprätthålls oavsett versaler och gemener
+      description: Ett API-test skapar och ändrar objekt så att deras unika nycklar krockar.
+      preconditions: Ett objekt med nyckeln REQ-001 finns.
+      expected: Varje krock avvisas med en hänvisning till det befintliga objektet.
+      steps:
+        - action: Skapa ett nytt objekt med nyckeln req-001.
+          expected: Anropet avvisas med HTTP-status 409 och felet hänvisar till det befintliga objektet REQ-001.
+          data: req-001
+        - action: Skapa ett objekt med nyckeln REQ-002 och ändra sedan dess nyckel till Req-001.
+          expected: Skapandet lyckas och ändringen avvisas med HTTP-status 409.
+        - action: Skicka två anrop som skapar nyckeln REQ-003 samtidigt.
+          expected: Exakt ett av anropen lyckas.
+
+  - id: DATA-T05
+    priority: critical
+    execution: automated
+    tags: [concurrency, api]
+    refs: ["RFC 9110 §13.1.1"]
+    en:
+      title: Concurrent update is rejected as a conflict
+      description: An API test simulates two users who load the same item and save changes one after the other.
+      preconditions: An item with version 1 and two API clients, A and B.
+      expected: The later save based on an outdated version is rejected and the earlier change is kept.
+      steps:
+        - action: Clients A and B both read the item and note its version or ETag.
+          expected: Both receive version 1.
+        - action: Client A saves a new title with If-Match set to version 1.
+          expected: The save succeeds and the item now has version 2.
+        - action: Client B saves a different title with If-Match set to version 1.
+          expected: The save is rejected with HTTP status 412 or 409 and the title is still the one saved by A.
+    sv:
+      title: Samtidig uppdatering avvisas som konflikt
+      description: Ett API-test simulerar två användare som läser in samma objekt och sparar ändringar efter varandra.
+      preconditions: Ett objekt med version 1 och två API-klienter, A och B.
+      expected: Den senare sparningen som bygger på en inaktuell version avvisas och den tidigare ändringen behålls.
+      steps:
+        - action: Klienterna A och B läser båda objektet och noterar dess version eller ETag.
+          expected: Båda får version 1.
+        - action: Klient A sparar en ny titel med If-Match satt till version 1.
+          expected: Sparningen lyckas och objektet har nu version 2.
+        - action: Klient B sparar en annan titel med If-Match satt till version 1.
+          expected: Sparningen avvisas med HTTP-status 412 eller 409 och titeln är fortfarande den som A sparade.
+
+  - id: DATA-T06
+    priority: medium
+    execution: manual
+    tags: [concurrency, conflict-resolution]
+    refs: ["ISO 9241-110:2020 use error robustness"]
+    en:
+      title: Resolving an edit conflict in the user interface
+      description: Checks the conflict view shown when two users edit the same item in two browsers.
+      preconditions: Two users signed in in two browsers, both with the same item open for editing.
+      expected: The second user sees both versions and saves a combination without losing either change.
+      steps:
+        - action: User 1 changes the title and saves.
+          expected: The save succeeds.
+        - action: User 2 changes the description and the title and saves.
+          expected: A conflict view shows both versions with the title marked as differing.
+        - action: User 2 keeps user 1's title and the own description and saves.
+          expected: The item has user 1's title and user 2's description, and the history shows both changes.
+    sv:
+      title: Lösa en redigeringskonflikt i användargränssnittet
+      description: Kontrollerar konfliktvyn som visas när två användare redigerar samma objekt i två webbläsare.
+      preconditions: Två användare inloggade i två webbläsare som båda har samma objekt öppet för redigering.
+      expected: Den andra användaren ser båda versionerna och sparar en kombination utan att någon ändring går förlorad.
+      steps:
+        - action: Användare 1 ändrar titeln och sparar.
+          expected: Sparningen lyckas.
+        - action: Användare 2 ändrar beskrivningen och titeln och sparar.
+          expected: En konfliktvy visar båda versionerna med titeln markerad som avvikande.
+        - action: Användare 2 behåller användare 1:s titel och sin egen beskrivning och sparar.
+          expected: Objektet har användare 1:s titel och användare 2:s beskrivning, och historiken visar båda ändringarna.
+
+  - id: DATA-T07
+    priority: high
+    execution: automated
+    tags: [soft-delete, restore]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
+    en:
+      title: Recycle bin retention and complete restore
+      description: An integration test deletes items, restores one and moves the clock past the retention period.
+      preconditions: A test environment with a controllable clock and two items, each with 2 attachments, 3 links and 5 history entries.
+      expected: Deleted items stay restorable for 30 days, a restore is complete and items are erased after day 30.
+      steps:
+        - action: Delete both items and list the recycle bin.
+          expected: Both items are listed and are no longer shown in normal lists.
+        - action: Restore the first item and read its attachments, links and history.
+          expected: It has 2 attachments, 3 links and 5 history entries plus entries for the deletion and the restore.
+        - action: Advance the clock by 31 days and run the clean-up job.
+          expected: The second item is permanently erased and no longer in the recycle bin.
+          data: "+31 days"
+    sv:
+      title: Papperskorgens lagringstid och fullständig återställning
+      description: Ett integrationstest tar bort objekt, återställer ett av dem och flyttar klockan förbi lagringstiden.
+      preconditions: En testmiljö med styrbar klocka och två objekt med vardera 2 bilagor, 3 länkar och 5 historikposter.
+      expected: Borttagna objekt kan återställas i 30 dagar, en återställning är fullständig och objekten raderas efter dag 30.
+      steps:
+        - action: Ta bort båda objekten och lista papperskorgen.
+          expected: Båda objekten listas och visas inte längre i vanliga listor.
+        - action: Återställ det första objektet och läs dess bilagor, länkar och historik.
+          expected: Det har 2 bilagor, 3 länkar och 5 historikposter samt poster för borttagningen och återställningen.
+        - action: Flytta klockan 31 dagar framåt och kör rensningsjobbet.
+          expected: Det andra objektet är permanent raderat och finns inte längre i papperskorgen.
+          data: "+31 dagar"
+
+  - id: DATA-T08
+    priority: high
+    execution: manual
+    tags: [history]
+    refs: ["ISO/IEC 25012:2008 traceability"]
+    en:
+      title: Change history is complete and readable
+      description: Checks the recorded change history and how it is presented.
+      preconditions: Two users with write permission and a new item.
+      expected: The history has one complete entry per change, newest first, with differences highlighted.
+      steps:
+        - action: User A changes the title, user B changes the description and user A changes the status.
+          expected: Each save succeeds.
+        - action: Open the history of the item.
+          expected: Three entries are listed newest first, each with field, old value, new value, user and time.
+        - action: Open the entry for the description change.
+          expected: Added text and removed text are highlighted in distinct styles.
+    sv:
+      title: Ändringshistoriken är fullständig och läsbar
+      description: Kontrollerar den registrerade ändringshistoriken och hur den presenteras.
+      preconditions: Två användare med skrivbehörighet och ett nytt objekt.
+      expected: Historiken har en fullständig post per ändring, med den senaste först och skillnaderna markerade.
+      steps:
+        - action: Användare A ändrar titeln, användare B ändrar beskrivningen och användare A ändrar statusen.
+          expected: Varje sparning lyckas.
+        - action: Öppna objektets historik.
+          expected: Tre poster listas med den senaste först, var och en med fält, gammalt värde, nytt värde, användare och tid.
+        - action: Öppna posten för ändringen av beskrivningen.
+          expected: Tillagd och borttagen text är markerad i olika stilar.
+
+  - id: DATA-T09
+    priority: medium
+    execution: manual
+    tags: [bulk-operations]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    en:
+      title: Bulk change with a result report
+      description: Checks a bulk change on many items and the report of partly failed bulk changes.
+      preconditions: A list with at least 1000 items, 2 of which are locked against editing by another user.
+      expected: The bulk change applies to all editable items and the report names each failed item with its reason.
+      steps:
+        - action: Select 1000 items that are not locked and change their status in one action.
+          expected: The change completes and every selected item has the new status.
+          data: "1000 items"
+        - action: Select 10 items including the 2 locked ones and change their status.
+          expected: The report states 8 succeeded and lists the 2 locked items with the reason "locked".
+        - action: Open the 2 listed items from the report.
+          expected: Both items still have their previous status.
+    sv:
+      title: Massändring med resultatrapport
+      description: Kontrollerar en massändring av många objekt och rapporten för massändringar som delvis misslyckas.
+      preconditions: En lista med minst 1000 objekt, varav 2 är låsta för redigering av en annan användare.
+      expected: Massändringen tillämpas på alla redigerbara objekt och rapporten anger varje misslyckat objekt med orsak.
+      steps:
+        - action: Markera 1000 objekt som inte är låsta och ändra deras status i en åtgärd.
+          expected: Ändringen genomförs och varje markerat objekt har den nya statusen.
+          data: "1000 objekt"
+        - action: Markera 10 objekt inklusive de 2 låsta och ändra deras status.
+          expected: Rapporten anger 8 lyckade och listar de 2 låsta objekten med orsaken "låst".
+        - action: Öppna de 2 listade objekten från rapporten.
+          expected: Båda objekten har fortfarande sin tidigare status.

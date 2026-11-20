@@ -46,6 +46,7 @@ const routes: RouteRecordRaw[] = [
           { path: 'analytics', name: 'analytics', component: () => import('./views/AnalyticsView.vue'), meta: { perm: P.requirementRead } },
           { path: 'prompts', name: 'prompts', component: () => import('./views/PromptsView.vue') },
           { path: 'flow', name: 'flow', component: () => import('./views/FlowView.vue'), meta: { perm: P.testRead } },
+          { path: 'catalog', name: 'catalog', component: () => import('./views/CatalogView.vue') },
           { path: 'tags', name: 'tags', component: () => import('./views/TagsView.vue') },
           { path: 'settings', name: 'settings', component: () => import('./views/SettingsView.vue') },
           { path: 'export', name: 'export', component: () => import('./views/ExportView.vue') },

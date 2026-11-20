@@ -1,0 +1,673 @@
+area: maintainability
+prefix: MNT
+group: operations
+name: {en: Maintainability, sv: Underhållbarhet}
+description:
+  en: Code review, coding standards, automated tests and coverage, continuous integration, static analysis, documentation, dependency updates and technical debt.
+  sv: Kodgranskning, kodstandard, automatiserade tester och täckning, kontinuerlig integration, statisk analys, dokumentation, uppdatering av beroenden och teknisk skuld.
+
+requirements:
+  - id: MNT-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [code-review, branch-protection]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.28 (secure coding)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)"]
+    tests: [MNT-T01]
+    en:
+      title: Review of every change
+      description: Each change to the main branch MUST be approved by at least one developer other than its author before it is merged.
+      rationale: Review finds defects early, spreads knowledge of the code and makes every change understood by at least two people.
+      criteria:
+        - method: inspection
+          text: The repository settings require one approval from someone other than the author, and administrators cannot bypass the rule.
+        - method: test
+          text: An attempt to merge a pull request without approval is refused.
+    sv:
+      title: Granskning av varje ändring
+      description: Varje ändring i huvudgrenen SKA godkännas av minst en annan utvecklare än författaren innan den slås ihop.
+      rationale: Granskning hittar fel tidigt, sprider kunskap om koden och gör att varje ändring är förstådd av minst två personer.
+      criteria:
+        - method: inspection
+          text: Inställningarna för kodförrådet kräver ett godkännande från någon annan än författaren, och administratörer kan inte kringgå regeln.
+        - method: test
+          text: Ett försök att slå ihop en ändringsbegäran utan godkännande avvisas.
+
+  - id: MNT-02
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [coding-standard, linting, ci]
+    refs: ["ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "ISO/IEC 27001:2022 Annex A 8.28 (secure coding)"]
+    tests: [MNT-T02]
+    en:
+      title: Coding standard checked in the pipeline
+      description: The pipeline MUST fail a change that does not pass the configured formatter and linter of the project.
+      rationale: An automatic check keeps the code base consistent and removes style discussions from reviews.
+      criteria:
+        - method: test
+          text: A change with a formatting error and a change with a linter finding both fail the pipeline.
+    sv:
+      title: Kodstandard kontrolleras i pipelinen
+      description: Pipelinen SKA underkänna en ändring som inte klarar projektets konfigurerade formaterare och lintverktyg.
+      rationale: En automatisk kontroll håller kodbasen enhetlig och tar bort stildiskussioner från granskningarna.
+      criteria:
+        - method: test
+          text: En ändring med ett formateringsfel och en ändring med ett fynd från lintverktyget underkänns båda i pipelinen.
+
+  - id: MNT-03
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [automated-tests, ci]
+    refs: ["ISO/IEC 25010:2011 §4.2.7.5 (testability)", "ISTQB CTFL 4.0 §2.1.4 (DevOps and testing)"]
+    tests: [MNT-T03]
+    en:
+      title: Automated tests on every change
+      description: The pipeline MUST run the automated unit and integration tests for each pull request and block the merge when a test fails.
+      rationale: Running every test on every change catches regressions when the change is still small and fresh in mind.
+      criteria:
+        - method: test
+          text: A pull request with a failing test cannot be merged, and the pipeline log shows that all test suites ran.
+    sv:
+      title: Automatiserade tester för varje ändring
+      description: Pipelinen SKA köra de automatiserade enhets- och integrationstesterna för varje ändringsbegäran och stoppa sammanslagningen när ett test misslyckas.
+      rationale: Att köra varje test för varje ändring fångar regressioner medan ändringen ännu är liten och färsk i minnet.
+      criteria:
+        - method: test
+          text: En ändringsbegäran med ett misslyckat test kan inte slås ihop, och pipelinens logg visar att alla testsviter har körts.
+
+  - id: MNT-04
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [ci, feedback-time]
+    refs: ["DORA State of DevOps research (lead time for changes)"]
+    tests: [MNT-T03]
+    en:
+      title: Feedback time of the pipeline
+      description: The pipeline SHOULD report the result for a pull request within 15 minutes of the push.
+      rationale: Developers wait for or switch away from slow pipelines, and both cost time and focus.
+      criteria:
+        - method: analysis
+          text: The median pipeline duration for pull requests over the last 30 days is at most 15 minutes.
+          threshold: "median ≤ 15 min"
+    sv:
+      title: Pipelinens återkopplingstid
+      description: Pipelinen BÖR rapportera resultatet för en ändringsbegäran inom 15 minuter efter att ändringen skickats upp.
+      rationale: Utvecklare väntar på eller byter bort från långsamma pipelines, och båda kostar tid och fokus.
+      criteria:
+        - method: analysis
+          text: Medianen för pipelinens körtid för ändringsbegäranden de senaste 30 dagarna är högst 15 minuter.
+          threshold: "median ≤ 15 min"
+
+  - id: MNT-05
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [coverage, automated-tests]
+    refs: ["ISO/IEC 25010:2011 §4.2.7.5 (testability)", "ISTQB CTFL 4.0 §4.3 (white-box test techniques: statement coverage)"]
+    tests: [MNT-T04]
+    en:
+      title: Statement coverage of changed code
+      description: The automated tests SHOULD cover at least 80 % of the statements in the code that a pull request adds or changes.
+      rationale: A coverage target on changed code raises test quality without requiring old code to be retrofitted at once.
+      criteria:
+        - method: test
+          text: The coverage report of the pipeline shows at least 80 % statement coverage for the changed lines of each pull request.
+          threshold: "≥ 80 % of changed statements"
+    sv:
+      title: Satstäckning för ändrad kod
+      description: De automatiserade testerna BÖR täcka minst 80 % av satserna i den kod som en ändringsbegäran lägger till eller ändrar.
+      rationale: Ett täckningsmål för ändrad kod höjer testkvaliteten utan krav på att gammal kod kompletteras på en gång.
+      criteria:
+        - method: test
+          text: Pipelinens täckningsrapport visar minst 80 % satstäckning för de ändrade raderna i varje ändringsbegäran.
+          threshold: "≥ 80 % av ändrade satser"
+
+  - id: MNT-06
+    type: constraint
+    obligation: may
+    priority: low
+    tags: [coverage, generated-code]
+    refs: ["ISO/IEC 25010:2011 §4.2.7.5 (testability)"]
+    tests: [MNT-T04]
+    en:
+      title: Generated code outside the coverage measure
+      description: The team MAY exclude generated source files from the coverage measurement when the exclusion is listed in the coverage configuration.
+      rationale: Generated code is tested through its generator, and counting it distorts the coverage figure.
+      criteria:
+        - method: inspection
+          text: Every excluded path in the coverage configuration points to generated files only.
+    sv:
+      title: Genererad kod utanför täckningsmåttet
+      description: Teamet FÅR undanta genererade källfiler från täckningsmätningen när undantaget anges i täckningskonfigurationen.
+      rationale: Genererad kod testas via sin generator, och att räkna med den snedvrider täckningsmåttet.
+      criteria:
+        - method: inspection
+          text: Varje undantagen sökväg i täckningskonfigurationen pekar bara på genererade filer.
+
+  - id: MNT-07
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [static-analysis, sast, ci]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.25 (secure development life cycle)", "OWASP ASVS 4.0 V1.1 (secure software development lifecycle)"]
+    tests: [MNT-T05]
+    en:
+      title: No merge with severe static analysis findings
+      description: A pull request MUST NOT be merged while the static analysis reports a new finding of high or critical severity.
+      rationale: Static analysis finds defect classes that reviews and tests miss, and blocking new severe findings keeps them from accumulating.
+      criteria:
+        - method: test
+          text: A pull request that introduces a known high-severity pattern is blocked by the pipeline.
+    sv:
+      title: Ingen sammanslagning med allvarliga fynd från statisk analys
+      description: En ändringsbegäran SKA INTE slås ihop så länge den statiska analysen rapporterar ett nytt fynd med hög eller kritisk allvarlighetsgrad.
+      rationale: Statisk analys hittar typer av fel som granskning och tester missar, och att stoppa nya allvarliga fynd hindrar att de samlas på hög.
+      criteria:
+        - method: test
+          text: En ändringsbegäran som inför ett känt mönster med hög allvarlighetsgrad stoppas av pipelinen.
+
+  - id: MNT-08
+    type: constraint
+    obligation: should_not
+    priority: low
+    tags: [complexity, static-analysis]
+    refs: ["ISO/IEC 25010:2011 §4.2.7.4 (modifiability)", "ISO/IEC 25023:2016 §8.8 (maintainability measures)"]
+    tests: [MNT-T05]
+    en:
+      title: Limit on function complexity
+      description: The cyclomatic complexity of a function SHOULD NOT exceed 15.
+      rationale: Functions with many paths are hard to understand and to test, and defects cluster in them.
+      criteria:
+        - method: analysis
+          text: The complexity report lists no function above 15, or each one has a recorded justification.
+          threshold: "cyclomatic complexity ≤ 15"
+    sv:
+      title: Gräns för funktioners komplexitet
+      description: Den cyklomatiska komplexiteten för en funktion BÖR INTE överstiga 15.
+      rationale: Funktioner med många vägar är svåra att förstå och testa, och fel samlas i dem.
+      criteria:
+        - method: analysis
+          text: Komplexitetsrapporten visar ingen funktion över 15, eller så har var och en en dokumenterad motivering.
+          threshold: "cyklomatisk komplexitet ≤ 15"
+
+  - id: MNT-09
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [documentation, architecture]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)"]
+    tests: [MNT-T06]
+    en:
+      title: Current architecture description
+      description: The project MUST keep an architecture description with context, component and deployment views that is reviewed at least every 6 months.
+      rationale: New team members and reviewers of changes need a correct overall picture that the code alone does not give.
+      criteria:
+        - method: review
+          text: The architecture description contains the three views, matches the running system and was reviewed within the last 6 months.
+          threshold: "review every 6 months"
+    sv:
+      title: Aktuell arkitekturbeskrivning
+      description: Projektet SKA hålla en arkitekturbeskrivning med kontext-, komponent- och driftsättningsvy som granskas minst var 6:e månad.
+      rationale: Nya medarbetare och granskare av ändringar behöver en korrekt helhetsbild som koden ensam inte ger.
+      criteria:
+        - method: review
+          text: Arkitekturbeskrivningen innehåller de tre vyerna, stämmer med det körande systemet och granskades inom de senaste 6 månaderna.
+          threshold: "granskas var 6:e månad"
+
+  - id: MNT-10
+    type: interface
+    obligation: must
+    priority: high
+    tags: [documentation, api, openapi]
+    refs: ["OpenAPI Specification 3.1", "ISO/IEC 25010:2011 §4.2.3.2 (interoperability)"]
+    tests: [MNT-T07]
+    en:
+      title: API description that matches the implementation
+      description: The project MUST publish an OpenAPI description of every public API endpoint that the pipeline checks against the implementation.
+      rationale: Integrators rely on the API description, and a description that drifts from the code causes failed integrations.
+      criteria:
+        - method: test
+          text: A contract test in the pipeline fails when an endpoint, parameter or response field differs from the OpenAPI description.
+    sv:
+      title: API-beskrivning som stämmer med implementationen
+      description: Projektet SKA publicera en OpenAPI-beskrivning av varje publik ändpunkt i API:et som pipelinen kontrollerar mot implementationen.
+      rationale: Integratörer förlitar sig på API-beskrivningen, och en beskrivning som glider isär från koden ger misslyckade integrationer.
+      criteria:
+        - method: test
+          text: Ett kontraktstest i pipelinen misslyckas när en ändpunkt, parameter eller ett svarsfält skiljer sig från OpenAPI-beskrivningen.
+
+  - id: MNT-11
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [documentation, operations]
+    refs: ["ITIL 4 Knowledge management", "ISO/IEC 25010:2011 §4.2.8.2 (installability)"]
+    tests: [MNT-T08]
+    en:
+      title: Operations manual
+      description: The project MUST provide an operations manual that covers installation, configuration, backup, restore, upgrade and troubleshooting.
+      rationale: Operations staff need written procedures to run the system without help from its developers.
+      criteria:
+        - method: review
+          text: An operator who has not worked on the system installs and upgrades a test environment using only the manual.
+    sv:
+      title: Driftdokumentation
+      description: Projektet SKA tillhandahålla en driftdokumentation som omfattar installation, konfiguration, säkerhetskopiering, återställning, uppgradering och felsökning.
+      rationale: Driftpersonalen behöver skrivna rutiner för att kunna driva systemet utan hjälp från utvecklarna.
+      criteria:
+        - method: review
+          text: En tekniker som inte har arbetat med systemet installerar och uppgraderar en testmiljö enbart med hjälp av dokumentationen.
+
+  - id: MNT-12
+    type: security
+    obligation: must
+    priority: critical
+    tags: [dependencies, vulnerabilities]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.8 (management of technical vulnerabilities)", "OWASP Top 10 2021 A06 (vulnerable and outdated components)"]
+    tests: [MNT-T09]
+    en:
+      title: Patching of critical vulnerabilities in dependencies
+      description: The team MUST update a dependency with a known critical vulnerability within 7 days after a fixed version is available.
+      rationale: Published vulnerabilities in common libraries are exploited within days.
+      criteria:
+        - method: analysis
+          text: For each critical advisory of the last 6 months the fix was deployed at most 7 days after the fixed version was released.
+          threshold: "≤ 7 days"
+    sv:
+      title: Rättning av kritiska sårbarheter i beroenden
+      description: Teamet SKA uppdatera ett beroende med en känd kritisk sårbarhet inom 7 dagar efter att en rättad version finns tillgänglig.
+      rationale: Publicerade sårbarheter i vanliga bibliotek utnyttjas inom några dagar.
+      criteria:
+        - method: analysis
+          text: För varje kritisk säkerhetsbulletin de senaste 6 månaderna driftsattes rättningen högst 7 dagar efter att den rättade versionen släpptes.
+          threshold: "≤ 7 dagar"
+
+  - id: MNT-13
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [dependencies, automation]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.8 (management of technical vulnerabilities)", "The Twelve-Factor App, II Dependencies"]
+    tests: [MNT-T09]
+    en:
+      title: Automated dependency update proposals
+      description: A tool SHOULD check the dependencies at least once a week and open a pull request for each available update.
+      rationale: Small regular updates are cheap, while dependencies left for years become a large and risky migration.
+      criteria:
+        - method: inspection
+          text: The tool configuration runs weekly and the repository shows update pull requests from the last 4 weeks.
+          threshold: "weekly"
+    sv:
+      title: Automatiska förslag på uppdatering av beroenden
+      description: Ett verktyg BÖR kontrollera beroendena minst en gång i veckan och öppna en ändringsbegäran för varje tillgänglig uppdatering.
+      rationale: Regelbundna uppdateringar i små steg är billiga, medan beroenden som lämnas orörda i åratal blir en omfattande och riskfylld migrering.
+      criteria:
+        - method: inspection
+          text: Verktygets konfiguration körs varje vecka och kodförrådet visar uppdateringsbegäranden från de senaste 4 veckorna.
+          threshold: "varje vecka"
+
+  - id: MNT-14
+    type: business
+    obligation: should
+    priority: low
+    tags: [technical-debt, backlog]
+    refs: ["ISO/IEC 25010:2011 §4.2.7 (maintainability)"]
+    tests: [MNT-T10]
+    en:
+      title: Tracked technical debt
+      description: The team SHOULD record known technical debt as labelled backlog items and review them at least once per quarter.
+      rationale: Debt that is written down can be prioritised against features, while debt that lives in people's heads only grows.
+      criteria:
+        - method: review
+          text: The backlog has items with the technical-debt label, each with an estimate, and the minutes of a review within the last 3 months.
+          threshold: "review every 3 months"
+    sv:
+      title: Registrerad teknisk skuld
+      description: Teamet BÖR registrera känd teknisk skuld som märkta poster i backloggen och gå igenom dem minst en gång per kvartal.
+      rationale: Skuld som är nedskriven kan prioriteras mot funktioner, medan skuld som bara finns i huvudet på folk växer.
+      criteria:
+        - method: review
+          text: Backloggen har poster märkta som teknisk skuld, var och en med en uppskattning, och anteckningar från en genomgång inom de senaste 3 månaderna.
+          threshold: "genomgång var 3:e månad"
+
+  - id: MNT-15
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [build, onboarding, documentation]
+    refs: ["The Twelve-Factor App, II Dependencies", "ISO/IEC 25010:2011 §4.2.7.4 (modifiability)"]
+    tests: [MNT-T11]
+    en:
+      title: Build from a clean checkout
+      description: The system SHOULD build and pass its tests from a clean checkout with one documented command within 30 minutes.
+      rationale: A reproducible build lowers the barrier for new developers and shows that no hidden local setup is needed.
+      criteria:
+        - method: test
+          text: On a fresh machine with only the documented prerequisites the documented command builds the system and passes the tests within 30 minutes.
+          threshold: "≤ 30 min"
+    sv:
+      title: Bygge från en ren utcheckning
+      description: Systemet BÖR gå att bygga och testa från en ren utcheckning med ett dokumenterat kommando inom 30 minuter.
+      rationale: Ett reproducerbart bygge sänker tröskeln för nya utvecklare och visar att ingen dold lokal uppsättning behövs.
+      criteria:
+        - method: test
+          text: På en ny dator med bara de dokumenterade förutsättningarna bygger det dokumenterade kommandot systemet och testerna går igenom inom 30 minuter.
+          threshold: "≤ 30 min"
+
+tests:
+  - id: MNT-T01
+    priority: high
+    execution: manual
+    tags: [code-review, branch-protection]
+    refs: []
+    en:
+      title: Merge without approval is refused
+      description: Checks the branch protection settings and tries to merge an unapproved change.
+      preconditions: A test pull request against the main branch; a user with administrator rights in the repository.
+      expected: Merging requires one approval from someone other than the author, also for administrators.
+      steps:
+        - action: Inspect the branch protection settings of the main branch.
+          expected: One approving review is required, the author's own approval does not count and administrators are included.
+        - action: As the author, try to merge the test pull request without review.
+          expected: The merge is refused.
+        - action: As administrator, try to merge the same pull request.
+          expected: The merge is refused.
+    sv:
+      title: Sammanslagning utan godkännande avvisas
+      description: Kontrollerar inställningarna för grenskydd och försöker slå ihop en ändring som inte är godkänd.
+      preconditions: En teständringsbegäran mot huvudgrenen; en användare med administratörsrättigheter i kodförrådet.
+      expected: Sammanslagning kräver ett godkännande från någon annan än författaren, även för administratörer.
+      steps:
+        - action: Granska inställningarna för grenskydd på huvudgrenen.
+          expected: En godkännande granskning krävs, författarens eget godkännande räknas inte och administratörer omfattas.
+        - action: Försök som författare slå ihop testbegäran utan granskning.
+          expected: Sammanslagningen avvisas.
+        - action: Försök som administratör slå ihop samma begäran.
+          expected: Sammanslagningen avvisas.
+
+  - id: MNT-T02
+    priority: medium
+    execution: automated
+    tags: [coding-standard, ci]
+    refs: []
+    en:
+      title: Pipeline rejects formatting and linter violations
+      description: Pushes two test branches with deliberate violations and checks the pipeline result.
+      preconditions: The formatter and linter are configured in the pipeline.
+      expected: Both branches fail the pipeline with a message that points to the violation.
+      steps:
+        - action: Push a branch with a file that is not formatted according to the project formatter.
+          expected: The pipeline fails and names the file.
+        - action: Push a branch with code that triggers a linter rule.
+          expected: The pipeline fails and names the rule, file and line.
+          data: "an unused variable"
+    sv:
+      title: Pipelinen underkänner formaterings- och lintfel
+      description: Skickar upp två testgrenar med avsiktliga avvikelser och kontrollerar pipelinens resultat.
+      preconditions: Formateraren och lintverktyget är konfigurerade i pipelinen.
+      expected: Båda grenarna underkänns i pipelinen med ett meddelande som pekar på avvikelsen.
+      steps:
+        - action: Skicka upp en gren med en fil som inte är formaterad enligt projektets formaterare.
+          expected: Pipelinen misslyckas och anger filen.
+        - action: Skicka upp en gren med kod som utlöser en regel i lintverktyget.
+          expected: Pipelinen misslyckas och anger regel, fil och rad.
+          data: "en oanvänd variabel"
+
+  - id: MNT-T03
+    priority: high
+    execution: automated
+    tags: [automated-tests, ci, feedback-time]
+    refs: []
+    en:
+      title: Failing test blocks the merge, and pipeline duration
+      description: Pushes a change with a failing test and reads the pipeline durations of the last 30 days.
+      preconditions: Access to the pipeline history; a test branch can be pushed.
+      expected: The failing change cannot be merged and the median pipeline duration is at most 15 minutes.
+      steps:
+        - action: Push a branch that makes one unit test fail and open a pull request.
+          expected: The pipeline fails and the merge button is blocked.
+        - action: Read the pipeline log of the run.
+          expected: The log shows that both the unit and the integration test suites ran.
+        - action: Compute the median duration of pull request pipelines over the last 30 days.
+          expected: The median is at most 15 minutes.
+    sv:
+      title: Misslyckat test stoppar sammanslagning, och pipelinens körtid
+      description: Skickar upp en ändring med ett misslyckat test och läser pipelinens körtider för de senaste 30 dagarna.
+      preconditions: Åtkomst till pipelinens historik; en testgren kan skickas upp.
+      expected: Den felande ändringen kan inte slås ihop och medianen för pipelinens körtid är högst 15 minuter.
+      steps:
+        - action: Skicka upp en gren som får ett enhetstest att misslyckas och öppna en ändringsbegäran.
+          expected: Pipelinen misslyckas och knappen för sammanslagning är spärrad.
+        - action: Läs pipelinens logg för körningen.
+          expected: Loggen visar att både enhets- och integrationstestsviterna har körts.
+        - action: Beräkna medianen för körtiden för ändringsbegärandens pipelines de senaste 30 dagarna.
+          expected: Medianen är högst 15 minuter.
+
+  - id: MNT-T04
+    priority: medium
+    execution: automated
+    tags: [coverage]
+    refs: []
+    en:
+      title: Coverage of changed code and exclusions
+      description: Checks the coverage report of recent pull requests and the exclusions in the coverage configuration.
+      preconditions: The pipeline produces a coverage report for each pull request.
+      expected: Changed code has at least 80 % statement coverage and only generated files are excluded.
+      steps:
+        - action: Read the coverage of changed lines for the last 10 merged pull requests.
+          expected: Each value is at least 80 %.
+        - action: List the excluded paths in the coverage configuration.
+          expected: Every excluded path contains only generated files.
+    sv:
+      title: Täckning av ändrad kod och undantag
+      description: Kontrollerar täckningsrapporten för de senaste ändringsbegärandena och undantagen i täckningskonfigurationen.
+      preconditions: Pipelinen tar fram en täckningsrapport för varje ändringsbegäran.
+      expected: Ändrad kod har minst 80 % satstäckning och bara genererade filer är undantagna.
+      steps:
+        - action: Läs täckningen för ändrade rader i de 10 senast sammanslagna ändringsbegärandena.
+          expected: Varje värde är minst 80 %.
+        - action: Lista de undantagna sökvägarna i täckningskonfigurationen.
+          expected: Varje undantagen sökväg innehåller bara genererade filer.
+
+  - id: MNT-T05
+    priority: high
+    execution: automated
+    tags: [static-analysis, complexity]
+    refs: []
+    en:
+      title: Static analysis blocks severe findings
+      description: Pushes a change with a known severe pattern and reads the complexity report.
+      preconditions: Static analysis and complexity measurement run in the pipeline.
+      expected: The severe finding blocks the merge and no function exceeds the complexity limit without justification.
+      steps:
+        - action: Push a branch that builds a database query by concatenating user input and open a pull request.
+          expected: The static analysis reports a high-severity finding and the merge is blocked.
+          data: "query = \"SELECT * FROM item WHERE id=\" + input"
+        - action: Read the complexity report of the main branch.
+          expected: No function has a cyclomatic complexity above 15, or each such function has a recorded justification.
+    sv:
+      title: Statisk analys stoppar allvarliga fynd
+      description: Skickar upp en ändring med ett känt allvarligt mönster och läser komplexitetsrapporten.
+      preconditions: Statisk analys och komplexitetsmätning körs i pipelinen.
+      expected: Det allvarliga fyndet stoppar sammanslagningen och ingen funktion överskrider komplexitetsgränsen utan motivering.
+      steps:
+        - action: Skicka upp en gren som bygger en databasfråga genom att slå ihop användarindata och öppna en ändringsbegäran.
+          expected: Den statiska analysen rapporterar ett fynd med hög allvarlighetsgrad och sammanslagningen stoppas.
+          data: "query = \"SELECT * FROM item WHERE id=\" + input"
+        - action: Läs komplexitetsrapporten för huvudgrenen.
+          expected: Ingen funktion har en cyklomatisk komplexitet över 15, eller så har varje sådan funktion en dokumenterad motivering.
+
+  - id: MNT-T06
+    priority: medium
+    execution: manual
+    tags: [documentation, architecture, review]
+    refs: ["ISO/IEC/IEEE 42010:2022"]
+    en:
+      title: Review of the architecture description
+      description: Compares the architecture description with the running system.
+      preconditions: The architecture description and the infrastructure code or deployment view of production.
+      expected: The description has the three views, matches the system and was reviewed within 6 months.
+      steps:
+        - action: Check that the description contains a context view, a component view and a deployment view.
+          expected: All three views are present.
+        - action: Compare the components and deployment units in the description with those that are running.
+          expected: Every running component appears in the description and no removed component is still shown.
+        - action: Read the review date of the description.
+          expected: The last review is within the last 6 months.
+    sv:
+      title: Granskning av arkitekturbeskrivningen
+      description: Jämför arkitekturbeskrivningen med det körande systemet.
+      preconditions: Arkitekturbeskrivningen och infrastrukturkoden eller driftsättningsvyn för produktion.
+      expected: Beskrivningen har de tre vyerna, stämmer med systemet och granskades inom 6 månader.
+      steps:
+        - action: Kontrollera att beskrivningen innehåller en kontextvy, en komponentvy och en driftsättningsvy.
+          expected: Alla tre vyerna finns.
+        - action: Jämför komponenterna och driftsättningsenheterna i beskrivningen med dem som körs.
+          expected: Varje körande komponent finns i beskrivningen och ingen borttagen komponent visas fortfarande.
+        - action: Läs granskningsdatumet för beskrivningen.
+          expected: Den senaste granskningen ligger inom de senaste 6 månaderna.
+
+  - id: MNT-T07
+    priority: high
+    execution: automated
+    tags: [api, openapi, contract-test]
+    refs: ["OpenAPI Specification 3.1"]
+    en:
+      title: Contract test of the API against its OpenAPI description
+      description: A pipeline job validates the OpenAPI file and checks real responses of the API against it.
+      preconditions: The OpenAPI file is stored in the repository; the job starts the system with test data.
+      expected: The description is valid and every endpoint, parameter and response field matches the implementation.
+      steps:
+        - action: Validate the OpenAPI file with a schema validator.
+          expected: The file is valid OpenAPI 3.1.
+        - action: Call every documented endpoint and validate each response against the description.
+          expected: All responses match.
+        - action: On a test branch, add an undocumented response field and run the job.
+          expected: The job fails and names the endpoint and the field.
+    sv:
+      title: Kontraktstest av API:et mot OpenAPI-beskrivningen
+      description: Ett pipelinejobb validerar OpenAPI-filen och kontrollerar verkliga svar från API:et mot den.
+      preconditions: OpenAPI-filen lagras i kodförrådet; jobbet startar systemet med testdata.
+      expected: Beskrivningen är giltig och varje ändpunkt, parameter och svarsfält stämmer med implementationen.
+      steps:
+        - action: Validera OpenAPI-filen med en schemavalidator.
+          expected: Filen är giltig OpenAPI 3.1.
+        - action: Anropa varje dokumenterad ändpunkt och validera varje svar mot beskrivningen.
+          expected: Alla svar stämmer.
+        - action: Lägg till ett odokumenterat svarsfält på en testgren och kör jobbet.
+          expected: Jobbet misslyckas och anger ändpunkten och fältet.
+
+  - id: MNT-T08
+    priority: medium
+    execution: manual
+    tags: [documentation, operations]
+    refs: []
+    en:
+      title: Operations manual walkthrough by a new operator
+      description: An operator who has not worked on the system follows the operations manual in a test environment.
+      preconditions: An empty test environment; an operator without previous knowledge of the system; the current manual.
+      expected: The operator installs, configures, backs up, restores and upgrades the system using only the manual.
+      steps:
+        - action: Install and configure the system following the manual.
+          expected: The system starts and the operator can sign in.
+        - action: Take a backup and restore it following the manual.
+          expected: The restore succeeds and the data is intact.
+        - action: Upgrade to the next version and look up the troubleshooting steps for a failed start.
+          expected: The upgrade succeeds and the troubleshooting section covers the case; every gap found is recorded.
+    sv:
+      title: Genomgång av driftdokumentationen med en ny tekniker
+      description: En tekniker som inte har arbetat med systemet följer driftdokumentationen i en testmiljö.
+      preconditions: En tom testmiljö; en tekniker utan tidigare kännedom om systemet; den aktuella dokumentationen.
+      expected: Teknikern installerar, konfigurerar, säkerhetskopierar, återställer och uppgraderar systemet enbart med hjälp av dokumentationen.
+      steps:
+        - action: Installera och konfigurera systemet enligt dokumentationen.
+          expected: Systemet startar och teknikern kan logga in.
+        - action: Ta en säkerhetskopia och återställ den enligt dokumentationen.
+          expected: Återställningen lyckas och data är intakta.
+        - action: Uppgradera till nästa version och slå upp felsökningsstegen för en misslyckad start.
+          expected: Uppgraderingen lyckas och felsökningsavsnittet täcker fallet; varje lucka som hittas registreras.
+
+  - id: MNT-T09
+    priority: critical
+    execution: automated
+    tags: [dependencies, vulnerabilities]
+    refs: ["OWASP Top 10 2021 A06"]
+    en:
+      title: Dependency audit and update timeliness
+      description: A pipeline job scans the dependencies for known vulnerabilities, and the history of advisories and update pull requests is checked.
+      preconditions: A dependency scanner (for example OSV-Scanner or Dependabot) is configured; history for 6 months is available.
+      expected: No open critical advisory is older than 7 days and update pull requests appear every week.
+      steps:
+        - action: Run the dependency scanner on the main branch.
+          expected: No critical vulnerability with a fixed version older than 7 days is reported.
+        - action: For each critical advisory of the last 6 months, compare the release date of the fix with the deployment date.
+          expected: Each fix was deployed within 7 days.
+        - action: List the update pull requests of the last 4 weeks.
+          expected: There is at least one run of the update tool per week.
+    sv:
+      title: Granskning av beroenden och uppdateringstakt
+      description: Ett pipelinejobb söker efter kända sårbarheter i beroendena, och historiken för säkerhetsbulletiner och uppdateringsbegäranden kontrolleras.
+      preconditions: Ett verktyg för beroendegranskning (till exempel OSV-Scanner eller Dependabot) är konfigurerat; historik för 6 månader finns.
+      expected: Ingen öppen kritisk bulletin är äldre än 7 dagar och uppdateringsbegäranden kommer varje vecka.
+      steps:
+        - action: Kör verktyget för beroendegranskning på huvudgrenen.
+          expected: Ingen kritisk sårbarhet med en rättad version äldre än 7 dagar rapporteras.
+        - action: Jämför rättningens releasedatum med driftsättningsdatum för varje kritisk bulletin de senaste 6 månaderna.
+          expected: Varje rättning driftsattes inom 7 dagar.
+        - action: Lista uppdateringsbegärandena de senaste 4 veckorna.
+          expected: Uppdateringsverktyget har körts minst en gång per vecka.
+
+  - id: MNT-T10
+    priority: low
+    execution: manual
+    tags: [technical-debt, review]
+    refs: []
+    en:
+      title: Review of the technical debt backlog
+      description: Checks that technical debt is recorded and reviewed.
+      preconditions: Access to the backlog and the team's meeting notes.
+      expected: Debt items are labelled and estimated, and a review took place within the last quarter.
+      steps:
+        - action: Filter the backlog on the technical-debt label.
+          expected: The list contains items, each with a description and an estimate.
+        - action: Find the notes of the latest debt review.
+          expected: The review is dated within the last 3 months and records decisions per item.
+    sv:
+      title: Granskning av backloggen för teknisk skuld
+      description: Kontrollerar att teknisk skuld registreras och gås igenom.
+      preconditions: Åtkomst till backloggen och teamets mötesanteckningar.
+      expected: Skuldposterna är märkta och uppskattade, och en genomgång har skett under det senaste kvartalet.
+      steps:
+        - action: Filtrera backloggen på märkningen för teknisk skuld.
+          expected: Listan innehåller poster, var och en med beskrivning och uppskattning.
+        - action: Hitta anteckningarna från den senaste genomgången av skulden.
+          expected: Genomgången är daterad inom de senaste 3 månaderna och anger beslut per post.
+
+  - id: MNT-T11
+    priority: medium
+    execution: manual
+    tags: [build, onboarding]
+    refs: []
+    en:
+      title: Build from a clean checkout on a fresh machine
+      description: Builds and tests the system on a fresh machine using only the documented prerequisites and command.
+      preconditions: A fresh virtual machine; the developer guide of the project.
+      expected: The build and the tests succeed with one command within 30 minutes.
+      steps:
+        - action: Install only the prerequisites listed in the developer guide and clone the repository.
+          expected: The prerequisites install without undocumented steps.
+        - action: Run the documented build-and-test command and measure the time.
+          expected: The build and all tests succeed within 30 minutes.
+    sv:
+      title: Bygge från ren utcheckning på en ny dator
+      description: Bygger och testar systemet på en ny dator med enbart de dokumenterade förutsättningarna och kommandot.
+      preconditions: En ny virtuell maskin; projektets utvecklarguide.
+      expected: Bygget och testerna lyckas med ett kommando inom 30 minuter.
+      steps:
+        - action: Installera bara de förutsättningar som anges i utvecklarguiden och klona kodförrådet.
+          expected: Förutsättningarna installeras utan odokumenterade steg.
+        - action: Kör det dokumenterade kommandot för bygge och test och mät tiden.
+          expected: Bygget och alla tester lyckas inom 30 minuter.

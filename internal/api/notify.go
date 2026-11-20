@@ -111,24 +111,9 @@ func (s *Server) handleDeleteNotifications(w http.ResponseWriter, r *http.Reques
 // recipients resolves people (user IDs, e-mail addresses, display names or
 // @handles) to members of the tenant, leaving out the actor.
 func (s *Server) recipients(ctx context.Context, p *Principal, people ...string) []string {
-	ms, err := s.Store.ListTenantMembers(ctx, p.TenantID())
-	if err != nil {
+	index := s.peopleIndex(ctx, p)
+	if index == nil {
 		return nil
-	}
-	users := make([]mention.User, 0, len(ms))
-	for _, m := range ms {
-		users = append(users, mention.User{ID: m.UserID, Email: m.Email, Name: m.Name})
-	}
-	index := map[string]string{}
-	for _, d := range mention.Directory(users, nil) {
-		if d.UserID == "" {
-			continue
-		}
-		for _, k := range []string{d.UserID, d.Email, d.Name, d.Handle, "@" + d.Handle} {
-			if k != "" {
-				index[strings.ToLower(k)] = d.UserID
-			}
-		}
 	}
 	seen := map[string]bool{p.User.ID: true}
 	var out []string
@@ -193,6 +178,32 @@ func (s *Server) notifyDefect(r *http.Request, p *Principal, d *model.Defect, ev
 		s.notifyUsers(r.Context(), p, s.recipients(r.Context(), p, d.Assignee), model.Notification{ProjectID: d.ProjectID,
 			Event: event, Title: title, Body: excerpt(d.Description, 300), EntityType: model.KindDefect, EntityID: d.ID})
 	}
+}
+
+// peopleIndex maps how a member can be named in a text field (user id,
+// e-mail, display name, handle, @handle; lower case) to the user id; nil
+// when the members cannot be read.
+func (s *Server) peopleIndex(ctx context.Context, p *Principal) map[string]string {
+	ms, err := s.Store.ListTenantMembers(ctx, p.TenantID())
+	if err != nil {
+		return nil
+	}
+	users := make([]mention.User, 0, len(ms))
+	for _, m := range ms {
+		users = append(users, mention.User{ID: m.UserID, Email: m.Email, Name: m.Name})
+	}
+	index := map[string]string{}
+	for _, d := range mention.Directory(users, nil) {
+		if d.UserID == "" {
+			continue
+		}
+		for _, k := range []string{d.UserID, d.Email, d.Name, d.Handle, "@" + d.Handle} {
+			if k != "" {
+				index[strings.ToLower(k)] = d.UserID
+			}
+		}
+	}
+	return index
 }
 
 // ---------------------------------------------------------------- webhooks

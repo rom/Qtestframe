@@ -1,0 +1,467 @@
+area: reporting
+prefix: RPT
+group: functional
+name: {en: Reporting, sv: Rapportering}
+description:
+  en: Standard reports, filters, drill-down, export formats, scheduled reports, consistency of figures with the source data, report performance and accessible charts.
+  sv: Standardrapporter, filter, nedborrning, exportformat, schemalagda rapporter, överensstämmelse mellan siffror och källdata, prestanda för rapporter och tillgängliga diagram.
+
+requirements:
+  - id: RPT-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [standard-reports]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 test status and completion reports", "ISO/IEC 25010:2023 functional completeness"]
+    tests: [RPT-T01]
+    en:
+      title: Standard reports included
+      description: The system MUST provide the standard reports status summary, requirement coverage, test results per run and trend over time without any configuration.
+      rationale: Teams need the common views from day one instead of building them themselves.
+      criteria:
+        - method: demonstration
+          text: In a project with seeded data each of the four reports opens from the reports page and shows figures without prior setup.
+    sv:
+      title: Standardrapporter ingår
+      description: Systemet SKA tillhandahålla standardrapporterna statusöversikt, kravtäckning, testresultat per körning och trend över tid utan någon konfiguration.
+      rationale: Team behöver de vanliga vyerna från första dagen i stället för att bygga dem själva.
+      criteria:
+        - method: demonstration
+          text: I ett projekt med testdata öppnas var och en av de fyra rapporterna från rapportsidan och visar siffror utan föregående inställningar.
+
+  - id: RPT-02
+    type: functional
+    obligation: must
+    priority: high
+    tags: [filters]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [RPT-T02]
+    en:
+      title: Report filters on project, period, tag and owner
+      description: Each report MUST offer filters on project, time period, tag and owner that apply to every figure and chart in the report.
+      rationale: A filter that affects only part of a report produces figures that contradict each other.
+      criteria:
+        - method: test
+          text: With a filter on one project, March 2026 and one tag, every figure and chart equals the count of matching items in the test data.
+    sv:
+      title: Rapportfilter på projekt, period, tagg och ägare
+      description: Varje rapport SKA erbjuda filter på projekt, tidsperiod, tagg och ägare som gäller för varje siffra och varje diagram i rapporten.
+      rationale: Ett filter som bara påverkar en del av rapporten ger siffror som motsäger varandra.
+      criteria:
+        - method: test
+          text: Med filter på ett projekt, mars 2026 och en tagg är varje siffra och varje diagram lika med antalet matchande objekt i testdata.
+
+  - id: RPT-03
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [consistency, data-quality]
+    refs: ["ISO/IEC 25012:2008 consistency", "ISO/IEC 25010:2023 functional correctness"]
+    tests: [RPT-T03]
+    en:
+      title: Figures consistent with the source data
+      description: Each figure in a report MUST equal the number of items in the list that the same filter produces at the same point in time.
+      rationale: Reports that disagree with the lists lose the trust of managers and auditors.
+      criteria:
+        - method: test
+          text: For every figure in the four standard reports an automated comparison with the matching list query finds no difference.
+    sv:
+      title: Siffror som stämmer med källdata
+      description: Varje siffra i en rapport SKA vara lika med antalet objekt i den lista som samma filter ger vid samma tidpunkt.
+      rationale: Rapporter som inte stämmer med listorna förlorar förtroendet hos chefer och revisorer.
+      criteria:
+        - method: test
+          text: För varje siffra i de fyra standardrapporterna hittar en automatisk jämförelse med motsvarande listfråga ingen skillnad.
+
+  - id: RPT-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [drill-down]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    tests: [RPT-T03]
+    en:
+      title: Drill-down from figures to items
+      description: Each figure and chart segment in a report SHOULD link to the filtered list of the items it counts.
+      rationale: Users who see a surprising number need to see the items behind it.
+      criteria:
+        - method: test
+          text: Clicking a figure opens a list with the same filters whose item count equals the figure.
+    sv:
+      title: Nedborrning från siffror till objekt
+      description: Varje siffra och diagramsegment i en rapport BÖR länka till den filtrerade listan över de objekt som den räknar.
+      rationale: Användare som ser en överraskande siffra behöver se objekten bakom den.
+      criteria:
+        - method: test
+          text: Ett klick på en siffra öppnar en lista med samma filter vars antal objekt är lika med siffran.
+
+  - id: RPT-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [export, pdf, csv, excel]
+    refs: ["ISO 32000-2:2020", "RFC 4180", "ECMA-376 Office Open XML"]
+    tests: [RPT-T04]
+    en:
+      title: Export of reports to PDF, CSV and Excel
+      description: The system MUST export each report to PDF, CSV and Excel with the same figures as on screen together with the applied filters and the generation time.
+      rationale: Reports are shared with stakeholders who have no account and are archived as evidence.
+      criteria:
+        - method: test
+          text: Exports of a filtered report in the three formats contain the same figures as the screen, the filter values and the generation time in UTC.
+    sv:
+      title: Export av rapporter till PDF, CSV och Excel
+      description: Systemet SKA exportera varje rapport till PDF, CSV och Excel med samma siffror som på skärmen tillsammans med de tillämpade filtren och tidpunkten då rapporten togs fram.
+      rationale: Rapporter delas med intressenter som saknar konto och arkiveras som underlag.
+      criteria:
+        - method: test
+          text: Exporter av en filtrerad rapport i de tre formaten innehåller samma siffror som skärmen, filtervärdena och tidpunkten i UTC.
+
+  - id: RPT-06
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [scheduled-reports, e-mail]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks", "IANA Time Zone Database"]
+    tests: [RPT-T05]
+    en:
+      title: Scheduled reports by e-mail
+      description: The system SHOULD let a user schedule a report daily, weekly or monthly at a chosen local time and send it as a PDF attachment to selected users of the organisation.
+      rationale: Stakeholders receive status at a fixed rhythm without having to remember to open the report.
+      criteria:
+        - method: test
+          text: A weekly schedule for Monday 08:00 Europe/Stockholm delivers the report to each selected recipient at 08:00 local time on 3 consecutive Mondays.
+    sv:
+      title: Schemalagda rapporter via e-post
+      description: Systemet BÖR låta en användare schemalägga en rapport dagligen, varje vecka eller varje månad vid en vald lokal tid och skicka den som PDF-bilaga till utvalda användare i organisationen.
+      rationale: Intressenter tar emot status i en fast rytm utan att behöva komma ihåg att öppna rapporten.
+      criteria:
+        - method: test
+          text: Ett veckoschema för måndagar kl. 08.00 Europe/Stockholm levererar rapporten till varje utvald mottagare kl. 08.00 lokal tid tre måndagar i rad.
+
+  - id: RPT-07
+    type: security
+    obligation: must
+    priority: critical
+    tags: [scheduled-reports, access-control]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1", "OWASP Top 10 2021 A01"]
+    tests: [RPT-T06]
+    en:
+      title: Scheduled reports limited to the recipient's permissions
+      description: The system MUST generate each scheduled report per recipient with only the data that the recipient is allowed to read at the time of sending.
+      rationale: A report built with the creator's permissions would leak data to recipients who lack access.
+      criteria:
+        - method: test
+          text: A scheduled report sent to two recipients with access to different projects contains for each recipient only the projects that recipient can read.
+    sv:
+      title: Schemalagda rapporter begränsas till mottagarens behörigheter
+      description: Systemet SKA ta fram varje schemalagd rapport per mottagare med enbart de data som mottagaren har läsbehörighet till vid utskicket.
+      rationale: En rapport som byggs med skaparens behörigheter skulle läcka data till mottagare som saknar åtkomst.
+      criteria:
+        - method: test
+          text: En schemalagd rapport till två mottagare med åtkomst till olika projekt innehåller för varje mottagare bara de projekt som mottagaren kan läsa.
+
+  - id: RPT-08
+    type: performance
+    obligation: must
+    priority: high
+    tags: [performance]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    tests: [RPT-T07]
+    en:
+      title: Report generation within ten seconds
+      description: The system MUST display each standard report for a project with 100 000 items within 10 seconds for 95 % of requests.
+      rationale: Reports are opened in meetings, where long waits disrupt the discussion.
+      criteria:
+        - method: test
+          text: A performance test with 20 concurrent users on a project of 100 000 items measures a 95th percentile of at most 10 seconds for each standard report.
+          threshold: "p95 ≤ 10 s at 100 000 items"
+    sv:
+      title: Rapporten tas fram inom tio sekunder
+      description: Systemet SKA visa varje standardrapport för ett projekt med 100 000 objekt inom 10 sekunder för 95 % av förfrågningarna.
+      rationale: Rapporter öppnas på möten, där långa väntetider stör diskussionen.
+      criteria:
+        - method: test
+          text: Ett prestandatest med 20 samtidiga användare i ett projekt med 100 000 objekt mäter en 95:e percentil på högst 10 sekunder för varje standardrapport.
+          threshold: "p95 ≤ 10 s vid 100 000 objekt"
+
+  - id: RPT-09
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [data-freshness]
+    refs: ["ISO/IEC 25012:2008 currentness"]
+    tests: [RPT-T08]
+    en:
+      title: Time of the data shown on each report
+      description: Each report MUST show the date and time of the data it is based on, in the viewer's time zone.
+      rationale: Readers of a report or an export need to know how current the figures are.
+      criteria:
+        - method: inspection
+          text: Each report on screen and in each export shows "Data as of" with date, time and time zone.
+    sv:
+      title: Tidpunkt för data visas på varje rapport
+      description: Varje rapport SKA visa datum och tid för de data som den bygger på, i betraktarens tidszon.
+      rationale: Den som läser en rapport eller en export behöver veta hur aktuella siffrorna är.
+      criteria:
+        - method: inspection
+          text: Varje rapport på skärmen och i varje export visar "Data per" med datum, tid och tidszon.
+
+  - id: RPT-10
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [charts, accessibility]
+    refs: ["WCAG 2.2 SC 1.1.1", "WCAG 2.2 SC 1.4.1", "WCAG 2.2 SC 1.4.11"]
+    tests: [RPT-T08]
+    en:
+      title: Charts with a table alternative and without colour coding alone
+      description: Each chart SHOULD offer a data table with the same values and distinguish its series by labels or patterns in addition to colour.
+      rationale: Screen reader users and people with colour vision deficiency cannot read a chart that relies on colour alone.
+      criteria:
+        - method: test
+          text: Every chart has a table view with the same values, and in a greyscale screenshot each series can still be told apart.
+    sv:
+      title: Diagram med tabellalternativ och inte bara färgkodning
+      description: Varje diagram BÖR erbjuda en datatabell med samma värden och skilja sina serier åt med etiketter eller mönster utöver färg.
+      rationale: Skärmläsaranvändare och personer med nedsatt färgseende kan inte läsa ett diagram som bara bygger på färg.
+      criteria:
+        - method: test
+          text: Varje diagram har en tabellvy med samma värden, och i en skärmbild i gråskala går varje serie fortfarande att skilja från de andra.
+
+tests:
+  - id: RPT-T01
+    priority: high
+    execution: manual
+    tags: [standard-reports]
+    refs: ["ISO/IEC/IEEE 29119-3:2021"]
+    en:
+      title: Standard reports available without setup
+      description: Checks that the four standard reports open and show data in a project without report configuration.
+      preconditions: A project with seeded requirements, tests and at least 3 completed runs, and no saved report configuration.
+      expected: All four standard reports open and show figures.
+      steps:
+        - action: Open the reports page of the project.
+          expected: The reports status summary, requirement coverage, test results per run and trend over time are listed.
+        - action: Open each of the four reports.
+          expected: Each report shows figures and charts based on the seeded data without asking for configuration.
+    sv:
+      title: Standardrapporter finns utan inställningar
+      description: Kontrollerar att de fyra standardrapporterna öppnas och visar data i ett projekt utan rapportinställningar.
+      preconditions: Ett projekt med testdata för krav, testfall och minst 3 avslutade körningar och inga sparade rapportinställningar.
+      expected: Alla fyra standardrapporterna öppnas och visar siffror.
+      steps:
+        - action: Öppna projektets rapportsida.
+          expected: Rapporterna statusöversikt, kravtäckning, testresultat per körning och trend över tid listas.
+        - action: Öppna var och en av de fyra rapporterna.
+          expected: Varje rapport visar siffror och diagram utifrån testdata utan att be om inställningar.
+
+  - id: RPT-T02
+    priority: high
+    execution: manual
+    tags: [filters]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    en:
+      title: Report filters apply to every figure
+      description: Checks that the report filters change every figure and chart consistently.
+      preconditions: Seeded data with known counts per project, month, tag and owner, and the expected counts for the filter below.
+      expected: Every figure and chart equals the expected count for the filter.
+      steps:
+        - action: Open the status summary and apply the filters project Alpha, period March 2026, tag billing and owner Anna.
+          expected: The filters are shown at the top of the report.
+          data: "Alpha; 2026-03-01–2026-03-31; billing; Anna"
+        - action: Compare each figure and chart value with the expected counts.
+          expected: Every figure and chart value equals the expected count.
+        - action: Remove the owner filter.
+          expected: Every figure and chart changes to the expected counts without the owner filter.
+    sv:
+      title: Rapportfilter gäller för varje siffra
+      description: Kontrollerar att rapportfiltren ändrar varje siffra och varje diagram på ett enhetligt sätt.
+      preconditions: Testdata med kända antal per projekt, månad, tagg och ägare och de förväntade antalen för filtret nedan.
+      expected: Varje siffra och varje diagram är lika med det förväntade antalet för filtret.
+      steps:
+        - action: Öppna statusöversikten och tillämpa filtren projekt Alpha, period mars 2026, tagg billing och ägare Anna.
+          expected: Filtren visas överst i rapporten.
+          data: "Alpha; 2026-03-01–2026-03-31; billing; Anna"
+        - action: Jämför varje siffra och diagramvärde med de förväntade antalen.
+          expected: Varje siffra och diagramvärde är lika med det förväntade antalet.
+        - action: Ta bort ägarfiltret.
+          expected: Varje siffra och diagram ändras till de förväntade antalen utan ägarfiltret.
+
+  - id: RPT-T03
+    priority: critical
+    execution: automated
+    tags: [consistency, drill-down]
+    refs: ["ISO/IEC 25012:2008 consistency"]
+    en:
+      title: Report figures equal list counts
+      description: A script reads every figure of the standard reports through the API and compares it with the count of the corresponding list query and drill-down link.
+      preconditions: A test environment with a randomly generated data set of 10 000 items and fixed seed, and API access to reports and lists.
+      expected: Every report figure equals the list count and the drill-down link returns the same count.
+      steps:
+        - action: Read each figure of each standard report with no filter and with 5 random filter combinations.
+          expected: A set of figures with their filters is collected.
+          data: "seed 42, 10 000 items"
+        - action: For each figure, run the list query with the same filters and count the items.
+          expected: Each count equals the figure.
+        - action: For each figure, follow its drill-down link and count the items in the list.
+          expected: Each count equals the figure.
+    sv:
+      title: Rapportsiffror är lika med antalet i listor
+      description: Ett skript läser varje siffra i standardrapporterna via API:et och jämför den med antalet i motsvarande listfråga och nedborrningslänk.
+      preconditions: En testmiljö med en slumpgenererad datamängd på 10 000 objekt med fast frö och API-åtkomst till rapporter och listor.
+      expected: Varje rapportsiffra är lika med antalet i listan och nedborrningslänken ger samma antal.
+      steps:
+        - action: Läs varje siffra i varje standardrapport utan filter och med 5 slumpvisa filterkombinationer.
+          expected: En mängd siffror med sina filter samlas in.
+          data: "frö 42, 10 000 objekt"
+        - action: Kör listfrågan med samma filter för varje siffra och räkna objekten.
+          expected: Varje antal är lika med siffran.
+        - action: Följ nedborrningslänken för varje siffra och räkna objekten i listan.
+          expected: Varje antal är lika med siffran.
+
+  - id: RPT-T04
+    priority: high
+    execution: manual
+    tags: [export]
+    refs: ["ISO 32000-2:2020", "RFC 4180"]
+    en:
+      title: Report exported to PDF, CSV and Excel
+      description: Checks that exports of a filtered report contain the same figures, the filters and the generation time.
+      preconditions: A report with an active filter shown on screen.
+      expected: All three exports match the screen and state the filters and the generation time.
+      steps:
+        - action: Export the report to PDF, CSV and Excel.
+          expected: Three files are downloaded.
+        - action: Compare the figures in each file with the figures on screen.
+          expected: All figures are identical.
+        - action: Look for the filter values and the generation time in each file.
+          expected: Each file states the filters and the generation time in UTC.
+    sv:
+      title: Rapport exporteras till PDF, CSV och Excel
+      description: Kontrollerar att exporter av en filtrerad rapport innehåller samma siffror, filtren och tidpunkten då rapporten togs fram.
+      preconditions: En rapport med ett aktivt filter visas på skärmen.
+      expected: Alla tre exporterna stämmer med skärmen och anger filtren och tidpunkten.
+      steps:
+        - action: Exportera rapporten till PDF, CSV och Excel.
+          expected: Tre filer laddas ner.
+        - action: Jämför siffrorna i varje fil med siffrorna på skärmen.
+          expected: Alla siffror är identiska.
+        - action: Leta efter filtervärdena och tidpunkten i varje fil.
+          expected: Varje fil anger filtren och tidpunkten i UTC.
+
+  - id: RPT-T05
+    priority: medium
+    execution: automated
+    tags: [scheduled-reports]
+    refs: ["IANA Time Zone Database"]
+    en:
+      title: Weekly scheduled report delivered on time
+      description: An integration test with a controllable clock checks the delivery times of a weekly scheduled report.
+      preconditions: A controllable clock, a test mailbox and two recipients in the organisation.
+      expected: The report arrives at 08:00 Europe/Stockholm on each of 3 consecutive Mondays as a PDF attachment.
+      steps:
+        - action: Schedule the status summary weekly on Monday at 08:00 Europe/Stockholm for both recipients.
+          expected: The schedule is saved and shows the next run time.
+          data: "Monday 08:00 Europe/Stockholm"
+        - action: Advance the clock to each of the next 3 Mondays at 08:00 local time, including 2026-03-30 after the change to daylight saving time.
+          expected: Each recipient receives one e-mail with the report as PDF within 5 minutes of 08:00 local time each Monday.
+    sv:
+      title: Veckovis schemalagd rapport levereras i tid
+      description: Ett integrationstest med styrbar klocka kontrollerar leveranstiderna för en veckovis schemalagd rapport.
+      preconditions: En styrbar klocka, en testbrevlåda och två mottagare i organisationen.
+      expected: Rapporten kommer fram kl. 08.00 Europe/Stockholm tre måndagar i rad som PDF-bilaga.
+      steps:
+        - action: Schemalägg statusöversikten varje måndag kl. 08.00 Europe/Stockholm för båda mottagarna.
+          expected: Schemat sparas och visar nästa körtid.
+          data: "måndag 08:00 Europe/Stockholm"
+        - action: Flytta klockan till var och en av de 3 följande måndagarna kl. 08.00 lokal tid, däribland 2026-03-30 efter övergången till sommartid.
+          expected: Varje mottagare tar emot ett e-postmeddelande med rapporten som PDF inom 5 minuter från kl. 08.00 lokal tid varje måndag.
+
+  - id: RPT-T06
+    priority: critical
+    execution: automated
+    tags: [scheduled-reports, access-control]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1"]
+    en:
+      title: Scheduled report respects each recipient's permissions
+      description: An integration test sends a scheduled report to recipients with different access and inspects the content of each delivered report.
+      preconditions: Projects Alpha and Beta, a report creator with access to both, recipient R1 with access to Alpha only and recipient R2 with access to Beta only.
+      expected: Each recipient's report contains only the projects that recipient can read.
+      steps:
+        - action: As the creator, schedule a status summary of both projects for R1 and R2 and trigger the run.
+          expected: Two e-mails with PDF reports are sent.
+        - action: Extract the text of R1's PDF.
+          expected: It contains figures for Alpha and no mention of Beta.
+        - action: Remove R2's access to Beta and trigger the run again.
+          expected: R2's report contains no project data and states that there is nothing to show.
+    sv:
+      title: Schemalagd rapport respekterar varje mottagares behörigheter
+      description: Ett integrationstest skickar en schemalagd rapport till mottagare med olika åtkomst och granskar innehållet i varje levererad rapport.
+      preconditions: Projekten Alpha och Beta, en rapportskapare med åtkomst till båda, mottagaren R1 med åtkomst enbart till Alpha och mottagaren R2 med åtkomst enbart till Beta.
+      expected: Varje mottagares rapport innehåller bara de projekt som mottagaren kan läsa.
+      steps:
+        - action: Schemalägg som skaparen en statusöversikt över båda projekten för R1 och R2 och starta körningen.
+          expected: Två e-postmeddelanden med PDF-rapporter skickas.
+        - action: Ta ut texten ur R1:s PDF.
+          expected: Den innehåller siffror för Alpha och nämner inte Beta.
+        - action: Ta bort R2:s åtkomst till Beta och starta körningen igen.
+          expected: R2:s rapport innehåller inga projektdata och anger att det inte finns något att visa.
+
+  - id: RPT-T07
+    priority: high
+    execution: automated
+    tags: [performance, load-test]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Performance test of standard reports
+      description: A load test tool opens the standard reports concurrently on a production-sized project and measures response times.
+      preconditions: A production-like environment with a project of 100 000 items and a load test tool.
+      expected: The 95th percentile per standard report is at most 10 seconds.
+      steps:
+        - action: Run 20 virtual users who open the four standard reports in random order with random filters for 10 minutes.
+          expected: The error rate stays below 0.1 %.
+          data: "20 users, 10 min, 100 000 items"
+        - action: Calculate the 95th percentile of the response time per report.
+          expected: Each percentile is at most 10 seconds and the test fails otherwise.
+    sv:
+      title: Prestandatest av standardrapporter
+      description: Ett lasttestverktyg öppnar standardrapporterna samtidigt i ett projekt i produktionsstorlek och mäter svarstiderna.
+      preconditions: En produktionslik miljö med ett projekt med 100 000 objekt och ett lasttestverktyg.
+      expected: Den 95:e percentilen per standardrapport är högst 10 sekunder.
+      steps:
+        - action: Kör 20 virtuella användare som öppnar de fyra standardrapporterna i slumpvis ordning med slumpvisa filter i 10 minuter.
+          expected: Felfrekvensen ligger under 0,1 %.
+          data: "20 användare, 10 min, 100 000 objekt"
+        - action: Beräkna den 95:e percentilen av svarstiden per rapport.
+          expected: Varje percentil är högst 10 sekunder, annars underkänns testet.
+
+  - id: RPT-T08
+    priority: medium
+    execution: manual
+    tags: [data-freshness, charts, accessibility]
+    refs: ["WCAG 2.2 SC 1.4.1", "ISO/IEC 25012:2008 currentness"]
+    en:
+      title: Data timestamp and accessible charts
+      description: Checks the data timestamp on reports and the table alternative and non-colour coding of charts.
+      preconditions: A user with the time zone Europe/Stockholm and a report with at least one chart with 3 series.
+      expected: The data time is shown in the user's time zone, and every chart can be read without colour and as a table.
+      steps:
+        - action: Open the report and an exported PDF of it.
+          expected: Both show "Data as of" with date, time and Europe/Stockholm time.
+        - action: Switch the chart to its table view.
+          expected: A table with the same values as the chart is shown.
+        - action: Take a greyscale screenshot of the chart.
+          expected: Each of the 3 series can be told apart by its label or pattern.
+    sv:
+      title: Tidpunkt för data och tillgängliga diagram
+      description: Kontrollerar tidpunkten för data på rapporter samt tabellalternativ och kodning utan färg i diagram.
+      preconditions: En användare med tidszonen Europe/Stockholm och en rapport med minst ett diagram med 3 serier.
+      expected: Tidpunkten för data visas i användarens tidszon, och varje diagram kan läsas utan färg och som tabell.
+      steps:
+        - action: Öppna rapporten och en exporterad PDF av den.
+          expected: Båda visar "Data per" med datum, tid och tid i Europe/Stockholm.
+        - action: Byt diagrammet till tabellvyn.
+          expected: En tabell med samma värden som diagrammet visas.
+        - action: Ta en skärmbild av diagrammet i gråskala.
+          expected: Var och en av de 3 serierna går att skilja från de andra genom etikett eller mönster.

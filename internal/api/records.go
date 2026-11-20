@@ -17,7 +17,7 @@ var (
 	requirementSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
-			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk"},
+			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention", "suspect", "defects", "risk", "catalog"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
 			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention"},
 	}
@@ -25,7 +25,7 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on", "suspect", "flaky", "flakiness"},
+			"depends_on", "suspect", "flaky", "flakiness", "catalog"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness"},
@@ -254,6 +254,7 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"suspect":  {strconv.Itoa(r.SuspectLinks)},
 		"defects":  {strconv.Itoa(r.OpenDefects)},
 		"risk":     {r.RiskLevel},
+		"catalog":  {r.CatalogRef},
 		"mention":  mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
 	}
 }
@@ -291,6 +292,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"depends_on": pc.prereqKeys[t.ID],
 		"flaky":      {strconv.FormatBool(t.Flaky)},
 		"flakiness":  {strconv.Itoa(t.Flakiness)},
+		"catalog":    {t.CatalogRef},
 	}
 }
 

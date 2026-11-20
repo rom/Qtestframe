@@ -1,0 +1,623 @@
+area: deployment
+prefix: DEP
+group: operations
+name: {en: Deployment and release, sv: Driftsättning och leverans}
+description:
+  en: Automated deployment, rollback, zero-downtime upgrades, database migrations, configuration outside the code, environment parity, infrastructure as code and release notes.
+  sv: Automatiserad driftsättning, återgång, uppgraderingar utan avbrott, databasmigreringar, konfiguration utanför koden, likvärdiga miljöer, infrastruktur som kod och versionsinformation.
+
+requirements:
+  - id: DEP-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [automation, pipeline]
+    refs: ["The Twelve-Factor App, V Build, release, run", "Google SRE book ch. 8 (Release Engineering)", "ITIL 4 Deployment management"]
+    tests: [DEP-T01]
+    en:
+      title: Automated deployment pipeline
+      description: A deployment to production MUST be started by a single action in the deployment pipeline, with no manual steps on servers.
+      rationale: Manual steps differ from one deployment to the next and are the most common source of failed releases.
+      criteria:
+        - method: demonstration
+          text: A release is deployed to production by starting one pipeline job, and the server access logs show no interactive sessions during the deployment.
+    sv:
+      title: Automatiserad driftsättningspipeline
+      description: En driftsättning i produktion SKA startas med en enda åtgärd i driftsättningspipelinen, utan manuella steg på servrarna.
+      rationale: Manuella steg skiljer sig från gång till gång och är den vanligaste orsaken till misslyckade leveranser.
+      criteria:
+        - method: demonstration
+          text: En version driftsätts i produktion genom att ett pipelinejobb startas, och serverns åtkomstloggar visar inga interaktiva sessioner under driftsättningen.
+
+  - id: DEP-02
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [artifact, build-once]
+    refs: ["The Twelve-Factor App, V Build, release, run", "Humble and Farley, Continuous Delivery (2010) ch. 5 (deployment pipeline)"]
+    tests: [DEP-T02]
+    en:
+      title: One build artifact for every environment
+      description: The pipeline MUST deploy the same build artifact, identified by its checksum, to test, staging and production.
+      rationale: Rebuilding per environment means that production runs something other than what was tested.
+      criteria:
+        - method: test
+          text: The checksum of the artifact running in production equals the checksum of the artifact that passed the test stage.
+    sv:
+      title: En byggartefakt för alla miljöer
+      description: Pipelinen SKA driftsätta samma byggartefakt, identifierad med sin kontrollsumma, i test, förproduktion och produktion.
+      rationale: Att bygga om per miljö innebär att produktionen kör något annat än det som testades.
+      criteria:
+        - method: test
+          text: Kontrollsumman för artefakten i produktion är densamma som för artefakten som klarade teststeget.
+
+  - id: DEP-03
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [rollback]
+    refs: ["Google SRE book ch. 8 (Release Engineering)", "ITIL 4 Release management"]
+    tests: [DEP-T03]
+    en:
+      title: Rollback to the previous version
+      description: The pipeline MUST put the previous production version back into service within 15 minutes after a rollback has been started.
+      rationale: A fast way back limits the damage of a faulty release and makes the team less afraid to deploy.
+      criteria:
+        - method: test
+          text: A rollback started from the pipeline puts the previous version back into service within 15 minutes.
+          threshold: "≤ 15 min"
+    sv:
+      title: Återgång till föregående version
+      description: Pipelinen SKA sätta den föregående produktionsversionen i drift igen inom 15 minuter efter att en återgång har startats.
+      rationale: En snabb väg tillbaka begränsar skadan av en felaktig version och gör teamet mindre rädda för att driftsätta.
+      criteria:
+        - method: test
+          text: En återgång som startas från pipelinen sätter den föregående versionen i drift inom 15 minuter.
+          threshold: "≤ 15 min"
+
+  - id: DEP-04
+    type: non_functional
+    obligation: should
+    priority: high
+    tags: [smoke-test, rollback, pipeline]
+    refs: ["Google SRE book ch. 8 (Release Engineering)"]
+    tests: [DEP-T03]
+    en:
+      title: Smoke test and automatic rollback
+      description: The pipeline SHOULD run a smoke test against production after each deployment and roll back automatically when the test fails.
+      rationale: A failed release is then undone within minutes, also when nobody is watching the deployment.
+      criteria:
+        - method: test
+          text: Deploying a version that fails the smoke test results in an automatic rollback without manual action.
+    sv:
+      title: Röktest och automatisk återgång
+      description: Pipelinen BÖR köra ett röktest mot produktion efter varje driftsättning och automatiskt återgå när testet misslyckas.
+      rationale: En misslyckad version tas då bort inom några minuter, även när ingen bevakar driftsättningen.
+      criteria:
+        - method: test
+          text: Driftsättning av en version som inte klarar röktestet leder till automatisk återgång utan manuell åtgärd.
+
+  - id: DEP-05
+    type: non_functional
+    obligation: must_not
+    priority: high
+    tags: [zero-downtime, rolling-upgrade]
+    refs: ["The Twelve-Factor App, IX Disposability", "ISO/IEC 25010:2011 §4.2.5.2 (availability)"]
+    tests: [DEP-T04]
+    en:
+      title: Upgrades without failed requests
+      description: A rolling upgrade MUST NOT cause server errors or refused connections at a load of 50 requests per second.
+      rationale: Upgrades without downtime allow releases during working hours, when the team is available to react.
+      criteria:
+        - method: test
+          text: A load test running during a rolling upgrade records no server errors and no connection failures.
+          threshold: "0 failed requests at 50 req/s"
+    sv:
+      title: Uppgraderingar utan misslyckade anrop
+      description: En rullande uppgradering SKA INTE orsaka serverfel eller nekade anslutningar vid en last på 50 anrop per sekund.
+      rationale: Uppgraderingar utan avbrott gör det möjligt att leverera under arbetstid, när teamet finns på plats för att reagera.
+      criteria:
+        - method: test
+          text: Ett lasttest som körs under en rullande uppgradering registrerar inga serverfel och inga anslutningsfel.
+          threshold: "0 misslyckade anrop vid 50 anrop/s"
+
+  - id: DEP-06
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [database-migration, automation]
+    refs: ["The Twelve-Factor App, XII Admin processes", "ISO/IEC 27001:2022 Annex A 8.32 (change management)"]
+    tests: [DEP-T05]
+    en:
+      title: Versioned and automated database migrations
+      description: The pipeline MUST apply database schema changes as versioned migration scripts that are stored with the code and recorded in the database when applied.
+      rationale: Versioned migrations make the schema of every environment known and reproducible.
+      criteria:
+        - method: test
+          text: Running the migrations against an empty database and against a copy of production gives the same schema, and running them again changes nothing.
+    sv:
+      title: Versionerade och automatiserade databasmigreringar
+      description: Pipelinen SKA genomföra ändringar i databasschemat som versionerade migreringsskript som lagras med koden och registreras i databasen när de har körts.
+      rationale: Versionerade migreringar gör schemat i varje miljö känt och reproducerbart.
+      criteria:
+        - method: test
+          text: Migreringarna ger samma schema mot en tom databas och mot en kopia av produktion, och en ny körning ändrar ingenting.
+
+  - id: DEP-07
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [database-migration, backward-compatibility, zero-downtime]
+    refs: ["ISO/IEC 25010:2011 §4.2.3.1 (co-existence)"]
+    tests: [DEP-T06]
+    en:
+      title: Schema changes compatible with the previous version
+      description: Each database migration MUST leave the schema usable by the previous application version.
+      rationale: Old and new versions run side by side during a rolling upgrade, and a rollback must not need a schema rollback.
+      criteria:
+        - method: test
+          text: The regression tests of the previous version pass against the schema after the new migrations.
+    sv:
+      title: Schemaändringar som fungerar med föregående version
+      description: Varje databasmigrering SKA lämna schemat användbart för den föregående applikationsversionen.
+      rationale: Gamla och nya versioner körs sida vid sida under en rullande uppgradering, och en återgång får inte kräva att schemat återställs.
+      criteria:
+        - method: test
+          text: Regressionstesterna för den föregående versionen går igenom mot schemat efter de nya migreringarna.
+
+  - id: DEP-08
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [configuration, environment]
+    refs: ["The Twelve-Factor App, III Config"]
+    tests: [DEP-T07]
+    en:
+      title: Configuration outside the code
+      description: The system MUST read all environment-specific settings from environment variables or a configuration service at start-up.
+      rationale: Settings outside the artifact allow one build to run in every environment and changes without a new build.
+      criteria:
+        - method: test
+          text: The same artifact starts in two environments with different database addresses by changing only environment variables.
+        - method: inspection
+          text: A search of the code finds no host names, ports or credentials of a specific environment.
+    sv:
+      title: Konfiguration utanför koden
+      description: Systemet SKA läsa alla miljöspecifika inställningar från miljövariabler eller en konfigurationstjänst vid start.
+      rationale: Inställningar utanför artefakten gör att ett bygge kan köras i varje miljö och att ändringar inte kräver ett nytt bygge.
+      criteria:
+        - method: test
+          text: Samma artefakt startar i två miljöer med olika databasadresser genom att bara miljövariablerna ändras.
+        - method: inspection
+          text: En sökning i koden hittar inga värdnamn, portar eller inloggningsuppgifter för en viss miljö.
+
+  - id: DEP-09
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [secrets, repository]
+    refs: ["OWASP ASVS 4.0 V2.10.4 (no secrets in source code)", "ISO/IEC 27001:2022 Annex A 8.4 (access to source code)"]
+    tests: [DEP-T08]
+    en:
+      title: No secrets in the source repository
+      description: The source repository MUST NOT contain passwords, API keys, private keys or access tokens, also in its history.
+      rationale: Repositories are cloned to many machines and kept for years, so a secret committed once has to be treated as leaked.
+      criteria:
+        - method: test
+          text: A secret scanner run over the full history reports no findings, and the pipeline blocks a commit with a test secret.
+    sv:
+      title: Inga hemligheter i kodförrådet
+      description: Kodförrådet SKA INTE innehålla lösenord, API-nycklar, privata nycklar eller åtkomsttoken, inte heller i historiken.
+      rationale: Kodförråd klonas till många datorer och sparas i åratal, så en hemlighet som checkats in en gång behöver betraktas som läckt.
+      criteria:
+        - method: test
+          text: En sökning efter hemligheter i hela historiken ger inga fynd, och pipelinen stoppar en incheckning med en testhemlighet.
+
+  - id: DEP-10
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [environment-parity, staging]
+    refs: ["The Twelve-Factor App, X Dev/prod parity", "ISO/IEC 27001:2022 Annex A 8.31 (separation of environments)"]
+    tests: [DEP-T09]
+    en:
+      title: Staging matches production
+      description: The staging environment SHOULD use the same operating system, database major version, deployment method and network topology as production.
+      rationale: Differences between staging and production hide the faults that then appear only after release.
+      criteria:
+        - method: review
+          text: A comparison of the two environments lists no difference in the four aspects, or each difference is documented and accepted.
+    sv:
+      title: Förproduktion motsvarar produktion
+      description: Förproduktionsmiljön BÖR använda samma operativsystem, huvudversion av databasen, driftsättningsmetod och nätverkstopologi som produktionen.
+      rationale: Skillnader mellan förproduktion och produktion döljer de fel som sedan visar sig först efter leverans.
+      criteria:
+        - method: review
+          text: En jämförelse av de två miljöerna visar ingen skillnad i de fyra avseendena, eller så är varje skillnad dokumenterad och godkänd.
+
+  - id: DEP-11
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [infrastructure-as-code, drift]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.9 (configuration management)", "Google SRE book ch. 8 (Release Engineering)"]
+    tests: [DEP-T10]
+    en:
+      title: Infrastructure as code
+      description: All production infrastructure MUST be defined in version-controlled code and changed only through the pipeline.
+      rationale: Infrastructure in code can be reviewed, reproduced after a disaster and compared with what is actually running.
+      criteria:
+        - method: test
+          text: A drift check between the code and the running infrastructure reports no differences.
+    sv:
+      title: Infrastruktur som kod
+      description: All produktionsinfrastruktur SKA vara definierad i versionshanterad kod och ändras endast via pipelinen.
+      rationale: Infrastruktur i kod kan granskas, återskapas efter en katastrof och jämföras med det som faktiskt körs.
+      criteria:
+        - method: test
+          text: En avvikelsekontroll mellan koden och den körande infrastrukturen visar inga skillnader.
+
+  - id: DEP-12
+    type: business
+    obligation: should
+    priority: medium
+    tags: [release-notes, communication]
+    refs: ["ITIL 4 Release management", "Keep a Changelog 1.1.0"]
+    tests: [DEP-T11]
+    en:
+      title: Release notes for each production release
+      description: The team SHOULD publish release notes with new features, fixes, known issues and actions for users within 1 working day of each production release.
+      rationale: Users and support need to know what changed to use new features and to recognise intended behaviour changes.
+      criteria:
+        - method: review
+          text: Each production release of the last 3 months has release notes, published at most 1 working day after the release, with the four sections.
+          threshold: "≤ 1 working day after release"
+    sv:
+      title: Versionsinformation för varje produktionsversion
+      description: Teamet BÖR publicera versionsinformation med nya funktioner, rättningar, kända problem och åtgärder för användarna inom 1 arbetsdag efter varje produktionsleverans.
+      rationale: Användare och support behöver veta vad som ändrats för att kunna använda nya funktioner och känna igen avsiktliga beteendeförändringar.
+      criteria:
+        - method: review
+          text: Varje produktionsleverans de senaste 3 månaderna har versionsinformation, publicerad högst 1 arbetsdag efter leveransen, med de fyra avsnitten.
+          threshold: "≤ 1 arbetsdag efter leverans"
+
+  - id: DEP-13
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [audit, deployment-log]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.32 (change management)", "ITIL 4 Change enablement"]
+    tests: [DEP-T01]
+    en:
+      title: Record of every deployment
+      description: The pipeline MUST record for each deployment the version, the environment, the start and end time and the person or process that started it.
+      rationale: A deployment record links incidents to changes and is evidence for audits of change management.
+      criteria:
+        - method: inspection
+          text: The deployment history for the last 30 days lists the five items for every deployment.
+    sv:
+      title: Registrering av varje driftsättning
+      description: Pipelinen SKA registrera version, miljö, start- och sluttid och den person eller process som startade den för varje driftsättning.
+      rationale: En logg över driftsättningar kopplar incidenter till ändringar och är underlag vid revision av ändringshanteringen.
+      criteria:
+        - method: inspection
+          text: Driftsättningshistoriken för de senaste 30 dagarna anger de fem uppgifterna för varje driftsättning.
+
+tests:
+  - id: DEP-T01
+    priority: high
+    execution: manual
+    tags: [automation, pipeline, audit]
+    refs: []
+    en:
+      title: Production deployment from the pipeline
+      description: Deploys a release to production through the pipeline and checks the record of the deployment.
+      preconditions: A release candidate has passed staging; the tester can start the production job; access to the server access logs.
+      expected: The deployment runs from one pipeline action without server logins and is fully recorded.
+      steps:
+        - action: Start the production deployment job for the release candidate.
+          expected: The job runs to completion without asking for manual input on servers.
+        - action: Check the server access logs for the period of the deployment.
+          expected: No interactive login to a production server occurred.
+        - action: Open the deployment history.
+          expected: The deployment is listed with version, environment, start and end time and the person who started it.
+    sv:
+      title: Driftsättning i produktion från pipelinen
+      description: Driftsätter en version i produktion via pipelinen och kontrollerar registreringen av driftsättningen.
+      preconditions: En versionskandidat har klarat förproduktion; testaren kan starta produktionsjobbet; åtkomst till serverns åtkomstloggar.
+      expected: Driftsättningen körs med en pipelineåtgärd utan serverinloggning och registreras fullständigt.
+      steps:
+        - action: Starta produktionsjobbet för versionskandidaten.
+          expected: Jobbet körs klart utan att fråga efter manuella inmatningar på servrar.
+        - action: Kontrollera serverns åtkomstloggar för tiden för driftsättningen.
+          expected: Ingen interaktiv inloggning på en produktionsserver har skett.
+        - action: Öppna driftsättningshistoriken.
+          expected: Driftsättningen visas med version, miljö, start- och sluttid och personen som startade den.
+
+  - id: DEP-T02
+    priority: high
+    execution: automated
+    tags: [artifact, build-once]
+    refs: []
+    en:
+      title: Same artifact checksum in every environment
+      description: A pipeline step compares the checksum of the artifact in each environment with the one built in the build stage.
+      preconditions: A release has been promoted through test and staging to production.
+      expected: The checksum is identical in all environments.
+      steps:
+        - action: Read the artifact checksum recorded by the build stage.
+          expected: A checksum is available.
+          data: "sha256 of the container image"
+        - action: Read the checksum of the artifact running in test, staging and production.
+          expected: All three equal the checksum from the build stage.
+    sv:
+      title: Samma kontrollsumma för artefakten i varje miljö
+      description: Ett steg i pipelinen jämför kontrollsumman för artefakten i varje miljö med den som byggdes i byggsteget.
+      preconditions: En version har förts vidare genom test och förproduktion till produktion.
+      expected: Kontrollsumman är identisk i alla miljöer.
+      steps:
+        - action: Läs artefaktens kontrollsumma som byggsteget registrerade.
+          expected: En kontrollsumma finns.
+          data: "sha256 för containeravbildningen"
+        - action: Läs kontrollsumman för artefakten som körs i test, förproduktion och produktion.
+          expected: Alla tre är lika med kontrollsumman från byggsteget.
+
+  - id: DEP-T03
+    priority: critical
+    execution: manual
+    tags: [rollback, smoke-test]
+    refs: ["Google SRE book ch. 8"]
+    en:
+      title: Automatic and manual rollback
+      description: Deploys a deliberately broken version to a production-like environment and checks both the automatic and the manual way back.
+      preconditions: A production-like environment with the production pipeline; a test version whose health page fails.
+      expected: The broken version is rolled back automatically, and a manual rollback completes within 15 minutes.
+      steps:
+        - action: Deploy the broken test version.
+          expected: The smoke test fails and the pipeline rolls back to the previous version without manual action.
+        - action: Deploy a working new version, then start a rollback from the pipeline and note the time.
+          expected: The rollback starts at once.
+        - action: Check the running version and the smoke test.
+          expected: The previous version is in service and passes the smoke test at most 15 minutes after the rollback started.
+    sv:
+      title: Automatisk och manuell återgång
+      description: Driftsätter en avsiktligt trasig version i en produktionslik miljö och kontrollerar både den automatiska och den manuella vägen tillbaka.
+      preconditions: En produktionslik miljö med produktionens pipeline; en testversion vars hälsosida fallerar.
+      expected: Den trasiga versionen återställs automatiskt, och en manuell återgång blir klar inom 15 minuter.
+      steps:
+        - action: Driftsätt den trasiga testversionen.
+          expected: Röktestet misslyckas och pipelinen återgår till föregående version utan manuell åtgärd.
+        - action: Driftsätt en fungerande ny version, starta sedan en återgång från pipelinen och notera tiden.
+          expected: Återgången startar direkt.
+        - action: Kontrollera vilken version som körs och kör röktestet.
+          expected: Den föregående versionen är i drift och klarar röktestet högst 15 minuter efter att återgången startade.
+
+  - id: DEP-T04
+    priority: high
+    execution: automated
+    tags: [zero-downtime, load-test]
+    refs: []
+    en:
+      title: Rolling upgrade under load
+      description: A load test runs during a rolling upgrade and counts failed requests.
+      preconditions: A production-like environment with at least 2 instances; a new version ready for deployment.
+      expected: No request fails during the upgrade.
+      steps:
+        - action: Start a load test at 50 requests per second.
+          expected: All requests succeed before the upgrade.
+        - action: Start the rolling upgrade while the load test continues.
+          expected: The instances are replaced one at a time.
+        - action: Stop the load test after the upgrade and count server errors and connection failures.
+          expected: The count is 0 and all instances run the new version.
+    sv:
+      title: Rullande uppgradering under last
+      description: Ett lasttest körs under en rullande uppgradering och räknar misslyckade anrop.
+      preconditions: En produktionslik miljö med minst 2 instanser; en ny version klar för driftsättning.
+      expected: Inget anrop misslyckas under uppgraderingen.
+      steps:
+        - action: Starta ett lasttest med 50 anrop per sekund.
+          expected: Alla anrop lyckas före uppgraderingen.
+        - action: Starta den rullande uppgraderingen medan lasttestet fortsätter.
+          expected: Instanserna byts ut en i taget.
+        - action: Stoppa lasttestet efter uppgraderingen och räkna serverfel och anslutningsfel.
+          expected: Antalet är 0 och alla instanser kör den nya versionen.
+
+  - id: DEP-T05
+    priority: high
+    execution: automated
+    tags: [database-migration, ci]
+    refs: []
+    en:
+      title: Migrations give the same schema everywhere
+      description: A CI job applies all migrations to an empty database and to an anonymised copy of production and compares the schemas.
+      preconditions: An anonymised copy of the production database is available to CI.
+      expected: Both databases end with the same schema and a repeated run changes nothing.
+      steps:
+        - action: Apply all migrations to an empty database and export the schema.
+          expected: The migrations succeed and each is recorded in the migration table.
+        - action: Apply the pending migrations to the copy of production and export the schema.
+          expected: The schema is identical to the one from the empty database.
+        - action: Run the migrations again on both databases.
+          expected: No migration is applied a second time and the schemas are unchanged.
+    sv:
+      title: Migreringarna ger samma schema överallt
+      description: Ett CI-jobb kör alla migreringar mot en tom databas och mot en avidentifierad kopia av produktion och jämför schemana.
+      preconditions: En avidentifierad kopia av produktionsdatabasen finns tillgänglig för CI.
+      expected: Båda databaserna får samma schema och en upprepad körning ändrar ingenting.
+      steps:
+        - action: Kör alla migreringar mot en tom databas och exportera schemat.
+          expected: Migreringarna lyckas och var och en registreras i migreringstabellen.
+        - action: Kör de väntande migreringarna mot kopian av produktion och exportera schemat.
+          expected: Schemat är identiskt med det från den tomma databasen.
+        - action: Kör migreringarna igen mot båda databaserna.
+          expected: Ingen migrering körs en andra gång och schemana är oförändrade.
+
+  - id: DEP-T06
+    priority: high
+    execution: automated
+    tags: [database-migration, backward-compatibility]
+    refs: []
+    en:
+      title: Previous version works with the new schema
+      description: A CI job runs the regression tests of the previous release against a database migrated to the new schema.
+      preconditions: The artifact and the regression tests of the previous release are available to CI.
+      expected: All regression tests of the previous version pass.
+      steps:
+        - action: Create a database and apply all migrations of the new version.
+          expected: The migrations succeed.
+        - action: Start the previous version of the application against this database and run its regression tests.
+          expected: All tests pass.
+    sv:
+      title: Föregående version fungerar med det nya schemat
+      description: Ett CI-jobb kör regressionstesterna för föregående version mot en databas som har migrerats till det nya schemat.
+      preconditions: Artefakten och regressionstesterna för föregående version finns tillgängliga för CI.
+      expected: Alla regressionstester för föregående version går igenom.
+      steps:
+        - action: Skapa en databas och kör alla migreringar för den nya versionen.
+          expected: Migreringarna lyckas.
+        - action: Starta föregående version av applikationen mot databasen och kör dess regressionstester.
+          expected: Alla tester går igenom.
+
+  - id: DEP-T07
+    priority: medium
+    execution: manual
+    tags: [configuration, environment]
+    refs: ["The Twelve-Factor App, III Config"]
+    en:
+      title: One artifact, two configurations
+      description: Starts the same artifact with two sets of environment variables and searches the code for environment-specific values.
+      preconditions: Two test databases with different addresses; the source code is available.
+      expected: The artifact connects to whichever database the variables name, and the code contains no environment-specific values.
+      steps:
+        - action: Start the artifact with the environment variables of test database A.
+          expected: The system starts and uses database A.
+        - action: Start the same artifact with the variables of test database B.
+          expected: The system starts and uses database B without a rebuild.
+        - action: Search the source code for host names, ports and credentials of the known environments.
+          expected: No match is found outside example and test files.
+    sv:
+      title: En artefakt, två konfigurationer
+      description: Startar samma artefakt med två uppsättningar miljövariabler och söker i koden efter miljöspecifika värden.
+      preconditions: Två testdatabaser med olika adresser; källkoden finns tillgänglig.
+      expected: Artefakten ansluter till den databas som variablerna anger, och koden innehåller inga miljöspecifika värden.
+      steps:
+        - action: Starta artefakten med miljövariablerna för testdatabas A.
+          expected: Systemet startar och använder databas A.
+        - action: Starta samma artefakt med variablerna för testdatabas B.
+          expected: Systemet startar och använder databas B utan nytt bygge.
+        - action: Sök i källkoden efter värdnamn, portar och inloggningsuppgifter för de kända miljöerna.
+          expected: Ingen träff finns utanför exempel- och testfiler.
+
+  - id: DEP-T08
+    priority: critical
+    execution: automated
+    tags: [secrets, ci, scanning]
+    refs: ["OWASP ASVS 4.0 V2.10.4"]
+    en:
+      title: Secret scanning of the repository
+      description: A secret scanner (for example gitleaks) runs over the full history and as a pipeline check on new commits.
+      preconditions: The scanner is configured in the pipeline; a test branch can be pushed.
+      expected: The history has no findings and a commit with a test secret is blocked.
+      steps:
+        - action: Run the scanner over the full history of the repository.
+          expected: The scanner reports no findings.
+        - action: Push a commit with a fake API key to a test branch.
+          expected: The pipeline check fails and names the file and line of the secret.
+          data: A fake key in the format of the cloud provider's documentation example (never a real credential)
+    sv:
+      title: Sökning efter hemligheter i kodförrådet
+      description: Ett verktyg som söker efter hemligheter (till exempel gitleaks) körs över hela historiken och som kontroll i pipelinen för nya incheckningar.
+      preconditions: Verktyget är konfigurerat i pipelinen; en testgren kan skickas upp.
+      expected: Historiken har inga fynd och en incheckning med en testhemlighet stoppas.
+      steps:
+        - action: Kör verktyget över kodförrådets hela historik.
+          expected: Verktyget rapporterar inga fynd.
+        - action: Skicka upp en incheckning med en falsk API-nyckel till en testgren.
+          expected: Kontrollen i pipelinen misslyckas och anger fil och rad för hemligheten.
+          data: En falsk nyckel i samma format som exemplet i molnleverantörens dokumentation (aldrig en riktig nyckel)
+
+  - id: DEP-T09
+    priority: medium
+    execution: manual
+    tags: [environment-parity, review]
+    refs: ["The Twelve-Factor App, X Dev/prod parity"]
+    en:
+      title: Comparison of staging and production
+      description: Compares the staging and production environments on the aspects that matter for parity.
+      preconditions: Read access to both environments or their infrastructure code.
+      expected: No undocumented difference in operating system, database major version, deployment method or network topology.
+      steps:
+        - action: Record the operating system version and the database major version in both environments.
+          expected: The values are the same.
+        - action: Compare the deployment method and the network topology (load balancer, zones, firewalls).
+          expected: Both environments use the same method and the same topology.
+        - action: List any differences found and check them against the list of accepted differences.
+          expected: Every difference is documented and accepted.
+    sv:
+      title: Jämförelse av förproduktion och produktion
+      description: Jämför förproduktions- och produktionsmiljön i de avseenden som spelar roll för likvärdighet.
+      preconditions: Läsbehörighet till båda miljöerna eller deras infrastrukturkod.
+      expected: Ingen odokumenterad skillnad i operativsystem, huvudversion av databasen, driftsättningsmetod eller nätverkstopologi.
+      steps:
+        - action: Registrera operativsystemets version och databasens huvudversion i båda miljöerna.
+          expected: Värdena är desamma.
+        - action: Jämför driftsättningsmetod och nätverkstopologi (lastbalanserare, zoner, brandväggar).
+          expected: Båda miljöerna använder samma metod och samma topologi.
+        - action: Lista eventuella skillnader och jämför dem med listan över godkända skillnader.
+          expected: Varje skillnad är dokumenterad och godkänd.
+
+  - id: DEP-T10
+    priority: high
+    execution: automated
+    tags: [infrastructure-as-code, drift]
+    refs: []
+    en:
+      title: Drift check between code and running infrastructure
+      description: A scheduled pipeline job runs the plan step of the infrastructure tool (for example Terraform or OpenTofu) against production.
+      preconditions: The job has read access to the production account; the infrastructure code is on the main branch.
+      expected: The plan shows no changes, and a manual change made in a test account is detected.
+      steps:
+        - action: Run the plan step against production.
+          expected: The plan reports no changes.
+        - action: In a test account, change a firewall rule by hand and run the plan step there.
+          expected: The plan reports the change and the job raises an alert.
+    sv:
+      title: Avvikelsekontroll mellan kod och körande infrastruktur
+      description: Ett schemalagt pipelinejobb kör planeringssteget i infrastrukturverktyget (till exempel Terraform eller OpenTofu) mot produktion.
+      preconditions: Jobbet har läsbehörighet till produktionskontot; infrastrukturkoden finns på huvudgrenen.
+      expected: Planen visar inga ändringar, och en manuell ändring i ett testkonto upptäcks.
+      steps:
+        - action: Kör planeringssteget mot produktion.
+          expected: Planen visar inga ändringar.
+        - action: Ändra en brandväggsregel för hand i ett testkonto och kör planeringssteget där.
+          expected: Planen visar ändringen och jobbet skapar ett larm.
+
+  - id: DEP-T11
+    priority: medium
+    execution: manual
+    tags: [release-notes, review]
+    refs: []
+    en:
+      title: Review of release notes
+      description: Compares the production releases of the last 3 months with the published release notes.
+      preconditions: The deployment history and the published release notes are available.
+      expected: Every release has timely release notes with the four sections.
+      steps:
+        - action: List the production releases of the last 3 months from the deployment history.
+          expected: The list contains version and release date.
+        - action: For each release, find the release notes and their publication date.
+          expected: Release notes exist and were published at most 1 working day after the release.
+        - action: Check the content of each release note.
+          expected: Each has sections for new features, fixes, known issues and actions for users.
+    sv:
+      title: Granskning av versionsinformation
+      description: Jämför produktionsleveranserna de senaste 3 månaderna med den publicerade versionsinformationen.
+      preconditions: Driftsättningshistoriken och den publicerade versionsinformationen finns tillgängliga.
+      expected: Varje leverans har versionsinformation i tid med de fyra avsnitten.
+      steps:
+        - action: Lista produktionsleveranserna de senaste 3 månaderna från driftsättningshistoriken.
+          expected: Listan innehåller version och leveransdatum.
+        - action: Hitta versionsinformationen och dess publiceringsdatum för varje leverans.
+          expected: Versionsinformation finns och publicerades högst 1 arbetsdag efter leveransen.
+        - action: Kontrollera innehållet i varje versionsinformation.
+          expected: Var och en har avsnitt för nya funktioner, rättningar, kända problem och åtgärder för användarna.

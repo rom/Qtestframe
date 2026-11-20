@@ -9,6 +9,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/rom/qtestframe/internal/db"
 	"github.com/rom/qtestframe/internal/model"
@@ -326,4 +327,49 @@ func (s *Store) SetReviewDueDate(ctx context.Context, tenantID, id, due string) 
 		return mapErr(sql.ErrNoRows, "review request")
 	}
 	return nil
+}
+
+// InReviewItem is a requirement or test whose status is "review".
+type InReviewItem struct {
+	EntityType  string    `json:"entity_type"`
+	EntityID    string    `json:"entity_id"`
+	Key         string    `json:"key"`
+	Title       string    `json:"title"`
+	ProjectID   string    `json:"project_id"`
+	ProjectKey  string    `json:"project_key"`
+	ProjectName string    `json:"project_name"`
+	Owner       string    `json:"owner"`
+	CreatedBy   string    `json:"created_by"`
+	Version     int       `json:"version"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// ListInReview returns the requirements and tests of all projects of a
+// tenant whose status is "review", oldest change first (they waited longest).
+func (s *Store) ListInReview(ctx context.Context, tenantID string) ([]InReviewItem, error) {
+	rows, err := s.c(ctx).query(ctx, `
+		SELECT 'requirement', r.id, r.key, r.title, r.project_id, p.key, p.name, r.owner, r.created_by, r.version, r.updated_at
+		FROM requirements r JOIN projects p ON p.id = r.project_id
+		WHERE r.tenant_id = ? AND r.status = 'review'
+		UNION ALL
+		SELECT 'test', t.id, t.key, t.title, t.project_id, p.key, p.name, '', t.created_by, t.version, t.updated_at
+		FROM test_cases t JOIN projects p ON p.id = t.project_id
+		WHERE t.tenant_id = ? AND t.status = 'review'`, tenantID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []InReviewItem{}
+	for rows.Next() {
+		var it InReviewItem
+		if err := rows.Scan(&it.EntityType, &it.EntityID, &it.Key, &it.Title, &it.ProjectID, &it.ProjectKey, &it.ProjectName, &it.Owner, &it.CreatedBy, &it.Version, &it.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, it)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].UpdatedAt.Before(out[j].UpdatedAt) })
+	return out, nil
 }

@@ -45,6 +45,7 @@ const tabs = computed(() => [
   { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
   { to: 'flow', icon: 'pi pi-share-alt', label: t('nav.flow') },
   ...(isSoftware(proj.project) ? [{ to: 'prompts', icon: 'pi pi-sparkles', label: t('nav.prompts') }] : []),
+  { to: 'catalog', icon: 'pi pi-book', label: t('nav.catalog') },
   { to: 'tags', icon: 'pi pi-hashtag', label: t('nav.tags') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
   { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },

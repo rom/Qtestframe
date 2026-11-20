@@ -8,14 +8,14 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 )
 
-const reqCols = `id, project_id, folder_id, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at`
+const reqCols = `id, project_id, folder_id, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at, catalog_ref`
 
 func scanRequirement(r interface{ Scan(...any) error }) (*model.Requirement, error) {
 	var q model.Requirement
 	var folder sql.NullString
 	var tags string
 	if err := r.Scan(&q.ID, &q.ProjectID, &folder, &q.Key, &q.Title, &q.Description, &q.Obligation, &q.Type, &q.Priority, &q.Status,
-		&q.Source, &q.Rationale, &q.Owner, &tags, &q.Version, &q.Position, &q.CreatedBy, &q.CreatedAt, &q.UpdatedAt); err != nil {
+		&q.Source, &q.Rationale, &q.Owner, &tags, &q.Version, &q.Position, &q.CreatedBy, &q.CreatedAt, &q.UpdatedAt, &q.CatalogRef); err != nil {
 		return nil, err
 	}
 	q.FolderID = strPtr(folder)
@@ -118,10 +118,10 @@ func insertRequirement(ctx context.Context, c conn, tenantID string, r *model.Re
 	}
 	r.Key = key
 	r.Position = seq
-	if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at, catalog_ref)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, tenantID, r.ProjectID, nullStr(r.FolderID), seq, r.Key, r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status,
-		r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt); err != nil {
+		r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt, r.CatalogRef); err != nil {
 		return mapErr(err, "requirement")
 	}
 	if err := setCategories(ctx, c, model.KindRequirement, r.ProjectID, r.ID, r.CategoryIDs); err != nil {
@@ -272,6 +272,7 @@ func (s *Store) UpdateRequirement(ctx context.Context, tenantID string, r *model
 	r.ProjectID = old.ProjectID
 	r.Key = old.Key
 	r.CreatedAt, r.CreatedBy = old.CreatedAt, old.CreatedBy
+	r.CatalogRef = old.CatalogRef // the origin is not edited
 	r.Version = old.Version + 1
 	r.UpdatedAt = s.now()
 	if r.FolderID != nil && *r.FolderID == "" {

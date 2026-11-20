@@ -48,6 +48,17 @@ Varje granskare får en egen förfrågan och en notis. Den som redan har en öpp
 
 Om posten ändras efter att förfrågan skickades markeras granskningen "ändrad sedan dess", så att alla ser att beslutet gällde en äldre version.
 
+### Poster med status Granskning
+
+Under förfrågningarna visar **Status Granskning** de krav och testfall som har status **Granskning** och som berör dig, i alla projekt, även när ingen har skickat en förfrågan till dig. **Varför du ser det** anger hur de berör dig:
+
+- **du äger det**: kravets **Ägare** anger dig (ditt namn, din e-postadress eller ditt @namn);
+- **du skrev det**: du skapade kravet eller testfallet;
+- **granskning begärd**: någon har bett dig granska det;
+- **du får granska**: din roll får granska krav eller testfall.
+
+De som har väntat längst kommer först. Slå på **Bara sådant jag äger, skrev eller ombetts granska** för att dölja dem du bara ser på grund av din roll. Öppna en post för att granska den: godkänn den, avvisa den eller sätt tillbaka den till **Utkast**. När statusen inte längre är **Granskning** försvinner den från listan.
+
 Många granskningar på en gång: när du godkänner eller avslår krav, eller markerar tester som klara, i en [massgranskning](requirements.md#godkänn-många-krav-på-en-gång) kan du slutföra dina öppna förfrågningar för de posterna i samma steg. De beslutas då utan checklistan och markeras som beslutade i en massgranskning.
 
 En granskningsförfrågan sparar ett beslut; den ändrar inte postens status. Den som har granskningsbehörighet godkänner fortfarande ett krav eller markerar ett test som klart med granskningsfältet.

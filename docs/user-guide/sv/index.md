@@ -20,6 +20,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Handledning: din första testkampanj](tutorial.md) | En komplett genomgång från ett tomt projekt till en rapport |
 | [Krav](requirements.md) | Kravnivåer, språkanalysen, fält, utvärderingskriterier, relationer, kommentarer, versionshistorik, massändring, flytt och bilagor |
 | [Testfall](tests.md) | Manuella steg, automatiserade skript, delade steg, kategorier, exekveringshistorik, kommentarer, versionshistorik och bilagor |
+| [Katalog](catalogue.md) | Standardkrav och testfall att lägga till i ett projekt: bläddra, söka, förhandsvisa och lägga till med testfall och spårlänkar |
 | [Testkörningar och exekvering](runs.md) | Körningar, exekveringsvyn och dess kortkommandon, defekter, CI-import med API-nycklar, bilagor |
 | [Spårbarhet och täckning](traceability-and-coverage.md) | Spårbarhetsmatrisen, hur täckningen beräknas, översikten |
 | [Baslinjer](baselines.md) | Frysa en release och jämföra versioner |

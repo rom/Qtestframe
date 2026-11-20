@@ -1,0 +1,609 @@
+area: compatibility
+prefix: CMP
+group: operations
+name: {en: Compatibility and portability, sv: Kompatibilitet och portabilitet}
+description:
+  en: Supported browsers, operating systems and screen sizes, backward compatibility of APIs and data formats, and standards-compliant file formats.
+  sv: Webbläsare, operativsystem och skärmstorlekar som stöds, bakåtkompatibilitet för API:er och dataformat samt standardenliga filformat.
+
+requirements:
+  - id: CMP-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [browser, support]
+    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)", "ISO/IEC 25010:2011 §4.2.3.1 (co-existence)"]
+    tests: [CMP-T01]
+    en:
+      title: Supported browsers
+      description: The web interface MUST work in the two latest major versions of Chrome, Edge, Firefox and Safari.
+      rationale: A defined browser matrix tells users what is supported and limits the testing effort to versions that are in real use.
+      criteria:
+        - method: test
+          text: The end-to-end test suite passes in each of the eight browser versions.
+          threshold: "latest 2 major versions of 4 browsers"
+    sv:
+      title: Webbläsare som stöds
+      description: Webbgränssnittet SKA fungera i de två senaste huvudversionerna av Chrome, Edge, Firefox och Safari.
+      rationale: En fastställd webbläsarmatris talar om för användarna vad som stöds och begränsar testinsatsen till versioner som faktiskt används.
+      criteria:
+        - method: test
+          text: Testsviten för hela flöden går igenom i var och en av de åtta webbläsarversionerna.
+          threshold: "2 senaste huvudversionerna av 4 webbläsare"
+
+  - id: CMP-02
+    type: constraint
+    obligation: must_not
+    priority: high
+    tags: [browser, plug-in]
+    refs: ["ISO/IEC 25010:2011 §4.2.8.2 (installability)"]
+    tests: [CMP-T01]
+    en:
+      title: No browser plug-ins or extensions
+      description: The web interface MUST NOT depend on browser plug-ins, extensions or locally installed client software.
+      rationale: Many organisations block the installation of extensions, and each extra component adds support cost and security risk.
+      criteria:
+        - method: test
+          text: The end-to-end tests pass in browser profiles with no extensions installed.
+    sv:
+      title: Inga insticksprogram eller tillägg i webbläsaren
+      description: Webbgränssnittet SKA INTE vara beroende av insticksprogram, tillägg eller lokalt installerad klientprogramvara.
+      rationale: Många organisationer spärrar installation av tillägg, och varje extra komponent ger supportkostnader och säkerhetsrisker.
+      criteria:
+        - method: test
+          text: Testerna för hela flöden går igenom i webbläsarprofiler utan installerade tillägg.
+
+  - id: CMP-03
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [operating-system, mobile, support]
+    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)"]
+    tests: [CMP-T02]
+    en:
+      title: Supported client operating systems
+      description: The web interface SHOULD work on Windows 11, the two latest major versions of macOS, iOS and Android, and Ubuntu LTS.
+      rationale: Browser engines behave differently per operating system, especially on mobile devices, so the operating systems need their own coverage.
+      criteria:
+        - method: test
+          text: The manual smoke test passes on each listed operating system with its default browser.
+    sv:
+      title: Klientoperativsystem som stöds
+      description: Webbgränssnittet BÖR fungera på Windows 11, de två senaste huvudversionerna av macOS, iOS och Android samt Ubuntu LTS.
+      rationale: Webbläsarmotorer beter sig olika på olika operativsystem, särskilt på mobila enheter, så operativsystemen behöver testas för sig.
+      criteria:
+        - method: test
+          text: Det manuella röktestet går igenom på varje angivet operativsystem med dess standardwebbläsare.
+
+  - id: CMP-04
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [server, container, platform]
+    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)", "Open Container Initiative Image Format Specification"]
+    tests: [CMP-T03]
+    en:
+      title: Server platforms
+      description: The server component MUST be delivered as an OCI container image that runs on Linux for both x86-64 and ARM64.
+      rationale: A standard container image for both processor architectures lets the system run with any common hosting provider.
+      criteria:
+        - method: test
+          text: The published image starts and passes the smoke test on an x86-64 host and on an ARM64 host.
+    sv:
+      title: Serverplattformar
+      description: Serverkomponenten SKA levereras som en OCI-containeravbildning som körs på Linux för både x86-64 och ARM64.
+      rationale: En standardiserad containeravbildning för båda processorarkitekturerna gör att systemet kan köras hos de vanliga driftleverantörerna.
+      criteria:
+        - method: test
+          text: Den publicerade avbildningen startar och klarar röktestet på en x86-64-värd och på en ARM64-värd.
+
+  - id: CMP-05
+    type: usability
+    obligation: must
+    priority: high
+    tags: [screen-size, responsive, reflow]
+    refs: ["WCAG 2.2 SC 1.4.10 (Reflow)", "EN 301 549 V3.2.1 §9.1.4.10"]
+    tests: [CMP-T04]
+    en:
+      title: Content reflows down to 320 pixels
+      description: Every page MUST be usable at a viewport width of 320 CSS pixels without horizontal scrolling of the page.
+      rationale: Narrow screens and high zoom levels are common, and two-dimensional scrolling makes reading and form filling very hard.
+      criteria:
+        - method: test
+          text: At 320 CSS pixels each main page shows all content and functions without a horizontal page scrollbar; data tables may scroll inside their own container.
+          threshold: "320 CSS px"
+    sv:
+      title: Innehållet anpassar sig ner till 320 pixlar
+      description: Varje sida SKA vara användbar vid en visningsbredd på 320 CSS-pixlar utan vågrät rullning av sidan.
+      rationale: Smala skärmar och kraftig zoomning är vanliga, och rullning i två riktningar gör läsning och ifyllnad av formulär mycket svår.
+      criteria:
+        - method: test
+          text: Vid 320 CSS-pixlar visar varje huvudsida allt innehåll och alla funktioner utan vågrät rullningslist för sidan; datatabeller får rulla i sin egen behållare.
+          threshold: "320 CSS-px"
+
+  - id: CMP-06
+    type: usability
+    obligation: should
+    priority: low
+    tags: [screen-size, responsive]
+    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)"]
+    tests: [CMP-T04]
+    en:
+      title: Layout on wide screens
+      description: The layout SHOULD limit the line length of running text to 80 characters at viewport widths up to 2560 CSS pixels.
+      rationale: Text stretched across a wide monitor is tiring to read, while tables and boards still profit from the width.
+      criteria:
+        - method: test
+          text: At 1920 and 2560 CSS pixels no paragraph of running text is wider than 80 characters.
+          threshold: "≤ 80 characters per line"
+    sv:
+      title: Layout på breda skärmar
+      description: Layouten BÖR begränsa radlängden för löptext till 80 tecken vid visningsbredder upp till 2560 CSS-pixlar.
+      rationale: Text som sträcks ut över en bred skärm är tröttsam att läsa, medan tabeller och tavlor ändå har nytta av bredden.
+      criteria:
+        - method: test
+          text: Vid 1920 och 2560 CSS-pixlar är inget stycke löptext bredare än 80 tecken.
+          threshold: "≤ 80 tecken per rad"
+
+  - id: CMP-07
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [touch, mobile, target-size]
+    refs: ["WCAG 2.2 SC 2.5.8 (Target Size (Minimum))"]
+    tests: [CMP-T05]
+    en:
+      title: Touch target size
+      description: Each interactive element MUST have a target area of at least 24 by 24 CSS pixels or keep that spacing to neighbouring targets.
+      rationale: Small targets close together lead to wrong taps on touch screens and are hard to hit for users with limited motor control.
+      criteria:
+        - method: test
+          text: An automated check of the main pages finds no interactive element below 24 by 24 CSS pixels without that spacing.
+          threshold: "≥ 24 × 24 CSS px"
+    sv:
+      title: Storlek på pekytor
+      description: Varje interaktivt element SKA ha en träffyta på minst 24 gånger 24 CSS-pixlar eller hålla det avståndet till intilliggande träffytor.
+      rationale: Tätt placerade små träffytor ger feltryck på pekskärmar och är svåra att träffa för användare med nedsatt motorik.
+      criteria:
+        - method: test
+          text: En automatisk kontroll av huvudsidorna hittar inget interaktivt element under 24 gånger 24 CSS-pixlar utan det avståndet.
+          threshold: "≥ 24 × 24 CSS-px"
+
+  - id: CMP-08
+    type: interface
+    obligation: must_not
+    priority: critical
+    tags: [api, backward-compatibility, versioning]
+    refs: ["Semantic Versioning 2.0.0", "ISO/IEC 25010:2011 §4.2.3.2 (interoperability)"]
+    tests: [CMP-T06]
+    en:
+      title: No breaking changes within a major API version
+      description: A release MUST NOT remove or rename an endpoint, a parameter or a response field within the same major version of the API.
+      rationale: Integrations are built once and maintained rarely, so a breaking change in a minor release breaks them without warning.
+      criteria:
+        - method: test
+          text: A comparison of the OpenAPI descriptions of the previous and the new release reports no breaking change when the major version is unchanged.
+    sv:
+      title: Inga brytande ändringar inom en huvudversion av API:et
+      description: En leverans SKA INTE ta bort eller byta namn på en ändpunkt, en parameter eller ett svarsfält inom samma huvudversion av API:et.
+      rationale: Integrationer byggs en gång och underhålls sällan, så en brytande ändring i en mindre version slår ut dem utan förvarning.
+      criteria:
+        - method: test
+          text: En jämförelse av OpenAPI-beskrivningarna för föregående och ny leverans visar ingen brytande ändring när huvudversionen är oförändrad.
+
+  - id: CMP-09
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [api, tolerant-reader, forward-compatibility]
+    refs: ["RFC 9413 (Maintaining Robust Protocols)", "ISO/IEC 25010:2011 §4.2.3.2 (interoperability)"]
+    tests: [CMP-T06]
+    en:
+      title: Unknown request fields are ignored
+      description: The API SHOULD accept a request that contains fields it does not know and process the known fields as usual.
+      rationale: Clients can then send fields of a newer API version without failing against an older server.
+      criteria:
+        - method: test
+          text: A valid create request with an added unknown field succeeds and stores the known fields.
+    sv:
+      title: Okända fält i anrop ignoreras
+      description: API:et BÖR godta ett anrop som innehåller fält som det inte känner till och behandla de kända fälten som vanligt.
+      rationale: Klienter kan då skicka fält från en nyare API-version utan att misslyckas mot en äldre server.
+      criteria:
+        - method: test
+          text: Ett giltigt skapa-anrop med ett tillagt okänt fält lyckas och sparar de kända fälten.
+
+  - id: CMP-10
+    type: interface
+    obligation: must
+    priority: high
+    tags: [api, deprecation, versioning]
+    refs: ["RFC 8594 (The Sunset HTTP Header Field)", "Semantic Versioning 2.0.0"]
+    tests: [CMP-T07]
+    en:
+      title: Support period for an old API version
+      description: The API MUST keep serving a superseded major version for at least 12 months after the release of its successor.
+      rationale: Integrators need a predictable period to plan and test their migration.
+      criteria:
+        - method: test
+          text: Requests to the previous major version still succeed 12 months after the successor was released and carry a Sunset header with the end date.
+          threshold: "≥ 12 months"
+    sv:
+      title: Stödperiod för en äldre API-version
+      description: API:et SKA fortsätta att betjäna en ersatt huvudversion i minst 12 månader efter att efterföljaren släppts.
+      rationale: Integratörer behöver en förutsägbar period för att planera och testa sin migrering.
+      criteria:
+        - method: test
+          text: Anrop till föregående huvudversion lyckas fortfarande 12 månader efter att efterföljaren släpptes och har ett Sunset-huvud med slutdatum.
+          threshold: "≥ 12 månader"
+
+  - id: CMP-11
+    type: functional
+    obligation: must
+    priority: high
+    tags: [data-format, backward-compatibility, import]
+    refs: ["ISO/IEC 25010:2011 §4.2.8.3 (replaceability)"]
+    tests: [CMP-T08]
+    en:
+      title: Import of files from earlier versions
+      description: The system MUST import export files produced by the current and the two previous major versions without loss of data.
+      rationale: Organisations keep exports as archives and for migration, and these files have to remain usable after upgrades.
+      criteria:
+        - method: test
+          text: Reference export files from each of the three versions import with all items and fields intact.
+          threshold: "current + 2 previous major versions"
+    sv:
+      title: Import av filer från tidigare versioner
+      description: Systemet SKA importera exportfiler från den aktuella och de två föregående huvudversionerna utan att data går förlorade.
+      rationale: Organisationer sparar exporter som arkiv och för migrering, och filerna behöver gå att använda även efter uppgraderingar.
+      criteria:
+        - method: test
+          text: Referensexportfiler från var och en av de tre versionerna importeras med alla poster och fält intakta.
+          threshold: "aktuell + 2 föregående huvudversioner"
+
+  - id: CMP-12
+    type: interface
+    obligation: must
+    priority: high
+    tags: [data-format, standards, export]
+    refs: ["RFC 4180 (CSV)", "RFC 8259 (JSON)", "ISO 8601-1:2019 (date and time)"]
+    tests: [CMP-T09]
+    en:
+      title: Standard export formats
+      description: The system MUST write exports as CSV according to RFC 4180 or JSON according to RFC 8259, with dates and times in ISO 8601.
+      rationale: Standard formats can be read by spreadsheets, scripts and other systems without custom parsers.
+      criteria:
+        - method: test
+          text: Exported files pass a strict RFC 4180 or RFC 8259 validator, and every date field matches the ISO 8601 pattern.
+    sv:
+      title: Standardiserade exportformat
+      description: Systemet SKA skriva exporter som CSV enligt RFC 4180 eller JSON enligt RFC 8259, med datum och tider enligt ISO 8601.
+      rationale: Standardformat kan läsas av kalkylprogram, skript och andra system utan egna tolkare.
+      criteria:
+        - method: test
+          text: Exporterade filer klarar en strikt validator för RFC 4180 eller RFC 8259, och varje datumfält följer mönstret i ISO 8601.
+
+  - id: CMP-13
+    type: functional
+    obligation: must
+    priority: high
+    tags: [encoding, unicode, data-format]
+    refs: ["RFC 3629 (UTF-8)", "ISO/IEC 10646 (Universal Coded Character Set)"]
+    tests: [CMP-T10]
+    en:
+      title: UTF-8 throughout
+      description: The system MUST store, display, import and export text in UTF-8 without altering any character.
+      rationale: Names and texts contain national letters and symbols, and a single wrong encoding step corrupts them permanently.
+      criteria:
+        - method: test
+          text: A text with Swedish, Greek, Chinese and emoji characters survives a round trip through the interface, the API, export and import unchanged.
+    sv:
+      title: UTF-8 genomgående
+      description: Systemet SKA lagra, visa, importera och exportera text i UTF-8 utan att ändra något tecken.
+      rationale: Namn och texter innehåller nationella bokstäver och symboler, och ett enda felaktigt kodningssteg förstör dem för gott.
+      criteria:
+        - method: test
+          text: En text med svenska, grekiska, kinesiska tecken och emojier passerar oförändrad genom gränssnittet, API:et, export och import.
+
+tests:
+  - id: CMP-T01
+    priority: high
+    execution: automated
+    tags: [browser, cross-browser, e2e]
+    refs: []
+    en:
+      title: End-to-end tests in the browser matrix
+      description: The end-to-end suite (for example with Playwright) runs in each supported browser version with a clean profile.
+      preconditions: Test runners for the two latest major versions of Chrome, Edge, Firefox and Safari; profiles without extensions.
+      expected: The suite passes in all eight browser versions.
+      steps:
+        - action: Run the end-to-end suite in each of the eight browser versions with a clean profile.
+          expected: Every test passes in every browser version.
+          data: "Chrome N and N-1, Edge N and N-1, Firefox N and N-1, Safari N and N-1"
+        - action: Check the list of installed extensions and plug-ins in each profile.
+          expected: The list is empty.
+    sv:
+      title: Tester av hela flöden i webbläsarmatrisen
+      description: Testsviten för hela flöden (till exempel med Playwright) körs i varje webbläsarversion som stöds med en ren profil.
+      preconditions: Testkörare för de två senaste huvudversionerna av Chrome, Edge, Firefox och Safari; profiler utan tillägg.
+      expected: Sviten går igenom i alla åtta webbläsarversionerna.
+      steps:
+        - action: Kör testsviten i var och en av de åtta webbläsarversionerna med en ren profil.
+          expected: Varje test går igenom i varje webbläsarversion.
+          data: "Chrome N och N-1, Edge N och N-1, Firefox N och N-1, Safari N och N-1"
+        - action: Kontrollera listan över installerade tillägg och insticksprogram i varje profil.
+          expected: Listan är tom.
+
+  - id: CMP-T02
+    priority: medium
+    execution: manual
+    tags: [operating-system, mobile, smoke-test]
+    refs: []
+    en:
+      title: Smoke test on each client operating system
+      description: Runs a short manual smoke test on each supported operating system with its default browser.
+      preconditions: Devices or virtual machines with each listed operating system; a test account.
+      expected: Sign-in, navigation, editing and export work on every operating system.
+      steps:
+        - action: On each operating system, sign in and open a project.
+          expected: Sign-in succeeds and the project opens.
+        - action: Create and edit a record, then upload an attachment.
+          expected: The record is saved and the attachment is stored.
+        - action: Export the project and open the downloaded file.
+          expected: The file downloads and opens with the default application of the operating system.
+    sv:
+      title: Röktest på varje klientoperativsystem
+      description: Kör ett kort manuellt röktest på varje operativsystem som stöds med dess standardwebbläsare.
+      preconditions: Enheter eller virtuella maskiner med varje angivet operativsystem; ett testkonto.
+      expected: Inloggning, navigering, redigering och export fungerar på varje operativsystem.
+      steps:
+        - action: Logga in och öppna ett projekt på varje operativsystem.
+          expected: Inloggningen lyckas och projektet öppnas.
+        - action: Skapa och redigera en post och ladda sedan upp en bilaga.
+          expected: Posten sparas och bilagan lagras.
+        - action: Exportera projektet och öppna den nedladdade filen.
+          expected: Filen laddas ner och öppnas med operativsystemets standardprogram.
+
+  - id: CMP-T03
+    priority: medium
+    execution: automated
+    tags: [container, platform, ci]
+    refs: []
+    en:
+      title: Container image on x86-64 and ARM64
+      description: A pipeline job pulls the published image on runners of both architectures and runs the smoke test.
+      preconditions: CI runners for linux/amd64 and linux/arm64; the image is published to the registry.
+      expected: The image manifest lists both architectures and the smoke test passes on both.
+      steps:
+        - action: Inspect the image manifest.
+          expected: The manifest contains images for linux/amd64 and linux/arm64.
+        - action: Start the image on the x86-64 runner and run the smoke test.
+          expected: The system starts and the smoke test passes.
+        - action: Start the image on the ARM64 runner and run the smoke test.
+          expected: The system starts and the smoke test passes.
+    sv:
+      title: Containeravbildning på x86-64 och ARM64
+      description: Ett pipelinejobb hämtar den publicerade avbildningen på körare för båda arkitekturerna och kör röktestet.
+      preconditions: CI-körare för linux/amd64 och linux/arm64; avbildningen är publicerad i registret.
+      expected: Avbildningens manifest anger båda arkitekturerna och röktestet går igenom på båda.
+      steps:
+        - action: Granska avbildningens manifest.
+          expected: Manifestet innehåller avbildningar för linux/amd64 och linux/arm64.
+        - action: Starta avbildningen på x86-64-köraren och kör röktestet.
+          expected: Systemet startar och röktestet går igenom.
+        - action: Starta avbildningen på ARM64-köraren och kör röktestet.
+          expected: Systemet startar och röktestet går igenom.
+
+  - id: CMP-T04
+    priority: high
+    execution: automated
+    tags: [screen-size, reflow, visual]
+    refs: ["WCAG 2.2 SC 1.4.10"]
+    en:
+      title: Layout at narrow and wide viewports
+      description: A browser script opens each main page at several viewport widths and measures horizontal overflow and line length.
+      preconditions: The list of main pages; a signed-in test user with test data.
+      expected: No horizontal page scrolling at 320 CSS pixels and no running text wider than 80 characters at 1920 and 2560 CSS pixels.
+      steps:
+        - action: Open each main page at a viewport width of 320 CSS pixels and compare the document width with the viewport width.
+          expected: The document is not wider than the viewport on any page.
+          data: "320 × 640 CSS px"
+        - action: At 320 CSS pixels, check that the main navigation and every primary button are visible or reachable through a menu.
+          expected: Every function is reachable.
+        - action: Open each main page at 1920 and 2560 CSS pixels and measure the characters per line of running text.
+          expected: No paragraph exceeds 80 characters per line.
+    sv:
+      title: Layout vid smala och breda visningsytor
+      description: Ett webbläsarskript öppnar varje huvudsida vid flera visningsbredder och mäter vågrätt överflöde och radlängd.
+      preconditions: Listan över huvudsidor; en inloggad testanvändare med testdata.
+      expected: Ingen vågrät rullning av sidan vid 320 CSS-pixlar och ingen löptext bredare än 80 tecken vid 1920 och 2560 CSS-pixlar.
+      steps:
+        - action: Öppna varje huvudsida med en visningsbredd på 320 CSS-pixlar och jämför dokumentets bredd med visningsytans.
+          expected: Dokumentet är inte bredare än visningsytan på någon sida.
+          data: "320 × 640 CSS-px"
+        - action: Kontrollera vid 320 CSS-pixlar att huvudnavigeringen och varje primär knapp syns eller nås via en meny.
+          expected: Varje funktion går att nå.
+        - action: Öppna varje huvudsida vid 1920 och 2560 CSS-pixlar och mät antalet tecken per rad i löptexten.
+          expected: Inget stycke överstiger 80 tecken per rad.
+
+  - id: CMP-T05
+    priority: medium
+    execution: automated
+    tags: [touch, target-size]
+    refs: ["WCAG 2.2 SC 2.5.8"]
+    en:
+      title: Size of interactive targets
+      description: A browser script measures the bounding box of every interactive element on the main pages and the spacing to its neighbours.
+      preconditions: The list of main pages at a mobile viewport of 390 CSS pixels.
+      expected: Every interactive element is at least 24 by 24 CSS pixels or has the equivalent spacing.
+      steps:
+        - action: Collect all links, buttons and form controls on each main page with their bounding boxes.
+          expected: A list of elements with width and height is produced.
+        - action: For each element smaller than 24 by 24 CSS pixels, check that a 24-pixel circle around its centre does not overlap a neighbouring target.
+          expected: No element fails both the size and the spacing check.
+    sv:
+      title: Storlek på interaktiva träffytor
+      description: Ett webbläsarskript mäter avgränsningsrutan för varje interaktivt element på huvudsidorna och avståndet till grannarna.
+      preconditions: Listan över huvudsidor vid en mobil visningsbredd på 390 CSS-pixlar.
+      expected: Varje interaktivt element är minst 24 gånger 24 CSS-pixlar eller har motsvarande avstånd.
+      steps:
+        - action: Samla in alla länkar, knappar och formulärkontroller på varje huvudsida med deras avgränsningsrutor.
+          expected: En lista med element och deras bredd och höjd tas fram.
+        - action: Kontrollera för varje element som är mindre än 24 gånger 24 CSS-pixlar att en cirkel på 24 pixlar kring dess mitt inte överlappar en intilliggande träffyta.
+          expected: Inget element underkänns i både storleks- och avståndskontrollen.
+
+  - id: CMP-T06
+    priority: critical
+    execution: automated
+    tags: [api, backward-compatibility, contract-test]
+    refs: ["Semantic Versioning 2.0.0"]
+    en:
+      title: Breaking change check of the API
+      description: A pipeline job compares the OpenAPI description of the new build with that of the last release and sends a request with an unknown field.
+      preconditions: The OpenAPI description of the last release is stored; an API diff tool (for example oasdiff) is configured.
+      expected: No breaking change within the same major version, and unknown request fields are ignored.
+      steps:
+        - action: Run the diff tool between the last release and the new build.
+          expected: The tool reports no breaking change, or the major version has been increased.
+        - action: On a test branch, rename a response field and run the job.
+          expected: The job fails and reports the renamed field as breaking.
+        - action: Send a valid create request with an extra field the API does not know.
+          expected: The request succeeds and the known fields are stored.
+          data: "{\"title\": \"Test\", \"futureField\": 1}"
+    sv:
+      title: Kontroll av brytande ändringar i API:et
+      description: Ett pipelinejobb jämför OpenAPI-beskrivningen för det nya bygget med den senaste leveransens och skickar ett anrop med ett okänt fält.
+      preconditions: OpenAPI-beskrivningen för senaste leveransen är sparad; ett verktyg för API-jämförelse (till exempel oasdiff) är konfigurerat.
+      expected: Ingen brytande ändring inom samma huvudversion, och okända fält i anrop ignoreras.
+      steps:
+        - action: Kör jämförelseverktyget mellan senaste leveransen och det nya bygget.
+          expected: Verktyget rapporterar ingen brytande ändring, eller så har huvudversionen höjts.
+        - action: Byt namn på ett svarsfält på en testgren och kör jobbet.
+          expected: Jobbet misslyckas och rapporterar det omdöpta fältet som brytande.
+        - action: Skicka ett giltigt skapa-anrop med ett extra fält som API:et inte känner till.
+          expected: Anropet lyckas och de kända fälten sparas.
+          data: "{\"title\": \"Test\", \"futureField\": 1}"
+
+  - id: CMP-T07
+    priority: high
+    execution: manual
+    tags: [api, deprecation]
+    refs: ["RFC 8594"]
+    en:
+      title: Previous API version during its support period
+      description: Calls the previous major version of the API and checks the release dates and the Sunset header.
+      preconditions: A successor major version has been released; the release history is available.
+      expected: The previous version answers normally and announces its end date at least 12 months after the successor release.
+      steps:
+        - action: Look up the release date of the current major version in the release history.
+          expected: The date is known.
+        - action: Call three endpoints of the previous major version.
+          expected: All calls succeed with the documented behaviour.
+        - action: Read the Sunset header of the responses.
+          expected: The header holds a date at least 12 months after the successor release.
+    sv:
+      title: Föregående API-version under stödperioden
+      description: Anropar föregående huvudversion av API:et och kontrollerar releasedatum och Sunset-huvudet.
+      preconditions: En efterföljande huvudversion har släppts; releasehistoriken finns tillgänglig.
+      expected: Föregående version svarar som vanligt och anger sitt slutdatum minst 12 månader efter efterföljarens release.
+      steps:
+        - action: Slå upp releasedatumet för den aktuella huvudversionen i releasehistoriken.
+          expected: Datumet är känt.
+        - action: Anropa tre ändpunkter i föregående huvudversion.
+          expected: Alla anrop lyckas med det dokumenterade beteendet.
+        - action: Läs Sunset-huvudet i svaren.
+          expected: Huvudet anger ett datum minst 12 månader efter efterföljarens release.
+
+  - id: CMP-T08
+    priority: high
+    execution: automated
+    tags: [import, backward-compatibility, data-format]
+    refs: []
+    en:
+      title: Import of reference files from earlier versions
+      description: An automated test imports a stored reference export from each of the last three major versions and compares the result with the expected content.
+      preconditions: Reference export files and their expected content are stored in the repository for the current and the two previous major versions.
+      expected: Each file imports without errors and the imported data matches the expected content.
+      steps:
+        - action: Import the reference file of the current major version into an empty project.
+          expected: The import succeeds and the item count matches the expected content.
+        - action: Repeat with the reference files of the two previous major versions.
+          expected: Both imports succeed.
+        - action: Compare every field of the imported items with the expected content.
+          expected: No field is missing or changed.
+    sv:
+      title: Import av referensfiler från tidigare versioner
+      description: Ett automatiserat test importerar en sparad referensexport från var och en av de tre senaste huvudversionerna och jämför resultatet med det förväntade innehållet.
+      preconditions: Referensexportfiler och deras förväntade innehåll finns i kodförrådet för den aktuella och de två föregående huvudversionerna.
+      expected: Varje fil importeras utan fel och de importerade data stämmer med det förväntade innehållet.
+      steps:
+        - action: Importera referensfilen för den aktuella huvudversionen till ett tomt projekt.
+          expected: Importen lyckas och antalet poster stämmer med det förväntade innehållet.
+        - action: Upprepa med referensfilerna för de två föregående huvudversionerna.
+          expected: Båda importerna lyckas.
+        - action: Jämför varje fält i de importerade posterna med det förväntade innehållet.
+          expected: Inget fält saknas eller är ändrat.
+
+  - id: CMP-T09
+    priority: high
+    execution: automated
+    tags: [export, standards, validation]
+    refs: ["RFC 4180", "RFC 8259", "ISO 8601-1:2019"]
+    en:
+      title: Exports pass strict format validation
+      description: An automated test exports test data with difficult values and validates the files with strict parsers.
+      preconditions: Test data containing commas, quotes, line breaks and dates in fields.
+      expected: The CSV and JSON exports are valid and every date follows ISO 8601.
+      steps:
+        - action: Export the test data as CSV and parse it with a strict RFC 4180 parser.
+          expected: The file parses, and fields with commas, quotes and line breaks are quoted correctly.
+          data: "field value: He said \"yes\", then left"
+        - action: Export the test data as JSON and parse it with a strict RFC 8259 parser.
+          expected: The file parses without errors.
+        - action: Check every date and time field in both files.
+          expected: Each value matches ISO 8601, for example 2026-03-01T08:15:30Z.
+    sv:
+      title: Exporter klarar strikt formatvalidering
+      description: Ett automatiserat test exporterar testdata med besvärliga värden och validerar filerna med strikta tolkare.
+      preconditions: Testdata med kommatecken, citattecken, radbrytningar och datum i fälten.
+      expected: CSV- och JSON-exporterna är giltiga och varje datum följer ISO 8601.
+      steps:
+        - action: Exportera testdata som CSV och tolka filen med en strikt tolkare för RFC 4180.
+          expected: Filen kan tolkas, och fält med kommatecken, citattecken och radbrytningar är korrekt citerade.
+          data: "fältvärde: Hon sa \"ja\", och gick"
+        - action: Exportera testdata som JSON och tolka filen med en strikt tolkare för RFC 8259.
+          expected: Filen kan tolkas utan fel.
+        - action: Kontrollera varje datum- och tidsfält i båda filerna.
+          expected: Varje värde följer ISO 8601, till exempel 2026-03-01T08:15:30Z.
+
+  - id: CMP-T10
+    priority: high
+    execution: automated
+    tags: [encoding, unicode]
+    refs: ["RFC 3629"]
+    en:
+      title: Round trip of international characters
+      description: An automated test saves a text with characters from several scripts and checks it after each step of a round trip.
+      preconditions: A test project; the test text below.
+      expected: The text is identical after saving, reading through the API, exporting and importing again.
+      steps:
+        - action: Save a record whose title is the test text through the web interface.
+          expected: The interface shows the title unchanged.
+          data: "Åsa Öberg – Ελλάδα 北京 ✅ 👩‍💻"
+        - action: Read the record through the API.
+          expected: The title in the response is byte-for-byte identical to the test text in UTF-8.
+        - action: Export the project, import the file into a new project and read the title.
+          expected: The title is identical to the test text.
+    sv:
+      title: Internationella tecken fram och tillbaka
+      description: Ett automatiserat test sparar en text med tecken från olika skriftsystem och kontrollerar den efter varje steg i en rundtur.
+      preconditions: Ett testprojekt; testtexten nedan.
+      expected: Texten är identisk efter att ha sparats, lästs via API:et, exporterats och importerats igen.
+      steps:
+        - action: Spara en post med testtexten som titel via webbgränssnittet.
+          expected: Gränssnittet visar titeln oförändrad.
+          data: "Åsa Öberg – Ελλάδα 北京 ✅ 👩‍💻"
+        - action: Läs posten via API:et.
+          expected: Titeln i svaret är identisk byte för byte med testtexten i UTF-8.
+        - action: Exportera projektet, importera filen till ett nytt projekt och läs titeln.
+          expected: Titeln är identisk med testtexten.

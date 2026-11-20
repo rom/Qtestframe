@@ -65,7 +65,7 @@ const toastBreakpoints = { '640px': { width: 'calc(100vw - 24px)', right: '12px'
 <template>
   <a class="skip-link" href="#main-content" @click.prevent="skipToMain">{{ t('nav.skipToMain') }}</a>
   <RouterView />
-  <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</div>
+  <div id="route-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</div>
   <Toast position="top-right" :pt="toastPt" :breakpoints="toastBreakpoints" />
   <ConfirmDialog :breakpoints="{ '640px': '100vw' }" />
   <SignInNotice />

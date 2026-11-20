@@ -1,0 +1,555 @@
+area: availability
+prefix: AVL
+group: quality
+name: {en: Availability, sv: Tillgänglighet i drift}
+description:
+  en: Uptime targets, maintenance windows, redundancy, failover, health checks and the status page.
+  sv: Mål för drifttid, servicefönster, redundans, failover, hälsokontroller och statussida.
+
+requirements:
+  - id: AVL-01
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [uptime, slo]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.2 (availability)", "Google SRE book ch. 4 (Service Level Objectives)", "ITIL 4 Availability management"]
+    tests: [AVL-T01, AVL-T02]
+    en:
+      title: Monthly availability target
+      description: The system MUST be available for 99.9 % of each calendar month, counted outside announced maintenance windows.
+      rationale: An explicit target turns availability into a figure that can be measured, reported and used as an error budget.
+      criteria:
+        - method: analysis
+          text: The monthly availability report based on the external probe shows at least 99.9 % for each month.
+          threshold: "≥ 99.9 % per month (≤ 43 min unplanned downtime)"
+    sv:
+      title: Mål för tillgänglighet per månad
+      description: Systemet SKA vara tillgängligt 99,9 % av varje kalendermånad, räknat utanför aviserade servicefönster.
+      rationale: Ett uttalat mål gör tillgängligheten till ett tal som kan mätas, rapporteras och användas som felbudget.
+      criteria:
+        - method: analysis
+          text: Månadsrapporten för tillgänglighet, baserad på den externa mätningen, visar minst 99,9 % för varje månad.
+          threshold: "≥ 99,9 % per månad (≤ 43 min oplanerat avbrott)"
+
+  - id: AVL-02
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [uptime, synthetic-monitoring]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)", "ISO/IEC 25023:2016 §8.6 (reliability measures)"]
+    tests: [AVL-T02]
+    en:
+      title: External availability probe
+      description: The availability of the system MUST be measured by an external probe that calls a user-facing page every 60 seconds from 2 locations.
+      rationale: Availability is what users experience from outside, so it has to be measured from outside and from more than one network.
+      criteria:
+        - method: inspection
+          text: The probe configuration shows an interval of at most 60 seconds, 2 locations and a check of a user-facing page.
+          threshold: "every 60 s from 2 locations"
+    sv:
+      title: Extern mätning av tillgänglighet
+      description: Systemets tillgänglighet SKA mätas av en extern kontroll som anropar en sida för användare var 60:e sekund från 2 platser.
+      rationale: Tillgänglighet är det användarna upplever utifrån, så den behöver mätas utifrån och från mer än ett nät.
+      criteria:
+        - method: inspection
+          text: Konfigurationen för kontrollen visar ett intervall på högst 60 sekunder, 2 platser och en kontroll av en sida för användare.
+          threshold: "var 60:e s från 2 platser"
+
+  - id: AVL-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [maintenance-window, communication]
+    refs: ["ITIL 4 Change enablement", "ITIL 4 Service level management"]
+    tests: [AVL-T03]
+    en:
+      title: Notice of planned downtime
+      description: The service provider MUST announce planned maintenance that interrupts the service at least 5 working days in advance.
+      rationale: Users plan their work around interruptions only when they know about them in time.
+      criteria:
+        - method: review
+          text: For each planned interruption in the last 6 months the announcement is dated at least 5 working days before the start.
+          threshold: "≥ 5 working days notice"
+    sv:
+      title: Avisering av planerade avbrott
+      description: Tjänsteleverantören SKA avisera planerat underhåll som avbryter tjänsten minst 5 arbetsdagar i förväg.
+      rationale: Användare kan bara planera sitt arbete kring avbrott när de känner till dem i tid.
+      criteria:
+        - method: review
+          text: För varje planerat avbrott under de senaste 6 månaderna är aviseringen daterad minst 5 arbetsdagar före start.
+          threshold: "≥ 5 arbetsdagars framförhållning"
+
+  - id: AVL-04
+    type: business
+    obligation: should_not
+    priority: medium
+    tags: [maintenance-window]
+    refs: ["ITIL 4 Availability management"]
+    tests: [AVL-T03]
+    en:
+      title: Length of planned downtime
+      description: Planned downtime SHOULD NOT exceed 4 hours per calendar month.
+      rationale: A cap on planned downtime keeps maintenance from becoming a hidden availability loss.
+      criteria:
+        - method: analysis
+          text: The sum of planned downtime per month in the change log is at most 4 hours.
+          threshold: "≤ 4 h per month"
+    sv:
+      title: Längd på planerade avbrott
+      description: Planerade avbrott BÖR INTE överstiga 4 timmar per kalendermånad.
+      rationale: Ett tak för planerade avbrott hindrar att underhållet blir en dold förlust av tillgänglighet.
+      criteria:
+        - method: analysis
+          text: Summan av planerade avbrott per månad i ändringsloggen är högst 4 timmar.
+          threshold: "≤ 4 h per månad"
+
+  - id: AVL-05
+    type: constraint
+    obligation: must
+    priority: critical
+    tags: [redundancy, architecture]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.14 (redundancy of information processing facilities)", "ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)"]
+    tests: [AVL-T04]
+    en:
+      title: No single point of failure
+      description: Each component on the request path MUST run in at least 2 instances placed in separate availability zones.
+      rationale: The loss of a server, rack or data centre then removes capacity but not the service.
+      criteria:
+        - method: inspection
+          text: The deployment diagram and the infrastructure code show at least 2 instances in different zones for every component on the request path.
+    sv:
+      title: Ingen enskild felpunkt
+      description: Varje komponent i anropskedjan SKA köras i minst 2 instanser placerade i separata tillgänglighetszoner.
+      rationale: Bortfall av en server, ett rack eller ett datacenter tar då bort kapacitet men inte tjänsten.
+      criteria:
+        - method: inspection
+          text: Driftsättningsdiagrammet och infrastrukturkoden visar minst 2 instanser i olika zoner för varje komponent i anropskedjan.
+
+  - id: AVL-06
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [failover, zone]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)"]
+    tests: [AVL-T05]
+    en:
+      title: Failover after loss of an availability zone
+      description: After the loss of one availability zone the system MUST serve users again from the remaining zones within 5 minutes.
+      rationale: Zone outages do occur at cloud providers, and recovery has to be automatic to stay within the availability target.
+      criteria:
+        - method: test
+          text: In a failover drill that isolates one zone the external probe records at most 5 minutes of failed checks.
+          threshold: "service restored ≤ 5 min"
+    sv:
+      title: Failover vid bortfall av en tillgänglighetszon
+      description: Efter bortfall av en tillgänglighetszon SKA systemet åter betjäna användarna från de kvarvarande zonerna inom 5 minuter.
+      rationale: Zonavbrott förekommer hos molnleverantörer, och återställningen behöver vara automatisk och ske inom målet för tillgänglighet.
+      criteria:
+        - method: test
+          text: I en failoverövning som isolerar en zon registrerar den externa kontrollen högst 5 minuter med misslyckade kontroller.
+          threshold: "tjänsten återställd ≤ 5 min"
+
+  - id: AVL-07
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [failover, database, replication]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "Google SRE book ch. 26 (Data Integrity)"]
+    tests: [AVL-T06]
+    en:
+      title: Database failover without loss of committed data
+      description: When the primary database fails, a replica MUST take over within 60 seconds without losing committed transactions.
+      rationale: The database is usually the hardest component to make redundant, and silent data loss after a failover is worse than a short outage.
+      criteria:
+        - method: test
+          text: Stopping the primary during a write load promotes a replica within 60 seconds, and every acknowledged write is present afterwards.
+          threshold: "takeover ≤ 60 s, 0 lost committed transactions"
+    sv:
+      title: Databasfailover utan förlust av bekräftade data
+      description: När den primära databasen fallerar SKA en replik ta över inom 60 sekunder utan att bekräftade transaktioner går förlorade.
+      rationale: Databasen är ofta den svåraste komponenten att göra redundant, och tyst dataförlust efter en failover är värre än ett kort avbrott.
+      criteria:
+        - method: test
+          text: När den primära databasen stoppas under skrivlast befordras en replik inom 60 sekunder, och varje bekräftad skrivning finns kvar efteråt.
+          threshold: "övertagande ≤ 60 s, 0 förlorade bekräftade transaktioner"
+
+  - id: AVL-08
+    type: interface
+    obligation: must
+    priority: high
+    tags: [health-check, readiness]
+    refs: ["The Twelve-Factor App, IX Disposability", "RFC 9110 §15.6.4 (503 Service Unavailable)"]
+    tests: [AVL-T07]
+    en:
+      title: Readiness endpoint reports dependencies
+      description: Each application instance MUST answer its readiness endpoint with status 503 within 1 second while its database is unreachable.
+      rationale: The load balancer can only route around a broken instance when the instance reports honestly and in time.
+      criteria:
+        - method: test
+          text: With the database blocked, the readiness endpoint returns 503 within 1 second; with the database reachable it returns 200.
+          threshold: "answer ≤ 1 s"
+    sv:
+      title: Beredskapskontrollen rapporterar beroenden
+      description: Varje applikationsinstans SKA svara på sin beredskapskontroll med status 503 inom 1 sekund så länge databasen inte går att nå.
+      rationale: Lastbalanseraren kan bara styra trafiken förbi en trasig instans när instansen rapporterar ärligt och i tid.
+      criteria:
+        - method: test
+          text: Med databasen blockerad returnerar beredskapskontrollen 503 inom 1 sekund; med databasen nåbar returnerar den 200.
+          threshold: "svar ≤ 1 s"
+
+  - id: AVL-09
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [health-check, load-balancer]
+    refs: ["Google SRE book ch. 20 (Load Balancing in the Datacenter)"]
+    tests: [AVL-T07]
+    en:
+      title: Unhealthy instances leave the rotation
+      description: The load balancer MUST stop sending requests to an instance within 30 seconds after the instance has started to fail its readiness check.
+      rationale: Removing a failing instance quickly limits the share of users who see errors.
+      criteria:
+        - method: test
+          text: After an instance starts failing its readiness check, its access log shows no new requests later than 30 seconds.
+          threshold: "removed ≤ 30 s"
+    sv:
+      title: Instanser som inte mår bra tas ur rotation
+      description: Lastbalanseraren SKA sluta skicka anrop till en instans inom 30 sekunder efter att instansen har börjat underkännas i beredskapskontrollen.
+      rationale: Att snabbt ta bort en felande instans begränsar andelen användare som ser fel.
+      criteria:
+        - method: test
+          text: Efter att en instans börjat underkännas i beredskapskontrollen visar dess åtkomstlogg inga nya anrop senare än 30 sekunder.
+          threshold: "borttagen ≤ 30 s"
+
+  - id: AVL-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [status-page, incident, communication]
+    refs: ["ITIL 4 Incident management", "Google SRE book ch. 14 (Managing Incidents)"]
+    tests: [AVL-T08]
+    en:
+      title: Status page updated during incidents
+      description: The service provider MUST publish an incident on the status page within 15 minutes after the incident has been declared.
+      rationale: A current status page reduces duplicate support requests and lets users decide whether to wait or switch to a workaround.
+      criteria:
+        - method: review
+          text: For each incident in the last 6 months the first status page entry is at most 15 minutes after the declared start.
+          threshold: "≤ 15 min after declaration"
+    sv:
+      title: Statussidan uppdateras vid incidenter
+      description: Tjänsteleverantören SKA publicera en incident på statussidan inom 15 minuter efter att incidenten har deklarerats.
+      rationale: En aktuell statussida minskar antalet dubbla supportärenden och låter användarna avgöra om de ska vänta eller välja en annan väg.
+      criteria:
+        - method: review
+          text: För varje incident under de senaste 6 månaderna kommer första inlägget på statussidan högst 15 minuter efter den deklarerade starten.
+          threshold: "≤ 15 min efter deklaration"
+
+  - id: AVL-11
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [status-page, independence]
+    refs: ["ITIL 4 Service continuity management"]
+    tests: [AVL-T08]
+    en:
+      title: Status page independent of production
+      description: The status page SHOULD be hosted on infrastructure that shares no servers, network or DNS provider with the production environment.
+      rationale: A status page that goes down together with the service cannot report the outage.
+      criteria:
+        - method: inspection
+          text: The hosting, network and DNS of the status page are documented and differ from those of production.
+    sv:
+      title: Statussida oberoende av produktion
+      description: Statussidan BÖR ligga på en infrastruktur som inte delar servrar, nät eller DNS-leverantör med produktionsmiljön.
+      rationale: En statussida som går ner tillsammans med tjänsten kan inte rapportera avbrottet.
+      criteria:
+        - method: inspection
+          text: Driftplats, nät och DNS för statussidan är dokumenterade och skiljer sig från produktionens.
+
+  - id: AVL-12
+    type: non_functional
+    obligation: may
+    priority: low
+    tags: [maintenance, read-only]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)"]
+    tests: [AVL-T09]
+    en:
+      title: Read-only mode during maintenance
+      description: During planned maintenance the system MAY offer read-only access to existing records instead of a full interruption.
+      rationale: Read-only access lets users look up information while changes are blocked, which shortens the effective downtime.
+      criteria:
+        - method: demonstration
+          text: In read-only mode users can open and search records, and every save action is refused with a maintenance message.
+    sv:
+      title: Skrivskyddat läge under underhåll
+      description: Under planerat underhåll FÅR systemet erbjuda skrivskyddad åtkomst till befintliga poster i stället för ett fullständigt avbrott.
+      rationale: Skrivskyddad åtkomst låter användarna slå upp information medan ändringar är spärrade, vilket förkortar det verkliga avbrottet.
+      criteria:
+        - method: demonstration
+          text: I skrivskyddat läge kan användarna öppna och söka poster, och varje försök att spara avvisas med ett meddelande om underhåll.
+
+tests:
+  - id: AVL-T01
+    priority: high
+    execution: manual
+    tags: [uptime, report]
+    refs: ["Google SRE book ch. 4"]
+    en:
+      title: Monthly availability report
+      description: Calculates the availability of the past month from the probe data and the maintenance calendar.
+      preconditions: Probe results for the whole month and the list of announced maintenance windows are available.
+      expected: Availability outside announced maintenance windows is at least 99.9 %.
+      steps:
+        - action: Export all probe results of the month and remove those inside announced maintenance windows.
+          expected: The remaining checks cover the month outside maintenance.
+        - action: Divide the number of successful checks by the total number of remaining checks.
+          expected: The result is at least 99.9 %.
+        - action: Compare the result with the error budget and record the remaining budget.
+          expected: The report states the availability, the downtime in minutes and the remaining budget.
+    sv:
+      title: Månadsrapport för tillgänglighet
+      description: Beräknar förra månadens tillgänglighet utifrån mätdata och kalendern för servicefönster.
+      preconditions: Mätresultat för hela månaden och listan över aviserade servicefönster finns tillgängliga.
+      expected: Tillgängligheten utanför aviserade servicefönster är minst 99,9 %.
+      steps:
+        - action: Exportera alla mätresultat för månaden och ta bort dem som ligger inom aviserade servicefönster.
+          expected: De återstående kontrollerna täcker månaden utanför underhåll.
+        - action: Dela antalet lyckade kontroller med det totala antalet återstående kontroller.
+          expected: Resultatet är minst 99,9 %.
+        - action: Jämför resultatet med felbudgeten och notera den återstående budgeten.
+          expected: Rapporten anger tillgänglighet, avbrottstid i minuter och återstående budget.
+
+  - id: AVL-T02
+    priority: high
+    execution: automated
+    tags: [synthetic-monitoring, probe]
+    refs: []
+    en:
+      title: External probe detects an outage
+      description: Checks the configuration of the external probe and that it registers a simulated outage.
+      preconditions: Access to the probe configuration; a test environment monitored by the same probe setup.
+      expected: The probe runs every 60 seconds from 2 locations and records the simulated outage from both.
+      steps:
+        - action: Read the probe configuration.
+          expected: The interval is at most 60 seconds, there are 2 locations and the target is a user-facing page.
+        - action: Make the monitored test page return status 500 for 5 minutes.
+          expected: Both locations record failed checks for the whole period.
+        - action: Restore the page.
+          expected: The checks succeed again within 2 minutes and the outage appears in the availability data.
+    sv:
+      title: Den externa kontrollen upptäcker ett avbrott
+      description: Kontrollerar konfigurationen för den externa kontrollen och att den registrerar ett simulerat avbrott.
+      preconditions: Åtkomst till kontrollens konfiguration; en testmiljö som övervakas med samma uppsättning.
+      expected: Kontrollen körs var 60:e sekund från 2 platser och registrerar det simulerade avbrottet från båda.
+      steps:
+        - action: Läs konfigurationen för kontrollen.
+          expected: Intervallet är högst 60 sekunder, det finns 2 platser och målet är en sida för användare.
+        - action: Låt den övervakade testsidan returnera status 500 i 5 minuter.
+          expected: Båda platserna registrerar misslyckade kontroller under hela perioden.
+        - action: Återställ sidan.
+          expected: Kontrollerna lyckas igen inom 2 minuter och avbrottet syns i tillgänglighetsdata.
+
+  - id: AVL-T03
+    priority: medium
+    execution: manual
+    tags: [maintenance-window, review]
+    refs: ["ITIL 4 Change enablement"]
+    en:
+      title: Review of planned maintenance
+      description: Reviews the announcements and durations of planned maintenance during the last 6 months.
+      preconditions: The change log and the published maintenance announcements for 6 months are available.
+      expected: Every announcement came at least 5 working days in advance and no month exceeds 4 hours of planned downtime.
+      steps:
+        - action: For each planned interruption, compare the announcement date with the start date.
+          expected: The difference is at least 5 working days for every interruption.
+        - action: Add up the planned downtime per calendar month.
+          expected: No month exceeds 4 hours.
+    sv:
+      title: Granskning av planerat underhåll
+      description: Granskar aviseringar och längd för planerat underhåll under de senaste 6 månaderna.
+      preconditions: Ändringsloggen och de publicerade aviseringarna om underhåll för 6 månader finns tillgängliga.
+      expected: Varje avisering kom minst 5 arbetsdagar i förväg och ingen månad har mer än 4 timmars planerat avbrott.
+      steps:
+        - action: Jämför aviseringsdatum med startdatum för varje planerat avbrott.
+          expected: Skillnaden är minst 5 arbetsdagar för varje avbrott.
+        - action: Summera de planerade avbrotten per kalendermånad.
+          expected: Ingen månad överstiger 4 timmar.
+
+  - id: AVL-T04
+    priority: high
+    execution: manual
+    tags: [redundancy, architecture-review]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.14"]
+    en:
+      title: Architecture review for single points of failure
+      description: Walks through the request path and checks redundancy of each component.
+      preconditions: The current deployment diagram and access to the infrastructure code or cloud console.
+      expected: Every component on the request path has at least 2 instances in different zones.
+      steps:
+        - action: List every component that a user request passes, from DNS to the database.
+          expected: The list includes DNS, load balancer, application, cache, queue and database.
+        - action: For each component, check the number of instances and their zones in the infrastructure code or console.
+          expected: Each component has at least 2 instances in at least 2 zones.
+        - action: Record any component that does not meet the rule as a finding with an owner.
+          expected: The review report lists zero open findings, or each finding has an owner and a date.
+    sv:
+      title: Arkitekturgranskning av enskilda felpunkter
+      description: Går igenom anropskedjan och kontrollerar redundansen för varje komponent.
+      preconditions: Det aktuella driftsättningsdiagrammet och åtkomst till infrastrukturkoden eller molnkonsolen.
+      expected: Varje komponent i anropskedjan har minst 2 instanser i olika zoner.
+      steps:
+        - action: Lista varje komponent som ett användaranrop passerar, från DNS till databasen.
+          expected: Listan omfattar DNS, lastbalanserare, applikation, cache, kö och databas.
+        - action: Kontrollera antal instanser och deras zoner för varje komponent i infrastrukturkoden eller konsolen.
+          expected: Varje komponent har minst 2 instanser i minst 2 zoner.
+        - action: Registrera varje komponent som inte uppfyller regeln som ett fynd med en ansvarig.
+          expected: Granskningsrapporten visar noll öppna fynd, eller så har varje fynd en ansvarig och ett datum.
+
+  - id: AVL-T05
+    priority: high
+    execution: manual
+    tags: [failover, drill]
+    refs: ["ISO/IEC 27031:2011", "ISO 22301:2019 §8.5 (exercise programme)"]
+    en:
+      title: Failover drill for an availability zone
+      description: Isolates one availability zone in a production-like environment under load and measures the interruption.
+      preconditions: A production-like environment spread over at least 2 zones; a load test and the external probe are running.
+      expected: Users are served from the remaining zones within 5 minutes.
+      steps:
+        - action: Block all network traffic to and from one zone and note the time.
+          expected: Instances in the blocked zone stop answering.
+        - action: Follow the probe results and the error rate of the load test.
+          expected: Failed checks stop at most 5 minutes after the block started.
+        - action: Lift the block and watch the instances in the zone.
+          expected: The instances rejoin the rotation without manual steps and without failed requests.
+    sv:
+      title: Failoverövning för en tillgänglighetszon
+      description: Isolerar en tillgänglighetszon i en produktionslik miljö under last och mäter avbrottet.
+      preconditions: En produktionslik miljö fördelad på minst 2 zoner; ett lasttest och den externa kontrollen körs.
+      expected: Användarna betjänas från de kvarvarande zonerna inom 5 minuter.
+      steps:
+        - action: Blockera all nätverkstrafik till och från en zon och notera tiden.
+          expected: Instanserna i den blockerade zonen slutar svara.
+        - action: Följ kontrollens resultat och felandelen i lasttestet.
+          expected: De misslyckade kontrollerna upphör högst 5 minuter efter att blockeringen startade.
+        - action: Häv blockeringen och följ instanserna i zonen.
+          expected: Instanserna återgår till rotationen utan manuella steg och utan misslyckade anrop.
+
+  - id: AVL-T06
+    priority: critical
+    execution: automated
+    tags: [failover, database]
+    refs: []
+    en:
+      title: Database failover during write load
+      description: A script writes numbered records, stops the primary database and checks the takeover time and that no acknowledged write is lost.
+      preconditions: A production-like database cluster with a primary and at least one replica.
+      expected: A replica takes over within 60 seconds and every acknowledged record exists afterwards.
+      steps:
+        - action: Start writing records with increasing sequence numbers and log each acknowledged number.
+          expected: Writes are acknowledged continuously.
+          data: "10 writes per second"
+        - action: Stop the primary database process abruptly and note the time.
+          expected: Writes fail for a short period and then succeed again against the new primary within 60 seconds.
+        - action: Compare the logged acknowledged numbers with the records in the new primary.
+          expected: Every acknowledged number is present.
+    sv:
+      title: Databasfailover under skrivlast
+      description: Ett skript skriver numrerade poster, stoppar den primära databasen och kontrollerar tiden för övertagande och att ingen bekräftad skrivning går förlorad.
+      preconditions: Ett produktionslikt databaskluster med en primär nod och minst en replik.
+      expected: En replik tar över inom 60 sekunder och varje bekräftad post finns kvar efteråt.
+      steps:
+        - action: Börja skriva poster med stigande löpnummer och logga varje bekräftat nummer.
+          expected: Skrivningarna bekräftas löpande.
+          data: "10 skrivningar per sekund"
+        - action: Stoppa den primära databasprocessen abrupt och notera tiden.
+          expected: Skrivningarna misslyckas en kort stund och lyckas sedan igen mot den nya primära noden inom 60 sekunder.
+        - action: Jämför de loggade bekräftade numren med posterna i den nya primära noden.
+          expected: Varje bekräftat nummer finns.
+
+  - id: AVL-T07
+    priority: high
+    execution: automated
+    tags: [health-check, load-balancer]
+    refs: []
+    en:
+      title: Readiness check and removal from rotation
+      description: A script blocks the database for one instance and checks the readiness response and the load balancer.
+      preconditions: At least 2 instances behind the load balancer; the test can block network traffic from one instance to the database.
+      expected: The instance reports 503 within 1 second and receives no requests 30 seconds later.
+      steps:
+        - action: Call the readiness endpoint of the instance while the database is reachable.
+          expected: The response is 200.
+        - action: Block traffic from the instance to the database and call the readiness endpoint.
+          expected: The response is 503 and arrives within 1 second.
+        - action: Send requests through the load balancer for 60 seconds and read the access log of the blocked instance.
+          expected: The instance receives no requests later than 30 seconds after the block.
+    sv:
+      title: Beredskapskontroll och borttagning ur rotation
+      description: Ett skript blockerar databasen för en instans och kontrollerar beredskapssvaret och lastbalanseraren.
+      preconditions: Minst 2 instanser bakom lastbalanseraren; testet kan blockera nätverkstrafik från en instans till databasen.
+      expected: Instansen rapporterar 503 inom 1 sekund och tar inte emot några anrop 30 sekunder senare.
+      steps:
+        - action: Anropa instansens beredskapskontroll medan databasen är nåbar.
+          expected: Svaret är 200.
+        - action: Blockera trafiken från instansen till databasen och anropa beredskapskontrollen.
+          expected: Svaret är 503 och kommer inom 1 sekund.
+        - action: Skicka anrop via lastbalanseraren i 60 sekunder och läs åtkomstloggen för den blockerade instansen.
+          expected: Instansen tar inte emot några anrop senare än 30 sekunder efter blockeringen.
+
+  - id: AVL-T08
+    priority: medium
+    execution: manual
+    tags: [status-page, incident]
+    refs: ["ITIL 4 Incident management"]
+    en:
+      title: Status page timeliness and independence
+      description: Reviews the status page entries against the incident log and checks where the page is hosted.
+      preconditions: The incident log for 6 months and documentation of the status page hosting.
+      expected: Each incident appeared on the status page within 15 minutes and the page does not depend on production infrastructure.
+      steps:
+        - action: For each incident, compare the declared start time with the time of the first status page entry.
+          expected: The difference is at most 15 minutes for every incident.
+        - action: Compare the hosting, network and DNS provider of the status page with those of production.
+          expected: None of them is shared.
+    sv:
+      title: Statussidans aktualitet och oberoende
+      description: Granskar statussidans inlägg mot incidentloggen och kontrollerar var sidan ligger.
+      preconditions: Incidentloggen för 6 månader och dokumentation av var statussidan driftas.
+      expected: Varje incident syntes på statussidan inom 15 minuter och sidan är inte beroende av produktionens infrastruktur.
+      steps:
+        - action: Jämför den deklarerade starttiden med tiden för första inlägget på statussidan för varje incident.
+          expected: Skillnaden är högst 15 minuter för varje incident.
+        - action: Jämför driftplats, nät och DNS-leverantör för statussidan med produktionens.
+          expected: Inget av dem är gemensamt.
+
+  - id: AVL-T09
+    priority: low
+    execution: manual
+    tags: [read-only, maintenance]
+    refs: []
+    en:
+      title: Read-only mode
+      description: Turns on read-only mode and checks that reading works and that changes are refused.
+      preconditions: An administrator can turn read-only mode on and off; a test user with edit permission.
+      expected: Records can be read and searched, and every change is refused with a maintenance message.
+      steps:
+        - action: Turn on read-only mode and open and search records as the test user.
+          expected: Records open and searches return results.
+        - action: Try to edit and save a record.
+          expected: The save is refused with a message about maintenance and the record is unchanged.
+        - action: Turn off read-only mode and save the same change.
+          expected: The change is saved.
+    sv:
+      title: Skrivskyddat läge
+      description: Slår på skrivskyddat läge och kontrollerar att läsning fungerar och att ändringar avvisas.
+      preconditions: En administratör kan slå på och av skrivskyddat läge; en testanvändare med behörighet att redigera.
+      expected: Poster kan läsas och sökas, och varje ändring avvisas med ett meddelande om underhåll.
+      steps:
+        - action: Slå på skrivskyddat läge och öppna och sök poster som testanvändaren.
+          expected: Posterna öppnas och sökningarna ger resultat.
+        - action: Försök redigera och spara en post.
+          expected: Sparandet avvisas med ett meddelande om underhåll och posten är oförändrad.
+        - action: Slå av skrivskyddat läge och spara samma ändring.
+          expected: Ändringen sparas.

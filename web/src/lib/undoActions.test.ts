@@ -9,10 +9,14 @@ vi.mock('./api', () => ({
       calls.push(`POST ${p}${b ? ' ' + JSON.stringify(b) : ''}`)
       return { id: 'new' }
     }),
+    del: vi.fn(async (p: string, b?: unknown) => {
+      calls.push(`DELETE ${p} ${JSON.stringify(b)}`)
+      return p.includes('/tests/') ? { trash_id: 'tt' } : p.includes('/none/') ? null : { trash_id: 'tr' }
+    }),
   },
 }))
 
-import { createdEntry, deletedEntry, entry, patchEntry, patchesEntry, recordUndo, toggleEntry } from './undoActions'
+import { addedItemsEntry, createdEntry, deletedEntry, entry, patchEntry, patchesEntry, recordUndo, toggleEntry } from './undoActions'
 import { useUndoStore } from '@/stores/undo'
 
 describe('undo actions', () => {
@@ -70,7 +74,29 @@ describe('undo actions', () => {
     expect(log.slice(-2)).toEqual(['back', 'again'])
   })
   it('records into the store', () => {
-    recordUndo(entry('x', async () => {}, async () => {}))
+    const item = recordUndo(entry('x', async () => {}, async () => {}))
     expect(useUndoStore().history.map((h) => h.label)).toEqual(['x'])
+    expect(item?.label).toBe('x')
+  })
+  it('trashes and restores added items', async () => {
+    const e = addedItemsEntry('Add', 'p1', ['r1'], ['t1', 't2'])
+    await e.undo()
+    await e.redo()
+    expect(calls).toEqual([
+      'DELETE /projects/p1/requirements/bulk {"ids":["r1"]}',
+      'DELETE /projects/p1/tests/bulk {"ids":["t1","t2"]}',
+      'POST /trash/tt/restore',
+      'POST /trash/tr/restore',
+    ])
+    calls.length = 0
+    const only = addedItemsEntry('Add', 'none', [], ['t1'])
+    await only.undo()
+    await only.redo()
+    expect(calls).toEqual(['DELETE /projects/none/tests/bulk {"ids":["t1"]}', 'POST /trash/tt/restore'])
+    calls.length = 0
+    const gone = addedItemsEntry('Add', 'none', ['r1'], [])
+    await gone.undo()
+    await gone.redo()
+    expect(calls).toEqual(['DELETE /projects/none/requirements/bulk {"ids":["r1"]}'])
   })
 })

@@ -48,6 +48,17 @@ Each reviewer gets a separate request and a notification. A person who already h
 
 If the item changes after the request was sent, the review is marked "changed since" so everyone can see that the decision was about an older version.
 
+### Items in review status
+
+Below the requests, **In review status** lists the requirements and tests whose status is **Review** and that concern you, in all projects, even when nobody sent you a request. **Why you see it** tells you how each one concerns you:
+
+- **you own it**: the requirement's **Owner** names you (your name, e-mail or @handle);
+- **you wrote it**: you created the requirement or test;
+- **review requested**: someone asked you to review it;
+- **you may review**: your role may review requirements or tests.
+
+Items that have waited longest come first. Turn on **Only items I own, wrote or was asked to review** to hide the ones you only see because of your role. Open an item to review it: approve it, reject it or set it back to **Draft**. Once its status is no longer **Review**, it leaves the list.
+
 Many reviews at once: when you approve or reject requirements, or mark tests ready, in a [bulk review](requirements.md#approve-many-requirements-at-once), you can complete your open requests for those items in the same step. They are then decided without the checklist and marked as decided in bulk.
 
 A review request records a decision; it does not change the item's status. Holders of the review permission still approve a requirement or mark a test ready with the review bar.

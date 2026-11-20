@@ -1,0 +1,611 @@
+area: input-validation
+prefix: INP
+group: security
+name: {en: Input validation and injection, sv: Validering av indata och injektion}
+description:
+  en: Server-side validation, injection into SQL, commands, LDAP and XML, cross-site scripting and output encoding, file uploads, deserialisation and server-side request forgery.
+  sv: Validering på servern, injektion i SQL, kommandon, LDAP och XML, skriptinjektion och utdatakodning, filuppladdning, deserialisering och förfalskade anrop från servern.
+
+requirements:
+  - id: INP-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [validation, server-side]
+    refs: ["OWASP ASVS 4.0 V5.1", "OWASP Input Validation Cheat Sheet", "NIST SP 800-53 SI-10"]
+    tests: [INP-T01]
+    en:
+      title: Server-side validation of input
+      description: The system MUST validate every input field on the server against a defined type, length and value range before processing it.
+      rationale: Validation in the browser can be bypassed, so only the server can stop malformed input from reaching business logic.
+      criteria:
+        - method: test
+          text: Requests that bypass the browser with too long, wrongly typed or out-of-range values are rejected with 400 and a field-level error.
+        - method: review
+          text: Every endpoint has a schema or validation rule for each of its input fields.
+    sv:
+      title: Validering av indata på servern
+      description: Systemet SKA validera varje indatafält på servern mot en definierad typ, längd och tillåtet värdeintervall innan det behandlas.
+      rationale: Validering i webbläsaren kan kringgås, så bara servern kan hindra felaktiga indata från att nå affärslogiken.
+      criteria:
+        - method: test
+          text: Anrop som kringgår webbläsaren med för långa värden, fel typ eller värden utanför intervallet avvisas med 400 och ett fel per fält.
+        - method: review
+          text: Varje endpoint har ett schema eller en valideringsregel för vart och ett av sina indatafält.
+
+  - id: INP-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [injection, sql-injection]
+    refs: ["OWASP ASVS 4.0 V5.3.4", "OWASP Top 10 2021 A03", "OWASP SQL Injection Prevention Cheat Sheet"]
+    tests: [INP-T02]
+    en:
+      title: Parameterised database queries
+      description: The system MUST pass user input to the database only as bound parameters of prepared statements or through an object-relational mapper that binds them.
+      rationale: Building SQL by string concatenation lets crafted input change the query and read or destroy the database.
+      criteria:
+        - method: review
+          text: A static analysis finds no SQL text built by concatenating or formatting variables.
+        - method: test
+          text: A DAST scan with SQL injection payloads reports no finding.
+    sv:
+      title: Parametriserade databasfrågor
+      description: Systemet SKA skicka användarens indata till databasen enbart som bundna parametrar i förberedda frågor eller via en objektrelationsmappare som binder dem.
+      rationale: SQL som byggs genom att strängar sätts ihop låter manipulerade indata ändra frågan och läsa eller förstöra databasen.
+      criteria:
+        - method: review
+          text: En statisk analys hittar ingen SQL-text som byggs genom att variabler sätts ihop eller formateras in.
+        - method: test
+          text: En DAST-skanning med nyttolaster för SQL-injektion rapporterar inget fynd.
+
+  - id: INP-03
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [injection, command-injection]
+    refs: ["OWASP ASVS 4.0 V5.3.8", "OWASP Top 10 2021 A03", "OWASP OS Command Injection Defense Cheat Sheet"]
+    tests: [INP-T03]
+    en:
+      title: No user input in shell commands
+      description: The system MUST NOT pass user input to an operating system shell; external programs are started with a fixed path and a separate argument list.
+      rationale: A shell interprets characters such as semicolons and backticks, so input can append commands of the attacker's choice.
+      criteria:
+        - method: review
+          text: The code contains no call to a shell with a command string that includes request data.
+        - method: test
+          text: Inputs with shell metacharacters in fields passed to external programs cause no extra command to run.
+    sv:
+      title: Inga indata i skalkommandon
+      description: Systemet SKA INTE skicka användarens indata till ett skal i operativsystemet; externa program startas med en fast sökväg och en separat argumentlista.
+      rationale: Ett skal tolkar tecken som semikolon och bakåtfnuttar, så indata kan lägga till kommandon som angriparen väljer.
+      criteria:
+        - method: review
+          text: Koden innehåller inget anrop till ett skal med en kommandosträng som innehåller data från anropet.
+        - method: test
+          text: Indata med skaltecken i fält som skickas till externa program gör inte att något extra kommando körs.
+
+  - id: INP-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [injection, ldap-injection]
+    refs: ["OWASP ASVS 4.0 V5.3.7", "OWASP LDAP Injection Prevention Cheat Sheet"]
+    tests: [INP-T04]
+    en:
+      title: Escaped input in LDAP filters
+      description: The system MUST escape the characters that have a special meaning in LDAP filters and distinguished names before it inserts user input into them.
+      rationale: Unescaped input such as an asterisk or a closing parenthesis can widen a directory query or bypass a sign-in check.
+      criteria:
+        - method: test
+          text: A user name of an asterisk or with an injected filter clause matches no directory entry and does not sign anyone in.
+    sv:
+      title: Skyddade indata i LDAP-filter
+      description: Systemet SKA skydda tecken med särskild betydelse i LDAP-filter och unika namn i katalogen innan användarens indata sätts in i dem.
+      rationale: Oskyddade indata som en asterisk eller en avslutande parentes kan vidga en katalogfråga eller kringgå en inloggningskontroll.
+      criteria:
+        - method: test
+          text: Ett användarnamn som består av en asterisk eller innehåller en injicerad filtervillkorsdel matchar ingen post i katalogen och loggar inte in någon.
+
+  - id: INP-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [xss, output-encoding]
+    refs: ["OWASP ASVS 4.0 V5.3.3", "OWASP Top 10 2021 A03", "OWASP Cross Site Scripting Prevention Cheat Sheet"]
+    tests: [INP-T05]
+    en:
+      title: Context-aware output encoding
+      description: The system MUST encode user-supplied data for the HTML, attribute, JavaScript or URL context in which it is written to a page.
+      rationale: Encoding stops stored or reflected input from running as script in other users' browsers.
+      criteria:
+        - method: test
+          text: XSS payloads saved in each text field are shown as literal text and no script runs.
+        - method: test
+          text: A DAST scan for reflected and stored cross-site scripting reports no finding.
+    sv:
+      title: Utdatakodning efter sammanhang
+      description: Systemet SKA koda data från användare för det sammanhang i HTML, attribut, JavaScript eller adress där de skrivs ut på en sida.
+      rationale: Kodningen hindrar sparade eller speglade indata från att köras som skript i andra användares webbläsare.
+      criteria:
+        - method: test
+          text: Nyttolaster för skriptinjektion som sparas i varje textfält visas som vanlig text och inget skript körs.
+        - method: test
+          text: En DAST-skanning efter speglad och lagrad skriptinjektion rapporterar inget fynd.
+
+  - id: INP-06
+    type: security
+    obligation: should
+    priority: medium
+    tags: [xss, content-security-policy]
+    refs: ["OWASP ASVS 4.0 V14.4.3", "W3C Content Security Policy Level 3"]
+    tests: [INP-T06]
+    en:
+      title: Content Security Policy without inline scripts
+      description: The system SHOULD send a Content-Security-Policy header on every HTML response that allows scripts only from its own origin and does not contain unsafe-inline or unsafe-eval.
+      rationale: The policy is a second line of defence that blocks injected scripts even when encoding has been missed.
+      criteria:
+        - method: test
+          text: Every HTML response has a Content-Security-Policy header whose script-src allows only self, nonces or hashes.
+    sv:
+      title: Content Security Policy utan inbäddade skript
+      description: Systemet BÖR skicka ett Content-Security-Policy-huvud på varje HTML-svar som tillåter skript enbart från den egna origin och som inte innehåller unsafe-inline eller unsafe-eval.
+      rationale: Policyn är ett andra skydd som blockerar injicerade skript även när kodningen har missats.
+      criteria:
+        - method: test
+          text: Varje HTML-svar har ett Content-Security-Policy-huvud vars script-src bara tillåter self, nonce eller hashar.
+
+  - id: INP-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [file-upload]
+    refs: ["OWASP ASVS 4.0 V12.1", "OWASP ASVS 4.0 V12.2", "OWASP File Upload Cheat Sheet"]
+    tests: [INP-T07]
+    en:
+      title: Uploaded files are checked by type and size
+      description: The system MUST reject an uploaded file that is larger than 10 MB or whose content does not match a file type on the allowlist.
+      rationale: Checking only the file name extension lets an attacker upload scripts or oversized files that exhaust storage.
+      criteria:
+        - method: test
+          text: A file of 10 MB plus one byte is rejected, and an executable renamed to report.pdf is rejected.
+    sv:
+      title: Uppladdade filer kontrolleras efter typ och storlek
+      description: Systemet SKA avvisa en uppladdad fil som är större än 10 MB eller vars innehåll inte motsvarar en filtyp på listan över tillåtna typer.
+      rationale: Om bara filändelsen kontrolleras kan en angripare ladda upp skript eller för stora filer som fyller lagringen.
+      criteria:
+        - method: test
+          text: En fil på 10 MB plus en byte avvisas, och en körbar fil som döpts om till rapport.pdf avvisas.
+
+  - id: INP-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [file-upload, storage]
+    refs: ["OWASP ASVS 4.0 V12.4", "OWASP ASVS 4.0 V12.5", "OWASP File Upload Cheat Sheet"]
+    tests: [INP-T08]
+    en:
+      title: Uploaded files are stored outside the web root
+      description: The system MUST store uploaded files outside the web server's document root under a name generated by the system.
+      rationale: A file that the web server can execute or that keeps a user-chosen path can lead to remote code execution or overwritten files.
+      criteria:
+        - method: inspection
+          text: Uploaded files are found only in a storage location that the web server does not serve directly, under generated names.
+        - method: test
+          text: An uploaded file named ../../index.html is stored under a generated name and no existing file changes.
+    sv:
+      title: Uppladdade filer lagras utanför webbroten
+      description: Systemet SKA lagra uppladdade filer utanför webbserverns dokumentrot under ett namn som systemet skapar.
+      rationale: En fil som webbservern kan köra eller som behåller en sökväg som användaren valt kan leda till fjärrkörning av kod eller överskrivna filer.
+      criteria:
+        - method: inspection
+          text: Uppladdade filer finns bara på en lagringsplats som webbservern inte serverar direkt, under genererade namn.
+        - method: test
+          text: En uppladdad fil med namnet ../../index.html lagras under ett genererat namn och ingen befintlig fil ändras.
+
+  - id: INP-09
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [deserialisation]
+    refs: ["OWASP ASVS 4.0 V5.5", "OWASP Top 10 2021 A08", "OWASP Deserialization Cheat Sheet"]
+    tests: [INP-T09]
+    en:
+      title: No deserialisation of untrusted objects
+      description: The system MUST NOT deserialise data from untrusted sources into object types chosen by the data itself.
+      rationale: Native object deserialisation of attacker data can run code during loading, before any validation takes place.
+      criteria:
+        - method: review
+          text: Untrusted input is parsed only with data-only formats such as JSON into fixed types, and no native object serialisation is used on it.
+        - method: test
+          text: A known gadget-chain payload sent to each endpoint that accepts serialised data causes no code execution or outbound connection.
+    sv:
+      title: Ingen deserialisering av opålitliga objekt
+      description: Systemet SKA INTE deserialisera data från opålitliga källor till objekttyper som data själva anger.
+      rationale: Inbyggd deserialisering av objekt från en angripare kan köra kod redan vid inläsningen, innan någon validering sker.
+      criteria:
+        - method: review
+          text: Opålitliga indata tolkas bara med rena dataformat som JSON till fasta typer, och ingen inbyggd objektserialisering används på dem.
+        - method: test
+          text: En känd nyttolast med gadgetkedja som skickas till varje endpoint som tar emot serialiserade data leder inte till kodkörning eller utgående förbindelse.
+
+  - id: INP-10
+    type: security
+    obligation: must
+    priority: critical
+    tags: [ssrf, outbound-requests]
+    refs: ["OWASP ASVS 4.0 V5.2.6", "OWASP Top 10 2021 A10", "OWASP Server-Side Request Forgery Prevention Cheat Sheet"]
+    tests: [INP-T10]
+    en:
+      title: Protection against server-side request forgery
+      description: The system MUST refuse to fetch a user-supplied URL that resolves to a loopback, private, link-local or cloud metadata address.
+      rationale: Otherwise an attacker can make the server reach internal services and cloud credentials that are not exposed to the internet.
+      criteria:
+        - method: test
+          text: Webhook or import URLs that point to 127.0.0.1, 10.0.0.1, 169.254.169.254 and a public name that resolves to a private address are each refused.
+    sv:
+      title: Skydd mot förfalskade anrop från servern
+      description: Systemet SKA vägra hämta en adress från en användare som pekar på en loopback-adress, en privat adress, en länklokal adress eller en adress för molnmetadata.
+      rationale: Annars kan en angripare få servern att nå interna tjänster och molnuppgifter som inte är exponerade mot internet.
+      criteria:
+        - method: test
+          text: Adresser för webhooks eller import som pekar på 127.0.0.1, 10.0.0.1, 169.254.169.254 och ett publikt namn som pekar på en privat adress avvisas var för sig.
+
+  - id: INP-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [xml, xxe]
+    refs: ["OWASP ASVS 4.0 V5.5.2", "OWASP XML External Entity Prevention Cheat Sheet"]
+    tests: [INP-T11]
+    en:
+      title: XML parsers do not resolve external entities
+      description: The system MUST configure every XML parser that reads untrusted input to reject document type definitions and external entities.
+      rationale: External entities let an XML document read local files or make the server send requests to internal hosts.
+      criteria:
+        - method: test
+          text: An uploaded XML document with an external entity that refers to a local file is rejected and the file content does not appear in any response.
+    sv:
+      title: XML-tolkar löser inte upp externa entiteter
+      description: Systemet SKA konfigurera varje XML-tolk som läser opålitliga indata så att den avvisar dokumenttypsdefinitioner och externa entiteter.
+      rationale: Externa entiteter låter ett XML-dokument läsa lokala filer eller få servern att skicka anrop till interna värdar.
+      criteria:
+        - method: test
+          text: Ett uppladdat XML-dokument med en extern entitet som pekar på en lokal fil avvisas och filens innehåll syns inte i något svar.
+
+tests:
+  - id: INP-T01
+    priority: critical
+    execution: automated
+    tags: [validation, server-side]
+    refs: ["OWASP Input Validation Cheat Sheet"]
+    en:
+      title: Invalid input sent directly to the API is rejected
+      description: A script derives invalid values from each endpoint's schema and sends them without the browser.
+      preconditions: The API description defines types, lengths and ranges for every input field, and a test account exists.
+      expected: Each invalid value is rejected with 400 and nothing is stored.
+      steps:
+        - action: For each string field, send a value one character longer than its maximum length.
+          expected: Each request is rejected with 400 and an error that names the field.
+        - action: For each numeric field, send a value below the minimum, above the maximum and a non-numeric string.
+          expected: Each request is rejected with 400 and an error that names the field.
+          data: "-1, 2147483648, abc"
+        - action: Read back the affected records.
+          expected: None of the invalid values has been stored.
+    sv:
+      title: Ogiltiga indata som skickas direkt till API:et avvisas
+      description: Ett skript tar fram ogiltiga värden från varje endpoints schema och skickar dem utan webbläsaren.
+      preconditions: API-beskrivningen anger typ, längd och intervall för varje indatafält, och ett testkonto finns.
+      expected: Varje ogiltigt värde avvisas med 400 och inget sparas.
+      steps:
+        - action: Skicka för varje strängfält ett värde som är ett tecken längre än den största tillåtna längden.
+          expected: Varje anrop avvisas med 400 och ett fel som anger fältet.
+        - action: Skicka för varje numeriskt fält ett värde under minimum, ett värde över maximum och en sträng som inte är ett tal.
+          expected: Varje anrop avvisas med 400 och ett fel som anger fältet.
+          data: "-1, 2147483648, abc"
+        - action: Läs tillbaka de berörda posterna.
+          expected: Inget av de ogiltiga värdena har sparats.
+
+  - id: INP-T02
+    priority: critical
+    execution: automated
+    tags: [sql-injection, dast]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-05"]
+    en:
+      title: SQL injection scan and code check
+      description: A DAST scanner sends SQL injection payloads to every parameter, and a static analysis rule checks how queries are built.
+      preconditions: An authenticated DAST scan profile for the test environment and a static analysis rule for concatenated SQL.
+      expected: Neither the scan nor the analysis reports a finding.
+      steps:
+        - action: Run the DAST scan with the SQL injection rule set against all endpoints.
+          expected: The scan finishes and reports no SQL injection.
+          data: "' OR '1'='1, 1; DROP TABLE users--, ' UNION SELECT NULL--"
+        - action: Run the static analysis rule for SQL built from strings on the source code.
+          expected: No finding is reported.
+    sv:
+      title: Skanning efter SQL-injektion och kodkontroll
+      description: En DAST-skanner skickar nyttolaster för SQL-injektion till varje parameter och en regel för statisk analys kontrollerar hur frågor byggs.
+      preconditions: En autentiserad DAST-profil för testmiljön och en regel för statisk analys som hittar ihopsatt SQL.
+      expected: Varken skanningen eller analysen rapporterar något fynd.
+      steps:
+        - action: Kör DAST-skanningen med regeluppsättningen för SQL-injektion mot alla endpoints.
+          expected: Skanningen slutförs och rapporterar ingen SQL-injektion.
+          data: "' OR '1'='1, 1; DROP TABLE users--, ' UNION SELECT NULL--"
+        - action: Kör regeln för statisk analys av SQL som byggs av strängar på källkoden.
+          expected: Inget fynd rapporteras.
+
+  - id: INP-T03
+    priority: critical
+    execution: manual
+    tags: [command-injection]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-12"]
+    en:
+      title: Shell metacharacters do not run extra commands
+      description: Sends shell metacharacters in fields that are passed to external programs, such as a file name for conversion.
+      preconditions: A function that calls an external program, and a way to observe processes or outbound DNS on the server.
+      expected: Only the intended program runs and no injected command takes effect.
+      steps:
+        - action: Enter a value that appends a sleep command and submit it.
+          expected: The response time does not grow by 10 seconds.
+          data: "report.pdf; sleep 10"
+        - action: Enter a value that tries to trigger a DNS lookup of a host you control.
+          expected: No lookup of that host is seen.
+          data: "report.pdf`nslookup x.attacker.example`"
+        - action: Review the code that starts the external program.
+          expected: It uses a fixed program path and an argument list without a shell.
+    sv:
+      title: Skaltecken kör inga extra kommandon
+      description: Skickar skaltecken i fält som förs vidare till externa program, till exempel ett filnamn för konvertering.
+      preconditions: En funktion som anropar ett externt program och ett sätt att se processer eller utgående DNS-uppslag på servern.
+      expected: Bara det avsedda programmet körs och inget injicerat kommando får effekt.
+      steps:
+        - action: Ange ett värde som lägger till ett sleep-kommando och skicka det.
+          expected: Svarstiden ökar inte med 10 sekunder.
+          data: "report.pdf; sleep 10"
+        - action: Ange ett värde som försöker utlösa ett DNS-uppslag av en värd som du styr.
+          expected: Inget uppslag av den värden syns.
+          data: "report.pdf`nslookup x.attacker.example`"
+        - action: Granska koden som startar det externa programmet.
+          expected: Den använder en fast programsökväg och en argumentlista utan skal.
+
+  - id: INP-T04
+    priority: high
+    execution: manual
+    tags: [ldap-injection]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-06"]
+    en:
+      title: LDAP filter injection does not widen a search or sign in
+      description: Sends LDAP filter syntax in the user name and in directory search fields.
+      preconditions: The system signs users in or searches users against an LDAP directory in the test environment.
+      expected: The special characters are treated as literal text.
+      steps:
+        - action: Sign in with an asterisk as user name and any password.
+          expected: The sign-in fails with the normal error.
+          data: "*"
+        - action: Sign in with a user name that closes the filter and adds an always-true clause.
+          expected: The sign-in fails with the normal error.
+          data: "admin)(|(uid=*"
+        - action: Search the user directory for an asterisk.
+          expected: No entries or only entries whose name contains an asterisk are returned.
+    sv:
+      title: Injektion i LDAP-filter vidgar inte en sökning och loggar inte in
+      description: Skickar syntax för LDAP-filter i användarnamnet och i sökfält mot katalogen.
+      preconditions: Systemet loggar in eller söker användare mot en LDAP-katalog i testmiljön.
+      expected: Specialtecknen behandlas som vanlig text.
+      steps:
+        - action: Logga in med en asterisk som användarnamn och ett godtyckligt lösenord.
+          expected: Inloggningen misslyckas med det vanliga felet.
+          data: "*"
+        - action: Logga in med ett användarnamn som stänger filtret och lägger till ett villkor som alltid är sant.
+          expected: Inloggningen misslyckas med det vanliga felet.
+          data: "admin)(|(uid=*"
+        - action: Sök efter en asterisk i användarkatalogen.
+          expected: Inga poster returneras, eller bara poster vars namn innehåller en asterisk.
+
+  - id: INP-T05
+    priority: critical
+    execution: automated
+    tags: [xss, dast]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-01", "OWASP Web Security Testing Guide WSTG-INPV-02"]
+    en:
+      title: Cross-site scripting payloads are shown as text
+      description: A browser-driven script saves XSS payloads in every text field and opens the pages that show them; a DAST scan covers reflected input.
+      preconditions: A headless browser test with a test account and a list of all forms with text fields.
+      expected: No payload runs as script.
+      steps:
+        - action: Save each payload in each text field of each form.
+          expected: The values are saved.
+          data: "<script>alert(1)</script>, \"><img src=x onerror=alert(1)>, javascript:alert(1)"
+        - action: Open each page that shows the saved values and listen for dialogs and console calls.
+          expected: No dialog opens and the payloads are shown as literal text.
+        - action: Run the DAST scan for reflected cross-site scripting.
+          expected: No finding is reported.
+    sv:
+      title: Nyttolaster för skriptinjektion visas som text
+      description: Ett webbläsarstyrt skript sparar nyttolaster för skriptinjektion i varje textfält och öppnar sidorna som visar dem; en DAST-skanning täcker speglade indata.
+      preconditions: Ett test i en huvudlös webbläsare med ett testkonto och en lista över alla formulär med textfält.
+      expected: Ingen nyttolast körs som skript.
+      steps:
+        - action: Spara varje nyttolast i varje textfält i varje formulär.
+          expected: Värdena sparas.
+          data: "<script>alert(1)</script>, \"><img src=x onerror=alert(1)>, javascript:alert(1)"
+        - action: Öppna varje sida som visar de sparade värdena och lyssna efter dialogrutor och konsolanrop.
+          expected: Ingen dialogruta öppnas och nyttolasterna visas som vanlig text.
+        - action: Kör DAST-skanningen efter speglad skriptinjektion.
+          expected: Inget fynd rapporteras.
+
+  - id: INP-T06
+    priority: medium
+    execution: automated
+    tags: [content-security-policy]
+    refs: ["W3C Content Security Policy Level 3"]
+    en:
+      title: HTML responses carry a strict Content Security Policy
+      description: A script crawls the application and checks the Content-Security-Policy header of every HTML response.
+      preconditions: An authenticated crawler for the test environment.
+      expected: Every HTML response has a policy without unsafe-inline or unsafe-eval for scripts.
+      steps:
+        - action: Crawl all reachable pages and collect the response headers.
+          expected: Every HTML response has a Content-Security-Policy header.
+        - action: Parse the script-src directive of each policy, or default-src when script-src is missing.
+          expected: It allows only self, nonces or hashes, and contains neither unsafe-inline nor unsafe-eval.
+    sv:
+      title: HTML-svar har en strikt Content Security Policy
+      description: Ett skript går igenom applikationen och kontrollerar huvudet Content-Security-Policy på varje HTML-svar.
+      preconditions: En autentiserad sökrobot för testmiljön.
+      expected: Varje HTML-svar har en policy utan unsafe-inline eller unsafe-eval för skript.
+      steps:
+        - action: Gå igenom alla nåbara sidor och samla in svarshuvudena.
+          expected: Varje HTML-svar har ett Content-Security-Policy-huvud.
+        - action: Tolka direktivet script-src i varje policy, eller default-src när script-src saknas.
+          expected: Det tillåter bara self, nonce eller hashar och innehåller varken unsafe-inline eller unsafe-eval.
+
+  - id: INP-T07
+    priority: high
+    execution: manual
+    tags: [file-upload]
+    refs: ["OWASP Web Security Testing Guide WSTG-BUSL-08", "OWASP Web Security Testing Guide WSTG-BUSL-09"]
+    en:
+      title: Uploads are checked for size and real file type
+      description: Uploads files at the size limit, above it, and with a misleading extension.
+      preconditions: A signed-in user on a page with a file upload, and test files prepared in advance.
+      expected: Only allowed file types up to 10 MB are accepted.
+      steps:
+        - action: Upload a PDF file of exactly 10 MB.
+          expected: The file is accepted.
+        - action: Upload a PDF file of 10 MB plus one byte.
+          expected: The file is rejected with a message that states the size limit.
+        - action: Upload an executable file renamed to report.pdf.
+          expected: The file is rejected because its content is not an allowed type.
+          data: report.pdf (PE executable)
+    sv:
+      title: Uppladdningar kontrolleras för storlek och verklig filtyp
+      description: Laddar upp filer vid storleksgränsen, över den och med en vilseledande filändelse.
+      preconditions: En inloggad användare på en sida med filuppladdning och testfiler som förberetts i förväg.
+      expected: Bara tillåtna filtyper upp till 10 MB godtas.
+      steps:
+        - action: Ladda upp en PDF-fil på exakt 10 MB.
+          expected: Filen godtas.
+        - action: Ladda upp en PDF-fil på 10 MB plus en byte.
+          expected: Filen avvisas med ett meddelande som anger storleksgränsen.
+        - action: Ladda upp en körbar fil som har döpts om till rapport.pdf.
+          expected: Filen avvisas eftersom innehållet inte är en tillåten typ.
+          data: rapport.pdf (PE-körbar fil)
+
+  - id: INP-T08
+    priority: high
+    execution: manual
+    tags: [file-upload, storage, path-traversal]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-01"]
+    en:
+      title: Uploaded files cannot be executed or overwrite files
+      description: Uploads a file with a path in its name and checks where and how it is stored.
+      preconditions: A signed-in user on a page with a file upload, and read access to the server storage.
+      expected: The file is stored under a generated name outside the web root.
+      steps:
+        - action: Upload a file whose name contains a relative path.
+          expected: The upload succeeds or is rejected, and no existing file on the server changes.
+          data: ../../index.html
+        - action: Locate the stored file on the server.
+          expected: It is outside the web server's document root and has a generated name.
+        - action: Try to open the file through a URL directly under the web root.
+          expected: The file is not reachable there and is served only through the download function.
+    sv:
+      title: Uppladdade filer kan inte köras eller skriva över filer
+      description: Laddar upp en fil med en sökväg i namnet och kontrollerar var och hur den lagras.
+      preconditions: En inloggad användare på en sida med filuppladdning och läsbehörighet till serverns lagring.
+      expected: Filen lagras under ett genererat namn utanför webbroten.
+      steps:
+        - action: Ladda upp en fil vars namn innehåller en relativ sökväg.
+          expected: Uppladdningen lyckas eller avvisas, och ingen befintlig fil på servern ändras.
+          data: ../../index.html
+        - action: Leta upp den lagrade filen på servern.
+          expected: Den ligger utanför webbserverns dokumentrot och har ett genererat namn.
+        - action: Försök öppna filen via en adress direkt under webbroten.
+          expected: Filen går inte att nå där och serveras bara via nedladdningsfunktionen.
+
+  - id: INP-T09
+    priority: critical
+    execution: manual
+    tags: [deserialisation]
+    refs: ["OWASP Deserialization Cheat Sheet"]
+    en:
+      title: Serialised object payloads are not executed
+      description: Reviews the parsing of untrusted data and sends a known gadget-chain payload to endpoints that accept serialised data.
+      preconditions: A list of endpoints, message consumers and cookies that carry serialised data, and a callback host that records connections.
+      expected: No payload causes code execution or a callback.
+      steps:
+        - action: Review how each listed input is parsed.
+          expected: Each uses a data-only format into fixed types and no native object deserialisation.
+        - action: Send a gadget-chain payload that opens a connection to the callback host to each listed input.
+          expected: The input is rejected and the callback host records no connection.
+    sv:
+      title: Nyttolaster med serialiserade objekt körs inte
+      description: Granskar hur opålitliga data tolkas och skickar en känd nyttolast med gadgetkedja till endpoints som tar emot serialiserade data.
+      preconditions: En lista över endpoints, meddelandekonsumenter och kakor som bär serialiserade data, och en värd för återanrop som registrerar förbindelser.
+      expected: Ingen nyttolast leder till kodkörning eller återanrop.
+      steps:
+        - action: Granska hur varje listad indatakälla tolkas.
+          expected: Var och en använder ett rent dataformat till fasta typer och ingen inbyggd objektdeserialisering.
+        - action: Skicka en nyttolast med gadgetkedja som öppnar en förbindelse till återanropsvärden till varje listad indatakälla.
+          expected: Indata avvisas och återanropsvärden registrerar ingen förbindelse.
+
+  - id: INP-T10
+    priority: critical
+    execution: automated
+    tags: [ssrf]
+    refs: ["OWASP Server-Side Request Forgery Prevention Cheat Sheet"]
+    en:
+      title: User-supplied URLs to internal addresses are refused
+      description: A script registers webhook or import URLs that point to internal addresses and checks that no request is made.
+      preconditions: A feature that fetches a user-supplied URL, a test DNS name that resolves to 10.0.0.5, and network monitoring on the server.
+      expected: Every internal target is refused and no connection to it is opened.
+      steps:
+        - action: Submit URLs with loopback, private and metadata IP addresses.
+          expected: Each URL is refused with a validation error.
+          data: "http://127.0.0.1/, http://10.0.0.1/, http://169.254.169.254/latest/meta-data/"
+        - action: Submit a URL with the test DNS name that resolves to a private address.
+          expected: The URL is refused and no connection to 10.0.0.5 is seen.
+        - action: Submit a URL that redirects to 127.0.0.1.
+          expected: The redirect is not followed to the internal address.
+    sv:
+      title: Adresser från användare till interna adresser avvisas
+      description: Ett skript registrerar adresser för webhooks eller import som pekar på interna adresser och kontrollerar att inget anrop görs.
+      preconditions: En funktion som hämtar en adress från användaren, ett DNS-testnamn som pekar på 10.0.0.5 och nätverksövervakning på servern.
+      expected: Varje internt mål avvisas och ingen förbindelse öppnas mot det.
+      steps:
+        - action: Skicka adresser med IP-adresser för loopback, privata nät och metadata.
+          expected: Varje adress avvisas med ett valideringsfel.
+          data: "http://127.0.0.1/, http://10.0.0.1/, http://169.254.169.254/latest/meta-data/"
+        - action: Skicka en adress med DNS-testnamnet som pekar på en privat adress.
+          expected: Adressen avvisas och ingen förbindelse till 10.0.0.5 syns.
+        - action: Skicka en adress som omdirigerar till 127.0.0.1.
+          expected: Omdirigeringen följs inte till den interna adressen.
+
+  - id: INP-T11
+    priority: high
+    execution: automated
+    tags: [xml, xxe]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-07"]
+    en:
+      title: XML with external entities is rejected
+      description: A script uploads XML documents with an external entity to every XML input.
+      preconditions: A list of endpoints and import functions that accept XML.
+      expected: No document type definition is processed and no file content leaks.
+      steps:
+        - action: Send an XML document whose external entity refers to /etc/hostname to each XML input.
+          expected: Each request is rejected and the host name of the server does not appear in any response.
+          data: "<!DOCTYPE x [<!ENTITY e SYSTEM \"file:///etc/hostname\">]><x>&e;</x>"
+        - action: Send an XML document with nested entities that expand to 1 GB.
+          expected: Each request is rejected within 2 seconds and memory use stays flat.
+    sv:
+      title: XML med externa entiteter avvisas
+      description: Ett skript laddar upp XML-dokument med en extern entitet till varje XML-indata.
+      preconditions: En lista över endpoints och importfunktioner som tar emot XML.
+      expected: Ingen dokumenttypsdefinition behandlas och inget filinnehåll läcker.
+      steps:
+        - action: Skicka ett XML-dokument vars externa entitet pekar på /etc/hostname till varje XML-indata.
+          expected: Varje anrop avvisas och serverns värdnamn syns inte i något svar.
+          data: "<!DOCTYPE x [<!ENTITY e SYSTEM \"file:///etc/hostname\">]><x>&e;</x>"
+        - action: Skicka ett XML-dokument med nästlade entiteter som expanderar till 1 GB.
+          expected: Varje anrop avvisas inom 2 sekunder och minnesanvändningen förblir oförändrad.

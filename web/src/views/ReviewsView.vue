@@ -14,6 +14,7 @@ import SelectButton from 'primevue/selectbutton'
 import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
 import ReviewDialog from '@/components/ReviewDialog.vue'
+import InReviewList from '@/components/InReviewList.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { isoDay, notificationTarget, overdue, reviewSeverity } from '@/lib/notifications'
 import { formatDate } from '@/lib/format'
@@ -40,6 +41,7 @@ const error = ref('')
 const current = ref<ReviewRequest | null>(null)
 const working = ref(false)
 const today = isoDay()
+const inReview = ref<InstanceType<typeof InReviewList> | null>(null)
 
 async function load() {
   loading.value = true
@@ -109,6 +111,7 @@ async function apply() {
     )
     if (action === 'approve' || action === 'request_changes') void notifications.load()
     await load()
+    void inReview.value?.load()
   } catch (e) {
     notify.fail(e)
   } finally {
@@ -179,7 +182,8 @@ async function apply() {
         </template>
       </DataTable>
     </div>
-    <ReviewDialog v-model:visible="working" :review="current" @saved="load" />
+    <InReviewList v-if="side === 'mine'" ref="inReview" />
+    <ReviewDialog v-model:visible="working" :review="current" @saved="() => (load(), inReview?.load())" />
 
     <Dialog :visible="!!dialog" modal :header="dialog ? t(`reviews.bulk.header.${dialog}`, { n: pendingSel.length }, pendingSel.length) : ''" :style="{ width: 'min(500px, 96vw)' }" @update:visible="(v: boolean) => !v && (dialog = null)">
       <div class="form">

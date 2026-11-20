@@ -20,6 +20,9 @@ const button = ref<HTMLButtonElement>()
 const bubble = ref<HTMLDivElement>()
 const link = ref<HTMLAnchorElement>()
 const pos = ref({ top: 0, left: 0, above: false })
+// the bubble is rendered inside the drawer or dialog around the button, so
+// keyboard focus and screen readers stay in that modal; elsewhere in <body>
+const target = ref<HTMLElement | string>('body')
 const ids = { desc: uid('tipd'), bubble: uid('tip') }
 
 const text = computed(() => t(tipKey(props.id)))
@@ -33,6 +36,7 @@ function cancelHide() {
 function show() {
   cancelHide()
   if (open.value) return
+  target.value = (button.value?.closest('.p-drawer, .p-dialog') as HTMLElement | null) ?? 'body'
   open.value = true
   void nextTick(position)
 }
@@ -54,11 +58,19 @@ function toggle() {
   show()
 }
 
-function position() {
+async function position() {
   if (!button.value || !bubble.value) return
   const r = button.value.getBoundingClientRect()
   const b = bubble.value.getBoundingClientRect()
-  pos.value = placeTip(r, { width: b.width, height: b.height }, window.innerWidth, window.innerHeight)
+  const want = placeTip(r, { width: b.width, height: b.height }, window.innerWidth, window.innerHeight)
+  pos.value = want
+  // inside a transformed drawer "position: fixed" is relative to the drawer:
+  // measure where the bubble landed and correct by the difference
+  await nextTick()
+  const got = bubble.value?.getBoundingClientRect()
+  if (got && (Math.abs(got.top - want.top) > 0.5 || Math.abs(got.left - want.left) > 0.5)) {
+    pos.value = { ...want, top: want.top + (want.top - got.top), left: want.left + (want.left - got.left) }
+  }
 }
 
 function onFocusOut(e: FocusEvent) {
@@ -67,7 +79,7 @@ function onFocusOut(e: FocusEvent) {
   hide(true)
 }
 function onButtonKey(e: KeyboardEvent) {
-  // the bubble lives at the end of the document: Tab moves into its link first
+  // the bubble comes later in the document than the button: Tab moves into its link first
   if (e.key === 'Tab' && !e.shiftKey && open.value && link.value) {
     e.preventDefault()
     link.value.focus()
@@ -95,7 +107,7 @@ function onDocPointer(e: PointerEvent) {
   hide(true)
 }
 function onViewport() {
-  if (open.value) position()
+  if (open.value) void position()
 }
 function readMore(e: MouseEvent) {
   if (!href.value || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return
@@ -137,7 +149,7 @@ onBeforeUnmount(() => {
     <i class="pi pi-info-circle" aria-hidden="true" />
     <span :id="ids.desc" hidden>{{ text }}</span>
   </button>
-  <Teleport to="body">
+  <Teleport :to="target">
     <div
       v-if="open"
       :id="ids.bubble"

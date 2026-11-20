@@ -1,0 +1,587 @@
+area: backup-recovery
+prefix: BCK
+group: quality
+name: {en: Backup and recovery, sv: Säkerhetskopiering och återställning}
+description:
+  en: Backup frequency, recovery point and recovery time objectives, restore tests, off-site and immutable copies, encryption of backups and the disaster recovery plan.
+  sv: Frekvens för säkerhetskopiering, mål för återställningspunkt och återställningstid, återläsningstester, kopior på annan plats och oföränderliga kopior, kryptering av säkerhetskopior och kontinuitetsplan.
+
+requirements:
+  - id: BCK-01
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [backup, frequency]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)"]
+    tests: [BCK-T01]
+    en:
+      title: Daily full backup
+      description: The system MUST take a full backup of the database and the file storage at least once every 24 hours.
+      rationale: A daily full copy is the baseline from which every restore starts.
+      criteria:
+        - method: inspection
+          text: The backup catalogue lists a completed full backup of the database and the file storage for each of the last 14 days.
+          threshold: "≥ 1 full backup per 24 h"
+    sv:
+      title: Daglig fullständig säkerhetskopia
+      description: Systemet SKA ta en fullständig säkerhetskopia av databasen och fillagringen minst en gång per 24 timmar.
+      rationale: En daglig fullständig kopia är utgångspunkten för varje återställning.
+      criteria:
+        - method: inspection
+          text: Katalogen över säkerhetskopior visar en slutförd fullständig kopia av databasen och fillagringen för var och en av de senaste 14 dagarna.
+          threshold: "≥ 1 fullständig kopia per 24 h"
+
+  - id: BCK-02
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [rpo, backup]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery point objective)"]
+    tests: [BCK-T02]
+    en:
+      title: Recovery point objective
+      description: The system MUST be recoverable to a point in time no more than 1 hour before a failure.
+      rationale: The recovery point objective states how much work the organisation accepts to lose and drives how often changes are copied.
+      criteria:
+        - method: test
+          text: In a restore drill the newest restored change is at most 1 hour older than the simulated failure.
+          threshold: "RPO ≤ 1 h"
+    sv:
+      title: Mål för återställningspunkt
+      description: Systemet SKA gå att återställa till en tidpunkt som ligger högst 1 timme före ett fel.
+      rationale: Målet för återställningspunkt anger hur mycket arbete organisationen accepterar att förlora och styr hur ofta ändringar kopieras.
+      criteria:
+        - method: test
+          text: Vid en återställningsövning är den senaste återställda ändringen högst 1 timme äldre än det simulerade felet.
+          threshold: "RPO ≤ 1 h"
+
+  - id: BCK-03
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [rto, restore]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery time objective)"]
+    tests: [BCK-T02]
+    en:
+      title: Recovery time objective
+      description: After a total loss of the production database the system MUST be back in service within 4 hours.
+      rationale: The recovery time objective tells the organisation how long it has to manage without the system and sizes the restore procedure.
+      criteria:
+        - method: test
+          text: In a restore drill the time from the decision to restore until users can sign in again is at most 4 hours.
+          threshold: "RTO ≤ 4 h"
+    sv:
+      title: Mål för återställningstid
+      description: Efter en total förlust av produktionsdatabasen SKA systemet vara i drift igen inom 4 timmar.
+      rationale: Målet för återställningstid talar om hur länge organisationen behöver klara sig utan systemet och styr återställningsrutinens utformning.
+      criteria:
+        - method: test
+          text: Vid en återställningsövning är tiden från beslut om återställning tills användarna kan logga in igen högst 4 timmar.
+          threshold: "RTO ≤ 4 h"
+
+  - id: BCK-04
+    type: business
+    obligation: must
+    priority: high
+    tags: [restore-test, drill]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "ISO 22301:2019 §8.5 (exercise programme)"]
+    tests: [BCK-T02]
+    en:
+      title: Quarterly full restore drill
+      description: The operations team MUST restore a complete production backup into a separate environment at least once per quarter and record the result.
+      rationale: Backups that have never been restored are a hope rather than a capability.
+      criteria:
+        - method: review
+          text: The drill log shows a full restore within the last 3 months with measured RPO, RTO and any deviations.
+          threshold: "every 3 months"
+    sv:
+      title: Fullständig återställningsövning varje kvartal
+      description: Driftteamet SKA återställa en fullständig säkerhetskopia av produktionen i en separat miljö minst en gång per kvartal och dokumentera resultatet.
+      rationale: Säkerhetskopior som aldrig har återställts är en förhoppning snarare än en förmåga.
+      criteria:
+        - method: review
+          text: Övningsloggen visar en fullständig återställning inom de senaste 3 månaderna med uppmätt RPO, RTO och eventuella avvikelser.
+          threshold: "var 3:e månad"
+
+  - id: BCK-05
+    type: non_functional
+    obligation: should
+    priority: high
+    tags: [backup, verification]
+    refs: ["Google SRE book ch. 26 (Data Integrity)"]
+    tests: [BCK-T03]
+    en:
+      title: Automated verification of backups
+      description: An automated job SHOULD restore the latest backup into a temporary database every week and compare record counts with the source.
+      rationale: Automatic restores between drills detect corrupt or incomplete backups within days instead of during an emergency.
+      criteria:
+        - method: test
+          text: The job log shows a weekly restore with matching record counts for each table, and a deliberately corrupted backup makes the job fail.
+          threshold: "weekly"
+    sv:
+      title: Automatisk verifiering av säkerhetskopior
+      description: Ett automatiskt jobb BÖR återställa den senaste säkerhetskopian till en tillfällig databas varje vecka och jämföra antalet poster med källan.
+      rationale: Automatiska återställningar mellan övningarna upptäcker trasiga eller ofullständiga kopior inom dagar i stället för mitt i en kris.
+      criteria:
+        - method: test
+          text: Jobbloggen visar en återställning varje vecka med samma antal poster per tabell, och en avsiktligt skadad kopia får jobbet att misslyckas.
+          threshold: "varje vecka"
+
+  - id: BCK-06
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [off-site, backup]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "NIST SP 800-34 Rev. 1 §3.4 (recovery strategies)"]
+    tests: [BCK-T04]
+    en:
+      title: Copy in another region
+      description: The operations team MUST keep at least one copy of each backup in a data centre at least 100 km from the production site.
+      rationale: A regional disaster such as a fire, flood or power failure must not destroy production and backups together.
+      criteria:
+        - method: inspection
+          text: The storage location of the backup copies is documented and is at least 100 km from production.
+          threshold: "≥ 100 km from production"
+    sv:
+      title: Kopia i en annan region
+      description: Driftteamet SKA förvara minst en kopia av varje säkerhetskopia i ett datacenter minst 100 km från produktionsplatsen.
+      rationale: En regional katastrof som brand, översvämning eller strömavbrott får inte förstöra både produktion och säkerhetskopior.
+      criteria:
+        - method: inspection
+          text: Lagringsplatsen för kopiorna är dokumenterad och ligger minst 100 km från produktionen.
+          threshold: "≥ 100 km från produktion"
+
+  - id: BCK-07
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [immutable, ransomware, backup]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "NIST SP 800-209 (security guidelines for storage infrastructure)"]
+    tests: [BCK-T05]
+    en:
+      title: Backups protected against deletion
+      description: The credentials used by the production systems MUST NOT be able to delete or overwrite a backup within its 30-day retention period.
+      rationale: Ransomware and compromised accounts target backups first, so at least one copy has to be out of their reach.
+      criteria:
+        - method: test
+          text: Attempts to delete and to overwrite a backup with the production credentials are refused.
+          threshold: "locked for 30 days"
+    sv:
+      title: Säkerhetskopior skyddade mot radering
+      description: De behörigheter som produktionssystemen använder SKA INTE kunna radera eller skriva över en säkerhetskopia inom dess lagringstid på 30 dagar.
+      rationale: Utpressningsprogram och kapade konton riktar in sig på säkerhetskopiorna först, så minst en kopia behöver vara utom räckhåll för dem.
+      criteria:
+        - method: test
+          text: Försök att radera och att skriva över en säkerhetskopia med produktionens behörigheter avvisas.
+          threshold: "låst i 30 dagar"
+
+  - id: BCK-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [encryption, backup, key-management]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.24 (use of cryptography)", "OWASP ASVS 4.0 V6.2 (algorithms)"]
+    tests: [BCK-T06]
+    en:
+      title: Encrypted backups
+      description: The system MUST encrypt every backup with AES-256 using a key that is stored outside the backup storage.
+      rationale: Backups hold the same data as production, and a stolen copy must not be readable.
+      criteria:
+        - method: inspection
+          text: The backup configuration shows AES-256 encryption and a key reference to a separate key management service.
+        - method: test
+          text: A backup file read directly from storage is not readable without the key.
+    sv:
+      title: Krypterade säkerhetskopior
+      description: Systemet SKA kryptera varje säkerhetskopia med AES-256 med en nyckel som förvaras utanför lagringen för säkerhetskopior.
+      rationale: Säkerhetskopior innehåller samma data som produktionen, och en stulen kopia får inte gå att läsa.
+      criteria:
+        - method: inspection
+          text: Konfigurationen för säkerhetskopiering visar AES-256-kryptering och en nyckelreferens till en separat nyckelhanteringstjänst.
+        - method: test
+          text: En kopia som läses direkt från lagringen går inte att läsa utan nyckeln.
+
+  - id: BCK-09
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [retention, backup]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "GDPR Art. 5(1)(e) (storage limitation)"]
+    tests: [BCK-T07]
+    en:
+      title: Retention of backups
+      description: The system MUST keep daily backups for 30 days and monthly backups for 12 months, and delete them after that.
+      rationale: A defined retention balances the ability to recover from late-detected errors against storage cost and data protection rules.
+      criteria:
+        - method: inspection
+          text: The backup catalogue holds 30 daily and 12 monthly backups and nothing older.
+          threshold: "30 days daily, 12 months monthly"
+    sv:
+      title: Lagringstid för säkerhetskopior
+      description: Systemet SKA spara dagliga säkerhetskopior i 30 dagar och månatliga i 12 månader och radera dem därefter.
+      rationale: En bestämd lagringstid väger förmågan att återställa efter sent upptäckta fel mot lagringskostnad och dataskyddsregler.
+      criteria:
+        - method: inspection
+          text: Katalogen över säkerhetskopior innehåller 30 dagliga och 12 månatliga kopior och inget äldre.
+          threshold: "30 dagar dagliga, 12 månader månatliga"
+
+  - id: BCK-10
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [alerting, backup]
+    refs: ["ITIL 4 Monitoring and event management"]
+    tests: [BCK-T08]
+    en:
+      title: Alert on failed or missing backup
+      description: The monitoring MUST alert the operations team within 1 hour when a scheduled backup fails or has not completed.
+      rationale: A backup failure that goes unnoticed for weeks leaves the organisation unprotected without knowing it.
+      criteria:
+        - method: test
+          text: A backup job that is made to fail produces an alert to the operations team within 1 hour.
+          threshold: "alert ≤ 1 h"
+    sv:
+      title: Larm vid misslyckad eller utebliven säkerhetskopiering
+      description: Övervakningen SKA larma driftteamet inom 1 timme när en schemalagd säkerhetskopiering misslyckas eller inte har slutförts.
+      rationale: Ett fel i säkerhetskopieringen som inte märks på veckor lämnar organisationen oskyddad utan att den vet om det.
+      criteria:
+        - method: test
+          text: Ett jobb för säkerhetskopiering som får misslyckas ger ett larm till driftteamet inom 1 timme.
+          threshold: "larm ≤ 1 h"
+
+  - id: BCK-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [disaster-recovery, plan, continuity]
+    refs: ["ISO 22301:2019 §8.4 (business continuity plans and procedures)", "ISO/IEC 27031:2011", "ISO/IEC 27001:2022 Annex A 5.30 (ICT readiness for business continuity)"]
+    tests: [BCK-T09]
+    en:
+      title: Documented and exercised disaster recovery plan
+      description: The organisation MUST maintain a disaster recovery plan for the system that is reviewed and exercised at least once every 12 months.
+      rationale: In a disaster there is no time to work out roles, contacts and steps, so they have to be written down and practised beforehand.
+      criteria:
+        - method: review
+          text: The plan names roles, contacts, recovery steps and target times, and is dated and exercised within the last 12 months.
+          threshold: "review and exercise every 12 months"
+    sv:
+      title: Dokumenterad och övad kontinuitetsplan
+      description: Organisationen SKA upprätthålla en plan för katastrofåterställning av systemet som granskas och övas minst en gång per 12 månader.
+      rationale: Vid en katastrof finns ingen tid att reda ut roller, kontakter och steg, så de behöver vara nedskrivna och övade i förväg.
+      criteria:
+        - method: review
+          text: Planen anger roller, kontakter, återställningssteg och måltider, och är daterad och övad inom de senaste 12 månaderna.
+          threshold: "granskas och övas var 12:e månad"
+
+  - id: BCK-12
+    type: functional
+    obligation: may
+    priority: low
+    tags: [restore, project, soft-delete]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)"]
+    tests: [BCK-T10]
+    en:
+      title: Restore of a single deleted project
+      description: An administrator MAY restore a deleted project, with its requirements, tests and runs, during 30 days after its deletion.
+      rationale: Accidental deletions are the most frequent reason for a restore, and handling them without a full database restore saves hours.
+      criteria:
+        - method: demonstration
+          text: A project deleted 29 days ago is restored by an administrator with all its items, while the rest of the data is unaffected.
+          threshold: "30 days"
+    sv:
+      title: Återställning av ett enskilt raderat projekt
+      description: En administratör FÅR återställa ett raderat projekt, med dess krav, testfall och körningar, under 30 dagar efter raderingen.
+      rationale: Raderingar av misstag är den vanligaste orsaken till återställning, och att hantera dem utan att återställa hela databasen sparar timmar.
+      criteria:
+        - method: demonstration
+          text: Ett projekt som raderades för 29 dagar sedan återställs av en administratör med alla sina poster, medan övriga data inte påverkas.
+          threshold: "30 dagar"
+
+tests:
+  - id: BCK-T01
+    priority: high
+    execution: automated
+    tags: [backup, frequency]
+    refs: []
+    en:
+      title: Daily backups in the backup catalogue
+      description: A script reads the backup catalogue and checks that a completed full backup exists for each of the last 14 days.
+      preconditions: Read access to the backup catalogue.
+      expected: Each of the last 14 days has a completed full backup of the database and of the file storage.
+      steps:
+        - action: List the backups of the last 14 days with type, status and completion time.
+          expected: The list is returned.
+        - action: For each day, check for a completed full backup of the database and of the file storage.
+          expected: No day is missing either backup.
+    sv:
+      title: Dagliga säkerhetskopior i katalogen
+      description: Ett skript läser katalogen över säkerhetskopior och kontrollerar att det finns en slutförd fullständig kopia för var och en av de senaste 14 dagarna.
+      preconditions: Läsbehörighet till katalogen över säkerhetskopior.
+      expected: Var och en av de senaste 14 dagarna har en slutförd fullständig kopia av databasen och av fillagringen.
+      steps:
+        - action: Lista säkerhetskopiorna för de senaste 14 dagarna med typ, status och tid för slutförande.
+          expected: Listan returneras.
+        - action: Kontrollera för varje dag att det finns en slutförd fullständig kopia av databasen och av fillagringen.
+          expected: Ingen dag saknar någon av kopiorna.
+
+  - id: BCK-T02
+    priority: critical
+    execution: manual
+    tags: [restore-test, rpo, rto, drill]
+    refs: ["ISO 22301:2019 §8.5"]
+    en:
+      title: Full restore drill with RPO and RTO measurement
+      description: Simulates the loss of the production database and restores it from backup into a separate environment.
+      preconditions: A separate restore environment; the restore runbook; a marker record written to production at a known time.
+      expected: Users can sign in within 4 hours and the newest restored change is at most 1 hour older than the simulated failure.
+      steps:
+        - action: Write a marker record to production, wait 30 minutes and declare the simulated failure, noting the time.
+          expected: The failure time and the time of the marker are recorded.
+        - action: Follow the restore runbook to restore the newest backup and change logs into the restore environment.
+          expected: The runbook can be followed without missing steps or credentials.
+        - action: Sign in to the restored system and note the time.
+          expected: Sign-in works at most 4 hours after the declared failure.
+        - action: Find the newest change in the restored data, including the marker record.
+          expected: The marker is present and the newest change is at most 1 hour older than the failure time.
+    sv:
+      title: Fullständig återställningsövning med mätning av RPO och RTO
+      description: Simulerar att produktionsdatabasen går förlorad och återställer den från säkerhetskopia i en separat miljö.
+      preconditions: En separat återställningsmiljö; återställningsrutinen; en markeringspost skriven till produktion vid en känd tidpunkt.
+      expected: Användare kan logga in inom 4 timmar och den senaste återställda ändringen är högst 1 timme äldre än det simulerade felet.
+      steps:
+        - action: Skriv en markeringspost till produktion, vänta 30 minuter och deklarera det simulerade felet med tidpunkt.
+          expected: Tidpunkten för felet och för markeringen är registrerade.
+        - action: Följ återställningsrutinen och återställ den senaste säkerhetskopian och ändringsloggarna i återställningsmiljön.
+          expected: Rutinen går att följa utan saknade steg eller behörigheter.
+        - action: Logga in i det återställda systemet och notera tiden.
+          expected: Inloggningen fungerar högst 4 timmar efter det deklarerade felet.
+        - action: Hitta den senaste ändringen i återställda data, inklusive markeringsposten.
+          expected: Markeringen finns och den senaste ändringen är högst 1 timme äldre än feltidpunkten.
+
+  - id: BCK-T03
+    priority: high
+    execution: automated
+    tags: [backup, verification]
+    refs: []
+    en:
+      title: Weekly automated restore verification
+      description: A scheduled job restores the latest backup into a temporary database, compares record counts with the source and removes the database again.
+      preconditions: The verification job is scheduled; a test backup that has been deliberately corrupted is available.
+      expected: The job passes with the real backup and fails with the corrupted one.
+      steps:
+        - action: Run the job against the latest backup.
+          expected: The restore succeeds and the record count of every table matches the source at backup time.
+        - action: Run the job against the corrupted test backup.
+          expected: The job fails and raises an alert.
+        - action: Check the job history for the last 4 weeks.
+          expected: There is one successful run per week.
+    sv:
+      title: Automatisk verifiering av återställning varje vecka
+      description: Ett schemalagt jobb återställer den senaste kopian i en tillfällig databas, jämför antalet poster med källan och tar sedan bort databasen.
+      preconditions: Verifieringsjobbet är schemalagt; en testkopia som avsiktligt har skadats finns tillgänglig.
+      expected: Jobbet går igenom med den riktiga kopian och misslyckas med den skadade.
+      steps:
+        - action: Kör jobbet mot den senaste kopian.
+          expected: Återställningen lyckas och antalet poster i varje tabell stämmer med källan vid kopieringstillfället.
+        - action: Kör jobbet mot den skadade testkopian.
+          expected: Jobbet misslyckas och skapar ett larm.
+        - action: Kontrollera jobbets historik för de senaste 4 veckorna.
+          expected: Det finns en lyckad körning per vecka.
+
+  - id: BCK-T04
+    priority: high
+    execution: manual
+    tags: [off-site, review]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.13"]
+    en:
+      title: Location of the off-site copies
+      description: Reviews where the backup copies are stored and checks that the latest backup is present there.
+      preconditions: Documentation of the storage locations; read access to the remote storage.
+      expected: A copy of the latest backup exists in a data centre at least 100 km from production.
+      steps:
+        - action: Look up the address or region of the production site and of the remote backup storage.
+          expected: The distance between them is at least 100 km.
+        - action: List the backups in the remote storage.
+          expected: The latest daily backup is present.
+    sv:
+      title: Placering av kopiorna på annan plats
+      description: Granskar var kopiorna förvaras och kontrollerar att den senaste säkerhetskopian finns där.
+      preconditions: Dokumentation av lagringsplatserna; läsbehörighet till den externa lagringen.
+      expected: En kopia av den senaste säkerhetskopian finns i ett datacenter minst 100 km från produktionen.
+      steps:
+        - action: Ta reda på adress eller region för produktionsplatsen och för den externa lagringen.
+          expected: Avståndet mellan dem är minst 100 km.
+        - action: Lista säkerhetskopiorna i den externa lagringen.
+          expected: Den senaste dagliga kopian finns.
+
+  - id: BCK-T05
+    priority: critical
+    execution: automated
+    tags: [immutable, backup, security]
+    refs: []
+    en:
+      title: Production credentials cannot delete backups
+      description: A script uses the credentials of the production systems to try to delete and overwrite a backup within its retention period.
+      preconditions: A backup younger than 30 days; the script runs with the same credentials as the production systems.
+      expected: Both attempts are refused and the backup is unchanged.
+      steps:
+        - action: Try to delete the backup.
+          expected: The storage refuses the request with an access or retention error.
+        - action: Try to upload a different file under the name of the backup.
+          expected: The storage refuses the request.
+        - action: Compare the checksum of the backup with the value recorded at creation.
+          expected: The checksums match.
+    sv:
+      title: Produktionens behörigheter kan inte radera säkerhetskopior
+      description: Ett skript använder produktionssystemens behörigheter för att försöka radera och skriva över en säkerhetskopia inom dess lagringstid.
+      preconditions: En säkerhetskopia som är yngre än 30 dagar; skriptet körs med samma behörigheter som produktionssystemen.
+      expected: Båda försöken avvisas och kopian är oförändrad.
+      steps:
+        - action: Försök radera kopian.
+          expected: Lagringen avvisar anropet med ett behörighets- eller lagringstidsfel.
+        - action: Försök ladda upp en annan fil med kopians namn.
+          expected: Lagringen avvisar anropet.
+        - action: Jämför kopians kontrollsumma med värdet som registrerades när den skapades.
+          expected: Kontrollsummorna stämmer.
+
+  - id: BCK-T06
+    priority: high
+    execution: manual
+    tags: [encryption, backup]
+    refs: []
+    en:
+      title: Backups are encrypted with a separate key
+      description: Checks the encryption settings and tries to read a backup without the key.
+      preconditions: Read access to the backup configuration and to one backup file.
+      expected: The backup uses AES-256 with a key held in a separate key service and cannot be read without it.
+      steps:
+        - action: Inspect the backup configuration.
+          expected: AES-256 is configured and the key is referenced from a separate key management service.
+        - action: Download one backup file directly from storage and try to open it with the database restore tool without the key.
+          expected: The file cannot be read and contains no readable records.
+    sv:
+      title: Säkerhetskopior är krypterade med en separat nyckel
+      description: Kontrollerar krypteringsinställningarna och försöker läsa en säkerhetskopia utan nyckeln.
+      preconditions: Läsbehörighet till konfigurationen för säkerhetskopiering och till en kopia.
+      expected: Kopian använder AES-256 med en nyckel i en separat nyckeltjänst och går inte att läsa utan den.
+      steps:
+        - action: Granska konfigurationen för säkerhetskopiering.
+          expected: AES-256 är konfigurerat och nyckeln hämtas från en separat nyckelhanteringstjänst.
+        - action: Hämta en kopia direkt från lagringen och försök öppna den med databasens återställningsverktyg utan nyckeln.
+          expected: Filen går inte att läsa och innehåller inga läsbara poster.
+
+  - id: BCK-T07
+    priority: medium
+    execution: automated
+    tags: [retention, backup]
+    refs: []
+    en:
+      title: Backup retention matches the policy
+      description: A script counts the backups in the catalogue by type and age.
+      preconditions: The backup system has run in its current configuration for more than 12 months.
+      expected: There are 30 daily and 12 monthly backups and none older than the policy allows.
+      steps:
+        - action: Count the daily backups and find the oldest one.
+          expected: There are 30 daily backups and the oldest is at most 30 days old.
+        - action: Count the monthly backups and find the oldest one.
+          expected: There are 12 monthly backups and the oldest is at most 12 months old.
+    sv:
+      title: Lagringstiden för säkerhetskopior följer policyn
+      description: Ett skript räknar kopiorna i katalogen efter typ och ålder.
+      preconditions: Systemet för säkerhetskopiering har körts med nuvarande konfiguration i mer än 12 månader.
+      expected: Det finns 30 dagliga och 12 månatliga kopior och ingen som är äldre än policyn tillåter.
+      steps:
+        - action: Räkna de dagliga kopiorna och hitta den äldsta.
+          expected: Det finns 30 dagliga kopior och den äldsta är högst 30 dagar gammal.
+        - action: Räkna de månatliga kopiorna och hitta den äldsta.
+          expected: Det finns 12 månatliga kopior och den äldsta är högst 12 månader gammal.
+
+  - id: BCK-T08
+    priority: high
+    execution: manual
+    tags: [alerting, backup]
+    refs: []
+    en:
+      title: Failed backup raises an alert
+      description: Makes a scheduled backup fail in a test environment with production alert rules.
+      preconditions: A test environment with the production backup schedule and alert rules; alerts go to a test channel.
+      expected: The operations team receives an alert within 1 hour of the failure.
+      steps:
+        - action: Revoke the write permission of the backup job on the target storage before the scheduled run.
+          expected: The scheduled backup fails.
+        - action: Watch the test alert channel and note the time of the alert.
+          expected: An alert that names the failed backup arrives within 1 hour of the scheduled start.
+        - action: Restore the permission and run the backup again.
+          expected: The backup succeeds and the alert is resolved.
+    sv:
+      title: Misslyckad säkerhetskopiering ger larm
+      description: Får en schemalagd säkerhetskopiering att misslyckas i en testmiljö med produktionens larmregler.
+      preconditions: En testmiljö med produktionens schema och larmregler för säkerhetskopiering; larmen går till en testkanal.
+      expected: Driftteamet får ett larm inom 1 timme efter felet.
+      steps:
+        - action: Ta bort skrivbehörigheten för jobbet på mållagringen före den schemalagda körningen.
+          expected: Den schemalagda säkerhetskopieringen misslyckas.
+        - action: Bevaka testkanalen för larm och notera tiden för larmet.
+          expected: Ett larm som anger den misslyckade kopieringen kommer inom 1 timme från den schemalagda starten.
+        - action: Återställ behörigheten och kör säkerhetskopieringen igen.
+          expected: Kopieringen lyckas och larmet återställs.
+
+  - id: BCK-T09
+    priority: high
+    execution: manual
+    tags: [disaster-recovery, exercise]
+    refs: ["ISO 22301:2019 §8.4", "ISO 22301:2019 §8.5"]
+    en:
+      title: Review and tabletop exercise of the disaster recovery plan
+      description: Reviews the content of the plan and runs a tabletop exercise with the people named in it.
+      preconditions: The current disaster recovery plan; the people in the named roles are available for 2 hours.
+      expected: The plan is complete and current, and the exercise shows that each role knows its steps.
+      steps:
+        - action: Check that the plan names roles, deputies, contact details, recovery steps and target times.
+          expected: All parts are present and the date of the last review is within 12 months.
+        - action: Call two of the listed contacts using the details in the plan.
+          expected: Both contacts are reached.
+        - action: Walk through a scenario of losing the production region and let each role describe its actions.
+          expected: Each role describes its steps consistent with the plan; gaps are recorded as actions with owners.
+    sv:
+      title: Granskning och skrivbordsövning av kontinuitetsplanen
+      description: Granskar planens innehåll och genomför en skrivbordsövning med de personer som anges i den.
+      preconditions: Den aktuella planen för katastrofåterställning; personerna i de angivna rollerna är tillgängliga i 2 timmar.
+      expected: Planen är komplett och aktuell, och övningen visar att varje roll känner till sina steg.
+      steps:
+        - action: Kontrollera att planen anger roller, ersättare, kontaktuppgifter, återställningssteg och måltider.
+          expected: Alla delar finns och datumet för senaste granskning ligger inom 12 månader.
+        - action: Ring två av de angivna kontakterna med uppgifterna i planen.
+          expected: Båda kontakterna nås.
+        - action: Gå igenom ett scenario där produktionsregionen går förlorad och låt varje roll beskriva sina åtgärder.
+          expected: Varje roll beskriver sina steg i enlighet med planen; luckor registreras som åtgärder med ansvariga.
+
+  - id: BCK-T10
+    priority: low
+    execution: manual
+    tags: [restore, project]
+    refs: []
+    en:
+      title: Restore of a deleted project by an administrator
+      description: Deletes a test project and restores it as an administrator.
+      preconditions: A test project with requirements, tests and runs; an administrator account.
+      expected: The project returns with all its items and nothing else is changed.
+      steps:
+        - action: Note the numbers of requirements, tests and runs in the project and delete the project.
+          expected: The project no longer appears in the project list.
+        - action: As administrator, open the list of deleted projects and restore the project.
+          expected: The project appears in the project list again.
+        - action: Compare the numbers of requirements, tests and runs with the noted values.
+          expected: The numbers are the same and other projects are unchanged.
+    sv:
+      title: Återställning av ett raderat projekt av en administratör
+      description: Raderar ett testprojekt och återställer det som administratör.
+      preconditions: Ett testprojekt med krav, testfall och körningar; ett administratörskonto.
+      expected: Projektet kommer tillbaka med alla sina poster och inget annat ändras.
+      steps:
+        - action: Notera antalet krav, testfall och körningar i projektet och radera projektet.
+          expected: Projektet syns inte längre i projektlistan.
+        - action: Öppna listan över raderade projekt som administratör och återställ projektet.
+          expected: Projektet syns i projektlistan igen.
+        - action: Jämför antalet krav, testfall och körningar med de noterade värdena.
+          expected: Antalen är desamma och övriga projekt är oförändrade.

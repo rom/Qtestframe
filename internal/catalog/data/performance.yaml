@@ -1,0 +1,609 @@
+area: performance
+prefix: PERF
+group: quality
+name: {en: Performance, sv: Prestanda}
+description:
+  en: Response times per type of operation, throughput, page load, resource use, batch durations and behaviour under load.
+  sv: Svarstider per typ av operation, genomströmning, sidladdning, resursanvändning, körtider för batchjobb och beteende under last.
+
+requirements:
+  - id: PERF-01
+    type: performance
+    obligation: must
+    priority: high
+    tags: [response-time, read, percentile]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "ISO/IEC 25023:2016 §8.3 (performance efficiency measures)"]
+    tests: [PERF-T01]
+    en:
+      title: Response time of read operations
+      description: The system MUST answer 95 % of read requests for a single page or record within 1 second with 100 concurrent users.
+      rationale: Users lose their train of thought when ordinary navigation takes longer than a second, and percentiles reveal slow outliers that averages hide.
+      criteria:
+        - method: test
+          text: A load test with 100 virtual users shows a 95th percentile of at most 1 second for read requests.
+          threshold: "p95 ≤ 1 s at 100 concurrent users"
+    sv:
+      title: Svarstid för läsoperationer
+      description: Systemet SKA besvara 95 % av läsanropen för en enskild sida eller post inom 1 sekund med 100 samtidiga användare.
+      rationale: Användare tappar tråden när vanlig navigering tar mer än en sekund, och percentiler visar långsamma avvikare som medelvärden döljer.
+      criteria:
+        - method: test
+          text: Ett lasttest med 100 virtuella användare visar en 95:e percentil på högst 1 sekund för läsanrop.
+          threshold: "p95 ≤ 1 s vid 100 samtidiga användare"
+
+  - id: PERF-02
+    type: performance
+    obligation: must
+    priority: high
+    tags: [response-time, write, percentile]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)"]
+    tests: [PERF-T01]
+    en:
+      title: Response time of save operations
+      description: The system MUST complete 95 % of requests that create or update a single record within 1.5 seconds with 100 concurrent users.
+      rationale: Saving is part of almost every task, and slow saves make users click twice and create duplicates.
+      criteria:
+        - method: test
+          text: In the mixed load test the 95th percentile of create and update requests is at most 1.5 seconds.
+          threshold: "p95 ≤ 1.5 s at 100 concurrent users"
+    sv:
+      title: Svarstid för att spara
+      description: Systemet SKA slutföra 95 % av anropen som skapar eller uppdaterar en enskild post inom 1,5 sekunder med 100 samtidiga användare.
+      rationale: Att spara ingår i nästan varje uppgift, och långsamma sparningar får användare att klicka två gånger och skapa dubbletter.
+      criteria:
+        - method: test
+          text: I det blandade lasttestet är 95:e percentilen för anrop som skapar och uppdaterar högst 1,5 sekunder.
+          threshold: "p95 ≤ 1,5 s vid 100 samtidiga användare"
+
+  - id: PERF-03
+    type: performance
+    obligation: must
+    priority: high
+    tags: [response-time, search, percentile]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "ISTQB CT-PT Performance Testing syllabus §1.2"]
+    tests: [PERF-T02]
+    en:
+      title: Response time of searches
+      description: The system MUST return the first page of results for 95 % of free-text searches within 2 seconds over 1 million records.
+      rationale: Search is the main way to find information in a growing data set, so its response time has to be verified against a realistic volume.
+      criteria:
+        - method: test
+          text: A search test against a database of 1 million records shows a 95th percentile of at most 2 seconds.
+          threshold: "p95 ≤ 2 s with 1 000 000 records"
+    sv:
+      title: Svarstid för sökningar
+      description: Systemet SKA visa första resultatsidan för 95 % av fritextsökningarna inom 2 sekunder i en databas med 1 miljon poster.
+      rationale: Sökning är det viktigaste sättet att hitta information i en växande datamängd, så svarstiden behöver verifieras mot en realistisk volym.
+      criteria:
+        - method: test
+          text: Ett söktest mot en databas med 1 miljon poster visar en 95:e percentil på högst 2 sekunder.
+          threshold: "p95 ≤ 2 s med 1 000 000 poster"
+
+  - id: PERF-04
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [response-time, report, export]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)"]
+    tests: [PERF-T03]
+    en:
+      title: Generation time of reports and exports
+      description: The system SHOULD generate a report or export of 10 000 rows within 10 seconds.
+      rationale: Reports are often produced just before a meeting or an audit, and users need to know how long they wait.
+      criteria:
+        - method: test
+          text: Five consecutive exports of 10 000 rows each finish within 10 seconds.
+          threshold: "≤ 10 s for 10 000 rows"
+    sv:
+      title: Tid för att skapa rapporter och exporter
+      description: Systemet BÖR skapa en rapport eller export med 10 000 rader inom 10 sekunder.
+      rationale: Rapporter tas ofta fram strax före ett möte eller en revision, och användaren behöver veta hur länge hen väntar.
+      criteria:
+        - method: test
+          text: Fem exporter i följd med 10 000 rader vardera blir klara inom 10 sekunder.
+          threshold: "≤ 10 s för 10 000 rader"
+
+  - id: PERF-05
+    type: performance
+    obligation: should
+    priority: high
+    tags: [page-load, core-web-vitals, lcp]
+    refs: ["web.dev Core Web Vitals: Largest Contentful Paint", "ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)"]
+    tests: [PERF-T04]
+    en:
+      title: Largest Contentful Paint
+      description: Each page of the web interface SHOULD reach a Largest Contentful Paint of at most 2.5 seconds at the 75th percentile of page loads.
+      rationale: The time until the main content is visible is what users perceive as page load, and the 75th percentile is the common reference point for this metric.
+      criteria:
+        - method: test
+          text: Lab measurements with a throttled 4G profile and field data both show LCP at or below 2.5 seconds at the 75th percentile.
+          threshold: "LCP p75 ≤ 2.5 s"
+    sv:
+      title: Largest Contentful Paint
+      description: Varje sida i webbgränssnittet BÖR nå en Largest Contentful Paint på högst 2,5 sekunder vid 75:e percentilen av sidladdningarna.
+      rationale: Tiden tills huvudinnehållet syns är det användaren upplever som sidladdning, och 75:e percentilen är den gängse referenspunkten för måttet.
+      criteria:
+        - method: test
+          text: Labbmätningar med en strypt 4G-profil och fältdata visar båda LCP på högst 2,5 sekunder vid 75:e percentilen.
+          threshold: "LCP p75 ≤ 2,5 s"
+
+  - id: PERF-06
+    type: performance
+    obligation: should
+    priority: high
+    tags: [page-load, core-web-vitals, inp]
+    refs: ["web.dev Core Web Vitals: Interaction to Next Paint"]
+    tests: [PERF-T04]
+    en:
+      title: Interaction to Next Paint
+      description: The web interface SHOULD keep Interaction to Next Paint at or below 200 milliseconds at the 75th percentile.
+      rationale: A delay between a click and the visible reaction makes the interface feel broken even when the server answers in time.
+      criteria:
+        - method: test
+          text: Field data or scripted interactions show INP at or below 200 milliseconds at the 75th percentile.
+          threshold: "INP p75 ≤ 200 ms"
+    sv:
+      title: Interaction to Next Paint
+      description: Webbgränssnittet BÖR hålla Interaction to Next Paint på högst 200 millisekunder vid 75:e percentilen.
+      rationale: En fördröjning mellan ett klick och den synliga reaktionen får gränssnittet att kännas trasigt även när servern svarar i tid.
+      criteria:
+        - method: test
+          text: Fältdata eller skriptade interaktioner visar INP på högst 200 millisekunder vid 75:e percentilen.
+          threshold: "INP p75 ≤ 200 ms"
+
+  - id: PERF-07
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [page-load, core-web-vitals, cls]
+    refs: ["web.dev Core Web Vitals: Cumulative Layout Shift"]
+    tests: [PERF-T04]
+    en:
+      title: Cumulative Layout Shift
+      description: Each page of the web interface SHOULD keep its Cumulative Layout Shift at or below 0.1 at the 75th percentile.
+      rationale: Content that moves while the page loads makes users click the wrong element.
+      criteria:
+        - method: test
+          text: Lab and field measurements show CLS at or below 0.1 at the 75th percentile.
+          threshold: "CLS p75 ≤ 0.1"
+    sv:
+      title: Cumulative Layout Shift
+      description: Varje sida i webbgränssnittet BÖR hålla sin Cumulative Layout Shift på högst 0,1 vid 75:e percentilen.
+      rationale: Innehåll som flyttar sig medan sidan laddas får användaren att klicka på fel element.
+      criteria:
+        - method: test
+          text: Labb- och fältmätningar visar CLS på högst 0,1 vid 75:e percentilen.
+          threshold: "CLS p75 ≤ 0,1"
+
+  - id: PERF-08
+    type: performance
+    obligation: must
+    priority: high
+    tags: [throughput, load]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.3 (capacity)", "ISTQB CT-PT Performance Testing syllabus §1.2 (load testing)"]
+    tests: [PERF-T05]
+    en:
+      title: Sustained throughput
+      description: The system MUST sustain 200 requests per second for 30 minutes with less than 0.1 % of requests failing.
+      rationale: The throughput target sets the size of the production environment and shows whether the system copes with the busiest hour.
+      criteria:
+        - method: test
+          text: A 30-minute load test at a constant rate of 200 requests per second has an error rate below 0.1 %.
+          threshold: "200 req/s for 30 min, errors < 0.1 %"
+    sv:
+      title: Uthållig genomströmning
+      description: Systemet SKA klara 200 anrop per sekund i 30 minuter med mindre än 0,1 % misslyckade anrop.
+      rationale: Målet för genomströmning styr storleken på produktionsmiljön och visar om systemet klarar den mest belastade timmen.
+      criteria:
+        - method: test
+          text: Ett lasttest på 30 minuter med konstant 200 anrop per sekund har en felandel under 0,1 %.
+          threshold: "200 anrop/s i 30 min, fel < 0,1 %"
+
+  - id: PERF-09
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [resource-use, cpu]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "ITIL 4 Capacity and performance management"]
+    tests: [PERF-T06]
+    en:
+      title: Processor utilisation under load
+      description: The application servers SHOULD keep their average processor utilisation below 70 % at a load of 200 requests per second.
+      rationale: Headroom on the processors absorbs short peaks and leaves time to add capacity before users notice degradation.
+      criteria:
+        - method: analysis
+          text: Metrics collected during the throughput test show average processor utilisation below 70 % on every application server.
+          threshold: "CPU < 70 % at 200 req/s"
+    sv:
+      title: Processoranvändning under last
+      description: Applikationsservrarna BÖR hålla sin genomsnittliga processoranvändning under 70 % vid en last på 200 anrop per sekund.
+      rationale: Marginal i processorerna tar upp korta toppar och ger tid att lägga till kapacitet innan användarna märker försämringar.
+      criteria:
+        - method: analysis
+          text: Mätvärden från genomströmningstestet visar genomsnittlig processoranvändning under 70 % på varje applikationsserver.
+          threshold: "CPU < 70 % vid 200 anrop/s"
+
+  - id: PERF-10
+    type: performance
+    obligation: must_not
+    priority: high
+    tags: [resource-use, memory, soak]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "ISTQB CT-PT Performance Testing syllabus §1.2 (endurance testing)"]
+    tests: [PERF-T07]
+    en:
+      title: No memory growth over time
+      description: The system MUST NOT increase its memory use by more than 10 % during 8 hours at a constant load of 100 concurrent users.
+      rationale: Memory leaks only show after hours of operation and end in crashes or restarts in production.
+      criteria:
+        - method: test
+          text: In an 8-hour soak test the memory use at the end is at most 10 % higher than after the first 30 minutes.
+          threshold: "memory growth ≤ 10 % over 8 h"
+    sv:
+      title: Ingen minnestillväxt över tid
+      description: Systemet SKA INTE öka sin minnesanvändning med mer än 10 % under 8 timmar med en konstant last på 100 samtidiga användare.
+      rationale: Minnesläckor syns först efter flera timmars drift och slutar med krascher eller omstarter i produktion.
+      criteria:
+        - method: test
+          text: I ett uthållighetstest på 8 timmar är minnesanvändningen vid slutet högst 10 % högre än efter de första 30 minuterna.
+          threshold: "minnesökning ≤ 10 % på 8 h"
+
+  - id: PERF-11
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [batch, duration]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "ITIL 4 Capacity and performance management"]
+    tests: [PERF-T08]
+    en:
+      title: Duration of nightly batch jobs
+      description: The nightly batch jobs MUST complete within 2 hours when they process 1 million records.
+      rationale: Batch jobs that overrun their window collide with the working day and with backups.
+      criteria:
+        - method: test
+          text: A batch run with 1 million records in a production-like environment finishes within 2 hours.
+          threshold: "≤ 2 h for 1 000 000 records"
+    sv:
+      title: Körtid för nattliga batchjobb
+      description: De nattliga batchjobben SKA bli klara inom 2 timmar när de bearbetar 1 miljon poster.
+      rationale: Batchjobb som drar över sitt tidsfönster krockar med arbetsdagen och med säkerhetskopieringen.
+      criteria:
+        - method: test
+          text: En batchkörning med 1 miljon poster i en produktionslik miljö blir klar inom 2 timmar.
+          threshold: "≤ 2 h för 1 000 000 poster"
+
+  - id: PERF-12
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [stress, peak-load, percentile]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (stress and spike testing)", "Google SRE book ch. 21 (Handling Overload)"]
+    tests: [PERF-T09]
+    en:
+      title: Response time at twice the expected load
+      description: At twice the expected peak load the system SHOULD keep the 95th percentile response time of read requests below 3 seconds.
+      rationale: Real peaks exceed forecasts, and a system that degrades gradually gives the team time to react.
+      criteria:
+        - method: test
+          text: A stress test at 200 concurrent users shows a 95th percentile of read requests below 3 seconds.
+          threshold: "p95 < 3 s at 2 × peak load"
+    sv:
+      title: Svarstid vid dubbla den förväntade lasten
+      description: Vid dubbla den förväntade topplasten BÖR systemet hålla 95:e percentilen för svarstiden på läsanrop under 3 sekunder.
+      rationale: Verkliga toppar överstiger prognoserna, och ett system som försämras gradvis ger teamet tid att reagera.
+      criteria:
+        - method: test
+          text: Ett stresstest med 200 samtidiga användare visar en 95:e percentil för läsanrop under 3 sekunder.
+          threshold: "p95 < 3 s vid 2 × topplast"
+
+  - id: PERF-13
+    type: constraint
+    obligation: should_not
+    priority: low
+    tags: [page-load, budget, javascript]
+    refs: ["web.dev Performance budgets"]
+    tests: [PERF-T10]
+    en:
+      title: Size budget for scripts on first load
+      description: The scripts that the browser downloads to show the start page SHOULD NOT exceed 500 KB after compression.
+      rationale: Script size drives download, parse and execution time on slower devices, and a fixed budget stops gradual growth.
+      criteria:
+        - method: test
+          text: The build pipeline measures the compressed script size of the start page and reports at most 500 KB.
+          threshold: "≤ 500 KB compressed"
+    sv:
+      title: Storleksbudget för skript vid första laddning
+      description: Skripten som webbläsaren laddar ner för att visa startsidan BÖR INTE överstiga 500 kB efter komprimering.
+      rationale: Skriptens storlek styr tiden för nedladdning, tolkning och körning på långsammare enheter, och en fast budget stoppar gradvis tillväxt.
+      criteria:
+        - method: test
+          text: Byggpipelinen mäter startsidans komprimerade skriptstorlek och rapporterar högst 500 kB.
+          threshold: "≤ 500 kB komprimerat"
+
+tests:
+  - id: PERF-T01
+    priority: high
+    execution: automated
+    tags: [load-test, response-time]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §4 (executing performance tests)"]
+    en:
+      title: Load test of read and save operations
+      description: A load test script (for example k6 or JMeter) runs a realistic mix of read and save requests and checks the percentiles.
+      preconditions: A production-like test environment with a representative data set; monitoring of the servers is active.
+      expected: The 95th percentile is at most 1 second for read requests and at most 1.5 seconds for save requests.
+      steps:
+        - action: Ramp up to 100 virtual users over 5 minutes, each running the scripted user journey with 80 % reads and 20 % saves.
+          expected: The test reaches 100 active virtual users without errors from the load generator.
+          data: "think time 5–10 s per step"
+        - action: Hold 100 virtual users for 30 minutes and collect response times per request type.
+          expected: The error rate stays below 0.1 %.
+        - action: Compute the 95th percentile per request type and compare with the thresholds.
+          expected: Reads are at most 1 second and saves at most 1.5 seconds; the script exits with a failure code otherwise.
+    sv:
+      title: Lasttest av läs- och sparoperationer
+      description: Ett lasttestskript (till exempel k6 eller JMeter) kör en realistisk blandning av läs- och sparanrop och kontrollerar percentilerna.
+      preconditions: En produktionslik testmiljö med en representativ datamängd; övervakning av servrarna är aktiv.
+      expected: 95:e percentilen är högst 1 sekund för läsanrop och högst 1,5 sekunder för sparanrop.
+      steps:
+        - action: Öka till 100 virtuella användare under 5 minuter, där var och en kör det skriptade användarflödet med 80 % läsningar och 20 % sparningar.
+          expected: Testet når 100 aktiva virtuella användare utan fel från lastgeneratorn.
+          data: "betänketid 5–10 s per steg"
+        - action: Håll 100 virtuella användare i 30 minuter och samla in svarstider per anropstyp.
+          expected: Felandelen ligger under 0,1 %.
+        - action: Beräkna 95:e percentilen per anropstyp och jämför med gränsvärdena.
+          expected: Läsningar ligger på högst 1 sekund och sparningar på högst 1,5 sekunder; annars avslutas skriptet med en felkod.
+
+  - id: PERF-T02
+    priority: high
+    execution: automated
+    tags: [load-test, search]
+    refs: []
+    en:
+      title: Search response time with a production-sized data set
+      description: A script runs a list of representative free-text searches against 1 million records and measures the time to the first result page.
+      preconditions: The test database holds 1 million generated records with realistic text; search indexes are built.
+      expected: The 95th percentile of the searches is at most 2 seconds.
+      steps:
+        - action: Run 500 searches from a list of common, rare and multi-word search terms with 20 concurrent users.
+          expected: Every search returns a result page or an empty result without errors.
+          data: "search term list with 100 terms, each used 5 times"
+        - action: Compute the 95th percentile of the response times.
+          expected: The 95th percentile is at most 2 seconds.
+    sv:
+      title: Svarstid för sökning med produktionsstor datamängd
+      description: Ett skript kör en lista med representativa fritextsökningar mot 1 miljon poster och mäter tiden till första resultatsidan.
+      preconditions: Testdatabasen innehåller 1 miljon genererade poster med realistisk text; sökindexen är byggda.
+      expected: 95:e percentilen för sökningarna är högst 2 sekunder.
+      steps:
+        - action: Kör 500 sökningar från en lista med vanliga, ovanliga och flerordiga söktermer med 20 samtidiga användare.
+          expected: Varje sökning ger en resultatsida eller ett tomt resultat utan fel.
+          data: "lista med 100 söktermer, var och en används 5 gånger"
+        - action: Beräkna 95:e percentilen av svarstiderna.
+          expected: 95:e percentilen är högst 2 sekunder.
+
+  - id: PERF-T03
+    priority: medium
+    execution: manual
+    tags: [report, export]
+    refs: []
+    en:
+      title: Export of 10 000 rows
+      description: Measures the time to produce a report or export with 10 000 rows.
+      preconditions: A project with at least 10 000 items exists; the tester has a stopwatch or the browser's network panel.
+      expected: Each export finishes within 10 seconds and contains all 10 000 rows.
+      steps:
+        - action: Start an export of the 10 000 items and measure the time until the file is ready.
+          expected: The file is ready within 10 seconds.
+        - action: Repeat the export four more times.
+          expected: All five exports finish within 10 seconds.
+        - action: Open the last exported file and count the data rows.
+          expected: The file contains 10 000 data rows.
+    sv:
+      title: Export av 10 000 rader
+      description: Mäter tiden för att ta fram en rapport eller export med 10 000 rader.
+      preconditions: Ett projekt med minst 10 000 poster finns; testaren har ett tidtagarur eller webbläsarens nätverkspanel.
+      expected: Varje export blir klar inom 10 sekunder och innehåller alla 10 000 rader.
+      steps:
+        - action: Starta en export av de 10 000 posterna och mät tiden tills filen är klar.
+          expected: Filen är klar inom 10 sekunder.
+        - action: Upprepa exporten fyra gånger till.
+          expected: Alla fem exporterna blir klara inom 10 sekunder.
+        - action: Öppna den senast exporterade filen och räkna dataraderna.
+          expected: Filen innehåller 10 000 datarader.
+
+  - id: PERF-T04
+    priority: high
+    execution: automated
+    tags: [core-web-vitals, page-load]
+    refs: ["web.dev Core Web Vitals"]
+    en:
+      title: Core Web Vitals of the main pages
+      description: A lab tool (for example Lighthouse CI) measures LCP, INP proxy and CLS of the main pages, and field data from real users is checked.
+      preconditions: The list of main pages is agreed; the pages are deployed in a production-like environment with test data.
+      expected: LCP is at most 2.5 seconds, INP at most 200 milliseconds and CLS at most 0.1 at the 75th percentile.
+      steps:
+        - action: Run the lab tool five times per main page with a mobile profile and throttled 4G network.
+          expected: The median LCP of each page is at most 2.5 seconds and CLS is at most 0.1.
+          data: "throttling: 4G, 4 × CPU slowdown"
+        - action: Run the scripted interactions (open menu, filter list, save form) and record the interaction latency.
+          expected: No interaction takes longer than 200 milliseconds to the next paint.
+        - action: Read the field data of the last 28 days for the same pages.
+          expected: LCP, INP and CLS meet the thresholds at the 75th percentile.
+    sv:
+      title: Core Web Vitals för huvudsidorna
+      description: Ett labbverktyg (till exempel Lighthouse CI) mäter LCP, en INP-motsvarighet och CLS för huvudsidorna, och fältdata från riktiga användare kontrolleras.
+      preconditions: Listan över huvudsidor är överenskommen; sidorna är driftsatta i en produktionslik miljö med testdata.
+      expected: LCP är högst 2,5 sekunder, INP högst 200 millisekunder och CLS högst 0,1 vid 75:e percentilen.
+      steps:
+        - action: Kör labbverktyget fem gånger per huvudsida med mobilprofil och strypt 4G-nät.
+          expected: Medianen för LCP på varje sida är högst 2,5 sekunder och CLS är högst 0,1.
+          data: "strypning: 4G, 4 × långsammare processor"
+        - action: Kör de skriptade interaktionerna (öppna meny, filtrera lista, spara formulär) och registrera fördröjningen.
+          expected: Ingen interaktion tar längre än 200 millisekunder till nästa uppritning.
+        - action: Läs fältdata för de senaste 28 dagarna för samma sidor.
+          expected: LCP, INP och CLS uppfyller gränsvärdena vid 75:e percentilen.
+
+  - id: PERF-T05
+    priority: high
+    execution: automated
+    tags: [load-test, throughput]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (load testing)"]
+    en:
+      title: Throughput test at 200 requests per second
+      description: A load generator sends a constant arrival rate of requests and checks the error rate.
+      preconditions: A production-like environment; the load generator uses an open model with a fixed arrival rate.
+      expected: The system handles 200 requests per second for 30 minutes with less than 0.1 % errors.
+      steps:
+        - action: Ramp the arrival rate to 200 requests per second over 5 minutes.
+          expected: The achieved rate reaches 200 requests per second.
+        - action: Hold the rate for 30 minutes and count failed requests (server errors and timeouts).
+          expected: Less than 0.1 % of the requests fail.
+          data: "timeout per request: 10 s"
+    sv:
+      title: Genomströmningstest med 200 anrop per sekund
+      description: En lastgenerator skickar anrop med en konstant ankomsttakt och kontrollerar felandelen.
+      preconditions: En produktionslik miljö; lastgeneratorn använder en öppen modell med fast ankomsttakt.
+      expected: Systemet hanterar 200 anrop per sekund i 30 minuter med mindre än 0,1 % fel.
+      steps:
+        - action: Öka ankomsttakten till 200 anrop per sekund under 5 minuter.
+          expected: Den uppnådda takten når 200 anrop per sekund.
+        - action: Håll takten i 30 minuter och räkna misslyckade anrop (serverfel och tidsgränser).
+          expected: Mindre än 0,1 % av anropen misslyckas.
+          data: "tidsgräns per anrop: 10 s"
+
+  - id: PERF-T06
+    priority: medium
+    execution: automated
+    tags: [resource-use, cpu, monitoring]
+    refs: []
+    en:
+      title: Processor utilisation during the throughput test
+      description: A script reads the processor metrics of the application servers for the period of the throughput test.
+      preconditions: PERF-T05 has run; processor metrics are collected at intervals of 60 seconds or less.
+      expected: The average processor utilisation of every application server stays below 70 %.
+      steps:
+        - action: Query the average processor utilisation per application server for the 30-minute steady-state period.
+          expected: A value is available for every server.
+        - action: Compare each value with the limit.
+          expected: Every value is below 70 %.
+    sv:
+      title: Processoranvändning under genomströmningstestet
+      description: Ett skript läser processormätvärdena för applikationsservrarna under perioden för genomströmningstestet.
+      preconditions: PERF-T05 har körts; processormätvärden samlas in med högst 60 sekunders intervall.
+      expected: Den genomsnittliga processoranvändningen på varje applikationsserver ligger under 70 %.
+      steps:
+        - action: Hämta den genomsnittliga processoranvändningen per applikationsserver för den stabila perioden på 30 minuter.
+          expected: Det finns ett värde för varje server.
+        - action: Jämför varje värde med gränsen.
+          expected: Varje värde ligger under 70 %.
+
+  - id: PERF-T07
+    priority: high
+    execution: automated
+    tags: [soak-test, memory]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (endurance testing)"]
+    en:
+      title: Eight-hour soak test
+      description: A load test runs for 8 hours at constant load while a script tracks the memory use of every process.
+      preconditions: A production-like environment that is not restarted during the test.
+      expected: Memory use grows by at most 10 % and no process restarts.
+      steps:
+        - action: Run 100 virtual users with the standard user journey for 8 hours.
+          expected: The test runs for the full 8 hours.
+        - action: Record the memory use of every application process after 30 minutes and after 8 hours.
+          expected: The value after 8 hours is at most 10 % higher than after 30 minutes.
+        - action: Check the process start times and the logs for restarts and out-of-memory errors.
+          expected: No process has restarted and no out-of-memory error is logged.
+    sv:
+      title: Uthållighetstest i åtta timmar
+      description: Ett lasttest körs i 8 timmar med konstant last medan ett skript följer minnesanvändningen för varje process.
+      preconditions: En produktionslik miljö som inte startas om under testet.
+      expected: Minnesanvändningen ökar med högst 10 % och ingen process startas om.
+      steps:
+        - action: Kör 100 virtuella användare med standardflödet i 8 timmar.
+          expected: Testet körs hela de 8 timmarna.
+        - action: Registrera minnesanvändningen för varje applikationsprocess efter 30 minuter och efter 8 timmar.
+          expected: Värdet efter 8 timmar är högst 10 % högre än efter 30 minuter.
+        - action: Kontrollera processernas starttider och loggarna efter omstarter och slut-på-minne-fel.
+          expected: Ingen process har startats om och inget slut-på-minne-fel är loggat.
+
+  - id: PERF-T08
+    priority: medium
+    execution: manual
+    tags: [batch, duration]
+    refs: []
+    en:
+      title: Nightly batch run with 1 million records
+      description: Runs the nightly batch jobs on a production-sized data set and checks the duration in the job log.
+      preconditions: A production-like environment with 1 million records to process; the job scheduler is configured as in production.
+      expected: All nightly batch jobs finish within 2 hours without errors.
+      steps:
+        - action: Start the nightly batch jobs at the scheduled time.
+          expected: The jobs start in the configured order.
+        - action: Read the start and end times of each job in the job log.
+          expected: The last job ends at most 2 hours after the first one started.
+        - action: Check the job log for failed or skipped records.
+          expected: All 1 million records are processed and no errors are logged.
+    sv:
+      title: Nattlig batchkörning med 1 miljon poster
+      description: Kör de nattliga batchjobben på en produktionsstor datamängd och kontrollerar körtiden i jobbloggen.
+      preconditions: En produktionslik miljö med 1 miljon poster att bearbeta; jobbschemaläggaren är konfigurerad som i produktion.
+      expected: Alla nattliga batchjobb blir klara inom 2 timmar utan fel.
+      steps:
+        - action: Starta de nattliga batchjobben vid den schemalagda tiden.
+          expected: Jobben startar i den konfigurerade ordningen.
+        - action: Läs start- och sluttid för varje jobb i jobbloggen.
+          expected: Det sista jobbet slutar högst 2 timmar efter att det första startade.
+        - action: Kontrollera jobbloggen efter misslyckade eller överhoppade poster.
+          expected: Alla 1 miljon poster är bearbetade och inga fel är loggade.
+
+  - id: PERF-T09
+    priority: medium
+    execution: automated
+    tags: [stress-test, peak-load]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (stress testing)"]
+    en:
+      title: Stress test at twice the expected peak load
+      description: A load test script doubles the expected peak load and checks that response times degrade gradually.
+      preconditions: The expected peak load is known (here 100 concurrent users); a production-like environment.
+      expected: At 200 concurrent users the 95th percentile of read requests is below 3 seconds and the system recovers after the test.
+      steps:
+        - action: Ramp up to 200 virtual users over 10 minutes and hold for 15 minutes.
+          expected: The 95th percentile of read requests stays below 3 seconds.
+        - action: Reduce the load to 50 virtual users.
+          expected: Within 5 minutes the response times return to the level measured in PERF-T01.
+    sv:
+      title: Stresstest med dubbla den förväntade topplasten
+      description: Ett lasttestskript dubblerar den förväntade topplasten och kontrollerar att svarstiderna försämras gradvis.
+      preconditions: Den förväntade topplasten är känd (här 100 samtidiga användare); en produktionslik miljö.
+      expected: Vid 200 samtidiga användare är 95:e percentilen för läsanrop under 3 sekunder och systemet återhämtar sig efter testet.
+      steps:
+        - action: Öka till 200 virtuella användare under 10 minuter och håll lasten i 15 minuter.
+          expected: 95:e percentilen för läsanrop ligger under 3 sekunder.
+        - action: Minska lasten till 50 virtuella användare.
+          expected: Inom 5 minuter är svarstiderna tillbaka på nivån som mättes i PERF-T01.
+
+  - id: PERF-T10
+    priority: low
+    execution: automated
+    tags: [budget, ci, javascript]
+    refs: []
+    en:
+      title: Script size budget check in the build pipeline
+      description: A step in the build pipeline measures the compressed size of the scripts loaded by the start page and fails the build above the budget.
+      preconditions: The build pipeline produces the production bundle; the budget is configured as 500 KB.
+      expected: The build passes when the scripts are within 500 KB and fails when they exceed it.
+      steps:
+        - action: Build the current version and read the size report of the budget step.
+          expected: The report shows the compressed script size of the start page, at most 500 KB.
+        - action: Add a test dependency of 600 KB to the start page on a branch and build it.
+          expected: The budget step fails and names the exceeded budget.
+    sv:
+      title: Kontroll av skriptbudget i byggpipelinen
+      description: Ett steg i byggpipelinen mäter den komprimerade storleken på skripten som startsidan laddar och stoppar bygget om budgeten överskrids.
+      preconditions: Byggpipelinen tar fram produktionspaketet; budgeten är konfigurerad till 500 kB.
+      expected: Bygget går igenom när skripten ryms inom 500 kB och stoppas när de överskrider gränsen.
+      steps:
+        - action: Bygg den aktuella versionen och läs storleksrapporten från budgetsteget.
+          expected: Rapporten visar startsidans komprimerade skriptstorlek, högst 500 kB.
+        - action: Lägg till ett testberoende på 600 kB i startsidan på en gren och bygg den.
+          expected: Budgetsteget misslyckas och anger vilken budget som överskreds.

@@ -1,0 +1,599 @@
+area: scalability
+prefix: SCAL
+group: quality
+name: {en: Scalability and capacity, sv: Skalning och kapacitet}
+description:
+  en: Concurrent users, growth of the data volume, horizontal scaling, capacity headroom, limits and quotas.
+  sv: Samtidiga användare, tillväxt i datavolym, horisontell skalning, kapacitetsmarginal, gränser och kvoter.
+
+requirements:
+  - id: SCAL-01
+    type: performance
+    obligation: must
+    priority: high
+    tags: [concurrent-users, capacity]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.3 (capacity)", "ISTQB CT-PT Performance Testing syllabus §1.2 (concurrency testing)"]
+    tests: [SCAL-T01]
+    en:
+      title: Concurrent signed-in users
+      description: The system MUST serve 500 concurrent signed-in users with a 95th percentile response time of at most 2 seconds.
+      rationale: The number of concurrent users is the capacity figure that the business can relate to and that sizes the environment.
+      criteria:
+        - method: test
+          text: A load test with 500 virtual users, each with its own session, shows a 95th percentile of at most 2 seconds.
+          threshold: "500 users, p95 ≤ 2 s"
+    sv:
+      title: Samtidigt inloggade användare
+      description: Systemet SKA betjäna 500 samtidigt inloggade användare med en 95:e percentil för svarstiden på högst 2 sekunder.
+      rationale: Antalet samtidiga användare är det kapacitetsmått som verksamheten kan relatera till och som avgör miljöns storlek.
+      criteria:
+        - method: test
+          text: Ett lasttest med 500 virtuella användare, var och en med egen session, visar en 95:e percentil på högst 2 sekunder.
+          threshold: "500 användare, p95 ≤ 2 s"
+
+  - id: SCAL-02
+    type: performance
+    obligation: must
+    priority: high
+    tags: [data-volume, capacity]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.3 (capacity)", "ISTQB CT-PT Performance Testing syllabus §1.2 (capacity testing)"]
+    tests: [SCAL-T02]
+    en:
+      title: Data volume per organisation
+      description: The system MUST store 10 million records per organisation while meeting the response time targets for read requests and searches.
+      rationale: Data accumulates for years, and a design that only works with test-sized data fails long after go-live.
+      criteria:
+        - method: test
+          text: With 10 million records loaded for one organisation the read and search tests meet their response time targets.
+          threshold: "10 000 000 records per organisation"
+    sv:
+      title: Datavolym per organisation
+      description: Systemet SKA lagra 10 miljoner poster per organisation och samtidigt uppfylla svarstidsmålen för läsanrop och sökningar.
+      rationale: Data samlas på sig under många år, och en lösning som bara fungerar med testdata i liten skala fallerar långt efter driftstarten.
+      criteria:
+        - method: test
+          text: Med 10 miljoner poster inlästa för en organisation uppfyller läs- och söktesterna sina svarstidsmål.
+          threshold: "10 000 000 poster per organisation"
+
+  - id: SCAL-03
+    type: performance
+    obligation: should_not
+    priority: medium
+    tags: [data-volume, growth, response-time]
+    refs: ["ISO/IEC 25023:2016 §8.3 (performance efficiency measures)"]
+    tests: [SCAL-T02]
+    en:
+      title: Response time as data grows
+      description: The median response time of read requests SHOULD NOT increase by more than 20 % when the data volume grows from 1 million to 10 million records.
+      rationale: A flat curve shows that queries use indexes and that growth will not force a redesign.
+      criteria:
+        - method: test
+          text: The same read test run at 1 million and at 10 million records shows a difference in median of at most 20 %.
+          threshold: "≤ 20 % increase from 1 M to 10 M records"
+    sv:
+      title: Svarstid när datamängden växer
+      description: Medianen för svarstiden på läsanrop BÖR INTE öka med mer än 20 % när datavolymen växer från 1 miljon till 10 miljoner poster.
+      rationale: En flack kurva visar att frågorna använder index och att tillväxten inte tvingar fram en omkonstruktion.
+      criteria:
+        - method: test
+          text: Samma lästest kört med 1 miljon och med 10 miljoner poster visar en skillnad i median på högst 20 %.
+          threshold: "≤ 20 % ökning från 1 M till 10 M poster"
+
+  - id: SCAL-04
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [horizontal-scaling, stateless]
+    refs: ["The Twelve-Factor App, VI Processes", "The Twelve-Factor App, VIII Concurrency"]
+    tests: [SCAL-T03]
+    en:
+      title: Stateless application instances
+      description: The application tier MUST run as at least 2 identical instances behind a load balancer without session affinity.
+      rationale: Instances that keep no user state locally can be added, removed and replaced at any time.
+      criteria:
+        - method: test
+          text: With session affinity turned off, a user journey whose requests alternate between 2 instances completes without errors or lost sessions.
+        - method: inspection
+          text: The configuration shows at least 2 instances and no sticky sessions on the load balancer.
+    sv:
+      title: Tillståndslösa applikationsinstanser
+      description: Applikationslagret SKA köras som minst 2 identiska instanser bakom en lastbalanserare utan sessionsbindning.
+      rationale: Instanser som inte sparar något användartillstånd lokalt kan läggas till, tas bort och bytas ut när som helst.
+      criteria:
+        - method: test
+          text: Med sessionsbindning avslagen genomförs ett användarflöde vars anrop växlar mellan 2 instanser utan fel eller tappade sessioner.
+        - method: inspection
+          text: Konfigurationen visar minst 2 instanser och ingen sessionsbindning i lastbalanseraren.
+
+  - id: SCAL-05
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [horizontal-scaling, throughput]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (scalability testing)"]
+    tests: [SCAL-T04]
+    en:
+      title: Throughput gain from added instances
+      description: Doubling the application instances from 2 to 4 SHOULD increase the maximum throughput by at least 70 %.
+      rationale: Scaling out only pays off when a shared bottleneck, such as the database, does not absorb the added capacity.
+      criteria:
+        - method: test
+          text: The maximum throughput measured with 4 instances is at least 1.7 times the throughput measured with 2 instances.
+          threshold: "≥ 1.7 × throughput at 2 × instances"
+    sv:
+      title: Ökad genomströmning med fler instanser
+      description: En fördubbling av applikationsinstanserna från 2 till 4 BÖR öka den maximala genomströmningen med minst 70 %.
+      rationale: Att skala ut lönar sig bara när en gemensam flaskhals, till exempel databasen, inte äter upp den tillförda kapaciteten.
+      criteria:
+        - method: test
+          text: Den maximala genomströmningen med 4 instanser är minst 1,7 gånger genomströmningen med 2 instanser.
+          threshold: "≥ 1,7 × genomströmning vid 2 × instanser"
+
+  - id: SCAL-06
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [autoscaling, horizontal-scaling]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 Annex A 8.6 (capacity management)"]
+    tests: [SCAL-T05]
+    en:
+      title: Automatic scale-out
+      description: The platform SHOULD start an additional application instance within 5 minutes after the average processor utilisation has exceeded 70 % for 3 minutes.
+      rationale: Automatic scaling handles load peaks outside office hours without waiting for an operator.
+      criteria:
+        - method: test
+          text: Under generated load above the threshold a new instance is serving traffic within 5 minutes.
+          threshold: "new instance ≤ 5 min after 3 min above 70 % CPU"
+    sv:
+      title: Automatisk utskalning
+      description: Plattformen BÖR starta ytterligare en applikationsinstans inom 5 minuter efter att den genomsnittliga processoranvändningen har legat över 70 % i 3 minuter.
+      rationale: Automatisk skalning hanterar lasttoppar utanför kontorstid utan att vänta på en operatör.
+      criteria:
+        - method: test
+          text: Under genererad last över gränsen tar en ny instans emot trafik inom 5 minuter.
+          threshold: "ny instans ≤ 5 min efter 3 min över 70 % CPU"
+
+  - id: SCAL-07
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [capacity, headroom]
+    refs: ["ITIL 4 Capacity and performance management", "Google SRE book ch. 18 (Software Engineering in SRE: capacity planning)"]
+    tests: [SCAL-T06]
+    en:
+      title: Capacity headroom in production
+      description: The production environment MUST have capacity for 1.5 times the highest load measured during the last 30 days.
+      rationale: Headroom covers unexpected peaks and the loss of one instance without overloading the rest.
+      criteria:
+        - method: analysis
+          text: The capacity report compares the tested maximum throughput with the 30-day peak and shows a ratio of at least 1.5.
+          threshold: "capacity ≥ 1.5 × 30-day peak"
+    sv:
+      title: Kapacitetsmarginal i produktion
+      description: Produktionsmiljön SKA ha kapacitet för 1,5 gånger den högsta last som uppmätts under de senaste 30 dagarna.
+      rationale: Marginalen täcker oväntade toppar och bortfall av en instans utan att resten överbelastas.
+      criteria:
+        - method: analysis
+          text: Kapacitetsrapporten jämför den testade maximala genomströmningen med 30-dagarstoppen och visar en kvot på minst 1,5.
+          threshold: "kapacitet ≥ 1,5 × 30-dagarstopp"
+
+  - id: SCAL-08
+    type: business
+    obligation: should
+    priority: medium
+    tags: [capacity, planning]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 Annex A 8.6 (capacity management)"]
+    tests: [SCAL-T06]
+    en:
+      title: Quarterly capacity forecast
+      description: The operations team SHOULD update a capacity forecast for the next 12 months at least once per quarter.
+      rationale: Purchases and architecture changes take months, so the need has to be known before the limit is reached.
+      criteria:
+        - method: review
+          text: The forecast for the next 12 months is dated within the last 3 months and covers users, data volume and throughput.
+          threshold: "updated every 3 months"
+    sv:
+      title: Kvartalsvis kapacitetsprognos
+      description: Driftteamet BÖR uppdatera en kapacitetsprognos för de kommande 12 månaderna minst en gång per kvartal.
+      rationale: Inköp och arkitekturändringar tar månader, så behovet behöver vara känt innan gränsen nås.
+      criteria:
+        - method: review
+          text: Prognosen för de kommande 12 månaderna är daterad inom de senaste 3 månaderna och omfattar användare, datavolym och genomströmning.
+          threshold: "uppdateras var 3:e månad"
+
+  - id: SCAL-09
+    type: interface
+    obligation: must
+    priority: high
+    tags: [rate-limit, quota, api]
+    refs: ["RFC 6585 §4 (429 Too Many Requests)", "RFC 9110 §10.2.3 (Retry-After)", "OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)"]
+    tests: [SCAL-T07]
+    en:
+      title: Rate limit per API client
+      description: The API MUST answer with status 429 and a Retry-After header when a client exceeds 100 requests per minute.
+      rationale: A rate limit stops one faulty or abusive client from consuming the capacity of everyone else.
+      criteria:
+        - method: test
+          text: Request 101 within one minute from the same client receives status 429 with a Retry-After header.
+          threshold: "100 requests per minute per client"
+    sv:
+      title: Anropsbegränsning per API-klient
+      description: API:et SKA svara med status 429 och ett Retry-After-huvud när en klient överskrider 100 anrop per minut.
+      rationale: En anropsgräns hindrar en felaktig eller illasinnad klient från att förbruka allas kapacitet.
+      criteria:
+        - method: test
+          text: Anrop nummer 101 inom en minut från samma klient får status 429 med ett Retry-After-huvud.
+          threshold: "100 anrop per minut och klient"
+
+  - id: SCAL-10
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [limits, upload]
+    refs: ["OWASP ASVS 4.0 V12.1 (file upload)"]
+    tests: [SCAL-T08]
+    en:
+      title: Maximum upload size
+      description: The system MUST reject an uploaded file larger than 100 MB with a message that states the maximum size.
+      rationale: An explicit limit protects storage and memory, and the message lets the user act on it.
+      criteria:
+        - method: test
+          text: A file of 100 MB is accepted and a file of 101 MB is rejected with a message that names the 100 MB limit.
+          threshold: "≤ 100 MB per file"
+    sv:
+      title: Största tillåtna filstorlek vid uppladdning
+      description: Systemet SKA avvisa en uppladdad fil som är större än 100 MB med ett meddelande som anger den största tillåtna storleken.
+      rationale: En tydlig gräns skyddar lagring och minne, och meddelandet gör att användaren vet vad hen ska göra.
+      criteria:
+        - method: test
+          text: En fil på 100 MB godtas och en fil på 101 MB avvisas med ett meddelande som anger gränsen 100 MB.
+          threshold: "≤ 100 MB per fil"
+
+  - id: SCAL-11
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [quota, storage, notification]
+    refs: ["ITIL 4 Capacity and performance management"]
+    tests: [SCAL-T09]
+    en:
+      title: Warning before the storage quota is used up
+      description: The system SHOULD notify the administrators of an organisation when 80 % of its storage quota is in use.
+      rationale: An early warning gives the organisation time to clean up or buy more space before uploads start failing.
+      criteria:
+        - method: test
+          text: Passing 80 % of the quota sends one notification to each administrator of the organisation.
+          threshold: "notification at 80 % of quota"
+    sv:
+      title: Varning innan lagringskvoten tar slut
+      description: Systemet BÖR meddela en organisations administratörer när 80 % av organisationens lagringskvot används.
+      rationale: En tidig varning ger organisationen tid att rensa eller köpa mer utrymme innan uppladdningar börjar misslyckas.
+      criteria:
+        - method: test
+          text: När 80 % av kvoten passeras skickas ett meddelande till varje administratör i organisationen.
+          threshold: "meddelande vid 80 % av kvoten"
+
+  - id: SCAL-12
+    type: interface
+    obligation: must_not
+    priority: medium
+    tags: [pagination, api, limits]
+    refs: ["OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)"]
+    tests: [SCAL-T10]
+    en:
+      title: Page size limit for list endpoints
+      description: A list endpoint of the API MUST NOT return more than 1 000 items in one response.
+      rationale: Unbounded lists grow with the data and eventually exhaust memory on both server and client.
+      criteria:
+        - method: test
+          text: A request for 5 000 items returns at most 1 000 items and a link or cursor to the next page.
+          threshold: "≤ 1 000 items per response"
+    sv:
+      title: Största sidstorlek för listanrop
+      description: Ett listanrop i API:et SKA INTE returnera mer än 1 000 poster i ett svar.
+      rationale: Obegränsade listor växer med datamängden och förbrukar till slut minnet både i servern och hos klienten.
+      criteria:
+        - method: test
+          text: Ett anrop som begär 5 000 poster returnerar högst 1 000 poster och en länk eller markör till nästa sida.
+          threshold: "≤ 1 000 poster per svar"
+
+tests:
+  - id: SCAL-T01
+    priority: high
+    execution: automated
+    tags: [load-test, concurrent-users]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (concurrency testing)"]
+    en:
+      title: Load test with 500 concurrent signed-in users
+      description: A load test script signs in 500 distinct test users and runs the standard user journey for each of them.
+      preconditions: 500 test accounts exist; the environment matches production in size.
+      expected: All 500 users stay signed in and the 95th percentile response time is at most 2 seconds.
+      steps:
+        - action: Sign in 500 virtual users over 10 minutes, each with its own account.
+          expected: All sign-ins succeed.
+          data: "accounts loadtest001 to loadtest500"
+        - action: Run the standard user journey for all users for 30 minutes.
+          expected: No session is lost and the error rate is below 0.1 %.
+        - action: Compute the 95th percentile of all response times during the steady period.
+          expected: The 95th percentile is at most 2 seconds.
+    sv:
+      title: Lasttest med 500 samtidigt inloggade användare
+      description: Ett lasttestskript loggar in 500 olika testanvändare och kör standardflödet för var och en av dem.
+      preconditions: 500 testkonton finns; miljön motsvarar produktion i storlek.
+      expected: Alla 500 användare förblir inloggade och 95:e percentilen för svarstiden är högst 2 sekunder.
+      steps:
+        - action: Logga in 500 virtuella användare under 10 minuter, var och en med eget konto.
+          expected: Alla inloggningar lyckas.
+          data: "konton loadtest001 till loadtest500"
+        - action: Kör standardflödet för alla användare i 30 minuter.
+          expected: Ingen session tappas och felandelen är under 0,1 %.
+        - action: Beräkna 95:e percentilen av alla svarstider under den stabila perioden.
+          expected: 95:e percentilen är högst 2 sekunder.
+
+  - id: SCAL-T02
+    priority: high
+    execution: automated
+    tags: [volume-test, data-volume]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (capacity testing)"]
+    en:
+      title: Volume test at 1 and 10 million records
+      description: A script runs the same read and search test against databases with 1 million and 10 million records and compares the results.
+      preconditions: Two copies of the test database exist, generated with the same distribution of data, at 1 million and 10 million records.
+      expected: The response time targets are met at 10 million records and the median grows by at most 20 %.
+      steps:
+        - action: Run the read and search test against the database with 1 million records.
+          expected: The test completes and the median response time of read requests is recorded.
+        - action: Run the same test against the database with 10 million records.
+          expected: The read and search targets are met.
+        - action: Compare the median response time of read requests between the two runs.
+          expected: The median at 10 million records is at most 20 % higher.
+    sv:
+      title: Volymtest med 1 och 10 miljoner poster
+      description: Ett skript kör samma läs- och söktest mot databaser med 1 miljon och 10 miljoner poster och jämför resultaten.
+      preconditions: Två kopior av testdatabasen finns, genererade med samma fördelning av data, med 1 miljon och 10 miljoner poster.
+      expected: Svarstidsmålen uppfylls vid 10 miljoner poster och medianen ökar med högst 20 %.
+      steps:
+        - action: Kör läs- och söktestet mot databasen med 1 miljon poster.
+          expected: Testet slutförs och medianen för svarstiden på läsanrop registreras.
+        - action: Kör samma test mot databasen med 10 miljoner poster.
+          expected: Målen för läsning och sökning uppfylls.
+        - action: Jämför medianen för svarstiden på läsanrop mellan de två körningarna.
+          expected: Medianen vid 10 miljoner poster är högst 20 % högre.
+
+  - id: SCAL-T03
+    priority: high
+    execution: manual
+    tags: [horizontal-scaling, stateless]
+    refs: []
+    en:
+      title: User journey across two instances without session affinity
+      description: Checks that the application keeps no user state in an instance.
+      preconditions: Two application instances run behind the load balancer with session affinity turned off.
+      expected: The user journey works across instances, also when one of them is stopped.
+      steps:
+        - action: Sign in and work through a journey of create, edit and search while the access logs show which instance served each request.
+          expected: The requests are served by both instances and the journey completes without errors.
+        - action: Stop the instance that served the last request and continue working.
+          expected: The user stays signed in and no entered data is lost.
+        - action: Inspect the load balancer and deployment configuration.
+          expected: At least 2 instances are configured and sticky sessions are turned off.
+    sv:
+      title: Användarflöde över två instanser utan sessionsbindning
+      description: Kontrollerar att applikationen inte sparar något användartillstånd i en instans.
+      preconditions: Två applikationsinstanser körs bakom lastbalanseraren med sessionsbindning avslagen.
+      expected: Användarflödet fungerar över instanserna, även när en av dem stoppas.
+      steps:
+        - action: Logga in och gå igenom ett flöde med att skapa, redigera och söka medan åtkomstloggarna visar vilken instans som hanterade varje anrop.
+          expected: Anropen hanteras av båda instanserna och flödet slutförs utan fel.
+        - action: Stoppa instansen som hanterade det senaste anropet och fortsätt arbeta.
+          expected: Användaren förblir inloggad och inga inmatade data går förlorade.
+        - action: Granska konfigurationen för lastbalanserare och driftsättning.
+          expected: Minst 2 instanser är konfigurerade och sessionsbindning är avslagen.
+
+  - id: SCAL-T04
+    priority: medium
+    execution: automated
+    tags: [scalability-test, throughput]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (scalability testing)"]
+    en:
+      title: Throughput with 2 and with 4 instances
+      description: A load test script finds the maximum throughput with 2 and with 4 application instances.
+      preconditions: The database and other shared components are sized as in production.
+      expected: The maximum throughput with 4 instances is at least 1.7 times that with 2 instances.
+      steps:
+        - action: With 2 instances, increase the arrival rate in steps of 20 requests per second until the 95th percentile exceeds 2 seconds or errors exceed 1 %.
+          expected: The last rate that met both limits is recorded as the maximum.
+        - action: Repeat the same procedure with 4 instances.
+          expected: The maximum throughput is at least 1.7 times the value with 2 instances.
+    sv:
+      title: Genomströmning med 2 och med 4 instanser
+      description: Ett lasttestskript tar fram den maximala genomströmningen med 2 och med 4 applikationsinstanser.
+      preconditions: Databasen och andra gemensamma komponenter är dimensionerade som i produktion.
+      expected: Den maximala genomströmningen med 4 instanser är minst 1,7 gånger den med 2 instanser.
+      steps:
+        - action: Med 2 instanser, öka ankomsttakten i steg om 20 anrop per sekund tills 95:e percentilen överstiger 2 sekunder eller felen överstiger 1 %.
+          expected: Den sista takten som klarade båda gränserna registreras som maximum.
+        - action: Upprepa samma förfarande med 4 instanser.
+          expected: Den maximala genomströmningen är minst 1,7 gånger värdet med 2 instanser.
+
+  - id: SCAL-T05
+    priority: medium
+    execution: automated
+    tags: [autoscaling]
+    refs: []
+    en:
+      title: Automatic scale-out under load
+      description: A script generates load above the scaling threshold and records when a new instance starts serving traffic.
+      preconditions: Autoscaling is configured with a threshold of 70 % average processor utilisation over 3 minutes; 2 instances run.
+      expected: A third instance serves traffic within 5 minutes after the threshold has been exceeded for 3 minutes.
+      steps:
+        - action: Generate load that keeps the processor utilisation above 70 % and note the time.
+          expected: The metric exceeds 70 % on the running instances.
+        - action: Poll the number of healthy instances in the load balancer every 15 seconds.
+          expected: A third healthy instance appears within 8 minutes of the start of the load (3 minutes plus 5 minutes).
+        - action: Stop the load and wait for the scale-in period.
+          expected: The number of instances returns to 2 without failed requests.
+    sv:
+      title: Automatisk utskalning under last
+      description: Ett skript genererar last över skalningsgränsen och registrerar när en ny instans börjar ta emot trafik.
+      preconditions: Automatisk skalning är konfigurerad med gränsen 70 % genomsnittlig processoranvändning under 3 minuter; 2 instanser körs.
+      expected: En tredje instans tar emot trafik inom 5 minuter efter att gränsen har överskridits i 3 minuter.
+      steps:
+        - action: Generera last som håller processoranvändningen över 70 % och notera tiden.
+          expected: Mätvärdet överstiger 70 % på de körande instanserna.
+        - action: Läs av antalet friska instanser i lastbalanseraren var 15:e sekund.
+          expected: En tredje frisk instans dyker upp inom 8 minuter från att lasten startade (3 minuter plus 5 minuter).
+        - action: Stoppa lasten och vänta ut perioden för nedskalning.
+          expected: Antalet instanser går tillbaka till 2 utan misslyckade anrop.
+
+  - id: SCAL-T06
+    priority: medium
+    execution: manual
+    tags: [capacity, review]
+    refs: ["ITIL 4 Capacity and performance management"]
+    en:
+      title: Review of capacity headroom and forecast
+      description: Reviews the capacity report and the 12-month forecast against the measured load.
+      preconditions: Load metrics for the last 30 days and the latest capacity test results are available.
+      expected: Capacity is at least 1.5 times the 30-day peak and the forecast is less than 3 months old.
+      steps:
+        - action: Find the highest load of the last 30 days in the monitoring data.
+          expected: The peak value is known, in requests per second and concurrent users.
+        - action: Divide the tested maximum throughput by the peak value.
+          expected: The ratio is at least 1.5.
+        - action: Open the capacity forecast and check its date and contents.
+          expected: The forecast is dated within the last 3 months and covers users, data volume and throughput for 12 months.
+    sv:
+      title: Granskning av kapacitetsmarginal och prognos
+      description: Granskar kapacitetsrapporten och 12-månadersprognosen mot den uppmätta lasten.
+      preconditions: Lastdata för de senaste 30 dagarna och de senaste resultaten från kapacitetstest finns tillgängliga.
+      expected: Kapaciteten är minst 1,5 gånger 30-dagarstoppen och prognosen är mindre än 3 månader gammal.
+      steps:
+        - action: Hitta den högsta lasten under de senaste 30 dagarna i övervakningsdata.
+          expected: Toppvärdet är känt, i anrop per sekund och samtidiga användare.
+        - action: Dela den testade maximala genomströmningen med toppvärdet.
+          expected: Kvoten är minst 1,5.
+        - action: Öppna kapacitetsprognosen och kontrollera datum och innehåll.
+          expected: Prognosen är daterad inom de senaste 3 månaderna och omfattar användare, datavolym och genomströmning för 12 månader.
+
+  - id: SCAL-T07
+    priority: high
+    execution: automated
+    tags: [rate-limit, api]
+    refs: ["RFC 6585 §4"]
+    en:
+      title: Rate limit returns 429 with Retry-After
+      description: A script sends requests from one API client above the limit and checks the responses.
+      preconditions: A test API client with a valid token; the limit is 100 requests per minute.
+      expected: Requests above the limit are answered with 429 and a Retry-After header, and requests succeed again after the stated time.
+      steps:
+        - action: Send 100 requests within 30 seconds with the same client token.
+          expected: All 100 requests succeed.
+        - action: Send request number 101 within the same minute.
+          expected: The response has status 429 and a Retry-After header with a number of seconds.
+        - action: Wait for the time in Retry-After and send one more request.
+          expected: The request succeeds.
+    sv:
+      title: Anropsgränsen ger 429 med Retry-After
+      description: Ett skript skickar anrop från en API-klient över gränsen och kontrollerar svaren.
+      preconditions: En test-API-klient med en giltig token; gränsen är 100 anrop per minut.
+      expected: Anrop över gränsen besvaras med 429 och ett Retry-After-huvud, och anrop lyckas igen efter den angivna tiden.
+      steps:
+        - action: Skicka 100 anrop inom 30 sekunder med samma klienttoken.
+          expected: Alla 100 anrop lyckas.
+        - action: Skicka anrop nummer 101 inom samma minut.
+          expected: Svaret har status 429 och ett Retry-After-huvud med ett antal sekunder.
+        - action: Vänta den tid som anges i Retry-After och skicka ett anrop till.
+          expected: Anropet lyckas.
+
+  - id: SCAL-T08
+    priority: medium
+    execution: manual
+    tags: [upload, limits]
+    refs: []
+    en:
+      title: Upload at and above the size limit
+      description: Uploads files at the size limit and just above it.
+      preconditions: A signed-in user with permission to upload attachments; test files of 100 MB and 101 MB.
+      expected: The file at the limit is stored and the larger file is rejected with a clear message.
+      steps:
+        - action: Upload the file of 100 MB as an attachment.
+          expected: The upload succeeds and the attachment can be downloaded.
+          data: "file-100mb.bin"
+        - action: Upload the file of 101 MB.
+          expected: The upload is rejected with a message that states the maximum size of 100 MB, and nothing is stored.
+          data: "file-101mb.bin"
+    sv:
+      title: Uppladdning vid och över storleksgränsen
+      description: Laddar upp filer precis vid storleksgränsen och strax över den.
+      preconditions: En inloggad användare med behörighet att ladda upp bilagor; testfiler på 100 MB och 101 MB.
+      expected: Filen vid gränsen sparas och den större filen avvisas med ett tydligt meddelande.
+      steps:
+        - action: Ladda upp filen på 100 MB som bilaga.
+          expected: Uppladdningen lyckas och bilagan går att ladda ner.
+          data: "file-100mb.bin"
+        - action: Ladda upp filen på 101 MB.
+          expected: Uppladdningen avvisas med ett meddelande som anger den största storleken 100 MB, och inget sparas.
+          data: "file-101mb.bin"
+
+  - id: SCAL-T09
+    priority: medium
+    execution: manual
+    tags: [quota, notification]
+    refs: []
+    en:
+      title: Notification at 80 % of the storage quota
+      description: Fills the storage of a test organisation past 80 % of its quota and checks the notification.
+      preconditions: A test organisation with a storage quota of 1 GB, 79 % in use, and two administrators.
+      expected: Each administrator receives exactly one notification when the 80 % mark is passed.
+      steps:
+        - action: Upload a file of 20 MB to the organisation.
+          expected: The storage in use passes 80 % of the quota.
+        - action: Check the notifications of both administrators.
+          expected: Each administrator has one notification that states the quota, the amount in use and the percentage.
+        - action: Upload another file of 5 MB.
+          expected: No further notification is sent for the same threshold.
+    sv:
+      title: Meddelande vid 80 % av lagringskvoten
+      description: Fyller lagringen för en testorganisation förbi 80 % av kvoten och kontrollerar meddelandet.
+      preconditions: En testorganisation med en lagringskvot på 1 GB, där 79 % används, och två administratörer.
+      expected: Varje administratör får exakt ett meddelande när 80 %-gränsen passeras.
+      steps:
+        - action: Ladda upp en fil på 20 MB till organisationen.
+          expected: Den använda lagringen passerar 80 % av kvoten.
+        - action: Kontrollera meddelandena för båda administratörerna.
+          expected: Varje administratör har ett meddelande som anger kvoten, den använda mängden och procentsatsen.
+        - action: Ladda upp ytterligare en fil på 5 MB.
+          expected: Inget nytt meddelande skickas för samma gräns.
+
+  - id: SCAL-T10
+    priority: medium
+    execution: automated
+    tags: [pagination, api]
+    refs: []
+    en:
+      title: List endpoints cap the page size
+      description: A script calls every list endpoint of the API with an oversized page size and without a page size.
+      preconditions: The test data set holds more than 5 000 items for each list endpoint; the list of endpoints comes from the API description.
+      expected: No response contains more than 1 000 items and every truncated response points to the next page.
+      steps:
+        - action: Call each list endpoint with a requested page size of 5 000.
+          expected: Each response contains at most 1 000 items and a next-page link or cursor.
+          data: "limit=5000"
+        - action: Call each list endpoint without a page size.
+          expected: Each response contains at most 1 000 items.
+        - action: Follow the next-page links until the end of one list.
+          expected: All items are returned exactly once.
+    sv:
+      title: Listanrop begränsar sidstorleken
+      description: Ett skript anropar varje listanrop i API:et med en för stor sidstorlek och utan sidstorlek.
+      preconditions: Testdatat innehåller mer än 5 000 poster för varje listanrop; listan över anrop hämtas från API-beskrivningen.
+      expected: Inget svar innehåller mer än 1 000 poster och varje avkortat svar pekar på nästa sida.
+      steps:
+        - action: Anropa varje listanrop med en begärd sidstorlek på 5 000.
+          expected: Varje svar innehåller högst 1 000 poster och en länk eller markör till nästa sida.
+          data: "limit=5000"
+        - action: Anropa varje listanrop utan sidstorlek.
+          expected: Varje svar innehåller högst 1 000 poster.
+        - action: Följ länkarna till nästa sida till slutet av en lista.
+          expected: Alla poster returneras exakt en gång.

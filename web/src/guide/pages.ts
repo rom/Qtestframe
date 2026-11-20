@@ -8,6 +8,7 @@ export const GUIDE_PAGES = [
   'tutorial',
   'requirements',
   'tests',
+  'catalogue',
   'runs',
   'releases-and-risks',
   'defects',

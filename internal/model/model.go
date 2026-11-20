@@ -351,20 +351,23 @@ type Category struct {
 
 // Requirement is a single specification statement.
 type Requirement struct {
-	ID          string                `json:"id"`
-	ProjectID   string                `json:"project_id"`
-	FolderID    *string               `json:"folder_id"`
-	Key         string                `json:"key"`
-	Title       string                `json:"title"`
-	Description string                `json:"description"`
-	Obligation  string                `json:"obligation"`
-	Type        string                `json:"type"`
-	Priority    string                `json:"priority"`
-	Status      string                `json:"status"`
-	Source      string                `json:"source"`
-	Rationale   string                `json:"rationale"`
-	Owner       string                `json:"owner"`
-	Tags        []string              `json:"tags"`
+	ID          string   `json:"id"`
+	ProjectID   string   `json:"project_id"`
+	FolderID    *string  `json:"folder_id"`
+	Key         string   `json:"key"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Obligation  string   `json:"obligation"`
+	Type        string   `json:"type"`
+	Priority    string   `json:"priority"`
+	Status      string   `json:"status"`
+	Source      string   `json:"source"`
+	Rationale   string   `json:"rationale"`
+	Owner       string   `json:"owner"`
+	Tags        []string `json:"tags"`
+	// CatalogRef is the catalogue id the requirement was copied from
+	// (internal/catalog), "" otherwise.
+	CatalogRef  string                `json:"catalog_ref"`
 	Version     int                   `json:"version"`
 	Position    int                   `json:"position"`
 	CategoryIDs []string              `json:"category_ids"`
@@ -438,24 +441,26 @@ type TestRef struct {
 
 // TestCase describes a manual or automated test.
 type TestCase struct {
-	ID             string     `json:"id"`
-	ProjectID      string     `json:"project_id"`
-	FolderID       *string    `json:"folder_id"`
-	Key            string     `json:"key"`
-	Title          string     `json:"title"`
-	Description    string     `json:"description"`
-	Preconditions  string     `json:"preconditions"`
-	ExecutionType  string     `json:"execution_type"`
-	ScriptLanguage string     `json:"script_language"`
-	Script         string     `json:"script"`
-	ExpectedResult string     `json:"expected_result"`
-	Priority       string     `json:"priority"`
-	Status         string     `json:"status"`
-	EstimatedMin   int        `json:"estimated_minutes"`
-	Tags           []string   `json:"tags"`
-	Position       int        `json:"position"`
-	CategoryIDs    []string   `json:"category_ids"`
-	Steps          []TestStep `json:"steps"`
+	ID             string   `json:"id"`
+	ProjectID      string   `json:"project_id"`
+	FolderID       *string  `json:"folder_id"`
+	Key            string   `json:"key"`
+	Title          string   `json:"title"`
+	Description    string   `json:"description"`
+	Preconditions  string   `json:"preconditions"`
+	ExecutionType  string   `json:"execution_type"`
+	ScriptLanguage string   `json:"script_language"`
+	Script         string   `json:"script"`
+	ExpectedResult string   `json:"expected_result"`
+	Priority       string   `json:"priority"`
+	Status         string   `json:"status"`
+	EstimatedMin   int      `json:"estimated_minutes"`
+	Tags           []string `json:"tags"`
+	// CatalogRef is the catalogue id the test was copied from, "" otherwise.
+	CatalogRef  string     `json:"catalog_ref"`
+	Position    int        `json:"position"`
+	CategoryIDs []string   `json:"category_ids"`
+	Steps       []TestStep `json:"steps"`
 	// Parameters and DataRows make the test data-driven: it is executed
 	// once per row (an iteration), with {{name}} placeholders in step texts
 	// replaced by the row's values.

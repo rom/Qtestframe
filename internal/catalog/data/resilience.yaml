@@ -1,0 +1,607 @@
+area: resilience
+prefix: RES
+group: quality
+name: {en: Resilience and error handling, sv: Motståndskraft och felhantering}
+description:
+  en: Error handling, timeouts, retries with backoff, circuit breakers, graceful degradation, idempotency, consistency after failures and clear error messages.
+  sv: Felhantering, tidsgränser, omförsök med backoff, kretsbrytare, kontrollerad nedgradering, idempotens, konsistens efter fel och tydliga felmeddelanden.
+
+requirements:
+  - id: RES-01
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [timeout, dependency]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    tests: [RES-T01]
+    en:
+      title: Timeout on every outbound call
+      description: The system MUST abort each call to another service or database after a configured timeout of at most 5 seconds.
+      rationale: Calls without a timeout tie up threads and connections when a dependency hangs, and the failure spreads to the whole system.
+      criteria:
+        - method: test
+          text: With a dependency that never answers, the call is aborted after at most 5 seconds and the error is handled.
+          threshold: "timeout ≤ 5 s"
+        - method: inspection
+          text: The client configuration of every dependency sets a timeout.
+    sv:
+      title: Tidsgräns för varje utgående anrop
+      description: Systemet SKA avbryta varje anrop till en annan tjänst eller databas efter en konfigurerad tidsgräns på högst 5 sekunder.
+      rationale: Anrop utan tidsgräns binder trådar och anslutningar när ett beroende hänger sig, och felet sprider sig till hela systemet.
+      criteria:
+        - method: test
+          text: Med ett beroende som aldrig svarar avbryts anropet efter högst 5 sekunder och felet hanteras.
+          threshold: "tidsgräns ≤ 5 s"
+        - method: inspection
+          text: Klientkonfigurationen för varje beroende anger en tidsgräns.
+
+  - id: RES-02
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [retry, backoff]
+    refs: ["Google SRE book ch. 22 (Addressing Cascading Failures)", "Google SRE book ch. 21 (Handling Overload)"]
+    tests: [RES-T02]
+    en:
+      title: Retries with exponential backoff and jitter
+      description: The system MUST retry a failed call to a dependency at most 3 times, with exponentially growing random delays starting at 200 milliseconds.
+      rationale: Bounded retries with random delays recover from short glitches without flooding a dependency that is already struggling.
+      criteria:
+        - method: test
+          text: Against a dependency that always fails, the log shows 1 call plus 3 retries with growing, non-identical delays.
+          threshold: "≤ 3 retries, first delay 200 ms"
+    sv:
+      title: Omförsök med exponentiell backoff och slumpvariation
+      description: Systemet SKA göra högst 3 omförsök av ett misslyckat anrop till ett beroende, med exponentiellt växande slumpmässiga väntetider som börjar på 200 millisekunder.
+      rationale: Begränsade omförsök med slumpvisa väntetider klarar korta störningar utan att översvämma ett beroende som redan har problem.
+      criteria:
+        - method: test
+          text: Mot ett beroende som alltid fallerar visar loggen 1 anrop plus 3 omförsök med växande och olika väntetider.
+          threshold: "≤ 3 omförsök, första väntetid 200 ms"
+
+  - id: RES-03
+    type: non_functional
+    obligation: must_not
+    priority: high
+    tags: [retry, client-error]
+    refs: ["RFC 9110 §15.5 (client error 4xx)", "RFC 9110 §9.2.2 (idempotent methods)"]
+    tests: [RES-T02]
+    en:
+      title: No retries of client errors
+      description: The system MUST NOT automatically retry a call that failed with a client error status in the range 400 to 499, other than 408 and 429.
+      rationale: A request that the receiver has rejected as invalid fails the same way again, and retrying only adds load.
+      criteria:
+        - method: test
+          text: A call answered with 400 or 403 is made exactly once, and a call answered with 429 is retried.
+    sv:
+      title: Inga omförsök vid klientfel
+      description: Systemet SKA INTE automatiskt göra om ett anrop som misslyckades med en klientfelstatus mellan 400 och 499, annat än 408 och 429.
+      rationale: Ett anrop som mottagaren har avvisat som ogiltigt misslyckas på samma sätt igen, och omförsök ger bara mer last.
+      criteria:
+        - method: test
+          text: Ett anrop som besvaras med 400 eller 403 görs exakt en gång, och ett anrop som besvaras med 429 görs om.
+
+  - id: RES-04
+    type: non_functional
+    obligation: should
+    priority: high
+    tags: [circuit-breaker, dependency]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    tests: [RES-T03]
+    en:
+      title: Circuit breaker for dependencies
+      description: The system SHOULD stop calling a dependency for 30 seconds once at least 50 % of at least 20 calls within 10 seconds have failed.
+      rationale: An open circuit gives a failing dependency room to recover and lets callers fail at once instead of waiting for timeouts.
+      criteria:
+        - method: test
+          text: After the failure threshold is reached, calls fail immediately for 30 seconds, then one trial call is let through.
+          threshold: "open at ≥ 50 % failures of ≥ 20 calls in 10 s, for 30 s"
+    sv:
+      title: Kretsbrytare för beroenden
+      description: Systemet BÖR sluta anropa ett beroende i 30 sekunder när minst 50 % av minst 20 anrop inom 10 sekunder har misslyckats.
+      rationale: En öppen krets ger ett felande beroende utrymme att återhämta sig och låter anroparna misslyckas direkt i stället för att vänta ut tidsgränser.
+      criteria:
+        - method: test
+          text: När felgränsen har nåtts misslyckas anropen direkt i 30 sekunder, därefter släpps ett provanrop igenom.
+          threshold: "öppnar vid ≥ 50 % fel av ≥ 20 anrop på 10 s, i 30 s"
+
+  - id: RES-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [graceful-degradation, search]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)"]
+    tests: [RES-T04]
+    en:
+      title: Core functions work without the search service
+      description: While the search service is unavailable, the system MUST keep viewing and editing of records working and show a notice that search is temporarily out of service.
+      rationale: Secondary services fail more often than the core, and users can go on working when the failure is contained.
+      criteria:
+        - method: test
+          text: With the search service stopped, records can be opened and saved, and the search field shows the notice.
+    sv:
+      title: Kärnfunktioner fungerar utan söktjänsten
+      description: Medan söktjänsten är otillgänglig SKA systemet hålla visning och redigering av poster igång och visa ett meddelande om att sökningen tillfälligt är ur funktion.
+      rationale: Kringtjänster fallerar oftare än kärnan, och användarna kan fortsätta arbeta när felet hålls avgränsat.
+      criteria:
+        - method: test
+          text: Med söktjänsten stoppad går poster att öppna och spara, och sökfältet visar meddelandet.
+
+  - id: RES-06
+    type: interface
+    obligation: must
+    priority: high
+    tags: [idempotency, api]
+    refs: ["IETF draft-ietf-httpapi-idempotency-key-header", "RFC 9110 §9.2.2 (idempotent methods)"]
+    tests: [RES-T05]
+    en:
+      title: Idempotency key on create requests
+      description: The API MUST return the original result without creating a new record when a create request is repeated with the same idempotency key within 24 hours.
+      rationale: Clients retry after network errors without knowing whether the first request arrived, and the key prevents duplicates.
+      criteria:
+        - method: test
+          text: Two identical create requests with the same Idempotency-Key header create one record and return the same identifier.
+          threshold: "key valid for 24 h"
+    sv:
+      title: Idempotensnyckel för anrop som skapar poster
+      description: API:et SKA returnera det ursprungliga resultatet utan att skapa en ny post när ett skapa-anrop upprepas med samma idempotensnyckel inom 24 timmar.
+      rationale: Klienter gör om anrop efter nätverksfel utan att veta om det första anropet kom fram, och nyckeln förhindrar dubbletter.
+      criteria:
+        - method: test
+          text: Två identiska skapa-anrop med samma Idempotency-Key-huvud skapar en post och returnerar samma identifierare.
+          threshold: "nyckeln gäller i 24 h"
+
+  - id: RES-07
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [consistency, transaction]
+    refs: ["ISO/IEC 25010:2011 §4.2.6.2 (integrity)", "Google SRE book ch. 26 (Data Integrity)"]
+    tests: [RES-T06]
+    en:
+      title: Atomic multi-step changes
+      description: When a change that updates more than one record is interrupted, the system MUST leave the data either fully in the state before or fully in the state after the change.
+      rationale: Half-applied changes create inconsistent data that is hard to detect and expensive to repair.
+      criteria:
+        - method: test
+          text: Killing the process in the middle of a multi-record change leaves no record with the new values while others keep the old ones.
+    sv:
+      title: Odelbara ändringar i flera steg
+      description: När en ändring som uppdaterar mer än en post avbryts SKA systemet lämna data antingen helt i tillståndet före eller helt i tillståndet efter ändringen.
+      rationale: Halvt genomförda ändringar skapar inkonsekventa data som är svåra att upptäcka och dyra att reparera.
+      criteria:
+        - method: test
+          text: Om processen avbryts mitt i en ändring av flera poster finns ingen post med nya värden medan andra har kvar de gamla.
+
+  - id: RES-08
+    type: usability
+    obligation: must
+    priority: high
+    tags: [error-message, user]
+    refs: ["ISO 9241-110:2020 (use error robustness)", "ISO/IEC 25010:2011 §4.2.4.4 (user error protection)"]
+    tests: [RES-T07]
+    en:
+      title: Error messages say what happened and what to do
+      description: Each error message shown to a user MUST state in plain language what went wrong and which action the user can take next.
+      rationale: Users who understand an error correct it themselves, while cryptic messages turn into support requests.
+      criteria:
+        - method: review
+          text: For a sample of 20 error situations, every message names the problem and a next step, without codes as the only content.
+    sv:
+      title: Felmeddelanden säger vad som hände och vad man kan göra
+      description: Varje felmeddelande som visas för en användare SKA på begripligt språk ange vad som gick fel och vilken åtgärd användaren kan vidta härnäst.
+      rationale: Användare som förstår ett fel rättar det själva, medan kryptiska meddelanden blir supportärenden.
+      criteria:
+        - method: review
+          text: För ett urval av 20 felsituationer anger varje meddelande problemet och ett nästa steg, utan att en kod är det enda innehållet.
+
+  - id: RES-09
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [error-message, information-disclosure]
+    refs: ["OWASP ASVS 4.0 V7.4.1 (generic error messages)", "OWASP Top 10 2021 A05 (security misconfiguration)"]
+    tests: [RES-T07]
+    en:
+      title: No internal details in error responses
+      description: Error pages and API error responses MUST NOT contain stack traces, database queries, file paths or software version numbers.
+      rationale: Internal details help attackers map the system and are of no use to the user.
+      criteria:
+        - method: test
+          text: Forced server errors in the interface and the API return a generic message without stack trace, query, path or version.
+    sv:
+      title: Inga interna detaljer i felsvar
+      description: Felsidor och felsvar från API:et SKA INTE innehålla stackspårningar, databasfrågor, filsökvägar eller versionsnummer för programvaran.
+      rationale: Interna detaljer hjälper angripare att kartlägga systemet och är till ingen nytta för användaren.
+      criteria:
+        - method: test
+          text: Framtvingade serverfel i gränssnittet och API:et ger ett allmänt meddelande utan stackspårning, fråga, sökväg eller version.
+
+  - id: RES-10
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [error-message, correlation-id, support]
+    refs: ["RFC 9457 (Problem Details for HTTP APIs)", "OWASP ASVS 4.0 V7.4.1"]
+    tests: [RES-T07, OBS-T02]
+    en:
+      title: Reference number in server error messages
+      description: Each message that reports a server error SHOULD show a reference number that matches the correlation id in the server logs.
+      rationale: The reference lets support find the exact log entry without asking the user to describe what they did.
+      criteria:
+        - method: test
+          text: The reference number shown for a forced server error is found in the log entry of the failed request.
+    sv:
+      title: Referensnummer i meddelanden om serverfel
+      description: Varje meddelande om ett serverfel BÖR visa ett referensnummer som stämmer med korrelations-id:t i serverloggarna.
+      rationale: Referensen gör att supporten hittar exakt rätt loggpost utan att be användaren beskriva vad hen gjorde.
+      criteria:
+        - method: test
+          text: Referensnumret som visas för ett framtvingat serverfel återfinns i loggposten för det misslyckade anropet.
+
+  - id: RES-11
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [bulkhead, isolation, dependency]
+    refs: ["Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    tests: [RES-T08]
+    en:
+      title: Isolated resources per dependency
+      description: The system SHOULD limit the concurrent calls to each dependency to at most 50 % of its worker threads.
+      rationale: When one slow dependency can take all threads, every other function stops as well.
+      criteria:
+        - method: test
+          text: With one dependency delayed by 10 seconds, requests that do not use it keep their normal response time.
+          threshold: "≤ 50 % of worker threads per dependency"
+    sv:
+      title: Avgränsade resurser per beroende
+      description: Systemet BÖR begränsa antalet samtidiga anrop till varje beroende till högst 50 % av arbetstrådarna.
+      rationale: När ett långsamt beroende kan ta alla trådar stannar även alla andra funktioner.
+      criteria:
+        - method: test
+          text: Med ett beroende fördröjt med 10 sekunder behåller anrop som inte använder det sin vanliga svarstid.
+          threshold: "≤ 50 % av arbetstrådarna per beroende"
+
+  - id: RES-12
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [queue, dead-letter, messaging]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)"]
+    tests: [RES-T09]
+    en:
+      title: Dead-letter queue for failed messages
+      description: The system MUST move a message that has failed processing 5 times to a dead-letter queue and raise an alert.
+      rationale: A message that keeps failing blocks the queue, while a dead-letter queue keeps it for analysis without losing it.
+      criteria:
+        - method: test
+          text: A message that always fails is attempted 5 times, then appears in the dead-letter queue, and an alert is raised.
+          threshold: "5 attempts"
+    sv:
+      title: Kö för meddelanden som inte kan bearbetas
+      description: Systemet SKA flytta ett meddelande som har misslyckats att bearbetas 5 gånger till en kö för obearbetbara meddelanden och skapa ett larm.
+      rationale: Ett meddelande som misslyckas om och om igen blockerar kön, medan en separat kö sparar det för analys utan att det går förlorat.
+      criteria:
+        - method: test
+          text: Ett meddelande som alltid misslyckas provas 5 gånger, hamnar sedan i kön för obearbetbara meddelanden, och ett larm skapas.
+          threshold: "5 försök"
+
+  - id: RES-13
+    type: business
+    obligation: should
+    priority: medium
+    tags: [fault-injection, chaos-engineering]
+    refs: ["ISTQB CTAL-TTA (reliability testing)", "Google SRE book ch. 17 (Testing for Reliability)"]
+    tests: [RES-T10]
+    en:
+      title: Regular fault-injection tests
+      description: The team SHOULD run a fault-injection test against each critical dependency at least once per quarter.
+      rationale: Error handling that is never exercised tends to break unnoticed, and planned tests find the gaps before an incident does.
+      criteria:
+        - method: review
+          text: The test log shows a fault-injection test for each critical dependency within the last 3 months, with findings recorded.
+          threshold: "every 3 months per critical dependency"
+    sv:
+      title: Regelbundna tester med felinjektion
+      description: Teamet BÖR köra ett felinjektionstest mot varje kritiskt beroende minst en gång per kvartal.
+      rationale: Felhantering som aldrig används går ofta sönder utan att någon märker det, och planerade tester hittar luckorna innan en incident gör det.
+      criteria:
+        - method: review
+          text: Testloggen visar ett felinjektionstest för varje kritiskt beroende under de senaste 3 månaderna, med registrerade fynd.
+          threshold: "var 3:e månad per kritiskt beroende"
+
+tests:
+  - id: RES-T01
+    priority: high
+    execution: automated
+    tags: [timeout, fault-injection]
+    refs: []
+    en:
+      title: Outbound call to a hanging dependency times out
+      description: An integration test replaces a dependency with a stub that accepts connections but never answers.
+      preconditions: The system runs in a test environment where each dependency can be replaced by a stub.
+      expected: The call is aborted within 5 seconds and the user request ends with a handled error.
+      steps:
+        - action: Configure the stub to accept the connection and never send a response.
+          expected: The stub is reachable and silent.
+        - action: Send a request to the system that needs the dependency and measure the time.
+          expected: The system answers within 5 seconds plus 1 second of processing, with a handled error response.
+        - action: Repeat for each dependency in the dependency list.
+          expected: Every dependency call is aborted within its timeout.
+    sv:
+      title: Utgående anrop till ett beroende som hänger sig avbryts
+      description: Ett integrationstest ersätter ett beroende med en attrapp som tar emot anslutningar men aldrig svarar.
+      preconditions: Systemet körs i en testmiljö där varje beroende kan ersättas med en attrapp.
+      expected: Anropet avbryts inom 5 sekunder och användarens anrop avslutas med ett hanterat fel.
+      steps:
+        - action: Konfigurera attrappen så att den tar emot anslutningen och aldrig skickar något svar.
+          expected: Attrappen är nåbar och tyst.
+        - action: Skicka ett anrop till systemet som kräver beroendet och mät tiden.
+          expected: Systemet svarar inom 5 sekunder plus 1 sekunds bearbetning, med ett hanterat felsvar.
+        - action: Upprepa för varje beroende i listan över beroenden.
+          expected: Varje anrop till ett beroende avbryts inom sin tidsgräns.
+
+  - id: RES-T02
+    priority: high
+    execution: automated
+    tags: [retry, backoff]
+    refs: []
+    en:
+      title: Retry behaviour against failing dependencies
+      description: An integration test uses a stub that returns configured status codes and records the arrival time of each call.
+      preconditions: A stub dependency that logs every call with a timestamp.
+      expected: Server errors are retried at most 3 times with growing random delays; client errors are not retried.
+      steps:
+        - action: Let the stub answer every call with status 503 and send one request through the system.
+          expected: The stub receives 4 calls in total.
+        - action: Compute the delays between the calls in this and in a second run.
+          expected: The delays grow from 200 milliseconds upwards and differ between the runs.
+        - action: Let the stub answer with status 400 and send one request.
+          expected: The stub receives exactly 1 call.
+    sv:
+      title: Beteende vid omförsök mot felande beroenden
+      description: Ett integrationstest använder en attrapp som returnerar konfigurerade statuskoder och registrerar när varje anrop kommer.
+      preconditions: En attrapp för beroendet som loggar varje anrop med tidsstämpel.
+      expected: Serverfel görs om högst 3 gånger med växande slumpmässiga väntetider; klientfel görs inte om.
+      steps:
+        - action: Låt attrappen svara 503 på varje anrop och skicka ett anrop genom systemet.
+          expected: Attrappen tar emot totalt 4 anrop.
+        - action: Beräkna väntetiderna mellan anropen i denna och i en andra körning.
+          expected: Väntetiderna växer från 200 millisekunder och uppåt och skiljer sig mellan körningarna.
+        - action: Låt attrappen svara 400 och skicka ett anrop.
+          expected: Attrappen tar emot exakt 1 anrop.
+
+  - id: RES-T03
+    priority: high
+    execution: automated
+    tags: [circuit-breaker]
+    refs: []
+    en:
+      title: Circuit breaker opens and closes
+      description: An integration test drives a dependency into failure and checks the state changes of the circuit breaker.
+      preconditions: A stub dependency whose answers can be switched between success and failure.
+      expected: The circuit opens at the threshold, rejects calls for 30 seconds and closes after a successful trial call.
+      steps:
+        - action: Send 20 calls within 10 seconds while the stub fails every call.
+          expected: The circuit opens and the next call fails at once without reaching the stub.
+        - action: Switch the stub to success and wait 30 seconds.
+          expected: The next call reaches the stub as a trial call.
+        - action: Send 10 more calls.
+          expected: All calls reach the stub and succeed.
+    sv:
+      title: Kretsbrytaren öppnar och stänger
+      description: Ett integrationstest får ett beroende att fallera och kontrollerar kretsbrytarens tillståndsbyten.
+      preconditions: En attrapp för beroendet vars svar kan växlas mellan lyckat och misslyckat.
+      expected: Kretsen öppnar vid gränsen, avvisar anrop i 30 sekunder och stänger efter ett lyckat provanrop.
+      steps:
+        - action: Skicka 20 anrop inom 10 sekunder medan attrappen låter varje anrop misslyckas.
+          expected: Kretsen öppnar och nästa anrop misslyckas direkt utan att nå attrappen.
+        - action: Växla attrappen till lyckade svar och vänta 30 sekunder.
+          expected: Nästa anrop når attrappen som provanrop.
+        - action: Skicka 10 anrop till.
+          expected: Alla anrop når attrappen och lyckas.
+
+  - id: RES-T04
+    priority: high
+    execution: manual
+    tags: [graceful-degradation, search]
+    refs: []
+    en:
+      title: Working without the search service
+      description: Stops the search service and checks that the core functions keep working.
+      preconditions: A test environment where the search service can be stopped; a signed-in test user.
+      expected: Records can be viewed and edited, and the search field shows a clear notice.
+      steps:
+        - action: Stop the search service.
+          expected: The health dashboard shows the search service as down.
+        - action: Open a record from the recent-items list, edit a field and save.
+          expected: The record opens and the change is saved.
+        - action: Look at the search field and try a search.
+          expected: A notice states that search is temporarily out of service; no error page appears.
+    sv:
+      title: Arbeta utan söktjänsten
+      description: Stoppar söktjänsten och kontrollerar att kärnfunktionerna fortsätter att fungera.
+      preconditions: En testmiljö där söktjänsten kan stoppas; en inloggad testanvändare.
+      expected: Poster kan visas och redigeras, och sökfältet visar ett tydligt meddelande.
+      steps:
+        - action: Stoppa söktjänsten.
+          expected: Hälsopanelen visar söktjänsten som nere.
+        - action: Öppna en post från listan över senaste poster, ändra ett fält och spara.
+          expected: Posten öppnas och ändringen sparas.
+        - action: Titta på sökfältet och prova en sökning.
+          expected: Ett meddelande anger att sökningen tillfälligt är ur funktion; ingen felsida visas.
+
+  - id: RES-T05
+    priority: high
+    execution: automated
+    tags: [idempotency, api]
+    refs: []
+    en:
+      title: Repeated create request with the same idempotency key
+      description: An API test sends the same create request twice with one idempotency key and once with another key.
+      preconditions: An API client with permission to create records.
+      expected: The same key yields one record; a new key yields a second record.
+      steps:
+        - action: Send a create request with header Idempotency-Key set to a new random value.
+          expected: The record is created and its identifier is returned.
+          data: "Idempotency-Key: 6f1c2a90-0001"
+        - action: Send the identical request with the same key.
+          expected: The response returns the same identifier and no second record exists.
+        - action: Send the request with a different key.
+          expected: A second record with a new identifier is created.
+    sv:
+      title: Upprepat skapa-anrop med samma idempotensnyckel
+      description: Ett API-test skickar samma skapa-anrop två gånger med en idempotensnyckel och en gång med en annan nyckel.
+      preconditions: En API-klient med behörighet att skapa poster.
+      expected: Samma nyckel ger en post; en ny nyckel ger en andra post.
+      steps:
+        - action: Skicka ett skapa-anrop med huvudet Idempotency-Key satt till ett nytt slumpvärde.
+          expected: Posten skapas och dess identifierare returneras.
+          data: "Idempotency-Key: 6f1c2a90-0001"
+        - action: Skicka det identiska anropet med samma nyckel.
+          expected: Svaret returnerar samma identifierare och ingen andra post finns.
+        - action: Skicka anropet med en annan nyckel.
+          expected: En andra post med en ny identifierare skapas.
+
+  - id: RES-T06
+    priority: critical
+    execution: automated
+    tags: [consistency, transaction, fault-injection]
+    refs: []
+    en:
+      title: Interrupted multi-record change leaves consistent data
+      description: A test starts a change of 1 000 records and kills the server process in the middle.
+      preconditions: A test database with 1 000 records that a bulk change updates together; a fault hook that stops the process after 500 updates.
+      expected: After restart either all 1 000 records have the old values or all have the new values.
+      steps:
+        - action: Start the bulk change and let the fault hook kill the process after 500 updates.
+          expected: The process stops in the middle of the change.
+        - action: Restart the system and count the records with the old and new values.
+          expected: The count is 1 000 old and 0 new, or 0 old and 1 000 new.
+    sv:
+      title: Avbruten ändring av flera poster lämnar konsekventa data
+      description: Ett test startar en ändring av 1 000 poster och avbryter serverprocessen mitt i.
+      preconditions: En testdatabas med 1 000 poster som en massändring uppdaterar tillsammans; en felkrok som stoppar processen efter 500 uppdateringar.
+      expected: Efter omstart har antingen alla 1 000 poster de gamla värdena eller alla de nya.
+      steps:
+        - action: Starta massändringen och låt felkroken avbryta processen efter 500 uppdateringar.
+          expected: Processen stannar mitt i ändringen.
+        - action: Starta om systemet och räkna posterna med gamla och nya värden.
+          expected: Antalet är 1 000 gamla och 0 nya, eller 0 gamla och 1 000 nya.
+
+  - id: RES-T07
+    priority: high
+    execution: manual
+    tags: [error-message, information-disclosure]
+    refs: ["OWASP ASVS 4.0 V7.4.1"]
+    en:
+      title: Error messages for users and API clients
+      description: Provokes user errors and server errors and reviews the resulting messages and responses.
+      preconditions: A test environment where a server error can be forced through a test switch; a list of 20 error situations.
+      expected: Messages explain the problem and the next step, server errors show a reference, and no internal details leak.
+      steps:
+        - action: Trigger each of the 20 error situations in the interface and read the message.
+          expected: Every message states what went wrong and what the user can do next.
+          data: "e.g. invalid date, missing required field, expired session, file too large"
+        - action: Force a server error in the interface and in the API.
+          expected: The response shows a generic message and a reference number, with no stack trace, query, path or version.
+        - action: Search the server logs for the reference number.
+          expected: The log entry of the failed request contains the same value as its correlation id.
+    sv:
+      title: Felmeddelanden för användare och API-klienter
+      description: Framkallar användarfel och serverfel och granskar meddelandena och svaren.
+      preconditions: En testmiljö där ett serverfel kan framtvingas med en testbrytare; en lista med 20 felsituationer.
+      expected: Meddelandena förklarar problemet och nästa steg, serverfel visar en referens och inga interna detaljer läcker ut.
+      steps:
+        - action: Framkalla var och en av de 20 felsituationerna i gränssnittet och läs meddelandet.
+          expected: Varje meddelande anger vad som gick fel och vad användaren kan göra härnäst.
+          data: "t.ex. ogiltigt datum, obligatoriskt fält saknas, utgången session, för stor fil"
+        - action: Framtvinga ett serverfel i gränssnittet och i API:et.
+          expected: Svaret visar ett allmänt meddelande och ett referensnummer, utan stackspårning, fråga, sökväg eller version.
+        - action: Sök efter referensnumret i serverloggarna.
+          expected: Loggposten för det misslyckade anropet innehåller samma värde som korrelations-id.
+
+  - id: RES-T08
+    priority: medium
+    execution: automated
+    tags: [bulkhead, load-test]
+    refs: []
+    en:
+      title: Slow dependency does not block other functions
+      description: A load test delays one dependency and measures requests that do not use it.
+      preconditions: A stub for the dependency with a configurable delay; a load test with two request groups, one using the dependency and one not.
+      expected: Requests that do not use the slow dependency keep their response time.
+      steps:
+        - action: Run the load test with no delay and record the 95th percentile of the group without the dependency.
+          expected: A baseline value is recorded.
+        - action: Set a delay of 10 seconds on the stub and run the load test again.
+          expected: The 95th percentile of the group without the dependency is at most 20 % above the baseline.
+    sv:
+      title: Ett långsamt beroende blockerar inte andra funktioner
+      description: Ett lasttest fördröjer ett beroende och mäter anrop som inte använder det.
+      preconditions: En attrapp för beroendet med inställbar fördröjning; ett lasttest med två anropsgrupper, en som använder beroendet och en som inte gör det.
+      expected: Anrop som inte använder det långsamma beroendet behåller sin svarstid.
+      steps:
+        - action: Kör lasttestet utan fördröjning och registrera 95:e percentilen för gruppen utan beroendet.
+          expected: Ett jämförelsevärde registreras.
+        - action: Sätt en fördröjning på 10 sekunder i attrappen och kör lasttestet igen.
+          expected: 95:e percentilen för gruppen utan beroendet är högst 20 % över jämförelsevärdet.
+
+  - id: RES-T09
+    priority: medium
+    execution: automated
+    tags: [queue, dead-letter]
+    refs: []
+    en:
+      title: Failing message ends in the dead-letter queue
+      description: An integration test publishes a message that the consumer can never process.
+      preconditions: The message consumer runs in a test environment with a dead-letter queue and alerting to a test channel.
+      expected: The message is attempted 5 times, moved to the dead-letter queue and an alert is raised.
+      steps:
+        - action: Publish a message with content that makes the consumer fail.
+          expected: The consumer log shows a failed attempt.
+          data: "malformed payload"
+        - action: Wait until processing stops and count the attempts in the log.
+          expected: There are exactly 5 attempts.
+        - action: Check the dead-letter queue and the test alert channel.
+          expected: The message is in the dead-letter queue and one alert names the queue.
+    sv:
+      title: Meddelande som inte kan bearbetas hamnar i rätt kö
+      description: Ett integrationstest publicerar ett meddelande som konsumenten aldrig kan bearbeta.
+      preconditions: Meddelandekonsumenten körs i en testmiljö med en kö för obearbetbara meddelanden och larm till en testkanal.
+      expected: Meddelandet provas 5 gånger, flyttas till kön för obearbetbara meddelanden och ett larm skapas.
+      steps:
+        - action: Publicera ett meddelande med innehåll som får konsumenten att misslyckas.
+          expected: Konsumentens logg visar ett misslyckat försök.
+          data: "felformaterat innehåll"
+        - action: Vänta tills bearbetningen upphör och räkna försöken i loggen.
+          expected: Det finns exakt 5 försök.
+        - action: Kontrollera kön för obearbetbara meddelanden och testkanalen för larm.
+          expected: Meddelandet ligger i kön och ett larm anger kön.
+
+  - id: RES-T10
+    priority: medium
+    execution: manual
+    tags: [fault-injection, review]
+    refs: ["Google SRE book ch. 17"]
+    en:
+      title: Review of the fault-injection schedule
+      description: Checks that every critical dependency has been tested with injected faults during the last quarter.
+      preconditions: The list of critical dependencies and the fault-injection test log are available.
+      expected: Each critical dependency has a recorded fault-injection test within the last 3 months with findings followed up.
+      steps:
+        - action: Compare the list of critical dependencies with the entries in the test log.
+          expected: Every dependency has an entry dated within the last 3 months.
+        - action: Check the findings of each entry.
+          expected: Every finding has an issue in the backlog with an owner.
+    sv:
+      title: Granskning av schemat för felinjektion
+      description: Kontrollerar att varje kritiskt beroende har testats med injicerade fel under det senaste kvartalet.
+      preconditions: Listan över kritiska beroenden och testloggen för felinjektion finns tillgängliga.
+      expected: Varje kritiskt beroende har ett registrerat felinjektionstest inom de senaste 3 månaderna med uppföljda fynd.
+      steps:
+        - action: Jämför listan över kritiska beroenden med posterna i testloggen.
+          expected: Varje beroende har en post daterad inom de senaste 3 månaderna.
+        - action: Kontrollera fynden i varje post.
+          expected: Varje fynd har ett ärende i backloggen med en ansvarig.

@@ -1,0 +1,14 @@
+# Groups of areas, in display order.
+groups:
+  - id: security
+    name: {en: Security, sv: Säkerhet}
+  - id: privacy
+    name: {en: Privacy and compliance, sv: Integritet och regelefterlevnad}
+  - id: quality
+    name: {en: Performance and reliability, sv: Prestanda och tillförlitlighet}
+  - id: operations
+    name: {en: Operations and maintainability, sv: Drift och underhåll}
+  - id: usability
+    name: {en: Usability and accessibility, sv: Användbarhet och tillgänglighet}
+  - id: functional
+    name: {en: Common functionality, sv: Vanlig funktionalitet}
