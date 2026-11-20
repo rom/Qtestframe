@@ -3,9 +3,13 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 GOFLAGS_BUILD = -trimpath -ldflags "-s -w -X main.version=$(VERSION)"
 BIN ?= bin/qtestframe
 COVERAGE_FLOOR ?= 85
+# user guide export: output folder and languages (empty: all)
+GUIDE_OUT ?= dist/user-guide
+GUIDE_LANGS ?=
+GUIDE_ARGS = --out $(GUIDE_OUT) $(if $(GUIDE_LANGS),--lang $(GUIDE_LANGS))
 
 .PHONY: all build web web-deps go test test-go test-web coverage coverage-go coverage-web \
-        lint vet fmt run dev clean release certs-dev
+        lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf
 
 all: build
 
@@ -56,6 +60,22 @@ lint: vet
 
 dev:
 	scripts/dev.sh
+
+# The user guide (docs/user-guide) as one document per language, in
+# $(GUIDE_OUT): qtestframe-user-guide-<lang>.md with an images/ folder,
+# and qtestframe-user-guide-<lang>.pdf (printed with Chromium: Playwright's,
+# a system Chrome, or QTF_CHROME). E.g. make guide GUIDE_LANGS=sv
+guide: guide-pdf
+
+guide-md: web/node_modules/.package-lock.json
+	node web/scripts/guide-export.mjs --no-pdf $(GUIDE_ARGS)
+
+# writes the Markdown too: the PDF is printed from it
+guide-pdf: web/node_modules/.package-lock.json
+	node web/scripts/guide-export.mjs $(GUIDE_ARGS)
+
+web/node_modules/.package-lock.json: web/package-lock.json
+	cd web && npm ci
 
 certs-dev:
 	scripts/certs/gen-server-cert.sh --cn localhost --san DNS:localhost,IP:127.0.0.1 --self-signed --out certs

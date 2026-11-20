@@ -393,7 +393,7 @@ Health endpoints for load balancers: `/healthz` (process alive) and `/readyz` (d
 scripts/dev.sh --seed
 ```
 
-This builds and starts the backend on :8080 (SQLite in `./data`) and the Vite dev server with hot reload on http://localhost:5173. Sign in as `admin@example.com` / `admin-dev-password`. `scripts/dev.sh --postgres` uses PostgreSQL instead. Other `make` targets: `test`, `coverage`, `vet`, `lint`, `release` (static binaries for Linux amd64/arm64 and macOS).
+This builds and starts the backend on :8080 (SQLite in `./data`) and the Vite dev server with hot reload on http://localhost:5173. Sign in as `admin@example.com` / `admin-dev-password`. `scripts/dev.sh --postgres` uses PostgreSQL instead. Other `make` targets: `test`, `coverage`, `vet`, `lint`, `release` (static binaries for Linux amd64/arm64 and macOS), and `guide` / `guide-md` (the user guide as one PDF and one Markdown file per language in `dist/user-guide/`, see [docs/user-guide/README.md](docs/user-guide/README.md#pdf-and-single-file-markdown)).
 
 ## Production deployment
 
