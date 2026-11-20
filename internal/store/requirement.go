@@ -105,23 +105,29 @@ func (s *Store) CreateRequirement(ctx context.Context, tenantID string, r *model
 		if err := s.checkFolder(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.FolderID); err != nil {
 			return err
 		}
-		seq, key, err := nextKey(ctx, c, r.ProjectID, model.KindRequirement)
-		if err != nil {
-			return err
-		}
-		r.Key = key
-		r.Position = seq
-		if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			r.ID, tenantID, r.ProjectID, nullStr(r.FolderID), seq, r.Key, r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status,
-			r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt); err != nil {
-			return mapErr(err, "requirement")
-		}
-		if err := setCategories(ctx, c, model.KindRequirement, r.ProjectID, r.ID, r.CategoryIDs); err != nil {
-			return err
-		}
-		return replaceCriteria(ctx, c, r)
+		return insertRequirement(ctx, c, tenantID, r)
 	})
+}
+
+// insertRequirement allocates the key of a validated requirement and
+// inserts it with its categories and criteria.
+func insertRequirement(ctx context.Context, c conn, tenantID string, r *model.Requirement) error {
+	seq, key, err := nextKey(ctx, c, r.ProjectID, model.KindRequirement)
+	if err != nil {
+		return err
+	}
+	r.Key = key
+	r.Position = seq
+	if _, err := c.exec(ctx, `INSERT INTO requirements (id, tenant_id, project_id, folder_id, seq, key, title, description, obligation, type, priority, status, source, rationale, owner, tags, version, position, created_by, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		r.ID, tenantID, r.ProjectID, nullStr(r.FolderID), seq, r.Key, r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status,
+		r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.Position, r.CreatedBy, r.CreatedAt, r.UpdatedAt); err != nil {
+		return mapErr(err, "requirement")
+	}
+	if err := setCategories(ctx, c, model.KindRequirement, r.ProjectID, r.ID, r.CategoryIDs); err != nil {
+		return err
+	}
+	return replaceCriteria(ctx, c, r)
 }
 
 func replaceCriteria(ctx context.Context, c conn, r *model.Requirement) error {

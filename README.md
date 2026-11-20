@@ -20,6 +20,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
   - Obligation levels based on RFC 2119/8174: `MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, `OPTIONAL`, `WILL` and `DESCRIBE`. The level is detected automatically from the text.
   - Live language checks while you write: ambiguous terms, TBDs, compound requirements, escape clauses, and/or, and more.
   - Status, type, priority, rationale, source (a per-project list of sources with free text), owner, tags (each tag in a colour of its own), version and **evaluation criteria** (test, inspection, analysis, demonstration, review).
+  - **Import** from the files customers send: CSV, Excel, ReqIF (`.reqif`, `.reqifz`) and Word, with English and Swedish column names, a preview with an editable column mapping, folders from sections and headings, obligation detection and duplicate checks.
 - **Test cases**
   - Manual tests are executed step by step (action, expected result, data).
   - Automated tests are shell, bash, Python or JavaScript scripts, run server-side in a sandbox. CI systems can also import results.
