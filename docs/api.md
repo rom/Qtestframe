@@ -836,6 +836,9 @@ carry `risk_level`, the highest level of their open risks (query field
 | PATCH | `/webhooks/{id}` | project.update | the same fields; `"rotate_secret": true` returns a new secret |
 | DELETE | `/webhooks/{id}` | project.update | |
 | POST | `/webhooks/{id}/test` | project.update | sends `ping` now → `{"ok","status","error"}` |
+| POST | `/projects/{pid}/webhooks/bulk` | project.update | `{"ids":[...], "enabled"?, "add_events"?, "remove_events"?}` → `{"updated": n}`; every webhook must keep an event (else 400, nothing saved); secrets are kept |
+| DELETE | `/projects/{pid}/webhooks/bulk` | project.update | `{"ids":[...]}` → `{"deleted": n}` |
+| POST | `/projects/{pid}/webhooks/test` | project.update | `{"ids":[...]}` (at most 50) sends `ping` to each → `{"results":[{id, name, ok, status, error}]}` |
 
 Users are notified (never about their own actions) when they are made
 owner, assignee of an execution or a defect, are @mentioned in a

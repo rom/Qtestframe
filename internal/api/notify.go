@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +29,9 @@ func (s *Server) routesNotifications(h routeFunc) {
 	h("GET /api/v1/webhook-events", s.handleWebhookEvents)
 	h("GET /api/v1/projects/{pid}/webhooks", s.handleListWebhooks, "project.update")
 	h("POST /api/v1/projects/{pid}/webhooks", s.handleCreateWebhook, "project.update")
+	h("POST /api/v1/projects/{pid}/webhooks/bulk", s.handleBulkWebhooks, "project.update")
+	h("DELETE /api/v1/projects/{pid}/webhooks/bulk", s.handleBulkDeleteWebhooks, "project.update")
+	h("POST /api/v1/projects/{pid}/webhooks/test", s.handleBulkTestWebhooks, "project.update")
 	h("PATCH /api/v1/webhooks/{id}", s.handleUpdateWebhook, "project.update")
 	h("DELETE /api/v1/webhooks/{id}", s.handleDeleteWebhook, "project.update")
 	h("POST /api/v1/webhooks/{id}/test", s.handleTestWebhook, "project.update")
@@ -450,4 +454,153 @@ func (s *Server) afterExecutionChange(r *http.Request, p *Principal, before, aft
 	if run.Status == "completed" && runBefore != "completed" {
 		s.notifyEvent(r, p, run.ProjectID, "run.completed", map[string]any{"run": run})
 	}
+}
+
+// ---------------------------------------------------------------- bulk
+
+func (s *Server) bulkWebhooksOf(r *http.Request, p *Principal, projectID string, ids []string) ([]*model.Webhook, error) {
+	ids, err := bulkIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	var out []*model.Webhook
+	for _, id := range ids {
+		hk, err := s.Store.GetWebhook(r.Context(), p.TenantID(), id)
+		if err != nil {
+			return nil, err
+		}
+		if hk.ProjectID != projectID {
+			return nil, fmt.Errorf("webhook %s: %w", id, store.ErrNotFound)
+		}
+		out = append(out, hk)
+	}
+	return out, nil
+}
+
+// handleBulkWebhooks: POST /projects/{pid}/webhooks/bulk
+// {"ids": [...], "enabled"?, "add_events"?, "remove_events"?}. Every
+// webhook must keep at least one event; all are checked before any is saved.
+func (s *Server) handleBulkWebhooks(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs          []string `json:"ids"`
+		Enabled      *bool    `json:"enabled"`
+		AddEvents    []string `json:"add_events"`
+		RemoveEvents []string `json:"remove_events"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if req.Enabled == nil && len(req.AddEvents) == 0 && len(req.RemoveEvents) == 0 {
+		s.fail(w, r, badRequest("nothing to change: enabled, add_events or remove_events"))
+		return
+	}
+	for _, e := range append(append([]string{}, req.AddEvents...), req.RemoveEvents...) {
+		if e != "*" && !slices.Contains(model.WebhookEvents, e) {
+			s.fail(w, r, badRequest("unknown event %q", e))
+			return
+		}
+	}
+	list, err := s.bulkWebhooksOf(r, p, pr.ID, req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	for _, hk := range list {
+		events := slices.DeleteFunc(append([]string(nil), hk.Events...), func(e string) bool { return slices.Contains(req.RemoveEvents, e) })
+		for _, e := range req.AddEvents {
+			if !slices.Contains(events, e) {
+				events = append(events, e)
+			}
+		}
+		if len(events) == 0 {
+			s.fail(w, r, badRequest("%s would have no events left", hk.Name))
+			return
+		}
+		hk.Events = events
+		if req.Enabled != nil {
+			hk.Enabled = *req.Enabled
+		}
+		hk.Secret = "" // keep the stored secret
+	}
+	for _, hk := range list {
+		if err := s.Store.UpdateWebhook(r.Context(), p.TenantID(), hk); err != nil {
+			s.fail(w, r, fmt.Errorf("%s: %w", hk.Name, err))
+			return
+		}
+		s.audit(r.Context(), p, "webhook.update", "webhook", hk.ID, hk.Name+" (bulk)")
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"updated": len(list)})
+}
+
+// handleBulkDeleteWebhooks: DELETE /projects/{pid}/webhooks/bulk {"ids": [...]}.
+func (s *Server) handleBulkDeleteWebhooks(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	list, err := s.bulkWebhooksOf(r, p, pr.ID, req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	for _, hk := range list {
+		if err := s.Store.DeleteWebhook(r.Context(), p.TenantID(), hk.ID); err != nil {
+			s.fail(w, r, fmt.Errorf("%s: %w", hk.Name, err))
+			return
+		}
+		s.audit(r.Context(), p, "webhook.delete", "webhook", hk.ID, hk.Name+" (bulk)")
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"deleted": len(list)})
+}
+
+// handleBulkTestWebhooks: POST /projects/{pid}/webhooks/test {"ids": [...]}
+// sends a ping to each webhook (one after another) →
+// {"results": [{id, name, ok, status, error}]}.
+func (s *Server) handleBulkTestWebhooks(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	list, err := s.bulkWebhooksOf(r, p, pr.ID, req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if len(list) > 50 {
+		s.fail(w, r, badRequest("test at most 50 webhooks at a time"))
+		return
+	}
+	results := []map[string]any{}
+	for _, hk := range list {
+		body, _ := json.Marshal(webhookPayload{ID: uuid.NewString(), Event: "ping", ProjectID: hk.ProjectID, Actor: p.User.Email, Time: time.Now().UTC(),
+			Data: map[string]string{"webhook": hk.Name}})
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		status, err := s.deliver(ctx, hk, "ping", body)
+		cancel()
+		res := map[string]any{"id": hk.ID, "name": hk.Name, "ok": err == nil, "status": status}
+		if err != nil {
+			res["error"] = err.Error()
+		}
+		results = append(results, res)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"results": results})
 }

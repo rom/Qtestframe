@@ -62,3 +62,5 @@ Under **Kategorier & inställningar** kan projektets administratörer (behörigh
 - **Skicka test** skickar en `ping`-händelse direkt. Tabellen visar resultatet av den senaste leveransen.
 
 Leveranser görs inte om och omdirigeringar följs inte.
+
+Kryssa i webhooks i listan för att **Slå på** eller **Stäng av** flera på en gång, **Lägg till händelser** eller **Ta bort händelser** (varje webhook måste ha minst en händelse kvar, annars ändras ingenting), **Skicka test** till alla (resultatet för varje visas) eller **Ta bort** dem. Andra ändringar än borttagning kan ångras med ångra-knappen.

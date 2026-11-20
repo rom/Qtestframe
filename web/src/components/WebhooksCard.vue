@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Outgoing webhooks of a project: URL, events, signing secret (shown once),
 // test delivery and the outcome of the latest delivery.
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import Column from 'primevue/column'
@@ -15,6 +15,8 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { deliveryState, validWebhookUrl } from '@/lib/notifications'
 import { formatDateTime } from '@/lib/format'
+import { valuesBefore } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { useNotify } from '@/composables/notify'
 import type { Webhook } from '@/lib/types'
 
@@ -105,6 +107,75 @@ function remove(w: Webhook) {
   })
 }
 
+// ---------- bulk ----------
+const selection = ref<Webhook[]>([])
+const selectedIds = computed(() => selection.value.map((w) => w.id))
+const eventsDialog = ref(false)
+const eventsMode = ref<'add' | 'remove'>('add')
+const eventsPick = ref<string[]>([])
+const bulkBusy = ref('')
+const testResults = ref<{ id: string; name: string; ok: boolean; status: number; error?: string }[]>([])
+watch(hooks, (list) => {
+  const ids = new Set(list.map((w) => w.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+async function bulkUpdate(body: Record<string, unknown>) {
+  const ids = [...selectedIds.value]
+  const before = valuesBefore(hooks.value, ids, ['enabled', 'events'])
+  const path = `/projects/${props.projectId}/webhooks/bulk`
+  try {
+    await api.post(path, { ids, ...body })
+    recordUndo(
+      entry(
+        t('webhooks.bulk.undo', { n: ids.length }),
+        async () => {
+          for (const b of before) await api.patch(`/webhooks/${b.id}`, b.before)
+        },
+        () => api.post(path, { ids, ...body }),
+      ),
+    )
+    notify.ok(t('webhooks.bulk.updated', { n: ids.length }, ids.length))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+function openEvents(mode: 'add' | 'remove') {
+  eventsMode.value = mode
+  eventsPick.value = []
+  eventsDialog.value = true
+}
+async function applyEvents() {
+  eventsDialog.value = false
+  if (eventsPick.value.length) await bulkUpdate(eventsMode.value === 'add' ? { add_events: eventsPick.value } : { remove_events: eventsPick.value })
+}
+async function bulkTest() {
+  bulkBusy.value = 'test'
+  testResults.value = []
+  try {
+    const res = await api.post<{ results: typeof testResults.value }>(`/projects/${props.projectId}/webhooks/test`, { ids: selectedIds.value })
+    testResults.value = res.results
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    bulkBusy.value = ''
+  }
+}
+function bulkDelete() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(t('webhooks.bulk.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      await api.del(`/projects/${props.projectId}/webhooks/bulk`, { ids })
+      notify.ok(t('webhooks.bulk.deleted', { n: ids.length }, ids.length))
+      selection.value = []
+      await load()
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
+
 async function copySecret() {
   try {
     await navigator.clipboard.writeText(secret.value)
@@ -123,7 +194,29 @@ async function copySecret() {
     </div>
     <p class="small muted">{{ t('webhooks.intro') }}</p>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-    <DataTable :value="hooks" data-key="id" size="small">
+    <div v-if="selection.length" class="bulkbar" role="toolbar" :aria-label="t('webhooks.bulk.toolbar')">
+      <b>{{ t('common.selected', { count: selection.length }) }}</b>
+      <Button :label="t('webhooks.bulk.enable')" icon="pi pi-check-circle" size="small" severity="secondary" outlined @click="bulkUpdate({ enabled: true })" />
+      <Button :label="t('webhooks.bulk.disable')" icon="pi pi-ban" size="small" severity="secondary" outlined @click="bulkUpdate({ enabled: false })" />
+      <Button :label="t('webhooks.bulk.addEvents')" icon="pi pi-plus" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openEvents('add')" />
+      <Button :label="t('webhooks.bulk.removeEvents')" icon="pi pi-minus" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openEvents('remove')" />
+      <Button :label="t('webhooks.bulk.test')" icon="pi pi-play" size="small" severity="secondary" outlined :loading="bulkBusy === 'test'" @click="bulkTest" />
+      <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+      <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+    </div>
+    <Message v-if="testResults.length" :severity="testResults.every((r) => r.ok) ? 'success' : 'warn'" closable style="margin-bottom: 10px" @close="testResults = []">
+      <b>{{ t('webhooks.bulk.testResults', { ok: testResults.filter((r) => r.ok).length, n: testResults.length }) }}</b>
+      <ul class="results">
+        <li v-for="r in testResults" :key="r.id" class="small">
+          <i :class="r.ok ? 'pi pi-check-circle' : 'pi pi-times-circle'" aria-hidden="true" />
+          <b>{{ r.name }}</b>:
+          <template v-if="r.ok">{{ t('webhooks.ok', { status: r.status }) }}</template>
+          <template v-else>{{ r.error || t('webhooks.failed') }}</template>
+        </li>
+      </ul>
+    </Message>
+    <DataTable v-model:selection="selection" :value="hooks" data-key="id" size="small">
+      <Column selection-mode="multiple" style="width: 2.6rem" />
       <Column field="name" :header="t('common.name')">
         <template #body="{ data }"><b>{{ data.name }}</b><div class="small muted url">{{ data.url }}</div></template>
       </Column>
@@ -176,6 +269,16 @@ async function copySecret() {
       </template>
     </Dialog>
 
+    <Dialog v-model:visible="eventsDialog" modal :header="eventsMode === 'add' ? t('webhooks.bulk.addEventsHeader', { n: selection.length }, selection.length) : t('webhooks.bulk.removeEventsHeader', { n: selection.length }, selection.length)" :style="{ width: 'min(480px, 96vw)' }">
+      <label for="wh-bulk-events" class="small" style="font-weight: 600">{{ t('webhooks.events') }}</label>
+      <MultiSelect v-model="eventsPick" input-id="wh-bulk-events" :options="eventOptions" option-label="label" option-value="value" filter display="chip" fluid />
+      <p v-if="eventsMode === 'remove'" class="small muted">{{ t('webhooks.bulk.keepOne') }}</p>
+      <template #footer>
+        <Button :label="t('common.cancel')" severity="secondary" text @click="eventsDialog = false" />
+        <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!eventsPick.length" @click="applyEvents" />
+      </template>
+    </Dialog>
+
     <Dialog :visible="!!secret" modal :header="t('webhooks.secretTitle')" :style="{ width: 'min(520px, 96vw)' }" @update:visible="(v: boolean) => !v && (secret = '')">
       <p class="small">{{ t('webhooks.secretOnce') }}</p>
       <div class="row">
@@ -216,6 +319,14 @@ async function copySecret() {
 }
 .toggle label {
   margin: 0;
+}
+.results {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+.results i {
+  margin-right: 4px;
 }
 .error-text {
   color: var(--p-red-600, #c62828);

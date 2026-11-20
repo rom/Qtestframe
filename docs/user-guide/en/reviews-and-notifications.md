@@ -62,3 +62,5 @@ Under **Categories & settings**, project administrators (permission to change th
 - **Send test** sends a `ping` event at once. The table shows the result of the latest delivery.
 
 Deliveries are not retried and redirects are not followed.
+
+Tick webhooks in the list to **Turn on** or **Turn off** several at once, **Add events** or **Remove events** (each webhook must keep at least one event, otherwise nothing is changed), **Send test** to all of them (the result of each is listed), or **Delete** them. Changes other than deleting can be undone with the undo button.
