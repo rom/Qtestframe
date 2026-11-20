@@ -211,6 +211,9 @@ func (s *Server) routes() {
 	h("POST /api/v1/runs/{id}/item-links", s.handleCreateItemLink("run"), "run.write")
 	h("PATCH /api/v1/item-links/{id}", s.handleUpdateItemLink, "project.read") // write of the source: see itemlinks.go
 	h("DELETE /api/v1/item-links/{id}", s.handleDeleteItemLink, "project.read")
+	h("GET /api/v1/projects/{pid}/item-links", s.handleListProjectItemLinks, "project.read")
+	h("POST /api/v1/projects/{pid}/item-links/bulk", s.handleBulkCreateItemLinks, "project.read") // write of each source: see bulkitemlinks.go
+	h("DELETE /api/v1/projects/{pid}/item-links/bulk", s.handleBulkDeleteItemLinks, "project.read")
 	h("GET /api/v1/projects/{pid}/trash", s.handleListTrash, "project.read")
 	h("POST /api/v1/trash/{id}/restore", s.handleRestoreTrash, "project.read") // write of the kind: see trash.go
 	h("POST /api/v1/tests/{id}/copy", s.handleCopyTest, "test.write")

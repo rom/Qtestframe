@@ -216,6 +216,58 @@ func (s *Store) ListItemLinks(ctx context.Context, tenantID, itemType, itemID st
 	return out, nil
 }
 
+// LinkSourceProjects returns the project of each existing source item of
+// one type (requirement, test or run); unknown ids are left out.
+func (s *Store) LinkSourceProjects(ctx context.Context, tenantID, sourceType string, ids []string) (map[string]string, error) {
+	ends, err := resolveLinkEnds(ctx, s.c(), tenantID, sourceType, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]string, len(ends))
+	for id, e := range ends {
+		out[id] = e.project
+	}
+	return out, nil
+}
+
+// ListProjectItemLinks returns the links carried by items of one source
+// type in a project (all source types when sourceType is empty), oldest
+// first.
+func (s *Store) ListProjectItemLinks(ctx context.Context, tenantID, projectID, sourceType string) ([]model.ItemLink, error) {
+	q := `SELECT ` + itemLinkCols + ` FROM item_links WHERE tenant_id = ? AND project_id = ?`
+	args := []any{tenantID, projectID}
+	if sourceType != "" {
+		q += ` AND source_type = ?`
+		args = append(args, sourceType)
+	}
+	rows, err := s.c().query(ctx, q+` ORDER BY created_at, id`, args...)
+	if err != nil {
+		return nil, err
+	}
+	var ptrs []*model.ItemLink
+	for rows.Next() {
+		l, err := scanItemLink(rows)
+		if err != nil {
+			rows.Close()
+			return nil, err
+		}
+		l.Direction = "outgoing"
+		ptrs = append(ptrs, l)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if err := s.decorateItemLinks(ctx, tenantID, ptrs); err != nil {
+		return nil, err
+	}
+	out := make([]model.ItemLink, 0, len(ptrs))
+	for _, l := range ptrs {
+		out = append(out, *l)
+	}
+	return out, nil
+}
+
 // decorateItemLinks fills keys and titles of both ends.
 func (s *Store) decorateItemLinks(ctx context.Context, tenantID string, links []*model.ItemLink) error {
 	ids := map[string][]string{}

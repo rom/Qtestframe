@@ -443,6 +443,9 @@ the read permission of an internal target's kind).
 | POST | same paths | `{"target_type", "target_id"?, "url"?, "label"?}` → 201 ItemLink. `target_type`: `requirement`, `test`, `run`, `file` (a `document` or `report` file of the project's archive), `report` (a report definition) or `url` (`http(s)://` or `mailto:`, at most 2000 characters); label at most 200 characters; same project only; no self-links; duplicates → 409 |
 | PATCH | `/item-links/{id}` | `{"label"}` |
 | DELETE | `/item-links/{id}` | 204 |
+| GET | `/projects/{pid}/item-links?source_type=requirement\|test\|run` | the outgoing links of the project's items (of one source type, or all), without links the caller cannot read |
+| POST | `/projects/{pid}/item-links/bulk` | `{"links":[{source_type, source_id, target_type, target_id?, url?, label?}]}` (max 1000) → `{"created":[ItemLink], "skipped":[{source_type, source_id, target_type, target_id, url, reason, message?}]}`; reasons `exists`, `not_found` (the source is not in the project), `not_allowed` (no write permission for the source's kind or no read permission for the target's), `invalid` (e.g. a self-link or a bad address, with `message`) |
+| DELETE | `/projects/{pid}/item-links/bulk` | `{"ids":[...]}` (max 1000) → `{"deleted":[ItemLink], "skipped":[{id, reason: "not_found"\|"not_allowed"}]}`; the deleted links are returned so they can be recreated |
 
 `ItemLink`: `{id, project_id, source_type, source_id, target_type, target_id,
 url, label, created_by, created_at, source_key, source_title, target_key,
