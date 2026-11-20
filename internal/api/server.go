@@ -150,6 +150,7 @@ func (s *Server) routes() {
 	// requirements
 	h("GET /api/v1/projects/{pid}/requirements", s.handleListRequirements, "requirement.read")
 	h("GET /api/v1/projects/{pid}/people", s.handlePeople, "requirement.read")
+	h("POST /api/v1/projects/{pid}/prompts", s.handlePrompt, "project.read") // read of the items' kind: see prompts.go
 	h("GET /api/v1/projects/{pid}/requirement-sources", s.handleRequirementSources, "requirement.read")
 	h("POST /api/v1/projects/{pid}/tags/suggest", s.handleSuggestTags, "requirement.read")
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")

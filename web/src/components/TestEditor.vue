@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { isSoftware } from '@/lib/projectTypes'
+import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
@@ -54,6 +56,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ saved: [item: TestCase]; deleted: [id: string]; copied: [item: TestCase]; close: [] }>()
 const meta = useMetaStore()
+const proj = useProjectStore()
 const notify = useNotify()
 const { t } = useI18n()
 const tabsId = newId('test-tabs')
@@ -542,6 +545,7 @@ const scriptPlaceholder = computed(() => {
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <Button v-if="item && canWrite" :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
       <span v-else style="margin-right: auto" />
+      <RouterLink v-if="item && isSoftware(proj.project)" :to="{ name: 'prompts', params: { projectId }, query: { kind: 'automate_tests', ids: item.id } }" class="small row nowrap" style="gap: 4px"><i class="pi pi-sparkles" aria-hidden="true" />{{ t('prompts.forItem') }}</RouterLink>
       <RouterLink v-if="item" :to="{ name: 'flow', params: { projectId }, query: { test: item.id } }" class="small row nowrap" style="gap: 4px"><i class="pi pi-share-alt" aria-hidden="true" />{{ t('flow.flowOfTest') }}</RouterLink>
       <Button :label="t('common.close')" severity="secondary" text @click="emit('close')" />
       <Button v-if="canWrite" type="submit" :label="isNew ? t('common.create') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />

@@ -182,6 +182,29 @@ Uploading and removing attachments needs the **Manager** role (the same as editi
 
 **Copy** in the editor creates a new requirement based on this one: titled *Copy of …*, with a new key in the same folder and the description, obligation, type, priority, source, rationale, owner, tags, categories and evaluation criteria. The copy starts as **Draft** and opens in the editor so you can adapt it. **▾ → Copy and relate as derived from** also records the relation *derived from* the original. Links to tests, comments and history are not copied.
 
+## AI prompts (software projects)
+
+In a project whose **project type** is **Software** (set it when you create the project, or under **Categories & settings → Project**), **AI prompts** appears in the project navigation. It builds a ready-to-use prompt for an AI assistant (for example a coding assistant) from the project's requirements or tests. Qtestframe only writes the text; you copy it into the assistant your organisation allows. Nothing is sent to an AI service.
+
+1. Choose what the prompt is for:
+
+   | From | Prompt | What the assistant is asked to do |
+   |---|---|---|
+   | requirements | **Implement requirements** | write the code, traceable to the requirement keys, with tests; list open questions |
+   | requirements | **Review requirements** | check them against ISO/IEC/IEEE 29148 and RFC 2119; propose rewrites and measurable criteria |
+   | requirements | **Design test cases** | derive test cases of a **test type**, as JSON that can be imported with the API |
+   | tests | **Automate test cases** | write automated tests in your **test framework**, one per test case, named after its key |
+   | tests | **Review tests** | check quality and coverage against the requirements they verify |
+   | tests | **Plan a test type** | a test plan for one test type: scope, tools, entry and exit criteria, tests to add |
+
+2. Choose the items: **all**, those **matching a filter** (the [query language](search-and-filters.md)), or **selected** ones. You can also start from a requirement or test: **AI prompt** at the bottom of the editor, or **AI prompt** in the bulk toolbar for the selected rows.
+3. Choose the **test type** (unit, integration, system, acceptance, end-to-end, API, regression, smoke, performance, security, usability or accessibility), the **test framework or tools** (suggestions such as pytest, Playwright, JUnit 5 or Go testing; any text is fine), the **language of the prompt** (English or Swedish) and any **additional instructions**.
+4. Select **Build prompt**, then **Copy** or **Download (.md)**.
+
+A prompt contains the project's **technical context**, the items with their obligation, status, description, rationale, criteria with thresholds, relations, linked tests or requirements, steps with test data and expected results, prerequisites and, for automation, the current script, followed by instructions and the expected form of the answer. Describe the languages, frameworks, architecture and conventions of the project once under **Categories & settings → Project → Technical context**; every prompt includes it.
+
+Reading the items is enough to build a prompt. A prompt holds at most 200 items. Only paste prompts into AI services that your organisation allows for this information.
+
 ## Delete a requirement
 
 Open it and select **Delete**, or select several and use **Delete** in the bulk toolbar. Deleting also removes its links, relations, comments and history. Select **Undo** (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) right afterwards to bring it back with everything, see [Undo and redo](getting-started.md#undo-and-redo).

@@ -52,6 +52,10 @@ Select **Undo** (↶) in the top bar or press <kbd>Ctrl</kbd>+<kbd>Z</kbd> outsi
 
 For older changes, open the item, go to the **History** tab, select the version you want and choose **Restore this version**. This creates a new version with the old content; nothing is lost and you can restore again.
 
+### Can Qtestframe write code or tests with AI?
+
+In a **software** project, **AI prompts** builds a prompt from your requirements or tests (implement them, review them, design or automate test cases, plan a test type) that you copy into the AI assistant your organisation uses. Qtestframe itself does not call any AI service. See [AI prompts](requirements.md#ai-prompts-software-projects).
+
 ### Why can't I approve a requirement or mark a test ready?
 
 Approving or rejecting a requirement needs the permission *requirement.review*, marking a test **Ready** needs *test.review*. By default the **Reviewer** and **Manager** roles have both and the **Test lead** has *test.review*; a **Tester** can write tests but not mark them ready. Without the permission these statuses are greyed out in the editor. See [Roles and permissions](administration.md#roles-and-permissions).
@@ -104,7 +108,7 @@ Those keys do not exist in the run's project. Check the spelling (case does not 
 
 ### Why are Pass and Fail disabled in the runner?
 
-The test may not be executed yet: it is not **Ready**, a requirement it verifies is not approved, or a test it depends on has not passed. The red box above the steps lists the reasons with links. Fix them (or ask an admin or test lead to change the [test execution settings](administration.md#test-execution-settings)); meanwhile you can mark the test **Blocked** or **Skipped**.
+The test may not be executed yet: it is not **Ready**, a requirement it verifies is not approved, or a test it depends on has not passed. The red box above the steps lists each reason with what to do and the setting that decides: whether the **test** is not Ready (still Draft or in Review), a **requirement** it verifies does not have one of the statuses the execution settings require (for example it is Approved but the settings require Implemented), or a **prerequisite** has not passed. Fix them (or ask an admin or test lead to change the [test execution settings](administration.md#test-execution-settings)); meanwhile you can mark the test **Blocked** or **Skipped**.
 
 ### How do I create a role of my own?
 

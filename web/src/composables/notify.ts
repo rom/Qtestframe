@@ -13,6 +13,10 @@ export function useNotify() {
     info(summary: string, detail?: string) {
       toast.add({ severity: 'info', summary, detail, life: 3500 })
     },
+    /** an error with a text of our own (e.g. translated readiness reasons) */
+    failText(summary: string, detail: string) {
+      toast.add({ severity: 'error', summary, detail, life: 10000 })
+    },
     fail(e: unknown, summary = t('errors.requestFailed')) {
       toast.add({ severity: 'error', summary, detail: errorMessage(e), life: 6000 })
     },

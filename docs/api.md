@@ -116,9 +116,10 @@ default):
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/projects` | project.read |
-| POST | `/projects` | project.create – `{"key","name","description","color"?,"seed_categories":true}` |
+| POST | `/projects` | project.create – `{"key","name","description","color"?,"type"?,"tech_context"?,"seed_categories":true}` |
 | GET | `/projects/{pid}` | project.read |
-| PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources"}` |
+| PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
+| POST | `/projects/{pid}/prompts` | project.read + the read permission of the items' kind – see [Prompts](#prompts-software-projects) |
 | DELETE | `/projects/{pid}` | project.delete |
 | GET | `/projects/{pid}/dashboard` | project.read |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
@@ -128,7 +129,32 @@ else → 400), `requirement_sources` (the list the requirement editor offers
 for *Source*; at most 50 entries of at most 100 characters, trimmed and
 de-duplicated case-insensitively) and `custom_sources` (false while the
 project uses the defaults; sending `[]` or the default list returns to
-them).
+them). `type` is one of `/meta` `project_types` (`general` by default,
+`software`, `hardware`, `system`, `business`); `tech_context` (at most 8000
+characters) describes the technology of a software project and is included
+in prompts.
+
+### Prompts (software projects)
+
+`POST /projects/{pid}/prompts` builds a prompt for an AI assistant
+(Markdown); it is read-only and nothing is sent to an AI service. Only for
+projects of type `software` (else 400).
+
+```json
+{"kind": "automate_tests", "lang": "en", "test_type": "integration", "framework": "pytest",
+ "notes": "…", "test_ids": ["…"], "q": "tag:checkout"}
+```
+
+* `kind` (`/meta` `prompt_kinds`): `implement`, `review_requirements`,
+  `design_tests` (requirements; need `requirement.read`), `automate_tests`,
+  `review_tests`, `test_strategy` (tests; need `test.read`; the last two also
+  include the requirements the tests verify when the caller may read them).
+* Items: `requirement_ids` / `test_ids` (must belong to the project), else
+  those matching `q`, else all; more than 200 → 400.
+* `test_type` (`/meta` `test_types`) is required for `design_tests` and
+  `test_strategy`; `lang` is `en` (default) or `sv`; `framework` ≤ 200 and
+  `notes` ≤ 8000 characters.
+* Response: `{"kind", "lang", "title", "prompt", "items"}`.
 
 Dashboard response:
 ```json
@@ -274,7 +300,7 @@ import) `run.execute`.
 | GET | `/projects/{pid}/runs?q=` | list `TestRun` with `summary` |
 | POST | `/projects/{pid}/runs` | `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query |
 | GET | `/runs/{id}` | `TestRun` |
-| PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}` |
+| PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. |
 | DELETE | `/runs/{id}` | |
 | GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness` |
 | POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` |
@@ -292,11 +318,22 @@ otherwise its latest result. Each failed check is an issue; it is
 
 ```json
 "readiness": {"ready": false, "allowed": false, "issues": [
-  {"kind": "test_status", "id": "…", "key": "SHOP-TC-4", "title": "…", "status": "draft", "blocking": true},
-  {"kind": "requirement_status", "id": "…", "key": "SHOP-REQ-2", "title": "…", "status": "review", "blocking": true},
-  {"kind": "dependency", "id": "…", "key": "SHOP-TC-1", "title": "…", "status": "failed", "blocking": true}
+  {"kind": "test_status", "id": "…", "key": "SHOP-TC-4", "title": "…", "status": "draft", "blocking": true,
+   "required": ["ready"], "setting": "allow_unready_tests"},
+  {"kind": "requirement_status", "id": "…", "key": "SHOP-REQ-2", "title": "…", "status": "review", "blocking": true,
+   "required": ["approved", "implemented", "verified"], "setting": "allow_unready_requirements"},
+  {"kind": "dependency", "id": "…", "key": "SHOP-TC-1", "title": "…", "status": "failed", "blocking": true,
+   "required": ["passed"], "setting": "allow_unmet_dependencies", "in_run": true}
 ]}
 ```
+
+`required` lists the statuses (or result) that would clear an issue,
+`setting` names the [execution setting](#administration) that decides
+whether it blocks, and `in_run` tells whether a prerequisite's status is its
+result in this run (else its latest result). The `error` text of a refusal
+spells each blocking issue out, e.g. *the test SHOP-TC-4 has status "draft",
+but only tests with status "ready" may be executed (setting
+allow_unready_tests is off)*.
 
 Setting `status` (or a step status) to `in_progress`, `passed` or `failed`
 records an execution and needs `allowed`; `not_run`, `blocked`, `skipped`,

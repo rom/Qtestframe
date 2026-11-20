@@ -41,8 +41,16 @@ func TestExecutionReadiness(t *testing.T) {
 
 	// starting is refused; assigning, notes and blocked/skipped are fine
 	res := a.m("PATCH", "/api/v1/executions/"+exID, map[string]any{"status": "passed"}, 409)
-	if res["code"] != "not_ready" || !strings.Contains(res["error"].(string), "RDY-TC-1 is draft") {
+	if res["code"] != "not_ready" || !strings.Contains(res["error"].(string), `the test RDY-TC-1 has status "draft", but only tests with status "ready" may be executed`) ||
+		!strings.Contains(res["error"].(string), `requirement RDY-REQ-1, which has status "draft", but the execution settings require linked requirements to be "approved", "implemented" or "verified"`) {
 		t.Fatal(res)
+	}
+	for _, x := range res["readiness"].(map[string]any)["issues"].([]any) {
+		i := x.(map[string]any)
+		want := map[string]string{"test_status": "allow_unready_tests|ready", "requirement_status": "allow_unready_requirements|approved,implemented,verified"}[i["kind"].(string)]
+		if got := i["setting"].(string) + "|" + strings.Join(strs(i["required"]), ","); got != want {
+			t.Fatal(got, want)
+		}
 	}
 	a.m("PATCH", "/api/v1/executions/"+exID, map[string]any{"assignee": "@admin", "notes": "waiting"}, 200)
 	a.m("PATCH", "/api/v1/executions/missing", map[string]any{"status": "passed"}, 404)
@@ -147,7 +155,7 @@ func TestTestDependencies(t *testing.T) {
 		exs[x["test_case_id"].(string)] = x["id"].(string)
 	}
 	res := a.m("PATCH", "/api/v1/executions/"+exs[order], map[string]any{"step_results": []any{}, "status": "in_progress"}, 409)
-	if !strings.Contains(res["error"].(string), "prerequisite DEP-TC-1 has not passed (not_run)") {
+	if !strings.Contains(res["error"].(string), `the prerequisite test DEP-TC-1 has not passed (its result in this run is "not_run")`) {
 		t.Fatal(res)
 	}
 	a.m("PATCH", "/api/v1/executions/"+exs[login], map[string]any{"status": "failed"}, 200)

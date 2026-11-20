@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
 import AutoComplete from 'primevue/autocomplete'
 import { useProjectStore } from '@/stores/project'
@@ -665,6 +666,7 @@ function criterionLabel(id: string | null) {
         @click="copy()"
       />
       <span v-else style="margin-right: auto" />
+      <RouterLink v-if="item && isSoftware(proj.project)" :to="{ name: 'prompts', params: { projectId }, query: { kind: 'implement', ids: item.id } }" class="small row nowrap" style="gap: 4px"><i class="pi pi-sparkles" aria-hidden="true" />{{ t('prompts.forItem') }}</RouterLink>
       <label v-if="isNew && canWrite && canLink" class="row nowrap small" style="gap: 6px" :title="t('editor.alsoCreateTestHint')">
         <Checkbox v-model="createTest" binary input-id="create-test" />
         {{ t('editor.alsoCreateTest') }}

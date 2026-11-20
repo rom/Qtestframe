@@ -236,3 +236,139 @@ func TestTrashRestore(t *testing.T) {
 	v.m("POST", "/api/v1/trash/"+list[0]["id"].(string)+"/restore", nil, 403)
 	a.m("POST", "/api/v1/trash/missing/restore", nil, 404)
 }
+
+func TestProjectTypeAndPrompts(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	pid := a.project("SW")
+	if got := a.m("GET", "/api/v1/projects/"+pid, nil, 200); got["type"] != "general" {
+		t.Fatal(got)
+	}
+	body := map[string]any{"kind": "implement"}
+	a.m("POST", "/api/v1/projects/"+pid+"/prompts", body, 400) // not a software project
+	a.m("PATCH", "/api/v1/projects/"+pid, map[string]any{"type": "rocket"}, 400)
+	up := a.m("PATCH", "/api/v1/projects/"+pid, map[string]any{"type": "software", "tech_context": "  Go and Vue  "}, 200)
+	if up["type"] != "software" || up["tech_context"] != "Go and Vue" {
+		t.Fatal(up)
+	}
+	a.m("POST", "/api/v1/projects", map[string]any{"key": "HW", "name": "Hardware", "type": "hardware"}, 201)
+	meta := a.m("GET", "/api/v1/meta", nil, 200)
+	if len(meta["project_types"].([]any)) != 5 || len(meta["prompt_kinds"].([]any)) != 6 || len(meta["test_types"].([]any)) < 10 {
+		t.Fatal(meta)
+	}
+
+	r1 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Login", "description": "The user MUST log in.", "create_test": false,
+		"criteria": []map[string]any{{"description": "works", "method": "test", "threshold": "2 s"}}}, 201)
+	r2 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Accounts", "create_test": false, "tags": []string{"later"}}, 201)
+	a.m("POST", "/api/v1/requirements/"+r1["id"].(string)+"/relations", map[string]any{"target_id": r2["id"], "type": "depends_on"}, 201)
+	shared := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "Log out", "steps": []map[string]any{{"action": "out"}}}, 201)
+	tc := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "Valid login", "execution_type": "automated", "script_language": "sh", "script": "exit 0",
+		"steps": []map[string]any{{"action": "Sign in", "data": "alice", "expected": "ok"}, {"call_test_id": shared["id"]}}}, 201)
+	a.m("POST", "/api/v1/projects/"+pid+"/links", map[string]any{"requirement_id": r1["id"], "test_case_id": tc["id"]}, 201)
+	a.m("POST", "/api/v1/tests/"+tc["id"].(string)+"/dependencies", map[string]any{"depends_on_id": shared["id"]}, 201)
+
+	// all requirements of the project
+	res := a.m("POST", "/api/v1/projects/"+pid+"/prompts", body, 200)
+	txt := res["prompt"].(string)
+	if res["items"].(float64) != 2 || !strings.Contains(txt, "Go and Vue") || !strings.Contains(txt, "depends on SW-REQ-2 Accounts") ||
+		!strings.Contains(txt, "is required by SW-REQ-1 Login") || !strings.Contains(txt, "SW-TC-2 Valid login") || !strings.Contains(txt, "2 s") {
+		t.Fatal(txt)
+	}
+	// chosen by ID, by query, in Swedish
+	res = a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "review_requirements", "lang": "sv", "requirement_ids": []string{r1["id"].(string)}}, 200)
+	if res["items"].(float64) != 1 || !strings.Contains(res["title"].(string), "Granska") {
+		t.Fatal(res)
+	}
+	res = a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "design_tests", "test_type": "unit", "q": "tag:later"}, 200)
+	if res["items"].(float64) != 1 || !strings.Contains(res["prompt"].(string), "SW-REQ-2") {
+		t.Fatal(res)
+	}
+	// tests: automate includes the script, calls and dependencies; strategy adds verified requirements
+	res = a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "automate_tests", "framework": "bats", "test_ids": []string{tc["id"].(string)}}, 200)
+	txt = res["prompt"].(string)
+	if !strings.Contains(txt, "exit 0") || !strings.Contains(txt, "SW-TC-1 Log out") || !strings.Contains(txt, "bats") || !strings.Contains(txt, "SW-REQ-1 Login") {
+		t.Fatal(txt)
+	}
+	res = a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "test_strategy", "test_type": "security", "test_ids": []string{tc["id"].(string)}}, 200)
+	if res["items"].(float64) != 2 {
+		t.Fatal(res)
+	}
+	// validation
+	a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "design_tests"}, 400)
+	a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "implement", "requirement_ids": []string{"elsewhere"}}, 400)
+	a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "implement", "q": "((("}, 400)
+	a.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "implement", "notes": strings.Repeat("x", 8001)}, 400)
+	// permissions: a role without test.read cannot build test prompts
+	e.member("req@example.com", rbac.RoleViewer)
+	a.m("PUT", "/api/v1/roles/viewer", map[string]any{"permissions": []string{"project.read", "requirement.read"}}, 200)
+	v := e.login("req@example.com")
+	v.m("POST", "/api/v1/projects/"+pid+"/prompts", map[string]any{"kind": "automate_tests"}, 403)
+	if res := v.m("POST", "/api/v1/projects/"+pid+"/prompts", body, 200); strings.Contains(res["prompt"].(string), "SW-TC-2") {
+		t.Fatal("test keys leak without test.read")
+	}
+}
+
+func TestRunCompletesWithLastResult(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	pid := a.project("RUN")
+	a.m("PUT", "/api/v1/settings", map[string]any{"allow_unready_tests": true, "allow_unready_requirements": true}, 200)
+	t1 := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "Only test", "status": "ready"}, 201)
+	run := a.m("POST", "/api/v1/projects/"+pid+"/runs", map[string]any{"name": "One", "test_ids": []string{t1["id"].(string)}}, 201)
+	rid := run["id"].(string)
+	ex := items(a.m("GET", "/api/v1/runs/"+rid+"/executions", nil, 200))[0]["id"].(string)
+	status := func() string { return a.m("GET", "/api/v1/runs/"+rid, nil, 200)["status"].(string) }
+
+	// a run with a single test completes with its result
+	a.m("PATCH", "/api/v1/executions/"+ex, map[string]any{"status": "in_progress"}, 200)
+	if s := status(); s != "in_progress" {
+		t.Fatal(s)
+	}
+	a.m("PATCH", "/api/v1/executions/"+ex, map[string]any{"status": "passed"}, 200)
+	if r := a.m("GET", "/api/v1/runs/"+rid, nil, 200); r["status"] != "completed" || r["completed_at"] == nil {
+		t.Fatal(r)
+	}
+	// notes on a finished execution keep it completed; taking the result back reopens it
+	a.m("PATCH", "/api/v1/executions/"+ex, map[string]any{"notes": "fine"}, 200)
+	if s := status(); s != "completed" {
+		t.Fatal(s)
+	}
+	a.m("PATCH", "/api/v1/executions/"+ex, map[string]any{"status": "not_run"}, 200)
+	if r := a.m("GET", "/api/v1/runs/"+rid, nil, 200); r["status"] != "in_progress" || r["completed_at"] != nil {
+		t.Fatal(r)
+	}
+	// blocked and skipped also finish a run; adding a test reopens it
+	a.m("PATCH", "/api/v1/executions/"+ex, map[string]any{"status": "skipped"}, 200)
+	if s := status(); s != "completed" {
+		t.Fatal(s)
+	}
+	t2 := a.m("POST", "/api/v1/projects/"+pid+"/tests", map[string]any{"title": "Second", "status": "ready"}, 201)
+	a.m("POST", "/api/v1/runs/"+rid+"/executions", map[string]any{"test_ids": []string{t2["id"].(string)}}, 200)
+	if s := status(); s != "in_progress" {
+		t.Fatal(s)
+	}
+	// a run completed by hand with open tests stays completed while they are worked on
+	a.m("PATCH", "/api/v1/runs/"+rid, map[string]any{"status": "completed"}, 200)
+	ex2 := ""
+	for _, x := range items(a.m("GET", "/api/v1/runs/"+rid+"/executions", nil, 200)) {
+		if x["test_case_id"] == t2["id"] {
+			ex2 = x["id"].(string)
+		}
+	}
+	a.m("PATCH", "/api/v1/executions/"+ex2, map[string]any{"status": "in_progress"}, 200)
+	if s := status(); s != "completed" {
+		t.Fatal(s)
+	}
+	// aborted runs are left alone
+	a.m("PATCH", "/api/v1/runs/"+rid, map[string]any{"status": "aborted"}, 200)
+	a.m("PATCH", "/api/v1/executions/"+ex2, map[string]any{"status": "failed"}, 200)
+	if s := status(); s != "aborted" {
+		t.Fatal(s)
+	}
+	// CI results complete a run too
+	run2 := a.m("POST", "/api/v1/projects/"+pid+"/runs", map[string]any{"name": "CI", "test_ids": []string{t1["id"].(string)}}, 201)
+	a.m("POST", "/api/v1/runs/"+run2["id"].(string)+"/results", map[string]any{"results": []map[string]any{{"test_key": t1["key"], "status": "passed"}}}, 200)
+	if r := a.m("GET", "/api/v1/runs/"+run2["id"].(string), nil, 200); r["status"] != "completed" {
+		t.Fatal(r)
+	}
+}

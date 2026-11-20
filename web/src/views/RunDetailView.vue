@@ -15,6 +15,9 @@ import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import Panel from 'primevue/panel'
+import Popover from 'primevue/popover'
+import ReadinessBanner from '@/components/ReadinessBanner.vue'
+import { readinessOfError, readinessSummary as explainReadiness } from '@/lib/readiness'
 import ProgressSpinner from 'primevue/progressspinner'
 import QueryInput from '@/components/QueryInput.vue'
 import StatusTag from '@/components/StatusTag.vue'
@@ -147,7 +150,7 @@ function readinessText(ex: Execution): string {
   return n ? t('readiness.notReady', { count: n }, n) : t('readiness.ok')
 }
 function readinessTitle(ex: Execution): string {
-  return (ex.readiness?.issues ?? []).map((i) => `${i.key}: ${enumLabel(i.kind === 'dependency' ? 'result' : 'status', i.status)}`).join(', ')
+  return explainReadiness(ex.readiness, t, enumLabel)
 }
 
 // ---------- columns ----------
@@ -180,8 +183,19 @@ async function quickStatus(ex: Execution, status: string) {
     Object.assign(ex, updated ?? { status })
     loadRun()
   } catch (e) {
-    notify.fail(e)
+    const rd = readinessOfError(e)
+    if (rd) {
+      ex.readiness = rd
+      notify.failText(t('readiness.saveRefused') + ' – ' + ex.test_key, explainReadiness(rd, t, enumLabel))
+    } else notify.fail(e)
   }
+}
+// the full explanation of an execution's readiness, in a popover
+const readinessPop = ref<InstanceType<typeof Popover> | null>(null)
+const readinessOf = ref<Execution | null>(null)
+function showReadiness(ev: Event, ex: Execution) {
+  readinessOf.value = ex
+  readinessPop.value?.toggle(ev)
 }
 const picker = ref(false)
 async function addTests(items: { id: string }[]) {
@@ -333,11 +347,19 @@ async function copySnippet() {
         <Column v-if="c.field === 'status'" field="status" column-key="status" :header="c.header" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
         <Column v-else-if="c.field === 'readiness'" column-key="readiness" :header="c.header" style="width: 150px">
           <template #body="{ data }">
-            <span v-if="data.readiness && !data.readiness.ready" class="readiness-cell small" :class="{ blocked: notAllowed(data) }" :title="readinessTitle(data)">
+            <button
+              v-if="data.readiness && !data.readiness.ready"
+              type="button"
+              class="readiness-cell small link-button"
+              :class="{ blocked: notAllowed(data) }"
+              :title="readinessTitle(data)"
+              aria-haspopup="dialog"
+              @click="showReadiness($event, data)"
+            >
               <i :class="notAllowed(data) ? 'pi pi-ban' : 'pi pi-exclamation-triangle'" aria-hidden="true" />
               {{ notAllowed(data) ? t('readiness.cannotRun') : readinessText(data) }}
               <span class="sr-only">: {{ readinessTitle(data) }}</span>
-            </span>
+            </button>
             <span v-else-if="data.readiness" class="small muted"><i class="pi pi-check" aria-hidden="true" /> {{ t('readiness.ok') }}</span>
           </template>
         </Column>
@@ -374,7 +396,7 @@ async function copySnippet() {
                   size="small"
                   severity="success"
                   :disabled="notAllowed(data)"
-                  v-tooltip="notAllowed(data) ? t('readiness.cannotRun') : t('run.markPassed')"
+                  v-tooltip="notAllowed(data) ? readinessTitle(data) : t('run.markPassed')"
                   :aria-label="t('run.markPassedKey', { key: data.test_key })"
                   @click="quickStatus(data, 'passed')"
                 />
@@ -385,7 +407,7 @@ async function copySnippet() {
                   size="small"
                   severity="danger"
                   :disabled="notAllowed(data)"
-                  v-tooltip="notAllowed(data) ? t('readiness.cannotRun') : t('run.markFailed')"
+                  v-tooltip="notAllowed(data) ? readinessTitle(data) : t('run.markFailed')"
                   :aria-label="t('run.markFailedKey', { key: data.test_key })"
                   @click="quickStatus(data, 'failed')"
                 />
@@ -432,5 +454,8 @@ async function copySnippet() {
     </Dialog>
     <ItemPickerDialog v-model:visible="picker" kind="test" :project-id="proj.pid" :exclude="executions.map((e) => e.test_case_id)" :header="t('run.addTestsHeader')" @pick="addTests" />
   </template>
+  <Popover ref="readinessPop" class="readiness-pop" :aria-label="t('readiness.column')">
+    <ReadinessBanner v-if="readinessOf" :readiness="readinessOf.readiness" :project-id="proj.pid" />
+  </Popover>
 </template>
 

@@ -295,10 +295,22 @@ type Project struct {
 	// defaults when the project has none of its own).
 	RequirementSources []string `json:"requirement_sources"`
 	// CustomSources reports whether RequirementSources are the project's own.
-	CustomSources bool      `json:"custom_sources"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	CustomSources bool `json:"custom_sources"`
+	// Type is one of ProjectTypes; "software" enables prompt generation.
+	Type string `json:"type"`
+	// TechContext describes the technology of a software project (languages,
+	// frameworks, architecture, conventions); generated prompts include it.
+	TechContext string    `json:"tech_context"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
+
+// ProjectTypes are the kinds of project. Software projects get extra
+// features (prompt generation for requirements and tests).
+var ProjectTypes = []string{"general", "software", "hardware", "system", "business"}
+
+// ProjectTypeSoftware is the project type with software features.
+const ProjectTypeSoftware = "software"
 
 // DefaultRequirementSources are offered when a project has no own list.
 var DefaultRequirementSources = []string{"Customer", "Contract", "Standard", "Regulation", "Stakeholder", "Product management", "Architecture", "Security analysis", "Internal", "Previous release"}
