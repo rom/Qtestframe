@@ -1,0 +1,529 @@
+area: supply-chain
+prefix: SUP
+group: security
+name: {en: Software supply chain, sv: Leveranskedja för programvara}
+description:
+  en: Inventory of dependencies, vulnerability scanning and patch times, pinned versions, signed and reproducible builds and review of third-party components.
+  sv: Förteckning över beroenden, sårbarhetsskanning och tider för att åtgärda sårbarheter, låsta versioner, signerade och spårbara byggen och granskning av tredjepartskomponenter.
+
+requirements:
+  - id: SUP-01
+    type: security
+    obligation: must
+    priority: high
+    tags: [sbom, dependency-inventory]
+    refs: ["OWASP ASVS 4.0 V14.2.5", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3"]
+    tests: [SUP-T01]
+    en:
+      title: Software bill of materials for each release
+      description: The system MUST be released with a software bill of materials in CycloneDX or SPDX format that lists every direct and transitive dependency with its version.
+      rationale: When a new vulnerability is published, the inventory shows within minutes which releases are affected.
+      criteria:
+        - method: inspection
+          text: The latest release has an SBOM file in a valid CycloneDX or SPDX format, and a sampled transitive dependency appears in it with the right version.
+    sv:
+      title: Programvaruförteckning för varje release
+      description: Systemet SKA levereras med en programvaruförteckning i formatet CycloneDX eller SPDX som anger varje direkt och indirekt beroende med version.
+      rationale: När en ny sårbarhet publiceras visar förteckningen inom några minuter vilka releaser som berörs.
+      criteria:
+        - method: inspection
+          text: Den senaste releasen har en SBOM-fil i giltigt CycloneDX- eller SPDX-format, och ett indirekt beroende som tas som stickprov finns med i den med rätt version.
+
+  - id: SUP-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [vulnerability-scanning, ci]
+    refs: ["OWASP Top 10 2021 A06", "NIST SP 800-218 RV.1.1", "ISO/IEC 27001:2022 A.8.8"]
+    tests: [SUP-T02]
+    en:
+      title: Dependency vulnerability scan on every build
+      description: The system MUST be built by a pipeline that scans all dependencies for known vulnerabilities and stops the build on a critical or high finding that has a fixed version.
+      rationale: Catching a known vulnerability in the pipeline is far cheaper than finding it after it has been exploited in production.
+      criteria:
+        - method: test
+          text: Adding a dependency version with a known critical vulnerability makes the build fail with a message naming the advisory.
+    sv:
+      title: Sårbarhetsskanning av beroenden vid varje bygge
+      description: Systemet SKA byggas av en byggkedja som skannar alla beroenden efter kända sårbarheter och stoppar bygget vid ett kritiskt eller högt fynd som har en åtgärdad version.
+      rationale: Att fånga en känd sårbarhet i byggkedjan är mycket billigare än att upptäcka den efter att den har utnyttjats i produktion.
+      criteria:
+        - method: test
+          text: När en beroendeversion med en känd kritisk sårbarhet läggs till misslyckas bygget med ett meddelande som anger säkerhetsbulletinen.
+
+  - id: SUP-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [patching, critical-vulnerabilities]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2"]
+    tests: [SUP-T03]
+    en:
+      title: Critical vulnerabilities fixed within 7 days
+      description: The system MUST have a fix for a critical vulnerability in one of its components deployed to production within 7 days after the fix is published.
+      rationale: Critical vulnerabilities are often exploited within days of disclosure.
+      criteria:
+        - method: review
+          text: For every critical vulnerability in the last 12 months, the time from published fix to production deployment is 7 days or less.
+    sv:
+      title: Kritiska sårbarheter åtgärdas inom 7 dagar
+      description: Systemet SKA ha en rättning av en kritisk sårbarhet i någon av sina komponenter driftsatt i produktion inom 7 dagar efter att rättningen har publicerats.
+      rationale: Kritiska sårbarheter utnyttjas ofta inom några dagar efter att de har offentliggjorts.
+      criteria:
+        - method: review
+          text: För varje kritisk sårbarhet de senaste 12 månaderna är tiden från publicerad rättning till driftsättning i produktion högst 7 dagar.
+
+  - id: SUP-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [patching, high-vulnerabilities]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2"]
+    tests: [SUP-T03]
+    en:
+      title: High vulnerabilities fixed within 30 days
+      description: The system MUST have a fix for a high-severity vulnerability in one of its components deployed to production within 30 days after the fix is published.
+      rationale: A fixed deadline keeps less urgent vulnerabilities from piling up unpatched.
+      criteria:
+        - method: review
+          text: For every high-severity vulnerability in the last 12 months, the time from published fix to production deployment is 30 days or less.
+    sv:
+      title: Allvarliga sårbarheter åtgärdas inom 30 dagar
+      description: Systemet SKA ha en rättning av en sårbarhet med hög allvarlighetsgrad i någon av sina komponenter driftsatt i produktion inom 30 dagar efter att rättningen har publicerats.
+      rationale: En fast tidsgräns hindrar mindre brådskande sårbarheter från att samlas på hög utan åtgärd.
+      criteria:
+        - method: review
+          text: För varje sårbarhet med hög allvarlighetsgrad de senaste 12 månaderna är tiden från publicerad rättning till driftsättning i produktion högst 30 dagar.
+
+  - id: SUP-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [code-signing, deployment]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.2.1", "OWASP Top 10 2021 A08"]
+    tests: [SUP-T04]
+    en:
+      title: Signed release artefacts
+      description: The system MUST be deployed only from release artefacts whose signature from the build pipeline has been verified by the deployment step.
+      rationale: Signature checks stop a tampered or substituted artefact from reaching production.
+      criteria:
+        - method: test
+          text: Deploying an artefact with a changed byte or without a signature is refused by the deployment step.
+    sv:
+      title: Signerade releaseartefakter
+      description: Systemet SKA driftsättas enbart från releaseartefakter vars signatur från byggkedjan har verifierats av driftsättningssteget.
+      rationale: Signaturkontrollen hindrar en manipulerad eller utbytt artefakt från att nå produktion.
+      criteria:
+        - method: test
+          text: Driftsättning av en artefakt med en ändrad byte eller utan signatur avvisas av driftsättningssteget.
+
+  - id: SUP-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [pinned-versions, lock-file]
+    refs: ["NIST SP 800-218 PW.4.1", "OWASP Top 10 2021 A08", "SLSA v1.0"]
+    tests: [SUP-T05]
+    en:
+      title: Pinned dependency versions
+      description: The system MUST be built from a committed lock file that pins every dependency to an exact version and checksum.
+      rationale: Floating versions let a compromised new release of a package enter the build without anyone noticing.
+      criteria:
+        - method: inspection
+          text: Every package manager in the repository has a committed lock file with versions and checksums, and the build uses it in frozen mode.
+    sv:
+      title: Låsta versioner av beroenden
+      description: Systemet SKA byggas från en incheckad låsfil som låser varje beroende till en exakt version och kontrollsumma.
+      rationale: Flytande versioner låter en kapad ny release av ett paket komma in i bygget utan att någon märker det.
+      criteria:
+        - method: inspection
+          text: Varje pakethanterare i kodförrådet har en incheckad låsfil med versioner och kontrollsummor, och bygget använder den i låst läge.
+
+  - id: SUP-07
+    type: security
+    obligation: should
+    priority: medium
+    tags: [third-party-review, dependency-selection]
+    refs: ["ISO/IEC 27001:2022 A.5.19", "ISO/IEC 27001:2022 A.5.21", "NIST SP 800-218 PW.4.4", "OpenSSF Scorecard"]
+    tests: [SUP-T06]
+    en:
+      title: Review before adding a third-party component
+      description: The system SHOULD take in a new third-party dependency only after a recorded review of its licence, maintenance activity and known vulnerabilities.
+      rationale: Every dependency becomes part of the attack surface and the legal obligations of the product.
+      criteria:
+        - method: review
+          text: Each dependency added in the last 6 months has a review record with licence, date of last release and open advisories.
+    sv:
+      title: Granskning innan en tredjepartskomponent läggs till
+      description: Systemet BÖR ta in ett nytt beroende från tredje part först efter en dokumenterad granskning av licens, underhållsaktivitet och kända sårbarheter.
+      rationale: Varje beroende blir en del av produktens attackyta och dess rättsliga åtaganden.
+      criteria:
+        - method: review
+          text: Varje beroende som lagts till de senaste 6 månaderna har en granskningspost med licens, datum för senaste release och öppna säkerhetsbulletiner.
+
+  - id: SUP-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [build-pipeline, provenance]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PO.5", "ISO/IEC 27001:2022 A.8.32"]
+    tests: [SUP-T07]
+    en:
+      title: Releases are built only by the pipeline
+      description: The system MUST be released only from artefacts built by the central build pipeline from a commit in version control.
+      rationale: Artefacts built on a developer machine cannot be traced to reviewed source code and can contain anything.
+      criteria:
+        - method: inspection
+          text: The provenance record of each production artefact names the pipeline run and the commit, and that commit exists on a protected branch.
+    sv:
+      title: Releaser byggs bara av byggkedjan
+      description: Systemet SKA släppas enbart från artefakter som den centrala byggkedjan har byggt från en incheckning i versionshanteringen.
+      rationale: Artefakter som byggts på en utvecklares dator går inte att spåra till granskad källkod och kan innehålla vad som helst.
+      criteria:
+        - method: inspection
+          text: Ursprungsposten för varje artefakt i produktion anger körningen i byggkedjan och incheckningen, och den incheckningen finns på en skyddad gren.
+
+  - id: SUP-09
+    type: security
+    obligation: should_not
+    priority: medium
+    tags: [end-of-life, unmaintained]
+    refs: ["OWASP Top 10 2021 A06", "OWASP ASVS 4.0 V14.2.1"]
+    tests: [SUP-T08]
+    en:
+      title: No end-of-life components
+      description: The system SHOULD NOT contain a runtime, framework or library version that has passed its end-of-life date set by the maintainer.
+      rationale: Components past end of life receive no security fixes, so new vulnerabilities in them stay open for good.
+      criteria:
+        - method: analysis
+          text: A comparison of the SBOM with published end-of-life dates finds no component past its date.
+    sv:
+      title: Inga komponenter som nått slutet av sin livslängd
+      description: Systemet BÖR INTE innehålla en version av en körmiljö, ett ramverk eller ett bibliotek som har passerat det slutdatum för support som förvaltaren har satt.
+      rationale: Komponenter efter slutdatum får inga säkerhetsrättningar, så nya sårbarheter i dem förblir öppna för gott.
+      criteria:
+        - method: analysis
+          text: En jämförelse av programvaruförteckningen med publicerade slutdatum hittar ingen komponent som har passerat sitt datum.
+
+  - id: SUP-10
+    type: security
+    obligation: should
+    priority: medium
+    tags: [container-images, base-image]
+    refs: ["NIST SP 800-190 §4.1", "ISO/IEC 27001:2022 A.8.8"]
+    tests: [SUP-T09]
+    en:
+      title: Container images rebuilt every 30 days
+      description: The system SHOULD rebuild and redeploy its container images on the latest patched base image at least every 30 days.
+      rationale: Base images collect operating system fixes continuously, and an image that is never rebuilt keeps its old vulnerabilities.
+      criteria:
+        - method: inspection
+          text: Every image running in production has a build date less than 30 days old and is based on the latest patch release of its base image.
+    sv:
+      title: Containeravbilder byggs om var 30:e dag
+      description: Systemet BÖR bygga om och driftsätta sina containeravbilder på den senaste rättade basavbilden minst var 30:e dag.
+      rationale: Basavbilder får löpande rättningar av operativsystemet, och en avbild som aldrig byggs om behåller sina gamla sårbarheter.
+      criteria:
+        - method: inspection
+          text: Varje avbild som körs i produktion har ett byggdatum som är mindre än 30 dagar gammalt och bygger på den senaste rättade versionen av sin basavbild.
+
+  - id: SUP-11
+    type: security
+    obligation: may
+    priority: low
+    tags: [package-registry, mirror]
+    refs: ["NIST SP 800-218 PO.3", "SLSA v1.0"]
+    tests: [SUP-T10]
+    en:
+      title: Packages fetched through an internal mirror
+      description: The system MAY be built with packages fetched only through an internal registry mirror instead of directly from public registries.
+      rationale: A mirror keeps builds working when a public package disappears and gives one place to block a malicious package.
+      criteria:
+        - method: test
+          text: A build in a network that blocks the public registries succeeds using only the internal mirror.
+    sv:
+      title: Paket hämtas via en intern spegel
+      description: Systemet FÅR byggas med paket som hämtas enbart via en intern spegel av paketregistren i stället för direkt från publika register.
+      rationale: En spegel håller byggen igång när ett publikt paket försvinner och ger ett enda ställe där ett skadligt paket kan spärras.
+      criteria:
+        - method: test
+          text: Ett bygge i ett nät som blockerar de publika registren lyckas med enbart den interna spegeln.
+
+tests:
+  - id: SUP-T01
+    priority: high
+    execution: automated
+    tags: [sbom]
+    refs: ["CycloneDX 1.5", "SPDX 2.3"]
+    en:
+      title: Release contains a complete and valid SBOM
+      description: A pipeline step validates the SBOM of a release and compares it with the resolved dependency tree.
+      preconditions: A release built by the pipeline and the package manager's resolved dependency list for the same commit.
+      expected: The SBOM is valid and complete.
+      steps:
+        - action: Validate the SBOM file against the CycloneDX or SPDX schema.
+          expected: Validation passes.
+        - action: Compare the components in the SBOM with the resolved dependency list.
+          expected: Every resolved dependency appears in the SBOM with the same version.
+    sv:
+      title: Releasen innehåller en fullständig och giltig SBOM
+      description: Ett steg i byggkedjan validerar releasens programvaruförteckning och jämför den med det upplösta beroendeträdet.
+      preconditions: En release som byggts av byggkedjan och pakethanterarens upplösta beroendelista för samma incheckning.
+      expected: Förteckningen är giltig och fullständig.
+      steps:
+        - action: Validera SBOM-filen mot schemat för CycloneDX eller SPDX.
+          expected: Valideringen går igenom.
+        - action: Jämför komponenterna i förteckningen med den upplösta beroendelistan.
+          expected: Varje upplöst beroende finns i förteckningen med samma version.
+
+  - id: SUP-T02
+    priority: critical
+    execution: automated
+    tags: [vulnerability-scanning, ci]
+    refs: ["OWASP Top 10 2021 A06"]
+    en:
+      title: A known vulnerable dependency stops the build
+      description: A test branch adds a dependency version with a published critical vulnerability and runs the pipeline.
+      preconditions: A test branch of the repository and the vulnerability scan step active in the pipeline.
+      expected: The build fails and names the advisory.
+      steps:
+        - action: Add a dependency version with a known critical vulnerability and push the branch.
+          expected: The pipeline runs the dependency scan.
+          data: log4j-core 2.14.1 (CVE-2021-44228)
+        - action: Read the pipeline result.
+          expected: The build has failed and the log names the advisory and the fixed version.
+        - action: Upgrade the dependency to the fixed version and push again.
+          expected: The scan passes.
+    sv:
+      title: Ett känt sårbart beroende stoppar bygget
+      description: En testgren lägger till en beroendeversion med en publicerad kritisk sårbarhet och kör byggkedjan.
+      preconditions: En testgren i kodförrådet och steget för sårbarhetsskanning aktivt i byggkedjan.
+      expected: Bygget misslyckas och anger säkerhetsbulletinen.
+      steps:
+        - action: Lägg till en beroendeversion med en känd kritisk sårbarhet och skicka upp grenen.
+          expected: Byggkedjan kör skanningen av beroenden.
+          data: log4j-core 2.14.1 (CVE-2021-44228)
+        - action: Läs resultatet från byggkedjan.
+          expected: Bygget har misslyckats och loggen anger säkerhetsbulletinen och den åtgärdade versionen.
+        - action: Uppgradera beroendet till den åtgärdade versionen och skicka upp igen.
+          expected: Skanningen går igenom.
+
+  - id: SUP-T03
+    priority: critical
+    execution: manual
+    tags: [patching]
+    refs: ["PCI DSS 4.0 Req. 6.3.3"]
+    en:
+      title: Patch times meet the deadlines
+      description: Reviews the vulnerability records of the last 12 months against the patch deadlines.
+      preconditions: Access to the vulnerability tracking records and the deployment history for the last 12 months.
+      expected: Every critical fix was deployed within 7 days and every high fix within 30 days.
+      steps:
+        - action: List every critical and high vulnerability in the system's components from the last 12 months with the date the fix was published.
+          expected: The list is complete when compared with the scanner history.
+        - action: For each item, find the date the fix reached production.
+          expected: Each date is recorded.
+        - action: Compute the time from published fix to production for each item.
+          expected: No critical item exceeds 7 days and no high item exceeds 30 days.
+    sv:
+      title: Tiderna för rättningar håller tidsgränserna
+      description: Granskar sårbarhetsposterna från de senaste 12 månaderna mot tidsgränserna för rättningar.
+      preconditions: Åtkomst till posterna i sårbarhetsuppföljningen och driftsättningshistoriken för de senaste 12 månaderna.
+      expected: Varje kritisk rättning driftsattes inom 7 dagar och varje hög inom 30 dagar.
+      steps:
+        - action: Lista varje kritisk och hög sårbarhet i systemets komponenter från de senaste 12 månaderna med datum för publicerad rättning.
+          expected: Listan är fullständig jämfört med skannerns historik.
+        - action: Ta för varje post reda på när rättningen nådde produktion.
+          expected: Varje datum är registrerat.
+        - action: Beräkna tiden från publicerad rättning till produktion för varje post.
+          expected: Ingen kritisk post överstiger 7 dagar och ingen hög post överstiger 30 dagar.
+
+  - id: SUP-T04
+    priority: high
+    execution: automated
+    tags: [code-signing, deployment]
+    refs: ["SLSA v1.0"]
+    en:
+      title: Unsigned or altered artefacts are not deployed
+      description: A script feeds the deployment step a correct, an altered and an unsigned artefact.
+      preconditions: A staging deployment that runs the same verification as production, and a signed release artefact.
+      expected: Only the correctly signed artefact is deployed.
+      steps:
+        - action: Deploy the signed artefact.
+          expected: The deployment succeeds.
+        - action: Change one byte of a copy of the artefact and deploy it.
+          expected: The deployment is refused with a signature error.
+        - action: Deploy a copy without its signature.
+          expected: The deployment is refused.
+    sv:
+      title: Osignerade eller ändrade artefakter driftsätts inte
+      description: Ett skript ger driftsättningssteget en korrekt, en ändrad och en osignerad artefakt.
+      preconditions: En driftsättning i förproduktion som kör samma verifiering som produktion, och en signerad releaseartefakt.
+      expected: Bara den korrekt signerade artefakten driftsätts.
+      steps:
+        - action: Driftsätt den signerade artefakten.
+          expected: Driftsättningen lyckas.
+        - action: Ändra en byte i en kopia av artefakten och driftsätt den.
+          expected: Driftsättningen avvisas med ett signaturfel.
+        - action: Driftsätt en kopia utan signatur.
+          expected: Driftsättningen avvisas.
+
+  - id: SUP-T05
+    priority: high
+    execution: automated
+    tags: [pinned-versions, lock-file]
+    refs: ["NIST SP 800-218 PW.4.1"]
+    en:
+      title: Builds use the lock file in frozen mode
+      description: A pipeline check verifies that lock files exist and that the build refuses to change them.
+      preconditions: The repository and its pipeline configuration.
+      expected: Every dependency is pinned and the build fails on a mismatch.
+      steps:
+        - action: Check that each package manifest in the repository has a committed lock file with checksums.
+          expected: Every manifest has one.
+        - action: Change a version range in a manifest without updating the lock file and run the build.
+          expected: The build fails because the lock file does not match.
+    sv:
+      title: Byggen använder låsfilen i låst läge
+      description: En kontroll i byggkedjan verifierar att låsfiler finns och att bygget vägrar ändra dem.
+      preconditions: Kodförrådet och dess konfiguration för byggkedjan.
+      expected: Varje beroende är låst och bygget misslyckas när filerna inte stämmer.
+      steps:
+        - action: Kontrollera att varje paketmanifest i kodförrådet har en incheckad låsfil med kontrollsummor.
+          expected: Varje manifest har en.
+        - action: Ändra ett versionsintervall i ett manifest utan att uppdatera låsfilen och kör bygget.
+          expected: Bygget misslyckas eftersom låsfilen inte stämmer.
+
+  - id: SUP-T06
+    priority: medium
+    execution: manual
+    tags: [third-party-review]
+    refs: ["ISO/IEC 27001:2022 A.5.21"]
+    en:
+      title: New dependencies have a review record
+      description: Compares dependencies added in the last 6 months with the review records.
+      preconditions: Version control history for the last 6 months and access to the dependency review records.
+      expected: Every new dependency was reviewed before it was merged.
+      steps:
+        - action: List the dependencies added to manifests in the last 6 months.
+          expected: A list with the date each one was merged.
+        - action: Find the review record of each dependency.
+          expected: Each has a record with licence, last release date and open advisories, dated before the merge.
+    sv:
+      title: Nya beroenden har en granskningspost
+      description: Jämför beroenden som lagts till de senaste 6 månaderna med granskningsposterna.
+      preconditions: Versionshistoriken för de senaste 6 månaderna och åtkomst till granskningsposterna för beroenden.
+      expected: Varje nytt beroende granskades innan det slogs ihop.
+      steps:
+        - action: Lista de beroenden som lagts till i manifesten de senaste 6 månaderna.
+          expected: En lista med datum då vart och ett slogs ihop.
+        - action: Leta upp granskningsposten för varje beroende.
+          expected: Vart och ett har en post med licens, datum för senaste release och öppna säkerhetsbulletiner, daterad före sammanslagningen.
+
+  - id: SUP-T07
+    priority: high
+    execution: manual
+    tags: [build-pipeline, provenance]
+    refs: ["SLSA v1.0 Build L2"]
+    en:
+      title: Production artefacts trace back to the pipeline
+      description: Follows the provenance of each production artefact to a pipeline run and a commit.
+      preconditions: Read access to the artefact registry, the pipeline history and version control.
+      expected: Every production artefact was built by the pipeline from a commit on a protected branch.
+      steps:
+        - action: List the artefacts running in production and read their provenance records.
+          expected: Each record names a pipeline run and a commit.
+        - action: Look up each pipeline run and commit.
+          expected: The run exists in the pipeline history and the commit is on a protected branch.
+        - action: Try to push an artefact to the production registry with a developer account.
+          expected: The push is refused.
+    sv:
+      title: Artefakter i produktion går att spåra till byggkedjan
+      description: Följer ursprunget för varje artefakt i produktion till en körning i byggkedjan och en incheckning.
+      preconditions: Läsbehörighet till artefaktregistret, byggkedjans historik och versionshanteringen.
+      expected: Varje artefakt i produktion har byggts av byggkedjan från en incheckning på en skyddad gren.
+      steps:
+        - action: Lista artefakterna som körs i produktion och läs deras ursprungsposter.
+          expected: Varje post anger en körning i byggkedjan och en incheckning.
+        - action: Slå upp varje körning och incheckning.
+          expected: Körningen finns i byggkedjans historik och incheckningen ligger på en skyddad gren.
+        - action: Försök skicka en artefakt till produktionsregistret med ett utvecklarkonto.
+          expected: Försöket avvisas.
+
+  - id: SUP-T08
+    priority: medium
+    execution: automated
+    tags: [end-of-life]
+    refs: ["OWASP Top 10 2021 A06"]
+    en:
+      title: SBOM check against end-of-life dates
+      description: A script compares the components in the SBOM with a database of published end-of-life dates.
+      preconditions: The SBOM of the current production release and access to an end-of-life data source.
+      expected: No component is past its end-of-life date.
+      steps:
+        - action: Look up the end-of-life date of each runtime, framework and library in the SBOM.
+          expected: A date or an open-ended support status is found for each component.
+        - action: Compare each date with today's date.
+          expected: No component has passed its end-of-life date.
+    sv:
+      title: Kontroll av programvaruförteckningen mot slutdatum för support
+      description: Ett skript jämför komponenterna i programvaruförteckningen med en databas över publicerade slutdatum för support.
+      preconditions: Programvaruförteckningen för den nuvarande releasen i produktion och åtkomst till en datakälla för slutdatum.
+      expected: Ingen komponent har passerat sitt slutdatum.
+      steps:
+        - action: Slå upp slutdatum för varje körmiljö, ramverk och bibliotek i förteckningen.
+          expected: Ett datum eller en öppen supportstatus hittas för varje komponent.
+        - action: Jämför varje datum med dagens datum.
+          expected: Ingen komponent har passerat sitt slutdatum.
+
+  - id: SUP-T09
+    priority: medium
+    execution: automated
+    tags: [container-images]
+    refs: ["NIST SP 800-190 §4.1"]
+    en:
+      title: Running images are less than 30 days old
+      description: A script reads the build date and base image of every image running in production.
+      preconditions: Read access to the production cluster and the image registry.
+      expected: Every running image is recent and on the latest patched base.
+      steps:
+        - action: List every image running in production with its build date.
+          expected: Every build date is less than 30 days before today.
+        - action: Compare the base image digest of each image with the latest patch release of that base image.
+          expected: Every image uses the latest patch release.
+    sv:
+      title: Avbilder som körs är mindre än 30 dagar gamla
+      description: Ett skript läser byggdatum och basavbild för varje avbild som körs i produktion.
+      preconditions: Läsbehörighet till produktionsklustret och avbildsregistret.
+      expected: Varje avbild som körs är ny och bygger på den senaste rättade basen.
+      steps:
+        - action: Lista varje avbild som körs i produktion med dess byggdatum.
+          expected: Varje byggdatum ligger mindre än 30 dagar före dagens datum.
+        - action: Jämför basavbildens kontrollsumma för varje avbild med den senaste rättade versionen av den basavbilden.
+          expected: Varje avbild använder den senaste rättade versionen.
+
+  - id: SUP-T10
+    priority: low
+    execution: automated
+    tags: [package-registry, mirror]
+    refs: ["NIST SP 800-218 PO.3"]
+    en:
+      title: Build succeeds with only the internal mirror
+      description: The pipeline runs a build in a network where public package registries are blocked.
+      preconditions: A build runner whose network allows only the internal registry mirror.
+      expected: The build succeeds without contacting a public registry.
+      steps:
+        - action: Run a clean build with an empty package cache on the restricted runner.
+          expected: The build succeeds.
+        - action: Read the network log of the runner.
+          expected: Every package download went to the internal mirror.
+    sv:
+      title: Bygget lyckas med enbart den interna spegeln
+      description: Byggkedjan kör ett bygge i ett nät där publika paketregister är blockerade.
+      preconditions: En byggagent vars nät bara tillåter den interna spegeln av paketregistren.
+      expected: Bygget lyckas utan kontakt med något publikt register.
+      steps:
+        - action: Kör ett rent bygge med tom paketcache på den begränsade byggagenten.
+          expected: Bygget lyckas.
+        - action: Läs byggagentens nätverkslogg.
+          expected: Varje nedladdning av paket gick till den interna spegeln.
