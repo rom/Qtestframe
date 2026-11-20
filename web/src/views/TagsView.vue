@@ -11,6 +11,10 @@ import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import SelectButton from 'primevue/selectbutton'
 import HelpLink from '@/guide/HelpLink.vue'
+import Dialog from 'primevue/dialog'
+import { P } from '@/lib/permissions'
+import { useAuthStore } from '@/stores/auth'
+import { useNotify } from '@/composables/notify'
 import StatusTag from '@/components/StatusTag.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { contentUrl } from '@/lib/files'
@@ -98,6 +102,44 @@ const modeOptions = computed(() => [
   { label: t('tagCloud.all'), value: 'all' },
   { label: t('tagCloud.any'), value: 'any' },
 ])
+// ---------- bulk: rename, merge, delete ----------
+const auth = useAuthStore()
+const notify = useNotify()
+const canEditTags = computed(() => auth.can(P.requirementWrite) && auth.can(P.testWrite))
+const tagDialog = ref<'' | 'rename' | 'merge'>('')
+const tagTo = ref('')
+const tagBusy = ref(false)
+const tagError = ref('')
+function openTagDialog(kind: 'rename' | 'merge') {
+  tagTo.value = kind === 'rename' ? selected.value[0] : selected.value[0]
+  tagError.value = ''
+  tagDialog.value = kind
+}
+async function tagAction(action: 'rename' | 'merge' | 'delete') {
+  tagBusy.value = true
+  tagError.value = ''
+  try {
+    const res = await api.post<{ requirements: number; tests: number; documents: number }>(`/projects/${proj.pid}/tags/bulk`, {
+      tags: selected.value,
+      action,
+      to: tagTo.value.trim(),
+    })
+    tagDialog.value = ''
+    notify.ok(t(`tagCloud.bulk.done.${action}`), t('tagCloud.counts', res))
+    selected.value = action === 'delete' ? [] : [tagTo.value.trim()]
+    await load()
+  } catch (e) {
+    if (tagDialog.value) tagError.value = errorMessage(e)
+    else notify.fail(e)
+  } finally {
+    tagBusy.value = false
+  }
+}
+function deleteTags() {
+  const n = selected.value.length
+  notify.confirmDanger(t('tagCloud.bulk.confirmDelete', { tags: selected.value.join(', ') }, n), () => tagAction('delete'))
+}
+
 const countText = (x: TagCount) =>
   t('tagCloud.counts', { requirements: x.requirements, tests: x.tests, documents: x.documents })
 </script>
@@ -152,6 +194,12 @@ const countText = (x: TagCount) =>
         <Button :label="t('common.clear')" text severity="secondary" @click="selected = []" />
       </div>
     </div>
+    <div v-if="canEditTags" class="bulkbar" role="toolbar" :aria-label="t('tagCloud.bulk.toolbar')" style="margin-top: 10px">
+      <Button v-if="selected.length === 1" :label="t('tagCloud.bulk.rename')" icon="pi pi-pencil" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openTagDialog('rename')" />
+      <Button v-if="selected.length > 1" :label="t('tagCloud.bulk.merge')" icon="pi pi-sitemap" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openTagDialog('merge')" />
+      <Button :label="t('tagCloud.bulk.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="deleteTags" />
+      <span class="small muted">{{ t('tagCloud.bulk.hint') }}</span>
+    </div>
     <div class="tag-results">
       <section>
         <h2 class="plain-heading row" style="gap: 6px">
@@ -196,6 +244,18 @@ const countText = (x: TagCount) =>
     </div>
   </div>
   <p v-else-if="tags.length" class="small muted" style="margin-top: 12px">{{ t('tagCloud.pick') }}</p>
+  <Dialog :visible="!!tagDialog" modal :header="tagDialog === 'rename' ? t('tagCloud.bulk.renameHeader', { tag: selected[0] }) : t('tagCloud.bulk.mergeHeader', { n: selected.length })" :style="{ width: 'min(440px, 96vw)' }" @update:visible="(v: boolean) => !v && (tagDialog = '')">
+    <div class="grid" style="gap: 8px">
+      <Message v-if="tagError" severity="error" :closable="false">{{ tagError }}</Message>
+      <label for="tg-to" class="small" style="font-weight: 600">{{ tagDialog === 'rename' ? t('tagCloud.bulk.newName') : t('tagCloud.bulk.mergeInto') }}</label>
+      <InputText id="tg-to" v-model="tagTo" fluid aria-describedby="tg-to-help" @keydown.enter="tagTo.trim() && tagAction(tagDialog as 'rename' | 'merge')" />
+      <small id="tg-to-help" class="muted">{{ tagDialog === 'rename' ? t('tagCloud.bulk.renameHelp') : t('tagCloud.bulk.mergeHelp', { tags: selected.join(', ') }) }}</small>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="tagDialog = ''" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :loading="tagBusy" :disabled="!tagTo.trim()" @click="tagAction(tagDialog as 'rename' | 'merge')" />
+    </template>
+  </Dialog>
 </template>
 
 <style>

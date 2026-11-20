@@ -22,6 +22,7 @@ import StatusTag from './StatusTag.vue'
 import CategoryChips from './CategoryChips.vue'
 import DefectLinks from './DefectLinks.vue'
 import CategorySelect from './CategorySelect.vue'
+import TagsInput from './TagsInput.vue'
 import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
 import RequirementImportDialog from './RequirementImportDialog.vue'
@@ -280,7 +281,7 @@ const selectedIds = computed(() => selection.value.map((s) => s.id))
 async function bulkSet(set: Record<string, unknown>) {
   if (!selectedIds.value.length) return
   const ids = [...selectedIds.value]
-  const field = (k: string) => (k === 'add_category_ids' || k === 'remove_category_ids' ? 'category_ids' : k)
+  const field = (k: string) => (k === 'add_category_ids' || k === 'remove_category_ids' ? 'category_ids' : k === 'add_tags' || k === 'remove_tags' ? 'tags' : k)
   const before = ids.map((id) => {
     const row = (items.value.find((x) => x.id === id) ?? {}) as Record<string, unknown>
     const old: Record<string, unknown> = {}
@@ -323,6 +324,18 @@ function bulkDelete() {
       notify.fail(e)
     }
   })
+}
+const tagDialog = ref(false)
+const tagMode = ref<'add' | 'remove'>('add')
+const tagValues = ref<string[]>([])
+function openTagDialog(mode: 'add' | 'remove') {
+  tagMode.value = mode
+  tagValues.value = []
+  tagDialog.value = true
+}
+async function applyTags() {
+  tagDialog.value = false
+  if (tagValues.value.length) await bulkSet(tagMode.value === 'add' ? { add_tags: tagValues.value } : { remove_tags: tagValues.value })
 }
 const catDialog = ref(false)
 const catMode = ref<'add' | 'remove'>('add')
@@ -535,6 +548,8 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Select v-model="bulkThird" :options="thirdOptions" option-label="label" option-value="value" :placeholder="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" :aria-label="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" size="small" style="min-width: 150px" />
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addCategories')" v-tooltip.bottom="t('workspace.addCategories')" @click="openCatDialog('add')" />
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeCategories')" v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
+        <Button :label="t('workspace.tagsButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addTags')" v-tooltip.bottom="t('workspace.addTags')" @click="openTagDialog('add')" />
+        <Button :label="t('workspace.tagsButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeTags')" v-tooltip.bottom="t('workspace.removeTags')" @click="openTagDialog('remove')" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button
           v-if="isSoftware(proj.project)"
@@ -678,6 +693,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     />
   </Drawer>
 
+  <Dialog v-model:visible="tagDialog" :header="tagMode === 'add' ? t('workspace.addTags') : t('workspace.removeTags')" modal style="width: min(480px, 95vw)">
+    <div class="grid" style="gap: 10px">
+      <TagsInput v-model="tagValues" :aria-label="t('common.tags')" />
+      <div class="small muted">{{ t(isReq ? 'workspace.appliesToRequirements' : 'workspace.appliesToTests', selection.length) }}<template v-if="tagMode === 'remove'"> · {{ t('workspace.removeTagsHint') }}</template></div>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="tagDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!tagValues.length" @click="applyTags" />
+    </template>
+  </Dialog>
   <Dialog v-model:visible="catDialog" :header="catMode === 'add' ? t('workspace.addCategories') : t('workspace.removeCategories')" modal style="width: min(480px, 95vw)">
     <div class="grid" style="gap: 12px">
       <SelectButton

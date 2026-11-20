@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/rbac"
@@ -114,4 +115,61 @@ func (s *Server) handleProjectTags(w http.ResponseWriter, r *http.Request, p *Pr
 		return
 	}
 	writeJSON(w, http.StatusOK, listOf(tags))
+}
+
+// handleBulkTags: POST /projects/{pid}/tags/bulk
+// {"tags": [...], "action": "rename" | "merge" | "delete", "to"}.
+// rename takes one tag, merge several (into to, which may be one of them
+// or a new name), delete removes the tags from every item. Requirements and
+// tests are changed (needs requirement.write and test.write); documents too
+// with project.update. → {"requirements", "tests", "documents"} (counts).
+func (s *Server) handleBulkTags(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		Tags   []string `json:"tags"`
+		Action string   `json:"action"`
+		To     string   `json:"to"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if !p.Can(rbac.RequirementWr) || !p.Can(rbac.TestWrite) {
+		writeError(w, http.StatusForbidden, "forbidden", "changing tags across the project needs requirement.write and test.write")
+		return
+	}
+	to := strings.TrimSpace(req.To)
+	switch req.Action {
+	case "rename":
+		if len(req.Tags) != 1 || to == "" {
+			s.fail(w, r, badRequest("rename takes one tag and a new name"))
+			return
+		}
+	case "merge":
+		if len(req.Tags) < 2 || to == "" {
+			s.fail(w, r, badRequest("merge takes at least two tags and the name to keep"))
+			return
+		}
+	case "delete":
+		to = ""
+	default:
+		s.fail(w, r, badRequest("action must be rename, merge or delete"))
+		return
+	}
+	changed, err := s.Store.ReplaceTags(r.Context(), p.TenantID(), pr.ID, req.Tags, to, p.Can(rbac.ProjectUpdate))
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	for _, id := range changed[model.KindRequirement] {
+		s.record(r.Context(), p, model.KindRequirement, id, "bulk_update")
+	}
+	for _, id := range changed[model.KindTest] {
+		s.record(r.Context(), p, model.KindTest, id, "bulk_update")
+	}
+	s.audit(r.Context(), p, "tag."+req.Action, "project", pr.ID, strings.Join(req.Tags, ", ")+" → "+to)
+	writeJSON(w, http.StatusOK, map[string]int{"requirements": len(changed[model.KindRequirement]), "tests": len(changed[model.KindTest]), "documents": len(changed["file"])})
 }

@@ -191,6 +191,7 @@ Kryssa i rutorna för flera krav (eller rubrikens kryssruta för hela sidan). Et
 
 - **Ange status**, **Ange prioritet**, **Ange kravnivå**: tillämpas direkt på alla markerade krav;
 - **Kategorier +** / **Kategorier −**: lägg till eller ta bort kategorivärden;
+- **Taggar +** / **Taggar −**: lägg till eller ta bort taggar (vid borttagning spelar stora och små bokstäver ingen roll);
 - **Flytta**: flytta dem till en mapp;
 - **Ta bort**: ta bort dem efter bekräftelse;
 - **×**: rensa markeringen.

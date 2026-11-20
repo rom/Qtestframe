@@ -412,7 +412,7 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 		}
 		// a review decision needs the review permission; any other change write
 		statusOnly := req.Set.Priority == nil && req.Set.Obligation == nil && req.Set.ExecutionType == nil &&
-			len(req.Set.AddCategoryIDs) == 0 && len(req.Set.RemoveCategoryIDs) == 0
+			len(req.Set.AddCategoryIDs) == 0 && len(req.Set.RemoveCategoryIDs) == 0 && len(req.Set.AddTags) == 0 && len(req.Set.RemoveTags) == 0
 		if req.Set.Status != nil {
 			if !authorizeChange(w, p, kind, statusOnly, "", *req.Set.Status) {
 				return

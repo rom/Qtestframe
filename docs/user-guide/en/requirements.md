@@ -174,6 +174,7 @@ Tick the checkboxes of several requirements (or the header checkbox for the whol
 
 - **Set status**, **Set priority**, **Set obligation**: applied at once to all selected requirements;
 - **Categories +** / **Categories −**: add or remove category values;
+- **Tags +** / **Tags −**: add or remove tags (removing ignores upper and lower case);
 - **Move**: move them to a folder;
 - **Delete**: delete them after confirmation;
 - **×**: clear the selection.

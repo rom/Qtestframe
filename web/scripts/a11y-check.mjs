@@ -132,6 +132,7 @@ async function discover(request) {
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
+    { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
     { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },
     run && { name: 'flow-run', path: `${p}/flow?run=${run.id}`, wait: '.stages, .empty' },

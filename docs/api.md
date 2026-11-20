@@ -217,7 +217,7 @@ missing permission). Decisions are audited as `requirement.review` /
 | DELETE | `/requirements/{id}` | 204; the response header `X-Trash-Id` names the [trash](#trash-undo-a-deletion) entry |
 | POST | `/requirements/{id}/copy` | requirement.write – `{"title"?, "relation"?}` → 201 Requirement: a copy as `draft` titled *Copy of …* (or `title`) with fields, tags, categories and new criteria; `relation` (a relation type, e.g. `derived_from`) also relates the copy to the original |
 | POST | `/projects/{pid}/requirements/move` | `{"ids":[...],"folder_id": id\|null, "position"?: n, "project_id"?: id}`; another `project_id` re-keys the items, remaps categories by dimension/name and drops their links ([design.md §5](design.md#5-move-semantics)) |
-| POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?}}` |
+| POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?, "add_tags"?, "remove_tags"?}}` (tag removal ignores case) |
 | DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` → `{"deleted": n, "trash_id"}` |
 | POST | `/projects/{pid}/requirements/review` | bulk review, see below |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
@@ -581,6 +581,7 @@ document archive with link `entity_type: "step"`, `run_id` and
 |---|---|---|---|
 | GET | `/projects/{pid}/graph?kind=requirement\|test` | project.read and requirement.read / test.read | `{"kind","nodes":[{id,key,title,status,result,folder}],"edges":[{id,source,target,type}]}`; `result` is the coverage of a requirement or the last result of a test. Requirement edges are relations; test edges are `depends_on` (test → prerequisite) and `calls` (shared steps) |
 | GET | `/projects/{pid}/tags` | project.read | `[{tag, requirements, tests, documents, total}]`, most used first |
+| POST | `/projects/{pid}/tags/bulk` | requirement.write and test.write | `{"tags":[...], "action": "rename\|merge\|delete", "to"}` – rename one tag, merge several into `to`, or remove them from every requirement and test (and document, with project.update) → `{"requirements","tests","documents"}` (items changed) |
 
 ## Profile and sessions
 
