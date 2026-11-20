@@ -93,6 +93,30 @@ type Tenant struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// TenantSettings are organisation-wide settings, edited by holders of
+// settings.manage (admins and test leads by default). Every field's zero
+// value is the strict default.
+type TenantSettings struct {
+	// AllowUnreadyTests permits executing tests whose status is not "ready".
+	AllowUnreadyTests bool `json:"allow_unready_tests"`
+	// AllowUnreadyRequirements permits executing tests that verify
+	// requirements whose status is not in ReadyRequirementStatuses.
+	AllowUnreadyRequirements bool `json:"allow_unready_requirements"`
+	// ReadyRequirementStatuses are the requirement statuses that count as
+	// ready for testing (default DefaultReadyRequirementStatuses).
+	ReadyRequirementStatuses []string `json:"ready_requirement_statuses"`
+	// AllowUnmetDependencies permits starting a test before the tests it
+	// depends on have passed.
+	AllowUnmetDependencies bool `json:"allow_unmet_dependencies"`
+}
+
+// DefaultReadyRequirementStatuses are the requirement statuses ready for
+// testing unless a tenant chooses others.
+var DefaultReadyRequirementStatuses = []string{"approved", "implemented", "verified"}
+
+// ReadyTestStatus is the test status that allows execution.
+const ReadyTestStatus = "ready"
+
 // User is a global identity which can be member of many tenants.
 type User struct {
 	ID           string    `json:"id"`
@@ -151,11 +175,13 @@ type FileInfo struct {
 
 // FileLink is an item a file is attached to.
 type FileLink struct {
-	EntityType string `json:"entity_type"` // requirement | test | run | execution
+	EntityType string `json:"entity_type"` // requirement | test | run | execution | step
 	EntityID   string `json:"entity_id"`
 	Key        string `json:"key"` // item key or run name
-	// RunID is set for execution links (the run containing the execution).
+	// RunID is set for execution and step links (the run containing the execution).
 	RunID string `json:"run_id,omitempty"`
+	// ExecutionID is set for step links (the execution of the step result).
+	ExecutionID string `json:"execution_id,omitempty"`
 }
 
 // ReportDefinition is a saved custom report.
@@ -334,9 +360,11 @@ type ItemRef struct {
 	Type string `json:"type"`
 	// Direction is "outgoing" when this item is the source, else "incoming".
 	Direction string `json:"direction"`
-	ID        string `json:"id"`
-	Key       string `json:"key"`
-	Title     string `json:"title,omitempty"`
+	// Kind of the item at the other end: requirement | test.
+	Kind  string `json:"kind"`
+	ID    string `json:"id"`
+	Key   string `json:"key"`
+	Title string `json:"title,omitempty"`
 }
 
 // EvaluationCriterion describes how a requirement is judged fulfilled.
@@ -445,6 +473,11 @@ type StepResult struct {
 	Expected string `json:"expected"`
 	Status   string `json:"status"`
 	Actual   string `json:"actual"`
+	// Evidence is what proves the result (observations, values, log
+	// excerpts, links); files are attachments of the step result.
+	Evidence string `json:"evidence"`
+	// AttachmentCount is the number of files attached as evidence.
+	AttachmentCount int `json:"attachment_count"`
 }
 
 // Execution is one test case inside a run.
@@ -493,6 +526,27 @@ type Relation struct {
 	TargetTitle string    `json:"target_title"`
 	// Direction relative to the requirement queried: outgoing | incoming.
 	Direction string `json:"direction,omitempty"`
+}
+
+// TestDependency says that TestID may only be executed after DependsOnID
+// has passed (same project).
+type TestDependency struct {
+	ID          string    `json:"id"`
+	ProjectID   string    `json:"project_id"`
+	TestID      string    `json:"test_id"`
+	DependsOnID string    `json:"depends_on_id"`
+	CreatedBy   string    `json:"created_by"`
+	CreatedAt   time.Time `json:"created_at"`
+	// Derived.
+	TestKey        string `json:"test_key"`
+	TestTitle      string `json:"test_title"`
+	DependsOnKey   string `json:"depends_on_key"`
+	DependsOnTitle string `json:"depends_on_title"`
+	// Direction relative to the test queried: outgoing (this test depends
+	// on the other) | incoming (the other test depends on this one).
+	Direction string `json:"direction,omitempty"`
+	// LastResult of the test at the other end (GET /tests/{id}/dependencies).
+	OtherLastResult string `json:"other_last_result,omitempty"`
 }
 
 // Revision is a stored snapshot of a requirement or test case.

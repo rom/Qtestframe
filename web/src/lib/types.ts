@@ -546,4 +546,27 @@ export interface SearchHit {
 export interface RbacInfo {
   roles: string[]
   matrix: Record<string, string[]>
+  permissions?: string[]
+}
+
+/** A role of the organisation (GET /roles). */
+export interface RoleInfo {
+  name: string
+  label?: string
+  description?: string
+  permissions: string[]
+  builtin: boolean
+  customized?: boolean
+  editable: boolean
+  deletable: boolean
+  members: number
+  tokens: number
+}
+
+/** Organisation settings (GET /settings). */
+export interface TenantSettings {
+  allow_unready_tests: boolean
+  allow_unready_requirements: boolean
+  ready_requirement_statuses: string[]
+  allow_unmet_dependencies: boolean
 }

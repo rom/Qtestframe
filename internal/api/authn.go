@@ -30,6 +30,10 @@ type Principal struct {
 	Role    string
 	Session *model.Session
 	Token   *model.APIToken
+	// perms are the effective permissions in Tenant, resolved from the
+	// tenant's role set (see resolvePerms); nil means the built-in defaults
+	// of Role.
+	perms []string
 }
 
 // Can reports whether the principal holds permission p in its tenant.
@@ -40,7 +44,15 @@ func (p *Principal) Can(perm rbac.Permission) bool {
 	if p.Tenant == nil {
 		return false
 	}
-	return rbac.Can(p.Role, perm)
+	if p.perms == nil {
+		return rbac.Can(p.Role, perm)
+	}
+	for _, q := range p.perms {
+		if q == string(perm) {
+			return true
+		}
+	}
+	return false
 }
 
 // Permissions lists the effective permissions.
@@ -51,7 +63,33 @@ func (p *Principal) Permissions() []string {
 	if p.Tenant == nil {
 		return []string{}
 	}
-	return rbac.PermissionsOf(p.Role)
+	if p.perms == nil {
+		return rbac.PermissionsOf(p.Role)
+	}
+	return append([]string{}, p.perms...)
+}
+
+// resolvePerms loads the tenant's roles and sets the principal's effective
+// permissions. An API token gets the permissions of its role that the
+// user's current role also has.
+func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRole string) error {
+	if p.Tenant == nil {
+		return nil
+	}
+	set, err := s.Store.RoleSet(ctx, p.Tenant.ID)
+	if err != nil {
+		return err
+	}
+	perms := set.PermissionsOf(p.Role)
+	if p.Token != nil && memberRole != "" {
+		mine := set.PermissionsOf(memberRole)
+		if !rbac.Subset(perms, mine) {
+			p.Role = memberRole // the token's role exceeds the user's current one
+		}
+		perms = rbac.Intersect(perms, mine)
+	}
+	p.perms = perms
+	return nil
 }
 
 // TenantID returns the current tenant id or "".
@@ -117,15 +155,19 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 			return nil, err
 		}
 		// a token never exceeds the user's current role
-		role := t.Role
 		m, err := s.Store.GetMembership(ctx, t.TenantID, u.ID)
 		if err != nil && !u.SuperAdmin {
 			return nil, err
 		}
-		if m != nil && rbac.Rank(m.Role) < rbac.Rank(role) {
-			role = m.Role
+		p := &Principal{User: u, Tenant: ten, Role: t.Role, Token: t}
+		memberRole := ""
+		if m != nil {
+			memberRole = m.Role
 		}
-		return &Principal{User: u, Tenant: ten, Role: role, Token: t}, nil
+		if err := s.resolvePerms(ctx, p, memberRole); err != nil {
+			return nil, err
+		}
+		return p, nil
 	}
 	c, err := r.Cookie(sessionCookie)
 	if err != nil || c.Value == "" {
@@ -151,6 +193,9 @@ func (s *Server) principal(r *http.Request) (*Principal, error) {
 				p.Tenant, p.Role = t, rbac.RoleAdmin
 			}
 		}
+	}
+	if err := s.resolvePerms(ctx, p, ""); err != nil {
+		return nil, err
 	}
 	return p, nil
 }
@@ -420,6 +465,9 @@ func (s *Server) principalFromSession(r *http.Request, u *model.User, sess *mode
 		p.Role = m.Role
 	} else if u.SuperAdmin {
 		p.Role = rbac.RoleAdmin
+	}
+	if err := s.resolvePerms(r.Context(), p, ""); err != nil {
+		return nil, err
 	}
 	return p, nil
 }
@@ -693,11 +741,16 @@ func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisio
 			return nil, "", err
 		}
 		tenantID = t.ID
+		set, err := s.Store.RoleSet(ctx, t.ID)
+		if err != nil {
+			return nil, "", err
+		}
 		def := prov.DefaultRole
-		if !rbac.ValidRole(def) {
+		if !set.Valid(def) {
 			def = rbac.RoleViewer
 		}
-		role := auth.MapRole(id.Groups, prov.RoleMapping, def, rbac.Rank)
+		// roles the tenant does not have (e.g. a deleted custom role) rank 0
+		role := auth.MapRole(id.Groups, prov.RoleMapping, def, set.Rank)
 		existing, err := s.Store.GetMembership(ctx, t.ID, u.ID)
 		switch {
 		case err != nil && prov.AutoProvision:

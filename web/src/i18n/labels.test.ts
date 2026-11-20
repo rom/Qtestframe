@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setLanguage } from './index'
-import { enumLabel, enumOptions, obligationHint, obligationKeyword, relationText } from './labels'
+import { customRoleLabels, enumLabel, enumOptions, obligationHint, obligationKeyword, relationText } from './labels'
 
 afterEach(() => setLanguage('en'))
 
@@ -51,5 +51,16 @@ describe('relations', () => {
     expect(relationText('depends_on', 'outgoing')).toBe('beror på')
     expect(relationText('refines', 'incoming')).toBe('förfinas av (underordnat)')
     expect(relationText('blocks', 'incoming')).toBe('incoming blocks')
+  })
+})
+
+describe('role labels', () => {
+  it('uses translations for built-in roles and stored labels for custom roles', () => {
+    setLanguage('en')
+    expect(enumLabel('role', 'test_lead')).toBe('Test lead')
+    customRoleLabels.set('auditor', 'External auditor')
+    expect(enumLabel('role', 'auditor')).toBe('External auditor')
+    customRoleLabels.clear()
+    expect(enumLabel('role', 'auditor')).toBe('Auditor')
   })
 })

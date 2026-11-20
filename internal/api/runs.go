@@ -1,7 +1,9 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
@@ -167,10 +169,24 @@ func (s *Server) handleListExecutions(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
-	out := []model.Execution{}
+	run, err := s.Store.GetRun(r.Context(), p.TenantID(), id)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	rc, err := s.loadReadiness(r.Context(), p.TenantID(), run.ProjectID, run.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	type withReadiness struct {
+		model.Execution
+		Readiness *Readiness `json:"readiness"`
+	}
+	out := []withReadiness{}
 	for i := range es {
 		if q.Match(executionRecord(&es[i])) {
-			out = append(out, es[i])
+			out = append(out, withReadiness{Execution: es[i], Readiness: rc.check(es[i].TestCaseID)})
 		}
 	}
 	writeJSON(w, http.StatusOK, listOf(out))
@@ -201,18 +217,51 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
-	n, unknown, err := s.Store.ImportResults(r.Context(), p.TenantID(), r.PathValue("id"), p.User.Email, req.Results)
+	run, err := s.Store.GetRun(r.Context(), p.TenantID(), r.PathValue("id"))
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "run.import", "run", r.PathValue("id"), "")
-	writeJSON(w, http.StatusOK, map[string]any{"updated": n, "unknown": unknown})
+	rc, err := s.loadReadiness(r.Context(), p.TenantID(), run.ProjectID, run.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	byKey := map[string]string{}
+	for id, t := range rc.tests {
+		byKey[strings.ToUpper(t.Key)] = id
+	}
+	// results of tests that may not be executed are not recorded
+	type rejected struct {
+		TestKey   string     `json:"test_key"`
+		Readiness *Readiness `json:"readiness"`
+	}
+	rejects := []rejected{}
+	accepted := make([]store.ImportResult, 0, len(req.Results))
+	for _, res := range req.Results {
+		if id, ok := byKey[strings.ToUpper(strings.TrimSpace(res.TestKey))]; ok && starts(store.ExecutionUpdate{Status: &res.Status}) {
+			if rd := rc.check(id); !rd.Allowed {
+				rejects = append(rejects, rejected{TestKey: res.TestKey, Readiness: rd})
+				continue
+			}
+		}
+		accepted = append(accepted, res)
+	}
+	n, unknown, err := s.Store.ImportResults(r.Context(), p.TenantID(), run.ID, p.User.Email, accepted)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	s.audit(r.Context(), p, "run.import", "run", run.ID, fmt.Sprintf("%d updated, %d rejected", n, len(rejects)))
+	writeJSON(w, http.StatusOK, map[string]any{"updated": n, "unknown": unknown, "rejected": rejects})
 }
 
 type executionDetail struct {
 	*model.Execution
 	Test *model.TestCase `json:"test"`
+	// Readiness of the test in this run (organisation settings, test and
+	// requirement status, prerequisites).
+	Readiness *Readiness `json:"readiness"`
 }
 
 func (s *Server) executionDetail(r *http.Request, p *Principal, id string) (*executionDetail, error) {
@@ -224,7 +273,11 @@ func (s *Server) executionDetail(r *http.Request, p *Principal, id string) (*exe
 	if err != nil {
 		return nil, err
 	}
-	return &executionDetail{Execution: e, Test: t}, nil
+	rd, err := s.executionReadiness(r.Context(), p.TenantID(), e)
+	if err != nil {
+		return nil, err
+	}
+	return &executionDetail{Execution: e, Test: t, Readiness: rd}, nil
 }
 
 func (s *Server) handleGetExecution(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -241,6 +294,22 @@ func (s *Server) handleUpdateExecution(w http.ResponseWriter, r *http.Request, p
 	if err := decode(r, &u); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if starts(u) {
+		cur, err := s.Store.GetExecution(r.Context(), p.TenantID(), r.PathValue("id"))
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		rd, err := s.executionReadiness(r.Context(), p.TenantID(), cur)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if !rd.Allowed {
+			notReady(w, cur.TestKey, rd)
+			return
+		}
 	}
 	e, err := s.Store.UpdateExecution(r.Context(), p.TenantID(), r.PathValue("id"), p.User.Email, u)
 	if err != nil {
@@ -268,6 +337,10 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 	}
 	if !s.Runner.Enabled() {
 		s.fail(w, r, runner.ErrDisabled)
+		return
+	}
+	if !d.Readiness.Allowed {
+		notReady(w, d.TestKey, d.Readiness)
 		return
 	}
 	run, err := s.Store.GetRun(r.Context(), p.TenantID(), d.RunID)

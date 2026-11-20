@@ -63,6 +63,11 @@ func newEnv(t *testing.T, mut ...func(*config.Config)) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Most tests execute draft tests; the strict default execution policy is
+	// covered in readiness_test.go (strictPolicy).
+	if err := st.SaveTenantSettings(ctx, ten.ID, &model.TenantSettings{AllowUnreadyTests: true, AllowUnreadyRequirements: true, AllowUnmetDependencies: true}); err != nil {
+		t.Fatal(err)
+	}
 	admin := mkUser(t, st, "admin@example.com", true)
 	if err := st.SetMembership(ctx, ten.ID, admin.ID, rbac.RoleAdmin); err != nil {
 		t.Fatal(err)

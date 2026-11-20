@@ -25,6 +25,7 @@ import { useI18n } from 'vue-i18n'
 import { chooseLocal, currentLang, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
 import { enumLabel } from '@/i18n/labels'
 import type { Tenant } from '@/lib/types'
+import { useRolesStore } from '@/stores/roles'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -58,6 +59,14 @@ onMounted(async () => {
     }
   }
 })
+
+// roles of the organisation: custom role labels everywhere, role selects
+const rolesStore = useRolesStore()
+watch(
+  () => auth.tenant?.id,
+  () => void rolesStore.ensure(true),
+  { immediate: true },
+)
 
 watch(
   () => route.fullPath,

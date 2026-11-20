@@ -1,8 +1,12 @@
 // Display labels for API enum values (statuses, priorities, roles …). The
 // values sent to and received from the API stay unchanged.
+import { reactive } from 'vue'
 import { humanize, options } from '@/lib/format'
 import { relationLabel } from '@/lib/relations'
 import { t, te } from './index'
+
+/** Labels of the organisation's custom roles (filled by stores/roles.ts). */
+export const customRoleLabels = reactive(new Map<string, string>())
 
 export type EnumGroup =
   | 'status'
@@ -24,7 +28,9 @@ export type EnumGroup =
 export function enumLabel(group: EnumGroup, value: string | null | undefined): string {
   if (!value) return ''
   const k = `enums.${group}.${value}`
-  return te(k) ? t(k) : humanize(value)
+  if (te(k)) return t(k)
+  if (group === 'role' && customRoleLabels.has(value)) return customRoleLabels.get(value)!
+  return humanize(value)
 }
 
 /** Select options for enum values with translated labels. */

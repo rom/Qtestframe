@@ -1,6 +1,10 @@
 package store
 
-import "context"
+import (
+	"context"
+	"sort"
+	"strings"
+)
 
 // ProjectTags returns the tags used by the requirements and tests of a
 // project, with the number of items carrying each one.
@@ -43,4 +47,63 @@ func (s *Store) ProjectPeopleNames(ctx context.Context, tenantID, projectID stri
 		out = append(out, v)
 	}
 	return out, rows.Err()
+}
+
+// TagCount is how many items of each kind carry a tag.
+type TagCount struct {
+	Tag          string `json:"tag"`
+	Requirements int    `json:"requirements"`
+	Tests        int    `json:"tests"`
+	Documents    int    `json:"documents"`
+	Total        int    `json:"total"`
+}
+
+// ProjectTagCounts counts the tags of a project's requirements, tests and
+// files (documents, reports and attachments), most used first.
+func (s *Store) ProjectTagCounts(ctx context.Context, tenantID, projectID string) ([]TagCount, error) {
+	rows, err := s.c().query(ctx, `SELECT 'r', tags FROM requirements WHERE tenant_id = ? AND project_id = ?
+		UNION ALL SELECT 't', tags FROM test_cases WHERE tenant_id = ? AND project_id = ?
+		UNION ALL SELECT 'd', tags FROM files WHERE tenant_id = ? AND project_id = ?`,
+		tenantID, projectID, tenantID, projectID, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	by := map[string]*TagCount{}
+	for rows.Next() {
+		var kind, raw string
+		if err := rows.Scan(&kind, &raw); err != nil {
+			return nil, err
+		}
+		for _, t := range decodeTags(raw) {
+			c := by[t]
+			if c == nil {
+				c = &TagCount{Tag: t}
+				by[t] = c
+			}
+			switch kind {
+			case "r":
+				c.Requirements++
+			case "t":
+				c.Tests++
+			default:
+				c.Documents++
+			}
+			c.Total++
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make([]TagCount, 0, len(by))
+	for _, c := range by {
+		out = append(out, *c)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Total != out[j].Total {
+			return out[i].Total > out[j].Total
+		}
+		return strings.ToLower(out[i].Tag) < strings.ToLower(out[j].Tag)
+	})
+	return out, nil
 }

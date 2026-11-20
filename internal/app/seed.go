@@ -157,6 +157,24 @@ func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Pro
 			}
 		}
 	}
+	// prerequisites: the negative login tests need a working login first
+	for _, d := range [][2]int{{1, 0}, {2, 1}} {
+		if err := st.AddTestDependency(ctx, tenantID, &model.TestDependency{TestID: testIDs[d[0]], DependsOnID: testIDs[d[1]], CreatedBy: "seed"}); err != nil {
+			return nil, err
+		}
+	}
+	// requirement relations for the dependency graph
+	for _, rel := range []struct {
+		src, dst int
+		typ      string
+	}{{1, 0, "depends_on"}, {2, 0, "provides"}, {3, 0, "depends_on"}, {4, 3, "refines"}, {6, 7, "derived_from"}} {
+		if rel.src >= len(reqs) || rel.dst >= len(reqs) {
+			continue
+		}
+		if err := st.CreateRelation(ctx, tenantID, &model.Relation{SourceID: reqs[rel.src].ID, TargetID: reqs[rel.dst].ID, Type: rel.typ, CreatedBy: "seed"}); err != nil {
+			return nil, err
+		}
+	}
 	run := &model.TestRun{ProjectID: p.ID, Name: "Sprint 12 regression", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed"}
 	if err := st.CreateRun(ctx, tenantID, run, testIDs); err != nil {
 		return nil, err

@@ -221,6 +221,8 @@ func (s *Server) routes() {
 	// reports (reports.go) and backup/restore (backup.go)
 	s.routesReports(h)
 	s.routesBackup(h)
+	s.routesRoles(h)
+	s.routesDependencies(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

@@ -80,7 +80,7 @@ func TestAllPermissions(t *testing.T) {
 	all := AllPermissions()
 	want := []Permission{TenantManage, MemberRead, MemberManage, ProjectRead, ProjectCreate,
 		ProjectUpdate, ProjectDelete, RequirementRd, RequirementWr, TestRead, TestWrite,
-		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage}
+		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage, RoleManage, SettingsManage}
 	if len(all) != len(want) {
 		t.Fatalf("AllPermissions has %d entries, want %d: %v", len(all), len(want), all)
 	}
@@ -119,5 +119,74 @@ func TestMatrix(t *testing.T) {
 	m[RoleViewer][0] = "mutated"
 	if PermissionsOf(RoleViewer)[0] == "mutated" {
 		t.Error("Matrix returned shared slice")
+	}
+}
+
+func TestTestLead(t *testing.T) {
+	for p, want := range map[Permission]bool{SettingsManage: true, ScriptExecute: true, TestWrite: true, RequirementWr: false, RoleManage: false, MemberManage: false} {
+		if Can(RoleTestLead, p) != want {
+			t.Errorf("test lead %s = %v", p, !want)
+		}
+	}
+	if !(Rank(RoleManager) > Rank(RoleTestLead) && Rank(RoleTestLead) > Rank(RoleTester)) {
+		t.Error("test lead rank")
+	}
+}
+
+func TestOverlayAndSet(t *testing.T) {
+	s := Overlay([]Role{
+		{Name: RoleAdmin, Permissions: []string{"export"}},                                  // ignored
+		{Name: RoleTester, Permissions: []string{"test.read", "project.read", "test.read"}}, // narrowed
+		{Name: RoleViewer, Permissions: DefaultPermissions(RoleViewer), Description: "read only"},
+		{Name: "auditor", Label: "Auditor", Permissions: []string{"audit.read", "project.read", "bogus"}},
+	})
+	if !s.Can(RoleAdmin, RoleManage) || len(s.PermissionsOf(RoleAdmin)) != len(AllPermissionList) {
+		t.Error("admin must keep all permissions")
+	}
+	if got := s.PermissionsOf(RoleTester); len(got) != 2 || !s[RoleTester].Customized || !s[RoleTester].Builtin {
+		t.Errorf("tester: %+v", s[RoleTester])
+	}
+	if s[RoleViewer].Customized || s[RoleViewer].Description != "read only" {
+		t.Errorf("viewer: %+v", s[RoleViewer])
+	}
+	a := s["auditor"]
+	if a.Builtin || a.Label != "Auditor" || len(a.Permissions) != 0 && a.Permissions[0] == "bogus" {
+		t.Errorf("auditor: %+v", a)
+	}
+	if !s.Valid("auditor") || s.Valid("nobody") || s.Can("nobody", ProjectRead) {
+		t.Error("Valid/Can")
+	}
+	names := s.Names()
+	if names[0] != RoleAdmin || names[len(names)-1] != "auditor" || len(s.List()) != len(names) {
+		t.Errorf("names: %v", names)
+	}
+	if s.Rank(RoleAdmin) <= s.Rank(RoleManager) || s.Rank("nobody") != 0 || s.Rank(RoleTester) != 2 {
+		t.Error("rank")
+	}
+	if len(s.Matrix()) != 6 || !Role(s[RoleTester]).Editable() || s[RoleAdmin].Editable() {
+		t.Error("matrix/editable")
+	}
+}
+
+func TestNamesAndPermissions(t *testing.T) {
+	for n, want := range map[string]bool{"auditor": true, "qa_lead2": true, "A": false, "a": false, "1x": false, "x-y": false, "abcdefghijabcdefghijabcdefghijabc": false} {
+		if ValidName(n) != want {
+			t.Errorf("ValidName(%q)", n)
+		}
+	}
+	if got, bad := NormalizePermissions([]string{"test.read", "export", "test.read"}); bad != "" || len(got) != 2 || got[0] != "export" {
+		t.Errorf("%v %q", got, bad)
+	}
+	if _, bad := NormalizePermissions([]string{"x"}); bad != "x" {
+		t.Error("bad permission not reported")
+	}
+	if !IsBuiltin(RoleTestLead) || IsBuiltin("auditor") || DefaultPermissions("auditor") != nil {
+		t.Error("IsBuiltin/DefaultPermissions")
+	}
+	if !Subset([]string{"a"}, []string{"a", "b"}) || Subset([]string{"c"}, []string{"a"}) {
+		t.Error("Subset")
+	}
+	if got := Intersect([]string{"b", "a", "c"}, []string{"a", "b"}); len(got) != 2 || got[0] != "a" {
+		t.Errorf("Intersect %v", got)
 	}
 }
