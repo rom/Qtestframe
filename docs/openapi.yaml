@@ -9561,6 +9561,325 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/configurations:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Runs and executions
+      summary: List test configurations
+      operationId: getProjectsByPidConfigurations
+      description: |-
+        the project's configurations `[{id, name, dimension_values, position}]` in order
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Runs and executions
+      summary: Create test configuration
+      operationId: postProjectsByPidConfigurations
+      description: |-
+        `{name, dimension_values: {dimension: value}}` → Configuration; names are unique per project
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/configurations/bulk:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Runs and executions
+      summary: Create several configurations
+      operationId: postProjectsByPidConfigurationsBulk
+      description: |-
+        e.g. all combinations of dimension values; all or nothing
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Runs and executions
+      summary: Delete several configurations
+      operationId: deleteProjectsByPidConfigurationsBulk
+      description: |-
+        `{"ids":[...]}`; configurations a run uses are refused (409); all or nothing
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/configurations/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Runs and executions
+      summary: Get test configuration
+      operationId: getConfigurationsById
+      description: '**Permission:** `project.read`.'
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Runs and executions
+      summary: Update test configuration
+      operationId: patchConfigurationsById
+      description: '**Permission:** `project.update`.'
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Runs and executions
+      summary: Delete test configuration
+      operationId: deleteConfigurationsById
+      description: |-
+        409 while a run uses it
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/coverage:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Requirements
+      summary: Coverage by configuration
+      operationId: getRequirementsByIdCoverage
+      description: |-
+        the requirement's coverage overall and per configuration its tests are planned in
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/data:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Tests
+      summary: Get test data
+      operationId: getTestsByIdData
+      description: |-
+        `{parameters: [name], data_rows: [{name, values: {parameter: value}}]}` of a data-driven test
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Tests
+      summary: Replace test data
+      operationId: putTestsByIdData
+      description: |-
+        same body as GET; at most 50 parameters and 500 rows; steps reference parameters as `{{name}}`
+
+        **Permission:** `test.write`.
+      x-permission: test.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/configurations:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    put:
+      tags:
+      - Runs and executions
+      summary: Set the configurations of a run
+      operationId: putRunsByIdConfigurations
+      description: |-
+        `{"configuration_ids":[...]}`: adding one creates an execution per test; removing one deletes its executions (409 while any has a result); all or nothing
+
+        **Permission:** `run.write`.
+      x-permission: run.write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:

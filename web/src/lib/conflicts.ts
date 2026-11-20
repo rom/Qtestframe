@@ -84,6 +84,12 @@ export const REQUIREMENT_FIELDS = {
 
 /** The editable fields of a test and how to compare them. */
 export const TEST_FIELDS = {
-  fields: ['title', 'description', 'preconditions', 'execution_type', 'script_language', 'script', 'expected_result', 'priority', 'status', 'estimated_minutes', 'tags', 'category_ids', 'folder_id', 'steps'],
-  normalize: { tags: asSet, category_ids: asSet, steps: project(['action', 'expected', 'data', 'call_test_id']) } as Record<string, Normalize>,
+  fields: ['title', 'description', 'preconditions', 'execution_type', 'script_language', 'script', 'expected_result', 'priority', 'status', 'estimated_minutes', 'tags', 'category_ids', 'folder_id', 'steps', 'parameters', 'data_rows'],
+  normalize: {
+    tags: asSet,
+    category_ids: asSet,
+    steps: project(['action', 'expected', 'data', 'call_test_id']),
+    parameters: (v) => (Array.isArray(v) ? v : []),
+    data_rows: project(['name', 'values']),
+  } as Record<string, Normalize>,
 }

@@ -47,13 +47,15 @@ const flips = computed(() => flipIds(items.value))
         <div class="small muted">
           <span v-if="data.run_environment"><i class="pi pi-server" style="font-size: 10px" /> {{ data.run_environment }}</span>
           <span v-if="data.run_build" class="mono"> <i class="pi pi-box" style="font-size: 10px" /> {{ data.run_build }}</span>
+          <span v-if="data.configuration_name"> <i class="pi pi-sliders-h" style="font-size: 10px" aria-hidden="true" /><span class="sr-only">{{ t('configurations.columnOne') }}:</span> {{ data.configuration_name }}</span>
         </div>
       </template>
     </Column>
     <Column field="status" :header="t('common.status')" style="width: 150px">
       <template #body="{ data }">
         <span class="row nowrap" style="gap: 4px">
-          <StatusTag :value="data.status" kind="result" />
+          <RouterLink v-if="data.iteration_count" :to="{ name: 'execute', params: { projectId, runId: data.run_id, executionId: data.id } }" :aria-label="t('testData.iterationsOf', { n: data.iteration_count }, data.iteration_count)"><StatusTag :value="data.status" kind="result" /></RouterLink>
+          <StatusTag v-else :value="data.status" kind="result" />
           <span v-if="flips.has(data.id)" class="flip-mark" :title="t('testExecutions.flipHint')"><i class="pi pi-sync" aria-hidden="true" /> {{ t('testExecutions.flip') }}</span>
         </span>
       </template>

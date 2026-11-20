@@ -8,16 +8,17 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 )
 
-const testCols = `id, project_id, folder_id, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, version`
+const testCols = `id, project_id, folder_id, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, version, parameters, data_rows`
 
 func scanTest(r interface{ Scan(...any) error }) (*model.TestCase, error) {
 	var t model.TestCase
 	var folder sql.NullString
-	var tags string
+	var tags, params, rows string
 	if err := r.Scan(&t.ID, &t.ProjectID, &folder, &t.Key, &t.Title, &t.Description, &t.Preconditions, &t.ExecutionType, &t.ScriptLanguage, &t.Script,
-		&t.ExpectedResult, &t.Priority, &t.Status, &t.EstimatedMin, &tags, &t.Position, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt, &t.Version); err != nil {
+		&t.ExpectedResult, &t.Priority, &t.Status, &t.EstimatedMin, &tags, &t.Position, &t.CreatedBy, &t.CreatedAt, &t.UpdatedAt, &t.Version, &params, &rows); err != nil {
 		return nil, err
 	}
+	t.Parameters, t.DataRows = decodeParams(params), decodeRows(rows)
 	t.FolderID = strPtr(folder)
 	t.Tags = decodeTags(tags)
 	t.CategoryIDs = []string{}
@@ -65,7 +66,7 @@ func ValidateTest(t *model.TestCase) error {
 	if len(t.Script) > 1<<20 {
 		return Invalidf("script is too large")
 	}
-	return nil
+	return ValidateTestData(t)
 }
 
 // CreateTest inserts a test case including steps and categories.
@@ -95,10 +96,11 @@ func (s *Store) CreateTest(ctx context.Context, tenantID string, t *model.TestCa
 			return err
 		}
 		t.Key, t.Position = key, seq
-		if _, err := c.exec(ctx, `INSERT INTO test_cases (id, tenant_id, project_id, folder_id, seq, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		if _, err := c.exec(ctx, `INSERT INTO test_cases (id, tenant_id, project_id, folder_id, seq, key, title, description, preconditions, execution_type, script_language, script, expected_result, priority, status, estimated_min, tags, position, created_by, created_at, updated_at, parameters, data_rows)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			t.ID, tenantID, t.ProjectID, nullStr(t.FolderID), seq, t.Key, t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script,
-			t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.Position, t.CreatedBy, t.CreatedAt, t.UpdatedAt); err != nil {
+			t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.Position, t.CreatedBy, t.CreatedAt, t.UpdatedAt,
+			encodeJSON(t.Parameters), encodeJSON(t.DataRows)); err != nil {
 			return mapErr(err, "test")
 		}
 		if err := setCategories(ctx, c, model.KindTest, t.ProjectID, t.ID, t.CategoryIDs); err != nil {
@@ -331,8 +333,9 @@ func (s *Store) UpdateTest(ctx context.Context, tenantID string, t *model.TestCa
 			return err
 		}
 		// AND version: a save that raced with another one fails (ErrStale)
-		res, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, updated_at = ?, version = ? WHERE id = ? AND version = ?`,
-			nullStr(t.FolderID), t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script, t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.UpdatedAt, t.Version, t.ID, old.Version)
+		res, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, updated_at = ?, version = ?, parameters = ?, data_rows = ? WHERE id = ? AND version = ?`,
+			nullStr(t.FolderID), t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script, t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.UpdatedAt, t.Version,
+			encodeJSON(t.Parameters), encodeJSON(t.DataRows), t.ID, old.Version)
 		if err != nil {
 			return err
 		}

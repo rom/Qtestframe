@@ -36,6 +36,7 @@ import CommentsPanel from './CommentsPanel.vue'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import TestExecutionsPanel from './TestExecutionsPanel.vue'
+import TestDataEditor from './TestDataEditor.vue'
 import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
@@ -47,7 +48,7 @@ import { useI18n } from 'vue-i18n'
 import { uid as newId } from '@/lib/a11y'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
-import type { Category, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
+import type { Category, DataRow, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 
@@ -120,6 +121,8 @@ function blank() {
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
     steps: [] as StepRow[],
+    parameters: [] as string[],
+    data_rows: [] as DataRow[],
   }
 }
 
@@ -183,6 +186,8 @@ async function load() {
           call_test_key: s.call_test_key,
           call_test_title: s.call_test_title,
         })),
+      parameters: [...(t.parameters ?? [])],
+      data_rows: (t.data_rows ?? []).map((r) => ({ name: r.name ?? '', values: { ...(r.values ?? {}) } })),
     }
     loaded.value = clone(bodyOf(form.value))
     await loadLinks()
@@ -589,6 +594,13 @@ const scriptPlaceholder = computed(() => {
         </span>
       </div>
     </div>
+
+    <TestDataEditor
+      v-model:parameters="form.parameters"
+      v-model:rows="form.data_rows"
+      :can-write="canWrite"
+      :texts="[form.description, form.preconditions, form.expected_result, ...form.steps.flatMap((s) => [s.action, s.expected, s.data])]"
+    />
 
     <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>

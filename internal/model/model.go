@@ -456,10 +456,15 @@ type TestCase struct {
 	Position       int        `json:"position"`
 	CategoryIDs    []string   `json:"category_ids"`
 	Steps          []TestStep `json:"steps"`
-	Version        int        `json:"version"`
-	CreatedBy      string     `json:"created_by"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	// Parameters and DataRows make the test data-driven: it is executed
+	// once per row (an iteration), with {{name}} placeholders in step texts
+	// replaced by the row's values.
+	Parameters []string  `json:"parameters"`
+	DataRows   []DataRow `json:"data_rows"`
+	Version    int       `json:"version"`
+	CreatedBy  string    `json:"created_by"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 	// Derived.
 	FolderPath   string    `json:"folder_path,omitempty"`
 	LinkedReqs   int       `json:"linked_requirements"`
@@ -495,6 +500,41 @@ type TraceLink struct {
 	TestCaseKey    string `json:"test_case_key,omitempty"`
 }
 
+// DataRow is one row of a data-driven test: values by parameter name and an
+// optional name (e.g. "admin user").
+type DataRow struct {
+	Name   string            `json:"name"`
+	Values map[string]string `json:"values"`
+}
+
+// DimensionValue is one coordinate of a configuration, e.g. Browser = Chrome.
+type DimensionValue struct {
+	Dimension string `json:"dimension"`
+	Value     string `json:"value"`
+}
+
+// Configuration is a named combination of dimension values (environment,
+// browser, OS, hardware, firmware ...) that tests are executed against.
+type Configuration struct {
+	ID          string           `json:"id"`
+	ProjectID   string           `json:"project_id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Values      []DimensionValue `json:"values"`
+	Position    int              `json:"position"`
+	CreatedBy   string           `json:"created_by"`
+	CreatedAt   time.Time        `json:"created_at"`
+	UpdatedAt   time.Time        `json:"updated_at"`
+	// Derived: number of runs that target it.
+	RunCount int `json:"run_count"`
+}
+
+// ConfigurationRef is a short reference to a configuration.
+type ConfigurationRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // TestRun is an execution campaign (cycle) over a set of tests.
 type TestRun struct {
 	ID          string     `json:"id"`
@@ -510,6 +550,9 @@ type TestRun struct {
 	CompletedAt *time.Time `json:"completed_at"`
 	// ReleaseID is the release this run tests (optional).
 	ReleaseID *string `json:"release_id"`
+	// Configurations the run targets (each test is executed once per
+	// configuration); empty for a run without configurations.
+	Configurations []ConfigurationRef `json:"configurations"`
 	// Derived.
 	Summary     map[string]int `json:"summary,omitempty"`
 	ReleaseName string         `json:"release_name,omitempty"`
@@ -529,6 +572,18 @@ type StepResult struct {
 	Evidence string `json:"evidence"`
 	// AttachmentCount is the number of files attached as evidence.
 	AttachmentCount int `json:"attachment_count"`
+	// IterationID: the iteration (data row) of a data-driven execution.
+	IterationID *string `json:"iteration_id"`
+}
+
+// Iteration is the execution of one data row of a data-driven test.
+type Iteration struct {
+	ID       string            `json:"id"`
+	Position int               `json:"position"`
+	Name     string            `json:"name"`
+	Values   map[string]string `json:"values"`
+	Status   string            `json:"status"`
+	Notes    string            `json:"notes"`
 }
 
 // Execution is one test case inside a run.
@@ -549,6 +604,14 @@ type Execution struct {
 	Position    int          `json:"position"`
 	Defects     []string     `json:"defects"`
 	StepResults []StepResult `json:"step_results,omitempty"`
+	// ConfigurationID / ConfigurationName: the configuration this
+	// execution runs in (nil without configuration).
+	ConfigurationID   *string `json:"configuration_id"`
+	ConfigurationName string  `json:"configuration_name,omitempty"`
+	// Iterations of a data-driven test (GET /executions/{id}); IterationCount
+	// is set in lists.
+	Iterations     []Iteration `json:"iterations,omitempty"`
+	IterationCount int         `json:"iteration_count"`
 	// Set by GET /tests/{id}/executions (history across runs).
 	RunName        string     `json:"run_name,omitempty"`
 	RunStatus      string     `json:"run_status,omitempty"`

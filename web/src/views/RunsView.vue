@@ -20,6 +20,7 @@ import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 import Checkbox from 'primevue/checkbox'
 import { useReleaseOptions } from '@/composables/releases'
+import { useConfigurations } from '@/composables/configurations'
 import { runReleaseName } from '@/lib/releases'
 import QueryInput from '@/components/QueryInput.vue'
 import StatusTag from '@/components/StatusTag.vue'
@@ -77,14 +78,18 @@ async function load() {
   }
 }
 const rel = useReleaseOptions(() => proj.pid)
+const cfg = useConfigurations(() => proj.pid)
 onMounted(() => {
   load()
-  if (auth.can(P.projectRead)) rel.load()
+  if (auth.can(P.projectRead)) {
+    rel.load()
+    cfg.load()
+  }
 })
 
 // ---------- create ----------
 const dialog = ref(false)
-const form = ref({ name: '', description: '', environment: '', build: '', query: '', release_id: '' })
+const form = ref({ name: '', description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [] as string[] })
 const pickedTests = ref<TestCase[]>([])
 const folderKeys = ref<Record<string, { checked: boolean; partialChecked: boolean }>>({})
 const folderExpanded = ref<Record<string, boolean>>({})
@@ -98,7 +103,7 @@ const previewError = ref<unknown>(null)
 
 function openCreate() {
   const d = new Date()
-  form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '', release_id: '' }
+  form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '', release_id: '', configuration_ids: [] }
   pickedTests.value = []
   folderKeys.value = {}
   folderExpanded.value = allKeys(testFolders.value)
@@ -249,6 +254,7 @@ const runColumns = computed<ColumnDef[]>(() => [
   { field: 'environment', header: t('common.environment') },
   { field: 'build', header: t('common.build') },
   { field: 'release', header: t('releasesView.release'), sortField: 'release_id' },
+  { field: 'configurations', header: t('configurations.column'), sortable: false },
   { field: 'progress', header: t('runs.progress'), sortable: false },
   { field: 'executions', header: t('runs.executions'), sortable: false },
   { field: 'created_by', header: t('workspace.colCreatedBy') },
@@ -257,7 +263,7 @@ const runColumns = computed<ColumnDef[]>(() => [
 const runLayout = useColumnLayout(
   () => 'qtf.cols.runs',
   runColumns,
-  () => ['status', 'environment', 'build', 'release', 'progress', 'executions', 'created_at'],
+  () => ['status', 'environment', 'build', 'release', 'configurations', 'progress', 'executions', 'created_at'],
 )
 </script>
 
@@ -329,6 +335,14 @@ const runLayout = useColumnLayout(
           <RouterLink v-if="runReleaseName(data, rel.names.value)" :to="{ name: 'releases', params: { projectId: proj.pid }, query: { r: data.release_id } }" @click.stop><Tag :value="runReleaseName(data, rel.names.value)" icon="pi pi-box" severity="secondary" /></RouterLink>
         </template>
       </Column>
+      <Column v-else-if="c.field === 'configurations'" column-key="configurations" :header="c.header" style="min-width: 140px">
+        <template #body="{ data }">
+          <span v-if="data.configurations?.length" class="row" style="gap: 4px">
+            <Tag v-for="c2 in data.configurations.slice(0, 3)" :key="c2.id" :value="c2.name" icon="pi pi-sliders-h" severity="secondary" />
+            <span v-if="data.configurations.length > 3" class="small muted">{{ t('configurations.more', { n: data.configurations.length - 3 }) }}</span>
+          </span>
+        </template>
+      </Column>
       <Column v-else-if="c.field === 'progress'" column-key="progress" :header="c.header" style="min-width: 220px">
         <template #body="{ data }"><SummaryBar :summary="data.summary" show-text /></template>
       </Column>
@@ -355,6 +369,12 @@ const runLayout = useColumnLayout(
         <div v-if="rel.releases.value.length" v-field class="field full">
           <label for="run-release">{{ t('releasesView.release') }}</label>
           <Select v-model="form.release_id" input-id="run-release" :options="rel.options.value" option-label="label" option-value="value" />
+        </div>
+        <div v-if="cfg.configurations.value.length" class="field full">
+          <label for="run-configs">{{ t('configurations.runField') }}</label>
+          <HelpTip id="run.configurations" :label="t('configurations.runField')" />
+          <MultiSelect v-model="form.configuration_ids" input-id="run-configs" :options="cfg.options.value" option-label="label" option-value="value" display="chip" filter :placeholder="t('configurations.runNone')" aria-describedby="run-configs-help" />
+          <small id="run-configs-help" class="muted">{{ t('configurations.runHelp') }}</small>
         </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>
       </div>

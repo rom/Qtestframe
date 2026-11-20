@@ -35,6 +35,7 @@ func cmdReport(args []string, env Env) error {
 	fs.BoolVar(&o.CreateRun, "create-run", false, "create the run named by --run when the project has none")
 	fs.StringVar(&o.Build, "build", "", "build of a run created with --create-run")
 	fs.StringVar(&o.Environment, "environment", "", "environment of a run created with --create-run")
+	fs.StringVar(&o.Configuration, "configuration", os.Getenv("QTF_CONFIGURATION"), "configuration (name or id) the results were obtained in; added to the run when it does not target it yet (default $QTF_CONFIGURATION)")
 	fs.Var((*stringList)(&o.JUnit), "junit", "JUnit XML report (file or glob; repeatable)")
 	fs.Var((*stringList)(&o.JSON), "json", `results in the JSON import format {"results":[...]} (file or glob; repeatable)`)
 	fs.BoolVar(&o.CreateMissing, "create-missing", false, "create draft automated tests for JUnit test cases without a test key (needs test.write)")

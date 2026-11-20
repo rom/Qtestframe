@@ -33,6 +33,7 @@ Select **New run** and fill in:
 
 - **Name**, for example *Sprint 12 regression* (a dated default is suggested);
 - **Description**, **Environment** (e.g. *staging*) and **Build** (e.g. *1.4.2+sha*): free text that is shown with the results and passed to automated scripts;
+- **Configurations** (when the project has [test configurations](administration.md#test-configurations)): the configurations the run targets, for example *Chrome / Windows* and *Firefox / Linux*. Each test is then executed once per configuration; see [Configurations in a run](#configurations-in-a-run). Without configurations each test is executed once;
 - **Tests to include**: the union of three tabs:
   - **Tests**: **Pick tests…** to select individual tests;
   - **Folders**: tests in the selected folders, including subfolders;
@@ -52,6 +53,18 @@ When a test is added, its current steps (with shared steps expanded) are copied 
 - **Add tests** adds more tests; **CI import** shows how a pipeline reports results; **Edit run** changes name, description, environment and build; **Delete** removes the run with all its results.
 - The table lists every execution with test, result, **Assignee**, **Executed by**, **Defects**, **Finished** time and duration. Filter it, for example `status:failed` or `assignee:anna`.
 - Per row: **Mark passed** and **Mark failed** record a result directly; the play button opens the execution in the runner.
+
+## Configurations in a run
+
+A run can target one or more [test configurations](administration.md#test-configurations). Adding a test then creates **one execution per test and configuration**: a run with 10 tests and 3 configurations has 30 executions.
+
+- The run list shows the configurations of each run in the **Configurations** column; the filter `configuration:Chrome` (or `config:`) finds runs that target a configuration.
+- On the run page, **Results per configuration** shows progress and pass rate of each configuration; select a configuration's name to see only its executions, or use **Show configuration** above the table. The **Configuration** column names the configuration of each execution, and the filter `configuration:"Chrome / Windows"` works in the execution table as well.
+- **Edit run → Configurations** changes the configurations later. An added configuration gets an execution for every test of the run. A removed configuration's executions are deleted, which is refused while one of them has a result (set them back to *Not run* first). Adding the first configuration to a run without configurations assigns the existing executions to that configuration; removing the last one keeps its executions as executions without configuration.
+- Prerequisites ([dependencies](tests.md#dependencies)) count per configuration: in a run, a prerequisite counts as passed when it passed in the **same configuration**.
+- The runner shows the configuration in its header, and the [execution history](tests.md#execution-history) of a test shows the configuration of each execution.
+
+Runs without configurations work exactly as before. How results in several configurations count for requirements is described in [How coverage is calculated](traceability-and-coverage.md#how-coverage-is-calculated).
 
 ## Record many results at once
 
@@ -85,6 +98,18 @@ The runner shows one execution at a time. Its header tells you which execution o
 6. Select **Save**, or **Save & next** to save and open the next execution. On the last execution the button is **Save & finish**: it saves and returns to the run page, where the run is completed once every test has a result; if some still have none, it says how many and opens the first of them. **Previous** and **Next** move between executions. *Unsaved changes* reminds you to save.
 
 A test without steps shows only the overall result, notes and defects.
+
+### Data-driven tests: iterations
+
+A [data-driven test](tests.md#data-driven-tests) has one **iteration** per row of its test data. The runner lists the iterations above the steps, each with its result; select one to work on it. It shows the values of the iteration's row, and the steps, the preconditions and the expected results with the placeholders replaced by these values.
+
+- With steps, every iteration has its own step results, evidence and actual results. Its result is derived from its steps like the result of a test. Marking the last step of an iteration moves on to the first step of the next one.
+- Without steps, mark each iteration **Passed**, **Failed**, **Blocked** or **Skipped** with the buttons below the values (or the keys P, F, B and S).
+- Each iteration has its own notes.
+
+The **overall result** of the execution follows the iterations, evaluated top-down: **Failed** if an iteration failed; else **Blocked** if one is blocked; **Passed** when all iterations passed or were skipped (at least one passed); **Skipped** when all were skipped; **Not run** when none has a result; otherwise **In progress**. As for steps, you can choose another overall result by hand. A result set directly on the execution (with **Mark passed** in the run, a bulk result or a CI import) is recorded as the overall result; the iterations keep their results, and the next change of an iteration derives the overall result again.
+
+The run page shows the number of iterations next to the result of a data-driven execution.
 
 ### Keyboard shortcuts
 
@@ -162,6 +187,7 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 - Test keys are matched without regard to case within the run's project. Tests that are not in the run yet are added.
 - The answer reports how many executions were `updated` and lists `unknown` keys, which were skipped.
 - An invalid status stops the import with an error; results before it stay applied.
+- **Configurations:** when the run targets [configurations](#configurations-in-a-run), name the configuration of the results with `?configuration=NAME` in the address (`.../results?configuration=Chrome%20%2F%20Windows`) or per result with the field `"configuration": "Chrome / Windows"` (name or ID). A configuration the run does not target yet is added to it. Without a configuration, a run with exactly one configuration uses it and a run without configurations records the results without configuration, as before; a run with several configurations answers with an error.
 
 Keep the token in your CI system's secret store, never in the repository. A token is bound to one organisation and never has more rights than its owner.
 
@@ -192,6 +218,7 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/junit" \
 - The answer lists, besides `updated`, `unknown` and `rejected`, the names of test cases without a key under `unmapped`.
 - Add `?create_missing=true` to create a draft automated test for every test case without a key (titled like the test case) and record its result. A later import finds the test again by its title. This needs the right to write tests.
 - Several files can be sent at once as a multipart upload (`-F file=@a.xml -F file=@b.xml`); together they may be at most 20 MB.
+- `?configuration=NAME` records the results in that configuration, as for the JSON format.
 
 ### The qtestframe report command
 
@@ -207,6 +234,7 @@ qtestframe report --project SHOP --run "Nightly $BUILD_NUMBER" --create-run \
 - `--run-id ID` reports into a known run instead of `--project`/`--run`.
 - `--junit` and `--json` (the JSON format above) take files or patterns and can be repeated.
 - `--create-missing` creates tests for test cases without a key, as above.
+- `--configuration NAME` (or `QTF_CONFIGURATION`) records the results in that configuration; the run gets the configuration if it does not target it yet. Run the command once per configuration, e.g. once per browser.
 - The command prints how many results were recorded and lists unknown keys, test cases without a key and rejected results with the reason. It ends with an error code when the upload fails, and with `--fail-on-unknown` also when results matched no test.
 
 ### Playwright reporter
@@ -221,7 +249,7 @@ reporter: [
 ],
 ```
 
-It reads the server address and token from `QTF_URL` and `QTF_TOKEN`, takes the key from the annotation, tag or title, writes the error and the `test.step()` titles with their result into the output and uploads screenshots, traces and other attachments of failed tests as attachments of the execution. If reporting fails, it only logs a message; your test run is not affected.
+It reads the server address and token from `QTF_URL` and `QTF_TOKEN`; the option `configuration` (or `QTF_CONFIGURATION`) names the [configuration](#configurations-in-a-run) of the results. It takes the key from the annotation, tag or title, writes the error and the `test.step()` titles with their result into the output and uploads screenshots, traces and other attachments of failed tests as attachments of the execution. If reporting fails, it only logs a message; your test run is not affected.
 
 ## Links of a run
 

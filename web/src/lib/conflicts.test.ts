@@ -63,3 +63,10 @@ describe('item fields', () => {
     expect(fieldConflicts(TEST_FIELDS.fields, tc, { ...tc, title: 'U' }, mine, TEST_FIELDS.normalize)).toEqual([{ field: 'title', theirs: 'U', mine: 'T', both: false }])
   })
 })
+
+it('compares test data', () => {
+  const base = { parameters: ['user'], data_rows: [{ name: 'a', values: { user: 'x' } }] }
+  const theirs = { parameters: ['user'], data_rows: [{ name: 'a', values: { user: 'y' } }] }
+  expect(fieldConflicts(TEST_FIELDS.fields, base, theirs, base, TEST_FIELDS.normalize).map((c) => c.field)).toEqual(['data_rows'])
+  expect(fieldConflicts(['parameters'], { parameters: null }, { parameters: ['p'] }, {}, TEST_FIELDS.normalize)).toEqual([{ field: 'parameters', theirs: ['p'], mine: [], both: false }])
+})

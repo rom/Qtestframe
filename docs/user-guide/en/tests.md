@@ -57,6 +57,22 @@ A step can **call** another test of the same project instead of having its own a
 
 When a run is created, the call is replaced by the called test's steps (marked `[KEY]`). Calls can be nested up to five levels. A test cannot call itself, and calls may not form a cycle. The called test shows **Used by:** with all tests that call it. If you delete a called test, the call becomes an empty step.
 
+## Data-driven tests
+
+A data-driven (parameterised) test is written once and executed with several sets of data, for example the same login with a customer, a business and an administrator account.
+
+1. In the test editor, open the **Test data** section below the steps and select **Add parameter**. Name the parameter, for example `username` (letters, digits, `_`, `.` and `-`, not starting with a digit; at most 50 parameters).
+2. Select **Add row** for every set of data and fill in the values. A row can have a name (*Customer*); without one it is called *Row 1*, *Row 2* … The arrows move rows, the bin removes one (at most 500 rows).
+3. Use the parameters in the steps, the preconditions, the description and the expected results as `{{username}}` (spaces inside the braces are allowed: `{{ username }}`).
+
+**Paste table** takes cells copied from Excel, LibreOffice or Google Sheets (or comma- or semicolon-separated text). Tick whether the first line names the parameters and whether the first column holds the row names, and whether the pasted rows replace the test data or are added to it. **Copy table** copies the test data as a table you can paste into a spreadsheet. A placeholder that is not a parameter is left as it is; the editor warns about such placeholders, as they are usually typos.
+
+When the test is added to a run, every row becomes an **iteration** of the execution with its own copy of the steps, with the placeholders replaced by the row's values. Changing the test data afterwards does not change existing runs, only new ones. A test without rows is executed once, as before. See [Data-driven tests: iterations](runs.md#data-driven-tests-iterations) for how iterations are executed and how the overall result is derived.
+
+**Shared steps and parameters:** steps called from another test ([shared steps](#shared-steps)) are resolved with the parameters of the **calling** test, so a shared *Sign in as {{username}}* works with each row of every test that calls it. The test data of the called test is not used when it is called; it applies only when that test itself is executed. Placeholders the calling test does not define stay unchanged.
+
+The test data is part of the test's version history and of the export (**Export → Test data**: one line per row and parameter).
+
 ## Categories
 
 Categories classify tests and requirements along **dimensions**. New projects get these defaults:
@@ -128,7 +144,9 @@ The **Executions** tab lists every execution of the test in all runs, newest fir
 
 ![The executions tab of a test with results across runs](../images/en-tests-executions.png)
 
-The table column **Last result** shows the most recent result. In queries, `last_result:failed` finds tests whose latest result failed, and `defect:SHOP-*` tests with such a defect.
+In runs with [configurations](runs.md#configurations-in-a-run) the configuration of each execution is shown below the run, and a data-driven execution links to its iterations in the runner.
+
+The table column **Last result** shows the most recent result (in any configuration). In queries, `last_result:failed` finds tests whose latest result failed, and `defect:SHOP-*` tests with such a defect.
 
 A result marked **Flip** differs from the previous passed or failed result of the test: there the test started to fail, or passed again.
 

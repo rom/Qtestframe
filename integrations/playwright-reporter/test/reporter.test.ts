@@ -59,13 +59,15 @@ function fakeServer(opts: { runs?: any[]; fail?: string } = {}) {
     if (path === '/projects') return json(200, { items: [{ id: 'p1', key: 'SHOP' }] });
     if (path === '/projects/p1/runs' && method === 'GET') return json(200, { items: opts.runs ?? [] });
     if (path === '/projects/p1/runs') return json(201, { id: 'run1' });
-    if (path.endsWith('/results')) return json(200, { updated: body.results.length, unknown: ['SHOP-TC-99'], rejected: [{ test_key: 'SHOP-TC-2', reason: 'draft' }] });
+    const route = u.pathname.replace('/api/v1', '');
+    if (route.endsWith('/results')) return json(200, { updated: body.results.length, unknown: ['SHOP-TC-99'], rejected: [{ test_key: 'SHOP-TC-2', reason: 'draft' }] });
     if (path.includes('/junit')) return json(200, { updated: 1, unknown: [], unmapped: [], rejected: [], created: [{ key: 'SHOP-TC-50', title: 'cart › empty' }] });
     if (path.endsWith('/executions'))
       return json(200, {
         items: [
           { id: 'e1', test_key: 'SHOP-TC-1', test_title: 'Pay' },
           { id: 'e50', test_key: 'SHOP-TC-50', test_title: 'cart › empty' },
+          { id: 'e1ff', test_key: 'SHOP-TC-1', test_title: 'Pay', configuration_id: 'cff', configuration_name: 'Firefox' },
         ],
       });
     if (path.endsWith('/attachments')) return json(201, { id: 'f1' });
@@ -267,6 +269,22 @@ describe('QtestframeReporter', () => {
     await r.onEnd({ status: 'passed' } as any);
     expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual(['GET /projects', 'GET /projects/p1/runs', 'POST /runs/new/results']);
     expect(logs).toContain('1 test(s) without a test key were not reported: no key');
+  });
+
+  it('names the configuration of the results and attaches evidence to its executions', async () => {
+    const calls = fakeServer();
+    vi.stubEnv('QTF_CONFIGURATION', 'firefox');
+    const r = new QtestframeReporter({ url: 'https://qtf.example', token: 'qtf_tok', runId: 'r1', createMissing: true, logger: () => {} });
+    r.onBegin({} as any, {} as any);
+    r.onTestEnd(fakeTest({ title: 'Pay SHOP-TC-1', outcome: 'unexpected' }), fakeResult({ status: 'failed', attachments: [{ name: 's', contentType: 'image/png', body: Buffer.from('x') }] }));
+    r.onTestEnd(fakeTest({ title: 'no key' }), fakeResult({ status: 'passed' }));
+    await r.onEnd({} as any);
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+      'POST /runs/r1/results?configuration=firefox',
+      'POST /runs/r1/junit?create_missing=true&configuration=firefox',
+      'GET /runs/r1/executions',
+      'POST /executions/e1ff/attachments',
+    ]);
   });
 
   it('uses runId directly and creates a dated run when no name is given', async () => {

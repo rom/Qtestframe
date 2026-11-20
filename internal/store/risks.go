@@ -191,7 +191,7 @@ func (s *Store) decorateRisks(ctx context.Context, tenantID, projectID string, r
 		return err
 	}
 	r2t, _ := LinkIndex(links)
-	last, err := s.LastResults(ctx, tenantID, projectID)
+	last, err := s.LastConfigResults(ctx, tenantID, projectID)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func (s *Store) decorateRisks(ctx context.Context, tenantID, projectID string, r
 			if len(r2t[q]) > 0 {
 				k.Covered++
 			}
-			if Coverage(r2t[q], last) == model.ResultPassed {
+			if CoverageOf(r2t[q], last) == model.ResultPassed {
 				k.Verified++
 			}
 		}

@@ -31,12 +31,12 @@ var (
 			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness"},
 	}
 	runSchema = &query.Schema{
-		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
-		Aliases: map[string]string{"env": "environment"},
+		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
+		Aliases: map[string]string{"env": "environment", "config": "configuration", "configurations": "configuration"},
 	}
 	executionSchema = &query.Schema{
-		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect", "mention"},
-		Aliases: map[string]string{"defects": "defect", "mentions": "mention"},
+		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect", "mention", "configuration"},
+		Aliases: map[string]string{"defects": "defect", "mentions": "mention", "config": "configuration"},
 	}
 )
 
@@ -58,9 +58,11 @@ type projectContext struct {
 	openDefects map[string]int
 	riskLevel   map[string]string
 	last        map[string]string
-	comments    map[string]int
-	relCount    map[string]int
-	defects     map[string][]string
+	// cfgResults: latest result of every test per configuration
+	cfgResults store.ConfigResults
+	comments   map[string]int
+	relCount   map[string]int
+	defects    map[string][]string
 	// requirement id → related keys; parent/child keys of refines relations
 	related, parents, children map[string][]string
 	// item id → references to related items (both directions)
@@ -106,6 +108,9 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 		return nil, err
 	}
 	if pc.flaky, err = s.Store.FlakyScores(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.cfgResults, err = s.Store.LastConfigResults(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
 	if pc.openDefects, err = s.Store.OpenDefectCounts(ctx, tenantID, p.ID); err != nil {
@@ -188,7 +193,7 @@ func (pc *projectContext) folderPath(id *string) string {
 func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.FolderPath = pc.folderPath(r.FolderID)
 	r.LinkedTests = len(pc.r2t[r.ID])
-	r.Coverage = store.Coverage(pc.r2t[r.ID], pc.last)
+	r.Coverage = store.CoverageOf(pc.r2t[r.ID], pc.cfgResults)
 	r.CommentCount = pc.comments[r.ID]
 	r.Relations = pc.relCount[r.ID]
 	r.RelationRefs = pc.refs[r.ID]
@@ -290,14 +295,18 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 }
 
 func runRecord(r *model.TestRun) query.MapRecord {
+	cfgs := make([]string, 0, len(r.Configurations))
+	for _, c := range r.Configurations {
+		cfgs = append(cfgs, c.Name)
+	}
 	return query.MapRecord{"id": {r.ID}, "name": {r.Name}, "description": {r.Description}, "status": {r.Status},
-		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}}
+		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs}
 }
 
 func executionRecord(e *model.Execution) query.MapRecord {
 	return query.MapRecord{"id": {e.ID}, "key": {e.TestKey}, "title": {e.TestTitle}, "status": {e.Status},
 		"assignee": {e.Assignee}, "executed_by": {e.ExecutedBy}, "notes": {e.Notes}, "output": {e.Output}, "defect": e.Defects,
-		"mention": mentions(e.Assignee, e.Notes)}
+		"mention": mentions(e.Assignee, e.Notes), "configuration": {e.ConfigurationName}}
 }
 
 // folderFilter returns a predicate selecting items in folder (and

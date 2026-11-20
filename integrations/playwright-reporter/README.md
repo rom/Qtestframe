@@ -60,6 +60,7 @@ export default defineConfig({
 | `runId` | `$QTF_RUN_ID` | Id of an existing run (wins over `project`/`run`). |
 | `createRun` | `true` when no `run` is given, else `false` | Create the run when the project has none of that name. |
 | `build`, `environment` | `$QTF_BUILD`, `$QTF_ENVIRONMENT` | Stored on a created run. |
+| `configuration` | `$QTF_CONFIGURATION` | Configuration (name or id) of the results, e.g. `Chrome / Windows`. The run gets the configuration when it does not target it yet; evidence is attached to the executions in that configuration. Without it, results go to the run's only configuration, or are recorded without configuration. |
 | `createMissing` | `false` | Create a draft automated test (titled `describe › test`) for each Playwright test without a key and record its result. Later runs find the test again by its title. Needs `test.write`. |
 | `keyPattern` | `/[A-Z][A-Z0-9]{1,15}-TC-\d+/` | Pattern of a test key in tags and titles (RegExp or string). |
 | `attachEvidence` | `true` | Upload the attachments of failed tests (`screenshot`, `trace`, `video`, `error-context`, your own `testInfo.attach()`). |
