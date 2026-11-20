@@ -907,6 +907,9 @@ with `kind` = `attachment` | `document` | `report` | `avatar` | `icon`.
 | DELETE | `/{type}/{id}/attachments/{file_id}` | same | unlink; an `attachment` file without remaining links is deleted |
 | GET | `/projects/{pid}/documents?q=&kind=` | project.read | document archive: every file of the project (attachments, documents, reports) |
 | POST | `/projects/{pid}/documents` | `requirement.write` or `test.write` | multipart upload → File (`kind: document`) |
+| POST | `/projects/{pid}/documents/bulk` | project.read + uploader or project.update per file | `{"ids":[...], "add_tags"?, "remove_tags"?, "description"?}` → `{"updated":[{id,name}], "skipped":[{id,name,reason:"not_allowed"}]}` |
+| DELETE | `/projects/{pid}/documents/bulk` | as above | `{"ids":[...]}` → `{"deleted": n, "skipped"}` |
+| POST | `/projects/{pid}/documents/zip` | project.read | `{"ids":[...]}` → `application/zip` with the files (unique names; at most 512 MB together, else 400) |
 
 Archive query fields: `name`, `description`, `tag`, `kind`, `type`
 (content type), `uploaded_by`, `created_at`, `size`, `linked` (keys of

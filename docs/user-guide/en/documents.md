@@ -36,6 +36,17 @@ The maximum size is 25 MB per file unless your administrator configured another 
 - **Preview** shows images (PNG, JPEG, GIF, WebP), PDF files and plain text directly in the browser.
 - **Download** saves the file. Other file types are always downloaded rather than shown, for safety.
 
+## Work with many files at once
+
+Tick files in the list (the header checkbox ticks the whole page). The toolbar offers:
+
+- **Download as ZIP**: one archive with all ticked files (at most 512 MB together). Files with the same name are numbered, for example *plan (2).pdf*. Anyone who can see the archive can download.
+- **Add tags** / **Remove tags** for all ticked files.
+- **Description**: replaces the description of each file (empty clears it).
+- **Delete**, after confirmation.
+
+Changing and deleting work on the files you may change: your own uploads, or every file with permission to change the project. When the selection also has other files, the toolbar says how many of them you can change, and only those are changed. Tag and description changes can be undone with the undo button.
+
 ## Link documents to items
 
 A file in the archive can be attached to any number of requirements, tests, runs and executions of the same project, without copying it. In the **Attachments** tab of an item, choose **Attach from archive** and pick the files. The archive then lists the item under **Linked to**.

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Document archive: every file of the project (attachments, documents, reports).
 import { tagClass } from '@/lib/tagColors'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -17,7 +17,7 @@ import FileDropZone from '@/components/FileDropZone.vue'
 import UploadQueue from '@/components/UploadQueue.vue'
 import FilePreviewDialog from '@/components/FilePreviewDialog.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
-import { api, ApiError, asItems, errorMessage } from '@/lib/api'
+import { api, ApiError, asItems, errorMessage, postDownload } from '@/lib/api'
 import { ARCHIVE_KINDS, archiveParams, contentUrl, fileIcon, formatFileSize, linkIcon, linkTarget, previewKind, sortFiles, tagsField } from '@/lib/files'
 import { formatDateTime, formatFullDateTime, getFormatLocale } from '@/lib/format'
 import { P } from '@/lib/permissions'
@@ -32,6 +32,9 @@ import { useNotify } from '@/composables/notify'
 import { useUploads } from '@/composables/uploads'
 import { useI18n } from 'vue-i18n'
 import HelpLink from '@/guide/HelpLink.vue'
+import SelectButton from 'primevue/selectbutton'
+import { valuesBefore } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -42,6 +45,93 @@ const { t } = useI18n()
 const maxMb = computed(() => (meta.meta as { max_upload_mb?: number }).max_upload_mb || undefined)
 
 const files = ref<FileInfo[]>([])
+
+// ---------- bulk ----------
+const selection = ref<FileInfo[]>([])
+const selectedIds = computed(() => selection.value.map((f) => f.id))
+/** selected files the user may change (uploader or project manager) */
+const manageable = computed(() => selection.value.filter((f) => canManage(f)))
+const zipping = ref(false)
+const tagDialog = ref(false)
+const tagMode = ref<'add' | 'remove'>('add')
+const tagValues = ref<string[]>([])
+const descDialog = ref(false)
+const descValue = ref('')
+watch(files, (list) => {
+  const ids = new Set(list.map((f) => f.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+interface BulkFile {
+  id: string
+  name: string
+  reason?: string
+}
+async function bulkZip() {
+  zipping.value = true
+  try {
+    await postDownload(`/projects/${proj.pid}/documents/zip`, { ids: selectedIds.value }, `${proj.project?.key ?? 'documents'}.zip`)
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    zipping.value = false
+  }
+}
+async function bulkUpdate(body: Record<string, unknown>) {
+  const ids = manageable.value.map((f) => f.id)
+  if (!ids.length) return
+  const before = valuesBefore(files.value, ids, ['tags', 'description'])
+  const path = `/projects/${proj.pid}/documents/bulk`
+  try {
+    const res = await api.post<{ updated: BulkFile[]; skipped: BulkFile[] }>(path, { ids, ...body })
+    const done = new Set(res.updated.map((u) => u.id))
+    const undo = before.filter((b) => done.has(b.id))
+    if (undo.length) {
+      recordUndo(
+        entry(
+          t('documents.bulk.undo', { n: undo.length }),
+          async () => {
+            for (const b of undo) await api.patch(`/files/${b.id}`, b.before)
+          },
+          () => api.post(path, { ids: undo.map((b) => b.id), ...body }),
+        ),
+      )
+    }
+    notify.ok(t('documents.bulk.updated', { n: res.updated.length }, res.updated.length))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+function openTags(mode: 'add' | 'remove') {
+  tagMode.value = mode
+  tagValues.value = []
+  tagDialog.value = true
+}
+async function applyTags() {
+  tagDialog.value = false
+  if (tagValues.value.length) await bulkUpdate(tagMode.value === 'add' ? { add_tags: tagValues.value } : { remove_tags: tagValues.value })
+}
+function openDesc() {
+  descValue.value = ''
+  descDialog.value = true
+}
+async function applyDesc() {
+  descDialog.value = false
+  await bulkUpdate({ description: descValue.value.trim() })
+}
+function bulkDelete() {
+  const ids = manageable.value.map((f) => f.id)
+  notify.confirmDanger(t('documents.bulk.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      const res = await api.del<{ deleted: number; skipped: BulkFile[] }>(`/projects/${proj.pid}/documents/bulk`, { ids })
+      notify.ok(t('documents.bulk.deleted', { n: res.deleted }, res.deleted))
+      selection.value = []
+      await load()
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
 const loading = ref(false)
 const error = ref<unknown>(null)
 const q = ref('')
@@ -174,8 +264,21 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
       />
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
     </div>
+    <div v-if="selection.length" class="bulkbar" role="toolbar" :aria-label="t('documents.bulk.toolbar')">
+      <b>{{ t('common.selected', { count: selection.length }) }}</b>
+      <Button :label="t('documents.bulk.zip')" icon="pi pi-download" size="small" severity="secondary" outlined :loading="zipping" @click="bulkZip" />
+      <template v-if="manageable.length">
+        <Button :label="t('documents.bulk.addTags')" icon="pi pi-tag" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openTags('add')" />
+        <Button :label="t('documents.bulk.removeTags')" icon="pi pi-minus" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openTags('remove')" />
+        <Button :label="t('documents.bulk.description')" icon="pi pi-align-left" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openDesc" />
+        <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+        <span v-if="manageable.length < selection.length" class="small muted">{{ t('documents.bulk.onlyYours', { n: manageable.length, total: selection.length }) }}</span>
+      </template>
+      <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+    </div>
     <DataTable
       :ref="docLayout.bind"
+      v-model:selection="selection"
       v-stack
       :value="files"
       data-key="id"
@@ -190,6 +293,7 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
       reorderable-columns
       @column-reorder="docLayout.onReorder()"
     >
+      <Column selection-mode="multiple" column-key="_select" :reorderable-column="false" style="width: 2.6rem" />
       <Column field="name" :header="t('common.name')" sortable :reorderable-column="false" style="min-width: 220px" body-class="stack-main">
         <template #body="{ data }">
           <div class="row nowrap" style="min-width: 0">
@@ -271,9 +375,39 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
     </form>
   </Dialog>
   <FilePreviewDialog v-model:visible="previewOpen" :file="preview" />
+  <Dialog v-model:visible="tagDialog" :header="tagMode === 'add' ? t('documents.bulk.addTagsHeader', { n: manageable.length }, manageable.length) : t('documents.bulk.removeTagsHeader', { n: manageable.length }, manageable.length)" modal style="width: min(460px, 96vw)">
+    <div class="bulk-form">
+      <SelectButton v-model="tagMode" :options="[{ l: t('common.add'), v: 'add' }, { l: t('common.remove'), v: 'remove' }]" option-label="l" option-value="v" :allow-empty="false" :aria-label="t('common.tags')" />
+      <TagsInput v-model="tagValues" :aria-label="t('common.tags')" />
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="tagDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!tagValues.length" @click="applyTags" />
+    </template>
+  </Dialog>
+  <Dialog v-model:visible="descDialog" :header="t('documents.bulk.descHeader', { n: manageable.length }, manageable.length)" modal style="width: min(480px, 96vw)">
+    <label for="bk-doc-desc" class="block-label">{{ t('common.description') }}</label>
+    <Textarea id="bk-doc-desc" v-model="descValue" rows="3" auto-resize fluid aria-describedby="bk-doc-desc-help" />
+    <small id="bk-doc-desc-help" class="muted">{{ t('documents.bulk.descHelp') }}</small>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="descDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" @click="applyDesc" />
+    </template>
+  </Dialog>
 </template>
 
 <style scoped>
+.bulk-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.block-label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
 .doc-name {
   font-weight: 600;
   text-align: left;
