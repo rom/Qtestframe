@@ -369,6 +369,8 @@ export interface Revision {
   changed_fields: string[] | null
   snapshot: Record<string, unknown> | string | null
   user_email: string
+  user_name?: string
+  user_avatar?: string
   created_at: string
 }
 
@@ -431,6 +433,8 @@ export interface AuditEntry {
   tenant_id: string
   user_id: string
   user_email: string
+  user_name?: string
+  user_avatar?: string
   action: string
   entity_type: string
   entity_id: string
@@ -454,6 +458,8 @@ export interface Meta {
   run_statuses: string[]
   result_statuses: string[]
   roles: string[]
+  /** Language packs of the requirement-language analysis. */
+  analysis_languages: string[]
   /** Server default for creating a linked test with each new requirement. */
   auto_create_test?: boolean
 }
@@ -490,6 +496,8 @@ export interface LanguageIssue {
   message: string
   offset: number
   length: number
+  /** Values for the translated message (term, keyword, keywords, words, max, examples). */
+  params?: Record<string, string>
 }
 
 export interface Analysis {
@@ -497,6 +505,8 @@ export interface Analysis {
   keywords: KeywordHit[] | null
   issues: LanguageIssue[] | null
   score: number
+  /** Language pack used, e.g. "en" or "sv". */
+  language?: string
 }
 
 export interface Traceability {

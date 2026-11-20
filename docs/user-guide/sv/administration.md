@@ -76,7 +76,7 @@ Använd den som bearer-token: `Authorization: Bearer qtf_…`. En nyckel hör ti
 
 ## Händelselogg
 
-*(Ansvarig)* **Administration → Händelselogg** registrerar vem som gjorde vad och när i organisationen: skapande, ändring och borttagning av objekt, in- och utloggningar, ändringar av medlemskap med mera. De nyaste posterna visas först.
+*(Ansvarig)* **Administration → Händelselogg** registrerar vem som gjorde vad och när i organisationen: skapande, ändring och borttagning av objekt, in- och utloggningar, ändringar av medlemskap med mera. De nyaste posterna visas först. Varje post visar avataren för den som utförde händelsen.
 
 ![Händelseloggen med tid, användare, åtgärd, objekt och detaljer](../images/sv-admin-audit.png)
 

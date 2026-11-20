@@ -18,7 +18,8 @@ describe('issueParams', () => {
     expect(issueParams(issue('ambiguous-term', 'changed wording'), '')).toBeNull()
   })
   it('handles keyword rules', () => {
-    expect(issueParams(issue('missing-keyword', 'no obligation keyword (MUST, SHALL, SHOULD, MAY, ...) found'))).toEqual({})
+    expect(issueParams(issue('missing-keyword', 'no obligation keyword (MUST, SHALL, SHOULD, MAY, ...) found'))).toEqual({ examples: 'MUST, SHALL, SHOULD, MAY' })
+    expect(issueParams(issue('missing-keyword', 'none'))).toEqual({ examples: 'MUST, SHALL, SHOULD, MAY' })
     expect(issueParams(issue('lowercase-keyword', '"shall" is not in uppercase; per RFC 8174 only uppercase SHALL has normative meaning'))).toEqual({
       term: 'shall',
       keyword: 'SHALL',
@@ -34,6 +35,12 @@ describe('issueParams', () => {
     expect(issueParams(issue('long-sentence', 'sentence has 52 words (more than 40); consider splitting it'))).toEqual({ words: '52', max: '40' })
     expect(issueParams(issue('long-sentence', 'too long'))).toBeNull()
   })
+  it('prefers structured params from the API', () => {
+    const i = { ...issue('ambiguous-negation', 'whatever', 0, 10), params: { term: 'måste inte' } }
+    expect(issueParams(i)).toEqual({ term: 'måste inte' })
+    expect(issueParams({ ...issue('missing-keyword', 'x'), params: { examples: 'SKA, MÅSTE, BÖR, FÅR' } })).toEqual({ examples: 'SKA, MÅSTE, BÖR, FÅR' })
+    expect(issueParams({ ...issue('ambiguous-negation', 'odd', 0, 4), params: {} }, 'måste inte')).toEqual({ term: 'måst' })
+  })
   it('knows nothing about other rules', () => {
     expect(issueParams(issue('new-rule', 'x'))).toBeNull()
   })
@@ -45,7 +52,7 @@ describe('issueMessage', () => {
     expect(issueMessage(issue('new-rule', 'API text'), '', echo)).toBe('API text')
     expect(issueMessage(issue('long-sentence', 'unexpected shape'), '', echo)).toBe('unexpected shape')
   })
-  it('covers all eleven rules', () => {
-    expect(ANALYSIS_RULES).toHaveLength(11)
+  it('covers all twelve rules', () => {
+    expect(ANALYSIS_RULES).toHaveLength(12)
   })
 })

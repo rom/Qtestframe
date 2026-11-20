@@ -31,6 +31,18 @@ func TestRevisionHistoryAndRestore(t *testing.T) {
 	if len(hist) != 3 || hist[0]["version"].(float64) != 3 || hist[2]["action"] != "create" {
 		t.Fatal(hist)
 	}
+	if hist[0]["user_avatar"] != "" || hist[0]["user_email"] != "admin@example.com" {
+		t.Fatal(hist[0])
+	}
+	a.m("PATCH", "/api/v1/auth/me", map[string]any{"avatar": "preset:fox"}, 200)
+	hist = items(a.m("GET", "/api/v1/requirements/"+id+"/history", nil, 200))
+	if hist[0]["user_avatar"] != "preset:fox" {
+		t.Fatal(hist[0])
+	}
+	audit := items(a.m("GET", "/api/v1/audit", nil, 200))
+	if len(audit) == 0 || audit[0]["user_avatar"] != "preset:fox" {
+		t.Fatal(audit)
+	}
 	if got := strs(hist[1]["changed_fields"]); strings.Join(got, ",") != "status,title" {
 		t.Fatal(got)
 	}

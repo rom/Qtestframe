@@ -46,7 +46,7 @@ const emit = defineEmits<{ saved: [item: Requirement]; deleted: [id: string]; cl
 const meta = useMetaStore()
 const notify = useNotify()
 const prefs = usePrefsStore()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const tabsId = uid('req-tabs')
 /** tab panel attributes for the content of a tab (only when the tabs are shown) */
 function panel(value: string) {
@@ -180,6 +180,30 @@ async function loadLinks() {
 // ---------- language analysis ----------
 const analysis = ref<Analysis | null>(null)
 const analyzing = ref(false)
+const LANG_KEY = 'qtf.analysisLanguage'
+function storedLanguage(): string {
+  try {
+    return localStorage.getItem(LANG_KEY) || 'auto'
+  } catch {
+    return 'auto'
+  }
+}
+/** "auto" detects the language of the text; otherwise a pack code. */
+const analysisLanguage = ref(storedLanguage())
+const languageLabel = (code: string) => (te(`analysis.languages.${code}`) ? t(`analysis.languages.${code}`) : code)
+const languageOptions = computed(() => [
+  { value: 'auto', label: t('analysis.languageAuto') },
+  ...meta.meta.analysis_languages.map((c) => ({ value: c, label: languageLabel(c) })),
+])
+watch(analysisLanguage, (v) => {
+  try {
+    localStorage.setItem(LANG_KEY, v)
+  } catch {
+    /* per-viewer convenience only */
+  }
+  runAnalysis(form.value.description ?? '')
+  runAnalysis.flush()
+})
 const runAnalysis = debounce(async (text: string) => {
   if (!text.trim() || prefs.hideAnalysis) {
     analysis.value = null
@@ -187,7 +211,7 @@ const runAnalysis = debounce(async (text: string) => {
   }
   analyzing.value = true
   try {
-    analysis.value = await api.post<Analysis>('/reqlang/analyze', { text })
+    analysis.value = await api.post<Analysis>('/reqlang/analyze', { text, language: analysisLanguage.value })
   } catch {
     analysis.value = null
   } finally {
@@ -230,9 +254,10 @@ const issues = computed(() => {
   })
 })
 /** Issue message in the active language (known rules), else the API's English text. */
-function issueText(i: { rule: string; message: string; offset: number; length: number }): string {
+function issueText(i: { rule: string; message: string; offset: number; length: number; params?: Record<string, string> }): string {
   return issueMessage(i, form.value.description ?? '', (key, params) => t(key, params))
 }
+const noKeywordExamples = computed(() => analysis.value?.issues?.find((i) => i.rule === 'missing-keyword')?.params?.examples ?? 'MUST, SHALL, SHOULD, MAY')
 const detectedDiffers = computed(() => !!analysis.value?.obligation && analysis.value.obligation !== form.value.obligation)
 function applyDetected() {
   if (analysis.value?.obligation) form.value.obligation = analysis.value.obligation
@@ -382,6 +407,16 @@ function criterionLabel(id: string | null) {
           <i class="pi pi-sparkles" style="color: var(--p-primary-color)" />
           <b class="small">{{ t('analysis.title') }}</b>
           <ProgressSpinner v-if="analyzing" style="width: 14px; height: 14px" stroke-width="6" :aria-label="t('common.loading')" />
+          <Select
+            v-model="analysisLanguage"
+            :options="languageOptions"
+            option-label="label"
+            option-value="value"
+            size="small"
+            :aria-label="t('analysis.language')"
+            :title="t('analysis.language')"
+          />
+          <span v-if="analysis?.language && analysisLanguage === 'auto'" class="small muted">{{ t('analysis.detectedLanguage', { language: languageLabel(analysis.language) }) }}</span>
         </span>
         <span v-if="analysis" class="row" aria-live="polite" aria-atomic="true">
           <span class="small muted">{{ t('analysis.detected') }}</span>
@@ -397,7 +432,7 @@ function criterionLabel(id: string | null) {
         </template>
       </div>
       <div v-if="!analysis?.keywords?.length && analysis" class="small muted" style="margin-top: 6px">
-        {{ t('analysis.noKeyword') }}
+        {{ t('analysis.noKeyword', { examples: noKeywordExamples }) }}
       </div>
       <ul v-if="issues.length" style="margin: 8px 0 0; padding-left: 18px" aria-live="polite" :aria-label="t('analysis.issues')">
         <li v-for="(i, n) in issues" :key="n" class="small">

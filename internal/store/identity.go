@@ -487,17 +487,18 @@ func (s *Store) ListAuditRange(ctx context.Context, tenantID string, from, to *t
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
-	q := `SELECT id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, created_at FROM audit_log WHERE tenant_id = ?`
+	q := `SELECT a.id, a.tenant_id, a.user_id, a.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), a.action, a.entity_type, a.entity_id, a.details, a.created_at
+		FROM audit_log a LEFT JOIN users u ON u.id = a.user_id WHERE a.tenant_id = ?`
 	args := []any{tenantID}
 	if from != nil {
-		q += ` AND created_at >= ?`
+		q += ` AND a.created_at >= ?`
 		args = append(args, from.UTC())
 	}
 	if to != nil {
-		q += ` AND created_at <= ?`
+		q += ` AND a.created_at <= ?`
 		args = append(args, to.UTC())
 	}
-	rows, err := s.c().query(ctx, q+` ORDER BY created_at DESC LIMIT ?`, append(args, limit)...)
+	rows, err := s.c().query(ctx, q+` ORDER BY a.created_at DESC LIMIT ?`, append(args, limit)...)
 	if err != nil {
 		return nil, err
 	}
@@ -505,7 +506,7 @@ func (s *Store) ListAuditRange(ctx context.Context, tenantID string, from, to *t
 	out := []model.AuditEntry{}
 	for rows.Next() {
 		var e model.AuditEntry
-		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.UserName, &e.UserAvatar, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, e)
@@ -518,7 +519,8 @@ func (s *Store) ListAudit(ctx context.Context, tenantID string, limit int) ([]mo
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
-	rows, err := s.c().query(ctx, `SELECT id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, created_at FROM audit_log WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ?`, tenantID, limit)
+	rows, err := s.c().query(ctx, `SELECT a.id, a.tenant_id, a.user_id, a.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), a.action, a.entity_type, a.entity_id, a.details, a.created_at
+		FROM audit_log a LEFT JOIN users u ON u.id = a.user_id WHERE a.tenant_id = ? ORDER BY a.created_at DESC LIMIT ?`, tenantID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -526,7 +528,7 @@ func (s *Store) ListAudit(ctx context.Context, tenantID string, limit int) ([]mo
 	out := []model.AuditEntry{}
 	for rows.Next() {
 		var e model.AuditEntry
-		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt); err != nil {
+		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.UserName, &e.UserAvatar, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, e)

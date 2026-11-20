@@ -110,7 +110,7 @@ function restore() {
           <span class="grow" />
           <span class="small muted" :title="formatFullDateTime(r.created_at)">{{ formatDateTime(r.created_at) }}</span>
         </div>
-        <div class="small muted row nowrap" style="gap: 6px; min-width: 0"><UserAvatar v-if="r.user_email" :email="r.user_email" :name="r.user_email" :size="18" /><span class="ellipsis">{{ r.user_email || t('common.system') }}</span></div>
+        <div class="small muted row nowrap" style="gap: 6px; min-width: 0"><UserAvatar v-if="r.user_email" :avatar="r.user_avatar" :email="r.user_email" :name="r.user_name || r.user_email" :size="18" /><span class="ellipsis" :title="r.user_email">{{ r.user_name || r.user_email || t('common.system') }}</span></div>
         <div v-if="r.changed_fields?.length">
           <span v-for="f in r.changed_fields.slice(0, 6)" :key="f" class="field-chip">{{ fieldLabel(f) }}</span>
           <span v-if="r.changed_fields.length > 6" class="small muted">+{{ r.changed_fields.length - 6 }}</span>
@@ -120,7 +120,7 @@ function restore() {
     <div v-if="selected" class="grid" style="gap: 10px">
       <div class="row">
         <b>{{ t('history.version', { version: selected.version }) }}</b>
-        <span class="muted small">{{ t('history.byAt', { action: enumLabel('historyAction', selected.action), user: selected.user_email || t('common.system'), date: formatFullDateTime(selected.created_at) }) }}</span>
+        <span class="muted small row nowrap" style="gap: 6px"><UserAvatar v-if="selected.user_email" :avatar="selected.user_avatar" :email="selected.user_email" :name="selected.user_name || selected.user_email" :size="20" />{{ t('history.byAt', { action: enumLabel('historyAction', selected.action), user: selected.user_name || selected.user_email || t('common.system'), date: formatFullDateTime(selected.created_at) }) }}</span>
         <span class="grow" />
         <Button
           v-if="canRestore && index > 0"

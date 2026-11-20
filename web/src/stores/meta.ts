@@ -14,6 +14,7 @@ export const DEFAULT_META: Meta = {
   run_statuses: ['planned', 'in_progress', 'completed', 'aborted'],
   result_statuses: ['not_run', 'in_progress', 'passed', 'failed', 'blocked', 'skipped'],
   roles: ['admin', 'manager', 'tester', 'viewer'],
+  analysis_languages: ['en', 'sv'],
   auto_create_test: true,
 }
 

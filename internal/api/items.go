@@ -329,12 +329,18 @@ func (s *Server) handleDeleteRequirement(w http.ResponseWriter, r *http.Request,
 func (s *Server) handleAnalyze(w http.ResponseWriter, r *http.Request, p *Principal) {
 	var req struct {
 		Text string `json:"text"`
+		// Language is a pack code ("en", "sv"); "" or "auto" detects it.
+		Language string `json:"language"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, reqlang.Analyze(req.Text))
+	if req.Language != "" && req.Language != "auto" && !reqlang.Supported(req.Language) {
+		s.fail(w, r, badRequest("language must be auto or one of %s", strings.Join(reqlang.Languages(), ", ")))
+		return
+	}
+	writeJSON(w, http.StatusOK, reqlang.AnalyzeLang(req.Text, req.Language))
 }
 
 // ---------------------------------------------------------------- move / bulk

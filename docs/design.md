@@ -74,6 +74,44 @@ returns the result; on creation of a requirement without an explicit
 `obligation`, the server sets it to `DetectObligation(title + "\n" + description)`.
 Updates never re-detect it.
 
+### Language packs
+
+The vocabulary is defined per language in `internal/reqlang/languages.go`
+(`reqlang.Pack`): obligation keywords, the term lists of the lint rules,
+the examples of the missing-keyword message and marker words for language
+detection. Built-in packs are **English** (`en`) and **Swedish** (`sv`),
+the same languages as the UI; `reqlang.Register` adds more.
+
+`AnalyzeLang(text, lang)` uses the given pack; `""`/`auto` (and
+`DetectObligation` on create) call `Detect`, which counts frequent
+function words of each pack, gives Swedish a bonus for å/ä/ö and lets
+English win ties. The editor offers *Detect language*, *English* and
+*Swedish*; the choice is kept per browser.
+
+Swedish keywords follow SIS conventions:
+
+| Keyword(s) | Level |
+|---|---|
+| `FÅR INTE`, `FÅR EJ` | `must_not` |
+| `MÅSTE`, `OBLIGATORISK(T/A)` | `must` |
+| `SKA INTE`, `SKALL INTE` | `shall_not` |
+| `SKA`, `SKALL` | `shall` |
+| `BÖR INTE`, `BÖR EJ`, `REKOMMENDERAS INTE` | `should_not` |
+| `BÖR`, `REKOMMENDERAS` | `should` |
+| `FÅR` | `may` |
+| `MÅSTE INTE`, `BEHÖVER INTE`, `VALFRI(TT/A)` | `optional` |
+| `KOMMER ATT` | `will` |
+| `BESKRIVER`, `INFORMATIV(T)`, `NOT:`, `ANMÄRKNING:` | `describe` |
+
+Swedish text has no case convention for keywords, so the
+`lowercase-keyword` rule is English-only; uppercase English RFC keywords
+(`MUST`, `SHALL`, …) are also recognised in Swedish text. The Swedish term
+lists cover the same rules (e.g. *snabb*, *användarvänlig*, *osv*,
+*och/eller*, *kunna*, *om möjligt*, *alla*). `måste inte` additionally gets
+`ambiguous-negation` (warning), because it is commonly misread as a
+prohibition (*får inte*) although it means "need not". Limitation: *får*
+also means "receives", which can give a false `may`.
+
 ### Obligation levels and keyword detection
 
 Keywords follow RFC 2119; per RFC 8174 only the UPPERCASE forms carry
@@ -107,7 +145,7 @@ text, and at line breaks.
 | Rule | Severity | Triggered by |
 |---|---|---|
 | `missing-keyword` | warning | no obligation keyword anywhere in the text |
-| `lowercase-keyword` | info | a keyword that is not all uppercase (`must` instead of `MUST`) |
+| `lowercase-keyword` | info | a keyword that is not all uppercase (`must` instead of `MUST`); English pack only |
 | `negative-requirement` | info | `MUST NOT`, `SHALL NOT` (harder to verify) |
 | `multiple-obligations` | warning | one sentence contains more than one distinct non-`describe` keyword |
 | `long-sentence` | info | a sentence with more than 40 words |
@@ -117,9 +155,10 @@ text, and at line breaks.
 | `and-or` | warning | `and/or` |
 | `passive-capability` | info | `be able to`, `be capable of` |
 | `escape-clause` | warning | if possible, where applicable, unless, except |
+| `ambiguous-negation` | warning | Swedish `måste inte` (prohibition or not required?) |
 
 Each finding has a byte `offset` and `length` into the analysed text, used
-by the editor for highlighting.
+by the editor for highlighting, and `params` for translating the message.
 
 **Score:** `100 − 25 × errors − 10 × warnings − 2 × infos`, floored at 0.
 
