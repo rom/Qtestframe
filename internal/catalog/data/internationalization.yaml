@@ -1,0 +1,595 @@
+area: internationalization
+prefix: I18N
+group: usability
+name: {en: Internationalisation, sv: Internationalisering}
+description:
+  en: Translatable texts, locale formats for dates, numbers and currency, time zones, Unicode, right-to-left readiness, sorting and language selection.
+  sv: Översättningsbara texter, lokala format för datum, tal och valuta, tidszoner, Unicode, stöd för höger-till-vänster-skrift, sortering och val av språk.
+
+requirements:
+  - id: I18N-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [translation, resource-files]
+    refs: ["W3C Internationalization Best Practices", "ISO/IEC 25010:2023 adaptability"]
+    tests: [I18N-T01, I18N-T09]
+    en:
+      title: User interface texts kept in resource files
+      description: The system MUST load every text shown in the user interface from translation resource files instead of from strings in the source code.
+      rationale: Texts embedded in code cannot be translated without a new release and are easily missed.
+      criteria:
+        - method: test
+          text: With a pseudo-localised resource file active, no visible text on any page appears untransformed.
+    sv:
+      title: Gränssnittstexter i resursfiler
+      description: Systemet SKA hämta varje text som visas i användargränssnittet från resursfiler för översättning i stället för från strängar i källkoden.
+      rationale: Texter som ligger i koden går inte att översätta utan en ny version och missas lätt.
+      criteria:
+        - method: test
+          text: Med en pseudolokaliserad resursfil aktiv visas ingen text på någon sida i oförändrad form.
+
+  - id: I18N-02
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [translation, layout]
+    refs: ["W3C Internationalization: text size in translation"]
+    tests: [I18N-T01]
+    en:
+      title: Room for longer translations
+      description: The user interface SHOULD display labels, buttons and menu items without truncation when their text is 40 % longer than the English text.
+      rationale: Translations into languages such as German or Finnish are often considerably longer than English.
+      criteria:
+        - method: test
+          text: With pseudo-localisation that lengthens every text by 40 %, no label, button or menu item is cut off or overlaps.
+          threshold: "+40 % text length"
+    sv:
+      title: Utrymme för längre översättningar
+      description: Användargränssnittet BÖR visa etiketter, knappar och menyval utan avklippning när texten är 40 % längre än den engelska texten.
+      rationale: Översättningar till språk som tyska eller finska blir ofta betydligt längre än engelskan.
+      criteria:
+        - method: test
+          text: Med pseudolokalisering som förlänger varje text med 40 % klipps ingen etikett, knapp eller menyval av och inget överlappar.
+          threshold: "+40 % textlängd"
+
+  - id: I18N-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [locale, dates]
+    refs: ["Unicode CLDR date and time patterns", "Unicode UTS #35 Part 4 Dates"]
+    tests: [I18N-T02]
+    en:
+      title: Dates formatted for the user's locale
+      description: The system MUST format dates and times according to the CLDR patterns of the locale selected by the user.
+      rationale: "A date such as 03/04/2026 means different days to users in different countries."
+      criteria:
+        - method: test
+          text: The date 20 November 2026 is shown as 2026-11-20 for sv-SE, 11/20/2026 for en-US and 20/11/2026 for en-GB.
+    sv:
+      title: Datum i användarens lokala format
+      description: Systemet SKA formatera datum och tider enligt CLDR-mönstren för den språk- och regioninställning som användaren har valt.
+      rationale: Ett datum som 03/04/2026 betyder olika dagar för användare i olika länder.
+      criteria:
+        - method: test
+          text: Datumet 20 november 2026 visas som 2026-11-20 för sv-SE, 11/20/2026 för en-US och 20/11/2026 för en-GB.
+
+  - id: I18N-04
+    type: functional
+    obligation: must
+    priority: high
+    tags: [locale, numbers, currency]
+    refs: ["Unicode CLDR number formats", "Unicode UTS #35 Part 3 Numbers", "ISO 4217"]
+    tests: [I18N-T02]
+    en:
+      title: Numbers and amounts formatted for the locale
+      description: The system MUST display numbers and monetary amounts with the decimal separator, grouping separator and currency placement of the user's locale.
+      rationale: A decimal comma read as a thousands separator changes a value by a factor of a thousand.
+      criteria:
+        - method: test
+          text: The amount 1234567.89 SEK is shown as "1 234 567,89 kr" for sv-SE and "SEK 1,234,567.89" for en-US.
+    sv:
+      title: Tal och belopp i lokalt format
+      description: Systemet SKA visa tal och belopp med decimaltecken, tusentalsavgränsare och valutaplacering enligt användarens språk- och regioninställning.
+      rationale: Ett decimalkomma som tolkas som tusentalsavgränsare ändrar ett värde med en faktor tusen.
+      criteria:
+        - method: test
+          text: Beloppet 1234567,89 SEK visas som "1 234 567,89 kr" för sv-SE och "SEK 1,234,567.89" för en-US.
+
+  - id: I18N-05
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [time-zones]
+    refs: ["IANA Time Zone Database", "RFC 3339 §5.6", "ISO 8601-1:2019"]
+    tests: [I18N-T03]
+    en:
+      title: Times stored in UTC and shown in the user's time zone
+      description: The system MUST store each point in time in UTC and display it in the IANA time zone selected in the user's profile.
+      rationale: Teams that work across time zones otherwise see wrong deadlines and wrong event order.
+      criteria:
+        - method: test
+          text: An event saved at 12:00 UTC is shown as 13:00 for a user in Europe/Stockholm in winter and 07:00 for a user in America/New_York.
+    sv:
+      title: Tider lagras i UTC och visas i användarens tidszon
+      description: Systemet SKA lagra varje tidpunkt i UTC och visa den i den IANA-tidszon som är vald i användarens profil.
+      rationale: Annars ser team som arbetar i olika tidszoner fel tidsfrister och fel ordning på händelser.
+      criteria:
+        - method: test
+          text: En händelse som sparas kl. 12.00 UTC visas som 13.00 för en användare i Europe/Stockholm på vintern och 07.00 för en användare i America/New_York.
+
+  - id: I18N-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [time-zones, daylight-saving]
+    refs: ["IANA Time Zone Database", "RFC 5545 §3.3.10"]
+    tests: [I18N-T03]
+    en:
+      title: Daylight saving time handled in schedules
+      description: The system MUST keep a recurring event at the same local wall-clock time when its time zone changes to or from daylight saving time.
+      rationale: A weekly meeting that moves one hour after a clock change causes missed appointments.
+      criteria:
+        - method: test
+          text: A weekly event at 09:00 Europe/Stockholm stays at 09:00 local time on both sides of the last Sunday in March and October.
+    sv:
+      title: Sommartid hanteras i scheman
+      description: Systemet SKA behålla en återkommande händelse på samma lokala klockslag när dess tidszon går över till eller från sommartid.
+      rationale: Ett veckomöte som flyttas en timme efter tidsomställningen leder till missade möten.
+      criteria:
+        - method: test
+          text: En veckohändelse kl. 09.00 Europe/Stockholm ligger kvar kl. 09.00 lokal tid på båda sidor om sista söndagen i mars och oktober.
+
+  - id: I18N-07
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [unicode, utf-8, encoding]
+    refs: ["The Unicode Standard", "RFC 3629", "W3C Character Model for the World Wide Web"]
+    tests: [I18N-T04]
+    en:
+      title: Unicode text in UTF-8 throughout
+      description: The system MUST accept, store and return text containing any Unicode code point, including characters outside the Basic Multilingual Plane, encoded as UTF-8.
+      rationale: Names and texts in Swedish, Sami, Chinese or with emoji are otherwise corrupted or rejected.
+      criteria:
+        - method: test
+          text: A round trip of the test strings through the user interface, the API and the database returns them byte-identical.
+    sv:
+      title: Unicodetext i UTF-8 hela vägen
+      description: Systemet SKA ta emot, lagra och returnera text med godtyckliga Unicodetecken, även tecken utanför det grundläggande flerspråkiga planet, kodade som UTF-8.
+      rationale: Annars förvanskas eller avvisas namn och texter på svenska, samiska, kinesiska eller med emojier.
+      criteria:
+        - method: test
+          text: Teststrängarna kommer tillbaka byte för byte oförändrade efter en rundtur genom användargränssnittet, API:et och databasen.
+
+  - id: I18N-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [unicode, normalization, search]
+    refs: ["Unicode UAX #15 Normalization Forms", "W3C Character Model: String Matching"]
+    tests: [I18N-T04]
+    en:
+      title: Unicode normalisation before comparison
+      description: The system SHOULD normalise text to Unicode Normalization Form C before it compares, searches or checks the uniqueness of text values.
+      rationale: The same visible letter, for example "å", can be encoded in two ways and would otherwise not match.
+      criteria:
+        - method: test
+          text: A search for "å" entered as one precomposed code point finds an item stored with "a" plus a combining ring, and the reverse.
+    sv:
+      title: Unicodenormalisering före jämförelse
+      description: Systemet BÖR normalisera text till Unicode Normalization Form C innan det jämför, söker i eller kontrollerar unikheten hos textvärden.
+      rationale: Samma synliga bokstav, till exempel "å", kan kodas på två sätt och skulle annars inte matcha.
+      criteria:
+        - method: test
+          text: En sökning på "å" angivet som en förkomponerad kodpunkt hittar ett objekt som lagrats med "a" plus en kombinerande ring, och omvänt.
+
+  - id: I18N-09
+    type: usability
+    obligation: should
+    priority: low
+    tags: [rtl, bidi, layout]
+    refs: ["Unicode UAX #9 Bidirectional Algorithm", "W3C Structural markup and right-to-left text in HTML"]
+    tests: [I18N-T05]
+    en:
+      title: Layout ready for right-to-left languages
+      description: The user interface SHOULD mirror its layout and set the text direction to right-to-left when the user selects Arabic or Hebrew.
+      rationale: Preparing the layout early avoids a costly redesign when right-to-left markets are added.
+      criteria:
+        - method: test
+          text: With a right-to-left language selected, navigation, icons with direction and table columns are mirrored, and mixed text is shown in the correct order.
+    sv:
+      title: Layout förberedd för höger-till-vänster-språk
+      description: Användargränssnittet BÖR spegelvända sin layout och sätta textriktningen till höger till vänster när användaren väljer arabiska eller hebreiska.
+      rationale: Att förbereda layouten tidigt undviker en kostsam omarbetning när marknader med höger-till-vänster-skrift tillkommer.
+      criteria:
+        - method: test
+          text: Med ett höger-till-vänster-språk valt är navigering, riktade ikoner och tabellkolumner spegelvända, och blandad text visas i rätt ordning.
+
+  - id: I18N-10
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [sorting, collation]
+    refs: ["Unicode UTS #10 Collation Algorithm", "Unicode CLDR collation"]
+    tests: [I18N-T06]
+    en:
+      title: Sorting by the locale's collation rules
+      description: The system MUST sort text in lists by the CLDR collation rules of the user's locale.
+      rationale: Sorting by code point puts "Ödmark" before "Åberg" or lower case after upper case, which users read as wrong.
+      criteria:
+        - method: test
+          text: For sv-SE the names Zander, Åberg, Ärlig and Ödmark are sorted in that order, and for en-US Åberg is sorted with A.
+    sv:
+      title: Sortering enligt språkets sorteringsregler
+      description: Systemet SKA sortera text i listor enligt CLDR:s sorteringsregler för användarens språk- och regioninställning.
+      rationale: Sortering på kodpunkt ger fel ordning för å, ä och ö och lägger gemener efter versaler, vilket användare uppfattar som fel.
+      criteria:
+        - method: test
+          text: För sv-SE sorteras namnen Zander, Åberg, Ärlig och Ödmark i den ordningen, och för en-US sorteras Åberg tillsammans med A.
+
+  - id: I18N-11
+    type: functional
+    obligation: must
+    priority: high
+    tags: [language-selection, profile]
+    refs: ["W3C Internationalization: language negotiation", "ISO 9241-110:2020 controllability"]
+    tests: [I18N-T07]
+    en:
+      title: User chooses the interface language
+      description: The system MUST let each user choose the interface language in the profile and apply it in all sessions of that user.
+      rationale: Users on shared or company computers cannot always change the browser language.
+      criteria:
+        - method: test
+          text: After a user selects Swedish in the profile, every page is shown in Swedish in a new session on another browser.
+    sv:
+      title: Användaren väljer gränssnittsspråk
+      description: Systemet SKA låta varje användare välja gränssnittsspråk i sin profil och tillämpa valet i alla användarens sessioner.
+      rationale: Användare på delade datorer eller företagsdatorer kan inte alltid ändra webbläsarens språk.
+      criteria:
+        - method: test
+          text: När en användare har valt svenska i profilen visas varje sida på svenska i en ny session i en annan webbläsare.
+
+  - id: I18N-12
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [language-selection, accept-language]
+    refs: ["RFC 9110 §12.5.4", "RFC 4647"]
+    tests: [I18N-T07]
+    en:
+      title: Initial language from the browser
+      description: The system SHOULD pick the initial interface language from the browser's Accept-Language header for a user without a saved language.
+      rationale: New users see the interface in their language from the first visit.
+      criteria:
+        - method: test
+          text: A first visit with "Accept-Language sv-SE,sv;q=0.9,en;q=0.8" shows Swedish, and one with "fr-FR" shows the fallback English.
+    sv:
+      title: Första språket från webbläsaren
+      description: Systemet BÖR välja det första gränssnittsspråket utifrån webbläsarens Accept-Language-huvud för en användare som inte har sparat något språk.
+      rationale: Nya användare ser gränssnittet på sitt eget språk redan vid första besöket.
+      criteria:
+        - method: test
+          text: Ett första besök med "Accept-Language sv-SE,sv;q=0.9,en;q=0.8" visar svenska, och ett med "fr-FR" visar reservspråket engelska.
+
+  - id: I18N-13
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [translation, plurals]
+    refs: ["Unicode CLDR Language Plural Rules", "ICU MessageFormat"]
+    tests: [I18N-T08, I18N-T09]
+    en:
+      title: Plural forms by the language's rules
+      description: Each message that contains a count MUST select its plural form by the CLDR plural rules of the display language.
+      rationale: Concatenating "item(s)" reads poorly, and languages such as Polish or Arabic have more than two plural forms.
+      criteria:
+        - method: test
+          text: For the counts 0, 1, 2, 5 and 22 the messages use the correct plural forms in English, Swedish and Polish.
+    sv:
+      title: Pluralformer enligt språkets regler
+      description: Varje meddelande som innehåller ett antal SKA välja pluralform enligt CLDR:s pluralregler för visningsspråket.
+      rationale: Lösningar som "objekt(en)" läses dåligt, och språk som polska eller arabiska har mer än två pluralformer.
+      criteria:
+        - method: test
+          text: För antalen 0, 1, 2, 5 och 22 använder meddelandena rätt pluralform på engelska, svenska och polska.
+
+  - id: I18N-14
+    type: constraint
+    obligation: should_not
+    priority: low
+    tags: [translation, images]
+    refs: ["W3C Internationalization Best Practices", "WCAG 2.2 SC 1.4.5"]
+    tests: [I18N-T09]
+    en:
+      title: No translatable text in images
+      description: The user interface SHOULD NOT contain images with text that needs translation.
+      rationale: Text in images has to be recreated for each language and cannot be read by screen readers.
+      criteria:
+        - method: inspection
+          text: A review of all image assets finds no image with words, apart from logotypes.
+    sv:
+      title: Ingen översättningsbar text i bilder
+      description: Användargränssnittet BÖR INTE innehålla bilder med text som behöver översättas.
+      rationale: Text i bilder måste göras om för varje språk och kan inte läsas av skärmläsare.
+      criteria:
+        - method: inspection
+          text: En genomgång av alla bildfiler hittar ingen bild med ord, bortsett från logotyper.
+
+tests:
+  - id: I18N-T01
+    priority: high
+    execution: automated
+    tags: [pseudo-localisation]
+    refs: ["W3C Internationalization Best Practices"]
+    en:
+      title: Pseudo-localisation finds hard-coded and truncated texts
+      description: A script switches the interface to a pseudo-locale that marks and lengthens every translated text and scans every page.
+      preconditions: A pseudo-locale generated from the English resource file with accented letters, brackets and 40 % extra length.
+      expected: Every visible text is pseudo-localised and none is truncated.
+      steps:
+        - action: The script selects the pseudo-locale and visits every route.
+          expected: Each page renders without errors.
+          data: "Save → [Šåvé·····]"
+        - action: The script collects the visible text nodes and looks for text without the pseudo-locale brackets.
+          expected: Only user data and product names are found outside the brackets.
+        - action: The script checks each element with text for overflow hidden beyond its box or for an ellipsis.
+          expected: No label, button or menu item is truncated.
+    sv:
+      title: Pseudolokalisering hittar hårdkodade och avklippta texter
+      description: Ett skript byter gränssnittet till en pseudolokal som märker och förlänger varje översatt text och skannar varje sida.
+      preconditions: En pseudolokal som genererats från den engelska resursfilen med accenttecken, hakparenteser och 40 % extra längd.
+      expected: Varje synlig text är pseudolokaliserad och ingen är avklippt.
+      steps:
+        - action: Skriptet väljer pseudolokalen och besöker varje vy.
+          expected: Varje sida visas utan fel.
+          data: "Save → [Šåvé·····]"
+        - action: Skriptet samlar in de synliga textnoderna och letar efter text utan pseudolokalens hakparenteser.
+          expected: Bara användardata och produktnamn finns utanför hakparenteserna.
+        - action: Skriptet kontrollerar varje element med text för dold överskjutande text eller utelämningstecken.
+          expected: Ingen etikett, knapp eller menyval är avklippt.
+
+  - id: I18N-T02
+    priority: high
+    execution: automated
+    tags: [locale, dates, numbers]
+    refs: ["Unicode CLDR"]
+    en:
+      title: Date, number and currency formats per locale
+      description: Unit tests call the formatting functions with fixed values for several locales and compare with expected strings.
+      preconditions: The formatting library and the expected output table for sv-SE, en-US and en-GB.
+      expected: Every formatted value equals the expected string for its locale.
+      steps:
+        - action: Format the date 2026-11-20 and the time 14:05 for each locale.
+          expected: The results are "2026-11-20 14:05" for sv-SE, "11/20/2026, 2:05 PM" for en-US and "20/11/2026, 14:05" for en-GB.
+        - action: Format the number 1234567.891 with 2 decimals for each locale.
+          expected: The results use the locale's decimal and grouping separators.
+          data: "sv-SE 1 234 567,89; en-US 1,234,567.89"
+        - action: Format the amount 1234.5 SEK for each locale.
+          expected: The currency symbol and position follow the locale.
+          data: "sv-SE 1 234,50 kr; en-US SEK 1,234.50"
+    sv:
+      title: Format för datum, tal och valuta per språkinställning
+      description: Enhetstester anropar formateringsfunktionerna med fasta värden för olika språkinställningar och jämför med förväntade strängar.
+      preconditions: Formateringsbiblioteket och tabellen med förväntade resultat för sv-SE, en-US och en-GB.
+      expected: Varje formaterat värde är lika med den förväntade strängen för sin språkinställning.
+      steps:
+        - action: Formatera datumet 2026-11-20 och tiden 14.05 för varje språkinställning.
+          expected: Resultaten är "2026-11-20 14:05" för sv-SE, "11/20/2026, 2:05 PM" för en-US och "20/11/2026, 14:05" för en-GB.
+        - action: Formatera talet 1234567,891 med 2 decimaler för varje språkinställning.
+          expected: Resultaten använder språkinställningens decimaltecken och tusentalsavgränsare.
+          data: "sv-SE 1 234 567,89; en-US 1,234,567.89"
+        - action: Formatera beloppet 1234,5 SEK för varje språkinställning.
+          expected: Valutasymbol och placering följer språkinställningen.
+          data: "sv-SE 1 234,50 kr; en-US SEK 1,234.50"
+
+  - id: I18N-T03
+    priority: high
+    execution: automated
+    tags: [time-zones, daylight-saving]
+    refs: ["IANA Time Zone Database"]
+    en:
+      title: Time zone conversion and daylight saving transitions
+      description: Integration tests save points in time and recurring events and read them back for users in different time zones.
+      preconditions: Two test users with the time zones Europe/Stockholm and America/New_York.
+      expected: Times are stored in UTC, shown in each user's zone and recurring events keep their local time.
+      steps:
+        - action: Save an event at 2026-01-15 12:00 UTC and read it as each user.
+          expected: The database holds 12:00 UTC and the users see 13:00 and 07:00.
+          data: 2026-01-15T12:00:00Z
+        - action: Create a weekly event at 09:00 Europe/Stockholm starting 2026-03-23 and list its occurrences until 2026-04-06.
+          expected: Every occurrence is at 09:00 local time and the UTC time shifts from 08:00 to 07:00 after 2026-03-29.
+        - action: List the occurrences of the same event around 2026-10-25.
+          expected: Every occurrence is at 09:00 local time and the UTC time shifts from 07:00 to 08:00.
+    sv:
+      title: Tidszonsomvandling och övergång till och från sommartid
+      description: Integrationstester sparar tidpunkter och återkommande händelser och läser dem för användare i olika tidszoner.
+      preconditions: Två testanvändare med tidszonerna Europe/Stockholm och America/New_York.
+      expected: Tider lagras i UTC, visas i varje användares tidszon och återkommande händelser behåller sitt lokala klockslag.
+      steps:
+        - action: Spara en händelse 2026-01-15 kl. 12.00 UTC och läs den som var och en av användarna.
+          expected: Databasen innehåller 12.00 UTC och användarna ser 13.00 respektive 07.00.
+          data: 2026-01-15T12:00:00Z
+        - action: Skapa en veckohändelse kl. 09.00 Europe/Stockholm med start 2026-03-23 och lista förekomsterna till och med 2026-04-06.
+          expected: Varje förekomst ligger kl. 09.00 lokal tid och UTC-tiden ändras från 08.00 till 07.00 efter 2026-03-29.
+        - action: Lista förekomsterna av samma händelse runt 2026-10-25.
+          expected: Varje förekomst ligger kl. 09.00 lokal tid och UTC-tiden ändras från 07.00 till 08.00.
+
+  - id: I18N-T04
+    priority: critical
+    execution: automated
+    tags: [unicode, utf-8, api]
+    refs: ["The Unicode Standard", "Unicode UAX #15"]
+    en:
+      title: Unicode round trip and normalisation
+      description: An API test saves text with characters from several scripts and reads it back, then searches with differently normalised input.
+      preconditions: A test environment with API access and the test strings below.
+      expected: All strings come back byte-identical and differently normalised input finds the same item.
+      steps:
+        - action: Create an item via the API with the test strings as title and description and read it back.
+          expected: The returned strings are byte-identical to the input and the response is declared as UTF-8.
+          data: "Åsa Öberg; Sámi: Áilu Čuoppo; 中文测试; עברית; 👩‍💻 emoji"
+        - action: Open the item in the user interface and export it to CSV.
+          expected: The strings are displayed and exported without replacement characters or mojibake.
+        - action: Search for "Åsa" entered in decomposed form (A + U+030A).
+          expected: The item stored with the precomposed "Å" is found.
+    sv:
+      title: Rundtur för Unicode och normalisering
+      description: Ett API-test sparar text med tecken från olika skriftsystem och läser tillbaka den och söker sedan med olika normaliserad inmatning.
+      preconditions: En testmiljö med API-åtkomst och teststrängarna nedan.
+      expected: Alla strängar kommer tillbaka byte för byte oförändrade och olika normaliserad inmatning hittar samma objekt.
+      steps:
+        - action: Skapa ett objekt via API:et med teststrängarna som titel och beskrivning och läs tillbaka det.
+          expected: De returnerade strängarna är byte för byte identiska med indata och svaret är angivet som UTF-8.
+          data: "Åsa Öberg; Sámi: Áilu Čuoppo; 中文测试; עברית; 👩‍💻 emoji"
+        - action: Öppna objektet i användargränssnittet och exportera det till CSV.
+          expected: Strängarna visas och exporteras utan ersättningstecken eller teckenröra.
+        - action: Sök på "Åsa" angivet i uppdelad form (A + U+030A).
+          expected: Objektet som lagrats med det förkomponerade "Å" hittas.
+
+  - id: I18N-T05
+    priority: low
+    execution: manual
+    tags: [rtl, bidi]
+    refs: ["Unicode UAX #9"]
+    en:
+      title: Right-to-left layout and mixed text
+      description: Checks the mirrored layout and the display of mixed left-to-right and right-to-left text.
+      preconditions: A right-to-left test locale, for example Arabic or Hebrew, is available.
+      expected: The layout is mirrored and mixed text is shown in the correct order.
+      steps:
+        - action: Select the right-to-left language and open the start page and a list page.
+          expected: The navigation is on the right, text is right-aligned and back and forward arrows point the other way.
+        - action: Create an item with a Hebrew title that contains an English product code.
+          expected: The title is displayed with the code in the correct position and the punctuation at the right end.
+          data: "גרסה ABC-123 חדשה"
+    sv:
+      title: Höger-till-vänster-layout och blandad text
+      description: Kontrollerar den spegelvända layouten och visningen av blandad text med vänster-till-höger- och höger-till-vänster-skrift.
+      preconditions: En testinställning för ett höger-till-vänster-språk, till exempel arabiska eller hebreiska, finns.
+      expected: Layouten är spegelvänd och blandad text visas i rätt ordning.
+      steps:
+        - action: Välj höger-till-vänster-språket och öppna startsidan och en listsida.
+          expected: Navigeringen ligger till höger, texten är högerjusterad och pilar för bakåt och framåt pekar åt andra hållet.
+        - action: Skapa ett objekt med en hebreisk titel som innehåller en engelsk produktkod.
+          expected: Titeln visas med koden på rätt plats och skiljetecknen längst till höger.
+          data: "גרסה ABC-123 חדשה"
+
+  - id: I18N-T06
+    priority: medium
+    execution: automated
+    tags: [sorting, collation]
+    refs: ["Unicode UTS #10"]
+    en:
+      title: Locale-aware sorting of names
+      description: An integration test sorts a fixed list of names through the list endpoint for two locales.
+      preconditions: Items named Ödmark, Zander, Åberg, ärlig and Adams exist.
+      expected: The order follows the collation rules of each locale.
+      steps:
+        - action: Request the list sorted by name with locale sv-SE.
+          expected: The order is Adams, Zander, Åberg, ärlig, Ödmark.
+          data: Ödmark, Zander, Åberg, ärlig, Adams
+        - action: Request the same list with locale en-US.
+          expected: The order is Åberg, Adams, ärlig, Ödmark, Zander.
+    sv:
+      title: Sortering av namn enligt språkinställning
+      description: Ett integrationstest sorterar en fast lista med namn via listtjänsten för två språkinställningar.
+      preconditions: Objekt med namnen Ödmark, Zander, Åberg, ärlig och Adams finns.
+      expected: Ordningen följer sorteringsreglerna för varje språkinställning.
+      steps:
+        - action: Begär listan sorterad på namn med språkinställningen sv-SE.
+          expected: Ordningen är Adams, Zander, Åberg, ärlig, Ödmark.
+          data: Ödmark, Zander, Åberg, ärlig, Adams
+        - action: Begär samma lista med språkinställningen en-US.
+          expected: Ordningen är Åberg, Adams, ärlig, Ödmark, Zander.
+
+  - id: I18N-T07
+    priority: high
+    execution: manual
+    tags: [language-selection]
+    refs: ["RFC 9110 §12.5.4"]
+    en:
+      title: Language from the browser and from the profile
+      description: Checks the initial language from the browser and that the profile choice overrides it in every session.
+      preconditions: A browser with its language set to Swedish and a new user account without a saved language.
+      expected: The first visit is in Swedish, and a language chosen in the profile applies in every new session.
+      steps:
+        - action: Sign in for the first time with the browser language set to Swedish.
+          expected: The interface is shown in Swedish.
+          data: "Accept-Language: sv-SE,sv;q=0.9,en;q=0.8"
+        - action: Select English in the profile and save.
+          expected: The interface switches to English at once.
+        - action: Sign in in another browser whose language is Swedish.
+          expected: The interface is shown in English, the language saved in the profile.
+    sv:
+      title: Språk från webbläsaren och från profilen
+      description: Kontrollerar det första språket från webbläsaren och att valet i profilen gäller före det i varje session.
+      preconditions: En webbläsare med språket inställt på svenska och ett nytt användarkonto utan sparat språk.
+      expected: Första besöket är på svenska, och ett språk som väljs i profilen gäller i varje ny session.
+      steps:
+        - action: Logga in för första gången med webbläsarens språk inställt på svenska.
+          expected: Gränssnittet visas på svenska.
+          data: "Accept-Language: sv-SE,sv;q=0.9,en;q=0.8"
+        - action: Välj engelska i profilen och spara.
+          expected: Gränssnittet byter till engelska direkt.
+        - action: Logga in i en annan webbläsare med svenska som språk.
+          expected: Gränssnittet visas på engelska, det språk som sparats i profilen.
+
+  - id: I18N-T08
+    priority: medium
+    execution: automated
+    tags: [plurals, translation]
+    refs: ["Unicode CLDR Language Plural Rules"]
+    en:
+      title: Plural forms in three languages
+      description: Unit tests render a message with a count for several counts in English, Swedish and Polish.
+      preconditions: The message "{count} items selected" is translated with CLDR plural categories in the three languages.
+      expected: Each count gets the grammatically correct form in each language.
+      steps:
+        - action: Render the message for the counts 0, 1, 2, 5 and 22 in English and Swedish.
+          expected: The singular form is used only for 1 and the plural form for the other counts.
+          data: "1 objekt markerat; 2 objekt markerade"
+        - action: Render the message for the same counts in Polish.
+          expected: The categories one, few and many are used as defined by CLDR (1 one, 2 and 22 few, 0 and 5 many).
+    sv:
+      title: Pluralformer på tre språk
+      description: Enhetstester återger ett meddelande med ett antal för olika antal på engelska, svenska och polska.
+      preconditions: Meddelandet "{count} objekt markerade" är översatt med CLDR:s pluralkategorier på de tre språken.
+      expected: Varje antal får den grammatiskt korrekta formen på varje språk.
+      steps:
+        - action: Återge meddelandet för antalen 0, 1, 2, 5 och 22 på engelska och svenska.
+          expected: Singularformen används bara för 1 och pluralformen för övriga antal.
+          data: "1 objekt markerat; 2 objekt markerade"
+        - action: Återge meddelandet för samma antal på polska.
+          expected: Kategorierna one, few och many används enligt CLDR (1 one, 2 och 22 few, 0 och 5 many).
+
+  - id: I18N-T09
+    priority: medium
+    execution: manual
+    tags: [translation, review]
+    refs: ["W3C Internationalization Best Practices"]
+    en:
+      title: Translation review of the interface
+      description: A native speaker walks through the interface in a translated language and checks completeness and wording.
+      preconditions: A reviewer who is a native speaker of the target language and access to all pages and the image assets.
+      expected: No untranslated text, no text in images and correct plural forms are found.
+      steps:
+        - action: Walk through every page and dialog in the target language.
+          expected: No English or placeholder text appears, apart from product names and user data.
+        - action: Trigger messages with the counts 1 and 3.
+          expected: The plural forms are grammatically correct.
+        - action: Review all image assets and illustrations.
+          expected: No image contains words that need translation.
+    sv:
+      title: Språkgranskning av gränssnittet
+      description: En person med målspråket som modersmål går igenom gränssnittet på det översatta språket och kontrollerar fullständighet och ordval.
+      preconditions: En granskare med målspråket som modersmål och åtkomst till alla sidor och bildfiler.
+      expected: Ingen oöversatt text, ingen text i bilder och korrekta pluralformer.
+      steps:
+        - action: Gå igenom varje sida och dialogruta på målspråket.
+          expected: Ingen engelsk text eller platshållartext visas, bortsett från produktnamn och användardata.
+        - action: Framkalla meddelanden med antalen 1 och 3.
+          expected: Pluralformerna är grammatiskt korrekta.
+        - action: Gå igenom alla bildfiler och illustrationer.
+          expected: Ingen bild innehåller ord som behöver översättas.

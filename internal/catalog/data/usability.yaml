@@ -1,0 +1,655 @@
+area: usability
+prefix: USE
+group: usability
+name: {en: Usability, sv: Användbarhet}
+description:
+  en: Navigation, feedback, error prevention and recovery, error messages, task completion, defaults, empty states and responsive layout, based on ISO 9241-110, ISO 9241-11 and Nielsen's heuristics.
+  sv: Navigering, återkoppling, förebyggande av och återhämtning från fel, felmeddelanden, måluppfyllelse, förval, tomma lägen och responsiv layout, utifrån ISO 9241-110, ISO 9241-11 och Nielsens heuristiker.
+
+requirements:
+  - id: USE-01
+    type: usability
+    obligation: must
+    priority: high
+    tags: [navigation, consistency]
+    refs: ["ISO 9241-110:2020 conformity with user expectations", "WCAG 2.2 SC 3.2.3", "Nielsen heuristic 4"]
+    tests: [USE-T01]
+    en:
+      title: Consistent main navigation
+      description: The user interface MUST show the main navigation in the same position and with the items in the same order on every page.
+      rationale: A stable navigation lets users build a mental model and find functions without searching.
+      criteria:
+        - method: inspection
+          text: On 10 sampled pages the main navigation has the same position, the same items and the same order.
+    sv:
+      title: Enhetlig huvudnavigering
+      description: Användargränssnittet SKA visa huvudnavigeringen på samma plats och med menyvalen i samma ordning på varje sida.
+      rationale: En stabil navigering gör att användare bygger upp en mental modell och hittar funktioner utan att leta.
+      criteria:
+        - method: inspection
+          text: På 10 utvalda sidor har huvudnavigeringen samma placering, samma menyval och samma ordning.
+
+  - id: USE-02
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [navigation, orientation]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1", "WCAG 2.2 SC 2.4.8"]
+    tests: [USE-T01]
+    en:
+      title: Current location is shown
+      description: The user interface SHOULD highlight the current section in the main navigation and show a breadcrumb trail on pages below the second level.
+      rationale: Users who arrive through a link or search need to see where they are in the structure.
+      criteria:
+        - method: inspection
+          text: The active section is highlighted on every page, and pages at level 3 or deeper show a breadcrumb trail with working links.
+    sv:
+      title: Aktuell plats visas
+      description: Användargränssnittet BÖR markera det aktuella avsnittet i huvudnavigeringen och visa en brödsmulestig på sidor under den andra nivån.
+      rationale: Användare som kommer via en länk eller sökning behöver se var i strukturen de befinner sig.
+      criteria:
+        - method: inspection
+          text: Det aktiva avsnittet är markerat på varje sida, och sidor på nivå 3 eller djupare visar en brödsmulestig med fungerande länkar.
+
+  - id: USE-03
+    type: usability
+    obligation: must
+    priority: high
+    tags: [feedback]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1"]
+    tests: [USE-T02]
+    en:
+      title: Feedback within one second
+      description: The user interface MUST show a visible response to each click, key press or form submission within 1 second.
+      rationale: Without a response within about a second users repeat the action or assume that the system has failed.
+      criteria:
+        - method: test
+          text: For 20 sampled actions the time from the action to the first visible response is at most 1 second.
+          threshold: "≤ 1 s"
+    sv:
+      title: Återkoppling inom en sekund
+      description: Användargränssnittet SKA visa en synlig reaktion på varje klick, tangenttryckning eller inskickat formulär inom 1 sekund.
+      rationale: Utan reaktion inom en sekund upprepar användare åtgärden eller tror att systemet har slutat fungera.
+      criteria:
+        - method: test
+          text: För 20 utvalda åtgärder är tiden från åtgärden till den första synliga reaktionen högst 1 sekund.
+          threshold: "≤ 1 s"
+
+  - id: USE-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [feedback, progress]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1"]
+    tests: [USE-T02]
+    en:
+      title: Progress indicator for long operations
+      description: The user interface SHOULD show a progress indicator with the share completed for each operation that lasts longer than 10 seconds.
+      rationale: Users tolerate waiting much better when they can see how far an operation has come.
+      criteria:
+        - method: test
+          text: An import, an export and a report that each take more than 10 seconds show a progress indicator with a percentage or item count.
+          threshold: "> 10 s"
+    sv:
+      title: Förloppsindikator för långa åtgärder
+      description: Användargränssnittet BÖR visa en förloppsindikator med andelen som är klar för varje åtgärd som tar längre tid än 10 sekunder.
+      rationale: Användare står ut med väntan mycket bättre när de ser hur långt en åtgärd har kommit.
+      criteria:
+        - method: test
+          text: En import, en export och en rapport som var och en tar mer än 10 sekunder visar en förloppsindikator med procent eller antal poster.
+          threshold: "> 10 s"
+
+  - id: USE-05
+    type: usability
+    obligation: must
+    priority: high
+    tags: [error-prevention, confirmation, delete]
+    refs: ["ISO 9241-110:2020 use error robustness", "Nielsen heuristic 5"]
+    tests: [USE-T03]
+    en:
+      title: Confirmation before permanent deletion
+      description: The system MUST ask for a confirmation that names the affected objects before it permanently deletes data.
+      rationale: A confirmation that states what will be lost prevents costly slips.
+      criteria:
+        - method: test
+          text: Each permanent delete action opens a confirmation dialog that names the object or the number of objects, and cancelling keeps the data.
+    sv:
+      title: Bekräftelse före permanent borttagning
+      description: Systemet SKA be om en bekräftelse som anger de berörda objekten innan det tar bort data permanent.
+      rationale: En bekräftelse som visar vad som går förlorat förhindrar kostsamma misstag.
+      criteria:
+        - method: test
+          text: Varje permanent borttagning öppnar en bekräftelsedialog som anger objektet eller antalet objekt, och om användaren avbryter finns data kvar.
+
+  - id: USE-06
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [undo, error-recovery]
+    refs: ["ISO 9241-110:2020 use error robustness", "Nielsen heuristic 3"]
+    tests: [USE-T03]
+    en:
+      title: Undo of recent actions
+      description: The user interface SHOULD offer an undo command for 10 seconds after a user deletes, moves or archives an item.
+      rationale: Undo lets users act with confidence and recover from mistakes without contacting support.
+      criteria:
+        - method: test
+          text: After deleting, moving and archiving an item, an undo command is visible for 10 seconds and restores the previous state.
+          threshold: "10 s"
+    sv:
+      title: Ångra nyss utförda åtgärder
+      description: Användargränssnittet BÖR erbjuda ett ångrakommando i 10 sekunder efter att en användare har tagit bort, flyttat eller arkiverat ett objekt.
+      rationale: Möjligheten att ångra gör att användare vågar agera och kan rätta misstag utan att kontakta supporten.
+      criteria:
+        - method: test
+          text: Efter att ett objekt har tagits bort, flyttats och arkiverats visas ett ångrakommando i 10 sekunder som återställer det tidigare läget.
+          threshold: "10 s"
+
+  - id: USE-07
+    type: usability
+    obligation: must
+    priority: high
+    tags: [error-messages]
+    refs: ["ISO 9241-110:2020 use error robustness", "Nielsen heuristic 9"]
+    tests: [USE-T04]
+    en:
+      title: Error messages state cause and next step
+      description: Each error message shown to a user MUST state in words what failed and what the user can do next.
+      rationale: Codes and technical texts leave users stuck and generate support requests.
+      criteria:
+        - method: inspection
+          text: Each error message in the message catalogue names the problem and a next step, and none consists of only a code or a stack trace.
+    sv:
+      title: Felmeddelanden anger orsak och nästa steg
+      description: Varje felmeddelande som visas för en användare SKA i ord ange vad som gick fel och vad användaren kan göra härnäst.
+      rationale: Koder och tekniska texter lämnar användaren utan väg framåt och leder till supportärenden.
+      criteria:
+        - method: inspection
+          text: Varje felmeddelande i meddelandekatalogen anger problemet och ett nästa steg, och inget består enbart av en kod eller en stackspårning.
+
+  - id: USE-08
+    type: usability
+    obligation: must
+    priority: high
+    tags: [forms, error-recovery]
+    refs: ["ISO 9241-110:2020 use error robustness", "WCAG 2.2 SC 3.3.7"]
+    tests: [USE-T04]
+    en:
+      title: Entered values kept after a validation error
+      description: The user interface MUST keep every value the user has entered in a form when the form is rejected by validation.
+      rationale: Having to type everything again after one mistake is frustrating and causes new errors.
+      criteria:
+        - method: test
+          text: A form with 10 filled fields and one invalid value is rejected and shows all 10 values unchanged, apart from password fields.
+    sv:
+      title: Inmatade värden finns kvar efter valideringsfel
+      description: Användargränssnittet SKA behålla varje värde som användaren har angett i ett formulär när formuläret avvisas vid validering.
+      rationale: Att behöva skriva in allt igen efter ett enda fel är frustrerande och leder till nya fel.
+      criteria:
+        - method: test
+          text: Ett formulär med 10 ifyllda fält och ett ogiltigt värde avvisas och visar alla 10 värden oförändrade, bortsett från lösenordsfält.
+
+  - id: USE-09
+    type: usability
+    obligation: should
+    priority: high
+    tags: [effectiveness, usability-test]
+    refs: ["ISO 9241-11:2018 effectiveness", "ISO/IEC 25010:2023 interaction capability", "ISO/IEC 25022"]
+    tests: [USE-T05]
+    en:
+      title: Completion rate for core tasks
+      description: At least 90 % of first-time participants in a usability test SHOULD complete each core task without assistance.
+      rationale: Effectiveness is the first measure of usability in ISO 9241-11 and shows whether users reach their goals at all.
+      criteria:
+        - method: test
+          text: In a moderated test with at least 8 first-time participants, each core task is completed without help by at least 90 % of them.
+          threshold: "≥ 90 %"
+    sv:
+      title: Andel genomförda huvuduppgifter
+      description: Minst 90 % av förstagångsdeltagarna i ett användbarhetstest BÖR genomföra varje huvuduppgift utan hjälp.
+      rationale: Ändamålsenlighet är det första måttet på användbarhet i ISO 9241-11 och visar om användarna alls når sina mål.
+      criteria:
+        - method: test
+          text: I ett modererat test med minst 8 förstagångsdeltagare genomförs varje huvuduppgift utan hjälp av minst 90 % av dem.
+          threshold: "≥ 90 %"
+
+  - id: USE-10
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [efficiency, navigation]
+    refs: ["ISO 9241-11:2018 efficiency", "ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [USE-T06]
+    en:
+      title: Core tasks within three clicks
+      description: The user interface SHOULD let a user start each core task within 3 clicks from the start page.
+      rationale: Short paths to frequent tasks save time for every user every day.
+      criteria:
+        - method: test
+          text: For each core task in the task list the shortest path from the start page to the task's first screen has at most 3 clicks.
+          threshold: "≤ 3 clicks"
+    sv:
+      title: Huvuduppgifter inom tre klick
+      description: Användargränssnittet BÖR låta användaren påbörja varje huvuduppgift inom 3 klick från startsidan.
+      rationale: Korta vägar till vanliga uppgifter sparar tid för varje användare varje dag.
+      criteria:
+        - method: test
+          text: För varje huvuduppgift i uppgiftslistan har den kortaste vägen från startsidan till uppgiftens första vy högst 3 klick.
+          threshold: "≤ 3 klick"
+
+  - id: USE-11
+    type: usability
+    obligation: should
+    priority: low
+    tags: [defaults, forms]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks", "Nielsen heuristic 7"]
+    tests: [USE-T07]
+    en:
+      title: Defaults from the user's last choice
+      description: A form SHOULD prefill each selection field with the value the same user chose the last time they used that form.
+      rationale: Sensible defaults reduce the number of decisions and keystrokes for repeated work.
+      criteria:
+        - method: test
+          text: After a user saves a form with chosen values, opening the form again shows those values preselected.
+    sv:
+      title: Förval från användarens senaste val
+      description: Ett formulär BÖR förifylla varje valfält med det värde som samma användare valde senast hon eller han använde formuläret.
+      rationale: Genomtänkta förval minskar antalet beslut och knapptryckningar vid upprepat arbete.
+      criteria:
+        - method: test
+          text: När en användare har sparat ett formulär med valda värden visas samma värden förvalda nästa gång formuläret öppnas.
+
+  - id: USE-12
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [empty-state, onboarding]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 10"]
+    tests: [USE-T08]
+    en:
+      title: Empty states explain and offer an action
+      description: Each list or overview without content MUST show a short explanation and a button to create the first item.
+      rationale: A blank page gives no hint whether data is missing, loading or filtered away.
+      criteria:
+        - method: test
+          text: In a new organisation without data, every list shows an explanatory text and a create button instead of an empty table.
+    sv:
+      title: Tomma lägen förklarar och erbjuder en åtgärd
+      description: Varje lista eller översikt utan innehåll SKA visa en kort förklaring och en knapp för att skapa det första objektet.
+      rationale: En tom sida ger ingen ledtråd om data saknas, laddas eller har filtrerats bort.
+      criteria:
+        - method: test
+          text: I en ny organisation utan data visar varje lista en förklarande text och en knapp för att skapa i stället för en tom tabell.
+
+  - id: USE-13
+    type: usability
+    obligation: must
+    priority: high
+    tags: [responsive, layout]
+    refs: ["ISO/IEC 25010:2023 adaptability", "WCAG 2.2 SC 1.3.4"]
+    tests: [USE-T09]
+    en:
+      title: Responsive layout from 360 to 1920 pixels
+      description: The user interface MUST offer every function at viewport widths from 360 to 1920 CSS pixels in portrait and landscape orientation.
+      rationale: Users switch between phones, tablets and desktop screens and expect the same functions on each.
+      criteria:
+        - method: test
+          text: At widths of 360, 768, 1280 and 1920 pixels every core task can be completed and no content overlaps.
+    sv:
+      title: Responsiv layout från 360 till 1920 pixlar
+      description: Användargränssnittet SKA erbjuda varje funktion vid visningsbredder från 360 till 1920 CSS-pixlar i både stående och liggande läge.
+      rationale: Användare växlar mellan mobil, surfplatta och datorskärm och förväntar sig samma funktioner på varje enhet.
+      criteria:
+        - method: test
+          text: Vid bredderna 360, 768, 1280 och 1920 pixlar kan varje huvuduppgift genomföras och inget innehåll överlappar.
+
+  - id: USE-14
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [error-prevention, unsaved-changes]
+    refs: ["ISO 9241-110:2020 use error robustness", "Nielsen heuristic 5"]
+    tests: [USE-T10]
+    en:
+      title: Warning before unsaved changes are lost
+      description: The user interface MUST warn the user and offer to stay on the page when the user leaves a form with unsaved changes.
+      rationale: Losing typed work by clicking a link or closing a tab is a frequent and avoidable error.
+      criteria:
+        - method: test
+          text: Navigating away from, reloading or closing a changed form shows a warning, and choosing to stay keeps the changes.
+    sv:
+      title: Varning innan osparade ändringar går förlorade
+      description: Användargränssnittet SKA varna användaren och erbjuda att stanna kvar på sidan när användaren lämnar ett formulär med osparade ändringar.
+      rationale: Att förlora inskriven text genom att klicka på en länk eller stänga en flik är ett vanligt fel som går att undvika.
+      criteria:
+        - method: test
+          text: När användaren navigerar bort från, laddar om eller stänger ett ändrat formulär visas en varning, och om användaren stannar finns ändringarna kvar.
+
+  - id: USE-15
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [satisfaction, sus, usability-test]
+    refs: ["ISO 9241-11:2018 satisfaction", "System Usability Scale (Brooke 1996)"]
+    tests: [USE-T05]
+    en:
+      title: Satisfaction score of at least 70
+      description: The system SHOULD reach a mean System Usability Scale score of at least 70 in a usability test with at least 8 participants.
+      rationale: A SUS score of 70 or more indicates that users find the product better than average.
+      criteria:
+        - method: analysis
+          text: The mean SUS score of the participants in the latest usability test is at least 70.
+          threshold: "SUS ≥ 70"
+    sv:
+      title: Nöjdhetspoäng på minst 70
+      description: Systemet BÖR nå ett medelvärde på minst 70 på System Usability Scale i ett användbarhetstest med minst 8 deltagare.
+      rationale: Ett SUS-värde på 70 eller mer tyder på att användarna upplever produkten som bättre än genomsnittet.
+      criteria:
+        - method: analysis
+          text: Medelvärdet för SUS bland deltagarna i det senaste användbarhetstestet är minst 70.
+          threshold: "SUS ≥ 70"
+
+tests:
+  - id: USE-T01
+    priority: high
+    execution: manual
+    tags: [navigation]
+    refs: ["ISO 9241-110:2020 conformity with user expectations"]
+    en:
+      title: Navigation is consistent and shows the location
+      description: Checks the position and order of the main navigation and the location indicators on sampled pages.
+      preconditions: A signed-in user with access to all sections and a list of 10 sample pages at different levels.
+      expected: The navigation is identical on every page, the active section is marked and deep pages show breadcrumbs.
+      steps:
+        - action: Open each of the 10 sample pages and take a screenshot of the navigation.
+          expected: The navigation has the same position, items and order on every screenshot.
+        - action: Check the highlighted item in the navigation on each page.
+          expected: The section that contains the page is highlighted.
+        - action: Open a page at level 3 and click each link in the breadcrumb trail.
+          expected: The trail shows the path to the page and each link opens the right parent page.
+    sv:
+      title: Navigeringen är enhetlig och visar platsen
+      description: Kontrollerar huvudnavigeringens placering och ordning samt platsindikatorerna på ett urval sidor.
+      preconditions: En inloggad användare med åtkomst till alla avsnitt och en lista med 10 exempelsidor på olika nivåer.
+      expected: Navigeringen är likadan på varje sida, det aktiva avsnittet är markerat och djupa sidor visar brödsmulor.
+      steps:
+        - action: Öppna var och en av de 10 exempelsidorna och ta en skärmbild av navigeringen.
+          expected: Navigeringen har samma placering, menyval och ordning på varje skärmbild.
+        - action: Kontrollera vilket menyval som är markerat på varje sida.
+          expected: Det avsnitt som sidan tillhör är markerat.
+        - action: Öppna en sida på nivå 3 och klicka på varje länk i brödsmulestigen.
+          expected: Stigen visar vägen till sidan och varje länk öppnar rätt överordnad sida.
+
+  - id: USE-T02
+    priority: high
+    execution: manual
+    tags: [feedback, progress]
+    refs: ["Nielsen heuristic 1"]
+    en:
+      title: Feedback and progress for actions
+      description: Measures the response time of visible feedback and checks the progress indicator for long operations.
+      preconditions: A signed-in user, a screen recorder with at least 30 frames per second and a data set that makes an export take more than 10 seconds.
+      expected: Every action responds within 1 second and long operations show their progress.
+      steps:
+        - action: Record the screen while performing 20 actions such as saving, filtering, opening a menu and submitting a form.
+          expected: In the recording each action shows a visible response within 1 second.
+          data: "≤ 1 s, 20 actions"
+        - action: Start an export that takes more than 10 seconds.
+          expected: A progress indicator shows a percentage or item count that increases until the export completes.
+        - action: Simulate a slow network with 3 seconds latency and save a form.
+          expected: A busy indicator appears and the save button is disabled until the response arrives.
+    sv:
+      title: Återkoppling och förlopp för åtgärder
+      description: Mäter svarstiden för synlig återkoppling och kontrollerar förloppsindikatorn för långa åtgärder.
+      preconditions: En inloggad användare, en skärminspelare med minst 30 bilder per sekund och en datamängd som gör att en export tar mer än 10 sekunder.
+      expected: Varje åtgärd ger en reaktion inom 1 sekund och långa åtgärder visar sitt förlopp.
+      steps:
+        - action: Spela in skärmen medan 20 åtgärder utförs, till exempel spara, filtrera, öppna en meny och skicka ett formulär.
+          expected: I inspelningen visar varje åtgärd en synlig reaktion inom 1 sekund.
+          data: "≤ 1 s, 20 åtgärder"
+        - action: Starta en export som tar mer än 10 sekunder.
+          expected: En förloppsindikator visar procent eller antal poster som ökar tills exporten är klar.
+        - action: Simulera ett långsamt nät med 3 sekunders fördröjning och spara ett formulär.
+          expected: En upptagetindikator visas och spara-knappen är inaktiverad tills svaret kommer.
+
+  - id: USE-T03
+    priority: high
+    execution: manual
+    tags: [delete, confirmation, undo]
+    refs: ["ISO 9241-110:2020 use error robustness", "Nielsen heuristic 3", "Nielsen heuristic 5"]
+    en:
+      title: Deletion is confirmed and can be undone
+      description: Checks the confirmation before permanent deletion and the undo command after reversible actions.
+      preconditions: A signed-in user with permission to delete items and at least 5 items in a list.
+      expected: Permanent deletion asks for confirmation naming the objects, and reversible actions can be undone.
+      steps:
+        - action: Select 3 items and choose permanent deletion.
+          expected: A dialog names the number of items and asks for confirmation.
+        - action: Cancel the dialog.
+          expected: The 3 items are still in the list.
+        - action: Archive one item and click undo within 10 seconds.
+          expected: The item is back in its original place with unchanged content.
+    sv:
+      title: Borttagning bekräftas och kan ångras
+      description: Kontrollerar bekräftelsen före permanent borttagning och ångrakommandot efter åtgärder som kan återställas.
+      preconditions: En inloggad användare med behörighet att ta bort objekt och minst 5 objekt i en lista.
+      expected: Permanent borttagning kräver en bekräftelse som anger objekten, och åtgärder som kan återställas kan ångras.
+      steps:
+        - action: Markera 3 objekt och välj permanent borttagning.
+          expected: En dialogruta anger antalet objekt och ber om bekräftelse.
+        - action: Avbryt dialogrutan.
+          expected: De 3 objekten finns kvar i listan.
+        - action: Arkivera ett objekt och klicka på ångra inom 10 sekunder.
+          expected: Objektet är tillbaka på sin ursprungliga plats med oförändrat innehåll.
+
+  - id: USE-T04
+    priority: high
+    execution: manual
+    tags: [error-messages, forms]
+    refs: ["Nielsen heuristic 9"]
+    en:
+      title: Error messages and kept input after validation
+      description: Checks that error messages name the problem and a next step and that entered values survive a validation error.
+      preconditions: A signed-in user and a form with at least 10 fields, one of them a date field.
+      expected: The error message is understandable and every entered value is kept.
+      steps:
+        - action: Fill in all 10 fields, enter an invalid date and submit.
+          expected: The form is rejected with a message that names the date field and the expected format.
+          data: 31/02/2026
+        - action: Check the other 9 fields.
+          expected: All values are still filled in as entered.
+        - action: Stop the server and try to save the form again.
+          expected: A message states that the connection failed and suggests trying again, without a stack trace.
+    sv:
+      title: Felmeddelanden och kvarvarande inmatning efter validering
+      description: Kontrollerar att felmeddelanden anger problemet och ett nästa steg och att inmatade värden finns kvar efter ett valideringsfel.
+      preconditions: En inloggad användare och ett formulär med minst 10 fält, varav ett datumfält.
+      expected: Felmeddelandet är begripligt och varje inmatat värde finns kvar.
+      steps:
+        - action: Fyll i alla 10 fälten, ange ett ogiltigt datum och skicka formuläret.
+          expected: Formuläret avvisas med ett meddelande som anger datumfältet och det förväntade formatet.
+          data: 31/02/2026
+        - action: Kontrollera de övriga 9 fälten.
+          expected: Alla värden är fortfarande ifyllda som de angavs.
+        - action: Stoppa servern och försök spara formuläret igen.
+          expected: Ett meddelande talar om att anslutningen misslyckades och föreslår ett nytt försök, utan stackspårning.
+
+  - id: USE-T05
+    priority: high
+    execution: manual
+    tags: [usability-test, sus]
+    refs: ["ISO 9241-11:2018", "ISO/IEC 25062 Common Industry Format"]
+    en:
+      title: Moderated usability test of core tasks
+      description: Measures completion rate and satisfaction with first-time users performing the core tasks.
+      preconditions: At least 8 participants from the target group who have not used the system, a task list and the SUS questionnaire.
+      expected: At least 90 % of participants complete each core task without help and the mean SUS score is at least 70.
+      steps:
+        - action: Give each participant the core tasks one at a time and observe without helping.
+          expected: For each task it is recorded whether the participant completed it without assistance.
+        - action: Let each participant fill in the SUS questionnaire after the session.
+          expected: A SUS score from 0 to 100 is calculated per participant.
+        - action: Calculate the completion rate per task and the mean SUS score.
+          expected: Each task has a completion rate of at least 90 % and the mean SUS score is at least 70.
+          data: "completion ≥ 90 %, SUS ≥ 70"
+    sv:
+      title: Modererat användbarhetstest av huvuduppgifter
+      description: Mäter andel genomförda uppgifter och nöjdhet hos förstagångsanvändare som utför huvuduppgifterna.
+      preconditions: Minst 8 deltagare ur målgruppen som inte har använt systemet, en uppgiftslista och SUS-enkäten.
+      expected: Minst 90 % av deltagarna genomför varje huvuduppgift utan hjälp och medelvärdet för SUS är minst 70.
+      steps:
+        - action: Ge varje deltagare huvuduppgifterna en i taget och observera utan att hjälpa till.
+          expected: För varje uppgift noteras om deltagaren genomförde den utan hjälp.
+        - action: Låt varje deltagare fylla i SUS-enkäten efter sessionen.
+          expected: Ett SUS-värde mellan 0 och 100 räknas fram per deltagare.
+        - action: Räkna ut andelen genomförda uppgifter per uppgift och medelvärdet för SUS.
+          expected: Varje uppgift har minst 90 % genomförande och medelvärdet för SUS är minst 70.
+          data: "genomförande ≥ 90 %, SUS ≥ 70"
+
+  - id: USE-T06
+    priority: medium
+    execution: automated
+    tags: [efficiency, e2e]
+    refs: ["ISO 9241-11:2018 efficiency"]
+    en:
+      title: Click count to reach core tasks
+      description: An end-to-end script starts each core task from the start page along the shortest path and counts the clicks.
+      preconditions: A test environment with seeded data and a browser automation suite with one scenario per core task.
+      expected: Every core task is reached within 3 clicks from the start page.
+      steps:
+        - action: For each core task the script opens the start page and follows the scripted shortest path to the task's first screen.
+          expected: The task's first screen is displayed.
+        - action: The script counts the clicks of each path and compares it with the limit.
+          expected: No path has more than 3 clicks, and the script fails the build otherwise.
+          data: "limit: 3 clicks"
+    sv:
+      title: Antal klick till huvuduppgifter
+      description: Ett skript för helflödestest påbörjar varje huvuduppgift från startsidan via den kortaste vägen och räknar klicken.
+      preconditions: En testmiljö med testdata och en svit för webbläsarautomatisering med ett scenario per huvuduppgift.
+      expected: Varje huvuduppgift nås inom 3 klick från startsidan.
+      steps:
+        - action: För varje huvuduppgift öppnar skriptet startsidan och följer den kortaste vägen till uppgiftens första vy.
+          expected: Uppgiftens första vy visas.
+        - action: Skriptet räknar klicken för varje väg och jämför med gränsen.
+          expected: Ingen väg har fler än 3 klick, annars låter skriptet bygget fallera.
+          data: "gräns: 3 klick"
+
+  - id: USE-T07
+    priority: low
+    execution: manual
+    tags: [defaults]
+    refs: ["Nielsen heuristic 7"]
+    en:
+      title: Form remembers the last chosen values
+      description: Checks that selection fields are prefilled with the user's previous choice.
+      preconditions: A signed-in user and a form with at least 2 selection fields.
+      expected: Reopening the form shows the previously chosen values, and other users are not affected.
+      steps:
+        - action: Open the form, choose non-default values in 2 selection fields and save.
+          expected: The form is saved.
+        - action: Open the same form again as the same user.
+          expected: The 2 selection fields show the values chosen last time.
+        - action: Open the form as a different user.
+          expected: The fields show the standard defaults, not the first user's choices.
+    sv:
+      title: Formuläret kommer ihåg de senast valda värdena
+      description: Kontrollerar att valfält förifylls med användarens föregående val.
+      preconditions: En inloggad användare och ett formulär med minst 2 valfält.
+      expected: När formuläret öppnas igen visas de senast valda värdena, och andra användare påverkas inte.
+      steps:
+        - action: Öppna formuläret, välj andra värden än standardvärdena i 2 valfält och spara.
+          expected: Formuläret sparas.
+        - action: Öppna samma formulär igen som samma användare.
+          expected: De 2 valfälten visar de värden som valdes förra gången.
+        - action: Öppna formuläret som en annan användare.
+          expected: Fälten visar standardvärdena, inte den första användarens val.
+
+  - id: USE-T08
+    priority: medium
+    execution: automated
+    tags: [empty-state, e2e]
+    refs: ["Nielsen heuristic 10"]
+    en:
+      title: Empty state on every list
+      description: A script visits every list in a new organisation without data and checks the empty state.
+      preconditions: A freshly created organisation with no data and a browser automation tool.
+      expected: Every list shows an explanation and a create button.
+      steps:
+        - action: The script signs in to the empty organisation and opens each list route.
+          expected: No list renders an empty table without text.
+        - action: On each list the script looks for the empty-state element and its create button and clicks the button.
+          expected: The element is present and the button opens the form for creating the first item.
+    sv:
+      title: Tomt läge på varje lista
+      description: Ett skript besöker varje lista i en ny organisation utan data och kontrollerar det tomma läget.
+      preconditions: En nyskapad organisation utan data och ett verktyg för webbläsarautomatisering.
+      expected: Varje lista visar en förklaring och en knapp för att skapa.
+      steps:
+        - action: Skriptet loggar in i den tomma organisationen och öppnar varje listvy.
+          expected: Ingen lista visar en tom tabell utan text.
+        - action: På varje lista letar skriptet efter elementet för tomt läge och dess skapa-knapp och klickar på knappen.
+          expected: Elementet finns och knappen öppnar formuläret för att skapa det första objektet.
+
+  - id: USE-T09
+    priority: high
+    execution: automated
+    tags: [responsive, visual-regression]
+    refs: ["ISO/IEC 25010:2023 adaptability"]
+    en:
+      title: Core tasks at four viewport widths
+      description: A script runs the core task scenarios at four viewport widths and compares screenshots with approved baselines.
+      preconditions: A test environment, a browser automation suite with the core task scenarios and approved screenshot baselines.
+      expected: Every core task passes at each width and no screenshot shows overlapping content.
+      steps:
+        - action: The script runs each core task scenario at widths 360, 768, 1280 and 1920 CSS pixels.
+          expected: Every scenario passes at every width.
+          data: 360, 768, 1280, 1920 px
+        - action: The script rotates the 768-pixel viewport to landscape and repeats the scenarios.
+          expected: Every scenario passes in landscape orientation.
+        - action: The script compares screenshots with the baselines.
+          expected: No difference above the threshold of 0.1 % of pixels is reported.
+          data: "threshold 0.1 %"
+    sv:
+      title: Huvuduppgifter vid fyra visningsbredder
+      description: Ett skript kör scenarierna för huvuduppgifterna vid fyra visningsbredder och jämför skärmbilder med godkända referensbilder.
+      preconditions: En testmiljö, en svit för webbläsarautomatisering med scenarierna för huvuduppgifterna och godkända referensbilder.
+      expected: Varje huvuduppgift går igenom vid varje bredd och ingen skärmbild visar överlappande innehåll.
+      steps:
+        - action: Skriptet kör varje scenario vid bredderna 360, 768, 1280 och 1920 CSS-pixlar.
+          expected: Varje scenario går igenom vid varje bredd.
+          data: 360, 768, 1280, 1920 px
+        - action: Skriptet vrider visningsområdet på 768 pixlar till liggande läge och upprepar scenarierna.
+          expected: Varje scenario går igenom i liggande läge.
+        - action: Skriptet jämför skärmbilderna med referensbilderna.
+          expected: Ingen skillnad över tröskeln 0,1 % av pixlarna rapporteras.
+          data: "tröskel 0,1 %"
+
+  - id: USE-T10
+    priority: medium
+    execution: automated
+    tags: [unsaved-changes, e2e]
+    refs: ["ISO 9241-110:2020 use error robustness"]
+    en:
+      title: Warning on leaving a form with unsaved changes
+      description: A script changes a form and tries to leave it in three ways, checking for the warning each time.
+      preconditions: A test environment and a browser automation tool with a signed-in test user.
+      expected: Each attempt to leave a changed form shows a warning and staying keeps the changes.
+      steps:
+        - action: The script changes a field in a form and clicks a link in the navigation.
+          expected: A warning dialog appears and choosing to stay keeps the changed value.
+        - action: The script triggers a page reload on the changed form.
+          expected: The browser's leave-page warning is raised.
+        - action: The script saves the form and then clicks the same link.
+          expected: No warning appears and the linked page opens.
+    sv:
+      title: Varning när ett formulär med osparade ändringar lämnas
+      description: Ett skript ändrar ett formulär och försöker lämna det på tre sätt och kontrollerar varningen varje gång.
+      preconditions: En testmiljö och ett verktyg för webbläsarautomatisering med en inloggad testanvändare.
+      expected: Varje försök att lämna ett ändrat formulär ger en varning och om användaren stannar finns ändringarna kvar.
+      steps:
+        - action: Skriptet ändrar ett fält i ett formulär och klickar på en länk i navigeringen.
+          expected: En varningsdialog visas och om användaren väljer att stanna finns det ändrade värdet kvar.
+        - action: Skriptet laddar om sidan med det ändrade formuläret.
+          expected: Webbläsarens varning om att lämna sidan visas.
+        - action: Skriptet sparar formuläret och klickar sedan på samma länk.
+          expected: Ingen varning visas och den länkade sidan öppnas.

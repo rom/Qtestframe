@@ -1,0 +1,809 @@
+area: accessibility
+prefix: A11Y
+group: usability
+name: {en: Accessibility, sv: Tillgänglighet}
+description:
+  en: Keyboard operation, focus, text alternatives, contrast, reflow, structure, forms, screen reader support, motion, captions and conformance with WCAG 2.2 AA and EN 301 549.
+  sv: Tangentbordsstyrning, fokus, textalternativ, kontrast, omflödning, struktur, formulär, stöd för skärmläsare, rörelse, undertexter och överensstämmelse med WCAG 2.2 AA och EN 301 549.
+
+requirements:
+  - id: A11Y-01
+    type: usability
+    obligation: must
+    priority: critical
+    tags: [keyboard]
+    refs: ["WCAG 2.2 SC 2.1.1", "EN 301 549 §9.2.1.1"]
+    tests: [A11Y-T01]
+    en:
+      title: Keyboard operation of every function
+      description: The system MUST let a user perform every function that is available with a pointing device by using the keyboard alone.
+      rationale: People who are blind, have motor impairments or use switch devices depend on the keyboard interface.
+      criteria:
+        - method: test
+          text: Every main task in the test script is completed with the keyboard only, without a mouse or touch input.
+    sv:
+      title: Alla funktioner kan styras med tangentbord
+      description: Systemet SKA låta användaren utföra varje funktion som finns tillgänglig med pekdon genom att enbart använda tangentbordet.
+      rationale: Personer som är blinda, har motoriska funktionsnedsättningar eller använder kontakter är beroende av tangentbordsgränssnittet.
+      criteria:
+        - method: test
+          text: Varje huvuduppgift i testmanuset genomförs enbart med tangentbord, utan mus eller pekskärm.
+
+  - id: A11Y-02
+    type: usability
+    obligation: must_not
+    priority: critical
+    tags: [keyboard, focus]
+    refs: ["WCAG 2.2 SC 2.1.2", "EN 301 549 §9.2.1.2"]
+    tests: [A11Y-T01]
+    en:
+      title: No keyboard trap
+      description: The user interface MUST NOT hold keyboard focus inside a component that the user cannot leave with Tab, Shift+Tab or Escape.
+      rationale: A keyboard trap stops a keyboard user from reaching the rest of the page and forces them to reload it.
+      criteria:
+        - method: test
+          text: Focus can be moved into and out of every dialog, menu, editor and embedded component with standard keys.
+    sv:
+      title: Ingen tangentbordsfälla
+      description: Användargränssnittet SKA INTE hålla kvar tangentbordsfokus i en komponent som användaren inte kan lämna med Tab, Skift+Tab eller Esc.
+      rationale: En tangentbordsfälla hindrar tangentbordsanvändare från att nå resten av sidan och tvingar dem att ladda om den.
+      criteria:
+        - method: test
+          text: Fokus kan flyttas in i och ut ur varje dialogruta, meny, redigerare och inbäddad komponent med standardtangenter.
+
+  - id: A11Y-03
+    type: usability
+    obligation: must
+    priority: high
+    tags: [focus, contrast]
+    refs: ["WCAG 2.2 SC 2.4.7", "WCAG 2.2 SC 2.4.11", "WCAG 2.2 SC 1.4.11"]
+    tests: [A11Y-T02]
+    en:
+      title: Visible focus indicator
+      description: The user interface MUST show a focus indicator on the focused element with a contrast ratio of at least 3:1 against the adjacent colours.
+      rationale: Keyboard users need to see where they are on the page before they can act.
+      criteria:
+        - method: test
+          text: Each interactive element shows a focus indicator when reached with Tab, and the measured contrast is at least 3:1.
+          threshold: "≥ 3:1"
+    sv:
+      title: Synlig fokusmarkering
+      description: Användargränssnittet SKA visa en fokusmarkering på elementet i fokus med ett kontrastförhållande på minst 3:1 mot angränsande färger.
+      rationale: Tangentbordsanvändare behöver se var de befinner sig på sidan innan de kan agera.
+      criteria:
+        - method: test
+          text: Varje interaktivt element visar en fokusmarkering när det nås med Tab, och den uppmätta kontrasten är minst 3:1.
+          threshold: "≥ 3:1"
+
+  - id: A11Y-04
+    type: usability
+    obligation: must
+    priority: high
+    tags: [focus, keyboard]
+    refs: ["WCAG 2.2 SC 2.4.3", "WCAG 2.2 SC 2.4.11"]
+    tests: [A11Y-T02]
+    en:
+      title: Logical focus order
+      description: The user interface MUST move keyboard focus in an order that follows the visual reading order of the page.
+      rationale: A focus order that jumps around the page disorients keyboard and screen reader users.
+      criteria:
+        - method: test
+          text: Tabbing through each page visits the elements from top to bottom and left to right, and opened dialogs receive focus first.
+    sv:
+      title: Logisk fokusordning
+      description: Användargränssnittet SKA flytta tangentbordsfokus i en ordning som följer sidans visuella läsordning.
+      rationale: En fokusordning som hoppar runt på sidan gör tangentbords- och skärmläsaranvändare desorienterade.
+      criteria:
+        - method: test
+          text: Tabbning genom varje sida besöker elementen uppifrån och ned och från vänster till höger, och öppnade dialogrutor får fokus först.
+
+  - id: A11Y-05
+    type: usability
+    obligation: must
+    priority: high
+    tags: [text-alternative, images]
+    refs: ["WCAG 2.2 SC 1.1.1", "EN 301 549 §9.1.1.1"]
+    tests: [A11Y-T03, A11Y-T04]
+    en:
+      title: Text alternatives for images
+      description: The user interface MUST give each informative image and icon a text alternative that conveys the same information.
+      rationale: Screen reader users cannot perceive information that is only available as an image.
+      criteria:
+        - method: test
+          text: An automated scan reports no image without a text alternative, and a manual review confirms that the texts match the images.
+    sv:
+      title: Textalternativ för bilder
+      description: Användargränssnittet SKA ge varje informativ bild och ikon ett textalternativ som förmedlar samma information.
+      rationale: Skärmläsaranvändare kan inte uppfatta information som bara finns som bild.
+      criteria:
+        - method: test
+          text: En automatisk skanning visar ingen bild utan textalternativ, och en manuell granskning bekräftar att texterna motsvarar bilderna.
+
+  - id: A11Y-06
+    type: usability
+    obligation: must
+    priority: high
+    tags: [contrast]
+    refs: ["WCAG 2.2 SC 1.4.3", "EN 301 549 §9.1.4.3"]
+    tests: [A11Y-T03]
+    en:
+      title: Contrast of body text
+      description: The user interface MUST display text below 24 CSS pixels with a contrast ratio of at least 4.5:1 against its background.
+      rationale: Low contrast makes text unreadable for people with low vision and for everyone in bright light.
+      criteria:
+        - method: test
+          text: An automated contrast check of every page in both colour themes reports no text below 4.5:1.
+          threshold: "≥ 4.5:1"
+    sv:
+      title: Kontrast för brödtext
+      description: Användargränssnittet SKA visa text som är mindre än 24 CSS-pixlar med ett kontrastförhållande på minst 4,5:1 mot bakgrunden.
+      rationale: Låg kontrast gör text oläslig för personer med nedsatt syn och för alla i starkt ljus.
+      criteria:
+        - method: test
+          text: En automatisk kontrastkontroll av varje sida i båda färgteman visar ingen text under 4,5:1.
+          threshold: "≥ 4,5:1"
+
+  - id: A11Y-07
+    type: usability
+    obligation: must
+    priority: high
+    tags: [reflow, responsive]
+    refs: ["WCAG 2.2 SC 1.4.10", "EN 301 549 §9.1.4.10"]
+    tests: [A11Y-T05]
+    en:
+      title: Reflow at 320 pixels width
+      description: The user interface MUST present its content at a viewport width of 320 CSS pixels without horizontal scrolling of the page.
+      rationale: People who zoom to 400 % and people on narrow phones need content that reflows into one column.
+      criteria:
+        - method: test
+          text: At 320 CSS pixels width no page needs horizontal scrolling, apart from data tables and diagrams that need two dimensions.
+    sv:
+      title: Omflödning vid 320 pixlars bredd
+      description: Användargränssnittet SKA visa sitt innehåll i ett visningsområde som är 320 CSS-pixlar brett utan att sidan behöver rullas i sidled.
+      rationale: Personer som zoomar till 400 % och personer med smala mobiler behöver innehåll som flödar om till en kolumn.
+      criteria:
+        - method: test
+          text: Vid 320 CSS-pixlars bredd behöver ingen sida rullas i sidled, bortsett från datatabeller och diagram som kräver två dimensioner.
+
+  - id: A11Y-08
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [resize, zoom]
+    refs: ["WCAG 2.2 SC 1.4.4", "WCAG 2.2 SC 1.4.12"]
+    tests: [A11Y-T05]
+    en:
+      title: Text resized to 200 percent
+      description: The user interface MUST keep all text and controls visible and operable when the browser text size is increased to 200 %.
+      rationale: People with low vision enlarge text and lose information when it is clipped or overlaps.
+      criteria:
+        - method: test
+          text: At 200 % text size no text is clipped, overlapped or hidden, and every control remains operable.
+          threshold: "200 %"
+    sv:
+      title: Text förstorad till 200 procent
+      description: Användargränssnittet SKA hålla all text och alla kontroller synliga och användbara när webbläsarens textstorlek ökas till 200 %.
+      rationale: Personer med nedsatt syn förstorar texten och förlorar information när den klipps av eller överlappar.
+      criteria:
+        - method: test
+          text: Vid 200 % textstorlek klipps, överlappas eller döljs ingen text, och alla kontroller går att använda.
+          threshold: "200 %"
+
+  - id: A11Y-09
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [headings, landmarks, structure]
+    refs: ["WCAG 2.2 SC 1.3.1", "WCAG 2.2 SC 2.4.1", "WCAG 2.2 SC 2.4.6"]
+    tests: [A11Y-T03, A11Y-T06]
+    en:
+      title: Headings and landmarks
+      description: Each page SHOULD contain exactly one level-1 heading, headings without skipped levels and the landmarks header, navigation and main.
+      rationale: Screen reader users move through a page by headings and landmarks instead of reading it from the top.
+      criteria:
+        - method: test
+          text: An automated structure check finds one level-1 heading, no skipped heading level and the three landmarks on every page.
+    sv:
+      title: Rubriker och landmärken
+      description: Varje sida BÖR innehålla exakt en rubrik på nivå 1, rubriker utan överhoppade nivåer och landmärkena sidhuvud, navigering och huvudinnehåll.
+      rationale: Skärmläsaranvändare tar sig fram på sidan via rubriker och landmärken i stället för att läsa den uppifrån.
+      criteria:
+        - method: test
+          text: En automatisk strukturkontroll hittar en rubrik på nivå 1, ingen överhoppad rubriknivå och de tre landmärkena på varje sida.
+
+  - id: A11Y-10
+    type: usability
+    obligation: must
+    priority: high
+    tags: [forms, labels]
+    refs: ["WCAG 2.2 SC 1.3.1", "WCAG 2.2 SC 3.3.2", "WCAG 2.2 SC 4.1.2"]
+    tests: [A11Y-T03, A11Y-T07]
+    en:
+      title: Labels for form fields
+      description: The user interface MUST give each form field a visible label that is programmatically associated with the field.
+      rationale: Without an associated label a screen reader announces only "edit text" and the user cannot tell what to enter.
+      criteria:
+        - method: test
+          text: An automated scan finds no form field without an accessible name, and the accessible name contains the visible label.
+    sv:
+      title: Etiketter för formulärfält
+      description: Användargränssnittet SKA ge varje formulärfält en synlig etikett som är programmatiskt kopplad till fältet.
+      rationale: Utan kopplad etikett läser skärmläsaren bara upp "redigera text" och användaren vet inte vad som ska anges.
+      criteria:
+        - method: test
+          text: En automatisk skanning hittar inget formulärfält utan tillgängligt namn, och det tillgängliga namnet innehåller den synliga etiketten.
+
+  - id: A11Y-11
+    type: usability
+    obligation: must
+    priority: high
+    tags: [forms, errors]
+    refs: ["WCAG 2.2 SC 3.3.1", "WCAG 2.2 SC 3.3.3"]
+    tests: [A11Y-T07]
+    en:
+      title: Form errors identified in text
+      description: The user interface MUST name each field with an input error in text and state how the user can correct the value.
+      rationale: An error shown only by a red border is lost on users who cannot see colour or the screen.
+      criteria:
+        - method: test
+          text: Submitting a form with invalid values shows a text message per field that names the field and the correction.
+    sv:
+      title: Formulärfel anges i text
+      description: Användargränssnittet SKA ange varje fält med felaktig inmatning i text och tala om hur användaren kan rätta värdet.
+      rationale: Ett fel som bara visas med en röd ram når inte användare som inte kan se färger eller skärmen.
+      criteria:
+        - method: test
+          text: När ett formulär skickas med ogiltiga värden visas ett textmeddelande per fält som anger fältet och hur det rättas.
+
+  - id: A11Y-12
+    type: usability
+    obligation: must
+    priority: high
+    tags: [screen-reader, status-messages]
+    refs: ["WCAG 2.2 SC 4.1.3", "EN 301 549 §9.4.1.3"]
+    tests: [A11Y-T08]
+    en:
+      title: Status messages announced to screen readers
+      description: The user interface MUST expose status messages such as "Saved" or "3 results" through a live region without moving the focus.
+      rationale: Screen reader users otherwise miss the feedback that sighted users see in a toast or a counter.
+      criteria:
+        - method: test
+          text: With a screen reader running, saving an item and filtering a list are announced while the focus stays in place.
+    sv:
+      title: Statusmeddelanden läses upp av skärmläsare
+      description: Användargränssnittet SKA exponera statusmeddelanden som "Sparat" eller "3 träffar" via en live-region utan att flytta fokus.
+      rationale: Annars missar skärmläsaranvändare den återkoppling som seende användare ser i en notis eller räknare.
+      criteria:
+        - method: test
+          text: Med skärmläsare igång läses det upp när ett objekt sparas och när en lista filtreras, medan fokus stannar kvar.
+
+  - id: A11Y-13
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [motion, animation]
+    refs: ["WCAG 2.2 SC 2.2.2", "WCAG 2.2 SC 2.3.1"]
+    tests: [A11Y-T09]
+    en:
+      title: Pause for moving content
+      description: The user interface MUST offer a control to pause or hide any content that starts moving automatically and moves for more than 5 seconds.
+      rationale: Moving content distracts people with attention disorders and makes reading impossible for some users.
+      criteria:
+        - method: test
+          text: Each carousel, ticker and looping animation longer than 5 seconds has a pause control that stops it.
+          threshold: "5 s"
+    sv:
+      title: Paus för rörligt innehåll
+      description: Användargränssnittet SKA erbjuda en kontroll för att pausa eller dölja innehåll som börjar röra sig automatiskt och rör sig i mer än 5 sekunder.
+      rationale: Rörligt innehåll distraherar personer med koncentrationssvårigheter och gör läsning omöjlig för en del användare.
+      criteria:
+        - method: test
+          text: Varje karusell, löpande text och upprepad animering som varar längre än 5 sekunder har en pausknapp som stoppar den.
+          threshold: "5 s"
+
+  - id: A11Y-14
+    type: usability
+    obligation: should
+    priority: low
+    tags: [motion, preferences]
+    refs: ["WCAG 2.2 SC 2.3.3", "Media Queries Level 5 prefers-reduced-motion"]
+    tests: [A11Y-T09]
+    en:
+      title: Reduced motion preference respected
+      description: The user interface SHOULD turn off decorative animations and transitions when the operating system setting for reduced motion is on.
+      rationale: Animations can trigger dizziness and nausea in people with vestibular disorders.
+      criteria:
+        - method: test
+          text: With reduced motion enabled in the operating system, page transitions and decorative animations do not play.
+    sv:
+      title: Inställning för minskad rörelse respekteras
+      description: Användargränssnittet BÖR stänga av dekorativa animeringar och övergångar när operativsystemets inställning för minskad rörelse är på.
+      rationale: Animeringar kan ge yrsel och illamående hos personer med balansrubbningar.
+      criteria:
+        - method: test
+          text: Med minskad rörelse påslagen i operativsystemet spelas inga sidövergångar eller dekorativa animeringar upp.
+
+  - id: A11Y-15
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [captions, media]
+    refs: ["WCAG 2.2 SC 1.2.2", "WCAG 2.2 SC 1.2.1", "EN 301 549 §9.1.2.2"]
+    tests: [A11Y-T10]
+    en:
+      title: Captions for prerecorded video
+      description: The system MUST provide synchronised captions for each prerecorded video that contains speech or other meaningful audio.
+      rationale: Deaf and hard-of-hearing users need captions to follow instructional and marketing videos.
+      criteria:
+        - method: inspection
+          text: Every video with audio offers captions that cover speech and relevant sounds and are in sync with the audio.
+    sv:
+      title: Undertexter för inspelad video
+      description: Systemet SKA tillhandahålla synkroniserade undertexter för varje inspelad video som innehåller tal eller annat betydelsebärande ljud.
+      rationale: Döva och hörselskadade användare behöver undertexter för att kunna följa instruktions- och informationsfilmer.
+      criteria:
+        - method: inspection
+          text: Varje video med ljud har undertexter som täcker tal och relevanta ljud och är synkroniserade med ljudet.
+
+  - id: A11Y-16
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [conformance, wcag]
+    refs: ["WCAG 2.2 conformance level AA", "EN 301 549 V3.2.1 clause 9", "Lag (2018:1937) om tillgänglighet till digital offentlig service", "Directive (EU) 2016/2102"]
+    tests: [A11Y-T11]
+    en:
+      title: Conformance with WCAG 2.2 level AA
+      description: The user interface MUST meet every level A and level AA success criterion of WCAG 2.2.
+      rationale: WCAG 2.2 AA is the level required by EN 301 549 and by the Swedish act on accessibility of digital public services.
+      criteria:
+        - method: review
+          text: An accessibility audit of the 10 most used pages and the main flows reports no failed level A or AA success criterion.
+    sv:
+      title: Överensstämmelse med WCAG 2.2 nivå AA
+      description: Användargränssnittet SKA uppfylla varje framgångskriterium på nivå A och nivå AA i WCAG 2.2.
+      rationale: WCAG 2.2 AA är den nivå som krävs av EN 301 549 och av lagen om tillgänglighet till digital offentlig service.
+      criteria:
+        - method: review
+          text: En tillgänglighetsgranskning av de 10 mest använda sidorna och huvudflödena visar inget underkänt framgångskriterium på nivå A eller AA.
+
+  - id: A11Y-17
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [accessibility-statement, public-sector]
+    refs: ["Lag (2018:1937) om tillgänglighet till digital offentlig service", "DIGG föreskrifter MDFFS 2019:2", "Commission Implementing Decision (EU) 2018/1523"]
+    tests: [A11Y-T12]
+    en:
+      title: Published accessibility statement
+      description: The system MUST link to an accessibility statement from every page that lists known shortcomings and a way to report inaccessible content.
+      rationale: Public sector bodies in the EU are obliged to publish a statement, and users need a channel to report barriers.
+      criteria:
+        - method: inspection
+          text: Every page links to the statement, and the statement contains the conformance status, known shortcomings, a feedback contact and its last review date.
+    sv:
+      title: Publicerad tillgänglighetsredogörelse
+      description: Systemet SKA länka från varje sida till en tillgänglighetsredogörelse som anger kända brister och ett sätt att anmäla otillgängligt innehåll.
+      rationale: Offentliga aktörer är skyldiga att publicera en redogörelse, och användare behöver en kanal för att anmäla hinder.
+      criteria:
+        - method: inspection
+          text: Varje sida länkar till redogörelsen, och redogörelsen innehåller status för överensstämmelse, kända brister, kontaktväg för synpunkter och datum för senaste översyn.
+
+  - id: A11Y-18
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [target-size, touch]
+    refs: ["WCAG 2.2 SC 2.5.8"]
+    tests: [A11Y-T13]
+    en:
+      title: Minimum target size
+      description: Each clickable target SHOULD be at least 24 × 24 CSS pixels or have that much space free of other targets around it.
+      rationale: Tiny targets are hard to hit for people with tremor and for everyone on a touch screen.
+      criteria:
+        - method: test
+          text: An automated measurement reports no interactive element smaller than 24 × 24 CSS pixels without the spacing.
+          threshold: "≥ 24 × 24 CSS px"
+    sv:
+      title: Minsta storlek på klickytor
+      description: Varje klickbar yta BÖR vara minst 24 × 24 CSS-pixlar eller ha motsvarande avstånd till andra klickytor runt sig.
+      rationale: Pyttesmå klickytor är svåra att träffa för personer med darrningar och för alla på pekskärm.
+      criteria:
+        - method: test
+          text: En automatisk mätning visar inget interaktivt element under 24 × 24 CSS-pixlar som saknar avståndet.
+          threshold: "≥ 24 × 24 CSS px"
+
+tests:
+  - id: A11Y-T01
+    priority: critical
+    execution: manual
+    tags: [keyboard]
+    refs: ["WCAG 2.2 SC 2.1.1", "WCAG 2.2 SC 2.1.2"]
+    en:
+      title: Main tasks completed with the keyboard only
+      description: Checks that the main tasks can be done without a pointing device and that focus never gets stuck.
+      preconditions: A signed-in user, a desktop browser and the mouse or touchpad disconnected or not used.
+      expected: All main tasks are completed with the keyboard and no component traps the focus.
+      steps:
+        - action: Starting on the start page, create, edit and save an item using only Tab, Shift+Tab, Enter, Space and the arrow keys.
+          expected: Every control in the flow is reached and activated, and the item is saved.
+        - action: Open a dialog, a dropdown menu and a rich text editor, then try to leave each with Tab, Shift+Tab and Escape.
+          expected: Focus leaves each component and returns to a logical place on the page.
+        - action: Sign out using the keyboard.
+          expected: The user is signed out without needing the mouse.
+    sv:
+      title: Huvuduppgifter genomförs enbart med tangentbord
+      description: Kontrollerar att huvuduppgifterna går att utföra utan pekdon och att fokus aldrig fastnar.
+      preconditions: En inloggad användare, en webbläsare på dator och att mus eller styrplatta inte används.
+      expected: Alla huvuduppgifter genomförs med tangentbord och ingen komponent håller kvar fokus.
+      steps:
+        - action: Börja på startsidan och skapa, redigera och spara ett objekt med enbart Tab, Skift+Tab, Retur, mellanslag och piltangenterna.
+          expected: Varje kontroll i flödet nås och aktiveras, och objektet sparas.
+        - action: Öppna en dialogruta, en rullgardinsmeny och en textredigerare och försök lämna var och en med Tab, Skift+Tab och Esc.
+          expected: Fokus lämnar varje komponent och återgår till en logisk plats på sidan.
+        - action: Logga ut med tangentbordet.
+          expected: Användaren loggas ut utan att musen behövs.
+
+  - id: A11Y-T02
+    priority: high
+    execution: manual
+    tags: [focus]
+    refs: ["WCAG 2.2 SC 2.4.3", "WCAG 2.2 SC 2.4.7"]
+    en:
+      title: Focus indicator and focus order
+      description: Checks that the focus is always visible with enough contrast and moves in reading order.
+      preconditions: A signed-in user, a desktop browser and a colour contrast analyser.
+      expected: The focus is visible on every element with at least 3:1 contrast and follows the reading order.
+      steps:
+        - action: Press Tab repeatedly through the start page, a list page and a form page.
+          expected: A visible indicator marks each focused element and the order follows the visual layout.
+        - action: Measure the contrast between the focus indicator and the adjacent background on 5 different element types.
+          expected: Each measured contrast ratio is at least 3:1.
+          data: button, link, text field, checkbox, tab
+        - action: Open a dialog and close it again with Escape.
+          expected: Focus moves into the dialog on opening and returns to the control that opened it on closing.
+    sv:
+      title: Fokusmarkering och fokusordning
+      description: Kontrollerar att fokus alltid syns med tillräcklig kontrast och flyttas i läsordning.
+      preconditions: En inloggad användare, en webbläsare på dator och ett verktyg för kontrastmätning.
+      expected: Fokus syns på varje element med minst 3:1 i kontrast och följer läsordningen.
+      steps:
+        - action: Tryck på Tab upprepade gånger genom startsidan, en listsida och en formulärsida.
+          expected: En synlig markering visar varje element i fokus och ordningen följer den visuella layouten.
+        - action: Mät kontrasten mellan fokusmarkeringen och den angränsande bakgrunden på 5 olika typer av element.
+          expected: Varje uppmätt kontrastförhållande är minst 3:1.
+          data: knapp, länk, textfält, kryssruta, flik
+        - action: Öppna en dialogruta och stäng den igen med Esc.
+          expected: Fokus flyttas in i dialogrutan när den öppnas och tillbaka till kontrollen som öppnade den när den stängs.
+
+  - id: A11Y-T03
+    priority: high
+    execution: automated
+    tags: [axe, scan]
+    refs: ["WCAG 2.2 SC 1.1.1", "WCAG 2.2 SC 1.4.3", "WCAG 2.2 SC 4.1.2"]
+    en:
+      title: Automated accessibility scan of all pages
+      description: A script opens every page in both colour themes and runs an axe-core scan with the WCAG 2.2 A and AA rule tags.
+      preconditions: A test environment with seeded data and a browser automation tool with axe-core installed.
+      expected: The scan reports no violation of the rules for text alternatives, contrast, labels, names and roles.
+      steps:
+        - action: The script signs in, visits each route of the application in the light theme and runs the scan.
+          expected: The scan reports zero violations with impact serious or critical.
+          data: "rule tags: wcag2a, wcag2aa, wcag21aa, wcag22aa"
+        - action: The script switches to the dark theme and repeats the scan.
+          expected: The scan reports zero colour-contrast violations.
+        - action: The script stores the scan report as a build artefact and fails the build on any violation.
+          expected: The build passes and the report lists the pages scanned.
+    sv:
+      title: Automatisk tillgänglighetsskanning av alla sidor
+      description: Ett skript öppnar varje sida i båda färgteman och kör en axe-core-skanning med regeltaggarna för WCAG 2.2 A och AA.
+      preconditions: En testmiljö med testdata och ett verktyg för webbläsarautomatisering med axe-core installerat.
+      expected: Skanningen visar inga överträdelser av reglerna för textalternativ, kontrast, etiketter, namn och roller.
+      steps:
+        - action: Skriptet loggar in, besöker varje vy i applikationen i det ljusa temat och kör skanningen.
+          expected: Skanningen visar noll överträdelser med allvarlighetsgrad serious eller critical.
+          data: "regeltaggar: wcag2a, wcag2aa, wcag21aa, wcag22aa"
+        - action: Skriptet byter till det mörka temat och upprepar skanningen.
+          expected: Skanningen visar noll kontrastöverträdelser.
+        - action: Skriptet sparar skanningsrapporten som byggartefakt och låter bygget fallera vid överträdelser.
+          expected: Bygget går igenom och rapporten listar de skannade sidorna.
+
+  - id: A11Y-T04
+    priority: medium
+    execution: manual
+    tags: [screen-reader, images]
+    refs: ["WCAG 2.2 SC 1.1.1"]
+    en:
+      title: Text alternatives checked with a screen reader
+      description: Checks that the text alternatives of images and icons convey their meaning and that decorative images are skipped.
+      preconditions: A screen reader (NVDA, JAWS or VoiceOver) with a supported browser.
+      expected: Each informative image is announced with a matching text and decorative images are not announced.
+      steps:
+        - action: Move through the start page and a page with charts using the screen reader's graphics navigation.
+          expected: Each informative image and chart is announced with a text that conveys its content.
+        - action: Move to each icon-only button in the toolbar.
+          expected: Each button is announced with its function, for example "Delete" or "Edit".
+        - action: Move past decorative images and separators.
+          expected: Decorative images are not announced.
+    sv:
+      title: Textalternativ kontrolleras med skärmläsare
+      description: Kontrollerar att textalternativen för bilder och ikoner förmedlar betydelsen och att dekorativa bilder hoppas över.
+      preconditions: En skärmläsare (NVDA, JAWS eller VoiceOver) med en webbläsare som stöds.
+      expected: Varje informativ bild läses upp med en text som motsvarar den och dekorativa bilder läses inte upp.
+      steps:
+        - action: Gå igenom startsidan och en sida med diagram med skärmläsarens navigering för grafik.
+          expected: Varje informativ bild och varje diagram läses upp med en text som förmedlar innehållet.
+        - action: Gå till varje knapp i verktygsfältet som bara har en ikon.
+          expected: Varje knapp läses upp med sin funktion, till exempel "Ta bort" eller "Redigera".
+        - action: Gå förbi dekorativa bilder och avdelare.
+          expected: Dekorativa bilder läses inte upp.
+
+  - id: A11Y-T05
+    priority: high
+    execution: manual
+    tags: [reflow, zoom]
+    refs: ["WCAG 2.2 SC 1.4.4", "WCAG 2.2 SC 1.4.10"]
+    en:
+      title: Reflow at 320 pixels and text at 200 percent
+      description: Checks that content reflows to a narrow viewport and survives enlarged text.
+      preconditions: A desktop browser with a window width of 1280 CSS pixels and a signed-in user.
+      expected: No page needs horizontal scrolling at 320 pixels and no text is lost at 200 % text size.
+      steps:
+        - action: Zoom the browser to 400 % (equal to 320 CSS pixels width) and visit the start page, a list page and a form.
+          expected: The content reflows into one column and the page does not scroll horizontally.
+          data: 1280 px / 400 % = 320 CSS px
+        - action: Reset the zoom and set the browser text size to 200 %.
+          expected: All text is visible and no text overlaps or is cut off.
+        - action: Complete a form at 200 % text size.
+          expected: Every field, button and message can be read and used.
+    sv:
+      title: Omflödning vid 320 pixlar och text på 200 procent
+      description: Kontrollerar att innehållet flödar om i ett smalt visningsområde och klarar förstorad text.
+      preconditions: En webbläsare på dator med fönsterbredden 1280 CSS-pixlar och en inloggad användare.
+      expected: Ingen sida behöver rullas i sidled vid 320 pixlar och ingen text går förlorad vid 200 % textstorlek.
+      steps:
+        - action: Zooma webbläsaren till 400 % (motsvarar 320 CSS-pixlars bredd) och besök startsidan, en listsida och ett formulär.
+          expected: Innehållet flödar om till en kolumn och sidan rullar inte i sidled.
+          data: 1280 px / 400 % = 320 CSS px
+        - action: Återställ zoomen och ställ in webbläsarens textstorlek på 200 %.
+          expected: All text syns och ingen text överlappar eller klipps av.
+        - action: Fyll i ett formulär med 200 % textstorlek.
+          expected: Varje fält, knapp och meddelande går att läsa och använda.
+
+  - id: A11Y-T06
+    priority: medium
+    execution: automated
+    tags: [headings, landmarks]
+    refs: ["WCAG 2.2 SC 1.3.1", "WCAG 2.2 SC 2.4.1"]
+    en:
+      title: Heading levels and landmarks on every page
+      description: A script reads the accessibility tree of each page and checks the heading outline and landmarks.
+      preconditions: A test environment with seeded data and a browser automation tool.
+      expected: Every page has one level-1 heading, no skipped heading level and the header, navigation and main landmarks.
+      steps:
+        - action: The script visits each route and counts the level-1 headings.
+          expected: Each page has exactly one level-1 heading.
+        - action: The script walks the heading outline in document order.
+          expected: No heading is more than one level deeper than the previous heading.
+        - action: The script lists the landmark roles on each page.
+          expected: Each page has banner, navigation and main landmarks, and main occurs once.
+    sv:
+      title: Rubriknivåer och landmärken på varje sida
+      description: Ett skript läser tillgänglighetsträdet för varje sida och kontrollerar rubrikstrukturen och landmärkena.
+      preconditions: En testmiljö med testdata och ett verktyg för webbläsarautomatisering.
+      expected: Varje sida har en rubrik på nivå 1, ingen överhoppad rubriknivå och landmärkena sidhuvud, navigering och huvudinnehåll.
+      steps:
+        - action: Skriptet besöker varje vy och räknar rubrikerna på nivå 1.
+          expected: Varje sida har exakt en rubrik på nivå 1.
+        - action: Skriptet går igenom rubrikstrukturen i dokumentordning.
+          expected: Ingen rubrik ligger mer än en nivå djupare än föregående rubrik.
+        - action: Skriptet listar landmärkesrollerna på varje sida.
+          expected: Varje sida har landmärkena banner, navigation och main, och main förekommer en gång.
+
+  - id: A11Y-T07
+    priority: high
+    execution: manual
+    tags: [forms, errors, screen-reader]
+    refs: ["WCAG 2.2 SC 3.3.1", "WCAG 2.2 SC 3.3.2"]
+    en:
+      title: Form labels and error messages with a screen reader
+      description: Checks that fields are announced with their labels and that validation errors are given in text.
+      preconditions: A screen reader with a supported browser and a form with at least one mandatory field and one e-mail field.
+      expected: Every field is announced with its label and each error names the field and the correction.
+      steps:
+        - action: Tab through the form with the screen reader running.
+          expected: Each field is announced with its visible label, its type and whether it is mandatory.
+        - action: Leave the mandatory field empty, enter an invalid e-mail address and submit.
+          expected: A text message appears next to each invalid field and states how to correct it.
+          data: name@example
+        - action: Move focus to the invalid e-mail field.
+          expected: The screen reader announces the field as invalid together with the error message.
+    sv:
+      title: Etiketter och felmeddelanden i formulär med skärmläsare
+      description: Kontrollerar att fält läses upp med sina etiketter och att valideringsfel anges i text.
+      preconditions: En skärmläsare med en webbläsare som stöds och ett formulär med minst ett tvingande fält och ett e-postfält.
+      expected: Varje fält läses upp med sin etikett och varje fel anger fältet och hur det rättas.
+      steps:
+        - action: Tabba genom formuläret med skärmläsaren igång.
+          expected: Varje fält läses upp med sin synliga etikett, sin typ och om det är tvingande.
+        - action: Lämna det tvingande fältet tomt, ange en ogiltig e-postadress och skicka formuläret.
+          expected: Ett textmeddelande visas vid varje ogiltigt fält och anger hur det rättas.
+          data: name@example
+        - action: Flytta fokus till det ogiltiga e-postfältet.
+          expected: Skärmläsaren läser upp fältet som ogiltigt tillsammans med felmeddelandet.
+
+  - id: A11Y-T08
+    priority: medium
+    execution: manual
+    tags: [screen-reader, status-messages]
+    refs: ["WCAG 2.2 SC 4.1.3"]
+    en:
+      title: Status messages are announced
+      description: Checks that confirmations and result counts are spoken by a screen reader without a change of focus.
+      preconditions: A screen reader with a supported browser and a list with at least 10 items.
+      expected: Status messages are announced and the focus does not move.
+      steps:
+        - action: Edit an item and save it with the keyboard.
+          expected: The screen reader announces the save confirmation and the focus stays on the save button or the form.
+        - action: Type a filter text into the list's filter field.
+          expected: The screen reader announces the new number of results while the focus stays in the filter field.
+          data: "test"
+    sv:
+      title: Statusmeddelanden läses upp
+      description: Kontrollerar att bekräftelser och antal träffar läses upp av skärmläsaren utan att fokus flyttas.
+      preconditions: En skärmläsare med en webbläsare som stöds och en lista med minst 10 objekt.
+      expected: Statusmeddelanden läses upp och fokus flyttas inte.
+      steps:
+        - action: Redigera ett objekt och spara det med tangentbordet.
+          expected: Skärmläsaren läser upp bekräftelsen och fokus stannar på spara-knappen eller i formuläret.
+        - action: Skriv en filtertext i listans filterfält.
+          expected: Skärmläsaren läser upp det nya antalet träffar medan fokus stannar i filterfältet.
+          data: "test"
+
+  - id: A11Y-T09
+    priority: medium
+    execution: manual
+    tags: [motion]
+    refs: ["WCAG 2.2 SC 2.2.2", "WCAG 2.2 SC 2.3.3"]
+    en:
+      title: Moving content can be paused and reduced
+      description: Checks the pause control for moving content and the reduced motion preference.
+      preconditions: A page with a carousel or looping animation and access to the operating system's display settings.
+      expected: Moving content can be paused, and decorative motion stops when reduced motion is set.
+      steps:
+        - action: Open the page with the moving content and wait 5 seconds.
+          expected: A pause control is visible and reachable with the keyboard.
+        - action: Activate the pause control.
+          expected: The movement stops and stays stopped.
+        - action: Turn on reduced motion in the operating system and reload the page.
+          expected: Decorative animations and page transitions do not play.
+    sv:
+      title: Rörligt innehåll kan pausas och dämpas
+      description: Kontrollerar pausknappen för rörligt innehåll och inställningen för minskad rörelse.
+      preconditions: En sida med en karusell eller upprepad animering och tillgång till operativsystemets skärminställningar.
+      expected: Rörligt innehåll kan pausas, och dekorativ rörelse upphör när minskad rörelse är inställt.
+      steps:
+        - action: Öppna sidan med det rörliga innehållet och vänta 5 sekunder.
+          expected: En pausknapp syns och kan nås med tangentbordet.
+        - action: Aktivera pausknappen.
+          expected: Rörelsen stannar och förblir stillastående.
+        - action: Slå på minskad rörelse i operativsystemet och ladda om sidan.
+          expected: Inga dekorativa animeringar eller sidövergångar spelas upp.
+
+  - id: A11Y-T10
+    priority: medium
+    execution: manual
+    tags: [captions, media]
+    refs: ["WCAG 2.2 SC 1.2.2"]
+    en:
+      title: Captions on prerecorded videos
+      description: Checks that every video with audio has accurate and synchronised captions.
+      preconditions: A list of all videos published in the system.
+      expected: Every video has captions that match the speech and are in sync.
+      steps:
+        - action: Play each video with captions turned on.
+          expected: Captions are available and can be turned on and off.
+        - action: Compare the captions of a 60-second section with the spoken audio.
+          expected: The captions contain the spoken words and relevant sounds and lag no more than 1 second behind.
+          data: "lag ≤ 1 s"
+    sv:
+      title: Undertexter på inspelade videor
+      description: Kontrollerar att varje video med ljud har korrekta och synkroniserade undertexter.
+      preconditions: En förteckning över alla videor som publiceras i systemet.
+      expected: Varje video har undertexter som stämmer med talet och är synkroniserade.
+      steps:
+        - action: Spela upp varje video med undertexterna påslagna.
+          expected: Undertexter finns och kan slås på och av.
+        - action: Jämför undertexterna för ett avsnitt på 60 sekunder med det talade ljudet.
+          expected: Undertexterna innehåller de talade orden och relevanta ljud och ligger högst 1 sekund efter.
+          data: "fördröjning ≤ 1 s"
+
+  - id: A11Y-T11
+    priority: critical
+    execution: manual
+    tags: [audit, wcag, conformance]
+    refs: ["WCAG 2.2 conformance level AA", "WCAG-EM 1.0", "EN 301 549 clause 9"]
+    en:
+      title: Accessibility audit against WCAG 2.2 AA
+      description: An expert audit of a sample of pages and flows against every level A and AA success criterion.
+      preconditions: An auditor with WCAG experience, a sample of the 10 most used pages and the main flows, and assistive technology.
+      expected: No level A or AA success criterion fails on the sampled pages.
+      steps:
+        - action: Define the scope and sample following the WCAG-EM methodology.
+          expected: The sample lists the pages, flows, browsers and assistive technologies covered.
+        - action: Evaluate each sampled page against each level A and AA success criterion.
+          expected: Each criterion is recorded as passed, failed or not applicable with evidence for failures.
+        - action: Summarise the results in an audit report.
+          expected: The report shows zero failed criteria, or each failure is linked to a defect with a planned fix.
+    sv:
+      title: Tillgänglighetsgranskning mot WCAG 2.2 AA
+      description: En expertgranskning av ett urval sidor och flöden mot varje framgångskriterium på nivå A och AA.
+      preconditions: En granskare med erfarenhet av WCAG, ett urval av de 10 mest använda sidorna och huvudflödena samt hjälpmedel.
+      expected: Inget framgångskriterium på nivå A eller AA underkänns på de granskade sidorna.
+      steps:
+        - action: Bestäm omfattning och urval enligt metoden WCAG-EM.
+          expected: Urvalet anger vilka sidor, flöden, webbläsare och hjälpmedel som ingår.
+        - action: Bedöm varje sida i urvalet mot varje framgångskriterium på nivå A och AA.
+          expected: Varje kriterium noteras som godkänt, underkänt eller ej tillämpligt, med belägg för underkända kriterier.
+        - action: Sammanfatta resultatet i en granskningsrapport.
+          expected: Rapporten visar noll underkända kriterier, eller så är varje brist kopplad till ett fel med planerad åtgärd.
+
+  - id: A11Y-T12
+    priority: medium
+    execution: manual
+    tags: [accessibility-statement]
+    refs: ["Lag (2018:1937) om tillgänglighet till digital offentlig service", "DIGG MDFFS 2019:2"]
+    en:
+      title: Accessibility statement is complete and linked
+      description: Checks that the accessibility statement can be found from every page and has the mandatory content.
+      preconditions: The system is deployed in a production-like environment.
+      expected: The statement is linked from every page and contains all mandatory parts.
+      steps:
+        - action: Open 5 different pages, including the sign-in page, and look for the link to the statement.
+          expected: Each page has a link to the accessibility statement, for example in the footer.
+        - action: Open the statement and compare it with the checklist of mandatory content.
+          expected: The statement contains the conformance status, known shortcomings, a feedback contact, the enforcement body and the review date.
+          data: "Enforcement body in Sweden: DIGG"
+        - action: Send a report of inaccessible content through the feedback contact.
+          expected: The report is received and acknowledged.
+    sv:
+      title: Tillgänglighetsredogörelsen är komplett och länkad
+      description: Kontrollerar att tillgänglighetsredogörelsen kan hittas från varje sida och har det innehåll som krävs.
+      preconditions: Systemet är driftsatt i en produktionslik miljö.
+      expected: Redogörelsen är länkad från varje sida och innehåller alla obligatoriska delar.
+      steps:
+        - action: Öppna 5 olika sidor, däribland inloggningssidan, och leta efter länken till redogörelsen.
+          expected: Varje sida har en länk till tillgänglighetsredogörelsen, till exempel i sidfoten.
+        - action: Öppna redogörelsen och jämför den med checklistan för obligatoriskt innehåll.
+          expected: Redogörelsen innehåller status för överensstämmelse, kända brister, kontaktväg för synpunkter, tillsynsmyndighet och datum för översyn.
+          data: "Tillsynsmyndighet i Sverige: DIGG"
+        - action: Skicka en anmälan om otillgängligt innehåll via kontaktvägen.
+          expected: Anmälan tas emot och bekräftas.
+
+  - id: A11Y-T13
+    priority: low
+    execution: automated
+    tags: [target-size]
+    refs: ["WCAG 2.2 SC 2.5.8"]
+    en:
+      title: Size of clickable targets measured
+      description: A script measures the bounding boxes of interactive elements and the space around them.
+      preconditions: A test environment and a browser automation tool at a viewport of 1280 × 800 CSS pixels.
+      expected: No interactive element is smaller than 24 × 24 CSS pixels without the free space around it.
+      steps:
+        - action: The script visits each route and collects the bounding boxes of buttons, links, inputs and custom controls.
+          expected: A list of element sizes per page is produced.
+        - action: For each element under 24 × 24 pixels the script checks whether a 24-pixel circle around its centre overlaps another target.
+          expected: No undersized element has an overlapping neighbour, and inline links in running text are excluded.
+          data: "24 × 24 CSS px"
+    sv:
+      title: Storleken på klickytor mäts
+      description: Ett skript mäter avgränsningsrutorna för interaktiva element och utrymmet runt dem.
+      preconditions: En testmiljö och ett verktyg för webbläsarautomatisering med visningsområdet 1280 × 800 CSS-pixlar.
+      expected: Inget interaktivt element är mindre än 24 × 24 CSS-pixlar utan fritt utrymme runt sig.
+      steps:
+        - action: Skriptet besöker varje vy och samlar in avgränsningsrutorna för knappar, länkar, inmatningsfält och egna kontroller.
+          expected: En lista över elementstorlekar per sida tas fram.
+        - action: För varje element under 24 × 24 pixlar kontrollerar skriptet om en cirkel på 24 pixlar runt dess mitt överlappar en annan klickyta.
+          expected: Inget för litet element har en överlappande granne, och länkar i löptext räknas inte.
+          data: "24 × 24 CSS px"
