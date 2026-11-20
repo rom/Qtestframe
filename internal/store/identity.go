@@ -119,12 +119,12 @@ func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 
 // ---------------------------------------------------------------- users
 
-const userCols = `id, email, display_name, password_hash, super_admin, auth_provider, external_id, disabled, created_at, preferences`
+const userCols = `id, email, display_name, password_hash, super_admin, auth_provider, external_id, disabled, created_at, preferences, avatar, must_change_password`
 
 func scanUser(r interface{ Scan(...any) error }) (*model.User, error) {
 	var u model.User
 	var prefs string
-	if err := r.Scan(&u.ID, &u.Email, &u.DisplayName, &u.PasswordHash, &u.SuperAdmin, &u.AuthProvider, &u.ExternalID, &u.Disabled, &u.CreatedAt, &prefs); err != nil {
+	if err := r.Scan(&u.ID, &u.Email, &u.DisplayName, &u.PasswordHash, &u.SuperAdmin, &u.AuthProvider, &u.ExternalID, &u.Disabled, &u.CreatedAt, &prefs, &u.Avatar, &u.MustChangePassword); err != nil {
 		return nil, err
 	}
 	u.CreatedAt = u.CreatedAt.UTC()
@@ -156,8 +156,8 @@ func (s *Store) CreateUser(ctx context.Context, u *model.User) error {
 		u.DisplayName = strings.Split(u.Email, "@")[0]
 	}
 	u.CreatedAt = s.now()
-	_, err := s.c().exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		u.ID, u.Email, u.DisplayName, u.PasswordHash, u.SuperAdmin, u.AuthProvider, u.ExternalID, u.Disabled, u.CreatedAt, encodePrefs(u.Preferences))
+	_, err := s.c().exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.ID, u.Email, u.DisplayName, u.PasswordHash, u.SuperAdmin, u.AuthProvider, u.ExternalID, u.Disabled, u.CreatedAt, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword)
 	return mapErr(err, "user")
 }
 
@@ -199,8 +199,8 @@ func (s *Store) ListUsers(ctx context.Context) ([]model.User, error) {
 
 // UpdateUser stores mutable user fields.
 func (s *Store) UpdateUser(ctx context.Context, u *model.User) error {
-	res, err := s.c().exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ?, preferences = ? WHERE id = ?`,
-		u.DisplayName, u.PasswordHash, u.SuperAdmin, u.Disabled, u.AuthProvider, u.ExternalID, encodePrefs(u.Preferences), u.ID)
+	res, err := s.c().exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ?, preferences = ?, avatar = ?, must_change_password = ? WHERE id = ?`,
+		u.DisplayName, u.PasswordHash, u.SuperAdmin, u.Disabled, u.AuthProvider, u.ExternalID, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword, u.ID)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func (s *Store) CountTenantAdmins(ctx context.Context, tenantID string) (int, er
 }
 
 func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]model.Membership, error) {
-	rows, err := s.c().query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, m.role, m.created_at
+	rows, err := s.c().query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at
 		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id `+where, arg)
 	if err != nil {
 		return nil, err
@@ -285,7 +285,7 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 	out := []model.Membership{}
 	for rows.Next() {
 		var m model.Membership
-		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Role, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &m.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, m)
@@ -479,6 +479,38 @@ func (s *Store) Audit(ctx context.Context, e model.AuditEntry) error {
 	_, err := s.c().exec(ctx, `INSERT INTO audit_log (id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.ID, e.TenantID, e.UserID, e.UserEmail, e.Action, e.EntityType, e.EntityID, e.Details, e.CreatedAt)
 	return err
+}
+
+// ListAuditRange returns the newest audit entries of a tenant within an
+// optional time range.
+func (s *Store) ListAuditRange(ctx context.Context, tenantID string, from, to *time.Time, limit int) ([]model.AuditEntry, error) {
+	if limit <= 0 || limit > 5000 {
+		limit = 500
+	}
+	q := `SELECT id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, created_at FROM audit_log WHERE tenant_id = ?`
+	args := []any{tenantID}
+	if from != nil {
+		q += ` AND created_at >= ?`
+		args = append(args, from.UTC())
+	}
+	if to != nil {
+		q += ` AND created_at <= ?`
+		args = append(args, to.UTC())
+	}
+	rows, err := s.c().query(ctx, q+` ORDER BY created_at DESC LIMIT ?`, append(args, limit)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []model.AuditEntry{}
+	for rows.Next() {
+		var e model.AuditEntry
+		if err := rows.Scan(&e.ID, &e.TenantID, &e.UserID, &e.UserEmail, &e.Action, &e.EntityType, &e.EntityID, &e.Details, &e.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
 }
 
 // ListAudit returns the newest audit entries of a tenant.

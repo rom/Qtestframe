@@ -4,6 +4,8 @@ import Button from 'primevue/button'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import ProgressSpinner from 'primevue/progressspinner'
+import UserAvatar from './UserAvatar.vue'
+import { usePeopleStore } from '@/stores/people'
 import { useConfirm } from 'primevue/useconfirm'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { diffSnapshots, parseSnapshot } from '@/lib/diff'
@@ -24,6 +26,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ restored: [item: unknown] }>()
 const notify = useNotify()
+usePeopleStore().ensure()
 const confirm = useConfirm()
 const { t, te } = useI18n()
 const fieldLabel = (f: string) => {
@@ -107,7 +110,7 @@ function restore() {
           <span class="grow" />
           <span class="small muted" :title="formatFullDateTime(r.created_at)">{{ formatDateTime(r.created_at) }}</span>
         </div>
-        <div class="small muted ellipsis">{{ r.user_email || t('common.system') }}</div>
+        <div class="small muted row nowrap" style="gap: 6px; min-width: 0"><UserAvatar v-if="r.user_email" :email="r.user_email" :name="r.user_email" :size="18" /><span class="ellipsis">{{ r.user_email || t('common.system') }}</span></div>
         <div v-if="r.changed_fields?.length">
           <span v-for="f in r.changed_fields.slice(0, 6)" :key="f" class="field-chip">{{ fieldLabel(f) }}</span>
           <span v-if="r.changed_fields.length > 6" class="small muted">+{{ r.changed_fields.length - 6 }}</span>

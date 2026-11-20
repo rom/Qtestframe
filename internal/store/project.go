@@ -14,11 +14,11 @@ var projectKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,15}$`)
 
 // ---------------------------------------------------------------- projects
 
-const projectCols = `id, tenant_id, key, name, description, defect_url_template, created_at, updated_at`
+const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, created_at, updated_at`
 
 func scanProject(r interface{ Scan(...any) error }) (*model.Project, error) {
 	var p model.Project
-	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &p, nil
@@ -119,8 +119,8 @@ func (s *Store) UpdateProject(ctx context.Context, tenantID string, p *model.Pro
 	if t := p.DefectURLTemplate; t != "" && (!strings.Contains(t, "{id}") || !(strings.HasPrefix(t, "https://") || strings.HasPrefix(t, "http://"))) {
 		return Invalidf("defect URL template must be an http(s) URL containing {id}")
 	}
-	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.UpdatedAt, p.ID, tenantID)
+	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, icon = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.Icon, p.UpdatedAt, p.ID, tenantID)
 	if err != nil {
 		return err
 	}

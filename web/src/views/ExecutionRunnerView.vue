@@ -12,6 +12,10 @@ import Tag from 'primevue/tag'
 import StatusTag from '@/components/StatusTag.vue'
 import TagsInput from '@/components/TagsInput.vue'
 import DefectLinks from '@/components/DefectLinks.vue'
+import AttachmentsPanel from '@/components/AttachmentsPanel.vue'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
 import { normalizeDefects } from '@/lib/defects'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { RESULT_COLORS } from '@/lib/colors'
@@ -67,6 +71,11 @@ const dirty = computed(() => !!ex.value && stateKey() !== snapshot.value)
 const error = ref('')
 
 const canExecute = computed(() => auth.can(P.runExecute))
+const resultTab = ref('result')
+const attachmentCount = ref<number | null>(null)
+const rTabs = 'runner-tabs'
+const rPanel = (v: string) => ({ role: 'tabpanel', id: `${rTabs}_tabpanel_${v}`, 'aria-labelledby': `${rTabs}_tab_${v}` })
+watch(() => props.executionId, () => (attachmentCount.value = null))
 const canScript = computed(() => auth.can(P.scriptExecute))
 const test = computed(() => ex.value?.test)
 const isAutomated = computed(() => test.value?.execution_type === 'automated')
@@ -148,7 +157,7 @@ const announce = ref('')
 function onKey(e: KeyboardEvent) {
   if (isAutomated.value || !steps.value.length) return
   // shortcuts never fire while typing in a field or inside an open dialog/overlay
-  if ((e.target as Element | null)?.closest?.('.p-dialog, .p-overlay-mask, .p-select-overlay, .p-multiselect-overlay')) return
+  if ((e.target as Element | null)?.closest?.('.p-dialog, .p-overlay-mask, .p-select-overlay, .p-multiselect-overlay, [role="tablist"]')) return
   const a = runnerAction(e)
   if (!a) return
   if (a.type === 'help') {
@@ -394,7 +403,16 @@ const statusOptions = computed(() => [
       <div v-if="test?.expected_result" style="margin-top: 8px"><b class="small">{{ t('runner.expected') }}</b><div class="step-box">{{ test.expected_result }}</div></div>
     </div>
 
-    <div class="card" style="margin-top: 16px">
+    <Tabs :id="rTabs" v-model:value="resultTab" class="editor-tabs" scrollable style="margin-top: 16px">
+      <TabList>
+        <Tab value="result"><i class="pi pi-check-circle" aria-hidden="true" /> {{ t('runner.resultTab') }}</Tab>
+        <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
+      </TabList>
+    </Tabs>
+    <div v-if="resultTab === 'attachments'" v-bind="rPanel('attachments')" class="card">
+      <AttachmentsPanel type="execution" :entity-id="executionId" :project-id="proj.pid" :can-write="canExecute" @count="(n) => (attachmentCount = n)" />
+    </div>
+    <div v-show="resultTab === 'result'" v-bind="rPanel('result')" class="card">
       <div class="form-grid">
         <div v-field class="field">
           <label>{{ t('runner.overallStatus') }}</label>

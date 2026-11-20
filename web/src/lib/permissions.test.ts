@@ -52,3 +52,16 @@ describe('roles', () => {
     expect(grantableRoles('')).toEqual([])
   })
 })
+
+describe('role matrix helpers', () => {
+  it('turns permissions into message keys', async () => {
+    const { permissionKey } = await import('./permissions')
+    expect(permissionKey('member.read')).toBe('member_read')
+    expect(permissionKey('export')).toBe('export')
+  })
+  it('orders known permissions first', async () => {
+    const { matrixPermissions } = await import('./permissions')
+    expect(matrixPermissions({ admin: ['zzz.custom', 'export', 'member.read'], viewer: null as unknown as string[] })).toEqual(['member.read', 'export', 'zzz.custom'])
+    expect(matrixPermissions(null)).toEqual([])
+  })
+})

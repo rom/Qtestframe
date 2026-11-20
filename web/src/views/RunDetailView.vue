@@ -17,6 +17,10 @@ import StatusTag from '@/components/StatusTag.vue'
 import SummaryBar from '@/components/SummaryBar.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
 import DefectLinks from '@/components/DefectLinks.vue'
+import AttachmentsPanel from '@/components/AttachmentsPanel.vue'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { anyOf, and } from '@/lib/query'
 import { formatDateTime, formatDuration, formatNumber } from '@/lib/format'
@@ -53,6 +57,10 @@ const queryError = ref<unknown>(null)
 const composed = computed(() => and(q.value, anyOf('status', statusFilter.value)))
 const canWrite = computed(() => auth.can(P.runWrite))
 const canExecute = computed(() => auth.can(P.runExecute))
+const tab = ref('executions')
+const attachmentCount = ref<number | null>(null)
+const tabsId = 'run-tabs'
+const panel = (v: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${v}`, 'aria-labelledby': `${tabsId}_tab_${v}` })
 
 async function loadRun() {
   try {
@@ -234,7 +242,16 @@ async function copySnippet() {
       </div>
     </div>
 
-    <div class="card">
+    <Tabs :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>
+      <TabList>
+        <Tab value="executions"><i class="pi pi-list" aria-hidden="true" /> {{ t('common.executions') }} <span class="count">{{ executions.length }}</span></Tab>
+        <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
+      </TabList>
+    </Tabs>
+    <div v-if="tab === 'attachments'" v-bind="panel('attachments')" class="card">
+      <AttachmentsPanel type="run" :entity-id="runId" :project-id="proj.pid" :can-write="canExecute" @count="(n) => (attachmentCount = n)" />
+    </div>
+    <div v-show="tab === 'executions'" v-bind="panel('executions')" class="card">
       <div class="filterbar">
         <QueryInput v-model="q" scope="execution" :error="queryError" :composed="composed" :placeholder="t('run.filterPlaceholder', { example: 'assignee:alice title:login' })" @submit="loadExecutions" />
         <MultiSelect v-model="statusFilter" :options="resultOptions" option-label="label" option-value="value" :placeholder="t('common.status')" :aria-label="t('common.status')" style="min-width: 150px" show-clear @change="loadExecutions" />

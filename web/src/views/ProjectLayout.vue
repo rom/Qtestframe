@@ -3,6 +3,7 @@ import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ProgressSpinner from 'primevue/progressspinner'
 import Message from 'primevue/message'
+import ProjectIcon from '@/components/ProjectIcon.vue'
 import { useProjectStore } from '@/stores/project'
 import { usePrefsStore } from '@/stores/prefs'
 import { errorMessage } from '@/lib/api'
@@ -37,6 +38,8 @@ const tabs = computed(() => [
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
+  { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },
+  { to: 'reports', icon: 'pi pi-file-pdf', label: t('nav.reports') },
   { to: 'settings', icon: 'pi pi-tags', label: t('nav.settings') },
   { to: 'export', icon: 'pi pi-download', label: t('nav.export') },
 ])
@@ -51,6 +54,7 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
     <nav class="row breadcrumb" style="margin-bottom: 4px" :aria-label="t('nav.breadcrumb')">
       <RouterLink :to="{ name: 'projects' }" class="muted small">{{ t('nav.breadcrumbProjects') }}</RouterLink>
       <i class="pi pi-angle-right muted small" aria-hidden="true" />
+      <ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :size="20" />
       <span class="small" style="font-weight: 600" aria-current="page">{{ proj.project?.name }}</span>
       <span class="key">{{ proj.project?.key }}</span>
     </nav>

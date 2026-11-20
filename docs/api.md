@@ -313,6 +313,110 @@ Requirement and test lists add `comment_count`.
   inserted in place (recursively, max depth 5), prefixed with `[KEY] `.
   Self-calls and cycles → 400.
 
+## Files, attachments and the document archive
+
+Files are stored in the database (so backups contain them). Upload with
+`multipart/form-data`: field `file`, optional `description` and `tags`
+(comma separated). Maximum size: `files.max_upload_mb` (default 25). Uploads
+with CSRF need the `X-CSRF-Token` header like any other mutation.
+
+`File`: `{id, project_id, kind, name, content_type, size, sha256, description,
+tags, uploaded_by, created_at, url, links: [{entity_type, entity_id, key}]}`
+with `kind` = `attachment` | `document` | `report` | `avatar` | `icon`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/files/{id}` | read access to the file's project | metadata |
+| GET | `/files/{id}/content[?inline=1]` | same | download; `inline=1` only for images (png, jpeg, gif, webp), PDF and plain text, otherwise `attachment`. Always `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox` |
+| PATCH | `/files/{id}` | uploader, or `project.update` | `{name?, description?, tags?}` |
+| DELETE | `/files/{id}` | uploader, or `project.update` | removes the file and all its links |
+| GET | `/{requirements\|tests\|runs\|executions}/{id}/attachments` | read permission of the item | `[File]` |
+| POST | same | `requirement.write` / `test.write` / `run.execute` (runs and executions) | multipart upload → File (`kind: attachment`) |
+| POST | `/{type}/{id}/attachments/link` | same | `{file_id}` attach an existing file of the same project |
+| DELETE | `/{type}/{id}/attachments/{file_id}` | same | unlink; an `attachment` file without remaining links is deleted |
+| GET | `/projects/{pid}/documents?q=&kind=` | project.read | document archive: every file of the project (attachments, documents, reports) |
+| POST | `/projects/{pid}/documents` | `requirement.write` or `test.write` | multipart upload → File (`kind: document`) |
+
+Archive query fields: `name`, `description`, `tag`, `kind`, `type`
+(content type), `uploaded_by`, `created_at`, `size`, `linked` (keys of
+linked items).
+
+### Avatars and project icons
+
+`user.avatar` and `project.icon` are `""` (initials), `"preset:<name>"`
+(`<name>` = `[a-z0-9-]{1,32}`, the client ships the preset images) or
+`"file:<id>"`.
+
+| Method | Path | Notes |
+|---|---|---|
+| PUT | `/auth/me/avatar` | multipart image (png, jpeg, gif, webp; max 1 MB) → `Me` |
+| PATCH | `/auth/me` | `{"avatar": "preset:fox" \| ""}` |
+| GET | `/avatars/{file_id}` | any signed-in user; serves avatar images |
+| PUT | `/projects/{pid}/icon` | project.update; multipart image (max 1 MB) → Project |
+| PATCH | `/projects/{pid}` | `{"icon": "preset:rocket" \| ""}` |
+
+Project icon files are served by `/files/{id}/content?inline=1`.
+
+## Sign-in information
+
+* `Me` additionally contains `previous_login` (`{created_at, ip, user_agent,
+  method}` of the successful sign-in before the current one, or `null`),
+  `failed_logins_since_previous` (failed password attempts on the account
+  since then) and `first_login` (true when the user has never signed in
+  before this session).
+* `GET /auth/logins` → the caller's last 50 sign-in events
+  (`[{id, success, method, ip, user_agent, created_at}]`).
+* Preference `intro_done` (bool) records that the first-login intro tour was
+  finished or skipped.
+* When `user.must_change_password` is true (after an administrator reset),
+  every endpoint except `/auth/*` returns 403 with code
+  `password_change_required` until `POST /auth/password` succeeds.
+
+## Administration additions
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST | `/members/{uid}/reset-password` | member.manage | resets a local user's password to a random temporary one → `{"temporary_password"}` (shown once); sets `must_change_password` and ends the user's sessions. Refused (403) for super admins and for users who are members of other tenants, unless the caller is a super admin |
+| PATCH | `/users/{id}` | super admin | also accepts `{"must_change_password": bool}` |
+| GET | `/audit?q=&from=&to=&limit=&format=csv` | audit.read | `from`/`to` are RFC 3339 or `YYYY-MM-DD`; `format=csv` downloads |
+| GET | `/admin/backup` | super admin | ZIP: `manifest.json` + one `<table>.jsonl` per table (all tenants, files included; sessions excluded) |
+| POST | `/admin/restore` | super admin | multipart `backup` (ZIP) + field `confirm=RESTORE`; the schema version must match; replaces **all** data in one transaction and signs everyone out → `{"restored": {table: rows}}` |
+
+CLI equivalents: `qtestframe backup --out FILE.zip`,
+`qtestframe restore --in FILE.zip --yes`.
+
+## Reports
+
+Standard reports (`GET /reports/templates` → `[{id, name, description,
+params, formats}]`):
+
+| id | Content | Params |
+|---|---|---|
+| `project_status` | KPIs, requirements by status/obligation, coverage, recent runs | – |
+| `requirements_coverage` | every requirement with linked tests, last results and coverage | `query` |
+| `traceability` | requirement × test links | `query` |
+| `run_summary` | one run: totals, executions, defects, durations | `run_id` (required) |
+| `defects` | defects recorded on executions, grouped by defect | – |
+| `test_inventory` | tests by folder, type, status and category | `query` |
+
+Custom report config (`CustomConfig`):
+
+```json
+{"entity": "requirement|test|run|execution", "query": "status:approved",
+ "columns": ["key","title","status"], "group_by": "status",
+ "sort_by": "key", "sort_desc": false, "include_summary": true,
+ "title": "Approved requirements", "run_id": "(execution only)"}
+```
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/reports/fields?entity=` | export | available columns `[{id, label}]` |
+| POST | `/projects/{pid}/reports/generate` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv, archive?: bool, name?}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
+| GET | `/projects/{pid}/reports/definitions` | export | saved custom reports |
+| POST | `/projects/{pid}/reports/definitions` | requirement.write or test.write | `{name, description, config}` |
+| GET / PATCH / DELETE | `/reports/definitions/{id}` | export / write | |
+| POST | `/reports/definitions/{id}/generate` | export | `{format, archive?}` |
+
 ## Search
 
 `GET /search?q=<expr>&types=requirement,test,run&project_id=&limit=` –

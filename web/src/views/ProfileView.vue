@@ -10,7 +10,8 @@ import Select from 'primevue/select'
 import ToggleSwitch from 'primevue/toggleswitch'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Avatar from 'primevue/avatar'
+import UserAvatar from '@/components/UserAvatar.vue'
+import AvatarPicker from '@/components/AvatarPicker.vue'
 import ThemePicker from '@/components/ThemePicker.vue'
 import { isThemeId, type ThemeId } from '@/themes/registry'
 import { useConfirm } from 'primevue/useconfirm'
@@ -19,11 +20,11 @@ import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
 import { useProjectStore } from '@/stores/project'
 import { useNotify } from '@/composables/notify'
-import { formatDate, formatDateTime, formatDateTimePref, formatFullDateTime, getFormatLocale, initials, relativeTime } from '@/lib/format'
+import { formatDate, formatDateTime, formatDateTimePref, formatFullDateTime, getFormatLocale, relativeTime } from '@/lib/format'
 import { browserTimeZone, normalizePrefs, preferencesPatch, timeZones } from '@/lib/prefs'
 import { deviceIcon, parseUserAgent, type UserAgentInfo } from '@/lib/useragent'
 import { P } from '@/lib/permissions'
-import type { Me, Preferences, Project, RbacInfo, SessionInfo } from '@/lib/types'
+import type { LoginEvent, Me, Preferences, Project, RbacInfo, SessionInfo } from '@/lib/types'
 import { useI18n } from 'vue-i18n'
 import { chooseLocal, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
 import { normalizeLang } from '@/i18n/select'
@@ -59,6 +60,17 @@ async function saveName() {
   } finally {
     savingName.value = false
   }
+}
+
+// ---------- avatar ----------
+async function saveAvatar(value: string) {
+  const me = await api.patch<Me>('/auth/me', { avatar: value })
+  if (me?.user) auth.set(me)
+}
+function onAvatarUploaded(res: unknown) {
+  const me = res as Me | null
+  if (me?.user) auth.set(me)
+  else auth.fetchMe()
 }
 
 // ---------- preferences ----------
@@ -277,16 +289,35 @@ function revokeOthers() {
   })
 }
 
+// ---------- sign-in history ----------
+const logins = ref<LoginEvent[]>([])
+const loginsLoading = ref(false)
+const loginsError = ref('')
+async function loadLogins() {
+  loginsLoading.value = true
+  loginsError.value = ''
+  try {
+    logins.value = asItems(await api.get<LoginEvent[]>('/auth/logins'))
+  } catch (e) {
+    loginsError.value = errorMessage(e)
+  } finally {
+    loginsLoading.value = false
+  }
+}
+const loginRows = computed(() => logins.value.map((l) => ({ ...l, ua: parseUserAgent(l.user_agent) })))
+const methodLabel = (m: string) => (m && ['password', 'oidc', 'saml', 'local'].includes(m) ? t(`profile.method.${m}`) : m || '—')
+
 onMounted(() => {
   loadProjects()
   loadRbac()
   loadSessions()
+  loadLogins()
 })
 </script>
 
 <template>
   <div class="page-header">
-    <Avatar :label="initials(auth.user?.display_name || auth.user?.email)" shape="circle" size="large" aria-hidden="true" style="background: var(--p-primary-color); color: var(--p-primary-contrast-color)" />
+    <UserAvatar :avatar="auth.user?.avatar ?? ''" :name="auth.user?.display_name || auth.user?.email" :size="48" />
     <div>
       <h1>{{ auth.user?.display_name || auth.user?.email }}</h1>
       <div class="sub">{{ t('profile.subtitle') }}</div>
@@ -311,6 +342,8 @@ onMounted(() => {
           <span class="small muted">{{ t('common.role') }}</span><span><Tag severity="danger" :value="t('profile.superAdministrator')" icon="pi pi-shield" /></span>
         </template>
       </div>
+      <div class="section-title">{{ t('avatar.title') }}</div>
+      <AvatarPicker kind="avatar" :value="auth.user?.avatar" :name="auth.user?.display_name || auth.user?.email || ''" upload-path="/auth/me/avatar" :save="saveAvatar" @uploaded="onAvatarUploaded" />
     </section>
 
     <!-- memberships -->
@@ -467,6 +500,26 @@ onMounted(() => {
           </DataTable>
         </div>
       </div>
+      <div class="section-title">
+        <span id="h-logins">{{ t('profile.signInHistory') }}</span>
+        <span class="grow" />
+        <Button icon="pi pi-refresh" text rounded size="small" severity="secondary" :aria-label="t('profile.refreshLogins')" v-tooltip="t('profile.refreshLogins')" @click="loadLogins" />
+      </div>
+      <Message v-if="loginsError" severity="error" :closable="false">{{ t('profile.loginsUnavailable', { error: loginsError }) }}</Message>
+      <DataTable v-else v-stack :value="loginRows" data-key="id" :loading="loginsLoading" :aria-busy="loginsLoading" size="small" paginator :rows="10" scrollable aria-labelledby="h-logins">
+        <Column :header="t('profile.when')" style="width: 170px">
+          <template #body="{ data }"><span class="small" :title="formatFullDateTime(data.created_at)">{{ formatDateTime(data.created_at) }}</span></template>
+        </Column>
+        <Column :header="t('profile.result')" style="width: 120px">
+          <template #body="{ data }"><Tag :value="data.success ? t('profile.loginOk') : t('profile.loginFailed')" :severity="data.success ? 'success' : 'danger'" :icon="data.success ? 'pi pi-check' : 'pi pi-times'" /></template>
+        </Column>
+        <Column :header="t('profile.method.label')" style="width: 120px"><template #body="{ data }"><span class="small">{{ methodLabel(data.method) }}</span></template></Column>
+        <Column field="ip" :header="t('profile.ipAddress')" style="width: 140px"><template #body="{ data }"><span class="mono small">{{ data.ip || '—' }}</span></template></Column>
+        <Column :header="t('profile.device')" style="min-width: 200px">
+          <template #body="{ data }"><span class="row nowrap small"><i :class="deviceIcon(data.ua.device)" class="muted" aria-hidden="true" /><span :title="data.user_agent">{{ uaLabel(data.ua) }}</span></span></template>
+        </Column>
+        <template #empty><div class="muted small">{{ t('profile.noLogins') }}</div></template>
+      </DataTable>
     </section>
   </div>
 </template>

@@ -2,9 +2,11 @@ package api
 
 import (
 	"errors"
+	"github.com/rom/qtestframe/internal/export"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/model"
@@ -27,6 +29,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"roles":                rbac.Roles,
 		"runner_enabled":       s.Runner.Enabled(),
 		"auto_create_test":     s.Cfg.Requirements.AutoCreateTest,
+		"max_upload_mb":        s.Cfg.Files.MaxUploadMB,
 		"themes":               model.Themes,
 		"languages":            model.Languages,
 		"version":              Version,
@@ -142,6 +145,8 @@ type userReq struct {
 	Password    *string `json:"password"`
 	SuperAdmin  *bool   `json:"super_admin"`
 	Disabled    *bool   `json:"disabled"`
+	// MustChangePassword forces a password change at next sign-in.
+	MustChangePassword *bool `json:"must_change_password"`
 }
 
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -175,6 +180,9 @@ func applyUserReq(u *model.User, req userReq) error {
 	}
 	if req.Disabled != nil {
 		u.Disabled = *req.Disabled
+	}
+	if req.MustChangePassword != nil {
+		u.MustChangePassword = *req.MustChangePassword
 	}
 	if req.Password != nil && *req.Password != "" {
 		if err := auth.ValidatePassword(*req.Password); err != nil {
@@ -401,6 +409,25 @@ func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request, p *Pr
 
 var auditSchema = &query.Schema{Fields: []string{"action", "entity", "entity_id", "user", "details", "created_at"}}
 
+// parseDay accepts RFC 3339 or YYYY-MM-DD; endOfDay moves a bare date to
+// the end of that day (for "to").
+func parseDay(v string, endOfDay bool) (*time.Time, error) {
+	if v == "" {
+		return nil, nil
+	}
+	if t, err := time.Parse(time.RFC3339, v); err == nil {
+		return &t, nil
+	}
+	t, err := time.Parse("2006-01-02", v)
+	if err != nil {
+		return nil, badRequest("invalid date %q (use YYYY-MM-DD or RFC 3339)", v)
+	}
+	if endOfDay {
+		t = t.Add(24*time.Hour - time.Nanosecond)
+	}
+	return &t, nil
+}
+
 func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request, p *Principal) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
 	q, err := query.Parse(r.URL.Query().Get("q"), auditSchema)
@@ -408,7 +435,17 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request, p *Principa
 		s.fail(w, r, err)
 		return
 	}
-	es, err := s.Store.ListAudit(r.Context(), p.TenantID(), limit)
+	from, err := parseDay(r.URL.Query().Get("from"), false)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	to, err := parseDay(r.URL.Query().Get("to"), true)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	es, err := s.Store.ListAuditRange(r.Context(), p.TenantID(), from, to, limit)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -421,5 +458,68 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request, p *Principa
 			out = append(out, e)
 		}
 	}
+	if r.URL.Query().Get("format") == "csv" {
+		ds := export.Dataset{Title: "Audit trail", Sections: []export.Section{{Name: "audit",
+			Columns: []string{"Time (UTC)", "User", "Action", "Entity", "Entity ID", "Details"}}}}
+		for _, e := range out {
+			ds.Sections[0].Rows = append(ds.Sections[0].Rows, []string{ts(e.CreatedAt), e.UserEmail, e.Action, e.EntityType, e.EntityID, e.Details})
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="audit-`+time.Now().UTC().Format("20060102-150405")+`.csv"`)
+		if err := export.WriteCSV(w, ds); err != nil {
+			s.Log.Error("audit export failed", "err", err)
+		}
+		s.audit(r.Context(), p, "audit.export", "audit", "", itoa(len(out)))
+		return
+	}
 	writeJSON(w, http.StatusOK, listOf(out))
+}
+
+// handleResetPassword sets a random temporary password for a tenant member.
+func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request, p *Principal) {
+	ctx := r.Context()
+	uid := r.PathValue("uid")
+	if _, err := s.Store.GetMembership(ctx, p.TenantID(), uid); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	u, err := s.Store.GetUser(ctx, uid)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if u.AuthProvider != "local" {
+		s.fail(w, r, badRequest("the password of %s is managed by the identity provider", u.Email))
+		return
+	}
+	isSuper := p.User.SuperAdmin && p.Token == nil
+	if !isSuper {
+		// a tenant admin must not take over accounts that reach beyond the tenant
+		ms, err := s.Store.ListUserMemberships(ctx, uid)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if u.SuperAdmin || len(ms) != 1 {
+			writeError(w, http.StatusForbidden, "forbidden", "only a super administrator can reset the password of this user")
+			return
+		}
+	}
+	if u.ID == p.User.ID {
+		s.fail(w, r, badRequest("use your profile to change your own password"))
+		return
+	}
+	temp := auth.RandomToken(12) + "-9"
+	if u.PasswordHash, err = auth.HashPassword(temp); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	u.MustChangePassword = true
+	if err := s.Store.UpdateUser(ctx, u); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	_ = s.Store.DeleteUserSessions(ctx, u.ID)
+	s.audit(ctx, p, "member.reset_password", "user", u.ID, u.Email)
+	writeJSON(w, http.StatusOK, map[string]string{"temporary_password": temp})
 }

@@ -83,6 +83,10 @@ func (s *Server) authed(fn handlerFunc, perms ...string) http.Handler {
 				return
 			}
 		}
+		if p.User.MustChangePassword && p.Token == nil && !strings.HasPrefix(r.URL.Path, "/api/v1/auth/") {
+			writeError(w, http.StatusForbidden, "password_change_required", "you must change your password first")
+			return
+		}
 		for _, perm := range perms {
 			if !p.Can(rbac.Permission(perm)) {
 				writeError(w, http.StatusForbidden, "forbidden", "permission "+perm+" required")
@@ -237,6 +241,10 @@ type meResponse struct {
 	Permissions []string           `json:"permissions"`
 	Memberships []model.Membership `json:"memberships"`
 	CSRFToken   string             `json:"csrf_token"`
+	// Sign-in information relative to the current session.
+	PreviousLogin *model.LoginEvent `json:"previous_login"`
+	FailedSince   int               `json:"failed_logins_since_previous"`
+	FirstLogin    bool              `json:"first_login"`
 }
 
 func (s *Server) me(ctx context.Context, p *Principal) (*meResponse, error) {
@@ -247,8 +255,42 @@ func (s *Server) me(ctx context.Context, p *Principal) (*meResponse, error) {
 	res := &meResponse{User: p.User, Tenant: p.Tenant, Role: p.Role, Permissions: p.Permissions(), Memberships: ms}
 	if p.Session != nil {
 		res.CSRFToken = p.Session.CSRF
+		if err := s.loginInfo(ctx, p, res); err != nil {
+			return nil, err
+		}
 	}
 	return res, nil
+}
+
+// loginInfo fills the previous successful sign-in before the current
+// session, failed attempts since then and whether this is the first one.
+func (s *Server) loginInfo(ctx context.Context, p *Principal, res *meResponse) error {
+	events, err := s.Store.ListLogins(ctx, p.User.ID, 200)
+	if err != nil {
+		return err
+	}
+	start := p.Session.CreatedAt
+	for i := range events {
+		e := &events[i]
+		if !e.CreatedAt.Before(start) {
+			continue // this session's own sign-in and later ones
+		}
+		if e.Success {
+			res.PreviousLogin = e
+			break
+		}
+		res.FailedSince++
+	}
+	res.FirstLogin = res.PreviousLogin == nil
+	return nil
+}
+
+// recordLogin stores a sign-in attempt; failures are only logged.
+func (s *Server) recordLogin(r *http.Request, userID, method string, ok bool) {
+	e := &model.LoginEvent{UserID: userID, Success: ok, Method: method, IP: s.clientIP(r), UserAgent: r.UserAgent()}
+	if err := s.Store.RecordLogin(r.Context(), e); err != nil {
+		s.Log.Warn("login event not recorded", "err", err)
+	}
 }
 
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -315,6 +357,9 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	if !auth.CheckPassword(hash, req.Password) || u == nil || u.Disabled {
 		s.Log.Warn("login failed", "email", store.NormalizeEmail(req.Email), "remote", s.clientIP(r))
+		if u != nil {
+			s.recordLogin(r, u.ID, "local", false)
+		}
 		writeError(w, http.StatusUnauthorized, "unauthorized", "invalid credentials")
 		return
 	}
@@ -348,6 +393,7 @@ func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, u *model.
 		return
 	}
 	s.audit(r.Context(), p, "login", "user", u.ID, method)
+	s.recordLogin(r, u.ID, method, true) // after the session exists: see loginInfo
 	if method != "local" {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -448,6 +494,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request, p 
 		return
 	}
 	p.User.PasswordHash = hash
+	p.User.MustChangePassword = false
 	if err := s.Store.UpdateUser(r.Context(), p.User); err != nil {
 		s.fail(w, r, err)
 		return

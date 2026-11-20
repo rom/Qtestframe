@@ -476,12 +476,12 @@ func validComment(body string) (string, error) {
 	return body, nil
 }
 
-const commentSelect = `SELECT c.id, c.entity_type, c.entity_id, c.user_id, COALESCE(u.email, ''), COALESCE(u.display_name, ''), c.body, c.created_at, c.updated_at
+const commentSelect = `SELECT c.id, c.entity_type, c.entity_id, c.user_id, COALESCE(u.email, ''), COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), c.body, c.created_at, c.updated_at
 	FROM comments c LEFT JOIN users u ON u.id = c.user_id`
 
 func scanComment(r interface{ Scan(...any) error }) (*model.Comment, error) {
 	var c model.Comment
-	if err := r.Scan(&c.ID, &c.EntityType, &c.EntityID, &c.UserID, &c.UserEmail, &c.UserName, &c.Body, &c.CreatedAt, &c.UpdatedAt); err != nil {
+	if err := r.Scan(&c.ID, &c.EntityType, &c.EntityID, &c.UserID, &c.UserEmail, &c.UserName, &c.UserAvatar, &c.Body, &c.CreatedAt, &c.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &c, nil
@@ -607,6 +607,23 @@ func (s *Store) TestDefects(ctx context.Context, tenantID, projectID string) (ma
 func deleteEntityData(ctx context.Context, c conn, entityType string, ids []string) error {
 	if len(ids) == 0 {
 		return nil
+	}
+	if err := removeAttachments(ctx, c, entityType, ids); err != nil {
+		return err
+	}
+	if entityType == model.KindTest {
+		// executions of deleted tests are removed by the FK cascade
+		rows, err := c.query(ctx, `SELECT id FROM test_executions WHERE test_case_id IN (`+placeholders(len(ids))+`)`, anySlice(ids)...)
+		if err != nil {
+			return err
+		}
+		execs, err := scanStrings(rows)
+		if err != nil {
+			return err
+		}
+		if err := removeAttachments(ctx, c, "execution", execs); err != nil {
+			return err
+		}
 	}
 	for _, tbl := range []string{"comments", "revisions"} {
 		args := append([]any{entityType}, anySlice(ids)...)

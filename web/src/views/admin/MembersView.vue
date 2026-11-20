@@ -11,10 +11,12 @@ import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
+import UserAvatar from '@/components/UserAvatar.vue'
+import TempPasswordDialog from '@/components/TempPasswordDialog.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDate } from '@/lib/format'
 import { P } from '@/lib/permissions'
-import type { Membership, RbacInfo } from '@/lib/types'
+import type { Membership } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
@@ -28,7 +30,7 @@ const meta = useMetaStore()
 const notify = useNotify()
 const { t } = useI18n()
 const members = ref<Membership[]>([])
-const rbac = ref<RbacInfo | null>(null)
+const rbac = ref<{ roles: string[] } | null>(null)
 const loading = ref(false)
 const filter = ref('')
 const canManage = computed(() => auth.can(P.memberManage))
@@ -51,7 +53,7 @@ async function load() {
 onMounted(async () => {
   load()
   try {
-    rbac.value = await api.get<RbacInfo>('/rbac')
+    rbac.value = await api.get<{ roles: string[] }>('/rbac')
   } catch {
     /* optional */
   }
@@ -105,8 +107,27 @@ async function add() {
     busy.value = false
   }
 }
-const showMatrix = ref(false)
-const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? {}).flat())].sort())
+// ---------- password reset ----------
+const tempOpen = ref(false)
+const tempPassword = ref('')
+const tempUser = ref('')
+function resetPassword(m: Membership) {
+  notify.confirmDanger(
+    t('admin.confirmResetPassword', { user: m.email ?? '' }),
+    async () => {
+      try {
+        const res = await api.post<{ temporary_password: string }>(`/members/${m.user_id}/reset-password`)
+        tempPassword.value = res?.temporary_password ?? ''
+        tempUser.value = m.email ?? ''
+        tempOpen.value = true
+      } catch (e) {
+        notify.fail(e, t('admin.resetFailed'))
+      }
+    },
+    t('admin.resetPasswordHeader'),
+    t('admin.resetPasswordAction'),
+  )
+}
 </script>
 
 <template>
@@ -114,11 +135,13 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
     <div class="filterbar">
       <IconField><InputIcon class="pi pi-filter" /><InputText v-model="filter" :placeholder="t('admin.filterMembers')" :aria-label="t('admin.filterMembers')" /></IconField>
       <span class="grow" />
-      <Button v-if="rbac" :label="t('admin.roleMatrix')" icon="pi pi-table" severity="secondary" text @click="showMatrix = true" />
+      <RouterLink :to="{ name: 'rbac' }" class="p-button p-button-text p-button-secondary"><i class="pi pi-table" aria-hidden="true" />&nbsp;{{ t('admin.roleMatrix') }}</RouterLink>
       <Button v-if="canManage" :label="t('admin.addMember')" icon="pi pi-user-plus" @click="openAdd" />
     </div>
     <DataTable v-stack :value="filtered" data-key="user_id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
-      <Column field="email" :header="t('common.email')" sortable body-class="stack-main" />
+      <Column field="email" :header="t('common.email')" sortable body-class="stack-main">
+        <template #body="{ data }"><span class="row nowrap" style="gap: 8px; min-width: 0"><UserAvatar :avatar="data.avatar" :user-id="data.user_id" :email="data.email" :name="data.display_name || data.email" :size="28" /><span class="ellipsis">{{ data.email }}</span></span></template>
+      </Column>
       <Column field="display_name" :header="t('common.name')" sortable />
       <Column field="role" :header="t('common.role')" sortable style="width: 200px">
         <template #body="{ data }">
@@ -137,8 +160,9 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
         </template>
       </Column>
       <Column field="created_at" :header="t('admin.memberSince')" sortable style="width: 150px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column v-if="canManage" style="width: 60px">
+      <Column v-if="canManage" style="width: 100px">
         <template #body="{ data }">
+          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" />
           <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('admin.removeMember', { user: data.email })" v-tooltip="t('common.remove')" @click="remove(data)" />
         </template>
       </Column>
@@ -163,26 +187,5 @@ const allPerms = computed(() => [...new Set(Object.values(rbac.value?.matrix ?? 
     </form>
   </Dialog>
 
-  <Dialog v-model:visible="showMatrix" :header="t('admin.rolesAndPermissions')" modal style="width: min(720px, 96vw)">
-    <div v-if="rbac" class="table-scroll" tabindex="0" role="region" :aria-label="t('admin.rolesAndPermissions')">
-    <table style="width: 100%; border-collapse: collapse; font-size: 13px">
-      <caption class="sr-only">{{ t('admin.rolesAndPermissions') }}</caption>
-      <thead>
-        <tr>
-          <th scope="col" style="text-align: left; padding: 6px">{{ t('admin.permission') }}</th>
-          <th v-for="r in rbac.roles" :key="r" scope="col" style="padding: 6px">{{ enumLabel('role', r) }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="p in allPerms" :key="p" style="border-top: 1px solid var(--qtf-border)">
-          <th scope="row" style="padding: 5px 6px; text-align: left; font-weight: normal" class="mono">{{ p }}</th>
-          <td v-for="r in rbac.roles" :key="r" style="text-align: center">
-            <template v-if="rbac.matrix[r]?.includes(p)"><i class="pi pi-check" style="color: var(--p-green-600)" aria-hidden="true" /><span class="sr-only">{{ t('common.yes') }}</span></template>
-            <span v-else class="sr-only">{{ t('common.no') }}</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    </div>
-  </Dialog>
+  <TempPasswordDialog v-model:visible="tempOpen" :password="tempPassword" :user="tempUser" />
 </template>

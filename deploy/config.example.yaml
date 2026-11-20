@@ -166,6 +166,11 @@ auth:
   #      "QTF-Admins": admin
   #      "QTF-Testers": tester
 
+files:
+  # Maximum size of one uploaded file (attachments, archive documents).
+  # Files are stored in the database and included in backups.
+  max_upload_mb: 25
+
 requirements:
   # Create a linked test case automatically when a requirement is created.
   # The test is placed in a test folder mirroring the requirement's folder

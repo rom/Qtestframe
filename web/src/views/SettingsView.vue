@@ -12,6 +12,7 @@ import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import { api, errorMessage } from '@/lib/api'
+import AvatarPicker from '@/components/AvatarPicker.vue'
 import { groupBy } from '@/lib/collections'
 import { defaultCategoryColor, normalizeHex, readableTextColor } from '@/lib/colors'
 import { P } from '@/lib/permissions'
@@ -131,6 +132,14 @@ async function saveProject() {
     notify.fail(e)
   }
 }
+async function saveIcon(icon: string) {
+  const p = await api.patch<Project>(`/projects/${proj.pid}`, { icon })
+  if (proj.project) Object.assign(proj.project, p ?? { icon })
+}
+function onIconUploaded(res: unknown) {
+  const p = res as Project | null
+  if (proj.project && p?.id) Object.assign(proj.project, p)
+}
 function deleteProject() {
   notify.confirmDanger(t('settings.confirmDeleteProject', { key: proj.project?.key ?? '' }), async () => {
     try {
@@ -217,6 +226,10 @@ function deleteProject() {
             </div>
           </div>
         </div>
+        <section class="card" style="max-width: 640px; margin-top: 16px" aria-labelledby="h-icon">
+          <h2 id="h-icon" class="plain-heading" style="margin-bottom: 10px">{{ t('settings.projectIcon') }}</h2>
+          <AvatarPicker kind="icon" :value="proj.project?.icon" :name="proj.project?.key ?? ''" :upload-path="`/projects/${proj.pid}/icon`" :save="saveIcon" :disabled="!auth.can(P.projectUpdate)" @uploaded="onIconUploaded" />
+        </section>
       </TabPanel>
     </TabPanels>
   </Tabs>

@@ -174,8 +174,9 @@ with Playwright and runs [axe-core](https://github.com/dequelabs/axe-core)
 against a running server with the demo data. It signs in as the bootstrap
 administrator and visits the login page, projects, dashboard, requirements
 (list and with the editor open), tests, runs, a run, the execution runner,
-traceability, baselines, settings, export, search, profile and the
-administration pages:
+traceability, baselines, settings, export, documents, reports, search,
+profile and the administration pages (members, tokens, audit, role matrix,
+organisations, users, backup):
 
 * in five configurations: light theme in English, dark theme in Swedish and
   the decorative themes navy, crazy and green_console (the theme and
@@ -183,8 +184,9 @@ administration pages:
 * at the viewports 390×844 (phone), 820×1180 (tablet), 1024×768 (tablet
   landscape) and 1440×900 (desktop), with touch emulation on the tablets
   and the phone;
-* including open states: the editor drawer, the "new run" dialog, the role
-  matrix dialog and the off-canvas navigation (phone and tablet);
+* including open states: the editor drawer, the attachments tabs of a
+  requirement and a run, the "new run" dialog and the off-canvas navigation
+  (phone and tablet);
 * with the axe tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, and
   asserting `document.documentElement.scrollWidth <= innerWidth` (no
   horizontal page scroll).

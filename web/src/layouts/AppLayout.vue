@@ -7,9 +7,11 @@ import InputText from 'primevue/inputtext'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Menu from 'primevue/menu'
-import Avatar from 'primevue/avatar'
+import UserAvatar from '@/components/UserAvatar.vue'
+import ProjectIcon from '@/components/ProjectIcon.vue'
 import Dialog from 'primevue/dialog'
 import ThemePicker from '@/components/ThemePicker.vue'
+import HelpMenu from '@/guide/HelpMenu.vue'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -19,7 +21,6 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
 import { api, asItems } from '@/lib/api'
 import { P } from '@/lib/permissions'
-import { initials } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
 import { chooseLocal, currentLang, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
 import { enumLabel } from '@/i18n/labels'
@@ -136,6 +137,8 @@ const projectNav = computed(() => [
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
+  { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },
+  { to: 'reports', icon: 'pi pi-file-pdf', label: t('nav.reports') },
   { to: 'settings', icon: 'pi pi-tags', label: t('nav.settings') },
   { to: 'export', icon: 'pi pi-download', label: t('nav.export') },
 ])
@@ -237,7 +240,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
           <i class="pi pi-search" aria-hidden="true" /><span class="label">{{ t('nav.search') }}</span>
         </RouterLink>
         <template v-if="inProject">
-          <div class="section" :title="proj.project?.name">{{ proj.project?.key }} · {{ proj.project?.name }}</div>
+          <div class="section project-section" :title="proj.project?.name"><ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :size="18" /><span class="ellipsis">{{ proj.project?.key }} · {{ proj.project?.name }}</span></div>
           <RouterLink
             v-for="n in projectNav"
             :key="n.to"
@@ -335,6 +338,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
           aria-haspopup="dialog"
           @click="searchOpen = true"
         />
+        <HelpMenu />
         <ThemePicker compact :t="t" />
         <Button
           :icon="ui.dark ? 'pi pi-sun' : 'pi pi-moon'"
@@ -346,7 +350,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
           @click="prefs.toggleTheme()"
         />
         <button type="button" class="user-button" aria-haspopup="menu" @click="userMenu?.toggle($event)">
-          <Avatar :label="initials(userName)" shape="circle" aria-hidden="true" style="background: var(--p-primary-color); color: var(--p-primary-contrast-color)" />
+          <UserAvatar :avatar="auth.user?.avatar ?? ''" :name="userName" :size="32" />
           <span class="user-text">
             <span style="font-weight: 600" class="ellipsis">{{ userName }}</span>
             <span class="muted small ellipsis">{{ userRole }}</span>
@@ -425,6 +429,11 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
 }
 .nav-close {
   margin-left: auto;
+}
+.project-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 @media (max-width: 1279px) {
   .user-text {

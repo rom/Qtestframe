@@ -13,6 +13,7 @@ import Skeleton from 'primevue/skeleton'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Message from 'primevue/message'
+import ProjectIcon from '@/components/ProjectIcon.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { formatDate, relativeTime } from '@/lib/format'
@@ -161,9 +162,7 @@ function open(p: Project) {
   <ul v-else-if="layout === 'cards'" class="project-cards plain-list" :aria-label="t('projects.title')">
     <li v-for="p in filtered" :key="p.id" class="card clickable" style="display: flex; flex-direction: column; gap: 8px" @click="open(p)">
       <div class="row nowrap">
-        <div aria-hidden="true" style="width: 40px; height: 40px; border-radius: 10px; background: color-mix(in srgb, var(--p-primary-color) 15%, transparent); color: var(--p-primary-color); display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: none">
-          {{ p.key.slice(0, 4) }}
-        </div>
+        <ProjectIcon :icon="p.icon" :project-key="p.key" :size="40" />
         <div class="grow">
           <RouterLink :to="{ name: 'dashboard', params: { projectId: p.id } }" class="project-link ellipsis" @click.stop>{{ p.name }}</RouterLink>
           <div class="key">{{ p.key }}</div>
@@ -183,7 +182,7 @@ function open(p: Project) {
     <DataTable v-stack :value="filtered" data-key="id" sort-field="key" :sort-order="1" row-hover @row-click="open($event.data)" class="clickable">
       <Column field="key" :header="t('common.key')" sortable><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
       <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
-        <template #body="{ data }"><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink></template>
+        <template #body="{ data }"><span class="row nowrap" style="min-width: 0"><ProjectIcon :icon="data.icon" :project-key="data.key" :size="24" /><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink></span></template>
       </Column>
       <Column field="description" :header="t('common.description')" />
       <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>

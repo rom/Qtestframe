@@ -15,6 +15,7 @@ import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import CommentsPanel from './CommentsPanel.vue'
+import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import TestExecutionsPanel from './TestExecutionsPanel.vue'
 import Tabs from 'primevue/tabs'
@@ -114,6 +115,7 @@ async function load() {
     const t = await api.get<TestCase>(`/tests/${props.itemId}`)
     item.value = t
     commentCount.value = t.comment_count ?? 0
+    attachmentCount.value = null
     form.value = {
       title: t.title,
       description: t.description,
@@ -184,6 +186,7 @@ const calledBy = computed(() => item.value?.called_by ?? [])
 // ---------- tabs ----------
 const tab = ref('details')
 const commentCount = ref(0)
+const attachmentCount = ref<number | null>(null)
 const execCount = ref<number | null>(null)
 function resolveId(field: string, id: string): string | undefined {
   if (field === 'category_ids') {
@@ -309,11 +312,13 @@ const scriptPlaceholder = computed(() => {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="executions"><i class="pi pi-play-circle" aria-hidden="true" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
+      <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
+  <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
   <HistoryPanel
     entity="test"

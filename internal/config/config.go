@@ -23,6 +23,8 @@ type Config struct {
 	Logging  Logging  `yaml:"logging"`
 	Auth     Auth     `yaml:"auth"`
 	Runner   Runner   `yaml:"runner"`
+	// Files configures uploads (attachments, documents, avatars).
+	Files Files `yaml:"files"`
 	// Requirements holds behaviour defaults for requirement management.
 	Requirements Requirements `yaml:"requirements"`
 	Hardening    Hardening    `yaml:"hardening"`
@@ -116,6 +118,12 @@ type SAML struct {
 	Provisioning    `yaml:",inline"`
 }
 
+// Files configures uploaded files, which are stored in the database.
+type Files struct {
+	// MaxUploadMB is the maximum size of one uploaded file.
+	MaxUploadMB int `yaml:"max_upload_mb"`
+}
+
 // Requirements configures requirement behaviour.
 type Requirements struct {
 	// AutoCreateTest creates a linked test case (one step per evaluation
@@ -180,6 +188,7 @@ func Default() Config {
 			},
 		},
 		Requirements: Requirements{AutoCreateTest: true},
+		Files:        Files{MaxUploadMB: 25},
 		Hardening:    Hardening{NoNewPrivs: true, Landlock: true, Seccomp: true, DropCapabilities: true},
 		Bootstrap:    Bootstrap{TenantSlug: "default", TenantName: "Default"},
 	}
@@ -374,6 +383,9 @@ func (c *Config) Validate() error {
 		if c.Logging.Syslog.Address == "" {
 			errs = append(errs, errors.New("logging.syslog.address is required"))
 		}
+	}
+	if c.Files.MaxUploadMB < 1 || c.Files.MaxUploadMB > 1024 {
+		errs = append(errs, errors.New("files.max_upload_mb must be between 1 and 1024"))
 	}
 	if c.Runner.Enabled && c.Runner.Timeout <= 0 {
 		errs = append(errs, errors.New("runner.timeout must be positive"))

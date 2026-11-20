@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { P } from '@/lib/permissions'
 import { useI18n } from 'vue-i18n'
+import HelpLink from '@/guide/HelpLink.vue'
 
 const auth = useAuthStore()
 const { t } = useI18n()
@@ -11,8 +12,10 @@ const tabs = computed(() =>
     { to: 'members', label: t('admin.members'), icon: 'pi pi-users', show: auth.can(P.memberRead) },
     { to: 'tokens', label: t('admin.tokens'), icon: 'pi pi-key', show: auth.can(P.tokenManage) },
     { to: 'audit', label: t('admin.audit'), icon: 'pi pi-history', show: auth.can(P.auditRead) },
+    { to: 'rbac', label: t('admin.roleMatrix'), icon: 'pi pi-table', show: true },
     { to: 'tenants', label: t('admin.tenants'), icon: 'pi pi-building', show: auth.isSuperAdmin },
     { to: 'users', label: t('admin.users'), icon: 'pi pi-id-card', show: auth.isSuperAdmin },
+    { to: 'backup', label: t('admin.backup'), icon: 'pi pi-database', show: auth.isSuperAdmin },
   ].filter((t) => t.show),
 )
 </script>
@@ -23,6 +26,7 @@ const tabs = computed(() =>
       <h1>{{ t('admin.title') }}</h1>
       <div class="sub">{{ auth.tenant?.name ?? t('admin.noTenant') }}</div>
     </div>
+    <div class="actions"><HelpLink page="administration" /></div>
   </div>
   <nav class="tabs-nav" :aria-label="t('admin.sections')">
     <RouterLink v-for="tab in tabs" :key="tab.to" :to="{ name: tab.to }"><i :class="tab.icon" aria-hidden="true" />{{ tab.label }}</RouterLink>

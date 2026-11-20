@@ -746,3 +746,11 @@ html, body { overflow-x: clip; }
   :root[data-theme] .sidebar, :root[data-theme] .main, :root[data-theme] .logo { transition: none !important; }
   :root[data-theme] .sidebar .brand:hover .logo { transform: none !important; }
 }
+
+/* Project initials inside the sidebar use the sidebar's own (contrast-
+   checked) text colour instead of the theme primary, which is too dark on
+   dark sidebars. */
+#app-sidebar .project-icon {
+  color: var(--qtf-sidebar-strong);
+  background: color-mix(in srgb, var(--qtf-sidebar-strong) 14%, transparent);
+}

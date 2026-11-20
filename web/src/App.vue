@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
+import SignInNotice from '@/components/SignInNotice.vue'
 import { usePrimeVue } from 'primevue/config'
 import { nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -55,6 +56,8 @@ const toastPt = {
     const urgent = props.message?.severity === 'error' || props.message?.severity === 'warn'
     return { role: urgent ? 'alert' : 'status', 'aria-live': urgent ? 'assertive' : 'polite' }
   },
+  // toasts are announced by their live region; they must not take the focus (PrimeVue autofocuses the close button)
+  closeButton: { autofocus: false },
 }
 const toastBreakpoints = { '640px': { width: 'calc(100vw - 24px)', right: '12px', left: '12px' } }
 </script>
@@ -65,4 +68,5 @@ const toastBreakpoints = { '640px': { width: 'calc(100vw - 24px)', right: '12px'
   <div class="sr-only" role="status" aria-live="polite" aria-atomic="true">{{ announcement }}</div>
   <Toast position="top-right" :pt="toastPt" :breakpoints="toastBreakpoints" />
   <ConfirmDialog :breakpoints="{ '640px': '100vw' }" />
+  <SignInNotice />
 </template>

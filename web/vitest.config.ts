@@ -9,8 +9,8 @@ export default mergeConfig(
       include: ['src/**/*.test.ts'],
       coverage: {
         provider: 'v8',
-        include: ['src/lib/**', 'src/themes/**', 'src/i18n/**'],
-        exclude: ['src/lib/**/*.test.ts', 'src/lib/types.ts', 'src/themes/**/*.test.ts', 'src/i18n/**/*.test.ts'],
+        include: ['src/lib/**', 'src/themes/**', 'src/i18n/**', 'src/guide/**'],
+        exclude: ['src/lib/**/*.test.ts', 'src/lib/types.ts', 'src/themes/**/*.test.ts', 'src/i18n/**/*.test.ts', 'src/guide/**/*.test.ts', 'src/guide/**/*.vue'],
         reporter: ['text', 'html'],
         thresholds: { lines: 85, functions: 85, branches: 85, statements: 85 },
       },
