@@ -66,18 +66,37 @@ Coverage appears as a column and quick filter in the requirements list, as the q
 
 ## The dashboard
 
-**Dashboard** is the first page of every project.
+**Dashboard** is the first page of every project. It has three tabs: **Overview** for the state today, **Trends** for how it changed and **Quality** for what needs attention. The tab is part of the address, so a link can open the dashboard on a given tab. On a phone the charts are stacked.
 
 ![The dashboard with key figures, requirement coverage, execution results and recent runs](../images/en-dashboard.png)
+
+**Overview**
 
 - **Key figures**: number of requirements (and how many are uncovered), coverage (how many are covered by tests), number of tests (manual and automated), test runs (in progress) and the pass rate of all executions.
 - **Requirement coverage**: how many requirements are *Passed*, *Failed*, *Partial*, *Not run* and *None*.
 - **Execution results**: all results of all runs.
+- **Progress of active runs**: one bar per planned or running run (the newest eight), split into passed, failed, blocked, skipped and not run.
+- **Recent runs**: the five newest runs with their progress; **All runs →** opens the run list.
 - **Requirements by status** and **Requirements by obligation** (requirements without a keyword count as *unspecified*).
 - **Tests by status**.
-- **Recent runs**: the five newest runs with their progress; **All runs →** opens the run list.
 
 On the dashboard, a requirement counts as *covered* as soon as at least one test is linked, regardless of results.
+
+**Trends**
+
+- **Coverage and pass rate over time**: the coverage (share of requirements with linked tests) and the pass rate (share of executed tests whose latest result passed) per day. Choose the period above the chart: 30, 90 or 365 days.
+- **Defects opened and closed per week**: new defects and defects that were resolved, closed or rejected, per week (Monday to Sunday).
+- **Release burn-up**: for the release chosen in the list, the requirements in its scope, how many of them have linked tests and how many have all their tests passed in the release's runs, day by day from the creation of the release. The target date of the release is shown above the chart. See [Releases](releases-and-risks.md).
+
+The trends come from a snapshot of the figures that Qtestframe saves once a day for every project (and when the dashboard is opened and today's snapshot is missing). A new project, or a project from before this feature, does not start empty: on the first snapshot, the earlier days are reconstructed from what has dates — when requirements, tests and links were created, the results of the runs and when defects were reported and resolved (up to a year back). Days without a snapshot are bridged by the line.
+
+**Quality**
+
+- **Flaky tests**: the ten tests whose results change most often between passed and failed, with their latest results (oldest first; a ring marks every flip) and when the result last flipped. Click a test to open it. See [Flaky tests](tests.md#flaky-tests).
+- **Open defects by severity**: open and in-progress defects per severity.
+- **Requirement coverage by group**: the coverage per top-level folder (requirements in subfolders count for the top folder) or, with **Category**, per requirement category; the twelve largest groups.
+
+Every chart has a text alternative with its figures for screen readers, and the legend names each colour.
 
 ## Dependency graphs
 

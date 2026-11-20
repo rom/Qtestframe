@@ -126,6 +126,8 @@ async function discover(request) {
   const routes = [
     { name: 'projects', path: '/projects' },
     { name: 'dashboard', path: `${p}/dashboard`, wait: 'canvas' },
+    { name: 'dashboard-trends', path: `${p}/dashboard?tab=trends`, wait: 'canvas, .empty' },
+    { name: 'dashboard-quality', path: `${p}/dashboard?tab=quality`, wait: 'canvas, .empty' },
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },

@@ -1,4 +1,5 @@
 // TypeScript mirrors of internal/model/model.go (JSON tags are authoritative).
+import type { FlakyTest, GroupCoverage } from './metrics'
 
 export interface Tenant {
   id: string
@@ -316,6 +317,9 @@ export interface TestCase {
   called_by?: TestRef[] | null
   /** links to requirements that are suspect */
   suspect_links?: number
+  /** pass/fail flips among the last results; flaky when at the threshold */
+  flakiness?: number
+  flaky?: boolean
   /** Requirements it verifies, tests it calls and tests that call it. */
   relations?: ItemRef[] | null
   step_count?: number
@@ -593,6 +597,12 @@ export interface Dashboard {
   runs: { total: number; by_status: Record<string, number> }
   recent_runs: TestRun[] | null
   results: Record<string, number>
+  /** planned and in-progress runs, newest first */
+  active_runs?: TestRun[] | null
+  coverage_by_folder?: GroupCoverage[] | null
+  coverage_by_category?: GroupCoverage[] | null
+  defects_by_severity?: Record<string, number>
+  flaky?: { total: number; items: FlakyTest[] | null; window: number; min_flips: number }
 }
 
 export interface KeywordHit {

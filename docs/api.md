@@ -141,7 +141,9 @@ default):
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
 | POST | `/projects/{pid}/prompts` | project.read + the read permission of the items' kind – see [Prompts](#prompts-software-projects) |
 | DELETE | `/projects/{pid}` | project.delete |
-| GET | `/projects/{pid}/dashboard` | project.read |
+| GET | `/projects/{pid}/dashboard` | project.read – see [Dashboard and metrics](#dashboard-and-metrics) |
+| GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
+| GET | `/projects/{pid}/flaky-tests` | project.read – `?limit=n` |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
 
 A `Project` has `color` (`#rrggbb` or `""` for the theme colour; anything
@@ -176,7 +178,9 @@ projects of type `software` (else 400).
   `notes` ≤ 8000 characters.
 * Response: `{"kind", "lang", "title", "prompt", "items"}`.
 
-Dashboard response:
+### Dashboard and metrics
+
+`GET /projects/{pid}/dashboard` aggregates on the server:
 ```json
 {
   "requirements": {"total": 10, "by_status": {"draft": 3}, "by_obligation": {"must": 4}, "covered": 7, "uncovered": 3},
@@ -184,9 +188,79 @@ Dashboard response:
   "coverage": {"passed": 5, "failed": 1, "not_run": 1, "none": 3, "partial": 0},
   "runs": {"total": 3, "by_status": {}},
   "recent_runs": [TestRun],
-  "results": {"passed": 30, "failed": 2, ...}
+  "results": {"passed": 30, "failed": 2, ...},
+  "active_runs": [TestRun],
+  "coverage_by_folder": [{"id": "…", "name": "Authentication", "total": 4, "coverage": {"passed": 2, "none": 2}}],
+  "coverage_by_category": [{"id": "…", "name": "Security", "dimension": "Area", "total": 3, "coverage": {}}],
+  "defects_by_severity": {"critical": 0, "major": 2, "minor": 1, "trivial": 0},
+  "flaky": {"total": 3, "items": [FlakyTest], "window": 10, "min_flips": 2}
 }
 ```
+
+* `active_runs`: planned and in-progress runs, newest first (at most 8),
+  with their `summary` (results per status).
+* `coverage_by_folder`: requirements per top-level folder (`id` `""` = no
+  folder) and `coverage_by_category`: per requirement category; both with
+  the coverage states, largest groups first (at most 12).
+* `defects_by_severity`: open defects (`open`, `in_progress`).
+* `flaky`: the 10 flakiest tests (see below) and how many there are.
+
+Opening the dashboard also records today's metric snapshot (again when the
+one of today is older than an hour).
+
+**Metric snapshots.** Every project gets one snapshot of its figures per
+UTC day: a background job of the server records it for every project
+without one for the day (at start and then hourly), and the dashboard and
+the trends request record it when it is missing. When a project gets its
+first snapshot, the days before (from the first requirement, test, result
+or defect; at most 365 days) are reconstructed from history: requirement
+and test counts by creation date, coverage from the creation of the trace
+links and the results with their timestamps, open defects from their
+creation and resolution dates (`source: "backfill"`; requirement and test
+statuses and risks have no history and are left out). Snapshots are kept in
+backups and deleted with their project.
+
+`GET /projects/{pid}/metrics/trends?range=30|90|365` (default 30) or
+`?since=YYYY-MM-DD` (at most 3660 days back) returns the snapshots of the
+period:
+```json
+{
+  "from": "2026-02-09", "to": "2026-03-10", "days": 30,
+  "points": [{"day": "2026-03-10", "source": "recorded", "requirements": 10, "covered": 7,
+              "coverage_pct": 70, "passed": 5, "tests": 20, "executed": 18, "pass_rate": 88.9,
+              "open_defects": 3, "data": MetricData}],
+  "defect_weeks": [{"week": "2026-03-09", "opened": 2, "closed": 1}]
+}
+```
+Days without a snapshot are missing from `points`. `coverage_pct` is the
+share of requirements with linked tests, `passed` the requirements whose
+linked tests all passed and `pass_rate` the share of executed tests
+(`executed`: last result not `not_run` / `in_progress`) whose last result
+passed — the figures of the dashboard. `MetricData` holds the counts:
+`requirements`, `covered`, `coverage` (per coverage state),
+`requirement_status`, `tests`, `test_status`, `results` (tests per last
+result), `executions` (results recorded that day), `open_defects` (per
+severity) and `open_risks` (per level). `defect_weeks` counts the defects
+created and resolved (closed, resolved or rejected) per week, Monday to
+Sunday (UTC), `week` being the Monday.
+
+**Flaky tests.** `GET /projects/{pid}/flaky-tests` lists the flaky tests
+of the project, highest score first, then the latest flip:
+```json
+{"items": [{"test_id": "…", "key": "DEMO-TC-3", "title": "…", "execution_type": "automated",
+            "score": 5, "window": 7, "last_flip": "2026-03-08T10:00:00Z",
+            "results": [{"status": "passed", "at": "…", "run_id": "…", "execution_id": "…", "flip": false}]}],
+ "window": 10, "min_flips": 2}
+```
+Only decisive results count — `passed` and `failed` of every run (manual
+results and automated ones from JUnit imports, the `qtestframe report`
+uploader and the Playwright reporter); blocked, skipped and not run are
+left out. The score is the number of flips (a result that differs from the
+previous one) among the test's last 10 decisive results (`results`, oldest
+first; `window` is how many there are); a test with at least 2 flips is
+flaky. Tests carry `flakiness` (the score, when above 0) and `flaky`, and
+the test query fields `flaky` (`true`/`false`) and `flakiness` (alias
+`flips`), e.g. `flaky:true` or `flakiness>=3`.
 
 ## Folders (groups) and categories
 
@@ -759,10 +833,16 @@ Reading needs `project.read`, changing `project.update`.
 | DELETE | `/projects/{pid}/releases/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/releases/{id}/requirements` | `{"add":[ids],"remove":[ids],"query":"<filter expr>"}` (the query adds its matches) → `{"added","removed","release"}` |
 | GET | `/releases/{id}/status` | `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}` |
+| GET | `/releases/{id}/burnup` | `{"release_id","name","target_date","from","to","points":[{"day","scope","covered","passed"}]}`: one point per day from the creation of the release (at most 365 days) to its release, or today |
 
 Runs belong to a release with `release_id` on `POST /projects/{pid}/runs`
 and `PATCH /runs/{id}` (`""` removes it). The results of a release are the
 latest result of each test in its runs.
+
+The burn-up is computed from history: `scope` counts the release's current
+requirements that existed on the day, `covered` those with a trace link
+made by then and `passed` those whose linked tests all passed in the
+release's runs by the end of the day (as in the release status).
 
 A percentage criterion with nothing to measure (an empty scope; no
 executions for `executed`) is not met and has `available: false`. A release
@@ -1259,7 +1339,8 @@ updated_at, criteria`.
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
 steps), priority, status, estimate, tag, folder, category, dimension, linked,
-last_result, created_by, created_at, updated_at`.
+last_result, created_by, created_at, updated_at, flaky (true/false),
+flakiness (alias flips)`.
 
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Execution fields: `id, key, title, status, assignee,

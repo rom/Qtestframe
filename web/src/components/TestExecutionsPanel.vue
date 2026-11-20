@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Message from 'primevue/message'
@@ -8,6 +8,7 @@ import DefectLinks from './DefectLinks.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDateTime, formatDuration, formatFullDateTime } from '@/lib/format'
 import type { Execution } from '@/lib/types'
+import { flipIds } from '@/lib/metrics'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
 
@@ -33,6 +34,8 @@ async function load() {
 }
 watch(() => props.testId, load, { immediate: true })
 const when = (e: Execution) => e.finished_at || e.started_at || e.run_created_at
+// results that differ from the test's previous passed / failed result
+const flips = computed(() => flipIds(items.value))
 </script>
 
 <template>
@@ -47,7 +50,14 @@ const when = (e: Execution) => e.finished_at || e.started_at || e.run_created_at
         </div>
       </template>
     </Column>
-    <Column field="status" :header="t('common.status')" style="width: 120px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
+    <Column field="status" :header="t('common.status')" style="width: 150px">
+      <template #body="{ data }">
+        <span class="row nowrap" style="gap: 4px">
+          <StatusTag :value="data.status" kind="result" />
+          <span v-if="flips.has(data.id)" class="flip-mark" :title="t('testExecutions.flipHint')"><i class="pi pi-sync" aria-hidden="true" /> {{ t('testExecutions.flip') }}</span>
+        </span>
+      </template>
+    </Column>
     <Column field="executed_by" :header="t('testExecutions.executedBy')" style="width: 140px"><template #body="{ data }"><span class="small">{{ data.executed_by || '—' }}</span></template></Column>
     <Column :header="t('common.date')" style="width: 130px">
       <template #body="{ data }"><span class="small muted" :title="formatFullDateTime(when(data))">{{ formatDateTime(when(data)) }}</span></template>

@@ -470,6 +470,10 @@ type TestCase struct {
 	// SuspectLinks: links to requirements that are suspect.
 	SuspectLinks int      `json:"suspect_links"`
 	Defects      []string `json:"defects,omitempty"`
+	// Flakiness: pass/fail flips among the last results; Flaky when it
+	// reaches the threshold (see store.FlakyWindow, store.FlakyMinFlips).
+	Flakiness int  `json:"flakiness,omitempty"`
+	Flaky     bool `json:"flaky,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.

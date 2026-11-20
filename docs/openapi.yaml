@@ -8880,6 +8880,90 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/metrics/trends:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Metric trends
+      operationId: getProjectsByPidMetricsTrends
+      description: |-
+        `?range=30|90|365` (default 30) or `?since=YYYY-MM-DD` → `{from, to, days, points:[{day, coverage_pct, pass_rate, open_defects, data}], defect_weeks:[{week, opened, closed}]}` from daily snapshots (UTC; earlier days backfilled from history)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/flaky-tests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Tests
+      summary: Flaky tests
+      operationId: getProjectsByPidFlakyTests
+      description: |-
+        tests with at least 2 pass/fail flips among their last 10 decisive results, highest score first (`?limit=n`)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/releases/{id}/burnup:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Releases
+      summary: Release burn-up
+      operationId: getReleasesByIdBurnup
+      description: |-
+        one point per day `{day, scope, covered, passed}` from the release's creation to its release date or today (at most 365 days)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
