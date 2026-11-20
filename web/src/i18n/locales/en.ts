@@ -129,6 +129,11 @@ const en = {
     changed: 'Language changed',
   },
   nav: {
+    releases: 'Releases',
+    defects: 'Defects',
+    risks: 'Risks',
+    reviews: 'My reviews',
+    notifications: 'Notifications',
     analytics: 'Analytics',
     prompts: 'AI prompts',
     flow: 'Test flow',
@@ -177,6 +182,11 @@ const en = {
     projectSections: 'Project sections',
   },
   titles: {
+    releases: 'Releases',
+    defects: 'Defects',
+    risks: 'Risks',
+    reviews: 'My reviews',
+    notifications: 'Notifications',
     analytics: 'Analytics',
     go: 'Go to item',
     prompts: 'AI prompts',

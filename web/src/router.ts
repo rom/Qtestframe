@@ -36,6 +36,9 @@ const routes: RouteRecordRaw[] = [
             component: () => import('./views/ExecutionRunnerView.vue'),
             props: true,
           },
+          { path: 'releases', name: 'releases', component: () => import('./views/ReleasesView.vue'), meta: { perm: P.projectRead } },
+          { path: 'defects', name: 'defects', component: () => import('./views/DefectsView.vue'), meta: { perm: P.projectRead } },
+          { path: 'risks', name: 'risks', component: () => import('./views/RisksView.vue'), meta: { perm: P.requirementRead } },
           { path: 'traceability', name: 'traceability', component: () => import('./views/TraceabilityView.vue') },
           { path: 'graph', name: 'graph', component: () => import('./views/GraphView.vue') },
           { path: 'analytics', name: 'analytics', component: () => import('./views/AnalyticsView.vue'), meta: { perm: P.requirementRead } },
@@ -49,6 +52,8 @@ const routes: RouteRecordRaw[] = [
           { path: 'reports', name: 'reports', component: () => import('./views/ReportsView.vue') },
         ],
       },
+      { path: 'notifications', name: 'notifications', component: () => import('./views/NotificationsView.vue') },
+      { path: 'reviews', name: 'reviews', component: () => import('./views/ReviewsView.vue') },
       { path: 'search', name: 'search', component: () => import('./views/SearchView.vue') },
       { path: 'go/:key', name: 'go', component: () => import('./views/GoView.vue') },
       {

@@ -131,6 +131,11 @@ const sv: Messages = {
     changed: 'Språket har ändrats',
   },
   nav: {
+    releases: 'Releaser',
+    defects: 'Defekter',
+    risks: 'Risker',
+    reviews: 'Mina granskningar',
+    notifications: 'Notiser',
     analytics: 'Analys',
     prompts: 'AI-prompter',
     flow: 'Testflöde',
@@ -179,6 +184,11 @@ const sv: Messages = {
     projectSections: 'Projektets delar',
   },
   titles: {
+    releases: 'Releaser',
+    defects: 'Defekter',
+    risks: 'Risker',
+    reviews: 'Mina granskningar',
+    notifications: 'Notiser',
     analytics: 'Analys',
     go: 'Gå till objekt',
     prompts: 'AI-prompter',
