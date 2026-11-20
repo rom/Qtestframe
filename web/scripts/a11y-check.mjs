@@ -134,6 +134,8 @@ async function discover(request) {
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },
     { name: 'baselines', path: `${p}/baselines` },
+    { name: 'releases', path: `${p}/releases` },
+    { name: 'risks', path: `${p}/risks`, wait: '.heat' },
     { name: 'settings', path: `${p}/settings` },
     { name: 'export', path: `${p}/export` },
     { name: 'documents', path: `${p}/documents` },

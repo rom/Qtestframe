@@ -10,7 +10,8 @@ export interface ColumnDef {
   header: string
   width?: string
   sortable?: boolean
-  sortField?: string
+  /** a field name, or a function of the row (e.g. a rank to sort levels by) */
+  sortField?: string | ((item: any) => string)
 }
 
 /** PrimeVue DataTable instance: d_columnOrder is its own copy of the order. */

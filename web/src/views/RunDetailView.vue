@@ -16,6 +16,9 @@ import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import Panel from 'primevue/panel'
+import Tag from 'primevue/tag'
+import { useReleaseOptions } from '@/composables/releases'
+import { runReleaseName } from '@/lib/releases'
 import Popover from 'primevue/popover'
 import ReadinessBanner from '@/components/ReadinessBanner.vue'
 import { readinessOfError, readinessSummary as explainReadiness } from '@/lib/readiness'
@@ -93,7 +96,11 @@ async function loadExecutions() {
 async function reload() {
   await Promise.all([loadRun(), loadExecutions()])
 }
-onMounted(reload)
+const rel = useReleaseOptions(() => proj.pid)
+onMounted(() => {
+  reload()
+  if (auth.can(P.projectRead)) rel.load()
+})
 
 const summary = computed(() => summarize(run.value?.summary))
 
@@ -110,11 +117,11 @@ async function setStatus(status: string) {
 
 // ---------- edit ----------
 const editDialog = ref(false)
-const editForm = ref({ name: '', description: '', environment: '', build: '' })
+const editForm = ref({ name: '', description: '', environment: '', build: '', release_id: '' })
 function openEdit() {
   if (!run.value) return
   const r = run.value
-  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build }
+  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '' }
   editDialog.value = true
 }
 async function saveEdit() {
@@ -259,6 +266,9 @@ async function copySnippet(text: string = ciSnippet.value) {
         <h1>{{ run.name }}</h1>
         <div class="sub row">
           <span v-if="run.environment"><i class="pi pi-server" aria-hidden="true" /><span class="sr-only">{{ t('common.environment') }}:</span> {{ run.environment }}</span>
+          <RouterLink v-if="runReleaseName(run, rel.names.value)" :to="{ name: 'releases', params: { projectId: proj.pid }, query: { r: run.release_id } }">
+            <Tag :value="runReleaseName(run, rel.names.value)" icon="pi pi-box" severity="secondary" :aria-label="t('releasesView.runRelease', { name: runReleaseName(run, rel.names.value) })" />
+          </RouterLink>
           <span v-if="run.build" class="mono"><i class="pi pi-box" aria-hidden="true" /><span class="sr-only">{{ t('common.build') }}:</span> {{ run.build }}</span>
           <span>{{ t('run.createdAt', { date: formatDateTime(run.created_at) }) }}{{ run.created_by ? t('run.createdBy', { user: run.created_by }) : '' }}</span>
           <span v-if="run.started_at">{{ t('run.startedAt', { date: formatDateTime(run.started_at) }) }}</span>
@@ -441,6 +451,10 @@ async function copySnippet(text: string = ciSnippet.value) {
         <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="editForm.name" /></div>
         <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="editForm.build" /></div>
+        <div v-if="rel.releases.value.length" v-field class="field full">
+          <label for="run-edit-release">{{ t('releasesView.release') }}</label>
+          <Select v-model="editForm.release_id" input-id="run-edit-release" :options="rel.options.value" option-label="label" option-value="value" />
+        </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="editForm.description" rows="3" auto-resize /></div>
       </div>
       <template #footer>

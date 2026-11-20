@@ -100,6 +100,7 @@ describe('help data', () => {
     expect(QUERY_HELP.length).toBeGreaterThan(10)
     expect(QUERY_OPERATORS.length).toBe(4)
     expect(QUERY_FIELDS.requirement).toContain('obligation')
+    expect(QUERY_FIELDS.requirement).toEqual(expect.arrayContaining(['risk', 'defects']))
     expect(QUERY_FIELDS.test).toContain('execution_type')
   })
 })
