@@ -236,6 +236,112 @@ translate it by `rule`: `term` (the matched text), `keyword`, `keywords`,
 `words`/`max` (`long-sentence`) and `examples` (`missing-keyword`, the
 pack's typical keywords). `language` is the pack that was used.
 
+### Import requirements
+
+Requirements from customer files: CSV, XLSX, ReqIF and DOCX. Both routes
+need `requirement.write` and take a `multipart/form-data` upload: field
+`file` (at most 20 MB; at most 5,000 requirements per file, else 400) and
+
+| Field | Meaning |
+|---|---|
+| `format` | `csv`, `xlsx`, `reqif` (also `reqifz`) or `docx`; default from the file extension (`.csv .tsv .txt .xlsx .xlsm .reqif .reqifz .docx`), else sniffed from the content. `.xls`/`.doc` → 400 |
+| `sheet` | XLSX sheet name (case-insensitive); default: a sheet named *requirements*/*krav*, else the first sheet with a header row |
+| `mapping` | JSON object `{"<column header>": "<field>"}` overriding the guessed field of a column (case-insensitive header; `"ignore"` or `""` ignores it). Fields: `title`, `description`, `external_id`, `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tags`, `folder`, `criteria`. For ReqIF the headers are the attribute long names |
+| `folder_id` | target requirement folder (root of the imported folder paths); default top level; unknown → 400 |
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/projects/{pid}/requirements/import/preview` | parses only, nothing is stored → `{format, sheet?, sheets?, columns:[{index, header, field}], candidates:[Candidate], warnings:[], errors:[], fields:[], total, duplicates, target_folder}` |
+| POST | `/projects/{pid}/requirements/import` | 201 (200 with `dry_run`) `{created, skipped, folders_created, tests_created, dry_run, format, items:[{id, key, title, row, location, folder_id, test_id?, test_key?}], skipped_items:[{title, row, location, reason}], warnings, errors}`; audited as `requirement.import` |
+
+Import options (form fields): `create_folders` (default `true`: create the
+candidates' folder paths below `folder_id`, reusing folders with the same
+name, case-insensitive; `false` puts everything in `folder_id`), `status`
+(default `draft`; used for candidates without a status), `create_tests`
+(default `false`; a linked draft test per requirement as with `create_test`,
+needs `test.write`), `skip_duplicates` (default `true`), `dry_run` (default
+`false`: everything is done in a transaction that is rolled back, so keys and
+counts show what would happen) and `exclude` (JSON array of candidate indexes
+of the preview to leave out). Importing a candidate with status `approved` or
+`rejected` (from the file or `status`) needs `requirement.review` → else 403.
+All requirements are stored in one transaction: if one fails validation
+(→ 400 naming its `location`), none is stored. Linked tests are created
+afterwards; if that fails, the imported requirements are deleted again.
+
+`Candidate`: `{title, description, obligation, obligation_from, type,
+priority, status, source, rationale, owner, tags, folder, criteria:[{description,
+method, threshold}], external_id, row, location, warnings, duplicate?}`.
+Enumerations are model codes or `""` (default on import). `obligation_from`
+is `column`, `text` (detected with the requirement language analysis from title
+and description, as on create) or `""`. `folder` is a path `A/B` relative to
+the target folder. `row`/`location` point into the file (`row 5`,
+`table 2, row 3`, `paragraph 12`, `SPEC-OBJECT …`). `errors` lists parts of
+the file that were left out (e.g. a row without title or description);
+problems that make the file unusable (no header row, broken XML/ZIP, unknown
+mapping field) → 400.
+
+**External ID and duplicates.** There is no external-ID column: the ID is
+recorded in `source` as `ID: <id>` (appended as `<source>, ID: <id>` when the
+file has a source). With `skip_duplicates` a candidate is skipped
+(`reason` `duplicate_external_id`) when a requirement of the project has
+`ID: <id>` in its source or an earlier candidate has the same ID, else
+(`duplicate_title`) when a requirement or earlier candidate has the same
+title, ignoring case. The preview marks these as `duplicate`.
+
+**Formats.**
+
+- **CSV / XLSX:** the header row is the first of the first 20 non-empty rows
+  that has a known title or description column (or two recognised columns
+  including one of them, or a column named in `mapping`); rows above it are
+  ignored. CSV: delimiter `,` `;` or tab (sniffed, or Excel's `sep=` line);
+  UTF-8 with or without BOM, UTF-16 with BOM, otherwise Windows-1252. The
+  export's formula guard (a leading `'` before `= + - @`) is removed. XLSX:
+  merged cells repeat their value over the merged range; a criteria sheet as
+  in the export (`Requirement`, `Criterion`, `Method`, `Threshold`) adds
+  criteria to the candidates with that ID.
+- **Column names** (case-insensitive, decoration such as `(optional)` or `*`
+  ignored), English · Swedish: title `Title, Name, Heading, Summary · Titel,
+  Namn, Rubrik`; description `Description, Text, Requirement, Statement ·
+  Beskrivning, Krav, Kravtext`; external_id `ID, Key, Ref, Reference, Number,
+  Requirement ID · Nyckel, Referens, Nummer, Krav-ID`; obligation `Obligation,
+  Level · Kravnivå, Nivå`; type `Type · Typ, Kravtyp`; priority `Priority ·
+  Prioritet`; status `Status, State · Tillstånd`; source `Source, Origin ·
+  Källa, Ursprung`; rationale `Rationale, Justification, Comment · Motivering,
+  Kommentar`; owner `Owner, Responsible · Ägare, Ansvarig`; tags `Tags, Labels
+  · Taggar, Etiketter` (split on `,` `;` `|`); folder `Folder, Section, Chapter,
+  Path · Mapp, Avsnitt, Kapitel` (path split on `/`, `\` or `>`); criteria
+  `Criteria, Acceptance criteria · Kriterier, Acceptanskriterier` (one per
+  line, bullets removed; `method: text` or `[method] text` sets the method).
+  The export columns `Key`, `Version`, `Linked tests`, `Coverage` and
+  `Categories` are recognised (`Key` → external_id, the others ignored).
+  Values: obligation `MUST`, `MUST NOT`, `SHALL`, `SHOULD`, `MAY`, `OPTIONAL`,
+  `WILL`, `SKA`, `SKA INTE`, `MÅSTE`, `BÖR`, `FÅR`, `FÅR INTE` … or the model
+  codes; type, priority, status and method in English or Swedish (`Hög`,
+  `Godkänd`, `Säkerhet`, `Inspektion` …) or as codes; an unknown value is a
+  candidate warning and the default applies.
+- **ReqIF 1.x** (`.reqif`, `.reqifz` = ZIP of `.reqif` files): each
+  SPEC-OBJECT is a candidate. STRING, XHTML (converted to text with line
+  breaks; list items as `- `), ENUMERATION (long names) and other values are
+  read; attributes map by long name: `ReqIF.Name`/title/name → title,
+  `ReqIF.Text`/text/description → description, `ReqIF.ForeignID`/ID →
+  external_id, others like column names. An object with a
+  `ReqIF.ChapterName` and no text is a heading: its name becomes a folder of
+  the objects below it in the SPECIFICATION hierarchy. With several
+  specifications their long names are the top folders. Objects outside every
+  hierarchy follow at the end.
+- **DOCX:** paragraphs with a heading style (style name `heading N` in
+  `styles.xml`, style IDs `Heading1`/`Rubrik1` …, or an outline level) set
+  the folder path. Every other paragraph or list item with a normative
+  keyword (MUST/SHALL/SHOULD/MAY/OPTIONAL and negations, SKA/BÖR/FÅR …,
+  detected with `reqlang`) is a candidate: the paragraph is the description,
+  the title its first eight words, and a leading `REQ-12:`, `[SRS-7]` or
+  `K12 -` identifier the external ID. If the document uses uppercase English
+  keywords anywhere, lowercase English keywords are not normative (RFC 8174).
+  Numbered list items after a candidate ending with `:` are appended to it.
+  Tables with a header row are parsed like CSV (vertically merged cells repeat
+  the value above); tables without one are scanned like paragraphs. Tracked
+  deletions and field codes are ignored.
+
 ## Test cases
 
 Reading needs `test.read`, writing `test.write`.

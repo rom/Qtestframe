@@ -23,6 +23,8 @@ import DefectLinks from './DefectLinks.vue'
 import CategorySelect from './CategorySelect.vue'
 import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
+import RequirementImportDialog from './RequirementImportDialog.vue'
+import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
 import { dragIds, encodeIds, ITEMS_MIME } from '@/lib/dnd'
@@ -246,6 +248,13 @@ watch(
   },
 )
 
+// ---------- import (requirements only) ----------
+const importOpen = ref(false)
+async function onImported(res: ImportResult) {
+  if (res.folders_created) await proj.loadFolders(props.kind)
+  await load()
+}
+
 async function onFoldersChanged() {
   await proj.loadFolders(props.kind)
   if (selectedFolder.value && !folders.value.some((f) => f.id === selectedFolder.value)) selectedFolder.value = null
@@ -416,6 +425,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             @reset="layout.reset()"
           />
           <Button icon="pi pi-refresh" severity="secondary" text rounded :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
+          <Button
+            v-if="isReq && canWrite"
+            :label="t('reqImport.button')"
+            icon="pi pi-upload"
+            severity="secondary"
+            outlined
+            aria-haspopup="dialog"
+            v-tooltip.bottom="t('reqImport.buttonHint')"
+            @click="importOpen = true"
+          />
           <Button v-if="canWrite" :label="isReq ? t('workspace.newRequirement') : t('workspace.newTest')" icon="pi pi-plus" @click="openEditor(null)" />
         </div>
       </div>
@@ -636,4 +655,5 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
     </template>
   </Dialog>
   <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />
+  <RequirementImportDialog v-if="isReq && canWrite" v-model:visible="importOpen" :project-id="pid" :folders="folders" :folder-id="selectedFolder" @imported="onImported" />
 </template>

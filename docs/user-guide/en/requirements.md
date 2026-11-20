@@ -198,6 +198,51 @@ You can also select **Attach from archive**: a file that is already in the proje
 
 Uploading and removing attachments needs the **Manager** role (the same as editing the requirement); reading them needs **Viewer**.
 
+## Import requirements
+
+Customers often send their requirements as a spreadsheet, a ReqIF export from their requirements tool or a Word document. **Import** in the header of the requirements page reads such a file and creates the requirements in one go. Importing needs the permission to edit requirements (**Manager** by default).
+
+1. Drag the file onto the dialog or choose it. Supported are **CSV** (comma, semicolon or tab separated; UTF-8 with or without byte order mark, UTF-16 and Windows-1252), **Excel** (`.xlsx`), **ReqIF 1.x** (`.reqif` and the zipped `.reqifz`) and **Word** (`.docx`), up to 20 MB and 5,000 requirements per file.
+2. Check the **preview**: the detected format, how each column is read and the first 50 requirements with notes (a derived title, an unknown value, a duplicate). Nothing is stored yet.
+3. Change the field of a column if it was guessed wrongly, or set it to *ignore*. Clear the **Import** box of rows you do not want.
+4. Choose the options and select **Import**. The list reloads and the dialog shows how many requirements, folders and tests were created and what was skipped.
+
+**Columns (CSV, Excel and tables in Word).** The first of the leading rows that names a title or description column is the header row; rows above it are ignored. Column names are recognised in English and Swedish, regardless of case:
+
+| Field | Column names |
+|---|---|
+| Title | Title, Name, Heading, Summary · Titel, Namn, Rubrik |
+| Description | Description, Text, Requirement, Statement · Beskrivning, Krav, Kravtext |
+| ID | ID, Key, Ref, Number · Nyckel, Referens, Nummer, Krav-ID |
+| Obligation | Obligation, Level · Kravnivå, Nivå |
+| Type | Type · Typ, Kravtyp |
+| Priority | Priority · Prioritet |
+| Status | Status, State · Tillstånd |
+| Source | Source, Origin · Källa, Ursprung |
+| Rationale | Rationale, Justification, Comment · Motivering, Kommentar |
+| Owner | Owner, Responsible · Ägare, Ansvarig |
+| Tags | Tags, Labels · Taggar, Etiketter (separated by commas) |
+| Folder | Folder, Section, Chapter · Mapp, Avsnitt, Kapitel (a path such as `Security / Login`) |
+| Acceptance criteria | Criteria, Acceptance criteria · Kriterier, Acceptanskriterier (one per line; a line may start with a method, e.g. `inspection: …`) |
+
+Values of type, priority, status and obligation may be written in English or Swedish (*High*/*Hög*, *Approved*/*Godkänd*, *Security*/*Säkerhet*). An unknown value is noted and the default is used. A row without a title gets one from the first words of its description. A file exported from Qtestframe (requirements as CSV or Excel) can be imported again; in an Excel export the evaluation criteria of the criteria sheet come along.
+
+**ReqIF.** Every SPEC-OBJECT becomes a requirement: *ReqIF.Name* (or an attribute named title or name) gives the title, *ReqIF.Text* the description and *ReqIF.ForeignID* the ID; other attributes are matched by name like columns. Formatted text (XHTML) is imported as plain text with its line breaks. Objects with only a *ReqIF.ChapterName* are headings: the specification hierarchy below them becomes folders.
+
+**Word.** Headings (the styles *Heading 1*, *Heading 2* … or *Rubrik 1* …) become folders. Every other paragraph or list item that contains an obligation keyword becomes a requirement: the paragraph is the description and the title is its first eight words. A leading identifier such as `REQ-12:` or `[SRS-7]` becomes the ID. List items right after a requirement ending with a colon are added to it. Tables with a header row are read like a spreadsheet. If the document writes its keywords in uppercase (MUST, SHALL), lowercase *may* or *should* in running text are not taken as requirements.
+
+**Obligation levels.** An obligation column (MUST, SHALL NOT, SKA, BÖR, FÅR …) wins; otherwise the level is detected from the title and description as in the editor, see [Obligation levels](#obligation-levels).
+
+**Options.**
+
+- **Target folder:** where the requirements go (the folder selected in the tree, or the top level).
+- **Create folders from the file:** folder paths, sections and headings are created below the target folder; existing folders with the same name are reused. Without it everything goes into the target folder.
+- **Status:** for requirements without a status in the file (default *Draft*). *Approved* and *Rejected* need the review permission.
+- **Create a linked test for each requirement**, as in the editor (needs the permission to edit tests).
+- **Skip duplicates:** a row is skipped when its ID is already recorded in a requirement of the project, or when a requirement with the same title (ignoring case) exists; rows repeated within the file count too.
+
+The ID of an imported requirement is kept in its **Source** field as `ID: REQ-12` (after the source of the file, if there is one), which is how duplicates are found the next time. The import is all or nothing: if one requirement cannot be stored, none is. Every import is recorded in the audit log.
+
 ## Copy a requirement
 
 **Copy** in the editor creates a new requirement based on this one: titled *Copy of …*, with a new key in the same folder and the description, obligation, type, priority, source, rationale, owner, tags, categories and evaluation criteria. The copy starts as **Draft** and opens in the editor so you can adapt it. **▾ → Copy and relate as derived from** also records the relation *derived from* the original. Links to tests, comments and history are not copied.
