@@ -33,7 +33,7 @@ The language buttons at the top of the sign-in page switch between English and S
 The dark bar on the left is the main navigation:
 
 - **Workspace:** **Projects** (all projects of the current organisation) and **Search** (search across projects).
-- **The open project:** once you open a project, its key and name appear with its sections: **Dashboard**, **Requirements**, **Tests**, **Operations** (test runs), **Traceability**, **Dependency graph**, **Tags**, **Baselines**, **Categories & settings**, **Export** and, where available, **Documents** and **Reports**.
+- **The open project:** once you open a project, its key and name appear with its sections: **Dashboard**, **Requirements**, **Tests**, **Operations** (test runs), **Traceability**, **Dependency graph**, **Test flow**, **Tags**, **Baselines**, **Categories & settings**, **Export** and, where available, **Documents** and **Reports**.
 - **Administration**, if your role allows it.
 
 Inside a project, the same sections are also shown as tabs at the top of the page, below the breadcrumb *Projects › project name*.
@@ -49,9 +49,20 @@ From left to right:
 | **Organisation** switch | Shows the current organisation and lets you switch to another one you are a member of. On phones it is a building icon. |
 | **Search** field | Searches requirements, tests and runs in all projects of the organisation. Type text or a [query](search-and-filters.md) and press <kbd>Enter</kbd>. On phones it is a magnifier button. |
 | **Help** (?) | Opens the **User guide**, **Help for this page**, **Query language**, **References and standards** and **Restart intro tour**. |
-| **Colour theme** | Picks one of the eleven themes, see [Themes](accessibility-and-languages.md#themes). |
+| **Undo / Redo / Undo history** | Undoes and redoes your changes, see [Undo and redo](#undo-and-redo). |
+| **Colour theme** | Picks one of the seventeen themes, see [Themes](accessibility-and-languages.md#themes). |
 | **Light mode / Dark mode** | Switches between light and dark quickly. |
 | **User menu** | Your name and role, **Profile & password**, light/dark mode, **Language** and **Sign out**. |
+
+### Undo and redo
+
+Most changes can be undone: editing, creating, copying and deleting requirements and tests, moving them, bulk edits, links, relations, dependencies, review decisions, restoring a version, test results in the runner, and creating, renaming and moving folders.
+
+- **Undo** (↶, <kbd>Ctrl</kbd>+<kbd>Z</kbd>) reverts the latest change; select it again to go further back. The tooltip names the change, for example *Undo: Edit SHOP-TC-4*.
+- **Redo** (↷, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd>) applies an undone change again. A new change clears what could be redone.
+- **Undo history** (🕘) lists your last 50 changes, newest first, with when they were made. Selecting one undoes it and everything after it.
+
+The keyboard shortcuts work outside text fields; in a text field they undo your typing as usual. The history belongs to you and your browser tab: it is cleared when you switch organisation, sign out or reload the page. A deleted requirement or test comes back with its key, links, relations, comments, history, attachments and execution results; deletions can be undone for 30 days through the API (see `GET /projects/{pid}/trash` in the API reference). An undo fails when the situation changed in the meantime, for example when someone else edited the item or you no longer have the permission; the item is then left as it is and a message explains why.
 
 ### Help where you need it
 

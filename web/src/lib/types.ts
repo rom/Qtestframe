@@ -171,6 +171,11 @@ export interface Project {
   defect_url_template?: string
   /** "" (initials), "preset:<name>" or "file:<id>" */
   icon?: string
+  /** "" (theme colour) or "#rrggbb" */
+  color?: string
+  /** offered for a requirement's source (the defaults unless custom_sources) */
+  requirement_sources?: string[]
+  custom_sources?: boolean
   created_at: string
   updated_at: string
 }

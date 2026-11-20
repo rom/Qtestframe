@@ -2,6 +2,7 @@
 // Tag cloud of a project (GET /projects/{pid}/tags): every tag sized by how
 // often it is used. Select one or more tags to list the requirements, tests
 // and documents that carry all (or any) of them.
+import { tagClass } from '@/lib/tagColors'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
@@ -122,8 +123,8 @@ const countText = (x: TagCount) =>
       <li v-for="x in shown" :key="x.tag">
         <button
           type="button"
-          class="cloud-tag"
-          :class="{ on: isOn(x.tag) }"
+          class="cloud-tag tag-colored"
+          :class="[tagClass(x.tag), { on: isOn(x.tag) }]"
           :aria-pressed="isOn(x.tag)"
           :style="{ fontSize: cloudSize(x.total, minMax.min, minMax.max) + 'px' }"
           :title="countText(x)"
@@ -141,7 +142,7 @@ const countText = (x: TagCount) =>
     <div class="row" style="justify-content: space-between; gap: 8px; flex-wrap: wrap">
       <div class="row" style="gap: 6px; flex-wrap: wrap">
         <b>{{ t('tagCloud.selected') }}</b>
-        <span v-for="s in selected" :key="s" class="tag-chip">
+        <span v-for="s in selected" :key="s" class="tag-chip" :class="tagClass(s)">
           <i class="pi pi-tag small muted" aria-hidden="true" />{{ s }}
           <button type="button" class="tag-remove" :aria-label="t('tagsInput.remove', { tag: s })" @click="toggle(s)"><i class="pi pi-times small" aria-hidden="true" /></button>
         </span>

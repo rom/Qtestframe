@@ -110,6 +110,10 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 	if req.CreateTest != nil {
 		createTest = *req.CreateTest
 	}
+	if isReviewDecision(model.KindRequirement, "", rq.Status) && !p.Can(rbac.RequirementRev) {
+		writeError(w, http.StatusForbidden, "forbidden", "permission requirement.review required to create an "+rq.Status+" requirement")
+		return
+	}
 	if createTest && !p.Can(rbac.TestWrite) {
 		if req.CreateTest != nil {
 			writeError(w, http.StatusForbidden, "forbidden", "permission test.write required to create a linked test")
@@ -288,7 +292,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		s.fail(w, r, err)
 		return
 	}
-	id, project, key := rq.ID, rq.ProjectID, rq.Key
+	id, project, key, oldStatus := rq.ID, rq.ProjectID, rq.Key, rq.Status
 	if keys["criteria"] {
 		rq.Criteria = nil
 	}
@@ -297,12 +301,18 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	rq.ID, rq.ProjectID, rq.Key = id, project, key
+	if !authorizeChange(w, p, model.KindRequirement, onlyKeys(keys, "status"), oldStatus, rq.Status) {
+		return
+	}
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, rq.ID)
 	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), rq, keys["criteria"]); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(ctx, p, "requirement.update", "requirement", rq.ID, rq.Key)
+	if a := reviewAction(model.KindRequirement, oldStatus, rq.Status); a != "" {
+		s.audit(ctx, p, a, "requirement", rq.ID, rq.Key+" "+oldStatus+" → "+rq.Status)
+	}
 	s.recordRequirement(ctx, p, rq.ID, "update")
 	out, err := s.decoratedRequirement(r, p, rq.ID)
 	if err != nil {
@@ -314,7 +324,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 
 func (s *Server) handleDeleteRequirement(w http.ResponseWriter, r *http.Request, p *Principal) {
 	id := r.PathValue("id")
-	n, err := s.Store.DeleteRequirements(r.Context(), p.TenantID(), "", []string{id})
+	n, trashID, err := s.Store.TrashRequirements(r.Context(), p.TenantID(), "", []string{id}, p.User.Email)
 	if err == nil && n == 0 {
 		err = store.ErrNotFound
 	}
@@ -323,6 +333,7 @@ func (s *Server) handleDeleteRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	s.audit(r.Context(), p, "requirement.delete", "requirement", id, "")
+	w.Header().Set(trashHeader, trashID)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -394,6 +405,17 @@ func (s *Server) handleBulk(kind string) handlerFunc {
 			s.fail(w, r, err)
 			return
 		}
+		// a review decision needs the review permission; any other change write
+		statusOnly := req.Set.Priority == nil && req.Set.Obligation == nil && req.Set.ExecutionType == nil &&
+			len(req.Set.AddCategoryIDs) == 0 && len(req.Set.RemoveCategoryIDs) == 0
+		if req.Set.Status != nil {
+			if !authorizeChange(w, p, kind, statusOnly, "", *req.Set.Status) {
+				return
+			}
+		} else if !p.Can(writePerm(kind)) {
+			writeError(w, http.StatusForbidden, "forbidden", "permission "+string(writePerm(kind))+" required")
+			return
+		}
 		for _, id := range uniqStrings(req.IDs) {
 			s.ensureInitialRevision(r.Context(), p, kind, id)
 		}
@@ -423,17 +445,17 @@ func (s *Server) handleBulkDelete(kind string) handlerFunc {
 			s.fail(w, r, err)
 			return
 		}
-		del := s.Store.DeleteRequirements
+		del := s.Store.TrashRequirements
 		if kind == model.KindTest {
-			del = s.Store.DeleteTests
+			del = s.Store.TrashTests
 		}
-		n, err := del(r.Context(), p.TenantID(), pr.ID, req.IDs)
+		n, trashID, err := del(r.Context(), p.TenantID(), pr.ID, req.IDs, p.User.Email)
 		if err != nil {
 			s.fail(w, r, err)
 			return
 		}
 		s.audit(r.Context(), p, kind+".bulk_delete", kind, strings.Join(req.IDs, ","), "")
-		writeJSON(w, http.StatusOK, map[string]int{"deleted": n})
+		writeJSON(w, http.StatusOK, map[string]any{"deleted": n, "trash_id": trashID})
 	}
 }
 
@@ -492,6 +514,10 @@ func (s *Server) handleCreateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
+	if isReviewDecision(model.KindTest, "", t.Status) && !p.Can(rbac.TestReview) {
+		writeError(w, http.StatusForbidden, "forbidden", "permission test.review required to create a ready test")
+		return
+	}
 	t.ProjectID = pr.ID
 	t.CreatedBy = p.User.Email
 	if err := s.Store.CreateTest(r.Context(), p.TenantID(), &t); err != nil {
@@ -546,7 +572,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
-	id, project, key := t.ID, t.ProjectID, t.Key
+	id, project, key, oldStatus := t.ID, t.ProjectID, t.Key, t.Status
 	if keys["steps"] {
 		t.Steps = nil
 	}
@@ -555,12 +581,18 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	t.ID, t.ProjectID, t.Key = id, project, key
+	if !authorizeChange(w, p, model.KindTest, onlyKeys(keys, "status"), oldStatus, t.Status) {
+		return
+	}
 	s.ensureInitialRevision(ctx, p, model.KindTest, t.ID)
 	if err := s.Store.UpdateTest(ctx, p.TenantID(), t, keys["steps"]); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(ctx, p, "test.update", "test", t.ID, t.Key)
+	if a := reviewAction(model.KindTest, oldStatus, t.Status); a != "" {
+		s.audit(ctx, p, a, "test", t.ID, t.Key+" "+oldStatus+" → "+t.Status)
+	}
 	s.recordTest(ctx, p, t.ID, "update")
 	out, err := s.decoratedTest(r, p, t.ID)
 	if err != nil {
@@ -572,7 +604,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 
 func (s *Server) handleDeleteTest(w http.ResponseWriter, r *http.Request, p *Principal) {
 	id := r.PathValue("id")
-	n, err := s.Store.DeleteTests(r.Context(), p.TenantID(), "", []string{id})
+	n, trashID, err := s.Store.TrashTests(r.Context(), p.TenantID(), "", []string{id}, p.User.Email)
 	if err == nil && n == 0 {
 		err = store.ErrNotFound
 	}
@@ -581,7 +613,50 @@ func (s *Server) handleDeleteTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.audit(r.Context(), p, "test.delete", "test", id, "")
+	w.Header().Set(trashHeader, trashID)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleCopyRequirement: POST /requirements/{id}/copy {"title"?, "relation"?}
+// creates a draft copy (criteria, categories, tags, folder) as the basis of a
+// new requirement; relation "derived_from" also relates the copy to the
+// original.
+func (s *Server) handleCopyRequirement(w http.ResponseWriter, r *http.Request, p *Principal) {
+	var req struct {
+		Title    string `json:"title"`
+		Relation string `json:"relation"`
+	}
+	if r.ContentLength != 0 {
+		if err := decode(r, &req); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+	if req.Relation != "" && !model.Valid(model.RelationTypes, req.Relation) {
+		s.fail(w, r, badRequest("relation must be one of %s", strings.Join(model.RelationTypes, ", ")))
+		return
+	}
+	ctx := r.Context()
+	rq, err := s.Store.CopyRequirement(ctx, p.TenantID(), r.PathValue("id"), req.Title, p.User.Email)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	s.audit(ctx, p, "requirement.copy", "requirement", rq.ID, rq.Key)
+	s.recordRequirement(ctx, p, rq.ID, "create")
+	if req.Relation != "" {
+		rel := &model.Relation{SourceID: rq.ID, TargetID: r.PathValue("id"), Type: req.Relation, CreatedBy: p.User.Email}
+		if err := s.Store.CreateRelation(ctx, p.TenantID(), rel); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	}
+	out, err := s.decoratedRequirement(r, p, rq.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
 }
 
 func (s *Server) handleCopyTest(w http.ResponseWriter, r *http.Request, p *Principal) {

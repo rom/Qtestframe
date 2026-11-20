@@ -19,8 +19,8 @@ import { presetFor, presetKey, presetTokens } from './presets'
 import { applyTheme, bootTheme, currentPresetKey, localTheme, resetThemeState } from './apply'
 import * as index from './index'
 
-const ALL = ['light', 'dark', 'system', 'spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy']
-const DARK = ['dark', 'camouflage', 'city_camouflage', 'navy', 'green_console']
+const ALL = ['light', 'dark', 'system', 'spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy', 'ocean', 'forest', 'sunset', 'nordic', 'lavender', 'high_contrast']
+const DARK = ['dark', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'forest', 'high_contrast']
 const PAINTED = THEME_IDS.filter((t) => t !== 'system') as ConcreteThemeId[]
 
 describe('contrast', () => {
@@ -258,5 +258,18 @@ describe('applyTheme', () => {
     expect(index.THEME_LABELS).toBe(THEME_LABELS)
     expect(typeof index.applyTheme).toBe('function')
     expect(typeof index.contrastRatio).toBe('function')
+  })
+})
+
+describe('theme scales', () => {
+  it('holds only valid six-digit colours', () => {
+    for (const id of THEME_IDS) {
+      if (id === 'system') continue
+      const def = THEME_DEFS[id]
+      for (const scale of [def.primary, def.surface]) {
+        if (!scale) continue
+        for (const v of Object.values(scale)) expect(v, `${id}: ${v}`).toMatch(/^#[0-9a-f]{6}$/i)
+      }
+    }
   })
 })

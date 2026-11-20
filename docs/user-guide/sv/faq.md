@@ -48,7 +48,13 @@ Att köra skript på servern kräver rollen **Testledare** eller **Ansvarig** (b
 
 ### Hur ångrar jag en ändring?
 
-Öppna objektet, gå till fliken **Versionshistorik**, välj den version du vill ha och välj **Återställ den här versionen**. Det skapar en ny version med det gamla innehållet; inget går förlorat och du kan återställa igen. Borttagna objekt kan däremot inte återställas från versionshistoriken; bara en [säkerhetskopia](administration.md#säkerhetskopiering-och-återställning) innehåller dem. Massändringar registreras per objekt och kan ångras på samma sätt, objekt för objekt.
+Välj **Ångra** (↶) i övre fältet eller tryck <kbd>Ctrl</kbd>+<kbd>Z</kbd> utanför ett textfält; **Ångrahistorik** (🕘) listar dina senaste ändringar. Det fungerar för redigeringar, borttagningar, flyttar, massändringar, länkar med mera, se [Ångra och gör om](getting-started.md#ångra-och-gör-om). Ett borttaget krav eller testfall kommer tillbaka med sin nyckel, sina länkar, kommentarer och sin historik.
+
+För äldre ändringar öppnar du objektet, går till fliken **Versionshistorik**, väljer den version du vill ha och väljer **Återställ den här versionen**. Det skapar en ny version med det gamla innehållet; inget går förlorat och du kan återställa igen.
+
+### Varför kan jag inte godkänna ett krav eller markera ett testfall som klart?
+
+Att godkänna eller avvisa ett krav kräver behörigheten *requirement.review*, att markera ett testfall som **Klart** kräver *test.review*. Som standard har rollerna **Granskare** och **Ansvarig** båda och **Testledare** har *test.review*; en **Testare** kan skriva testfall men inte markera dem som klara. Utan behörigheten är statusarna gråade i redigeraren. Se [Roller och behörigheter](administration.md#roller-och-behörigheter).
 
 ### Kan två personer redigera samma krav samtidigt?
 
@@ -152,7 +158,7 @@ Välj **Hjälp** (frågetecknet i övre fältet) → **Starta introduktionsturen
 
 ### Kan jag ändra nyckeln för ett projekt?
 
-Nej. Nyckeln ingår i varje objekts id och kan inte ändras när projektet har skapats. Du kan ändra projektets namn och beskrivning under **Kategorier & inställningar**. Om du verkligen behöver en annan nyckel, skapa ett nytt projekt och flytta mapparna dit; objekten får då nya nycklar.
+Nej. Nyckeln ingår i varje objekts id och kan inte ändras när projektet har skapats. Du kan ändra projektets namn, beskrivning och färg under **Kategorier & inställningar** (eller med ✎ i projektlistan). Om du verkligen behöver en annan nyckel, skapa ett nytt projekt och flytta mapparna dit; objekten får då nya nycklar.
 
 ## Filer och data
 

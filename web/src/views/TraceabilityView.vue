@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUndoStore } from '@/stores/undo'
+import { recordUndo, toggleEntry } from '@/lib/undoActions'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
@@ -94,6 +96,24 @@ const cols = computed(() =>
 )
 const coveredCount = computed(() => (data.value?.requirements ?? []).filter((r) => (reqCounts.value.get(r.id) ?? 0) > 0).length)
 
+function matrixEntry(created: boolean, id: string, reqId: string, testId: string) {
+  const pid = proj.pid
+  const rk = data.value?.requirements.find((r) => r.id === reqId)?.key ?? ''
+  const tk = data.value?.tests.find((x) => x.id === testId)?.key ?? ''
+  return toggleEntry(
+    t(created ? 'undo.a.link' : 'undo.a.unlink', { from: rk, to: tk }),
+    created,
+    id,
+    async () => (await api.post<TraceLink>(`/projects/${pid}/links`, { requirement_id: reqId, test_case_id: testId })).id,
+    async (x) => void (await api.del(`/links/${x}`)),
+  )
+}
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => void load(),
+)
+
 async function toggle(reqId: string, testId: string) {
   if (!canEdit.value || !data.value) return
   const key = linkKey(reqId, testId)
@@ -104,9 +124,11 @@ async function toggle(reqId: string, testId: string) {
     if (existing) {
       await api.del(`/links/${existing.id}`)
       data.value.links = data.value.links.filter((l) => l.id !== existing.id)
+      recordUndo(matrixEntry(false, existing.id, reqId, testId))
     } else {
       const l = await api.post<TraceLink>(`/projects/${proj.pid}/links`, { requirement_id: reqId, test_case_id: testId })
       data.value.links = [...data.value.links, l ?? ({ id: '', requirement_id: reqId, test_case_id: testId } as TraceLink)]
+      if (l?.id) recordUndo(matrixEntry(true, l.id, reqId, testId))
       if (!l?.id) await load()
     }
   } catch (e) {

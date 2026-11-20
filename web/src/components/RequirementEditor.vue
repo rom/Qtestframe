@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import SplitButton from 'primevue/splitbutton'
+import AutoComplete from 'primevue/autocomplete'
+import { useProjectStore } from '@/stores/project'
+import { filterSources, mergeSources } from '@/lib/sources'
+import ReviewBar from './ReviewBar.vue'
+import { P } from '@/lib/permissions'
+import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
@@ -35,6 +42,9 @@ import type { Analysis, Category, EvaluationCriterion, Folder, Requirement, Test
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
+import { useUndoStore } from '@/stores/undo'
+import { changedKeys, clone, pickBefore } from '@/lib/undo'
+import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 
 const props = defineProps<{
   projectId: string
@@ -45,7 +55,7 @@ const props = defineProps<{
   canWrite: boolean
   canLink: boolean
 }>()
-const emit = defineEmits<{ saved: [item: Requirement]; deleted: [id: string]; close: [] }>()
+const emit = defineEmits<{ saved: [item: Requirement]; deleted: [id: string]; copied: [item: Requirement]; close: [] }>()
 const meta = useMetaStore()
 const notify = useNotify()
 const prefs = usePrefsStore()
@@ -121,7 +131,47 @@ const folderOptions = computed(() => [
   ...flatten(buildTree(props.folders)).map((f) => ({ id: f.id as string | null, label: '  '.repeat(f.depth) + f.label })),
 ])
 const obligationOptions = computed(() => [{ label: t('requirements.autoDetect'), value: '' }, ...enumOptions('obligation', meta.meta.obligations)])
-const statusOptions = computed(() => enumOptions('status', meta.meta.requirement_statuses))
+const auth = useAuthStore()
+const proj = useProjectStore()
+/** review decisions need the review permission (the current status stays selectable) */
+const REVIEW_DECISIONS = ['approved', 'rejected']
+const canReview = computed(() => auth.can(P.requirementReview))
+const statusOptions = computed(() =>
+  enumOptions('status', meta.meta.requirement_statuses).map((o) => ({ ...o, disabled: !canReview.value && REVIEW_DECISIONS.includes(o.value) && o.value !== item.value?.status })),
+)
+// ---------- requirement source: the project's list plus sources already used ----------
+const sources = ref<string[]>([])
+async function loadSources() {
+  try {
+    const res = await api.get<{ configured: string[]; used: { source: string; count: number }[] }>(`/projects/${props.projectId}/requirement-sources`)
+    sources.value = mergeSources(res.configured ?? [], (res.used ?? []).map((u) => u.source))
+  } catch {
+    sources.value = proj.project?.requirement_sources ?? []
+  }
+}
+const sourceSuggestions = ref<string[]>([])
+function completeSource(e: { query: string }) {
+  sourceSuggestions.value = filterSources(sources.value, e.query)
+}
+watch(() => props.projectId, loadSources, { immediate: true })
+
+/** copy as the basis of a new requirement; derived also relates it ("derived from") */
+async function copy(derived = false) {
+  if (!item.value) return
+  try {
+    const c = await api.post<Requirement>(`/requirements/${item.value.id}/copy`, derived ? { relation: 'derived_from' } : {})
+    notify.ok(t('requirements.copied'), c?.key)
+    if (c?.id) recordUndo(createdEntry(t('undo.a.copy', { key: item.value.key }), delRequirement(c.id)))
+    emit('copied', c)
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+const copyItems = computed(() => [{ label: t('requirements.copyDerived'), icon: 'pi pi-sitemap', command: () => copy(true) }])
+async function onReviewed(updated: unknown) {
+  await load()
+  if (updated && typeof updated === 'object') emit('saved', updated as Requirement)
+}
 const typeOptions = computed(() => enumOptions('requirementType', meta.meta.requirement_types))
 const priorityOptions = computed(() => enumOptions('priority', meta.meta.priorities))
 const methodOptions = computed(() => enumOptions('evaluationMethod', meta.meta.evaluation_methods))
@@ -160,6 +210,7 @@ async function load() {
         .sort((a, b) => a.position - b.position)
         .map((c) => ({ id: c.id, description: c.description, method: c.method, threshold: c.threshold })),
     }
+    loaded.value = clone(bodyOf(form.value))
     await loadLinks()
   } catch (e) {
     error.value = errorMessage(e)
@@ -282,16 +333,34 @@ function moveCriterion(i: number, d: number) {
 }
 
 // ---------- save / delete ----------
-async function save() {
-  saving.value = true
-  error.value = ''
-  const f = form.value
-  const body = {
+/** the PATCH body of a form */
+function bodyOf(f: typeof form.value) {
+  return {
     ...f,
     criteria: f.criteria
       .filter((c) => c.description.trim())
       .map((c, i): Partial<EvaluationCriterion> => ({ ...(c.id ? { id: c.id } : {}), description: c.description, method: c.method, threshold: c.threshold, position: i + 1 })),
   }
+}
+/** the body as loaded, for undoing an edit */
+const loaded = ref<Record<string, unknown> | null>(null)
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => {
+    // reload after an undo/redo unless there are unsaved changes
+    if (props.itemId && JSON.stringify(bodyOf(form.value)) === JSON.stringify(loaded.value)) void load()
+  },
+)
+function delRequirement(id: string) {
+  return () => api.delTrash(`/requirements/${id}`)
+}
+
+async function save() {
+  saving.value = true
+  error.value = ''
+  const body = bodyOf(form.value)
+  const before = loaded.value
   try {
     const saved = isNew.value
       ? await api.post<Requirement & { linked_test?: TestCase }>(`/projects/${props.projectId}/requirements`, { ...body, create_test: createTest.value })
@@ -301,6 +370,13 @@ async function save() {
       isNew.value ? t('requirements.created') : t('requirements.saved'),
       linked ? t('requirements.withLinkedTest', { key: saved?.key ?? '', test: linked.key }) : saved?.key,
     )
+    if (saved?.id) {
+      if (isNew.value) recordUndo(createdEntry(t('undo.a.create', { key: saved.key }), delRequirement(saved.id)))
+      else if (before) {
+        const keys = changedKeys(before, body, Object.keys(body))
+        if (keys.length) recordUndo(patchEntry(t('undo.a.edit', { key: saved.key }), `/requirements/${saved.id}`, pickBefore(before, keys), pickBefore(body, keys)))
+      }
+    }
     emit('saved', saved)
     if (!isNew.value) await load() // refresh version and counts
   } catch (e) {
@@ -315,8 +391,9 @@ function remove() {
   const it = item.value
   notify.confirmDanger(t('requirements.confirmDelete', { key: it.key }), async () => {
     try {
-      await api.del(`/requirements/${it.id}`)
-      notify.ok(t('requirements.deleted'))
+      const trash = await api.delTrash(`/requirements/${it.id}`)
+      if (trash) recordUndo(deletedEntry(t('undo.a.delete', { key: it.key }), trash, delRequirement(it.id)))
+      notify.ok(t('requirements.deleted'), t('undo.hint'))
       emit('deleted', it.id)
     } catch (e) {
       notify.fail(e)
@@ -325,15 +402,24 @@ function remove() {
 }
 
 // ---------- links ----------
+function linkEntry(created: boolean, id: string, body: Record<string, unknown>, testKey: string) {
+  const pid = props.projectId
+  const label = t(created ? 'undo.a.link' : 'undo.a.unlink', { from: item.value?.key ?? '', to: testKey })
+  return toggleEntry(
+    label,
+    created,
+    id,
+    async () => (await api.post<TraceLink>(`/projects/${pid}/links`, body)).id,
+    async (x) => void (await api.del(`/links/${x}`)),
+  )
+}
 const testById = computed(() => new Map(tests.value.map((t) => [t.id, t])))
 async function addLinks(picked: { id: string }[]) {
   try {
-    for (const t of picked) {
-      await api.post(`/projects/${props.projectId}/links`, {
-        requirement_id: props.itemId,
-        test_case_id: t.id,
-        ...(linkCriterion.value ? { criterion_id: linkCriterion.value } : {}),
-      })
+    for (const tc of picked) {
+      const body = { requirement_id: props.itemId, test_case_id: tc.id, ...(linkCriterion.value ? { criterion_id: linkCriterion.value } : {}) }
+      const l = await api.post<TraceLink>(`/projects/${props.projectId}/links`, body)
+      if (l?.id) recordUndo(linkEntry(true, l.id, body, (tc as { key?: string }).key ?? ''))
     }
     tests.value = []
     await loadLinks()
@@ -345,6 +431,9 @@ async function addLinks(picked: { id: string }[]) {
 async function removeLink(l: TraceLink) {
   try {
     await api.del(`/links/${l.id}`)
+    recordUndo(
+      linkEntry(false, l.id, { requirement_id: l.requirement_id, test_case_id: l.test_case_id, ...(l.criterion_id ? { criterion_id: l.criterion_id } : {}) }, testById.value.get(l.test_case_id)?.key ?? l.test_case_key ?? ''),
+    )
     links.value = links.value.filter((x) => x.id !== l.id)
   } catch (e) {
     notify.fail(e)
@@ -394,6 +483,7 @@ function criterionLabel(id: string | null) {
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+    <ReviewBar v-if="item" kind="requirement" :item="item" @changed="onReviewed" />
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>
@@ -461,7 +551,7 @@ function criterionLabel(id: string | null) {
       <div v-field class="field">
         <label>{{ t('common.status') }}</label>
         <HelpTip id="req.status" :label="t('common.status')" />
-        <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
+        <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" option-disabled="disabled" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.type') }}</label>
@@ -481,7 +571,19 @@ function criterionLabel(id: string | null) {
       <div v-field class="field">
         <label>{{ t('common.source') }}</label>
         <HelpTip id="req.source" :label="t('common.source')" />
-        <InputText v-model="form.source" :disabled="!canWrite" :placeholder="t('requirements.sourcePlaceholder')" />
+        <AutoComplete
+          v-model="form.source"
+          :suggestions="sourceSuggestions"
+          dropdown
+          dropdown-mode="blank"
+          complete-on-focus
+          :disabled="!canWrite"
+          :placeholder="t('requirements.sourcePlaceholder')"
+          :dropdown-icon="'pi pi-chevron-down'"
+          :pt="{ dropdown: { 'aria-label': t('requirements.sourceList') } }"
+          fluid
+          @complete="completeSource"
+        />
       </div>
       <div v-field class="field full">
         <label>{{ t('requirements.rationale') }}</label>
@@ -549,7 +651,20 @@ function criterionLabel(id: string | null) {
     </div>
 
     <div class="row editor-footer">
-      <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text style="margin-right: auto" @click="remove" />
+      <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
+      <SplitButton
+        v-if="item && canWrite"
+        :label="t('common.copy')"
+        icon="pi pi-copy"
+        severity="secondary"
+        text
+        :model="copyItems"
+        :button-props="{ 'aria-label': t('requirements.copyHint') }"
+        :menu-button-props="{ 'aria-label': t('requirements.copyMore') }"
+        style="margin-right: auto"
+        @click="copy()"
+      />
+      <span v-else style="margin-right: auto" />
       <label v-if="isNew && canWrite && canLink" class="row nowrap small" style="gap: 6px" :title="t('editor.alsoCreateTestHint')">
         <Checkbox v-model="createTest" binary input-id="create-test" />
         {{ t('editor.alsoCreateTest') }}

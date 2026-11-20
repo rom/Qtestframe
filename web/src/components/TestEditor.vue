@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { useUndoStore } from '@/stores/undo'
+import { changedKeys, clone, pickBefore } from '@/lib/undo'
+import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
+import ReviewBar from './ReviewBar.vue'
+import { P } from '@/lib/permissions'
+import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
@@ -55,7 +61,17 @@ const tabsId = newId('test-tabs')
 function panel(value: string) {
   return item.value ? { role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` } : {}
 }
-const statusOptions = computed(() => enumOptions('status', meta.meta.test_statuses))
+const auth = useAuthStore()
+/** review decisions need the review permission (the current status stays selectable) */
+const REVIEW_DECISIONS = ['ready']
+const canReview = computed(() => auth.can(P.testReview))
+const statusOptions = computed(() =>
+  enumOptions('status', meta.meta.test_statuses).map((o) => ({ ...o, disabled: !canReview.value && REVIEW_DECISIONS.includes(o.value) && o.value !== item.value?.status })),
+)
+async function onReviewed(updated: unknown) {
+  await load()
+  if (updated && typeof updated === 'object') emit('saved', updated as TestCase)
+}
 const priorityOptions = computed(() => enumOptions('priority', meta.meta.priorities))
 const languageOptions = computed(() => enumOptions('scriptLanguage', meta.meta.script_languages))
 
@@ -151,6 +167,7 @@ async function load() {
           call_test_title: s.call_test_title,
         })),
     }
+    loaded.value = clone(bodyOf(form.value))
     await loadLinks()
   } catch (e) {
     error.value = errorMessage(e)
@@ -220,11 +237,20 @@ function onReorder(e: { value: StepRow[] }) {
 }
 
 // ---------- save ----------
-async function save() {
-  saving.value = true
-  error.value = ''
-  const f = form.value
-  const body = {
+const loaded = ref<Record<string, unknown> | null>(null)
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => {
+    // reload after an undo/redo unless there are unsaved changes
+    if (props.itemId && JSON.stringify(bodyOf(form.value)) === JSON.stringify(loaded.value)) void load()
+  },
+)
+function delTest(id: string) {
+  return () => api.delTrash(`/tests/${id}`)
+}
+function bodyOf(f: typeof form.value) {
+  return {
     ...f,
     // only automated tests have a script language (avoids spurious history changes)
     script_language: f.execution_type === 'automated' ? f.script_language : item.value?.script_language ?? '',
@@ -237,11 +263,24 @@ async function save() {
           : { ...(s.id ? { id: s.id } : {}), position: i + 1, action: s.action, expected: s.expected, data: s.data, call_test_id: null },
       ),
   }
+}
+async function save() {
+  saving.value = true
+  error.value = ''
+  const body = bodyOf(form.value)
+  const before = loaded.value
   try {
     const saved = isNew.value
       ? await api.post<TestCase>(`/projects/${props.projectId}/tests`, body)
       : await api.patch<TestCase>(`/tests/${props.itemId}`, body)
     notify.ok(isNew.value ? t('tests.created') : t('tests.saved'), saved?.key)
+    if (saved?.id) {
+      if (isNew.value) recordUndo(createdEntry(t('undo.a.create', { key: saved.key }), delTest(saved.id)))
+      else if (before) {
+        const keys = changedKeys(before, body, Object.keys(body))
+        if (keys.length) recordUndo(patchEntry(t('undo.a.edit', { key: saved.key }), `/tests/${saved.id}`, pickBefore(before, keys), pickBefore(body, keys)))
+      }
+    }
     emit('saved', saved)
     if (!isNew.value) await load() // refresh version, call-step keys and called_by
   } catch (e) {
@@ -256,6 +295,7 @@ async function copy() {
   try {
     const c = await api.post<TestCase>(`/tests/${item.value.id}/copy`)
     notify.ok(t('tests.copied'), c?.key)
+    if (c?.id) recordUndo(createdEntry(t('undo.a.copy', { key: item.value.key }), delTest(c.id)))
     emit('copied', c)
   } catch (e) {
     notify.fail(e)
@@ -267,8 +307,9 @@ function remove() {
   const it = item.value
   notify.confirmDanger(t('tests.confirmDelete', { key: it.key }), async () => {
     try {
-      await api.del(`/tests/${it.id}`)
-      notify.ok(t('tests.deleted'))
+      const trash = await api.delTrash(`/tests/${it.id}`)
+      if (trash) recordUndo(deletedEntry(t('undo.a.delete', { key: it.key }), trash, delTest(it.id)))
+      notify.ok(t('tests.deleted'), t('undo.hint'))
       emit('deleted', it.id)
     } catch (e) {
       notify.fail(e)
@@ -277,10 +318,24 @@ function remove() {
 }
 
 // ---------- links ----------
+function linkEntry(created: boolean, id: string, body: Record<string, unknown>, reqKey: string) {
+  const pid = props.projectId
+  return toggleEntry(
+    t(created ? 'undo.a.link' : 'undo.a.unlink', { from: reqKey, to: item.value?.key ?? '' }),
+    created,
+    id,
+    async () => (await api.post<TraceLink>(`/projects/${pid}/links`, body)).id,
+    async (x) => void (await api.del(`/links/${x}`)),
+  )
+}
 const reqById = computed(() => new Map(reqs.value.map((r) => [r.id, r])))
 async function addLinks(picked: { id: string }[]) {
   try {
-    for (const r of picked) await api.post(`/projects/${props.projectId}/links`, { requirement_id: r.id, test_case_id: props.itemId })
+    for (const r of picked) {
+      const body = { requirement_id: r.id, test_case_id: props.itemId }
+      const l = await api.post<TraceLink>(`/projects/${props.projectId}/links`, body)
+      if (l?.id) recordUndo(linkEntry(true, l.id, body, (r as { key?: string }).key ?? ''))
+    }
     reqs.value = []
     await loadLinks()
     notify.ok(t('editor.linksAdded', picked.length))
@@ -291,6 +346,7 @@ async function addLinks(picked: { id: string }[]) {
 async function removeLink(l: TraceLink) {
   try {
     await api.del(`/links/${l.id}`)
+    recordUndo(linkEntry(false, l.id, { requirement_id: l.requirement_id, test_case_id: l.test_case_id, ...(l.criterion_id ? { criterion_id: l.criterion_id } : {}) }, reqById.value.get(l.requirement_id)?.key ?? l.requirement_key ?? ''))
     links.value = links.value.filter((x) => x.id !== l.id)
   } catch (e) {
     notify.fail(e)
@@ -345,6 +401,7 @@ const scriptPlaceholder = computed(() => {
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+    <ReviewBar v-if="item" kind="test" :item="item" @changed="onReviewed" />
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>
@@ -368,7 +425,7 @@ const scriptPlaceholder = computed(() => {
       <div v-field class="field">
         <label>{{ t('common.status') }}</label>
         <HelpTip id="test.status" :label="t('common.status')" />
-        <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
+        <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" option-disabled="disabled" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.priority') }}</label>
@@ -485,6 +542,7 @@ const scriptPlaceholder = computed(() => {
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <Button v-if="item && canWrite" :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
       <span v-else style="margin-right: auto" />
+      <RouterLink v-if="item" :to="{ name: 'flow', params: { projectId }, query: { test: item.id } }" class="small row nowrap" style="gap: 4px"><i class="pi pi-share-alt" aria-hidden="true" />{{ t('flow.flowOfTest') }}</RouterLink>
       <Button :label="t('common.close')" severity="secondary" text @click="emit('close')" />
       <Button v-if="canWrite" type="submit" :label="isNew ? t('common.create') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
     </div>

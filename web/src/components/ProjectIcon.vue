@@ -3,12 +3,20 @@
 import { computed, ref, watch } from 'vue'
 import { imageUrl } from '@/lib/avatars'
 import { ICON_PRESETS } from '@/assets/presets'
+import { projectColorStyle } from '@/lib/projectColors'
 
-const props = withDefaults(defineProps<{ icon?: string | null; projectKey?: string; size?: number; label?: string }>(), { icon: '', projectKey: '', size: 40, label: '' })
+const props = withDefaults(defineProps<{ icon?: string | null; projectKey?: string; size?: number; label?: string; color?: string | null }>(), {
+  icon: '',
+  projectKey: '',
+  size: 40,
+  label: '',
+  color: '',
+})
 const src = computed(() => imageUrl(props.icon, 'icon', ICON_PRESETS))
 const broken = ref(false)
 watch(src, () => (broken.value = false))
 const style = computed(() => ({
+  ...projectColorStyle(props.color),
   width: `${props.size}px`,
   height: `${props.size}px`,
   borderRadius: `${Math.round(props.size / 4)}px`,

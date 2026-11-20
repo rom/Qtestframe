@@ -104,6 +104,11 @@ func (s *Server) handleRestoreRequirement(w http.ResponseWriter, r *http.Request
 		s.fail(w, r, err)
 		return
 	}
+	// restoring an approved version is a review decision too
+	if isReviewDecision(model.KindRequirement, cur.Status, old.Status) && !p.Can(rbac.RequirementRev) {
+		writeError(w, http.StatusForbidden, "forbidden", "permission requirement.review required to restore a version with status "+old.Status)
+		return
+	}
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, cur.ID)
 	cur.Title, cur.Description, cur.Obligation, cur.Type = old.Title, old.Description, old.Obligation, old.Type
 	cur.Priority, cur.Status, cur.Source, cur.Rationale = old.Priority, old.Status, old.Source, old.Rationale
@@ -148,6 +153,10 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 	var old model.TestCase
 	if err := json.Unmarshal(rev.Snapshot, &old); err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if isReviewDecision(model.KindTest, cur.Status, old.Status) && !p.Can(rbac.TestReview) {
+		writeError(w, http.StatusForbidden, "forbidden", "permission test.review required to restore a version with status "+old.Status)
 		return
 	}
 	s.ensureInitialRevision(ctx, p, model.KindTest, cur.ID)

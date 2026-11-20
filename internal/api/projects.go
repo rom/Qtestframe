@@ -31,13 +31,14 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request, p *
 		Key            string `json:"key"`
 		Name           string `json:"name"`
 		Description    string `json:"description"`
+		Color          string `json:"color"`
 		SeedCategories *bool  `json:"seed_categories"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	pr := &model.Project{Key: req.Key, Name: req.Name, Description: req.Description}
+	pr := &model.Project{Key: req.Key, Name: req.Name, Description: req.Description, Color: req.Color}
 	seed := req.SeedCategories == nil || *req.SeedCategories
 	if err := s.Store.CreateProject(r.Context(), p.TenantID(), pr, seed); err != nil {
 		s.fail(w, r, err)
@@ -59,10 +60,12 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	var req struct {
-		Name              *string `json:"name"`
-		Description       *string `json:"description"`
-		DefectURLTemplate *string `json:"defect_url_template"`
-		Icon              *string `json:"icon"`
+		Name               *string   `json:"name"`
+		Description        *string   `json:"description"`
+		DefectURLTemplate  *string   `json:"defect_url_template"`
+		Icon               *string   `json:"icon"`
+		Color              *string   `json:"color"`
+		RequirementSources *[]string `json:"requirement_sources"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -78,6 +81,13 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request, p *
 	}
 	if req.DefectURLTemplate != nil {
 		pr.DefectURLTemplate = *req.DefectURLTemplate
+	}
+	if req.Color != nil {
+		pr.Color = *req.Color
+	}
+	if req.RequirementSources != nil {
+		// an empty list returns to the defaults
+		pr.RequirementSources, pr.CustomSources = *req.RequirementSources, len(*req.RequirementSources) > 0
 	}
 	if req.Name != nil {
 		pr.Name = *req.Name
@@ -416,4 +426,19 @@ func (s *Server) handleMoveDimension(w http.ResponseWriter, r *http.Request, p *
 	}
 	s.audit(r.Context(), p, "category.move", "category", pr.ID, req.Dimension+" -> "+req.NewDimension)
 	writeJSON(w, http.StatusOK, map[string]int{"moved": n})
+}
+
+// handleRequirementSources: GET /projects/{pid}/requirement-sources — the
+// configured sources and those already used by the project's requirements.
+func (s *Server) handleRequirementSources(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	used, err := s.Store.RequirementSourceUsage(r.Context(), p.TenantID(), pr.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"configured": pr.RequirementSources, "custom": pr.CustomSources, "used": used})
 }

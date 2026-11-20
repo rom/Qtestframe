@@ -187,6 +187,12 @@ export async function postDownload(path: string, body: unknown, fallbackName = '
   return name
 }
 
+/** DELETE that answers 204 with the trash entry of the deletion (X-Trash-Id), for undo. */
+export async function delTrash(path: string): Promise<string> {
+  const res = await send('DELETE', path)
+  return res.headers.get('X-Trash-Id') ?? ''
+}
+
 export const api = {
   get: <T = unknown>(path: string, params?: Record<string, ParamValue>, opts: RequestOptions = {}) =>
     request<T>('GET', path, { ...opts, params }),
@@ -197,6 +203,7 @@ export const api = {
     request<T>('PATCH', path, { ...opts, body }),
   del: <T = unknown>(path: string, body?: unknown, opts: RequestOptions = {}) =>
     request<T>('DELETE', path, { ...opts, body }),
+  delTrash,
   download,
   postDownload,
   getBlob,

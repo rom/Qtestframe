@@ -48,7 +48,13 @@ Running scripts on the server needs the **Test lead** or **Manager** role (the p
 
 ### How do I undo a change?
 
-Open the item, go to the **History** tab, select the version you want and choose **Restore this version**. This creates a new version with the old content; nothing is lost and you can restore again. Deleted items, however, cannot be restored from the history; only a [backup](administration.md#backup-and-restore) contains them. Bulk changes are recorded per item and can be undone the same way, item by item.
+Select **Undo** (↶) in the top bar or press <kbd>Ctrl</kbd>+<kbd>Z</kbd> outside a text field; the **Undo history** (🕘) lists your recent changes. This works for edits, deletions, moves, bulk edits, links and more, see [Undo and redo](getting-started.md#undo-and-redo). A deleted requirement or test comes back with its key, links, comments and history.
+
+For older changes, open the item, go to the **History** tab, select the version you want and choose **Restore this version**. This creates a new version with the old content; nothing is lost and you can restore again.
+
+### Why can't I approve a requirement or mark a test ready?
+
+Approving or rejecting a requirement needs the permission *requirement.review*, marking a test **Ready** needs *test.review*. By default the **Reviewer** and **Manager** roles have both and the **Test lead** has *test.review*; a **Tester** can write tests but not mark them ready. Without the permission these statuses are greyed out in the editor. See [Roles and permissions](administration.md#roles-and-permissions).
 
 ### Can two people edit the same requirement at the same time?
 
@@ -152,7 +158,7 @@ Select **Help** (the question mark in the top bar) → **Restart intro tour**.
 
 ### Can I change the key of a project?
 
-No. The key is part of every item ID and cannot be changed after the project is created. You can change the project's name and description in **Categories & settings**. If you really need another key, create a new project and move the folders into it; the items get new keys.
+No. The key is part of every item ID and cannot be changed after the project is created. You can change the project's name, description and colour in **Categories & settings** (or with ✎ on the project list). If you really need another key, create a new project and move the folders into it; the items get new keys.
 
 ## Files and data
 

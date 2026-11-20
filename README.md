@@ -19,21 +19,24 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Requirements**
   - Obligation levels based on RFC 2119/8174: `MUST`, `MUST NOT`, `SHALL`, `SHALL NOT`, `SHOULD`, `SHOULD NOT`, `MAY`, `OPTIONAL`, `WILL` and `DESCRIBE`. The level is detected automatically from the text.
   - Live language checks while you write: ambiguous terms, TBDs, compound requirements, escape clauses, and/or, and more.
-  - Status, type, priority, rationale, source, owner, tags, version and **evaluation criteria** (test, inspection, analysis, demonstration, review).
+  - Status, type, priority, rationale, source (a per-project list of sources with free text), owner, tags (each tag in a colour of its own), version and **evaluation criteria** (test, inspection, analysis, demonstration, review).
 - **Test cases**
   - Manual tests are executed step by step (action, expected result, data).
   - Automated tests are shell, bash, Python or JavaScript scripts, run server-side in a sandbox. CI systems can also import results.
+- **Undo and redo:** an undo stack in the top bar (<kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>) for edits, deletions, copies, moves, bulk edits, links, relations, dependencies, review decisions, results and folders; deleted requirements and tests come back with their key, links, comments, history, attachments and results (a 30-day trash in the API).
+- **Reuse and review:** copy a requirement as the basis of a new one (optionally related as *derived from*); a **Reviewer** role and the permissions `requirement.review` and `test.review` for approving requirements and marking tests ready; copies start as drafts.
 - **Change history:** every change of a requirement or test is versioned, with a field-level diff and one-click restore. **Baselines** freeze a project's state for a release and compare it with the current state or another baseline.
 - **Relations** between requirements (refines/decomposition, depends on, provides, derived from, conflicts with, duplicates, relates to) and **comment threads** on requirements and tests. A **Relations** column in the requirement and test lists shows every relation in both directions (*depends on*, *provided by*, *verified by*, *calls* …), next to many other optional columns (owner, source, tags, criteria, steps, defects, created by …).
 - **@mentions:** type `@` in owner, assignee, descriptions, notes and comments to pick a user of the organisation or a person already named in the project; mentions are shown with name and avatar, and `mention:anna` finds them.
 - **Tag suggestions** from the title and description, preferring tags the project already uses.
 - **Test reuse and results:** shared steps (a step can call another test), **test dependencies** (a test may only start after its prerequisites have passed), execution history across runs, **evidence** per executed step (text and files such as screenshots), and defects linked to failed executions (with links into your issue tracker).
 - **Execution readiness:** by default only Ready tests of approved requirements whose prerequisites have passed can be executed; admins and test leads decide which rules apply. The runner, run page and new-run dialog show why a test cannot run yet.
+- **Test flow:** a flowchart of a test's steps (checks of the expected results, shared steps expandable in place, automated tests as script → exit code) and the run order of a test run in stages derived from the test dependencies; both with a text view.
 - **Dependency graphs and tag cloud:** layered graphs of requirement relations and of test dependencies and shared steps, with filters and a list view; a tag cloud that lists the requirements, tests and documents carrying the selected tags.
 - **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder.
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
 - **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
-- **Personal touches:** avatars for users and icons for projects (presets or uploaded images), a "last signed in" notice with failed attempts, and a first-login intro tour.
+- **Personal touches:** seventeen colour themes (including ocean, forest, sunset, nordic, lavender and high contrast), avatars for users, icons and colours for projects (presets or uploaded images), a "last signed in" notice with failed attempts, and a first-login intro tour.
 - **Built-in user guide** in English and Swedish with a tutorial, FAQ and a [references](docs/user-guide/en/references.md) page (RFC 2119, RFC 8174, NIST, ISO/IEC/IEEE 29148 and 29119 and more), available under Help in the tool ([docs/user-guide](docs/user-guide/en/index.md)).
 - **Context-sensitive help:** an *i* next to form fields explains the field on mouse-over or keyboard focus and links to the matching section of the guide; <kbd>?</kbd> opens the guide page for the current view.
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
@@ -41,7 +44,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dependency graph, tag cloud, dashboard, global search, administration. Table columns can be chosen and reordered (drag the header or use the Columns menu).
 - **Filtering and search on every field** with a [query language](#query-language): field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
 - **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**.
-- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, test lead, tester, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
+- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
 
 ## Quick start
@@ -290,9 +293,10 @@ A **tenant** is an isolated organisation; projects belong to a tenant. A user ca
 | Role | Can (default) |
 |---|---|
 | viewer | read everything, export |
-| tester | + edit tests, execute runs, create API tokens |
-| test lead | + run scripts, read the audit log, change the test execution settings |
-| manager | + edit requirements, create/edit projects and categories |
+| reviewer | viewer + approve/reject requirements and mark tests ready (`requirement.review`, `test.review`), without editing them |
+| tester | viewer + edit tests, execute runs, create API tokens |
+| test lead | tester + mark tests ready, run scripts, read the audit log, change the test execution settings |
+| manager | + edit and approve requirements, create/edit projects and categories |
 | admin | + delete projects, manage members, roles and the tenant |
 
 These are defaults. Under **Administration → Role matrix**, admins (or any role with `role.manage`) tick and untick the permissions of every role except admin, reset built-in roles to their defaults, and create their own roles, for example an *Auditor* who only reads the audit log. Nobody can grant a permission they do not hold, and admin always keeps every permission ([ADR 0014](docs/adr/0014-tenant-configurable-roles.md)).

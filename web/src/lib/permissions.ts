@@ -13,8 +13,10 @@ export const P = {
   projectDelete: 'project.delete',
   requirementRead: 'requirement.read',
   requirementWrite: 'requirement.write',
+  requirementReview: 'requirement.review',
   testRead: 'test.read',
   testWrite: 'test.write',
+  testReview: 'test.review',
   runRead: 'run.read',
   runWrite: 'run.write',
   runExecute: 'run.execute',
@@ -27,7 +29,7 @@ export const P = {
 export type Permission = (typeof P)[keyof typeof P]
 
 /** Roles from most to least privileged (rbac.Roles). */
-export const ROLES = ['admin', 'manager', 'test_lead', 'tester', 'viewer'] as const
+export const ROLES = ['admin', 'manager', 'test_lead', 'tester', 'reviewer', 'viewer'] as const
 
 /**
  * Whether the current user holds a permission. Super admins hold every

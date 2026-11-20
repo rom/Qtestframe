@@ -19,6 +19,12 @@ const SERIES: Record<ConcreteThemeId, string[]> = {
   navy: ['#f2d27a', '#7fa6e0', '#c9a64e', '#9fb9e3', '#e0b85a', '#5b86c9', '#d9e3f3'],
   green_console: ['#66ff8a', '#1fd455', '#a0ffb4', '#17a843', '#cfffd9', '#56ae6e', '#33f06a'],
   crazy: ['#ff4fb7', '#22d3ee', '#ffe14d', '#6a2bd9', '#2dd47a', '#ff8a1f', '#c2187a'],
+  ocean: ['#0b6680', '#2bb3c9', '#f28c6b', '#5c7cfa', '#1f9d76', '#e0b545', '#94a3b8'],
+  forest: ['#8fcf78', '#d9b45a', '#6fb3a8', '#c98a5a', '#a7c96f', '#7d9fd1', '#cfe0c9'],
+  sunset: ['#e8743b', '#b23b0a', '#f2b134', '#7a2c43', '#d95d8a', '#6c5b9e', '#f0b08f'],
+  nordic: ['#5e81ac', '#bf616a', '#a3be8c', '#d08770', '#b48ead', '#88c0d0', '#ebcb8b'],
+  lavender: ['#9b72d6', '#e48bb5', '#6fb7d9', '#c9a0f0', '#7fc8a9', '#f0b77a', '#6a3fab'],
+  high_contrast: ['#ffd400', '#00e5ff', '#ff6ec7', '#7cff4f', '#ff9a3c', '#b9a6ff', '#ffffff'],
 }
 
 export interface ChartColors {

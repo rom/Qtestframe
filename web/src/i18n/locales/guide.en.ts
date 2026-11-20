@@ -42,7 +42,7 @@ const guideEn = {
     req_type: "The kind of requirement, for example functional, performance, security or usability. Use it to group and report non-functional requirements.",
     req_priority: "How important the requirement is: critical, high, medium or low. Plan and test the critical ones first.",
     req_owner: "The person responsible for the requirement. Type an at sign to pick a user of the organisation or a name already used in the project.",
-    req_source: "Where the requirement comes from: a customer, a contract, a standard such as NIST SP 800-53, a regulation or an earlier document.",
+    req_source: "Where the requirement comes from: a customer, a contract, a standard such as NIST SP 800-53, a regulation or an earlier document. Pick one from the list (the project's sources and those already used) or type your own.",
     req_rationale: "Why the requirement exists. A rationale helps reviewers judge whether it is still needed and how to test it.",
     req_folder: "The folder (group) of the requirement in the project tree. Moving it between folders keeps its key and history.",
     req_categories: "Values of the project’s category dimensions, for example Area / Payment. Categories can be filtered, reported and shown as chips.",
@@ -79,6 +79,7 @@ const guideEn = {
     export_aspects: "The parts of the project to export. An optional query below limits the requirements and tests.",
     query_filter: "Filter with the query language, for example status:approved priority=high or -has:criteria. Press Enter to apply.",
     settings_defectTemplate: "A URL with {'{'}id{'}'}, for example https://jira.example.com/browse/{'{'}id{'}'}. Defect IDs in executions become links to your tracker.",
+    settings_sources: "The sources offered in a requirement's Source field, one per line. Sources already used in the project are offered too, and any other text can still be typed. Empty the list to return to the defaults.",
     settings_dimension: "A dimension groups category values, for example Area with Payment and UI. Each item can have values of several dimensions.",
   },
   tour: {

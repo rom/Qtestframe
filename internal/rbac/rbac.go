@@ -1,8 +1,8 @@
 // Package rbac implements role based access control for tenant members.
 //
 // Every user has exactly one role per tenant. A role is a named set of
-// permissions. Five roles are built in (admin, manager, test lead, tester,
-// viewer); each tenant can change the permissions of every built-in role
+// permissions. Six roles are built in (admin, manager, test lead, tester,
+// reviewer, viewer); each tenant can change the permissions of every built-in role
 // except admin, and create its own roles (see Set). Super administrators (a
 // global user flag) implicitly hold all permissions in every tenant.
 package rbac
@@ -28,8 +28,10 @@ const (
 	ProjectDelete  Permission = "project.delete"
 	RequirementRd  Permission = "requirement.read"
 	RequirementWr  Permission = "requirement.write"
+	RequirementRev Permission = "requirement.review"
 	TestRead       Permission = "test.read"
 	TestWrite      Permission = "test.write"
+	TestReview     Permission = "test.review"
 	RunRead        Permission = "run.read"
 	RunWrite       Permission = "run.write"
 	RunExecute     Permission = "run.execute"
@@ -43,8 +45,8 @@ const (
 // resource).
 var AllPermissionList = []Permission{
 	ProjectRead, ProjectCreate, ProjectUpdate, ProjectDelete,
-	RequirementRd, RequirementWr,
-	TestRead, TestWrite,
+	RequirementRd, RequirementWr, RequirementRev,
+	TestRead, TestWrite, TestReview,
 	RunRead, RunWrite, RunExecute, ScriptExecute,
 	Export, AuditRead, TokenManage,
 	MemberRead, MemberManage, RoleManage, SettingsManage, TenantManage,
@@ -56,11 +58,12 @@ const (
 	RoleManager  = "manager"
 	RoleTestLead = "test_lead"
 	RoleTester   = "tester"
+	RoleReviewer = "reviewer"
 	RoleViewer   = "viewer"
 )
 
 // Roles lists the built-in roles from most to least privileged.
-var Roles = []string{RoleAdmin, RoleManager, RoleTestLead, RoleTester, RoleViewer}
+var Roles = []string{RoleAdmin, RoleManager, RoleTestLead, RoleTester, RoleReviewer, RoleViewer}
 
 var readPerms = []Permission{ProjectRead, RequirementRd, TestRead, RunRead, MemberRead, Export}
 
@@ -72,9 +75,10 @@ func with(extra ...Permission) []Permission {
 // changes them.
 var defaults = map[string][]Permission{
 	RoleViewer:   with(),
+	RoleReviewer: with(RequirementRev, TestReview),
 	RoleTester:   with(RunExecute, RunWrite, TestWrite, TokenManage),
-	RoleTestLead: with(RunExecute, RunWrite, TestWrite, ScriptExecute, AuditRead, TokenManage, SettingsManage),
-	RoleManager: with(RunExecute, RunWrite, TestWrite, RequirementWr, ProjectCreate,
+	RoleTestLead: with(RunExecute, RunWrite, TestWrite, TestReview, ScriptExecute, AuditRead, TokenManage, SettingsManage),
+	RoleManager: with(RunExecute, RunWrite, TestWrite, TestReview, RequirementWr, RequirementRev, ProjectCreate,
 		ProjectUpdate, ScriptExecute, AuditRead, TokenManage, SettingsManage),
 	RoleAdmin: append([]Permission{}, AllPermissionList...),
 }

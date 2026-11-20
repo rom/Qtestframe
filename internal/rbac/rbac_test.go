@@ -65,9 +65,11 @@ func TestPermissionsOf(t *testing.T) {
 	if got := PermissionsOf("nobody"); len(got) != 0 {
 		t.Errorf("unknown role permissions = %v", got)
 	}
-	// Higher roles are supersets of lower roles.
-	for i := 0; i+1 < len(Roles); i++ {
-		hi, lo := Roles[i], Roles[i+1]
+	// Higher roles are supersets of lower roles (the reviewer branches off
+	// the viewer: it reviews but does not write).
+	chain := []string{RoleAdmin, RoleManager, RoleTestLead, RoleTester, RoleViewer}
+	for i := 0; i+1 < len(chain); i++ {
+		hi, lo := chain[i], chain[i+1]
 		for _, p := range PermissionsOf(lo) {
 			if !Can(hi, Permission(p)) {
 				t.Errorf("%s lacks %s held by %s", hi, p, lo)
@@ -80,7 +82,7 @@ func TestAllPermissions(t *testing.T) {
 	all := AllPermissions()
 	want := []Permission{TenantManage, MemberRead, MemberManage, ProjectRead, ProjectCreate,
 		ProjectUpdate, ProjectDelete, RequirementRd, RequirementWr, TestRead, TestWrite,
-		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage, RoleManage, SettingsManage}
+		RunRead, RunWrite, RunExecute, ScriptExecute, Export, AuditRead, TokenManage, RoleManage, SettingsManage, RequirementRev, TestReview}
 	if len(all) != len(want) {
 		t.Fatalf("AllPermissions has %d entries, want %d: %v", len(all), len(want), all)
 	}
@@ -163,7 +165,7 @@ func TestOverlayAndSet(t *testing.T) {
 	if s.Rank(RoleAdmin) <= s.Rank(RoleManager) || s.Rank("nobody") != 0 || s.Rank(RoleTester) != 2 {
 		t.Error("rank")
 	}
-	if len(s.Matrix()) != 6 || !Role(s[RoleTester]).Editable() || s[RoleAdmin].Editable() {
+	if len(s.Matrix()) != 7 || !Role(s[RoleTester]).Editable() || s[RoleAdmin].Editable() {
 		t.Error("matrix/editable")
 	}
 }
@@ -188,5 +190,16 @@ func TestNamesAndPermissions(t *testing.T) {
 	}
 	if got := Intersect([]string{"b", "a", "c"}, []string{"a", "b"}); len(got) != 2 || got[0] != "a" {
 		t.Errorf("Intersect %v", got)
+	}
+}
+
+func TestReviewer(t *testing.T) {
+	for p, want := range map[Permission]bool{RequirementRev: true, TestReview: true, RequirementWr: false, TestWrite: false, ProjectRead: true} {
+		if Can(RoleReviewer, p) != want {
+			t.Errorf("reviewer %s = %v", p, !want)
+		}
+	}
+	if !Can(RoleManager, RequirementRev) || !Can(RoleTestLead, TestReview) || Can(RoleTestLead, RequirementRev) || Can(RoleTester, TestReview) {
+		t.Error("review permissions of the other roles")
 	}
 }

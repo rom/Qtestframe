@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUndoStore } from '@/stores/undo'
+import { recordUndo, toggleEntry } from '@/lib/undoActions'
 // Prerequisites of a test (GET/POST /tests/{id}/dependencies): tests that
 // must have passed before this one may be started, and the tests that wait
 // for this one.
@@ -30,11 +32,27 @@ async function load() {
 }
 watch(() => props.testId, load, { immediate: true })
 
+function dependencyEntry(created: boolean, d: TestDependency) {
+  return toggleEntry(
+    t(created ? 'undo.a.dependency' : 'undo.a.undependency', { from: d.test_key, to: d.depends_on_key }),
+    created,
+    d.id,
+    async () => (await api.post<TestDependency>(`/tests/${d.test_id}/dependencies`, { depends_on_id: d.depends_on_id })).id,
+    async (id) => void (await api.del(`/test-dependencies/${id}`)),
+  )
+}
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => void load(),
+)
+
 async function add(items: { id: string }[]) {
   let added = 0
   for (const it of items) {
     try {
-      await api.post(`/tests/${props.testId}/dependencies`, { depends_on_id: it.id })
+      const d = await api.post<TestDependency>(`/tests/${props.testId}/dependencies`, { depends_on_id: it.id })
+      if (d?.id) recordUndo(dependencyEntry(true, d))
       added++
     } catch (e) {
       notify.fail(e, t('dependencies.addFailed'))
@@ -49,6 +67,7 @@ async function add(items: { id: string }[]) {
 async function remove(d: TestDependency) {
   try {
     await api.del(`/test-dependencies/${d.id}`)
+    recordUndo(dependencyEntry(false, d))
     deps.value = deps.value.filter((x) => x.id !== d.id)
     emit('changed')
   } catch (e) {

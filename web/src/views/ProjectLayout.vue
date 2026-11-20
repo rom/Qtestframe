@@ -38,6 +38,7 @@ const tabs = computed(() => [
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
   { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
+  { to: 'flow', icon: 'pi pi-share-alt', label: t('nav.flow') },
   { to: 'tags', icon: 'pi pi-hashtag', label: t('nav.tags') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
   { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },
@@ -56,7 +57,7 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
     <nav class="row breadcrumb" style="margin-bottom: 4px" :aria-label="t('nav.breadcrumb')">
       <RouterLink :to="{ name: 'projects' }" class="muted small">{{ t('nav.breadcrumbProjects') }}</RouterLink>
       <i class="pi pi-angle-right muted small" aria-hidden="true" />
-      <ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :size="20" />
+      <ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :color="proj.project?.color" :size="20" />
       <span class="small" style="font-weight: 600" aria-current="page">{{ proj.project?.name }}</span>
       <span class="key">{{ proj.project?.key }}</span>
     </nav>

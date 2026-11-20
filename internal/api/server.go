@@ -150,13 +150,15 @@ func (s *Server) routes() {
 	// requirements
 	h("GET /api/v1/projects/{pid}/requirements", s.handleListRequirements, "requirement.read")
 	h("GET /api/v1/projects/{pid}/people", s.handlePeople, "requirement.read")
+	h("GET /api/v1/projects/{pid}/requirement-sources", s.handleRequirementSources, "requirement.read")
 	h("POST /api/v1/projects/{pid}/tags/suggest", s.handleSuggestTags, "requirement.read")
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/move", s.handleMoveItems(model.KindRequirement), "requirement.write")
-	h("POST /api/v1/projects/{pid}/requirements/bulk", s.handleBulk(model.KindRequirement), "requirement.write")
+	h("POST /api/v1/projects/{pid}/requirements/bulk", s.handleBulk(model.KindRequirement), "requirement.read")
 	h("DELETE /api/v1/projects/{pid}/requirements/bulk", s.handleBulkDelete(model.KindRequirement), "requirement.write")
 	h("GET /api/v1/requirements/{id}", s.handleGetRequirement, "requirement.read")
-	h("PATCH /api/v1/requirements/{id}", s.handleUpdateRequirement, "requirement.write")
+	h("PATCH /api/v1/requirements/{id}", s.handleUpdateRequirement, "requirement.read") // write or review: see review.go
+	h("POST /api/v1/requirements/{id}/copy", s.handleCopyRequirement, "requirement.write")
 	h("DELETE /api/v1/requirements/{id}", s.handleDeleteRequirement, "requirement.write")
 	h("GET /api/v1/requirements/{id}/links", s.handleItemLinks(model.KindRequirement), "requirement.read")
 	h("GET /api/v1/requirements/{id}/history", s.handleHistory(model.KindRequirement), "requirement.read")
@@ -180,11 +182,13 @@ func (s *Server) routes() {
 	h("GET /api/v1/projects/{pid}/tests", s.handleListTests, "test.read")
 	h("POST /api/v1/projects/{pid}/tests", s.handleCreateTest, "test.write")
 	h("POST /api/v1/projects/{pid}/tests/move", s.handleMoveItems(model.KindTest), "test.write")
-	h("POST /api/v1/projects/{pid}/tests/bulk", s.handleBulk(model.KindTest), "test.write")
+	h("POST /api/v1/projects/{pid}/tests/bulk", s.handleBulk(model.KindTest), "test.read")
 	h("DELETE /api/v1/projects/{pid}/tests/bulk", s.handleBulkDelete(model.KindTest), "test.write")
 	h("GET /api/v1/tests/{id}", s.handleGetTest, "test.read")
-	h("PATCH /api/v1/tests/{id}", s.handleUpdateTest, "test.write")
+	h("PATCH /api/v1/tests/{id}", s.handleUpdateTest, "test.read") // write or review: see review.go
 	h("DELETE /api/v1/tests/{id}", s.handleDeleteTest, "test.write")
+	h("GET /api/v1/projects/{pid}/trash", s.handleListTrash, "project.read")
+	h("POST /api/v1/trash/{id}/restore", s.handleRestoreTrash, "project.read") // write of the kind: see trash.go
 	h("POST /api/v1/tests/{id}/copy", s.handleCopyTest, "test.write")
 	h("GET /api/v1/tests/{id}/links", s.handleItemLinks(model.KindTest), "test.read")
 	h("GET /api/v1/tests/{id}/history", s.handleHistory(model.KindTest), "test.read")

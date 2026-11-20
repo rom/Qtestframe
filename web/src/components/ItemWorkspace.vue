@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useUndoStore } from '@/stores/undo'
+import { deletedEntry, entry, recordUndo } from '@/lib/undoActions'
+import { tagClass } from '@/lib/tagColors'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -209,14 +212,38 @@ function onRowDrag(e: DragEvent, row: Item) {
 }
 
 async function moveItems(ids: string[], folderId: string | null) {
+  const path = `/projects/${pid.value}/${plural.value}/move`
+  const byFolder = new Map<string | null, string[]>()
+  for (const id of ids) {
+    const old = items.value.find((x) => x.id === id)?.folder_id ?? null
+    byFolder.set(old, [...(byFolder.get(old) ?? []), id])
+  }
   try {
-    await api.post(`/projects/${pid.value}/${plural.value}/move`, { ids, folder_id: folderId })
+    await api.post(path, { ids, folder_id: folderId })
+    recordUndo(
+      entry(
+        t('undo.a.move', { n: ids.length }),
+        async () => {
+          for (const [f, group] of byFolder) await api.post(path, { ids: group, folder_id: f })
+        },
+        () => api.post(path, { ids, folder_id: folderId }),
+      ),
+    )
     notify.ok(t(isReq.value ? 'workspace.movedRequirements' : 'workspace.movedTests', ids.length), folderId ? folderPath(folders.value, folderId) : t('common.topLevel'))
     await load()
   } catch (e) {
     notify.fail(e, t('workspace.moveFailed'))
   }
 }
+
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  async () => {
+    await proj.loadFolders(props.kind)
+    await load()
+  },
+)
 
 async function onFoldersChanged() {
   await proj.loadFolders(props.kind)
@@ -228,8 +255,26 @@ async function onFoldersChanged() {
 const selectedIds = computed(() => selection.value.map((s) => s.id))
 async function bulkSet(set: Record<string, unknown>) {
   if (!selectedIds.value.length) return
+  const ids = [...selectedIds.value]
+  const field = (k: string) => (k === 'add_category_ids' || k === 'remove_category_ids' ? 'category_ids' : k)
+  const before = ids.map((id) => {
+    const row = (items.value.find((x) => x.id === id) ?? {}) as Record<string, unknown>
+    const old: Record<string, unknown> = {}
+    for (const k of Object.keys(set)) old[field(k)] = Array.isArray(row[field(k)]) ? [...(row[field(k)] as unknown[])] : row[field(k)]
+    return { id, old }
+  })
+  const bulkPath = `/projects/${pid.value}/${plural.value}/bulk`
   try {
-    await api.post(`/projects/${pid.value}/${plural.value}/bulk`, { ids: selectedIds.value, set })
+    await api.post(bulkPath, { ids, set })
+    recordUndo(
+      entry(
+        t('undo.a.bulk', { n: ids.length }),
+        async () => {
+          for (const b of before) await api.patch(`/${plural.value}/${b.id}`, b.old)
+        },
+        () => api.post(bulkPath, { ids, set }),
+      ),
+    )
     notify.ok(t(isReq.value ? 'workspace.updatedRequirements' : 'workspace.updatedTests', selectedIds.value.length))
     await load()
   } catch (e) {
@@ -240,9 +285,15 @@ function bulkDelete() {
   const n = selectedIds.value.length
   notify.confirmDanger(t(isReq.value ? 'workspace.confirmDeleteRequirements' : 'workspace.confirmDeleteTests', n), async () => {
     try {
-      await api.del(`/projects/${pid.value}/${plural.value}/bulk`, { ids: selectedIds.value })
+      const ids = [...selectedIds.value]
+      const path = `/projects/${pid.value}/${plural.value}/bulk`
+      const res = await api.del<{ trash_id?: string }>(path, { ids })
+      if (res?.trash_id) {
+        const label = n === 1 ? t('undo.a.delete', { key: selection.value[0]?.key ?? '' }) : t('undo.a.deleteMany', { n })
+        recordUndo(deletedEntry(label, res.trash_id, async () => (await api.del<{ trash_id?: string }>(path, { ids }))?.trash_id ?? ''))
+      }
       selection.value = []
-      notify.ok(t('workspace.deletedCount', { count: n }))
+      notify.ok(t('workspace.deletedCount', { count: n }), t('undo.hint'))
       await load()
     } catch (e) {
       notify.fail(e)
@@ -310,7 +361,7 @@ function onDeleted() {
   editorOpen.value = false
   load()
 }
-function onCopied(it: TestCase) {
+function onCopied(it: { id: string }) {
   load()
   if (it?.id) openEditor(it.id)
 }
@@ -487,7 +538,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <RelationsCell v-else-if="c.field === 'relations'" :refs="data.relations" :project-id="pid" />
             <MentionText v-else-if="c.field === 'owner'" :text="data.owner" class="small" />
             <span v-else-if="c.field === 'tags'" class="row small" style="gap: 4px">
-              <span v-for="tag in data.tags ?? []" :key="tag" class="tag-chip">{{ tag }}</span>
+              <span v-for="tag in data.tags ?? []" :key="tag" class="tag-chip" :class="tagClass(tag)">{{ tag }}</span>
             </span>
             <DefectLinks v-else-if="c.field === 'defects'" :defects="data.defects" class="small" />
             <span v-else-if="c.field === 'script_language'" class="small mono">{{ data.execution_type === 'automated' ? data.script_language : '' }}</span>
@@ -535,6 +586,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       :can-link="canLink"
       @saved="onSaved"
       @deleted="onDeleted"
+      @copied="onCopied"
       @close="editorOpen = false"
     />
     <TestEditor

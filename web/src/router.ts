@@ -38,6 +38,7 @@ const routes: RouteRecordRaw[] = [
           },
           { path: 'traceability', name: 'traceability', component: () => import('./views/TraceabilityView.vue') },
           { path: 'graph', name: 'graph', component: () => import('./views/GraphView.vue') },
+          { path: 'flow', name: 'flow', component: () => import('./views/FlowView.vue'), meta: { perm: P.testRead } },
           { path: 'tags', name: 'tags', component: () => import('./views/TagsView.vue') },
           { path: 'settings', name: 'settings', component: () => import('./views/SettingsView.vue') },
           { path: 'export', name: 'export', component: () => import('./views/ExportView.vue') },

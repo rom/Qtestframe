@@ -174,3 +174,40 @@ func TestDeriveStatusAndCoverage(t *testing.T) {
 }
 
 func ptr(s string) *string { return &s }
+
+func TestTrashExpiry(t *testing.T) {
+	st, ten, ctx := setup(t)
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	st.SetClock(func() time.Time { return now })
+	p := &model.Project{Key: "TR", Name: "Trash"}
+	must(t, st.CreateProject(ctx, ten.ID, p, false))
+	r := &model.Requirement{ProjectID: p.ID, Title: "Gone"}
+	must(t, st.CreateRequirement(ctx, ten.ID, r))
+	n, id, err := st.TrashRequirements(ctx, ten.ID, p.ID, []string{r.ID}, "a@example.com")
+	if err != nil || n != 1 || id == "" {
+		t.Fatal(n, id, err)
+	}
+	if n, id, err := st.TrashRequirements(ctx, ten.ID, p.ID, []string{"missing"}, ""); err != nil || n != 0 || id != "" {
+		t.Fatal(n, id, err)
+	}
+	list, err := st.ListTrash(ctx, ten.ID, p.ID)
+	if err != nil || len(list) != 1 || list[0].Label != r.Key+" Gone" || list[0].DeletedBy != "a@example.com" {
+		t.Fatal(list, err)
+	}
+	if st, err := st.TrashStatuses(ctx, ten.ID, id); err != nil || len(st) != 1 || st[0] != "draft" {
+		t.Fatal(st, err)
+	}
+	now = now.Add(store.TrashRetention + time.Hour)
+	if _, err := st.RestoreTrash(ctx, ten.ID, id); !errors.Is(err, store.ErrInvalid) {
+		t.Fatal(err)
+	}
+	if list, _ := st.ListTrash(ctx, ten.ID, p.ID); len(list) != 0 {
+		t.Fatal(list)
+	}
+	if n, err := st.PurgeTrash(ctx); err != nil || n != 1 {
+		t.Fatal(n, err)
+	}
+	if _, err := st.GetTrash(ctx, ten.ID, id); !errors.Is(err, store.ErrNotFound) {
+		t.Fatal(err)
+	}
+}

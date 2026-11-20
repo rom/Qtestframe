@@ -44,7 +44,7 @@ const guideSv: GuideMessages = {
     req_type: "Vilken sorts krav det är, till exempel funktionellt, prestanda, säkerhet eller användbarhet. Använd det för att gruppera och rapportera icke-funktionella krav.",
     req_priority: "Hur viktigt kravet är: kritisk, hög, medel eller låg. Planera och testa de kritiska först.",
     req_owner: "Den som ansvarar för kravet. Skriv ett snabel-a för att välja en användare i organisationen eller ett namn som redan används i projektet.",
-    req_source: "Var kravet kommer ifrån: en kund, ett avtal, en standard som NIST SP 800-53, en föreskrift eller ett tidigare dokument.",
+    req_source: "Var kravet kommer ifrån: en kund, ett avtal, en standard som NIST SP 800-53, en föreskrift eller ett tidigare dokument. Välj i listan (projektets källor och de som redan används) eller skriv en egen.",
     req_rationale: "Varför kravet finns. En motivering hjälper granskare att avgöra om kravet fortfarande behövs och hur det ska testas.",
     req_folder: "Kravets mapp (grupp) i projektets träd. Kravet behåller sin nyckel och historik när det flyttas mellan mappar.",
     req_categories: "Värden i projektets kategoridimensioner, till exempel Område / Betalning. Kategorier kan filtreras, rapporteras och visas som etiketter.",
@@ -81,6 +81,7 @@ const guideSv: GuideMessages = {
     export_aspects: "De delar av projektet som exporteras. En valfri fråga nedanför begränsar kraven och testfallen.",
     query_filter: "Filtrera med frågespråket, till exempel status:approved priority=high eller -has:criteria. Tryck Enter för att använda filtret.",
     settings_defectTemplate: "En URL med {'{'}id{'}'}, till exempel https://jira.example.com/browse/{'{'}id{'}'}. Defekt-id i exekveringar blir länkar till ditt ärendesystem.",
+    settings_sources: "Källorna som erbjuds i ett kravs fält Källa, en per rad. Källor som redan används i projektet erbjuds också, och annan text kan fortfarande skrivas. Töm listan för att återgå till standardlistan.",
     settings_dimension: "En dimension grupperar kategorivärden, till exempel Område med Betalning och Gränssnitt. Varje objekt kan ha värden i flera dimensioner.",
   },
   tour: {

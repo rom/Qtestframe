@@ -69,15 +69,15 @@ If you do not want the box, turn it off in your profile: **Hide the live require
 | **Title** | A short name (required). |
 | **Description** | The requirement statement itself, analysed while you type. |
 | **Obligation** | See above. |
-| **Status** | Draft, Review, Approved, Implemented, Verified, Rejected or Obsolete. |
+| **Status** | Draft, Review, Approved, Implemented, Verified, Rejected or Obsolete. *Approved* and *Rejected* are review decisions: they need the permission *requirement.review* (Reviewer or Manager) and are greyed out without it. Reviewers see **Approve** and **Reject** buttons at the top of the editor. |
 | **Type** | Functional, Non-functional, Security, Performance, Usability, Interface, Constraint, Business or Regulatory. |
 | **Priority** | Critical, High, Medium or Low. |
 | **Owner** | Who is responsible for the requirement. Type `@` to pick a person, see [Mention people](#mention-people). |
-| **Source** | Where it comes from, for example *Customer spec §4.2*. |
+| **Source** | Where it comes from. Pick one from the list (▾), which offers the project's sources and the sources other requirements already use, or type your own, for example *Customer spec §4.2*. The list of the project is edited under **Categories & settings → Requirement sources** (one per line; empty means the defaults: Customer, Contract, Standard, Regulation, Stakeholder, …). |
 | **Rationale** | Why it exists. |
 | **Folder** | Where it is filed. |
 | **Categories** | Values of the project's requirement category dimensions, for example *Area / Security*. |
-| **Tags** | Free keywords; type a tag and press <kbd>Enter</kbd>, or select one of the **Suggested tags** below the field. Suggestions come from the title and description: tags the project already uses that the text mentions come first (a solid border), then abbreviations such as *GDPR* and words of the title or words used more than once (a dashed border). |
+| **Tags** | Free keywords; type a tag and press <kbd>Enter</kbd>, or select one of the **Suggested tags** below the field. Suggestions come from the title and description: tags the project already uses that the text mentions come first (a solid border), then abbreviations such as *GDPR* and words of the title or words used more than once (a dashed border). Every tag gets a colour of its own, the same everywhere (tables, the tag cloud, documents), so equal tags are easy to spot. |
 
 The header of the editor shows the ID, the **version** (for example *v3*), the coverage and who changed it last. The version increases with every change.
 
@@ -178,6 +178,10 @@ You can also select **Attach from archive**: a file that is already in the proje
 
 Uploading and removing attachments needs the **Manager** role (the same as editing the requirement); reading them needs **Viewer**.
 
+## Copy a requirement
+
+**Copy** in the editor creates a new requirement based on this one: titled *Copy of …*, with a new key in the same folder and the description, obligation, type, priority, source, rationale, owner, tags, categories and evaluation criteria. The copy starts as **Draft** and opens in the editor so you can adapt it. **▾ → Copy and relate as derived from** also records the relation *derived from* the original. Links to tests, comments and history are not copied.
+
 ## Delete a requirement
 
-Open it and select **Delete**, or select several and use **Delete** in the bulk toolbar. Deleting also removes its links, comments and history. This cannot be undone; if you might need it again, set the status to **Obsolete** instead.
+Open it and select **Delete**, or select several and use **Delete** in the bulk toolbar. Deleting also removes its links, relations, comments and history. Select **Undo** (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) right afterwards to bring it back with everything, see [Undo and redo](getting-started.md#undo-and-redo).

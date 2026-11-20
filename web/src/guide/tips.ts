@@ -64,6 +64,7 @@ export const TIPS = {
   'query.filter': { page: 'search-and-filters', anchor: { en: 'syntax-in-five-minutes', sv: 'syntaxen-på-fem-minuter' } },
   'settings.defectTemplate': DEFECTS,
   'settings.dimension': CATEGORIES,
+  'settings.sources': REQ_FIELDS,
 } satisfies Record<string, TipTarget>
 
 export type TipId = keyof typeof TIPS
