@@ -6,6 +6,7 @@ import Checkbox from 'primevue/checkbox'
 import Message from 'primevue/message'
 import QueryInput from '@/components/QueryInput.vue'
 import { api } from '@/lib/api'
+import { exportExtension, isReqIFFormat } from '@/lib/download'
 import { P } from '@/lib/permissions'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
@@ -22,11 +23,14 @@ const formats = computed(() => [
   { value: 'csv', label: 'CSV', icon: 'pi pi-file', desc: t('export.formatCsv') },
   { value: 'pdf', label: 'PDF', icon: 'pi pi-file-pdf', desc: t('export.formatPdf') },
   { value: 'docx', label: 'Word', icon: 'pi pi-file-word', desc: t('export.formatDocx') },
+  { value: 'reqif', label: 'ReqIF', icon: 'pi pi-sitemap', desc: t('export.formatReqif') },
+  { value: 'reqifz', label: t('export.reqifzLabel'), icon: 'pi pi-box', desc: t('export.formatReqifz') },
 ])
 const aspects = computed(() => [
   { value: 'requirements', label: t('export.aspectRequirements') },
   { value: 'criteria', label: t('export.aspectCriteria') },
   { value: 'tests', label: t('export.aspectTests') },
+  { value: 'test_data', label: t('testData.exportAspect') },
   { value: 'runs', label: t('export.aspectRuns') },
   { value: 'traceability', label: t('export.aspectTraceability') },
 ])
@@ -35,7 +39,8 @@ const selected = ref<string[]>(aspects.value.map((a) => a.value))
 const q = ref('')
 const busy = ref(false)
 const error = ref<unknown>(null)
-const willZip = computed(() => format.value === 'csv' && selected.value.length > 1)
+const reqif = computed(() => isReqIFFormat(format.value))
+const willZip = computed(() => exportExtension(format.value, selected.value.length) === 'zip')
 
 async function download() {
   busy.value = true
@@ -43,8 +48,12 @@ async function download() {
   try {
     const name = await api.download(
       `/projects/${proj.pid}/export`,
-      { format: format.value, aspects: selected.value.length === aspects.value.length ? undefined : selected.value, q: q.value.trim() },
-      `${proj.project?.key ?? 'export'}.${willZip.value ? 'zip' : format.value}`,
+      {
+        format: format.value,
+        aspects: reqif.value || selected.value.length === aspects.value.length ? undefined : selected.value,
+        q: q.value.trim(),
+      },
+      `${proj.project?.key ?? 'export'}.${exportExtension(format.value, selected.value.length)}`,
     )
     notify.ok(t('export.downloaded'), name)
   } catch (e) {
@@ -86,11 +95,12 @@ async function download() {
         <div class="small muted" style="margin-top: 4px">{{ f.desc }}</div>
       </button>
     </div>
-    <fieldset class="plain-fieldset">
+    <fieldset class="plain-fieldset" :disabled="reqif">
     <legend class="section-title">{{ t('export.aspects') }} <HelpTip id="export.aspects" :label="t('export.aspects')" /></legend>
+    <p v-if="reqif" class="small muted" style="margin: 0 0 8px"><i class="pi pi-info-circle" aria-hidden="true" /> {{ t('export.reqifHint') }}</p>
     <div class="row" style="gap: 18px">
       <span v-for="a in aspects" :key="a.value" class="row nowrap">
-        <Checkbox v-model="selected" :input-id="'a-' + a.value" :value="a.value" />
+        <Checkbox v-model="selected" :input-id="'a-' + a.value" :value="a.value" :disabled="reqif" />
         <label :for="'a-' + a.value">{{ a.label }}</label>
       </span>
     </div>
@@ -100,7 +110,7 @@ async function download() {
     <div class="row" style="margin-top: 18px">
       <span v-if="willZip" class="small muted"><i class="pi pi-info-circle" /> {{ t('export.zipHint') }}</span>
       <span class="grow" />
-      <Button :label="t('export.download')" icon="pi pi-download" :loading="busy" :disabled="!selected.length" @click="download" />
+      <Button :label="t('export.download')" icon="pi pi-download" :loading="busy" :disabled="!reqif && !selected.length" @click="download" />
     </div>
   </div>
 </template>

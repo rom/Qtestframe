@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SuspectLink from './SuspectLink.vue'
+import ConfigurationCoverage from './ConfigurationCoverage.vue'
 import ObligationHelp from './ObligationHelp.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
@@ -10,6 +11,7 @@ import AutoComplete from 'primevue/autocomplete'
 import { useProjectStore } from '@/stores/project'
 import { filterSources, mergeSources } from '@/lib/sources'
 import ReviewBar from './ReviewBar.vue'
+import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
@@ -50,6 +52,8 @@ import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
+import ConflictDialog from './ConflictDialog.vue'
+import { fieldConflicts, REQUIREMENT_FIELDS, staleOf, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 
 const props = defineProps<{
@@ -383,6 +387,42 @@ function delRequirement(id: string) {
   return () => api.delTrash(`/requirements/${id}`)
 }
 
+// ---------- someone saved in between ----------
+const conflictOpen = ref(false)
+const conflictList = ref<FieldConflict[]>([])
+const stale = ref<Stale<Requirement> | null>(null)
+function showConflict(st: Stale<Requirement>) {
+  stale.value = st
+  conflictList.value = item.value ? fieldConflicts(REQUIREMENT_FIELDS.fields, item.value, st.current, form.value, REQUIREMENT_FIELDS.normalize) : []
+  conflictOpen.value = true
+}
+async function reloadTheirs() {
+  conflictOpen.value = false
+  await load()
+}
+/** save only what was changed here, on top of the newer version */
+async function mergeMine() {
+  const st = stale.value
+  if (!st || !loaded.value) return
+  saving.value = true
+  const body = bodyOf(form.value)
+  const keys = changedKeys(loaded.value, body, Object.keys(body))
+  try {
+    const saved = await api.patch<Requirement>(`/requirements/${props.itemId}`, pickBefore(body, keys), { ifMatch: st.current.version })
+    conflictOpen.value = false
+    notify.ok(t('conflict.merged'), saved?.key)
+    if (saved?.id && keys.length) recordUndo(patchEntry(t('undo.a.edit', { key: saved.key }), `/requirements/${saved.id}`, pickBefore(st.current, keys), pickBefore(body, keys)))
+    emit('saved', saved)
+    await load()
+  } catch (e) {
+    const again = staleOf<Requirement>(e)
+    if (again) showConflict(again)
+    else error.value = errorMessage(e)
+  } finally {
+    saving.value = false
+  }
+}
+
 async function save() {
   saving.value = true
   error.value = ''
@@ -391,7 +431,7 @@ async function save() {
   try {
     const saved = isNew.value
       ? await api.post<Requirement & { linked_test?: TestCase }>(`/projects/${props.projectId}/requirements`, { ...body, create_test: createTest.value })
-      : await api.patch<Requirement>(`/requirements/${props.itemId}`, body)
+      : await api.patch<Requirement>(`/requirements/${props.itemId}`, body, { ifMatch: item.value?.version })
     const linked = isNew.value ? (saved as Requirement & { linked_test?: TestCase })?.linked_test : undefined
     notify.ok(
       isNew.value ? t('requirements.created') : t('requirements.saved'),
@@ -407,7 +447,9 @@ async function save() {
     emit('saved', saved)
     if (!isNew.value) await load() // refresh version and counts
   } catch (e) {
-    error.value = errorMessage(e)
+    const st = staleOf<Requirement>(e)
+    if (st) showConflict(st)
+    else error.value = errorMessage(e)
   } finally {
     saving.value = false
   }
@@ -518,6 +560,7 @@ function criterionLabel(id: string | null) {
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <ReviewBar v-if="item" kind="requirement" :item="item" @changed="onReviewed" />
+    <TraceRuleViolations v-if="item" kind="requirement" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${relationCount}/${linkCount}`" />
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>
@@ -685,6 +728,7 @@ function criterionLabel(id: string | null) {
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.test_case_key || testById.get(l.test_case_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
+      <ConfigurationCoverage v-if="links.length" :requirement-id="item.id" :project-id="projectId" :refresh="links.length" />
     </div>
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />
@@ -725,4 +769,5 @@ function criterionLabel(id: string | null) {
     />
   </form>
   </template>
+  <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

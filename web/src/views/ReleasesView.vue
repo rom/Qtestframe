@@ -40,6 +40,7 @@ import {
   runsOfRelease,
   CRITERION_TYPES,
   DEFECT_SEVERITIES,
+  RULE_LEVELS,
   MIN_RELEASE_NOTE,
   RELEASE_STATUSES,
 } from '@/lib/releases'
@@ -373,6 +374,7 @@ watch(selectedId, () => {
 })
 const typeOptions = computed(() => CRITERION_TYPES.map((v) => ({ label: t(`releasesView.criterion.${v}.name`), value: v })))
 const severityOptions = computed(() => [{ label: t('releasesView.anySeverity'), value: '' }, ...DEFECT_SEVERITIES.map((v) => ({ label: t(`releasesView.severity.${v}`), value: v }))])
+const ruleLevelOptions = computed(() => RULE_LEVELS.map((v) => ({ label: t(`releasesView.ruleLevel.${v}`), value: v })))
 const riskLevelOptions = computed(() => [{ label: t('releasesView.anyLevel'), value: '' }, ...RISK_LEVELS.map((v) => ({ label: t(`risksView.level.${v}`), value: v }))])
 function touch() {
   criteriaDirty.value = true
@@ -466,12 +468,13 @@ async function loadBaseline() {
 }
 watch(() => [detail.value?.id, detail.value?.status], loadBaseline, { immediate: true })
 
-const itemKindLabel = (kind: string) => t(`releasesView.kind.${kind === 'test' || kind === 'risk' || kind === 'defect' ? kind : 'requirement'}`)
+const itemKindLabel = (kind: string) => t(`releasesView.kind.${kind === 'test' || kind === 'risk' || kind === 'defect' || kind === 'trace_rule' ? kind : 'requirement'}`)
 /** note of a blocking item: a risk level, a severity, a result or a requirement status */
 function itemNote(c: CriterionResult, note?: string) {
   if (!note) return ''
   if (c.type === 'risks_mitigated') return t(`risksView.level.${note}`)
   if (c.type === 'no_open_defects') return t(`releasesView.severity.${note}`)
+  if (c.type === 'trace_rules') return note // the names of the rules the item breaks
   if (note === 'none') return t('releasesView.noteNoTests')
   return c.type === 'approved' ? enumLabel('status', note) : enumLabel('result', note)
 }
@@ -713,6 +716,17 @@ function itemNote(c: CriterionResult, note?: string) {
             class="crit-param"
             :disabled="!canWrite"
             :aria-label="t('releasesView.riskLevelN', { n: i + 1 })"
+            @update:model-value="touch"
+          />
+          <Select
+            v-else-if="criterionParam(c.type) === 'ruleSeverity'"
+            v-model="c.level"
+            :options="ruleLevelOptions"
+            option-label="label"
+            option-value="value"
+            class="crit-param"
+            :disabled="!canWrite"
+            :aria-label="t('releasesView.ruleLevelN', { n: i + 1 })"
             @update:model-value="touch"
           />
           <span v-else class="crit-param small muted">{{ t('releasesView.noParameter') }}</span>

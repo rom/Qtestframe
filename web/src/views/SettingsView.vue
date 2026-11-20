@@ -21,6 +21,7 @@ import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
 import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
+import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import { groupBy } from '@/lib/collections'
 import { defaultCategoryColor, normalizeHex, readableTextColor } from '@/lib/colors'
 import { P } from '@/lib/permissions'
@@ -39,7 +40,7 @@ const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
 const route = useRoute()
-const tab = ref<string>(['requirement', 'test', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
+const tab = ref<string>(['requirement', 'test', 'configurations', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
 
 function canEdit(scope: ItemKind) {
   return auth.can(scope === 'requirement' ? P.requirementWrite : P.testWrite) || auth.can(P.projectUpdate)
@@ -255,6 +256,7 @@ function deleteProject() {
     <TabList>
       <Tab value="requirement"><i class="pi pi-list-check" /> {{ t('settings.requirementCategories') }}</Tab>
       <Tab value="test"><i class="pi pi-check-square" /> {{ t('settings.testCategories') }}</Tab>
+      <Tab value="configurations"><i class="pi pi-sliders-h" /> {{ t('configurations.tab') }}</Tab>
       <Tab value="project"><i class="pi pi-cog" /> {{ t('settings.project') }}</Tab>
     </TabList>
     <TabPanels style="padding: 16px 0; background: transparent">
@@ -312,6 +314,9 @@ function deleteProject() {
             </div>
           </section>
         </div>
+      </TabPanel>
+      <TabPanel value="configurations">
+        <ConfigurationsSettings v-if="proj.pid && tab === 'configurations'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
       </TabPanel>
       <TabPanel value="project">
         <div class="card" style="max-width: 640px">

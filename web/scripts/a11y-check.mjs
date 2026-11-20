@@ -113,6 +113,11 @@ async function discover(request) {
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
+  // configurations and a data-driven test (seed-demo: "Cross-browser smoke")
+  const crossRun = runs.find((r) => (r.configurations ?? []).length > 0)
+  const crossExecs = crossRun ? items(await api(request, 'GET', `/runs/${crossRun.id}/executions`)) : []
+  const ddEx = crossExecs.find((e) => e.iteration_count > 0)
+  const ddLinks = ddEx ? items(await api(request, 'GET', `/tests/${ddEx.test_case_id}/links`)) : []
   const hasDefects = items(await api(request, 'GET', `/projects/${pid}/defects`)).length > 0
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
@@ -122,10 +127,17 @@ async function discover(request) {
   const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
   const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
   const hasNotifications = items(await api(request, 'GET', '/notifications').catch(() => [])).length > 0
+  // a requirement that breaks a traceability rule (seed-demo has rules)
+  const ruleReport = await api(request, 'GET', `/projects/${pid}/trace-rules/evaluate`).catch(() => null)
+  const ruleViolator = (ruleReport?.results ?? []).flatMap((r) => r.violations ?? []).find((v) => v.kind === 'requirement')
+  const emailOn = (await api(request, 'GET', '/meta').catch(() => ({}))).email_enabled === true
+  const hasDefinitions = items(await api(request, 'GET', `/projects/${pid}/reports/definitions`).catch(() => [])).length > 0
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
     { name: 'dashboard', path: `${p}/dashboard`, wait: 'canvas' },
+    { name: 'dashboard-trends', path: `${p}/dashboard?tab=trends`, wait: 'canvas, .empty' },
+    { name: 'dashboard-quality', path: `${p}/dashboard?tab=quality`, wait: 'canvas, .empty' },
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },
@@ -138,6 +150,10 @@ async function discover(request) {
     run && { name: 'run-bulk', path: `${p}/runs/${run.id}`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     run && ex && { name: 'execute', path: `${p}/runs/${run.id}/exec/${ex.id}` },
     { name: 'traceability', path: `${p}/traceability` },
+    { name: 'trace-rules', path: `${p}/traceability?view=rules`, wait: '.trace-rules .rule-list' },
+    { name: 'trace-rules-violations', path: `${p}/traceability?view=rules`, open: '.trace-rules .violations-toggle', wait: '.trace-rules .violations' },
+    { name: 'trace-rule-dialog', path: `${p}/traceability?view=rules`, open: '.trace-rules .filterbar button:has(.pi-plus)', wait: '.p-dialog .trace-rule-form' },
+    ruleViolator && { name: 'requirement-trace-rules', path: `${p}/requirements?item=${ruleViolator.id}`, wait: '.p-drawer .trace-violations' },
     { name: 'traceability-selected', path: `${p}/traceability`, open: '.trace-bulk .p-checkbox', wait: '.trace-bulk' },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
@@ -172,14 +188,29 @@ async function discover(request) {
     { name: 'defect-dialog', path: `${p}/defects`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },
+    { name: 'configurations', path: `${p}/settings?tab=configurations`, wait: '#h-configs' },
+    { name: 'configurations-bulk', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] .p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    { name: 'configuration-dialog', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-plus)', wait: '.p-dialog #cfg-form' },
+    { name: 'configurations-generate', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-th-large)', wait: '.p-dialog .preview' },
+    crossRun && { name: 'run-configurations', path: `${p}/runs/${crossRun.id}`, wait: '#h-per-config' },
+    crossRun && { name: 'run-edit-configurations', path: `${p}/runs/${crossRun.id}`, open: '.page-header .actions button:has(.pi-pencil)', wait: '.p-dialog #run-edit-configs' },
+    crossRun && ddEx && { name: 'execute-iterations', path: `${p}/runs/${crossRun.id}/exec/${ddEx.id}`, wait: '.iter-list' },
+    ddEx && { name: 'test-data', path: `${p}/tests?item=${ddEx.test_case_id}`, wait: '.data-table' },
+    ddEx && { name: 'test-data-paste', path: `${p}/tests?item=${ddEx.test_case_id}`, open: '.p-drawer button:has(.pi-clipboard)', wait: '.p-dialog #td-paste' },
+    ddLinks.length > 0 && { name: 'requirement-coverage', path: `${p}/requirements?item=${ddLinks[0].requirement_id}`, wait: '.cov-table' },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
     // the folder tree is a side panel from 1200 px (a drawer below)
     { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', minWidth: 1200 },
     { name: 'folders-bulk-drawer', path: `${p}/requirements`, open: ['.page-header .actions button:has(.pi-folder)', '.p-drawer button.p-button:has(.pi-check-square)', '.p-drawer .p-tree .p-checkbox'], wait: '.p-drawer .folder-bulk', maxWidth: 1199 },
     { name: 'categories-bulk', path: `${p}/settings?tab=requirement`, open: '.category-grid .p-checkbox', wait: '.bulkbar' },
     { name: 'export', path: `${p}/export` },
+    // ReqIF selected: the aspects are disabled and a hint is shown
+    { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },
     { name: 'reports', path: `${p}/reports` },
+    emailOn && { name: 'reports-email', path: `${p}/reports`, open: '.report-card button:has(.pi-envelope)', wait: '.report-mail-dialog' },
+    emailOn && { name: 'reports-subscriptions', path: `${p}/reports`, wait: 'section.subscriptions' },
+    emailOn && hasDefinitions && { name: 'reports-subscription-dialog', path: `${p}/reports`, open: 'section.subscriptions button:has(.pi-calendar-plus)', wait: '.subscription-dialog' },
     { name: 'reports-batch', path: `${p}/reports`, open: 'section:has(#h-batch) .p-datatable-tbody .p-checkbox', wait: 'section:has(#h-batch) .bulkbar' },
     { name: 'requirement-attachments', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     run && { name: 'run-attachments', path: `${p}/runs/${run.id}`, open: '[role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
@@ -195,11 +226,16 @@ async function discover(request) {
     { name: 'notifications', path: '/notifications' },
     { name: 'reviews', path: '/reviews' },
     { name: 'members', path: '/admin/members' },
+    { name: 'members-add', path: '/admin/members', open: '.filterbar button:has(.pi-user-plus)', wait: '.p-dialog' },
+    // public invitation page (an unknown token shows the explanation)
+    { name: 'invite', path: '/invite/not-a-valid-token', anon: true, wait: '.p-message' },
     { name: 'members-bulk', path: '/admin/members', open: '.p-datatable-tbody tr .p-checkbox', wait: '.bulkbar' },
     { name: 'rbac', path: '/admin/roles' },
     { name: 'execution-settings', path: '/admin/execution', wait: '.setting' },
     { name: 'backup', path: '/admin/backup' },
     { name: 'tokens', path: '/admin/tokens' },
+    { name: 'provisioning', path: '/admin/provisioning', wait: '#h-scim-events' },
+    { name: 'provisioning-token-dialog', path: '/admin/provisioning', open: 'section:has(#h-scim-tokens) .filterbar button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'audit', path: '/admin/audit' },
     { name: 'tenants', path: '/admin/tenants' },
     { name: 'users', path: '/admin/users' },

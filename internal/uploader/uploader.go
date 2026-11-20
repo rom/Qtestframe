@@ -211,7 +211,7 @@ type File struct {
 
 // ImportJUnit uploads JUnit XML files in one request (so results of one
 // test spread over several files combine on the server).
-func (c *Client) ImportJUnit(ctx context.Context, runID string, files []File, createMissing bool) (*Summary, error) {
+func (c *Client) ImportJUnit(ctx context.Context, runID string, files []File, createMissing bool, configuration string) (*Summary, error) {
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	for _, f := range files {
@@ -226,9 +226,16 @@ func (c *Client) ImportJUnit(ctx context.Context, runID string, files []File, cr
 	if err := mw.Close(); err != nil {
 		return nil, err
 	}
-	path := "/runs/" + url.PathEscape(runID) + "/junit"
+	q := url.Values{}
 	if createMissing {
-		path += "?create_missing=true"
+		q.Set("create_missing", "true")
+	}
+	if configuration != "" {
+		q.Set("configuration", configuration)
+	}
+	path := "/runs/" + url.PathEscape(runID) + "/junit"
+	if len(q) > 0 {
+		path += "?" + q.Encode()
 	}
 	var s Summary
 	if err := c.do(ctx, http.MethodPost, path, &buf, mw.FormDataContentType(), &s); err != nil {
@@ -237,10 +244,15 @@ func (c *Client) ImportJUnit(ctx context.Context, runID string, files []File, cr
 	return &s, nil
 }
 
-// ImportJSON posts results in the JSON import format.
-func (c *Client) ImportJSON(ctx context.Context, runID string, results []json.RawMessage) (*Summary, error) {
+// ImportJSON posts results in the JSON import format; configuration (may
+// be empty) applies to results that name none.
+func (c *Client) ImportJSON(ctx context.Context, runID string, results []json.RawMessage, configuration string) (*Summary, error) {
 	var s Summary
-	err := c.sendJSON(ctx, http.MethodPost, "/runs/"+url.PathEscape(runID)+"/results", map[string]any{"results": results}, &s)
+	path := "/runs/" + url.PathEscape(runID) + "/results"
+	if configuration != "" {
+		path += "?" + url.Values{"configuration": {configuration}}.Encode()
+	}
+	err := c.sendJSON(ctx, http.MethodPost, path, map[string]any{"results": results}, &s)
 	if err != nil {
 		return nil, err
 	}
@@ -256,6 +268,9 @@ type Options struct {
 	Run, RunID         string
 	CreateRun          bool
 	Build, Environment string
+	// Configuration (name or id) of the results; empty: none, or the
+	// run's only configuration.
+	Configuration string
 	// JUnit and JSON are file names or glob patterns.
 	JUnit, JSON   []string
 	CreateMissing bool
@@ -346,7 +361,7 @@ func Report(ctx context.Context, o Options) (*Summary, error) {
 	}
 	sum := &Summary{RunID: runID}
 	if len(jsonResults) > 0 {
-		s, err := c.ImportJSON(ctx, runID, jsonResults)
+		s, err := c.ImportJSON(ctx, runID, jsonResults, o.Configuration)
 		if err != nil {
 			return nil, err
 		}
@@ -354,7 +369,7 @@ func Report(ctx context.Context, o Options) (*Summary, error) {
 		sum.add(s)
 	}
 	if len(xmlDocs) > 0 {
-		s, err := c.ImportJUnit(ctx, runID, xmlDocs, o.CreateMissing)
+		s, err := c.ImportJUnit(ctx, runID, xmlDocs, o.CreateMissing, o.Configuration)
 		if err != nil {
 			return sum, err
 		}

@@ -93,6 +93,8 @@ export interface RequestOptions {
   /** Do not trigger the login redirect on 401 (used by /auth/me and /auth/login). */
   noAuthRedirect?: boolean
   signal?: AbortSignal
+  /** The version the change is based on (If-Match); a newer saved version answers 412 "stale". */
+  ifMatch?: number | string
 }
 
 async function toError(res: Response): Promise<ApiError> {
@@ -143,6 +145,7 @@ async function send(method: string, path: string, opts: RequestOptions = {}): Pr
     init.body = JSON.stringify(opts.body)
   }
   if (method !== 'GET' && method !== 'HEAD' && csrfToken) headers['X-CSRF-Token'] = csrfToken
+  if (opts.ifMatch !== undefined && opts.ifMatch !== '') headers['If-Match'] = `"${opts.ifMatch}"`
   const res = await fetch(buildUrl(path, opts.params), init)
   if (!res.ok) {
     const err = await toError(res)

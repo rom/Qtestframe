@@ -615,7 +615,12 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <StatusTag v-else-if="c.field === 'status'" :value="data.status" />
             <StatusTag v-else-if="c.field === 'priority'" :value="data.priority" kind="priority" />
             <StatusTag v-else-if="c.field === 'coverage'" :value="data.coverage" kind="coverage" />
-            <StatusTag v-else-if="c.field === 'last_result'" :value="data.last_result" kind="result" />
+            <span v-else-if="c.field === 'last_result'" class="row nowrap" style="gap: 4px">
+              <StatusTag :value="data.last_result" kind="result" />
+              <span v-if="data.flaky" class="flaky-badge" :title="t('workspace.flakyHint', data.flakiness ?? 0)" :aria-label="t('workspace.flakyHint', data.flakiness ?? 0)">
+                <i class="pi pi-sync" aria-hidden="true" /> {{ t('workspace.flaky') }}
+              </span>
+            </span>
             <span v-else-if="c.field === 'execution_type'" class="row nowrap small">
               <i :class="data.execution_type === 'automated' ? 'pi pi-bolt' : 'pi pi-user'" class="muted" />{{ enumLabel('executionType', data.execution_type) }}
             </span>

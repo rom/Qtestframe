@@ -16,6 +16,7 @@ export const DEFAULT_META: Meta = {
   roles: ['admin', 'manager', 'tester', 'viewer'],
   analysis_languages: ['en', 'sv'],
   auto_create_test: true,
+  email_enabled: false,
 }
 
 export const useMetaStore = defineStore('meta', {
@@ -31,6 +32,8 @@ export const useMetaStore = defineStore('meta', {
           if (Array.isArray(v) && v.length) (merged as unknown as Record<string, unknown>)[k] = v
         }
         if (typeof m?.auto_create_test === 'boolean') merged.auto_create_test = m.auto_create_test
+        merged.email_enabled = m?.email_enabled === true
+        if (typeof m?.email_digest_hour === 'number') merged.email_digest_hour = m.email_digest_hour
         this.meta = merged
         this.loaded = true
       } catch {

@@ -273,6 +273,7 @@ func (s *Server) handleGetRequirement(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, rq.Version)
 	writeJSON(w, http.StatusOK, rq)
 }
 
@@ -281,6 +282,9 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 	rq, err := s.Store.GetRequirement(ctx, p.TenantID(), r.PathValue("id"))
 	if err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if !s.requireVersion(w, r, p, "requirement", rq.ID, rq.Version) {
 		return
 	}
 	body, err := readBody(r)
@@ -308,7 +312,10 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, rq.ID)
-	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), rq, keys["criteria"]); err != nil {
+	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), rq, keys["criteria"]); isStale(err) {
+		s.staleItem(w, r, p, "requirement", rq.ID)
+		return
+	} else if err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -324,6 +331,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, out.Version)
 	writeJSON(w, http.StatusOK, out)
 }
 
@@ -558,6 +566,7 @@ func (s *Server) handleGetTest(w http.ResponseWriter, r *http.Request, p *Princi
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, t.Version)
 	writeJSON(w, http.StatusOK, t)
 }
 
@@ -566,6 +575,9 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	t, err := s.Store.GetTest(ctx, p.TenantID(), r.PathValue("id"))
 	if err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if !s.requireVersion(w, r, p, "test", t.ID, t.Version) {
 		return
 	}
 	body, err := readBody(r)
@@ -584,6 +596,12 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		t.Steps = nil
 	}
 	before := store.SnapshotTest(t)
+	if keys["parameters"] {
+		t.Parameters = nil
+	}
+	if keys["data_rows"] {
+		t.DataRows = nil
+	}
 	if err := jsonMerge(body, t); err != nil {
 		s.fail(w, r, err)
 		return
@@ -593,7 +611,10 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.ensureInitialRevision(ctx, p, model.KindTest, t.ID)
-	if err := s.Store.UpdateTest(ctx, p.TenantID(), t, keys["steps"]); err != nil {
+	if err := s.Store.UpdateTest(ctx, p.TenantID(), t, keys["steps"]); isStale(err) {
+		s.staleItem(w, r, p, "test", t.ID)
+		return
+	} else if err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -609,6 +630,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, out.Version)
 	writeJSON(w, http.StatusOK, out)
 }
 
@@ -801,12 +823,38 @@ func (s *Server) handleTraceability(w http.ResponseWriter, r *http.Request, p *P
 		Requirements []traceReq        `json:"requirements"`
 		Tests        []traceTest       `json:"tests"`
 		Links        []model.TraceLink `json:"links"`
+		// Configuration the coverage and results are filtered to ("none":
+		// results without configuration), when given.
+		Configuration string `json:"configuration,omitempty"`
 	}{Requirements: []traceReq{}, Tests: []traceTest{}, Links: pc.links}
+	// ?configuration=<id> | none: coverage and results in that configuration only
+	cfg, filtered := r.URL.Query().Get("configuration"), false
+	if cfg != "" {
+		filtered = true
+		res.Configuration = cfg
+		if cfg == "none" {
+			cfg = store.NoConfiguration
+		} else if c, err := s.Store.GetConfiguration(r.Context(), p.TenantID(), cfg); err != nil || c.ProjectID != pr.ID {
+			s.fail(w, r, badRequest("unknown configuration %q", cfg))
+			return
+		}
+	}
 	for _, rq := range reqs {
-		res.Requirements = append(res.Requirements, traceReq{rq.ID, rq.Key, rq.Title, rq.Obligation, rq.Coverage})
+		cov := rq.Coverage
+		if filtered {
+			cov = store.CoverageInConfiguration(pc.r2t[rq.ID], pc.cfgResults, cfg)
+		}
+		res.Requirements = append(res.Requirements, traceReq{rq.ID, rq.Key, rq.Title, rq.Obligation, cov})
 	}
 	for _, t := range tests {
-		res.Tests = append(res.Tests, traceTest{t.ID, t.Key, t.Title, t.LastResult})
+		last := t.LastResult
+		if filtered {
+			last = pc.cfgResults[t.ID][cfg]
+			if last == "" {
+				last = model.ResultNotRun
+			}
+		}
+		res.Tests = append(res.Tests, traceTest{t.ID, t.Key, t.Title, last})
 	}
 	writeJSON(w, http.StatusOK, res)
 }

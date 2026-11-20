@@ -28,6 +28,12 @@ export interface QtestframeReporterOptions {
   build?: string;
   /** Environment of a created run (default: $QTF_ENVIRONMENT). */
   environment?: string;
+  /**
+   * Configuration (name or id) the results were obtained in, e.g. "Chrome / Windows"
+   * (default: $QTF_CONFIGURATION). The run gets the configuration when it does not
+   * target it yet. Without one, results go to the run's only configuration (or none).
+   */
+  configuration?: string;
   /** Create draft automated tests for Playwright tests without a key (needs test.write). */
   createMissing?: boolean;
   /** Pattern of a test key in tags and titles (default /[A-Z][A-Z0-9]{1,15}-TC-\d+/). */
@@ -198,6 +204,7 @@ class QtestframeReporter implements Reporter {
       runId: options.runId ?? env.QTF_RUN_ID,
       build: options.build ?? env.QTF_BUILD,
       environment: options.environment ?? env.QTF_ENVIRONMENT,
+      configuration: options.configuration ?? env.QTF_CONFIGURATION,
     };
     this.log = options.logger ?? ((m) => console.log(`[qtestframe] ${m}`));
     const p = options.keyPattern ?? DEFAULT_KEY_PATTERN;
@@ -290,6 +297,12 @@ class QtestframeReporter implements Reporter {
     return run.id;
   }
 
+  /** "?configuration=…" (or "&…" after other parameters) when a configuration is set. */
+  private configQuery(sep: '?' | '&' = '?'): string {
+    const c = this.o.configuration?.trim();
+    return c ? `${sep}configuration=${encodeURIComponent(c)}` : '';
+  }
+
   // ------------------------------------------------------------ report
 
   private collect(): { keyed: Collected[]; unkeyed: Collected[] } {
@@ -330,12 +343,12 @@ class QtestframeReporter implements Reporter {
         duration_ms: c.durationMs,
         output: truncate(c.outputs.join('\n\n')),
       }));
-      this.summarise('results', await this.request<ImportResponse>('POST', `/runs/${encodeURIComponent(runId)}/results`, { results }));
+      this.summarise('results', await this.request<ImportResponse>('POST', `/runs/${encodeURIComponent(runId)}/results${this.configQuery()}`, { results }));
     }
     if (unkeyed.length && this.o.createMissing) {
       const form = new FormData();
       form.append('file', new Blob([junitXML(unkeyed)], { type: 'application/xml' }), 'playwright.xml');
-      const res = await this.request<ImportResponse>('POST', `/runs/${encodeURIComponent(runId)}/junit?create_missing=true`, form);
+      const res = await this.request<ImportResponse>('POST', `/runs/${encodeURIComponent(runId)}/junit?create_missing=true${this.configQuery('&')}`, form);
       this.summarise('tests without a key', res);
     } else if (unkeyed.length) {
       this.log(`${unkeyed.length} test(s) without a test key were not reported: ${unkeyed.map((c) => c.name).join(', ')}`);
@@ -357,13 +370,23 @@ class QtestframeReporter implements Reporter {
 
   private async uploadEvidence(runId: string, items: Collected[]): Promise<void> {
     if (!items.length) return;
-    const execs = await this.request<{ items: { id: string; test_key: string; test_title: string }[] }>(
-      'GET',
-      `/runs/${encodeURIComponent(runId)}/executions`,
-    );
-    const byKey = new Map(execs.items.map((e) => [e.test_key.toUpperCase(), e.id]));
-    // tests created for results without a key carry the result's title
-    const byTitle = new Map(execs.items.map((e) => [e.test_title, e.id]));
+    const all = await this.request<{
+      items: { id: string; test_key: string; test_title: string; configuration_id?: string | null; configuration_name?: string }[];
+    }>('GET', `/runs/${encodeURIComponent(runId)}/executions`);
+    // with a configuration, evidence belongs to the executions in it
+    const cfg = this.o.configuration?.trim().toLowerCase();
+    const inConfig = cfg
+      ? all.items.filter((e) => (e.configuration_name ?? '').toLowerCase() === cfg || (e.configuration_id ?? '').toLowerCase() === cfg)
+      : all.items;
+    const execs = { items: inConfig.length ? inConfig : all.items };
+    // the first execution of a test wins (several without a configuration)
+    const byKey = new Map<string, string>();
+    const byTitle = new Map<string, string>();
+    for (const e of execs.items) {
+      if (!byKey.has(e.test_key.toUpperCase())) byKey.set(e.test_key.toUpperCase(), e.id);
+      // tests created for results without a key carry the result's title
+      if (!byTitle.has(e.test_title)) byTitle.set(e.test_title, e.id);
+    }
     const max = this.o.maxAttachmentBytes ?? 20 << 20;
     let n = 0;
     for (const c of items) {

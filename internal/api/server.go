@@ -21,6 +21,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/runner"
@@ -49,10 +50,25 @@ type Server struct {
 	signer *auth.Signer
 
 	limiter *rateLimiter
-	mux     *http.ServeMux
-	once    sync.Once
+	// scimLimiter bounds the requests of one SCIM token, scimAuthLimiter
+	// the failed SCIM authentications of one client address.
+	scimLimiter     *rateLimiter
+	scimAuthLimiter *rateLimiter
+	mux             *http.ServeMux
+	once            sync.Once
+	// routeTable records every registered "METHOD /path" pattern (see
+	// Routes); the OpenAPI test compares it with docs/openapi.yaml.
+	routeTable []Route
 	// hooks tracks webhook deliveries in flight (see WaitWebhooks).
 	hooks sync.WaitGroup
+
+	// Mail sends e-mail; nil when e-mail is not configured (email.host).
+	Mail mail.Sender
+	// Clock is the time of the e-mail jobs (tests); nil = time.Now.
+	Clock func() time.Time
+	// mails tracks e-mails in flight (see WaitMail).
+	mails       sync.WaitGroup
+	mailLimiter *rateLimiter
 }
 
 // New creates a server and its identity providers.
@@ -63,6 +79,14 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		SAML:    map[string]*auth.SAMLProvider{},
 		signer:  auth.NewSigner(nil),
 		limiter: newRateLimiter(10, 5*time.Minute),
+		// identity providers sync in bursts (Entra ID: initial cycle)
+		scimLimiter:     newRateLimiter(1200, time.Minute),
+		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
+		// report e-mails per user (no open relay)
+		mailLimiter: newRateLimiter(30, 10*time.Minute),
+	}
+	if e := cfg.Email; e.On() {
+		s.Mail = mail.NewSMTP(mail.SMTPConfig{Host: e.Host, Port: e.Port, Username: e.Username, Password: e.Password, TLS: e.TLS, Timeout: e.Timeout})
 	}
 	base := strings.TrimSuffix(cfg.Server.BaseURL, "/")
 	for _, o := range cfg.Auth.OIDC {
@@ -87,18 +111,26 @@ func (s *Server) Handler() http.Handler {
 func (s *Server) routes() {
 	m := http.NewServeMux()
 	s.mux = m
-	m.HandleFunc("GET /healthz", s.handleHealth)
-	m.HandleFunc("GET /readyz", s.handleReady)
-
 	h := func(pattern string, fn handlerFunc, perm ...string) {
+		s.routeTable = append(s.routeTable, Route{Pattern: pattern, Permissions: perm})
 		m.Handle(pattern, s.authed(fn, perm...))
 	}
-	pub := func(pattern string, fn http.HandlerFunc) { m.HandleFunc(pattern, fn) }
+	pub := func(pattern string, fn http.HandlerFunc) {
+		s.routeTable = append(s.routeTable, Route{Pattern: pattern, Public: true})
+		m.HandleFunc(pattern, fn)
+	}
+	pub("GET /healthz", s.handleHealth)
+	pub("GET /readyz", s.handleReady)
+	pub("GET /api/v1/openapi.json", s.handleOpenAPI)
+	pub("GET /api/v1/openapi.yaml", s.handleOpenAPI)
 
 	// auth
 	pub("GET /api/v1/auth/providers", s.handleProviders)
 	pub("POST /api/v1/auth/login", s.handleLogin)
 	pub("POST /api/v1/auth/logout", s.handleLogout)
+	// e-mail invitations (invitations.go): the token is the credential
+	pub("GET /api/v1/invitations/{token}", s.handleGetInvitation)
+	pub("POST /api/v1/invitations/{token}/accept", s.handleAcceptInvitation)
 	pub("GET /api/v1/auth/oidc/{name}/login", s.handleOIDCLogin)
 	pub("GET /api/v1/auth/oidc/{name}/callback", s.handleOIDCCallback)
 	pub("GET /api/v1/auth/saml/{name}/metadata", s.handleSAMLMetadata)
@@ -123,7 +155,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/users", s.handleCreateUser)
 	h("PATCH /api/v1/users/{id}", s.handleUpdateUser)
 	h("GET /api/v1/members", s.handleListMembers, "member.read")
-	h("POST /api/v1/members", s.handleAddMember, "member.manage")
+	h("POST /api/v1/members", s.atomic(s.handleAddMember), "member.manage")
 	h("POST /api/v1/members/bulk", s.atomic(s.handleBulkMembers), "member.manage")
 	h("PATCH /api/v1/members/{uid}", s.handleUpdateMember, "member.manage")
 	h("DELETE /api/v1/members/{uid}", s.handleRemoveMember, "member.manage")
@@ -243,12 +275,13 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/runs/bulk", s.atomic(s.handleBulkRuns), "run.write")
 	h("DELETE /api/v1/projects/{pid}/runs/bulk", s.atomic(s.handleBulkDeleteRuns), "run.write")
 	h("GET /api/v1/runs/{id}", s.handleGetRun, "run.read")
-	h("PATCH /api/v1/runs/{id}", s.handleUpdateRun, "run.write")
+	h("PATCH /api/v1/runs/{id}", s.atomic(s.handleUpdateRun), "run.write")
 	h("DELETE /api/v1/runs/{id}", s.handleDeleteRun, "run.write")
 	h("GET /api/v1/runs/{id}/executions", s.handleListExecutions, "run.read")
 	h("POST /api/v1/runs/{id}/executions", s.handleAddExecutions, "run.write")
 	h("POST /api/v1/runs/{id}/executions/bulk", s.atomic(s.handleBulkExecutions), "run.read")
 	h("POST /api/v1/runs/{id}/results", s.handleImportResults, "run.execute")
+	h("PUT /api/v1/runs/{id}/configurations", s.atomic(s.handleSetRunConfigurations), "run.write")
 	h("GET /api/v1/executions/{id}", s.handleGetExecution, "run.read")
 	h("PATCH /api/v1/executions/{id}", s.handleUpdateExecution, "run.execute")
 	h("POST /api/v1/executions/{id}/run-script", s.handleRunScript, "script.execute")
@@ -265,12 +298,19 @@ func (s *Server) routes() {
 	s.routesRoles(h)
 	s.routesDependencies(h)
 	s.routesReleases(h)
+	s.routesMetrics(h)
 	s.routesDefects(h)
 	s.routesRisks(h)
 	s.routesNotifications(h)
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
+	// SCIM provisioning: its own token authentication (scim.go)
+	s.routesSCIM(m)
+	s.routesSCIMAdmin(h)
+	s.routesTraceRules(h)
+	s.routesEmail(h)
+	s.routesConfigurations(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -461,7 +501,8 @@ func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.As(err, &qe):
 		pos := qe.Pos
-		writeJSON(w, http.StatusBadRequest, apiError{Error: qe.Error(), Code: "invalid_query", Position: &pos})
+		// err may name the query it belongs to ("selector: query: …")
+		writeJSON(w, http.StatusBadRequest, apiError{Error: err.Error(), Code: "invalid_query", Position: &pos})
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", err.Error())
 	case errors.Is(err, store.ErrConflict):
@@ -576,6 +617,21 @@ func (l *rateLimiter) allow(key string) bool {
 		}
 	}
 	return true
+}
+
+// blocked reports whether key has used up its attempts, without recording
+// one.
+func (l *rateLimiter) blocked(key string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	cut := time.Now().Add(-l.window)
+	n := 0
+	for _, t := range l.hits[key] {
+		if t.After(cut) {
+			n++
+		}
+	}
+	return n >= l.max
 }
 
 func (l *rateLimiter) reset(key string) {

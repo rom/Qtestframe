@@ -301,7 +301,7 @@ func (s *Server) handleBulkExecutions(w http.ResponseWriter, r *http.Request, p 
 				continue
 			}
 			if starts(u, e) {
-				if rd := rc.check(e.TestCaseID); !rd.Allowed {
+				if rd := rc.check(e.TestCaseID, e.ConfigurationID); !rd.Allowed {
 					var why []string
 					for _, i := range rd.Issues {
 						if i.Blocking {

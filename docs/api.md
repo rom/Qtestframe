@@ -27,7 +27,8 @@ is unreachable); all other paths serve the web client.
 * **Errors** – non-2xx responses have the body
   `{"error": "<message>", "code": "<machine_code>"}`. Codes: `bad_request`
   (400), `unauthorized` (401), `forbidden` (403), `not_found` (404),
-  `conflict` (409, also for duplicates and a disabled runner),
+  `conflict` (409, also for duplicates and a disabled runner), `stale`
+  (412, see *Concurrent edits*),
   `invalid_query` (400), `rate_limited` (429, login), `unavailable` (503,
   `/readyz`), `internal` (500).
 * **Bulk requests are all or nothing** – every bulk endpoint (the `…/bulk`
@@ -39,6 +40,15 @@ is unreachable); all other paths serve the web client.
   Exceptions, because they call outside services: pushing and syncing
   defects with the tracker (`/defects/push`, `/defects/sync`), webhook
   tests and report batches, which save item by item.
+* **Concurrent edits** – `GET` and `PATCH` of a requirement or test answer
+  with `ETag: "<version>"`. Send `If-Match: "<version>"` with a `PATCH` to
+  save only if nobody saved in between; otherwise the answer is `412` with
+  code `stale` and `{"error", "code", "current": <the saved item>,
+  "changed_by", "changed_at"}`. Without `If-Match` the change is saved as
+  before (two saves that race are still refused with 412). The web client
+  always sends it and lets the user compare and merge.
+* **OpenAPI** – a machine-readable description of all routes is served at
+  `GET /api/v1/openapi.json` (see [OpenAPI description](#openapi-description)).
 * **IDs** are UUID strings. Times are RFC 3339.
 * **Lists** return `{"items": [...], "total": n}`. There is no pagination
   (except `limit` on search and audit).
@@ -86,11 +96,13 @@ is unreachable); all other paths serve the web client.
 | GET | `/users` | super admin | list all users |
 | POST | `/users` | super admin | `{"email","display_name","password","super_admin"}` |
 | PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409) |
-| GET | `/members` | member.read | members of current tenant |
-| POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?}` – creates the local user if it does not exist |
+| GET | `/members` | member.read | members of current tenant; `"scim": true` marks members provisioned by SCIM, whose role and membership only the identity provider changes (`PATCH`, `DELETE` and `POST /members` answer 409 `scim_managed` for them); a member with an open e-mail invitation has `"invitation": {id, sent_at, expires_at, sso, expired, invited_by}` |
+| POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?,"invite"?,"sso"?}` – creates the local user if it does not exist. With `"invite": true` (needs e-mail, see [E-mail](#e-mail)) a person without a used account gets an invitation e-mail instead of an initial password (`password` must then be empty), and the answer has `invitation`; an existing account only gets an e-mail that it was added. `"sso": true` invites to sign in with single sign-on |
+| POST | `/members/{user_id}/invitation` | member.manage | sends a new invitation link (the old link stops working) → invitation; 409 when the person already uses the account |
+| DELETE | `/members/{user_id}/invitation` | member.manage | revokes the open invitation → `{"revoked": true, "removed": bool}`; a person who never used the account is also removed from the tenant |
 | PATCH | `/members/{user_id}` | member.manage | `{"role"}`; the last admin cannot be demoted (409) |
 | DELETE | `/members/{user_id}` | member.manage | the last admin cannot be removed (409) |
-| POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"remove", "role"?}` (max 1000, all or nothing) → `{"changed":[{user_id, email, role}], "skipped":[{user_id, email, role, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `unchanged`. A change that would leave no admin is refused (409). For a removal, `role` is the role the member had |
+| POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"remove", "role"?}` (max 1000, all or nothing) → `{"changed":[{user_id, email, role}], "skipped":[{user_id, email, role, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `scim` (provisioned by SCIM), `unchanged`. A change that would leave no admin is refused (409). For a removal, `role` is the role the member had |
 | GET | `/rbac` | any | `{"roles":[...],"matrix":{role:[perm]},"permissions":[...]}` – the effective matrix of the current tenant |
 | GET | `/roles` | any member | `{"items":[Role],"permissions":[...]}`; Role = `{name, label?, description?, permissions, builtin, customized?, editable, deletable, members, tokens}` |
 | POST | `/roles` | role.manage | `{"name","label","description"?,"permissions":[...]}` → 201 Role; `name` is 2–32 of `a-z0-9_` starting with a letter; 409 when it exists |
@@ -103,7 +115,8 @@ is unreachable); all other paths serve the web client.
 | POST | `/tokens` | token.manage | `{"name","role","expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; role defaults to the own role, and its permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its role's and the user's current role's permissions) |
 | DELETE | `/tokens/{id}` | token.manage | |
 | GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user |
-| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"` and `"version"` |
+| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC) and `"version"` |
+| POST | `/admin/email/test` | tenant.manage | sends a test e-mail to the caller's own address now → `{"ok", "to", "error"?}` with the SMTP error; 400 when e-mail is not configured |
 
 Roles: nobody can grant a permission they do not hold (403 when a role
 change or new role adds one). Role changes are audited (`role.create`,
@@ -131,7 +144,9 @@ default):
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
 | POST | `/projects/{pid}/prompts` | project.read + the read permission of the items' kind – see [Prompts](#prompts-software-projects) |
 | DELETE | `/projects/{pid}` | project.delete |
-| GET | `/projects/{pid}/dashboard` | project.read |
+| GET | `/projects/{pid}/dashboard` | project.read – see [Dashboard and metrics](#dashboard-and-metrics) |
+| GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
+| GET | `/projects/{pid}/flaky-tests` | project.read – `?limit=n` |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
 
 A `Project` has `color` (`#rrggbb` or `""` for the theme colour; anything
@@ -166,7 +181,9 @@ projects of type `software` (else 400).
   `notes` ≤ 8000 characters.
 * Response: `{"kind", "lang", "title", "prompt", "items"}`.
 
-Dashboard response:
+### Dashboard and metrics
+
+`GET /projects/{pid}/dashboard` aggregates on the server:
 ```json
 {
   "requirements": {"total": 10, "by_status": {"draft": 3}, "by_obligation": {"must": 4}, "covered": 7, "uncovered": 3},
@@ -174,9 +191,79 @@ Dashboard response:
   "coverage": {"passed": 5, "failed": 1, "not_run": 1, "none": 3, "partial": 0},
   "runs": {"total": 3, "by_status": {}},
   "recent_runs": [TestRun],
-  "results": {"passed": 30, "failed": 2, ...}
+  "results": {"passed": 30, "failed": 2, ...},
+  "active_runs": [TestRun],
+  "coverage_by_folder": [{"id": "…", "name": "Authentication", "total": 4, "coverage": {"passed": 2, "none": 2}}],
+  "coverage_by_category": [{"id": "…", "name": "Security", "dimension": "Area", "total": 3, "coverage": {}}],
+  "defects_by_severity": {"critical": 0, "major": 2, "minor": 1, "trivial": 0},
+  "flaky": {"total": 3, "items": [FlakyTest], "window": 10, "min_flips": 2}
 }
 ```
+
+* `active_runs`: planned and in-progress runs, newest first (at most 8),
+  with their `summary` (results per status).
+* `coverage_by_folder`: requirements per top-level folder (`id` `""` = no
+  folder) and `coverage_by_category`: per requirement category; both with
+  the coverage states, largest groups first (at most 12).
+* `defects_by_severity`: open defects (`open`, `in_progress`).
+* `flaky`: the 10 flakiest tests (see below) and how many there are.
+
+Opening the dashboard also records today's metric snapshot (again when the
+one of today is older than an hour).
+
+**Metric snapshots.** Every project gets one snapshot of its figures per
+UTC day: a background job of the server records it for every project
+without one for the day (at start and then hourly), and the dashboard and
+the trends request record it when it is missing. When a project gets its
+first snapshot, the days before (from the first requirement, test, result
+or defect; at most 365 days) are reconstructed from history: requirement
+and test counts by creation date, coverage from the creation of the trace
+links and the results with their timestamps, open defects from their
+creation and resolution dates (`source: "backfill"`; requirement and test
+statuses and risks have no history and are left out). Snapshots are kept in
+backups and deleted with their project.
+
+`GET /projects/{pid}/metrics/trends?range=30|90|365` (default 30) or
+`?since=YYYY-MM-DD` (at most 3660 days back) returns the snapshots of the
+period:
+```json
+{
+  "from": "2026-02-09", "to": "2026-03-10", "days": 30,
+  "points": [{"day": "2026-03-10", "source": "recorded", "requirements": 10, "covered": 7,
+              "coverage_pct": 70, "passed": 5, "tests": 20, "executed": 18, "pass_rate": 88.9,
+              "open_defects": 3, "data": MetricData}],
+  "defect_weeks": [{"week": "2026-03-09", "opened": 2, "closed": 1}]
+}
+```
+Days without a snapshot are missing from `points`. `coverage_pct` is the
+share of requirements with linked tests, `passed` the requirements whose
+linked tests all passed and `pass_rate` the share of executed tests
+(`executed`: last result not `not_run` / `in_progress`) whose last result
+passed — the figures of the dashboard. `MetricData` holds the counts:
+`requirements`, `covered`, `coverage` (per coverage state),
+`requirement_status`, `tests`, `test_status`, `results` (tests per last
+result), `executions` (results recorded that day), `open_defects` (per
+severity) and `open_risks` (per level). `defect_weeks` counts the defects
+created and resolved (closed, resolved or rejected) per week, Monday to
+Sunday (UTC), `week` being the Monday.
+
+**Flaky tests.** `GET /projects/{pid}/flaky-tests` lists the flaky tests
+of the project, highest score first, then the latest flip:
+```json
+{"items": [{"test_id": "…", "key": "DEMO-TC-3", "title": "…", "execution_type": "automated",
+            "score": 5, "window": 7, "last_flip": "2026-03-08T10:00:00Z",
+            "results": [{"status": "passed", "at": "…", "run_id": "…", "execution_id": "…", "flip": false}]}],
+ "window": 10, "min_flips": 2}
+```
+Only decisive results count — `passed` and `failed` of every run (manual
+results and automated ones from JUnit imports, the `qtestframe report`
+uploader and the Playwright reporter); blocked, skipped and not run are
+left out. The score is the number of flips (a result that differs from the
+previous one) among the test's last 10 decisive results (`results`, oldest
+first; `window` is how many there are); a test with at least 2 flips is
+flaky. Tests carry `flakiness` (the score, when above 0) and `flaky`, and
+the test query fields `flaky` (`true`/`false`) and `flakiness` (alias
+`flips`), e.g. `flaky:true` or `flakiness>=3`.
 
 ## Folders (groups) and categories
 
@@ -405,9 +492,11 @@ Reading needs `test.read`, writing `test.write`.
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/tests?q=&folder_id=&recursive=true` | list (`steps` omitted) incl. `linked_requirements`, `last_result` |
-| POST | `/projects/{pid}/tests` | TestCase fields, `steps` array |
-| GET | `/tests/{id}` | includes `steps` |
-| PATCH | `/tests/{id}` | partial; `steps` (if present) replaces all |
+| POST | `/projects/{pid}/tests` | TestCase fields, `steps` array, optional `parameters` and `data_rows` (see [Test data](#test-data-data-driven-tests)) |
+| GET | `/tests/{id}` | includes `steps`, `parameters` and `data_rows` |
+| PATCH | `/tests/{id}` | partial; `steps`, `parameters` and `data_rows` (each if present) replace all |
+| GET | `/tests/{id}/data` | `{"parameters":[...], "data_rows":[DataRow]}` |
+| PUT | `/tests/{id}/data` | `{"parameters":[...], "data_rows":[DataRow]}` replaces the test data (a new version of the test; `test.write`) |
 | DELETE | `/tests/{id}` | 204 with `X-Trash-Id` |
 | POST | `/tests/{id}/copy` | duplicate → new TestCase (status `draft`) |
 | POST | `/projects/{pid}/tests/move` | like requirements |
@@ -427,6 +516,26 @@ Test lists also carry `step_count` and `defects`; `relations` includes
 `depends_on` references (with `kind: "test"`). Query field `depends_on`
 (aliases `depends`, `dependency`, `prerequisite`) holds the keys of a
 test's prerequisites.
+
+### Test data (data-driven tests)
+
+A test with `parameters` (names) and `data_rows` is executed once per row
+(an *iteration*). `DataRow` is `{"name": "", "values": {"param": "value"}}`.
+Parameter names start with a letter or `_` and contain letters, digits,
+`_`, `.` and `-` (at most 50 characters, unique ignoring case, at most 50
+parameters); at most 500 rows, row names up to 200 and values up to 2 000
+characters. Values of unknown parameters are dropped, missing ones become
+`""`; data rows need at least one parameter (else 400).
+
+Step actions and expected results reference parameters as `{{name}}`
+(spaces inside the braces allowed). When the test is added to a run, every
+row becomes an iteration with its own step results whose texts have the
+placeholders replaced; placeholders of unknown parameters are kept. Steps of
+called tests (shared steps) are resolved with the parameters of the calling
+test; the called test's own data rows are not used. Description,
+preconditions, the overall expected result and step `data` are returned
+unresolved with the embedded `test`; the client resolves them with the
+iteration's `values`.
 
 ### Trash: undo a deletion
 
@@ -507,7 +616,62 @@ Reading needs `project.read`; creating and deleting links needs
 | DELETE | `/projects/{pid}/links/bulk` | `{"ids":[...]}` (max 1000) → `{"deleted":[TraceLink], "skipped":[{id, reason: "not_found"}], "status_changes"}`; the deleted links are returned so they can be recreated |
 | POST | `/projects/{pid}/links/confirm` | `{"ids":[...]}` → `{"confirmed": n, "status_changes"}`; confirms the suspect ones among the project's links |
 | DELETE | `/links/{id}` | |
-| GET | `/projects/{pid}/traceability?q=&tq=` | `{"requirements":[{id,key,title,obligation,coverage}], "tests":[{id,key,title,last_result}], "links":[TraceLink]}`; `q` filters requirements, `tq` tests |
+| GET | `/projects/{pid}/traceability?q=&tq=&configuration=` | `{"requirements":[{id,key,title,obligation,coverage}], "tests":[{id,key,title,last_result}], "links":[TraceLink]}`; `q` filters requirements, `tq` tests; `configuration=<id>` (or `none` for results without configuration) gives coverage and last results in that configuration only (400 for an unknown configuration) |
+| GET | `/requirements/{id}/coverage` | coverage by configuration (`requirement.read`): `{"requirement_id", "coverage", "configurations":[{id, name, coverage}], "tests":[{id, key, title, results: {configuration_id: result}, result}]}`; `id` `""` stands for results without configuration; `results` holds the latest result of each linked test in every configuration it is planned in (`""` when planned but not run yet); `result` combines them (failed, blocked, passed in all, else in_progress/skipped/not_run) |
+
+**Coverage with configurations.** Every configuration a linked test is
+planned in (it has an execution there in any run of the project; an
+execution without configuration counts as one more configuration) counts as
+one result: the latest result other than `not_run` in that configuration.
+The requirement's `coverage` applies the usual rules to all these results:
+`failed` if one failed or is blocked, `passed` if all passed, `partial` if
+some passed, else `not_run` (`none` without links). A requirement is thus
+passed only when its tests passed in every configuration they are planned
+in. Without configurations this is the latest result of each test, as
+before. The coverage *in one configuration* counts only the linked tests
+planned in it (`not_run` when none is). Releases count a test as passed only
+when it passed in every configuration of the release's runs.
+
+### Traceability rules
+
+Rules say that the items matching a selector must have at least `min`
+traces of a kind. Reading and evaluating needs `project.read` (the
+per-item routes `requirement.read` / `test.read`); creating, changing and
+deleting rules needs `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/trace-rules` | `[TraceRule]` in their order |
+| POST | `/projects/{pid}/trace-rules` | TraceRule fields (below) → 201 TraceRule; a new rule is enabled unless `enabled: false`; at most 200 rules per project |
+| GET / PATCH / DELETE | `/trace-rules/{id}` | PATCH changes the fields given |
+| GET | `/projects/{pid}/trace-rules/evaluate?all=&rule_id=&limit=` | evaluates the enabled rules (`all=1`: also the disabled ones; `rule_id`: one rule) → `{"results":[TraceRuleResult], "passed", "summary":{rules, passed, failed, errors, warnings, violations}}`; `passed` is false when an enabled rule of severity `error` fails. `limit` bounds the violations listed per rule (default 500), `violation_count` is always the full number |
+| POST | `/projects/{pid}/trace-rules/preview?limit=` | evaluates an unsaved rule (the body of a POST) → TraceRuleResult |
+| GET | `/requirements/{id}/trace-rules`, `/tests/{id}/trace-rules` | the enabled rules the item breaks → `{"items":[{rule, kind, id, key, title, found, required, total}]}` |
+
+TraceRule: `{"id","project_id","name","description","severity":"error|warning","enabled","scope":"requirement|test","selector":"<query>","kind","min","not_suspect"?,"passed"?,"relation_type"?,"direction"?,"target_type"?,"target_query"?,"every"?,"position","created_by","created_at","updated_at"}`.
+`selector` is a [query](#query-language) on the items of `scope` (empty: all).
+Options that do not apply to the kind are cleared.
+
+| `kind` | Applies to | Counts | Options |
+|---|---|---|---|
+| `verified_by` | requirements | its trace links to tests | `not_suspect`, `passed` (the test's last result is passed), `target_query` (on the test) |
+| `verifies` | tests | its trace links to requirements | `not_suspect`, `target_query` (on the requirement) |
+| `relation` | requirements | its relations to other requirements | `relation_type` (empty: any), `direction` (`incoming`: the other requirement is the source, e.g. `refines` + `incoming` = refined by child requirements; `outgoing`; empty: both), `target_query` |
+| `item_link` | requirements, tests | its item links | `target_type` (`requirement`, `test`, `run`, `file`, `report`, `url`; empty: any), `direction`, `target_query` (needs `target_type` requirement or test) |
+
+`min` is 1 to 1000 (default 1). With `every: true` an item also breaks the
+rule when one of its traces (of the relation type, direction and target
+type) does not meet the conditions; `min` may then be 0, e.g. "no suspect
+link": `{"kind":"verified_by","not_suspect":true,"every":true,"min":0}`.
+An invalid selector or target query is a 400 `invalid_query` whose message
+starts with `selector:` or `target_query:`.
+
+TraceRuleResult: `{"rule":TraceRule, "matched": n, "violations":[{kind, id, key, title, found, required, total}], "violation_count": n, "passed", "error"?}`;
+`found` counts the qualifying traces, `total` the traces before the
+conditions (`not_suspect`, `passed`, `target_query`). The **Traceability**
+report lists the enabled rules and their violations (sections
+`trace_rules` and `trace_rule_violations`, evaluated on the report's
+requirements and tests).
 
 ## Operations (runs and executions)
 
@@ -517,20 +681,21 @@ import) `run.execute`.
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/projects/{pid}/runs?q=` | list `TestRun` with `summary` |
-| POST | `/projects/{pid}/runs` | `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query |
+| GET | `/projects/{pid}/runs?q=` | list `TestRun` with `summary` and `configurations` (`[{id, name}]`); query field `configuration` (alias `config`) |
+| POST | `/projects/{pid}/runs` | `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>","configuration_ids":[...]}` – union of explicit tests, tests in folders (recursive) and tests matching query; with `configuration_ids` (configurations of the project, at most 50) every test is executed once per configuration |
 | GET | `/runs/{id}` | `TestRun` |
-| PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. |
+| PATCH | `/runs/{id}` | `{"name","description","status","environment","build","release_id","configuration_ids"}` (`configuration_ids` as for `PUT /runs/{id}/configurations`; all or nothing). A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. |
 | DELETE | `/runs/{id}` | |
 | POST | `/projects/{pid}/runs/bulk` | `{"ids":[...], "set": {"status"?, "release_id"? ("" removes), "environment"?, "build"?}}` → `{"updated": n}` (run.write) |
 | DELETE | `/projects/{pid}/runs/bulk` | `{"ids":[...]}` → `{"deleted": n}` (run.write) |
-| GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness` |
-| POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` |
+| GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness`, `configuration_id`, `configuration_name` and `iteration_count`; query field `configuration` (alias `config`) |
+| POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` – one execution per test and configuration of the run → `{"added": n}` |
+| PUT | `/runs/{id}/configurations` | `{"configuration_ids":[...]}` (run.write, all or nothing) → `{"run", "added", "removed"}`: an added configuration gets an execution for every test of the run; the executions of a removed one are deleted (409 while one of them has a result other than `not_run`). Adding the first configuration to a run without any assigns its executions to it; removing the last one keeps its executions without configuration |
 | POST | `/runs/{id}/executions/bulk` | `{"ids":[...] \| "all": true, "from": [results]?, "set": {"status"?, "assignee"?, "notes_append"?}}` (run.execute) → `{"updated", "rejected", "skipped"}`, each `[{id, key, title, status, assignee, reason}]` with the values before; or `{"ids" \| "all", "from"?, "remove": true}` (run.write) → `{"removed": n, "skipped"}`. `status` is `passed`, `failed`, `blocked`, `skipped` or `not_run`; `from` keeps only executions with those results (others are `skipped` with reason `status`, unchanged ones with `already`). Results that record an execution go through the readiness check; refusals are `rejected` with the blocking issues as `reason`. Executions are applied in passes, so prerequisites in the same request are recorded first. Step results are not changed. |
-| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
-| POST | `/runs/{id}/junit?create_missing=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
-| GET | `/executions/{id}` | `Execution` with `step_results`, `readiness` and embedded `test` (TestCase incl. steps & script) |
-| PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}]}` – status derived from steps when omitted and steps given; 409 `not_ready` when the update records an execution that the settings forbid |
+| POST | `/runs/{id}/results?configuration=` | CI import: `{"results":[{"test_key","status","duration_ms","output","configuration"?}]}` (see *Configurations of imported results* below) → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
+| POST | `/runs/{id}/junit?create_missing=&configuration=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
+| GET | `/executions/{id}` | `Execution` with `step_results` (each with `iteration_id`), `iterations` (data-driven tests), `readiness` and embedded `test` (TestCase incl. steps & script) |
+| PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}],"iterations":[{"id","status"?,"notes"?}]}` – status derived from steps (or iterations) when omitted and steps or iterations given; 409 `not_ready` when the update records an execution that the settings forbid |
 | POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test` |
 
 **JUnit XML import.** `POST /runs/{id}/junit` reads `<testsuites>` or
@@ -554,11 +719,34 @@ test: an automated test of the run's project with exactly that title, or a
 new draft automated test titled after the testcase (listed in `created`);
 its result is recorded and the test added to the run.
 
+**Configurations of imported results.** A result names its configuration
+with `configuration` (name, ignoring case, or id); results without one use
+the `?configuration=` parameter of the request. Without either, a run
+targeting exactly one configuration uses it, a run without configurations
+records the result without configuration (as before) and a run targeting
+several answers 400. An unknown configuration is a 400. A configuration the
+run does not target yet is added to it (see `PUT /runs/{id}/configurations`).
+`qtestframe report --configuration NAME` and the Playwright reporter's
+`configuration` option (both default `$QTF_CONFIGURATION`) pass it on.
+
+**Iterations.** An execution of a data-driven test has `iterations`:
+`[{id, position, name, values: {param: value}, status, notes}]`, one per
+data row (a snapshot made when the test was added). Step results of an
+iteration carry its `iteration_id`. An iteration with steps takes the
+result derived from its steps (like an execution); one without steps takes
+the `status` given in `iterations`. The execution's result is then derived
+from the iterations: `failed` if any failed, else `blocked` if any is
+blocked, `passed` when all passed or were skipped (at least one passed),
+`skipped` when all were skipped, `not_run` when none has a result, else
+`in_progress`. An explicit `status` (also from bulk updates and CI imports)
+is the overall result and leaves the iterations unchanged. Iteration notes
+are at most 20 000 characters.
+
 **Readiness.** Before a result is recorded the server checks the test:
 status `ready`; every linked requirement in one of
 `ready_requirement_statuses`; every prerequisite (`/tests/{id}/dependencies`)
-`passed` – its execution in the same run when it is part of the run,
-otherwise its latest result. Each failed check is an issue; it is
+`passed` – its execution in the same run (and the same configuration) when
+it is part of the run there, otherwise its latest result. Each failed check is an issue; it is
 `blocking` unless the matching `allow_*` setting is on.
 
 ```json
@@ -590,6 +778,26 @@ characters) and `attachment_count`; files are attachments of the step
 result: `/step-results/{id}/attachments` (below). They appear in the
 document archive with link `entity_type: "step"`, `run_id` and
 `execution_id`, and are deleted with the run or the test.
+
+## Configurations
+
+Test configurations are named combinations of dimension values a run can
+target. Reading needs `project.read`, changes need `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/configurations` | `[Configuration]` in order (`position`, then name) |
+| POST | `/projects/{pid}/configurations` | `{"name"?, "description"?, "values":[{"dimension","value"}]}` → 201 Configuration; without `name` it is named after its values (`Chrome / Windows`); names are unique per project ignoring case (409) |
+| POST | `/projects/{pid}/configurations/bulk` | `{"configurations":[...], "skip_existing"?: bool}` (1–200, all or nothing) → `{"created":[Configuration], "skipped":["name"]}`; e.g. every combination of some dimensions |
+| DELETE | `/projects/{pid}/configurations/bulk` | `{"ids":[...]}` (all or nothing) → `{"deleted": n}` |
+| GET | `/configurations/{id}` | Configuration |
+| PATCH | `/configurations/{id}` | `{"name"?, "description"?, "values"?, "position"?}` |
+| DELETE | `/configurations/{id}` | 204; 409 while a run targets it |
+
+`Configuration`: `{id, project_id, name, description, values:[{dimension,
+value}], position, created_by, created_at, updated_at, run_count}`. Each
+dimension at most once per configuration (ignoring case), at most 20 values,
+dimensions and values up to 100 characters, names up to 200.
 
 ## Dependency graph and tags
 
@@ -749,10 +957,16 @@ Reading needs `project.read`, changing `project.update`.
 | DELETE | `/projects/{pid}/releases/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/releases/{id}/requirements` | `{"add":[ids],"remove":[ids],"query":"<filter expr>"}` (the query adds its matches) → `{"added","removed","release"}` |
 | GET | `/releases/{id}/status` | `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}` |
+| GET | `/releases/{id}/burnup` | `{"release_id","name","target_date","from","to","points":[{"day","scope","covered","passed"}]}`: one point per day from the creation of the release (at most 365 days) to its release, or today |
 
 Runs belong to a release with `release_id` on `POST /projects/{pid}/runs`
 and `PATCH /runs/{id}` (`""` removes it). The results of a release are the
 latest result of each test in its runs.
+
+The burn-up is computed from history: `scope` counts the release's current
+requirements that existed on the day, `covered` those with a trace link
+made by then and `passed` those whose linked tests all passed in the
+release's runs by the end of the day (as in the release status).
 
 A percentage criterion with nothing to measure (an empty scope; no
 executions for `executed`) is not met and has `available: false`. A release
@@ -771,6 +985,7 @@ Exit criterion types (`threshold` in percent, default 100):
 | `no_suspect` | no scope requirement has a suspect link |
 | `no_open_defects` | no open defect of at least severity `level` (critical, major, minor, trivial) is linked to the scope |
 | `risks_mitigated` | no identified or mitigating risk of at least `level` (low, medium, high, critical) addresses a scope requirement |
+| `trace_rules` | no scope requirement and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of severity `level` (`error`, the default: errors only; `warning`: errors and warnings). The items list each item once with the names of the rules it breaks as `note` |
 
 ## Defects
 
@@ -864,6 +1079,11 @@ carry `risk_level`, the highest level of their open risks (query field
 | POST | `/projects/{pid}/webhooks/bulk` | project.update | `{"ids":[...], "enabled"?, "add_events"?, "remove_events"?}` → `{"updated": n}`; every webhook must keep an event (else 400, nothing saved); secrets are kept |
 | DELETE | `/projects/{pid}/webhooks/bulk` | project.update | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/projects/{pid}/webhooks/test` | project.update | `{"ids":[...]}` (at most 50) sends `ping` to each → `{"results":[{id, name, ok, status, error}]}` |
+
+Users choose in their profile whether notifications are also e-mailed:
+preference `email_notifications` (`PATCH /auth/me`
+`{"preferences":{"email_notifications":"off"|"immediate"|"digest"}}`,
+default off). See [E-mail](#e-mail).
 
 Users are notified (never about their own actions) when they are made
 owner, assignee of an execution or a defect, are @mentioned in a
@@ -987,6 +1207,115 @@ Project icon files are served by `/files/{id}/content?inline=1`.
 CLI equivalents: `qtestframe backup --out FILE.zip`,
 `qtestframe restore --in FILE.zip --yes`.
 
+## SCIM 2.0 provisioning
+
+Identity providers (Microsoft Entra ID, Okta, OneLogin, JumpCloud …)
+provision the members of one tenant with SCIM 2.0 ([RFC 7643](https://www.rfc-editor.org/rfc/rfc7643),
+[RFC 7644](https://www.rfc-editor.org/rfc/rfc7644)). The service provider
+lives **outside** `/api/v1`, at `<base_url>/scim/v2`, and has its own
+authentication: `Authorization: Bearer qtfscim_…`, a **SCIM token** that is
+bound to one tenant. SCIM tokens do not work for `/api/v1`, and API tokens
+and sessions do not work for `/scim/v2`. Responses are
+`application/scim+json`; requests may be `application/scim+json` or
+`application/json`.
+
+### Model
+
+* **Users** are matched by e-mail (the primary or work address in `emails`,
+  else `userName`). A new user gets an account with `auth_provider` `scim`
+  and **no password**; the first OIDC/SAML sign-in links it to the provider
+  (as for just-in-time provisioning). An existing account with that e-mail
+  is taken over. `id` is the Qtestframe user id; `userName`, `externalId`
+  and `name` are kept per tenant.
+* `active: false` removes the tenant membership and ends the user's
+  sessions in the tenant and API tokens there; `active: true` restores the
+  membership. `DELETE /Users/{id}` removes the membership and the
+  provisioning record (the account stays).
+* **Groups → roles.** Groups pushed by the provider are mapped to roles by
+  a tenant admin (`PATCH /api/v1/scim/groups/{id}`). An active user gets the
+  most privileged role of their mapped groups (admin first, then by number
+  of permissions), else the tenant's default role (`default_role`, `""` =
+  no membership). Membership and role are recomputed on every user or group
+  change and when the mapping changes.
+* SCIM never changes `super_admin` and never leaves a tenant without an
+  admin (409). The e-mail and display name of a user who also belongs to
+  other tenants, or who is a super admin, are not changed (a different
+  e-mail is refused with 400 `mutability`).
+* Every request that writes is one transaction: when any part fails, nothing
+  is saved. Every change is audited with `user_email` `SCIM: <token name>`
+  (`scim.user.create|update|deactivate|reactivate|delete`,
+  `scim.group.create|update|delete`).
+* Rate limits: 1200 requests per minute per token, 20 failed
+  authentications per 5 minutes per client address (then 429 with
+  `Retry-After`).
+
+### Endpoints
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/scim/v2/ServiceProviderConfig` | patch yes, bulk no, filter yes (max 1000), sort no, ETag yes, changePassword no |
+| GET | `/scim/v2/ResourceTypes`, `/ResourceTypes/{User\|Group}` | |
+| GET | `/scim/v2/Schemas`, `/Schemas/{urn}` | core User and Group schemas |
+| GET | `/scim/v2/Users?filter=&startIndex=&count=&attributes=&excludedAttributes=` | ListResponse; `count` default 100, max 1000 |
+| POST | `/scim/v2/Users` | 201 with `Location`; 409 `uniqueness` for a known `userName` |
+| GET | `/scim/v2/Users/{id}` | `ETag` = `meta.version` |
+| PUT | `/scim/v2/Users/{id}` | replaces `userName`, `externalId`, `name`, `displayName`, `emails`, `active` (an absent `active` keeps the state) |
+| PATCH | `/scim/v2/Users/{id}` | PatchOp, see below |
+| DELETE | `/scim/v2/Users/{id}` | 204 |
+| GET | `/scim/v2/Groups?filter=&startIndex=&count=&excludedAttributes=members` | |
+| POST | `/scim/v2/Groups` | `{"displayName","externalId"?,"members"?:[{"value": user id}]}`; members must be provisioned users of the tenant (400 `invalidValue`) |
+| GET | `/scim/v2/Groups/{id}` | |
+| PUT | `/scim/v2/Groups/{id}` | replaces name and members |
+| PATCH | `/scim/v2/Groups/{id}` | PatchOp, see below → 200 with the group |
+| DELETE | `/scim/v2/Groups/{id}` | 204; its members' roles are recomputed |
+| any | `/scim/v2/Me`, `/scim/v2/Bulk` | 501 |
+
+**Filters** support `eq ne co sw ew gt ge lt le pr`, `and`, `or`, `not ( )`,
+parentheses, sub-attributes (`name.givenName`), schema-qualified names
+(`urn:ietf:params:scim:schemas:core:2.0:User:userName`) and value paths
+(`emails[type eq "work"]`, `emails[type eq "work"].value eq "a@example.com"`,
+`members[value eq "<id>"]`). Strings compare case-insensitively except `id`
+and `externalId`.
+
+**PATCH** (`{"schemas":["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+"Operations":[…]}`): `op` is `add`, `replace` or `remove` in any letter
+case. Users: paths `active` (boolean or `"True"`/`"False"`, as Entra ID
+sends), `userName`, `displayName`, `externalId`, `name`, `name.givenName`,
+`name.familyName`, `emails`, `emails[type eq "work"].value`; without a path
+the value is an object of such attributes, also with dotted keys
+(`{"op":"Replace","value":{"name.givenName":"Ada","active":false}}`).
+Attributes Qtestframe does not store (title, phone numbers, the enterprise
+extension …) are accepted and ignored. Groups: `displayName`, `externalId`,
+`members` (`add` a list, `replace` the list, `remove` with a list as value,
+with a filter path `members[value eq "<id>"]`, or without value for all),
+or a path-less object (`{"op":"replace","value":{"id":"…","displayName":"…"}}`,
+as Okta sends).
+
+Errors use the SCIM format:
+
+```json
+{"schemas":["urn:ietf:params:scim:api:messages:2.0:Error"],"status":"409","scimType":"uniqueness","detail":"a user with userName ada@example.com already exists"}
+```
+
+`scimType` is one of `invalidFilter`, `invalidPath`, `invalidSyntax`,
+`invalidValue`, `mutability`, `noTarget`, `uniqueness` (absent for 401,
+404, 409 last admin, 429, 501).
+
+### Administration (`/api/v1`, tenant.manage)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/scim` | `{"base_url", "default_role", "tokens":[SCIMToken], "groups":[{id, display_name, external_id, role, members}], "users", "active_users"}` |
+| PATCH | `/scim/settings` | `{"default_role": role or ""}`; recomputes all provisioned members (409 if the last admin would lose the role) |
+| POST | `/scim/tokens` | `{"name","expires_days"?}` → 201 `{"token":"qtfscim_…","item":SCIMToken}` (shown once, stored as SHA-256); API tokens cannot create SCIM tokens (403) |
+| DELETE | `/scim/tokens/{id}` | revokes at once → 204 |
+| PATCH | `/scim/groups/{id}` | `{"role": role or ""}`; recomputes the group's members (409 if the last admin would lose the role) |
+| GET | `/scim/events?limit=` | newest audit entries whose action starts with `scim.` (default 50, max 500) |
+
+`SCIMToken` = `{id, tenant_id, name, prefix, created_by, created_at, expires_at?, last_used?}`.
+Admin changes are audited as `scim.token.create`, `scim.token.delete`,
+`scim.settings` and `scim.group.role`.
+
 ## Reports
 
 Standard reports (`GET /reports/templates` → `[{id, name, description,
@@ -1020,6 +1349,51 @@ Custom report config (`CustomConfig`):
 | POST | `/reports/definitions/{id}/generate` | export | `{format, archive?}` |
 | POST | `/projects/{pid}/reports/batch` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
 | DELETE | `/projects/{pid}/reports/definitions/bulk` | requirement.write or test.write | `{"ids":[...]}` → `{"deleted": n}` |
+| GET | `/projects/{pid}/reports/recipients` | export | members who may read the project `{"items":[{user_id, email, display_name, role}], "addresses_allowed": bool, "email_enabled": bool}` |
+| POST | `/projects/{pid}/reports/email` | export | `{template + params? \| custom \| definition_id, format, recipients: [user ids], addresses?: [...], message?}` → 202 `{"queued": n, "skipped": [{user_id, reason}]}`. The report is rendered now and e-mailed in the background as an attachment. Members who may not read what the report shows are skipped (`no_access`, `disabled`); `addresses` (other e-mail addresses) need project.update (403). At most 50 recipients; 30 report e-mails per user in 10 minutes (429). A failed delivery becomes an in-app notification (`report.email_failed`) of the sender |
+| GET | `/projects/{pid}/reports/subscriptions` | export | `{"items":[ReportSubscription], "email_enabled"}` |
+| POST | `/projects/{pid}/reports/subscriptions` | export + (requirement.write or test.write) | `{definition_id, frequency: daily\|weekly\|monthly, weekday?: 0–6 (0 = Sunday), day_of_month?: 1–28, time: "HH:MM", timezone: IANA name, format, recipients: [user ids], addresses?, message?, enabled?}` → 201; the caller is the owner. Not with an API token |
+| PATCH | `/reports/subscriptions/{id}` | owner or project.update (and requirement.write or test.write) | the same fields except `definition_id`; the next run is computed again |
+| DELETE | `/reports/subscriptions/{id}` | owner or project.update | |
+| POST | `/reports/subscriptions/{id}/send` | owner or project.update | sends the report now and waits for the mail server → the subscription with `last_sent_at` / `last_error` (the schedule is unchanged) |
+
+`ReportSubscription` = `{id, project_id, definition_id, definition_name,
+owner_id, owner_email, frequency, weekday, day_of_month, time, timezone,
+format, recipients, addresses, message, enabled, next_run_at, last_run_at,
+last_sent_at, last_error, created_at, updated_at}`. A scheduled report is
+generated with the owner's permissions at the time it is sent (the owner
+must still be an enabled member with `export`; outside addresses are only
+used while the owner holds project.update) and goes to the recipients who
+may still read it. A subscription that missed runs while the server was
+down is sent once, then the next run is computed from that moment.
+Deleting the saved report deletes its subscriptions.
+
+## E-mail
+
+E-mail is configured in the `email` section of the server configuration
+(see the README). Without it, `/meta` reports `"email_enabled": false`
+and the e-mail endpoints answer 400 `e-mail is not configured`. Messages
+are sent in the background after the request's transaction is committed
+(never for a request that fails), with the configured timeout; failures
+are logged.
+
+- **Notification e-mails**: `immediate` mails each notification with a
+  link to the item; `digest` sends one e-mail a day (at `email.digest_hour`
+  UTC) with the unread notifications that were not mailed yet. Every
+  notification e-mail links to the profile (`/profile#email`) to change
+  the setting, also as `List-Unsubscribe` header.
+- **Invitations**: the link `/invite/{token}` is valid for 7 days and can
+  be used once; only a SHA-256 hash of the token is stored. Public
+  endpoints (rate limited per client address):
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/invitations/{token}` | public | `{email, display_name, tenant_name, role, invited_by, expires_at, sso, local}`; 404 for an unknown, used or revoked link, 410 when it expired |
+| POST | `/invitations/{token}/accept` | public | `{"display_name","password"}` (password policy as everywhere) sets name and password, closes the invitation and signs in → the same answer as `/auth/login` (`Me`, session cookie). 400 for single sign-on invitations: those are accepted by signing in with the identity provider |
+
+Audit actions: `invitation.send`, `invitation.resend`, `invitation.revoke`,
+`invitation.accept`, `email.test`, `report.email`,
+`report_subscription.create/update/delete/send`.
 
 ## Search
 
@@ -1034,16 +1408,81 @@ queried. Response:
 
 ## Export
 
-`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx&aspects=requirements,criteria,tests,traceability,runs&q=`
+`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
 (permission `export`)
 
 * `format` also accepts `excel` and `word`. `aspects` defaults to all;
   unknown aspects are a 400. `q` is applied to requirements if it is a valid
   requirement query and to tests if it is a valid test query.
 * CSV with more than one aspect is delivered as a ZIP of CSV files.
+* `reqif` and `reqifz` export the (filtered) requirements as
+  [ReqIF 1.2](#reqif-export); `aspects` does not apply. `reqif` is the XML
+  document (`application/xml`), `reqifz` a ZIP (`application/zip`) with the
+  document `<KEY>.reqif` and the requirements' attachments below
+  `files/<requirement key>/`.
+* `tests` has the columns `Parameters` and `Data rows` (count); `test_data`
+  lists the data table, one line per row and parameter (`Test`, `Row`,
+  `Row name`, `Parameter`, `Value`); `runs` has `Configuration` and
+  `Iterations` per execution.
 * Response has `Content-Disposition: attachment;
   filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
   neutralised in CSV; see [design.md §11](design.md#11-export-formats).
+
+### ReqIF export
+
+The document follows the ReqIF 1.2 schema
+(`http://www.omg.org/spec/ReqIF/20110401/reqif.xsd`, `REQ-IF-VERSION` 1.0
+as the standard prescribes); XHTML values use the prefix `xhtml:` bound to
+`http://www.w3.org/1999/xhtml`, as DOORS, Polarion and ProR expect.
+
+* `REQ-IF-HEADER`: `REQ-IF-TOOL-ID` `Qtestframe`, `SOURCE-TOOL-ID`
+  `Qtestframe <version>`, title `<KEY> – <name>`, creation time and a
+  comment with the filter.
+* `DATATYPES`: string, XHTML, integer, date and the enumerations
+  `Obligation` (`MUST` … `DESCRIBE`), `Type`, `Priority`, `Status`. Each
+  `ENUM-VALUE` has a readable `LONG-NAME` and the model code as
+  `EMBEDDED-VALUE/@OTHER-CONTENT`.
+* `SPEC-OBJECT-TYPE` *Requirement* with the attributes `ReqIF.ForeignID`
+  (key), `ReqIF.Name` (title), `ReqIF.Text` (description), `Obligation`,
+  `Type`, `Priority`, `Status`, `Source`, `Rationale`, `Owner`, `Tags`,
+  `Categories` (`Dimension/Value`, comma separated), `Acceptance criteria`
+  (XHTML list of `method: text (threshold: …)`), `Version`,
+  `ReqIF.ForeignCreatedBy`, `ReqIF.ForeignCreatedOn` and, in `.reqifz`,
+  `Attachments` (`<xhtml:object data="files/…">` per file). The
+  description is converted from Markdown (paragraphs, line breaks, lists,
+  headings, code blocks, bold, italics, code, links and images; images of
+  exported attachments point into the archive).
+* Folders are heading objects: `SPEC-OBJECT-TYPE` *Heading* with
+  `ReqIF.ChapterName`. One `SPECIFICATION` holds the folder tree as
+  `SPEC-HIERARCHY`: below a heading come the folder's requirements, then
+  its subfolders. With a filter only folders that contain exported
+  requirements are included.
+* Requirement relations between exported requirements are `SPEC-RELATION`s
+  (source → target) with one `SPEC-RELATION-TYPE` per relation type
+  (`Refines`, `Depends on`, …).
+* `IDENTIFIER`s are derived from the database ids (`qtf-req-<id>`,
+  `qtf-folder-<id>`, `qtf-rel-<id>`, …), so repeated exports keep them;
+  `LONG-NAME` of a requirement is its key, of a heading the folder name;
+  `LAST-CHANGE` is the item's last update.
+
+Importing the file again (`POST /projects/{pid}/requirements/import`)
+restores title, description (the importer reads the XHTML of a Qtestframe
+file back as Markdown), obligation, type, priority, status, source,
+rationale, owner, tags, criteria and folders; the key becomes the external
+ID (`ID: <key>` in the source). Relations, categories and attachments are
+not imported.
+
+## OpenAPI description
+
+`GET /api/v1/openapi.json` (and `/api/v1/openapi.yaml`, no authentication)
+serves an OpenAPI 3.1 description of every route: parameters, the main
+request and response bodies, the security schemes (session cookie with
+`X-CSRF-Token`, bearer tokens) and the permission of each operation
+(`x-permission` and in the description). Its source is
+[`docs/openapi.yaml`](openapi.yaml); a test fails when a route is added
+without describing it. View it with any OpenAPI viewer, for example by
+opening the JSON URL in Swagger UI, Redoc or an editor plug-in, or generate
+a client from it.
 
 ## Query language
 
@@ -1079,7 +1518,8 @@ updated_at, criteria`.
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
 steps), priority, status, estimate, tag, folder, category, dimension, linked,
-last_result, created_by, created_at, updated_at`.
+last_result, created_by, created_at, updated_at, flaky (true/false),
+flakiness (alias flips)`.
 
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Execution fields: `id, key, title, status, assignee,

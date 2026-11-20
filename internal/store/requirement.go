@@ -281,8 +281,13 @@ func (s *Store) UpdateRequirement(ctx context.Context, tenantID string, r *model
 		if err := s.checkFolder(ctx, c, tenantID, r.ProjectID, model.KindRequirement, r.FolderID); err != nil {
 			return err
 		}
-		if _, err := c.exec(ctx, `UPDATE requirements SET folder_id = ?, title = ?, description = ?, obligation = ?, type = ?, priority = ?, status = ?, source = ?, rationale = ?, owner = ?, tags = ?, version = ?, updated_at = ? WHERE id = ?`,
-			nullStr(r.FolderID), r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status, r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.UpdatedAt, r.ID); err != nil {
+		// AND version: a save that raced with another one fails (ErrStale)
+		res, err := c.exec(ctx, `UPDATE requirements SET folder_id = ?, title = ?, description = ?, obligation = ?, type = ?, priority = ?, status = ?, source = ?, rationale = ?, owner = ?, tags = ?, version = ?, updated_at = ? WHERE id = ? AND version = ?`,
+			nullStr(r.FolderID), r.Title, r.Description, r.Obligation, r.Type, r.Priority, r.Status, r.Source, r.Rationale, r.Owner, encodeTags(r.Tags), r.Version, r.UpdatedAt, r.ID, old.Version)
+		if err != nil {
+			return err
+		}
+		if err := sameVersion(res); err != nil {
 			return err
 		}
 		if err := setCategories(ctx, c, model.KindRequirement, r.ProjectID, r.ID, r.CategoryIDs); err != nil {

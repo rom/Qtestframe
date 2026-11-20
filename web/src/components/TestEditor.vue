@@ -6,8 +6,11 @@ import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
+import ConflictDialog from './ConflictDialog.vue'
+import { fieldConflicts, staleOf, TEST_FIELDS, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import ReviewBar from './ReviewBar.vue'
+import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
@@ -33,6 +36,7 @@ import CommentsPanel from './CommentsPanel.vue'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import TestExecutionsPanel from './TestExecutionsPanel.vue'
+import TestDataEditor from './TestDataEditor.vue'
 import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
@@ -44,7 +48,7 @@ import { useI18n } from 'vue-i18n'
 import { uid as newId } from '@/lib/a11y'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
-import type { Category, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
+import type { Category, DataRow, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 
@@ -117,6 +121,8 @@ function blank() {
     category_ids: [] as string[],
     folder_id: (props.folderId ?? null) as string | null,
     steps: [] as StepRow[],
+    parameters: [] as string[],
+    data_rows: [] as DataRow[],
   }
 }
 
@@ -180,6 +186,8 @@ async function load() {
           call_test_key: s.call_test_key,
           call_test_title: s.call_test_title,
         })),
+      parameters: [...(t.parameters ?? [])],
+      data_rows: (t.data_rows ?? []).map((r) => ({ name: r.name ?? '', values: { ...(r.values ?? {}) } })),
     }
     loaded.value = clone(bodyOf(form.value))
     await loadLinks()
@@ -293,6 +301,42 @@ function bodyOf(f: typeof form.value) {
       ),
   }
 }
+// ---------- someone saved in between ----------
+const conflictOpen = ref(false)
+const conflictList = ref<FieldConflict[]>([])
+const stale = ref<Stale<TestCase> | null>(null)
+function showConflict(st: Stale<TestCase>) {
+  stale.value = st
+  conflictList.value = item.value ? fieldConflicts(TEST_FIELDS.fields, item.value, st.current, form.value, TEST_FIELDS.normalize) : []
+  conflictOpen.value = true
+}
+async function reloadTheirs() {
+  conflictOpen.value = false
+  await load()
+}
+/** save only what was changed here, on top of the newer version */
+async function mergeMine() {
+  const st = stale.value
+  if (!st || !loaded.value) return
+  saving.value = true
+  const body = bodyOf(form.value)
+  const keys = changedKeys(loaded.value, body, Object.keys(body))
+  try {
+    const saved = await api.patch<TestCase>(`/tests/${props.itemId}`, pickBefore(body, keys), { ifMatch: st.current.version })
+    conflictOpen.value = false
+    notify.ok(t('conflict.merged'), saved?.key)
+    if (saved?.id && keys.length) recordUndo(patchEntry(t('undo.a.edit', { key: saved.key }), `/tests/${saved.id}`, pickBefore(st.current, keys), pickBefore(body, keys)))
+    emit('saved', saved)
+    await load()
+  } catch (e) {
+    const again = staleOf<TestCase>(e)
+    if (again) showConflict(again)
+    else error.value = errorMessage(e)
+  } finally {
+    saving.value = false
+  }
+}
+
 async function save() {
   saving.value = true
   error.value = ''
@@ -301,7 +345,7 @@ async function save() {
   try {
     const saved = isNew.value
       ? await api.post<TestCase>(`/projects/${props.projectId}/tests`, body)
-      : await api.patch<TestCase>(`/tests/${props.itemId}`, body)
+      : await api.patch<TestCase>(`/tests/${props.itemId}`, body, { ifMatch: item.value?.version })
     notify.ok(isNew.value ? t('tests.created') : t('tests.saved'), saved?.key)
     if (saved?.id) {
       if (isNew.value) recordUndo(createdEntry(t('undo.a.create', { key: saved.key }), delTest(saved.id)))
@@ -313,7 +357,9 @@ async function save() {
     emit('saved', saved)
     if (!isNew.value) await load() // refresh version, call-step keys and called_by
   } catch (e) {
-    error.value = errorMessage(e)
+    const st = staleOf<TestCase>(e)
+    if (st) showConflict(st)
+    else error.value = errorMessage(e)
   } finally {
     saving.value = false
   }
@@ -435,6 +481,7 @@ const scriptPlaceholder = computed(() => {
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <ReviewBar v-if="item" kind="test" :item="item" @changed="onReviewed" />
+    <TraceRuleViolations v-if="item" kind="test" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${linkCount}`" />
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>
@@ -548,6 +595,13 @@ const scriptPlaceholder = computed(() => {
       </div>
     </div>
 
+    <TestDataEditor
+      v-model:parameters="form.parameters"
+      v-model:rows="form.data_rows"
+      :can-write="canWrite"
+      :texts="[form.description, form.preconditions, form.expected_result, ...form.steps.flatMap((s) => [s.action, s.expected, s.data])]"
+    />
+
     <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>
       <HelpTip id="test.expected" :label="t('tests.overallExpected')" />
@@ -603,4 +657,5 @@ const scriptPlaceholder = computed(() => {
     />
   </form>
   </template>
+  <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>

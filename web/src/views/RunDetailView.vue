@@ -18,6 +18,8 @@ import Message from 'primevue/message'
 import Panel from 'primevue/panel'
 import Tag from 'primevue/tag'
 import { useReleaseOptions } from '@/composables/releases'
+import { useConfigurations } from '@/composables/configurations'
+import { summaryByConfiguration } from '@/lib/configurations'
 import { runReleaseName } from '@/lib/releases'
 import Popover from 'primevue/popover'
 import ReadinessBanner from '@/components/ReadinessBanner.vue'
@@ -100,10 +102,32 @@ async function reload() {
   await Promise.all([loadRun(), loadExecutions()])
 }
 const rel = useReleaseOptions(() => proj.pid)
+const cfg = useConfigurations(() => proj.pid)
 onMounted(() => {
   reload()
-  if (auth.can(P.projectRead)) rel.load()
+  if (auth.can(P.projectRead)) {
+    rel.load()
+    cfg.load()
+  }
 })
+
+// ---------- configurations ----------
+const runConfigs = computed(() => run.value?.configurations ?? [])
+const hasConfigs = computed(() => runConfigs.value.length > 0 || executions.value.some((e) => e.configuration_id))
+/** '' all, 'none' executions without configuration, else a configuration id */
+const configFilter = ref('')
+const perConfig = computed(() => summaryByConfiguration(executions.value, runConfigs.value))
+const configFilterOptions = computed(() => [
+  { label: t('configurations.all'), value: '' },
+  ...perConfig.value.map((c) => ({ label: c.id ? c.name : t('configurations.withoutShort'), value: c.id || 'none' })),
+])
+const shownExecutions = computed(() =>
+  configFilter.value ? executions.value.filter((e) => (e.configuration_id ?? 'none') === configFilter.value) : executions.value,
+)
+/** the execution's test key, with its configuration when it has one */
+function exLabel(ex: Execution): string {
+  return ex.configuration_name ? `${ex.test_key} (${ex.configuration_name})` : ex.test_key
+}
 
 const summary = computed(() => summarize(run.value?.summary))
 
@@ -120,20 +144,30 @@ async function setStatus(status: string) {
 
 // ---------- edit ----------
 const editDialog = ref(false)
-const editForm = ref({ name: '', description: '', environment: '', build: '', release_id: '' })
+const editForm = ref({ name: '', description: '', environment: '', build: '', release_id: '', configuration_ids: [] as string[] })
+const editError = ref('')
 function openEdit() {
   if (!run.value) return
   const r = run.value
-  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '' }
+  editForm.value = { name: r.name, description: r.description, environment: r.environment, build: r.build, release_id: r.release_id ?? '', configuration_ids: (r.configurations ?? []).map((c) => c.id) }
+  editError.value = ''
   editDialog.value = true
 }
 async function saveEdit() {
+  editError.value = ''
+  const { configuration_ids, ...fields } = editForm.value
+  const before = (run.value?.configurations ?? []).map((c) => c.id)
+  const changed = before.join(',') !== configuration_ids.join(',')
   try {
-    run.value = await api.patch<TestRun>(`/runs/${props.runId}`, editForm.value)
+    run.value = await api.patch<TestRun>(`/runs/${props.runId}`, changed ? editForm.value : fields)
     editDialog.value = false
     notify.ok(t('run.updated'))
+    if (changed) {
+      await reload()
+      if (configFilter.value && !configFilterOptions.value.some((o) => o.value === configFilter.value)) configFilter.value = ''
+    }
   } catch (e) {
-    notify.fail(e)
+    editError.value = errorMessage(e)
   }
 }
 function remove() {
@@ -237,6 +271,7 @@ function readinessTitle(ex: Execution): string {
 
 // ---------- columns ----------
 const execColumns = computed<ColumnDef[]>(() => [
+  { field: 'configuration', header: t('configurations.columnOne'), width: '150px' },
   { field: 'status', header: t('common.status'), width: '130px' },
   { field: 'readiness', header: t('readiness.column'), width: '150px', sortable: false },
   { field: 'assignee', header: t('run.assignee'), width: '180px' },
@@ -248,7 +283,7 @@ const execColumns = computed<ColumnDef[]>(() => [
 const execLayout = useColumnLayout(
   () => 'qtf.cols.executions',
   execColumns,
-  () => ['status', 'readiness', 'assignee', 'executed_by', 'defects', 'duration_ms', 'finished_at'],
+  () => ['configuration', 'status', 'readiness', 'assignee', 'executed_by', 'defects', 'duration_ms', 'finished_at'],
 )
 async function setAssignee(ex: Execution, value: string) {
   if (value === ex.assignee) return
@@ -268,7 +303,7 @@ async function quickStatus(ex: Execution, status: string) {
     const rd = readinessOfError(e)
     if (rd) {
       ex.readiness = rd
-      notify.failText(t('readiness.saveRefused') + ' – ' + ex.test_key, explainReadiness(rd, t, enumLabel))
+      notify.failText(t('readiness.saveRefused') + ' – ' + exLabel(ex), explainReadiness(rd, t, enumLabel))
     } else notify.fail(e)
   }
 }
@@ -314,7 +349,7 @@ const ciJunitSnippet = computed(
 )
 const ciCliSnippet = computed(
   () => `QTF_URL=${origin} QTF_TOKEN=qtf_<api-token> \\
-  qtestframe report --run-id ${props.runId} --junit 'results/*.xml'`,
+  qtestframe report --run-id ${props.runId} --junit 'results/*.xml'${runConfigs.value.length ? ` --configuration '${runConfigs.value[0].name}'` : ''}`,
 )
 async function copySnippet(text: string = ciSnippet.value) {
   try {
@@ -387,6 +422,30 @@ async function copySnippet(text: string = ciSnippet.value) {
       </div>
     </div>
 
+    <section v-if="hasConfigs" class="card" style="margin-bottom: 16px" aria-labelledby="h-per-config">
+      <h2 id="h-per-config" class="plain-heading" style="margin-bottom: 8px">{{ t('configurations.perConfiguration') }}</h2>
+      <div class="table-scroll">
+        <table class="per-config">
+          <thead>
+            <tr>
+              <th scope="col">{{ t('configurations.columnOne') }}</th>
+              <th scope="col">{{ t('run.progress') }}</th>
+              <th scope="col">{{ t('run.passRate') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="c in perConfig" :key="c.id">
+              <th scope="row">
+                <button type="button" class="link-button" :aria-pressed="configFilter === (c.id || 'none')" :title="t('configurations.showOnly')" @click="configFilter = configFilter === (c.id || 'none') ? '' : c.id || 'none'">{{ c.id ? c.name : t('configurations.withoutShort') }}</button>
+              </th>
+              <td style="min-width: 200px"><SummaryBar :summary="c.summary" show-text /></td>
+              <td>{{ formatNumber(summarize(c.summary).passRate / 100, undefined, { style: 'percent' }) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <Tabs :id="tabsId" v-model:value="tab" class="editor-tabs" scrollable>
       <TabList>
         <Tab value="executions"><i class="pi pi-list" aria-hidden="true" /> {{ t('common.executions') }} <span class="count">{{ executions.length }}</span></Tab>
@@ -411,6 +470,7 @@ async function copySnippet(text: string = ciSnippet.value) {
           @reset="execLayout.reset()"
         />
         <MultiSelect v-model="statusFilter" :options="resultOptions" option-label="label" option-value="value" :placeholder="t('common.status')" :aria-label="t('common.status')" style="min-width: 150px" show-clear @change="loadExecutions" />
+        <Select v-if="hasConfigs" v-model="configFilter" :options="configFilterOptions" option-label="label" option-value="value" :aria-label="t('configurations.filter')" style="min-width: 170px" />
         <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="reload" />
       </div>
       <Message v-if="readinessSummary.blocked || readinessSummary.warned" :severity="readinessSummary.blocked ? 'warn' : 'info'" :closable="false" style="margin-bottom: 10px">
@@ -429,7 +489,7 @@ async function copySnippet(text: string = ciSnippet.value) {
         :ref="execLayout.bind"
         v-model:selection="selection"
         v-stack
-        :value="executions"
+        :value="shownExecutions"
         data-key="id"
         :loading="loading"
         :aria-busy="loading"
@@ -452,7 +512,15 @@ async function copySnippet(text: string = ciSnippet.value) {
         </Column>
         <Column field="test_title" :header="t('common.title')" sortable :reorderable-column="false" style="min-width: 200px" body-class="stack-main" />
         <template v-for="c in execLayout.visible.value" :key="c.field">
-        <Column v-if="c.field === 'status'" field="status" column-key="status" :header="c.header" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
+        <Column v-if="c.field === 'configuration' && hasConfigs" field="configuration_name" column-key="configuration" :header="c.header" sortable style="width: 150px">
+          <template #body="{ data }"><Tag v-if="data.configuration_name" :value="data.configuration_name" icon="pi pi-sliders-h" severity="secondary" /><span v-else class="muted">—</span></template>
+        </Column>
+        <Column v-else-if="c.field === 'status'" field="status" column-key="status" :header="c.header" sortable style="width: 130px">
+          <template #body="{ data }">
+            <StatusTag :value="data.status" kind="result" />
+            <span v-if="data.iteration_count" class="small muted" style="margin-left: 4px" :title="t('testData.iterationsCount', { n: data.iteration_count }, data.iteration_count)"><i class="pi pi-table" aria-hidden="true" /> {{ data.iteration_count }}<span class="sr-only"> {{ t('testData.iterationsCount', { n: data.iteration_count }, data.iteration_count) }}</span></span>
+          </template>
+        </Column>
         <Column v-else-if="c.field === 'readiness'" column-key="readiness" :header="c.header" style="width: 150px">
           <template #body="{ data }">
             <button
@@ -478,7 +546,7 @@ async function copySnippet(text: string = ciSnippet.value) {
               :model-value="assigneeDraft[data.id] ?? data.assignee"
               size="small"
               :placeholder="t('run.unassigned')"
-              :aria-label="t('run.assigneeOf', { key: data.test_key })"
+              :aria-label="t('run.assigneeOf', { key: exLabel(data) })"
               class="w-full"
               @update:model-value="(v: string) => (assigneeDraft[data.id] = v)"
               @blur="setAssignee(data, assigneeDraft[data.id] ?? data.assignee)"
@@ -505,7 +573,7 @@ async function copySnippet(text: string = ciSnippet.value) {
                   severity="success"
                   :disabled="notAllowed(data)"
                   v-tooltip="notAllowed(data) ? readinessTitle(data) : t('run.markPassed')"
-                  :aria-label="t('run.markPassedKey', { key: data.test_key })"
+                  :aria-label="t('run.markPassedKey', { key: exLabel(data) })"
                   @click="quickStatus(data, 'passed')"
                 />
                 <Button
@@ -516,11 +584,11 @@ async function copySnippet(text: string = ciSnippet.value) {
                   severity="danger"
                   :disabled="notAllowed(data)"
                   v-tooltip="notAllowed(data) ? readinessTitle(data) : t('run.markFailed')"
-                  :aria-label="t('run.markFailedKey', { key: data.test_key })"
+                  :aria-label="t('run.markFailedKey', { key: exLabel(data) })"
                   @click="quickStatus(data, 'failed')"
                 />
               </template>
-              <Button :icon="canExecute ? 'pi pi-play' : 'pi pi-eye'" text rounded size="small" v-tooltip="canExecute ? t('run.execute') : t('run.view')" :aria-label="canExecute ? t('run.executeKey', { key: data.test_key }) : t('run.viewKey', { key: data.test_key })" @click="execute(data)" />
+              <Button :icon="canExecute ? 'pi pi-play' : 'pi pi-eye'" text rounded size="small" v-tooltip="canExecute ? t('run.execute') : t('run.view')" :aria-label="canExecute ? t('run.executeKey', { key: exLabel(data) }) : t('run.viewKey', { key: exLabel(data) })" @click="execute(data)" />
             </div>
           </template>
         </Column>
@@ -529,6 +597,7 @@ async function copySnippet(text: string = ciSnippet.value) {
     </div>
 
     <Dialog v-model:visible="editDialog" :header="t('run.edit')" modal style="width: min(560px, 95vw)">
+      <Message v-if="editError" severity="error" :closable="false" style="margin-bottom: 10px">{{ editError }}</Message>
       <div class="form-grid">
         <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="editForm.name" /></div>
         <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
@@ -536,6 +605,11 @@ async function copySnippet(text: string = ciSnippet.value) {
         <div v-if="rel.releases.value.length" v-field class="field full">
           <label for="run-edit-release">{{ t('releasesView.release') }}</label>
           <Select v-model="editForm.release_id" input-id="run-edit-release" :options="rel.options.value" option-label="label" option-value="value" />
+        </div>
+        <div v-if="cfg.configurations.value.length || editForm.configuration_ids.length" class="field full">
+          <label for="run-edit-configs">{{ t('configurations.runField') }}</label>
+          <MultiSelect v-model="editForm.configuration_ids" input-id="run-edit-configs" :options="cfg.options.value" option-label="label" option-value="value" display="chip" filter :placeholder="t('configurations.runNone')" aria-describedby="run-edit-configs-help" />
+          <small id="run-edit-configs-help" class="muted">{{ t('configurations.editHelp') }}</small>
         </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="editForm.description" rows="3" auto-resize /></div>
       </div>
@@ -556,6 +630,13 @@ async function copySnippet(text: string = ciSnippet.value) {
         <template #updated><code>updated</code></template>
         <template #unknown><code>unknown</code></template>
       </i18n-t>
+      <Message v-if="runConfigs.length" severity="info" :closable="false" style="margin-bottom: 10px">
+        <i18n-t keypath="configurations.ciHint" tag="span">
+          <template #param><code>?configuration=</code></template>
+          <template #field><code>configuration</code></template>
+          <template #flag><code>--configuration</code></template>
+        </i18n-t>
+      </Message>
       <Panel :header="t('run.endpoint')" toggleable collapsed>
         <div class="mono">POST /api/v1/runs/{{ runId }}/results</div>
         <div class="mono">POST /api/v1/runs/{{ runId }}/junit</div>
@@ -610,6 +691,23 @@ async function copySnippet(text: string = ciSnippet.value) {
 
 
 <style scoped>
+.table-scroll {
+  overflow-x: auto;
+}
+.per-config {
+  border-collapse: collapse;
+  width: 100%;
+}
+.per-config th,
+.per-config td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--qtf-border);
+}
+.per-config thead th {
+  font-size: 12px;
+  font-weight: 600;
+}
 .bulk-form {
   display: flex;
   flex-direction: column;

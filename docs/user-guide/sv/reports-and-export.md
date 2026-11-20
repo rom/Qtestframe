@@ -21,6 +21,8 @@ Välj **Export** i projektets sidopanel.
    | **CSV** | En `.csv`-fil för en del; ett `.zip`-arkiv med en CSV-fil per del när du väljer flera. UTF-8, kommaavgränsad. |
    | **PDF** | En utskriftsvänlig rapport i liggande format med en tabell per del och sidnummer. |
    | **DOCX** | Ett redigerbart Word-dokument med en rubrik och en tabell per del, till exempel som grund för ett specifikationsdokument. |
+   | **ReqIF** | Kraven som en ReqIF 1.2-fil (`.reqif`) för kravverktyg som IBM DOORS, Polarion, Jama eller ProR. Se [ReqIF för kravverktyg](#reqif-för-kravverktyg). |
+   | **ReqIF (med bilagor)** | Ett `.reqifz`-arkiv: ReqIF-filen och kravens bilagor och bilder. |
 
 2. Välj **Innehåll**:
 
@@ -34,10 +36,26 @@ Välj **Export** i projektets sidopanel.
 
    Kolumnrubrikerna i de exporterade filerna är på engelska.
 
+   ReqIF innehåller bara krav, så valet av innehåll används inte för det formatet.
+
 3. Ange eventuellt ett **Filter**. Det gäller krav om det är en giltig fråga för krav och testfall om det är en giltig fråga för testfall: `obligation=must` filtrerar bara krav, `type=automated` bara testfall, `folder:Kassa` båda.
 4. Välj **Ladda ned**. Filen namnges efter projektnyckeln och tidpunkten, till exempel `SHOP-20261119-143000.xlsx`.
 
 **Säkert för kalkylblad:** värden som börjar med `=`, `+`, `-` eller `@` får ett prefix i CSV-filer, och celler i XLSX är alltid text, så inget i dina data körs som en formel.
+
+### ReqIF för kravverktyg
+
+ReqIF (Requirements Interchange Format) är standardformatet för att utbyta krav mellan verktyg. Använd det för att lämna dina krav till en kund eller leverantör i deras eget verktyg, eller för att hämta tillbaka krav som har bearbetats där.
+
+Det här innehåller ReqIF-filen:
+
+- **Ett objekt per krav** med nyckel (*ReqIF.ForeignID*), rubrik (*ReqIF.Name*), beskrivning som formaterad text (*ReqIF.Text*), kravnivå, typ, prioritet och status som värdelistor, källa, motivering, ägare, taggar, kategorier, acceptanskriterier (en rad per kriterium: metod, text och tröskelvärde), version, upphovsperson och när kravet skapades.
+- **Mapparna som rubriker.** Varje mapp blir ett rubrikobjekt (*ReqIF.ChapterName*); mappens krav och sedan dess undermappar ligger under rubriken, så att kravverktyget visar samma kapitel som kravträdet. Med ett filter tas bara mappar med exporterade krav med.
+- **Relationer** mellan de exporterade kraven (*förfinar*, *beror på* och de andra) som ReqIF-relationer.
+- **Formatering.** Stycken, radbrytningar, listor, rubriker, kodblock, fetstil, kursiv, länkar och bilder i beskrivningar blir formaterad text. I en `.reqifz`-fil ligger bilder och andra bilagor som filer i arkivet och listas i attributet *Attachments*.
+- **Stabila identifierare.** Varje objekt får samma identifierare i varje export, så att ett verktyg känner igen krav som det redan har och kan uppdatera dem.
+
+**Importera igen.** En ReqIF-fil från Qtestframe kan [importeras](requirements.md#importera-krav) i vilket projekt som helst. Rubriker, beskrivningar med sin formatering, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, kriterier och mappar kommer tillbaka; den ursprungliga nyckeln sparas som externt ID (*ID: SHOP-REQ-12* i källan), och de nya kraven får nycklar i målprojektet. Relationer, kategorier och bilagor importeras inte.
 
 ## Standardrapporter
 
@@ -47,7 +65,7 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 |---|---|---|
 | **Projektstatus** | nyckeltal, krav per status och kravnivå, täckning, senaste körningar | – |
 | **Kravtäckning** | varje krav med länkade testfall, deras senaste utfall och täckningen | valfritt filter |
-| **Spårbarhet** | länkarna mellan krav och testfall | valfritt filter |
+| **Spårbarhet** | länkarna mellan krav och testfall, och [spårbarhetsreglerna](traceability-and-coverage.md#spårbarhetsregler) med resultat och överträdelser | valfritt filter |
 | **Sammanfattning av körning** | en körning: summor, exekveringar, defekter och tidsåtgång | körningen (obligatorisk) |
 | **Defekter** | alla defekter som registrerats på exekveringar, grupperade per defekt | – |
 | **Testförteckning** | testfall per mapp, typ, status och kategori | valfritt filter |
@@ -91,12 +109,37 @@ Ta fram rapporten i valfritt format, som ovan. För att återanvända den välje
 
 **Ta bort sparade rapporter** tar bort de markerade sparade egna rapporterna (standardrapporter kan inte tas bort). Att spara i arkivet och att ta bort kräver behörighet att redigera krav eller testfall; att ladda ner kräver exportbehörighet.
 
+## Skicka en rapport med e-post
+
+När servern kan skicka e-post har varje standardrapport en kuvertknapp (**Skicka med e-post**), och verktyget för egna rapporter har också **Skicka med e-post**. Välj:
+
+- **Medlemmar**: personer i din organisation som får läsa projektet. En medlem som inte får läsa det rapporten visar (till exempel testkörningar) hoppas över, och meddelandet säger vem.
+- **Andra adresser**, åtskilda med kommatecken: personer utanför organisationen. Det kräver behörighet att ändra projektet, så att Qtestframe inte kan användas för att skicka e-post till vem som helst.
+- ett **Meddelande** om du vill och **Format**.
+
+Rapporten tas fram med dina behörigheter och bifogas e-postmeddelandet. Om det inte kan levereras får du en [notis](reviews-and-notifications.md#notiser).
+
+## Schemalagda rapporter
+
+**Schemalagda rapporter**, längst ned på sidan Rapporter, skickar [sparade egna rapporter](#egna-rapporter) med e-post enligt ett schema. *(Kräver behörighet att redigera krav eller tester.)* Välj **Schemalägg en rapport** och välj sedan den sparade rapporten, **Hur ofta** (varje dag, varje vecka på en veckodag eller varje månad på en dag från 1 till 28), **Tid** och **Tidszon**, **Format**, mottagarna och ett meddelande om du vill.
+
+Listan visar varje schema med dess mottagare, när det **Senast skickades** (eller felet vid senaste försöket) och **Nästa utskick**. Stäng av **Aktiv** för att pausa ett schema, välj **Skicka nu** för att skicka direkt (schemat ändras inte), eller ändra och ta bort det. Bara den som schemalade rapporten, eller någon som får ändra projektet, kan ändra schemat.
+
+Bra att veta:
+
+- Rapporten tas fram med behörigheterna hos den som schemalade den, vid den tidpunkt den skickas. Om personen inte längre är medlem eller inte längre får exportera visar schemat ett fel i stället för att skicka.
+- Medlemmar som inte längre får läsa rapporten hoppas över.
+- Om servern var nere när en rapport skulle skickas skickas den en gång när servern är igång igen, inte en gång för varje missat tillfälle.
+- När den sparade rapporten tas bort försvinner även dess scheman.
+
 ## Vilket ska jag välja?
 
 | Behov | Använd |
 |---|---|
 | Arbeta med data i Excel eller ett annat verktyg | **Export**, XLSX eller CSV |
+| Lämna över krav till ett kravverktyg (DOORS, Polarion …) eller en annan Qtestframe | **Export**, ReqIF |
 | Ett specifikationsdokument för granskning eller underskrift | **Export**, DOCX, delarna krav och kriterier |
 | En statusrapport till ett styrgruppsmöte | **Rapporter → Projektstatus**, PDF |
 | Underlag för en revision eller en release | **Rapporter → Kravtäckning** eller **Sammanfattning av körning**, sparad i arkivet, tillsammans med en [baslinje](baselines.md) |
 | En återkommande lista med egna kolumner | En sparad **anpassad rapport** |
+| Samma rapport i mottagarnas inkorg varje vecka | En sparad anpassad rapport under **Schemalagda rapporter** |

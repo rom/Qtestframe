@@ -594,6 +594,12 @@ func cmdServe(args []string, env Env) error {
 		ErrorLog:          slog.NewLogLogger(log.Handler(), slog.LevelWarn),
 	}
 	go purgeSessions(ctx, st, log)
+	go recordMetrics(ctx, st, log, time.Hour)
+	// e-mail digests and scheduled reports (only when e-mail is configured)
+	if cfg.Email.On() {
+		log.Info("e-mail enabled", "host", cfg.Email.Host, "port", cfg.Email.Port, "tls", cfg.Email.TLS, "from", cfg.Email.From)
+	}
+	srv.StartJobs(ctx)
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)
@@ -608,7 +614,9 @@ func cmdServe(args []string, env Env) error {
 	log.Info("shutting down")
 	sctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	return hs.Shutdown(sctx)
+	err = hs.Shutdown(sctx)
+	srv.WaitMail() // e-mails in flight (each is bounded by email.timeout)
+	return err
 }
 
 // certReloader serves the current key pair and reloads it on SIGHUP
@@ -694,6 +702,30 @@ func cmdHealthcheck(args []string, env Env) error {
 	}
 	fmt.Fprintln(env.Stdout, "ok")
 	return nil
+}
+
+// recordMetrics records the daily metric snapshot of every project: once at
+// start and then every interval for the projects that have no snapshot for
+// the current day (of the store's clock) yet, so each project gets one
+// snapshot per day.
+func recordMetrics(ctx context.Context, st *store.Store, log *slog.Logger, interval time.Duration) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		if n, err := st.RecordAllSnapshots(ctx); err != nil {
+			if ctx.Err() != nil {
+				return
+			}
+			log.Warn("metric snapshots failed", "err", err)
+		} else if n > 0 {
+			log.Info("recorded metric snapshots", "projects", n)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
 }
 
 func purgeSessions(ctx context.Context, st *store.Store, log *slog.Logger) {

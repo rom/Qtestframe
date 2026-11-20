@@ -42,8 +42,12 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Defects** as items with status, severity, assignee and links to requirements, tests and executions (report one straight from a failed execution), with **Jira and GitHub** push, status sync and import.
 - **Risks:** a risk register with likelihood × impact, a heat map, mitigation, status and the requirements that address each risk, with risk coverage and a release criterion.
 - **Reviews and sign-off:** ask named people to review a requirement or test with a checklist, record their decision, and sign baselines electronically (password re-check, content fingerprint, audit).
-- **Notifications and webhooks:** in-app notifications for assignments, @mentions, review requests and defect changes; signed (HMAC-SHA256) webhooks per project for requirement, test, run, defect, risk, release, review and sign-off events.
+- **Notifications and webhooks:** in-app notifications for assignments, @mentions, review requests and defect changes, optionally by **e-mail** (immediately or a daily digest), e-mail invitations for new members and **scheduled report e-mails**; signed (HMAC-SHA256) webhooks per project for requirement, test, run, defect, risk, release, review and sign-off events.
 - **Automated results:** import JSON or **JUnit XML** results into a run, the `qtestframe report` command-line uploader for CI, and a **Playwright reporter** package ([integrations/playwright-reporter](integrations/playwright-reporter/README.md)).
+- **Test configurations and data-driven tests:** run the same tests against several environments (browser, OS, hardware …) with one execution per test and configuration and coverage per configuration; parameterised tests with a data table run once per row, with `{{parameter}}` placeholders in their steps.
+- **Traceability rules:** project rules such as "every MUST requirement is verified by a test" or "every test verifies a requirement", with violations on the traceability page and in the editors, and a release exit criterion.
+- **Dashboard trends and quality:** coverage and pass rate over time, defects opened vs closed, a release burn-up, progress of active runs, coverage by folder or category, and **flaky test** detection (pass ↔ fail flips) with a `flaky:` filter.
+- **Safe concurrent editing:** saving a requirement or test that someone else saved in the meantime shows both versions field by field instead of overwriting them (ETag / If-Match in the API).
 - **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder.
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
 - **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
@@ -54,8 +58,8 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Grouping:** nested folders for requirements and tests. Drag and drop moves items, whole folders, or entire category dimensions, also to another project.
 - **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dependency graph, tag cloud, dashboard, global search, administration. Table columns can be chosen and reordered (drag the header or use the Columns menu).
 - **Filtering and search on every field** with a [query language](#query-language): field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
-- **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**.
-- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
+- **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**, and of requirements to **ReqIF 1.2** (`.reqif`, or `.reqifz` with attachments) for DOORS, Polarion, ProR and other requirement tools, with folders as headings and relations; an export imports back with all fields.
+- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **SCIM 2.0** user provisioning from Entra ID, Okta and other identity providers (group → role mapping, deactivation ends access), **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
 
 ## Quick start
@@ -137,6 +141,25 @@ The most important settings:
 | `runner.enabled` | allow server-side execution of automated test scripts (default `false`) |
 | `logging.syslog` | ship logs to a central syslog server |
 | `bootstrap.admin_email`, `bootstrap.admin_password` | first administrator, created only when the database has no users |
+| `email.host`, `email.port`, `email.tls`, `email.from` | outgoing e-mail (SMTP) for notification e-mails, invitations and reports by e-mail; off while `host` is empty |
+
+**E-mail** is optional. With it, users can get their notifications by e-mail (each one immediately or a daily digest, chosen in the profile), administrators can invite new members by e-mail instead of setting an initial password, and reports can be sent by e-mail or on a schedule. Without it these features are hidden in the web client and the API answers that e-mail is not configured. Links in e-mails use `server.base_url`, which is then required. The password is never written in the file: use `password_file` (relative paths are resolved against `$CREDENTIALS_DIRECTORY`) or the `QTF_EMAIL_PASSWORD` environment variable.
+
+```yaml
+email:
+  host: smtp.example.com
+  port: 587                  # 587 = STARTTLS, 465 = implicit TLS
+  tls: starttls              # starttls (default) | tls | none (local relay only)
+  username: qtestframe       # leave out for a relay without authentication
+  password_file: /run/secrets/smtp-password
+  from: qtestframe@example.com
+  from_name: Qtestframe
+  timeout: 30s               # per message
+  digest_hour: 7             # hour (UTC) of the daily notification digest
+  # enabled: false           # keep the settings but send nothing
+```
+
+Administrators check the settings with **Administration → Members → Send test e-mail**, which shows the answer of the mail server when sending fails. Mail is sent in the background (never for a request that fails), failures are logged.
 
 To use **PostgreSQL**, set:
 
@@ -332,11 +355,11 @@ echo 'Initial-pass-123' | ./bin/qtestframe user create --config examples/qtestfr
 ./bin/qtestframe member add --config examples/qtestframe.yaml --tenant acme --email alice@example.com --role manager
 ```
 
-For single sign-on, add `auth.oidc` (Keycloak, Entra ID, Okta, …) or `auth.saml` (ADFS, Keycloak, …) entries. Users can be provisioned automatically, with their role taken from IdP groups through `role_mapping`. See [docs/operations.md](docs/operations.md).
+For single sign-on, add `auth.oidc` (Keycloak, Entra ID, Okta, …) or `auth.saml` (ADFS, Keycloak, …) entries. Users can be provisioned automatically, with their role taken from IdP groups through `role_mapping`. See [docs/operations.md](docs/operations.md). Identity providers can also provision users ahead of their first sign-in with SCIM 2.0 at `/scim/v2` (Administration → Provisioning (SCIM); see [docs/api.md](docs/api.md#scim-20-provisioning)).
 
 ## Automation and CI
 
-Create a token under **Administration → API tokens**. It is shown once and starts with `qtf_`. Use it as a Bearer token; every UI action is also available through the REST API ([docs/api.md](docs/api.md)).
+Create a token under **Administration → API tokens**. It is shown once and starts with `qtf_`. Use it as a Bearer token; every UI action is also available through the REST API ([docs/api.md](docs/api.md)). The server describes the API as **OpenAPI 3.1** at `/api/v1/openapi.json` (no sign-in needed; source [docs/openapi.yaml](docs/openapi.yaml)): open it in any OpenAPI viewer such as Swagger UI or Redoc, or generate a client from it.
 
 Report results from a CI pipeline into an existing run; tests are matched by key:
 
@@ -439,6 +462,7 @@ make coverage
 | [docs/security.md](docs/security.md) | threat model, authentication, RBAC, hardening |
 | [docs/testing.md](docs/testing.md) | test strategy and coverage |
 | [docs/api.md](docs/api.md) | REST API and query language reference |
+| [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI 3.1 description of the REST API (served at `/api/v1/openapi.json`) |
 | [docs/operations.md](docs/operations.md) | installation, TLS, OIDC/SAML, syslog, backup |
 | [docs/user-guide](docs/user-guide/en/index.md) | user guide with tutorial and FAQ (also [in Swedish](docs/user-guide/sv/index.md) and in the tool under Help) |
 | [docs/user-guide/en/references.md](docs/user-guide/en/references.md) | references: RFC 2119, RFC 8174 and other RFCs, NIST publications, requirement and testing standards |

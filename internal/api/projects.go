@@ -185,13 +185,35 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request, p *Prin
 	if len(recent) > 5 {
 		recent = recent[:5]
 	}
+	byFolder, byCategory := pc.coverageGroups(reqs)
+	defects, err := s.Store.OpenDefectsBySeverity(ctx, p.TenantID(), pr.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	flaky, err := s.Store.FlakyTests(ctx, p.TenantID(), pr.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	flakyTotal := len(flaky)
+	if len(flaky) > 10 {
+		flaky = flaky[:10]
+	}
+	// today's snapshot for the trends (re-recorded when older than an hour)
+	s.recordSnapshot(ctx, p.TenantID(), pr.ID, true)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"requirements": map[string]any{"total": len(reqs), "by_status": reqStatus, "by_obligation": reqObl, "covered": covered, "uncovered": len(reqs) - covered},
-		"tests":        map[string]any{"total": len(tests), "by_execution_type": testType, "by_status": testStatus},
-		"coverage":     coverage,
-		"runs":         map[string]any{"total": len(runs), "by_status": runStatus},
-		"recent_runs":  recent,
-		"results":      results,
+		"requirements":         map[string]any{"total": len(reqs), "by_status": reqStatus, "by_obligation": reqObl, "covered": covered, "uncovered": len(reqs) - covered},
+		"tests":                map[string]any{"total": len(tests), "by_execution_type": testType, "by_status": testStatus},
+		"coverage":             coverage,
+		"runs":                 map[string]any{"total": len(runs), "by_status": runStatus},
+		"recent_runs":          recent,
+		"results":              results,
+		"active_runs":          activeRuns(runs),
+		"coverage_by_folder":   byFolder,
+		"coverage_by_category": byCategory,
+		"defects_by_severity":  defects,
+		"flaky":                map[string]any{"total": flakyTotal, "items": flaky, "window": store.FlakyWindow, "min_flips": store.FlakyMinFlips},
 	})
 }
 

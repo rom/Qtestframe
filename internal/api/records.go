@@ -25,18 +25,18 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on", "suspect"},
+			"depends_on", "suspect", "flaky", "flakiness"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
-			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on"},
+			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness"},
 	}
 	runSchema = &query.Schema{
-		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
-		Aliases: map[string]string{"env": "environment"},
+		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id", "configuration"},
+		Aliases: map[string]string{"env": "environment", "config": "configuration", "configurations": "configuration"},
 	}
 	executionSchema = &query.Schema{
-		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect", "mention"},
-		Aliases: map[string]string{"defects": "defect", "mentions": "mention"},
+		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect", "mention", "configuration"},
+		Aliases: map[string]string{"defects": "defect", "mentions": "mention", "config": "configuration"},
 	}
 )
 
@@ -50,15 +50,19 @@ type projectContext struct {
 	categories map[string]model.Category
 	links      []model.TraceLink
 	r2t, t2r   map[string][]string
+	// keys at the other end of the trace links, in link order
+	r2tKeys, t2rKeys map[string][]string
 	// suspect: requirement or test id → number of its suspect links
 	suspect map[string]int
 	// requirement id → open defects / highest open risk level
 	openDefects map[string]int
 	riskLevel   map[string]string
 	last        map[string]string
-	comments    map[string]int
-	relCount    map[string]int
-	defects     map[string][]string
+	// cfgResults: latest result of every test per configuration
+	cfgResults store.ConfigResults
+	comments   map[string]int
+	relCount   map[string]int
+	defects    map[string][]string
 	// requirement id → related keys; parent/child keys of refines relations
 	related, parents, children map[string][]string
 	// item id → references to related items (both directions)
@@ -68,6 +72,8 @@ type projectContext struct {
 	// test dependencies of the project; test id → keys of its prerequisites
 	deps       []model.TestDependency
 	prereqKeys map[string][]string
+	// test id → flakiness score (pass/fail flips among the last results)
+	flaky map[string]int
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -89,13 +95,22 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	}
 	pc.r2t, pc.t2r = store.LinkIndex(pc.links)
 	pc.suspect = map[string]int{}
+	pc.r2tKeys, pc.t2rKeys = map[string][]string{}, map[string][]string{}
 	for _, l := range pc.links {
+		pc.r2tKeys[l.RequirementID] = append(pc.r2tKeys[l.RequirementID], l.TestCaseKey)
+		pc.t2rKeys[l.TestCaseID] = append(pc.t2rKeys[l.TestCaseID], l.RequirementKey)
 		if l.SuspectSince != nil {
 			pc.suspect[l.RequirementID]++
 			pc.suspect[l.TestCaseID]++
 		}
 	}
 	if pc.last, err = s.Store.LastResults(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.flaky, err = s.Store.FlakyScores(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.cfgResults, err = s.Store.LastConfigResults(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
 	if pc.openDefects, err = s.Store.OpenDefectCounts(ctx, tenantID, p.ID); err != nil {
@@ -178,7 +193,7 @@ func (pc *projectContext) folderPath(id *string) string {
 func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.FolderPath = pc.folderPath(r.FolderID)
 	r.LinkedTests = len(pc.r2t[r.ID])
-	r.Coverage = store.Coverage(pc.r2t[r.ID], pc.last)
+	r.Coverage = store.CoverageOf(pc.r2t[r.ID], pc.cfgResults)
 	r.CommentCount = pc.comments[r.ID]
 	r.Relations = pc.relCount[r.ID]
 	r.RelationRefs = pc.refs[r.ID]
@@ -199,6 +214,8 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	t.StepCount = len(t.Steps)
 	t.Defects = pc.defects[t.ID]
 	t.SuspectLinks = pc.suspect[t.ID]
+	t.Flakiness = pc.flaky[t.ID]
+	t.Flaky = t.Flakiness >= store.FlakyMinFlips
 	refs := append([]model.ItemRef{}, pc.refs[t.ID]...)
 	seen := map[string]bool{}
 	for _, st := range t.Steps {
@@ -224,12 +241,7 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 	for _, c := range r.Criteria {
 		crit = append(crit, c.Description, c.Method, c.Threshold)
 	}
-	var linkedKeys []string
-	for _, l := range pc.links {
-		if l.RequirementID == r.ID {
-			linkedKeys = append(linkedKeys, l.TestCaseKey)
-		}
-	}
+	linkedKeys := pc.r2tKeys[r.ID]
 	return query.MapRecord{
 		"id": {r.ID}, "key": {r.Key}, "title": {r.Title}, "description": {r.Description}, "obligation": {r.Obligation},
 		"type": {r.Type}, "priority": {r.Priority}, "status": {r.Status}, "source": {r.Source},
@@ -265,12 +277,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 			calls = append(calls, st.CallTestKey)
 		}
 	}
-	var linkedKeys []string
-	for _, l := range pc.links {
-		if l.TestCaseID == t.ID {
-			linkedKeys = append(linkedKeys, l.RequirementKey)
-		}
-	}
+	linkedKeys := pc.t2rKeys[t.ID]
 	return query.MapRecord{
 		"id": {t.ID}, "key": {t.Key}, "title": {t.Title}, "description": {t.Description},
 		"preconditions": {t.Preconditions}, "execution_type": {t.ExecutionType},
@@ -282,18 +289,24 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)}, "suspect": {strconv.Itoa(t.SuspectLinks)},
 		"mention":    mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
 		"depends_on": pc.prereqKeys[t.ID],
+		"flaky":      {strconv.FormatBool(t.Flaky)},
+		"flakiness":  {strconv.Itoa(t.Flakiness)},
 	}
 }
 
 func runRecord(r *model.TestRun) query.MapRecord {
+	cfgs := make([]string, 0, len(r.Configurations))
+	for _, c := range r.Configurations {
+		cfgs = append(cfgs, c.Name)
+	}
 	return query.MapRecord{"id": {r.ID}, "name": {r.Name}, "description": {r.Description}, "status": {r.Status},
-		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}}
+		"environment": {r.Environment}, "build": {r.Build}, "created_by": {r.CreatedBy}, "created_at": {ts(r.CreatedAt)}, "configuration": cfgs}
 }
 
 func executionRecord(e *model.Execution) query.MapRecord {
 	return query.MapRecord{"id": {e.ID}, "key": {e.TestKey}, "title": {e.TestTitle}, "status": {e.Status},
 		"assignee": {e.Assignee}, "executed_by": {e.ExecutedBy}, "notes": {e.Notes}, "output": {e.Output}, "defect": e.Defects,
-		"mention": mentions(e.Assignee, e.Notes)}
+		"mention": mentions(e.Assignee, e.Notes), "configuration": {e.ConfigurationName}}
 }
 
 // folderFilter returns a predicate selecting items in folder (and

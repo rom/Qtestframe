@@ -70,6 +70,14 @@ func validateRelease(r *model.Release) error {
 		if c.Threshold == 0 && percentCriterion(c.Type) {
 			c.Threshold = 100
 		}
+		if c.Type == "trace_rules" {
+			if c.Level == "" {
+				c.Level = "error"
+			}
+			if c.Level != "error" && c.Level != "warning" {
+				return Invalidf("the level of trace_rules must be error or warning")
+			}
+		}
 	}
 	return nil
 }
@@ -296,6 +304,9 @@ type ReleaseData struct {
 	OpenDefects func(level string) []ReleaseItem
 	// OpenRisks returns the unmitigated risks at or above a level (nil when unknown).
 	OpenRisks func(level string) []ReleaseItem
+	// RuleViolations returns the items of the scope that break traceability
+	// rules of at least a severity (nil when unknown).
+	RuleViolations func(level string) []ReleaseItem
 }
 
 // ReleaseItem is something a criterion refers to.
@@ -432,6 +443,13 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 			}
 			open := d.OpenDefects(c.Level)
 			out = append(out, CriterionResult{ExitCriterion: c, Met: len(open) == 0, Actual: float64(len(open)), Items: limitItems(open), Available: true})
+		case "trace_rules":
+			if d.RuleViolations == nil {
+				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
+				continue
+			}
+			bad := d.RuleViolations(c.Level)
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(bad) == 0, Actual: float64(len(bad)), Items: limitItems(bad), Available: true})
 		case "risks_mitigated":
 			if d.OpenRisks == nil {
 				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
@@ -458,8 +476,10 @@ func limitItems(items []ReleaseItem) []ReleaseItem {
 }
 
 // ReleaseStatus evaluates a release. defects and risks provide the open
-// defects and risks of the scope (nil when not available).
-func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects, risks func(scope []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+// defects and risks of the scope, rules the items of the scope (scope
+// requirements and the tests linked to them) that break traceability rules
+// (each nil when not available).
+func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
 	rel, err := s.GetRelease(ctx, tenantID, id)
 	if err != nil {
 		return nil, err
@@ -483,22 +503,24 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 		}
 	}
 	d := ReleaseData{Results: map[string]string{}}
-	// latest result per test in the release's runs
-	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e
+	// latest result per test and configuration in the release's runs
+	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.configuration_id, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e
 		JOIN test_runs r ON r.id = e.run_id JOIN test_cases t ON t.id = e.test_case_id WHERE r.release_id = ? AND r.tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return nil, err
 	}
 	type res struct {
-		key, title, status string
-		at                 time.Time
+		status string
+		at     time.Time
 	}
-	latest := map[string]res{}
+	latest := map[string]map[string]res{}
+	names := map[string][2]string{}
 	for rows.Next() {
 		var tid, key, title, st string
+		var cfg sql.NullString
 		var fin, sta sql.NullTime
 		var at time.Time
-		if err := rows.Scan(&tid, &key, &title, &st, &fin, &sta, &at); err != nil {
+		if err := rows.Scan(&tid, &key, &title, &cfg, &st, &fin, &sta, &at); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -511,18 +533,32 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 		if st != model.ResultNotRun && st != model.ResultInProgress {
 			d.Executed++
 		}
-		if cur, ok := latest[tid]; !ok || (st != model.ResultNotRun && (cur.status == model.ResultNotRun || at.After(cur.at))) {
-			latest[tid] = res{key, title, st, at}
+		names[tid] = [2]string{key, title}
+		if latest[tid] == nil {
+			latest[tid] = map[string]res{}
+		}
+		if cur, ok := latest[tid][cfg.String]; !ok || (st != model.ResultNotRun && (cur.status == model.ResultNotRun || at.After(cur.at))) {
+			latest[tid][cfg.String] = res{st, at}
 		}
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	for tid, r := range latest {
-		d.Results[tid] = r.status
-		if r.status == model.ResultFailed || r.status == model.ResultBlocked {
-			d.FailedTests = append(d.FailedTests, ReleaseItem{Kind: model.KindTest, ID: tid, Key: r.key, Title: r.title, Note: r.status})
+	units := ConfigResults{}
+	for tid, m := range latest {
+		units[tid] = map[string]string{}
+		for cfg, r := range m {
+			units[tid][cfg] = r.status
+			if r.status == model.ResultNotRun {
+				units[tid][cfg] = ""
+			}
+		}
+		// a test counts as passed only when it passed in every configuration
+		st := units.Combined(tid)
+		d.Results[tid] = st
+		if st == model.ResultFailed || st == model.ResultBlocked {
+			d.FailedTests = append(d.FailedTests, ReleaseItem{Kind: model.KindTest, ID: tid, Key: names[tid][0], Title: names[tid][1], Note: st})
 		}
 	}
 	sort.Slice(d.FailedTests, func(i, j int) bool { return naturalLess(d.FailedTests[i].Key, d.FailedTests[j].Key) })
@@ -537,7 +573,7 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 		if len(rr.Tests) > 0 {
 			sum["covered"]++
 		}
-		switch Coverage(rr.Tests, d.Results) {
+		switch CoverageOf(rr.Tests, units) {
 		case model.ResultPassed:
 			sum["passed"]++
 		case model.ResultFailed:
@@ -552,6 +588,21 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	}
 	if risks != nil {
 		d.OpenRisks = func(level string) []ReleaseItem { return risks(rel.RequirementIDs, level) }
+	}
+	if len(rules) > 0 && rules[0] != nil {
+		var scopeTests []string
+		seen := map[string]bool{}
+		for _, rid := range rel.RequirementIDs {
+			for _, tid := range tests[rid] {
+				if !seen[tid] {
+					seen[tid] = true
+					scopeTests = append(scopeTests, tid)
+				}
+			}
+		}
+		d.RuleViolations = func(level string) []ReleaseItem {
+			return rules[0](rel.ProjectID, rel.RequirementIDs, scopeTests, level)
+		}
 	}
 	rep := &ReleaseStatusReport{Release: rel, Criteria: EvaluateExitCriteria(rel.ExitCriteria, d), Summary: sum}
 	rep.Go = true

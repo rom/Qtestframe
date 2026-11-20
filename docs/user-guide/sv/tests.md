@@ -57,6 +57,22 @@ Ett steg kan **anropa** ett annat testfall i samma projekt i stället för att h
 
 När en körning skapas ersätts anropet med det anropade testfallets steg (markerade `[NYCKEL]`). Anrop kan nästlas i upp till fem nivåer. Ett testfall kan inte anropa sig självt, och anrop får inte bilda en cykel. Det anropade testfallet visar **Används av:** med alla testfall som anropar det. Om du tar bort ett anropat testfall blir anropet ett tomt steg.
 
+## Datadrivna testfall
+
+Ett datadrivet (parametriserat) testfall skrivs en gång och körs med flera uppsättningar data, till exempel samma inloggning med ett kundkonto, ett företagskonto och ett administratörskonto.
+
+1. Öppna avsnittet **Testdata** under stegen i testfallsredigeraren och välj **Lägg till parameter**. Namnge parametern, till exempel `username` (bokstäver, siffror, `_`, `.` och `-`, inte först en siffra; högst 50 parametrar).
+2. Välj **Lägg till rad** för varje uppsättning data och fyll i värdena. En rad kan ha ett namn (*Kund*); utan namn heter den *Rad 1*, *Rad 2* … Pilarna flyttar rader och papperskorgen tar bort en (högst 500 rader).
+3. Använd parametrarna i stegen, förutsättningarna, beskrivningen och de förväntade resultaten som `{{username}}` (mellanslag innanför klamrarna går bra: `{{ username }}`).
+
+**Klistra in tabell** tar emot celler som kopierats från Excel, LibreOffice eller Google Kalkylark (eller text åtskild med komma eller semikolon). Ange om första raden namnger parametrarna, om första kolumnen innehåller radnamnen och om de inklistrade raderna ska ersätta testdatan eller läggas till. **Kopiera tabell** kopierar testdatan som en tabell som du kan klistra in i ett kalkylark. En platshållare som inte är en parameter lämnas som den är; redigeraren varnar för sådana platshållare, eftersom de oftast är stavfel.
+
+När testfallet läggs till i en körning blir varje rad en **iteration** av exekveringen, med en egen kopia av stegen där platshållarna har ersatts med radens värden. Ändringar i testdatan efteråt påverkar inte befintliga körningar, bara nya. Ett testfall utan rader exekveras en gång, som tidigare. Under [Datadrivna testfall: iterationer](runs.md#datadrivna-testfall-iterationer) beskrivs hur iterationer exekveras och hur det samlade utfallet härleds.
+
+**Delade steg och parametrar:** steg som anropas från ett annat testfall ([delade steg](#delade-steg)) fylls i med parametrarna i det **anropande** testfallet, så ett delat *Logga in som {{username}}* fungerar med varje rad i alla testfall som anropar det. Det anropade testfallets egen testdata används inte när det anropas; den gäller bara när testfallet självt exekveras. Platshållare som det anropande testfallet inte definierar lämnas oförändrade.
+
+Testdatan ingår i testfallets versionshistorik och i exporten (**Exportera → Testdata**: en rad per datarad och parameter).
+
 ## Kategorier
 
 Kategorier klassificerar testfall och krav längs **dimensioner**. Nya projekt får dessa standardvärden:
@@ -128,11 +144,28 @@ Fliken **Exekveringar** listar alla exekveringar av testfallet i alla körningar
 
 ![Fliken Exekveringar för ett testfall med utfall från flera körningar](../images/sv-tests-executions.png)
 
-Kolumnen **Senaste utfall** visar det senaste utfallet. I frågor hittar `last_result:failed` testfall vars senaste utfall är underkänt och `defect:SHOP-*` testfall med en sådan defekt.
+I körningar med [konfigurationer](runs.md#konfigurationer-i-en-körning) visas varje exekverings konfiguration under körningen, och en datadriven exekvering länkar till sina iterationer i exekveringsvyn.
+
+Kolumnen **Senaste utfall** visar det senaste utfallet (i vilken konfiguration som helst). I frågor hittar `last_result:failed` testfall vars senaste utfall är underkänt och `defect:SHOP-*` testfall med en sådan defekt.
+
+Ett utfall markerat med **Växling** skiljer sig från testfallets föregående godkända eller underkända utfall: där började testfallet underkännas, eller blev godkänt igen.
+
+## Instabila testfall
+
+Ett testfall är *instabilt* när utfallet växlar fram och tillbaka mellan godkänt och underkänt utan att testfallet eller produkten har ändrats däremellan. Qtestframe tittar på de 10 senaste godkända eller underkända utfallen för varje testfall, från alla körningar – manuella utfall och automatiserade utfall från JUnit-importer, uppladdaren `qtestframe report` och Playwright-rapportören. Blockerade, överhoppade och ej körda utfall räknas inte, eftersom de inte säger något om själva testfallet.
+
+Testfallets *instabilitet* är antalet växlingar bland de utfallen: ett godkänt utfall efter ett underkänt, eller tvärtom. Ett testfall med **2 eller fler växlingar** räknas som instabilt. Ett testfall som gick sönder en gång och lagades har högst två växlingar utspridda över lång tid; ett testfall som växlar hela tiden når gränsen snabbt.
+
+- I listan över testfall har instabila testfall märket **Instabilt** bredvid det senaste utfallet (håll pekaren över det för att se antalet växlingar).
+- Frågan `flaky:true` listar de instabila testfallen; `flakiness>=3` (eller `flips>=3`) dem med minst tre växlingar.
+- Fliken **Kvalitet** på [översikten](traceability-and-coverage.md#översikten) visar de tio mest instabila testfallen med deras senaste utfall.
+- Fliken **Exekveringar** för ett testfall markerar varje växling.
+
+Ett instabilt testfall döljer verkliga fel och kostar tid i omkörningar: hitta orsaken (tidsberoenden, testdata, ordningen, miljön) eller lägg testfallet åt sidan tills det är åtgärdat.
 
 ## Kommentarer och versionshistorik
 
-**Kommentarer** och **Versionshistorik** fungerar precis som för [krav](requirements.md#kommentarer). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort.
+**Kommentarer** och **Versionshistorik** fungerar precis som för [krav](requirements.md#kommentarer). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort. Om någon annan sparar ett testfall medan du redigerar det kan du jämföra och välja i stället för att skriva över den andras ändringar, se [När någon annan har sparat först](requirements.md#när-någon-annan-har-sparat-först).
 
 ## Länkar
 

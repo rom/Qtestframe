@@ -136,6 +136,18 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 			return nil, err
 		}
 	}
+	if id == report.Traceability {
+		in := map[string]bool{}
+		for _, rq := range d.Requirements {
+			in[model.KindRequirement+":"+rq.ID] = true
+		}
+		for _, t := range d.Tests {
+			in[model.KindTest+":"+t.ID] = true
+		}
+		if d.TraceRules, err = s.evaluateTraceRules(ctx, p.TenantID(), pr, false, func(k, x string) bool { return in[k+":"+x] }); err != nil {
+			return nil, err
+		}
+	}
 	switch id {
 	case report.RunSummary:
 		run, err := s.projectRun(r, p, pr, strings.TrimSpace(params["run_id"]))

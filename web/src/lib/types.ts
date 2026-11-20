@@ -1,4 +1,5 @@
 // TypeScript mirrors of internal/model/model.go (JSON tags are authoritative).
+import type { FlakyTest, GroupCoverage } from './metrics'
 
 export interface Tenant {
   id: string
@@ -39,6 +40,8 @@ export interface Preferences {
   create_linked_test?: boolean | null
   /** first-login intro tour finished or skipped */
   intro_done?: boolean
+  /** e-mail for notifications: off (default) | immediate | digest */
+  email_notifications?: string
 }
 
 export interface SessionInfo {
@@ -63,6 +66,54 @@ export interface Membership {
   created_at: string
   /** avatar of the member (when the server includes it) */
   avatar?: string
+  /** provisioned by SCIM: the identity provider manages role and membership */
+  scim?: boolean
+  /** open e-mail invitation (members list of the tenant) */
+  invitation?: InvitationInfo
+}
+
+/** An open invitation of a member (Membership.invitation). */
+export interface InvitationInfo {
+  id: string
+  sent_at: string
+  expires_at: string
+  sso: boolean
+  expired: boolean
+  invited_by: string
+}
+
+/** Scheduled e-mailing of a saved report. */
+export interface ReportSubscription {
+  id: string
+  project_id: string
+  definition_id: string
+  definition_name?: string
+  owner_id: string
+  owner_email?: string
+  frequency: string
+  weekday: number
+  day_of_month: number
+  time: string
+  timezone: string
+  format: string
+  recipients: string[]
+  addresses: string[]
+  message: string
+  enabled: boolean
+  next_run_at: string | null
+  last_run_at: string | null
+  last_sent_at: string | null
+  last_error: string
+  created_at: string
+  updated_at: string
+}
+
+/** A member who can get reports by e-mail. */
+export interface ReportRecipient {
+  user_id: string
+  email: string
+  display_name: string
+  role: string
 }
 
 /** The sign-in before the current one (Me.previous_login). */
@@ -314,10 +365,58 @@ export interface TestCase {
   called_by?: TestRef[] | null
   /** links to requirements that are suspect */
   suspect_links?: number
+  /** pass/fail flips among the last results; flaky when at the threshold */
+  flakiness?: number
+  flaky?: boolean
   /** Requirements it verifies, tests it calls and tests that call it. */
   relations?: ItemRef[] | null
   step_count?: number
   defects?: string[] | null
+  /** Data-driven tests: parameter names and data rows (one iteration per row). */
+  parameters?: string[] | null
+  data_rows?: DataRow[] | null
+}
+
+/** One row of the test data of a data-driven test. */
+export interface DataRow {
+  name: string
+  values: Record<string, string>
+}
+
+/** One coordinate of a configuration, e.g. Browser = Chrome. */
+export interface DimensionValue {
+  dimension: string
+  value: string
+}
+
+/** A named combination of dimension values tests are executed against. */
+export interface Configuration {
+  id: string
+  project_id: string
+  name: string
+  description: string
+  values: DimensionValue[]
+  position: number
+  created_by?: string
+  created_at?: string
+  updated_at?: string
+  /** runs that target it */
+  run_count?: number
+}
+
+export interface ConfigurationRef {
+  id: string
+  name: string
+}
+
+/** The execution of one data row of a data-driven test. */
+export interface Iteration {
+  id: string
+  position: number
+  name: string
+  values: Record<string, string>
+  status: string
+  notes: string
 }
 
 export interface TraceLink {
@@ -349,6 +448,8 @@ export interface TestRun {
   release_id?: string | null
   release_name?: string
   summary?: Record<string, number>
+  /** configurations the run targets (each test is executed once per configuration) */
+  configurations?: ConfigurationRef[] | null
 }
 
 export interface StepResult {
@@ -364,6 +465,8 @@ export interface StepResult {
   attachment_count?: number
   /** Assumed: step data is echoed for convenience (falls back to test.steps). */
   data?: string
+  /** the iteration (data row) of a data-driven execution */
+  iteration_id?: string | null
 }
 
 /** A reason why a test should not be executed yet (see Readiness). */
@@ -453,6 +556,12 @@ export interface Execution {
   run_environment?: string
   run_build?: string
   run_created_at?: string | null
+  /** the configuration it runs in (null without configuration) */
+  configuration_id?: string | null
+  configuration_name?: string
+  /** iterations of a data-driven test (single executions) and their number (lists) */
+  iterations?: Iteration[]
+  iteration_count?: number
 }
 
 export interface Relation {
@@ -572,6 +681,10 @@ export interface Meta {
   analysis_languages: string[]
   /** Server default for creating a linked test with each new requirement. */
   auto_create_test?: boolean
+  /** Whether the server can send e-mail (email section of the configuration). */
+  email_enabled?: boolean
+  /** Hour of the day (UTC) when daily digests are sent. */
+  email_digest_hour?: number
 }
 
 export interface Dashboard {
@@ -591,6 +704,12 @@ export interface Dashboard {
   runs: { total: number; by_status: Record<string, number> }
   recent_runs: TestRun[] | null
   results: Record<string, number>
+  /** planned and in-progress runs, newest first */
+  active_runs?: TestRun[] | null
+  coverage_by_folder?: GroupCoverage[] | null
+  coverage_by_category?: GroupCoverage[] | null
+  defects_by_severity?: Record<string, number>
+  flaky?: { total: number; items: FlakyTest[] | null; window: number; min_flips: number }
 }
 
 export interface KeywordHit {
@@ -623,6 +742,70 @@ export interface Traceability {
   requirements: { id: string; key: string; title: string; obligation: string; coverage: string }[]
   tests: { id: string; key: string; title: string; last_result: string }[]
   links: TraceLink[]
+  /** the configuration coverage and results are filtered to ('none': without configuration) */
+  configuration?: string
+}
+
+/** Traceability rule kinds (internal/model TraceRuleKinds). */
+export type TraceRuleKind = 'verified_by' | 'verifies' | 'relation' | 'item_link'
+
+export interface TraceRuleFields {
+  name: string
+  description: string
+  /** error | warning */
+  severity: string
+  enabled: boolean
+  /** requirement | test */
+  scope: string
+  selector: string
+  kind: TraceRuleKind | string
+  min: number
+  not_suspect?: boolean
+  passed?: boolean
+  relation_type?: string
+  /** incoming | outgoing | '' (any) */
+  direction?: string
+  target_type?: string
+  target_query?: string
+  every?: boolean
+}
+
+export interface TraceRule extends TraceRuleFields {
+  id: string
+  project_id: string
+  position: number
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TraceViolation {
+  kind: string
+  id: string
+  key: string
+  title: string
+  found: number
+  required: number
+  total: number
+}
+
+export interface TraceRuleResult {
+  rule: TraceRule
+  matched: number
+  violations: TraceViolation[]
+  violation_count: number
+  passed: boolean
+  error?: string
+}
+
+export interface TraceRulesReport {
+  results: TraceRuleResult[]
+  passed: boolean
+  summary: Record<string, number>
+}
+
+export interface ItemTraceViolation extends TraceViolation {
+  rule: TraceRule
 }
 
 export interface SearchHit {
@@ -669,11 +852,11 @@ export interface TenantSettings {
 // ---------------------------------------------------------------- releases
 
 export interface ExitCriterion {
-  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated */
+  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated, trace_rules */
   type: string
   /** percent for percentage criteria */
   threshold?: number
-  /** minimum severity (defects) or risk level (risks) */
+  /** minimum severity (defects), risk level (risks) or rule severity (trace_rules: error | warning) */
   level?: string
 }
 

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/reqlang"
@@ -11,7 +12,12 @@ import (
 
 // SeedDemo creates a demonstration project with folders, requirements,
 // evaluation criteria, test cases, links and a test run.
-func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Project, error) {
+func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.Project, error) {
+	// The project is created SeedHistoryDays ago and gets a history of
+	// nightly runs (trends, burn-up, flaky tests); the last run is today's.
+	clock := &seedClock{live: live}
+	clock.at = live.Now().AddDate(0, 0, -SeedHistoryDays)
+	st := live.WithClock(clock.now)
 	key := "DEMO"
 	ps, err := st.ListProjects(ctx, tenantID)
 	if err != nil {
@@ -112,6 +118,7 @@ func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Pro
 			return nil, err
 		}
 		reqs = append(reqs, r)
+		clock.advance(18 * time.Hour)
 	}
 
 	type testSpec struct {
@@ -175,6 +182,24 @@ func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Pro
 			return nil, err
 		}
 	}
+	if err := seedHistory(ctx, st, clock, tenantID, p.ID, reqs, testIDs); err != nil {
+		return nil, err
+	}
+	clock.at = time.Time{} // today: the live clock
+	// traceability rules (see Traceability → Rules)
+	for _, tr := range []model.TraceRule{
+		{Name: "Every MUST requirement is verified by a test", Description: "Mandatory requirements (MUST, SHALL) need at least one linked test.",
+			Severity: "error", Scope: model.KindRequirement, Selector: "obligation:must OR obligation:shall", Kind: model.TraceVerifiedBy, Min: 1},
+		{Name: "No suspect links on MUST requirements", Description: "Review the tests of a mandatory requirement after it changed.",
+			Severity: "warning", Scope: model.KindRequirement, Selector: "obligation:must OR obligation:shall", Kind: model.TraceVerifiedBy,
+			TraceRuleOptions: model.TraceRuleOptions{NotSuspect: true, Every: true}},
+		{Name: "Every test verifies a requirement", Severity: "warning", Scope: model.KindTest, Kind: model.TraceVerifies, Min: 1},
+	} {
+		tr.ProjectID, tr.Enabled, tr.CreatedBy = p.ID, true, "seed"
+		if err := st.CreateTraceRule(ctx, tenantID, &tr); err != nil {
+			return nil, err
+		}
+	}
 	run := &model.TestRun{ProjectID: p.ID, Name: "Sprint 12 regression", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed"}
 	if err := st.CreateRun(ctx, tenantID, run, testIDs); err != nil {
 		return nil, err
@@ -197,7 +222,78 @@ func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Pro
 			return nil, err
 		}
 	}
+	if err := seedConfigurations(ctx, st, tenantID, p, tf, reqs[0], testIDs[0]); err != nil {
+		return nil, err
+	}
 	return p, nil
+}
+
+// seedConfigurations adds browser/OS configurations, a data-driven login
+// test and a cross-browser run with some results.
+func seedConfigurations(ctx context.Context, st *store.Store, tenantID string, p *model.Project, folder *model.Folder, req *model.Requirement, loginTest string) error {
+	var cfgs []model.ConfigurationRef
+	for _, v := range [][2]string{{"Chrome", "Windows"}, {"Firefox", "Linux"}, {"Safari", "macOS"}} {
+		c := &model.Configuration{ProjectID: p.ID, Values: []model.DimensionValue{{Dimension: "Browser", Value: v[0]}, {Dimension: "OS", Value: v[1]}}, CreatedBy: "seed"}
+		if err := st.CreateConfiguration(ctx, tenantID, c); err != nil {
+			return err
+		}
+		cfgs = append(cfgs, model.ConfigurationRef{ID: c.ID, Name: c.Name})
+	}
+	dd := &model.TestCase{ProjectID: p.ID, FolderID: &folder.ID, Title: "Login with different account types", ExecutionType: model.ExecManual, Status: "ready", CreatedBy: "seed",
+		Description: "Data-driven: runs once per row of the test data.",
+		Steps: []model.TestStep{
+			{Action: "Open the login page and sign in as {{email}} with password {{password}}", Expected: "Sign-in succeeds"},
+			{Action: "Open the account menu", Expected: "The role {{role}} is shown"},
+		},
+		Parameters: []string{"email", "password", "role"},
+		DataRows: []model.DataRow{
+			{Name: "Customer", Values: map[string]string{"email": "carol@example.com", "password": "Customer-123", "role": "Customer"}},
+			{Name: "Business", Values: map[string]string{"email": "bob@example.com", "password": "Business-123", "role": "Business account"}},
+			{Name: "Administrator", Values: map[string]string{"email": "admin@example.com", "password": "Admin-123", "role": "Administrator"}},
+		}}
+	if err := st.CreateTest(ctx, tenantID, dd); err != nil {
+		return err
+	}
+	if err := st.CreateLink(ctx, tenantID, &model.TraceLink{RequirementID: req.ID, TestCaseID: dd.ID}); err != nil {
+		return err
+	}
+	run := &model.TestRun{ProjectID: p.ID, Name: "Cross-browser smoke", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed", Configurations: cfgs}
+	if err := st.CreateRun(ctx, tenantID, run, []string{loginTest, dd.ID}); err != nil {
+		return err
+	}
+	es, err := st.ListExecutions(ctx, tenantID, run.ID)
+	if err != nil {
+		return err
+	}
+	passed := model.ResultPassed
+	for _, e := range es {
+		switch {
+		case e.TestCaseID == loginTest && e.ConfigurationName != "Safari / macOS":
+			if _, err := st.UpdateExecution(ctx, tenantID, e.ID, "seed", store.ExecutionUpdate{Status: &passed}); err != nil {
+				return err
+			}
+		case e.TestCaseID == dd.ID && e.ConfigurationName == "Chrome / Windows":
+			// every iteration passes except the administrator's role label
+			full, err := st.GetExecution(ctx, tenantID, e.ID)
+			if err != nil {
+				return err
+			}
+			admin := full.Iterations[len(full.Iterations)-1].ID
+			var srs []model.StepResult
+			for i, sr := range full.StepResults {
+				status := model.ResultPassed
+				if sr.IterationID != nil && *sr.IterationID == admin && i == len(full.StepResults)-1 {
+					status = model.ResultFailed
+					sr.Actual = "The role is shown as \"Admin\""
+				}
+				srs = append(srs, model.StepResult{ID: sr.ID, Status: status, Actual: sr.Actual})
+			}
+			if _, err := st.UpdateExecution(ctx, tenantID, e.ID, "seed", store.ExecutionUpdate{StepResults: srs}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func itoa(n int) string {

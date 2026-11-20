@@ -45,3 +45,16 @@ export function saveBlob(blob: Blob, filename: string): void {
   a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+/** Export formats that contain requirements only (ReqIF); aspects do not apply. */
+export const REQIF_FORMATS: readonly string[] = ['reqif', 'reqifz']
+
+/** Whether an export format is ReqIF (`.reqif` or `.reqifz`). */
+export function isReqIFFormat(format: string): boolean {
+  return REQIF_FORMATS.includes(format)
+}
+
+/** The file extension of an export: CSV with several aspects is a ZIP archive. */
+export function exportExtension(format: string, aspectCount: number): string {
+  return format === 'csv' && aspectCount > 1 ? 'zip' : format
+}

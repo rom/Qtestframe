@@ -10,12 +10,14 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
+import ToggleSwitch from 'primevue/toggleswitch'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import UserAvatar from '@/components/UserAvatar.vue'
 import TempPasswordDialog from '@/components/TempPasswordDialog.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatDateTime } from '@/lib/format'
+import { invitationState } from '@/lib/email'
 import { P } from '@/lib/permissions'
 import type { Membership } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
@@ -38,6 +40,8 @@ const rbac = ref<{ roles: string[] } | null>(null)
 const loading = ref(false)
 const filter = ref('')
 const canManage = computed(() => auth.can(P.memberManage))
+/** some members are provisioned by SCIM (their role and membership are managed by the identity provider) */
+const hasScim = computed(() => members.value.some((m) => m.scim))
 const rolesStore = useRolesStore()
 const roles = computed(() => enumOptions('role', rolesStore.roles.length ? rolesStore.roles.map((r) => r.name) : (rbac.value?.roles ?? meta.meta.roles)))
 const filtered = computed(() => {
@@ -57,6 +61,7 @@ async function load() {
 }
 onMounted(async () => {
   load()
+  void meta.load()
   void rolesStore.ensure()
   try {
     rbac.value = await api.get<{ roles: string[] }>('/rbac')
@@ -197,26 +202,31 @@ function bulkRemove() {
 }
 
 const dialog = ref(false)
-const form = ref({ email: '', display_name: '', role: 'tester', password: '' })
+const emailEnabled = computed(() => !!meta.meta.email_enabled)
+const blankForm = () => ({ email: '', display_name: '', role: 'tester', password: '', invite: emailEnabled.value, sso: false })
+const form = ref(blankForm())
 const formError = ref('')
 const busy = ref(false)
 function openAdd() {
-  form.value = { email: '', display_name: '', role: 'tester', password: '' }
+  form.value = blankForm()
   formError.value = ''
   dialog.value = true
 }
 async function add() {
   busy.value = true
   formError.value = ''
+  const invite = emailEnabled.value && form.value.invite
   try {
-    await api.post('/members', {
+    const res = await api.post<Membership>('/members', {
       email: form.value.email.trim(),
       role: form.value.role,
       ...(form.value.display_name ? { display_name: form.value.display_name } : {}),
-      ...(form.value.password ? { password: form.value.password } : {}),
+      ...(!invite && form.value.password ? { password: form.value.password } : {}),
+      ...(invite ? { invite: true, sso: form.value.sso } : {}),
     })
     dialog.value = false
-    notify.ok(t('admin.memberAdded'), form.value.email)
+    if (invite) notify.ok(res?.invitation ? t('email.invite.sent') : t('admin.memberAdded'), res?.invitation ? form.value.email : t('email.invite.noticeSent'))
+    else notify.ok(t('admin.memberAdded'), form.value.email)
     load()
   } catch (e) {
     formError.value = errorMessage(e)
@@ -224,6 +234,53 @@ async function add() {
     busy.value = false
   }
 }
+// ---------- invitations ----------
+const canTestMail = computed(() => auth.can(P.tenantManage))
+const testing = ref(false)
+async function testMail() {
+  testing.value = true
+  try {
+    const res = await api.post<{ ok: boolean; to: string; error?: string }>('/admin/email/test')
+    if (res?.ok) notify.ok(t('email.test.sent', { to: res.to }))
+    else notify.failText(t('email.test.failed'), res?.error ?? '')
+  } catch (e) {
+    notify.fail(e, t('email.test.failed'))
+  } finally {
+    testing.value = false
+  }
+}
+function inviteTip(m: Membership): string {
+  const inv = m.invitation
+  if (!inv) return ''
+  const p = { sent: formatDateTime(inv.sent_at), expires: formatDateTime(inv.expires_at), by: inv.invited_by }
+  return invitationState(inv) === 'expired' ? t('email.invite.expiredTip', p) : t('email.invite.invitedTip', p)
+}
+async function resend(m: Membership) {
+  try {
+    await api.post(`/members/${m.user_id}/invitation`)
+    notify.ok(t('email.invite.resent'), m.email)
+    load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+function revokeInvite(m: Membership) {
+  notify.confirmDanger(
+    t('email.invite.confirmRevoke', { user: m.email ?? '' }),
+    async () => {
+      try {
+        await api.del(`/members/${m.user_id}/invitation`)
+        notify.ok(t('email.invite.revoked'), m.email)
+        load()
+      } catch (e) {
+        notify.fail(e)
+      }
+    },
+    t('email.invite.revokeHeader'),
+    t('email.invite.revoke'),
+  )
+}
+
 // ---------- password reset ----------
 const tempOpen = ref(false)
 const tempPassword = ref('')
@@ -253,8 +310,14 @@ function resetPassword(m: Membership) {
       <IconField><InputIcon class="pi pi-filter" /><InputText v-model="filter" :placeholder="t('admin.filterMembers')" :aria-label="t('admin.filterMembers')" /></IconField>
       <span class="grow" />
       <RouterLink :to="{ name: 'rbac' }" class="p-button p-button-text p-button-secondary"><i class="pi pi-table" aria-hidden="true" />&nbsp;{{ t('admin.roleMatrix') }}</RouterLink>
+      <Button v-if="canTestMail && emailEnabled" :label="t('email.test.button')" icon="pi pi-envelope" severity="secondary" outlined :loading="testing" v-tooltip.bottom="t('email.test.hint')" @click="testMail" />
       <Button v-if="canManage" :label="t('admin.addMember')" icon="pi pi-user-plus" @click="openAdd" />
     </div>
+    <Message v-if="hasScim" severity="info" :closable="false" class="scim-notice">
+      {{ t('provisioning.member.notice') }}
+      <RouterLink v-if="auth.can(P.tenantManage)" :to="{ name: 'provisioning' }">{{ t('provisioning.member.settingsLink') }}</RouterLink>
+    </Message>
+    <Message v-if="canManage && meta.loaded && !emailEnabled" severity="secondary" :closable="false" class="small" style="margin-bottom: 10px">{{ t('email.notConfigured') }}</Message>
     <div v-if="canManage && selection.length" class="bulkbar" role="toolbar" :aria-label="t('admin.bulk.toolbar')">
       <b>{{ t('common.selected', { count: selection.length }) }}</b>
       <Select
@@ -275,13 +338,23 @@ function resetPassword(m: Membership) {
     <DataTable v-model:selection="selection" v-stack :value="filtered" data-key="user_id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
       <Column v-if="canManage" selection-mode="multiple" style="width: 2.6rem" />
       <Column field="email" :header="t('common.email')" sortable body-class="stack-main">
-        <template #body="{ data }"><span class="row nowrap" style="gap: 8px; min-width: 0"><UserAvatar :avatar="data.avatar" :user-id="data.user_id" :email="data.email" :name="data.display_name || data.email" :size="28" /><span class="ellipsis">{{ data.email }}</span></span></template>
+        <template #body="{ data }"><span class="row nowrap" style="gap: 8px; min-width: 0"><UserAvatar :avatar="data.avatar" :user-id="data.user_id" :email="data.email" :name="data.display_name || data.email" :size="28" /><span class="ellipsis">{{ data.email }}</span><Tag v-if="data.scim" :value="t('provisioning.member.tag')" severity="info" class="scim-tag" v-tooltip="t('provisioning.member.hint')" />
+            <Tag
+              v-if="data.invitation"
+              v-tooltip="inviteTip(data)"
+              tabindex="0"
+              :aria-label="`${invitationState(data.invitation) === 'expired' ? t('email.invite.expired') : t('email.invite.invited')}: ${inviteTip(data)}`"
+              :value="invitationState(data.invitation) === 'expired' ? t('email.invite.expired') : t('email.invite.invited')"
+              :severity="invitationState(data.invitation) === 'expired' ? 'warn' : 'info'"
+              icon="pi pi-envelope"
+              class="invite-tag"
+            /></span></template>
       </Column>
       <Column field="display_name" :header="t('common.name')" sortable />
       <Column field="role" :header="t('common.role')" sortable style="width: 200px">
         <template #body="{ data }">
           <Select
-            v-if="canManage && data.user_id !== auth.user?.id"
+            v-if="canManage && data.user_id !== auth.user?.id && !data.scim"
             :model-value="data.role"
             :options="roles"
             option-label="label"
@@ -295,10 +368,14 @@ function resetPassword(m: Membership) {
         </template>
       </Column>
       <Column field="created_at" :header="t('admin.memberSince')" sortable style="width: 150px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column v-if="canManage" style="width: 100px">
+      <Column v-if="canManage" style="width: 140px; white-space: nowrap">
         <template #body="{ data }">
-          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" />
-          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('admin.removeMember', { user: data.email })" v-tooltip="t('common.remove')" @click="remove(data)" />
+          <template v-if="data.invitation">
+            <Button v-if="emailEnabled" icon="pi pi-send" text rounded severity="secondary" :aria-label="t('email.invite.resendOf', { user: data.email })" v-tooltip="t('email.invite.resend')" @click="resend(data)" />
+            <Button icon="pi pi-ban" text rounded severity="danger" :aria-label="t('email.invite.revokeOf', { user: data.email })" v-tooltip="t('email.invite.revoke')" @click="revokeInvite(data)" />
+          </template>
+          <Button v-if="data.user_id !== auth.user?.id && !data.invitation && !data.scim" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" />
+          <Button v-if="data.user_id !== auth.user?.id && !data.scim" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('admin.removeMember', { user: data.email })" v-tooltip="t('common.remove')" @click="remove(data)" />
         </template>
       </Column>
     </DataTable>
@@ -310,7 +387,15 @@ function resetPassword(m: Membership) {
       <div v-field class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" required autofocus /></div>
       <div v-field class="field"><label>{{ t('common.role') }}</label><HelpTip id="member.role" :label="t('common.role')" /><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
       <div v-field class="field"><label>{{ t('admin.displayNameNew') }}</label><InputText v-model="form.display_name" /></div>
-      <div v-field class="field">
+      <template v-if="emailEnabled">
+        <label class="row nowrap small" for="mb-invite"><ToggleSwitch v-model="form.invite" input-id="mb-invite" aria-describedby="mb-invite-hint" /> {{ t('email.invite.toggle') }}</label>
+        <small id="mb-invite-hint" class="muted" style="margin-top: -6px">{{ t('email.invite.hint') }}</small>
+        <template v-if="form.invite">
+          <label class="row nowrap small" for="mb-sso"><ToggleSwitch v-model="form.sso" input-id="mb-sso" aria-describedby="mb-sso-hint" /> {{ t('email.invite.sso') }}</label>
+          <small id="mb-sso-hint" class="muted" style="margin-top: -6px">{{ t('email.invite.ssoHint') }}</small>
+        </template>
+      </template>
+      <div v-if="!(emailEnabled && form.invite)" v-field class="field">
         <label>{{ t('admin.initialPassword') }}</label>
         <HelpTip id="member.initialPassword" :label="t('admin.initialPassword')" />
         <Password v-model="form.password" toggle-mask fluid autocomplete="new-password" />
@@ -318,10 +403,23 @@ function resetPassword(m: Membership) {
       </div>
       <div class="row" style="justify-content: flex-end">
         <Button :label="t('common.cancel')" text severity="secondary" @click="dialog = false" />
-        <Button type="submit" :label="t('common.add')" icon="pi pi-check" :loading="busy" :disabled="!form.email" />
+        <Button type="submit" :label="emailEnabled && form.invite ? t('email.invite.submit') : t('common.add')" :icon="emailEnabled && form.invite ? 'pi pi-send' : 'pi pi-check'" :loading="busy" :disabled="!form.email" />
       </div>
     </form>
   </Dialog>
 
   <TempPasswordDialog v-model:visible="tempOpen" :password="tempPassword" :user="tempUser" />
 </template>
+
+<style scoped>
+.scim-notice {
+  margin-bottom: 12px;
+}
+.scim-tag {
+  flex: none;
+}
+.invite-tag {
+  flex: none;
+  font-size: 11px;
+}
+</style>

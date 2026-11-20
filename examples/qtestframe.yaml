@@ -77,6 +77,26 @@ runner:
     python: /usr/bin/python3
     javascript: /usr/bin/node
 
+# Outgoing e-mail: notifications by e-mail, invitations of new members and
+# reports sent by e-mail or on a schedule. Off while host is empty; then the
+# web client hides or explains these features. Links in e-mails use
+# server.base_url, which must be set. To try it locally without a real mail
+# server, run any SMTP sink on port 2525 (e.g. `python3 -m aiosmtpd -n -l
+# 127.0.0.1:2525`) and uncomment:
+#
+# email:
+#   host: 127.0.0.1         # SMTP server
+#   port: 2525              # 587 (STARTTLS), 465 (implicit TLS) or 25
+#   tls: none               # starttls (default) | tls | none (local relays only)
+#   from: qtestframe@example.com
+#   from_name: Qtestframe
+#   # username: qtestframe  # with a password from password_file or the
+#   # password_file: /run/secrets/smtp-password   # QTF_EMAIL_PASSWORD variable,
+#   #                       # never in this file
+#   timeout: 30s
+#   digest_hour: 7          # hour (UTC) of the daily notification digest
+#   # enabled: false        # keep the settings but send nothing
+
 hardening:
   # In-process Linux hardening; ignored (reported as skipped) on macOS.
   no_new_privs: true

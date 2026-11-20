@@ -408,12 +408,22 @@ func truncRunes(s string, n int) string {
 
 var criterionMethodRe = regexp.MustCompile(`(?i)^\[?([\p{L}]+)\]?\s*[:\]–-]\s*(.+)$`)
 
+// thresholdRe matches a trailing "(threshold: …)" as written by the ReqIF
+// export.
+var thresholdRe = regexp.MustCompile(`(?i)\s*\((?:threshold|tröskelvärde|tröskel):\s*([^()]*)\)\s*$`)
+
 // parseCriteria turns one criterion per line into criteria. A line may
-// start with a method: "inspection: …" or "[analys] …".
+// start with a method: "inspection: …" or "[analys] …", and end with a
+// threshold: "… (threshold: 2 s)".
 func parseCriteria(s string) []Criterion {
 	var out []Criterion
 	for _, l := range lines(s) {
 		c := Criterion{Description: l}
+		if m := thresholdRe.FindStringSubmatchIndex(l); m != nil && m[0] > 0 {
+			c.Threshold = strings.TrimSpace(l[m[2]:m[3]])
+			l = strings.TrimSpace(l[:m[0]])
+			c.Description = l
+		}
 		if m := criterionMethodRe.FindStringSubmatch(l); m != nil {
 			if meth, ok := ParseMethod(m[1]); ok && meth != "" {
 				c.Method, c.Description = meth, strings.TrimSpace(m[2])
