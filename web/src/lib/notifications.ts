@@ -19,7 +19,7 @@ export function notificationTarget(n: Pick<AppNotification, 'project_id' | 'enti
     case 'defect':
       return { name: 'defects', params, query: { item: n.entity_id } }
     case 'risk':
-      return { name: 'risks', params, query: { item: n.entity_id } }
+      return { name: 'risks', params, query: { risk: n.entity_id } }
     case 'execution':
       return { name: 'runs', params }
   }

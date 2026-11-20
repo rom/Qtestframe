@@ -25,7 +25,7 @@ describe('notificationTarget', () => {
     expect(notificationTarget(n('requirement'))).toEqual({ name: 'requirements', params: { projectId: 'p1' }, query: { item: 'x' } })
     expect(notificationTarget(n('test'))?.name).toBe('tests')
     expect(notificationTarget(n('defect'))?.name).toBe('defects')
-    expect(notificationTarget(n('risk'))?.query).toEqual({ item: 'x' })
+    expect(notificationTarget(n('risk'))?.query).toEqual({ risk: 'x' })
     expect(notificationTarget(n('execution'))).toEqual({ name: 'runs', params: { projectId: 'p1' } })
     expect(notificationTarget(n('other'))?.name).toBe('dashboard')
   })
