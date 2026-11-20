@@ -9,6 +9,8 @@ import InputText from 'primevue/inputtext'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import MultiSelect from 'primevue/multiselect'
+import Select from 'primevue/select'
+import { useConfigurations } from '@/composables/configurations'
 import Button from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 import ProgressSpinner from 'primevue/progressspinner'
@@ -63,17 +65,29 @@ function cellLabel(rKey: string, tKey: string) {
   return t('traceability.linkCell', { req: rKey, test: tKey })
 }
 
+// coverage and results in one configuration ('' all, 'none' without configuration)
+const cfg = useConfigurations(() => proj.pid)
+const configuration = ref('')
+const configOptions = computed(() => [
+  { label: t('configurations.allCoverage'), value: '' },
+  ...cfg.options.value,
+  { label: t('configurations.withoutShort'), value: 'none' },
+])
 async function load() {
   loading.value = true
   try {
-    data.value = await api.get<Traceability>(`/projects/${proj.pid}/traceability`)
+    data.value = await api.get<Traceability>(`/projects/${proj.pid}/traceability`, configuration.value ? { configuration: configuration.value } : undefined)
   } catch (e) {
     notify.fail(e, t('traceability.loadFailed'))
   } finally {
     loading.value = false
   }
 }
-onMounted(load)
+onMounted(() => {
+  load()
+  cfg.load()
+})
+watch(configuration, () => void load())
 
 const linkMap = computed(() => {
   const m = new Map<string, TraceLink>()
@@ -270,6 +284,7 @@ async function toggle(reqId: string, testId: string) {
       <InputText v-model="testFilter" :placeholder="t('traceability.filterTests')" :aria-label="t('traceability.filterTests')" />
     </IconField>
     <MultiSelect v-model="coverage" :options="coverageOptions" option-label="label" option-value="value" :placeholder="t('traceability.coverage')" :aria-label="t('traceability.coverage')" style="min-width: 150px" show-clear />
+    <Select v-if="cfg.configurations.value.length" v-model="configuration" :options="configOptions" option-label="label" option-value="value" :aria-label="t('configurations.coverageIn')" style="min-width: 170px" />
     <span class="row small nowrap"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">{{ t('traceability.onlyLinked') }}</label><HelpTip id="trace.onlyLinked" :label="t('traceability.onlyLinked')" /></span>
     <HelpTip id="trace.coverage" :label="t('traceability.coverage')" />
     <ul class="row small muted plain-list trace-legend" :aria-label="t('traceability.legend')">

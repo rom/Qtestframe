@@ -318,6 +318,51 @@ export interface TestCase {
   relations?: ItemRef[] | null
   step_count?: number
   defects?: string[] | null
+  /** Data-driven tests: parameter names and data rows (one iteration per row). */
+  parameters?: string[] | null
+  data_rows?: DataRow[] | null
+}
+
+/** One row of the test data of a data-driven test. */
+export interface DataRow {
+  name: string
+  values: Record<string, string>
+}
+
+/** One coordinate of a configuration, e.g. Browser = Chrome. */
+export interface DimensionValue {
+  dimension: string
+  value: string
+}
+
+/** A named combination of dimension values tests are executed against. */
+export interface Configuration {
+  id: string
+  project_id: string
+  name: string
+  description: string
+  values: DimensionValue[]
+  position: number
+  created_by?: string
+  created_at?: string
+  updated_at?: string
+  /** runs that target it */
+  run_count?: number
+}
+
+export interface ConfigurationRef {
+  id: string
+  name: string
+}
+
+/** The execution of one data row of a data-driven test. */
+export interface Iteration {
+  id: string
+  position: number
+  name: string
+  values: Record<string, string>
+  status: string
+  notes: string
 }
 
 export interface TraceLink {
@@ -349,6 +394,8 @@ export interface TestRun {
   release_id?: string | null
   release_name?: string
   summary?: Record<string, number>
+  /** configurations the run targets (each test is executed once per configuration) */
+  configurations?: ConfigurationRef[] | null
 }
 
 export interface StepResult {
@@ -364,6 +411,8 @@ export interface StepResult {
   attachment_count?: number
   /** Assumed: step data is echoed for convenience (falls back to test.steps). */
   data?: string
+  /** the iteration (data row) of a data-driven execution */
+  iteration_id?: string | null
 }
 
 /** A reason why a test should not be executed yet (see Readiness). */
@@ -453,6 +502,12 @@ export interface Execution {
   run_environment?: string
   run_build?: string
   run_created_at?: string | null
+  /** the configuration it runs in (null without configuration) */
+  configuration_id?: string | null
+  configuration_name?: string
+  /** iterations of a data-driven test (single executions) and their number (lists) */
+  iterations?: Iteration[]
+  iteration_count?: number
 }
 
 export interface Relation {
@@ -623,6 +678,8 @@ export interface Traceability {
   requirements: { id: string; key: string; title: string; obligation: string; coverage: string }[]
   tests: { id: string; key: string; title: string; last_result: string }[]
   links: TraceLink[]
+  /** the configuration coverage and results are filtered to ('none': without configuration) */
+  configuration?: string
 }
 
 export interface SearchHit {

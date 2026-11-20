@@ -243,12 +243,13 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/runs/bulk", s.atomic(s.handleBulkRuns), "run.write")
 	h("DELETE /api/v1/projects/{pid}/runs/bulk", s.atomic(s.handleBulkDeleteRuns), "run.write")
 	h("GET /api/v1/runs/{id}", s.handleGetRun, "run.read")
-	h("PATCH /api/v1/runs/{id}", s.handleUpdateRun, "run.write")
+	h("PATCH /api/v1/runs/{id}", s.atomic(s.handleUpdateRun), "run.write")
 	h("DELETE /api/v1/runs/{id}", s.handleDeleteRun, "run.write")
 	h("GET /api/v1/runs/{id}/executions", s.handleListExecutions, "run.read")
 	h("POST /api/v1/runs/{id}/executions", s.handleAddExecutions, "run.write")
 	h("POST /api/v1/runs/{id}/executions/bulk", s.atomic(s.handleBulkExecutions), "run.read")
 	h("POST /api/v1/runs/{id}/results", s.handleImportResults, "run.execute")
+	h("PUT /api/v1/runs/{id}/configurations", s.atomic(s.handleSetRunConfigurations), "run.write")
 	h("GET /api/v1/executions/{id}", s.handleGetExecution, "run.read")
 	h("PATCH /api/v1/executions/{id}", s.handleUpdateExecution, "run.execute")
 	h("POST /api/v1/executions/{id}/run-script", s.handleRunScript, "script.execute")
@@ -271,6 +272,7 @@ func (s *Server) routes() {
 	s.routesReviews(h)
 	s.routesJUnit(h)
 	s.routesReqImport(h)
+	s.routesConfigurations(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

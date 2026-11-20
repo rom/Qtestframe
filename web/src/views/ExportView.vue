@@ -27,6 +27,7 @@ const aspects = computed(() => [
   { value: 'requirements', label: t('export.aspectRequirements') },
   { value: 'criteria', label: t('export.aspectCriteria') },
   { value: 'tests', label: t('export.aspectTests') },
+  { value: 'test_data', label: t('testData.exportAspect') },
   { value: 'runs', label: t('export.aspectRuns') },
   { value: 'traceability', label: t('export.aspectTraceability') },
 ])

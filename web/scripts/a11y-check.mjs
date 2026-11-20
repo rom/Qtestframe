@@ -113,6 +113,11 @@ async function discover(request) {
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
+  // configurations and a data-driven test (seed-demo: "Cross-browser smoke")
+  const crossRun = runs.find((r) => (r.configurations ?? []).length > 0)
+  const crossExecs = crossRun ? items(await api(request, 'GET', `/runs/${crossRun.id}/executions`)) : []
+  const ddEx = crossExecs.find((e) => e.iteration_count > 0)
+  const ddLinks = ddEx ? items(await api(request, 'GET', `/tests/${ddEx.test_case_id}/links`)) : []
   const hasDefects = items(await api(request, 'GET', `/projects/${pid}/defects`)).length > 0
   const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
@@ -172,6 +177,16 @@ async function discover(request) {
     { name: 'defect-dialog', path: `${p}/defects`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },
+    { name: 'configurations', path: `${p}/settings?tab=configurations`, wait: '#h-configs' },
+    { name: 'configurations-bulk', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] .p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    { name: 'configuration-dialog', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-plus)', wait: '.p-dialog #cfg-form' },
+    { name: 'configurations-generate', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-th-large)', wait: '.p-dialog .preview' },
+    crossRun && { name: 'run-configurations', path: `${p}/runs/${crossRun.id}`, wait: '#h-per-config' },
+    crossRun && { name: 'run-edit-configurations', path: `${p}/runs/${crossRun.id}`, open: '.page-header .actions button:has(.pi-pencil)', wait: '.p-dialog #run-edit-configs' },
+    crossRun && ddEx && { name: 'execute-iterations', path: `${p}/runs/${crossRun.id}/exec/${ddEx.id}`, wait: '.iter-list' },
+    ddEx && { name: 'test-data', path: `${p}/tests?item=${ddEx.test_case_id}`, wait: '.data-table' },
+    ddEx && { name: 'test-data-paste', path: `${p}/tests?item=${ddEx.test_case_id}`, open: '.p-drawer button:has(.pi-clipboard)', wait: '.p-dialog #td-paste' },
+    ddLinks.length > 0 && { name: 'requirement-coverage', path: `${p}/requirements?item=${ddLinks[0].requirement_id}`, wait: '.cov-table' },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
     // the folder tree is a side panel from 1200 px (a drawer below)
     { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', minWidth: 1200 },

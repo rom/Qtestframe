@@ -197,7 +197,78 @@ func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Pro
 			return nil, err
 		}
 	}
+	if err := seedConfigurations(ctx, st, tenantID, p, tf, reqs[0], testIDs[0]); err != nil {
+		return nil, err
+	}
 	return p, nil
+}
+
+// seedConfigurations adds browser/OS configurations, a data-driven login
+// test and a cross-browser run with some results.
+func seedConfigurations(ctx context.Context, st *store.Store, tenantID string, p *model.Project, folder *model.Folder, req *model.Requirement, loginTest string) error {
+	var cfgs []model.ConfigurationRef
+	for _, v := range [][2]string{{"Chrome", "Windows"}, {"Firefox", "Linux"}, {"Safari", "macOS"}} {
+		c := &model.Configuration{ProjectID: p.ID, Values: []model.DimensionValue{{Dimension: "Browser", Value: v[0]}, {Dimension: "OS", Value: v[1]}}, CreatedBy: "seed"}
+		if err := st.CreateConfiguration(ctx, tenantID, c); err != nil {
+			return err
+		}
+		cfgs = append(cfgs, model.ConfigurationRef{ID: c.ID, Name: c.Name})
+	}
+	dd := &model.TestCase{ProjectID: p.ID, FolderID: &folder.ID, Title: "Login with different account types", ExecutionType: model.ExecManual, Status: "ready", CreatedBy: "seed",
+		Description: "Data-driven: runs once per row of the test data.",
+		Steps: []model.TestStep{
+			{Action: "Open the login page and sign in as {{email}} with password {{password}}", Expected: "Sign-in succeeds"},
+			{Action: "Open the account menu", Expected: "The role {{role}} is shown"},
+		},
+		Parameters: []string{"email", "password", "role"},
+		DataRows: []model.DataRow{
+			{Name: "Customer", Values: map[string]string{"email": "carol@example.com", "password": "Customer-123", "role": "Customer"}},
+			{Name: "Business", Values: map[string]string{"email": "bob@example.com", "password": "Business-123", "role": "Business account"}},
+			{Name: "Administrator", Values: map[string]string{"email": "admin@example.com", "password": "Admin-123", "role": "Administrator"}},
+		}}
+	if err := st.CreateTest(ctx, tenantID, dd); err != nil {
+		return err
+	}
+	if err := st.CreateLink(ctx, tenantID, &model.TraceLink{RequirementID: req.ID, TestCaseID: dd.ID}); err != nil {
+		return err
+	}
+	run := &model.TestRun{ProjectID: p.ID, Name: "Cross-browser smoke", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed", Configurations: cfgs}
+	if err := st.CreateRun(ctx, tenantID, run, []string{loginTest, dd.ID}); err != nil {
+		return err
+	}
+	es, err := st.ListExecutions(ctx, tenantID, run.ID)
+	if err != nil {
+		return err
+	}
+	passed := model.ResultPassed
+	for _, e := range es {
+		switch {
+		case e.TestCaseID == loginTest && e.ConfigurationName != "Safari / macOS":
+			if _, err := st.UpdateExecution(ctx, tenantID, e.ID, "seed", store.ExecutionUpdate{Status: &passed}); err != nil {
+				return err
+			}
+		case e.TestCaseID == dd.ID && e.ConfigurationName == "Chrome / Windows":
+			// every iteration passes except the administrator's role label
+			full, err := st.GetExecution(ctx, tenantID, e.ID)
+			if err != nil {
+				return err
+			}
+			admin := full.Iterations[len(full.Iterations)-1].ID
+			var srs []model.StepResult
+			for i, sr := range full.StepResults {
+				status := model.ResultPassed
+				if sr.IterationID != nil && *sr.IterationID == admin && i == len(full.StepResults)-1 {
+					status = model.ResultFailed
+					sr.Actual = "The role is shown as \"Admin\""
+				}
+				srs = append(srs, model.StepResult{ID: sr.ID, Status: status, Actual: sr.Actual})
+			}
+			if _, err := st.UpdateExecution(ctx, tenantID, e.ID, "seed", store.ExecutionUpdate{StepResults: srs}); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func itoa(n int) string {

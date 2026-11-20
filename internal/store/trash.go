@@ -215,6 +215,9 @@ func snapshotItems(ctx context.Context, c conn, kind string, ids []string) (*tra
 		if len(execs) > 0 {
 			execIDs := rowIDs(execs)
 			attachEntities["execution"] = execIDs
+			if _, err := add("execution_iterations", `execution_id IN (`+placeholders(len(execIDs))+`)`, anySlice(execIDs)...); err != nil {
+				return nil, err
+			}
 			steps, err := add("step_results", `execution_id IN (`+placeholders(len(execIDs))+`)`, anySlice(execIDs)...)
 			if err != nil {
 				return nil, err
@@ -561,9 +564,23 @@ func (s *Store) RestoreTrash(ctx context.Context, tenantID, id string) (*TrashEn
 				case "item_links":
 					ok, err = linkEndsExist(row, exists)
 				case "test_executions":
-					ok, err = need(row, "test_runs", "run_id", "test_cases", "test_case_id")
-				case "step_results":
+					if ok, err = need(row, "test_runs", "run_id", "test_cases", "test_case_id"); ok {
+						if cfg, _ := row["configuration_id"].(string); cfg != "" {
+							if in, err2 := exists("configurations", cfg); err2 != nil {
+								return err2
+							} else if !in {
+								row["configuration_id"] = nil
+							}
+						}
+					}
+				case "execution_iterations":
 					ok, err = need(row, "test_executions", "execution_id")
+				case "step_results":
+					if ok, err = need(row, "test_executions", "execution_id"); ok {
+						if it, _ := row["iteration_id"].(string); it != "" {
+							ok, err = need(row, "execution_iterations", "iteration_id")
+						}
+					}
 				case "files":
 					ignoreConflict = true
 					if p, _ := row["project_id"].(string); p != "" {

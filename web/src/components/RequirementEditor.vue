@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SuspectLink from './SuspectLink.vue'
+import ConfigurationCoverage from './ConfigurationCoverage.vue'
 import ObligationHelp from './ObligationHelp.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
@@ -685,6 +686,7 @@ function criterionLabel(id: string | null) {
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.test_case_key || testById.get(l.test_case_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
+      <ConfigurationCoverage v-if="links.length" :requirement-id="item.id" :project-id="projectId" :refresh="links.length" />
     </div>
 
     <RequirementRisks v-if="item" :requirement-id="item.id" :project-id="projectId" />

@@ -163,7 +163,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 
 // ---------------------------------------------------------------- export
 
-var allAspects = []string{"requirements", "criteria", "tests", "traceability", "runs"}
+var allAspects = []string{"requirements", "criteria", "tests", "test_data", "traceability", "runs"}
 
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
@@ -221,7 +221,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			return nil, err
 		}
 	}
-	if want["tests"] || want["traceability"] {
+	if want["tests"] || want["test_data"] || want["traceability"] {
 		if tests, err = s.filterTests(r, p, pr, pc, testExpr(expr), "", true); err != nil {
 			return nil, err
 		}
@@ -251,7 +251,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 	}
 	if want["tests"] {
 		sec := export.Section{Name: "tests", Title: "Test cases",
-			Columns: []string{"Key", "Title", "Execution", "Status", "Priority", "Folder", "Categories", "Tags", "Preconditions", "Steps", "Expected result", "Script language", "Linked requirements", "Last result"}}
+			Columns: []string{"Key", "Title", "Execution", "Status", "Priority", "Folder", "Categories", "Tags", "Preconditions", "Steps", "Expected result", "Script language", "Linked requirements", "Last result", "Parameters", "Data rows"}}
 		for _, t := range tests {
 			var steps []string
 			for i, st := range t.Steps {
@@ -263,7 +263,19 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			}
 			sec.Rows = append(sec.Rows, []string{t.Key, t.Title, t.ExecutionType, t.Status, t.Priority, t.FolderPath, cats(t.CategoryIDs),
 				strings.Join(t.Tags, ", "), t.Preconditions, strings.Join(steps, "\n"), t.ExpectedResult, t.ScriptLanguage,
-				strconv.Itoa(t.LinkedReqs), t.LastResult})
+				strconv.Itoa(t.LinkedReqs), t.LastResult, strings.Join(t.Parameters, ", "), strconv.Itoa(len(t.DataRows))})
+		}
+		ds.Sections = append(ds.Sections, sec)
+	}
+	if want["test_data"] {
+		// one line per value: re-importable and filterable in a spreadsheet
+		sec := export.Section{Name: "test_data", Title: "Test data", Columns: []string{"Test", "Row", "Row name", "Parameter", "Value"}}
+		for _, t := range tests {
+			for i, row := range t.DataRows {
+				for _, prm := range t.Parameters {
+					sec.Rows = append(sec.Rows, []string{t.Key, strconv.Itoa(i + 1), row.Name, prm, row.Values[prm]})
+				}
+			}
 		}
 		ds.Sections = append(ds.Sections, sec)
 	}
@@ -297,7 +309,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			return nil, err
 		}
 		sort.SliceStable(runs, func(i, j int) bool { return runs[i].CreatedAt.Before(runs[j].CreatedAt) })
-		sec := export.Section{Name: "runs", Title: "Test runs", Columns: []string{"Run", "Run status", "Environment", "Build", "Created", "Test", "Title", "Result", "Executed by", "Duration (ms)", "Defects", "Notes"}}
+		sec := export.Section{Name: "runs", Title: "Test runs", Columns: []string{"Run", "Run status", "Environment", "Build", "Created", "Test", "Title", "Result", "Executed by", "Duration (ms)", "Defects", "Notes", "Configuration", "Iterations"}}
 		for _, run := range runs {
 			es, err := s.Store.ListExecutions(ctx, p.TenantID(), run.ID)
 			if err != nil {
@@ -305,7 +317,7 @@ func (s *Server) buildDataset(r *http.Request, p *Principal, pr *model.Project, 
 			}
 			for _, e := range es {
 				sec.Rows = append(sec.Rows, []string{run.Name, run.Status, run.Environment, run.Build, ts(run.CreatedAt), e.TestKey, e.TestTitle,
-					e.Status, e.ExecutedBy, strconv.FormatInt(e.DurationMS, 10), strings.Join(e.Defects, ", "), e.Notes})
+					e.Status, e.ExecutedBy, strconv.FormatInt(e.DurationMS, 10), strings.Join(e.Defects, ", "), e.Notes, e.ConfigurationName, strconv.Itoa(e.IterationCount)})
 			}
 		}
 		ds.Sections = append(ds.Sections, sec)

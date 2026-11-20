@@ -58,8 +58,17 @@ type readinessContext struct {
 	t2r      map[string][]string
 	deps     map[string][]model.TestDependency
 	last     map[string]string
-	// inRun: test id → status of its execution in the run being checked
+	// inRun: test id and configuration (see runKey) → status of its
+	// execution in the run being checked
 	inRun map[string]string
+}
+
+// runKey identifies the execution of a test in a configuration of a run.
+func runKey(testID string, cfg *string) string {
+	if cfg == nil {
+		return testID
+	}
+	return testID + "|" + *cfg
 }
 
 func (s *Server) loadReadiness(ctx context.Context, tenantID, projectID, runID string) (*readinessContext, error) {
@@ -107,16 +116,17 @@ func (s *Server) loadReadiness(ctx context.Context, tenantID, projectID, runID s
 			return nil, err
 		}
 		for _, e := range es {
-			rc.inRun[e.TestCaseID] = e.Status
+			rc.inRun[runKey(e.TestCaseID, e.ConfigurationID)] = e.Status
 		}
 	}
 	return rc, nil
 }
 
-// check returns the readiness of a test. A prerequisite counts as passed
-// when its execution in the same run passed, or — when it is not part of
-// the run — when its latest result anywhere is passed.
-func (rc *readinessContext) check(testID string) *Readiness {
+// check returns the readiness of a test (in configuration cfg of the run).
+// A prerequisite counts as passed when its execution in the same run and
+// configuration passed, or — when it is not part of the run in that
+// configuration — when its latest result anywhere is passed.
+func (rc *readinessContext) check(testID string, cfg *string) *Readiness {
 	out := &Readiness{Issues: []ReadinessIssue{}}
 	if t, ok := rc.tests[testID]; ok && t.Status != model.ReadyTestStatus {
 		out.Issues = append(out.Issues, ReadinessIssue{Kind: IssueTestStatus, ID: t.ID, Key: t.Key, Title: t.Title, Status: t.Status,
@@ -133,7 +143,7 @@ func (rc *readinessContext) check(testID string) *Readiness {
 			Blocking: !rc.settings.AllowUnreadyRequirements, Required: append([]string{}, rc.settings.ReadyRequirementStatuses...), Setting: "allow_unready_requirements"})
 	}
 	for _, d := range rc.deps[testID] {
-		status, inRun := rc.inRun[d.DependsOnID]
+		status, inRun := rc.inRun[runKey(d.DependsOnID, cfg)]
 		if !inRun {
 			status = rc.last[d.DependsOnID]
 		}
@@ -178,6 +188,17 @@ func starts(u store.ExecutionUpdate, cur *model.Execution) bool {
 			return true
 		}
 	}
+	prevIt := map[string]string{}
+	if cur != nil {
+		for _, it := range cur.Iterations {
+			prevIt[it.ID] = it.Status
+		}
+	}
+	for _, it := range u.Iterations {
+		if activeResult(it.Status) && (cur == nil || prevIt[it.ID] != it.Status) {
+			return true
+		}
+	}
 	return false
 }
 
@@ -206,7 +227,7 @@ func (s *Server) executionReadiness(ctx context.Context, tenantID string, e *mod
 	if err != nil {
 		return nil, err
 	}
-	return rc.check(e.TestCaseID), nil
+	return rc.check(e.TestCaseID, e.ConfigurationID), nil
 }
 
 // handleTestReadiness: GET /projects/{pid}/readiness?test_ids=a,b — the
@@ -232,7 +253,7 @@ func (s *Server) handleTestReadiness(w http.ResponseWriter, r *http.Request, p *
 	for _, id := range ids {
 		id = strings.TrimSpace(id)
 		if _, ok := rc.tests[id]; ok {
-			out[id] = rc.check(id)
+			out[id] = rc.check(id, nil)
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"tests": out, "settings": rc.settings})

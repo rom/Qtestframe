@@ -45,15 +45,37 @@ func (s *Store) CreateRun(ctx context.Context, tenantID string, run *model.TestR
 		if err := checkRelease(ctx, c, tenantID, run.ProjectID, run.ReleaseID); err != nil {
 			return err
 		}
+		cfgs := make([]string, 0, len(run.Configurations))
+		for _, r := range run.Configurations {
+			cfgs = append(cfgs, r.ID)
+		}
+		cfgs = uniq(cfgs)
+		if err := checkRunConfigurations(ctx, c, tenantID, run.ProjectID, cfgs); err != nil {
+			return err
+		}
 		if _, err := c.exec(ctx, `INSERT INTO test_runs (id, tenant_id, project_id, name, description, status, environment, build, created_by, created_at, release_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			run.ID, tenantID, run.ProjectID, run.Name, run.Description, run.Status, run.Environment, run.Build, run.CreatedBy, run.CreatedAt, nullStr(run.ReleaseID)); err != nil {
 			return err
 		}
-		_, err := s.addExecutions(ctx, c, tenantID, run.ProjectID, run.ID, testIDs)
+		for i, id := range cfgs {
+			if _, err := c.exec(ctx, `INSERT INTO run_configurations (run_id, configuration_id, position) VALUES (?, ?, ?)`, run.ID, id, i); err != nil {
+				return err
+			}
+		}
+		var err error
+		if run.Configurations, err = runConfigurations(ctx, c, run.ID); err != nil {
+			return err
+		}
+		_, err = s.addExecutions(ctx, c, tenantID, run.ProjectID, run.ID, testIDs)
 		return err
 	})
 }
 
+// addExecutions adds the tests to a run: one execution per test and
+// configuration of the run (one without configuration when the run targets
+// none). Pairs already in the run are skipped. The steps are snapshotted;
+// a data-driven test gets one iteration per data row, each with its own
+// step results whose {{parameter}} placeholders are resolved.
 func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, runID string, testIDs []string) (int, error) {
 	var pos sql.NullInt64
 	if err := c.row(ctx, `SELECT MAX(position) FROM test_executions WHERE run_id = ?`, runID).Scan(&pos); err != nil {
@@ -63,40 +85,86 @@ func (s *Store) addExecutions(ctx context.Context, c conn, tenantID, projectID, 
 	if pos.Valid {
 		next = int(pos.Int64) + 1
 	}
+	cfgRefs, err := runConfigurations(ctx, c, runID)
+	if err != nil {
+		return 0, err
+	}
+	cfgs := []*string{nil}
+	if len(cfgRefs) > 0 {
+		cfgs = cfgs[:0]
+		for i := range cfgRefs {
+			cfgs = append(cfgs, &cfgRefs[i].ID)
+		}
+	}
 	added := 0
 	for _, tid := range uniq(testIDs) {
 		var exists int
-		if err := c.row(ctx, `SELECT COUNT(*) FROM test_cases WHERE id = ? AND tenant_id = ? AND project_id = ?`, tid, tenantID, projectID).Scan(&exists); err != nil {
-			return added, err
-		}
-		if exists == 0 {
+		var params, rowsJSON string
+		err := c.row(ctx, `SELECT parameters, data_rows FROM test_cases WHERE id = ? AND tenant_id = ? AND project_id = ?`, tid, tenantID, projectID).Scan(&params, &rowsJSON)
+		if err == sql.ErrNoRows {
 			return added, Invalidf("test %s not found in project", tid)
 		}
-		if err := c.row(ctx, `SELECT COUNT(*) FROM test_executions WHERE run_id = ? AND test_case_id = ?`, runID, tid).Scan(&exists); err != nil {
-			return added, err
-		}
-		if exists > 0 {
-			continue
-		}
-		eid := newID()
-		if _, err := c.exec(ctx, `INSERT INTO test_executions (id, tenant_id, run_id, test_case_id, status, position) VALUES (?, ?, ?, ?, 'not_run', ?)`, eid, tenantID, runID, tid, next); err != nil {
-			return added, err
-		}
-		// snapshot the steps, expanding shared (call) steps in place
-		steps, err := expandSteps(ctx, c, tid, "", 0, map[string]bool{tid: true})
 		if err != nil {
 			return added, err
 		}
-		for i, st := range steps {
-			if _, err := c.exec(ctx, `INSERT INTO step_results (id, execution_id, step_id, position, action, expected, status, actual) VALUES (?, ?, ?, ?, ?, ?, 'not_run', '')`,
-				newID(), eid, st.ID, i, st.Action, st.Expected); err != nil {
+		dataRows := decodeRows(rowsJSON)
+		var steps []model.TestStep
+		stepsLoaded := false
+		for _, cfg := range cfgs {
+			if cfg == nil {
+				err = c.row(ctx, `SELECT COUNT(*) FROM test_executions WHERE run_id = ? AND test_case_id = ? AND configuration_id IS NULL`, runID, tid).Scan(&exists)
+			} else {
+				err = c.row(ctx, `SELECT COUNT(*) FROM test_executions WHERE run_id = ? AND test_case_id = ? AND configuration_id = ?`, runID, tid, *cfg).Scan(&exists)
+			}
+			if err != nil {
 				return added, err
 			}
+			if exists > 0 {
+				continue
+			}
+			if !stepsLoaded {
+				// snapshot the steps, expanding shared (call) steps in place
+				if steps, err = expandSteps(ctx, c, tid, "", 0, map[string]bool{tid: true}); err != nil {
+					return added, err
+				}
+				stepsLoaded = true
+			}
+			eid := newID()
+			if _, err := c.exec(ctx, `INSERT INTO test_executions (id, tenant_id, run_id, test_case_id, status, position, configuration_id) VALUES (?, ?, ?, ?, 'not_run', ?, ?)`, eid, tenantID, runID, tid, next, nullStr(cfg)); err != nil {
+				return added, err
+			}
+			if len(dataRows) == 0 {
+				if err := insertStepResults(ctx, c, eid, nil, steps, nil); err != nil {
+					return added, err
+				}
+			}
+			for i, r := range dataRows {
+				iid := newID()
+				if _, err := c.exec(ctx, `INSERT INTO execution_iterations (id, execution_id, position, name, data_values, status, notes) VALUES (?, ?, ?, ?, ?, 'not_run', '')`,
+					iid, eid, i, r.Name, encodeJSON(r.Values)); err != nil {
+					return added, err
+				}
+				if err := insertStepResults(ctx, c, eid, &iid, steps, r.Values); err != nil {
+					return added, err
+				}
+			}
+			next++
+			added++
 		}
-		next++
-		added++
 	}
 	return added, nil
+}
+
+// insertStepResults snapshots steps as step results of an execution (and
+// iteration), resolving placeholders with values.
+func insertStepResults(ctx context.Context, c conn, execID string, iterID *string, steps []model.TestStep, values map[string]string) error {
+	for i, st := range steps {
+		if _, err := c.exec(ctx, `INSERT INTO step_results (id, execution_id, step_id, position, action, expected, status, actual, iteration_id) VALUES (?, ?, ?, ?, ?, ?, 'not_run', '', ?)`,
+			newID(), execID, st.ID, i, ResolvePlaceholders(st.Action, values), ResolvePlaceholders(st.Expected, values), nullStr(iterID)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // expandSteps returns the steps of test tid with call steps replaced by the
@@ -199,6 +267,9 @@ func (s *Store) GetRun(ctx context.Context, tenantID, id string) (*model.TestRun
 	if run.Summary == nil {
 		run.Summary = map[string]int{}
 	}
+	if run.Configurations, err = runConfigurations(ctx, s.c(ctx), id); err != nil {
+		return nil, err
+	}
 	return run, nil
 }
 
@@ -244,10 +315,18 @@ func (s *Store) ListRuns(ctx context.Context, tenantID, projectID string) ([]mod
 	if err != nil {
 		return nil, err
 	}
+	cfgs, err := s.runConfigurationsOf(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
 	for i := range out {
 		out[i].Summary = sums[out[i].ID]
 		if out[i].Summary == nil {
 			out[i].Summary = map[string]int{}
+		}
+		out[i].Configurations = cfgs[out[i].ID]
+		if out[i].Configurations == nil {
+			out[i].Configurations = []model.ConfigurationRef{}
 		}
 	}
 	return out, nil
@@ -323,18 +402,25 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 	})
 }
 
-const execCols = `e.id, e.run_id, e.test_case_id, t.key, t.title, e.status, e.assignee, e.executed_by, e.started_at, e.finished_at, e.duration_ms, e.output, e.notes, e.position, e.defects`
+const execCols = `e.id, e.run_id, e.test_case_id, t.key, t.title, e.status, e.assignee, e.executed_by, e.started_at, e.finished_at, e.duration_ms, e.output, e.notes, e.position, e.defects,
+	e.configuration_id, COALESCE(cf.name, ''), (SELECT COUNT(*) FROM execution_iterations i WHERE i.execution_id = e.id)`
+
+// execFrom joins what execCols needs.
+const execFrom = ` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id LEFT JOIN configurations cf ON cf.id = e.configuration_id`
 
 func scanExecution(r interface{ Scan(...any) error }, extra ...any) (*model.Execution, error) {
 	var e model.Execution
 	var st, ft sql.NullTime
 	var defects string
-	dest := append([]any{&e.ID, &e.RunID, &e.TestCaseID, &e.TestKey, &e.TestTitle, &e.Status, &e.Assignee, &e.ExecutedBy, &st, &ft, &e.DurationMS, &e.Output, &e.Notes, &e.Position, &defects}, extra...)
+	var cfg sql.NullString
+	dest := append([]any{&e.ID, &e.RunID, &e.TestCaseID, &e.TestKey, &e.TestTitle, &e.Status, &e.Assignee, &e.ExecutedBy, &st, &ft, &e.DurationMS, &e.Output, &e.Notes, &e.Position, &defects,
+		&cfg, &e.ConfigurationName, &e.IterationCount}, extra...)
 	if err := r.Scan(dest...); err != nil {
 		return nil, err
 	}
 	e.StartedAt, e.FinishedAt = timePtr(st), timePtr(ft)
 	e.Defects = decodeTags(defects)
+	e.ConfigurationID = strPtr(cfg)
 	return &e, nil
 }
 
@@ -342,8 +428,8 @@ func scanExecution(r interface{ Scan(...any) error }, extra ...any) (*model.Exec
 // newest run first.
 func (s *Store) ListTestExecutions(ctx context.Context, tenantID, testID string) ([]model.Execution, error) {
 	rows, err := s.c(ctx).query(ctx, `SELECT `+execCols+`, r.name, r.status, r.environment, r.build, r.created_at
-		FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id JOIN test_runs r ON r.id = e.run_id
-		WHERE e.test_case_id = ? AND e.tenant_id = ? ORDER BY r.created_at DESC`, testID, tenantID)
+		`+execFrom+` JOIN test_runs r ON r.id = e.run_id
+		WHERE e.test_case_id = ? AND e.tenant_id = ? ORDER BY r.created_at DESC, e.position`, testID, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -366,7 +452,7 @@ func (s *Store) ListTestExecutions(ctx context.Context, tenantID, testID string)
 
 // ListExecutions lists executions of a run in order.
 func (s *Store) ListExecutions(ctx context.Context, tenantID, runID string) ([]model.Execution, error) {
-	rows, err := s.c(ctx).query(ctx, `SELECT `+execCols+` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id WHERE e.run_id = ? AND e.tenant_id = ? ORDER BY e.position`, runID, tenantID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+execCols+execFrom+` WHERE e.run_id = ? AND e.tenant_id = ? ORDER BY e.position`, runID, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -394,11 +480,18 @@ func (s *Store) StepResultExecution(ctx context.Context, tenantID, stepResultID 
 
 // GetExecution returns an execution with step results.
 func (s *Store) GetExecution(ctx context.Context, tenantID, id string) (*model.Execution, error) {
-	e, err := scanExecution(s.c(ctx).row(ctx, `SELECT `+execCols+` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id WHERE e.id = ? AND e.tenant_id = ?`, id, tenantID))
+	e, err := scanExecution(s.c(ctx).row(ctx, `SELECT `+execCols+execFrom+` WHERE e.id = ? AND e.tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "execution")
 	}
-	rows, err := s.c(ctx).query(ctx, `SELECT sr.id, sr.step_id, sr.position, sr.action, sr.expected, sr.status, sr.actual, sr.evidence,
+	if e.Iterations, err = listIterations(ctx, s.c(ctx), id); err != nil {
+		return nil, err
+	}
+	pos := map[string]int{}
+	for _, it := range e.Iterations {
+		pos[it.ID] = it.Position
+	}
+	rows, err := s.c(ctx).query(ctx, `SELECT sr.id, sr.step_id, sr.position, sr.action, sr.expected, sr.status, sr.actual, sr.evidence, sr.iteration_id,
 		(SELECT COUNT(*) FROM attachments a WHERE a.entity_type = 'step' AND a.entity_id = sr.id)
 		FROM step_results sr WHERE sr.execution_id = ? ORDER BY sr.position`, id)
 	if err != nil {
@@ -408,12 +501,48 @@ func (s *Store) GetExecution(ctx context.Context, tenantID, id string) (*model.E
 	e.StepResults = []model.StepResult{}
 	for rows.Next() {
 		var sr model.StepResult
-		if err := rows.Scan(&sr.ID, &sr.StepID, &sr.Position, &sr.Action, &sr.Expected, &sr.Status, &sr.Actual, &sr.Evidence, &sr.AttachmentCount); err != nil {
+		var it sql.NullString
+		if err := rows.Scan(&sr.ID, &sr.StepID, &sr.Position, &sr.Action, &sr.Expected, &sr.Status, &sr.Actual, &sr.Evidence, &it, &sr.AttachmentCount); err != nil {
 			return nil, err
 		}
+		sr.IterationID = strPtr(it)
 		e.StepResults = append(e.StepResults, sr)
 	}
-	return e, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	// iteration by iteration, steps in order
+	sort.SliceStable(e.StepResults, func(i, j int) bool {
+		a, b := -1, -1
+		if e.StepResults[i].IterationID != nil {
+			a = pos[*e.StepResults[i].IterationID]
+		}
+		if e.StepResults[j].IterationID != nil {
+			b = pos[*e.StepResults[j].IterationID]
+		}
+		return a < b
+	})
+	return e, nil
+}
+
+// listIterations returns the iterations of an execution in order.
+func listIterations(ctx context.Context, c conn, execID string) ([]model.Iteration, error) {
+	rows, err := c.query(ctx, `SELECT id, position, name, data_values, status, notes FROM execution_iterations WHERE execution_id = ? ORDER BY position`, execID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []model.Iteration{}
+	for rows.Next() {
+		var it model.Iteration
+		var vals string
+		if err := rows.Scan(&it.ID, &it.Position, &it.Name, &vals, &it.Status, &it.Notes); err != nil {
+			return nil, err
+		}
+		it.Values = decodeValues(vals)
+		out = append(out, it)
+	}
+	return out, rows.Err()
 }
 
 // ExecutionUpdate holds changes for an execution.
@@ -425,27 +554,51 @@ type ExecutionUpdate struct {
 	DurationMS  *int64             `json:"duration_ms"`
 	Defects     *[]string          `json:"defects"`
 	StepResults []model.StepResult `json:"step_results"`
+	// Iterations sets results (and notes) of iterations of a data-driven
+	// execution; the status of an iteration with steps is always derived
+	// from its step results.
+	Iterations []IterationUpdate `json:"iterations"`
+}
+
+// IterationUpdate changes one iteration.
+type IterationUpdate struct {
+	ID     string  `json:"id"`
+	Status string  `json:"status"`
+	Notes  *string `json:"notes"`
 }
 
 // DeriveStatus computes an overall result from step results.
 func DeriveStatus(steps []model.StepResult) string {
-	if len(steps) == 0 {
+	st := make([]string, len(steps))
+	for i, s := range steps {
+		st[i] = s.Status
+	}
+	return DeriveResult(st)
+}
+
+// DeriveResult combines results (of steps, or of the iterations of a
+// data-driven execution) into one: failed if any failed, else blocked if
+// any is blocked, passed when all passed or were skipped (at least one
+// passed), skipped when all were skipped, not_run when none has a result,
+// otherwise in_progress.
+func DeriveResult(statuses []string) string {
+	if len(statuses) == 0 {
 		return model.ResultNotRun
 	}
 	counts := map[string]int{}
-	for _, s := range steps {
-		counts[s.Status]++
+	for _, s := range statuses {
+		counts[s]++
 	}
 	switch {
 	case counts[model.ResultFailed] > 0:
 		return model.ResultFailed
 	case counts[model.ResultBlocked] > 0:
 		return model.ResultBlocked
-	case counts[model.ResultPassed]+counts[model.ResultSkipped] == len(steps) && counts[model.ResultPassed] > 0:
+	case counts[model.ResultPassed]+counts[model.ResultSkipped] == len(statuses) && counts[model.ResultPassed] > 0:
 		return model.ResultPassed
-	case counts[model.ResultSkipped] == len(steps):
+	case counts[model.ResultSkipped] == len(statuses):
 		return model.ResultSkipped
-	case counts[model.ResultNotRun] == len(steps):
+	case counts[model.ResultNotRun] == len(statuses):
 		return model.ResultNotRun
 	}
 	return model.ResultInProgress
@@ -482,11 +635,53 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 		e.StepResults[i].Actual = sr.Actual
 		e.StepResults[i].Evidence = sr.Evidence
 	}
+	iterByID := map[string]int{}
+	for i, it := range e.Iterations {
+		iterByID[it.ID] = i
+	}
+	for _, iu := range u.Iterations {
+		i, ok := iterByID[iu.ID]
+		if !ok {
+			return nil, Invalidf("unknown iteration %s", iu.ID)
+		}
+		if iu.Status != "" {
+			if !model.Valid(model.ResultStatuses, iu.Status) {
+				return nil, Invalidf("invalid iteration status %q", iu.Status)
+			}
+			e.Iterations[i].Status = iu.Status
+		}
+		if iu.Notes != nil {
+			if len(*iu.Notes) > MaxEvidence {
+				return nil, Invalidf("notes of iteration %d are longer than %d characters", e.Iterations[i].Position+1, MaxEvidence)
+			}
+			e.Iterations[i].Notes = *iu.Notes
+		}
+	}
+	// iterations with steps take the result of their steps
+	if len(u.StepResults) > 0 || len(u.Iterations) > 0 {
+		perIter := map[string][]model.StepResult{}
+		for _, sr := range e.StepResults {
+			if sr.IterationID != nil {
+				perIter[*sr.IterationID] = append(perIter[*sr.IterationID], sr)
+			}
+		}
+		for i, it := range e.Iterations {
+			if steps := perIter[it.ID]; len(steps) > 0 {
+				e.Iterations[i].Status = DeriveStatus(steps)
+			}
+		}
+	}
 	wasFinal := finalResult(e.Status)
 	status := e.Status
 	switch {
 	case u.Status != nil:
 		status = *u.Status
+	case len(e.Iterations) > 0 && (len(u.StepResults) > 0 || len(u.Iterations) > 0):
+		st := make([]string, len(e.Iterations))
+		for i, it := range e.Iterations {
+			st[i] = it.Status
+		}
+		status = DeriveResult(st)
 	case len(u.StepResults) > 0:
 		status = DeriveStatus(e.StepResults)
 	}
@@ -538,6 +733,11 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 				return err
 			}
 		}
+		for _, it := range e.Iterations {
+			if _, err := c.exec(ctx, `UPDATE execution_iterations SET status = ?, notes = ? WHERE id = ?`, it.Status, it.Notes, it.ID); err != nil {
+				return err
+			}
+		}
 		if status != model.ResultNotRun {
 			if _, err := c.exec(ctx, `UPDATE test_runs SET status = 'in_progress', started_at = COALESCE(started_at, ?) WHERE id = ? AND status = 'planned'`, now, e.RunID); err != nil {
 				return err
@@ -563,10 +763,75 @@ type ImportResult struct {
 	Status     string `json:"status"`
 	DurationMS int64  `json:"duration_ms"`
 	Output     string `json:"output"`
+	// Configuration (name or id) the result was obtained in; empty uses
+	// the import's default (see ResolveImportConfigurations).
+	Configuration string `json:"configuration,omitempty"`
+	// ConfigurationID is set by ResolveImportConfigurations.
+	ConfigurationID *string `json:"-"`
+}
+
+// ResolveImportConfigurations sets the configuration of every result: its
+// own (name or id), else def. Without either, a run targeting exactly one
+// configuration uses it, a run without configurations records results
+// without configuration and a run targeting several is an error. A named
+// configuration the run does not target yet is added to the run (see
+// SetRunConfigurations).
+func (s *Store) ResolveImportConfigurations(ctx context.Context, tenantID, runID, def string, results []ImportResult) error {
+	run, err := s.GetRun(ctx, tenantID, runID)
+	if err != nil {
+		return err
+	}
+	targeted := map[string]bool{}
+	order := []string{}
+	for _, c := range run.Configurations {
+		targeted[c.ID] = true
+		order = append(order, c.ID)
+	}
+	found := map[string]string{}
+	for i := range results {
+		ref := strings.TrimSpace(results[i].Configuration)
+		if ref == "" {
+			ref = strings.TrimSpace(def)
+		}
+		if ref == "" {
+			switch len(run.Configurations) {
+			case 0:
+				results[i].ConfigurationID = nil
+			case 1:
+				id := run.Configurations[0].ID
+				results[i].ConfigurationID = &id
+			default:
+				return Invalidf("run %q targets %d configurations: name the configuration of the results", run.Name, len(run.Configurations))
+			}
+			continue
+		}
+		id, ok := found[strings.ToLower(ref)]
+		if !ok {
+			c, err := s.FindConfiguration(ctx, tenantID, run.ProjectID, ref)
+			if err != nil {
+				return err
+			}
+			id = c.ID
+			found[strings.ToLower(ref)] = id
+		}
+		if !targeted[id] {
+			targeted[id] = true
+			order = append(order, id)
+		}
+		results[i].ConfigurationID = &id
+	}
+	if len(order) != len(run.Configurations) {
+		if _, err := s.SetRunConfigurations(ctx, tenantID, runID, order); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ImportResults records CI results by test key; tests not yet in the run
-// are added. Returns updated count and unknown keys.
+// are added. Results carry the configuration set by
+// ResolveImportConfigurations (nil: the run's only configuration, or none).
+// Returns updated count and unknown keys.
 func (s *Store) ImportResults(ctx context.Context, tenantID, runID, user string, results []ImportResult) (int, []string, error) {
 	run, err := s.GetRun(ctx, tenantID, runID)
 	if err != nil {
@@ -600,8 +865,8 @@ func (s *Store) ImportResults(ctx context.Context, tenantID, runID, user string,
 		if _, err := s.AddExecutions(ctx, tenantID, runID, []string{tid}); err != nil {
 			return updated, unknown, err
 		}
-		var eid string
-		if err := s.c(ctx).row(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND test_case_id = ?`, runID, tid).Scan(&eid); err != nil {
+		eid, err := s.executionOf(ctx, runID, tid, r.ConfigurationID)
+		if err != nil {
 			return updated, unknown, err
 		}
 		st, out, dur := r.Status, r.Output, r.DurationMS
@@ -611,6 +876,19 @@ func (s *Store) ImportResults(ctx context.Context, tenantID, runID, user string,
 		updated++
 	}
 	return updated, unknown, nil
+}
+
+// executionOf returns the execution of a test in a run and configuration
+// (nil: the first one of the test in the run).
+func (s *Store) executionOf(ctx context.Context, runID, testID string, cfg *string) (string, error) {
+	var eid string
+	var err error
+	if cfg == nil {
+		err = s.c(ctx).row(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND test_case_id = ? ORDER BY position`, runID, testID).Scan(&eid)
+	} else {
+		err = s.c(ctx).row(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND test_case_id = ? AND configuration_id = ?`, runID, testID, *cfg).Scan(&eid)
+	}
+	return eid, mapErr(err, "execution")
 }
 
 // LastResults returns test id → latest non-not_run execution status.

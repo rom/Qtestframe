@@ -405,9 +405,11 @@ Reading needs `test.read`, writing `test.write`.
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/tests?q=&folder_id=&recursive=true` | list (`steps` omitted) incl. `linked_requirements`, `last_result` |
-| POST | `/projects/{pid}/tests` | TestCase fields, `steps` array |
-| GET | `/tests/{id}` | includes `steps` |
-| PATCH | `/tests/{id}` | partial; `steps` (if present) replaces all |
+| POST | `/projects/{pid}/tests` | TestCase fields, `steps` array, optional `parameters` and `data_rows` (see [Test data](#test-data-data-driven-tests)) |
+| GET | `/tests/{id}` | includes `steps`, `parameters` and `data_rows` |
+| PATCH | `/tests/{id}` | partial; `steps`, `parameters` and `data_rows` (each if present) replace all |
+| GET | `/tests/{id}/data` | `{"parameters":[...], "data_rows":[DataRow]}` |
+| PUT | `/tests/{id}/data` | `{"parameters":[...], "data_rows":[DataRow]}` replaces the test data (a new version of the test; `test.write`) |
 | DELETE | `/tests/{id}` | 204 with `X-Trash-Id` |
 | POST | `/tests/{id}/copy` | duplicate → new TestCase (status `draft`) |
 | POST | `/projects/{pid}/tests/move` | like requirements |
@@ -427,6 +429,26 @@ Test lists also carry `step_count` and `defects`; `relations` includes
 `depends_on` references (with `kind: "test"`). Query field `depends_on`
 (aliases `depends`, `dependency`, `prerequisite`) holds the keys of a
 test's prerequisites.
+
+### Test data (data-driven tests)
+
+A test with `parameters` (names) and `data_rows` is executed once per row
+(an *iteration*). `DataRow` is `{"name": "", "values": {"param": "value"}}`.
+Parameter names start with a letter or `_` and contain letters, digits,
+`_`, `.` and `-` (at most 50 characters, unique ignoring case, at most 50
+parameters); at most 500 rows, row names up to 200 and values up to 2 000
+characters. Values of unknown parameters are dropped, missing ones become
+`""`; data rows need at least one parameter (else 400).
+
+Step actions and expected results reference parameters as `{{name}}`
+(spaces inside the braces allowed). When the test is added to a run, every
+row becomes an iteration with its own step results whose texts have the
+placeholders replaced; placeholders of unknown parameters are kept. Steps of
+called tests (shared steps) are resolved with the parameters of the calling
+test; the called test's own data rows are not used. Description,
+preconditions, the overall expected result and step `data` are returned
+unresolved with the embedded `test`; the client resolves them with the
+iteration's `values`.
 
 ### Trash: undo a deletion
 
@@ -507,7 +529,21 @@ Reading needs `project.read`; creating and deleting links needs
 | DELETE | `/projects/{pid}/links/bulk` | `{"ids":[...]}` (max 1000) → `{"deleted":[TraceLink], "skipped":[{id, reason: "not_found"}], "status_changes"}`; the deleted links are returned so they can be recreated |
 | POST | `/projects/{pid}/links/confirm` | `{"ids":[...]}` → `{"confirmed": n, "status_changes"}`; confirms the suspect ones among the project's links |
 | DELETE | `/links/{id}` | |
-| GET | `/projects/{pid}/traceability?q=&tq=` | `{"requirements":[{id,key,title,obligation,coverage}], "tests":[{id,key,title,last_result}], "links":[TraceLink]}`; `q` filters requirements, `tq` tests |
+| GET | `/projects/{pid}/traceability?q=&tq=&configuration=` | `{"requirements":[{id,key,title,obligation,coverage}], "tests":[{id,key,title,last_result}], "links":[TraceLink]}`; `q` filters requirements, `tq` tests; `configuration=<id>` (or `none` for results without configuration) gives coverage and last results in that configuration only (400 for an unknown configuration) |
+| GET | `/requirements/{id}/coverage` | coverage by configuration (`requirement.read`): `{"requirement_id", "coverage", "configurations":[{id, name, coverage}], "tests":[{id, key, title, results: {configuration_id: result}, result}]}`; `id` `""` stands for results without configuration; `results` holds the latest result of each linked test in every configuration it is planned in (`""` when planned but not run yet); `result` combines them (failed, blocked, passed in all, else in_progress/skipped/not_run) |
+
+**Coverage with configurations.** Every configuration a linked test is
+planned in (it has an execution there in any run of the project; an
+execution without configuration counts as one more configuration) counts as
+one result: the latest result other than `not_run` in that configuration.
+The requirement's `coverage` applies the usual rules to all these results:
+`failed` if one failed or is blocked, `passed` if all passed, `partial` if
+some passed, else `not_run` (`none` without links). A requirement is thus
+passed only when its tests passed in every configuration they are planned
+in. Without configurations this is the latest result of each test, as
+before. The coverage *in one configuration* counts only the linked tests
+planned in it (`not_run` when none is). Releases count a test as passed only
+when it passed in every configuration of the release's runs.
 
 ## Operations (runs and executions)
 
@@ -517,20 +553,21 @@ import) `run.execute`.
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/projects/{pid}/runs?q=` | list `TestRun` with `summary` |
-| POST | `/projects/{pid}/runs` | `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query |
+| GET | `/projects/{pid}/runs?q=` | list `TestRun` with `summary` and `configurations` (`[{id, name}]`); query field `configuration` (alias `config`) |
+| POST | `/projects/{pid}/runs` | `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>","configuration_ids":[...]}` – union of explicit tests, tests in folders (recursive) and tests matching query; with `configuration_ids` (configurations of the project, at most 50) every test is executed once per configuration |
 | GET | `/runs/{id}` | `TestRun` |
-| PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. |
+| PATCH | `/runs/{id}` | `{"name","description","status","environment","build","release_id","configuration_ids"}` (`configuration_ids` as for `PUT /runs/{id}/configurations`; all or nothing). A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. |
 | DELETE | `/runs/{id}` | |
 | POST | `/projects/{pid}/runs/bulk` | `{"ids":[...], "set": {"status"?, "release_id"? ("" removes), "environment"?, "build"?}}` → `{"updated": n}` (run.write) |
 | DELETE | `/projects/{pid}/runs/bulk` | `{"ids":[...]}` → `{"deleted": n}` (run.write) |
-| GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness` |
-| POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` |
+| GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness`, `configuration_id`, `configuration_name` and `iteration_count`; query field `configuration` (alias `config`) |
+| POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` – one execution per test and configuration of the run → `{"added": n}` |
+| PUT | `/runs/{id}/configurations` | `{"configuration_ids":[...]}` (run.write, all or nothing) → `{"run", "added", "removed"}`: an added configuration gets an execution for every test of the run; the executions of a removed one are deleted (409 while one of them has a result other than `not_run`). Adding the first configuration to a run without any assigns its executions to it; removing the last one keeps its executions without configuration |
 | POST | `/runs/{id}/executions/bulk` | `{"ids":[...] \| "all": true, "from": [results]?, "set": {"status"?, "assignee"?, "notes_append"?}}` (run.execute) → `{"updated", "rejected", "skipped"}`, each `[{id, key, title, status, assignee, reason}]` with the values before; or `{"ids" \| "all", "from"?, "remove": true}` (run.write) → `{"removed": n, "skipped"}`. `status` is `passed`, `failed`, `blocked`, `skipped` or `not_run`; `from` keeps only executions with those results (others are `skipped` with reason `status`, unchanged ones with `already`). Results that record an execution go through the readiness check; refusals are `rejected` with the blocking issues as `reason`. Executions are applied in passes, so prerequisites in the same request are recorded first. Step results are not changed. |
-| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
-| POST | `/runs/{id}/junit?create_missing=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
-| GET | `/executions/{id}` | `Execution` with `step_results`, `readiness` and embedded `test` (TestCase incl. steps & script) |
-| PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}]}` – status derived from steps when omitted and steps given; 409 `not_ready` when the update records an execution that the settings forbid |
+| POST | `/runs/{id}/results?configuration=` | CI import: `{"results":[{"test_key","status","duration_ms","output","configuration"?}]}` (see *Configurations of imported results* below) → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
+| POST | `/runs/{id}/junit?create_missing=&configuration=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
+| GET | `/executions/{id}` | `Execution` with `step_results` (each with `iteration_id`), `iterations` (data-driven tests), `readiness` and embedded `test` (TestCase incl. steps & script) |
+| PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}],"iterations":[{"id","status"?,"notes"?}]}` – status derived from steps (or iterations) when omitted and steps or iterations given; 409 `not_ready` when the update records an execution that the settings forbid |
 | POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test` |
 
 **JUnit XML import.** `POST /runs/{id}/junit` reads `<testsuites>` or
@@ -554,11 +591,34 @@ test: an automated test of the run's project with exactly that title, or a
 new draft automated test titled after the testcase (listed in `created`);
 its result is recorded and the test added to the run.
 
+**Configurations of imported results.** A result names its configuration
+with `configuration` (name, ignoring case, or id); results without one use
+the `?configuration=` parameter of the request. Without either, a run
+targeting exactly one configuration uses it, a run without configurations
+records the result without configuration (as before) and a run targeting
+several answers 400. An unknown configuration is a 400. A configuration the
+run does not target yet is added to it (see `PUT /runs/{id}/configurations`).
+`qtestframe report --configuration NAME` and the Playwright reporter's
+`configuration` option (both default `$QTF_CONFIGURATION`) pass it on.
+
+**Iterations.** An execution of a data-driven test has `iterations`:
+`[{id, position, name, values: {param: value}, status, notes}]`, one per
+data row (a snapshot made when the test was added). Step results of an
+iteration carry its `iteration_id`. An iteration with steps takes the
+result derived from its steps (like an execution); one without steps takes
+the `status` given in `iterations`. The execution's result is then derived
+from the iterations: `failed` if any failed, else `blocked` if any is
+blocked, `passed` when all passed or were skipped (at least one passed),
+`skipped` when all were skipped, `not_run` when none has a result, else
+`in_progress`. An explicit `status` (also from bulk updates and CI imports)
+is the overall result and leaves the iterations unchanged. Iteration notes
+are at most 20 000 characters.
+
 **Readiness.** Before a result is recorded the server checks the test:
 status `ready`; every linked requirement in one of
 `ready_requirement_statuses`; every prerequisite (`/tests/{id}/dependencies`)
-`passed` – its execution in the same run when it is part of the run,
-otherwise its latest result. Each failed check is an issue; it is
+`passed` – its execution in the same run (and the same configuration) when
+it is part of the run there, otherwise its latest result. Each failed check is an issue; it is
 `blocking` unless the matching `allow_*` setting is on.
 
 ```json
@@ -590,6 +650,26 @@ characters) and `attachment_count`; files are attachments of the step
 result: `/step-results/{id}/attachments` (below). They appear in the
 document archive with link `entity_type: "step"`, `run_id` and
 `execution_id`, and are deleted with the run or the test.
+
+## Configurations
+
+Test configurations are named combinations of dimension values a run can
+target. Reading needs `project.read`, changes need `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/configurations` | `[Configuration]` in order (`position`, then name) |
+| POST | `/projects/{pid}/configurations` | `{"name"?, "description"?, "values":[{"dimension","value"}]}` → 201 Configuration; without `name` it is named after its values (`Chrome / Windows`); names are unique per project ignoring case (409) |
+| POST | `/projects/{pid}/configurations/bulk` | `{"configurations":[...], "skip_existing"?: bool}` (1–200, all or nothing) → `{"created":[Configuration], "skipped":["name"]}`; e.g. every combination of some dimensions |
+| DELETE | `/projects/{pid}/configurations/bulk` | `{"ids":[...]}` (all or nothing) → `{"deleted": n}` |
+| GET | `/configurations/{id}` | Configuration |
+| PATCH | `/configurations/{id}` | `{"name"?, "description"?, "values"?, "position"?}` |
+| DELETE | `/configurations/{id}` | 204; 409 while a run targets it |
+
+`Configuration`: `{id, project_id, name, description, values:[{dimension,
+value}], position, created_by, created_at, updated_at, run_count}`. Each
+dimension at most once per configuration (ignoring case), at most 20 values,
+dimensions and values up to 100 characters, names up to 200.
 
 ## Dependency graph and tags
 
@@ -1034,13 +1114,17 @@ queried. Response:
 
 ## Export
 
-`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx&aspects=requirements,criteria,tests,traceability,runs&q=`
+`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
 (permission `export`)
 
 * `format` also accepts `excel` and `word`. `aspects` defaults to all;
   unknown aspects are a 400. `q` is applied to requirements if it is a valid
   requirement query and to tests if it is a valid test query.
 * CSV with more than one aspect is delivered as a ZIP of CSV files.
+* `tests` has the columns `Parameters` and `Data rows` (count); `test_data`
+  lists the data table, one line per row and parameter (`Test`, `Row`,
+  `Row name`, `Parameter`, `Value`); `runs` has `Configuration` and
+  `Iterations` per execution.
 * Response has `Content-Disposition: attachment;
   filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
   neutralised in CSV; see [design.md §11](design.md#11-export-formats).

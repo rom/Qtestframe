@@ -22,6 +22,7 @@ type fake struct {
 	created  map[string]string
 	junit    []string // file names of the last JUnit upload
 	junitQ   string
+	jsonQ    string
 	json     []json.RawMessage
 	authFail bool
 	importSt int
@@ -76,6 +77,7 @@ func (f *fake) server(t *testing.T) *httptest.Server {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		f.mu.Lock()
 		f.json = req.Results
+		f.jsonQ = r.URL.RawQuery
 		f.mu.Unlock()
 		writeJSON(w, 200, map[string]any{"updated": len(req.Results), "unknown": []string{}, "rejected": []any{}})
 	})
@@ -141,6 +143,15 @@ func TestReportCreatesRunAndUploads(t *testing.T) {
 		if !strings.Contains(out.String(), want) {
 			t.Errorf("summary misses %q:\n%s", want, out.String())
 		}
+	}
+
+	// --configuration is passed to both imports
+	if _, err := Report(context.Background(), Options{URL: hs.URL, Token: "qtf_secret", RunID: "r9", Configuration: "Chrome / Windows",
+		JUnit: []string{filepath.Join(dir, "a.xml")}, JSON: []string{filepath.Join(dir, "r.json")}}); err != nil {
+		t.Fatal(err)
+	}
+	if f.junitQ != "configuration=Chrome+%2F+Windows" || f.jsonQ != "configuration=Chrome+%2F+Windows" {
+		t.Errorf("configuration: %q %q", f.junitQ, f.jsonQ)
 	}
 
 	// --fail-on-unknown
@@ -259,7 +270,7 @@ func TestClientEdgeCases(t *testing.T) {
 	if _, err := c.CreateRun(ctx, "q", "x", "", ""); err == nil || err.Error() != "server answered 500" {
 		t.Error(err)
 	}
-	if _, err := c.ImportJSON(ctx, "r", nil); err == nil {
+	if _, err := c.ImportJSON(ctx, "r", nil, "Chrome"); err == nil {
 		t.Error("import json against an unknown path")
 	}
 	if err := c.sendJSON(ctx, "GET", "/x", func() {}, nil); err == nil {
@@ -270,7 +281,7 @@ func TestClientEdgeCases(t *testing.T) {
 	}
 	cctx, cancel := context.WithCancel(ctx)
 	cancel()
-	if _, err := c.ImportJUnit(cctx, "r", []File{{Name: "x.xml", Data: []byte("<testsuite/>")}}, false); err == nil {
+	if _, err := c.ImportJUnit(cctx, "r", []File{{Name: "x.xml", Data: []byte("<testsuite/>")}}, false, ""); err == nil {
 		t.Error("cancelled")
 	}
 }

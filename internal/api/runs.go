@@ -49,6 +49,8 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		FolderIDs   []string `json:"folder_ids"`
 		Query       string   `json:"query"`
 		ReleaseID   *string  `json:"release_id"`
+		// ConfigurationIDs: the configurations the run targets.
+		ConfigurationIDs []string `json:"configuration_ids"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -84,6 +86,9 @@ func (s *Server) handleCreateRun(w http.ResponseWriter, r *http.Request, p *Prin
 	}
 	run := &model.TestRun{ProjectID: pr.ID, Name: req.Name, Description: req.Description,
 		Environment: req.Environment, Build: req.Build, CreatedBy: p.User.Email, ReleaseID: req.ReleaseID}
+	for _, id := range req.ConfigurationIDs {
+		run.Configurations = append(run.Configurations, model.ConfigurationRef{ID: id})
+	}
 	if err := s.Store.CreateRun(r.Context(), p.TenantID(), run, ids); err != nil {
 		s.fail(w, r, err)
 		return
@@ -121,6 +126,9 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 		Build       *string `json:"build"`
 		// ReleaseID: "" removes the run from its release.
 		ReleaseID *string `json:"release_id"`
+		// ConfigurationIDs replaces the configurations the run targets
+		// (see PUT /runs/{id}/configurations).
+		ConfigurationIDs *[]string `json:"configuration_ids"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -144,6 +152,12 @@ func (s *Server) handleUpdateRun(w http.ResponseWriter, r *http.Request, p *Prin
 	if err := s.Store.UpdateRun(r.Context(), p.TenantID(), run); err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	if req.ConfigurationIDs != nil {
+		if _, err := s.Store.SetRunConfigurations(r.Context(), p.TenantID(), run.ID, *req.ConfigurationIDs); err != nil {
+			s.fail(w, r, err)
+			return
+		}
 	}
 	s.audit(r.Context(), p, "run.update", "run", run.ID, run.Status)
 	out, err := s.Store.GetRun(r.Context(), p.TenantID(), run.ID)
@@ -201,7 +215,7 @@ func (s *Server) handleListExecutions(w http.ResponseWriter, r *http.Request, p 
 	out := []withReadiness{}
 	for i := range es {
 		if q.Match(executionRecord(&es[i])) {
-			out = append(out, withReadiness{Execution: es[i], Readiness: rc.check(es[i].TestCaseID)})
+			out = append(out, withReadiness{Execution: es[i], Readiness: rc.check(es[i].TestCaseID, es[i].ConfigurationID)})
 		}
 	}
 	writeJSON(w, http.StatusOK, listOf(out))
@@ -240,6 +254,30 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 	s.recordResults(w, r, p, run, req.Results, "run.import", nil)
 }
 
+// handleSetRunConfigurations: PUT /runs/{id}/configurations
+// {"configuration_ids": [...]} — see store.SetRunConfigurations.
+func (s *Server) handleSetRunConfigurations(w http.ResponseWriter, r *http.Request, p *Principal) {
+	var req struct {
+		ConfigurationIDs []string `json:"configuration_ids"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	ch, err := s.Store.SetRunConfigurations(r.Context(), p.TenantID(), r.PathValue("id"), req.ConfigurationIDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	s.audit(r.Context(), p, "run.configurations", "run", r.PathValue("id"), fmt.Sprintf("%d configuration(s), %d added, %d removed", len(req.ConfigurationIDs), ch.Added, ch.Removed))
+	run, err := s.Store.GetRun(r.Context(), p.TenantID(), r.PathValue("id"))
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"run": run, "added": ch.Added, "removed": ch.Removed})
+}
+
 // rejectedResult is a result that was not recorded because the test may
 // not be executed.
 type rejectedResult struct {
@@ -253,6 +291,11 @@ type rejectedResult struct {
 // accepted ones and writes {"updated","unknown","rejected"} merged with
 // extra.
 func (s *Server) recordResults(w http.ResponseWriter, r *http.Request, p *Principal, run *model.TestRun, results []store.ImportResult, action string, extra map[string]any) {
+	// ?configuration= names the configuration of results without their own
+	if err := s.Store.ResolveImportConfigurations(r.Context(), p.TenantID(), run.ID, r.URL.Query().Get("configuration"), results); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	rc, err := s.loadReadiness(r.Context(), p.TenantID(), run.ProjectID, run.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -267,7 +310,7 @@ func (s *Server) recordResults(w http.ResponseWriter, r *http.Request, p *Princi
 	accepted := make([]store.ImportResult, 0, len(results))
 	for _, res := range results {
 		if id, ok := byKey[strings.ToUpper(strings.TrimSpace(res.TestKey))]; ok && activeResult(res.Status) {
-			if rd := rc.check(id); !rd.Allowed {
+			if rd := rc.check(id, res.ConfigurationID); !rd.Allowed {
 				var why []string
 				for _, i := range rd.Issues {
 					if i.Blocking {
