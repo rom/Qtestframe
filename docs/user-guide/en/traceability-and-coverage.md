@@ -19,6 +19,19 @@ Select **Traceability** in the project sidebar.
 
 The matrix scrolls in both directions; the requirement column stays visible.
 
+### Link several at once
+
+With the **Tester** role, a toolbar above the matrix (and the list) works on many links at once:
+
+1. Tick requirements with the checkbox at the start of their row, or **Select all shown requirements** (use the filters first to narrow them down).
+2. Optionally choose tests in **Tests for the selected requirements**; with none chosen, the actions take all tests.
+3. Choose an action; the number on each button says how many links it affects:
+   - **Link** links every selected requirement to every chosen test; existing links are kept.
+   - **Unlink** removes the links between the selected requirements and the chosen tests (after a confirmation).
+   - **Confirm suspect** confirms the suspect links among them (cells with a warning sign: the requirement or test changed after the link was confirmed).
+
+Ticking only tests (no requirements) lets **Unlink** and **Confirm suspect** act on all links of those tests. Linking and unlinking can be undone with **Undo**; the status that follows evidence is updated once for all affected requirements.
+
 ## How coverage is calculated
 
 Coverage is derived from the **last result** of every linked test. It is computed every time you look at it and never stored, so it is always current.

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useUndoStore } from '@/stores/undo'
-import { recordUndo, toggleEntry } from '@/lib/undoActions'
+import { entry, recordUndo, toggleEntry } from '@/lib/undoActions'
+import { chunks, linkPlan, type LinkPair } from '@/lib/bulkLinks'
+import Checkbox from 'primevue/checkbox'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
@@ -115,6 +117,106 @@ watch(
   () => void load(),
 )
 
+// ---------- bulk: link, unlink and confirm a selection ----------
+// requirements are ticked in the matrix or list; tests are chosen in the toolbar
+const canBulk = computed(() => auth.can(P.testWrite))
+const selReqs = ref<string[]>([])
+const selTests = ref<string[]>([])
+const bulkBusy = ref(false)
+const testOptions = computed(() => (data.value?.tests ?? []).map((x) => ({ value: x.id, label: `${x.key} ${x.title}` })))
+const plan = computed(() => linkPlan(data.value?.links ?? [], selReqs.value, selTests.value))
+const allShown = computed({
+  get: () => rows.value.length > 0 && rows.value.every((r) => selReqs.value.includes(r.id)),
+  set: (v: boolean) => {
+    const shown = new Set(rows.value.map((r) => r.id))
+    selReqs.value = v ? [...new Set([...selReqs.value, ...shown])] : selReqs.value.filter((id) => !shown.has(id))
+  },
+})
+watch(data, (d) => {
+  const reqs = new Set((d?.requirements ?? []).map((r) => r.id))
+  const tests = new Set((d?.tests ?? []).map((x) => x.id))
+  selReqs.value = selReqs.value.filter((id) => reqs.has(id))
+  selTests.value = selTests.value.filter((id) => tests.has(id))
+})
+function clearSelection() {
+  selReqs.value = []
+  selTests.value = []
+}
+
+type LinkRow = LinkPair & { criterion_id?: string | null }
+async function createLinks(pid: string, pairs: LinkRow[]): Promise<TraceLink[]> {
+  const out: TraceLink[] = []
+  for (const c of chunks(pairs)) out.push(...(await api.post<{ created: TraceLink[] }>(`/projects/${pid}/links/bulk`, { links: c })).created)
+  return out
+}
+async function deleteLinks(pid: string, ids: string[]): Promise<TraceLink[]> {
+  const out: TraceLink[] = []
+  for (const c of chunks(ids)) out.push(...(await api.del<{ deleted: TraceLink[] }>(`/projects/${pid}/links/bulk`, { ids: c })).deleted)
+  return out
+}
+/** Undo entry for links that were just created (linkedNow) or deleted. */
+function bulkEntry(label: string, pid: string, links: TraceLink[], linkedNow: boolean) {
+  const rows: LinkRow[] = links.map((l) => ({ requirement_id: l.requirement_id, test_case_id: l.test_case_id, criterion_id: l.criterion_id }))
+  let ids = links.map((l) => l.id)
+  const add = async () => (ids = (await createLinks(pid, rows)).map((l) => l.id))
+  const drop = async () => deleteLinks(pid, ids)
+  return linkedNow ? entry(label, drop, add) : entry(label, add, drop)
+}
+
+async function bulkLink() {
+  const pid = proj.pid
+  bulkBusy.value = true
+  try {
+    const created = await createLinks(pid, plan.value.toLink)
+    notify.ok(t('traceability.bulk.linked', { n: created.length }, created.length))
+    if (created.length) recordUndo(bulkEntry(t('traceability.bulk.linked', { n: created.length }, created.length), pid, created, true))
+    await load()
+  } catch (e) {
+    notify.fail(e, t('traceability.linkFailed'))
+    await load()
+  } finally {
+    bulkBusy.value = false
+  }
+}
+function bulkUnlink() {
+  const pid = proj.pid
+  const ids = plan.value.inScope.map((l) => l.id)
+  const n = ids.length
+  notify.confirmDanger(
+    t('traceability.bulk.confirmUnlink', { n }, n),
+    async () => {
+      bulkBusy.value = true
+      try {
+        const deleted = await deleteLinks(pid, ids)
+        notify.ok(t('traceability.bulk.unlinked', { n: deleted.length }, deleted.length))
+        if (deleted.length) recordUndo(bulkEntry(t('traceability.bulk.unlinked', { n: deleted.length }, deleted.length), pid, deleted, false))
+        await load()
+      } catch (e) {
+        notify.fail(e, t('traceability.linkFailed'))
+        await load()
+      } finally {
+        bulkBusy.value = false
+      }
+    },
+    t('traceability.bulk.unlinkHeader'),
+    t('traceability.bulk.unlinkAction'),
+  )
+}
+async function bulkConfirm() {
+  const pid = proj.pid
+  bulkBusy.value = true
+  try {
+    let n = 0
+    for (const c of chunks(plan.value.suspect.map((l) => l.id))) n += (await api.post<{ confirmed: number }>(`/projects/${pid}/links/confirm`, { ids: c })).confirmed
+    notify.ok(t('traceability.bulk.confirmed', { n }, n))
+    await load()
+  } catch (e) {
+    notify.fail(e, t('traceability.linkFailed'))
+  } finally {
+    bulkBusy.value = false
+  }
+}
+
 async function toggle(reqId: string, testId: string) {
   if (!canEdit.value || !data.value) return
   const key = linkKey(reqId, testId)
@@ -173,6 +275,28 @@ async function toggle(reqId: string, testId: string) {
       <li v-for="(c, k) in COVERAGE_COLORS" :key="k" class="row nowrap" style="gap: 4px"><span aria-hidden="true" :style="{ width: '10px', height: '10px', borderRadius: '3px', background: c }" />{{ enumLabel('coverage', String(k)) }}</li>
     </ul>
   </div>
+  <div v-if="canBulk && data && data.requirements.length && data.tests.length" class="bulkbar trace-bulk" role="toolbar" :aria-label="t('traceability.bulk.toolbar')">
+    <span class="row nowrap small"><Checkbox v-model="allShown" binary input-id="trace-all" /><label for="trace-all">{{ t('traceability.bulk.selectAll') }}</label></span>
+    <b class="small nowrap">{{ t('traceability.bulk.reqsSelected', { n: selReqs.length }, selReqs.length) }}</b>
+    <MultiSelect
+      v-model="selTests"
+      :options="testOptions"
+      option-label="label"
+      option-value="value"
+      filter
+      size="small"
+      :placeholder="t('traceability.bulk.allTests')"
+      :aria-label="t('traceability.bulk.tests')"
+      :max-selected-labels="2"
+      :selected-items-label="t('traceability.bulk.testsSelected', { n: selTests.length }, selTests.length)"
+      class="trace-bulk-tests"
+    />
+    <Button :label="t('traceability.bulk.link', { n: plan.toLink.length }, plan.toLink.length)" icon="pi pi-link" size="small" outlined :disabled="!plan.toLink.length || bulkBusy" @click="bulkLink" />
+    <Button :label="t('traceability.bulk.unlink', { n: plan.inScope.length }, plan.inScope.length)" icon="pi pi-times-circle" size="small" severity="danger" outlined :disabled="!plan.inScope.length || bulkBusy" @click="bulkUnlink" />
+    <Button :label="t('traceability.bulk.confirm', { n: plan.suspect.length }, plan.suspect.length)" icon="pi pi-check-circle" size="small" severity="secondary" outlined :disabled="!plan.suspect.length || bulkBusy" @click="bulkConfirm" />
+    <HelpTip id="trace.bulk" :label="t('traceability.bulk.toolbar')" />
+    <Button v-if="selReqs.length || selTests.length" icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="clearSelection" />
+  </div>
   <div v-if="loading && !data" class="empty" aria-busy="true"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <div v-else-if="data && (!data.requirements.length || !data.tests.length)" class="card empty">
     <i class="pi pi-th-large" aria-hidden="true" />{{ t('traceability.needsData') }}
@@ -182,6 +306,7 @@ async function toggle(reqId: string, testId: string) {
   <ul v-else-if="data && view === 'list'" class="trace-list plain-list" :aria-busy="loading">
     <li v-for="r in rows" :key="r.id" class="card trace-item" :style="{ borderLeft: '4px solid ' + (COVERAGE_COLORS[r.coverage || 'none'] ?? '#94a3b8') }">
       <div class="row trace-item-head">
+        <Checkbox v-if="canBulk" v-model="selReqs" :value="r.id" :input-id="'trl-' + r.id" :aria-label="t('traceability.bulk.selectOne', { key: r.key })" />
         <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" class="key">{{ r.key }}</RouterLink>
         <span class="grow trace-title">{{ r.title }}</span>
         <StatusTag :value="r.obligation" kind="obligation" empty="" />
@@ -244,6 +369,7 @@ async function toggle(reqId: string, testId: string) {
         <tr v-for="r in rows" :key="r.id">
           <th scope="row" class="sticky-col req-cell" :style="{ borderLeft: '4px solid ' + (COVERAGE_COLORS[r.coverage || 'none'] ?? '#94a3b8') }">
             <div class="row nowrap">
+              <Checkbox v-if="canBulk" v-model="selReqs" :value="r.id" :input-id="'trm-' + r.id" :aria-label="t('traceability.bulk.selectOne', { key: r.key })" />
               <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" class="key">{{ r.key }}</RouterLink>
               <span class="ellipsis grow" :title="r.title">{{ r.title }}</span>
               <StatusTag :value="r.obligation" kind="obligation" empty="" />

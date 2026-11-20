@@ -19,6 +19,19 @@ Välj **Spårbarhet** i projektets sidopanel.
 
 Matrisen rullar i båda riktningarna; kravkolumnen förblir synlig.
 
+### Länka flera på en gång
+
+Med rollen **Testare** finns ett verktygsfält ovanför matrisen (och listan) som arbetar med många länkar på en gång:
+
+1. Kryssa i krav med kryssrutan först på raden, eller **Markera alla visade krav** (använd filtren först för att avgränsa).
+2. Välj eventuellt testfall i **Testfall för de markerade kraven**; utan valda testfall gäller åtgärderna alla testfall.
+3. Välj en åtgärd; talet på varje knapp anger hur många länkar den påverkar:
+   - **Länka** länkar varje markerat krav till varje valt testfall; befintliga länkar behålls.
+   - **Ta bort länkar** tar bort länkarna mellan de markerade kraven och de valda testfallen (efter en bekräftelse).
+   - **Bekräfta misstänkta** bekräftar de misstänkta länkarna bland dem (celler med en varningssymbol: kravet eller testfallet har ändrats sedan länken bekräftades).
+
+Väljer du bara testfall (inga krav) gäller **Ta bort länkar** och **Bekräfta misstänkta** alla länkar för de testfallen. Att länka och ta bort länkar kan ångras med **Ångra**; statusen som följer bevisen uppdateras en gång för alla berörda krav.
+
 ## Så beräknas täckningen
 
 Täckningen härleds från det **senaste utfallet** för varje länkat testfall. Den beräknas varje gång du tittar på den och sparas aldrig, så den är alltid aktuell.

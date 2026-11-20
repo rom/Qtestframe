@@ -490,6 +490,9 @@ Reading needs `project.read`; creating and deleting links needs
 |---|---|---|
 | GET | `/projects/{pid}/links` | all links |
 | POST | `/projects/{pid}/links` | `{"requirement_id","test_case_id","criterion_id"?}` |
+| POST | `/projects/{pid}/links/bulk` | `{"links":[{requirement_id, test_case_id, criterion_id?}]}` (max 1000) → `{"created":[TraceLink], "skipped":[{requirement_id, test_case_id, reason}], "status_changes"}`; reasons `exists`, `not_found` (not in the project), `invalid` (e.g. a criterion of another requirement) |
+| DELETE | `/projects/{pid}/links/bulk` | `{"ids":[...]}` (max 1000) → `{"deleted":[TraceLink], "skipped":[{id, reason: "not_found"}], "status_changes"}`; the deleted links are returned so they can be recreated |
+| POST | `/projects/{pid}/links/confirm` | `{"ids":[...]}` → `{"confirmed": n, "status_changes"}`; confirms the suspect ones among the project's links |
 | DELETE | `/links/{id}` | |
 | GET | `/projects/{pid}/traceability?q=&tq=` | `{"requirements":[{id,key,title,obligation,coverage}], "tests":[{id,key,title,last_result}], "links":[TraceLink]}`; `q` filters requirements, `tq` tests |
 
