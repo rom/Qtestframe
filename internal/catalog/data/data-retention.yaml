@@ -1,0 +1,521 @@
+area: data-retention
+prefix: RET
+group: privacy
+name: {en: Data retention and deletion, sv: Lagringstid och gallring}
+description:
+  en: Retention periods, automatic deletion and anonymisation, inactive accounts, backups and restores, and legal hold.
+  sv: Lagringstider, automatisk gallring och anonymisering, inaktiva konton, säkerhetskopior och återläsning samt bevarandebeslut vid rättsliga krav.
+
+requirements:
+  - id: RET-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [retention-period, configuration]
+    refs: ["GDPR Art. 5(1)(e)", "GDPR Art. 30(1)(f)", "ISO/IEC 27001:2022 A.5.33", "ISO/IEC 27701:2019 §7.4.7"]
+    tests: [RET-T01]
+    en:
+      title: Retention period for each data category
+      description: The system MUST hold a configured retention period for each category of personal data that it stores.
+      rationale: Data cannot be deleted on time unless the system knows how long each kind of data is to be kept.
+      criteria:
+        - method: inspection
+          text: Every data category in the personal data inventory has a retention period in the system configuration, and the two values agree.
+    sv:
+      title: Lagringstid för varje datakategori
+      description: Systemet SKA ha en konfigurerad lagringstid för varje kategori av personuppgifter som det lagrar.
+      rationale: Uppgifter kan inte gallras i tid om systemet inte vet hur länge varje typ av uppgift ska sparas.
+      criteria:
+        - method: inspection
+          text: Varje datakategori i förteckningen över personuppgifter har en lagringstid i systemets konfiguration, och de två värdena stämmer överens.
+
+  - id: RET-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [deletion, automation]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-53 SI-12"]
+    tests: [RET-T02]
+    en:
+      title: Automatic deletion after the retention period
+      description: The system MUST delete or anonymise a record automatically within 7 days after its retention period has ended.
+      rationale: Manual clean-up is forgotten, so data is kept longer than allowed when deletion is not automated.
+      criteria:
+        - method: test
+          text: A record whose retention period ended 8 days ago is gone or anonymised, and a record whose period ends tomorrow is still intact.
+    sv:
+      title: Automatisk gallring efter lagringstiden
+      description: Systemet SKA radera eller anonymisera en post automatiskt inom 7 dagar efter att dess lagringstid har gått ut.
+      rationale: Manuell rensning glöms bort, så uppgifter sparas längre än tillåtet när gallringen inte är automatisk.
+      criteria:
+        - method: test
+          text: En post vars lagringstid gick ut för 8 dagar sedan är borta eller anonymiserad, och en post vars tid går ut i morgon är orörd.
+
+  - id: RET-03
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [inactive-accounts, deletion]
+    refs: ["GDPR Art. 5(1)(e)", "GDPR Art. 5(1)(c)"]
+    tests: [RET-T03]
+    en:
+      title: Deletion of inactive accounts
+      description: The system SHOULD delete an account that has not been signed in to for 24 months, after warning the user by e-mail 30 days in advance.
+      rationale: Dormant accounts hold personal data without a current purpose and are targets for takeover.
+      criteria:
+        - method: test
+          text: An account inactive for 23 months receives a warning e-mail, and an account inactive for 24 months and 30 days after the warning is deleted.
+    sv:
+      title: Gallring av inaktiva konton
+      description: Systemet BÖR radera ett konto som ingen har loggat in på under 24 månader, efter att användaren har varnats via mejl 30 dagar i förväg.
+      rationale: Vilande konton innehåller personuppgifter utan aktuellt ändamål och är mål för kapning.
+      criteria:
+        - method: test
+          text: Ett konto som varit inaktivt i 23 månader får ett varningsmejl, och ett konto som varit inaktivt i 24 månader och 30 dagar efter varningen raderas.
+
+  - id: RET-04
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [deletion, search-index, cache]
+    refs: ["GDPR Art. 17", "ISO/IEC 27001:2022 A.8.10"]
+    tests: [RET-T04]
+    en:
+      title: Deletion reaches indexes, caches and replicas
+      description: The system MUST remove a deleted record from search indexes, caches, read replicas and data warehouse copies within 24 hours.
+      rationale: Data deleted only from the main database remains visible through search and reports.
+      criteria:
+        - method: test
+          text: 24 hours after a record is deleted, it is found neither by search nor in cached pages nor in the data warehouse.
+    sv:
+      title: Gallring når index, cachar och repliker
+      description: Systemet SKA ta bort en raderad post från sökindex, cachar, läsrepliker och kopior i datalagret inom 24 timmar.
+      rationale: Uppgifter som bara raderas i huvuddatabasen syns fortfarande via sökning och rapporter.
+      criteria:
+        - method: test
+          text: 24 timmar efter att en post har raderats hittas den varken via sökning, i cachade sidor eller i datalagret.
+
+  - id: RET-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [backups, retention-period]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.13", "NIST SP 800-53 CP-9"]
+    tests: [RET-T05]
+    en:
+      title: Backups expire after 35 days
+      description: The system MUST delete backups that contain personal data no later than 35 days after they were made.
+      rationale: A fixed backup lifetime sets a known date by which deleted data has also left the backups.
+      criteria:
+        - method: inspection
+          text: The backup policy sets a lifetime of 35 days or less, and the oldest backup in storage is at most 35 days old.
+    sv:
+      title: Säkerhetskopior slutar gälla efter 35 dagar
+      description: Systemet SKA radera säkerhetskopior som innehåller personuppgifter senast 35 dagar efter att de togs.
+      rationale: En fast livslängd för säkerhetskopior ger ett känt datum då raderade uppgifter även har försvunnit ur kopiorna.
+      criteria:
+        - method: inspection
+          text: Policyn för säkerhetskopiering anger en livslängd på 35 dagar eller kortare, och den äldsta säkerhetskopian i lagringen är högst 35 dagar gammal.
+
+  - id: RET-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [backups, restore, erasure]
+    refs: ["GDPR Art. 17", "ISO/IEC 27001:2022 A.8.13"]
+    tests: [RET-T06]
+    en:
+      title: Erasures are applied again after a restore
+      description: The system MUST apply every erasure recorded since a backup was made before a restore of that backup is put back into service.
+      rationale: Restoring an old backup would otherwise bring back data that people have asked to have deleted.
+      criteria:
+        - method: test
+          text: After a restore of a backup made before a person was erased, the person's data is absent when the system opens for users.
+    sv:
+      title: Raderingar görs om efter återläsning
+      description: Systemet SKA tillämpa varje radering som registrerats sedan en säkerhetskopia togs innan en återläsning av den kopian tas i drift.
+      rationale: Annars skulle en återläst gammal säkerhetskopia ta tillbaka uppgifter som personer har begärt att få raderade.
+      criteria:
+        - method: test
+          text: Efter återläsning av en säkerhetskopia som togs innan en person raderades saknas personens uppgifter när systemet öppnas för användarna.
+
+  - id: RET-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [legal-hold]
+    refs: ["GDPR Art. 17(3)(e)", "ISO/IEC 27001:2022 A.5.33", "NIST SP 800-53 AU-11(1)"]
+    tests: [RET-T07]
+    en:
+      title: Legal hold on records
+      description: The system MUST let a user with the legal hold role place a hold on chosen records with a reason and lift it again.
+      rationale: During a dispute or investigation, records that would otherwise be deleted have to be preserved.
+      criteria:
+        - method: demonstration
+          text: A user with the role places a hold with a reason on three records, the records show the hold, and lifting it removes the mark.
+    sv:
+      title: Bevarandebeslut för poster
+      description: Systemet SKA låta en användare med rollen för bevarandebeslut lägga ett bevarandebeslut med motivering på valda poster och häva det igen.
+      rationale: Under en tvist eller utredning behöver poster bevaras som annars skulle gallras.
+      criteria:
+        - method: demonstration
+          text: En användare med rollen lägger ett bevarandebeslut med motivering på tre poster, posterna visar beslutet och när det hävs försvinner markeringen.
+
+  - id: RET-08
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [legal-hold, deletion]
+    refs: ["GDPR Art. 17(3)(e)", "NIST SP 800-53 AU-11(1)"]
+    tests: [RET-T08]
+    en:
+      title: Records under legal hold are not deleted
+      description: The system MUST NOT delete a record under legal hold, whether through automatic retention jobs, erasure requests or user action.
+      rationale: Destroying evidence under a hold can lead to legal sanctions.
+      criteria:
+        - method: test
+          text: A record under hold whose retention period has ended survives the retention job, and a user delete request on it is refused with a message about the hold.
+    sv:
+      title: Poster med bevarandebeslut gallras inte
+      description: Systemet SKA INTE radera en post med bevarandebeslut, vare sig genom automatiska gallringsjobb, begäranden om radering eller åtgärder av användare.
+      rationale: Att förstöra bevis som omfattas av ett bevarandebeslut kan leda till rättsliga sanktioner.
+      criteria:
+        - method: test
+          text: En post med bevarandebeslut vars lagringstid har gått ut finns kvar efter gallringsjobbet, och en användares begäran om att radera den avvisas med ett meddelande om beslutet.
+
+  - id: RET-09
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [anonymisation, k-anonymity]
+    refs: ["GDPR Recital 26", "ISO/IEC 20889:2018", "Article 29 Working Party Opinion 05/2014 on Anonymisation Techniques"]
+    tests: [RET-T09]
+    en:
+      title: Anonymised data cannot be linked to a person
+      description: The system SHOULD generalise anonymised data so that every combination of postcode, birth year and gender matches at least 5 persons.
+      rationale: Removing names is not enough, because a rare combination of remaining attributes can identify a person.
+      criteria:
+        - method: analysis
+          text: A k-anonymity check over postcode, birth year and gender in the anonymised data set gives k of 5 or more, and no direct identifier remains.
+    sv:
+      title: Anonymiserade data kan inte kopplas till en person
+      description: Systemet BÖR generalisera anonymiserade data så att varje kombination av postnummer, födelseår och kön motsvarar minst 5 personer.
+      rationale: Det räcker inte att ta bort namn, eftersom en ovanlig kombination av återstående attribut kan identifiera en person.
+      criteria:
+        - method: analysis
+          text: En kontroll av k-anonymitet över postnummer, födelseår och kön i det anonymiserade datasetet ger k på 5 eller mer, och ingen direkt identifierare finns kvar.
+
+  - id: RET-10
+    type: regulatory
+    obligation: may
+    priority: low
+    tags: [deletion, reporting]
+    refs: ["GDPR Art. 5(2)", "ISO/IEC 27701:2019 §7.4.7"]
+    tests: [RET-T10]
+    en:
+      title: Monthly deletion report
+      description: The system MAY produce a monthly report with the number of records deleted or anonymised per data category.
+      rationale: The report helps show accountability and reveals a retention job that has silently stopped.
+      criteria:
+        - method: demonstration
+          text: The report for the past month lists each data category with its count, and the counts match the deletion log.
+    sv:
+      title: Månadsrapport över gallring
+      description: Systemet FÅR ta fram en månadsrapport med antalet raderade eller anonymiserade poster per datakategori.
+      rationale: Rapporten hjälper till att visa ansvarsskyldighet och avslöjar ett gallringsjobb som har stannat utan att någon märkt det.
+      criteria:
+        - method: demonstration
+          text: Rapporten för den senaste månaden visar varje datakategori med antal, och antalen stämmer med gallringsloggen.
+
+tests:
+  - id: RET-T01
+    priority: high
+    execution: manual
+    tags: [retention-period]
+    refs: ["GDPR Art. 30(1)(f)"]
+    en:
+      title: Every data category has a configured retention period
+      description: Compares the retention configuration with the personal data inventory.
+      preconditions: Administrator access to the retention configuration and the current personal data inventory.
+      expected: The configuration covers every category with the same periods as the inventory.
+      steps:
+        - action: List the data categories and retention periods in the inventory.
+          expected: A list is produced.
+        - action: Open the retention configuration and look up each category.
+          expected: Each category is configured.
+        - action: Compare the periods.
+          expected: Every configured period equals the inventory period.
+    sv:
+      title: Varje datakategori har en konfigurerad lagringstid
+      description: Jämför konfigurationen för lagringstider med förteckningen över personuppgifter.
+      preconditions: Administratörsåtkomst till konfigurationen för lagringstider och den aktuella förteckningen över personuppgifter.
+      expected: Konfigurationen täcker varje kategori med samma tider som förteckningen.
+      steps:
+        - action: Lista datakategorierna och lagringstiderna i förteckningen.
+          expected: En lista tas fram.
+        - action: Öppna konfigurationen för lagringstider och slå upp varje kategori.
+          expected: Varje kategori är konfigurerad.
+        - action: Jämför tiderna.
+          expected: Varje konfigurerad tid är lika med tiden i förteckningen.
+
+  - id: RET-T02
+    priority: high
+    execution: automated
+    tags: [deletion, automation]
+    refs: ["GDPR Art. 5(1)(e)"]
+    en:
+      title: Retention job deletes expired records only
+      description: A script creates records with different ages, runs the retention job and checks the result.
+      preconditions: A data category with a retention period of 365 days and a test environment clock the script can set.
+      expected: Expired records are removed and others are untouched.
+      steps:
+        - action: Create one record 373 days old and one record 364 days old in the category.
+          expected: Both records exist.
+        - action: Run the retention job.
+          expected: The job completes without errors.
+        - action: Read both records.
+          expected: The 373-day-old record is deleted or anonymised and the 364-day-old record is unchanged.
+    sv:
+      title: Gallringsjobbet raderar bara utgångna poster
+      description: Ett skript skapar poster med olika ålder, kör gallringsjobbet och kontrollerar resultatet.
+      preconditions: En datakategori med lagringstiden 365 dagar och en klocka i testmiljön som skriptet kan ställa.
+      expected: Utgångna poster tas bort och övriga lämnas orörda.
+      steps:
+        - action: Skapa en post som är 373 dagar gammal och en som är 364 dagar gammal i kategorin.
+          expected: Båda posterna finns.
+        - action: Kör gallringsjobbet.
+          expected: Jobbet slutförs utan fel.
+        - action: Läs båda posterna.
+          expected: Posten som är 373 dagar gammal är raderad eller anonymiserad och posten som är 364 dagar gammal är oförändrad.
+
+  - id: RET-T03
+    priority: medium
+    execution: automated
+    tags: [inactive-accounts]
+    refs: ["GDPR Art. 5(1)(e)"]
+    en:
+      title: Inactive accounts are warned and then deleted
+      description: A script sets last sign-in dates in the past and runs the inactive account job.
+      preconditions: Three test accounts, access to a test mailbox and a test environment clock the script can set.
+      expected: Accounts are warned at 23 months and deleted 30 days after the warning.
+      steps:
+        - action: Set the last sign-in of account A to 23 months ago and run the job.
+          expected: Account A receives a warning e-mail that names the deletion date.
+        - action: Advance the clock by 30 days without signing in to A and run the job.
+          expected: Account A is deleted.
+        - action: Set account B's last sign-in to 23 months ago, run the job, sign in to B and run the job again after 30 days.
+          expected: Account B is kept.
+    sv:
+      title: Inaktiva konton varnas och raderas sedan
+      description: Ett skript sätter datum för senaste inloggning bakåt i tiden och kör jobbet för inaktiva konton.
+      preconditions: Tre testkonton, åtkomst till en testinkorg och en klocka i testmiljön som skriptet kan ställa.
+      expected: Konton varnas vid 23 månader och raderas 30 dagar efter varningen.
+      steps:
+        - action: Sätt senaste inloggning för konto A till 23 månader bakåt och kör jobbet.
+          expected: Konto A får ett varningsmejl som anger datum för raderingen.
+        - action: Flytta fram klockan 30 dagar utan att logga in på A och kör jobbet.
+          expected: Konto A raderas.
+        - action: Sätt senaste inloggning för konto B till 23 månader bakåt, kör jobbet, logga in på B och kör jobbet igen efter 30 dagar.
+          expected: Konto B behålls.
+
+  - id: RET-T04
+    priority: high
+    execution: manual
+    tags: [deletion, search-index, cache]
+    refs: ["GDPR Art. 17"]
+    en:
+      title: Deleted record disappears from search, cache and warehouse
+      description: Deletes a record with a unique marker and searches for it in every secondary store after 24 hours.
+      preconditions: A test record that contains a unique marker string and has been indexed, cached and loaded into the data warehouse.
+      expected: The marker is not found anywhere after 24 hours.
+      steps:
+        - action: Delete the test record.
+          expected: The record is gone from the main database.
+          data: DEL-MARKER-58c1
+        - action: After 24 hours, search for the marker in the application search.
+          expected: No result is returned.
+        - action: Open the record's former URL and query the data warehouse for the marker.
+          expected: The page returns 404 and the warehouse query returns no rows.
+    sv:
+      title: En raderad post försvinner ur sökning, cache och datalager
+      description: Raderar en post med en unik markör och söker efter den i varje sekundär lagringsplats efter 24 timmar.
+      preconditions: En testpost som innehåller en unik markörsträng och som har indexerats, cachats och lästs in i datalagret.
+      expected: Markören hittas ingenstans efter 24 timmar.
+      steps:
+        - action: Radera testposten.
+          expected: Posten är borta ur huvuddatabasen.
+          data: DEL-MARKER-58c1
+        - action: Sök efter markören i applikationens sökning efter 24 timmar.
+          expected: Ingen träff returneras.
+        - action: Öppna postens tidigare adress och fråga datalagret efter markören.
+          expected: Sidan svarar 404 och frågan mot datalagret ger inga rader.
+
+  - id: RET-T05
+    priority: high
+    execution: automated
+    tags: [backups]
+    refs: ["ISO/IEC 27001:2022 A.8.13"]
+    en:
+      title: No backup is older than 35 days
+      description: A script lists the backups in every backup location and checks their ages and the lifecycle policy.
+      preconditions: Read access to every backup location of the environment.
+      expected: The policy and the stored backups respect the 35-day limit.
+      steps:
+        - action: Read the lifecycle or retention policy of each backup location.
+          expected: Each policy deletes backups at most 35 days after creation.
+        - action: List all backups with their creation dates.
+          expected: No backup is older than 35 days.
+    sv:
+      title: Ingen säkerhetskopia är äldre än 35 dagar
+      description: Ett skript listar säkerhetskopiorna på varje lagringsplats för säkerhetskopior och kontrollerar deras ålder och livscykelpolicyn.
+      preconditions: Läsbehörighet till varje lagringsplats för säkerhetskopior i miljön.
+      expected: Policyn och de lagrade kopiorna håller gränsen på 35 dagar.
+      steps:
+        - action: Läs livscykel- eller lagringspolicyn för varje lagringsplats.
+          expected: Varje policy raderar säkerhetskopior senast 35 dagar efter att de skapades.
+        - action: Lista alla säkerhetskopior med datum då de skapades.
+          expected: Ingen säkerhetskopia är äldre än 35 dagar.
+
+  - id: RET-T06
+    priority: high
+    execution: manual
+    tags: [backups, restore, erasure]
+    refs: ["GDPR Art. 17"]
+    en:
+      title: Restore re-applies erasures before go-live
+      description: Restores a backup made before an erasure and checks that the erased person stays erased.
+      preconditions: A restore test environment, a backup that contains test person X, and an erasure of X carried out after that backup.
+      expected: X's data is absent when the restored system opens for users.
+      steps:
+        - action: Restore the backup following the documented restore procedure.
+          expected: The procedure includes a step that applies erasures recorded since the backup.
+        - action: Before opening the system, search for X's name, e-mail address and id.
+          expected: No match is found.
+        - action: Open the system for test users and repeat the search.
+          expected: No match is found.
+    sv:
+      title: Återläsning gör om raderingar innan systemet tas i drift
+      description: Läser tillbaka en säkerhetskopia som togs före en radering och kontrollerar att den raderade personen förblir raderad.
+      preconditions: En testmiljö för återläsning, en säkerhetskopia som innehåller testperson X och en radering av X som gjordes efter den kopian.
+      expected: X:s uppgifter saknas när det återlästa systemet öppnas för användarna.
+      steps:
+        - action: Läs tillbaka säkerhetskopian enligt den dokumenterade rutinen för återläsning.
+          expected: Rutinen innehåller ett steg som tillämpar raderingar som registrerats sedan kopian togs.
+        - action: Sök efter X:s namn, e-postadress och id innan systemet öppnas.
+          expected: Ingen träff hittas.
+        - action: Öppna systemet för testanvändare och upprepa sökningen.
+          expected: Ingen träff hittas.
+
+  - id: RET-T07
+    priority: high
+    execution: manual
+    tags: [legal-hold]
+    refs: ["NIST SP 800-53 AU-11(1)"]
+    en:
+      title: Placing and lifting a legal hold
+      description: Places a legal hold on records and lifts it again.
+      preconditions: A user with the legal hold role, a user without it, and three test records.
+      expected: Only the user with the role can place and lift holds, and the reason is recorded.
+      steps:
+        - action: As the user without the role, try to place a hold on a record.
+          expected: The action is not available or is refused.
+        - action: As the user with the role, place a hold with a reason on the three records.
+          expected: Each record shows the hold, the reason, the user and the time.
+          data: "Reason: dispute 2026-114"
+        - action: Lift the hold on one record.
+          expected: The mark is removed from that record and the lift is recorded with user and time.
+    sv:
+      title: Lägga och häva ett bevarandebeslut
+      description: Lägger ett bevarandebeslut på poster och häver det igen.
+      preconditions: En användare med rollen för bevarandebeslut, en användare utan rollen och tre testposter.
+      expected: Bara användaren med rollen kan lägga och häva beslut, och motiveringen registreras.
+      steps:
+        - action: Försök som användaren utan roll lägga ett bevarandebeslut på en post.
+          expected: Åtgärden finns inte eller avvisas.
+        - action: Lägg som användaren med rollen ett bevarandebeslut med motivering på de tre posterna.
+          expected: Varje post visar beslutet, motiveringen, användaren och tidpunkten.
+          data: "Motivering: tvist 2026-114"
+        - action: Häv beslutet för en av posterna.
+          expected: Markeringen tas bort från posten och hävningen registreras med användare och tidpunkt.
+
+  - id: RET-T08
+    priority: critical
+    execution: automated
+    tags: [legal-hold, deletion]
+    refs: ["GDPR Art. 17(3)(e)"]
+    en:
+      title: Records under hold survive every deletion path
+      description: A script tries every deletion path against a record under legal hold.
+      preconditions: A test record under legal hold whose retention period has ended, and the owner of the record as a test user.
+      expected: The record still exists after every attempt.
+      steps:
+        - action: Run the retention job.
+          expected: The record still exists.
+        - action: Carry out an erasure request for the record's data subject.
+          expected: The record still exists and the erasure result lists it as held.
+        - action: As the owner, send a delete request for the record.
+          expected: The request is refused with a message about the legal hold.
+    sv:
+      title: Poster med bevarandebeslut klarar varje raderingsväg
+      description: Ett skript provar varje raderingsväg mot en post med bevarandebeslut.
+      preconditions: En testpost med bevarandebeslut vars lagringstid har gått ut, och postens ägare som testanvändare.
+      expected: Posten finns kvar efter varje försök.
+      steps:
+        - action: Kör gallringsjobbet.
+          expected: Posten finns kvar.
+        - action: Genomför en begäran om radering för postens registrerade person.
+          expected: Posten finns kvar och raderingsresultatet anger att den omfattas av ett bevarandebeslut.
+        - action: Skicka som ägaren en begäran om att radera posten.
+          expected: Begäran avvisas med ett meddelande om bevarandebeslutet.
+
+  - id: RET-T09
+    priority: medium
+    execution: automated
+    tags: [anonymisation, k-anonymity]
+    refs: ["ISO/IEC 20889:2018"]
+    en:
+      title: k-anonymity check of anonymised data
+      description: A script measures k-anonymity and searches for direct identifiers in the anonymised data set.
+      preconditions: An export of the anonymised data set and a list of direct identifier columns of the source data.
+      expected: k is 5 or more and no direct identifier remains.
+      steps:
+        - action: Group the records by postcode, birth year and gender and count each group.
+          expected: The smallest group has 5 or more records.
+        - action: Check the data set for the direct identifier columns and for values that match e-mail or identity number patterns.
+          expected: None are found.
+    sv:
+      title: Kontroll av k-anonymitet i anonymiserade data
+      description: Ett skript mäter k-anonymitet och söker efter direkta identifierare i det anonymiserade datasetet.
+      preconditions: En export av det anonymiserade datasetet och en lista över kolumner med direkta identifierare i källdata.
+      expected: k är 5 eller mer och ingen direkt identifierare finns kvar.
+      steps:
+        - action: Gruppera posterna efter postnummer, födelseår och kön och räkna varje grupp.
+          expected: Den minsta gruppen har 5 eller fler poster.
+        - action: Sök i datasetet efter kolumnerna med direkta identifierare och efter värden som liknar e-postadresser eller personnummer.
+          expected: Inga hittas.
+
+  - id: RET-T10
+    priority: low
+    execution: manual
+    tags: [deletion, reporting]
+    refs: ["GDPR Art. 5(2)"]
+    en:
+      title: Deletion report matches the deletion log
+      description: Opens the monthly deletion report and compares it with the deletion log.
+      preconditions: A test environment where the retention job has deleted records in at least two categories during the past month.
+      expected: The report lists every category with correct counts.
+      steps:
+        - action: Open the deletion report for the past month.
+          expected: The report lists each data category with a count.
+        - action: Count the entries per category in the deletion log for the same month.
+          expected: The counts match the report.
+    sv:
+      title: Gallringsrapporten stämmer med gallringsloggen
+      description: Öppnar månadsrapporten över gallring och jämför den med gallringsloggen.
+      preconditions: En testmiljö där gallringsjobbet har raderat poster i minst två kategorier under den senaste månaden.
+      expected: Rapporten visar varje kategori med rätt antal.
+      steps:
+        - action: Öppna gallringsrapporten för den senaste månaden.
+          expected: Rapporten visar varje datakategori med ett antal.
+        - action: Räkna posterna per kategori i gallringsloggen för samma månad.
+          expected: Antalen stämmer med rapporten.

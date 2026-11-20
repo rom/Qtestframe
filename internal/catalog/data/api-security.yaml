@@ -1,0 +1,589 @@
+area: api-security
+prefix: APIS
+group: security
+name: {en: API security, sv: API-säkerhet}
+description:
+  en: Authentication of API clients, token scopes and lifetime, rate limits, CORS, request size limits, mass assignment and error responses that do not leak details.
+  sv: Autentisering av API-klienter, behörighetsomfång och livslängd för token, anropsgränser, CORS, storleksgränser för anrop, massilldelning och felsvar som inte läcker detaljer.
+
+requirements:
+  - id: APIS-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [api, authentication]
+    refs: ["OWASP API Security Top 10 2023 API2", "OWASP ASVS 4.0 V13.1", "RFC 6749"]
+    tests: [APIS-T01]
+    en:
+      title: Every API client is authenticated
+      description: The system MUST reject with 401 a request to an endpoint that is not marked as public in the API description when the request carries no valid access token or API key.
+      rationale: An API endpoint without authentication is reachable by anyone on the internet, including automated scanners.
+      criteria:
+        - method: test
+          text: Each non-public endpoint called without credentials, with an expired token and with a malformed token returns 401.
+    sv:
+      title: Varje API-klient autentiseras
+      description: Systemet SKA avvisa med 401 ett anrop till en endpoint som inte är markerad som publik i API-beskrivningen när anropet saknar en giltig åtkomsttoken eller API-nyckel.
+      rationale: En endpoint utan autentisering kan nås av vem som helst på internet, även av automatiska skannrar.
+      criteria:
+        - method: test
+          text: Varje icke-publik endpoint som anropas utan inloggningsuppgifter, med en utgången token och med en felformad token svarar 401.
+
+  - id: APIS-02
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [api-key, url]
+    refs: ["OWASP ASVS 4.0 V13.1.3", "OWASP REST Security Cheat Sheet"]
+    tests: [APIS-T02]
+    en:
+      title: No credentials in query strings
+      description: The system MUST NOT accept API keys or access tokens in the URL query string.
+      rationale: Query strings are written to access logs, proxy logs and browser history, where the credentials leak.
+      criteria:
+        - method: test
+          text: A request with a valid API key in the query string and none in the header is rejected with 401.
+    sv:
+      title: Inga inloggningsuppgifter i frågesträngar
+      description: Systemet SKA INTE godta API-nycklar eller åtkomsttoken i adressens frågesträng.
+      rationale: Frågesträngar skrivs till åtkomstloggar, proxyloggar och webbläsarhistorik, där uppgifterna läcker.
+      criteria:
+        - method: test
+          text: Ett anrop med en giltig API-nyckel i frågesträngen och ingen i huvudet avvisas med 401.
+
+  - id: APIS-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [rate-limiting, api]
+    refs: ["OWASP API Security Top 10 2023 API4", "OWASP ASVS 4.0 V11.1.4", "RFC 6585 §4"]
+    tests: [APIS-T03]
+    en:
+      title: Rate limit per API client
+      description: The system MUST answer with 429 and a Retry-After header when an API client sends more than 100 requests within 1 minute.
+      rationale: Without a limit a single client can exhaust capacity for everyone or scrape data at machine speed.
+      criteria:
+        - method: test
+          text: Of 120 requests sent by one client within 1 minute, the first 100 succeed and the rest return 429 with Retry-After.
+    sv:
+      title: Anropsgräns per API-klient
+      description: Systemet SKA svara med 429 och ett Retry-After-huvud när en API-klient skickar mer än 100 anrop inom 1 minut.
+      rationale: Utan gräns kan en enda klient förbruka kapaciteten för alla eller hämta stora mängder data i maskinfart.
+      criteria:
+        - method: test
+          text: Av 120 anrop som en klient skickar inom 1 minut lyckas de första 100 och resten får 429 med Retry-After.
+
+  - id: APIS-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [access-token, expiry, oauth]
+    refs: ["RFC 9700 §2.2", "OWASP ASVS 4.0 V3.5", "RFC 7519 §4.1.4"]
+    tests: [APIS-T04]
+    en:
+      title: Short-lived access tokens
+      description: The system MUST issue API access tokens that expire at most 60 minutes after they were issued and reject them after that time.
+      rationale: A short lifetime limits how long a leaked token is useful to an attacker.
+      criteria:
+        - method: inspection
+          text: The exp claim of a newly issued token is at most 3600 seconds after its iat claim.
+        - method: test
+          text: A token used 61 minutes after issue is rejected with 401.
+    sv:
+      title: Åtkomsttoken med kort livslängd
+      description: Systemet SKA utfärda åtkomsttoken för API:et som slutar gälla senast 60 minuter efter utfärdandet och avvisa dem efter den tiden.
+      rationale: En kort livslängd begränsar hur länge en läckt token är användbar för en angripare.
+      criteria:
+        - method: inspection
+          text: Anspråket exp i en nyutfärdad token ligger högst 3600 sekunder efter anspråket iat.
+        - method: test
+          text: En token som används 61 minuter efter utfärdandet avvisas med 401.
+
+  - id: APIS-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [scopes, oauth, authorisation]
+    refs: ["RFC 6749 §3.3", "OWASP API Security Top 10 2023 API5", "OWASP ASVS 4.0 V13.1.4"]
+    tests: [APIS-T05]
+    en:
+      title: Token scopes limit API operations
+      description: The system MUST refuse with 403 an API operation that is not covered by the scopes of the access token used.
+      rationale: Scopes let an integration hold only the rights it needs, so a leaked read-only token cannot delete data.
+      criteria:
+        - method: test
+          text: A token with only a read scope can read records, and its write and delete requests return 403.
+    sv:
+      title: Behörighetsomfång i token begränsar API-operationer
+      description: Systemet SKA avvisa med 403 en API-operation som inte täcks av behörighetsomfånget i den åtkomsttoken som används.
+      rationale: Behörighetsomfång låter en integration ha bara de rättigheter den behöver, så att en läckt token för läsning inte kan radera data.
+      criteria:
+        - method: test
+          text: En token med enbart läsomfång kan läsa poster, och dess anrop för skrivning och radering får 403.
+
+  - id: APIS-06
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [cors]
+    refs: ["OWASP ASVS 4.0 V14.5.3", "OWASP Web Security Testing Guide WSTG-CLNT-07", "Fetch Living Standard §3.2"]
+    tests: [APIS-T06]
+    en:
+      title: CORS limited to listed origins
+      description: The system MUST NOT return an Access-Control-Allow-Origin header for an origin that is not on its configured list of trusted origins.
+      rationale: Reflecting any origin, especially with credentials, lets every website read the API responses of a signed-in user.
+      criteria:
+        - method: test
+          text: A preflight and a simple request from an unlisted origin get no Access-Control-Allow-Origin header, and a listed origin gets its own value back.
+    sv:
+      title: CORS begränsat till listade origins
+      description: Systemet SKA INTE returnera ett Access-Control-Allow-Origin-huvud för en origin som saknas i den konfigurerade listan över betrodda origins.
+      rationale: Om varje origin speglas, särskilt med inloggningsuppgifter, kan alla webbplatser läsa API-svaren för en inloggad användare.
+      criteria:
+        - method: test
+          text: Ett förhandsanrop och ett enkelt anrop från en olistad origin får inget Access-Control-Allow-Origin-huvud, och en listad origin får tillbaka sitt eget värde.
+
+  - id: APIS-07
+    type: security
+    obligation: must
+    priority: medium
+    tags: [request-size, denial-of-service]
+    refs: ["OWASP API Security Top 10 2023 API4", "OWASP ASVS 4.0 V13.1.1"]
+    tests: [APIS-T07]
+    en:
+      title: Limit on request body size
+      description: The system MUST reject an API request whose body is larger than 1 MB with status 413 before parsing it.
+      rationale: Parsing oversized bodies uses memory and CPU and is a cheap way to slow the service down for everyone.
+      criteria:
+        - method: test
+          text: A body of 1 MB is accepted for parsing and a body of 1 MB plus one byte returns 413 without increasing memory use.
+    sv:
+      title: Gräns för anropets storlek
+      description: Systemet SKA avvisa ett API-anrop vars innehåll är större än 1 MB med status 413 innan innehållet tolkas.
+      rationale: Att tolka för stora anrop förbrukar minne och processorkraft och är ett billigt sätt att göra tjänsten långsam för alla.
+      criteria:
+        - method: test
+          text: Ett innehåll på 1 MB tas emot för tolkning och ett innehåll på 1 MB plus en byte får 413 utan att minnesanvändningen ökar.
+
+  - id: APIS-08
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [error-handling, information-disclosure]
+    refs: ["OWASP ASVS 4.0 V7.4.1", "OWASP Top 10 2021 A05", "OWASP Error Handling Cheat Sheet"]
+    tests: [APIS-T08]
+    en:
+      title: Error responses do not leak internals
+      description: The system MUST NOT include stack traces, SQL statements, internal file paths, host names or software versions in error responses.
+      rationale: Internal details help attackers map the system and choose exploits for the exact versions in use.
+      criteria:
+        - method: test
+          text: Responses to malformed requests and forced server errors contain only a generic message and a correlation id.
+    sv:
+      title: Felsvar läcker inga interna detaljer
+      description: Systemet SKA INTE ta med stackspår, SQL-satser, interna filsökvägar, värdnamn eller programvaruversioner i felsvar.
+      rationale: Interna detaljer hjälper angripare att kartlägga systemet och välja attacker mot exakt de versioner som används.
+      criteria:
+        - method: test
+          text: Svar på felformade anrop och framtvingade serverfel innehåller bara ett allmänt meddelande och ett korrelations-id.
+
+  - id: APIS-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [mass-assignment, api]
+    refs: ["OWASP API Security Top 10 2023 API3", "OWASP ASVS 4.0 V5.1.2", "OWASP Mass Assignment Cheat Sheet"]
+    tests: [APIS-T09]
+    en:
+      title: Protection against mass assignment
+      description: The system MUST change only the fields that are on the writable list of an endpoint and reject requests that try to set any other field.
+      rationale: Binding the whole request to the record lets a client set fields such as role, owner or price that it is not meant to control.
+      criteria:
+        - method: test
+          text: An update that also sets role, owner id or created date is rejected with 400, and the record is unchanged.
+    sv:
+      title: Skydd mot massilldelning
+      description: Systemet SKA ändra enbart de fält som finns på en endpoints lista över skrivbara fält och avvisa anrop som försöker sätta andra fält.
+      rationale: Om hela anropet binds till posten kan en klient sätta fält som roll, ägare eller pris som den inte ska styra över.
+      criteria:
+        - method: test
+          text: En uppdatering som även sätter roll, ägar-id eller skapandedatum avvisas med 400, och posten är oförändrad.
+
+  - id: APIS-10
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [pagination, api]
+    refs: ["OWASP API Security Top 10 2023 API4"]
+    tests: [APIS-T10]
+    en:
+      title: Upper limit on page size
+      description: The system SHOULD return at most 100 items per page from a list endpoint, whatever page size the client asks for.
+      rationale: Unbounded result sets make it possible to pull a whole database in one request and to overload the server.
+      criteria:
+        - method: test
+          text: A list request with a page size of 10 000 returns 100 items and a link to the next page.
+    sv:
+      title: Övre gräns för sidstorlek
+      description: Systemet BÖR returnera högst 100 objekt per sida från en endpoint för listor, oavsett vilken sidstorlek klienten begär.
+      rationale: Obegränsade resultat gör det möjligt att hämta en hel databas i ett anrop och att överbelasta servern.
+      criteria:
+        - method: test
+          text: Ett listanrop med sidstorleken 10 000 returnerar 100 objekt och en länk till nästa sida.
+
+  - id: APIS-11
+    type: security
+    obligation: should
+    priority: medium
+    tags: [api-key, revocation]
+    refs: ["OWASP ASVS 4.0 V3.5", "NIST SP 800-53 IA-5"]
+    tests: [APIS-T11]
+    en:
+      title: API keys can be revoked at once
+      description: The system SHOULD let an administrator revoke an API key so that requests using it are rejected within 1 minute.
+      rationale: A leaked key has to be stopped immediately without waiting for it to expire.
+      criteria:
+        - method: test
+          text: Requests with a key fail with 401 within 1 minute after the key is revoked in the administration.
+    sv:
+      title: API-nycklar kan återkallas direkt
+      description: Systemet BÖR låta en administratör återkalla en API-nyckel så att anrop med den avvisas inom 1 minut.
+      rationale: En läckt nyckel behöver stoppas omedelbart utan att vänta på att den slutar gälla.
+      criteria:
+        - method: test
+          text: Anrop med en nyckel misslyckas med 401 inom 1 minut efter att nyckeln har återkallats i administrationen.
+
+tests:
+  - id: APIS-T01
+    priority: critical
+    execution: automated
+    tags: [api, authentication]
+    refs: ["OWASP API Security Top 10 2023 API2"]
+    en:
+      title: Non-public endpoints reject missing and invalid credentials
+      description: A script calls every endpoint in the API description with no, expired and malformed credentials.
+      preconditions: The API description marks public endpoints, and the script has an expired token and a malformed token.
+      expected: Every non-public endpoint returns 401 in all three cases.
+      steps:
+        - action: Call each non-public endpoint without an Authorization header.
+          expected: Each response is 401.
+        - action: Call each non-public endpoint with the expired token.
+          expected: Each response is 401.
+        - action: Call each non-public endpoint with the malformed token.
+          expected: Each response is 401.
+          data: "Authorization: Bearer abc.def"
+    sv:
+      title: Icke-publika endpoints avvisar saknade och ogiltiga inloggningsuppgifter
+      description: Ett skript anropar varje endpoint i API-beskrivningen utan, med utgångna och med felformade inloggningsuppgifter.
+      preconditions: API-beskrivningen markerar publika endpoints, och skriptet har en utgången token och en felformad token.
+      expected: Varje icke-publik endpoint svarar 401 i alla tre fallen.
+      steps:
+        - action: Anropa varje icke-publik endpoint utan Authorization-huvud.
+          expected: Varje svar är 401.
+        - action: Anropa varje icke-publik endpoint med den utgångna token.
+          expected: Varje svar är 401.
+        - action: Anropa varje icke-publik endpoint med den felformade token.
+          expected: Varje svar är 401.
+          data: "Authorization: Bearer abc.def"
+
+  - id: APIS-T02
+    priority: high
+    execution: automated
+    tags: [api-key, url]
+    refs: ["OWASP REST Security Cheat Sheet"]
+    en:
+      title: Credentials in the query string are refused
+      description: A script sends a valid API key and a valid token as query parameters.
+      preconditions: A valid API key and a valid access token for a test client.
+      expected: Neither credential is accepted from the query string.
+      steps:
+        - action: Call a protected endpoint with the API key as a query parameter and no header.
+          expected: The response is 401.
+          data: "?api_key=<valid key>"
+        - action: Call a protected endpoint with the access token as a query parameter and no header.
+          expected: The response is 401.
+          data: "?access_token=<valid token>"
+    sv:
+      title: Inloggningsuppgifter i frågesträngen avvisas
+      description: Ett skript skickar en giltig API-nyckel och en giltig token som frågeparametrar.
+      preconditions: En giltig API-nyckel och en giltig åtkomsttoken för en testklient.
+      expected: Ingen av uppgifterna godtas från frågesträngen.
+      steps:
+        - action: Anropa en skyddad endpoint med API-nyckeln som frågeparameter och utan huvud.
+          expected: Svaret är 401.
+          data: "?api_key=<giltig nyckel>"
+        - action: Anropa en skyddad endpoint med åtkomsttoken som frågeparameter och utan huvud.
+          expected: Svaret är 401.
+          data: "?access_token=<giltig token>"
+
+  - id: APIS-T03
+    priority: high
+    execution: automated
+    tags: [rate-limiting]
+    refs: ["OWASP API Security Top 10 2023 API4"]
+    en:
+      title: Requests above the rate limit get 429
+      description: A script sends a burst of requests from one client and counts the responses.
+      preconditions: A test client with the default rate limit of 100 requests per minute.
+      expected: Requests above the limit are refused with 429 and Retry-After.
+      steps:
+        - action: Send 120 requests to a cheap read endpoint within 30 seconds.
+          expected: The first 100 succeed and the remaining 20 return 429.
+        - action: Inspect the 429 responses.
+          expected: Each has a Retry-After header with a value in seconds.
+        - action: Wait for the time given in Retry-After and send one request.
+          expected: The request succeeds.
+    sv:
+      title: Anrop över anropsgränsen får 429
+      description: Ett skript skickar en skur av anrop från en klient och räknar svaren.
+      preconditions: En testklient med standardgränsen 100 anrop per minut.
+      expected: Anrop över gränsen avvisas med 429 och Retry-After.
+      steps:
+        - action: Skicka 120 anrop till en enkel läsendpoint inom 30 sekunder.
+          expected: De första 100 lyckas och de återstående 20 får 429.
+        - action: Granska svaren med 429.
+          expected: Vart och ett har ett Retry-After-huvud med ett värde i sekunder.
+        - action: Vänta den tid som anges i Retry-After och skicka ett anrop.
+          expected: Anropet lyckas.
+
+  - id: APIS-T04
+    priority: high
+    execution: automated
+    tags: [access-token, expiry]
+    refs: ["RFC 7519 §4.1.4"]
+    en:
+      title: Access tokens expire within 60 minutes
+      description: A script decodes a new token and uses it after its lifetime.
+      preconditions: A test client that can obtain tokens and a test environment clock the script can advance.
+      expected: The token lifetime is at most 60 minutes and is enforced.
+      steps:
+        - action: Obtain an access token and decode its claims.
+          expected: exp minus iat is 3600 seconds or less.
+        - action: Advance the clock by 61 minutes and call a protected endpoint with the token.
+          expected: The response is 401.
+    sv:
+      title: Åtkomsttoken slutar gälla inom 60 minuter
+      description: Ett skript avkodar en ny token och använder den efter dess livslängd.
+      preconditions: En testklient som kan hämta token och en klocka i testmiljön som skriptet kan flytta fram.
+      expected: Livslängden för token är högst 60 minuter och upprätthålls.
+      steps:
+        - action: Hämta en åtkomsttoken och avkoda dess anspråk.
+          expected: exp minus iat är 3600 sekunder eller mindre.
+        - action: Flytta fram klockan 61 minuter och anropa en skyddad endpoint med token.
+          expected: Svaret är 401.
+
+  - id: APIS-T05
+    priority: critical
+    execution: automated
+    tags: [scopes, authorisation]
+    refs: ["RFC 6749 §3.3"]
+    en:
+      title: A read-only token cannot write or delete
+      description: A script uses a token with only a read scope against read, write and delete operations.
+      preconditions: A test client allowed to request a token with only the read scope, and a test record.
+      expected: Only read operations succeed.
+      steps:
+        - action: Read the test record with the read-only token.
+          expected: The record is returned.
+        - action: Update the test record with the read-only token.
+          expected: The response is 403 and the record is unchanged.
+        - action: Delete the test record with the read-only token.
+          expected: The response is 403 and the record still exists.
+    sv:
+      title: En token för enbart läsning kan inte skriva eller radera
+      description: Ett skript använder en token med enbart läsomfång mot operationer för läsning, skrivning och radering.
+      preconditions: En testklient som får begära en token med enbart läsomfång, och en testpost.
+      expected: Bara läsoperationer lyckas.
+      steps:
+        - action: Läs testposten med läs-token.
+          expected: Posten returneras.
+        - action: Uppdatera testposten med läs-token.
+          expected: Svaret är 403 och posten är oförändrad.
+        - action: Radera testposten med läs-token.
+          expected: Svaret är 403 och posten finns kvar.
+
+  - id: APIS-T06
+    priority: high
+    execution: automated
+    tags: [cors]
+    refs: ["OWASP Web Security Testing Guide WSTG-CLNT-07"]
+    en:
+      title: CORS headers only for trusted origins
+      description: A script sends preflight and simple requests with listed, unlisted and null origins.
+      preconditions: The configured list of trusted origins for the test environment.
+      expected: Only listed origins receive CORS permission.
+      steps:
+        - action: Send an OPTIONS preflight with an unlisted origin.
+          expected: The response has no Access-Control-Allow-Origin header.
+          data: "Origin: https://evil.example"
+        - action: Send a GET with Origin set to null.
+          expected: The response has no Access-Control-Allow-Origin header.
+        - action: Send a GET with a listed origin.
+          expected: Access-Control-Allow-Origin equals that origin and is never a wildcard when credentials are allowed.
+    sv:
+      title: CORS-huvuden bara för betrodda origins
+      description: Ett skript skickar förhandsanrop och enkla anrop med listade, olistade och null-origins.
+      preconditions: Den konfigurerade listan över betrodda origins för testmiljön.
+      expected: Bara listade origins får CORS-tillstånd.
+      steps:
+        - action: Skicka ett förhandsanrop med OPTIONS och en olistad origin.
+          expected: Svaret har inget Access-Control-Allow-Origin-huvud.
+          data: "Origin: https://evil.example"
+        - action: Skicka ett GET-anrop med Origin satt till null.
+          expected: Svaret har inget Access-Control-Allow-Origin-huvud.
+        - action: Skicka ett GET-anrop med en listad origin.
+          expected: Access-Control-Allow-Origin är lika med den origin och är aldrig ett jokertecken när inloggningsuppgifter tillåts.
+
+  - id: APIS-T07
+    priority: medium
+    execution: automated
+    tags: [request-size]
+    refs: ["OWASP API Security Top 10 2023 API4"]
+    en:
+      title: Oversized request bodies are rejected with 413
+      description: A script sends bodies at and just above the size limit and watches memory use.
+      preconditions: A write endpoint that accepts JSON and memory metrics for the API server.
+      expected: Bodies over 1 MB are refused before parsing.
+      steps:
+        - action: Send a valid JSON body of exactly 1 MB.
+          expected: The request is processed, or rejected for content reasons with 400.
+        - action: Send a JSON body of 1 MB plus one byte.
+          expected: The response is 413.
+        - action: Send 50 bodies of 100 MB in parallel.
+          expected: Each response is 413 and the memory use of the server rises by less than 50 MB.
+    sv:
+      title: För stora anrop avvisas med 413
+      description: Ett skript skickar innehåll vid och strax över storleksgränsen och bevakar minnesanvändningen.
+      preconditions: En skrivendpoint som tar emot JSON och minnesmätvärden för API-servern.
+      expected: Innehåll över 1 MB avvisas innan det tolkas.
+      steps:
+        - action: Skicka ett giltigt JSON-innehåll på exakt 1 MB.
+          expected: Anropet behandlas, eller avvisas av innehållsskäl med 400.
+        - action: Skicka ett JSON-innehåll på 1 MB plus en byte.
+          expected: Svaret är 413.
+        - action: Skicka 50 innehåll på 100 MB parallellt.
+          expected: Varje svar är 413 och serverns minnesanvändning ökar med mindre än 50 MB.
+
+  - id: APIS-T08
+    priority: high
+    execution: automated
+    tags: [error-handling, information-disclosure]
+    refs: ["OWASP Web Security Testing Guide WSTG-ERRH-01"]
+    en:
+      title: Error responses contain no internal details
+      description: A script provokes client and server errors and searches the responses for internal details.
+      preconditions: A test endpoint or fault injection that forces a server error in the test environment.
+      expected: Error responses hold only a generic message and a correlation id.
+      steps:
+        - action: Send malformed JSON, a wrong content type and an unknown route.
+          expected: Each response has a generic message, a correlation id and the correct 4xx status.
+          data: '{"name": '
+        - action: Force a server error.
+          expected: The response is 500 with a generic message and a correlation id.
+        - action: Search all collected responses for stack frames, SQL keywords, file paths and version strings.
+          expected: No match is found.
+          data: "at com., Traceback, SELECT, /var/, /home/, Server: nginx/"
+    sv:
+      title: Felsvar innehåller inga interna detaljer
+      description: Ett skript framkallar klient- och serverfel och söker efter interna detaljer i svaren.
+      preconditions: En testendpoint eller felinjicering som tvingar fram ett serverfel i testmiljön.
+      expected: Felsvar innehåller bara ett allmänt meddelande och ett korrelations-id.
+      steps:
+        - action: Skicka felformad JSON, fel innehållstyp och en okänd väg.
+          expected: Varje svar har ett allmänt meddelande, ett korrelations-id och rätt status i 4xx-serien.
+          data: '{"name": '
+        - action: Tvinga fram ett serverfel.
+          expected: Svaret är 500 med ett allmänt meddelande och ett korrelations-id.
+        - action: Sök i alla insamlade svar efter stackramar, SQL-nyckelord, filsökvägar och versionssträngar.
+          expected: Ingen träff hittas.
+          data: "at com., Traceback, SELECT, /var/, /home/, Server: nginx/"
+
+  - id: APIS-T09
+    priority: high
+    execution: automated
+    tags: [mass-assignment]
+    refs: ["OWASP API Security Top 10 2023 API3"]
+    en:
+      title: Protected fields cannot be set through the API
+      description: A script adds protected fields to create and update requests.
+      preconditions: An ordinary test user who owns a record, and the list of writable fields for that record type.
+      expected: Requests with protected fields are rejected and no protected value changes.
+      steps:
+        - action: Update the record and add a role field with the value admin.
+          expected: The response is 400 and the user's role is unchanged.
+          data: '{"title": "x", "role": "admin"}'
+        - action: Update the record and set the owner id to another user.
+          expected: The response is 400 and the owner is unchanged.
+        - action: Create a record with a created date in the past.
+          expected: The response is 400, or the record gets the server time as created date.
+    sv:
+      title: Skyddade fält kan inte sättas via API:et
+      description: Ett skript lägger till skyddade fält i anrop som skapar och uppdaterar poster.
+      preconditions: En vanlig testanvändare som äger en post och listan över skrivbara fält för den posttypen.
+      expected: Anrop med skyddade fält avvisas och inget skyddat värde ändras.
+      steps:
+        - action: Uppdatera posten och lägg till ett rollfält med värdet admin.
+          expected: Svaret är 400 och användarens roll är oförändrad.
+          data: '{"title": "x", "role": "admin"}'
+        - action: Uppdatera posten och sätt ägar-id till en annan användare.
+          expected: Svaret är 400 och ägaren är oförändrad.
+        - action: Skapa en post med ett skapandedatum bakåt i tiden.
+          expected: Svaret är 400, eller så får posten serverns tid som skapandedatum.
+
+  - id: APIS-T10
+    priority: medium
+    execution: automated
+    tags: [pagination]
+    refs: ["OWASP API Security Top 10 2023 API4"]
+    en:
+      title: Page size is capped at 100
+      description: A script asks a list endpoint for very large pages.
+      preconditions: A list endpoint with at least 250 records for the test user.
+      expected: No response holds more than 100 items.
+      steps:
+        - action: Request the list with a page size of 10 000.
+          expected: The response holds 100 items and a link to the next page.
+          data: "?limit=10000"
+        - action: Follow the next-page links to the end.
+          expected: Every page holds at most 100 items and all records are returned once.
+    sv:
+      title: Sidstorleken begränsas till 100
+      description: Ett skript begär mycket stora sidor från en endpoint för listor.
+      preconditions: En endpoint för listor med minst 250 poster för testanvändaren.
+      expected: Inget svar innehåller mer än 100 objekt.
+      steps:
+        - action: Begär listan med sidstorleken 10 000.
+          expected: Svaret innehåller 100 objekt och en länk till nästa sida.
+          data: "?limit=10000"
+        - action: Följ länkarna till nästa sida till slutet.
+          expected: Varje sida innehåller högst 100 objekt och alla poster returneras en gång.
+
+  - id: APIS-T11
+    priority: medium
+    execution: manual
+    tags: [api-key, revocation]
+    refs: ["NIST SP 800-53 IA-5"]
+    en:
+      title: A revoked API key stops working within one minute
+      description: Revokes an API key in the administration while a client uses it.
+      preconditions: An administrator and a script that calls the API with a test key every 5 seconds.
+      expected: The key is refused within 1 minute of revocation.
+      steps:
+        - action: Start the script and confirm that its calls succeed.
+          expected: Each call returns 200.
+        - action: Revoke the key in the administration and note the time.
+          expected: The key is shown as revoked.
+        - action: Read the script's results.
+          expected: Calls return 401 no later than 1 minute after the noted time.
+    sv:
+      title: En återkallad API-nyckel slutar fungera inom en minut
+      description: Återkallar en API-nyckel i administrationen medan en klient använder den.
+      preconditions: En administratör och ett skript som anropar API:et med en testnyckel var femte sekund.
+      expected: Nyckeln avvisas inom 1 minut efter återkallelsen.
+      steps:
+        - action: Starta skriptet och bekräfta att dess anrop lyckas.
+          expected: Varje anrop svarar 200.
+        - action: Återkalla nyckeln i administrationen och anteckna tiden.
+          expected: Nyckeln visas som återkallad.
+        - action: Läs skriptets resultat.
+          expected: Anropen svarar 401 senast 1 minut efter den antecknade tiden.

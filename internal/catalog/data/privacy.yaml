@@ -1,0 +1,571 @@
+area: privacy
+prefix: PRIV
+group: privacy
+name: {en: Privacy and data protection, sv: Integritet och dataskydd}
+description:
+  en: Rights of data subjects, consent, data minimisation, purpose limitation, privacy notices and the inventory of personal data, in line with the GDPR.
+  sv: De registrerades rättigheter, samtycke, uppgiftsminimering, ändamålsbegränsning, integritetsinformation och förteckning över personuppgifter, i linje med dataskyddsförordningen (GDPR).
+
+requirements:
+  - id: PRIV-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [gdpr, right-of-access, data-subject-rights]
+    refs: ["GDPR Art. 15", "GDPR Art. 12(3)", "ISO/IEC 27701:2019 §7.3.8"]
+    tests: [PRIV-T01]
+    en:
+      title: Right of access
+      description: The system MUST produce a copy of all personal data that it holds on a data subject within 30 days after a verified request.
+      rationale: The GDPR gives every person the right to see the data held about them within one month.
+      criteria:
+        - method: test
+          text: A copy produced for a test person contains every personal data field listed for them in the personal data inventory, including data in linked records.
+        - method: review
+          text: The request log shows that each request in the last 12 months was answered within 30 days.
+    sv:
+      title: Rätt till tillgång
+      description: Systemet SKA ta fram en kopia av alla personuppgifter om en registrerad person inom 30 dagar efter en verifierad begäran.
+      rationale: Dataskyddsförordningen ger varje person rätt att inom en månad se de uppgifter som behandlas om hen.
+      criteria:
+        - method: test
+          text: En kopia som tas fram för en testperson innehåller varje personuppgiftsfält som förteckningen anger för personen, även uppgifter i kopplade poster.
+        - method: review
+          text: Loggen över begäranden visar att varje begäran de senaste 12 månaderna besvarades inom 30 dagar.
+
+  - id: PRIV-02
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [gdpr, rectification, data-subject-rights]
+    refs: ["GDPR Art. 16", "GDPR Art. 19"]
+    tests: [PRIV-T02]
+    en:
+      title: Right to rectification
+      description: The system MUST let users correct their own name, contact details and other profile data, and pass the correction to connected systems within 24 hours.
+      rationale: Incorrect personal data can harm the person, and the GDPR requires that corrections reach the recipients of the data.
+      criteria:
+        - method: test
+          text: A user changes their e-mail address and the new address is shown in the system at once and in each connected system within 24 hours.
+    sv:
+      title: Rätt till rättelse
+      description: Systemet SKA låta användare själva rätta sitt namn, sina kontaktuppgifter och övriga profiluppgifter och föra rättelsen vidare till anslutna system inom 24 timmar.
+      rationale: Felaktiga personuppgifter kan skada personen, och dataskyddsförordningen kräver att rättelser når mottagarna av uppgifterna.
+      criteria:
+        - method: test
+          text: En användare byter e-postadress och den nya adressen visas direkt i systemet och i varje anslutet system inom 24 timmar.
+
+  - id: PRIV-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [gdpr, erasure, data-subject-rights]
+    refs: ["GDPR Art. 17", "GDPR Art. 12(3)", "ISO/IEC 27701:2019 §7.3.6"]
+    tests: [PRIV-T03]
+    en:
+      title: Right to erasure
+      description: The system MUST erase or anonymise a data subject's personal data that has no legal retention obligation within 30 days after a verified erasure request.
+      rationale: People have the right to have their data deleted once it is no longer needed and no law requires it to be kept.
+      criteria:
+        - method: test
+          text: After an erasure request is carried out, a search for the test person's name, e-mail address and id in the database and search index finds nothing outside records under legal retention.
+    sv:
+      title: Rätt till radering
+      description: Systemet SKA radera eller anonymisera den registrerades personuppgifter som saknar lagstadgad lagringsskyldighet inom 30 dagar efter en verifierad begäran om radering.
+      rationale: Personer har rätt att få sina uppgifter raderade när de inte längre behövs och ingen lag kräver att de sparas.
+      criteria:
+        - method: test
+          text: När en begäran om radering har utförts hittar en sökning efter testpersonens namn, e-postadress och id i databasen och sökindexet ingenting utanför poster med lagstadgad lagring.
+
+  - id: PRIV-04
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [gdpr, data-portability, export]
+    refs: ["GDPR Art. 20"]
+    tests: [PRIV-T04]
+    en:
+      title: Right to data portability
+      description: The system MUST let users download the personal data they have provided in a structured, machine-readable format such as JSON or CSV.
+      rationale: Portability lets people move their data to another service without retyping it.
+      criteria:
+        - method: test
+          text: The downloaded file parses as JSON or CSV and contains every field the user has entered, with field names.
+    sv:
+      title: Rätt till dataportabilitet
+      description: Systemet SKA låta användare ladda ned de personuppgifter de själva har lämnat i ett strukturerat, maskinläsbart format som JSON eller CSV.
+      rationale: Portabilitet låter personer flytta sina uppgifter till en annan tjänst utan att skriva in dem igen.
+      criteria:
+        - method: test
+          text: Den nedladdade filen går att tolka som JSON eller CSV och innehåller varje fält som användaren har fyllt i, med fältnamn.
+
+  - id: PRIV-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [gdpr, consent]
+    refs: ["GDPR Art. 7(1)", "GDPR Art. 4(11)", "ISO/IEC 27701:2019 §7.2.4"]
+    tests: [PRIV-T05]
+    en:
+      title: Consent is recorded
+      description: The system MUST record the time, the purpose and the version of the consent text each time a person gives consent.
+      rationale: The controller has to be able to show that a person consented, to what and when.
+      criteria:
+        - method: test
+          text: Giving consent creates a record with the person's id, the purpose, the consent text version and a UTC time.
+    sv:
+      title: Samtycken registreras
+      description: Systemet SKA registrera tidpunkt, ändamål och version av samtyckestexten varje gång en person lämnar sitt samtycke.
+      rationale: Den personuppgiftsansvarige behöver kunna visa att en person har samtyckt, till vad och när.
+      criteria:
+        - method: test
+          text: Ett lämnat samtycke skapar en post med personens id, ändamålet, versionen av samtyckestexten och en tidpunkt i UTC.
+
+  - id: PRIV-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [gdpr, consent, withdrawal]
+    refs: ["GDPR Art. 7(3)"]
+    tests: [PRIV-T06]
+    en:
+      title: Consent can be withdrawn
+      description: The system MUST let a person withdraw each consent from the same settings page where it was given and stop the related processing within 24 hours.
+      rationale: Withdrawing consent has to be as easy as giving it, and processing based on it has to end.
+      criteria:
+        - method: test
+          text: After a withdrawal, the consent record is marked as withdrawn with a time, and no processing for that purpose occurs after 24 hours.
+    sv:
+      title: Samtycken kan återkallas
+      description: Systemet SKA låta en person återkalla varje samtycke från samma inställningssida där det lämnades och stoppa den tillhörande behandlingen inom 24 timmar.
+      rationale: Det ska vara lika lätt att återkalla ett samtycke som att lämna det, och behandling som bygger på samtycket ska upphöra.
+      criteria:
+        - method: test
+          text: Efter en återkallelse är samtyckesposten markerad som återkallad med en tidpunkt, och ingen behandling för det ändamålet sker efter 24 timmar.
+
+  - id: PRIV-07
+    type: regulatory
+    obligation: must_not
+    priority: medium
+    tags: [gdpr, data-minimisation]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25", "ISO/IEC 27701:2019 §7.4.1"]
+    tests: [PRIV-T07]
+    en:
+      title: Data minimisation in forms
+      description: The system MUST NOT make a personal data field mandatory when the personal data inventory gives no purpose that needs it.
+      rationale: Collecting only what is needed reduces the harm of a breach and is required by the GDPR.
+      criteria:
+        - method: review
+          text: Every mandatory personal data field in the forms is matched by an entry in the inventory with a purpose that needs the field.
+    sv:
+      title: Uppgiftsminimering i formulär
+      description: Systemet SKA INTE göra ett personuppgiftsfält tvingande när förteckningen över personuppgifter inte anger något ändamål som kräver fältet.
+      rationale: Att samla in bara det som behövs minskar skadan vid en incident och krävs av dataskyddsförordningen.
+      criteria:
+        - method: review
+          text: Varje tvingande personuppgiftsfält i formulären motsvaras av en post i förteckningen med ett ändamål som kräver fältet.
+
+  - id: PRIV-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [gdpr, records-of-processing, data-inventory]
+    refs: ["GDPR Art. 30", "GDPR Art. 5(1)(b)", "ISO/IEC 27001:2022 A.5.34", "ISO/IEC 27701:2019 §7.2.8"]
+    tests: [PRIV-T08]
+    en:
+      title: Inventory of personal data
+      description: The system MUST be documented in a personal data inventory that gives, for each personal data field, its purpose, legal basis, retention period and recipients.
+      rationale: The inventory is the basis for records of processing, for answering data subject requests and for limiting use to stated purposes.
+      criteria:
+        - method: review
+          text: Every personal data column in the database schema appears in the inventory with all four attributes filled in.
+    sv:
+      title: Förteckning över personuppgifter
+      description: Systemet SKA vara dokumenterat i en förteckning över personuppgifter som för varje personuppgiftsfält anger ändamål, rättslig grund, lagringstid och mottagare.
+      rationale: Förteckningen är grunden för registret över behandlingar, för att besvara de registrerades begäranden och för att begränsa användningen till angivna ändamål.
+      criteria:
+        - method: review
+          text: Varje kolumn med personuppgifter i databasschemat finns i förteckningen med alla fyra attributen ifyllda.
+
+  - id: PRIV-09
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [gdpr, privacy-notice, transparency]
+    refs: ["GDPR Art. 13", "GDPR Art. 12(1)"]
+    tests: [PRIV-T09]
+    en:
+      title: Privacy notice where data is collected
+      description: The system MUST show a link to the current privacy notice on every form that collects personal data.
+      rationale: People have to be told who processes their data and why at the moment the data is collected.
+      criteria:
+        - method: inspection
+          text: Each form that collects personal data has a working link to the privacy notice, and the notice shows its version date.
+    sv:
+      title: Integritetsinformation där uppgifter samlas in
+      description: Systemet SKA visa en länk till den gällande integritetsinformationen i varje formulär som samlar in personuppgifter.
+      rationale: Personer ska få veta vem som behandlar deras uppgifter och varför i samma stund som uppgifterna samlas in.
+      criteria:
+        - method: inspection
+          text: Varje formulär som samlar in personuppgifter har en fungerande länk till integritetsinformationen, och informationen visar sitt versionsdatum.
+
+  - id: PRIV-10
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [cookies, tracking, consent]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 6(1)(a)", "Swedish Electronic Communications Act (LEK) ch. 9 §28"]
+    tests: [PRIV-T10]
+    en:
+      title: No tracking before consent
+      description: The system MUST NOT set non-essential cookies or load third-party tracking scripts before the visitor has consented to them.
+      rationale: Storing or reading information on the visitor's device for purposes other than the service itself needs prior consent.
+      criteria:
+        - method: test
+          text: A first visit with an empty browser profile sets only cookies classed as strictly necessary and makes no request to tracking domains before consent.
+    sv:
+      title: Ingen spårning före samtycke
+      description: Systemet SKA INTE sätta kakor som inte är nödvändiga eller ladda spårningsskript från tredje part innan besökaren har samtyckt till dem.
+      rationale: Att lagra eller läsa information på besökarens enhet för andra syften än själva tjänsten kräver samtycke i förväg.
+      criteria:
+        - method: test
+          text: Ett första besök med en tom webbläsarprofil sätter bara kakor som klassats som nödvändiga och gör inga anrop till spårningsdomäner före samtycket.
+
+  - id: PRIV-11
+    type: regulatory
+    obligation: should_not
+    priority: medium
+    tags: [test-data, anonymisation]
+    refs: ["GDPR Art. 5(1)(b)", "GDPR Art. 32", "ISO/IEC 27001:2022 A.8.33"]
+    tests: [PRIV-T11]
+    en:
+      title: No real personal data in test environments
+      description: The system's test and development environments SHOULD NOT contain personal data copied from production without anonymisation.
+      rationale: Test environments have weaker access controls, and testing is not a purpose the data was collected for.
+      criteria:
+        - method: inspection
+          text: A sample of 100 person records from each test environment contains no name, e-mail address or national identity number that exists in production.
+    sv:
+      title: Inga verkliga personuppgifter i testmiljöer
+      description: Systemets test- och utvecklingsmiljöer BÖR INTE innehålla personuppgifter som kopierats från produktion utan anonymisering.
+      rationale: Testmiljöer har svagare åtkomstskydd, och test är inte ett ändamål som uppgifterna samlades in för.
+      criteria:
+        - method: inspection
+          text: Ett urval på 100 personposter från varje testmiljö innehåller inget namn, ingen e-postadress och inget personnummer som finns i produktion.
+
+tests:
+  - id: PRIV-T01
+    priority: high
+    execution: manual
+    tags: [gdpr, right-of-access]
+    refs: ["GDPR Art. 15"]
+    en:
+      title: Data subject access request returns all data
+      description: Runs an access request for a test person and compares the result with the personal data inventory.
+      preconditions: A test person with data in every module, including linked records, and the current personal data inventory.
+      expected: The copy is complete and produced within the deadline.
+      steps:
+        - action: Register a verified access request for the test person and note the date.
+          expected: The request is logged with the date and a deadline 30 days later.
+        - action: Produce the copy using the documented procedure.
+          expected: A file is produced and the request is marked as answered with the date.
+        - action: Compare the copy with the fields listed for the person in the inventory.
+          expected: Every listed field is present, including data in linked records.
+    sv:
+      title: Begäran om tillgång ger alla uppgifter
+      description: Genomför en begäran om tillgång för en testperson och jämför resultatet med förteckningen över personuppgifter.
+      preconditions: En testperson med uppgifter i varje modul, även i kopplade poster, och den aktuella förteckningen över personuppgifter.
+      expected: Kopian är fullständig och tas fram inom tidsgränsen.
+      steps:
+        - action: Registrera en verifierad begäran om tillgång för testpersonen och anteckna datumet.
+          expected: Begäran loggas med datum och en tidsgräns 30 dagar senare.
+        - action: Ta fram kopian enligt den dokumenterade rutinen.
+          expected: En fil skapas och begäran markeras som besvarad med datum.
+        - action: Jämför kopian med de fält som förteckningen anger för personen.
+          expected: Varje angivet fält finns med, även uppgifter i kopplade poster.
+
+  - id: PRIV-T02
+    priority: medium
+    execution: manual
+    tags: [gdpr, rectification]
+    refs: ["GDPR Art. 16", "GDPR Art. 19"]
+    en:
+      title: Profile correction reaches connected systems
+      description: Corrects a test user's e-mail address and checks the system and its connected systems.
+      preconditions: A signed-in test user and read access to each connected system that receives the user's contact details.
+      expected: The correction is shown at once in the system and within 24 hours in each connected system.
+      steps:
+        - action: Change the e-mail address in the profile and save.
+          expected: The new address is shown in the profile at once.
+          data: rättad.adress@example.com
+        - action: After 24 hours, look up the user in each connected system.
+          expected: Each connected system shows the new address.
+    sv:
+      title: Rättelse i profilen når anslutna system
+      description: Rättar en testanvändares e-postadress och kontrollerar systemet och dess anslutna system.
+      preconditions: En inloggad testanvändare och läsbehörighet till varje anslutet system som tar emot användarens kontaktuppgifter.
+      expected: Rättelsen syns direkt i systemet och inom 24 timmar i varje anslutet system.
+      steps:
+        - action: Ändra e-postadressen i profilen och spara.
+          expected: Den nya adressen visas direkt i profilen.
+          data: rättad.adress@example.com
+        - action: Slå upp användaren i varje anslutet system efter 24 timmar.
+          expected: Varje anslutet system visar den nya adressen.
+
+  - id: PRIV-T03
+    priority: high
+    execution: manual
+    tags: [gdpr, erasure]
+    refs: ["GDPR Art. 17"]
+    en:
+      title: Erasure request removes the person's data
+      description: Carries out an erasure request and searches every store for the person's identifiers.
+      preconditions: A test person with data in every module and in the search index, and one record under legal retention such as an invoice.
+      expected: Only the record under legal retention still holds the person's data.
+      steps:
+        - action: Carry out a verified erasure request for the test person using the documented procedure.
+          expected: The request is marked as completed within 30 days of registration.
+        - action: Search the database and the search index for the person's name, e-mail address and id.
+          expected: The only match is the invoice under legal retention.
+        - action: Open the records the person had created.
+          expected: They show an anonymous author instead of the person's name.
+    sv:
+      title: Begäran om radering tar bort personens uppgifter
+      description: Genomför en begäran om radering och söker efter personens identifierare i varje lagringsplats.
+      preconditions: En testperson med uppgifter i varje modul och i sökindexet, och en post med lagstadgad lagring, till exempel en faktura.
+      expected: Bara posten med lagstadgad lagring innehåller fortfarande personens uppgifter.
+      steps:
+        - action: Genomför en verifierad begäran om radering för testpersonen enligt den dokumenterade rutinen.
+          expected: Begäran markeras som slutförd inom 30 dagar från registreringen.
+        - action: Sök i databasen och sökindexet efter personens namn, e-postadress och id.
+          expected: Den enda träffen är fakturan med lagstadgad lagring.
+        - action: Öppna de poster som personen hade skapat.
+          expected: De visar en anonym upphovsperson i stället för personens namn.
+
+  - id: PRIV-T04
+    priority: medium
+    execution: automated
+    tags: [gdpr, data-portability]
+    refs: ["GDPR Art. 20"]
+    en:
+      title: Data export is complete and machine-readable
+      description: A script requests the user's data export and checks its format and content.
+      preconditions: A test user who has filled in every profile field and created at least one record of each type.
+      expected: The export parses and contains every field the user entered.
+      steps:
+        - action: Request the data export as the test user and download the file.
+          expected: The file is delivered as JSON or CSV.
+        - action: Parse the file.
+          expected: Parsing succeeds and each value has a field name.
+        - action: Compare the values with those the user entered.
+          expected: Every entered value is present.
+    sv:
+      title: Dataexporten är fullständig och maskinläsbar
+      description: Ett skript begär användarens dataexport och kontrollerar dess format och innehåll.
+      preconditions: En testanvändare som har fyllt i varje profilfält och skapat minst en post av varje typ.
+      expected: Exporten går att tolka och innehåller varje fält som användaren har fyllt i.
+      steps:
+        - action: Begär dataexporten som testanvändaren och ladda ned filen.
+          expected: Filen levereras som JSON eller CSV.
+        - action: Tolka filen.
+          expected: Tolkningen lyckas och varje värde har ett fältnamn.
+        - action: Jämför värdena med dem som användaren har fyllt i.
+          expected: Varje ifyllt värde finns med.
+
+  - id: PRIV-T05
+    priority: high
+    execution: automated
+    tags: [gdpr, consent]
+    refs: ["GDPR Art. 7(1)"]
+    en:
+      title: Consent creates a complete record
+      description: A script gives consent for a purpose and reads the stored consent record.
+      preconditions: A test user and a purpose that requires consent, such as a newsletter.
+      expected: The record contains the person, purpose, text version and time.
+      steps:
+        - action: Give consent to the newsletter as the test user.
+          expected: The consent is confirmed.
+        - action: Read the consent records for the user.
+          expected: A record exists with the user id, the purpose, the version of the consent text and a UTC time.
+    sv:
+      title: Samtycke skapar en fullständig post
+      description: Ett skript lämnar samtycke för ett ändamål och läser den sparade samtyckesposten.
+      preconditions: En testanvändare och ett ändamål som kräver samtycke, till exempel ett nyhetsbrev.
+      expected: Posten innehåller person, ändamål, textversion och tidpunkt.
+      steps:
+        - action: Lämna samtycke till nyhetsbrevet som testanvändaren.
+          expected: Samtycket bekräftas.
+        - action: Läs samtyckesposterna för användaren.
+          expected: Det finns en post med användarens id, ändamålet, versionen av samtyckestexten och en tidpunkt i UTC.
+
+  - id: PRIV-T06
+    priority: high
+    execution: manual
+    tags: [gdpr, consent, withdrawal]
+    refs: ["GDPR Art. 7(3)"]
+    en:
+      title: Withdrawn consent stops processing
+      description: Withdraws a consent and checks that the related processing stops.
+      preconditions: A test user who has consented to the newsletter, and access to the newsletter send log.
+      expected: The withdrawal is recorded and no newsletter is sent after 24 hours.
+      steps:
+        - action: Open the settings page where consent was given and withdraw the newsletter consent.
+          expected: The page confirms the withdrawal in one step.
+        - action: Read the consent record.
+          expected: It is marked as withdrawn with a time.
+        - action: Check the newsletter send log for the following 7 days.
+          expected: No newsletter is sent to the user later than 24 hours after the withdrawal.
+    sv:
+      title: Återkallat samtycke stoppar behandlingen
+      description: Återkallar ett samtycke och kontrollerar att den tillhörande behandlingen upphör.
+      preconditions: En testanvändare som har samtyckt till nyhetsbrevet och åtkomst till utskicksloggen för nyhetsbrevet.
+      expected: Återkallelsen registreras och inget nyhetsbrev skickas efter 24 timmar.
+      steps:
+        - action: Öppna inställningssidan där samtycket lämnades och återkalla samtycket till nyhetsbrevet.
+          expected: Sidan bekräftar återkallelsen i ett steg.
+        - action: Läs samtyckesposten.
+          expected: Den är markerad som återkallad med en tidpunkt.
+        - action: Kontrollera utskicksloggen för nyhetsbrevet under de följande 7 dagarna.
+          expected: Inget nyhetsbrev skickas till användaren senare än 24 timmar efter återkallelsen.
+
+  - id: PRIV-T07
+    priority: medium
+    execution: manual
+    tags: [gdpr, data-minimisation]
+    refs: ["GDPR Art. 5(1)(c)"]
+    en:
+      title: Mandatory personal data fields are justified
+      description: Reviews each form that collects personal data against the personal data inventory.
+      preconditions: A list of forms that collect personal data and the current personal data inventory.
+      expected: Every mandatory personal data field has a purpose in the inventory that needs it.
+      steps:
+        - action: List the mandatory personal data fields of each form.
+          expected: A complete list is produced.
+        - action: Look up each field in the inventory.
+          expected: Each field has an entry whose purpose needs the field.
+        - action: Submit each form with only the mandatory fields filled in.
+          expected: Each form is accepted.
+    sv:
+      title: Tvingande personuppgiftsfält är motiverade
+      description: Granskar varje formulär som samlar in personuppgifter mot förteckningen över personuppgifter.
+      preconditions: En lista över formulär som samlar in personuppgifter och den aktuella förteckningen över personuppgifter.
+      expected: Varje tvingande personuppgiftsfält har ett ändamål i förteckningen som kräver det.
+      steps:
+        - action: Lista de tvingande personuppgiftsfälten i varje formulär.
+          expected: En fullständig lista tas fram.
+        - action: Slå upp varje fält i förteckningen.
+          expected: Varje fält har en post vars ändamål kräver fältet.
+        - action: Skicka varje formulär med bara de tvingande fälten ifyllda.
+          expected: Varje formulär godtas.
+
+  - id: PRIV-T08
+    priority: high
+    execution: manual
+    tags: [records-of-processing, data-inventory]
+    refs: ["GDPR Art. 30"]
+    en:
+      title: Personal data inventory matches the database
+      description: Compares the database schema with the personal data inventory.
+      preconditions: The current database schema and the personal data inventory.
+      expected: Every personal data column is in the inventory with purpose, legal basis, retention and recipients.
+      steps:
+        - action: Mark every column in the schema that holds personal data.
+          expected: A list of personal data columns is produced.
+        - action: Look up each column in the inventory.
+          expected: Each column is listed.
+        - action: Check the four attributes of each inventory entry.
+          expected: Purpose, legal basis, retention period and recipients are filled in for every entry.
+    sv:
+      title: Förteckningen över personuppgifter stämmer med databasen
+      description: Jämför databasschemat med förteckningen över personuppgifter.
+      preconditions: Det aktuella databasschemat och förteckningen över personuppgifter.
+      expected: Varje kolumn med personuppgifter finns i förteckningen med ändamål, rättslig grund, lagringstid och mottagare.
+      steps:
+        - action: Markera varje kolumn i schemat som innehåller personuppgifter.
+          expected: En lista över kolumner med personuppgifter tas fram.
+        - action: Slå upp varje kolumn i förteckningen.
+          expected: Varje kolumn finns med.
+        - action: Kontrollera de fyra attributen i varje post i förteckningen.
+          expected: Ändamål, rättslig grund, lagringstid och mottagare är ifyllda för varje post.
+
+  - id: PRIV-T09
+    priority: medium
+    execution: automated
+    tags: [privacy-notice]
+    refs: ["GDPR Art. 13"]
+    en:
+      title: Forms that collect personal data link to the privacy notice
+      description: A browser script opens every form that collects personal data and follows its privacy notice link.
+      preconditions: A list of forms that collect personal data.
+      expected: Every form has a working link to the current notice.
+      steps:
+        - action: Open each form and look for a link to the privacy notice.
+          expected: Each form has the link.
+        - action: Follow each link.
+          expected: The page loads with status 200 and shows a version date.
+    sv:
+      title: Formulär som samlar in personuppgifter länkar till integritetsinformationen
+      description: Ett webbläsarskript öppnar varje formulär som samlar in personuppgifter och följer dess länk till integritetsinformationen.
+      preconditions: En lista över formulär som samlar in personuppgifter.
+      expected: Varje formulär har en fungerande länk till den gällande informationen.
+      steps:
+        - action: Öppna varje formulär och leta efter en länk till integritetsinformationen.
+          expected: Varje formulär har länken.
+        - action: Följ varje länk.
+          expected: Sidan laddas med status 200 och visar ett versionsdatum.
+
+  - id: PRIV-T10
+    priority: high
+    execution: automated
+    tags: [cookies, tracking]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    en:
+      title: No tracking cookies or requests before consent
+      description: A headless browser visits the site with an empty profile and records cookies and network requests before and after consent.
+      preconditions: The list of cookies classed as strictly necessary and the list of tracking domains used by the site.
+      expected: Tracking starts only after consent.
+      steps:
+        - action: Open the start page and three other pages without answering the consent banner.
+          expected: Only strictly necessary cookies are set and no request goes to a tracking domain.
+        - action: Reject all optional cookies and open the same pages.
+          expected: Still no optional cookie is set and no request goes to a tracking domain.
+        - action: In a new empty profile, accept all cookies and open the same pages.
+          expected: The optional cookies and tracking requests appear only after acceptance.
+    sv:
+      title: Inga spårningskakor eller spårningsanrop före samtycke
+      description: En huvudlös webbläsare besöker webbplatsen med en tom profil och registrerar kakor och nätverksanrop före och efter samtycke.
+      preconditions: Listan över kakor som klassats som nödvändiga och listan över spårningsdomäner som webbplatsen använder.
+      expected: Spårningen börjar först efter samtycke.
+      steps:
+        - action: Öppna startsidan och tre andra sidor utan att svara på samtyckesrutan.
+          expected: Bara nödvändiga kakor sätts och inget anrop går till en spårningsdomän.
+        - action: Avvisa alla valfria kakor och öppna samma sidor.
+          expected: Fortfarande sätts ingen valfri kaka och inget anrop går till en spårningsdomän.
+        - action: Godkänn alla kakor i en ny tom profil och öppna samma sidor.
+          expected: De valfria kakorna och spårningsanropen syns först efter godkännandet.
+
+  - id: PRIV-T11
+    priority: medium
+    execution: automated
+    tags: [test-data, anonymisation]
+    refs: ["ISO/IEC 27001:2022 A.8.33"]
+    en:
+      title: Test environments hold no production personal data
+      description: A script compares a sample of person records in each test environment with production.
+      preconditions: Read access to each test environment and a hashed list of production names, e-mail addresses and identity numbers.
+      expected: No sampled value matches production.
+      steps:
+        - action: Draw 100 random person records from each test environment.
+          expected: 100 records per environment are drawn.
+        - action: Hash the name, e-mail address and identity number of each record and compare them with the production list.
+          expected: No match is found.
+    sv:
+      title: Testmiljöer innehåller inga personuppgifter från produktion
+      description: Ett skript jämför ett urval av personposter i varje testmiljö med produktion.
+      preconditions: Läsbehörighet till varje testmiljö och en hashad lista över namn, e-postadresser och personnummer i produktion.
+      expected: Inget värde i urvalet matchar produktion.
+      steps:
+        - action: Dra 100 slumpvisa personposter från varje testmiljö.
+          expected: 100 poster per miljö dras.
+        - action: Hasha namn, e-postadress och personnummer för varje post och jämför med listan från produktion.
+          expected: Ingen träff hittas.

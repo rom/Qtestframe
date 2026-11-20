@@ -1,0 +1,527 @@
+area: audit-trail
+prefix: AUD
+group: privacy
+name: {en: Audit trail and electronic signatures, sv: Ändringslogg och elektroniska underskrifter}
+description:
+  en: Recording who changed what and when, tamper evidence, retention and export of audit records for auditors, and electronic signatures.
+  sv: Registrering av vem som ändrade vad och när, manipuleringsskydd, lagring och export av ändringsloggen för revisorer samt elektroniska underskrifter.
+
+requirements:
+  - id: AUD-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [audit-trail, change-history]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3"]
+    tests: [AUD-T01]
+    en:
+      title: Every change is recorded in the audit trail
+      description: The system MUST record the user, the UTC time, the record id, the field, the old value and the new value for each creation, change and deletion of a business record.
+      rationale: An auditor has to be able to reconstruct the full history of a record and see who is responsible for each change.
+      criteria:
+        - method: test
+          text: Creating, changing two fields of and deleting a test record produces audit entries that show all six attributes for each change.
+    sv:
+      title: Varje ändring registreras i ändringsloggen
+      description: Systemet SKA registrera användare, tidpunkt i UTC, post-id, fält, gammalt värde och nytt värde för varje gång en verksamhetspost skapas, ändras eller raderas.
+      rationale: En revisor behöver kunna återskapa hela historiken för en post och se vem som ansvarar för varje ändring.
+      criteria:
+        - method: test
+          text: När en testpost skapas, får två fält ändrade och raderas uppstår poster i ändringsloggen som visar alla sex attributen för varje ändring.
+
+  - id: AUD-02
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [audit-trail, immutability]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-9"]
+    tests: [AUD-T02]
+    en:
+      title: Audit entries cannot be changed or deleted
+      description: The system MUST NOT offer any user, including administrators, a function or API that changes or deletes an audit entry.
+      rationale: An audit trail that its users can edit proves nothing.
+      criteria:
+        - method: test
+          text: Attempts to update or delete an audit entry through the user interface and the API, as an administrator, are refused or have no such function.
+        - method: inspection
+          text: The database account used by the application has only insert and select rights on the audit table.
+    sv:
+      title: Poster i ändringsloggen kan inte ändras eller raderas
+      description: Systemet SKA INTE erbjuda någon användare, inte heller administratörer, en funktion eller ett API som ändrar eller raderar en post i ändringsloggen.
+      rationale: En ändringslogg som användarna själva kan redigera bevisar ingenting.
+      criteria:
+        - method: test
+          text: Försök som administratör att uppdatera eller radera en post i ändringsloggen via användargränssnittet och API:et avvisas, eller så saknas sådan funktion.
+        - method: inspection
+          text: Databaskontot som applikationen använder har bara rättighet att infoga och läsa i loggtabellen.
+
+  - id: AUD-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [tamper-evidence, hash-chain]
+    refs: ["NIST SP 800-53 AU-9(3)", "NIST SP 800-53 AU-10", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [AUD-T03]
+    en:
+      title: Tamper-evident audit trail
+      description: The system MUST link each audit entry to the previous one with a cryptographic hash so that a verification run detects any changed, inserted or removed entry.
+      rationale: Even with access controls, someone with database access could alter entries; the hash chain makes such changes visible.
+      criteria:
+        - method: test
+          text: The verification run reports success on an untouched trail and names the first broken entry after one entry is changed directly in the database.
+    sv:
+      title: Manipuleringssäker ändringslogg
+      description: Systemet SKA länka varje post i ändringsloggen till den föregående med en kryptografisk hash så att en verifieringskörning upptäcker varje ändrad, tillagd eller borttagen post.
+      rationale: Även med åtkomstskydd kan någon med åtkomst till databasen ändra poster; hashkedjan gör sådana ändringar synliga.
+      criteria:
+        - method: test
+          text: Verifieringskörningen rapporterar att en orörd logg är korrekt och anger den första trasiga posten efter att en post har ändrats direkt i databasen.
+
+  - id: AUD-04
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [audit-trail, retention-period]
+    refs: ["21 CFR Part 11 §11.10(c)", "EU GMP Annex 11 §17", "Swedish Bookkeeping Act (1999:1078) ch. 7 §2"]
+    tests: [AUD-T04]
+    en:
+      title: Retention of audit records
+      description: The system MUST keep audit entries for at least 7 years after the end of the calendar year in which they were created.
+      rationale: Audits and legal claims can concern events many years back; teams adjust the period to the rules that apply to them.
+      criteria:
+        - method: inspection
+          text: The retention setting for the audit trail is 7 years or more, and the retention job excludes audit entries younger than that.
+    sv:
+      title: Lagringstid för ändringsloggen
+      description: Systemet SKA spara poster i ändringsloggen i minst 7 år efter utgången av det kalenderår då de skapades.
+      rationale: Revisioner och rättsliga anspråk kan gälla händelser långt tillbaka i tiden; team anpassar tiden efter de regler som gäller för dem.
+      criteria:
+        - method: inspection
+          text: Lagringstiden för ändringsloggen är 7 år eller mer, och gallringsjobbet undantar poster i ändringsloggen som är yngre än så.
+
+  - id: AUD-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [audit-trail, export, auditor]
+    refs: ["21 CFR Part 11 §11.10(b)", "EU GMP Annex 11 §8", "ISO/IEC 27001:2022 A.5.35"]
+    tests: [AUD-T05]
+    en:
+      title: Export of the audit trail for auditors
+      description: The system MUST let an auditor export the audit entries for a chosen date range and record as a CSV file together with a SHA-256 checksum of the file.
+      rationale: Auditors work with their own tools and need a complete copy that they can show has not been altered.
+      criteria:
+        - method: test
+          text: An export for one record and one month contains exactly the entries shown in the system for that selection, and the checksum matches the file.
+    sv:
+      title: Export av ändringsloggen för revisorer
+      description: Systemet SKA låta en revisor exportera posterna i ändringsloggen för ett valt datumintervall och en vald post som en CSV-fil tillsammans med en SHA-256-kontrollsumma för filen.
+      rationale: Revisorer arbetar i egna verktyg och behöver en fullständig kopia som de kan visa inte har ändrats.
+      criteria:
+        - method: test
+          text: En export för en post och en månad innehåller exakt de poster som systemet visar för det urvalet, och kontrollsumman stämmer med filen.
+
+  - id: AUD-06
+    type: security
+    obligation: should
+    priority: medium
+    tags: [auditor, read-only, roles]
+    refs: ["ISO/IEC 27001:2022 A.5.35", "ISO/IEC 27001:2022 A.8.34", "NIST SP 800-53 AU-9(4)"]
+    tests: [AUD-T06]
+    en:
+      title: Read-only auditor role
+      description: The system SHOULD offer an auditor role that can read and export the audit trail and all records without any right to change data.
+      rationale: External auditors then get the access they need without the risk that they alter what they examine.
+      criteria:
+        - method: test
+          text: A user with only the auditor role can open and export the audit trail, and every create, update and delete request from that user returns 403.
+    sv:
+      title: Revisorsroll med enbart läsbehörighet
+      description: Systemet BÖR erbjuda en revisorsroll som kan läsa och exportera ändringsloggen och alla poster utan någon rätt att ändra data.
+      rationale: Externa revisorer får då den åtkomst de behöver utan risk att de ändrar det de granskar.
+      criteria:
+        - method: test
+          text: En användare med enbart revisorsrollen kan öppna och exportera ändringsloggen, och varje anrop från den användaren som skapar, uppdaterar eller raderar svarar 403.
+
+  - id: AUD-07
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [e-signature, re-authentication]
+    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "EU GMP Annex 11 §14", "eIDAS Regulation (EU) No 910/2014 Art. 26"]
+    tests: [AUD-T07]
+    en:
+      title: Electronic signature with re-authentication
+      description: The system MUST ask the signer for their password or a second factor at each electronic signature and store the signer's name, the UTC time and the meaning of the signature.
+      rationale: The signature has to be attributable to one person, and its meaning, such as reviewed or approved, has to be clear to any later reader.
+      criteria:
+        - method: test
+          text: Signing is refused without the password or second factor, and a completed signature shows name, time and meaning on the record and in the audit trail.
+    sv:
+      title: Elektronisk underskrift med ny autentisering
+      description: Systemet SKA be den som skriver under om lösenord eller en andra faktor vid varje elektronisk underskrift och spara undertecknarens namn, tidpunkten i UTC och underskriftens innebörd.
+      rationale: Underskriften behöver kunna knytas till en person, och dess innebörd, till exempel granskad eller godkänd, behöver vara tydlig för den som läser den senare.
+      criteria:
+        - method: test
+          text: Underskriften avvisas utan lösenord eller andra faktor, och en genomförd underskrift visar namn, tidpunkt och innebörd på posten och i ändringsloggen.
+
+  - id: AUD-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [e-signature, record-linking]
+    refs: ["21 CFR Part 11 §11.70", "EU GMP Annex 11 §14"]
+    tests: [AUD-T08]
+    en:
+      title: Signatures are bound to the signed content
+      description: The system MUST mark a signature as no longer valid when the signed record is changed after signing.
+      rationale: A signature has to apply to exactly the content that the signer saw, not to a later version.
+      criteria:
+        - method: test
+          text: After a field of a signed record is changed, the record shows the signature as invalidated, and the audit trail shows the change and the signature status.
+    sv:
+      title: Underskrifter är knutna till det undertecknade innehållet
+      description: Systemet SKA markera en underskrift som inte längre giltig när den undertecknade posten ändras efter underskriften.
+      rationale: En underskrift ska gälla exakt det innehåll som undertecknaren såg, inte en senare version.
+      criteria:
+        - method: test
+          text: När ett fält i en undertecknad post ändras visar posten att underskriften är ogiltig, och ändringsloggen visar ändringen och underskriftens status.
+
+  - id: AUD-09
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [audit-trail, reason-for-change]
+    refs: ["EU GMP Annex 11 §9", "21 CFR Part 11 §11.10(e)"]
+    tests: [AUD-T09]
+    en:
+      title: Reason for change on approved records
+      description: The system SHOULD ask for a reason of at least 10 characters when a user changes a record that has already been approved, and store it in the audit trail.
+      rationale: Changes to approved data are the ones auditors question most, and the reason gives them the context.
+      criteria:
+        - method: test
+          text: Saving a change to an approved record without a reason, or with 9 characters, is refused; with a reason of 10 characters it is saved and the reason appears in the audit trail.
+    sv:
+      title: Orsak till ändring av godkända poster
+      description: Systemet BÖR be om en orsak på minst 10 tecken när en användare ändrar en post som redan har godkänts och spara orsaken i ändringsloggen.
+      rationale: Ändringar av godkända uppgifter är de som revisorer ifrågasätter mest, och orsaken ger dem sammanhanget.
+      criteria:
+        - method: test
+          text: En ändring av en godkänd post utan orsak, eller med 9 tecken, sparas inte; med en orsak på 10 tecken sparas den och orsaken syns i ändringsloggen.
+
+  - id: AUD-10
+    type: usability
+    obligation: may
+    priority: low
+    tags: [audit-trail, history-view]
+    refs: ["EU GMP Annex 11 §9"]
+    tests: [AUD-T10]
+    en:
+      title: Change history shown on each record
+      description: The system MAY show the change history of a record on the record's own page, newest change first.
+      rationale: Users and reviewers can then see what happened to a record without going to a separate audit tool.
+      criteria:
+        - method: demonstration
+          text: The history tab of a record lists its changes with user, time, field, old value and new value in reverse order of time.
+    sv:
+      title: Ändringshistorik visas på varje post
+      description: Systemet FÅR visa en posts ändringshistorik på postens egen sida, med den senaste ändringen först.
+      rationale: Användare och granskare kan då se vad som har hänt med en post utan att gå till ett separat loggverktyg.
+      criteria:
+        - method: demonstration
+          text: Historikfliken för en post visar dess ändringar med användare, tidpunkt, fält, gammalt värde och nytt värde i omvänd tidsordning.
+
+tests:
+  - id: AUD-T01
+    priority: critical
+    execution: automated
+    tags: [audit-trail, change-history]
+    refs: ["21 CFR Part 11 §11.10(e)"]
+    en:
+      title: Create, change and delete appear in the audit trail
+      description: A script creates, changes and deletes a record and reads the resulting audit entries.
+      preconditions: A test user allowed to manage records and read access to the audit trail.
+      expected: Each operation produces entries with user, time, record id, field, old value and new value.
+      steps:
+        - action: Create a record with a title and a status.
+          expected: An entry shows the creation with the user, a UTC time, the record id and the initial values.
+          data: "title: Audit test, status: draft"
+        - action: Change the title and the status.
+          expected: Two entries show the field names with their old and new values.
+        - action: Delete the record.
+          expected: An entry shows the deletion with the user, the time and the last values.
+    sv:
+      title: Skapa, ändra och radera syns i ändringsloggen
+      description: Ett skript skapar, ändrar och raderar en post och läser de poster i ändringsloggen som uppstår.
+      preconditions: En testanvändare som får hantera poster och läsbehörighet till ändringsloggen.
+      expected: Varje åtgärd ger loggposter med användare, tidpunkt, post-id, fält, gammalt värde och nytt värde.
+      steps:
+        - action: Skapa en post med titel och status.
+          expected: En loggpost visar skapandet med användaren, en tidpunkt i UTC, post-id och de första värdena.
+          data: "titel: Loggtest, status: utkast"
+        - action: Ändra titeln och statusen.
+          expected: Två loggposter visar fältnamnen med gamla och nya värden.
+        - action: Radera posten.
+          expected: En loggpost visar raderingen med användaren, tidpunkten och de sista värdena.
+
+  - id: AUD-T02
+    priority: critical
+    execution: manual
+    tags: [audit-trail, immutability]
+    refs: ["NIST SP 800-53 AU-9"]
+    en:
+      title: Administrators cannot alter the audit trail
+      description: Tries to change and delete audit entries as an administrator and inspects the database rights.
+      preconditions: An administrator account, an API client and read access to the database grants.
+      expected: No path exists to change or delete an audit entry.
+      steps:
+        - action: As an administrator, look for edit or delete actions on audit entries in the user interface.
+          expected: No such actions exist.
+        - action: Send PUT and DELETE requests for an audit entry id to the API as the administrator.
+          expected: Each request is refused with 403, 404 or 405 and the entry is unchanged.
+        - action: Read the grants of the application's database account on the audit table.
+          expected: Only insert and select are granted.
+    sv:
+      title: Administratörer kan inte ändra ändringsloggen
+      description: Försöker ändra och radera poster i ändringsloggen som administratör och granskar rättigheterna i databasen.
+      preconditions: Ett administratörskonto, en API-klient och läsbehörighet till rättigheterna i databasen.
+      expected: Det finns inget sätt att ändra eller radera en post i ändringsloggen.
+      steps:
+        - action: Leta som administratör efter åtgärder för att redigera eller radera loggposter i användargränssnittet.
+          expected: Inga sådana åtgärder finns.
+        - action: Skicka PUT- och DELETE-anrop för ett loggpost-id till API:et som administratör.
+          expected: Varje anrop avvisas med 403, 404 eller 405 och posten är oförändrad.
+        - action: Läs rättigheterna för applikationens databaskonto på loggtabellen.
+          expected: Bara infoga och läsa är beviljade.
+
+  - id: AUD-T03
+    priority: high
+    execution: automated
+    tags: [tamper-evidence, hash-chain]
+    refs: ["NIST SP 800-53 AU-9(3)"]
+    en:
+      title: Hash chain verification detects tampering
+      description: A script verifies the audit hash chain, alters the database directly and verifies again.
+      preconditions: A test database with at least 1000 audit entries and direct write access for the test script.
+      expected: The verification passes on the untouched trail and fails on each kind of tampering.
+      steps:
+        - action: Run the verification on the untouched trail.
+          expected: The verification reports success.
+        - action: Change the new value of entry 500 directly in the database and run the verification.
+          expected: The verification fails and names entry 500.
+        - action: Restore the data, delete entry 700 directly and run the verification.
+          expected: The verification fails and names the entry after the gap.
+    sv:
+      title: Verifiering av hashkedjan upptäcker manipulation
+      description: Ett skript verifierar hashkedjan i ändringsloggen, ändrar databasen direkt och verifierar igen.
+      preconditions: En testdatabas med minst 1000 poster i ändringsloggen och direkt skrivåtkomst för testskriptet.
+      expected: Verifieringen går igenom för den orörda loggen och misslyckas för varje typ av manipulation.
+      steps:
+        - action: Kör verifieringen på den orörda loggen.
+          expected: Verifieringen rapporterar att loggen är korrekt.
+        - action: Ändra det nya värdet i post 500 direkt i databasen och kör verifieringen.
+          expected: Verifieringen misslyckas och anger post 500.
+        - action: Återställ data, radera post 700 direkt och kör verifieringen.
+          expected: Verifieringen misslyckas och anger posten efter luckan.
+
+  - id: AUD-T04
+    priority: high
+    execution: manual
+    tags: [audit-trail, retention-period]
+    refs: ["EU GMP Annex 11 §17"]
+    en:
+      title: Audit entries are kept for 7 years
+      description: Inspects the retention setting and runs the retention job on aged audit entries.
+      preconditions: A test environment where audit entries can be back-dated, and access to the retention configuration.
+      expected: Audit entries younger than the retention period survive the retention job.
+      steps:
+        - action: Read the retention setting for the audit trail.
+          expected: It is 7 years or more after the end of the year of creation.
+        - action: Back-date an audit entry to 6 years and 11 months ago and run the retention job.
+          expected: The entry still exists.
+    sv:
+      title: Poster i ändringsloggen sparas i 7 år
+      description: Granskar inställningen för lagringstid och kör gallringsjobbet på åldrade poster i ändringsloggen.
+      preconditions: En testmiljö där poster i ändringsloggen kan bakdateras och åtkomst till konfigurationen för lagringstider.
+      expected: Poster i ändringsloggen som är yngre än lagringstiden finns kvar efter gallringsjobbet.
+      steps:
+        - action: Läs inställningen för ändringsloggens lagringstid.
+          expected: Den är 7 år eller mer efter utgången av det år då posten skapades.
+        - action: Bakdatera en loggpost till 6 år och 11 månader sedan och kör gallringsjobbet.
+          expected: Posten finns kvar.
+
+  - id: AUD-T05
+    priority: high
+    execution: manual
+    tags: [audit-trail, export, auditor]
+    refs: ["21 CFR Part 11 §11.10(b)"]
+    en:
+      title: Audit export is complete and has a checksum
+      description: Exports the audit trail for one record and one month and compares it with the view in the system.
+      preconditions: A test record with at least 20 audit entries in the chosen month, and a user with the auditor role.
+      expected: The export matches the system view and its checksum.
+      steps:
+        - action: Choose the record and the month and export the audit trail.
+          expected: A CSV file and a SHA-256 checksum are delivered.
+        - action: Compute the SHA-256 checksum of the file.
+          expected: It equals the delivered checksum.
+        - action: Compare the rows of the file with the entries shown in the system for the same selection.
+          expected: The number of rows and every value match.
+    sv:
+      title: Exporten av ändringsloggen är fullständig och har en kontrollsumma
+      description: Exporterar ändringsloggen för en post och en månad och jämför med vyn i systemet.
+      preconditions: En testpost med minst 20 loggposter under den valda månaden och en användare med revisorsrollen.
+      expected: Exporten stämmer med vyn i systemet och med sin kontrollsumma.
+      steps:
+        - action: Välj posten och månaden och exportera ändringsloggen.
+          expected: En CSV-fil och en SHA-256-kontrollsumma levereras.
+        - action: Beräkna SHA-256-kontrollsumman för filen.
+          expected: Den är lika med den levererade kontrollsumman.
+        - action: Jämför raderna i filen med de loggposter som systemet visar för samma urval.
+          expected: Antalet rader och varje värde stämmer.
+
+  - id: AUD-T06
+    priority: medium
+    execution: automated
+    tags: [auditor, read-only]
+    refs: ["ISO/IEC 27001:2022 A.8.34"]
+    en:
+      title: Auditor role can read but not change
+      description: A script signs in with a user that has only the auditor role and calls read and write endpoints.
+      preconditions: A test user with only the auditor role and a list of create, update and delete endpoints.
+      expected: Reads and exports succeed and every write is refused.
+      steps:
+        - action: Read records and the audit trail and request an audit export.
+          expected: Each request succeeds.
+        - action: Call each create, update and delete endpoint.
+          expected: Each response is 403 and nothing changes.
+    sv:
+      title: Revisorsrollen kan läsa men inte ändra
+      description: Ett skript loggar in med en användare som bara har revisorsrollen och anropar endpoints för läsning och skrivning.
+      preconditions: En testanvändare med enbart revisorsrollen och en lista över endpoints som skapar, uppdaterar och raderar.
+      expected: Läsning och export lyckas och varje skrivning avvisas.
+      steps:
+        - action: Läs poster och ändringsloggen och begär en export av loggen.
+          expected: Varje anrop lyckas.
+        - action: Anropa varje endpoint som skapar, uppdaterar eller raderar.
+          expected: Varje svar är 403 och ingenting ändras.
+
+  - id: AUD-T07
+    priority: critical
+    execution: manual
+    tags: [e-signature, re-authentication]
+    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)"]
+    en:
+      title: Signing requires re-authentication and records its meaning
+      description: Signs a record with and without re-authentication and checks what is stored.
+      preconditions: A signed-in user allowed to approve, and a record that is ready for approval.
+      expected: Signing needs the password or second factor and stores name, time and meaning.
+      steps:
+        - action: Choose to approve the record and close the password prompt without entering anything.
+          expected: The record is not signed.
+        - action: Approve again and enter a wrong password.
+          expected: The signature is refused.
+        - action: Approve again with the correct password.
+          expected: The record shows the signer's full name, a UTC time and the meaning Approved, and the audit trail has a matching entry.
+    sv:
+      title: Underskrift kräver ny autentisering och registrerar sin innebörd
+      description: Skriver under en post med och utan ny autentisering och kontrollerar vad som sparas.
+      preconditions: En inloggad användare som får godkänna och en post som är klar för godkännande.
+      expected: Underskriften kräver lösenord eller andra faktor och sparar namn, tidpunkt och innebörd.
+      steps:
+        - action: Välj att godkänna posten och stäng lösenordsrutan utan att ange något.
+          expected: Posten skrivs inte under.
+        - action: Godkänn igen och ange fel lösenord.
+          expected: Underskriften avvisas.
+        - action: Godkänn igen med rätt lösenord.
+          expected: Posten visar undertecknarens fullständiga namn, en tidpunkt i UTC och innebörden Godkänd, och ändringsloggen har en motsvarande post.
+
+  - id: AUD-T08
+    priority: high
+    execution: manual
+    tags: [e-signature, record-linking]
+    refs: ["21 CFR Part 11 §11.70"]
+    en:
+      title: Changing a signed record invalidates the signature
+      description: Changes a field of a signed record and checks the signature status.
+      preconditions: A record that has been approved with an electronic signature, and a user allowed to edit it.
+      expected: The signature is shown as invalid after the change.
+      steps:
+        - action: Open the signed record.
+          expected: The signature is shown as valid.
+        - action: Change one field and save.
+          expected: The record shows the signature as invalidated by the change.
+        - action: Open the audit trail of the record.
+          expected: It shows the field change and the change of signature status with the same time.
+    sv:
+      title: Ändring av en undertecknad post gör underskriften ogiltig
+      description: Ändrar ett fält i en undertecknad post och kontrollerar underskriftens status.
+      preconditions: En post som har godkänts med elektronisk underskrift och en användare som får redigera den.
+      expected: Underskriften visas som ogiltig efter ändringen.
+      steps:
+        - action: Öppna den undertecknade posten.
+          expected: Underskriften visas som giltig.
+        - action: Ändra ett fält och spara.
+          expected: Posten visar att underskriften har blivit ogiltig genom ändringen.
+        - action: Öppna postens ändringslogg.
+          expected: Den visar fältändringen och ändringen av underskriftens status med samma tidpunkt.
+
+  - id: AUD-T09
+    priority: medium
+    execution: manual
+    tags: [audit-trail, reason-for-change]
+    refs: ["EU GMP Annex 11 §9"]
+    en:
+      title: Changing an approved record asks for a reason
+      description: Changes an approved record with no reason, a short reason and a valid reason.
+      preconditions: An approved record and a user allowed to edit it.
+      expected: The change is saved only with a reason of at least 10 characters, which is stored in the audit trail.
+      steps:
+        - action: Change a field of the approved record and save without a reason.
+          expected: The save is refused and a reason is requested.
+        - action: Enter a reason of 9 characters and save.
+          expected: The save is refused with a message about the minimum length.
+          data: Typo fix.
+        - action: Enter a reason of 10 characters or more and save.
+          expected: The change is saved and the reason appears in the audit entry.
+          data: Typo in the title corrected
+    sv:
+      title: Ändring av en godkänd post kräver en orsak
+      description: Ändrar en godkänd post utan orsak, med en för kort orsak och med en giltig orsak.
+      preconditions: En godkänd post och en användare som får redigera den.
+      expected: Ändringen sparas bara med en orsak på minst 10 tecken, som sparas i ändringsloggen.
+      steps:
+        - action: Ändra ett fält i den godkända posten och spara utan orsak.
+          expected: Sparningen avvisas och en orsak efterfrågas.
+        - action: Ange en orsak på 9 tecken och spara.
+          expected: Sparningen avvisas med ett meddelande om minsta längd.
+          data: Stavfel x
+        - action: Ange en orsak på 10 tecken eller mer och spara.
+          expected: Ändringen sparas och orsaken syns i loggposten.
+          data: Stavfel i titeln rättat
+
+  - id: AUD-T10
+    priority: low
+    execution: manual
+    tags: [audit-trail, history-view]
+    refs: ["EU GMP Annex 11 §9"]
+    en:
+      title: Record page shows its change history
+      description: Opens the history tab of a record that has been changed several times.
+      preconditions: A record that has been changed at least three times by two different users.
+      expected: The history lists every change, newest first.
+      steps:
+        - action: Open the record and its history tab.
+          expected: Every change is listed with user, time, field, old value and new value.
+        - action: Check the order of the list.
+          expected: The newest change is at the top.
+    sv:
+      title: Postens sida visar dess ändringshistorik
+      description: Öppnar historikfliken för en post som har ändrats ett antal gånger.
+      preconditions: En post som har ändrats minst tre gånger av två olika användare.
+      expected: Historiken visar varje ändring med den senaste först.
+      steps:
+        - action: Öppna posten och dess historikflik.
+          expected: Varje ändring visas med användare, tidpunkt, fält, gammalt värde och nytt värde.
+        - action: Kontrollera ordningen i listan.
+          expected: Den senaste ändringen ligger överst.
