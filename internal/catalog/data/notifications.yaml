@@ -1,0 +1,523 @@
+area: notifications
+prefix: NOTIF
+group: functional
+name: {en: Notifications, sv: Aviseringar}
+description:
+  en: In-app and e-mail notifications, preferences and opt-out, digests, unsubscribe links, delivery failures and security notices.
+  sv: Aviseringar i appen och via e-post, inställningar och avregistrering, sammanfattningar, avregistreringslänkar, misslyckade leveranser och säkerhetsmeddelanden.
+
+requirements:
+  - id: NOTIF-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [in-app]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1"]
+    tests: [NOTIF-T01]
+    en:
+      title: In-app notifications with unread count
+      description: The system MUST show an in-app notification to a user who is assigned an item, mentioned in a comment or asked for a review, and show the number of unread notifications in the page header.
+      rationale: Users need to see work that is waiting for them without checking every list.
+      criteria:
+        - method: test
+          text: Each of the three events creates one notification for the affected user, and the unread count in the header increases by one per event.
+    sv:
+      title: Aviseringar i appen med antal olästa
+      description: Systemet SKA visa en avisering i appen för en användare som tilldelas ett objekt, nämns i en kommentar eller ombeds granska, och visa antalet olästa aviseringar i sidhuvudet.
+      rationale: Användare behöver se arbete som väntar på dem utan att gå igenom varje lista.
+      criteria:
+        - method: test
+          text: Var och en av de tre händelserna skapar en avisering för den berörda användaren, och antalet olästa i sidhuvudet ökar med ett per händelse.
+
+  - id: NOTIF-02
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [in-app, read-state]
+    refs: ["ISO 9241-110:2020 controllability"]
+    tests: [NOTIF-T01]
+    en:
+      title: Mark notifications as read
+      description: The user interface SHOULD let a user mark a single notification or all notifications as read and mark a notification as read when the user opens its item.
+      rationale: An unread count that never decreases loses its meaning.
+      criteria:
+        - method: test
+          text: Opening a notification's item, marking one notification and marking all notifications each reduce the unread count accordingly.
+    sv:
+      title: Markera aviseringar som lästa
+      description: Användargränssnittet BÖR låta en användare markera en enskild avisering eller alla aviseringar som lästa och markera en avisering som läst när användaren öppnar dess objekt.
+      rationale: Ett antal olästa som aldrig minskar förlorar sin betydelse.
+      criteria:
+        - method: test
+          text: Att öppna en aviserings objekt, markera en avisering och markera alla aviseringar minskar vart och ett antalet olästa på motsvarande sätt.
+
+  - id: NOTIF-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [e-mail, latency]
+    refs: ["RFC 5322", "ISO/IEC 25010:2023 time behaviour"]
+    tests: [NOTIF-T02]
+    en:
+      title: E-mail notification within five minutes
+      description: The system MUST send an e-mail notification for each event that the user has subscribed to by e-mail within 5 minutes of the event.
+      rationale: Users who are not signed in rely on e-mail to learn about urgent work in time.
+      criteria:
+        - method: test
+          text: For 20 subscribed events the time from event to delivery in the test mailbox is at most 5 minutes for each.
+          threshold: "≤ 5 min"
+    sv:
+      title: E-postavisering inom fem minuter
+      description: Systemet SKA skicka en avisering via e-post för varje händelse som användaren prenumererar på via e-post inom 5 minuter efter händelsen.
+      rationale: Användare som inte är inloggade förlitar sig på e-post för att i tid få veta om brådskande arbete.
+      criteria:
+        - method: test
+          text: För 20 prenumererade händelser är tiden från händelse till leverans i testbrevlådan högst 5 minuter för var och en.
+          threshold: "≤ 5 min"
+
+  - id: NOTIF-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [e-mail, language]
+    refs: ["RFC 9110 §12.5.4", "W3C Internationalization Best Practices"]
+    tests: [NOTIF-T02]
+    en:
+      title: Notifications in the recipient's language
+      description: The system SHOULD write each notification in the interface language and with the date format of the recipient's profile.
+      rationale: A notification triggered by a colleague abroad is otherwise sent in the wrong language.
+      criteria:
+        - method: test
+          text: An event triggered by an English-speaking user produces a Swedish notification with Swedish date format for a recipient whose profile is set to Swedish.
+    sv:
+      title: Aviseringar på mottagarens språk
+      description: Systemet BÖR skriva varje avisering på gränssnittsspråket och med datumformatet från mottagarens profil.
+      rationale: Annars skickas en avisering som utlöses av en kollega i ett annat land på fel språk.
+      criteria:
+        - method: test
+          text: En händelse som utlöses av en engelskspråkig användare ger en svensk avisering med svenskt datumformat till en mottagare vars profil är inställd på svenska.
+
+  - id: NOTIF-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [preferences, opt-out]
+    refs: ["ISO 9241-110:2020 controllability", "Directive 2002/58/EC Art. 13"]
+    tests: [NOTIF-T03]
+    en:
+      title: Preferences per event type and channel
+      description: The system MUST let each user choose per event type whether to receive notifications in the app, by e-mail, both or not at all.
+      rationale: Users who cannot limit notifications start to ignore all of them.
+      criteria:
+        - method: test
+          text: For each event type the four settings can be saved and the next event of that type is delivered exactly through the chosen channels.
+    sv:
+      title: Inställningar per händelsetyp och kanal
+      description: Systemet SKA låta varje användare välja per händelsetyp mellan aviseringar i appen, via e-post, båda delarna eller inga aviseringar alls.
+      rationale: Användare som inte kan begränsa aviseringarna börjar strunta i alla.
+      criteria:
+        - method: test
+          text: För varje händelsetyp kan de fyra inställningarna sparas, och nästa händelse av den typen levereras exakt via de valda kanalerna.
+
+  - id: NOTIF-06
+    type: usability
+    obligation: should_not
+    priority: low
+    tags: [noise]
+    refs: ["Nielsen heuristic 8"]
+    tests: [NOTIF-T03]
+    en:
+      title: No notification of the user's own actions
+      description: The system SHOULD NOT notify a user of an event that the same user has caused.
+      rationale: Notifications about one's own changes are noise that hides relevant messages.
+      criteria:
+        - method: test
+          text: A user who assigns an item to the own account and comments on it receives no notification for either action.
+    sv:
+      title: Inga aviseringar om egna åtgärder
+      description: Systemet BÖR INTE avisera en användare om en händelse som samma användare har orsakat.
+      rationale: Aviseringar om egna ändringar är brus som döljer relevanta meddelanden.
+      criteria:
+        - method: test
+          text: En användare som tilldelar sig själv ett objekt och kommenterar det aviseras inte om någon av åtgärderna.
+
+  - id: NOTIF-07
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [digest, e-mail]
+    refs: ["ISO 9241-110:2020 controllability", "IANA Time Zone Database"]
+    tests: [NOTIF-T04]
+    en:
+      title: Daily digest at a chosen hour
+      description: The system SHOULD offer a daily digest e-mail that replaces individual e-mails and is sent at the hour the user chooses in the user's own time zone.
+      rationale: A single summary suits users who prefer to deal with notifications at one time of day.
+      criteria:
+        - method: test
+          text: A user with the digest at 07:00 Europe/Stockholm receives one e-mail at 07:00 local time with all events of the past 24 hours and no individual e-mails.
+    sv:
+      title: Daglig sammanfattning vid vald tidpunkt
+      description: Systemet BÖR erbjuda en daglig sammanfattning via e-post som ersätter enskilda e-postmeddelanden och skickas vid den timme som användaren väljer i sin egen tidszon.
+      rationale: En samlad sammanfattning passar användare som föredrar att hantera aviseringar vid en tidpunkt på dagen.
+      criteria:
+        - method: test
+          text: En användare med sammanfattning kl. 07.00 Europe/Stockholm tar emot ett e-postmeddelande kl. 07.00 lokal tid med alla händelser från de senaste 24 timmarna och inga enskilda meddelanden.
+
+  - id: NOTIF-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [unsubscribe, e-mail]
+    refs: ["RFC 8058", "RFC 2369 §3.2", "Directive 2002/58/EC Art. 13"]
+    tests: [NOTIF-T05]
+    en:
+      title: One-click unsubscribe in notification e-mails
+      description: Each notification e-mail MUST contain a visible unsubscribe link and a List-Unsubscribe header that support one-click unsubscribe as defined in RFC 8058.
+      rationale: Recipients and mailbox providers expect a working opt-out, and missing headers cause mail to be treated as spam.
+      criteria:
+        - method: test
+          text: Each notification e-mail template has the link and the headers List-Unsubscribe and List-Unsubscribe-Post, and a POST to the link turns off that event type.
+    sv:
+      title: Avregistrering med ett klick i aviseringsmejl
+      description: Varje e-postavisering SKA innehålla en synlig avregistreringslänk och ett List-Unsubscribe-huvud som stöder avregistrering med ett klick enligt RFC 8058.
+      rationale: Mottagare och e-postleverantörer förväntar sig en fungerande avregistrering, och saknade huvuden gör att e-post behandlas som skräppost.
+      criteria:
+        - method: test
+          text: Varje mall för e-postaviseringar har länken och huvudena List-Unsubscribe och List-Unsubscribe-Post, och en POST till länken stänger av den händelsetypen.
+
+  - id: NOTIF-09
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [delivery, retry]
+    refs: ["RFC 5321 §4.5.4.1", "ISO/IEC 25010:2023 fault tolerance"]
+    tests: [NOTIF-T06]
+    en:
+      title: Retry of temporarily failed e-mail delivery
+      description: The system MUST retry an e-mail that fails with a temporary error at least 5 times with increasing intervals during 24 hours.
+      rationale: Temporary failures at the receiving server are common and should not cause lost notifications.
+      criteria:
+        - method: test
+          text: With the mail server answering 451 four times and then accepting, the message is delivered on the fifth attempt within 24 hours.
+    sv:
+      title: Nya försök vid tillfälligt misslyckad e-postleverans
+      description: Systemet SKA göra minst 5 nya försök med ökande intervall under 24 timmar när ett e-postmeddelande misslyckas med ett tillfälligt fel.
+      rationale: Tillfälliga fel hos den mottagande servern är vanliga och ska inte leda till förlorade aviseringar.
+      criteria:
+        - method: test
+          text: När e-postservern svarar 451 fyra gånger och sedan tar emot levereras meddelandet vid det femte försöket inom 24 timmar.
+
+  - id: NOTIF-10
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [delivery, bounce]
+    refs: ["RFC 5321 §4.2.1", "RFC 3464"]
+    tests: [NOTIF-T06]
+    en:
+      title: Sending stopped after a permanent failure
+      description: The system MUST stop e-mail notifications to an address after a permanent delivery failure and show a warning in the user's profile and in the user list.
+      rationale: Repeated sends to dead addresses damage the sender's reputation, and the user needs to know that mail is not arriving.
+      criteria:
+        - method: test
+          text: After one 550 response no further e-mail is sent to the address, and the warning is shown until the user confirms or changes the address.
+    sv:
+      title: Utskick stoppas efter ett permanent fel
+      description: Systemet SKA sluta skicka e-postaviseringar till en adress efter ett permanent leveransfel och visa en varning i användarens profil och i användarlistan.
+      rationale: Upprepade utskick till döda adresser skadar avsändarens anseende, och användaren behöver veta att e-post inte kommer fram.
+      criteria:
+        - method: test
+          text: Efter ett svar med 550 skickas ingen mer e-post till adressen, och varningen visas tills användaren bekräftar eller byter adressen.
+
+  - id: NOTIF-11
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [e-mail, confidentiality]
+    refs: ["OWASP ASVS 4.0.3 V8.3", "ISO/IEC 27001:2022 Annex A 5.14"]
+    tests: [NOTIF-T07]
+    en:
+      title: No confidential content in e-mail
+      description: Notification e-mails MUST NOT contain more of an item than its identifier, its title and a link that requires sign-in.
+      rationale: E-mail is often forwarded, stored unencrypted and read on unmanaged devices.
+      criteria:
+        - method: inspection
+          text: Each e-mail template contains only the identifier, the title and the link, and the link shows the item only after sign-in.
+    sv:
+      title: Inget konfidentiellt innehåll i e-post
+      description: E-postaviseringar SKA INTE innehålla mer av ett objekt än dess identitet, titel och en länk som kräver inloggning.
+      rationale: E-post vidarebefordras ofta, lagras okrypterad och läses på enheter som organisationen inte hanterar.
+      criteria:
+        - method: inspection
+          text: Varje e-postmall innehåller bara identitet, titel och länk, och länken visar objektet först efter inloggning.
+
+  - id: NOTIF-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-notice, account]
+    refs: ["OWASP ASVS 4.0.3 V2.2.3", "NIST SP 800-63B §6.1.2.3"]
+    tests: [NOTIF-T08]
+    en:
+      title: Security notices regardless of preferences
+      description: The system MUST send an e-mail to the account owner on a password change, a change of e-mail address and a sign-in from a new device, independent of the notification preferences.
+      rationale: The owner must learn of account changes that may indicate a takeover, even with notifications switched off.
+      criteria:
+        - method: test
+          text: With all notifications switched off, each of the three events still produces a security e-mail to the account owner.
+    sv:
+      title: Säkerhetsmeddelanden oberoende av inställningar
+      description: Systemet SKA skicka ett e-postmeddelande till kontoinnehavaren vid byte av lösenord, byte av e-postadress och inloggning från en ny enhet, oberoende av aviseringsinställningarna.
+      rationale: Innehavaren behöver få veta om kontoändringar som kan tyda på ett kapat konto, även med aviseringarna avstängda.
+      criteria:
+        - method: test
+          text: Med alla aviseringar avstängda ger var och en av de tre händelserna ändå ett säkerhetsmeddelande till kontoinnehavaren.
+
+tests:
+  - id: NOTIF-T01
+    priority: high
+    execution: manual
+    tags: [in-app]
+    refs: ["Nielsen heuristic 1"]
+    en:
+      title: In-app notifications and read state
+      description: Checks that relevant events create in-app notifications and that the unread count follows the read state.
+      preconditions: Two signed-in users, A and B, in two browsers; B has no unread notifications.
+      expected: B receives one notification per event and the unread count matches the unread notifications.
+      steps:
+        - action: As A, assign an item to B, mention B in a comment and request a review from B.
+          expected: B sees 3 new notifications and the unread count shows 3.
+          data: "@B"
+        - action: As B, open the item from the first notification.
+          expected: The first notification is marked as read and the count shows 2.
+        - action: As B, choose mark all as read.
+          expected: All notifications are marked as read and the count disappears.
+    sv:
+      title: Aviseringar i appen och lässtatus
+      description: Kontrollerar att relevanta händelser skapar aviseringar i appen och att antalet olästa följer lässtatusen.
+      preconditions: Två inloggade användare, A och B, i två webbläsare; B har inga olästa aviseringar.
+      expected: B får en avisering per händelse och antalet olästa stämmer med de olästa aviseringarna.
+      steps:
+        - action: Tilldela som A ett objekt till B, nämn B i en kommentar och be B om en granskning.
+          expected: B ser 3 nya aviseringar och antalet olästa visar 3.
+          data: "@B"
+        - action: Öppna som B objektet från den första aviseringen.
+          expected: Den första aviseringen markeras som läst och antalet visar 2.
+        - action: Välj som B att markera alla som lästa.
+          expected: Alla aviseringar markeras som lästa och antalet försvinner.
+
+  - id: NOTIF-T02
+    priority: high
+    execution: automated
+    tags: [e-mail, latency, language]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: E-mail delivery time and language
+      description: An integration test triggers subscribed events and measures the time until each e-mail arrives in a test mailbox.
+      preconditions: A test mail server with an API, a recipient whose profile is set to Swedish and e-mail subscription for all event types, and a sender set to English.
+      expected: Every e-mail arrives within 5 minutes, in Swedish and with Swedish date format.
+      steps:
+        - action: As the sender, trigger 20 subscribed events and record the time of each.
+          expected: All 20 events are accepted.
+          data: "20 events"
+        - action: Poll the test mailbox until all 20 e-mails have arrived and compute the delay of each.
+          expected: Every delay is at most 5 minutes.
+        - action: Check the language and the dates in the e-mails.
+          expected: The texts are Swedish and dates are written as YYYY-MM-DD.
+    sv:
+      title: Leveranstid och språk för e-post
+      description: Ett integrationstest utlöser prenumererade händelser och mäter tiden tills varje e-postmeddelande har kommit fram till en testbrevlåda.
+      preconditions: En e-postserver för test med API, en mottagare vars profil är inställd på svenska och som prenumererar på alla händelsetyper via e-post, och en avsändare inställd på engelska.
+      expected: Varje e-postmeddelande kommer fram inom 5 minuter, på svenska och med svenskt datumformat.
+      steps:
+        - action: Utlös som avsändaren 20 prenumererade händelser och notera tiden för var och en.
+          expected: Alla 20 händelser tas emot.
+          data: "20 händelser"
+        - action: Fråga testbrevlådan tills alla 20 meddelanden har kommit och räkna ut fördröjningen för vart och ett.
+          expected: Varje fördröjning är högst 5 minuter.
+        - action: Kontrollera språket och datumen i meddelandena.
+          expected: Texterna är på svenska och datum skrivs som ÅÅÅÅ-MM-DD.
+
+  - id: NOTIF-T03
+    priority: high
+    execution: automated
+    tags: [preferences]
+    refs: ["ISO 9241-110:2020 controllability"]
+    en:
+      title: Channel preferences and own actions
+      description: An integration test sets each preference for one event type and checks which channels deliver the next event.
+      preconditions: Users A and B, a test mailbox for B and the event type "assigned".
+      expected: Notifications are delivered exactly through the chosen channels and never for B's own actions.
+      steps:
+        - action: For B, set "assigned" to in-app only, e-mail only, both and off in turn, and let A assign an item to B after each change.
+          expected: The notification appears only in the chosen channels for each setting, and nothing appears for off.
+          data: "in-app, e-mail, both, off"
+        - action: Set "assigned" to both and let B assign an item to B and comment on it.
+          expected: B receives neither an in-app notification nor an e-mail.
+    sv:
+      title: Kanalinställningar och egna åtgärder
+      description: Ett integrationstest ställer in varje alternativ för en händelsetyp och kontrollerar vilka kanaler som levererar nästa händelse.
+      preconditions: Användarna A och B, en testbrevlåda för B och händelsetypen "tilldelad".
+      expected: Aviseringar levereras exakt via de valda kanalerna och aldrig för B:s egna åtgärder.
+      steps:
+        - action: Ställ för B in "tilldelad" på bara appen, bara e-post, båda och av i tur och ordning, och låt A tilldela B ett objekt efter varje ändring.
+          expected: Aviseringen visas bara i de valda kanalerna för varje inställning, och inget visas för av.
+          data: "app, e-post, båda, av"
+        - action: Ställ in "tilldelad" på båda och låt B tilldela sig själv ett objekt och kommentera det.
+          expected: B aviseras varken i appen eller via e-post.
+
+  - id: NOTIF-T04
+    priority: medium
+    execution: automated
+    tags: [digest, time-zones]
+    refs: ["IANA Time Zone Database"]
+    en:
+      title: Daily digest at the chosen local hour
+      description: An integration test with a controllable clock checks the time and content of the daily digest.
+      preconditions: A user with the digest at 07:00 and the time zone Europe/Stockholm, a controllable clock and a test mailbox.
+      expected: One digest arrives at 07:00 local time with all events of the past 24 hours and no individual e-mails are sent.
+      steps:
+        - action: Trigger 5 events for the user between 08:00 and 20:00 local time.
+          expected: No individual e-mail is sent.
+          data: "5 events"
+        - action: Advance the clock to 07:00 local time the next day.
+          expected: One digest e-mail listing the 5 events arrives within 5 minutes.
+        - action: Repeat over the change to daylight saving time on 2026-03-29.
+          expected: The digest still arrives at 07:00 local time.
+    sv:
+      title: Daglig sammanfattning vid vald lokal timme
+      description: Ett integrationstest med styrbar klocka kontrollerar tidpunkt och innehåll för den dagliga sammanfattningen.
+      preconditions: En användare med sammanfattning kl. 07.00 och tidszonen Europe/Stockholm, en styrbar klocka och en testbrevlåda.
+      expected: En sammanfattning kommer kl. 07.00 lokal tid med alla händelser från de senaste 24 timmarna och inga enskilda meddelanden skickas.
+      steps:
+        - action: Utlös 5 händelser för användaren mellan kl. 08.00 och 20.00 lokal tid.
+          expected: Inget enskilt e-postmeddelande skickas.
+          data: "5 händelser"
+        - action: Flytta klockan till kl. 07.00 lokal tid nästa dag.
+          expected: En sammanfattning som listar de 5 händelserna kommer fram inom 5 minuter.
+        - action: Upprepa över övergången till sommartid 2026-03-29.
+          expected: Sammanfattningen kommer fortfarande kl. 07.00 lokal tid.
+
+  - id: NOTIF-T05
+    priority: high
+    execution: automated
+    tags: [unsubscribe, e-mail]
+    refs: ["RFC 8058"]
+    en:
+      title: Unsubscribe link and headers in every template
+      description: A script renders each notification e-mail template and checks the unsubscribe link and headers, then performs a one-click unsubscribe.
+      preconditions: The list of notification e-mail templates and a test user subscribed to all event types by e-mail.
+      expected: Every template has the link and both headers, and the one-click request unsubscribes the user from that event type.
+      steps:
+        - action: Render each template and read the headers and the body.
+          expected: Each e-mail has a List-Unsubscribe header with an HTTPS URL, a List-Unsubscribe-Post header with the value "List-Unsubscribe=One-Click" and a visible link in the body.
+        - action: Send a POST request to the HTTPS URL of one template without a session cookie.
+          expected: The response is successful and the user's e-mail setting for that event type is off.
+          data: "List-Unsubscribe=One-Click"
+    sv:
+      title: Avregistreringslänk och huvuden i varje mall
+      description: Ett skript skapar varje mall för e-postaviseringar och kontrollerar avregistreringslänk och huvuden och gör sedan en avregistrering med ett klick.
+      preconditions: Förteckningen över mallar för e-postaviseringar och en testanvändare som prenumererar på alla händelsetyper via e-post.
+      expected: Varje mall har länken och båda huvudena, och anropet med ett klick avregistrerar användaren från den händelsetypen.
+      steps:
+        - action: Skapa varje mall och läs huvuden och brödtext.
+          expected: Varje meddelande har ett List-Unsubscribe-huvud med en HTTPS-URL, ett List-Unsubscribe-Post-huvud med värdet "List-Unsubscribe=One-Click" och en synlig länk i brödtexten.
+        - action: Skicka ett POST-anrop till HTTPS-URL:en för en mall utan sessionscookie.
+          expected: Svaret är lyckat och användarens e-postinställning för den händelsetypen är avstängd.
+          data: "List-Unsubscribe=One-Click"
+
+  - id: NOTIF-T06
+    priority: medium
+    execution: automated
+    tags: [delivery, retry, bounce]
+    refs: ["RFC 5321"]
+    en:
+      title: Retries on temporary failure and stop on permanent failure
+      description: An integration test uses a fake mail server that returns scripted SMTP replies.
+      preconditions: A fake SMTP server with scripted replies, a controllable clock and two test users with different addresses.
+      expected: Temporary failures are retried until delivery and permanent failures stop further sending with a visible warning.
+      steps:
+        - action: Script the server to answer 451 four times and then 250 for user 1, and trigger a notification.
+          expected: The message is delivered on the fifth attempt, the intervals between attempts increase and all attempts fall within 24 hours.
+          data: "451, 451, 451, 451, 250"
+        - action: Script the server to answer 550 for user 2 and trigger two notifications.
+          expected: Only one delivery attempt is made, and the second notification is not sent.
+          data: "550 5.1.1 user unknown"
+        - action: Open user 2's profile and the administrator's user list.
+          expected: Both show a warning that e-mail to the address cannot be delivered.
+    sv:
+      title: Nya försök vid tillfälligt fel och stopp vid permanent fel
+      description: Ett integrationstest använder en låtsad e-postserver som returnerar förinställda SMTP-svar.
+      preconditions: En låtsad SMTP-server med förinställda svar, en styrbar klocka och två testanvändare med olika adresser.
+      expected: Tillfälliga fel ger nya försök tills leveransen lyckas och permanenta fel stoppar vidare utskick med en synlig varning.
+      steps:
+        - action: Ställ in servern att svara 451 fyra gånger och sedan 250 för användare 1 och utlös en avisering.
+          expected: Meddelandet levereras vid det femte försöket, intervallen mellan försöken ökar och alla försök sker inom 24 timmar.
+          data: "451, 451, 451, 451, 250"
+        - action: Ställ in servern att svara 550 för användare 2 och utlös två aviseringar.
+          expected: Bara ett leveransförsök görs, och den andra aviseringen skickas inte.
+          data: "550 5.1.1 user unknown"
+        - action: Öppna användare 2:s profil och administratörens användarlista.
+          expected: Båda visar en varning om att e-post till adressen inte kan levereras.
+
+  - id: NOTIF-T07
+    priority: high
+    execution: manual
+    tags: [e-mail, confidentiality]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.14"]
+    en:
+      title: E-mail content limited to identifier, title and link
+      description: Checks each notification e-mail for item content beyond the identifier and title.
+      preconditions: An item with a confidential description and comment, and a user subscribed to all event types by e-mail.
+      expected: No e-mail contains the description or comment, and the link requires sign-in.
+      steps:
+        - action: Trigger each event type for the item and open the resulting e-mails.
+          expected: Each e-mail shows only the identifier, the title and a link.
+          data: "Description: CONFIDENTIAL-MARKER-123"
+        - action: Search all received e-mails for the marker text.
+          expected: The marker is not found.
+        - action: Open the link in a private browser window.
+          expected: The sign-in page is shown before the item.
+    sv:
+      title: E-postens innehåll begränsas till identitet, titel och länk
+      description: Kontrollerar varje e-postavisering efter objektinnehåll utöver identitet och titel.
+      preconditions: Ett objekt med en konfidentiell beskrivning och kommentar och en användare som prenumererar på alla händelsetyper via e-post.
+      expected: Inget meddelande innehåller beskrivningen eller kommentaren, och länken kräver inloggning.
+      steps:
+        - action: Utlös varje händelsetyp för objektet och öppna de e-postmeddelanden som skickas.
+          expected: Varje meddelande visar bara identitet, titel och en länk.
+          data: "Beskrivning: CONFIDENTIAL-MARKER-123"
+        - action: Sök i alla mottagna meddelanden efter markörtexten.
+          expected: Markören hittas inte.
+        - action: Öppna länken i ett privat webbläsarfönster.
+          expected: Inloggningssidan visas före objektet.
+
+  - id: NOTIF-T08
+    priority: high
+    execution: automated
+    tags: [security-notice]
+    refs: ["OWASP ASVS 4.0.3 V2.2.3"]
+    en:
+      title: Security notices sent with notifications switched off
+      description: An integration test switches off all notifications for a user and performs the three security-relevant account changes.
+      preconditions: A test user with every notification preference set to off and a test mailbox.
+      expected: Each account change produces one security e-mail to the account owner.
+      steps:
+        - action: Change the user's password.
+          expected: A security e-mail about the password change arrives.
+        - action: Change the user's e-mail address.
+          expected: A security e-mail about the change arrives at the previous address.
+        - action: Sign in from a new device with a new user agent and IP address.
+          expected: A security e-mail about the new sign-in arrives with the time and approximate location.
+    sv:
+      title: Säkerhetsmeddelanden skickas med aviseringarna avstängda
+      description: Ett integrationstest stänger av alla aviseringar för en användare och utför de tre säkerhetsrelevanta kontoändringarna.
+      preconditions: En testanvändare med alla aviseringsinställningar avstängda och en testbrevlåda.
+      expected: Varje kontoändring ger ett säkerhetsmeddelande till kontoinnehavaren.
+      steps:
+        - action: Byt användarens lösenord.
+          expected: Ett säkerhetsmeddelande om lösenordsbytet kommer fram.
+        - action: Byt användarens e-postadress.
+          expected: Ett säkerhetsmeddelande om bytet kommer fram till den tidigare adressen.
+        - action: Logga in från en ny enhet med ny webbläsaridentitet och IP-adress.
+          expected: Ett säkerhetsmeddelande om den nya inloggningen kommer fram med tidpunkt och ungefärlig plats.

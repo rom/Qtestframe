@@ -1,0 +1,537 @@
+area: help
+prefix: HELP
+group: usability
+name: {en: Help and documentation, sv: Hjälp och dokumentation}
+description:
+  en: Onboarding, contextual help, user documentation, release notes for users and support contact.
+  sv: Introduktion för nya användare, sammanhangsberoende hjälp, användardokumentation, versionsinformation för användare och kontakt med supporten.
+
+requirements:
+  - id: HELP-01
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [onboarding]
+    refs: ["ISO 9241-110:2020 learnability", "Nielsen heuristic 10"]
+    tests: [HELP-T01]
+    en:
+      title: Guided introduction at first sign-in
+      description: The system SHOULD offer a guided introduction of at most 5 steps at a user's first sign-in that the user can skip and restart from the help menu.
+      rationale: A short introduction shortens the time to the first useful result without forcing experienced users through it.
+      criteria:
+        - method: test
+          text: A new user sees an introduction of 5 steps or fewer, can skip it at every step and can start it again from the help menu.
+          threshold: "≤ 5 steps"
+    sv:
+      title: Guidad introduktion vid första inloggningen
+      description: Systemet BÖR erbjuda en guidad introduktion på högst 5 steg vid användarens första inloggning som användaren kan hoppa över och starta om från hjälpmenyn.
+      rationale: En kort introduktion förkortar tiden till det första användbara resultatet utan att erfarna användare tvingas igenom den.
+      criteria:
+        - method: test
+          text: En ny användare ser en introduktion på högst 5 steg, kan hoppa över den i varje steg och kan starta den igen från hjälpmenyn.
+          threshold: "≤ 5 steg"
+
+  - id: HELP-02
+    type: usability
+    obligation: may
+    priority: low
+    tags: [onboarding, sample-data]
+    refs: ["ISO 9241-110:2020 learnability"]
+    tests: [HELP-T01]
+    en:
+      title: Example content for new users
+      description: The system MAY offer a new organisation an example project with sample data that an administrator can delete in one action.
+      rationale: Sample data shows how the product is meant to be used and gives users something to try features on.
+      criteria:
+        - method: demonstration
+          text: A new organisation can create the example project from the start page, and an administrator removes it with one delete action.
+    sv:
+      title: Exempelinnehåll för nya användare
+      description: Systemet FÅR erbjuda en ny organisation ett exempelprojekt med exempeldata som en administratör kan ta bort med en åtgärd.
+      rationale: Exempeldata visar hur produkten är tänkt att användas och ger användarna något att prova funktionerna på.
+      criteria:
+        - method: demonstration
+          text: En ny organisation kan skapa exempelprojektet från startsidan, och en administratör tar bort det med en enda borttagning.
+
+  - id: HELP-03
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [contextual-help]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "ISO/IEC/IEEE 26514:2022"]
+    tests: [HELP-T02]
+    en:
+      title: Help link from each page
+      description: Each page SHOULD contain a help link that opens the section of the user documentation for that page.
+      rationale: Help that opens at the right place is used far more than a manual that must be searched from the start.
+      criteria:
+        - method: test
+          text: Every route has a help link, and each link opens an existing documentation section whose title matches the page.
+    sv:
+      title: Hjälplänk från varje sida
+      description: Varje sida BÖR innehålla en hjälplänk som öppnar det avsnitt i användardokumentationen som gäller sidan.
+      rationale: Hjälp som öppnas på rätt ställe används mycket mer än en handbok som måste genomsökas från början.
+      criteria:
+        - method: test
+          text: Varje vy har en hjälplänk, och varje länk öppnar ett befintligt dokumentationsavsnitt vars rubrik motsvarar sidan.
+
+  - id: HELP-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [contextual-help, forms]
+    refs: ["WCAG 2.2 SC 3.3.2", "ISO 9241-110:2020 self-descriptiveness"]
+    tests: [HELP-T08]
+    en:
+      title: Hints for fields with a format rule
+      description: The user interface SHOULD show a hint with the expected format next to each field that accepts only a specific format.
+      rationale: Stating the format before input prevents errors instead of reporting them afterwards.
+      criteria:
+        - method: inspection
+          text: Every date, identifier, phone number and pattern-restricted field shows a hint with the format or an example value.
+    sv:
+      title: Tips för fält med formatkrav
+      description: Användargränssnittet BÖR visa ett tips med det förväntade formatet vid varje fält som bara godtar ett visst format.
+      rationale: Att ange formatet före inmatningen förebygger fel i stället för att rapportera dem i efterhand.
+      criteria:
+        - method: inspection
+          text: Varje fält för datum, identitet, telefonnummer och annat mönster visar ett tips med formatet eller ett exempelvärde.
+
+  - id: HELP-05
+    type: usability
+    obligation: must
+    priority: high
+    tags: [documentation]
+    refs: ["ISO/IEC/IEEE 26514:2022", "ISO/IEC 25010:2023 interaction capability"]
+    tests: [HELP-T03]
+    en:
+      title: User documentation for each core task
+      description: The system MUST provide online user documentation with step-by-step instructions for each core task listed in the product's task list.
+      rationale: Users and support staff need a single authoritative source for how tasks are done.
+      criteria:
+        - method: review
+          text: Each core task in the task list has a documentation page with numbered steps, and following the steps completes the task.
+    sv:
+      title: Användardokumentation för varje huvuduppgift
+      description: Systemet SKA tillhandahålla användardokumentation på webben med instruktioner steg för steg för varje huvuduppgift i produktens uppgiftslista.
+      rationale: Användare och supportpersonal behöver en enda auktoritativ källa till hur uppgifter utförs.
+      criteria:
+        - method: review
+          text: Varje huvuduppgift i uppgiftslistan har en dokumentationssida med numrerade steg, och den som följer stegen slutför uppgiften.
+
+  - id: HELP-06
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [documentation, languages]
+    refs: ["ISO/IEC/IEEE 26514:2022"]
+    tests: [HELP-T03]
+    en:
+      title: Documentation in each interface language
+      description: The user documentation SHOULD be available in each language that the user interface supports.
+      rationale: Users who work in the interface in their own language expect help in the same language.
+      criteria:
+        - method: inspection
+          text: For each supported interface language every documentation page exists in that language.
+    sv:
+      title: Dokumentation på varje gränssnittsspråk
+      description: Användardokumentationen BÖR finnas på varje språk som användargränssnittet stöder.
+      rationale: Användare som arbetar i gränssnittet på sitt eget språk förväntar sig hjälp på samma språk.
+      criteria:
+        - method: inspection
+          text: För varje gränssnittsspråk som stöds finns varje dokumentationssida på det språket.
+
+  - id: HELP-07
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [documentation, release]
+    refs: ["ISO/IEC/IEEE 26514:2022", "ISO/IEC/IEEE 12207:2017"]
+    tests: [HELP-T03]
+    en:
+      title: Documentation matches the released version
+      description: The user documentation MUST be updated for each change that affects the user interface no later than the day the change is released.
+      rationale: Outdated screenshots and instructions mislead users and erode trust in the help.
+      criteria:
+        - method: review
+          text: For the last 3 releases, every change that affected the user interface has a documentation update published on or before the release day.
+    sv:
+      title: Dokumentationen motsvarar den släppta versionen
+      description: Användardokumentationen SKA uppdateras för varje ändring som påverkar användargränssnittet senast den dag ändringen släpps.
+      rationale: Inaktuella skärmbilder och instruktioner vilseleder användare och undergräver förtroendet för hjälpen.
+      criteria:
+        - method: review
+          text: För de 3 senaste versionerna har varje ändring som påverkade användargränssnittet en dokumentationsuppdatering som publicerades senast på releasedagen.
+
+  - id: HELP-08
+    type: usability
+    obligation: should
+    priority: low
+    tags: [documentation, search]
+    refs: ["ISO/IEC/IEEE 26514:2022"]
+    tests: [HELP-T04]
+    en:
+      title: Search in the user documentation
+      description: The user documentation SHOULD offer a full-text search that shows the matching pages within 2 seconds.
+      rationale: Users look for an answer to a concrete question and rarely browse the table of contents.
+      criteria:
+        - method: test
+          text: Searching for 10 terms from the documentation returns the page that contains each term among the first 5 results within 2 seconds.
+          threshold: "≤ 2 s"
+    sv:
+      title: Sökning i användardokumentationen
+      description: Användardokumentationen BÖR erbjuda en fritextsökning som visar matchande sidor inom 2 sekunder.
+      rationale: Användare letar efter svar på en konkret fråga och bläddrar sällan i innehållsförteckningen.
+      criteria:
+        - method: test
+          text: En sökning på 10 termer från dokumentationen visar sidan som innehåller respektive term bland de 5 första träffarna inom 2 sekunder.
+          threshold: "≤ 2 s"
+
+  - id: HELP-09
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [release-notes]
+    refs: ["ISO/IEC/IEEE 26514:2022", "Keep a Changelog 1.1.0"]
+    tests: [HELP-T05]
+    en:
+      title: Release notes for users
+      description: The supplier MUST publish release notes for users on the release day that list the new features, changed behaviour and fixed defects that users notice.
+      rationale: Users need to know what has changed in order to use new features and to adapt their routines.
+      criteria:
+        - method: review
+          text: Each of the last 3 releases has release notes, published on the release day, with the sections new, changed and fixed written without internal ticket jargon.
+    sv:
+      title: Versionsinformation för användare
+      description: Leverantören SKA publicera versionsinformation för användare på releasedagen som anger nya funktioner, ändrat beteende och rättade fel som användarna märker.
+      rationale: Användare behöver veta vad som har ändrats för att kunna använda nya funktioner och anpassa sina rutiner.
+      criteria:
+        - method: review
+          text: Var och en av de 3 senaste versionerna har versionsinformation, publicerad på releasedagen, med avsnitten nytt, ändrat och rättat skrivna utan intern ärendejargong.
+
+  - id: HELP-10
+    type: usability
+    obligation: may
+    priority: low
+    tags: [release-notes, in-app]
+    refs: ["Nielsen heuristic 1"]
+    tests: [HELP-T05]
+    en:
+      title: In-app notice of what is new
+      description: The user interface MAY show each user a dismissible notice after an update that links to the release notes.
+      rationale: An in-app notice reaches users who never read release notes on their own.
+      criteria:
+        - method: demonstration
+          text: After an update each user sees the notice once, can dismiss it, and the link opens the current release notes.
+    sv:
+      title: Meddelande om nyheter i appen
+      description: Användargränssnittet FÅR visa varje användare ett meddelande efter en uppdatering som går att stänga och som länkar till versionsinformationen.
+      rationale: Ett meddelande i appen når användare som aldrig läser versionsinformationen själva.
+      criteria:
+        - method: demonstration
+          text: Efter en uppdatering ser varje användare meddelandet en gång, kan stänga det, och länken öppnar den aktuella versionsinformationen.
+
+  - id: HELP-11
+    type: usability
+    obligation: must
+    priority: high
+    tags: [support]
+    refs: ["ISO/IEC 25010:2023 interaction capability", "ISO 9241-110:2020 controllability"]
+    tests: [HELP-T06]
+    en:
+      title: Support contact reachable from every page
+      description: The user interface MUST show a way to contact support within 2 clicks from every page, together with the expected response time.
+      rationale: Users who are stuck need a visible path to a human instead of giving up.
+      criteria:
+        - method: test
+          text: From 10 sampled pages the support contact is reached within 2 clicks and states a response time, for example 1 working day.
+          threshold: "≤ 2 clicks"
+    sv:
+      title: Kontakt med supporten nås från varje sida
+      description: Användargränssnittet SKA visa ett sätt att kontakta supporten inom 2 klick från varje sida, tillsammans med förväntad svarstid.
+      rationale: Användare som har kört fast behöver en synlig väg till en människa i stället för att ge upp.
+      criteria:
+        - method: test
+          text: Från 10 utvalda sidor nås supportkontakten inom 2 klick och anger en svarstid, till exempel 1 arbetsdag.
+          threshold: "≤ 2 klick"
+
+  - id: HELP-12
+    type: usability
+    obligation: should
+    priority: low
+    tags: [support, diagnostics]
+    refs: ["ISO/IEC 25010:2023 maintainability"]
+    tests: [HELP-T06]
+    en:
+      title: Technical context attached to support requests
+      description: The support form SHOULD attach the product version, the current page and the browser version to a request after the user has agreed to it.
+      rationale: Context sent with the request saves a round of questions and speeds up the answer.
+      criteria:
+        - method: test
+          text: A request sent from the form contains version, page and browser when the user agrees, and none of them when the user declines.
+    sv:
+      title: Teknisk kontext bifogas supportärenden
+      description: Supportformuläret BÖR bifoga produktversion, aktuell sida och webbläsarversion till ett ärende efter att användaren har godkänt det.
+      rationale: Kontext som skickas med ärendet sparar en omgång frågor och ger svar tidigare.
+      criteria:
+        - method: test
+          text: Ett ärende som skickas från formuläret innehåller version, sida och webbläsare när användaren godkänner det, och inget av dem när användaren avböjer.
+
+  - id: HELP-13
+    type: usability
+    obligation: may
+    priority: low
+    tags: [keyboard, shortcuts]
+    refs: ["WCAG 2.2 SC 2.1.4", "ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [HELP-T07]
+    en:
+      title: Overview of keyboard shortcuts
+      description: The user interface MAY show an overview of all keyboard shortcuts when the user presses the question mark key outside a text field.
+      rationale: Frequent users work considerably faster once they know the shortcuts.
+      criteria:
+        - method: demonstration
+          text: Pressing "?" outside a text field opens the overview, every listed shortcut works, and Escape closes it.
+    sv:
+      title: Översikt över kortkommandon
+      description: Användargränssnittet FÅR visa en översikt över alla kortkommandon när användaren trycker på frågeteckentangenten utanför ett textfält.
+      rationale: Vana användare arbetar betydligt snabbare när de känner till kortkommandona.
+      criteria:
+        - method: demonstration
+          text: Om användaren trycker på "?" utanför ett textfält öppnas översikten, varje kortkommando i den fungerar och Esc stänger den.
+
+tests:
+  - id: HELP-T01
+    priority: medium
+    execution: manual
+    tags: [onboarding]
+    refs: ["ISO 9241-110:2020 learnability"]
+    en:
+      title: Guided introduction and example project
+      description: Checks the first-sign-in introduction and the optional example project for a new organisation.
+      preconditions: A newly created organisation and a user who has never signed in.
+      expected: The introduction has at most 5 steps, can be skipped and restarted, and the example project can be created and removed.
+      steps:
+        - action: Sign in for the first time.
+          expected: The guided introduction starts and shows step 1 of at most 5.
+        - action: Skip the introduction at step 2, then start it again from the help menu.
+          expected: The introduction closes on skipping and restarts from step 1 from the help menu.
+        - action: Create the example project from the start page and then delete it as an administrator.
+          expected: The project with sample data appears and is removed completely with one delete action.
+    sv:
+      title: Guidad introduktion och exempelprojekt
+      description: Kontrollerar introduktionen vid första inloggningen och exempelprojektet för en ny organisation.
+      preconditions: En nyskapad organisation och en användare som aldrig har loggat in.
+      expected: Introduktionen har högst 5 steg, kan hoppas över och startas om, och exempelprojektet kan skapas och tas bort.
+      steps:
+        - action: Logga in för första gången.
+          expected: Den guidade introduktionen startar och visar steg 1 av högst 5.
+        - action: Hoppa över introduktionen i steg 2 och starta den sedan igen från hjälpmenyn.
+          expected: Introduktionen stängs när den hoppas över och startar om från steg 1 via hjälpmenyn.
+        - action: Skapa exempelprojektet från startsidan och ta sedan bort det som administratör.
+          expected: Projektet med exempeldata visas och tas bort helt med en enda borttagning.
+
+  - id: HELP-T02
+    priority: medium
+    execution: automated
+    tags: [contextual-help, links]
+    refs: ["ISO/IEC/IEEE 26514:2022"]
+    en:
+      title: Help link on every page leads to a matching section
+      description: A script visits every route, follows its help link and checks the target section.
+      preconditions: A test environment, the published documentation and a browser automation tool.
+      expected: Every page has a help link that opens an existing section matching the page.
+      steps:
+        - action: The script visits each route and looks for the help link.
+          expected: A help link is found on every route.
+        - action: The script follows each help link.
+          expected: The target answers with HTTP status 200 and the anchor in the link exists on the target page.
+        - action: The script compares the section title with the page's mapping in the help index.
+          expected: Each section title matches the expected entry for its page.
+    sv:
+      title: Hjälplänk på varje sida leder till rätt avsnitt
+      description: Ett skript besöker varje vy, följer dess hjälplänk och kontrollerar målavsnittet.
+      preconditions: En testmiljö, den publicerade dokumentationen och ett verktyg för webbläsarautomatisering.
+      expected: Varje sida har en hjälplänk som öppnar ett befintligt avsnitt som motsvarar sidan.
+      steps:
+        - action: Skriptet besöker varje vy och letar efter hjälplänken.
+          expected: En hjälplänk hittas i varje vy.
+        - action: Skriptet följer varje hjälplänk.
+          expected: Målet svarar med HTTP-status 200 och ankaret i länken finns på målsidan.
+        - action: Skriptet jämför avsnittsrubriken med sidans post i hjälpindexet.
+          expected: Varje avsnittsrubrik stämmer med den förväntade posten för sin sida.
+
+  - id: HELP-T03
+    priority: high
+    execution: manual
+    tags: [documentation, review]
+    refs: ["ISO/IEC/IEEE 26514:2022"]
+    en:
+      title: Documentation covers core tasks and is current
+      description: A reviewer follows the documentation for each core task in the current version and in each interface language.
+      preconditions: The product's task list, the release history of the last 3 releases and access to the documentation in all languages.
+      expected: Every core task is documented, the instructions work in the current version and every language is complete.
+      steps:
+        - action: For each core task, follow the documented steps in the current version of the system.
+          expected: Each task is completed by following the steps, and screenshots match the interface.
+        - action: Compare the list of documentation pages per interface language.
+          expected: Every page exists in every supported language.
+        - action: For each change affecting the interface in the last 3 releases, compare the documentation update date with the release date.
+          expected: Every update was published on or before the release day.
+    sv:
+      title: Dokumentationen täcker huvuduppgifterna och är aktuell
+      description: En granskare följer dokumentationen för varje huvuduppgift i den aktuella versionen och på varje gränssnittsspråk.
+      preconditions: Produktens uppgiftslista, releasehistoriken för de 3 senaste versionerna och åtkomst till dokumentationen på alla språk.
+      expected: Varje huvuduppgift är dokumenterad, instruktionerna fungerar i den aktuella versionen och varje språk är komplett.
+      steps:
+        - action: Följ de dokumenterade stegen för varje huvuduppgift i den aktuella versionen av systemet.
+          expected: Varje uppgift slutförs genom att stegen följs, och skärmbilderna stämmer med gränssnittet.
+        - action: Jämför listan över dokumentationssidor per gränssnittsspråk.
+          expected: Varje sida finns på varje språk som stöds.
+        - action: Jämför datum för dokumentationsuppdateringen med releasedatum för varje ändring som påverkade gränssnittet i de 3 senaste versionerna.
+          expected: Varje uppdatering publicerades senast på releasedagen.
+
+  - id: HELP-T04
+    priority: low
+    execution: manual
+    tags: [documentation, search]
+    refs: ["ISO/IEC/IEEE 26514:2022"]
+    en:
+      title: Documentation search finds the right page
+      description: Checks the hit quality and response time of the documentation search.
+      preconditions: A list of 10 search terms, each with the documentation page that should be found.
+      expected: Each expected page is among the first 5 results within 2 seconds.
+      steps:
+        - action: Search for each of the 10 terms and time the response.
+          expected: Results are shown within 2 seconds for each term.
+          data: "import, export, time zone, delete project, invite user, report, filter, API key, notifications, language"
+        - action: Check the position of the expected page in each result list.
+          expected: The expected page is among the first 5 results for every term.
+    sv:
+      title: Sökning i dokumentationen hittar rätt sida
+      description: Kontrollerar träffkvalitet och svarstid för sökningen i dokumentationen.
+      preconditions: En lista med 10 söktermer, var och en med den dokumentationssida som ska hittas.
+      expected: Varje förväntad sida finns bland de 5 första träffarna inom 2 sekunder.
+      steps:
+        - action: Sök på var och en av de 10 termerna och mät svarstiden.
+          expected: Träffar visas inom 2 sekunder för varje term.
+          data: "import, export, tidszon, ta bort projekt, bjud in användare, rapport, filter, API-nyckel, aviseringar, språk"
+        - action: Kontrollera var den förväntade sidan hamnar i varje träfflista.
+          expected: Den förväntade sidan finns bland de 5 första träffarna för varje term.
+
+  - id: HELP-T05
+    priority: medium
+    execution: manual
+    tags: [release-notes]
+    refs: ["Keep a Changelog 1.1.0"]
+    en:
+      title: Release notes and in-app notice after an update
+      description: Checks the content and timing of release notes and the notice shown after an update.
+      preconditions: A test environment that has just been updated to a new release and a user who used the previous release.
+      expected: The release notes are published on the release day with the required sections, and the notice appears once.
+      steps:
+        - action: Open the release notes for the new release.
+          expected: They are dated on the release day and contain the sections new, changed and fixed in user language.
+        - action: Sign in as the user who used the previous release.
+          expected: A notice of what is new appears with a link to the release notes.
+        - action: Dismiss the notice, sign out and sign in again.
+          expected: The notice does not appear again.
+    sv:
+      title: Versionsinformation och meddelande i appen efter en uppdatering
+      description: Kontrollerar innehåll och tidpunkt för versionsinformationen och meddelandet som visas efter en uppdatering.
+      preconditions: En testmiljö som nyss har uppdaterats till en ny version och en användare som använde den föregående versionen.
+      expected: Versionsinformationen publiceras på releasedagen med de avsnitt som krävs, och meddelandet visas en gång.
+      steps:
+        - action: Öppna versionsinformationen för den nya versionen.
+          expected: Den är daterad på releasedagen och innehåller avsnitten nytt, ändrat och rättat på ett språk som användare förstår.
+        - action: Logga in som användaren som använde den föregående versionen.
+          expected: Ett meddelande om nyheter visas med en länk till versionsinformationen.
+        - action: Stäng meddelandet, logga ut och logga in igen.
+          expected: Meddelandet visas inte igen.
+
+  - id: HELP-T06
+    priority: high
+    execution: manual
+    tags: [support]
+    refs: ["ISO/IEC 25010:2023 interaction capability"]
+    en:
+      title: Support contact and context in support requests
+      description: Checks that support can be reached from every page and that technical context is attached only with consent.
+      preconditions: A signed-in user, a list of 10 sample pages and access to the support inbox.
+      expected: Support is reached within 2 clicks with a stated response time, and context is attached only when the user agrees.
+      steps:
+        - action: From each sample page, count the clicks needed to reach the support contact.
+          expected: The contact is reached within 2 clicks from each page and shows the expected response time.
+        - action: Send a support request and agree to attach technical information.
+          expected: The request in the support inbox contains the product version, the page and the browser version.
+        - action: Send a second request and decline to attach technical information.
+          expected: The request contains only the text the user wrote.
+    sv:
+      title: Kontakt med supporten och kontext i supportärenden
+      description: Kontrollerar att supporten kan nås från varje sida och att teknisk kontext bifogas bara efter samtycke.
+      preconditions: En inloggad användare, en lista med 10 exempelsidor och åtkomst till supportens inkorg.
+      expected: Supporten nås inom 2 klick med angiven svarstid, och kontext bifogas bara när användaren godkänner det.
+      steps:
+        - action: Räkna från varje exempelsida hur många klick som behövs för att nå supportkontakten.
+          expected: Kontakten nås inom 2 klick från varje sida och visar förväntad svarstid.
+        - action: Skicka ett supportärende och godkänn att teknisk information bifogas.
+          expected: Ärendet i supportens inkorg innehåller produktversion, sida och webbläsarversion.
+        - action: Skicka ett andra ärende och avböj att teknisk information bifogas.
+          expected: Ärendet innehåller bara den text som användaren skrev.
+
+  - id: HELP-T07
+    priority: low
+    execution: manual
+    tags: [keyboard, shortcuts]
+    refs: ["WCAG 2.2 SC 2.1.4"]
+    en:
+      title: Keyboard shortcut overview
+      description: Checks that the shortcut overview opens, lists working shortcuts and does not interfere with typing.
+      preconditions: A signed-in user on a list page.
+      expected: The overview opens with "?" outside text fields, every shortcut works and typing "?" in a field is unaffected.
+      steps:
+        - action: Press "?" with the focus outside a text field.
+          expected: The shortcut overview opens.
+        - action: Close the overview with Escape and try each listed shortcut.
+          expected: The overview closes and each shortcut performs its documented action.
+        - action: Type "?" into a text field.
+          expected: The character is entered in the field and the overview does not open.
+    sv:
+      title: Översikt över kortkommandon
+      description: Kontrollerar att översikten över kortkommandon öppnas, listar fungerande kortkommandon och inte stör vid inmatning.
+      preconditions: En inloggad användare på en listsida.
+      expected: Översikten öppnas med "?" utanför textfält, varje kortkommando fungerar och "?" i ett fält påverkas inte.
+      steps:
+        - action: Tryck på "?" med fokus utanför ett textfält.
+          expected: Översikten över kortkommandon öppnas.
+        - action: Stäng översikten med Esc och prova varje kortkommando i listan.
+          expected: Översikten stängs och varje kortkommando utför sin dokumenterade åtgärd.
+        - action: Skriv "?" i ett textfält.
+          expected: Tecknet skrivs in i fältet och översikten öppnas inte.
+
+  - id: HELP-T08
+    priority: medium
+    execution: manual
+    tags: [contextual-help, forms]
+    refs: ["WCAG 2.2 SC 3.3.2"]
+    en:
+      title: Format hints on restricted fields
+      description: Checks that every field with a format rule shows the expected format before input.
+      preconditions: A list of the forms in the system and their fields with format rules.
+      expected: Every field with a format rule shows a hint with the format or an example.
+      steps:
+        - action: Open each form and locate the fields for dates, identifiers, phone numbers and other patterns.
+          expected: Each such field shows a hint next to it, for example "YYYY-MM-DD".
+        - action: Enter a value that follows the hint in each field and save.
+          expected: Each value is accepted.
+          data: "2026-11-20, +46 8 123 456 78"
+    sv:
+      title: Formattips vid fält med formatkrav
+      description: Kontrollerar att varje fält med formatkrav visar det förväntade formatet före inmatningen.
+      preconditions: En förteckning över formulären i systemet och deras fält med formatkrav.
+      expected: Varje fält med formatkrav visar ett tips med formatet eller ett exempel.
+      steps:
+        - action: Öppna varje formulär och leta upp fälten för datum, identiteter, telefonnummer och andra mönster.
+          expected: Varje sådant fält visar ett tips bredvid sig, till exempel "ÅÅÅÅ-MM-DD".
+        - action: Ange ett värde som följer tipset i varje fält och spara.
+          expected: Varje värde godtas.
+          data: "2026-11-20, +46 8 123 456 78"

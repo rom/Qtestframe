@@ -1,0 +1,533 @@
+area: user-accounts
+prefix: ACCT
+group: functional
+name: {en: User accounts, sv: Användarkonton}
+description:
+  en: Invitation and registration, e-mail verification, profile editing, deactivation, account deletion and user administration.
+  sv: Inbjudan och registrering, verifiering av e-postadress, redigering av profil, avaktivering, borttagning av konto och användaradministration.
+
+requirements:
+  - id: ACCT-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [invitation]
+    refs: ["OWASP ASVS 4.0.3 V2.3", "ISO/IEC 27001:2022 Annex A 5.16"]
+    tests: [ACCT-T01]
+    en:
+      title: Invitation of users by an administrator
+      description: The system MUST let an administrator invite a new user by e-mail with a personal sign-up link that is valid for 7 days.
+      rationale: Invitations put the administrator in control of who joins the organisation.
+      criteria:
+        - method: test
+          text: An invited person can create the account with the link on day 7 and the link is rejected on day 8.
+          threshold: "7 days"
+    sv:
+      title: Administratören bjuder in användare
+      description: Systemet SKA låta en administratör bjuda in en ny användare via e-post med en personlig registreringslänk som gäller i 7 dagar.
+      rationale: Inbjudningar ger administratören kontroll över vem som ansluter till organisationen.
+      criteria:
+        - method: test
+          text: Den inbjudna personen kan skapa kontot med länken dag 7 och länken avvisas dag 8.
+          threshold: "7 dagar"
+
+  - id: ACCT-02
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [invitation, tokens]
+    refs: ["OWASP ASVS 4.0.3 V2.3.1", "OWASP ASVS 4.0.3 V3.5"]
+    tests: [ACCT-T01]
+    en:
+      title: Used or revoked invitations are rejected
+      description: The system MUST NOT create an account from an invitation link that has already been used or has been revoked by an administrator.
+      rationale: A forwarded or leaked invitation link must not give a second person access.
+      criteria:
+        - method: test
+          text: A second use of an invitation link and the use of a revoked link both fail with an explanatory message.
+    sv:
+      title: Använda eller återkallade inbjudningar avvisas
+      description: Systemet SKA INTE skapa ett konto från en inbjudningslänk som redan har använts eller som en administratör har återkallat.
+      rationale: En vidarebefordrad eller läckt inbjudningslänk ska inte ge en annan person åtkomst.
+      criteria:
+        - method: test
+          text: Ett andra försök med en inbjudningslänk och ett försök med en återkallad länk misslyckas båda med ett förklarande meddelande.
+
+  - id: ACCT-03
+    type: functional
+    obligation: may
+    priority: low
+    tags: [registration, settings]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    tests: [ACCT-T02]
+    en:
+      title: Self-registration controlled by a setting
+      description: The system MAY offer self-registration through an organisation setting that is switched off by default.
+      rationale: Open products gain users through self-registration, while closed organisations need to keep it off.
+      criteria:
+        - method: test
+          text: The sign-up page is unavailable with the setting off and available after an administrator switches it on.
+    sv:
+      title: Självregistrering styrs av en inställning
+      description: Systemet FÅR erbjuda självregistrering genom en organisationsinställning som är avstängd som standard.
+      rationale: Öppna produkter får användare genom självregistrering, medan slutna organisationer behöver ha den avstängd.
+      criteria:
+        - method: test
+          text: Registreringssidan är inte tillgänglig med inställningen avstängd och blir tillgänglig när en administratör slår på den.
+
+  - id: ACCT-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [e-mail-verification, registration]
+    refs: ["OWASP ASVS 4.0.3 V2.1", "NIST SP 800-63A §5.1"]
+    tests: [ACCT-T02]
+    en:
+      title: E-mail address verified before activation
+      description: The system MUST activate a self-registered account only after the user has opened a verification link sent to the e-mail address within 24 hours.
+      rationale: Verification proves that the user controls the address that is used for notifications and password recovery.
+      criteria:
+        - method: test
+          text: An unverified account cannot sign in, a link opened after 23 hours activates the account and a link opened after 25 hours is rejected.
+          threshold: "24 h"
+    sv:
+      title: E-postadressen verifieras före aktivering
+      description: Systemet SKA aktivera ett självregistrerat konto först när användaren inom 24 timmar har öppnat en verifieringslänk som skickats till e-postadressen.
+      rationale: Verifieringen visar att användaren har kontroll över den adress som används för aviseringar och återställning av lösenord.
+      criteria:
+        - method: test
+          text: Ett overifierat konto kan inte logga in, en länk som öppnas efter 23 timmar aktiverar kontot och en länk som öppnas efter 25 timmar avvisas.
+          threshold: "24 h"
+
+  - id: ACCT-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [e-mail-verification, profile]
+    refs: ["OWASP ASVS 4.0.3 V2.2.3"]
+    tests: [ACCT-T03]
+    en:
+      title: Changed e-mail address verified before use
+      description: The system MUST keep using the previous e-mail address of an account until the user has verified the new address.
+      rationale: An attacker with brief access to a session could otherwise take over the account by changing its address.
+      criteria:
+        - method: test
+          text: After a change of address, messages go to the old address until the verification link to the new address is opened, and the old address is informed of the change.
+    sv:
+      title: Ändrad e-postadress verifieras före användning
+      description: Systemet SKA fortsätta använda kontots tidigare e-postadress tills användaren har verifierat den nya adressen.
+      rationale: Annars kan en angripare med kortvarig åtkomst till en session ta över kontot genom att byta adress.
+      criteria:
+        - method: test
+          text: Efter ett adressbyte skickas meddelanden till den gamla adressen tills verifieringslänken till den nya adressen öppnas, och den gamla adressen underrättas om bytet.
+
+  - id: ACCT-06
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [profile]
+    refs: ["GDPR Art. 16"]
+    tests: [ACCT-T03]
+    en:
+      title: Users edit their own profile
+      description: The system MUST let a signed-in user change the display name, interface language, time zone and notification address of the user's own profile.
+      rationale: Users keep their own data accurate, which also meets the right to rectification.
+      criteria:
+        - method: test
+          text: Each of the four fields can be changed and saved by the user, and the new values are shown at once.
+    sv:
+      title: Användaren redigerar sin egen profil
+      description: Systemet SKA låta en inloggad användare ändra visningsnamn, gränssnittsspråk, tidszon och aviseringsadress i sin egen profil.
+      rationale: Användarna håller själva sina uppgifter korrekta, vilket också uppfyller rätten till rättelse.
+      criteria:
+        - method: test
+          text: Vart och ett av de fyra fälten kan ändras och sparas av användaren, och de nya värdena visas direkt.
+
+  - id: ACCT-07
+    type: security
+    obligation: must
+    priority: critical
+    tags: [deactivation, sessions]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.18", "OWASP ASVS 4.0.3 V3.3"]
+    tests: [ACCT-T04]
+    en:
+      title: Deactivation ends access within one minute
+      description: The system MUST end every session and reject every sign-in and API token of a deactivated account within 1 minute of the deactivation.
+      rationale: Staff who leave the organisation must lose access at once, while their data and history are kept.
+      criteria:
+        - method: test
+          text: A browser session and an API token of the account fail within 60 seconds of deactivation, and the user's items and history remain.
+          threshold: "≤ 1 min"
+    sv:
+      title: Avaktivering stänger åtkomsten inom en minut
+      description: Systemet SKA avsluta varje session och avvisa varje inloggning och API-token för ett avaktiverat konto inom 1 minut efter avaktiveringen.
+      rationale: Personal som lämnar organisationen ska förlora åtkomsten direkt, medan deras data och historik behålls.
+      criteria:
+        - method: test
+          text: En webbläsarsession och en API-token för kontot slutar fungera inom 60 sekunder efter avaktiveringen, och användarens objekt och historik finns kvar.
+          threshold: "≤ 1 min"
+
+  - id: ACCT-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [deactivation, reactivation]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    tests: [ACCT-T04]
+    en:
+      title: Reactivation restores previous roles
+      description: The system SHOULD give a reactivated account the roles and group memberships it had at the time of deactivation.
+      rationale: People returning from leave can resume work without the administrator rebuilding their permissions.
+      criteria:
+        - method: test
+          text: An account with 2 roles and 3 groups is deactivated and reactivated and then has the same 2 roles and 3 groups.
+    sv:
+      title: Återaktivering återställer tidigare roller
+      description: Systemet BÖR ge ett återaktiverat konto de roller och gruppmedlemskap som det hade vid avaktiveringen.
+      rationale: Personer som kommer tillbaka från ledighet kan fortsätta arbeta utan att administratören bygger upp behörigheterna igen.
+      criteria:
+        - method: test
+          text: Ett konto med 2 roller och 3 grupper avaktiveras och återaktiveras och har sedan samma 2 roller och 3 grupper.
+
+  - id: ACCT-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [deletion, gdpr, privacy]
+    refs: ["GDPR Art. 17", "GDPR Art. 12(3)"]
+    tests: [ACCT-T05]
+    en:
+      title: Account deletion on request
+      description: The system MUST erase or anonymise the personal data of an account within 30 days after the user or an administrator has requested deletion.
+      rationale: The right to erasure requires the controller to remove personal data without undue delay.
+      criteria:
+        - method: test
+          text: Thirty days after a deletion request the name, e-mail and profile data no longer exist, and the user's contributions show an anonymous author.
+          threshold: "≤ 30 days"
+    sv:
+      title: Borttagning av konto på begäran
+      description: Systemet SKA radera eller anonymisera ett kontos personuppgifter inom 30 dagar efter att användaren eller en administratör har begärt borttagning.
+      rationale: Rätten till radering kräver att den personuppgiftsansvarige tar bort personuppgifter utan onödigt dröjsmål.
+      criteria:
+        - method: test
+          text: Trettio dagar efter en begäran om borttagning finns inte längre namn, e-postadress och profiluppgifter, och användarens bidrag visar en anonym upphovsperson.
+          threshold: "≤ 30 dagar"
+
+  - id: ACCT-10
+    type: functional
+    obligation: must_not
+    priority: high
+    tags: [administration, roles]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.15"]
+    tests: [ACCT-T06]
+    en:
+      title: Last administrator cannot be removed
+      description: The system MUST NOT deactivate, delete or remove the administrator role from the last active administrator of an organisation.
+      rationale: An organisation without an administrator cannot manage its users and needs the supplier to recover.
+      criteria:
+        - method: test
+          text: Attempts to deactivate, delete or demote the only administrator are rejected with a message, and succeed once a second administrator exists.
+    sv:
+      title: Den sista administratören kan inte tas bort
+      description: Systemet SKA INTE avaktivera, ta bort eller frånta administratörsrollen från den sista aktiva administratören i en organisation.
+      rationale: En organisation utan administratör kan inte hantera sina användare och behöver leverantörens hjälp för att komma vidare.
+      criteria:
+        - method: test
+          text: Försök att avaktivera, ta bort eller frånta rollen från den enda administratören avvisas med ett meddelande och lyckas när det finns en andra administratör.
+
+  - id: ACCT-11
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [administration, user-list]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    tests: [ACCT-T07]
+    en:
+      title: User list for administrators
+      description: The user administration SHOULD list each account with its status, roles and time of last sign-in and offer a filter by status and role.
+      rationale: Administrators review accounts regularly and need to find inactive or over-privileged accounts.
+      criteria:
+        - method: test
+          text: The list shows status, roles and last sign-in for each account, and filtering by status and role returns only matching accounts.
+    sv:
+      title: Användarlista för administratörer
+      description: Användaradministrationen BÖR lista varje konto med status, roller och tidpunkt för senaste inloggning samt erbjuda filtrering på status och roll.
+      rationale: Administratörer går regelbundet igenom konton och behöver hitta inaktiva konton eller konton med för höga behörigheter.
+      criteria:
+        - method: test
+          text: Listan visar status, roller och senaste inloggning för varje konto, och filtrering på status och roll visar bara matchande konton.
+
+  - id: ACCT-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [audit-log, administration]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.15", "OWASP ASVS 4.0.3 V7.2"]
+    tests: [ACCT-T08]
+    en:
+      title: Account changes recorded in the audit log
+      description: The system MUST record in the audit log each invitation, role change, deactivation, reactivation and deletion of an account with the acting user and the time.
+      rationale: An audit trail of account changes is needed to investigate misuse and to show compliance.
+      criteria:
+        - method: test
+          text: Each of the five changes produces one audit entry with actor, affected account, action and UTC timestamp.
+    sv:
+      title: Kontoändringar registreras i granskningsloggen
+      description: Systemet SKA registrera varje inbjudan, rolländring, avaktivering, återaktivering och borttagning av ett konto i granskningsloggen med utförande användare och tidpunkt.
+      rationale: En spårbar historik över kontoändringar behövs för att utreda missbruk och visa regelefterlevnad.
+      criteria:
+        - method: test
+          text: Var och en av de fem ändringarna ger en post i granskningsloggen med utförare, berört konto, åtgärd och tidsstämpel i UTC.
+
+tests:
+  - id: ACCT-T01
+    priority: high
+    execution: automated
+    tags: [invitation, api]
+    refs: ["OWASP ASVS 4.0.3 V2.3"]
+    en:
+      title: Invitation link validity, single use and revocation
+      description: An API test creates invitations, moves the test clock and checks when the links are accepted.
+      preconditions: A test environment with a controllable clock, an administrator token and a test mailbox.
+      expected: Links are accepted within 7 days, once only, and never after revocation.
+      steps:
+        - action: Invite a new address, advance the clock by 6 days and 23 hours and create the account with the link.
+          expected: The account is created.
+          data: invitee1@example.test
+        - action: Use the same link a second time.
+          expected: The request is rejected and no second account is created.
+        - action: Invite another address and advance the clock by 7 days and 1 hour before using the link.
+          expected: The request is rejected because the link has expired.
+          data: invitee2@example.test
+        - action: Invite a third address, revoke the invitation and use the link.
+          expected: The request is rejected because the invitation was revoked.
+          data: invitee3@example.test
+    sv:
+      title: Inbjudningslänkens giltighet, engångsanvändning och återkallelse
+      description: Ett API-test skapar inbjudningar, flyttar testklockan och kontrollerar när länkarna godtas.
+      preconditions: En testmiljö med styrbar klocka, en administratörstoken och en testbrevlåda.
+      expected: Länkar godtas inom 7 dagar, bara en gång och aldrig efter återkallelse.
+      steps:
+        - action: Bjud in en ny adress, flytta klockan 6 dagar och 23 timmar framåt och skapa kontot med länken.
+          expected: Kontot skapas.
+          data: invitee1@example.test
+        - action: Använd samma länk en gång till.
+          expected: Begäran avvisas och inget andra konto skapas.
+        - action: Bjud in en annan adress och flytta klockan 7 dagar och 1 timme framåt innan länken används.
+          expected: Begäran avvisas eftersom länken har gått ut.
+          data: invitee2@example.test
+        - action: Bjud in en tredje adress, återkalla inbjudan och använd länken.
+          expected: Begäran avvisas eftersom inbjudan har återkallats.
+          data: invitee3@example.test
+
+  - id: ACCT-T02
+    priority: high
+    execution: manual
+    tags: [registration, e-mail-verification]
+    refs: ["OWASP ASVS 4.0.3 V2.1"]
+    en:
+      title: Self-registration and e-mail verification
+      description: Checks the self-registration setting and that a new account is activated only through a valid verification link.
+      preconditions: An organisation with self-registration switched off, an administrator and a test mailbox.
+      expected: Registration is possible only with the setting on, and the account is active only after verification within 24 hours.
+      steps:
+        - action: Open the sign-up page while the setting is off.
+          expected: The page is not available.
+        - action: Switch the setting on as administrator, register a new account and try to sign in without verifying.
+          expected: Sign-in is refused with a message asking the user to verify the address.
+          data: newuser@example.test
+        - action: Open the verification link from the test mailbox and sign in.
+          expected: The account is activated and sign-in succeeds.
+        - action: Register another account and open its link after 25 hours.
+          expected: The link is rejected and the user can request a new one.
+    sv:
+      title: Självregistrering och verifiering av e-postadress
+      description: Kontrollerar inställningen för självregistrering och att ett nytt konto bara aktiveras via en giltig verifieringslänk.
+      preconditions: En organisation med självregistrering avstängd, en administratör och en testbrevlåda.
+      expected: Registrering är bara möjlig med inställningen påslagen, och kontot blir aktivt först efter verifiering inom 24 timmar.
+      steps:
+        - action: Öppna registreringssidan medan inställningen är avstängd.
+          expected: Sidan är inte tillgänglig.
+        - action: Slå på inställningen som administratör, registrera ett nytt konto och försök logga in utan att verifiera.
+          expected: Inloggningen nekas med ett meddelande som ber användaren verifiera adressen.
+          data: newuser@example.test
+        - action: Öppna verifieringslänken från testbrevlådan och logga in.
+          expected: Kontot aktiveras och inloggningen lyckas.
+        - action: Registrera ytterligare ett konto och öppna dess länk efter 25 timmar.
+          expected: Länken avvisas och användaren kan begära en ny.
+
+  - id: ACCT-T03
+    priority: medium
+    execution: manual
+    tags: [profile, e-mail-verification]
+    refs: ["GDPR Art. 16"]
+    en:
+      title: Profile editing and change of e-mail address
+      description: Checks that a user can edit the own profile and that a new e-mail address is used only after verification.
+      preconditions: A signed-in user with the e-mail address old@example.test and access to two test mailboxes.
+      expected: Profile fields are saved, and messages go to the new address only after it has been verified.
+      steps:
+        - action: Change display name, language and time zone and save.
+          expected: The new values are shown at once and remain after signing in again.
+          data: "Anna Svensson; Svenska; Europe/Stockholm"
+        - action: Change the e-mail address to new@example.test and trigger a notification before verifying.
+          expected: The notification is sent to old@example.test, and old@example.test is informed of the requested change.
+        - action: Open the verification link sent to new@example.test and trigger a notification again.
+          expected: The notification is sent to new@example.test.
+    sv:
+      title: Redigering av profil och byte av e-postadress
+      description: Kontrollerar att användaren kan redigera sin egen profil och att en ny e-postadress används först efter verifiering.
+      preconditions: En inloggad användare med e-postadressen old@example.test och åtkomst till två testbrevlådor.
+      expected: Profilfälten sparas, och meddelanden skickas till den nya adressen först när den har verifierats.
+      steps:
+        - action: Ändra visningsnamn, språk och tidszon och spara.
+          expected: De nya värdena visas direkt och finns kvar efter ny inloggning.
+          data: "Anna Svensson; Svenska; Europe/Stockholm"
+        - action: Ändra e-postadressen till new@example.test och utlös en avisering före verifieringen.
+          expected: Aviseringen skickas till old@example.test, och old@example.test underrättas om det begärda bytet.
+        - action: Öppna verifieringslänken som skickats till new@example.test och utlös en avisering igen.
+          expected: Aviseringen skickas till new@example.test.
+
+  - id: ACCT-T04
+    priority: critical
+    execution: automated
+    tags: [deactivation, reactivation, sessions]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    en:
+      title: Deactivation ends sessions and reactivation restores roles
+      description: An integration test deactivates an account with an open session and an API token, then reactivates it.
+      preconditions: A test account with 2 roles, 3 group memberships, an open browser session and a valid API token.
+      expected: All access fails within 60 seconds of deactivation, and reactivation restores roles and groups.
+      steps:
+        - action: Deactivate the account as administrator and poll the session and the API token every 5 seconds.
+          expected: Both are rejected with HTTP status 401 within 60 seconds.
+          data: "limit 60 s"
+        - action: Try to sign in with the account's password.
+          expected: Sign-in is refused.
+        - action: Reactivate the account and read its roles and groups.
+          expected: The account has the same 2 roles and 3 groups as before, and its items and history are unchanged.
+    sv:
+      title: Avaktivering avslutar sessioner och återaktivering återställer roller
+      description: Ett integrationstest avaktiverar ett konto med en öppen session och en API-token och återaktiverar det sedan.
+      preconditions: Ett testkonto med 2 roller, 3 gruppmedlemskap, en öppen webbläsarsession och en giltig API-token.
+      expected: All åtkomst upphör inom 60 sekunder efter avaktiveringen, och återaktiveringen återställer roller och grupper.
+      steps:
+        - action: Avaktivera kontot som administratör och kontrollera sessionen och API-token var femte sekund.
+          expected: Båda avvisas med HTTP-status 401 inom 60 sekunder.
+          data: "gräns 60 s"
+        - action: Försök logga in med kontots lösenord.
+          expected: Inloggningen nekas.
+        - action: Återaktivera kontot och läs dess roller och grupper.
+          expected: Kontot har samma 2 roller och 3 grupper som tidigare, och dess objekt och historik är oförändrade.
+
+  - id: ACCT-T05
+    priority: high
+    execution: manual
+    tags: [deletion, gdpr]
+    refs: ["GDPR Art. 17"]
+    en:
+      title: Personal data erased after an account deletion request
+      description: Checks that the personal data of a deleted account is erased or anonymised within the deadline.
+      preconditions: A test account that has created items and comments, and read access to the database.
+      expected: After the deadline no personal data of the account remains and its contributions show an anonymous author.
+      steps:
+        - action: Request deletion of the account from the profile page and confirm.
+          expected: The user is signed out and told the date by which the data will be erased.
+        - action: Wait for the deletion job, or advance the clock by 30 days in the test environment, and search the database for the name and e-mail address.
+          expected: No record with the name or e-mail address remains, apart from entries in backups that expire by rotation.
+        - action: Open an item that the account had created.
+          expected: The item remains and shows an anonymous author such as "Deleted user".
+    sv:
+      title: Personuppgifter raderas efter begäran om borttagning av konto
+      description: Kontrollerar att personuppgifterna för ett borttaget konto raderas eller anonymiseras inom tidsgränsen.
+      preconditions: Ett testkonto som har skapat objekt och kommentarer samt läsåtkomst till databasen.
+      expected: Efter tidsgränsen finns inga personuppgifter kvar för kontot och dess bidrag visar en anonym upphovsperson.
+      steps:
+        - action: Begär borttagning av kontot från profilsidan och bekräfta.
+          expected: Användaren loggas ut och informeras om vilket datum uppgifterna senast raderas.
+        - action: Vänta på borttagningsjobbet, eller flytta klockan 30 dagar framåt i testmiljön, och sök i databasen efter namnet och e-postadressen.
+          expected: Ingen post med namnet eller e-postadressen finns kvar, bortsett från säkerhetskopior som rensas genom rotation.
+        - action: Öppna ett objekt som kontot hade skapat.
+          expected: Objektet finns kvar och visar en anonym upphovsperson, till exempel "Borttagen användare".
+
+  - id: ACCT-T06
+    priority: high
+    execution: automated
+    tags: [administration, roles, api]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.15"]
+    en:
+      title: Protection of the last administrator
+      description: An API test tries to deactivate, delete and demote the only administrator of an organisation.
+      preconditions: A test organisation with exactly one administrator and one ordinary user.
+      expected: All three attempts are rejected while there is one administrator and succeed when there are two.
+      steps:
+        - action: As the administrator, try to remove the own administrator role, deactivate the own account and delete it.
+          expected: Each request is rejected with HTTP status 409 and an error stating that the organisation needs an administrator.
+        - action: Give the ordinary user the administrator role and repeat the demotion.
+          expected: The demotion succeeds.
+    sv:
+      title: Skydd av den sista administratören
+      description: Ett API-test försöker avaktivera, ta bort och frånta rollen från den enda administratören i en organisation.
+      preconditions: En testorganisation med exakt en administratör och en vanlig användare.
+      expected: Alla tre försöken avvisas så länge det finns en administratör och lyckas när det finns två.
+      steps:
+        - action: Försök som administratör ta bort den egna administratörsrollen, avaktivera det egna kontot och ta bort det.
+          expected: Varje begäran avvisas med HTTP-status 409 och ett fel som anger att organisationen behöver en administratör.
+        - action: Ge den vanliga användaren administratörsrollen och upprepa borttagningen av rollen.
+          expected: Borttagningen av rollen lyckas.
+
+  - id: ACCT-T07
+    priority: medium
+    execution: manual
+    tags: [administration, user-list]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    en:
+      title: User list with status, roles and filters
+      description: Checks the content of the administrator's user list and its filters.
+      preconditions: An organisation with at least 10 accounts in the statuses active, invited and deactivated and with different roles.
+      expected: The list shows status, roles and last sign-in, and filters return only matching accounts.
+      steps:
+        - action: Open the user administration as administrator.
+          expected: Each account is listed with status, roles and time of last sign-in.
+        - action: Filter by the status deactivated.
+          expected: Only deactivated accounts are shown.
+        - action: Filter by the status active and the role administrator.
+          expected: Only active administrators are shown.
+    sv:
+      title: Användarlista med status, roller och filter
+      description: Kontrollerar innehållet i administratörens användarlista och dess filter.
+      preconditions: En organisation med minst 10 konton med statusarna aktiv, inbjuden och avaktiverad och med olika roller.
+      expected: Listan visar status, roller och senaste inloggning, och filtren visar bara matchande konton.
+      steps:
+        - action: Öppna användaradministrationen som administratör.
+          expected: Varje konto listas med status, roller och tidpunkt för senaste inloggning.
+        - action: Filtrera på statusen avaktiverad.
+          expected: Bara avaktiverade konton visas.
+        - action: Filtrera på statusen aktiv och rollen administratör.
+          expected: Bara aktiva administratörer visas.
+
+  - id: ACCT-T08
+    priority: high
+    execution: automated
+    tags: [audit-log]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.15"]
+    en:
+      title: Audit entries for account changes
+      description: An integration test performs each kind of account change and reads the audit log.
+      preconditions: A test organisation, an administrator token and read access to the audit log API.
+      expected: Each change produces exactly one audit entry with actor, target, action and timestamp.
+      steps:
+        - action: Invite a user, change the user's role, deactivate, reactivate and delete the account.
+          expected: All five operations succeed.
+        - action: Read the audit log entries created during the test.
+          expected: There are exactly five entries in the order performed, each with the administrator as actor, the account as target, the action and a UTC timestamp.
+    sv:
+      title: Poster i granskningsloggen för kontoändringar
+      description: Ett integrationstest utför varje typ av kontoändring och läser granskningsloggen.
+      preconditions: En testorganisation, en administratörstoken och läsåtkomst till granskningsloggens API.
+      expected: Varje ändring ger exakt en post i granskningsloggen med utförare, mål, åtgärd och tidsstämpel.
+      steps:
+        - action: Bjud in en användare, ändra användarens roll, avaktivera, återaktivera och ta bort kontot.
+          expected: Alla fem åtgärderna lyckas.
+        - action: Läs de poster i granskningsloggen som skapades under testet.
+          expected: Det finns exakt fem poster i utförd ordning, var och en med administratören som utförare, kontot som mål, åtgärden och en tidsstämpel i UTC.

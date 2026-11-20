@@ -1,0 +1,633 @@
+area: integration-api
+prefix: API
+group: functional
+name: {en: Integration API, sv: Integrations-API}
+description:
+  en: REST conventions, versioning and compatibility, OpenAPI documentation, pagination, error format, idempotency keys, webhooks with signatures and rate limit headers.
+  sv: REST-konventioner, versionshantering och kompatibilitet, OpenAPI-dokumentation, sidindelning, felformat, idempotensnycklar, webhooks med signaturer och huvuden för anropsbegränsning.
+
+requirements:
+  - id: API-01
+    type: interface
+    obligation: must
+    priority: high
+    tags: [rest, http-methods]
+    refs: ["RFC 9110 §9.2.1", "RFC 9110 §9.2.2", "RFC 9110 §9.3"]
+    tests: [API-T01]
+    en:
+      title: HTTP methods used by their defined semantics
+      description: The API MUST use GET only for safe reads, PUT and DELETE only for idempotent operations, and POST for creating resources in a collection.
+      rationale: Clients, proxies and retry logic rely on the semantics of the HTTP methods.
+      criteria:
+        - method: test
+          text: A contract test finds no GET that changes state, and repeating each PUT and DELETE leaves the same final state as a single call.
+    sv:
+      title: HTTP-metoder används enligt sin definierade betydelse
+      description: API:et SKA använda GET bara för säkra läsningar, PUT och DELETE bara för idempotenta åtgärder och POST för att skapa resurser i en samling.
+      rationale: Klienter, mellanservrar och logik för nya försök förlitar sig på HTTP-metodernas betydelse.
+      criteria:
+        - method: test
+          text: Ett kontraktstest hittar inget GET som ändrar tillstånd, och om varje PUT och DELETE upprepas blir sluttillståndet detsamma som efter ett anrop.
+
+  - id: API-02
+    type: interface
+    obligation: must
+    priority: high
+    tags: [rest, status-codes]
+    refs: ["RFC 9110 §15", "RFC 9110 §10.2.2"]
+    tests: [API-T01]
+    en:
+      title: Status codes that match the outcome
+      description: The API MUST answer a successful create with status 201 and a Location header, a missing resource with 404 and a request with invalid content with 422.
+      rationale: Correct status codes let clients handle outcomes without parsing message texts.
+      criteria:
+        - method: test
+          text: Contract tests for each endpoint confirm 201 with Location on create, 404 for an unknown identifier and 422 for invalid content.
+    sv:
+      title: Statuskoder som motsvarar utfallet
+      description: API:et SKA besvara ett lyckat skapande med status 201 och ett Location-huvud, en saknad resurs med 404 och ett anrop med ogiltigt innehåll med 422.
+      rationale: Korrekta statuskoder gör att klienter kan hantera utfall utan att tolka meddelandetexter.
+      criteria:
+        - method: test
+          text: Kontraktstester för varje slutpunkt bekräftar 201 med Location vid skapande, 404 för en okänd identitet och 422 för ogiltigt innehåll.
+
+  - id: API-03
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [timestamps, json]
+    refs: ["RFC 3339 §5.6", "RFC 8259"]
+    tests: [API-T01]
+    en:
+      title: Timestamps in RFC 3339 format with UTC
+      description: The API MUST represent each point in time as an RFC 3339 string in UTC with the suffix Z.
+      rationale: A single unambiguous time format avoids time zone errors in every integration.
+      criteria:
+        - method: test
+          text: A schema check of all responses finds every timestamp field matching the RFC 3339 pattern with the suffix Z.
+    sv:
+      title: Tidsstämplar i formatet RFC 3339 med UTC
+      description: API:et SKA ange varje tidpunkt som en sträng enligt RFC 3339 i UTC med suffixet Z.
+      rationale: Ett enda entydigt tidsformat undviker tidszonsfel i varje integration.
+      criteria:
+        - method: test
+          text: En schemakontroll av alla svar visar att varje tidsstämpelfält följer mönstret i RFC 3339 med suffixet Z.
+
+  - id: API-04
+    type: interface
+    obligation: must
+    priority: high
+    tags: [versioning]
+    refs: ["Semantic Versioning 2.0.0", "ISO/IEC 25010:2023 compatibility"]
+    tests: [API-T02]
+    en:
+      title: Major version in the path and a support period
+      description: The API MUST carry its major version in the URL path and keep each previous major version available for 12 months after its successor is released.
+      rationale: Integrators need time to migrate and must be able to see which contract they are using.
+      criteria:
+        - method: inspection
+          text: Every endpoint path starts with /v and the major version, and the release log shows each superseded version running for 12 months.
+          threshold: "12 months"
+    sv:
+      title: Huvudversion i sökvägen och en supportperiod
+      description: API:et SKA ange sin huvudversion i URL:ens sökväg och hålla varje föregående huvudversion tillgänglig i 12 månader efter att efterföljaren har släppts.
+      rationale: Integratörer behöver tid att byta och måste kunna se vilket kontrakt de använder.
+      criteria:
+        - method: inspection
+          text: Varje sökväg till en slutpunkt börjar med /v och huvudversionen, och releaseloggen visar att varje ersatt version har varit i drift i 12 månader.
+          threshold: "12 månader"
+
+  - id: API-05
+    type: interface
+    obligation: must_not
+    priority: critical
+    tags: [versioning, compatibility]
+    refs: ["Semantic Versioning 2.0.0", "OpenAPI Specification 3.1.0"]
+    tests: [API-T03]
+    en:
+      title: No breaking change within a major version
+      description: A release MUST NOT remove or rename a field, endpoint or enumeration value, or add a mandatory request field, within the same major API version.
+      rationale: Breaking changes without a new major version break customers' integrations without warning.
+      criteria:
+        - method: test
+          text: A comparison of the OpenAPI descriptions of the previous and the new release reports no breaking change within the major version.
+    sv:
+      title: Inga bakåtinkompatibla ändringar inom en huvudversion
+      description: En release SKA INTE ta bort eller byta namn på ett fält, en slutpunkt eller ett uppräkningsvärde, eller lägga till ett tvingande fält i anrop, inom samma huvudversion av API:et.
+      rationale: Inkompatibla ändringar utan ny huvudversion förstör kundernas integrationer utan förvarning.
+      criteria:
+        - method: test
+          text: En jämförelse av OpenAPI-beskrivningarna för föregående och ny release rapporterar ingen inkompatibel ändring inom huvudversionen.
+
+  - id: API-06
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [versioning, deprecation]
+    refs: ["RFC 8594", "RFC 9745"]
+    tests: [API-T02]
+    en:
+      title: Deprecation announced in response headers
+      description: Each response from a deprecated endpoint SHOULD contain a Deprecation header and a Sunset header with the date of removal.
+      rationale: Headers reach the developers whose code still calls the endpoint, even if they miss announcements.
+      criteria:
+        - method: test
+          text: Calls to a deprecated endpoint return both headers with valid dates, and calls to current endpoints return neither.
+    sv:
+      title: Utfasning meddelas i svarshuvuden
+      description: Varje svar från en utfasad slutpunkt BÖR innehålla ett Deprecation-huvud och ett Sunset-huvud med datum för borttagningen.
+      rationale: Huvudena når de utvecklare vars kod fortfarande anropar slutpunkten, även om de missar utskick.
+      criteria:
+        - method: test
+          text: Anrop till en utfasad slutpunkt returnerar båda huvudena med giltiga datum, och anrop till aktuella slutpunkter returnerar inget av dem.
+
+  - id: API-07
+    type: interface
+    obligation: must
+    priority: high
+    tags: [openapi, documentation]
+    refs: ["OpenAPI Specification 3.1.0", "ISO/IEC 25010:2023 interoperability"]
+    tests: [API-T03]
+    en:
+      title: Complete OpenAPI description
+      description: The supplier MUST publish an OpenAPI 3.1 description that covers every endpoint, parameter, request body, response and error of the API.
+      rationale: A machine-readable contract allows client generation, contract tests and accurate documentation.
+      criteria:
+        - method: test
+          text: The published description validates against the OpenAPI 3.1 schema, and a contract test of the running API finds no undocumented endpoint or response.
+    sv:
+      title: Fullständig OpenAPI-beskrivning
+      description: Leverantören SKA publicera en OpenAPI 3.1-beskrivning som omfattar varje slutpunkt, parameter, anropskropp, svar och fel i API:et.
+      rationale: Ett maskinläsbart kontrakt möjliggör generering av klienter, kontraktstester och korrekt dokumentation.
+      criteria:
+        - method: test
+          text: Den publicerade beskrivningen validerar mot schemat för OpenAPI 3.1, och ett kontraktstest av det körande API:et hittar ingen odokumenterad slutpunkt eller svar.
+
+  - id: API-08
+    type: interface
+    obligation: must
+    priority: high
+    tags: [pagination]
+    refs: ["RFC 8288", "ISO/IEC 25010:2023 capacity"]
+    tests: [API-T04]
+    en:
+      title: Cursor pagination of collections
+      description: The API MUST return collections in pages of at most 100 items with a cursor-based link to the next page in a Link header with the relation "next".
+      rationale: Unbounded responses overload server and client, and cursors stay correct when items are added during paging.
+      criteria:
+        - method: test
+          text: A collection of 250 items is returned in 3 pages linked by rel="next", the last page has no next link, and a limit of 101 is rejected or capped at 100.
+          threshold: "≤ 100 items per page"
+    sv:
+      title: Sidindelning av samlingar med markör
+      description: API:et SKA returnera samlingar i sidor om högst 100 objekt med en markörbaserad länk till nästa sida i ett Link-huvud med relationen "next".
+      rationale: Obegränsade svar överbelastar server och klient, och markörer förblir korrekta när objekt läggs till under bläddringen.
+      criteria:
+        - method: test
+          text: En samling med 250 objekt returneras på 3 sidor länkade med rel="next", den sista sidan saknar nästa-länk och en gräns på 101 avvisas eller begränsas till 100.
+          threshold: "≤ 100 objekt per sida"
+
+  - id: API-09
+    type: interface
+    obligation: must
+    priority: high
+    tags: [errors, problem-details]
+    refs: ["RFC 9457 §3", "RFC 9110 §15.5"]
+    tests: [API-T05]
+    en:
+      title: Errors as problem details
+      description: The API MUST return each error response with the media type application/problem+json and the members type, title, status and detail.
+      rationale: A standard error format lets clients handle every error with the same code.
+      criteria:
+        - method: test
+          text: Every 4xx and 5xx response in the contract test suite has the media type and the four members, and status equals the HTTP status code.
+    sv:
+      title: Fel som problemdetaljer
+      description: API:et SKA returnera varje felsvar med mediatypen application/problem+json och medlemmarna type, title, status och detail.
+      rationale: Ett standardiserat felformat gör att klienter kan hantera varje fel med samma kod.
+      criteria:
+        - method: test
+          text: Varje svar med 4xx och 5xx i sviten med kontraktstester har mediatypen och de fyra medlemmarna, och status är lika med HTTP-statuskoden.
+
+  - id: API-10
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [errors, validation]
+    refs: ["RFC 9457 §3.2"]
+    tests: [API-T05]
+    en:
+      title: Field-level validation errors
+      description: A validation error response SHOULD contain an extension member that lists each invalid field with a JSON Pointer and a message.
+      rationale: Clients can show each error next to the right field instead of a generic failure.
+      criteria:
+        - method: test
+          text: A request with 2 invalid fields returns a problem with an errors list of 2 entries, each with a JSON Pointer to its field and a message.
+    sv:
+      title: Valideringsfel per fält
+      description: Ett svar med valideringsfel BÖR innehålla en tilläggsmedlem som listar varje ogiltigt fält med en JSON Pointer och ett meddelande.
+      rationale: Klienter kan visa varje fel vid rätt fält i stället för ett allmänt felmeddelande.
+      criteria:
+        - method: test
+          text: Ett anrop med 2 ogiltiga fält returnerar ett problem med en fellista på 2 poster, var och en med en JSON Pointer till sitt fält och ett meddelande.
+
+  - id: API-11
+    type: interface
+    obligation: must
+    priority: high
+    tags: [idempotency, retries]
+    refs: ["IETF draft-ietf-httpapi-idempotency-key-header", "RFC 9110 §9.2.2"]
+    tests: [API-T06]
+    en:
+      title: Idempotency keys for create requests
+      description: The API MUST return the stored response of the first request, without creating a new resource, when a POST is repeated with the same Idempotency-Key header within 24 hours.
+      rationale: Clients can safely retry after a timeout without creating duplicates.
+      criteria:
+        - method: test
+          text: Two identical POST requests with the same key create one resource and return identical responses, and the same key with a different body is rejected with 422.
+          threshold: "24 h"
+    sv:
+      title: Idempotensnycklar för anrop som skapar
+      description: API:et SKA returnera det sparade svaret från det första anropet, utan att skapa en ny resurs, när ett POST upprepas med samma Idempotency-Key-huvud inom 24 timmar.
+      rationale: Klienter kan säkert göra nya försök efter en tidsgräns utan att skapa dubbletter.
+      criteria:
+        - method: test
+          text: Två identiska POST-anrop med samma nyckel skapar en resurs och ger identiska svar, och samma nyckel med en annan kropp avvisas med 422.
+          threshold: "24 h"
+
+  - id: API-12
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [webhooks]
+    refs: ["ISO/IEC 25010:2023 interoperability"]
+    tests: [API-T07]
+    en:
+      title: Webhooks for item changes
+      description: The system SHOULD send a webhook request to each registered endpoint within 60 seconds after an item is created, updated or deleted.
+      rationale: Webhooks let integrations react to changes without polling the API.
+      criteria:
+        - method: test
+          text: For 10 changes of each kind the webhook receiver gets one request per change within 60 seconds, with event type and item identifier.
+          threshold: "≤ 60 s"
+    sv:
+      title: Webhooks för ändringar av objekt
+      description: Systemet BÖR skicka ett webhookanrop till varje registrerad mottagare inom 60 sekunder efter att ett objekt har skapats, uppdaterats eller tagits bort.
+      rationale: Webhooks gör att integrationer kan reagera på ändringar utan att fråga API:et om och om igen.
+      criteria:
+        - method: test
+          text: För 10 ändringar av varje slag tar webhookmottagaren emot ett anrop per ändring inom 60 sekunder, med händelsetyp och objektets identitet.
+          threshold: "≤ 60 s"
+
+  - id: API-13
+    type: security
+    obligation: must
+    priority: critical
+    tags: [webhooks, signature]
+    refs: ["RFC 2104", "Standard Webhooks specification 1.0", "OWASP ASVS 4.0.3 V13.1"]
+    tests: [API-T07]
+    en:
+      title: Signed webhook requests
+      description: The system MUST sign each webhook request with an HMAC-SHA256 signature over a timestamp and the request body, using a secret unique to the endpoint.
+      rationale: Receivers need to verify that a request comes from the system and has not been altered or replayed.
+      criteria:
+        - method: test
+          text: The receiver verifies the signature of each request with the endpoint secret, a changed body fails verification, and the timestamp is within 5 minutes of the receive time.
+    sv:
+      title: Signerade webhookanrop
+      description: Systemet SKA signera varje webhookanrop med en HMAC-SHA256-signatur över en tidsstämpel och anropets kropp med en hemlighet som är unik för mottagaren.
+      rationale: Mottagare behöver kunna kontrollera att ett anrop kommer från systemet och inte har ändrats eller spelats upp igen.
+      criteria:
+        - method: test
+          text: Mottagaren verifierar signaturen för varje anrop med mottagarens hemlighet, en ändrad kropp underkänns och tidsstämpeln ligger inom 5 minuter från mottagningstiden.
+
+  - id: API-14
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [webhooks, retries]
+    refs: ["Standard Webhooks specification 1.0", "ISO/IEC 25010:2023 fault tolerance"]
+    tests: [API-T08]
+    en:
+      title: Webhook retries with backoff
+      description: The system SHOULD retry a webhook delivery that fails or exceeds 10 seconds with increasing intervals for 24 hours and show each attempt in a delivery log.
+      rationale: Receivers are sometimes down, and integrators need to see what was delivered.
+      criteria:
+        - method: test
+          text: A receiver that answers 503 three times and then 200 gets the event on the fourth attempt, and the log shows all four attempts with status and time.
+    sv:
+      title: Nya webhookförsök med ökande intervall
+      description: Systemet BÖR göra nya försök med ökande intervall under 24 timmar när en webhookleverans misslyckas eller tar längre tid än 10 sekunder och visa varje försök i en leveranslogg.
+      rationale: Mottagare är ibland nere, och integratörer behöver se vad som har levererats.
+      criteria:
+        - method: test
+          text: En mottagare som svarar 503 tre gånger och sedan 200 tar emot händelsen vid fjärde försöket, och loggen visar alla fyra försöken med status och tid.
+
+  - id: API-15
+    type: interface
+    obligation: must
+    priority: high
+    tags: [rate-limiting]
+    refs: ["RFC 6585 §4", "RFC 9110 §10.2.3", "IETF draft-ietf-httpapi-ratelimit-headers"]
+    tests: [API-T09]
+    en:
+      title: Rate limit status in response headers
+      description: The API MUST report the remaining request quota in RateLimit headers on each response and answer a request over the limit with status 429 and a Retry-After header.
+      rationale: Clients that see their quota can slow down before they are blocked and know when to try again.
+      criteria:
+        - method: test
+          text: Each response carries the quota headers, and the first request over a limit of 100 per minute returns 429 with Retry-After in seconds.
+    sv:
+      title: Status för anropsbegränsning i svarshuvuden
+      description: API:et SKA ange återstående anropskvot i RateLimit-huvuden i varje svar och besvara ett anrop över gränsen med status 429 och ett Retry-After-huvud.
+      rationale: Klienter som ser sin kvot kan sakta ner innan de blockeras och vet när de kan försöka igen.
+      criteria:
+        - method: test
+          text: Varje svar har kvothuvudena, och det första anropet över en gräns på 100 per minut returnerar 429 med Retry-After i sekunder.
+
+tests:
+  - id: API-T01
+    priority: high
+    execution: automated
+    tags: [contract-test, rest]
+    refs: ["RFC 9110"]
+    en:
+      title: Contract test of methods, status codes and timestamps
+      description: A contract test suite calls each endpoint and checks method semantics, status codes and timestamp format.
+      preconditions: A test environment with an API token and the OpenAPI description of the current version.
+      expected: Every endpoint follows the HTTP method semantics, returns the expected status codes and uses RFC 3339 UTC timestamps.
+      steps:
+        - action: Call each GET endpoint twice and compare a snapshot of the data before and after.
+          expected: No GET changes any data.
+        - action: Create a resource with POST, then call PUT and DELETE on it twice each.
+          expected: POST returns 201 with a Location header, and the second PUT and DELETE leave the same state as the first.
+        - action: Request an unknown identifier and send a body with an invalid value.
+          expected: The responses have status 404 and 422.
+          data: /v1/items/does-not-exist
+        - action: Check each timestamp field in all responses.
+          expected: Each matches the RFC 3339 pattern and ends with Z.
+          data: "2026-11-20T14:05:00Z"
+    sv:
+      title: Kontraktstest av metoder, statuskoder och tidsstämplar
+      description: En svit med kontraktstester anropar varje slutpunkt och kontrollerar metodernas betydelse, statuskoder och tidsformat.
+      preconditions: En testmiljö med en API-token och OpenAPI-beskrivningen för den aktuella versionen.
+      expected: Varje slutpunkt följer HTTP-metodernas betydelse, returnerar förväntade statuskoder och använder tidsstämplar enligt RFC 3339 i UTC.
+      steps:
+        - action: Anropa varje GET-slutpunkt två gånger och jämför en ögonblicksbild av data före och efter.
+          expected: Inget GET ändrar data.
+        - action: Skapa en resurs med POST och anropa sedan PUT och DELETE på den två gånger var.
+          expected: POST returnerar 201 med ett Location-huvud, och det andra PUT- och DELETE-anropet lämnar samma tillstånd som det första.
+        - action: Begär en okänd identitet och skicka en kropp med ett ogiltigt värde.
+          expected: Svaren har status 404 och 422.
+          data: /v1/items/does-not-exist
+        - action: Kontrollera varje tidsstämpelfält i alla svar.
+          expected: Varje fält följer mönstret i RFC 3339 och slutar med Z.
+          data: "2026-11-20T14:05:00Z"
+
+  - id: API-T02
+    priority: medium
+    execution: automated
+    tags: [versioning, deprecation]
+    refs: ["RFC 8594", "RFC 9745"]
+    en:
+      title: Version paths and deprecation headers
+      description: A script checks that every path carries the major version and that deprecated endpoints announce their removal.
+      preconditions: The OpenAPI description with at least one endpoint marked as deprecated and a test environment.
+      expected: Every path has a version prefix and only deprecated endpoints return Deprecation and Sunset headers.
+      steps:
+        - action: List all paths in the OpenAPI description.
+          expected: Every path starts with /v followed by the major version number.
+          data: "^/v[0-9]+/"
+        - action: Call each deprecated endpoint.
+          expected: The response contains a Deprecation header and a Sunset header with an HTTP date in the future.
+        - action: Call each current endpoint.
+          expected: The response contains neither header.
+    sv:
+      title: Versionssökvägar och huvuden för utfasning
+      description: Ett skript kontrollerar att varje sökväg innehåller huvudversionen och att utfasade slutpunkter meddelar sin borttagning.
+      preconditions: OpenAPI-beskrivningen med minst en slutpunkt markerad som utfasad och en testmiljö.
+      expected: Varje sökväg har ett versionsprefix och bara utfasade slutpunkter returnerar huvudena Deprecation och Sunset.
+      steps:
+        - action: Lista alla sökvägar i OpenAPI-beskrivningen.
+          expected: Varje sökväg börjar med /v följt av huvudversionens nummer.
+          data: "^/v[0-9]+/"
+        - action: Anropa varje utfasad slutpunkt.
+          expected: Svaret innehåller ett Deprecation-huvud och ett Sunset-huvud med ett HTTP-datum i framtiden.
+        - action: Anropa varje aktuell slutpunkt.
+          expected: Svaret innehåller inget av huvudena.
+
+  - id: API-T03
+    priority: critical
+    execution: automated
+    tags: [openapi, contract-test, compatibility]
+    refs: ["OpenAPI Specification 3.1.0"]
+    en:
+      title: OpenAPI description is valid, complete and compatible
+      description: The build validates the OpenAPI description, compares it with the previous release and checks the running API against it.
+      preconditions: The OpenAPI descriptions of the previous and the new release, a schema validator, an OpenAPI diff tool and a test environment.
+      expected: The description is valid, has no breaking change and matches the running API.
+      steps:
+        - action: Validate the new description against the OpenAPI 3.1 schema.
+          expected: The validator reports no error.
+        - action: Compare the new description with the previous release within the same major version.
+          expected: The diff tool reports no removed or renamed field, endpoint or enumeration value and no new mandatory request field.
+        - action: Run the contract test suite, which validates every request and response of the running API against the description.
+          expected: No undocumented endpoint, status code or field is found.
+    sv:
+      title: OpenAPI-beskrivningen är giltig, fullständig och kompatibel
+      description: Bygget validerar OpenAPI-beskrivningen, jämför den med föregående release och kontrollerar det körande API:et mot den.
+      preconditions: OpenAPI-beskrivningarna för föregående och ny release, en schemavaliderare, ett jämförelseverktyg för OpenAPI och en testmiljö.
+      expected: Beskrivningen är giltig, har inga inkompatibla ändringar och stämmer med det körande API:et.
+      steps:
+        - action: Validera den nya beskrivningen mot schemat för OpenAPI 3.1.
+          expected: Valideraren rapporterar inga fel.
+        - action: Jämför den nya beskrivningen med föregående release inom samma huvudversion.
+          expected: Jämförelseverktyget rapporterar inga borttagna eller omdöpta fält, slutpunkter eller uppräkningsvärden och inga nya tvingande fält i anrop.
+        - action: Kör sviten med kontraktstester som validerar varje anrop och svar från det körande API:et mot beskrivningen.
+          expected: Ingen odokumenterad slutpunkt, statuskod eller fält hittas.
+
+  - id: API-T04
+    priority: high
+    execution: automated
+    tags: [pagination]
+    refs: ["RFC 8288"]
+    en:
+      title: Cursor pagination with Link headers
+      description: An API test pages through a collection of known size by following the next links.
+      preconditions: A collection with exactly 250 items.
+      expected: The items are returned in pages of at most 100, linked by rel="next", without duplicates or gaps.
+      steps:
+        - action: Request the collection with limit=100 and follow each rel="next" link.
+          expected: There are 3 pages with 100, 100 and 50 items, and the last page has no next link.
+          data: "250 items"
+        - action: Create a new item while paging, between the first and second page.
+          expected: No item is returned twice and none of the original 250 is skipped.
+        - action: Request the collection with limit=101.
+          expected: The request is rejected with 422 or the page contains at most 100 items.
+    sv:
+      title: Sidindelning med markör och Link-huvuden
+      description: Ett API-test bläddrar genom en samling av känd storlek genom att följa nästa-länkarna.
+      preconditions: En samling med exakt 250 objekt.
+      expected: Objekten returneras i sidor om högst 100, länkade med rel="next", utan dubbletter eller luckor.
+      steps:
+        - action: Begär samlingen med limit=100 och följ varje rel="next"-länk.
+          expected: Det blir 3 sidor med 100, 100 och 50 objekt, och den sista sidan saknar nästa-länk.
+          data: "250 objekt"
+        - action: Skapa ett nytt objekt under bläddringen, mellan första och andra sidan.
+          expected: Inget objekt returneras två gånger och inget av de ursprungliga 250 hoppas över.
+        - action: Begär samlingen med limit=101.
+          expected: Anropet avvisas med 422 eller sidan innehåller högst 100 objekt.
+
+  - id: API-T05
+    priority: high
+    execution: automated
+    tags: [errors, problem-details]
+    refs: ["RFC 9457"]
+    en:
+      title: Error responses follow RFC 9457
+      description: An API test provokes each kind of error and validates the problem details.
+      preconditions: A test environment and the JSON schema for problem details.
+      expected: Every error is a valid problem details object, and validation errors list each invalid field.
+      steps:
+        - action: Provoke a 401, a 403, a 404, a 409 and a 422 response.
+          expected: Each has the media type application/problem+json and the members type, title, status and detail, with status equal to the HTTP status.
+        - action: Send a create request with an empty title and an invalid due date.
+          expected: The problem contains an errors list with 2 entries pointing to /title and /due with a message each.
+          data: '{"title": "", "due": "2026-02-30"}'
+    sv:
+      title: Felsvar följer RFC 9457
+      description: Ett API-test framkallar varje typ av fel och validerar problemdetaljerna.
+      preconditions: En testmiljö och JSON-schemat för problemdetaljer.
+      expected: Varje fel är ett giltigt objekt med problemdetaljer, och valideringsfel listar varje ogiltigt fält.
+      steps:
+        - action: Framkalla svar med 401, 403, 404, 409 och 422.
+          expected: Vart och ett har mediatypen application/problem+json och medlemmarna type, title, status och detail, där status är lika med HTTP-statusen.
+        - action: Skicka ett anrop som skapar ett objekt med tom titel och ogiltigt förfallodatum.
+          expected: Problemet innehåller en fellista med 2 poster som pekar på /title och /due med ett meddelande var.
+          data: '{"title": "", "due": "2026-02-30"}'
+
+  - id: API-T06
+    priority: high
+    execution: automated
+    tags: [idempotency]
+    refs: ["IETF draft-ietf-httpapi-idempotency-key-header"]
+    en:
+      title: Repeated POST with an idempotency key
+      description: An API test repeats create requests with the same and with different idempotency keys.
+      preconditions: A test environment with a controllable clock and an empty collection.
+      expected: A repeated request with the same key creates nothing new within 24 hours, and key misuse is rejected.
+      steps:
+        - action: Send the same POST twice with the header Idempotency-Key set to the same UUID.
+          expected: Both responses are identical with status 201 and the same Location, and the collection holds 1 item.
+          data: "Idempotency-Key: 8e03978e-40d5-43e8-bc93-6894a57f9324"
+        - action: Send a POST with the same key but a different body.
+          expected: The request is rejected with 422 and nothing is created.
+        - action: Advance the clock by 25 hours and send the original request again.
+          expected: A new item is created.
+    sv:
+      title: Upprepat POST med idempotensnyckel
+      description: Ett API-test upprepar anrop som skapar objekt med samma och med olika idempotensnycklar.
+      preconditions: En testmiljö med styrbar klocka och en tom samling.
+      expected: Ett upprepat anrop med samma nyckel skapar inget nytt inom 24 timmar, och felaktig användning av nyckeln avvisas.
+      steps:
+        - action: Skicka samma POST två gånger med huvudet Idempotency-Key satt till samma UUID.
+          expected: Båda svaren är identiska med status 201 och samma Location, och samlingen innehåller 1 objekt.
+          data: "Idempotency-Key: 8e03978e-40d5-43e8-bc93-6894a57f9324"
+        - action: Skicka ett POST med samma nyckel men en annan kropp.
+          expected: Anropet avvisas med 422 och inget skapas.
+        - action: Flytta klockan 25 timmar framåt och skicka det ursprungliga anropet igen.
+          expected: Ett nytt objekt skapas.
+
+  - id: API-T07
+    priority: critical
+    execution: automated
+    tags: [webhooks, signature]
+    refs: ["RFC 2104", "Standard Webhooks specification 1.0"]
+    en:
+      title: Webhook delivery time and signature verification
+      description: An integration test registers a webhook receiver, makes item changes and verifies timing and signatures.
+      preconditions: A test webhook receiver that records requests and receive times, and a registered endpoint with a known secret.
+      expected: Each change is delivered within 60 seconds with a valid signature that fails when the body is changed.
+      steps:
+        - action: Create, update and delete 10 items each.
+          expected: The receiver records 30 requests, each within 60 seconds of its change, with event type and item identifier.
+        - action: Compute the HMAC-SHA256 over the timestamp and body of each request with the secret and compare it with the signature header.
+          expected: Every signature matches and every timestamp is within 5 minutes of the receive time.
+        - action: Change one byte of a recorded body and verify it again.
+          expected: The verification fails.
+    sv:
+      title: Leveranstid och verifiering av signatur för webhooks
+      description: Ett integrationstest registrerar en webhookmottagare, gör ändringar av objekt och kontrollerar tider och signaturer.
+      preconditions: En testmottagare för webhooks som registrerar anrop och mottagningstider och en registrerad mottagare med känd hemlighet.
+      expected: Varje ändring levereras inom 60 sekunder med en giltig signatur som underkänns när kroppen ändras.
+      steps:
+        - action: Skapa, uppdatera och ta bort 10 objekt vardera.
+          expected: Mottagaren registrerar 30 anrop, vart och ett inom 60 sekunder från sin ändring, med händelsetyp och objektets identitet.
+        - action: Beräkna HMAC-SHA256 över tidsstämpel och kropp för varje anrop med hemligheten och jämför med signaturhuvudet.
+          expected: Varje signatur stämmer och varje tidsstämpel ligger inom 5 minuter från mottagningstiden.
+        - action: Ändra en byte i en registrerad kropp och verifiera den igen.
+          expected: Verifieringen underkänns.
+
+  - id: API-T08
+    priority: medium
+    execution: automated
+    tags: [webhooks, retries]
+    refs: ["Standard Webhooks specification 1.0"]
+    en:
+      title: Webhook retries and delivery log
+      description: An integration test lets the receiver fail a number of times and checks the retries and the log.
+      preconditions: A scriptable webhook receiver and a controllable clock.
+      expected: Failed deliveries are retried with increasing intervals and every attempt is logged.
+      steps:
+        - action: Script the receiver to answer 503 three times and then 200, and trigger one event.
+          expected: The event is delivered on the fourth attempt and the intervals between attempts increase.
+          data: "503, 503, 503, 200"
+        - action: Script the receiver to wait 15 seconds before answering and trigger one event.
+          expected: The attempt is treated as failed after 10 seconds and retried.
+        - action: Open the delivery log for the endpoint.
+          expected: Every attempt is listed with time, status code or timeout and duration.
+    sv:
+      title: Nya webhookförsök och leveranslogg
+      description: Ett integrationstest låter mottagaren misslyckas ett antal gånger och kontrollerar nya försök och loggen.
+      preconditions: En styrbar webhookmottagare och en styrbar klocka.
+      expected: Misslyckade leveranser görs om med ökande intervall och varje försök loggas.
+      steps:
+        - action: Ställ in mottagaren att svara 503 tre gånger och sedan 200 och utlös en händelse.
+          expected: Händelsen levereras vid fjärde försöket och intervallen mellan försöken ökar.
+          data: "503, 503, 503, 200"
+        - action: Ställ in mottagaren att vänta 15 sekunder innan den svarar och utlös en händelse.
+          expected: Försöket räknas som misslyckat efter 10 sekunder och görs om.
+        - action: Öppna leveransloggen för mottagaren.
+          expected: Varje försök listas med tid, statuskod eller tidsgräns och varaktighet.
+
+  - id: API-T09
+    priority: high
+    execution: automated
+    tags: [rate-limiting]
+    refs: ["RFC 6585 §4"]
+    en:
+      title: Rate limit headers and 429 response
+      description: A script sends requests above the limit and checks the quota headers and the response when the limit is exceeded.
+      preconditions: An API token with a limit of 100 requests per minute.
+      expected: Each response reports the remaining quota and the 101st request is answered with 429 and Retry-After.
+      steps:
+        - action: Send 100 requests within one minute.
+          expected: Each succeeds and the remaining quota in the headers decreases from 99 to 0.
+          data: "100 requests / 60 s"
+        - action: Send request number 101 in the same minute.
+          expected: The response has status 429, a problem details body and a Retry-After header in seconds.
+        - action: Wait for the number of seconds in Retry-After and send another request.
+          expected: The request succeeds.
+    sv:
+      title: Huvuden för anropsbegränsning och svar med 429
+      description: Ett skript skickar anrop över gränsen och kontrollerar kvothuvudena och svaret när gränsen överskrids.
+      preconditions: En API-token med en gräns på 100 anrop per minut.
+      expected: Varje svar anger återstående kvot och det 101:a anropet besvaras med 429 och Retry-After.
+      steps:
+        - action: Skicka 100 anrop inom en minut.
+          expected: Varje anrop lyckas och den återstående kvoten i huvudena minskar från 99 till 0.
+          data: "100 anrop / 60 s"
+        - action: Skicka anrop nummer 101 under samma minut.
+          expected: Svaret har status 429, en kropp med problemdetaljer och ett Retry-After-huvud i sekunder.
+        - action: Vänta det antal sekunder som anges i Retry-After och skicka ett nytt anrop.
+          expected: Anropet lyckas.

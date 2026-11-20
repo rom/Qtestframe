@@ -1,0 +1,563 @@
+area: search
+prefix: SRCH
+group: functional
+name: {en: Search and filtering, sv: Sökning och filtrering}
+description:
+  en: Search fields, filters, sorting, pagination, relevance, empty results, saved searches, access control in results and search performance.
+  sv: Sökfält, filter, sortering, sidindelning, relevans, tomma resultat, sparade sökningar, behörighet i träfflistor och prestanda för sökning.
+
+requirements:
+  - id: SRCH-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [search-field, navigation]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks", "WCAG 2.2 SC 2.4.5"]
+    tests: [SRCH-T01]
+    en:
+      title: Search field on every page
+      description: The user interface MUST show a search field in the page header of every page after sign-in.
+      rationale: Search is the quickest route to a known item and users expect it in the same place everywhere.
+      criteria:
+        - method: inspection
+          text: The search field is present in the header on 10 sampled pages and has an accessible name.
+    sv:
+      title: Sökfält på varje sida
+      description: Användargränssnittet SKA visa ett sökfält i sidhuvudet på varje sida efter inloggning.
+      rationale: Sökning är den kortaste vägen till ett känt objekt och användare förväntar sig sökfältet på samma plats överallt.
+      criteria:
+        - method: inspection
+          text: Sökfältet finns i sidhuvudet på 10 utvalda sidor och har ett tillgängligt namn.
+
+  - id: SRCH-02
+    type: usability
+    obligation: may
+    priority: low
+    tags: [search-field, keyboard]
+    refs: ["WCAG 2.2 SC 2.1.4"]
+    tests: [SRCH-T01]
+    en:
+      title: Keyboard shortcut to the search field
+      description: The user interface MAY move the focus to the search field when the user presses the slash key outside a text field.
+      rationale: Frequent users reach search without leaving the keyboard.
+      criteria:
+        - method: demonstration
+          text: Pressing "/" on a page moves the focus to the search field, and typing "/" in a text field enters the character.
+    sv:
+      title: Kortkommando till sökfältet
+      description: Användargränssnittet FÅR flytta fokus till sökfältet när användaren trycker på snedstreck utanför ett textfält.
+      rationale: Vana användare når sökningen utan att släppa tangentbordet.
+      criteria:
+        - method: demonstration
+          text: Ett tryck på "/" på en sida flyttar fokus till sökfältet, och "/" i ett textfält skrivs in som tecken.
+
+  - id: SRCH-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [matching]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [SRCH-T02]
+    en:
+      title: Search in identifier, title and text
+      description: The search MUST find items whose identifier, title or description contains the search terms, ignoring letter case.
+      rationale: Users remember fragments of titles or identifiers and seldom the exact spelling.
+      criteria:
+        - method: test
+          text: Searches for an identifier, a word from a title and a word from a description each find the item, in lower and upper case.
+    sv:
+      title: Sökning i identitet, titel och text
+      description: Sökningen SKA hitta objekt vars identitet, titel eller beskrivning innehåller söktermerna, oavsett versaler och gemener.
+      rationale: Användare minns delar av titlar eller identiteter men sällan den exakta stavningen.
+      criteria:
+        - method: test
+          text: Sökningar på en identitet, ett ord från en titel och ett ord från en beskrivning hittar var och en objektet, med gemener och med versaler.
+
+  - id: SRCH-04
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [relevance, ranking]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [SRCH-T02]
+    en:
+      title: Exact matches ranked first
+      description: The search SHOULD rank an item whose identifier or title matches the search text exactly above items that match only in the description.
+      rationale: Users who type an exact identifier expect that item at the top of the list.
+      criteria:
+        - method: test
+          text: For 10 test queries the item with the exact identifier or title match is the first result.
+    sv:
+      title: Exakta träffar rangordnas först
+      description: Sökningen BÖR rangordna ett objekt vars identitet eller titel exakt stämmer med söktexten före objekt som bara matchar i beskrivningen.
+      rationale: Användare som skriver en exakt identitet förväntar sig det objektet överst i listan.
+      criteria:
+        - method: test
+          text: För 10 testfrågor är objektet med exakt träff på identitet eller titel det första resultatet.
+
+  - id: SRCH-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [filters]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [SRCH-T03]
+    en:
+      title: Filters on status, owner, date and tags
+      description: Each list MUST offer filters on status, owner, date range and tags that combine with each other so that only items matching every filter are shown.
+      rationale: Filters narrow long lists to the items relevant for the task at hand.
+      criteria:
+        - method: test
+          text: Combining a status, an owner, a date range and a tag returns exactly the items that match all four conditions in the test data.
+    sv:
+      title: Filter på status, ägare, datum och taggar
+      description: Varje lista SKA erbjuda filter på status, ägare, datumintervall och taggar som kombineras så att bara objekt som uppfyller varje filter visas.
+      rationale: Filter begränsar långa listor till de objekt som är relevanta för den aktuella uppgiften.
+      criteria:
+        - method: test
+          text: En kombination av status, ägare, datumintervall och tagg ger exakt de objekt i testdata som uppfyller alla fyra villkoren.
+
+  - id: SRCH-06
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [filters, feedback]
+    refs: ["Nielsen heuristic 1", "Nielsen heuristic 3"]
+    tests: [SRCH-T03]
+    en:
+      title: Active filters visible and removable
+      description: The user interface SHOULD show each active filter above the results with a control to remove it and a single control to clear all filters.
+      rationale: Hidden filters make users believe that data is missing.
+      criteria:
+        - method: test
+          text: Each applied filter appears above the results, removing one updates the results, and the clear control removes all of them.
+    sv:
+      title: Aktiva filter syns och kan tas bort
+      description: Användargränssnittet BÖR visa varje aktivt filter ovanför resultatet med en kontroll för att ta bort det och en gemensam kontroll för att rensa alla filter.
+      rationale: Dolda filter får användare att tro att data saknas.
+      criteria:
+        - method: test
+          text: Varje tillämpat filter visas ovanför resultatet, när ett tas bort uppdateras resultatet, och rensa-kontrollen tar bort alla.
+
+  - id: SRCH-07
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [sorting]
+    refs: ["Unicode UTS #10", "ISO 9241-110:2020 controllability"]
+    tests: [SRCH-T04]
+    en:
+      title: Sorting by each visible column
+      description: Each list MUST let the user sort ascending or descending by each visible column, using the identifier as a secondary key for equal values.
+      rationale: A stable order with a defined secondary key keeps items from jumping between pages.
+      criteria:
+        - method: test
+          text: Sorting by each column in both directions gives the expected order, and items with equal values keep their order across reloads.
+    sv:
+      title: Sortering på varje synlig kolumn
+      description: Varje lista SKA låta användaren sortera stigande eller fallande på varje synlig kolumn med identiteten som andra sorteringsnyckel för lika värden.
+      rationale: En stabil ordning med definierad andra nyckel gör att objekt inte hoppar mellan sidor.
+      criteria:
+        - method: test
+          text: Sortering på varje kolumn i båda riktningarna ger förväntad ordning, och objekt med lika värden behåller sin ordning vid omladdning.
+
+  - id: SRCH-08
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [pagination]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    tests: [SRCH-T05]
+    en:
+      title: Pagination with total count
+      description: Each result list MUST show the total number of matches and divide the results into pages of 25, 50 or 100 items as chosen by the user.
+      rationale: Pagination keeps pages responsive, and the total count tells users whether to refine the search.
+      criteria:
+        - method: test
+          text: With 237 matches the list states 237, shows 25 items on the first page, and offers 50 and 100 as page sizes with 5 and 3 pages.
+    sv:
+      title: Sidindelning med totalt antal
+      description: Varje träfflista SKA visa det totala antalet träffar och dela upp resultatet på sidor om 25, 50 eller 100 objekt enligt användarens val.
+      rationale: Sidindelning håller sidorna responsiva, och det totala antalet visar om användaren behöver förfina sökningen.
+      criteria:
+        - method: test
+          text: Med 237 träffar anger listan 237, visar 25 objekt på första sidan och erbjuder sidstorlekarna 50 och 100 med 5 respektive 3 sidor.
+
+  - id: SRCH-09
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [empty-results]
+    refs: ["Nielsen heuristic 9", "ISO 9241-110:2020 self-descriptiveness"]
+    tests: [SRCH-T06]
+    en:
+      title: Message for empty search results
+      description: A search without matches MUST show a message that repeats the search text, names the active filters and offers to clear the filters.
+      rationale: An empty list without explanation looks like an error and leaves the user without a next step.
+      criteria:
+        - method: test
+          text: A search with no matches shows the message with the search text, the active filters and a working clear-filters control.
+    sv:
+      title: Meddelande vid tomt sökresultat
+      description: En sökning utan träffar SKA visa ett meddelande som upprepar söktexten, anger de aktiva filtren och erbjuder att rensa filtren.
+      rationale: En tom lista utan förklaring ser ut som ett fel och lämnar användaren utan nästa steg.
+      criteria:
+        - method: test
+          text: En sökning utan träffar visar meddelandet med söktexten, de aktiva filtren och en fungerande kontroll för att rensa filtren.
+
+  - id: SRCH-10
+    type: functional
+    obligation: should
+    priority: low
+    tags: [saved-searches]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [SRCH-T07]
+    en:
+      title: Saved searches
+      description: The system SHOULD let a user save the current search text, filters and sort order under a name and run the saved search again from a list.
+      rationale: Recurring queries such as "my open items" are repeated daily and should not be rebuilt each time.
+      criteria:
+        - method: test
+          text: A saved search appears in the user's list and reproduces the same results, filters and sort order when run.
+    sv:
+      title: Sparade sökningar
+      description: Systemet BÖR låta en användare spara aktuell söktext, filter och sorteringsordning under ett namn och köra den sparade sökningen igen från en lista.
+      rationale: Återkommande frågor som "mina öppna objekt" upprepas dagligen och ska inte behöva byggas upp varje gång.
+      criteria:
+        - method: test
+          text: En sparad sökning visas i användarens lista och ger samma resultat, filter och sorteringsordning när den körs.
+
+  - id: SRCH-11
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [url, sharing]
+    refs: ["RFC 3986 §3.4"]
+    tests: [SRCH-T07]
+    en:
+      title: Search state in the address
+      description: The user interface SHOULD keep the search text, filters, sort order and page in the URL so that a copied link opens the same results.
+      rationale: Users share result lists with colleagues and use the browser's back button between searches.
+      criteria:
+        - method: test
+          text: Opening a copied result URL in another browser by a user with the same permissions shows the same search text, filters, order and page.
+    sv:
+      title: Söktillståndet i adressen
+      description: Användargränssnittet BÖR hålla söktext, filter, sorteringsordning och sida i URL:en så att en kopierad länk öppnar samma resultat.
+      rationale: Användare delar träfflistor med kollegor och använder webbläsarens bakåtknapp mellan sökningar.
+      criteria:
+        - method: test
+          text: När en kopierad resultat-URL öppnas i en annan webbläsare av en användare med samma behörigheter visas samma söktext, filter, ordning och sida.
+
+  - id: SRCH-12
+    type: performance
+    obligation: must
+    priority: high
+    tags: [performance, response-time]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    tests: [SRCH-T08]
+    en:
+      title: Search response time
+      description: The system MUST return the first page of search results within 1 second for 95 % of searches in a data set of 1 million items.
+      rationale: Slow search makes users abandon it and browse lists instead.
+      criteria:
+        - method: test
+          text: A load test with 50 concurrent users and 1 million items measures a 95th percentile below 1 second for the first page.
+          threshold: "p95 ≤ 1 s at 1 000 000 items"
+    sv:
+      title: Svarstid för sökning
+      description: Systemet SKA returnera första sidan av sökresultatet inom 1 sekund för 95 % av sökningarna i en datamängd med 1 miljon objekt.
+      rationale: Långsam sökning gör att användare slutar söka och bläddrar i listor i stället.
+      criteria:
+        - method: test
+          text: Ett lasttest med 50 samtidiga användare och 1 miljon objekt mäter en 95:e percentil under 1 sekund för första sidan.
+          threshold: "p95 ≤ 1 s vid 1 000 000 objekt"
+
+  - id: SRCH-13
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [access-control]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1", "OWASP Top 10 2021 A01"]
+    tests: [SRCH-T09]
+    en:
+      title: No unauthorised items in results
+      description: The search MUST NOT include items that the user is not allowed to read, neither in the result list, the total count, nor the suggestions.
+      rationale: Counts and suggestions can leak the existence and titles of confidential items.
+      criteria:
+        - method: test
+          text: A user without access to a project finds none of its items, and the total count equals the number of items that user may read.
+    sv:
+      title: Inga obehöriga objekt i träfflistan
+      description: Sökningen SKA INTE ta med objekt som användaren saknar läsbehörighet till, varken i träfflistan, i det totala antalet eller i förslagen.
+      rationale: Antal och förslag kan avslöja att konfidentiella objekt finns och vad de heter.
+      criteria:
+        - method: test
+          text: En användare utan åtkomst till ett projekt hittar inga av dess objekt, och det totala antalet motsvarar de objekt som användaren har läsbehörighet till.
+
+tests:
+  - id: SRCH-T01
+    priority: medium
+    execution: manual
+    tags: [search-field]
+    refs: ["WCAG 2.2 SC 2.4.5"]
+    en:
+      title: Search field present and reachable by shortcut
+      description: Checks the search field on sampled pages and the slash shortcut.
+      preconditions: A signed-in user and a list of 10 sample pages.
+      expected: The search field is in the header on every page and the shortcut moves the focus to it.
+      steps:
+        - action: Open each sample page and look at the header.
+          expected: The search field is shown in the header on every page.
+        - action: Press "/" with the focus outside a text field.
+          expected: The focus moves to the search field.
+        - action: Type "a/b" into a text field elsewhere on the page.
+          expected: The text "a/b" is entered and the focus stays in the field.
+          data: a/b
+    sv:
+      title: Sökfältet finns och nås med kortkommando
+      description: Kontrollerar sökfältet på ett urval sidor och kortkommandot snedstreck.
+      preconditions: En inloggad användare och en lista med 10 exempelsidor.
+      expected: Sökfältet finns i sidhuvudet på varje sida och kortkommandot flyttar fokus dit.
+      steps:
+        - action: Öppna varje exempelsida och titta på sidhuvudet.
+          expected: Sökfältet visas i sidhuvudet på varje sida.
+        - action: Tryck på "/" med fokus utanför ett textfält.
+          expected: Fokus flyttas till sökfältet.
+        - action: Skriv "a/b" i ett textfält på en annan plats på sidan.
+          expected: Texten "a/b" skrivs in och fokus stannar i fältet.
+          data: a/b
+
+  - id: SRCH-T02
+    priority: high
+    execution: automated
+    tags: [matching, relevance]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    en:
+      title: Matching and ranking of search results
+      description: An integration test runs fixed queries against a seeded data set and checks matches and the top result.
+      preconditions: Seeded items, among them REQ-042 titled "Password reset" and other items that mention "password reset" only in the description.
+      expected: The expected items are found regardless of letter case and exact matches are ranked first.
+      steps:
+        - action: Search for "req-042", "REQ-042" and "password".
+          expected: Each query returns REQ-042.
+        - action: Search for a word that occurs only in the description of REQ-042.
+          expected: REQ-042 is among the results.
+          data: "token expiry"
+        - action: Search for "Password reset".
+          expected: REQ-042 is the first result, ahead of items that match only in the description.
+    sv:
+      title: Matchning och rangordning av sökresultat
+      description: Ett integrationstest kör fasta frågor mot en datamängd med testdata och kontrollerar träffar och första resultatet.
+      preconditions: Testobjekt, däribland REQ-042 med titeln "Password reset" och andra objekt som bara nämner "password reset" i beskrivningen.
+      expected: De förväntade objekten hittas oavsett versaler och gemener och exakta träffar rangordnas först.
+      steps:
+        - action: Sök på "req-042", "REQ-042" och "password".
+          expected: Varje fråga returnerar REQ-042.
+        - action: Sök på ett ord som bara förekommer i beskrivningen av REQ-042.
+          expected: REQ-042 finns bland resultaten.
+          data: "token expiry"
+        - action: Sök på "Password reset".
+          expected: REQ-042 är första resultatet, före objekt som bara matchar i beskrivningen.
+
+  - id: SRCH-T03
+    priority: high
+    execution: manual
+    tags: [filters]
+    refs: ["Nielsen heuristic 1"]
+    en:
+      title: Combined filters and active filter display
+      description: Checks that filters combine and that active filters are shown and can be removed.
+      preconditions: A list with seeded data where exactly 4 items are open, owned by Anna, created in March 2026 and tagged "billing".
+      expected: The combined filters return exactly the 4 items, and the filter display works.
+      steps:
+        - action: Apply the filters status open, owner Anna, created 2026-03-01 to 2026-03-31 and tag billing.
+          expected: Exactly 4 items are shown and the 4 filters appear above the results.
+          data: "open; Anna; 2026-03-01–2026-03-31; billing"
+        - action: Remove the tag filter.
+          expected: The tag filter disappears and the result includes the open March items owned by Anna with any tag.
+        - action: Use the clear-all control.
+          expected: No filter is shown and the full list returns.
+    sv:
+      title: Kombinerade filter och visning av aktiva filter
+      description: Kontrollerar att filter kombineras och att aktiva filter visas och kan tas bort.
+      preconditions: En lista med testdata där exakt 4 objekt är öppna, ägs av Anna, skapades i mars 2026 och har taggen "billing".
+      expected: De kombinerade filtren ger exakt de 4 objekten och visningen av filtren fungerar.
+      steps:
+        - action: Tillämpa filtren status öppen, ägare Anna, skapad 2026-03-01 till 2026-03-31 och taggen billing.
+          expected: Exakt 4 objekt visas och de 4 filtren syns ovanför resultatet.
+          data: "öppen; Anna; 2026-03-01–2026-03-31; billing"
+        - action: Ta bort taggfiltret.
+          expected: Taggfiltret försvinner och resultatet omfattar Annas öppna objekt från mars oavsett tagg.
+        - action: Använd kontrollen för att rensa alla filter.
+          expected: Inga filter visas och hela listan visas igen.
+
+  - id: SRCH-T04
+    priority: medium
+    execution: automated
+    tags: [sorting]
+    refs: ["Unicode UTS #10"]
+    en:
+      title: Sorting by every column is correct and stable
+      description: A script sorts a list by every visible column in both directions and compares with the expected order.
+      preconditions: A seeded list with at least 60 items, several of which share the same status and owner.
+      expected: Every sort order is correct and ties are broken by identifier.
+      steps:
+        - action: For each column, request ascending and descending order and read the first 3 pages.
+          expected: The order matches the expected order computed from the seed data.
+        - action: Sort by status and reload the page 3 times.
+          expected: Items with the same status appear in identifier order and in the same positions each time.
+    sv:
+      title: Sortering på varje kolumn är korrekt och stabil
+      description: Ett skript sorterar en lista på varje synlig kolumn i båda riktningarna och jämför med förväntad ordning.
+      preconditions: En lista med testdata med minst 60 objekt där en del har samma status och ägare.
+      expected: Varje sorteringsordning är korrekt och lika värden ordnas efter identitet.
+      steps:
+        - action: Begär stigande och fallande ordning för varje kolumn och läs de 3 första sidorna.
+          expected: Ordningen stämmer med den förväntade ordningen som beräknats från testdata.
+        - action: Sortera på status och ladda om sidan 3 gånger.
+          expected: Objekt med samma status visas i identitetsordning och på samma positioner varje gång.
+
+  - id: SRCH-T05
+    priority: medium
+    execution: automated
+    tags: [pagination, api]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    en:
+      title: Pagination and total count
+      description: An integration test pages through a result set of known size with each page size.
+      preconditions: A seeded search with exactly 237 matches.
+      expected: The total is correct, the pages have the right size and no item appears twice or is missing.
+      steps:
+        - action: Request the first page with the default page size.
+          expected: The response states a total of 237 and contains 25 items.
+          data: "237 matches"
+        - action: Page through all results with page sizes 50 and 100.
+          expected: There are 5 and 3 pages, the last pages hold 37 items, and the union of all pages has 237 distinct items.
+    sv:
+      title: Sidindelning och totalt antal
+      description: Ett integrationstest bläddrar genom en träffmängd av känd storlek med varje sidstorlek.
+      preconditions: En sökning i testdata med exakt 237 träffar.
+      expected: Totalen är korrekt, sidorna har rätt storlek och inget objekt visas två gånger eller saknas.
+      steps:
+        - action: Begär första sidan med standardsidstorleken.
+          expected: Svaret anger totalt 237 och innehåller 25 objekt.
+          data: "237 träffar"
+        - action: Bläddra genom alla resultat med sidstorlekarna 50 och 100.
+          expected: Det blir 5 respektive 3 sidor, de sista sidorna har 37 objekt och alla sidor tillsammans innehåller 237 olika objekt.
+
+  - id: SRCH-T06
+    priority: medium
+    execution: manual
+    tags: [empty-results]
+    refs: ["Nielsen heuristic 9"]
+    en:
+      title: Empty result message
+      description: Checks the message shown when a search with filters has no matches.
+      preconditions: A signed-in user on a list with data.
+      expected: The message repeats the search, names the filters and offers to clear them.
+      steps:
+        - action: Apply the status filter closed and search for a text that does not exist.
+          expected: A message shows the search text and names the closed filter.
+          data: "zzqx-nothing"
+        - action: Use the clear-filters control in the message.
+          expected: The filter is removed and the search runs again without it.
+    sv:
+      title: Meddelande vid tomt resultat
+      description: Kontrollerar meddelandet som visas när en sökning med filter saknar träffar.
+      preconditions: En inloggad användare på en lista med data.
+      expected: Meddelandet upprepar sökningen, anger filtren och erbjuder att rensa dem.
+      steps:
+        - action: Tillämpa statusfiltret stängd och sök på en text som inte finns.
+          expected: Ett meddelande visar söktexten och anger filtret stängd.
+          data: "zzqx-nothing"
+        - action: Använd kontrollen för att rensa filter i meddelandet.
+          expected: Filtret tas bort och sökningen körs igen utan det.
+
+  - id: SRCH-T07
+    priority: low
+    execution: manual
+    tags: [saved-searches, url]
+    refs: ["RFC 3986 §3.4"]
+    en:
+      title: Saved search and shareable result address
+      description: Checks that a search can be saved and rerun and that the URL reproduces the result for another user.
+      preconditions: Two users with the same permissions and a list with seeded data.
+      expected: The saved search and the copied URL both reproduce the same results, filters, order and page.
+      steps:
+        - action: Search for "invoice", filter on status open, sort by due date descending, go to page 2 and save the search as "Open invoices".
+          expected: The saved search appears in the user's list.
+        - action: Go to the start page and run "Open invoices" from the list.
+          expected: The same results, filters and sort order are shown.
+        - action: Copy the URL of page 2 and open it as the second user in another browser.
+          expected: The second user sees the same search text, filters, order and page 2.
+    sv:
+      title: Sparad sökning och delbar resultatadress
+      description: Kontrollerar att en sökning kan sparas och köras igen och att URL:en återskapar resultatet för en annan användare.
+      preconditions: Två användare med samma behörigheter och en lista med testdata.
+      expected: Både den sparade sökningen och den kopierade URL:en ger samma resultat, filter, ordning och sida.
+      steps:
+        - action: Sök på "invoice", filtrera på status öppen, sortera på förfallodatum fallande, gå till sidan 2 och spara sökningen som "Öppna fakturor".
+          expected: Den sparade sökningen visas i användarens lista.
+        - action: Gå till startsidan och kör "Öppna fakturor" från listan.
+          expected: Samma resultat, filter och sorteringsordning visas.
+        - action: Kopiera URL:en till sidan 2 och öppna den som den andra användaren i en annan webbläsare.
+          expected: Den andra användaren ser samma söktext, filter, ordning och sidan 2.
+
+  - id: SRCH-T08
+    priority: high
+    execution: automated
+    tags: [performance, load-test]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Load test of search response time
+      description: A load test tool runs a mix of search queries against a production-sized data set and measures response times.
+      preconditions: A production-like environment with 1 million items, a query mix of 200 recorded searches and a load test tool.
+      expected: The 95th percentile response time for the first result page is at most 1 second.
+      steps:
+        - action: Ramp up to 50 virtual users who run queries from the mix with 1 second think time for 15 minutes.
+          expected: The error rate stays below 0.1 %.
+          data: "50 users, 15 min, 1 000 000 items"
+        - action: Calculate the response time percentiles for the first result page.
+          expected: The 95th percentile is at most 1 second and the test fails otherwise.
+    sv:
+      title: Lasttest av svarstid för sökning
+      description: Ett lasttestverktyg kör en blandning av sökfrågor mot en datamängd i produktionsstorlek och mäter svarstiderna.
+      preconditions: En produktionslik miljö med 1 miljon objekt, en frågeblandning med 200 inspelade sökningar och ett lasttestverktyg.
+      expected: Den 95:e percentilen för svarstiden för första resultatsidan är högst 1 sekund.
+      steps:
+        - action: Öka till 50 virtuella användare som kör frågor ur blandningen med 1 sekunds betänketid i 15 minuter.
+          expected: Felfrekvensen ligger under 0,1 %.
+          data: "50 användare, 15 min, 1 000 000 objekt"
+        - action: Beräkna svarstidspercentilerna för första resultatsidan.
+          expected: Den 95:e percentilen är högst 1 sekund, annars underkänns testet.
+
+  - id: SRCH-T09
+    priority: critical
+    execution: automated
+    tags: [access-control, api]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1"]
+    en:
+      title: Search respects read permissions
+      description: An API test searches as a user without access to one project and checks results, counts and suggestions.
+      preconditions: Projects P1 and P2, each with an item titled "Confidential budget", and a user with read access to P1 only.
+      expected: Nothing from P2 is visible in results, totals or suggestions.
+      steps:
+        - action: Search for "Confidential budget" as the user.
+          expected: Only the item from P1 is returned and the total count is 1.
+        - action: Request search suggestions for "Confid".
+          expected: The suggestions contain no item from P2.
+        - action: Grant the user read access to P2 and repeat the search.
+          expected: Both items are returned and the total count is 2.
+    sv:
+      title: Sökningen respekterar läsbehörigheter
+      description: Ett API-test söker som en användare utan åtkomst till ett projekt och kontrollerar träffar, antal och förslag.
+      preconditions: Projekten P1 och P2 med vardera ett objekt med titeln "Confidential budget" och en användare med läsbehörighet enbart till P1.
+      expected: Inget från P2 syns i träffar, totaler eller förslag.
+      steps:
+        - action: Sök på "Confidential budget" som användaren.
+          expected: Bara objektet från P1 returneras och det totala antalet är 1.
+        - action: Begär sökförslag för "Confid".
+          expected: Förslagen innehåller inget objekt från P2.
+        - action: Ge användaren läsbehörighet till P2 och upprepa sökningen.
+          expected: Båda objekten returneras och det totala antalet är 2.
