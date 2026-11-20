@@ -22,12 +22,11 @@ func TestDashboardTrendsAndFlaky(t *testing.T) {
 	a.m("POST", "/api/v1/projects/"+pid+"/links", map[string]any{"requirement_id": r1["id"], "test_case_id": tc["id"]}, 201)
 	rel := a.m("POST", "/api/v1/projects/"+pid+"/releases", map[string]any{"name": "1.0"}, 201)
 	a.m("POST", "/api/v1/releases/"+rel["id"].(string)+"/requirements", map[string]any{"add": []any{r1["id"]}}, 200)
-	for i, st := range []string{"passed", "failed", "passed"} {
+	for _, st := range []string{"passed", "failed", "passed"} {
 		now = now.Add(time.Hour)
 		run := a.m("POST", "/api/v1/projects/"+pid+"/runs", map[string]any{"name": "nightly", "test_ids": []any{tc["id"]}, "release_id": rel["id"]}, 201)
 		ex := items(a.m("GET", "/api/v1/runs/"+run["id"].(string)+"/executions", nil, 200))
 		a.m("PATCH", "/api/v1/executions/"+ex[0]["id"].(string), map[string]any{"status": st}, 200)
-		_ = i
 	}
 	// an open run
 	a.m("POST", "/api/v1/projects/"+pid+"/runs", map[string]any{"name": "open", "test_ids": []any{tc["id"]}}, 201)

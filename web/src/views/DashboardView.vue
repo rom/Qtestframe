@@ -1,20 +1,43 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Chart from 'primevue/chart'
 import Skeleton from 'primevue/skeleton'
 import Button from 'primevue/button'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
+import SelectButton from 'primevue/selectbutton'
+import Select from 'primevue/select'
 import SummaryBar from '@/components/SummaryBar.vue'
 import StatusTag from '@/components/StatusTag.vue'
-import { api } from '@/lib/api'
+import { api, asItems } from '@/lib/api'
 import { COVERAGE_COLORS, RESULT_COLORS, colorFor } from '@/lib/colors'
 import { seriesColor } from '@/themes/chart'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { entriesByCount } from '@/lib/collections'
-import { formatNumber, percent, relativeTime } from '@/lib/format'
+import { formatDate, formatNumber, percent, relativeTime } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, type EnumGroup } from '@/i18n/labels'
 import { RESULT_ORDER, summarize } from '@/lib/summary'
-import type { Dashboard } from '@/lib/types'
+import {
+  TREND_RANGES,
+  burnupSeries,
+  countValues,
+  describeMulti,
+  groupCoverageChart,
+  runProgress,
+  summarizeSeries,
+  trendSeries,
+  weekSeries,
+  type Burnup,
+  type ChartData,
+  type FlakyTest,
+  type GroupCoverage,
+  type TrendRange,
+  type Trends,
+} from '@/lib/metrics'
+import type { Dashboard, Release } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useMetaStore } from '@/stores/meta'
 import { useChartTheme } from '@/composables/chartTheme'
@@ -25,9 +48,23 @@ const meta = useMetaStore()
 const theme = useChartTheme()
 const narrow = useBreakpoint('phone')
 const notify = useNotify()
+const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const data = ref<Dashboard | null>(null)
 const loading = ref(true)
+
+// ---------- sections (tabs, kept in ?tab=) ----------
+type Section = 'overview' | 'trends' | 'quality'
+const SECTIONS: Section[] = ['overview', 'trends', 'quality']
+const tabsId = 'dash-tabs'
+const panel = (value: string) => ({ role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` })
+const initial = route.query.tab as Section
+const section = ref<Section>(SECTIONS.includes(initial) ? initial : 'overview')
+watch(section, (v) => {
+  if ((route.query.tab ?? 'overview') !== v) router.replace({ query: { ...route.query, tab: v === 'overview' ? undefined : v } })
+  if (v === 'trends') loadTrends()
+})
 
 async function load() {
   loading.value = true
@@ -38,6 +75,7 @@ async function load() {
   } finally {
     loading.value = false
   }
+  if (section.value === 'trends') loadTrends(true)
 }
 onMounted(load)
 
@@ -62,19 +100,23 @@ const kpis = computed(() => {
   ]
 })
 
+// ---------- chart options ----------
 function font() {
   return { family: theme.value.font }
 }
-function baseOptions(legend = false, indexAxis: 'x' | 'y' = 'x') {
+function legendOptions(show: boolean) {
+  return { display: show, position: 'bottom', labels: { color: theme.value.text, usePointStyle: true, boxWidth: 8, font: font() } }
+}
+function axis(extra: Record<string, unknown> = {}) {
   const c = theme.value
+  return { ticks: { color: c.text, precision: 0, font: font() }, grid: { color: c.grid }, border: { color: c.grid }, ...extra }
+}
+function baseOptions(legend = false, indexAxis: 'x' | 'y' = 'x', stacked = false) {
   return {
     maintainAspectRatio: false,
     indexAxis,
-    plugins: { legend: { display: legend, position: 'bottom', labels: { color: c.text, usePointStyle: true, boxWidth: 8, font: font() } }, tooltip: { titleFont: font(), bodyFont: font() } },
-    scales: {
-      x: { ticks: { color: c.text, precision: 0, font: font() }, grid: { color: c.grid }, border: { color: c.grid } },
-      y: { ticks: { color: c.text, precision: 0, font: font() }, grid: { color: c.grid }, border: { color: c.grid }, beginAtZero: true },
-    },
+    plugins: { legend: legendOptions(legend), tooltip: { titleFont: font(), bodyFont: font() } },
+    scales: { x: axis({ stacked }), y: axis({ stacked, beginAtZero: true }) },
   }
 }
 const doughnutOptions = computed(() => ({
@@ -85,6 +127,22 @@ const doughnutOptions = computed(() => ({
     tooltip: { titleFont: font(), bodyFont: font() },
   },
 }))
+/** Lines over days: percentages (0–100) or counts. */
+function lineOptions(pct: boolean) {
+  const c = theme.value
+  return {
+    maintainAspectRatio: false,
+    spanGaps: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: legendOptions(true), tooltip: { titleFont: font(), bodyFont: font() } },
+    scales: {
+      x: { ticks: { color: c.text, font: font(), maxRotation: 0, autoSkip: true, maxTicksLimit: narrow.value ? 4 : 8 }, grid: { display: false }, border: { color: c.grid } },
+      y: pct
+        ? { min: 0, max: 100, ticks: { color: c.text, font: font(), callback: (v: number) => `${v} %` }, grid: { color: c.grid }, border: { color: c.grid } }
+        : axis({ beginAtZero: true }),
+    },
+  }
+}
 
 /** Bars: categorical colours of the active theme. */
 function bar(group: EnumGroup, rec: Record<string, number> | undefined, order?: readonly string[]) {
@@ -107,6 +165,7 @@ function describe(title: string, c: { labels: string[]; datasets: { data: number
   const parts = c.labels.map((l, i) => `${l}: ${formatNumber(c.datasets[0].data[i] ?? 0)}`)
   return parts.length ? `${title}. ${parts.join(', ')}` : title
 }
+const fmtPct = (n: number) => `${formatNumber(n)} %`
 
 const coverageChart = computed(() => doughnut('coverage', data.value?.coverage, COVERAGE_COLORS, ['passed', 'failed', 'partial', 'not_run', 'none']))
 const statusChart = computed(() => bar('status', data.value?.requirements.by_status, meta.meta.requirement_statuses))
@@ -114,6 +173,143 @@ const obligationChart = computed(() => bar('obligation', data.value?.requirement
 const resultsChart = computed(() => doughnut('result', data.value?.results, RESULT_COLORS, RESULT_ORDER))
 const testStatusChart = computed(() => bar('status', data.value?.tests.by_status, meta.meta.test_statuses))
 const hasData = (c: { datasets: { data: number[] }[] }) => c.datasets[0].data.some((v) => v > 0)
+const hasAny = (c: ChartData) => c.datasets.some((d) => d.data.some((v) => (v ?? 0) > 0))
+
+// ---------- overview: active runs ----------
+const activeRuns = computed(() => data.value?.active_runs ?? [])
+const progressChart = computed(() => {
+  const c = runProgress(activeRuns.value, (s) => enumLabel('result', s))
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 4, maxBarThickness: 26 }))
+  return c
+})
+const progressHeight = computed(() => `${Math.max(160, 60 + activeRuns.value.length * 38)}px`)
+
+// ---------- quality ----------
+const SEVERITY_COLORS: Record<string, string> = { critical: '#dc2626', major: '#ea580c', minor: '#d97706', trivial: '#64748b' }
+const SEVERITY_ORDER = ['critical', 'major', 'minor', 'trivial']
+const severityChart = computed(() => {
+  const rec = data.value?.defects_by_severity ?? {}
+  const keys = [...SEVERITY_ORDER, ...Object.keys(rec).filter((k) => !SEVERITY_ORDER.includes(k))]
+  return {
+    labels: keys.map((k) => t(`defectsView.severity.${k}`)),
+    datasets: [{ data: keys.map((k) => rec[k] ?? 0), backgroundColor: keys.map((k, i) => colorFor(SEVERITY_COLORS, k, i)), borderRadius: 6, maxBarThickness: 34 }],
+  }
+})
+
+type GroupBy = 'folder' | 'category'
+const groupBy = ref<GroupBy>('folder')
+const groupOptions = computed(() => [
+  { value: 'folder', label: t('dashboard.byFolder') },
+  { value: 'category', label: t('dashboard.byCategory') },
+])
+const groups = computed<GroupCoverage[]>(() => (groupBy.value === 'folder' ? data.value?.coverage_by_folder : data.value?.coverage_by_category) ?? [])
+const groupName = (g: GroupCoverage) => (groupBy.value === 'folder' ? g.name || t('dashboard.noFolder') : g.dimension ? `${g.dimension}: ${g.name}` : g.name)
+const groupChart = computed(() => {
+  const c = groupCoverageChart(groups.value, groupName, (s) => enumLabel('coverage', s))
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 4, maxBarThickness: 24 }))
+  return c
+})
+const groupHeight = computed(() => `${Math.max(200, 60 + groups.value.length * 32)}px`)
+
+const flaky = computed<FlakyTest[]>(() => data.value?.flaky?.items ?? [])
+const resultLabel = (s: string) => enumLabel('result', s)
+const sequenceText = (f: FlakyTest) => t('dashboard.flakySequence', { seq: f.results.map((r) => resultLabel(r.status)).join(', ') })
+
+// ---------- trends ----------
+const range = ref<TrendRange>(30)
+const rangeOptions = computed(() => TREND_RANGES.map((n) => ({ value: n, label: t('dashboard.rangeDays', { n }) })))
+const trends = ref<Trends | null>(null)
+const trendsLoading = ref(false)
+let trendsFor = ''
+
+async function loadTrends(force = false) {
+  const key = `${proj.pid}:${range.value}`
+  if (!force && trendsFor === key) return
+  trendsFor = key
+  trendsLoading.value = true
+  try {
+    trends.value = await api.get<Trends>(`/projects/${proj.pid}/metrics/trends?range=${range.value}`)
+  } catch (e) {
+    trendsFor = ''
+    notify.fail(e, t('dashboard.trendLoadFailed'))
+  } finally {
+    trendsLoading.value = false
+  }
+  loadReleases()
+}
+watch(range, () => loadTrends())
+
+const trend = computed(() => trendSeries(trends.value))
+const trendChart = computed<ChartData>(() => {
+  const s = trend.value
+  const c1 = '#16a34a'
+  const c2 = seriesColor(theme.value, 0)
+  return {
+    labels: s.days.map(formatDate),
+    datasets: [
+      { label: t('dashboard.seriesCoverage'), data: s.coverage, borderColor: c1, backgroundColor: c1, pointStyle: 'circle', pointRadius: s.days.length > 60 ? 0 : 2, borderWidth: 2, tension: 0.2 },
+      { label: t('dashboard.seriesPassRate'), data: s.passRate, borderColor: c2, backgroundColor: c2, pointStyle: 'rectRot', pointRadius: s.days.length > 60 ? 0 : 3, borderWidth: 2, borderDash: [6, 4], tension: 0.2 },
+    ],
+  }
+})
+const trendDays = computed(() => countValues(trend.value.coverage))
+const trendDescription = computed(() => {
+  const parts = trendChart.value.datasets
+    .map((d) => {
+      const s = summarizeSeries(d.data)
+      return s && t('dashboard.trendSummary', { series: d.label, first: fmtPct(s.first), last: fmtPct(s.last), min: fmtPct(s.min), max: fmtPct(s.max) })
+    })
+    .filter(Boolean)
+  return [t('dashboard.trendTitle'), t('dashboard.trendDays', trendDays.value), ...parts].join('. ')
+})
+
+const weeks = computed(() => weekSeries(trends.value?.defect_weeks))
+const weekChart = computed<ChartData>(() => ({
+  labels: weeks.value.weeks.map(formatDate),
+  datasets: [
+    { label: t('dashboard.seriesOpened'), data: weeks.value.opened, backgroundColor: '#ef4444', borderRadius: 4, maxBarThickness: 18 },
+    { label: t('dashboard.seriesClosed'), data: weeks.value.closed, backgroundColor: '#22c55e', borderRadius: 4, maxBarThickness: 18 },
+  ],
+}))
+
+// release burn-up
+const releases = ref<Release[]>([])
+const releaseId = ref<string | null>(null)
+const burnup = ref<Burnup | null>(null)
+let releasesLoaded = false
+async function loadReleases() {
+  if (releasesLoaded) return
+  releasesLoaded = true
+  try {
+    releases.value = asItems(await api.get<Release[]>(`/projects/${proj.pid}/releases`))
+  } catch {
+    releases.value = []
+  }
+  const pick = releases.value.find((r) => r.status === 'active') ?? releases.value.find((r) => r.status === 'planned') ?? releases.value[0]
+  releaseId.value = pick?.id ?? null
+}
+watch(releaseId, async (id) => {
+  burnup.value = null
+  if (!id) return
+  try {
+    burnup.value = await api.get<Burnup>(`/releases/${id}/burnup`)
+  } catch (e) {
+    notify.fail(e, t('dashboard.burnupLoadFailed'))
+  }
+})
+const releaseOptions = computed(() => releases.value.map((r) => ({ value: r.id, label: r.version && r.version !== r.name ? `${r.name} (${r.version})` : r.name })))
+const burnupChart = computed<ChartData>(() => {
+  const b = burnupSeries(burnup.value)
+  const scope = theme.value.text
+  return {
+    labels: b.days.map(formatDate),
+    datasets: [
+      { label: t('dashboard.seriesScope'), data: b.scope, borderColor: scope, backgroundColor: scope, borderDash: [4, 4], stepped: true, pointRadius: 0, borderWidth: 2 },
+      { label: t('dashboard.seriesCovered'), data: b.covered, borderColor: seriesColor(theme.value, 0), backgroundColor: seriesColor(theme.value, 0), pointStyle: 'rectRot', pointRadius: 0, borderWidth: 2 },
+      { label: t('dashboard.seriesPassed'), data: b.passed, borderColor: '#16a34a', backgroundColor: 'rgba(34, 197, 94, 0.18)', fill: 'origin', pointRadius: 0, borderWidth: 2 },
+    ],
+  }
+})
 </script>
 
 <template>
@@ -125,11 +321,21 @@ const hasData = (c: { datasets: { data: number[] }[] }) => c.datasets[0].data.so
     <div class="actions"><Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" /></div>
   </div>
 
+  <Tabs :id="tabsId" v-model:value="section" class="editor-tabs dash-tabs" scrollable>
+    <TabList :aria-label="t('dashboard.sections')">
+      <Tab value="overview"><i class="pi pi-th-large" aria-hidden="true" /> {{ t('dashboard.tabOverview') }}</Tab>
+      <Tab value="trends"><i class="pi pi-chart-line" aria-hidden="true" /> {{ t('dashboard.tabTrends') }}</Tab>
+      <Tab value="quality"><i class="pi pi-verified" aria-hidden="true" /> {{ t('dashboard.tabQuality') }}</Tab>
+    </TabList>
+  </Tabs>
+
   <div v-if="loading && !data" class="grid" aria-busy="true" :aria-label="t('common.loading')">
     <div class="kpis"><Skeleton v-for="i in 5" :key="i" height="78px" /></div>
     <div class="charts"><Skeleton v-for="i in 4" :key="i" height="280px" /></div>
   </div>
-  <div v-else-if="data" class="grid" :aria-busy="loading">
+
+  <!-- overview -->
+  <div v-else-if="data && section === 'overview'" class="grid" :aria-busy="loading" v-bind="panel('overview')">
     <ul class="kpis plain-list" :aria-label="t('dashboard.kpis')">
       <li v-for="k in kpis" :key="k.label" class="card kpi">
         <div class="icon" aria-hidden="true" :style="{ background: k.color + '1f', color: k.color }"><i :class="k.icon" /></div>
@@ -160,23 +366,15 @@ const hasData = (c: { datasets: { data: number[] }[] }) => c.datasets[0].data.so
           <div v-else class="empty">{{ t('dashboard.noExecutions') }}</div>
         </div>
       </section>
-      <section class="card" aria-labelledby="ch-status">
-        <h2 id="ch-status">{{ t('dashboard.requirementsByStatus') }}</h2>
-        <div class="chart-box" role="img" :aria-label="describe(t('dashboard.requirementsByStatus'), statusChart)">
-          <Chart type="bar" :data="statusChart" :options="baseOptions()" style="height: 100%" />
+      <section class="card" aria-labelledby="ch-active">
+        <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+          <h2 id="ch-active" style="margin: 0">{{ t('dashboard.activeRuns') }}</h2>
+          <RouterLink :to="{ name: 'runs', params: { projectId: proj.pid } }" class="small">{{ t('dashboard.allRuns') }}</RouterLink>
         </div>
-      </section>
-      <section class="card" aria-labelledby="ch-obligation">
-        <h2 id="ch-obligation">{{ t('dashboard.requirementsByObligation') }}</h2>
-        <div class="chart-box" role="img" :aria-label="describe(t('dashboard.requirementsByObligation'), obligationChart)">
-          <Chart type="bar" :data="obligationChart" :options="baseOptions(false, 'y')" style="height: 100%" />
+        <div v-if="hasAny(progressChart)" class="chart-box" :style="{ height: progressHeight }" role="img" :aria-label="describeMulti(t('dashboard.activeRuns'), progressChart, formatNumber)">
+          <Chart type="bar" :data="progressChart" :options="baseOptions(true, 'y', true)" style="height: 100%" />
         </div>
-      </section>
-      <section class="card" aria-labelledby="ch-tests">
-        <h2 id="ch-tests">{{ t('dashboard.testsByStatus') }}</h2>
-        <div class="chart-box" role="img" :aria-label="describe(t('dashboard.testsByStatus'), testStatusChart)">
-          <Chart type="bar" :data="testStatusChart" :options="baseOptions()" style="height: 100%" />
-        </div>
+        <div v-else class="empty">{{ t('dashboard.noActiveRuns') }}</div>
       </section>
       <section class="card" aria-labelledby="ch-runs">
         <div class="row" style="justify-content: space-between; margin-bottom: 8px">
@@ -200,6 +398,142 @@ const hasData = (c: { datasets: { data: number[] }[] }) => c.datasets[0].data.so
           </div>
         </RouterLink>
       </section>
+      <section class="card" aria-labelledby="ch-status">
+        <h2 id="ch-status">{{ t('dashboard.requirementsByStatus') }}</h2>
+        <div class="chart-box" role="img" :aria-label="describe(t('dashboard.requirementsByStatus'), statusChart)">
+          <Chart type="bar" :data="statusChart" :options="baseOptions()" style="height: 100%" />
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ch-obligation">
+        <h2 id="ch-obligation">{{ t('dashboard.requirementsByObligation') }}</h2>
+        <div class="chart-box" role="img" :aria-label="describe(t('dashboard.requirementsByObligation'), obligationChart)">
+          <Chart type="bar" :data="obligationChart" :options="baseOptions(false, 'y')" style="height: 100%" />
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ch-tests">
+        <h2 id="ch-tests">{{ t('dashboard.testsByStatus') }}</h2>
+        <div class="chart-box" role="img" :aria-label="describe(t('dashboard.testsByStatus'), testStatusChart)">
+          <Chart type="bar" :data="testStatusChart" :options="baseOptions()" style="height: 100%" />
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- trends -->
+  <div v-else-if="data && section === 'trends'" class="grid" :aria-busy="trendsLoading" v-bind="panel('trends')">
+    <div class="row trend-toolbar">
+      <span id="dash-range" class="small muted">{{ t('dashboard.trendRange') }}</span>
+      <SelectButton v-model="range" :options="rangeOptions" option-label="label" option-value="value" :allow-empty="false" aria-labelledby="dash-range" />
+    </div>
+    <section class="card" aria-labelledby="ch-trend">
+      <h2 id="ch-trend">{{ t('dashboard.trendTitle') }}</h2>
+      <div class="chart-box tall">
+        <Skeleton v-if="trendsLoading && !trends" height="100%" />
+        <div v-else-if="trendDays > 0" role="img" :aria-label="trendDescription" class="chart-fill">
+          <Chart type="line" :data="trendChart" :options="lineOptions(true)" style="height: 100%" />
+        </div>
+        <div v-else class="empty">{{ t('dashboard.noTrend') }}</div>
+      </div>
+    </section>
+    <div class="charts">
+      <section class="card" aria-labelledby="ch-weeks">
+        <h2 id="ch-weeks">{{ t('dashboard.defectsPerWeek') }}</h2>
+        <div class="chart-box">
+          <div v-if="hasAny(weekChart)" role="img" :aria-label="describeMulti(t('dashboard.defectsPerWeek'), weekChart, formatNumber)" class="chart-fill">
+            <Chart type="bar" :data="weekChart" :options="baseOptions(true)" style="height: 100%" />
+          </div>
+          <div v-else class="empty">{{ t('dashboard.noDefectsInPeriod') }}</div>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ch-burnup">
+        <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+          <h2 id="ch-burnup" style="margin: 0">{{ t('dashboard.burnup') }}</h2>
+          <Select v-if="releases.length" v-model="releaseId" :options="releaseOptions" option-label="label" option-value="value" size="small" :aria-label="t('dashboard.burnupRelease')" class="release-select" />
+        </div>
+        <div v-if="burnup?.target_date" class="small muted">{{ t('dashboard.burnupTarget', { date: formatDate(burnup.target_date) }) }}</div>
+        <div class="chart-box">
+          <div v-if="!releases.length" class="empty">{{ t('dashboard.noReleases') }}</div>
+          <Skeleton v-else-if="!burnup" height="100%" />
+          <div v-else role="img" :aria-label="describeMulti(t('dashboard.burnup') + ' ' + burnup.name, burnupChart, formatNumber, 8)" class="chart-fill">
+            <Chart type="line" :data="burnupChart" :options="lineOptions(false)" style="height: 100%" />
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- quality -->
+  <div v-else-if="data && section === 'quality'" class="grid" v-bind="panel('quality')">
+    <section class="card" aria-labelledby="ch-flaky">
+      <h2 id="ch-flaky">{{ t('dashboard.flakyTests') }}</h2>
+      <p class="small muted" style="margin-top: 0">{{ t('dashboard.flakyHint', { min: data.flaky?.min_flips ?? 2, window: data.flaky?.window ?? 10 }) }}</p>
+      <div v-if="!flaky.length" class="empty">{{ t('dashboard.noFlaky') }}</div>
+      <ol v-else class="plain-list flaky-list">
+        <li v-for="f in flaky" :key="f.test_id" class="flaky-row">
+          <div class="flaky-main">
+            <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: f.test_id } }" class="flaky-link">
+              <span class="key">{{ f.key }}</span> <span>{{ f.title }}</span>
+            </RouterLink>
+            <div class="small muted">
+              <i :class="f.execution_type === 'automated' ? 'pi pi-bolt' : 'pi pi-user'" aria-hidden="true" /> {{ enumLabel('executionType', f.execution_type) }}
+              <span v-if="f.last_flip"> · {{ t('dashboard.lastFlip', { when: relativeTime(f.last_flip) }) }}</span>
+            </div>
+          </div>
+          <div class="flaky-seq" role="img" :aria-label="sequenceText(f)">
+            <span v-for="r in f.results" :key="r.execution_id" class="dot" :class="[r.status, { flip: r.flip }]" :title="`${resultLabel(r.status)} · ${formatDate(r.at)}`">
+              <i :class="r.status === 'passed' ? 'pi pi-check' : 'pi pi-times'" aria-hidden="true" />
+            </span>
+          </div>
+          <span class="flaky-score">{{ t('dashboard.flips', f.score) }}</span>
+        </li>
+      </ol>
+      <div v-if="(data.flaky?.total ?? 0) > flaky.length" class="small muted" style="margin-top: 8px">
+        {{ t('dashboard.flakyMore', { shown: flaky.length, total: data.flaky?.total }) }}
+        <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { q: 'flaky:true' } }">{{ t('dashboard.allFlaky') }}</RouterLink>
+      </div>
+    </section>
+    <div class="charts">
+      <section class="card" aria-labelledby="ch-severity">
+        <h2 id="ch-severity">{{ t('dashboard.defectsBySeverity') }}</h2>
+        <div class="chart-box">
+          <div v-if="hasData(severityChart)" role="img" :aria-label="describe(t('dashboard.defectsBySeverity'), severityChart)" class="chart-fill">
+            <Chart type="bar" :data="severityChart" :options="baseOptions()" style="height: 100%" />
+          </div>
+          <div v-else class="empty">{{ t('dashboard.noOpenDefects') }}</div>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ch-groups">
+        <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+          <h2 id="ch-groups" style="margin: 0">{{ t('dashboard.coverageByGroup') }}</h2>
+          <SelectButton v-model="groupBy" :options="groupOptions" option-label="label" option-value="value" :allow-empty="false" size="small" :aria-label="t('dashboard.groupBy')" />
+        </div>
+        <div v-if="groups.length" class="chart-box" :style="{ height: groupHeight }" role="img" :aria-label="describeMulti(t('dashboard.coverageByGroup'), groupChart, formatNumber, 20)">
+          <Chart type="bar" :data="groupChart" :options="baseOptions(true, 'y', true)" style="height: 100%" />
+        </div>
+        <div v-else class="empty">{{ t('dashboard.noRequirements') }}</div>
+      </section>
     </div>
   </div>
 </template>
+
+<style scoped>
+.dash-tabs { margin-bottom: 12px; }
+.chart-box.tall { height: 300px; }
+.trend-toolbar { gap: 10px; flex-wrap: wrap; }
+.release-select { min-width: 160px; max-width: 100%; }
+.flaky-list { display: grid; gap: 0; }
+.flaky-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--qtf-border); }
+.flaky-row:last-child { border-bottom: 0; }
+.flaky-main { min-width: 0; }
+.flaky-link { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.flaky-seq { display: flex; gap: 3px; flex-wrap: wrap; }
+.dot { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 9px; color: #fff; }
+.dot.passed { background: #15803d; }
+.dot.failed { background: #b91c1c; border-radius: 3px; }
+.dot.flip { outline: 2px solid var(--qtf-text); outline-offset: 1px; }
+.flaky-score { font-size: 12px; font-weight: 600; white-space: nowrap; }
+@media (max-width: 640px) {
+  .flaky-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .flaky-seq { grid-column: 1 / -1; }
+}
+</style>

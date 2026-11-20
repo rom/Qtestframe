@@ -130,6 +130,21 @@ The **Executions** tab lists every execution of the test in all runs, newest fir
 
 The table column **Last result** shows the most recent result. In queries, `last_result:failed` finds tests whose latest result failed, and `defect:SHOP-*` tests with such a defect.
 
+A result marked **Flip** differs from the previous passed or failed result of the test: there the test started to fail, or passed again.
+
+## Flaky tests
+
+A test is *flaky* when its result changes back and forth between passed and failed without the test or the product being changed in between. Qtestframe looks at the last 10 passed or failed results of every test, from all runs — manual results as well as automated ones from JUnit imports, the `qtestframe report` uploader and the Playwright reporter. Blocked, skipped and not run results are left out, since they say nothing about the test itself.
+
+The *flakiness* of a test is the number of flips among those results: a passed result after a failed one, or the reverse. A test with **2 or more flips** counts as flaky. A test that broke once and was fixed has at most two flips spread over a long time; a test that alternates reaches the threshold quickly.
+
+- In the tests list, flaky tests have a **Flaky** badge next to the last result (point at it to see the number of flips).
+- The query `flaky:true` lists the flaky tests; `flakiness>=3` (or `flips>=3`) those with at least three flips.
+- The **Quality** tab of the [dashboard](traceability-and-coverage.md#the-dashboard) shows the ten flakiest tests with their latest results.
+- The **Executions** tab of a test marks every flip.
+
+A flaky test hides real failures and wastes time on reruns: find the cause (timing, test data, order, the environment) or put the test aside until it is fixed.
+
 ## Comments and history
 
 **Comments** and **History** work exactly as for [requirements](requirements.md#comments). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped.
