@@ -331,7 +331,7 @@ func (s *Server) completeReviews(r *http.Request, p *Principal, list []model.Rev
 	for i := range list {
 		v := &list[i]
 		v.Status, v.Comment = status, note
-		if err := s.Store.UpdateReviewRequest(ctx, p.TenantID(), v); err != nil {
+		if err := s.Store.Savepoint(ctx, func() error { return s.Store.UpdateReviewRequest(ctx, p.TenantID(), v) }); err != nil {
 			s.Log.Warn("bulk review: complete review request", "id", v.ID, "err", err)
 			continue
 		}

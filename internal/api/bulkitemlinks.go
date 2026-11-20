@@ -123,7 +123,8 @@ func (s *Server) handleBulkCreateItemLinks(w http.ResponseWriter, r *http.Reques
 			continue
 		}
 		l := &model.ItemLink{SourceType: x.SourceType, SourceID: x.SourceID, TargetType: x.TargetType, TargetID: x.TargetID, URL: x.URL, Label: x.Label, CreatedBy: p.User.Email}
-		err := s.Store.CreateItemLink(ctx, p.TenantID(), l)
+		// a savepoint: a link that cannot be created is skipped, the rest goes on
+		err := s.Store.Savepoint(ctx, func() error { return s.Store.CreateItemLink(ctx, p.TenantID(), l) })
 		switch {
 		case errors.Is(err, store.ErrNotFound):
 			skip("not_found", "")

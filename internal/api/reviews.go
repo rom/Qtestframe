@@ -20,7 +20,7 @@ func (s *Server) routesReviews(h routeFunc) {
 	h("GET /api/v1/review-checklists", s.handleReviewChecklists)
 	h("GET /api/v1/reviews", s.handleListReviews)
 	h("POST /api/v1/reviews", s.handleCreateReviews)
-	h("POST /api/v1/reviews/bulk", s.handleBulkReviewRequests)
+	h("POST /api/v1/reviews/bulk", s.atomic(s.handleBulkReviewRequests))
 	h("GET /api/v1/reviews/{id}", s.handleGetReview)
 	h("PATCH /api/v1/reviews/{id}", s.handleUpdateReview)
 	h("GET /api/v1/baselines/{id}/signoffs", s.handleListSignoffs, "requirement.read")

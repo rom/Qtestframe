@@ -30,6 +30,15 @@ is unreachable); all other paths serve the web client.
   `conflict` (409, also for duplicates and a disabled runner),
   `invalid_query` (400), `rate_limited` (429, login), `unavailable` (503,
   `/readyz`), `internal` (500).
+* **Bulk requests are all or nothing** – every bulk endpoint (the `…/bulk`
+  routes, bulk review, sign-offs and restore, link confirmation, execution
+  and notification batches) runs in one database transaction. An error
+  answer (4xx/5xx) means none of the changes was saved; items listed in
+  `skipped` with a reason are part of a successful answer, so the others
+  were saved. Webhooks for the changes are sent only after they are saved.
+  Exceptions, because they call outside services: pushing and syncing
+  defects with the tracker (`/defects/push`, `/defects/sync`), webhook
+  tests and report batches, which save item by item.
 * **IDs** are UUID strings. Times are RFC 3339.
 * **Lists** return `{"items": [...], "total": n}`. There is no pagination
   (except `limit` on search and audit).

@@ -22,7 +22,7 @@ func (s *Store) CreateTenant(ctx context.Context, slug, name string) (*model.Ten
 		return nil, Invalidf("tenant name is required")
 	}
 	t := &model.Tenant{ID: newID(), Slug: slug, Name: strings.TrimSpace(name), CreatedAt: s.now()}
-	_, err := s.c().exec(ctx, `INSERT INTO tenants (id, slug, name, created_at) VALUES (?, ?, ?, ?)`, t.ID, t.Slug, t.Name, t.CreatedAt)
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO tenants (id, slug, name, created_at) VALUES (?, ?, ?, ?)`, t.ID, t.Slug, t.Name, t.CreatedAt)
 	if err != nil {
 		return nil, mapErr(err, "tenant")
 	}
@@ -54,19 +54,19 @@ func scanTenant(r interface{ Scan(...any) error }) (*model.Tenant, error) {
 
 // GetTenant returns a tenant by id.
 func (s *Store) GetTenant(ctx context.Context, id string) (*model.Tenant, error) {
-	t, err := scanTenant(s.c().row(ctx, `SELECT `+tenantCols+` FROM tenants WHERE id = ?`, id))
+	t, err := scanTenant(s.c(ctx).row(ctx, `SELECT `+tenantCols+` FROM tenants WHERE id = ?`, id))
 	return t, mapErr(err, "tenant")
 }
 
 // GetTenantBySlug returns a tenant by slug.
 func (s *Store) GetTenantBySlug(ctx context.Context, slug string) (*model.Tenant, error) {
-	t, err := scanTenant(s.c().row(ctx, `SELECT `+tenantCols+` FROM tenants WHERE slug = ?`, strings.ToLower(slug)))
+	t, err := scanTenant(s.c(ctx).row(ctx, `SELECT `+tenantCols+` FROM tenants WHERE slug = ?`, strings.ToLower(slug)))
 	return t, mapErr(err, "tenant")
 }
 
 // ListTenants returns all tenants.
 func (s *Store) ListTenants(ctx context.Context) ([]model.Tenant, error) {
-	rows, err := s.c().query(ctx, `SELECT `+tenantCols+` FROM tenants ORDER BY name`)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+tenantCols+` FROM tenants ORDER BY name`)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *Store) UpdateTenant(ctx context.Context, id, name string) (*model.Tenan
 	if strings.TrimSpace(name) == "" {
 		return nil, Invalidf("tenant name is required")
 	}
-	res, err := s.c().exec(ctx, `UPDATE tenants SET name = ? WHERE id = ?`, strings.TrimSpace(name), id)
+	res, err := s.c(ctx).exec(ctx, `UPDATE tenants SET name = ? WHERE id = ?`, strings.TrimSpace(name), id)
 	if err != nil {
 		return nil, err
 	}
@@ -156,32 +156,32 @@ func (s *Store) CreateUser(ctx context.Context, u *model.User) error {
 		u.DisplayName = strings.Split(u.Email, "@")[0]
 	}
 	u.CreatedAt = s.now()
-	_, err := s.c().exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO users (`+userCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		u.ID, u.Email, u.DisplayName, u.PasswordHash, u.SuperAdmin, u.AuthProvider, u.ExternalID, u.Disabled, u.CreatedAt, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword)
 	return mapErr(err, "user")
 }
 
 // GetUser returns a user by id.
 func (s *Store) GetUser(ctx context.Context, id string) (*model.User, error) {
-	u, err := scanUser(s.c().row(ctx, `SELECT `+userCols+` FROM users WHERE id = ?`, id))
+	u, err := scanUser(s.c(ctx).row(ctx, `SELECT `+userCols+` FROM users WHERE id = ?`, id))
 	return u, mapErr(err, "user")
 }
 
 // GetUserByEmail returns a user by e-mail.
 func (s *Store) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	u, err := scanUser(s.c().row(ctx, `SELECT `+userCols+` FROM users WHERE email = ?`, NormalizeEmail(email)))
+	u, err := scanUser(s.c(ctx).row(ctx, `SELECT `+userCols+` FROM users WHERE email = ?`, NormalizeEmail(email)))
 	return u, mapErr(err, "user")
 }
 
 // GetUserByExternal returns a user by provider and external subject.
 func (s *Store) GetUserByExternal(ctx context.Context, provider, externalID string) (*model.User, error) {
-	u, err := scanUser(s.c().row(ctx, `SELECT `+userCols+` FROM users WHERE auth_provider = ? AND external_id = ?`, provider, externalID))
+	u, err := scanUser(s.c(ctx).row(ctx, `SELECT `+userCols+` FROM users WHERE auth_provider = ? AND external_id = ?`, provider, externalID))
 	return u, mapErr(err, "user")
 }
 
 // ListUsers returns all users.
 func (s *Store) ListUsers(ctx context.Context) ([]model.User, error) {
-	rows, err := s.c().query(ctx, `SELECT `+userCols+` FROM users ORDER BY email`)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+userCols+` FROM users ORDER BY email`)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (s *Store) ListUsers(ctx context.Context) ([]model.User, error) {
 
 // UpdateUser stores mutable user fields.
 func (s *Store) UpdateUser(ctx context.Context, u *model.User) error {
-	res, err := s.c().exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ?, preferences = ?, avatar = ?, must_change_password = ? WHERE id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE users SET display_name = ?, password_hash = ?, super_admin = ?, disabled = ?, auth_provider = ?, external_id = ?, preferences = ?, avatar = ?, must_change_password = ? WHERE id = ?`,
 		u.DisplayName, u.PasswordHash, u.SuperAdmin, u.Disabled, u.AuthProvider, u.ExternalID, encodePrefs(u.Preferences), u.Avatar, u.MustChangePassword, u.ID)
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (s *Store) UpdateUser(ctx context.Context, u *model.User) error {
 // CountUsers returns the number of users.
 func (s *Store) CountUsers(ctx context.Context) (int, error) {
 	var n int
-	err := s.c().row(ctx, `SELECT COUNT(*) FROM users`).Scan(&n)
+	err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM users`).Scan(&n)
 	return n, err
 }
 
@@ -237,7 +237,7 @@ func (s *Store) SetMembership(ctx context.Context, tenantID, userID, role string
 // GetMembership returns the role of a user in a tenant.
 func (s *Store) GetMembership(ctx context.Context, tenantID, userID string) (*model.Membership, error) {
 	var m model.Membership
-	err := s.c().row(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, m.role, m.created_at FROM memberships m JOIN tenants t ON t.id = m.tenant_id WHERE m.tenant_id = ? AND m.user_id = ?`, tenantID, userID).
+	err := s.c(ctx).row(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, m.role, m.created_at FROM memberships m JOIN tenants t ON t.id = m.tenant_id WHERE m.tenant_id = ? AND m.user_id = ?`, tenantID, userID).
 		Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Role, &m.CreatedAt)
 	if err != nil {
 		return nil, mapErr(err, "membership")
@@ -247,14 +247,14 @@ func (s *Store) GetMembership(ctx context.Context, tenantID, userID string) (*mo
 
 // RemoveMembership deletes a membership.
 func (s *Store) RemoveMembership(ctx context.Context, tenantID, userID string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM memberships WHERE tenant_id = ? AND user_id = ?`, tenantID, userID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM memberships WHERE tenant_id = ? AND user_id = ?`, tenantID, userID)
 	if err != nil {
 		return err
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return mapErr(sql.ErrNoRows, "membership")
 	}
-	_, err = s.c().exec(ctx, `DELETE FROM sessions WHERE tenant_id = ? AND user_id = ?`, tenantID, userID)
+	_, err = s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE tenant_id = ? AND user_id = ?`, tenantID, userID)
 	return err
 }
 
@@ -271,12 +271,12 @@ func (s *Store) ListTenantMembers(ctx context.Context, tenantID string) ([]model
 // CountTenantAdmins returns the number of admins in a tenant.
 func (s *Store) CountTenantAdmins(ctx context.Context, tenantID string) (int, error) {
 	var n int
-	err := s.c().row(ctx, `SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND role = 'admin'`, tenantID).Scan(&n)
+	err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND role = 'admin'`, tenantID).Scan(&n)
 	return n, err
 }
 
 func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]model.Membership, error) {
-	rows, err := s.c().query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at
+	rows, err := s.c(ctx).query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at
 		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id `+where, arg)
 	if err != nil {
 		return nil, err
@@ -299,7 +299,7 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 func (s *Store) CreateSession(ctx context.Context, sess *model.Session) error {
 	sess.CreatedAt = s.now()
 	sess.LastSeen = &sess.CreatedAt
-	_, err := s.c().exec(ctx, `INSERT INTO sessions (id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO sessions (id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		sess.ID, sess.UserID, sess.TenantID, sess.CSRF, sess.CreatedAt, sess.ExpiresAt.UTC(), sess.IP, truncate(sess.UserAgent, 512), sess.CreatedAt)
 	return mapErr(err, "session")
 }
@@ -308,7 +308,7 @@ func (s *Store) CreateSession(ctx context.Context, sess *model.Session) error {
 func (s *Store) GetSession(ctx context.Context, id string) (*model.Session, error) {
 	var sess model.Session
 	var seen sql.NullTime
-	err := s.c().row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen FROM sessions WHERE id = ?`, id).
+	err := s.c(ctx).row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen FROM sessions WHERE id = ?`, id).
 		Scan(&sess.ID, &sess.UserID, &sess.TenantID, &sess.CSRF, &sess.CreatedAt, &sess.ExpiresAt, &sess.IP, &sess.UserAgent, &seen)
 	sess.LastSeen = timePtr(seen)
 	if err != nil {
@@ -328,14 +328,14 @@ func (s *Store) TouchSession(ctx context.Context, sess *model.Session, ip string
 		return nil
 	}
 	sess.LastSeen, sess.IP = &now, ip
-	_, err := s.c().exec(ctx, `UPDATE sessions SET last_seen = ?, ip = ? WHERE id = ?`, now, ip, sess.ID)
+	_, err := s.c(ctx).exec(ctx, `UPDATE sessions SET last_seen = ?, ip = ? WHERE id = ?`, now, ip, sess.ID)
 	return err
 }
 
 // ListUserSessions returns the active sessions of a user, newest first.
 // IDs are the stored session hashes, which cannot be used to log in.
 func (s *Store) ListUserSessions(ctx context.Context, userID string) ([]model.SessionInfo, error) {
-	rows, err := s.c().query(ctx, `SELECT id, tenant_id, created_at, expires_at, ip, user_agent, last_seen FROM sessions WHERE user_id = ? AND expires_at > ? ORDER BY created_at DESC`, userID, s.now())
+	rows, err := s.c(ctx).query(ctx, `SELECT id, tenant_id, created_at, expires_at, ip, user_agent, last_seen FROM sessions WHERE user_id = ? AND expires_at > ? ORDER BY created_at DESC`, userID, s.now())
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func (s *Store) ListUserSessions(ctx context.Context, userID string) ([]model.Se
 
 // DeleteUserSession revokes one session of a user.
 func (s *Store) DeleteUserSession(ctx context.Context, userID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM sessions WHERE id = ? AND user_id = ?`, id, userID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE id = ? AND user_id = ?`, id, userID)
 	if err != nil {
 		return err
 	}
@@ -367,26 +367,26 @@ func (s *Store) DeleteUserSession(ctx context.Context, userID, id string) error 
 
 // SetSessionTenant changes the current tenant of a session.
 func (s *Store) SetSessionTenant(ctx context.Context, id, tenantID string) error {
-	_, err := s.c().exec(ctx, `UPDATE sessions SET tenant_id = ? WHERE id = ?`, tenantID, id)
+	_, err := s.c(ctx).exec(ctx, `UPDATE sessions SET tenant_id = ? WHERE id = ?`, tenantID, id)
 	return err
 }
 
 // DeleteSession removes a session.
 func (s *Store) DeleteSession(ctx context.Context, id string) error {
-	_, err := s.c().exec(ctx, `DELETE FROM sessions WHERE id = ?`, id)
+	_, err := s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE id = ?`, id)
 	return err
 }
 
 // DeleteUserSessions removes all sessions of a user.
 func (s *Store) DeleteUserSessions(ctx context.Context, userID string) error {
-	_, err := s.c().exec(ctx, `DELETE FROM sessions WHERE user_id = ?`, userID)
+	_, err := s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE user_id = ?`, userID)
 	return err
 }
 
 // DeleteOtherSessions removes all sessions of a user except keep and
 // returns how many were removed.
 func (s *Store) DeleteOtherSessions(ctx context.Context, userID, keep string) (int, error) {
-	res, err := s.c().exec(ctx, `DELETE FROM sessions WHERE user_id = ? AND id <> ?`, userID, keep)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE user_id = ? AND id <> ?`, userID, keep)
 	if err != nil {
 		return 0, err
 	}
@@ -396,7 +396,7 @@ func (s *Store) DeleteOtherSessions(ctx context.Context, userID, keep string) (i
 
 // PurgeExpiredSessions deletes expired sessions and returns the count.
 func (s *Store) PurgeExpiredSessions(ctx context.Context) (int64, error) {
-	res, err := s.c().exec(ctx, `DELETE FROM sessions WHERE expires_at <= ?`, s.now())
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE expires_at <= ?`, s.now())
 	if err != nil {
 		return 0, err
 	}
@@ -409,7 +409,7 @@ func (s *Store) PurgeExpiredSessions(ctx context.Context) (int64, error) {
 func (s *Store) CreateToken(ctx context.Context, t *model.APIToken) error {
 	t.ID = newID()
 	t.CreatedAt = s.now()
-	_, err := s.c().exec(ctx, `INSERT INTO api_tokens (id, tenant_id, user_id, name, role, hash, prefix, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO api_tokens (id, tenant_id, user_id, name, role, hash, prefix, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		t.ID, t.TenantID, t.UserID, t.Name, t.Role, t.Hash, t.Prefix, t.CreatedAt, nullTime(t.ExpiresAt))
 	return mapErr(err, "token")
 }
@@ -428,20 +428,20 @@ func scanToken(r interface{ Scan(...any) error }) (*model.APIToken, error) {
 
 // GetTokenByHash returns a valid (non-expired) token.
 func (s *Store) GetTokenByHash(ctx context.Context, hash string) (*model.APIToken, error) {
-	t, err := scanToken(s.c().row(ctx, `SELECT `+tokenCols+` FROM api_tokens WHERE hash = ?`, hash))
+	t, err := scanToken(s.c(ctx).row(ctx, `SELECT `+tokenCols+` FROM api_tokens WHERE hash = ?`, hash))
 	if err != nil {
 		return nil, mapErr(err, "token")
 	}
 	if t.ExpiresAt != nil && !t.ExpiresAt.After(s.now()) {
 		return nil, mapErr(sql.ErrNoRows, "token")
 	}
-	_, _ = s.c().exec(ctx, `UPDATE api_tokens SET last_used = ? WHERE id = ?`, s.now(), t.ID)
+	_, _ = s.c(ctx).exec(ctx, `UPDATE api_tokens SET last_used = ? WHERE id = ?`, s.now(), t.ID)
 	return t, nil
 }
 
 // ListTokens lists a user's tokens in a tenant.
 func (s *Store) ListTokens(ctx context.Context, tenantID, userID string) ([]model.APIToken, error) {
-	rows, err := s.c().query(ctx, `SELECT `+tokenCols+` FROM api_tokens WHERE tenant_id = ? AND user_id = ? ORDER BY created_at`, tenantID, userID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+tokenCols+` FROM api_tokens WHERE tenant_id = ? AND user_id = ? ORDER BY created_at`, tenantID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -459,7 +459,7 @@ func (s *Store) ListTokens(ctx context.Context, tenantID, userID string) ([]mode
 
 // DeleteToken revokes a token owned by user in tenant.
 func (s *Store) DeleteToken(ctx context.Context, tenantID, userID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM api_tokens WHERE id = ? AND tenant_id = ? AND user_id = ?`, id, tenantID, userID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM api_tokens WHERE id = ? AND tenant_id = ? AND user_id = ?`, id, tenantID, userID)
 	if err != nil {
 		return err
 	}
@@ -476,7 +476,7 @@ func (s *Store) DeleteToken(ctx context.Context, tenantID, userID, id string) er
 func (s *Store) Audit(ctx context.Context, e model.AuditEntry) error {
 	e.ID = newID()
 	e.CreatedAt = s.now()
-	_, err := s.c().exec(ctx, `INSERT INTO audit_log (id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO audit_log (id, tenant_id, user_id, user_email, action, entity_type, entity_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.ID, e.TenantID, e.UserID, e.UserEmail, e.Action, e.EntityType, e.EntityID, e.Details, e.CreatedAt)
 	return err
 }
@@ -498,7 +498,7 @@ func (s *Store) ListAuditRange(ctx context.Context, tenantID string, from, to *t
 		q += ` AND a.created_at <= ?`
 		args = append(args, to.UTC())
 	}
-	rows, err := s.c().query(ctx, q+` ORDER BY a.created_at DESC LIMIT ?`, append(args, limit)...)
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY a.created_at DESC LIMIT ?`, append(args, limit)...)
 	if err != nil {
 		return nil, err
 	}
@@ -519,7 +519,7 @@ func (s *Store) ListAudit(ctx context.Context, tenantID string, limit int) ([]mo
 	if limit <= 0 || limit > 5000 {
 		limit = 500
 	}
-	rows, err := s.c().query(ctx, `SELECT a.id, a.tenant_id, a.user_id, a.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), a.action, a.entity_type, a.entity_id, a.details, a.created_at
+	rows, err := s.c(ctx).query(ctx, `SELECT a.id, a.tenant_id, a.user_id, a.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), a.action, a.entity_type, a.entity_id, a.details, a.created_at
 		FROM audit_log a LEFT JOIN users u ON u.id = a.user_id WHERE a.tenant_id = ? ORDER BY a.created_at DESC LIMIT ?`, tenantID, limit)
 	if err != nil {
 		return nil, err

@@ -165,13 +165,13 @@ var DefaultCategories = []DefaultCategory{
 
 // GetProject returns a project of the tenant.
 func (s *Store) GetProject(ctx context.Context, tenantID, id string) (*model.Project, error) {
-	p, err := scanProject(s.c().row(ctx, `SELECT `+projectCols+` FROM projects WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	p, err := scanProject(s.c(ctx).row(ctx, `SELECT `+projectCols+` FROM projects WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	return p, mapErr(err, "project")
 }
 
 // ListProjects returns all projects of a tenant.
 func (s *Store) ListProjects(ctx context.Context, tenantID string) ([]model.Project, error) {
-	rows, err := s.c().query(ctx, `SELECT `+projectCols+` FROM projects WHERE tenant_id = ? ORDER BY name`, tenantID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+projectCols+` FROM projects WHERE tenant_id = ? ORDER BY name`, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (s *Store) UpdateProject(ctx context.Context, tenantID string, p *model.Pro
 	if err := normalizeProjectExtras(p); err != nil {
 		return err
 	}
-	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, icon = ?, color = ?, requirement_sources = ?, type = ?, tech_context = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, icon = ?, color = ?, requirement_sources = ?, type = ?, tech_context = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
 		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.Icon, p.Color, storedSources(p), p.Type, p.TechContext, p.UpdatedAt, p.ID, tenantID)
 	if err != nil {
 		return err
@@ -228,7 +228,7 @@ type SourceCount struct {
 
 // RequirementSourceUsage lists the sources used by a project's requirements, most used first.
 func (s *Store) RequirementSourceUsage(ctx context.Context, tenantID, projectID string) ([]SourceCount, error) {
-	rows, err := s.c().query(ctx, `SELECT source, COUNT(*) FROM requirements WHERE tenant_id = ? AND project_id = ? AND source <> '' GROUP BY source ORDER BY COUNT(*) DESC, source`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT source, COUNT(*) FROM requirements WHERE tenant_id = ? AND project_id = ? AND source <> '' GROUP BY source ORDER BY COUNT(*) DESC, source`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +385,7 @@ func nextFolderPos(ctx context.Context, c conn, projectID, kind string, parent *
 
 // GetFolder returns a folder of the tenant.
 func (s *Store) GetFolder(ctx context.Context, tenantID, id string) (*model.Folder, error) {
-	f, err := scanFolder(s.c().row(ctx, `SELECT `+folderCols+` FROM folders WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	f, err := scanFolder(s.c(ctx).row(ctx, `SELECT `+folderCols+` FROM folders WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	return f, mapErr(err, "folder")
 }
 
@@ -398,7 +398,7 @@ func (s *Store) ListFolders(ctx context.Context, tenantID, projectID, kind strin
 		q += ` AND kind = ?`
 		args = append(args, kind)
 	}
-	rows, err := s.c().query(ctx, q+` ORDER BY position, name`, args...)
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY position, name`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +420,7 @@ func (s *Store) UpdateFolder(ctx context.Context, tenantID string, f *model.Fold
 	if f.Name == "" {
 		return Invalidf("folder name is required")
 	}
-	res, err := s.c().exec(ctx, `UPDATE folders SET name = ?, description = ? WHERE id = ? AND tenant_id = ?`, f.Name, f.Description, f.ID, tenantID)
+	res, err := s.c(ctx).exec(ctx, `UPDATE folders SET name = ?, description = ? WHERE id = ? AND tenant_id = ?`, f.Name, f.Description, f.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -646,7 +646,7 @@ func (s *Store) CreateCategory(ctx context.Context, tenantID string, c *model.Ca
 		return err
 	}
 	c.ID = newID()
-	_, err := s.c().exec(ctx, `INSERT INTO categories (id, tenant_id, project_id, scope, dimension, name, color, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO categories (id, tenant_id, project_id, scope, dimension, name, color, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		c.ID, tenantID, c.ProjectID, c.Scope, c.Dimension, c.Name, c.Color, c.Description)
 	return mapErr(err, "category")
 }
@@ -669,7 +669,7 @@ func validateCategory(c *model.Category) error {
 // GetCategory returns a category.
 func (s *Store) GetCategory(ctx context.Context, tenantID, id string) (*model.Category, error) {
 	var c model.Category
-	err := s.c().row(ctx, `SELECT `+categoryCols+` FROM categories WHERE id = ? AND tenant_id = ?`, id, tenantID).
+	err := s.c(ctx).row(ctx, `SELECT `+categoryCols+` FROM categories WHERE id = ? AND tenant_id = ?`, id, tenantID).
 		Scan(&c.ID, &c.ProjectID, &c.Scope, &c.Dimension, &c.Name, &c.Color, &c.Description)
 	if err != nil {
 		return nil, mapErr(err, "category")
@@ -685,7 +685,7 @@ func (s *Store) ListCategories(ctx context.Context, tenantID, projectID, scope s
 		q += ` AND scope = ?`
 		args = append(args, scope)
 	}
-	rows, err := s.c().query(ctx, q+` ORDER BY scope, dimension, name`, args...)
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY scope, dimension, name`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -712,13 +712,13 @@ func (s *Store) UpdateCategory(ctx context.Context, tenantID string, c *model.Ca
 	if err := validateCategory(c); err != nil {
 		return err
 	}
-	_, err = s.c().exec(ctx, `UPDATE categories SET dimension = ?, name = ?, color = ?, description = ? WHERE id = ?`, c.Dimension, c.Name, c.Color, c.Description, c.ID)
+	_, err = s.c(ctx).exec(ctx, `UPDATE categories SET dimension = ?, name = ?, color = ?, description = ? WHERE id = ?`, c.Dimension, c.Name, c.Color, c.Description, c.ID)
 	return mapErr(err, "category")
 }
 
 // DeleteCategory removes a category and its assignments.
 func (s *Store) DeleteCategory(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM categories WHERE id = ? AND tenant_id = ?`, id, tenantID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM categories WHERE id = ? AND tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return err
 	}

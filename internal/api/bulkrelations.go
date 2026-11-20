@@ -85,7 +85,8 @@ func (s *Server) handleBulkCreateRelations(w http.ResponseWriter, r *http.Reques
 			continue
 		}
 		rel := &model.Relation{SourceID: x.SourceID, TargetID: x.TargetID, Type: x.Type, CreatedBy: p.User.Email}
-		if err := s.Store.CreateRelation(ctx, p.TenantID(), rel); errors.Is(err, store.ErrInvalid) {
+		err := s.Store.Savepoint(ctx, func() error { return s.Store.CreateRelation(ctx, p.TenantID(), rel) })
+		if errors.Is(err, store.ErrInvalid) {
 			skip("invalid", err.Error()) // an unknown type or a refines cycle
 			continue
 		} else if errors.Is(err, store.ErrConflict) {

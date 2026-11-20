@@ -14,7 +14,7 @@ func (s *Server) routesDependencies(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/readiness", s.handleTestReadiness, "test.read")
 	h("GET /api/v1/projects/{pid}/graph", s.handleGraph, "project.read")
 	h("GET /api/v1/projects/{pid}/tags", s.handleProjectTags, "project.read")
-	h("POST /api/v1/projects/{pid}/tags/bulk", s.handleBulkTags, "project.read")
+	h("POST /api/v1/projects/{pid}/tags/bulk", s.atomic(s.handleBulkTags), "project.read")
 }
 
 func (s *Server) handleTestDependencies(w http.ResponseWriter, r *http.Request, p *Principal) {

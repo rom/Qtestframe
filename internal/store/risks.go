@@ -87,7 +87,7 @@ func (s *Store) UpdateRisk(ctx context.Context, tenantID string, k *model.Risk) 
 		return err
 	}
 	k.UpdatedAt = s.now()
-	res, err := s.c().exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE risks SET title = ?, description = ?, category = ?, likelihood = ?, impact = ?, status = ?, mitigation = ?, owner = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
 		k.Title, k.Description, k.Category, k.Likelihood, k.Impact, k.Status, k.Mitigation, k.Owner, k.UpdatedAt, k.ID, tenantID)
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (s *Store) SetRiskRequirements(ctx context.Context, tenantID, riskID string
 
 // GetRisk returns a risk with its requirements and their coverage.
 func (s *Store) GetRisk(ctx context.Context, tenantID, id string) (*model.Risk, error) {
-	k, err := scanRisk(s.c().row(ctx, `SELECT `+riskCols+` FROM risks WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	k, err := scanRisk(s.c(ctx).row(ctx, `SELECT `+riskCols+` FROM risks WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "risk")
 	}
@@ -144,7 +144,7 @@ func (s *Store) GetRisk(ctx context.Context, tenantID, id string) (*model.Risk, 
 
 // ListRisks lists the risks of a project, highest score first.
 func (s *Store) ListRisks(ctx context.Context, tenantID, projectID string) ([]model.Risk, error) {
-	rows, err := s.c().query(ctx, `SELECT `+riskCols+` FROM risks WHERE tenant_id = ? AND project_id = ? ORDER BY likelihood * impact DESC, seq`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+riskCols+` FROM risks WHERE tenant_id = ? AND project_id = ? ORDER BY likelihood * impact DESC, seq`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (s *Store) decorateRisks(ctx context.Context, tenantID, projectID string, r
 	if len(risks) == 0 {
 		return nil
 	}
-	rows, err := s.c().query(ctx, `SELECT rr.risk_id, rr.requirement_id FROM risk_requirements rr JOIN risks k ON k.id = rr.risk_id JOIN requirements q ON q.id = rr.requirement_id WHERE k.project_id = ? AND k.tenant_id = ? ORDER BY q.seq`, projectID, tenantID)
+	rows, err := s.c(ctx).query(ctx, `SELECT rr.risk_id, rr.requirement_id FROM risk_requirements rr JOIN risks k ON k.id = rr.risk_id JOIN requirements q ON q.id = rr.requirement_id WHERE k.project_id = ? AND k.tenant_id = ? ORDER BY q.seq`, projectID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func (s *Store) DeleteRisk(ctx context.Context, tenantID, id string) error {
 // RequirementRiskLevels returns, per requirement of a project, the highest
 // level of the open risks it addresses.
 func (s *Store) RequirementRiskLevels(ctx context.Context, tenantID, projectID string) (map[string]string, error) {
-	rows, err := s.c().query(ctx, `SELECT rr.requirement_id, k.likelihood, k.impact FROM risk_requirements rr JOIN risks k ON k.id = rr.risk_id
+	rows, err := s.c(ctx).query(ctx, `SELECT rr.requirement_id, k.likelihood, k.impact FROM risk_requirements rr JOIN risks k ON k.id = rr.risk_id
 		WHERE k.tenant_id = ? AND k.project_id = ? AND k.status IN ('identified', 'mitigating')`, tenantID, projectID)
 	if err != nil {
 		return nil, err

@@ -51,7 +51,7 @@ func (s *Store) ListNotifications(ctx context.Context, tenantID, userID string, 
 	if unreadOnly {
 		where += ` AND read_at IS NULL`
 	}
-	rows, err := s.c().query(ctx, `SELECT id, user_id, project_id, event, title, body, entity_type, entity_id, actor, read_at, created_at FROM notifications `+where+` ORDER BY created_at DESC, id LIMIT ?`, tenantID, userID, limit)
+	rows, err := s.c(ctx).query(ctx, `SELECT id, user_id, project_id, event, title, body, entity_type, entity_id, actor, read_at, created_at FROM notifications `+where+` ORDER BY created_at DESC, id LIMIT ?`, tenantID, userID, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -71,7 +71,7 @@ func (s *Store) ListNotifications(ctx context.Context, tenantID, userID string, 
 		return nil, 0, err
 	}
 	var unread int
-	err = s.c().row(ctx, `SELECT COUNT(*) FROM notifications WHERE tenant_id = ? AND user_id = ? AND read_at IS NULL`, tenantID, userID).Scan(&unread)
+	err = s.c(ctx).row(ctx, `SELECT COUNT(*) FROM notifications WHERE tenant_id = ? AND user_id = ? AND read_at IS NULL`, tenantID, userID).Scan(&unread)
 	return out, unread, err
 }
 
@@ -86,7 +86,7 @@ func (s *Store) MarkNotificationsRead(ctx context.Context, tenantID, userID stri
 		q += ` AND id IN (` + placeholders(len(ids)) + `)`
 		args = append(args, anySlice(ids)...)
 	}
-	res, err := s.c().exec(ctx, q, args...)
+	res, err := s.c(ctx).exec(ctx, q, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -96,7 +96,7 @@ func (s *Store) MarkNotificationsRead(ctx context.Context, tenantID, userID stri
 
 // PruneNotifications deletes read notifications older than the given age.
 func (s *Store) PruneNotifications(ctx context.Context, age time.Duration) error {
-	_, err := s.c().exec(ctx, `DELETE FROM notifications WHERE read_at IS NOT NULL AND created_at < ?`, s.now().Add(-age))
+	_, err := s.c(ctx).exec(ctx, `DELETE FROM notifications WHERE read_at IS NOT NULL AND created_at < ?`, s.now().Add(-age))
 	return err
 }
 
@@ -170,7 +170,7 @@ func (s *Store) CreateWebhook(ctx context.Context, tenantID string, w *model.Web
 	w.CreatedAt = s.now()
 	w.UpdatedAt = w.CreatedAt
 	ev, _ := json.Marshal(w.Events)
-	_, err := s.c().exec(ctx, `INSERT INTO webhooks (id, tenant_id, project_id, name, url, secret, events, enabled, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO webhooks (id, tenant_id, project_id, name, url, secret, events, enabled, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		w.ID, tenantID, w.ProjectID, w.Name, w.URL, w.Secret, string(ev), w.Enabled, w.CreatedBy, w.CreatedAt, w.UpdatedAt)
 	return mapErr(err, "webhook")
 }
@@ -182,7 +182,7 @@ func (s *Store) UpdateWebhook(ctx context.Context, tenantID string, w *model.Web
 	}
 	w.UpdatedAt = s.now()
 	ev, _ := json.Marshal(w.Events)
-	res, err := s.c().exec(ctx, `UPDATE webhooks SET name = ?, url = ?, events = ?, enabled = ?, secret = CASE WHEN ? = '' THEN secret ELSE ? END, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE webhooks SET name = ?, url = ?, events = ?, enabled = ?, secret = CASE WHEN ? = '' THEN secret ELSE ? END, updated_at = ? WHERE id = ? AND tenant_id = ?`,
 		w.Name, w.URL, string(ev), w.Enabled, w.Secret, w.Secret, w.UpdatedAt, w.ID, tenantID)
 	if err != nil {
 		return err
@@ -195,13 +195,13 @@ func (s *Store) UpdateWebhook(ctx context.Context, tenantID string, w *model.Web
 
 // GetWebhook returns a webhook including its secret.
 func (s *Store) GetWebhook(ctx context.Context, tenantID, id string) (*model.Webhook, error) {
-	w, err := scanWebhook(s.c().row(ctx, `SELECT `+webhookCols+` FROM webhooks WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	w, err := scanWebhook(s.c(ctx).row(ctx, `SELECT `+webhookCols+` FROM webhooks WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	return w, mapErr(err, "webhook")
 }
 
 // ListWebhooks lists a project's webhooks including secrets.
 func (s *Store) ListWebhooks(ctx context.Context, tenantID, projectID string) ([]model.Webhook, error) {
-	rows, err := s.c().query(ctx, `SELECT `+webhookCols+` FROM webhooks WHERE tenant_id = ? AND project_id = ? ORDER BY name, created_at`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+webhookCols+` FROM webhooks WHERE tenant_id = ? AND project_id = ? ORDER BY name, created_at`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (s *Store) WebhooksFor(ctx context.Context, tenantID, projectID, event stri
 
 // DeleteWebhook removes a webhook.
 func (s *Store) DeleteWebhook(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM webhooks WHERE id = ? AND tenant_id = ?`, id, tenantID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM webhooks WHERE id = ? AND tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return err
 	}
@@ -249,7 +249,7 @@ func (s *Store) RecordWebhookDelivery(ctx context.Context, id string, status int
 	if len(errText) > 500 {
 		errText = errText[:500]
 	}
-	_, err := s.c().exec(ctx, `UPDATE webhooks SET last_delivery_at = ?, last_status = ?, last_error = ? WHERE id = ?`, s.now(), status, errText, id)
+	_, err := s.c(ctx).exec(ctx, `UPDATE webhooks SET last_delivery_at = ?, last_status = ?, last_error = ? WHERE id = ?`, s.now(), status, errText, id)
 	return err
 }
 
@@ -260,7 +260,7 @@ func (s *Store) MarkEntityNotificationsRead(ctx context.Context, tenantID, userI
 		return nil
 	}
 	args := append([]any{s.now(), tenantID, userID, event}, anySlice(entityIDs)...)
-	_, err := s.c().exec(ctx, `UPDATE notifications SET read_at = ? WHERE tenant_id = ? AND user_id = ? AND event = ? AND read_at IS NULL AND entity_id IN (`+placeholders(len(entityIDs))+`)`, args...)
+	_, err := s.c(ctx).exec(ctx, `UPDATE notifications SET read_at = ? WHERE tenant_id = ? AND user_id = ? AND event = ? AND read_at IS NULL AND entity_id IN (`+placeholders(len(entityIDs))+`)`, args...)
 	return err
 }
 
@@ -270,7 +270,7 @@ func (s *Store) MarkNotificationsUnread(ctx context.Context, tenantID, userID st
 		return 0, nil
 	}
 	args := append([]any{tenantID, userID}, anySlice(ids)...)
-	res, err := s.c().exec(ctx, `UPDATE notifications SET read_at = NULL WHERE tenant_id = ? AND user_id = ? AND read_at IS NOT NULL AND id IN (`+placeholders(len(ids))+`)`, args...)
+	res, err := s.c(ctx).exec(ctx, `UPDATE notifications SET read_at = NULL WHERE tenant_id = ? AND user_id = ? AND read_at IS NOT NULL AND id IN (`+placeholders(len(ids))+`)`, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -292,7 +292,7 @@ func (s *Store) DeleteNotifications(ctx context.Context, tenantID, userID string
 	default:
 		return 0, Invalidf("give ids or read: true")
 	}
-	res, err := s.c().exec(ctx, q, args...)
+	res, err := s.c(ctx).exec(ctx, q, args...)
 	if err != nil {
 		return 0, err
 	}

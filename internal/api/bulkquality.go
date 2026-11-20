@@ -601,7 +601,12 @@ func (s *Server) handleBulkSignBaselines(w http.ResponseWriter, r *http.Request,
 	}
 	signed, skipped := []bulkBaseline{}, []bulkBaseline{}
 	for _, b := range list {
-		so, err := s.signBaseline(r, p, b.ID, req)
+		// a savepoint: a conflict skips this baseline, the rest goes on
+		var so *model.Signoff
+		err := s.Store.Savepoint(r.Context(), func() (err error) {
+			so, err = s.signBaseline(r, p, b.ID, req)
+			return err
+		})
 		if errors.Is(err, store.ErrConflict) {
 			skipped = append(skipped, bulkBaseline{ID: b.ID, Name: b.Name, Reason: "already"})
 			continue

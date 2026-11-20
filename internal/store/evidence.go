@@ -49,7 +49,7 @@ func (s *Store) MarkLinksSuspect(ctx context.Context, tenantID, kind, id, reason
 	if kind == model.KindTest {
 		col = "test_case_id"
 	}
-	rows, err := s.c().query(ctx, `SELECT requirement_id FROM trace_links WHERE tenant_id = ? AND `+col+` = ? AND suspect_since IS NULL`, tenantID, id)
+	rows, err := s.c(ctx).query(ctx, `SELECT requirement_id FROM trace_links WHERE tenant_id = ? AND `+col+` = ? AND suspect_since IS NULL`, tenantID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (s *Store) MarkLinksSuspect(ctx context.Context, tenantID, kind, id, reason
 	if len(reason) > 500 {
 		reason = reason[:500]
 	}
-	_, err = s.c().exec(ctx, `UPDATE trace_links SET suspect_since = ?, suspect_reason = ? WHERE tenant_id = ? AND `+col+` = ? AND suspect_since IS NULL`, s.now(), reason, tenantID, id)
+	_, err = s.c(ctx).exec(ctx, `UPDATE trace_links SET suspect_since = ?, suspect_reason = ? WHERE tenant_id = ? AND `+col+` = ? AND suspect_since IS NULL`, s.now(), reason, tenantID, id)
 	return reqs, err
 }
 
@@ -82,7 +82,7 @@ func (s *Store) ConfirmLinks(ctx context.Context, tenantID string, linkIDs []str
 	default:
 		return nil, Invalidf("nothing to confirm")
 	}
-	rows, err := s.c().query(ctx, `SELECT id FROM trace_links WHERE `+where, args...)
+	rows, err := s.c(ctx).query(ctx, `SELECT id FROM trace_links WHERE `+where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (s *Store) ConfirmLinks(ctx context.Context, tenantID string, linkIDs []str
 		}
 		out = append(out, *l)
 	}
-	_, err = s.c().exec(ctx, `UPDATE trace_links SET suspect_since = NULL, suspect_reason = '' WHERE `+where, args...)
+	_, err = s.c(ctx).exec(ctx, `UPDATE trace_links SET suspect_since = NULL, suspect_reason = '' WHERE `+where, args...)
 	return out, err
 }
 
@@ -183,7 +183,7 @@ func (s *Store) SyncEvidenceStatus(ctx context.Context, tenantID, projectID stri
 		}
 		r.Version++
 		r.UpdatedAt = s.now()
-		if _, err := s.c().exec(ctx, `UPDATE requirements SET status = ?, version = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, next, r.Version, r.UpdatedAt, id, tenantID); err != nil {
+		if _, err := s.c(ctx).exec(ctx, `UPDATE requirements SET status = ?, version = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, next, r.Version, r.UpdatedAt, id, tenantID); err != nil {
 			return out, err
 		}
 		from := r.Status

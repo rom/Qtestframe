@@ -25,14 +25,14 @@ import (
 
 func (s *Server) routesNotifications(h routeFunc) {
 	h("GET /api/v1/notifications", s.handleListNotifications)
-	h("POST /api/v1/notifications/read", s.handleReadNotifications)
-	h("POST /api/v1/notifications/unread", s.handleUnreadNotifications)
-	h("DELETE /api/v1/notifications", s.handleDeleteNotifications)
+	h("POST /api/v1/notifications/read", s.atomic(s.handleReadNotifications))
+	h("POST /api/v1/notifications/unread", s.atomic(s.handleUnreadNotifications))
+	h("DELETE /api/v1/notifications", s.atomic(s.handleDeleteNotifications))
 	h("GET /api/v1/webhook-events", s.handleWebhookEvents)
 	h("GET /api/v1/projects/{pid}/webhooks", s.handleListWebhooks, "project.update")
 	h("POST /api/v1/projects/{pid}/webhooks", s.handleCreateWebhook, "project.update")
-	h("POST /api/v1/projects/{pid}/webhooks/bulk", s.handleBulkWebhooks, "project.update")
-	h("DELETE /api/v1/projects/{pid}/webhooks/bulk", s.handleBulkDeleteWebhooks, "project.update")
+	h("POST /api/v1/projects/{pid}/webhooks/bulk", s.atomic(s.handleBulkWebhooks), "project.update")
+	h("DELETE /api/v1/projects/{pid}/webhooks/bulk", s.atomic(s.handleBulkDeleteWebhooks), "project.update")
 	h("POST /api/v1/projects/{pid}/webhooks/test", s.handleBulkTestWebhooks, "project.update")
 	h("PATCH /api/v1/webhooks/{id}", s.handleUpdateWebhook, "project.update")
 	h("DELETE /api/v1/webhooks/{id}", s.handleDeleteWebhook, "project.update")
@@ -222,15 +222,18 @@ func (s *Server) notifyEvent(r *http.Request, p *Principal, projectID, event str
 	if err != nil {
 		return
 	}
-	for _, hk := range hooks {
-		s.hooks.Add(1)
-		go func(hk model.Webhook) {
-			defer s.hooks.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			defer cancel()
-			s.deliver(ctx, &hk, event, body)
-		}(hk)
-	}
+	// inside a request transaction, deliver only once it is committed
+	store.AfterCommit(r.Context(), func() {
+		for _, hk := range hooks {
+			s.hooks.Add(1)
+			go func(hk model.Webhook) {
+				defer s.hooks.Done()
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cancel()
+				s.deliver(ctx, &hk, event, body)
+			}(hk)
+		}
+	})
 }
 
 // WaitWebhooks waits for deliveries in flight (tests, shutdown).

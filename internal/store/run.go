@@ -187,7 +187,7 @@ func syncRunStatus(ctx context.Context, c conn, runID string, now time.Time, reo
 
 // GetRun returns a run with its result summary.
 func (s *Store) GetRun(ctx context.Context, tenantID, id string) (*model.TestRun, error) {
-	run, err := scanRun(s.c().row(ctx, `SELECT `+runCols+` FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	run, err := scanRun(s.c(ctx).row(ctx, `SELECT `+runCols+` FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "run")
 	}
@@ -203,7 +203,7 @@ func (s *Store) GetRun(ctx context.Context, tenantID, id string) (*model.TestRun
 }
 
 func (s *Store) runSummaries(ctx context.Context, where string, args ...any) (map[string]map[string]int, error) {
-	rows, err := s.c().query(ctx, `SELECT run_id, status, COUNT(*) FROM test_executions `+where+` GROUP BY run_id, status`, args...)
+	rows, err := s.c(ctx).query(ctx, `SELECT run_id, status, COUNT(*) FROM test_executions `+where+` GROUP BY run_id, status`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (s *Store) runSummaries(ctx context.Context, where string, args ...any) (ma
 
 // ListRuns returns runs of a project, newest first.
 func (s *Store) ListRuns(ctx context.Context, tenantID, projectID string) ([]model.TestRun, error) {
-	rows, err := s.c().query(ctx, `SELECT `+runCols+` FROM test_runs WHERE tenant_id = ? AND project_id = ? ORDER BY created_at DESC`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+runCols+` FROM test_runs WHERE tenant_id = ? AND project_id = ? ORDER BY created_at DESC`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -272,10 +272,10 @@ func (s *Store) UpdateRun(ctx context.Context, tenantID string, run *model.TestR
 	if run.Status == "planned" || run.Status == "in_progress" {
 		run.CompletedAt = nil
 	}
-	if err := checkRelease(ctx, s.c(), tenantID, run.ProjectID, run.ReleaseID); err != nil {
+	if err := checkRelease(ctx, s.c(ctx), tenantID, run.ProjectID, run.ReleaseID); err != nil {
 		return err
 	}
-	res, err := s.c().exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ?, release_id = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE test_runs SET name = ?, description = ?, status = ?, environment = ?, build = ?, started_at = ?, completed_at = ?, release_id = ? WHERE id = ? AND tenant_id = ?`,
 		run.Name, run.Description, run.Status, run.Environment, run.Build, nullTime(run.StartedAt), nullTime(run.CompletedAt), nullStr(run.ReleaseID), run.ID, tenantID)
 	if err != nil {
 		return err
@@ -341,7 +341,7 @@ func scanExecution(r interface{ Scan(...any) error }, extra ...any) (*model.Exec
 // ListTestExecutions returns the executions of a test across all runs,
 // newest run first.
 func (s *Store) ListTestExecutions(ctx context.Context, tenantID, testID string) ([]model.Execution, error) {
-	rows, err := s.c().query(ctx, `SELECT `+execCols+`, r.name, r.status, r.environment, r.build, r.created_at
+	rows, err := s.c(ctx).query(ctx, `SELECT `+execCols+`, r.name, r.status, r.environment, r.build, r.created_at
 		FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id JOIN test_runs r ON r.id = e.run_id
 		WHERE e.test_case_id = ? AND e.tenant_id = ? ORDER BY r.created_at DESC`, testID, tenantID)
 	if err != nil {
@@ -366,7 +366,7 @@ func (s *Store) ListTestExecutions(ctx context.Context, tenantID, testID string)
 
 // ListExecutions lists executions of a run in order.
 func (s *Store) ListExecutions(ctx context.Context, tenantID, runID string) ([]model.Execution, error) {
-	rows, err := s.c().query(ctx, `SELECT `+execCols+` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id WHERE e.run_id = ? AND e.tenant_id = ? ORDER BY e.position`, runID, tenantID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+execCols+` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id WHERE e.run_id = ? AND e.tenant_id = ? ORDER BY e.position`, runID, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -388,17 +388,17 @@ const MaxEvidence = 20000
 // StepResultExecution returns the execution a step result belongs to.
 func (s *Store) StepResultExecution(ctx context.Context, tenantID, stepResultID string) (string, error) {
 	var id string
-	err := s.c().row(ctx, `SELECT e.id FROM step_results sr JOIN test_executions e ON e.id = sr.execution_id WHERE sr.id = ? AND e.tenant_id = ?`, stepResultID, tenantID).Scan(&id)
+	err := s.c(ctx).row(ctx, `SELECT e.id FROM step_results sr JOIN test_executions e ON e.id = sr.execution_id WHERE sr.id = ? AND e.tenant_id = ?`, stepResultID, tenantID).Scan(&id)
 	return id, mapErr(err, "step result")
 }
 
 // GetExecution returns an execution with step results.
 func (s *Store) GetExecution(ctx context.Context, tenantID, id string) (*model.Execution, error) {
-	e, err := scanExecution(s.c().row(ctx, `SELECT `+execCols+` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id WHERE e.id = ? AND e.tenant_id = ?`, id, tenantID))
+	e, err := scanExecution(s.c(ctx).row(ctx, `SELECT `+execCols+` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id WHERE e.id = ? AND e.tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "execution")
 	}
-	rows, err := s.c().query(ctx, `SELECT sr.id, sr.step_id, sr.position, sr.action, sr.expected, sr.status, sr.actual, sr.evidence,
+	rows, err := s.c(ctx).query(ctx, `SELECT sr.id, sr.step_id, sr.position, sr.action, sr.expected, sr.status, sr.actual, sr.evidence,
 		(SELECT COUNT(*) FROM attachments a WHERE a.entity_type = 'step' AND a.entity_id = sr.id)
 		FROM step_results sr WHERE sr.execution_id = ? ORDER BY sr.position`, id)
 	if err != nil {
@@ -572,7 +572,7 @@ func (s *Store) ImportResults(ctx context.Context, tenantID, runID, user string,
 	if err != nil {
 		return 0, nil, err
 	}
-	tests, err := s.c().query(ctx, `SELECT key, id FROM test_cases WHERE project_id = ? AND tenant_id = ?`, run.ProjectID, tenantID)
+	tests, err := s.c(ctx).query(ctx, `SELECT key, id FROM test_cases WHERE project_id = ? AND tenant_id = ?`, run.ProjectID, tenantID)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -601,7 +601,7 @@ func (s *Store) ImportResults(ctx context.Context, tenantID, runID, user string,
 			return updated, unknown, err
 		}
 		var eid string
-		if err := s.c().row(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND test_case_id = ?`, runID, tid).Scan(&eid); err != nil {
+		if err := s.c(ctx).row(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND test_case_id = ?`, runID, tid).Scan(&eid); err != nil {
 			return updated, unknown, err
 		}
 		st, out, dur := r.Status, r.Output, r.DurationMS
@@ -615,7 +615,7 @@ func (s *Store) ImportResults(ctx context.Context, tenantID, runID, user string,
 
 // LastResults returns test id → latest non-not_run execution status.
 func (s *Store) LastResults(ctx context.Context, tenantID, projectID string) (map[string]string, error) {
-	rows, err := s.c().query(ctx, `SELECT e.test_case_id, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e JOIN test_runs r ON r.id = e.run_id
+	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e JOIN test_runs r ON r.id = e.run_id
 		WHERE r.project_id = ? AND e.tenant_id = ? AND e.status <> 'not_run'`, projectID, tenantID)
 	if err != nil {
 		return nil, err
