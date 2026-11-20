@@ -23,6 +23,19 @@ export const useNotificationsStore = defineStore('notifications', {
       for (const n of this.items) if (!ids || ids.includes(n.id)) n.read_at = n.read_at ?? now
       this.unread = ids ? Math.max(0, this.unread - ids.length) : 0
     },
+    async markUnread(ids: string[]) {
+      const res = await api.post<{ marked: number }>('/notifications/unread', { ids })
+      for (const n of this.items) if (ids.includes(n.id)) n.read_at = null
+      this.unread += res.marked
+    },
+    /** Delete notifications: the given ones, or all read ones. */
+    async remove(which: string[] | 'read') {
+      const res = await api.del<{ deleted: number }>('/notifications', which === 'read' ? { read: true } : { ids: which })
+      const gone = (n: AppNotification) => (which === 'read' ? !!n.read_at : which.includes(n.id))
+      this.unread -= this.items.filter((n) => gone(n) && !n.read_at).length
+      this.items = this.items.filter((n) => !gone(n))
+      return res.deleted
+    },
     start() {
       if (this.timer) return
       void this.load()

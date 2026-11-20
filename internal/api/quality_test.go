@@ -444,3 +444,50 @@ func TestNotificationsAndWebhooks(t *testing.T) {
 	a.m("DELETE", "/api/v1/webhooks/"+wh["id"].(string), nil, 204)
 	a.m("DELETE", "/api/v1/webhooks/"+wh["id"].(string), nil, 404)
 }
+
+func TestBulkNotifications(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	e.member("anna.berg@example.com", "tester")
+	n := e.login("anna.berg@example.com")
+	pid := a.project("BN")
+	for _, title := range []string{"One", "Two", "Three"} {
+		a.m("POST", "/api/v1/projects/"+pid+"/defects", map[string]any{"title": title, "assignee": "@anna.berg"}, 201)
+	}
+	// someone else's notifications are never touched
+	e.member("bo@example.com", "tester")
+	bo := e.login("bo@example.com")
+	a.m("POST", "/api/v1/projects/"+pid+"/defects", map[string]any{"title": "Bo", "assignee": "bo@example.com"}, 201)
+	boID := items(bo.m("GET", "/api/v1/notifications", nil, 200))[0]["id"].(string)
+
+	list := items(n.m("GET", "/api/v1/notifications", nil, 200))
+	if len(list) != 3 {
+		t.Fatal(list)
+	}
+	ids := []string{list[0]["id"].(string), list[1]["id"].(string)}
+	n.m("POST", "/api/v1/notifications/read", map[string]any{"ids": append(ids, boID)}, 200)
+	if r := n.m("GET", "/api/v1/notifications", nil, 200); r["unread"].(float64) != 1 {
+		t.Fatal(r)
+	}
+	n.m("POST", "/api/v1/notifications/unread", map[string]any{"ids": []string{}}, 400)
+	if r := n.m("POST", "/api/v1/notifications/unread", map[string]any{"ids": ids[:1]}, 200); r["marked"].(float64) != 1 {
+		t.Fatal(r)
+	}
+	if r := n.m("GET", "/api/v1/notifications", nil, 200); r["unread"].(float64) != 2 {
+		t.Fatal(r)
+	}
+	n.m("DELETE", "/api/v1/notifications", map[string]any{}, 400)
+	// delete all read (one), then one by id
+	if r := n.m("DELETE", "/api/v1/notifications", map[string]any{"read": true}, 200); r["deleted"].(float64) != 1 {
+		t.Fatal(r)
+	}
+	if r := n.m("DELETE", "/api/v1/notifications", map[string]any{"ids": []string{ids[0], boID}}, 200); r["deleted"].(float64) != 1 {
+		t.Fatal(r)
+	}
+	if l := items(n.m("GET", "/api/v1/notifications", nil, 200)); len(l) != 1 {
+		t.Fatal(l)
+	}
+	if r := bo.m("GET", "/api/v1/notifications", nil, 200); r["unread"].(float64) != 1 || len(items(r)) != 1 {
+		t.Fatal("bo's notification changed", r)
+	}
+}

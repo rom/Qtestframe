@@ -2033,6 +2033,15 @@ const sv: Messages = {
     matrixCaption: 'Krav i rader ({rows}), testfall i kolumner ({cols}). En nedtryckt cell betyder länkad.',
   },
   notifications: {
+    bulk: {
+      toolbar: 'Åtgärder för de markerade notiserna',
+      selectAll: 'Markera alla som visas',
+      selectOne: 'Markera: {title}',
+      markUnread: 'Markera som oläst',
+      deleteRead: 'Ta bort lästa',
+      confirmDeleteRead: 'Ta bort alla notiser som du har läst?',
+      deleted: '{n} notis borttagen | {n} notiser borttagna',
+    },
     title: 'Notiser',
     intro: 'Tilldelningar, omnämnanden, granskningsförfrågningar och ändrade defekter som gäller dig.',
     bell: 'Notiser',

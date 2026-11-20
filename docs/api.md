@@ -831,6 +831,8 @@ carry `risk_level`, the highest level of their open risks (query field
 |---|---|---|---|
 | GET | `/notifications?unread=1&limit=` | signed in | `{"items":[Notification],"unread":n}` |
 | POST | `/notifications/read` | signed in | `{"ids":[...]}`, or `{}` for all |
+| POST | `/notifications/unread` | signed in | `{"ids":[...]}` → `{"marked": n}` |
+| DELETE | `/notifications` | signed in | `{"ids":[...]}`, or `{"read": true}` for all read ones → `{"deleted": n}`; only the caller's own notifications are affected |
 | GET | `/webhook-events` | signed in | event names |
 | GET | `/projects/{pid}/webhooks` | project.update | `[Webhook]` without secrets (`has_secret`) |
 | POST | `/projects/{pid}/webhooks` | project.update | `{"name","url","events":["*"\|event...],"enabled","secret"?}` → Webhook with `secret` (shown only here) |

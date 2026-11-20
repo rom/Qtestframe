@@ -2031,6 +2031,15 @@ const en = {
     matrixCaption: 'Requirements in rows ({rows}), tests in columns ({cols}). A pressed cell means linked.',
   },
   notifications: {
+    bulk: {
+      toolbar: 'Actions for the selected notifications',
+      selectAll: 'Select all shown',
+      selectOne: 'Select: {title}',
+      markUnread: 'Mark unread',
+      deleteRead: 'Delete read',
+      confirmDeleteRead: 'Delete all notifications you have read?',
+      deleted: '{n} notification deleted | {n} notifications deleted',
+    },
     title: 'Notifications',
     intro: 'Assignments, mentions, review requests and defect changes that concern you.',
     bell: 'Notifications',

@@ -26,6 +26,8 @@ import (
 func (s *Server) routesNotifications(h routeFunc) {
 	h("GET /api/v1/notifications", s.handleListNotifications)
 	h("POST /api/v1/notifications/read", s.handleReadNotifications)
+	h("POST /api/v1/notifications/unread", s.handleUnreadNotifications)
+	h("DELETE /api/v1/notifications", s.handleDeleteNotifications)
 	h("GET /api/v1/webhook-events", s.handleWebhookEvents)
 	h("GET /api/v1/projects/{pid}/webhooks", s.handleListWebhooks, "project.update")
 	h("POST /api/v1/projects/{pid}/webhooks", s.handleCreateWebhook, "project.update")
@@ -62,6 +64,46 @@ func (s *Server) handleReadNotifications(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int{"marked": n})
+}
+
+// handleUnreadNotifications marks notifications unread: {"ids": [...]}.
+func (s *Server) handleUnreadNotifications(w http.ResponseWriter, r *http.Request, p *Principal) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if len(req.IDs) == 0 {
+		s.fail(w, r, badRequest("choose at least one notification"))
+		return
+	}
+	n, err := s.Store.MarkNotificationsUnread(r.Context(), p.TenantID(), p.User.ID, req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"marked": n})
+}
+
+// handleDeleteNotifications deletes the caller's notifications:
+// {"ids": [...]} or {"read": true} for all read ones.
+func (s *Server) handleDeleteNotifications(w http.ResponseWriter, r *http.Request, p *Principal) {
+	var req struct {
+		IDs  []string `json:"ids"`
+		Read bool     `json:"read"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	n, err := s.Store.DeleteNotifications(r.Context(), p.TenantID(), p.User.ID, req.IDs, req.Read)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"deleted": n})
 }
 
 // ---------------------------------------------------------------- recipients

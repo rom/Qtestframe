@@ -263,3 +263,39 @@ func (s *Store) MarkEntityNotificationsRead(ctx context.Context, tenantID, userI
 	_, err := s.c().exec(ctx, `UPDATE notifications SET read_at = ? WHERE tenant_id = ? AND user_id = ? AND event = ? AND read_at IS NULL AND entity_id IN (`+placeholders(len(entityIDs))+`)`, args...)
 	return err
 }
+
+// MarkNotificationsUnread marks a user's notifications unread again.
+func (s *Store) MarkNotificationsUnread(ctx context.Context, tenantID, userID string, ids []string) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	args := append([]any{tenantID, userID}, anySlice(ids)...)
+	res, err := s.c().exec(ctx, `UPDATE notifications SET read_at = NULL WHERE tenant_id = ? AND user_id = ? AND read_at IS NOT NULL AND id IN (`+placeholders(len(ids))+`)`, args...)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return int(n), nil
+}
+
+// DeleteNotifications deletes a user's notifications: the given ones, or
+// with readOnly (and no ids) all that have been read.
+func (s *Store) DeleteNotifications(ctx context.Context, tenantID, userID string, ids []string, readOnly bool) (int, error) {
+	q := `DELETE FROM notifications WHERE tenant_id = ? AND user_id = ?`
+	args := []any{tenantID, userID}
+	switch {
+	case len(ids) > 0:
+		q += ` AND id IN (` + placeholders(len(ids)) + `)`
+		args = append(args, anySlice(ids)...)
+	case readOnly:
+		q += ` AND read_at IS NOT NULL`
+	default:
+		return 0, Invalidf("give ids or read: true")
+	}
+	res, err := s.c().exec(ctx, q, args...)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := res.RowsAffected()
+	return int(n), nil
+}

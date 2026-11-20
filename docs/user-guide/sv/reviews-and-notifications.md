@@ -15,6 +15,8 @@ Du får en notis när någon annan:
 
 Du får aldrig notiser om dina egna ändringar. Lästa notiser rensas bort efter en tid.
 
+På **Alla notiser** kryssar du i notiser (eller **Markera alla som visas**) för att **Markera som läst**, **Markera som oläst** eller **Ta bort** dem tillsammans. **Ta bort lästa** tar bort alla notiser som du redan har läst.
+
 ## Begär granskning
 
 Öppna ett krav eller ett test. Under granskningsfältet visar **Granskningsförfrågningar** vilka som har tillfrågats och vad de beslutade. Välj **Begär granskning** (du behöver skrivbehörighet för posten):

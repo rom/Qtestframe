@@ -15,6 +15,8 @@ You get a notification when someone else:
 
 You are never notified about your own changes. Read notifications are cleaned up after some time.
 
+On **All notifications**, tick notifications (or **Select all shown**) to **Mark read**, **Mark unread** or **Delete** them together. **Delete read** removes every notification you have already read.
+
 ## Request a review
 
 Open a requirement or a test. Under the review bar, **Review requests** shows who has been asked and what they decided. Choose **Request review** (you need write permission for the item):
