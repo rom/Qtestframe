@@ -13,9 +13,17 @@ import { placeTip, queryGuidePath, TIP_IDS, TIPS, tipHelpPath, tipKey, type TipT
 
 const LANGS = { en: guideEn, sv: guideSv } as const
 
+// rendered once per page: many tips point at the same page
+const anchorCache = new Map<string, Set<string>>()
 function anchors(lang: string, page: string): Set<string> {
-  const p = getPage(lang, page)!
-  return new Set([...renderGuide(p.markdown, { lang, assets: {} }).html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]))
+  const key = `${lang}/${page}`
+  let set = anchorCache.get(key)
+  if (!set) {
+    const p = getPage(lang, page)!
+    set = new Set([...renderGuide(p.markdown, { lang, assets: {} }).html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]))
+    anchorCache.set(key, set)
+  }
+  return set
 }
 
 function sources(dir: string, out: string[] = []): string[] {
