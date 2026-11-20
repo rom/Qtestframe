@@ -161,7 +161,7 @@ async function apply() {
         <Column v-else field="reviewer_email" :header="t('reviews.reviewers')"><template #body="{ data }"><span class="small">{{ data.reviewer_name || data.reviewer_email }}</span></template></Column>
         <Column field="due_date" :header="t('reviews.dueDate')" sortable style="width: 130px">
           <template #body="{ data }">
-            <span class="small" :class="{ late: overdue(data, today) }">{{ data.due_date ? formatDate(data.due_date) : '' }}</span>
+            <span class="small" :class="{ 'late error-text': overdue(data, today) }">{{ data.due_date ? formatDate(data.due_date) : '' }}</span>
             <span v-if="overdue(data, today)" class="sr-only">{{ t('reviews.overdue') }}</span>
           </template>
         </Column>
@@ -213,11 +213,7 @@ async function apply() {
   overflow-wrap: anywhere;
 }
 .late {
-  color: var(--p-red-700, #b91c1c);
   font-weight: 600;
-}
-:global(.app-dark) .late {
-  color: var(--p-red-300, #fca5a5);
 }
 .form {
   display: flex;

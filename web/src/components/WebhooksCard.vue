@@ -328,10 +328,4 @@ async function copySecret() {
 .results i {
   margin-right: 4px;
 }
-.error-text {
-  color: var(--p-red-700, #b91c1c);
-}
-:global(.app-dark) .error-text {
-  color: var(--p-red-300, #fca5a5);
-}
 </style>
