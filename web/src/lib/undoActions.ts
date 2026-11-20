@@ -1,14 +1,14 @@
 // Building blocks for undo entries of the usual kinds of change.
 import { api } from './api'
-import { clone, type UndoEntry } from './undo'
+import { clone, type StackItem, type UndoEntry } from './undo'
 import { useUndoStore } from '@/stores/undo'
 
-/** Record an entry (no-op outside a pinia app, e.g. in some unit tests). */
-export function recordUndo(e: UndoEntry): void {
+/** Record an entry (no-op outside a pinia app, e.g. in some unit tests); returns the stack item. */
+export function recordUndo(e: UndoEntry): StackItem | null {
   try {
-    useUndoStore().record(e)
+    return useUndoStore().record(e)
   } catch {
-    /* no store */
+    return null /* no store */
   }
 }
 
@@ -87,4 +87,29 @@ export function toggleEntry(label: string, existsNow: boolean, id: string, creat
 /** Run two directions of a change (e.g. moves) as an entry. */
 export function entry(label: string, undo: () => Promise<unknown>, redo: () => Promise<unknown>): UndoEntry {
   return { label, undo: async () => void (await undo()), redo: async () => void (await redo()) }
+}
+
+/**
+ * Items just added together (a catalogue import): undo moves the
+ * requirements and then the tests to the trash, redo restores the tests
+ * first and then the requirements, so their trace links come back.
+ */
+export function addedItemsEntry(label: string, projectId: string, requirementIds: readonly string[], testIds: readonly string[]): UndoEntry {
+  const reqs = [...requirementIds]
+  const tests = [...testIds]
+  let trashReq = ''
+  let trashTest = ''
+  const trash = async (kind: 'requirements' | 'tests', ids: string[]) =>
+    ids.length ? ((await api.del<{ trash_id?: string }>(`/projects/${projectId}/${kind}/bulk`, { ids }))?.trash_id ?? '') : ''
+  return {
+    label,
+    undo: async () => {
+      trashReq = await trash('requirements', reqs)
+      trashTest = await trash('tests', tests)
+    },
+    redo: async () => {
+      if (trashTest) await restoreTrash(trashTest)
+      if (trashReq) await restoreTrash(trashReq)
+    },
+  }
 }

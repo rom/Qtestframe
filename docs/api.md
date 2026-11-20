@@ -573,6 +573,106 @@ their names). Deleting an item removes its links (the trash restores them);
 moving requirements or tests to another project drops their internal links
 and keeps web links.
 
+## Catalogue
+
+A built-in library of standard requirements and tests for software
+development (security, privacy, performance, reliability, operations,
+usability, accessibility, common functionality), in English and Swedish.
+The texts are written for Qtestframe and cite the standards they are based
+on (OWASP ASVS, WCAG, ISO/IEC 25010, NIST SP 800-63B …) in `refs` by name
+and section, without copying them. The content lives in
+`internal/catalog/data` (format: `internal/catalog/FORMAT.md`) and ships
+with the binary.
+
+Items are organised in **groups** (e.g. Security) of **areas** (e.g.
+Authentication). Requirement ids are `<PREFIX>-NN` (`AUTH-01`), test ids
+`<PREFIX>-TNN` (`AUTH-T01`); a requirement lists the catalogue tests that
+verify it (`tests`), a test the requirements it verifies (`requirements`).
+`lang` is `en` (default) or `sv`; a text missing in Swedish falls back to
+English. List filters take comma-separated values.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[…]}` – groups in display order with item counts |
+| GET | `/catalog/requirements?lang=&area=&group=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, type, obligation, priority, tags, refs, tests, title, description, in_project?}]}`. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
+| GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}]` |
+| GET | `/catalog/tests?lang=&area=&group=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, priority, execution, tags, refs, requirements, steps (count), title, description, in_project?}]}`; `q` also searches the steps and the ids of the verified requirements |
+| GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
+| GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
+| POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
+
+**Origin.** Requirements and tests have `catalog_ref`: the catalogue id they
+were copied from, `""` otherwise. It is set only by the import, ignored in
+create and update requests, and kept when an item is edited, restored from a
+revision or baseline, copied, moved (also to another project), trashed and
+restored, and in backups. The query field `catalog` filters by it:
+`catalog:AUTH-01`, `catalog:AUTH-*`, `has:catalog`.
+
+**Import.** `POST /projects/{pid}/catalog/import`
+
+```json
+{
+  "requirement_ids": ["AUTH-01", "AUTH-02"],
+  "test_ids": ["PERF-T03"],
+  "lang": "sv",
+  "requirement_folder_id": "…", "test_folder_id": "…",
+  "folders": "area",
+  "status": "draft", "test_status": "draft",
+  "include_tests": true,
+  "add_copies": false,
+  "source": "Standard"
+}
+```
+
+- At most 500 items per request (chosen requirements and tests plus the
+  included tests), else 400. The request is atomic: on an error nothing is
+  stored.
+- `include_tests` (default `true` when the caller has `test.write`) also adds
+  the catalogue tests that verify the chosen requirements.
+- Requirements get title, description, obligation, type, priority, rationale,
+  tags, the evaluation criteria (method, text, threshold) and `catalog_ref`;
+  `source` is the cited standards joined with `; ` (or `Catalogue <id>`)
+  unless the request names one. Tests get title, description,
+  preconditions, expected result, steps (action, expected result, data),
+  execution type, priority, tags and `catalog_ref`. No extra tag is added:
+  `catalog_ref` (query field `catalog`) records the origin.
+- `status` (requirements, default `draft`) and `test_status` (default
+  `draft`); a review decision status needs `requirement.review` /
+  `test.review`.
+- Folders: the items go into `requirement_folder_id` / `test_folder_id`
+  (`""` = top level). `folders: "area"` adds a folder per area below them,
+  `"group"` a group folder with area folders, named in `lang`; folders of
+  the same name are reused.
+- Items the project already has (same `catalog_ref`) are skipped with reason
+  `exists` (and the `existing` items) unless `add_copies` is true; unknown
+  ids are skipped with `not_found`.
+- **Trace links:** each new requirement is linked to the project tests of its
+  catalogue tests and each new test to the project requirements of the
+  catalogue requirements it verifies, whether they were added now or earlier.
+  Links need `test.write`; the requirements' evidence status is updated.
+- The server setting `requirements.auto_create_test` does not apply: the
+  catalogue tests take the place of the automatic draft tests.
+- Permissions: `requirement.write` for requirements, `test.write` for tests
+  (also for an explicit `include_tests: true`); otherwise 403.
+- Revisions are recorded as for manual creation; the import is audited as
+  `catalog.import`.
+
+→ 201
+
+```json
+{
+  "requirements": [{"id": "…", "key": "WEB-REQ-12", "title": "…", "catalog_ref": "AUTH-01", "folder_id": "…"}],
+  "tests": [{"id": "…", "key": "WEB-TC-30", "title": "…", "catalog_ref": "AUTH-T01", "folder_id": "…"}],
+  "links": [{"id": "…", "requirement_id": "…", "requirement_key": "WEB-REQ-12", "test_case_id": "…", "test_case_key": "WEB-TC-30"}],
+  "skipped": [{"kind": "requirement", "catalog_ref": "AUTH-02", "reason": "exists", "existing": [{"id": "…", "key": "WEB-REQ-3", "title": "…"}]}],
+  "folders_created": 2
+}
+```
+
+To undo an import, delete the created items with the bulk delete routes
+(requirements first, then tests); restoring the trash entries in the
+reverse order brings them back with their links.
+
 ## Requirement analytics
 
 `GET /projects/{pid}/analytics?lang=` (requirement.read) analyses all
@@ -1514,13 +1614,13 @@ semantics: [design.md §9](design.md#9-query-language).
 Requirement fields: `id, key, title, description, obligation, type, priority,
 status, source, rationale, owner, tag, version, folder, category, dimension
 (matches "Dimension/Name"), coverage, linked, created_by, created_at,
-updated_at, criteria`.
+updated_at, criteria, catalog` (the [catalogue](#catalogue) id it was copied from).
 
 Test fields: `id, key, title, description, preconditions, execution_type (alias
 type), script_language, script, expected, step (actions/expected/data of
 steps), priority, status, estimate, tag, folder, category, dimension, linked,
 last_result, created_by, created_at, updated_at, flaky (true/false),
-flakiness (alias flips)`.
+flakiness (alias flips), catalog`.
 
 Run fields: `id, name, description, status, environment (alias env), build,
 created_by, created_at`. Execution fields: `id, key, title, status, assignee,

@@ -22,8 +22,8 @@ export const useUndoStore = defineStore('undo', {
   },
   actions: {
     /** Record a change that was just made. */
-    record(e: UndoEntry) {
-      this.stack.push(e)
+    record(e: UndoEntry): StackItem {
+      return this.stack.push(e)
     },
     /** Clear the history when the organisation changes. */
     bind(scope: string) {

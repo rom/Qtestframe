@@ -142,6 +142,8 @@ async function discover(request) {
   const ruleViolator = (ruleReport?.results ?? []).flatMap((r) => r.violations ?? []).find((v) => v.kind === 'requirement')
   const emailOn = (await api(request, 'GET', '/meta').catch(() => ({}))).email_enabled === true
   const hasDefinitions = items(await api(request, 'GET', `/projects/${pid}/reports/definitions`).catch(() => [])).length > 0
+  // the first catalogue requirement, for the preview
+  const catalogReq = items(await api(request, 'GET', '/catalog/requirements').catch(() => []))[0]
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -168,6 +170,13 @@ async function discover(request) {
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
+    // the requirement and test catalogue: both tabs, a selection, the preview, the import dialog, the areas drawer
+    { name: 'catalog', path: `${p}/catalog?lang=en`, wait: '.cat-list li, .list-pane .empty' },
+    { name: 'catalog-tests', path: `${p}/catalog?tab=tests&lang=sv`, wait: '.cat-list li, .list-pane .empty' },
+    { name: 'catalog-selected', path: `${p}/catalog`, open: '.cat-list li .p-checkbox', wait: '.catalog-bar' },
+    catalogReq && { name: 'catalog-preview', path: `${p}/catalog?item=${catalogReq.id}`, wait: '#cp-title' },
+    { name: 'catalog-import-dialog', path: `${p}/catalog`, open: ['.cat-list li .p-checkbox', '.catalog-bar button:has(.pi-plus)'], wait: '.p-dialog #catalog-import-form' },
+    { name: 'catalog-areas-drawer', path: `${p}/catalog`, open: '.tabs-row button:has(.pi-sitemap)', wait: '.catalog-areas-drawer .p-tree', maxWidth: 1199 },
     hasTags && { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
     { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },

@@ -282,6 +282,8 @@ export interface Requirement {
   rationale: string
   owner: string
   tags: string[] | null
+  /** catalogue id the item was copied from ("" otherwise) */
+  catalog_ref?: string
   version: number
   position: number
   category_ids: string[] | null
@@ -351,6 +353,8 @@ export interface TestCase {
   status: string
   estimated_minutes: number
   tags: string[] | null
+  /** catalogue id the item was copied from ("" otherwise) */
+  catalog_ref?: string
   position: number
   category_ids: string[] | null
   steps: TestStep[] | null
