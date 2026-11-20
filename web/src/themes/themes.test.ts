@@ -260,3 +260,16 @@ describe('applyTheme', () => {
     expect(typeof index.contrastRatio).toBe('function')
   })
 })
+
+describe('theme scales', () => {
+  it('holds only valid six-digit colours', () => {
+    for (const id of THEME_IDS) {
+      if (id === 'system') continue
+      const def = THEME_DEFS[id]
+      for (const scale of [def.primary, def.surface]) {
+        if (!scale) continue
+        for (const v of Object.values(scale)) expect(v, `${id}: ${v}`).toMatch(/^#[0-9a-f]{6}$/i)
+      }
+    }
+  })
+})
