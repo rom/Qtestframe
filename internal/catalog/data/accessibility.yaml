@@ -106,14 +106,14 @@ requirements:
     tests: [A11Y-T03, A11Y-T04]
     en:
       title: Text alternatives for images
-      description: The user interface MUST give each informative image and icon a text alternative that conveys the same information.
+      description: The user interface MUST give each image and icon that carries information a text alternative that conveys the same information.
       rationale: Screen reader users cannot perceive information that is only available as an image.
       criteria:
         - method: test
           text: An automated scan reports no image without a text alternative, and a manual review confirms that the texts match the images.
     sv:
       title: Textalternativ för bilder
-      description: Användargränssnittet SKA ge varje informativ bild och ikon ett textalternativ som förmedlar samma information.
+      description: Användargränssnittet SKA ge varje bild och ikon som bär information ett textalternativ som förmedlar samma information.
       rationale: Skärmläsaranvändare kan inte uppfatta information som bara finns som bild.
       criteria:
         - method: test
