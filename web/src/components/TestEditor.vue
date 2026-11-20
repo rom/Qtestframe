@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import DefectsPanel from '@/components/DefectsPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
@@ -65,7 +66,10 @@ const tabsId = newId('test-tabs')
 const linkCount = ref<number | null>(null)
 watch(
   () => props.itemId,
-  () => (linkCount.value = null),
+  () => {
+    linkCount.value = null
+    openDefects.value = 0
+  },
 )
 /** tab panel attributes for the content of a tab (only when the tabs are shown) */
 function panel(value: string) {
@@ -236,6 +240,8 @@ const tab = ref('details')
 const commentCount = ref(0)
 const attachmentCount = ref<number | null>(null)
 const execCount = ref<number | null>(null)
+/** open defects of the test and its executions (known once the tab was opened) */
+const openDefects = ref(0)
 function resolveId(field: string, id: string): string | undefined {
   if (field === 'category_ids') {
     const c = props.categories.find((x) => x.id === id)
@@ -399,12 +405,14 @@ const scriptPlaceholder = computed(() => {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="executions"><i class="pi pi-play-circle" aria-hidden="true" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+      <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
+  <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="test" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>

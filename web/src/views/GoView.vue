@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// /go/:key — opens a requirement or test by its key (links in texts, in
+// /go/:key — opens a requirement, test or defect by its key (links in texts, in
 // e-mails or chats). Looks the key up with the search API and replaces the
 // route with the item's editor.
 import { onMounted, ref, watch } from 'vue'
@@ -26,13 +26,14 @@ async function resolve() {
   error.value = ''
   notFound.value = false
   try {
-    const hits = asItems(await api.get<{ items: Hit[] }>('/search', { q: `key:"${key}"`, types: 'requirement,test', limit: 20 }))
+    const hits = asItems(await api.get<{ items: Hit[] }>('/search', { q: `key:"${key}"`, types: 'requirement,test,defect', limit: 20 }))
     const hit = hits.find((h) => h.key.toUpperCase() === key)
     if (!hit) {
       notFound.value = true
       return
     }
-    await router.replace({ name: hit.type === 'requirement' ? 'requirements' : 'tests', params: { projectId: hit.project_id }, query: { item: hit.id } })
+    const name = hit.type === 'requirement' ? 'requirements' : hit.type === 'defect' ? 'defects' : 'tests'
+    await router.replace({ name, params: { projectId: hit.project_id }, query: { item: hit.id } })
   } catch (e) {
     error.value = errorMessage(e)
   }

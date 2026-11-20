@@ -2,6 +2,7 @@
 import SuspectLink from './SuspectLink.vue'
 import ObligationHelp from './ObligationHelp.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import DefectsPanel from '@/components/DefectsPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
 import AutoComplete from 'primevue/autocomplete'
@@ -123,6 +124,8 @@ const tab = ref('details')
 const commentCount = ref(0)
 const attachmentCount = ref<number | null>(null)
 const relationCount = ref(0)
+/** open defects (of the requirement, its tests and their executions) */
+const openDefects = ref(0)
 function resolveId(field: string, id: string): string | undefined {
   if (field === 'category_ids') {
     const c = props.categories.find((x) => x.id === id)
@@ -202,6 +205,7 @@ async function load() {
     commentCount.value = r.comment_count ?? 0
     attachmentCount.value = null
     relationCount.value = r.relation_count ?? 0
+    openDefects.value = r.open_defects ?? 0
     form.value = {
       title: r.title,
       description: r.description,
@@ -480,11 +484,13 @@ function criterionLabel(id: string | null) {
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="relations"><i class="pi pi-sitemap" aria-hidden="true" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
       <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
+      <Tab value="defects"><i class="pi pi-exclamation-circle" aria-hidden="true" /> {{ t('defectsView.tab') }} <span v-if="openDefects" class="count" :title="t('defectsView.openCount', { n: openDefects }, openDefects)">{{ openDefects }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
+  <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
   <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
@@ -504,6 +510,9 @@ function criterionLabel(id: string | null) {
       <span v-if="item" class="key" style="font-size: 14px">{{ item.key }}</span>
       <Tag v-if="item" :value="t('common.versionShort', { version: item.version })" severity="secondary" />
       <StatusTag v-if="item?.coverage" :value="item.coverage" kind="coverage" />
+      <button v-if="item && openDefects" type="button" class="open-defects-badge" @click="tab = 'defects'">
+        <i class="pi pi-exclamation-circle" aria-hidden="true" />{{ t('defectsView.openCount', { n: openDefects }, openDefects) }}
+      </button>
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>

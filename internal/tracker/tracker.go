@@ -7,9 +7,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -53,6 +55,12 @@ func New(t *model.DefectTracker, hc *http.Client) (Client, error) {
 	}
 	return nil, fmt.Errorf("no defect tracker is configured for the project")
 }
+
+var jiraIssueRe = regexp.MustCompile(`^[A-Z][A-Z0-9_]*-[0-9]+$`)
+
+// ErrBadKey: an issue key that cannot belong to the tracker (a mistake of
+// the caller, not of the tracker).
+var ErrBadKey = errors.New("invalid issue key")
 
 // Error is a failed request to the tracker.
 type Error struct {
@@ -187,6 +195,9 @@ func (j *jira) Create(ctx context.Context, in NewIssue) (*Issue, error) {
 
 func (j *jira) Get(ctx context.Context, key string) (*Issue, error) {
 	key = strings.ToUpper(strings.TrimSpace(key))
+	if !jiraIssueRe.MatchString(key) {
+		return nil, fmt.Errorf("%w: a Jira issue is referred to by its key, e.g. SHOP-12", ErrBadKey)
+	}
 	var ji jiraIssue
 	if err := do(ctx, j.hc, http.MethodGet, j.cfg.URL+"/rest/api/2/issue/"+key+"?fields=summary,status,resolution", nil, j.auth, &ji); err != nil {
 		return nil, err
@@ -245,7 +256,7 @@ func number(key string) (string, error) {
 		k = k[i+1:]
 	}
 	if _, err := strconv.Atoi(k); err != nil {
-		return "", fmt.Errorf("a GitHub issue is referred to as owner/repo#123 or #123")
+		return "", fmt.Errorf("%w: a GitHub issue is referred to as owner/repo#123 or #123", ErrBadKey)
 	}
 	return k, nil
 }

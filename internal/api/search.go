@@ -29,7 +29,7 @@ type SearchHit struct {
 var searchSchema = func() *query.Schema {
 	seen := map[string]bool{}
 	out := &query.Schema{Aliases: map[string]string{}}
-	for _, s := range []*query.Schema{requirementSchema, testSchema, runSchema} {
+	for _, s := range []*query.Schema{requirementSchema, testSchema, runSchema, defectSchema} {
 		for _, f := range s.Fields {
 			if !seen[f] {
 				seen[f] = true
@@ -140,6 +140,17 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 			}
 			for j := range runs {
 				add(meta(runRecord(&runs[j]), "run"), SearchHit{Type: "run", ID: runs[j].ID, ProjectID: pr.ID, ProjectKey: pr.Key, Key: runs[j].Name, Title: runs[j].Name})
+			}
+		}
+		// defects only when asked for (types=defect), e.g. to resolve PROJ-BUG-n keys
+		if types["defect"] {
+			defects, err := s.Store.ListDefects(ctx, p.TenantID(), pr.ID)
+			if err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			for j := range defects {
+				add(meta(defectRecord(&defects[j]), "defect"), SearchHit{Type: "defect", ID: defects[j].ID, ProjectID: pr.ID, ProjectKey: pr.Key, Key: defects[j].Key, Title: defects[j].Title})
 			}
 		}
 	}

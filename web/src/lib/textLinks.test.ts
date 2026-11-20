@@ -13,6 +13,11 @@ describe('text links', () => {
       { text: '.' },
     ])
   })
+  it('finds defect keys', () => {
+    expect(splitTextLinks('Fails, see SHOP-BUG-4.')).toEqual([{ text: 'Fails, see ' }, { text: 'SHOP-BUG-4', key: 'SHOP-BUG-4' }, { text: '.' }])
+    expect(hasTextLinks('SHOP-BUG-4')).toBe(true)
+    expect(splitTextLinks('SHOP-BUGS-4')).toEqual([{ text: 'SHOP-BUGS-4' }])
+  })
   it('keeps parentheses that belong to an address', () => {
     expect(splitTextLinks('(https://en.wikipedia.org/wiki/Foo_(bar))')[1]).toEqual({ text: 'https://en.wikipedia.org/wiki/Foo_(bar)', url: 'https://en.wikipedia.org/wiki/Foo_(bar)' })
     expect(splitTextLinks('(see https://x.org)')[1].url).toBe('https://x.org')

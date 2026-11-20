@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -244,6 +245,16 @@ func TestDefectsAndTrackerSync(t *testing.T) {
 		t.Fatal(imp)
 	}
 	a.m("POST", "/api/v1/projects/"+f.pid+"/defects/import", map[string]any{"external_key": "#99"}, 502)
+	// a key the tracker cannot have is the caller's mistake, not the tracker's
+	a.m("POST", "/api/v1/projects/"+f.pid+"/defects/import", map[string]any{"external_key": "abc"}, 400)
+	a.m("POST", "/api/v1/projects/"+f.pid+"/defects/import", map[string]any{"external_key": "  "}, 400)
+	// defect keys are found by the search (links to PROJ-BUG-n keys)
+	if hits := items(a.m("GET", "/api/v1/search?q="+url.QueryEscape(`key:"BUGS-BUG-1"`)+"&types=defect", nil, 200)); len(hits) != 1 || hits[0]["type"] != "defect" || hits[0]["id"] != did {
+		t.Fatal(hits)
+	}
+	if hits := items(a.m("GET", "/api/v1/search?q="+url.QueryEscape(`key:"BUGS-BUG-1"`), nil, 200)); len(hits) != 0 {
+		t.Fatal("defects only when asked for", hits)
+	}
 	all := a.m("POST", "/api/v1/projects/"+f.pid+"/defects/sync", nil, 200)
 	if all["synced"].(float64) != 2 {
 		t.Fatal(all)

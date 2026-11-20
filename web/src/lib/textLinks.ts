@@ -1,10 +1,10 @@
-// Finds item keys (SHOP-REQ-12, SHOP-TC-3) and web addresses in plain text
+// Finds item keys (SHOP-REQ-12, SHOP-TC-3, SHOP-BUG-4) and web addresses in plain text
 // so they can be shown as links: keys open the item in the tool, addresses
 // open in a new tab.
 
 export type TextPart = { text: string; key?: string; url?: string }
 
-const KEY = String.raw`\b[A-Z][A-Z0-9]{1,15}-(?:REQ|TC)-\d+\b`
+const KEY = String.raw`\b[A-Z][A-Z0-9]{1,15}-(?:REQ|TC|BUG)-\d+\b`
 const URL = String.raw`\bhttps?:\/\/[^\s<>"'\]]+`
 const PATTERN = new RegExp(`(${KEY})|(${URL})`, 'g')
 // punctuation that usually ends a sentence rather than an address
@@ -37,4 +37,4 @@ export function splitTextLinks(text: string | null | undefined): TextPart[] {
 }
 
 /** Whether a text contains anything to link (cheap check before splitting). */
-export const hasTextLinks = (text: string | null | undefined): boolean => !!text && (/-(?:REQ|TC)-\d/.test(text) || /https?:\/\//i.test(text))
+export const hasTextLinks = (text: string | null | undefined): boolean => !!text && (/-(?:REQ|TC|BUG)-\d/.test(text) || /https?:\/\//i.test(text))

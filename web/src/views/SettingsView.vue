@@ -16,6 +16,7 @@ import { api, errorMessage } from '@/lib/api'
 import AvatarPicker from '@/components/AvatarPicker.vue'
 import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
+import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
 import { groupBy } from '@/lib/collections'
 import { defaultCategoryColor, normalizeHex, readableTextColor } from '@/lib/colors'
 import { P } from '@/lib/permissions'
@@ -276,6 +277,7 @@ function deleteProject() {
           <h2 id="h-icon" class="plain-heading" style="margin-bottom: 10px">{{ t('settings.projectIcon') }}</h2>
           <AvatarPicker kind="icon" :value="proj.project?.icon" :name="proj.project?.key ?? ''" :upload-path="`/projects/${proj.pid}/icon`" :save="saveIcon" :disabled="!auth.can(P.projectUpdate)" @uploaded="onIconUploaded" />
         </section>
+        <DefectTrackerSettings v-if="auth.can(P.projectUpdate) && proj.pid" :project-id="proj.pid" />
       </TabPanel>
     </TabPanels>
   </Tabs>

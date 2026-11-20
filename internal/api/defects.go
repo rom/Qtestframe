@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strings"
@@ -286,6 +287,10 @@ func (s *Server) trackerClient(r *http.Request, p *Principal, projectID string) 
 
 // trackerFail reports an error of the external tracker as 502.
 func (s *Server) trackerFail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, tracker.ErrBadKey) {
+		s.fail(w, r, badRequest("%v", err))
+		return
+	}
 	if _, ok := err.(*tracker.Error); ok || strings.Contains(err.Error(), "cannot reach") || strings.Contains(err.Error(), "unexpected answer") {
 		writeError(w, http.StatusBadGateway, "tracker_error", err.Error())
 		return
@@ -446,6 +451,10 @@ func (s *Server) handleImportDefect(w http.ResponseWriter, r *http.Request, p *P
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if req.ExternalKey = strings.TrimSpace(req.ExternalKey); req.ExternalKey == "" {
+		s.fail(w, r, badRequest("external_key is required"))
 		return
 	}
 	c, t, err := s.trackerClient(r, p, pr.ID)
