@@ -68,7 +68,7 @@ test('creates a run, executes it with the keyboard and reports the pass', async 
   // traceability: the requirement is covered by a passed test
   await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Traceability' }).click()
   await settled(page)
-  const row = page.getByRole('table', { name: /Requirements in rows/ }).getByRole('row', { name: new RegExp(`^${req.key}\\b`) })
+  const row = page.getByRole('table', { name: /Requirements in rows/ }).getByRole('row', { name: new RegExp(`\\b${req.key}\\b`) })
   await expect(row.getByRole('cell', { name: 'Passed', exact: true })).toBeVisible()
   await expect(row.getByRole('button', { name: `Link ${req.key} to ${tc.key}` })).toHaveAttribute('aria-pressed', 'true')
 })
