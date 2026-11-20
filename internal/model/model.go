@@ -108,6 +108,11 @@ type TenantSettings struct {
 	// AllowUnmetDependencies permits starting a test before the tests it
 	// depends on have passed.
 	AllowUnmetDependencies bool `json:"allow_unmet_dependencies"`
+	// ManualVerification turns off "status follows evidence": by default an
+	// implemented requirement becomes verified when all its linked tests
+	// pass and no link is suspect, and a verified one goes back to
+	// implemented when that no longer holds.
+	ManualVerification bool `json:"manual_verification"`
 }
 
 // DefaultReadyRequirementStatuses are the requirement statuses ready for
@@ -368,6 +373,8 @@ type Requirement struct {
 	Coverage     string `json:"coverage,omitempty"` // none | not_run | passed | failed | partial
 	CommentCount int    `json:"comment_count"`
 	Relations    int    `json:"relation_count"`
+	// SuspectLinks: links to tests that are suspect.
+	SuspectLinks int `json:"suspect_links"`
 	// RelationRefs lists the related items in both directions: requirement
 	// relations and the tests that verify it ("verifies", incoming).
 	RelationRefs  []ItemRef `json:"relations,omitempty"`
@@ -453,7 +460,9 @@ type TestCase struct {
 	// RelationRefs: requirements it verifies, tests it calls and tests that call it.
 	RelationRefs []ItemRef `json:"relations,omitempty"`
 	StepCount    int       `json:"step_count,omitempty"`
-	Defects      []string  `json:"defects,omitempty"`
+	// SuspectLinks: links to requirements that are suspect.
+	SuspectLinks int      `json:"suspect_links"`
+	Defects      []string `json:"defects,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -464,6 +473,10 @@ type TraceLink struct {
 	TestCaseID    string    `json:"test_case_id"`
 	CriterionID   *string   `json:"criterion_id"`
 	CreatedAt     time.Time `json:"created_at"`
+	// SuspectSince is set when the requirement or test changed after the
+	// link was made or last confirmed; SuspectReason says what changed.
+	SuspectSince  *time.Time `json:"suspect_since"`
+	SuspectReason string     `json:"suspect_reason,omitempty"`
 	// Derived.
 	RequirementKey string `json:"requirement_key,omitempty"`
 	TestCaseKey    string `json:"test_case_key,omitempty"`

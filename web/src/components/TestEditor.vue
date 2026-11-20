@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
@@ -182,6 +183,19 @@ async function load() {
     error.value = errorMessage(e)
   } finally {
     loading.value = false
+  }
+}
+const suspectCount = computed(() => links.value.filter((l) => l.suspect_since).length)
+async function onSuspectConfirmed() {
+  await load()
+}
+async function confirmAll() {
+  try {
+    await api.post(`/tests/${props.itemId}/links/confirm`)
+    notify.ok(t('suspect.confirmed'))
+    await load()
+  } catch (e) {
+    notify.fail(e)
   }
 }
 async function loadLinks() {
@@ -536,12 +550,14 @@ const scriptPlaceholder = computed(() => {
       <div class="section-title">
         <i class="pi pi-link" /> {{ t('tests.linkedRequirements', { count: links.length }) }}
         <span class="grow" />
+        <Button v-if="canLink && suspectCount" size="small" :label="t('suspect.confirmAll', { n: suspectCount })" icon="pi pi-check" text @click="confirmAll" />
         <Button v-if="canLink" size="small" :label="t('tests.linkRequirements')" icon="pi pi-plus" text @click="pickReqs = true" />
       </div>
       <div v-if="!links.length" class="muted small">{{ t('tests.verifiesNothing') }}</div>
       <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
         <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" class="key">{{ l.requirement_key || reqById.get(l.requirement_id)?.key }}</RouterLink>
         <span class="grow ellipsis">{{ reqById.get(l.requirement_id)?.title }}</span>
+        <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="reqById.get(l.requirement_id)?.obligation" kind="obligation" empty="" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.requirement_key || reqById.get(l.requirement_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>

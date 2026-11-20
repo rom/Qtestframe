@@ -293,6 +293,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	id, project, key, oldStatus := rq.ID, rq.ProjectID, rq.Key, rq.Status
+	before := store.SnapshotRequirement(rq)
 	if keys["criteria"] {
 		rq.Criteria = nil
 	}
@@ -314,6 +315,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		s.audit(ctx, p, a, "requirement", rq.ID, rq.Key+" "+oldStatus+" → "+rq.Status)
 	}
 	s.recordRequirement(ctx, p, rq.ID, "update")
+	s.afterContentChange(ctx, p, model.KindRequirement, rq.ID, rq.Key, rq.ProjectID, before)
 	out, err := s.decoratedRequirement(r, p, rq.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -576,6 +578,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	if keys["steps"] {
 		t.Steps = nil
 	}
+	before := store.SnapshotTest(t)
 	if err := jsonMerge(body, t); err != nil {
 		s.fail(w, r, err)
 		return
@@ -594,6 +597,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		s.audit(ctx, p, a, "test", t.ID, t.Key+" "+oldStatus+" → "+t.Status)
 	}
 	s.recordTest(ctx, p, t.ID, "update")
+	s.afterContentChange(ctx, p, model.KindTest, t.ID, t.Key, t.ProjectID, before)
 	out, err := s.decoratedTest(r, p, t.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -732,16 +736,23 @@ func (s *Server) handleCreateLink(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.audit(r.Context(), p, "link.create", "link", l.ID, l.RequirementKey+" -> "+l.TestCaseKey)
+	s.syncEvidence(r.Context(), p, pr.ID, []string{l.RequirementID})
 	writeJSON(w, http.StatusCreated, l)
 }
 
 func (s *Server) handleDeleteLink(w http.ResponseWriter, r *http.Request, p *Principal) {
 	id := r.PathValue("id")
+	l, err := s.Store.GetLink(r.Context(), p.TenantID(), id)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	if err := s.Store.DeleteLink(r.Context(), p.TenantID(), id); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	s.audit(r.Context(), p, "link.delete", "link", id, "")
+	s.syncEvidence(r.Context(), p, l.ProjectID, []string{l.RequirementID})
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -63,6 +63,7 @@ const (
 	CodeTestsNotReady       = "tests_not_ready"
 	CodeManyDrafts          = "many_drafts"
 	CodeNoOwner             = "no_owner"
+	CodeSuspectLinks        = "suspect_links"
 	CodeMixedLanguages      = "mixed_languages"
 	CodeMixedLanguageText   = "mixed_language_text"
 	CodeEnglishKeywords     = "english_keywords"
@@ -101,6 +102,8 @@ type Requirement struct {
 	TestsReady int
 	// Conflicts: keys of requirements it conflicts with.
 	Conflicts []string
+	// Suspect: number of its links to tests that are suspect.
+	Suspect int
 }
 
 // Test is the analytics view of a test.
@@ -392,7 +395,7 @@ func Analyze(in Input) Report {
 
 	// ---- per requirement checks
 	var missing, kwMissing, mismatch, multi, noTestsM, noTests, failing, notRun, noCrit, empty, low, noOwner, conflicts, notReady []Item
-	var mixedText, englishKw, casing, notNormative, nonRFC []Item
+	var mixedText, englishKw, casing, notNormative, nonRFC, suspect []Item
 	byRule := map[string][]Item{}
 	covered, active, drafts := 0, 0, 0
 	for i := range reqs {
@@ -473,6 +476,9 @@ func Analyze(in Input) Report {
 		}
 		if strings.TrimSpace(r.Owner) == "" {
 			noOwner = append(noOwner, reqItem(r, ""))
+		}
+		if r.Suspect > 0 {
+			suspect = append(suspect, reqItem(r, itoa(r.Suspect)))
 		}
 		if len(r.Conflicts) > 0 {
 			conflicts = append(conflicts, reqItem(r, strings.Join(r.Conflicts, ", ")))
@@ -588,6 +594,7 @@ func Analyze(in Input) Report {
 	b.add(CodeNoTestsMandatory, Problem, CatCoverage, map[string]string{"count": itoa(len(noTestsM))}, noTestsM)
 	b.add(CodeNoTests, Warning, CatCoverage, map[string]string{"count": itoa(len(noTests))}, noTests)
 	b.add(CodeTestsFailing, Problem, CatCoverage, map[string]string{"count": itoa(len(failing))}, failing)
+	b.add(CodeSuspectLinks, Warning, CatCoverage, map[string]string{"count": itoa(len(suspect))}, suspect)
 	b.add(CodeTestsNotRun, Info, CatCoverage, map[string]string{"count": itoa(len(notRun))}, notRun)
 	b.add(CodeNoCriteria, Warning, CatCoverage, map[string]string{"count": itoa(len(noCrit))}, noCrit)
 	if in.Tests != nil {

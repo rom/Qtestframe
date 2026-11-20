@@ -270,3 +270,12 @@ func TestLanguagesAndRFCCasing(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestSuspectLinksFinding(t *testing.T) {
+	r := req(1, "must", "The system MUST log every sign-in.")
+	r.Suspect = 2
+	f := find(Analyze(Input{Requirements: []Requirement{r}}), CodeSuspectLinks)
+	if f == nil || f.Items[0].Note != "2" || f.Severity != Warning {
+		t.Fatal(f)
+	}
+}

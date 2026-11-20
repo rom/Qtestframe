@@ -168,6 +168,7 @@ const allColumns = computed<Col[]>(() =>
         { field: 'criteria_count', header: t('workspace.colCriteria'), width: '90px' },
         { field: 'version', header: t('workspace.colVersion'), width: '70px' },
         { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'suspect_links', header: t('workspace.colSuspect'), width: '110px' },
         { field: 'created_by', header: t('workspace.colCreatedBy') },
         { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
@@ -188,6 +189,7 @@ const allColumns = computed<Col[]>(() =>
         { field: 'defects', header: t('workspace.colDefects'), sortable: false },
         { field: 'version', header: t('workspace.colVersion'), width: '70px' },
         { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'suspect_links', header: t('workspace.colSuspect'), width: '110px' },
         { field: 'created_by', header: t('workspace.colCreatedBy') },
         { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
@@ -556,6 +558,9 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <span v-else-if="c.field === 'created_by' || c.field === 'source'" class="small">{{ data[c.field] }}</span>
             <span v-else-if="c.field === 'type'" class="small">{{ enumLabel('requirementType', data.type) }}</span>
             <span v-else-if="c.field === 'folder_path'" class="small muted">{{ data.folder_path }}</span>
+            <span v-else-if="c.field === 'suspect_links'" class="small" :class="data.suspect_links ? 'suspect' : 'muted'">
+              <i v-if="data.suspect_links" class="pi pi-exclamation-triangle" aria-hidden="true" /> {{ data.suspect_links ?? 0 }}
+            </span>
             <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">
               <i :class="c.field === 'comment_count' ? 'pi pi-comments' : 'pi pi-sitemap'" class="muted" style="font-size: 11px" /> {{ data[c.field] ?? 0 }}
             </span>

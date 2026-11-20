@@ -246,6 +246,8 @@ export interface Requirement {
   /** Related items in both directions (requirement relations and verifying tests). */
   relations?: ItemRef[] | null
   criteria_count?: number
+  /** links to tests that are suspect (changed since the link was confirmed) */
+  suspect_links?: number
 }
 
 /** A reference from a list item to a related item (see lib/itemRefs.ts). */
@@ -306,6 +308,8 @@ export interface TestCase {
   last_result?: string
   comment_count?: number
   called_by?: TestRef[] | null
+  /** links to requirements that are suspect */
+  suspect_links?: number
   /** Requirements it verifies, tests it calls and tests that call it. */
   relations?: ItemRef[] | null
   step_count?: number
@@ -319,6 +323,9 @@ export interface TraceLink {
   test_case_id: string
   criterion_id: string | null
   created_at: string
+  /** set when the requirement or test changed after the link was confirmed */
+  suspect_since?: string | null
+  suspect_reason?: string
   requirement_key?: string
   test_case_key?: string
 }
@@ -649,4 +656,6 @@ export interface TenantSettings {
   allow_unready_requirements: boolean
   ready_requirement_statuses: string[]
   allow_unmet_dependencies: boolean
+  /** true turns off "requirement status follows test results" */
+  manual_verification?: boolean
 }

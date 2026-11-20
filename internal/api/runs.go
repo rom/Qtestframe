@@ -253,6 +253,7 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	s.audit(r.Context(), p, "run.import", "run", run.ID, fmt.Sprintf("%d updated, %d rejected", n, len(rejects)))
+	s.syncEvidence(r.Context(), p, run.ProjectID, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"updated": n, "unknown": unknown, "rejected": rejects})
 }
 
@@ -317,6 +318,11 @@ func (s *Server) handleUpdateExecution(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 	s.audit(r.Context(), p, "execution.update", "execution", e.ID, e.TestKey+" "+e.Status)
+	if run, err := s.Store.GetRun(r.Context(), p.TenantID(), e.RunID); err == nil {
+		if reqs := s.requirementsOfTests(r.Context(), p, run.ProjectID, []string{e.TestCaseID}); len(reqs) > 0 {
+			s.syncEvidence(r.Context(), p, run.ProjectID, reqs)
+		}
+	}
 	d, err := s.executionDetail(r, p, e.ID)
 	if err != nil {
 		s.fail(w, r, err)

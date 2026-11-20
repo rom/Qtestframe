@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SuspectLink from './SuspectLink.vue'
 import ObligationHelp from './ObligationHelp.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
@@ -227,6 +228,19 @@ async function load() {
   }
 }
 
+const suspectCount = computed(() => links.value.filter((l) => l.suspect_since).length)
+async function onSuspectConfirmed() {
+  await load()
+}
+async function confirmAll() {
+  try {
+    await api.post(`/requirements/${props.itemId}/links/confirm`)
+    notify.ok(t('suspect.confirmed'))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
 async function loadLinks() {
   if (!props.itemId) return
   try {
@@ -648,6 +662,7 @@ function criterionLabel(id: string | null) {
         <span class="grow" />
         <template v-if="canLink">
           <Select v-if="(item.criteria ?? []).length" v-model="linkCriterion" :options="criterionOptions" option-label="label" option-value="value" size="small" style="max-width: 220px" :aria-label="t('requirements.linkCriterion')" />
+          <Button v-if="suspectCount" size="small" :label="t('suspect.confirmAll', { n: suspectCount })" icon="pi pi-check" text @click="confirmAll" />
           <Button size="small" :label="t('requirements.linkTests')" icon="pi pi-plus" text @click="pickTests = true" />
         </template>
       </div>
@@ -656,6 +671,7 @@ function criterionLabel(id: string | null) {
         <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: l.test_case_id } }" class="key">{{ l.test_case_key || testById.get(l.test_case_id)?.key }}</RouterLink>
         <span class="grow ellipsis">{{ testById.get(l.test_case_id)?.title }}</span>
         <span v-if="l.criterion_id" class="small muted">{{ criterionLabel(l.criterion_id) }}</span>
+        <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.test_case_key || testById.get(l.test_case_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>

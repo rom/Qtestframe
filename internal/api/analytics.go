@@ -70,7 +70,7 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request, p *Prin
 		}
 		in.Requirements = append(in.Requirements, analytics.Requirement{
 			ID: rq.ID, Key: rq.Key, Title: rq.Title, Description: rq.Description, Obligation: rq.Obligation, Status: rq.Status, Owner: rq.Owner,
-			Criteria: len(rq.Criteria), Tests: rq.LinkedTests, Coverage: rq.Coverage, TestsReady: ready, Conflicts: conflicts[rq.ID],
+			Criteria: len(rq.Criteria), Tests: rq.LinkedTests, Coverage: rq.Coverage, TestsReady: ready, Conflicts: conflicts[rq.ID], Suspect: rq.SuspectLinks,
 		})
 	}
 	if p.Can(rbac.TestRead) {

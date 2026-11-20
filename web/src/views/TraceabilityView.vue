@@ -52,6 +52,7 @@ const viewOptions = computed(() => [
 ])
 const showAll = ref<Record<string, boolean>>({})
 const isLinked = (reqId: string, testId: string) => linkMap.value.has(linkKey(reqId, testId))
+const isSuspect = (reqId: string, testId: string) => !!linkMap.value.get(linkKey(reqId, testId))?.suspect_since
 function linkedCols(reqId: string) {
   return cols.value.filter((tc) => isLinked(reqId, tc.id))
 }
@@ -249,21 +250,22 @@ async function toggle(reqId: string, testId: string) {
             </div>
           </th>
           <td style="padding: 2px 8px; text-align: center"><StatusTag :value="r.coverage || 'none'" kind="coverage" /></td>
-          <td v-for="tc in cols" :key="tc.id" class="cell" :class="{ linked: isLinked(r.id, tc.id), editable: canEdit }">
+          <td v-for="tc in cols" :key="tc.id" class="cell" :class="{ linked: isLinked(r.id, tc.id), suspect: isSuspect(r.id, tc.id), editable: canEdit }">
             <button
               v-if="canEdit"
               type="button"
               class="cell-button"
               :aria-pressed="isLinked(r.id, tc.id)"
-              :aria-label="cellLabel(r.key, tc.key)"
-              :title="`${r.key} ↔ ${tc.key}`"
+              :aria-label="cellLabel(r.key, tc.key) + (isSuspect(r.id, tc.id) ? ` (${t('suspect.label')})` : '')"
+              :title="`${r.key} ↔ ${tc.key}` + (isSuspect(r.id, tc.id) ? ` – ${t('suspect.label')}: ${linkMap.get(linkKey(r.id, tc.id))?.suspect_reason ?? ''}` : '')"
               @click="toggle(r.id, tc.id)"
             >
               <i v-if="busy === linkKey(r.id, tc.id)" class="pi pi-spin pi-spinner" aria-hidden="true" />
+              <i v-else-if="isSuspect(r.id, tc.id)" class="pi pi-exclamation-triangle" aria-hidden="true" />
               <i v-else-if="isLinked(r.id, tc.id)" class="pi pi-check" aria-hidden="true" />
             </button>
             <template v-else-if="isLinked(r.id, tc.id)">
-              <i class="pi pi-check" aria-hidden="true" /><span class="sr-only">{{ t('traceability.linkedCell', { req: r.key, test: tc.key }) }}</span>
+              <i :class="isSuspect(r.id, tc.id) ? 'pi pi-exclamation-triangle' : 'pi pi-check'" aria-hidden="true" /><span class="sr-only">{{ t('traceability.linkedCell', { req: r.key, test: tc.key }) }}{{ isSuspect(r.id, tc.id) ? ` (${t('suspect.label')})` : '' }}</span>
             </template>
           </td>
         </tr>

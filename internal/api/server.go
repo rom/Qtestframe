@@ -211,6 +211,9 @@ func (s *Server) routes() {
 	h("GET /api/v1/projects/{pid}/links", s.handleListLinks, "project.read")
 	h("POST /api/v1/projects/{pid}/links", s.handleCreateLink, "test.write")
 	h("DELETE /api/v1/links/{id}", s.handleDeleteLink, "test.write")
+	h("POST /api/v1/links/{id}/confirm", s.handleConfirmLink, "test.write")
+	h("POST /api/v1/requirements/{id}/links/confirm", s.handleConfirmItemLinks(model.KindRequirement), "test.write")
+	h("POST /api/v1/tests/{id}/links/confirm", s.handleConfirmItemLinks(model.KindTest), "test.write")
 	h("GET /api/v1/projects/{pid}/traceability", s.handleTraceability, "project.read")
 
 	// operations

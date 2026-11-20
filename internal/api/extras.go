@@ -110,6 +110,7 @@ func (s *Server) handleRestoreRequirement(w http.ResponseWriter, r *http.Request
 		return
 	}
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, cur.ID)
+	before := store.SnapshotRequirement(cur)
 	cur.Title, cur.Description, cur.Obligation, cur.Type = old.Title, old.Description, old.Obligation, old.Type
 	cur.Priority, cur.Status, cur.Source, cur.Rationale = old.Priority, old.Status, old.Source, old.Rationale
 	cur.Owner, cur.Tags, cur.Criteria = old.Owner, old.Tags, old.Criteria
@@ -122,6 +123,7 @@ func (s *Server) handleRestoreRequirement(w http.ResponseWriter, r *http.Request
 		return
 	}
 	s.recordRequirement(ctx, p, cur.ID, "restore")
+	s.afterContentChange(ctx, p, model.KindRequirement, cur.ID, cur.Key, cur.ProjectID, before)
 	s.audit(ctx, p, "requirement.restore", "requirement", cur.ID, cur.Key+" to version "+itoa(rev.Version))
 	out, err := s.decoratedRequirement(r, p, cur.ID)
 	if err != nil {
@@ -160,6 +162,7 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 		return
 	}
 	s.ensureInitialRevision(ctx, p, model.KindTest, cur.ID)
+	before := store.SnapshotTest(cur)
 	cur.Title, cur.Description, cur.Preconditions, cur.ExecutionType = old.Title, old.Description, old.Preconditions, old.ExecutionType
 	cur.ScriptLanguage, cur.Script, cur.ExpectedResult = old.ScriptLanguage, old.Script, old.ExpectedResult
 	cur.Priority, cur.Status, cur.EstimatedMin, cur.Tags = old.Priority, old.Status, old.EstimatedMin, old.Tags
@@ -183,6 +186,7 @@ func (s *Server) handleRestoreTest(w http.ResponseWriter, r *http.Request, p *Pr
 		return
 	}
 	s.recordTest(ctx, p, cur.ID, "restore")
+	s.afterContentChange(ctx, p, model.KindTest, cur.ID, cur.Key, cur.ProjectID, before)
 	s.audit(ctx, p, "test.restore", "test", cur.ID, cur.Key+" to version "+itoa(rev.Version))
 	out, err := s.decoratedTest(r, p, cur.ID)
 	if err != nil {
