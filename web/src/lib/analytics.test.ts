@@ -27,3 +27,17 @@ describe('analytics texts', () => {
     expect(severityIcon('info')).toContain('info')
   })
 })
+
+describe('language names', () => {
+  it('names language codes', async () => {
+    const { languageNames, itemNote } = await import('./analytics')
+    const tt = (k: string) => ({ 'analysis.languages.en': 'English', 'analysis.languages.sv': 'Swedish' })[k] ?? k
+    const tte = (k: string) => k.startsWith('analysis.languages.')
+    expect(languageNames('en 90%, sv 10%', tt, tte)).toBe('English 90%, Swedish 10%')
+    expect(itemNote({ code: 'mixed_language_text', severity: 'warning', category: 'x', params: {}, items: [], total: 0 }, 'en + sv', tt, tte)).toBe('English + Swedish')
+    expect(itemNote({ code: 'rfc_casing', severity: 'warning', category: 'x', params: {}, items: [], total: 0 }, 'en', tt, tte)).toBe('en')
+    expect(itemNote({ code: 'rfc_casing', severity: 'warning', category: 'x', params: {}, items: [], total: 0 }, undefined, tt, tte)).toBe('')
+    const f = { code: 'mixed_languages', severity: 'warning', category: 'consistency', params: { dominant: 'en', languages: 'en 90%, sv 10%' }, items: [], total: 1 }
+    expect(findingText(f, (k, p) => `${k}${JSON.stringify(p)}`, () => true).title).toContain('"dominant":"analysis.languages.en')
+  })
+})

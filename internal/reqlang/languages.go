@@ -218,3 +218,48 @@ func Detect(text string) string {
 	}
 	return best
 }
+
+// DetectConfident guesses the language of text like Detect, but only
+// answers when the text has enough evidence: at least minScore marker
+// words (or Swedish letters) and more than any other language. ok is false
+// for short or ambiguous text.
+func DetectConfident(text string, minScore int) (lang string, ok bool) {
+	words := strings.FieldsFunc(strings.ToLower(text), func(r rune) bool {
+		return !(unicode.IsLetter(r) || r == '\'')
+	})
+	best, bestScore, second := "", 0, 0
+	for _, code := range Languages() {
+		pk := packs[code]
+		score := 0
+		for _, w := range words {
+			if pk.markers[w] {
+				score++
+			}
+		}
+		if code == "sv" && strings.ContainsAny(strings.ToLower(text), "åäö") {
+			score += 2
+		}
+		switch {
+		case score > bestScore:
+			best, second, bestScore = code, bestScore, score
+		case score > second:
+			second = score
+		}
+	}
+	if bestScore < minScore || bestScore == second {
+		return "", false
+	}
+	return best, true
+}
+
+// IsRFCKeyword reports whether a canonical keyword is one of the English
+// RFC 2119 keywords (MUST, SHALL NOT, RECOMMENDED …).
+func IsRFCKeyword(keyword string) bool {
+	k := strings.ToUpper(keyword)
+	for _, x := range rfcKeywords {
+		if x.text == k {
+			return true
+		}
+	}
+	return false
+}

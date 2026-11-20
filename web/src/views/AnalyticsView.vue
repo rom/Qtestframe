@@ -11,7 +11,7 @@ import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
 import HelpLink from '@/guide/HelpLink.vue'
 import { api, errorMessage } from '@/lib/api'
-import { FAMILY_COLORS, findingText, severityIcon, type AnalyticsFinding, type AnalyticsReport } from '@/lib/analytics'
+import { FAMILY_COLORS, findingText, itemNote, languageNames, severityIcon, type AnalyticsFinding, type AnalyticsReport } from '@/lib/analytics'
 import { enumLabel } from '@/i18n/labels'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
@@ -166,6 +166,20 @@ const healthClass = computed(() => {
         </section>
       </div>
 
+      <section v-if="report.languages?.length" class="card" style="margin-top: 16px">
+        <h2 class="plain-heading">{{ t('analytics.languages') }}</h2>
+        <p class="small muted" style="margin-top: 0">{{ t('analytics.languagesHint') }}</p>
+        <div class="stack lang-stack" role="img" :aria-label="report.languages.map((l) => `${languageNames(l.value, t, te)} ${l.percent} %`).join(', ')">
+          <span v-for="(l, i) in report.languages" :key="l.value" :style="{ width: l.percent + '%', background: FAMILY_COLORS[i % FAMILY_COLORS.length] }" />
+        </div>
+        <div class="row small" style="gap: 12px; flex-wrap: wrap; margin-top: 4px">
+          <span v-for="(l, i) in report.languages" :key="l.value" class="row nowrap" style="gap: 4px">
+            <span class="swatch" :style="{ background: FAMILY_COLORS[i % FAMILY_COLORS.length] }" aria-hidden="true" />
+            <b>{{ languageNames(l.value, t, te) }}</b> {{ l.count }} ({{ l.percent }} %)
+          </span>
+        </div>
+      </section>
+
       <section class="card" style="margin-top: 16px">
         <div class="row" style="justify-content: space-between; flex-wrap: wrap; gap: 8px">
           <h2 class="plain-heading">{{ t('analytics.findings') }}</h2>
@@ -191,7 +205,7 @@ const healthClass = computed(() => {
                   <li v-for="it in expanded.has(i) ? f.items : f.items.slice(0, SHOWN)" :key="it.id" class="row nowrap">
                     <RouterLink :to="itemRoute(it)" class="key">{{ it.key }}</RouterLink>
                     <span class="ellipsis grow">{{ it.title }}</span>
-                    <span v-if="it.note" class="small muted mono">{{ it.note }}</span>
+                    <span v-if="it.note" class="small muted mono">{{ itemNote(f, it.note, t, te) }}</span>
                   </li>
                 </ul>
                 <Button
@@ -288,7 +302,15 @@ const healthClass = computed(() => {
   overflow: hidden;
   background: var(--qtf-hover);
 }
-.family .swatch {
+.lang-stack {
+  display: flex;
+  height: 14px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--qtf-hover);
+}
+.family .swatch,
+.lang-stack + .row .swatch {
   width: 10px;
   height: 10px;
   border-radius: 2px;

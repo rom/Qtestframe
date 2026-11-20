@@ -147,3 +147,25 @@ func TestLanguageSelection(t *testing.T) {
 		}
 	}
 }
+
+func TestDetectConfident(t *testing.T) {
+	for _, c := range []struct {
+		text string
+		lang string
+		ok   bool
+	}{
+		{"The system MUST log every sign-in of the user.", "en", true},
+		{"Systemet SKA logga varje inloggning för användaren.", "sv", true},
+		{"Login", "", false},
+		{"", "", false},
+		{"API 2.0", "", false},
+	} {
+		lang, ok := DetectConfident(c.text, 2)
+		if lang != c.lang || ok != c.ok {
+			t.Errorf("%q: %q %v", c.text, lang, ok)
+		}
+	}
+	if !IsRFCKeyword("must not") || !IsRFCKeyword("RECOMMENDED") || IsRFCKeyword("SKA") || IsRFCKeyword("WILL") {
+		t.Error("IsRFCKeyword")
+	}
+}

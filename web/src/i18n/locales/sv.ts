@@ -1042,6 +1042,8 @@ const sv: Messages = {
     businessHint: 'Verksamhetsprocesser, tjänster och organisationsförändringar.',
   },
   analytics: {
+    languages: 'Kravens språk',
+    languagesHint: 'Språket i varje krav vars text är tillräckligt lång för att avgöra det.',
     title: 'Kravanalys',
     intro: 'En analys av alla krav i projektet: kravnivåer och nyckelord, täckning med testfall och textkvalitet.',
     refresh: 'Analysera igen',
@@ -1110,6 +1112,12 @@ const sv: Messages = {
       'ambiguous-negation': 'Tvetydiga negationer',
     },
     code: {
+      rfc_not_normative: { title: 'Nyckelord bara med gemener, alltså inget normativt nyckelord: {n}', detail: 'RFC 8174: bara MUST, SHOULD, MAY … med versaler har den särskilda betydelsen; "must" med gemener är vanlig engelska, så de här kraven anger ingen kravnivå.', fix: 'Skriv nyckelordet med versaler, t.ex. "The user MUST …".' },
+      rfc_casing: { title: 'Nyckelord som inte skrivs med versaler (RFC 2119 / RFC 8174): {n}', detail: 'Utöver nyckelord med versaler använder de här kraven dem också med gemener eller blandade versaler ("must", "Should"), som läsaren kan tolka som normativa eller inte.', fix: 'Skriv varje avsett nyckelord med versaler och formulera om andra användningar (t.ex. "has to", "is required to" → MUST).' },
+      non_rfc_keyword: { title: 'WILL används som kravnivå (inget nyckelord i RFC 2119): {n}', detail: 'WILL definieras inte i RFC 2119; det anger oftast en avsikt eller ett faktum om andra, inte ett krav på systemet.', fix: 'Använd MUST, SHOULD eller MAY om ett krav avses, eller markera texten som beskrivande.' },
+      mixed_languages: { title: 'Krav på mer än ett språk: {languages}', detail: 'De flesta krav är skrivna på {dominant} ({dominantPercent} %); kraven i listan är skrivna på ett annat språk.', fix: 'Skriv alla krav i projektet på ett språk, eller översätt de här.' },
+      mixed_language_text: { title: 'Krav som blandar språk i sin text: {n}', detail: 'Titeln och meningarna i de här kraven är inte alla på samma språk.', fix: 'Skriv om varje krav på ett språk.' },
+      english_keywords: { title: 'Engelska nyckelord i krav på ett annat språk: {n}', detail: 'De här kraven är skrivna på ett annat språk men använder engelska nyckelord (MUST, SHALL …).', fix: 'Använd nyckelorden för textens språk (på svenska SKA, BÖR, FÅR …), eller skriv kravet på engelska.' },
       obligation_missing: { title: 'Krav utan kravnivå: {n}', detail: 'Ett krav utan kravnivå säger inte om det ska, bör eller kan uppfyllas.', fix: 'Ange kravnivån (SKA/MUST, BÖR/SHOULD, KAN/MAY …) i kravet och skriv nyckelordet i texten.' },
       keyword_missing: { title: 'Kravnivå i fältet men inget nyckelord i texten: {n}', detail: 'Nivån finns bara i fältet; den som läser texten (eller en export) ser den inte.', fix: 'Skriv nyckelordet med versaler i beskrivningen, t.ex. "Systemet SKA …".' },
       obligation_mismatch: { title: 'Texten och fältet för kravnivå säger olika: {n}', detail: 'Texten använder ett nyckelord för en annan nivå än fältet (visas som fält ≠ text).', fix: 'Se till att fältet och texten stämmer överens.' },

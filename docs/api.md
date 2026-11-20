@@ -310,13 +310,14 @@ an analysis language. Test findings are included with `test.read`.
  "obligations": [{"value": "must", "count": 19, "percent": 95}, {"value": "shall", "count": 1, "percent": 5}],
  "families": [{"family": "mandatory", "total": 20, "dominant": "MUST", "keywords": [{"value": "MUST", "count": 19, "percent": 95}, …]}],
  "statuses": [{"value": "approved", "count": 12, "percent": 60}, …], "coverage": [{"value": "passed", …}],
+ "languages": [{"value": "en", "count": 18, "percent": 90}, {"value": "sv", "count": 2, "percent": 10}],
  "findings": [{"code": "inconsistent_keyword", "severity": "warning", "category": "consistency",
                "params": {"family": "mandatory", "dominant": "MUST", "dominantPercent": "95", "keyword": "SHALL", "count": "1", …},
                "items": [{"kind": "requirement", "id": "…", "key": "SHOP-REQ-7", "title": "…", "note": "SHALL"}], "total": 1}]}
 ```
 
 Findings carry a `code` and `params` for clients to phrase, and are ordered
-problems, warnings, infos. Codes: `obligation_missing`, `keyword_missing`,
+problems, warnings, infos. Codes: `rfc_not_normative` (keywords only in lower case), `rfc_casing` (keywords also in lower or mixed case), `non_rfc_keyword` (WILL), `mixed_languages`, `mixed_language_text`, `english_keywords`, `obligation_missing`, `keyword_missing`,
 `obligation_mismatch`, `multiple_levels`, `spread_all_mandatory`,
 `spread_no_mandatory`, `spread_many_optional`, `spread_many_should`,
 `spread_many_descriptive`, `inconsistent_keyword` (a keyword used where

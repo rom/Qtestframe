@@ -1040,6 +1040,8 @@ const en = {
     businessHint: 'Business processes, services and organisational change.',
   },
   analytics: {
+    languages: 'Languages of the requirements',
+    languagesHint: 'The language of each requirement whose text is long enough to tell.',
     title: 'Requirement analytics',
     intro: 'An analysis of all requirements of the project: obligation levels and keywords, coverage by tests, and the quality of the texts.',
     refresh: 'Analyse again',
@@ -1108,6 +1110,12 @@ const en = {
       'ambiguous-negation': 'Ambiguous negations',
     },
     code: {
+      rfc_not_normative: { title: 'Keywords only in lower case, so no normative keyword: {n}', detail: 'RFC 8174: only MUST, SHOULD, MAY … in capitals have the special meaning; "must" in lower case is ordinary English, so these requirements state no obligation.', fix: 'Write the keyword in capitals, e.g. "The user MUST …".' },
+      rfc_casing: { title: 'Keywords not in capitals (RFC 2119 / RFC 8174): {n}', detail: 'Besides keywords in capitals, these requirements also use them in lower or mixed case ("must", "Should"), which readers may or may not take as normative.', fix: 'Write every intended keyword in capitals, and rephrase other uses (e.g. "has to", "is required to" → MUST).' },
+      non_rfc_keyword: { title: 'WILL used as an obligation (not an RFC 2119 keyword): {n}', detail: 'WILL is not defined in RFC 2119; it usually states an intent or a fact about others, not a requirement on the system.', fix: 'Use MUST, SHOULD or MAY if a requirement is meant, or mark the text as descriptive.' },
+      mixed_languages: { title: 'Requirements in more than one language: {languages}', detail: 'Most requirements are written in {dominant} ({dominantPercent} %); the requirements listed are written in another language.', fix: 'Write all requirements of the project in one language, or translate these.' },
+      mixed_language_text: { title: 'Requirements that mix languages in their text: {n}', detail: 'The title and the sentences of these requirements are not all in the same language.', fix: 'Rewrite each requirement in one language.' },
+      english_keywords: { title: 'English keywords in requirements in another language: {n}', detail: 'These requirements are written in another language but use English keywords (MUST, SHALL …).', fix: 'Use the keywords of the language of the text (in Swedish SKA, BÖR, FÅR …), or write the requirement in English.' },
       obligation_missing: { title: 'Requirements without an obligation level: {n}', detail: 'A requirement without an obligation level does not say whether it must, should or may be fulfilled.', fix: 'Set the obligation (MUST, SHOULD, MAY …) in the requirement, and write the keyword in the text.' },
       keyword_missing: { title: 'Obligation level in the field but no keyword in the text: {n}', detail: 'The level is only in the field; readers of the text (or an export) do not see it.', fix: 'Write the keyword in capitals in the description, e.g. "The system MUST …".' },
       obligation_mismatch: { title: 'Text and obligation field disagree: {n}', detail: 'The text uses a keyword of another level than the obligation field (shown as field ≠ text).', fix: 'Make the field and the text agree.' },
