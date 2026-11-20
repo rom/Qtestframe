@@ -804,6 +804,7 @@ var ExitCriterionTypes = []string{
 	"no_suspect",       // no suspect links in scope
 	"no_open_defects",  // no open defects (of at least the given severity) on the scope
 	"risks_mitigated",  // every risk of at least the given level linked to scope requirements is mitigated or accepted
+	"trace_rules",      // the enabled traceability rules pass on the scope (level error: errors only, warning: also warnings)
 }
 
 // ExitCriterion is one condition a release must meet.
@@ -811,7 +812,8 @@ type ExitCriterion struct {
 	Type string `json:"type"`
 	// Threshold in percent for the percentage criteria (default 100).
 	Threshold float64 `json:"threshold,omitempty"`
-	// Severity / level for no_open_defects and risks_mitigated.
+	// Severity / level for no_open_defects and risks_mitigated; for
+	// trace_rules the least rule severity that counts (error | warning).
 	Level string `json:"level,omitempty"`
 }
 
@@ -985,4 +987,71 @@ type AuditEntry struct {
 	EntityID   string    `json:"entity_id"`
 	Details    string    `json:"details"`
 	CreatedAt  time.Time `json:"created_at"`
+}
+
+// Traceability rule kinds: what an item matching the rule's selector must
+// have at least Min of.
+const (
+	// TraceVerifiedBy: a requirement is verified by tests (trace links).
+	TraceVerifiedBy = "verified_by"
+	// TraceVerifies: a test verifies requirements (trace links).
+	TraceVerifies = "verifies"
+	// TraceRelation: a requirement has relations to other requirements
+	// (e.g. refines, incoming = refined by child requirements).
+	TraceRelation = "relation"
+	// TraceItemLink: a requirement or test has item links.
+	TraceItemLink = "item_link"
+)
+
+// TraceRuleKinds lists the rule kinds; TraceRuleSeverities their severities.
+var (
+	TraceRuleKinds      = []string{TraceVerifiedBy, TraceVerifies, TraceRelation, TraceItemLink}
+	TraceRuleSeverities = []string{"error", "warning"}
+	// TraceRuleDirections of relations and item links ("" = any).
+	TraceRuleDirections = []string{"", "incoming", "outgoing"}
+)
+
+// TraceRule says that the items of a project matching Selector must have
+// at least Min of a trace kind.
+type TraceRule struct {
+	ID          string `json:"id"`
+	ProjectID   string `json:"project_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	// Severity: error | warning.
+	Severity string `json:"severity"`
+	Enabled  bool   `json:"enabled"`
+	// Scope: the items the rule applies to, requirement | test.
+	Scope string `json:"scope"`
+	// Selector is a query-language expression on Scope items ("" = all).
+	Selector string `json:"selector"`
+	// Kind is a TraceRuleKinds value.
+	Kind string `json:"kind"`
+	// Min is the least number of qualifying traces (default 1; 0 only with
+	// Every, to check the conditions without requiring a trace).
+	Min int `json:"min"`
+	TraceRuleOptions
+	Position  int       `json:"position"`
+	CreatedBy string    `json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// TraceRuleOptions are the kind-specific settings of a rule.
+type TraceRuleOptions struct {
+	// NotSuspect: only links that are not suspect count (verified_by, verifies).
+	NotSuspect bool `json:"not_suspect,omitempty"`
+	// Passed: only tests whose last result passed count (verified_by).
+	Passed bool `json:"passed,omitempty"`
+	// RelationType of relation rules ("" = any type).
+	RelationType string `json:"relation_type,omitempty"`
+	// Direction of relations and item links: incoming | outgoing | "" (any).
+	Direction string `json:"direction,omitempty"`
+	// TargetType of item links: the type at the other end ("" = any).
+	TargetType string `json:"target_type,omitempty"`
+	// TargetQuery filters the requirement or test at the other end.
+	TargetQuery string `json:"target_query,omitempty"`
+	// Every: every trace of the kind must meet the conditions (e.g. no
+	// suspect link at all), not only Min of them.
+	Every bool `json:"every,omitempty"`
 }

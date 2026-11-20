@@ -72,6 +72,7 @@ const guideSv: GuideMessages = {
     baseline_filter: "En valfri fråga som begränsar vilka krav och testfall som fryses i baslinjen, till exempel status:approved.",
     trace_bulk: "Kryssa i krav, välj eventuellt testfall och länka, ta bort länkar eller bekräfta misstänkta länkar för alla på en gång. Utan valda testfall gäller åtgärderna alla testfall.",
     trace_onlyLinked: "Visa bara testfall som är länkade till minst ett krav, vilket gör stora matriser lättare att läsa.",
+    trace_rules: "Regler anger hur objekt ska spåras, till exempel att varje MUST-krav verifieras av ett testfall. Varje regel visar hur många objekt den gäller och vilka objekt som bryter mot den.",
     trace_coverage: "Täckningen kommer från det senaste utfallet för varje länkat testfall: ingen (inga testfall), ej kört, godkänt (alla godkända), underkänt (något underkänt) eller delvis.",
     token_role: "Den högsta roll nyckeln får använda. Den begränsas också av din egen aktuella roll i organisationen.",
     token_expires: "När nyckeln slutar fungera. Kortlivade nycklar begränsar skadan om en nyckel läcker.",

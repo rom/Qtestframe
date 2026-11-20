@@ -45,7 +45,7 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 |---|---|---|
 | **Project status** | key figures, requirements by status and obligation, coverage, recent runs | – |
 | **Requirements coverage** | every requirement with its linked tests, their last results and the coverage | optional filter |
-| **Traceability** | the requirement × test links | optional filter |
+| **Traceability** | the requirement × test links, and the [traceability rules](traceability-and-coverage.md#traceability-rules) with their results and violations | optional filter |
 | **Run summary** | one run: totals, executions, defects and durations | the run (required) |
 | **Defects** | all defects recorded on executions, grouped by defect | – |
 | **Test inventory** | tests by folder, type, status and category | optional filter |

@@ -16,6 +16,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/tracerules"
 )
 
 // ErrInvalid marks invalid report requests (unknown template, missing
@@ -113,6 +114,9 @@ type Data struct {
 	// Executions per run id (only loaded where a template needs them).
 	Executions map[string][]model.Execution
 	Categories map[string]model.Category
+	// TraceRules are the evaluated traceability rules (traceability report;
+	// evaluated on the requirements and tests above).
+	TraceRules []tracerules.Result
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time

@@ -50,6 +50,8 @@ type projectContext struct {
 	categories map[string]model.Category
 	links      []model.TraceLink
 	r2t, t2r   map[string][]string
+	// keys at the other end of the trace links, in link order
+	r2tKeys, t2rKeys map[string][]string
 	// suspect: requirement or test id → number of its suspect links
 	suspect map[string]int
 	// requirement id → open defects / highest open risk level
@@ -89,7 +91,10 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	}
 	pc.r2t, pc.t2r = store.LinkIndex(pc.links)
 	pc.suspect = map[string]int{}
+	pc.r2tKeys, pc.t2rKeys = map[string][]string{}, map[string][]string{}
 	for _, l := range pc.links {
+		pc.r2tKeys[l.RequirementID] = append(pc.r2tKeys[l.RequirementID], l.TestCaseKey)
+		pc.t2rKeys[l.TestCaseID] = append(pc.t2rKeys[l.TestCaseID], l.RequirementKey)
 		if l.SuspectSince != nil {
 			pc.suspect[l.RequirementID]++
 			pc.suspect[l.TestCaseID]++
@@ -224,12 +229,7 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 	for _, c := range r.Criteria {
 		crit = append(crit, c.Description, c.Method, c.Threshold)
 	}
-	var linkedKeys []string
-	for _, l := range pc.links {
-		if l.RequirementID == r.ID {
-			linkedKeys = append(linkedKeys, l.TestCaseKey)
-		}
-	}
+	linkedKeys := pc.r2tKeys[r.ID]
 	return query.MapRecord{
 		"id": {r.ID}, "key": {r.Key}, "title": {r.Title}, "description": {r.Description}, "obligation": {r.Obligation},
 		"type": {r.Type}, "priority": {r.Priority}, "status": {r.Status}, "source": {r.Source},
@@ -265,12 +265,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 			calls = append(calls, st.CallTestKey)
 		}
 	}
-	var linkedKeys []string
-	for _, l := range pc.links {
-		if l.TestCaseID == t.ID {
-			linkedKeys = append(linkedKeys, l.RequirementKey)
-		}
-	}
+	linkedKeys := pc.t2rKeys[t.ID]
 	return query.MapRecord{
 		"id": {t.ID}, "key": {t.Key}, "title": {t.Title}, "description": {t.Description},
 		"preconditions": {t.Preconditions}, "execution_type": {t.ExecutionType},

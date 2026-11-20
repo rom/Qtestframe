@@ -16,6 +16,8 @@ import SelectButton from 'primevue/selectbutton'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { readPref, writePref } from '@/stores/ui'
 import StatusTag from '@/components/StatusTag.vue'
+import TraceRulesPanel from '@/components/TraceRulesPanel.vue'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/lib/api'
 import { linkKey } from '@/lib/collections'
 import { COVERAGE_COLORS } from '@/lib/colors'
@@ -46,12 +48,27 @@ const canEdit = computed(() => auth.can(P.testWrite))
 
 // matrix or one list per requirement (default on phones)
 const phone = useBreakpoint('phone')
+// ?view=rules opens the traceability rules (links from editors and releases)
+const route = useRoute()
+const router = useRouter()
+type View = 'matrix' | 'list' | 'rules'
+const isView = (v: unknown): v is View => v === 'matrix' || v === 'list' || v === 'rules'
 const storedView = readPref('qtf.trace.view')
-const view = ref<'matrix' | 'list'>(storedView === 'matrix' || storedView === 'list' ? storedView : phone.value ? 'list' : 'matrix')
-watch(view, (v) => writePref('qtf.trace.view', v))
+const view = ref<View>(isView(route.query.view) ? route.query.view : isView(storedView) ? storedView : phone.value ? 'list' : 'matrix')
+watch(view, (v) => {
+  writePref('qtf.trace.view', v)
+  if (route.query.view && route.query.view !== v) void router.replace({ query: { ...route.query, view: undefined } })
+})
+watch(
+  () => route.query.view,
+  (v) => {
+    if (isView(v)) view.value = v
+  },
+)
 const viewOptions = computed(() => [
   { value: 'matrix', label: t('traceability.viewMatrix'), icon: 'pi pi-th-large' },
   { value: 'list', label: t('traceability.viewList'), icon: 'pi pi-list' },
+  { value: 'rules', label: t('traceability.viewRules'), icon: 'pi pi-list-check' },
 ])
 const showAll = ref<Record<string, boolean>>({})
 const isLinked = (reqId: string, testId: string) => linkMap.value.has(linkKey(reqId, testId))
@@ -250,7 +267,7 @@ async function toggle(reqId: string, testId: string) {
       <div class="sub" v-if="data">
         {{ t('traceability.linked', { covered: coveredCount, total: data.requirements.length, pct: percent(coveredCount, data.requirements.length) }) }} ·
         {{ t('counts.links', data.links.length) }}
-        <template v-if="canEdit">{{ t('traceability.toggleHint') }}</template>
+        <template v-if="canEdit && view !== 'rules'">{{ t('traceability.toggleHint') }}</template>
       </div>
     </div>
     <div class="actions">
@@ -260,6 +277,8 @@ async function toggle(reqId: string, testId: string) {
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
     </div>
   </div>
+  <TraceRulesPanel v-if="view === 'rules'" :project-id="proj.pid" />
+  <template v-else>
   <div class="filterbar">
     <IconField>
       <InputIcon class="pi pi-filter" aria-hidden="true" />
@@ -399,4 +418,5 @@ async function toggle(reqId: string, testId: string) {
       </tbody>
     </table>
   </div>
+  </template>
 </template>

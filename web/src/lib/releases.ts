@@ -14,6 +14,7 @@ export const CRITERION_TYPES = [
   'no_suspect',
   'no_open_defects',
   'risks_mitigated',
+  'trace_rules',
 ] as const
 /** Criteria measured in percent of a total, with a threshold. */
 export const PERCENT_CRITERIA = ['coverage', 'passed', 'executed', 'approved'] as const
@@ -22,13 +23,16 @@ export const DEFECT_SEVERITIES = ['critical', 'major', 'minor', 'trivial'] as co
 /** The least a release note must have when releasing despite a no-go. */
 export const MIN_RELEASE_NOTE = 3
 
-export type CriterionParam = 'threshold' | 'severity' | 'riskLevel' | 'none'
+export type CriterionParam = 'threshold' | 'severity' | 'riskLevel' | 'ruleSeverity' | 'none'
+/** Levels of the trace_rules criterion: errors only, or errors and warnings. */
+export const RULE_LEVELS = ['error', 'warning'] as const
 
 /** What a criterion type is parameterised by. */
 export function criterionParam(type: string): CriterionParam {
   if ((PERCENT_CRITERIA as readonly string[]).includes(type)) return 'threshold'
   if (type === 'no_open_defects') return 'severity'
   if (type === 'risks_mitigated') return 'riskLevel'
+  if (type === 'trace_rules') return 'ruleSeverity'
   return 'none'
 }
 
@@ -41,6 +45,8 @@ export function newCriterion(type: string): ExitCriterion {
       return { type, level: 'major' }
     case 'riskLevel':
       return { type, level: 'high' }
+    case 'ruleSeverity':
+      return { type, level: 'error' }
   }
   return { type }
 }
@@ -63,6 +69,8 @@ export function cleanCriteria(list: readonly ExitCriterion[]): ExitCriterion[] {
       case 'severity':
       case 'riskLevel':
         return c.level ? { type: c.type, level: c.level } : { type: c.type }
+      case 'ruleSeverity':
+        return { type: c.type, level: c.level === 'warning' ? 'warning' : 'error' }
     }
     return { type: c.type }
   })
@@ -91,6 +99,8 @@ export function criterionText(c: ExitCriterion, t: T, level: (kind: 'severity' |
       const kind = criterionParam(c.type) as 'severity' | 'riskLevel'
       return c.level ? t(`${base}.withLevel`, { level: level(kind, c.level) }) : t(`${base}.any`)
     }
+    case 'ruleSeverity':
+      return t(`${base}.${c.level === 'warning' ? 'withWarnings' : 'errorsOnly'}`)
   }
   return t(`${base}.label`)
 }
@@ -118,6 +128,8 @@ export function releaseItemRoute(item: Pick<ReleaseItem, 'kind' | 'id'>, project
       return { name: 'risks', params, query: { risk: item.id } }
     case 'defect':
       return { name: 'defects', params, query: { defect: item.id } }
+    case 'trace_rule':
+      return { name: 'traceability', params, query: { view: 'rules' } }
   }
   return { name: 'requirements', params, query: { item: item.id } }
 }

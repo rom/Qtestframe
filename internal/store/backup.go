@@ -36,6 +36,7 @@ var BackupTables = []string{
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
 	"files", "file_blobs", "attachments", "report_definitions", "login_events", "roles", "test_dependencies",
 	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks", "review_requests", "baseline_signoffs",
+	"trace_rules",
 }
 
 // tables that exist but are deliberately not part of a backup.
@@ -44,7 +45,7 @@ var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true}
 // boolColumns are stored as INTEGER 0/1 on SQLite and BOOLEAN on PostgreSQL.
 var boolColumns = map[string]bool{
 	"users.super_admin": true, "users.disabled": true, "users.must_change_password": true,
-	"login_events.success": true,
+	"login_events.success": true, "trace_rules.enabled": true,
 }
 
 // blobColumns hold binary data (base64 in the backup).

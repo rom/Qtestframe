@@ -13,7 +13,7 @@ Select **Traceability** in the project sidebar.
 - The summary says how many requirements are linked, for example *14/20 requirements linked (70 %)*.
 - **Filter requirements** and **Filter tests** take [queries](search-and-filters.md), for example `folder:Checkout` and `type=automated`.
 - **Only linked tests** hides tests that are not linked to any shown requirement.
-- **View** switches between **Matrix** and **List**. The list shows each requirement with its linked tests and is easier to read on phones.
+- **View** switches between **Matrix** and **List**. The list shows each requirement with its linked tests and is easier to read on phones. **Rules** shows the [traceability rules](#traceability-rules).
 
 **Link and unlink:** click (or focus and press <kbd>Enter</kbd> or <kbd>Space</kbd> on) an empty cell to link the requirement and the test; click a marked cell to remove the link. This needs the **Tester** role. Links can also be managed in the requirement editor (**Link tests**) and the test editor (**Link requirements**).
 
@@ -31,6 +31,53 @@ With the **Tester** role, a toolbar above the matrix (and the list) works on man
    - **Confirm suspect** confirms the suspect links among them (cells with a warning sign: the requirement or test changed after the link was confirmed).
 
 Ticking only tests (no requirements) lets **Unlink** and **Confirm suspect** act on all links of those tests. Linking and unlinking can be undone with **Undo**; the status that follows evidence is updated once for all affected requirements.
+
+## Traceability rules
+
+Rules say how the items of a project must be traced, so that gaps show up long before an audit or a release. A rule says: *the items that match a query must have at least N traces of a kind*, for example *every MUST requirement is verified by at least one test*.
+
+Select **Traceability** in the project sidebar and **View → Rules**. Every rule shows:
+
+- a green tick when no item breaks it, a red cross for a broken **error** and an amber one for a broken **warning**;
+- which items it applies to and what they need, for example *Requirements matching obligation:must needs at least 1 linked test (not suspect)*;
+- how many items match it and how many of them break it. **Show violations** lists the items that break it with what is missing (*has 0, needs 1*, or *1 of 2 qualify, needs 1* when some traces do not meet the conditions); select a key to open the item.
+
+**Only violations** hides the rules that pass and the rules that are turned off; **Filter rules and items** finds a rule by name or a violating item by key or title. The requirement and test editors show the rules the item breaks above the fields, with a link to the rules.
+
+### Create and edit rules
+
+Rules are managed by users who can change the project settings (permission `project.update`, by default **Manager** and **Admin**); everyone else sees the results. Select **New rule**, optionally **Start from** a preset, and fill in:
+
+| Field | Meaning |
+|---|---|
+| **Name**, **Description** | what the rule is for |
+| **Severity** | **Error** or **Warning**. Errors make the rules fail; release exit criteria can count errors only or warnings too |
+| **Rule is on** | rules that are off are listed but not counted |
+| **Applies to** | requirements or tests |
+| **Items the rule applies to** | a [query](search-and-filters.md), for example `obligation:must type:security` or `folder:Payments`; empty applies the rule to every item |
+| **Must have** | the kind of trace: **Tests that verify it** (trace links of a requirement), **Requirements it verifies** (trace links of a test), **Relations to requirements** or **Item links** |
+| **At least** | how many traces an item needs (default 1) |
+| **Relation type**, **Direction** | for relations: for example *Refines* and *incoming* means *refined by child requirements*; *any relation* and *both directions* count every relation |
+| **Link to**, **Direction** | for item links: what the link must point to (a requirement, test, run, file, report, web address or anything) |
+| **Only … that match** | a query on the item at the other end, for example `type:functional` to count only functional child requirements |
+| **Only links that are not suspect** | suspect links do not count |
+| **Only tests whose last result passed** | tests that have not passed do not count |
+| **Every trace must meet the conditions** | an item breaks the rule as soon as one of its traces does not meet the conditions (for example has a suspect link). With it, **At least** may be 0 |
+
+**Try it** evaluates the rule without saving it and says how many items match and break it. Use the eye button to turn a rule off and on, the pencil to edit it and the trash icon to delete it; all of these can be undone.
+
+The presets:
+
+| Preset | Rule |
+|---|---|
+| Every MUST requirement is verified by a test | requirements matching `obligation:must OR obligation:shall` need at least 1 linked test (error) |
+| Every MUST requirement has a passed test | as above, but the test must not be suspect and its last result must be passed (error) |
+| No suspect links on MUST requirements | every link of a MUST or SHALL requirement must not be suspect, at least 0 (warning) |
+| Every test verifies a requirement | every test is linked to at least 1 requirement (warning) |
+| Business requirements are refined by at least one requirement | requirements matching `type:business` have at least 1 incoming *refines* relation (warning) |
+| Security requirements are verified by two tests | requirements matching `type:security` need at least 2 linked tests (warning) |
+
+The rules are also evaluated on a release's scope by the exit criterion [Traceability rules](releases-and-risks.md#exit-criteria), and the **Traceability** report lists every enabled rule with its result and the items that break it.
 
 ## How coverage is calculated
 

@@ -122,6 +122,9 @@ async function discover(request) {
   const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
   const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
   const hasNotifications = items(await api(request, 'GET', '/notifications').catch(() => [])).length > 0
+  // a requirement that breaks a traceability rule (seed-demo has rules)
+  const ruleReport = await api(request, 'GET', `/projects/${pid}/trace-rules/evaluate`).catch(() => null)
+  const ruleViolator = (ruleReport?.results ?? []).flatMap((r) => r.violations ?? []).find((v) => v.kind === 'requirement')
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -138,6 +141,10 @@ async function discover(request) {
     run && { name: 'run-bulk', path: `${p}/runs/${run.id}`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     run && ex && { name: 'execute', path: `${p}/runs/${run.id}/exec/${ex.id}` },
     { name: 'traceability', path: `${p}/traceability` },
+    { name: 'trace-rules', path: `${p}/traceability?view=rules`, wait: '.trace-rules .rule-list' },
+    { name: 'trace-rules-violations', path: `${p}/traceability?view=rules`, open: '.trace-rules .violations-toggle', wait: '.trace-rules .violations' },
+    { name: 'trace-rule-dialog', path: `${p}/traceability?view=rules`, open: '.trace-rules .filterbar button:has(.pi-plus)', wait: '.p-dialog .trace-rule-form' },
+    ruleViolator && { name: 'requirement-trace-rules', path: `${p}/requirements?item=${ruleViolator.id}`, wait: '.p-drawer .trace-violations' },
     { name: 'traceability-selected', path: `${p}/traceability`, open: '.trace-bulk .p-checkbox', wait: '.trace-bulk' },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },

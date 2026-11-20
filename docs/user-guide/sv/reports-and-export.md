@@ -47,7 +47,7 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 |---|---|---|
 | **Projektstatus** | nyckeltal, krav per status och kravnivå, täckning, senaste körningar | – |
 | **Kravtäckning** | varje krav med länkade testfall, deras senaste utfall och täckningen | valfritt filter |
-| **Spårbarhet** | länkarna mellan krav och testfall | valfritt filter |
+| **Spårbarhet** | länkarna mellan krav och testfall, och [spårbarhetsreglerna](traceability-and-coverage.md#spårbarhetsregler) med resultat och överträdelser | valfritt filter |
 | **Sammanfattning av körning** | en körning: summor, exekveringar, defekter och tidsåtgång | körningen (obligatorisk) |
 | **Defekter** | alla defekter som registrerats på exekveringar, grupperade per defekt | – |
 | **Testförteckning** | testfall per mapp, typ, status och kategori | valfritt filter |
