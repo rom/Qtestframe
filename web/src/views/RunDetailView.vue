@@ -4,7 +4,7 @@ import MentionText from '@/components/MentionText.vue'
 import ColumnsMenu from '@/components/ColumnsMenu.vue'
 import { useColumnLayout, type ColumnDef } from '@/composables/columns'
 import MentionInput from '@/components/MentionInput.vue'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -46,6 +46,9 @@ import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, enumOptions } from '@/i18n/labels'
+import Checkbox from 'primevue/checkbox'
+import { BULK_RESULTS, execCounts, execUndo, rejectedText, type ExecBulkResult } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 const prefs = usePrefsStore()
 
 const props = defineProps<{ runId: string }>()
@@ -145,6 +148,76 @@ function remove() {
 }
 
 // ---------- executions ----------
+// ---------- bulk ----------
+const selection = ref<Execution[]>([])
+const selectedIds = computed(() => selection.value.map((e) => e.id))
+const bulkResultOptions = computed(() => enumOptions('result', [...BULK_RESULTS]))
+const bulkResult = ref<string | null>(null)
+const bulkDialog = ref(false)
+const bulkForm = reactive({ status: '' as string, assigneeOn: false, assignee: '', note: '', onlyNotRun: false })
+watch(executions, (list) => {
+  const ids = new Set(list.map((e) => e.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+watch(bulkResult, (v) => v && bulkUpdate({ status: v }, false).then(() => (bulkResult.value = null)))
+function openBulk() {
+  Object.assign(bulkForm, { status: '', assigneeOn: false, assignee: '', note: '', onlyNotRun: false })
+  bulkDialog.value = true
+}
+async function applyBulk() {
+  const set: { status?: string; assignee?: string; notes_append?: string } = {}
+  if (bulkForm.status) set.status = bulkForm.status
+  if (bulkForm.assigneeOn) set.assignee = bulkForm.assignee.trim()
+  if (bulkForm.note.trim()) set.notes_append = bulkForm.note.trim()
+  bulkDialog.value = false
+  await bulkUpdate(set, bulkForm.onlyNotRun)
+}
+async function bulkUpdate(set: { status?: string; assignee?: string; notes_append?: string }, onlyNotRun: boolean) {
+  const ids = [...selectedIds.value]
+  if (!ids.length || !Object.keys(set).length) return
+  const notesBefore = new Map(executions.value.map((e) => [e.id, e.notes ?? '']))
+  const path = `/runs/${props.runId}/executions/bulk`
+  try {
+    const res = await api.post<ExecBulkResult>(path, { ids, set, ...(onlyNotRun ? { from: ['not_run'] } : {}) })
+    const c = execCounts(res)
+    const undo = execUndo(res.updated ?? [], set, notesBefore)
+    if (undo.length) {
+      recordUndo(
+        entry(
+          t('run.bulk.undo', { n: undo.length }),
+          async () => {
+            for (const u of undo) await api.patch(`/executions/${u.id}`, u.body)
+          },
+          () => api.post(path, { ids: undo.map((u) => u.id), set }),
+        ),
+      )
+    }
+    const extra = c.skipped ? t('run.bulk.skipped', { n: c.skipped }, c.skipped) : undefined
+    if (c.rejected) notify.failText(t('run.bulk.rejected', { n: c.rejected, updated: c.updated }, c.rejected), rejectedText(res.rejected ?? []))
+    else notify.ok(t('run.bulk.updated', { n: c.updated }, c.updated), extra)
+    await reload()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+function bulkRemove() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(
+    t('run.bulk.confirmRemove', { n: ids.length }, ids.length),
+    async () => {
+      try {
+        const res = await api.post<ExecBulkResult>(`/runs/${props.runId}/executions/bulk`, { ids, remove: true })
+        notify.ok(t('run.bulk.removed', { n: res.removed ?? 0 }, res.removed ?? 0))
+        selection.value = []
+        await reload()
+      } catch (e) {
+        notify.fail(e)
+      }
+    },
+    undefined,
+    t('run.bulk.remove'),
+  )
+}
 /** assignee being edited per execution id (committed on blur or Enter) */
 const assigneeDraft = reactive<Record<string, string>>({})
 
@@ -345,8 +418,16 @@ async function copySnippet(text: string = ciSnippet.value) {
         {{ t('readiness.runSummary', { blocked: readinessSummary.blocked, total: executions.length, warned: readinessSummary.warned }) }}
         <RouterLink v-if="auth.can(P.settingsManage)" :to="{ name: 'executionSettings' }">{{ t('readiness.settingsLink') }}</RouterLink>
       </Message>
+      <div v-if="selection.length && canExecute" class="bulkbar" role="toolbar" :aria-label="t('run.bulk.toolbar')">
+        <b>{{ t('common.selected', { count: selection.length }) }}</b>
+        <Select v-model="bulkResult" :options="bulkResultOptions" option-label="label" option-value="value" :placeholder="t('run.bulk.setResult')" :aria-label="t('run.bulk.setResult')" size="small" style="min-width: 150px" />
+        <Button :label="t('run.bulk.more')" icon="pi pi-pencil" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulk" />
+        <Button v-if="canWrite" :label="t('run.bulk.remove')" icon="pi pi-minus-circle" size="small" severity="danger" outlined @click="bulkRemove" />
+        <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+      </div>
       <DataTable
         :ref="execLayout.bind"
+        v-model:selection="selection"
         v-stack
         :value="executions"
         data-key="id"
@@ -362,6 +443,7 @@ async function copySnippet(text: string = ciSnippet.value) {
         reorderable-columns
         @column-reorder="execLayout.onReorder()"
       >
+        <Column v-if="canExecute" selection-mode="multiple" column-key="_select" :reorderable-column="false" style="width: 2.6rem" />
         <Column field="position" header="#" sortable :reorderable-column="false" style="width: 60px" />
         <Column field="test_key" :header="t('run.test')" sortable :reorderable-column="false" style="width: 140px">
           <template #body="{ data }">
@@ -501,5 +583,45 @@ async function copySnippet(text: string = ciSnippet.value) {
   <Popover ref="readinessPop" class="readiness-pop" :aria-label="t('readiness.column')">
     <ReadinessBanner v-if="readinessOf" :readiness="readinessOf.readiness" :project-id="proj.pid" />
   </Popover>
+  <Dialog v-model:visible="bulkDialog" :header="t('run.bulk.dialogTitle', { n: selection.length }, selection.length)" modal style="width: min(520px, 96vw)">
+    <div class="bulk-form">
+      <label for="bk-result">{{ t('run.bulk.result') }}</label>
+      <Select v-model="bulkForm.status" input-id="bk-result" :options="[{ label: t('run.bulk.unchanged'), value: '' }, ...bulkResultOptions]" option-label="label" option-value="value" fluid />
+      <div class="row">
+        <Checkbox v-model="bulkForm.assigneeOn" binary input-id="bk-assign-on" />
+        <label for="bk-assign-on">{{ t('run.bulk.assignTo') }}</label>
+      </div>
+      <MentionInput v-model="bulkForm.assignee" :project-id="proj.pid" :disabled="!bulkForm.assigneeOn" :placeholder="t('run.bulk.emptyUnassigns')" :aria-label="t('run.bulk.assignTo')" />
+      <label for="bk-note">{{ t('run.bulk.note') }}</label>
+      <Textarea id="bk-note" v-model="bulkForm.note" rows="2" auto-resize fluid aria-describedby="bk-note-help" />
+      <small id="bk-note-help" class="muted">{{ t('run.bulk.noteHelp') }}</small>
+      <div class="row">
+        <Checkbox v-model="bulkForm.onlyNotRun" binary input-id="bk-only" />
+        <label for="bk-only">{{ t('run.bulk.onlyNotRun') }}</label>
+      </div>
+      <small class="muted">{{ t('run.bulk.readinessHelp') }}</small>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="bulkDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!bulkForm.status && !bulkForm.assigneeOn && !bulkForm.note.trim()" @click="applyBulk" />
+    </template>
+  </Dialog>
 </template>
 
+
+<style scoped>
+.bulk-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bulk-form > label {
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 6px;
+}
+.bulk-form .row {
+  gap: 8px;
+  margin-top: 6px;
+}
+</style>

@@ -16,6 +16,17 @@ En **körning** (testkörning, kampanj) är en uppsättning testfall som du exek
 
 ![Sidan Testkörningar med listan över körningar, deras förlopp och andel godkända](../images/sv-runs-list.png)
 
+## Ändra många körningar på en gång
+
+Kryssa i körningarna i listan (eller rubrikens kryssruta för hela sidan). Verktygsfältet som visas ändrar alla på en gång (behörighet att ändra körningar):
+
+- **Ange status**: till exempel avbryta gamla körningar, eller avsluta körningar som i praktiken är klara.
+- **Ange release**: lägg körningarna i en [release](releases-and-risks.md), eller ta bort dem ur en.
+- **Miljö / bygge**: ange miljö, bygge eller båda (ett tomt fält rensar).
+- **Ta bort**: ta bort körningarna med alla resultat, efter bekräftelse.
+
+Ändringar av status, release, miljö och bygge kan ångras med ångra-knappen i övre fältet; borttagning kan inte ångras.
+
 ## Skapa en körning
 
 Välj **Ny körning** och fyll i:
@@ -41,6 +52,18 @@ När ett testfall läggs till kopieras dess aktuella steg (med delade steg utvec
 - **Lägg till testfall** lägger till fler testfall; **CI-import** visar hur en pipeline rapporterar utfall; **Redigera körning** ändrar namn, beskrivning, miljö och bygge; **Ta bort** tar bort körningen med alla dess utfall.
 - Tabellen listar varje exekvering med testfall, utfall, **Tilldelad**, **Exekverad av**, **Defekter**, tidpunkten **Avslutad** och tidsåtgången. Filtrera den, till exempel `status:failed` eller `assignee:anna`.
 - Per rad: **Markera som godkänd** och **Markera som underkänd** registrerar ett utfall direkt; uppspelningsknappen öppnar exekveringen i exekveringsvyn.
+
+## Spara många utfall på en gång
+
+På körningens sida kryssar du i tester i exekveringstabellen (rubrikens kryssruta markerar hela sidan). Verktygsfältet erbjuder då:
+
+- **Ange resultat**: *Godkänd*, *Underkänd*, *Blockerad*, *Överhoppad* eller *Ej körd* för alla markerade tester.
+- **Resultat, ansvarig, anteckning…**: en dialog för att i ett steg ange resultat, tilldela testerna till någon (tomt tar bort tilldelningen) och lägga till en anteckning under de anteckningar de redan har. **Bara tester som inte har körts än** lämnar tester som redan har ett utfall orörda, till exempel för att markera resten *Överhoppad* i slutet av en körning.
+- **Ta bort ur körningen** (behörighet att ändra körningar): tar ut testerna ur körningen, med utfall, stegresultat och bevis, efter bekräftelse.
+
+Samma [exekveringsinställningar](administration.md) gäller som för ett test i taget: *Godkänd* och *Underkänd* sparas bara för tester som får köras. Tester som inte får det listas med orsaken, och resten sparas. Förutsättningar i samma urval hanteras: när du markerar ett test och dess förutsättning *Godkänd* samtidigt sparas förutsättningen först. *Blockerad*, *Överhoppad*, *Ej körd*, tilldelningar och anteckningar går alltid.
+
+Stegresultaten ändras inte: ett massresultat är varje tests samlade utfall. Körningen avslutas av sig själv när alla tester har ett slutligt utfall, och krav vars status följer bevisen uppdateras. Resultat, tilldelningar och anteckningar kan ångras med ångra-knappen; att ta bort tester kan inte ångras.
 
 ## Exekveringsvyn
 

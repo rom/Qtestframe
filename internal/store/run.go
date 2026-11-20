@@ -693,3 +693,41 @@ func LinkIndex(links []model.TraceLink) (map[string][]string, map[string][]strin
 	}
 	return r2t, t2r
 }
+
+// DeleteExecutions removes executions from a run (with their step results,
+// attachments and defect links) and completes the run when every remaining
+// execution has a final result. It returns the number removed.
+func (s *Store) DeleteExecutions(ctx context.Context, tenantID, runID string, ids []string) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	n := 0
+	err := s.tx(ctx, func(c conn) error {
+		args := append([]any{runID, tenantID}, anySlice(ids)...)
+		rows, err := c.query(ctx, `SELECT id FROM test_executions WHERE run_id = ? AND tenant_id = ? AND id IN (`+placeholders(len(ids))+`)`, args...)
+		if err != nil {
+			return err
+		}
+		found, err := scanStrings(rows)
+		if err != nil {
+			return err
+		}
+		if len(found) != len(uniq(ids)) {
+			return mapErr(sql.ErrNoRows, "execution")
+		}
+		if err := removeExecutionAttachments(ctx, c, found); err != nil {
+			return err
+		}
+		if err := deleteDefectLinks(ctx, c, "execution", found); err != nil {
+			return err
+		}
+		res, err := c.exec(ctx, `DELETE FROM test_executions WHERE id IN (`+placeholders(len(found))+`)`, anySlice(found)...)
+		if err != nil {
+			return err
+		}
+		m, _ := res.RowsAffected()
+		n = int(m)
+		return syncRunStatus(ctx, c, runID, s.now(), false)
+	})
+	return n, err
+}

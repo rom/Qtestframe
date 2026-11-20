@@ -35,6 +35,8 @@ app.use(PrimeVue, {
     // tree items are named by their content (as in the WAI-ARIA tree pattern); the expand
     // button is mouse-only (tabindex -1), keyboard users use the arrow keys on the item
     tree: { node: { 'aria-label': undefined }, nodeToggleButton: { 'aria-hidden': 'true' } },
+    // the selected state of a row is on the row (aria-selected); a checkbox may not carry it
+    datatable: { column: { pcRowCheckbox: { root: { 'aria-selected': undefined } } } },
   },
 })
 app.use(ToastService)

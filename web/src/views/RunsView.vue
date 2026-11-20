@@ -18,6 +18,7 @@ import Message from 'primevue/message'
 import MultiSelect from 'primevue/multiselect'
 import Select from 'primevue/select'
 import Tag from 'primevue/tag'
+import Checkbox from 'primevue/checkbox'
 import { useReleaseOptions } from '@/composables/releases'
 import { runReleaseName } from '@/lib/releases'
 import QueryInput from '@/components/QueryInput.vue'
@@ -34,6 +35,8 @@ import ColumnsMenu from '@/components/ColumnsMenu.vue'
 import { useColumnLayout, type ColumnDef } from '@/composables/columns'
 import type { Readiness, TestCase, TestRun } from '@/lib/types'
 import { readinessSummary } from '@/lib/readiness'
+import { runsBefore, type RunBulkSet } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { enumLabel } from '@/i18n/labels'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
@@ -158,6 +161,73 @@ async function create() {
   }
 }
 
+// ---------- bulk ----------
+const selection = ref<TestRun[]>([])
+const canBulk = computed(() => auth.can(P.runWrite))
+const selectedIds = computed(() => selection.value.map((r) => r.id))
+const bulkStatus = ref<string | null>(null)
+const bulkRelease = ref<string | null>(null)
+const envDialog = ref(false)
+const bulkEnv = ref('')
+const bulkBuild = ref('')
+const bulkEnvOn = ref(false)
+const bulkBuildOn = ref(false)
+const bulkPath = computed(() => `/projects/${proj.pid}/runs/bulk`)
+watch(runs, (list) => {
+  const ids = new Set(list.map((r) => r.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+async function bulkSet(set: RunBulkSet) {
+  const ids = [...selectedIds.value]
+  if (!ids.length) return
+  const before = runsBefore(runs.value, ids, set)
+  try {
+    await api.post(bulkPath.value, { ids, set })
+    recordUndo(
+      entry(
+        t('runs.bulk.undo', { n: ids.length }),
+        async () => {
+          for (const b of before) await api.patch(`/runs/${b.id}`, b.before)
+        },
+        () => api.post(bulkPath.value, { ids, set }),
+      ),
+    )
+    notify.ok(t('runs.bulk.updated', { n: ids.length }, ids.length))
+    await load()
+  } catch (e) {
+    notify.fail(e, t('runs.bulk.failed'))
+  }
+}
+watch(bulkStatus, (v) => v && bulkSet({ status: v }).then(() => (bulkStatus.value = null)))
+watch(bulkRelease, (v) => v !== null && bulkSet({ release_id: v }).then(() => (bulkRelease.value = null)))
+function openEnv() {
+  bulkEnv.value = ''
+  bulkBuild.value = ''
+  bulkEnvOn.value = true
+  bulkBuildOn.value = false
+  envDialog.value = true
+}
+async function applyEnv() {
+  const set: RunBulkSet = {}
+  if (bulkEnvOn.value) set.environment = bulkEnv.value.trim()
+  if (bulkBuildOn.value) set.build = bulkBuild.value.trim()
+  envDialog.value = false
+  await bulkSet(set)
+}
+function bulkDelete() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(t('runs.bulk.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      await api.del(bulkPath.value, { ids })
+      notify.ok(t('runs.bulk.deleted', { n: ids.length }, ids.length))
+      selection.value = []
+      await load()
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
+
 function remove(r: TestRun) {
   notify.confirmDanger(t('runs.confirmDelete', { name: r.name }), async () => {
     try {
@@ -212,8 +282,17 @@ const runLayout = useColumnLayout(
         @reset="runLayout.reset()"
       />
     </div>
+    <div v-if="selection.length && canBulk" class="bulkbar" role="toolbar" :aria-label="t('runs.bulk.toolbar')">
+      <b>{{ t('common.selected', { count: selection.length }) }}</b>
+      <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('runs.bulk.setStatus')" :aria-label="t('runs.bulk.setStatus')" size="small" style="min-width: 150px" />
+      <Select v-if="rel.releases.value.length" v-model="bulkRelease" :options="rel.options.value" option-label="label" option-value="value" :placeholder="t('runs.bulk.setRelease')" :aria-label="t('runs.bulk.setRelease')" size="small" style="min-width: 150px" />
+      <Button :label="t('runs.bulk.envBuild')" icon="pi pi-server" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openEnv" />
+      <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+      <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+    </div>
     <DataTable
       :ref="runLayout.bind"
+      v-model:selection="selection"
       v-stack
       :value="runs"
       data-key="id"
@@ -229,6 +308,7 @@ const runLayout = useColumnLayout(
       @column-reorder="runLayout.onReorder()"
       @row-click="(e) => router.push({ name: 'run', params: { projectId: proj.pid, runId: (e.data as TestRun).id } })"
     >
+      <Column v-if="canBulk" selection-mode="multiple" column-key="_select" :reorderable-column="false" style="width: 2.6rem" />
       <Column field="name" :header="t('common.name')" sortable :reorderable-column="false" body-class="stack-main">
         <template #body="{ data }">
           <div style="min-width: 0">
@@ -330,4 +410,33 @@ const runLayout = useColumnLayout(
     </template>
   </Dialog>
   <ItemPickerDialog v-model:visible="picker" kind="test" :project-id="proj.pid" :exclude="pickedTests.map((t) => t.id)" @pick="addPicked" />
+  <Dialog v-model:visible="envDialog" :header="t('runs.bulk.envHeader', { n: selection.length }, selection.length)" modal style="width: min(460px, 96vw)">
+    <div class="env-form">
+      <div class="row">
+        <Checkbox v-model="bulkEnvOn" binary input-id="bk-env-on" />
+        <label for="bk-env-on">{{ t('runs.bulk.setEnvironment') }}</label>
+      </div>
+      <InputText v-model="bulkEnv" :disabled="!bulkEnvOn" fluid :aria-label="t('runs.bulk.setEnvironment')" :placeholder="t('runs.bulk.emptyClears')" />
+      <div class="row">
+        <Checkbox v-model="bulkBuildOn" binary input-id="bk-build-on" />
+        <label for="bk-build-on">{{ t('runs.bulk.setBuild') }}</label>
+      </div>
+      <InputText v-model="bulkBuild" :disabled="!bulkBuildOn" fluid :aria-label="t('runs.bulk.setBuild')" :placeholder="t('runs.bulk.emptyClears')" />
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="envDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!bulkEnvOn && !bulkBuildOn" @click="applyEnv" />
+    </template>
+  </Dialog>
 </template>
+
+<style scoped>
+.env-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.env-form .row {
+  gap: 8px;
+}
+</style>

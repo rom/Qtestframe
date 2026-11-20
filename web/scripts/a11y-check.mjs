@@ -113,10 +113,12 @@ async function discover(request) {
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },
     { name: 'runs', path: `${p}/runs` },
+    { name: 'runs-bulk', path: `${p}/runs`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     // open states: dialogs and the off-canvas navigation
     { name: 'run-new-dialog', path: `${p}/runs`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'nav-drawer', path: `${p}/dashboard`, open: 'button[aria-controls="app-sidebar"]', wait: '.sidebar.open', narrow: true },
     run && { name: 'run', path: `${p}/runs/${run.id}` },
+    run && { name: 'run-bulk', path: `${p}/runs/${run.id}`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     run && ex && { name: 'execute', path: `${p}/runs/${run.id}/exec/${ex.id}` },
     { name: 'traceability', path: `${p}/traceability` },
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },

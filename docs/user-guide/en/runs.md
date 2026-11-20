@@ -16,6 +16,17 @@ A **run** (test run, campaign) is a set of tests that you execute together, for 
 
 ![The Operations page with the list of runs, their progress and pass rate](../images/en-runs-list.png)
 
+## Change many runs at once
+
+Tick the runs in the list (or the header checkbox for the whole page). The toolbar that appears changes all of them at once (permission to change runs):
+
+- **Set status**: for example abort old runs, or close runs that are finished in practice.
+- **Set release**: put the runs in a [release](releases-and-risks.md), or take them out of one.
+- **Environment / build**: set the environment, the build or both (an empty field clears it).
+- **Delete**: delete the runs with all their results, after confirmation.
+
+Status, release, environment and build changes can be undone with the undo button in the top bar; deleting cannot.
+
 ## Create a run
 
 Select **New run** and fill in:
@@ -41,6 +52,18 @@ When a test is added, its current steps (with shared steps expanded) are copied 
 - **Add tests** adds more tests; **CI import** shows how a pipeline reports results; **Edit run** changes name, description, environment and build; **Delete** removes the run with all its results.
 - The table lists every execution with test, result, **Assignee**, **Executed by**, **Defects**, **Finished** time and duration. Filter it, for example `status:failed` or `assignee:anna`.
 - Per row: **Mark passed** and **Mark failed** record a result directly; the play button opens the execution in the runner.
+
+## Record many results at once
+
+On the run page, tick tests in the execution table (the header checkbox ticks the whole page). The toolbar then offers:
+
+- **Set result**: *Passed*, *Failed*, *Blocked*, *Skipped* or *Not run* for all ticked tests.
+- **Result, assignee, note…**: a dialog to set a result, assign the tests to someone (empty removes the assignee) and add a note below the notes they already have, in one step. **Only tests that have not been run yet** leaves tests that already have a result alone, for example to mark the rest *Skipped* at the end of a run.
+- **Remove from run** (permission to change runs): takes the tests out of the run, with their results, step results and evidence, after confirmation.
+
+The same [execution settings](administration.md) apply as for one test at a time: *Passed* and *Failed* are only recorded for tests that may be executed. Tests that may not are listed with the reason, and the rest are recorded. Prerequisites in the same selection are handled: when you mark a test and its prerequisite *Passed* together, the prerequisite is recorded first. *Blocked*, *Skipped*, *Not run*, assignees and notes are always possible.
+
+Step results are not changed: a bulk result is the overall result of each test. The run completes by itself when every test has a final result, and requirements whose status follows the evidence are updated. Results, assignees and notes can be undone with the undo button; removing tests cannot.
 
 ## The execution runner
 
