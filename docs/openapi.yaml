@@ -80,6 +80,8 @@ tags:
   description: Reports, export (CSV, XLSX, PDF, DOCX, ReqIF) and search
 - name: Import
   description: Requirement import
+- name: Catalogue
+  description: Built-in catalogue of standard requirements and tests, and copying them into a project
 - name: Operations
   description: Health, readiness and this description
 paths:
@@ -8717,6 +8719,277 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/catalog:
+    get:
+      tags:
+      - Catalogue
+      summary: Catalogue overview
+      operationId: getCatalog
+      description: |-
+        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[{tag, count}]}`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      responses:
+        '200':
+          description: The groups and areas
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/requirements:
+    get:
+      tags:
+      - Catalogue
+      summary: List catalogue requirements
+      operationId: getCatalogRequirements
+      description: |-
+        `{"items":[CatalogRequirement]}` in `lang` (English where a text is missing). The filters take comma-separated values; `q` is free text whose words must all occur (title, id, tags, cited standards, description, rationale) and orders the result by relevance, else catalogue order. With `project_id`, each item has `in_project:[{id, key, title}]` (the project's requirements with that `catalog_ref`) and `not_in_project=true` leaves those out
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogArea'
+      - $ref: '#/components/parameters/catalogGroup'
+      - $ref: '#/components/parameters/catalogQ'
+      - name: type
+        in: query
+        required: false
+        description: requirement types, comma-separated
+        schema:
+          type: string
+      - name: obligation
+        in: query
+        required: false
+        description: obligations (must, must_not, should, should_not, may), comma-separated
+        schema:
+          type: string
+      - $ref: '#/components/parameters/catalogPriority'
+      - $ref: '#/components/parameters/catalogTag'
+      - $ref: '#/components/parameters/catalogProject'
+      - $ref: '#/components/parameters/catalogNotInProject'
+      responses:
+        '200':
+          description: The matching requirements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CatalogRequirement'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/requirements/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: catalogue id, e.g. AUTH-01
+      schema:
+        type: string
+    get:
+      tags:
+      - Catalogue
+      summary: Get a catalogue requirement
+      operationId: getCatalogRequirementsById
+      description: |-
+        A requirement with its full text in `lang`: `CatalogRequirement` plus `{area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}], in_project?}` (`in_project` with `project_id`)
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogProject'
+      responses:
+        '200':
+          description: The requirement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogRequirement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/tests:
+    get:
+      tags:
+      - Catalogue
+      summary: List catalogue tests
+      operationId: getCatalogTests
+      description: |-
+        `{"items":[CatalogTest]}` in `lang`; filters as for the requirements, plus `execution` (manual, automated). `q` also searches the steps and the ids of the verified requirements
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogArea'
+      - $ref: '#/components/parameters/catalogGroup'
+      - $ref: '#/components/parameters/catalogQ'
+      - $ref: '#/components/parameters/catalogPriority'
+      - $ref: '#/components/parameters/catalogTag'
+      - name: execution
+        in: query
+        required: false
+        description: execution types (manual, automated), comma-separated
+        schema:
+          type: string
+      - $ref: '#/components/parameters/catalogProject'
+      - $ref: '#/components/parameters/catalogNotInProject'
+      responses:
+        '200':
+          description: The matching tests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CatalogTest'
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/catalog/tests/{id}:
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: catalogue id, e.g. AUTH-T01
+      schema:
+        type: string
+    get:
+      tags:
+      - Catalogue
+      summary: Get a catalogue test
+      operationId: getCatalogTestsById
+      description: |-
+        A test with its full text in `lang`: `CatalogTest` plus `{area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}], in_project?}`
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogProject'
+      responses:
+        '200':
+          description: The test
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogTest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/catalog:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Catalogue
+      summary: Catalogue items in a project
+      operationId: getProjectsByPidCatalog
+      description: |-
+        Which catalogue items the project already has, by `catalog_ref` → `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {"AUTH-T01": [...]}}`; a kind the caller may not read stays empty
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: Project items by catalogue id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requirements:
+                    type: object
+                  tests:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/catalog/import:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Catalogue
+      summary: Add catalogue items to a project
+      operationId: postProjectsByPidCatalogImport
+      description: |-
+        Copies catalogue requirements and tests into the project in `lang` (at most 500 items, all or nothing) → 201 `{requirements:[{id, key, title, catalog_ref, folder_id}], tests:[...], links:[{id, requirement_id, requirement_key, test_case_id, test_case_key}], skipped:[{kind, catalog_ref, reason, existing?}], folders_created}`. With `include_tests` (default true when the caller has test.write) the catalogue tests that verify the chosen requirements are added too. Trace links connect each new requirement to the project tests of its catalogue tests and each new test to the project requirements it verifies, new or already there. Items the project already has (same `catalog_ref`) are skipped with reason `exists` unless `add_copies`; unknown ids are skipped with `not_found`. `folders`: `none`, `area` (a folder per area) or `group` (group / area) below the target folders, reusing folders of the same name. The automatic linked test of new requirements is not created. Audited as `catalog.import`
+
+        **Permission:** `project.read`, plus `requirement.write` for requirements and `test.write` for tests and links (`requirement.review` / `test.review` for a review decision status).
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogImport'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/scim:
     get:
       tags:
@@ -9923,6 +10196,65 @@ components:
       bearerFormat: qtf_<token>
       description: 'API token (`Authorization: Bearer qtf_…`) from `POST /api/v1/tokens`; bound to one tenant, no CSRF header needed.'
   parameters:
+    catalogLang:
+      name: lang
+      in: query
+      required: false
+      description: language of the texts (en, sv; default en)
+      schema:
+        type: string
+        enum:
+        - en
+        - sv
+    catalogArea:
+      name: area
+      in: query
+      required: false
+      description: area ids, comma-separated
+      schema:
+        type: string
+    catalogGroup:
+      name: group
+      in: query
+      required: false
+      description: group ids, comma-separated
+      schema:
+        type: string
+    catalogQ:
+      name: q
+      in: query
+      required: false
+      description: free-text search; all words must occur
+      schema:
+        type: string
+    catalogPriority:
+      name: priority
+      in: query
+      required: false
+      description: priorities, comma-separated
+      schema:
+        type: string
+    catalogTag:
+      name: tag
+      in: query
+      required: false
+      description: tags, comma-separated (any of them)
+      schema:
+        type: string
+    catalogProject:
+      name: project_id
+      in: query
+      required: false
+      description: mark the items the project already has (`in_project`)
+      schema:
+        type: string
+    catalogNotInProject:
+      name: not_in_project
+      in: query
+      required: false
+      description: with project_id, leave out the items the project already has
+      schema:
+        type: boolean
     pid:
       name: pid
       in: path
@@ -9992,6 +10324,120 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    CatalogRequirement:
+      type: object
+      properties:
+        id:
+          type: string
+        area:
+          type: string
+        group:
+          type: string
+        type:
+          type: string
+        obligation:
+          type: string
+        priority:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        refs:
+          type: array
+          description: the standards it is based on (cited, not copied)
+          items:
+            type: string
+        tests:
+          type: array
+          description: catalogue tests that verify it
+          items:
+            type: string
+        title:
+          type: string
+        description:
+          type: string
+        in_project:
+          type: array
+          items:
+            type: object
+    CatalogTest:
+      type: object
+      properties:
+        id:
+          type: string
+        area:
+          type: string
+        group:
+          type: string
+        priority:
+          type: string
+        execution:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        refs:
+          type: array
+          items:
+            type: string
+        requirements:
+          type: array
+          description: catalogue requirements it verifies
+          items:
+            type: string
+        steps:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        in_project:
+          type: array
+          items:
+            type: object
+    CatalogImport:
+      type: object
+      properties:
+        requirement_ids:
+          type: array
+          items:
+            type: string
+        test_ids:
+          type: array
+          items:
+            type: string
+        lang:
+          type: string
+          enum:
+          - en
+          - sv
+        requirement_folder_id:
+          type: string
+          description: target folder of the requirements ('' = top level)
+        test_folder_id:
+          type: string
+          description: target folder of the tests ('' = top level)
+        folders:
+          type: string
+          enum:
+          - none
+          - area
+          - group
+        status:
+          type: string
+          description: status of the requirements (default draft)
+        test_status:
+          type: string
+          description: status of the tests (default draft)
+        include_tests:
+          type: boolean
+        add_copies:
+          type: boolean
+        source:
+          type: string
+          description: source of the requirements; omitted = the cited standards
     StaleError:
       allOf:
       - $ref: '#/components/schemas/Error'
@@ -10900,6 +11346,9 @@ components:
           type: array
           items:
             type: string
+        catalog_ref:
+          type: string
+          description: the catalogue id the item was copied from (see the catalogue routes); empty otherwise. Kept on edits, copies, moves and restores; ignored in updates
         version:
           type: integer
         position:
@@ -11060,6 +11509,9 @@ components:
           type: array
           items:
             type: string
+        catalog_ref:
+          type: string
+          description: the catalogue id the item was copied from (see the catalogue routes); empty otherwise. Kept on edits, copies, moves and restores; ignored in updates
         position:
           type: integer
         category_ids:

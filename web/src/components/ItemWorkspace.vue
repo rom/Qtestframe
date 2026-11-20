@@ -457,6 +457,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           />
           <Button icon="pi pi-refresh" severity="secondary" text rounded :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
           <Button
+            v-if="canWrite"
+            :label="t('catalog.addFromCatalog')"
+            icon="pi pi-book"
+            severity="secondary"
+            outlined
+            class="catalog-entry"
+            v-tooltip.bottom="t('catalog.addFromCatalogHint')"
+            @click="router.push({ name: 'catalog', params: { projectId: pid }, query: isReq ? {} : { tab: 'tests' } })"
+          />
+          <Button
             v-if="isReq && canWrite"
             :label="t('reqImport.button')"
             icon="pi pi-upload"
@@ -655,6 +665,10 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           <div class="empty">
             <i class="pi pi-inbox" />
             <div>{{ isReq ? (composed ? t('workspace.emptyRequirementsFilter') : t('workspace.emptyRequirements')) : composed ? t('workspace.emptyTestsFilter') : t('workspace.emptyTests') }}</div>
+            <div v-if="!composed && !selectedFolder && canWrite" class="small" style="margin-top: 8px">
+              {{ t('catalog.emptyProjectHint') }}
+              <RouterLink :to="{ name: 'catalog', params: { projectId: pid }, query: isReq ? {} : { tab: 'tests' } }">{{ t('catalog.addFromCatalog') }}</RouterLink>
+            </div>
           </div>
         </template>
       </DataTable>

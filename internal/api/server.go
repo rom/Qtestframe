@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/auth"
+	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/config"
 	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
@@ -41,6 +42,9 @@ type Server struct {
 	Log    *slog.Logger
 	Runner *runner.Runner
 	UI     fs.FS // embedded SPA (may be nil)
+	// Catalog is the requirement and test catalogue served (nil = the
+	// built-in one, catalog.Default).
+	Catalog *catalog.Catalog
 	// HTTPClient is used for outgoing calls (defect trackers, webhooks);
 	// nil means a default client with a timeout.
 	HTTPClient *http.Client
@@ -311,6 +315,7 @@ func (s *Server) routes() {
 	s.routesTraceRules(h)
 	s.routesEmail(h)
 	s.routesConfigurations(h)
+	s.routesCatalog(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

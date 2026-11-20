@@ -20,6 +20,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Tutorial: your first test campaign](tutorial.md) | A complete walk-through from an empty project to a report |
 | [Requirements](requirements.md) | Obligation levels, the language analysis, fields, evaluation criteria, relations, comments, history, bulk edit, moving and attachments |
 | [Tests](tests.md) | Manual steps, automated scripts, shared steps, categories, execution history, comments, history and attachments |
+| [Catalogue](catalogue.md) | Standard requirements and tests to add to a project: browsing, searching, the preview and adding with tests and trace links |
 | [Test runs and execution](runs.md) | Runs, the execution runner and its keyboard shortcuts, defects, CI import with API tokens, attachments |
 | [Traceability and coverage](traceability-and-coverage.md) | The traceability matrix, how coverage is calculated, the dashboard |
 | [Baselines](baselines.md) | Freezing a release and comparing versions |

@@ -7,6 +7,7 @@ import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
+import CatalogOrigin from './CatalogOrigin.vue'
 import { fieldConflicts, staleOf, TEST_FIELDS, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import ReviewBar from './ReviewBar.vue'
@@ -479,6 +480,7 @@ const scriptPlaceholder = computed(() => {
       <StatusTag v-if="item?.last_result" :value="item.last_result" kind="result" />
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
+    <CatalogOrigin v-if="item?.catalog_ref" kind="test" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <ReviewBar v-if="item" kind="test" :item="item" @changed="onReviewed" />
     <TraceRuleViolations v-if="item" kind="test" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${linkCount}`" />

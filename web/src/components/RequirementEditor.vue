@@ -53,6 +53,7 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
+import CatalogOrigin from './CatalogOrigin.vue'
 import { fieldConflicts, REQUIREMENT_FIELDS, staleOf, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 
@@ -558,6 +559,7 @@ function criterionLabel(id: string | null) {
       </button>
       <span v-if="item" class="muted small">{{ t('editor.updatedBy', { date: formatDateTime(item.updated_at) }) }}{{ item.created_by ? t('editor.createdBy', { user: item.created_by }) : '' }}</span>
     </div>
+    <CatalogOrigin v-if="item?.catalog_ref" kind="requirement" :catalog-ref="item.catalog_ref" :project-id="projectId" />
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <ReviewBar v-if="item" kind="requirement" :item="item" @changed="onReviewed" />
     <TraceRuleViolations v-if="item" kind="requirement" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${relationCount}/${linkCount}`" />
