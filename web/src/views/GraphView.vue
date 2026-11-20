@@ -280,26 +280,27 @@ const listNodes = computed(() => [...shownNodes.value].sort((a, b) => a.key.loca
               <title>{{ byId.get(e.source)?.key }} {{ relationText(e.type, 'outgoing') }} {{ byId.get(e.target)?.key }}</title>
             </path>
           </g>
-          <a
-            v-for="n in layout.nodes"
-            :key="n.id"
-            :href="href(n.id)"
-            class="graph-node"
-            :class="{ dim: dimmed(n.id), selected: selected === n.id, match: matches?.has(n.id) }"
-            :aria-label="nodeName(byId.get(n.id)!)"
-            :aria-describedby="`gdesc-${n.id}`"
-            @click="open($event, n.id)"
-            @keydown.space.prevent="select(n.id)"
-            @contextmenu.prevent="select(n.id)"
-          >
+          <g v-for="n in layout.nodes" :key="n.id">
+            <!-- tooltip and description stay outside the link: its name is exactly its visible text -->
             <title>{{ byId.get(n.id)?.key }} {{ byId.get(n.id)?.title }}</title>
             <desc :id="`gdesc-${n.id}`">{{ nodeDescription(byId.get(n.id)!) }}</desc>
-            <rect :x="n.x" :y="n.y" :width="W" :height="H" rx="8" class="node-box" />
-            <rect :x="n.x" :y="n.y" width="6" :height="H" rx="3" :fill="colorOf(byId.get(n.id)!)" />
-            <text :x="n.x + 14" :y="n.y + 20" class="node-key">{{ byId.get(n.id)?.key }}</text>
-            <text :x="n.x + W - 8" :y="n.y + 20" class="node-status" text-anchor="end">{{ short(resultLabel(byId.get(n.id)!), 14) }}</text>
-            <text :x="n.x + 14" :y="n.y + 40" class="node-title">{{ short(byId.get(n.id)?.title ?? '') }}</text>
-          </a>
+            <a
+              :href="href(n.id)"
+              class="graph-node"
+              :class="{ dim: dimmed(n.id), selected: selected === n.id, match: matches?.has(n.id) }"
+              :aria-label="nodeName(byId.get(n.id)!)"
+              :aria-describedby="`gdesc-${n.id}`"
+              @click="open($event, n.id)"
+              @keydown.space.prevent="select(n.id)"
+              @contextmenu.prevent="select(n.id)"
+            >
+              <rect :x="n.x" :y="n.y" :width="W" :height="H" rx="8" class="node-box" />
+              <rect :x="n.x" :y="n.y" width="6" :height="H" rx="3" :fill="colorOf(byId.get(n.id)!)" />
+              <text :x="n.x + 14" :y="n.y + 20" class="node-key">{{ `${byId.get(n.id)?.key} ` }}</text>
+              <text :x="n.x + W - 8" :y="n.y + 20" class="node-status" text-anchor="end">{{ `${short(resultLabel(byId.get(n.id)!), 14)} ` }}</text>
+              <text :x="n.x + 14" :y="n.y + 40" class="node-title">{{ short(byId.get(n.id)?.title ?? '') }}</text>
+            </a>
+          </g>
         </svg>
       </div>
       <p v-if="view === 'graph'" class="small muted" style="margin: 8px 0 0">{{ t('graph.hint') }}</p>
