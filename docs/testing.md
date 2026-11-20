@@ -25,6 +25,7 @@ to run the suites on Linux and macOS.
 | OS hardening | child processes of the test binary | no_new_privs, capabilities, Landlock, seccomp, rlimits, `sandbox-exec` |
 | Frontend | Vitest (jsdom) | `web/src/lib`, `web/src/i18n` and `web/src/themes` modules |
 | Accessibility / responsive | Playwright + axe-core (`npm run a11y`) | every main route in five theme/language configurations at phone, tablet and desktop sizes against a running server |
+| End-to-end | `@playwright/test` (`npm run e2e`, `web/e2e/`) | main user journeys in Chromium against the built binary with a fresh database |
 
 No test needs network access: identity providers, syslog receivers and TLS
 endpoints are started in process on loopback.
@@ -229,6 +230,44 @@ The script needs a Chrome or Chromium (`npx playwright install chromium`
 or a system browser). Each run signs in once; the login rate limit (10
 attempts) is not an issue for repeated runs.
 
+### End-to-end tests
+
+`web/e2e/` is a Playwright suite (`@playwright/test`, headless Chromium)
+for the main user journeys, one spec each: sign-in/out and a wrong
+password, writing a requirement (language analysis, edit, Ctrl+Z undo),
+a manual test with steps (copy, delete, undo the delete), planning and
+executing a run in the runner (run completed, dashboard and traceability
+show the pass), the readiness banner of a draft test, language and theme
+switching, and an axe smoke test of the dashboard and requirements.
+
+`web/playwright.config.ts` starts the built binary itself
+(`web/e2e/server.mjs`): it copies `examples/qtestframe.yaml` into a fresh
+temporary directory, runs `seed-demo` and serves on a free port, so every
+run starts from an empty database; the directory is removed afterwards.
+Each test creates its own project (and the preferences test its own user)
+through the API, so the specs are independent and run in parallel.
+
+```sh
+make build                    # the tests use bin/qtestframe
+cd web
+npx playwright install chromium   # once (CI: --with-deps)
+npm run e2e                   # or: npx playwright test e2e/runs.spec.ts --headed
+npm run typecheck:e2e         # tsc over e2e/ and playwright.config.ts
+npx playwright show-report    # HTML report in web/playwright-report/
+```
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `QTF_BIN` | `../bin/qtestframe` (relative to `web/`) | server binary to test |
+| `QTF_E2E_PORT` | a free port | port of the test server |
+| `QTF_E2E_URL` | – | test an already running, seeded server instead of starting one |
+| `QTF_E2E_KEEP` | – | `1` keeps the temporary data directory (its path is printed) |
+| `PW_CHROMIUM` | Playwright's Chromium, else `/opt/pw-browsers/chromium` | Chromium executable |
+| `CI` | – | set: one retry, two workers, `test.only` fails the run |
+
+Traces are kept for failed tests (`web/test-results/`, open with
+`npx playwright show-trace`). The suite takes about 20 seconds locally.
+
 ## 8. Coverage floor
 
 The floor is 85 % for both code bases ([ADR 0013](adr/0013-coverage-floor-85-percent.md)).
@@ -287,6 +326,7 @@ behind build tags.
 | `go` | PostgreSQL 16 service container, `QTF_TEST_POSTGRES_DSN` set; `make vet` (linux + darwin), gofmt check, `make coverage-go` (85 % floor, on PostgreSQL), upload `coverage.out` |
 | `web` | Node 22, `npm ci`, `npm run build` (type check + build), `npm run coverage` (85 % thresholds) |
 | `build` | after `go` and `web`, on `ubuntu-latest` and `macos-latest`: `make build`, `./bin/qtestframe version` |
+| `e2e` | `ubuntu-latest`: `make build`, `npm run typecheck:e2e`, `npx playwright install --with-deps chromium`, `npm run e2e`; on failure the HTML report and traces are uploaded as the `playwright-report` artifact |
 
 Because `QTF_TEST_POSTGRES_DSN` is set in CI, the store and API suites run
 against PostgreSQL there; locally they run against SQLite unless the
