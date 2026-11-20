@@ -149,6 +149,7 @@ async function discover(request) {
     { name: 'search', path: '/search?q=login' },
     { name: 'help', path: '/help' },
     { name: 'profile', path: '/profile' },
+    { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
     { name: 'notifications', path: '/notifications' },
     { name: 'reviews', path: '/reviews' },
     { name: 'members', path: '/admin/members' },

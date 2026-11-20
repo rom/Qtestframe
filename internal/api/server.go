@@ -162,6 +162,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/move", s.handleMoveItems(model.KindRequirement), "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/bulk", s.handleBulk(model.KindRequirement), "requirement.read")
+	h("POST /api/v1/projects/{pid}/requirements/review", s.handleBulkReview(model.KindRequirement), "requirement.read")
 	h("DELETE /api/v1/projects/{pid}/requirements/bulk", s.handleBulkDelete(model.KindRequirement), "requirement.write")
 	h("GET /api/v1/requirements/{id}", s.handleGetRequirement, "requirement.read")
 	h("PATCH /api/v1/requirements/{id}", s.handleUpdateRequirement, "requirement.read") // write or review: see review.go
@@ -190,6 +191,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/tests", s.handleCreateTest, "test.write")
 	h("POST /api/v1/projects/{pid}/tests/move", s.handleMoveItems(model.KindTest), "test.write")
 	h("POST /api/v1/projects/{pid}/tests/bulk", s.handleBulk(model.KindTest), "test.read")
+	h("POST /api/v1/projects/{pid}/tests/review", s.handleBulkReview(model.KindTest), "test.read")
 	h("DELETE /api/v1/projects/{pid}/tests/bulk", s.handleBulkDelete(model.KindTest), "test.write")
 	h("GET /api/v1/tests/{id}", s.handleGetTest, "test.read")
 	h("PATCH /api/v1/tests/{id}", s.handleUpdateTest, "test.read") // write or review: see review.go

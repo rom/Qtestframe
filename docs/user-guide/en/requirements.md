@@ -144,6 +144,29 @@ Every change creates a new **version**. The **History** tab lists the versions w
 
 **Restore this version** copies the content of an old version back as a **new** version: title, description, obligation, type, priority, status, source, rationale, owner, tags, categories and criteria. Nothing is lost; the newer versions stay in the history. The folder and project are not changed. Categories that no longer exist are dropped.
 
+## Approve many requirements at once
+
+Holders of the review permission (`requirement.review`) can approve or reject many requirements in one step. Tick the requirements and choose **Approve or reject…** in the toolbar, or, with nothing ticked, choose **Bulk review** above the list. Then choose:
+
+- **Which items**: the selected ones, all shown in the list (the current folder and filters, so filter first for a subset, e.g. `folder:Payments obligation:must`), or all requirements of the project.
+- **Decision**: approve or reject.
+- **Only items with status**: by default only requirements in *Review*. Add *Draft* to approve drafts directly.
+- **Include anyway, despite**: see below.
+- **Comment**: added to every requirement that changes, for example "Approved in the review meeting of 12 March".
+
+The preview shows which requirements change and which are skipped, grouped by the reason:
+
+| Reason | Meaning |
+|---|---|
+| Already has this status | nothing to do |
+| Status not chosen above | its status is not one of those you chose |
+| The latest review asked for changes | a [review request](reviews-and-notifications.md) was answered with *Request changes* |
+| Review requests are still open | someone has not finished reviewing it |
+| Has suspect links | a linked test changed since the link was confirmed |
+| No obligation level | approving needs an obligation level (rejecting does not) |
+
+Choose a check under **Include anyway, despite** to approve those requirements anyway. Nothing is saved until you choose the button at the bottom. Each change is recorded in the requirement's history and the audit log, and the whole step can be undone with the undo button in the top bar (undo needs write permission).
+
 ## Bulk edit
 
 Tick the checkboxes of several requirements (or the header checkbox for the whole page). A toolbar appears:

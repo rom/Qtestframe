@@ -217,6 +217,7 @@ missing permission). Decisions are audited as `requirement.review` /
 | POST | `/projects/{pid}/requirements/move` | `{"ids":[...],"folder_id": id\|null, "position"?: n, "project_id"?: id}`; another `project_id` re-keys the items, remaps categories by dimension/name and drops their links ([design.md §5](design.md#5-move-semantics)) |
 | POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?}}` |
 | DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/requirements/review` | bulk review, see below |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
 | POST | `/reqlang/analyze` | `{"text", "language"?}` → `Analysis` (below). `language` is a pack code from `/meta` `analysis_languages` (`en`, `sv`); empty or `auto` detects it from the text; anything else → 400 |
 
@@ -342,6 +343,38 @@ title, ignoring case. The preview marks these as `duplicate`.
   the value above); tables without one are scanned like paragraphs. Tracked
   deletions and field codes are ignored.
 
+### Bulk review
+
+`POST /projects/{pid}/requirements/review` approves or rejects many
+requirements, `POST /projects/{pid}/tests/review` marks many tests ready.
+Needs `requirement.review` / `test.review` (write permission is not
+needed).
+
+```json
+{"decision": "approved", "ids": ["…"], "query": "folder:Payments", "all": false,
+ "from": ["review"], "ignore": ["no_obligation"], "comment": "…", "dry_run": true}
+```
+
+- `decision`: `approved` or `rejected` for requirements, `ready` for tests.
+- The items: `ids`, else the matches of `query`, else every item of the
+  project with `all: true` (one of them is required; at most 5000 items).
+- `from`: the statuses an item may have (default `["review"]`).
+- Items are skipped with a `reason`: `already`, `status` (not in `from`),
+  `changes_requested` (the latest decided review request asked for
+  changes), `pending_review` (a review request is open), `suspect` (suspect
+  links; not checked when rejecting), `no_obligation` (approving a
+  requirement without obligation), `no_steps` (manual test without steps),
+  `no_script` (automated test without script). The last six can be listed
+  in `ignore` to include such items anyway.
+- `comment` is added as a comment to every changed item.
+- `dry_run` returns the preview without changing anything.
+
+Response: `{"decision", "dry_run", "updated": [{id, key, title, status}],
+"skipped": [{id, key, title, status, reason}]}` (`status` is the status
+before). Each change gets a revision (`bulk_update`), an audit entry
+`requirement.review` / `test.review` and a `requirement.updated` /
+`test.updated` webhook; the call is audited as `…bulk_review`.
+
 ## Test cases
 
 Reading needs `test.read`, writing `test.write`.
@@ -357,6 +390,7 @@ Reading needs `test.read`, writing `test.write`.
 | POST | `/projects/{pid}/tests/move` | like requirements |
 | POST | `/projects/{pid}/tests/bulk` | like requirements (`status`, `priority`, `execution_type`, categories) |
 | DELETE | `/projects/{pid}/tests/bulk` | → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/tests/review` | bulk review: mark tests ready (see [Bulk review](#bulk-review)) |
 | GET | `/tests/{id}/links` | `[TraceLink]` |
 | GET | `/tests/{id}/dependencies` | `[TestDependency]` both directions: `direction` = `outgoing` (this test depends on the other) or `incoming`; `other_last_result` is the latest result of the other test |
 | POST | `/tests/{id}/dependencies` | `{"depends_on_id"}` → 201 TestDependency; same project only; self-dependencies and cycles → 400, duplicates → 409 |

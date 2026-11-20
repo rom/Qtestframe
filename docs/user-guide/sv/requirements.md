@@ -161,6 +161,29 @@ Varje ändring skapar en ny **version**. Fliken **Versionshistorik** listar vers
 
 **Återställ den här versionen** kopierar tillbaka innehållet i en gammal version som en **ny** version: titel, beskrivning, kravnivå, typ, prioritet, status, källa, motivering, ägare, taggar, kategorier och kriterier. Inget går förlorat; de nyare versionerna finns kvar i historiken. Mapp och projekt ändras inte. Kategorier som inte längre finns tas bort.
 
+## Godkänn många krav på en gång
+
+Den som har granskningsbehörighet (`requirement.review`) kan godkänna eller avslå många krav i ett steg. Kryssa i kraven och välj **Godkänn eller avslå…** i verktygsfältet, eller välj **Massgranskning** ovanför listan när inget är markerat. Välj sedan:
+
+- **Vilka poster**: de markerade, alla som visas i listan (aktuell mapp och filter, så filtrera först för ett urval, t.ex. `folder:Betalningar obligation:must`) eller alla krav i projektet.
+- **Beslut**: godkänn eller avslå.
+- **Bara poster med status**: som standard bara krav i *Granskning*. Lägg till *Utkast* för att godkänna utkast direkt.
+- **Ta med ändå, trots**: se nedan.
+- **Kommentar**: läggs till på varje krav som ändras, till exempel "Godkänt på granskningsmötet 12 mars".
+
+Förhandsgranskningen visar vilka krav som ändras och vilka som hoppas över, grupperade efter orsak:
+
+| Orsak | Betydelse |
+|---|---|
+| Har redan den här statusen | inget att göra |
+| Statusen är inte vald ovan | statusen är inte en av dem du valde |
+| Den senaste granskningen begärde ändringar | en [granskningsförfrågan](reviews-and-notifications.md) besvarades med *Begär ändringar* |
+| Granskningsförfrågningar är fortfarande öppna | någon har inte granskat klart |
+| Har misstänkta länkar | ett länkat test har ändrats sedan länken bekräftades |
+| Saknar kravnivå | för att godkänna krävs en kravnivå (inte för att avslå) |
+
+Välj en kontroll under **Ta med ändå, trots** för att godkänna de kraven ändå. Inget sparas förrän du väljer knappen längst ner. Varje ändring registreras i kravets versionshistorik och i granskningsloggen, och hela steget kan ångras med ångra-knappen i övre fältet (för att ångra krävs skrivbehörighet).
+
 ## Massändring
 
 Kryssa i rutorna för flera krav (eller rubrikens kryssruta för hela sidan). Ett verktygsfält visas:

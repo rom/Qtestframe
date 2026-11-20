@@ -25,6 +25,7 @@ import CategorySelect from './CategorySelect.vue'
 import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
 import RequirementImportDialog from './RequirementImportDialog.vue'
+import BulkReviewDialog from './BulkReviewDialog.vue'
 import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
@@ -81,6 +82,9 @@ const isReq = computed(() => props.kind === 'requirement')
 const plural = computed(() => (isReq.value ? 'requirements' : 'tests'))
 const pid = computed(() => proj.pid)
 const canWrite = computed(() => auth.can(isReq.value ? P.requirementWrite : P.testWrite))
+const canReview = computed(() => auth.can(isReq.value ? P.requirementReview : P.testReview))
+const bulkReviewOpen = ref(false)
+const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
 const folders = computed(() => proj.folders[props.kind])
 const categories = computed(() => proj.categoriesFor(props.kind))
@@ -268,6 +272,10 @@ async function onFoldersChanged() {
 }
 
 // ---------- bulk actions ----------
+async function onBulkReviewed() {
+  selection.value = []
+  await load()
+}
 const selectedIds = computed(() => selection.value.map((s) => s.id))
 async function bulkSet(set: Record<string, unknown>) {
   if (!selectedIds.value.length) return
@@ -441,6 +449,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             v-tooltip.bottom="t('reqImport.buttonHint')"
             @click="importOpen = true"
           />
+          <Button
+            v-if="canReview && !selection.length && items.length"
+            :label="t('bulkReview.toolbar')"
+            icon="pi pi-verified"
+            severity="secondary"
+            outlined
+            aria-haspopup="dialog"
+            v-tooltip.bottom="isReq ? t('bulkReview.toolbarHintRequirement') : t('bulkReview.toolbarHintTest')"
+            @click="bulkReviewOpen = true"
+          />
           <Button v-if="canWrite" :label="isReq ? t('workspace.newRequirement') : t('workspace.newTest')" icon="pi pi-plus" @click="openEditor(null)" />
         </div>
       </div>
@@ -499,8 +517,19 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       </div>
       <div v-if="composed && composed !== q" class="small muted mono" style="margin: -4px 0 10px">q = {{ composed }}</div>
 
-      <div v-if="selection.length && canWrite" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
+      <div v-if="selection.length && (canWrite || canReview)" class="bulkbar" role="toolbar" :aria-label="t('workspace.bulkActions')">
         <b>{{ t('common.selected', { count: selection.length }) }}</b>
+        <Button
+          v-if="canReview"
+          :label="isReq ? t('bulkReview.buttonRequirement') : t('bulkReview.buttonTest')"
+          icon="pi pi-verified"
+          size="small"
+          severity="success"
+          outlined
+          aria-haspopup="dialog"
+          @click="bulkReviewOpen = true"
+        />
+        <template v-if="canWrite">
         <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('workspace.setStatus')" :aria-label="t('workspace.setStatus')" size="small" style="min-width: 140px" />
         <Select v-model="bulkPriority" :options="priorityOptions" option-label="label" option-value="value" :placeholder="t('workspace.setPriority')" :aria-label="t('workspace.setPriority')" size="small" style="min-width: 140px" />
         <Select v-model="bulkThird" :options="thirdOptions" option-label="label" option-value="value" :placeholder="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" :aria-label="isReq ? t('workspace.setObligation') : t('workspace.setExecution')" size="small" style="min-width: 150px" />
@@ -517,6 +546,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           @click="$router.push({ name: 'prompts', params: { projectId: pid }, query: { kind: isReq ? 'implement' : 'automate_tests', ids: selectedIds.join(',') } })"
         />
         <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+        </template>
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
 
@@ -670,4 +700,12 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   </Dialog>
   <FolderPickerDialog v-model:visible="moveDialog" :folders="folders" :header="t('workspace.moveSelection')" @pick="onPickFolder" />
   <RequirementImportDialog v-if="isReq && canWrite" v-model:visible="importOpen" :project-id="pid" :folders="folders" :folder-id="selectedFolder" @imported="onImported" />
+  <BulkReviewDialog
+    v-model:visible="bulkReviewOpen"
+    :kind="isReq ? 'requirement' : 'test'"
+    :project-id="pid"
+    :selected="selectedIds"
+    :shown="shownIds"
+    @done="onBulkReviewed"
+  />
 </template>
