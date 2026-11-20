@@ -44,7 +44,7 @@ Att skriva krav kräver rollen **Ansvarig** i den aktuella organisationen. Med *
 
 ### Varför ser jag inte knappen Kör skript?
 
-Att köra skript på servern kräver rollen **Ansvarig**, och administratören måste ha aktiverat skriptexekveringen (`runner.enabled`). Utan rollen visar exekveringsvyn att behörigheten *script.execute* krävs. Om exekveraren är avstängd på servern använder du [CI-importen](runs.md#importera-utfall-från-ci) i stället.
+Att köra skript på servern kräver rollen **Testledare** eller **Ansvarig** (behörigheten *script.execute*), och administratören måste ha aktiverat skriptexekveringen (`runner.enabled`). Utan rollen visar exekveringsvyn att behörigheten *script.execute* krävs. Om exekveraren är avstängd på servern använder du [CI-importen](runs.md#importera-utfall-från-ci) i stället.
 
 ### Hur ångrar jag en ändring?
 
@@ -95,6 +95,14 @@ Skapa en API-nyckel (**Administration → API-nycklar**, roll Testare eller hög
 ### En CI-import rapporterar ”unknown” testnycklar. Varför?
 
 De nycklarna finns inte i körningens projekt. Kontrollera stavningen (versaler och gemener spelar ingen roll) och att testfallen inte har flyttats till ett annat projekt, vilket ger dem nya nycklar.
+
+### Varför är Godkänd och Underkänd avstängda i exekveringsvyn?
+
+Testfallet får inte exekveras än: det är inte **Klart**, ett krav det verifierar är inte godkänt, eller ett testfall det beror på har inte godkänts. Den röda rutan ovanför stegen listar orsakerna med länkar. Åtgärda dem (eller be en administratör eller testledare ändra [inställningarna för testexekvering](administration.md#inställningar-för-testexekvering)); under tiden kan du markera testfallet som **Blockerat** eller **Överhoppat**.
+
+### Hur skapar jag en egen roll?
+
+*(Administratör)* **Administration → Rollmatris → Ny roll**: ge den ett namn, välj vilken roll den ska börja med behörigheterna från, kryssa sedan i och ur behörigheter i matrisen och spara. Se [Ändra roller och skapa egna](administration.md#ändra-roller-och-skapa-egna).
 
 ### Kan jag ändra ett utfall efter att jag har sparat det?
 

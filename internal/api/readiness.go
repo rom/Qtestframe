@@ -142,17 +142,26 @@ func (rc *readinessContext) check(testID string) *Readiness {
 	return out
 }
 
+func activeResult(s string) bool {
+	return s != "" && s != model.ResultNotRun && s != model.ResultBlocked && s != model.ResultSkipped
+}
+
 // starts reports whether an execution update records an actual execution
 // (as opposed to assigning, commenting, or marking it blocked or skipped).
-func starts(u store.ExecutionUpdate) bool {
-	active := func(s string) bool {
-		return s != "" && s != model.ResultNotRun && s != model.ResultBlocked && s != model.ResultSkipped
-	}
-	if u.Status != nil && active(*u.Status) {
+// With the current execution cur, only changes count: saving notes of an
+// execution that already has a result is not a new execution.
+func starts(u store.ExecutionUpdate, cur *model.Execution) bool {
+	if u.Status != nil && activeResult(*u.Status) && (cur == nil || cur.Status != *u.Status) {
 		return true
 	}
+	prev := map[string]string{}
+	if cur != nil {
+		for _, sr := range cur.StepResults {
+			prev[sr.ID] = sr.Status
+		}
+	}
 	for _, sr := range u.StepResults {
-		if active(sr.Status) {
+		if activeResult(sr.Status) && (cur == nil || prev[sr.ID] != sr.Status) {
 			return true
 		}
 	}

@@ -45,6 +45,7 @@ func TestExecutionReadiness(t *testing.T) {
 		t.Fatal(res)
 	}
 	a.m("PATCH", "/api/v1/executions/"+exID, map[string]any{"assignee": "@admin", "notes": "waiting"}, 200)
+	a.m("PATCH", "/api/v1/executions/missing", map[string]any{"status": "passed"}, 404)
 	a.m("PATCH", "/api/v1/executions/"+exID, map[string]any{"status": "blocked"}, 200)
 	d := a.m("GET", "/api/v1/executions/"+exID, nil, 200)
 	if d["readiness"].(map[string]any)["allowed"] != false {
@@ -61,6 +62,9 @@ func TestExecutionReadiness(t *testing.T) {
 	}
 	a.m("PATCH", "/api/v1/executions/"+exID, map[string]any{"status": "passed"}, 200)
 	strictPolicy(t, a)
+	// the result is recorded; saving it again (e.g. with new notes) is not a new execution
+	a.m("PATCH", "/api/v1/executions/"+exID, map[string]any{"status": "passed", "notes": "rechecked"}, 200)
+	a.m("PATCH", "/api/v1/executions/"+exID, map[string]any{"status": "failed"}, 409)
 	a.m("PATCH", "/api/v1/requirements/"+req["id"].(string), map[string]any{"status": "approved"}, 200)
 	if rd := a.m("GET", "/api/v1/executions/"+exID, nil, 200)["readiness"].(map[string]any); rd["ready"] != true {
 		t.Fatal(rd)

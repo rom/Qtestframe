@@ -27,7 +27,9 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Relations** between requirements (refines/decomposition, depends on, provides, derived from, conflicts with, duplicates, relates to) and **comment threads** on requirements and tests. A **Relations** column in the requirement and test lists shows every relation in both directions (*depends on*, *provided by*, *verified by*, *calls* …), next to many other optional columns (owner, source, tags, criteria, steps, defects, created by …).
 - **@mentions:** type `@` in owner, assignee, descriptions, notes and comments to pick a user of the organisation or a person already named in the project; mentions are shown with name and avatar, and `mention:anna` finds them.
 - **Tag suggestions** from the title and description, preferring tags the project already uses.
-- **Test reuse and results:** shared steps (a step can call another test), execution history across runs, and defects linked to failed executions (with links into your issue tracker).
+- **Test reuse and results:** shared steps (a step can call another test), **test dependencies** (a test may only start after its prerequisites have passed), execution history across runs, **evidence** per executed step (text and files such as screenshots), and defects linked to failed executions (with links into your issue tracker).
+- **Execution readiness:** by default only Ready tests of approved requirements whose prerequisites have passed can be executed; admins and test leads decide which rules apply. The runner, run page and new-run dialog show why a test cannot run yet.
+- **Dependency graphs and tag cloud:** layered graphs of requirement relations and of test dependencies and shared steps, with filters and a list view; a tag cloud that lists the requirements, tests and documents carrying the selected tags.
 - **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder.
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
 - **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
@@ -36,10 +38,10 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Context-sensitive help:** an *i* next to form fields explains the field on mouse-over or keyboard focus and links to the matching section of the guide; <kbd>?</kbd> opens the guide page for the current view.
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
 - **Grouping:** nested folders for requirements and tests. Drag and drop moves items, whole folders, or entire category dimensions, also to another project.
-- **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dashboard, global search, administration.
+- **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dependency graph, tag cloud, dashboard, global search, administration. Table columns can be chosen and reordered (drag the header or use the Columns menu).
 - **Filtering and search on every field** with a [query language](#query-language): field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
 - **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**.
-- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, tester, viewer + super admin), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
+- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, test lead, tester, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
 
 ## Quick start
@@ -246,7 +248,7 @@ Fields with several values (tags, categories, criteria, steps, linked items, def
 | List | Fields (aliases in parentheses) |
 |---|---|
 | Requirements | `id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder`, `category` (`categories`), `dimension`, `coverage`, `linked`, `related` (`relation`), `parent` (`parents`), `child` (`children`), `comments`, `mention` (`mentions`), `criteria` (`criterion`), `created_by`, `created_at`, `updated_at` |
-| Tests | `id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category` (`categories`), `dimension`, `linked`, `last_result` (`result`), `defect` (`defects`), `calls`, `comments`, `mention` (`mentions`), `version`, `created_by`, `created_at`, `updated_at` |
+| Tests | `id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category` (`categories`), `dimension`, `linked`, `last_result` (`result`), `defect` (`defects`), `calls`, `depends_on` (`depends`), `comments`, `mention` (`mentions`), `version`, `created_by`, `created_at`, `updated_at` |
 | Runs | `id`, `name`, `description`, `status`, `environment` (`env`), `build`, `created_by`, `created_at` |
 | Executions (run page) | `id`, `key`, `title`, `status`, `assignee`, `executed_by`, `notes`, `output`, `defect` (`defects`), `mention` (`mentions`) |
 | Audit log | `action`, `entity`, `entity_id`, `user`, `details`, `created_at` |
@@ -285,14 +287,21 @@ An invalid query is rejected with a message that points at the position of the p
 
 A **tenant** is an isolated organisation; projects belong to a tenant. A user can be a member of several tenants, with one role in each, and switches between them with the selector at the top. **Super administrators** can manage all tenants and users.
 
-| Role | Can |
+| Role | Can (default) |
 |---|---|
 | viewer | read everything, export |
 | tester | + edit tests, execute runs, create API tokens |
-| manager | + edit requirements, create/edit projects and categories, run scripts, read the audit log |
-| admin | + delete projects, manage members and the tenant |
+| test lead | + run scripts, read the audit log, change the test execution settings |
+| manager | + edit requirements, create/edit projects and categories |
+| admin | + delete projects, manage members, roles and the tenant |
 
-In the web UI, **Administration** has Members (add people by e-mail and choose a role), API tokens, Audit log, and for super admins Tenants and Users.
+These are defaults. Under **Administration → Role matrix**, admins (or any role with `role.manage`) tick and untick the permissions of every role except admin, reset built-in roles to their defaults, and create their own roles, for example an *Auditor* who only reads the audit log. Nobody can grant a permission they do not hold, and admin always keeps every permission ([ADR 0014](docs/adr/0014-tenant-configurable-roles.md)).
+
+In the web UI, **Administration** has Members (add people by e-mail and choose a role), API tokens, Audit log, Role matrix, Test execution settings, and for super admins Tenants, Users and Backup.
+
+### Test execution settings
+
+By default a test can only be executed when its status is **Ready**, the requirements it verifies are **Approved**, **Implemented** or **Verified**, and the tests it depends on have passed. Admins and test leads can relax each rule under **Administration → Test execution**. Forbidden results are refused by the server (`409 not_ready`, also for API clients; CI imports report them under `rejected`); the UI shows the reasons in red in the runner, in a Readiness column on the run page and as warnings in the New run dialog. Allowed exceptions are shown as warnings.
 
 The same can be done from the command line:
 
@@ -322,7 +331,7 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
   -d '{"results":[{"test_key":"SHOP-TC-7","status":"passed","duration_ms":1234,"output":"ok"}]}'
 ```
 
-The run page has a **CI import** button that shows this command with the right run ID.
+The run page has a **CI import** button that shows this command with the right run ID. Results of tests that may not be executed yet (see [Test execution settings](#test-execution-settings)) are not recorded; the response lists them under `rejected` with the reasons.
 
 ## Command line reference
 

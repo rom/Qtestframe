@@ -4,7 +4,8 @@ Date: 2026-11-19
 
 ## Status
 
-Accepted
+Accepted; the fixed matrix is superseded by [ADR 0014](0014-tenant-configurable-roles.md)
+(built-in roles with tenant-configurable permissions and custom roles).
 
 ## Context
 

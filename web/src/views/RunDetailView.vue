@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import MentionText from '@/components/MentionText.vue'
+import ColumnsMenu from '@/components/ColumnsMenu.vue'
+import { useColumnLayout, type ColumnDef } from '@/composables/columns'
 import MentionInput from '@/components/MentionInput.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -133,6 +135,36 @@ function remove() {
 // ---------- executions ----------
 /** assignee being edited per execution id (committed on blur or Enter) */
 const assigneeDraft = reactive<Record<string, string>>({})
+
+// ---------- readiness (see ReadinessBanner) ----------
+const notAllowed = (ex: Execution) => !!ex.readiness && !ex.readiness.allowed
+const readinessSummary = computed(() => ({
+  blocked: executions.value.filter(notAllowed).length,
+  warned: executions.value.filter((e) => e.readiness && e.readiness.allowed && !e.readiness.ready).length,
+}))
+function readinessText(ex: Execution): string {
+  const n = ex.readiness?.issues.length ?? 0
+  return n ? t('readiness.notReady', { count: n }, n) : t('readiness.ok')
+}
+function readinessTitle(ex: Execution): string {
+  return (ex.readiness?.issues ?? []).map((i) => `${i.key}: ${enumLabel(i.kind === 'dependency' ? 'result' : 'status', i.status)}`).join(', ')
+}
+
+// ---------- columns ----------
+const execColumns = computed<ColumnDef[]>(() => [
+  { field: 'status', header: t('common.status'), width: '130px' },
+  { field: 'readiness', header: t('readiness.column'), width: '150px', sortable: false },
+  { field: 'assignee', header: t('run.assignee'), width: '180px' },
+  { field: 'executed_by', header: t('run.executedBy'), width: '150px' },
+  { field: 'defects', header: t('run.defects'), sortable: false },
+  { field: 'duration_ms', header: t('common.duration'), width: '110px' },
+  { field: 'finished_at', header: t('run.finished'), width: '150px' },
+])
+const execLayout = useColumnLayout(
+  () => 'qtf.cols.executions',
+  execColumns,
+  () => ['status', 'readiness', 'assignee', 'executed_by', 'defects', 'duration_ms', 'finished_at'],
+)
 async function setAssignee(ex: Execution, value: string) {
   if (value === ex.assignee) return
   try {
@@ -258,19 +290,58 @@ async function copySnippet() {
     <div v-show="tab === 'executions'" v-bind="panel('executions')" class="card">
       <div class="filterbar">
         <QueryInput v-model="q" scope="execution" :error="queryError" :composed="composed" :placeholder="t('run.filterPlaceholder', { example: 'assignee:alice title:login' })" @submit="loadExecutions" />
+        <ColumnsMenu
+          :columns="execColumns"
+          :order="execLayout.order.value"
+          @toggle="(id, on) => execLayout.toggle(id, on)"
+          @move="(id, d) => execLayout.move(id, d)"
+          @reset="execLayout.reset()"
+        />
         <MultiSelect v-model="statusFilter" :options="resultOptions" option-label="label" option-value="value" :placeholder="t('common.status')" :aria-label="t('common.status')" style="min-width: 150px" show-clear @change="loadExecutions" />
         <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="reload" />
       </div>
-      <DataTable v-stack :value="executions" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" :rows-per-page-options="prefs.rowsPerPage" row-hover sort-field="position" :sort-order="1" size="small">
-        <Column field="position" header="#" sortable style="width: 60px" />
-        <Column field="test_key" :header="t('run.test')" sortable style="width: 140px">
+      <Message v-if="readinessSummary.blocked || readinessSummary.warned" :severity="readinessSummary.blocked ? 'warn' : 'info'" :closable="false" style="margin-bottom: 10px">
+        <i class="pi pi-exclamation-triangle" aria-hidden="true" />
+        {{ t('readiness.runSummary', { blocked: readinessSummary.blocked, total: executions.length, warned: readinessSummary.warned }) }}
+        <RouterLink v-if="auth.can(P.settingsManage)" :to="{ name: 'executionSettings' }">{{ t('readiness.settingsLink') }}</RouterLink>
+      </Message>
+      <DataTable
+        :ref="execLayout.bind"
+        v-stack
+        :value="executions"
+        data-key="id"
+        :loading="loading"
+        :aria-busy="loading"
+        paginator
+        :rows="prefs.rowsFor(50)"
+        :rows-per-page-options="prefs.rowsPerPage"
+        row-hover
+        sort-field="position"
+        :sort-order="1"
+        size="small"
+        reorderable-columns
+        @column-reorder="execLayout.onReorder()"
+      >
+        <Column field="position" header="#" sortable :reorderable-column="false" style="width: 60px" />
+        <Column field="test_key" :header="t('run.test')" sortable :reorderable-column="false" style="width: 140px">
           <template #body="{ data }">
             <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: data.test_case_id } }" class="key">{{ data.test_key }}</RouterLink>
           </template>
         </Column>
-        <Column field="test_title" :header="t('common.title')" sortable style="min-width: 200px" body-class="stack-main" />
-        <Column field="status" :header="t('common.status')" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
-        <Column field="assignee" :header="t('run.assignee')" sortable style="width: 180px">
+        <Column field="test_title" :header="t('common.title')" sortable :reorderable-column="false" style="min-width: 200px" body-class="stack-main" />
+        <template v-for="c in execLayout.visible.value" :key="c.field">
+        <Column v-if="c.field === 'status'" field="status" column-key="status" :header="c.header" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
+        <Column v-else-if="c.field === 'readiness'" column-key="readiness" :header="c.header" style="width: 150px">
+          <template #body="{ data }">
+            <span v-if="data.readiness && !data.readiness.ready" class="readiness-cell small" :class="{ blocked: notAllowed(data) }" :title="readinessTitle(data)">
+              <i :class="notAllowed(data) ? 'pi pi-ban' : 'pi pi-exclamation-triangle'" aria-hidden="true" />
+              {{ notAllowed(data) ? t('readiness.cannotRun') : readinessText(data) }}
+              <span class="sr-only">: {{ readinessTitle(data) }}</span>
+            </span>
+            <span v-else-if="data.readiness" class="small muted"><i class="pi pi-check" aria-hidden="true" /> {{ t('readiness.ok') }}</span>
+          </template>
+        </Column>
+        <Column v-else-if="c.field === 'assignee'" field="assignee" column-key="assignee" :header="c.header" sortable style="width: 180px">
           <template #body="{ data }">
             <MentionInput
               v-if="canWrite"
@@ -287,16 +358,37 @@ async function copySnippet() {
             <span v-else>—</span>
           </template>
         </Column>
-        <Column field="executed_by" :header="t('run.executedBy')" sortable style="width: 150px" />
-        <Column :header="t('run.defects')" style="min-width: 120px"><template #body="{ data }"><DefectLinks :defects="data.defects" /></template></Column>
-        <Column field="duration_ms" :header="t('common.duration')" sortable style="width: 110px"><template #body="{ data }">{{ formatDuration(data.duration_ms) }}</template></Column>
-        <Column field="finished_at" :header="t('run.finished')" sortable style="width: 150px"><template #body="{ data }"><span class="small muted">{{ formatDateTime(data.finished_at) }}</span></template></Column>
-        <Column style="width: 150px">
+        <Column v-else-if="c.field === 'executed_by'" field="executed_by" column-key="executed_by" :header="c.header" sortable style="width: 150px" />
+        <Column v-else-if="c.field === 'defects'" column-key="defects" :header="c.header" style="min-width: 120px"><template #body="{ data }"><DefectLinks :defects="data.defects" /></template></Column>
+        <Column v-else-if="c.field === 'duration_ms'" field="duration_ms" column-key="duration_ms" :header="c.header" sortable style="width: 110px"><template #body="{ data }">{{ formatDuration(data.duration_ms) }}</template></Column>
+        <Column v-else-if="c.field === 'finished_at'" field="finished_at" column-key="finished_at" :header="c.header" sortable style="width: 150px"><template #body="{ data }"><span class="small muted">{{ formatDateTime(data.finished_at) }}</span></template></Column>
+        </template>
+        <Column column-key="_actions" :reorderable-column="false" style="width: 150px">
           <template #body="{ data }">
             <div class="row nowrap" style="gap: 0">
               <template v-if="canExecute">
-                <Button icon="pi pi-check" text rounded size="small" severity="success" v-tooltip="t('run.markPassed')" :aria-label="t('run.markPassedKey', { key: data.test_key })" @click="quickStatus(data, 'passed')" />
-                <Button icon="pi pi-times" text rounded size="small" severity="danger" v-tooltip="t('run.markFailed')" :aria-label="t('run.markFailedKey', { key: data.test_key })" @click="quickStatus(data, 'failed')" />
+                <Button
+                  icon="pi pi-check"
+                  text
+                  rounded
+                  size="small"
+                  severity="success"
+                  :disabled="notAllowed(data)"
+                  v-tooltip="notAllowed(data) ? t('readiness.cannotRun') : t('run.markPassed')"
+                  :aria-label="t('run.markPassedKey', { key: data.test_key })"
+                  @click="quickStatus(data, 'passed')"
+                />
+                <Button
+                  icon="pi pi-times"
+                  text
+                  rounded
+                  size="small"
+                  severity="danger"
+                  :disabled="notAllowed(data)"
+                  v-tooltip="notAllowed(data) ? t('readiness.cannotRun') : t('run.markFailed')"
+                  :aria-label="t('run.markFailedKey', { key: data.test_key })"
+                  @click="quickStatus(data, 'failed')"
+                />
               </template>
               <Button :icon="canExecute ? 'pi pi-play' : 'pi pi-eye'" text rounded size="small" v-tooltip="canExecute ? t('run.execute') : t('run.view')" :aria-label="canExecute ? t('run.executeKey', { key: data.test_key }) : t('run.viewKey', { key: data.test_key })" @click="execute(data)" />
             </div>
@@ -341,3 +433,4 @@ async function copySnippet() {
     <ItemPickerDialog v-model:visible="picker" kind="test" :project-id="proj.pid" :exclude="executions.map((e) => e.test_case_id)" :header="t('run.addTestsHeader')" @pick="addTests" />
   </template>
 </template>
+

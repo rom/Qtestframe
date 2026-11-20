@@ -37,6 +37,8 @@ const tabs = computed(() => [
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
+  { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
+  { to: 'tags', icon: 'pi pi-hashtag', label: t('nav.tags') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
   { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },
   { to: 'reports', icon: 'pi pi-file-pdf', label: t('nav.reports') },

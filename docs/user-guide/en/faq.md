@@ -44,7 +44,7 @@ Writing requirements needs the **Manager** role in the current organisation. Wit
 
 ### Why can't I see the Run script button?
 
-Running scripts on the server needs the **Manager** role, and the administrator must enable the script runner (`runner.enabled`). Without the role, the runner says that the *script.execute* permission is needed. If the runner is disabled on the server, use the [CI import](runs.md#import-results-from-ci) instead.
+Running scripts on the server needs the **Test lead** or **Manager** role (the permission *script.execute*), and the administrator must enable the script runner (`runner.enabled`). Without the role, the runner says that the *script.execute* permission is needed. If the runner is disabled on the server, use the [CI import](runs.md#import-results-from-ci) instead.
 
 ### How do I undo a change?
 
@@ -95,6 +95,14 @@ Create an API token (**Administration → API tokens**, role Tester or higher), 
 ### A CI import reports "unknown" test keys. Why?
 
 Those keys do not exist in the run's project. Check the spelling (case does not matter) and that the tests have not been moved to another project, which gives them new keys.
+
+### Why are Pass and Fail disabled in the runner?
+
+The test may not be executed yet: it is not **Ready**, a requirement it verifies is not approved, or a test it depends on has not passed. The red box above the steps lists the reasons with links. Fix them (or ask an admin or test lead to change the [test execution settings](administration.md#test-execution-settings)); meanwhile you can mark the test **Blocked** or **Skipped**.
+
+### How do I create a role of my own?
+
+*(Admin)* **Administration → Role matrix → New role**: give it a name, choose the role whose permissions it starts with, then tick and untick permissions in the matrix and save. See [Change roles and create your own](administration.md#change-roles-and-create-your-own).
 
 ### Can I change a result after saving it?
 

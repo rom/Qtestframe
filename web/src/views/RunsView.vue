@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import HelpTip from '@/guide/HelpTip.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -26,7 +26,9 @@ import { buildTree, allKeys } from '@/lib/tree'
 import { formatDateTime } from '@/lib/format'
 import { summarize } from '@/lib/summary'
 import { P } from '@/lib/permissions'
-import type { TestCase, TestRun } from '@/lib/types'
+import ColumnsMenu from '@/components/ColumnsMenu.vue'
+import { useColumnLayout, type ColumnDef } from '@/composables/columns'
+import type { Readiness, TestCase, TestRun } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
@@ -105,6 +107,24 @@ function addPicked(items: { id: string }[]) {
   const have = new Set(pickedTests.value.map((t) => t.id))
   pickedTests.value = [...pickedTests.value, ...(items as TestCase[]).filter((t) => !have.has(t.id))]
 }
+// readiness of the picked tests (warn before the run is created)
+const pickedReadiness = ref<Record<string, Readiness>>({})
+watch(
+  () => pickedTests.value.map((x) => x.id).join(','),
+  async (ids) => {
+    if (!ids) {
+      pickedReadiness.value = {}
+      return
+    }
+    try {
+      const res = await api.get<{ tests: Record<string, Readiness> }>(`/projects/${proj.pid}/readiness`, { test_ids: ids })
+      pickedReadiness.value = res.tests ?? {}
+    } catch {
+      pickedReadiness.value = {}
+    }
+  },
+)
+const pickedNotReady = computed(() => pickedTests.value.filter((x) => pickedReadiness.value[x.id] && !pickedReadiness.value[x.id].ready))
 const nothingSelected = computed(() => !pickedTests.value.length && !selectedFolderIds.value.length && !form.value.query.trim())
 async function create() {
   saving.value = true
@@ -138,6 +158,22 @@ function remove(r: TestRun) {
   })
 }
 const progress = (r: TestRun) => summarize(r.summary)
+
+// ---------- columns ----------
+const runColumns = computed<ColumnDef[]>(() => [
+  { field: 'status', header: t('common.status') },
+  { field: 'environment', header: t('common.environment') },
+  { field: 'build', header: t('common.build') },
+  { field: 'progress', header: t('runs.progress'), sortable: false },
+  { field: 'executions', header: t('runs.executions'), sortable: false },
+  { field: 'created_by', header: t('workspace.colCreatedBy') },
+  { field: 'created_at', header: t('common.created') },
+])
+const runLayout = useColumnLayout(
+  () => 'qtf.cols.runs',
+  runColumns,
+  () => ['status', 'environment', 'build', 'progress', 'executions', 'created_at'],
+)
 </script>
 
 <template>
@@ -155,9 +191,32 @@ const progress = (r: TestRun) => summarize(r.summary)
     <div class="filterbar">
       <QueryInput v-model="q" scope="run" :error="queryError" :composed="composed" :placeholder="t('runs.filterPlaceholder', { example: 'environment:staging build:1.4*' })" @submit="load" />
       <MultiSelect v-model="statuses" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('common.status')" :aria-label="t('common.status')" style="min-width: 150px" show-clear @change="load" />
+      <ColumnsMenu
+        :columns="runColumns"
+        :order="runLayout.order.value"
+        @toggle="(id, on) => runLayout.toggle(id, on)"
+        @move="(id, d) => runLayout.move(id, d)"
+        @reset="runLayout.reset()"
+      />
     </div>
-    <DataTable v-stack :value="runs" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(25)" row-hover sort-field="created_at" :sort-order="-1" class="clickable" @row-click="(e) => router.push({ name: 'run', params: { projectId: proj.pid, runId: (e.data as TestRun).id } })">
-      <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
+    <DataTable
+      :ref="runLayout.bind"
+      v-stack
+      :value="runs"
+      data-key="id"
+      :loading="loading"
+      :aria-busy="loading"
+      paginator
+      :rows="prefs.rowsFor(25)"
+      row-hover
+      sort-field="created_at"
+      :sort-order="-1"
+      class="clickable"
+      reorderable-columns
+      @column-reorder="runLayout.onReorder()"
+      @row-click="(e) => router.push({ name: 'run', params: { projectId: proj.pid, runId: (e.data as TestRun).id } })"
+    >
+      <Column field="name" :header="t('common.name')" sortable :reorderable-column="false" body-class="stack-main">
         <template #body="{ data }">
           <div style="min-width: 0">
             <RouterLink :to="{ name: 'run', params: { projectId: proj.pid, runId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink>
@@ -165,17 +224,20 @@ const progress = (r: TestRun) => summarize(r.summary)
           </div>
         </template>
       </Column>
-      <Column field="status" :header="t('common.status')" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" /></template></Column>
-      <Column field="environment" :header="t('common.environment')" sortable />
-      <Column field="build" :header="t('common.build')" sortable><template #body="{ data }"><span class="mono">{{ data.build }}</span></template></Column>
-      <Column :header="t('runs.progress')" style="min-width: 220px">
+      <template v-for="c in runLayout.visible.value" :key="c.field">
+      <Column v-if="c.field === 'status'" field="status" column-key="status" :header="c.header" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" /></template></Column>
+      <Column v-else-if="c.field === 'environment'" field="environment" column-key="environment" :header="c.header" sortable />
+      <Column v-else-if="c.field === 'build'" field="build" column-key="build" :header="c.header" sortable><template #body="{ data }"><span class="mono">{{ data.build }}</span></template></Column>
+      <Column v-else-if="c.field === 'progress'" column-key="progress" :header="c.header" style="min-width: 220px">
         <template #body="{ data }"><SummaryBar :summary="data.summary" show-text /></template>
       </Column>
-      <Column :header="t('runs.executions')" style="width: 120px"><template #body="{ data }">{{ progress(data).total }}</template></Column>
-      <Column field="created_at" :header="t('common.created')" sortable style="width: 160px">
+      <Column v-else-if="c.field === 'executions'" column-key="executions" :header="c.header" style="width: 120px"><template #body="{ data }">{{ progress(data).total }}</template></Column>
+      <Column v-else-if="c.field === 'created_by'" field="created_by" column-key="created_by" :header="c.header" sortable />
+      <Column v-else-if="c.field === 'created_at'" field="created_at" column-key="created_at" :header="c.header" sortable style="width: 160px">
         <template #body="{ data }"><span class="small muted">{{ formatDateTime(data.created_at) }}</span></template>
       </Column>
-      <Column v-if="auth.can(P.runWrite)" style="width: 60px">
+      </template>
+      <Column v-if="auth.can(P.runWrite)" column-key="_actions" :reorderable-column="false" style="width: 60px">
         <template #body="{ data }"><Button icon="pi pi-trash" text rounded severity="danger" :aria-label="t('runs.deleteNamed', { name: data.name })" v-tooltip="t('common.delete')" @click.stop="remove(data)" /></template>
       </Column>
       <template #empty><div class="empty"><i class="pi pi-play-circle" />{{ t('runs.none') }}</div></template>
@@ -207,10 +269,22 @@ const progress = (r: TestRun) => summarize(r.summary)
             <div style="max-height: 220px; overflow: auto">
               <div v-for="tc in pickedTests" :key="tc.id" class="row nowrap" style="padding: 4px 0; border-bottom: 1px solid var(--qtf-border)">
                 <span class="key">{{ tc.key }}</span><span class="grow ellipsis">{{ tc.title }}</span>
+                <span
+                  v-if="pickedReadiness[tc.id] && !pickedReadiness[tc.id].ready"
+                  class="readiness-cell small"
+                  :class="{ blocked: !pickedReadiness[tc.id].allowed }"
+                  :title="pickedReadiness[tc.id].issues.map((i) => i.key).join(', ')"
+                >
+                  <i :class="pickedReadiness[tc.id].allowed ? 'pi pi-exclamation-triangle' : 'pi pi-ban'" aria-hidden="true" />
+                  {{ pickedReadiness[tc.id].allowed ? t('readiness.notReady', { count: pickedReadiness[tc.id].issues.length }, pickedReadiness[tc.id].issues.length) : t('readiness.cannotRun') }}
+                </span>
                 <Button icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.removeItem', { key: tc.key })" @click="pickedTests = pickedTests.filter((x) => x.id !== tc.id)" />
               </div>
               <div v-if="!pickedTests.length" class="muted small">{{ t('runs.noneSelectedTests') }}</div>
             </div>
+            <Message v-if="pickedNotReady.length" severity="warn" :closable="false" style="margin-top: 8px">
+              {{ t('readiness.pickedNotReady', { count: pickedNotReady.length }, pickedNotReady.length) }} {{ t('readiness.pickedHint') }}
+            </Message>
           </TabPanel>
           <TabPanel value="folders">
             <div v-if="!testFolders.length" class="muted small">{{ t('runs.noFolders') }}</div>

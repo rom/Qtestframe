@@ -33,12 +33,13 @@ Status, Context, Decision, Consequences).
 | [0005](adr/0005-shared-schema-multi-tenancy.md) | Shared-schema multi-tenancy with `tenant_id` |
 | [0006](adr/0006-server-side-sessions-and-csrf.md) | Server-side sessions with hashed tokens, CSRF token and Origin check instead of JWT |
 | [0007](adr/0007-in-process-query-language.md) | A custom query language evaluated in process instead of translated to SQL |
-| [0008](adr/0008-fixed-role-rbac.md) | Fixed-role RBAC per tenant with a super-admin flag |
+| [0008](adr/0008-fixed-role-rbac.md) | Fixed-role RBAC per tenant with a super-admin flag (matrix superseded by 0014) |
 | [0009](adr/0009-oidc-and-saml-with-jit-provisioning.md) | OIDC (PKCE + nonce) and SAML via crewjam/saml with JIT provisioning and group→role mapping |
 | [0010](adr/0010-defence-in-depth-hardening.md) | Defence in depth: systemd and SELinux/AppArmor outside, no_new_privs/caps/Landlock/seccomp inside |
 | [0011](adr/0011-script-runner-sandbox-via-re-exec.md) | Script runner sandbox via re-exec (`sandbox-exec`), disabled by default |
 | [0012](adr/0012-syslog-shipping-rfc5424.md) | Syslog shipping with RFC 5424 over UDP, TCP and TLS |
 | [0013](adr/0013-coverage-floor-85-percent.md) | A test coverage floor of 85 % |
+| [0014](adr/0014-tenant-configurable-roles.md) | Tenant-configurable roles on top of built-in defaults (supersedes the fixed matrix of 0008) |
 
 ## Where to start
 

@@ -754,3 +754,28 @@ html, body { overflow-x: clip; }
   color: var(--qtf-sidebar-strong);
   background: color-mix(in srgb, var(--qtf-sidebar-strong) 14%, transparent);
 }
+
+/* readiness of a test for execution (run page, new-run dialog) */
+.readiness-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--p-amber-700, #b45309);
+}
+.readiness-cell.blocked {
+  color: var(--p-red-700, #b91c1c);
+  font-weight: 600;
+}
+.app-dark .readiness-cell {
+  color: var(--p-amber-300);
+}
+.app-dark .readiness-cell.blocked {
+  color: var(--p-red-300);
+}
+
+/* links inside messages take the message colour (contrast in every theme) */
+.p-message a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}

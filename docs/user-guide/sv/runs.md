@@ -7,7 +7,8 @@ En **körning** (testkörning, kampanj) är en uppsättning testfall som du exek
 | Visa körningar och utfall | Läsare |
 | Skapa, redigera och ta bort körningar, lägga till testfall | Testare |
 | Registrera utfall, importera utfall från CI | Testare |
-| Köra automatiserade skript på servern | Ansvarig |
+| Köra automatiserade skript på servern | Testledare |
+| Ändra [inställningarna för testexekvering](administration.md#inställningar-för-testexekvering) | Testledare |
 
 ## Listan över körningar
 
@@ -84,7 +85,22 @@ Tangenterna är desamma på svenska och engelska (P som i *pass*, F som i *fail*
 
 För ett automatiserat testfall visar exekveringsvyn **Skript** och **Utdata**. Välj **Kör skript** för att köra det på servern: exekveringen får status *Pågår*, skriptet körs och utfallet blir **Godkänd** vid slutkod 0 och annars **Underkänd** (även när tidsgränsen överskrids). Utdata och tidsåtgång sparas.
 
-Knappen kräver rollen **Ansvarig**. Om administratören inte har aktiverat skriptexekveringen svarar servern att den är avstängd; utfallen kommer då från CI.
+Knappen kräver rollen **Testledare** eller **Ansvarig** (behörigheten *script.execute*). Om administratören inte har aktiverat skriptexekveringen svarar servern att den är avstängd; utfallen kommer då från CI.
+
+### Bevis
+
+Varje steg i ett manuellt testfall har ett avsnitt **Bevis** under *Faktiskt resultat*: öppna det för att registrera vad som visar utfallet. Skriv iakttagelser, värden eller länkar i textfältet (till exempel *svarstid 120 ms, order 4711*), och lägg till filer som skärmbilder eller loggutdrag *(Testare)*. Filer kan släppas på ytan eller väljas ur arkivet, som andra [bilagor](#bilagor-till-körningar-och-exekveringar). Stegets rubrik visar hur mycket bevis det har.
+
+Bevisen sparas med exekveringen (välj **Spara**), stannar kvar i körningen även om testfallet ändras senare, och visas i dokumentarkivet som *Bevis för ett teststeg*, länkade till steget. När körningen tas bort tas även bevisfilerna bort.
+
+### När kan ett testfall exekveras?
+
+Innan ett testfall exekveras kontrollerar Qtestframe att det är klart: testfallet har status **Klar**, kraven det verifierar är godkända (eller implementerade eller verifierade), och testfallen det [beror på](tests.md#beroenden) har godkänts. Vad som händer när en kontroll inte går igenom ställs in under [inställningar för testexekvering](administration.md#inställningar-för-testexekvering):
+
+- **blockerat** (standard): exekveringsvyn visar en röd ruta med orsaker och länkar; **Godkänd**, **Underkänd** och **Kör skript** är avstängda, och servern avvisar sådana utfall. Du kan fortfarande markera testfallet som **Blockerat** eller **Överhoppat**;
+- **tillåtet**: orsakerna visas som en gul varning, och du kan exekvera testfallet.
+
+Körningens sida visar samma sak i kolumnen **Redo**, med en sammanfattning ovanför tabellen, och dialogen **Ny körning** markerar valda testfall som inte är klara.
 
 ## Defekter
 

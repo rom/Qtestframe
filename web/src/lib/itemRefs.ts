@@ -15,7 +15,8 @@ export interface RefGroup {
 const ORDER = ['refines', 'depends_on', 'provides', 'derived_from', 'conflicts_with', 'duplicates', 'relates_to', 'verifies', 'calls']
 
 /** The kind of item at the other end of a reference. */
-export function refKind(r: Pick<ItemRef, 'type' | 'direction'>): 'requirement' | 'test' {
+export function refKind(r: Pick<ItemRef, 'type' | 'direction'> & { kind?: string }): 'requirement' | 'test' {
+  if (r.kind === 'requirement' || r.kind === 'test') return r.kind
   if (r.type === 'calls') return 'test'
   if (r.type === 'verifies') return r.direction === 'outgoing' ? 'requirement' : 'test'
   return 'requirement'

@@ -103,8 +103,10 @@ export interface FileLink {
   entity_type: 'requirement' | 'test' | 'run' | 'execution' | string
   entity_id: string
   key: string
-  /** Run of an execution link. */
+  /** Run of an execution or step link. */
   run_id?: string
+  /** Execution of a step link (step evidence). */
+  execution_id?: string
 }
 
 /** Metadata of a stored file (FileInfo). */
@@ -242,6 +244,8 @@ export interface ItemRef {
   /** a relation type, "verifies" (test → requirement) or "calls" (test → test) */
   type: string
   direction: 'outgoing' | 'incoming' | string
+  /** kind of the item at the other end */
+  kind?: 'requirement' | 'test' | string
   id: string
   key: string
   title?: string
@@ -333,8 +337,45 @@ export interface StepResult {
   expected: string
   status: string
   actual: string
+  /** Proof of the result (text); files are attachments of the step result. */
+  evidence?: string
+  attachment_count?: number
   /** Assumed: step data is echoed for convenience (falls back to test.steps). */
   data?: string
+}
+
+/** A reason why a test should not be executed yet (see Readiness). */
+export interface ReadinessIssue {
+  kind: 'test_status' | 'requirement_status' | 'dependency' | string
+  id: string
+  key: string
+  title: string
+  status: string
+  /** blocking issues prevent execution; others are warnings */
+  blocking: boolean
+}
+
+/** Whether a test may be executed (organisation settings, statuses, prerequisites). */
+export interface Readiness {
+  ready: boolean
+  allowed: boolean
+  issues: ReadinessIssue[]
+}
+
+/** A prerequisite between two tests (GET /tests/{id}/dependencies). */
+export interface TestDependency {
+  id: string
+  project_id: string
+  test_id: string
+  depends_on_id: string
+  created_by: string
+  created_at: string
+  test_key: string
+  test_title: string
+  depends_on_key: string
+  depends_on_title: string
+  direction?: 'outgoing' | 'incoming' | string
+  other_last_result?: string
 }
 
 export interface Execution {
@@ -355,6 +396,8 @@ export interface Execution {
   defects?: string[] | null
   step_results?: StepResult[]
   test?: TestCase
+  /** Whether the test may be executed in this run (lists and single executions). */
+  readiness?: Readiness
   run_name?: string
   run_status?: string
   run_environment?: string

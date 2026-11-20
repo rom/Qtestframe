@@ -239,7 +239,7 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 	rejects := []rejected{}
 	accepted := make([]store.ImportResult, 0, len(req.Results))
 	for _, res := range req.Results {
-		if id, ok := byKey[strings.ToUpper(strings.TrimSpace(res.TestKey))]; ok && starts(store.ExecutionUpdate{Status: &res.Status}) {
+		if id, ok := byKey[strings.ToUpper(strings.TrimSpace(res.TestKey))]; ok && activeResult(res.Status) {
 			if rd := rc.check(id); !rd.Allowed {
 				rejects = append(rejects, rejected{TestKey: res.TestKey, Readiness: rd})
 				continue
@@ -295,12 +295,12 @@ func (s *Server) handleUpdateExecution(w http.ResponseWriter, r *http.Request, p
 		s.fail(w, r, err)
 		return
 	}
-	if starts(u) {
-		cur, err := s.Store.GetExecution(r.Context(), p.TenantID(), r.PathValue("id"))
-		if err != nil {
-			s.fail(w, r, err)
-			return
-		}
+	cur, err := s.Store.GetExecution(r.Context(), p.TenantID(), r.PathValue("id"))
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if starts(u, cur) {
 		rd, err := s.executionReadiness(r.Context(), p.TenantID(), cur)
 		if err != nil {
 			s.fail(w, r, err)

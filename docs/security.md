@@ -209,15 +209,24 @@ addresses are verified and controlled by your organisation.
   flag grants every permission in every tenant plus user/tenant management
   (for session logins only; API tokens are limited to their role). A super
   admin without membership in the current tenant acts as `admin` there.
-* Roles and permissions (`internal/rbac/rbac.go`, served at `GET /api/v1/rbac`):
+* Roles and permissions (`internal/rbac/rbac.go`; defaults below, the
+  tenant's effective matrix is served at `GET /api/v1/roles`):
 
-| Permission | viewer | tester | manager | admin |
-|---|:-:|:-:|:-:|:-:|
-| project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ |
-| test.write, run.write, run.execute, token.manage | | ✔ | ✔ | ✔ |
-| requirement.write, project.create, project.update, script.execute, audit.read | | | ✔ | ✔ |
-| project.delete, member.manage, tenant.manage | | | | ✔ |
+| Permission | viewer | tester | test_lead | manager | admin |
+|---|:-:|:-:|:-:|:-:|:-:|
+| project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ | ✔ |
+| test.write, run.write, run.execute, token.manage | | ✔ | ✔ | ✔ | ✔ |
+| script.execute, audit.read, settings.manage | | | ✔ | ✔ | ✔ |
+| requirement.write, project.create, project.update | | | | ✔ | ✔ |
+| project.delete, member.manage, role.manage, tenant.manage | | | | | ✔ |
 
+* **Configurable roles** ([ADR 0014](adr/0014-tenant-configurable-roles.md)):
+  holders of `role.manage` change the permissions of the built-in roles
+  except `admin` and create custom roles. Escalation is prevented: a role
+  or API token can only receive permissions the caller holds; `admin`
+  always keeps every permission; API tokens get the intersection of their
+  role and the user's current role on every request. Role changes are
+  audited.
 * Full matrix with the endpoints using each permission:
   [design.md §12](design.md#12-rbac-matrix). Guards: a tenant keeps at
   least one admin; a super admin cannot demote or disable themselves.

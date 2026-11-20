@@ -12,6 +12,8 @@ const BY_ROUTE: Record<string, string> = {
   run: 'runs',
   execute: 'runs',
   traceability: 'traceability-and-coverage',
+  graph: 'traceability-and-coverage',
+  tags: 'search-and-filters',
   baselines: 'baselines',
   settings: 'tests',
   export: 'reports-and-export',

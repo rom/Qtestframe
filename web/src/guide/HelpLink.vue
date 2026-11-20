@@ -4,9 +4,14 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { helpPath } from './links'
 
-const props = defineProps<{ page: string; anchor?: string }>()
-const { t } = useI18n()
-const to = computed(() => helpPath(props.page, props.anchor ?? ''))
+// anchor: a heading slug, or one per language ({ en: 'evidence', sv: 'bevis' })
+const props = defineProps<{ page: string; anchor?: string | Record<string, string> }>()
+const { t, locale } = useI18n()
+const to = computed(() => {
+  const a = props.anchor
+  const slug = typeof a === 'string' ? a : (a?.[String(locale.value)] ?? '')
+  return helpPath(props.page, slug)
+})
 </script>
 
 <template>

@@ -145,6 +145,8 @@ const projectNav = computed(() => [
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
+  { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
+  { to: 'tags', icon: 'pi pi-hashtag', label: t('nav.tags') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
   { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },
   { to: 'reports', icon: 'pi pi-file-pdf', label: t('nav.reports') },
@@ -161,7 +163,7 @@ const tenantItems = computed(() =>
   })),
 )
 
-const showAdmin = computed(() => auth.can(P.memberRead) || auth.can(P.tokenManage) || auth.can(P.auditRead) || auth.isSuperAdmin)
+const showAdmin = computed(() => auth.can(P.memberRead) || auth.can(P.tokenManage) || auth.can(P.auditRead) || auth.can(P.settingsManage) || auth.isSuperAdmin)
 
 const userItems = computed(() => [
   { label: auth.user?.email ?? '', disabled: true, icon: 'pi pi-user' },

@@ -17,6 +17,7 @@ import StatusTag from './StatusTag.vue'
 import TagsInput from './TagsInput.vue'
 import CategorySelect from './CategorySelect.vue'
 import ItemPickerDialog from './ItemPickerDialog.vue'
+import TestDependenciesPanel from './TestDependenciesPanel.vue'
 import CommentsPanel from './CommentsPanel.vue'
 import AttachmentsPanel from './AttachmentsPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
@@ -477,6 +478,8 @@ const scriptPlaceholder = computed(() => {
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.requirement_key || reqById.get(l.requirement_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />
       </div>
     </div>
+
+    <TestDependenciesPanel v-if="item" :project-id="projectId" :test-id="item.id" :can-write="canWrite" @changed="emit('saved', item)" />
 
     <div class="row editor-footer">
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />

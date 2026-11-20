@@ -63,6 +63,7 @@ You can drag folders to nest or reorder them. Select a folder to show only its r
 
 5. Leave **Obligation** on **Auto-detect from text**: the detected level is stored when you create the requirement. You can also choose a level yourself; **Apply detected obligation** sets the field to what the analysis found.
 6. Set **Priority** to **High** and, under **Categories**, choose **Area / Core**.
+7. Set **Status** to **Approved**: in a real project you do this once the requirement has been reviewed. By default a test can only be executed when it is **Ready** and every requirement it verifies is **Approved**, **Implemented** or **Verified** (see [Test execution settings](administration.md#test-execution-settings)).
 
 Which keyword to use:
 

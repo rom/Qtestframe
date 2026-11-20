@@ -13,6 +13,7 @@ const tabs = computed(() =>
     { to: 'tokens', label: t('admin.tokens'), icon: 'pi pi-key', show: auth.can(P.tokenManage) },
     { to: 'audit', label: t('admin.audit'), icon: 'pi pi-history', show: auth.can(P.auditRead) },
     { to: 'rbac', label: t('admin.roleMatrix'), icon: 'pi pi-table', show: true },
+    { to: 'executionSettings', label: t('execSettings.tab'), icon: 'pi pi-sliders-h', show: auth.can(P.settingsManage) },
     { to: 'tenants', label: t('admin.tenants'), icon: 'pi pi-building', show: auth.isSuperAdmin },
     { to: 'users', label: t('admin.users'), icon: 'pi pi-id-card', show: auth.isSuperAdmin },
     { to: 'backup', label: t('admin.backup'), icon: 'pi pi-database', show: auth.isSuperAdmin },
