@@ -157,6 +157,7 @@ async function discover(request) {
     { name: 'export', path: `${p}/export` },
     { name: 'documents', path: `${p}/documents` },
     { name: 'reports', path: `${p}/reports` },
+    { name: 'reports-batch', path: `${p}/reports`, open: 'section:has(#h-batch) .p-datatable-tbody .p-checkbox', wait: 'section:has(#h-batch) .bulkbar' },
     { name: 'requirement-attachments', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     run && { name: 'run-attachments', path: `${p}/runs/${run.id}`, open: '[role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     { name: 'search', path: '/search?q=login' },

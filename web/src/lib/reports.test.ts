@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  batchBody,
+  batchFormats,
+  batchMissing,
   blankCustomForm,
   buildCustomConfig,
   formFromConfig,
@@ -10,6 +13,7 @@ import {
   templateParams,
   toggleColumn,
   validateCustom,
+  type ReportFormat,
 } from './reports'
 
 describe('normalizeTemplate', () => {
@@ -93,5 +97,27 @@ describe('generate', () => {
   it('toggles columns', () => {
     expect(toggleColumn(['a'], 'b')).toEqual(['a', 'b'])
     expect(toggleColumn(['a', 'b'], 'a')).toEqual(['b'])
+  })
+})
+
+describe('report batch', () => {
+  const row = (kind: 'template' | 'definition', id: string, formats: ReportFormat[] = ['pdf', 'docx', 'xlsx', 'csv'], required: string[] = []) => ({ kind, id, name: id, description: '', formats, required })
+  it('formats are those every selected report supports', () => {
+    expect(batchFormats([])).toEqual(['pdf', 'docx', 'xlsx', 'csv'])
+    expect(batchFormats([row('template', 'a', ['pdf', 'csv']), row('definition', 'b')])).toEqual(['pdf', 'csv'])
+  })
+  it('builds the request and finds missing parameters', () => {
+    const rows = [row('template', 'run_summary', undefined, ['run_id']), row('template', 'defects'), row('definition', 'd1')]
+    expect(batchMissing(rows, {})).toEqual(['run_id'])
+    expect(batchMissing(rows, { run_id: 'r' })).toEqual([])
+    expect(batchBody(rows, 'pdf', true, { run_id: 'r', other: 'x' })).toEqual({
+      templates: [
+        { template: 'run_summary', params: { run_id: 'r' } },
+        { template: 'defects', params: {} },
+      ],
+      definitions: ['d1'],
+      format: 'pdf',
+      archive: true,
+    })
   })
 })

@@ -13,12 +13,19 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Tag from 'primevue/tag'
 import QueryInput from '@/components/QueryInput.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { moveItem } from '@/lib/collections'
 import {
   FALLBACK_FIELDS,
+  batchBody,
+  batchFormats,
+  batchMissing,
+  type BatchRow,
   FORMAT_INFO,
   KNOWN_TEMPLATES,
   REPORT_ENTITIES,
@@ -240,6 +247,69 @@ async function saveDefinition() {
     saving.value = false
   }
 }
+// ---------- several reports at once ----------
+const batchRows = computed<BatchRow[]>(() => [
+  ...templates.value.map((tpl) => ({
+    kind: 'template' as const,
+    id: tpl.id,
+    name: tplName(tpl),
+    description: tplDesc(tpl),
+    formats: tpl.formats,
+    required: tpl.params.filter((p) => p.required).map((p) => p.name),
+  })),
+  ...definitions.value.map((d) => ({ kind: 'definition' as const, id: d.id, name: d.name, description: d.description ?? '', formats: REPORT_FORMATS, required: [] })),
+])
+const batchSel = ref<BatchRow[]>([])
+const batchParams = reactive<Record<string, string>>({})
+const batchFormat = ref<ReportFormat>('pdf')
+const batchBusy = ref('')
+const batchFailed = ref<{ name: string; error: string }[]>([])
+const batchFormatOptions = computed(() => formatOptions(batchFormats(batchSel.value)))
+const batchNeedsRun = computed(() => batchSel.value.some((r) => r.required.includes('run_id')))
+const batchMissingParams = computed(() => batchMissing(batchSel.value, batchParams))
+const batchDefinitions = computed(() => batchSel.value.filter((r) => r.kind === 'definition'))
+watch(batchFormatOptions, (opts) => {
+  if (opts.length && !opts.some((o) => o.value === batchFormat.value)) batchFormat.value = opts[0].value
+})
+watch(batchRows, (rows) => {
+  const keys = new Set(rows.map((r) => r.kind + r.id))
+  batchSel.value = batchSel.value.filter((r) => keys.has(r.kind + r.id))
+})
+watch(runOptions, (opts) => {
+  if (!batchParams.run_id && opts.length) batchParams.run_id = opts[0].value
+})
+async function runBatch(archive: boolean) {
+  batchFailed.value = []
+  batchBusy.value = archive ? 'archive' : 'zip'
+  const body = batchBody(batchSel.value, batchFormat.value, archive, batchParams)
+  try {
+    if (archive) {
+      const res = await api.post<{ files: FileInfo[]; failed: { name: string; error: string }[] }>(`${base.value}/batch`, body)
+      batchFailed.value = res.failed
+      notify.ok(t('reports.batch.savedToArchive', { n: res.files.length }, res.files.length))
+    } else {
+      await api.postDownload(`${base.value}/batch`, body, `${proj.project?.key ?? 'reports'}-reports.zip`)
+    }
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    batchBusy.value = ''
+  }
+}
+function deleteBatchDefinitions() {
+  const ids = batchDefinitions.value.map((r) => r.id)
+  notify.confirmDanger(t('reports.batch.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      await api.del(`${base.value}/definitions/bulk`, { ids })
+      if (current.value && ids.includes(current.value.id)) newReport()
+      await loadDefinitions()
+      notify.ok(t('reports.batch.deleted', { n: ids.length }, ids.length))
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
+
 function deleteDefinition() {
   const d = current.value
   if (!d) return
@@ -392,6 +462,39 @@ onMounted(() => {
         <Button :label="t('reports.saveToArchive')" icon="pi pi-folder-plus" severity="secondary" outlined :loading="custom.busy === 'archive'" :disabled="!!custom.busy" @click="generateCustom(true)" />
         <Button :label="t('reports.download')" icon="pi pi-download" :loading="custom.busy === 'download'" :disabled="!!custom.busy" @click="generateCustom(false)" />
       </div>
+    </section>
+
+    <section v-if="canExport && batchRows.length" class="card" style="margin-top: 20px" aria-labelledby="h-batch">
+      <h2 id="h-batch" class="plain-heading">{{ t('reports.batch.title') }}</h2>
+      <p class="small muted" style="margin: 4px 0 10px">{{ t('reports.batch.intro') }}</p>
+      <DataTable v-model:selection="batchSel" v-stack :value="batchRows" :data-key="(r: BatchRow) => r.kind + r.id" size="small">
+        <Column selection-mode="multiple" style="width: 2.6rem" />
+        <Column :header="t('common.name')" body-class="stack-main">
+          <template #body="{ data }">
+            <b>{{ data.name }}</b>
+            <div v-if="data.description" class="small muted">{{ data.description }}</div>
+          </template>
+        </Column>
+        <Column :header="t('common.type')" style="width: 160px">
+          <template #body="{ data }"><Tag :value="data.kind === 'template' ? t('reports.batch.standard') : t('reports.batch.savedReport')" :severity="data.kind === 'template' ? 'secondary' : 'info'" /></template>
+        </Column>
+      </DataTable>
+      <div v-if="batchSel.length" class="bulkbar" role="toolbar" :aria-label="t('reports.batch.toolbar')" style="margin-top: 10px">
+        <b>{{ t('common.selected', { count: batchSel.length }) }}</b>
+        <Select v-model="batchFormat" :options="batchFormatOptions" option-label="label" option-value="value" :aria-label="t('reports.format')" size="small" style="min-width: 110px" />
+        <Select v-if="batchNeedsRun" v-model="batchParams.run_id" :options="runOptions" option-label="label" option-value="value" :placeholder="t('reports.batch.chooseRun')" :aria-label="t('reports.batch.runForSummary')" size="small" style="min-width: 180px" />
+        <Button :label="t('reports.batch.zip')" icon="pi pi-download" size="small" :loading="batchBusy === 'zip'" :disabled="!!batchBusy || !batchFormatOptions.length || batchMissingParams.length > 0" @click="runBatch(false)" />
+        <Button v-if="canSave" :label="t('reports.saveToArchive')" icon="pi pi-folder-plus" size="small" severity="secondary" outlined :loading="batchBusy === 'archive'" :disabled="!!batchBusy || !batchFormatOptions.length || batchMissingParams.length > 0" @click="runBatch(true)" />
+        <Button v-if="canSave && batchDefinitions.length" :label="t('reports.batch.deleteSaved', { n: batchDefinitions.length }, batchDefinitions.length)" icon="pi pi-trash" size="small" severity="danger" outlined @click="deleteBatchDefinitions" />
+        <span v-if="!batchFormatOptions.length" class="small muted">{{ t('reports.batch.noCommonFormat') }}</span>
+        <span v-else-if="batchMissingParams.length" class="small muted">{{ t('reports.batch.needRun') }}</span>
+      </div>
+      <Message v-if="batchFailed.length" severity="warn" closable style="margin-top: 10px" @close="batchFailed = []">
+        <b>{{ t('reports.batch.someFailed', { n: batchFailed.length }, batchFailed.length) }}</b>
+        <ul style="margin: 4px 0 0; padding-left: 18px">
+          <li v-for="f in batchFailed" :key="f.name" class="small"><b>{{ f.name }}</b>: {{ f.error }}</li>
+        </ul>
+      </Message>
     </section>
   </template>
 

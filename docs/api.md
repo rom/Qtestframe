@@ -990,6 +990,8 @@ Custom report config (`CustomConfig`):
 | POST | `/projects/{pid}/reports/definitions` | requirement.write or test.write | `{name, description, config}` |
 | GET / PATCH / DELETE | `/reports/definitions/{id}` | export / write | |
 | POST | `/reports/definitions/{id}/generate` | export | `{format, archive?}` |
+| POST | `/projects/{pid}/reports/batch` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
+| DELETE | `/projects/{pid}/reports/definitions/bulk` | requirement.write or test.write | `{"ids":[...]}` → `{"deleted": n}` |
 
 ## Search
 
