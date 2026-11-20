@@ -1,0 +1,655 @@
+area: monitoring
+prefix: OBS
+group: operations
+name: {en: Monitoring and observability, sv: Övervakning och observerbarhet}
+description:
+  en: Structured logs, metrics, tracing, correlation ids, alerting, dashboards and log retention.
+  sv: Strukturerade loggar, mätvärden, spårning, korrelations-id, larm, översiktspaneler och lagringstid för loggar.
+
+requirements:
+  - id: OBS-01
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [logging, structured-logs]
+    refs: ["The Twelve-Factor App, XI Logs", "OWASP ASVS 4.0 V7.1 (log content)", "ISO/IEC 27001:2022 Annex A 8.15 (logging)"]
+    tests: [OBS-T01]
+    en:
+      title: Structured log entries
+      description: Each log entry MUST be written as one JSON object with at least timestamp in UTC (ISO 8601), level, service name, message and correlation id.
+      rationale: Structured entries can be searched, filtered and aggregated by tools without fragile text parsing.
+      criteria:
+        - method: test
+          text: A sample of 100 log lines from each service parses as JSON and contains the five fields.
+    sv:
+      title: Strukturerade loggposter
+      description: Varje loggpost SKA skrivas som ett JSON-objekt med minst tidsstämpel i UTC (ISO 8601), nivå, tjänstens namn, meddelande och korrelations-id.
+      rationale: Strukturerade poster kan sökas, filtreras och sammanställas med verktyg utan bräcklig texttolkning.
+      criteria:
+        - method: test
+          text: Ett urval av 100 loggrader från varje tjänst kan tolkas som JSON och innehåller de fem fälten.
+
+  - id: OBS-02
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [correlation-id, tracing, logging]
+    refs: ["W3C Trace Context (traceparent header)", "OpenTelemetry specification: context propagation"]
+    tests: [OBS-T02]
+    en:
+      title: Correlation id across services
+      description: The system MUST pass the correlation id of an incoming request on to every log entry and every outgoing call that the request causes.
+      rationale: One id that follows a request through every service turns hours of log searching into a single query.
+      criteria:
+        - method: test
+          text: A request that passes 3 services produces log entries with the same correlation id in all 3.
+    sv:
+      title: Korrelations-id genom alla tjänster
+      description: Systemet SKA föra vidare korrelations-id:t från ett inkommande anrop till varje loggpost och varje utgående anrop som anropet ger upphov till.
+      rationale: Ett id som följer ett anrop genom alla tjänster gör timmar av loggsökning till en enda fråga.
+      criteria:
+        - method: test
+          text: Ett anrop som passerar 3 tjänster ger loggposter med samma korrelations-id i alla 3.
+
+  - id: OBS-03
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [logging, secrets, personal-data]
+    refs: ["OWASP ASVS 4.0 V7.1.1 (no credentials in logs)", "OWASP Logging Cheat Sheet", "GDPR Art. 5(1)(c) (data minimisation)"]
+    tests: [OBS-T03]
+    en:
+      title: No secrets or identity numbers in logs
+      description: The logs MUST NOT contain passwords, session tokens, API keys or complete personal identity numbers.
+      rationale: Logs are copied to many tools and read by many people, so secrets in them leak beyond their intended protection.
+      criteria:
+        - method: test
+          text: After a scripted session with known test secrets, a search of all logs finds none of them.
+    sv:
+      title: Inga hemligheter eller personnummer i loggar
+      description: Loggarna SKA INTE innehålla lösenord, sessionstoken, API-nycklar eller fullständiga personnummer.
+      rationale: Loggar kopieras till olika verktyg och läses av fler personer, så hemligheter i dem sprids utanför sitt avsedda skydd.
+      criteria:
+        - method: test
+          text: Efter en skriptad session med kända testhemligheter hittar en sökning i alla loggar ingen av dem.
+
+  - id: OBS-04
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [metrics, red]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems: the four golden signals)", "ISO/IEC 27001:2022 Annex A 8.16 (monitoring activities)"]
+    tests: [OBS-T04]
+    en:
+      title: Request metrics per endpoint
+      description: The system MUST expose request count, error count and a duration histogram for each endpoint.
+      rationale: Rate, errors and duration per endpoint show which part of the system is affected when users report problems.
+      criteria:
+        - method: test
+          text: After 50 calls to an endpoint, of which 5 fail, the metrics show 50 requests, 5 errors and a duration histogram for that endpoint.
+    sv:
+      title: Mätvärden för anrop per ändpunkt
+      description: Systemet SKA exponera antal anrop, antal fel och ett histogram över svarstider för varje ändpunkt.
+      rationale: Takt, fel och svarstid per ändpunkt visar vilken del av systemet som påverkas när användare rapporterar problem.
+      criteria:
+        - method: test
+          text: Efter 50 anrop till en ändpunkt, varav 5 misslyckas, visar mätvärdena 50 anrop, 5 fel och ett svarstidshistogram för ändpunkten.
+
+  - id: OBS-05
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [metrics, resource-use, saturation]
+    refs: ["Google SRE book ch. 6 (saturation)", "ISO/IEC 27001:2022 Annex A 8.6 (capacity management)"]
+    tests: [OBS-T04]
+    en:
+      title: Resource metrics
+      description: The monitoring MUST collect processor, memory, disk and connection pool usage of each instance at intervals of at most 60 seconds.
+      rationale: Saturation metrics warn before a resource runs out and explain degradations after the fact.
+      criteria:
+        - method: inspection
+          text: The monitoring tool shows the four metrics for every instance with data points no more than 60 seconds apart.
+          threshold: "interval ≤ 60 s"
+    sv:
+      title: Mätvärden för resurser
+      description: Övervakningen SKA samla in användningen av processor, minne, disk och anslutningspool för varje instans med högst 60 sekunders intervall.
+      rationale: Mätvärden för mättnad varnar innan en resurs tar slut och förklarar försämringar i efterhand.
+      criteria:
+        - method: inspection
+          text: Övervakningsverktyget visar de fyra mätvärdena för varje instans med högst 60 sekunder mellan mätpunkterna.
+          threshold: "intervall ≤ 60 s"
+
+  - id: OBS-06
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [tracing, sampling]
+    refs: ["OpenTelemetry specification: tracing and sampling", "W3C Trace Context"]
+    tests: [OBS-T05]
+    en:
+      title: Distributed tracing of requests
+      description: The system SHOULD record a distributed trace for at least 10 % of requests and for every request that ends in a server error.
+      rationale: Traces show where time is spent across services, and keeping all failed requests makes errors analysable.
+      criteria:
+        - method: test
+          text: Of 1 000 test requests at least 100 have a trace, and each forced server error has a trace.
+          threshold: "≥ 10 % sampled, 100 % of errors"
+    sv:
+      title: Distribuerad spårning av anrop
+      description: Systemet BÖR registrera en distribuerad spårning för minst 10 % av anropen och för varje anrop som slutar med ett serverfel.
+      rationale: Spårningar visar var tiden går åt mellan tjänsterna, och att alla misslyckade anrop sparas gör felen möjliga att analysera.
+      criteria:
+        - method: test
+          text: Av 1 000 testanrop har minst 100 en spårning, och varje framtvingat serverfel har en spårning.
+          threshold: "≥ 10 % stickprov, 100 % av felen"
+
+  - id: OBS-07
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [alerting, error-rate, on-call]
+    refs: ["Google SRE workbook ch. 5 (Alerting on SLOs)", "ITIL 4 Monitoring and event management"]
+    tests: [OBS-T06]
+    en:
+      title: Alert on high error rate
+      description: The monitoring MUST alert the on-call engineer within 5 minutes when more than 1 % of requests fail with a server error over a 5-minute window.
+      rationale: An error rate alert catches outages that users notice, independent of their cause.
+      criteria:
+        - method: test
+          text: A forced error rate of 5 % for 10 minutes gives an alert to the on-call engineer within 5 minutes after the window is exceeded.
+          threshold: "> 1 % errors over 5 min, alert ≤ 5 min"
+    sv:
+      title: Larm vid hög felandel
+      description: Övervakningen SKA larma jourhavande tekniker inom 5 minuter när mer än 1 % av anropen misslyckas med ett serverfel under ett femminutersfönster.
+      rationale: Ett larm på felandel fångar avbrott som användarna märker, oavsett orsak.
+      criteria:
+        - method: test
+          text: En framtvingad felandel på 5 % i 10 minuter ger ett larm till jourhavande inom 5 minuter efter att fönstret överskridits.
+          threshold: "> 1 % fel under 5 min, larm ≤ 5 min"
+
+  - id: OBS-08
+    type: non_functional
+    obligation: should
+    priority: high
+    tags: [alerting, latency]
+    refs: ["Google SRE book ch. 6 (latency)", "Google SRE workbook ch. 5 (Alerting on SLOs)"]
+    tests: [OBS-T06]
+    en:
+      title: Alert on slow responses
+      description: The monitoring SHOULD alert the on-call engineer when the 95th percentile response time exceeds 2 seconds for 10 consecutive minutes.
+      rationale: Slow responses frustrate users before any errors occur and often precede an outage.
+      criteria:
+        - method: test
+          text: An injected delay that keeps the 95th percentile at 3 seconds for 15 minutes triggers one alert.
+          threshold: "p95 > 2 s for 10 min"
+    sv:
+      title: Larm vid långsamma svar
+      description: Övervakningen BÖR larma jourhavande tekniker när 95:e percentilen för svarstiden överstiger 2 sekunder i 10 minuter i följd.
+      rationale: Långsamma svar frustrerar användarna innan några fel uppstår och kommer ofta före ett avbrott.
+      criteria:
+        - method: test
+          text: En injicerad fördröjning som håller 95:e percentilen på 3 sekunder i 15 minuter utlöser ett larm.
+          threshold: "p95 > 2 s i 10 min"
+
+  - id: OBS-09
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [alerting, runbook]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)", "ITIL 4 Monitoring and event management"]
+    tests: [OBS-T07]
+    en:
+      title: Runbook link in every alert
+      description: Each alert SHOULD contain a link to a runbook that lists the first diagnostic steps for that alert.
+      rationale: A runbook shortens the response at night and lets engineers who did not build the service handle the alert.
+      criteria:
+        - method: inspection
+          text: Every alert rule has a runbook link and every linked page exists and lists diagnostic steps.
+    sv:
+      title: Länk till driftinstruktion i varje larm
+      description: Varje larm BÖR innehålla en länk till en driftinstruktion som listar de första stegen för felsökning av larmet.
+      rationale: En driftinstruktion kortar insatstiden nattetid och låter tekniker som inte byggt tjänsten hantera larmet.
+      criteria:
+        - method: inspection
+          text: Varje larmregel har en länk till en driftinstruktion och varje länkad sida finns och listar felsökningssteg.
+
+  - id: OBS-10
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [dashboard, golden-signals]
+    refs: ["Google SRE book ch. 6 (the four golden signals)"]
+    tests: [OBS-T08]
+    en:
+      title: Service dashboard
+      description: The monitoring MUST provide a dashboard per service that shows request rate, error rate, latency percentiles and saturation for the last 24 hours.
+      rationale: A shared starting view lets everyone in an incident look at the same data within seconds.
+      criteria:
+        - method: demonstration
+          text: For each service the dashboard opens with the four signals and a 24-hour time range.
+    sv:
+      title: Översiktspanel per tjänst
+      description: Övervakningen SKA tillhandahålla en översiktspanel per tjänst som visar anropstakt, felandel, percentiler för svarstid och mättnad för de senaste 24 timmarna.
+      rationale: En gemensam startvy gör att alla i en incident tittar på samma data inom några sekunder.
+      criteria:
+        - method: demonstration
+          text: För varje tjänst öppnas panelen med de fyra signalerna och ett tidsintervall på 24 timmar.
+
+  - id: OBS-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [log-retention, logging]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.15 (logging)", "ITIL 4 Information security management"]
+    tests: [OBS-T09]
+    en:
+      title: Minimum retention of application logs
+      description: The system MUST keep application logs searchable for at least 90 days.
+      rationale: Incidents and security events are often investigated weeks after they happened.
+      criteria:
+        - method: test
+          text: A search for a log entry written 89 days ago returns the entry.
+          threshold: "≥ 90 days"
+    sv:
+      title: Minsta lagringstid för applikationsloggar
+      description: Systemet SKA hålla applikationsloggar sökbara i minst 90 dagar.
+      rationale: Incidenter och säkerhetshändelser utreds ofta veckor efter att de inträffade.
+      criteria:
+        - method: test
+          text: En sökning efter en loggpost som skrevs för 89 dagar sedan returnerar posten.
+          threshold: "≥ 90 dagar"
+
+  - id: OBS-12
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [log-retention, personal-data]
+    refs: ["GDPR Art. 5(1)(e) (storage limitation)"]
+    tests: [OBS-T09]
+    en:
+      title: Deletion of old application logs
+      description: The system SHOULD delete application logs automatically 180 days after they were written.
+      rationale: Logs contain personal data such as user ids and addresses, and keeping them indefinitely conflicts with storage limitation.
+      criteria:
+        - method: test
+          text: No application log entry older than 180 days is found in the log store or its archive.
+          threshold: "deleted after 180 days"
+    sv:
+      title: Radering av gamla applikationsloggar
+      description: Systemet BÖR radera applikationsloggar automatiskt 180 dagar efter att de skrevs.
+      rationale: Loggar innehåller personuppgifter som användar-id och adresser, och att spara dem hur länge som helst strider mot principen om lagringsminimering.
+      criteria:
+        - method: test
+          text: Ingen applikationsloggpost äldre än 180 dagar finns i loggarkivet eller dess arkivkopior.
+          threshold: "raderas efter 180 dagar"
+
+  - id: OBS-13
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [time-synchronisation, logging]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.17 (clock synchronization)", "RFC 5905 (NTPv4)"]
+    tests: [OBS-T10]
+    en:
+      title: Synchronised clocks
+      description: Each server MUST keep its clock within 100 milliseconds of a common time source.
+      rationale: Events from different servers can only be ordered when their timestamps are comparable.
+      criteria:
+        - method: test
+          text: The time synchronisation status of every server shows an offset below 100 milliseconds.
+          threshold: "offset < 100 ms"
+    sv:
+      title: Synkroniserade klockor
+      description: Varje server SKA hålla sin klocka inom 100 millisekunder från en gemensam tidskälla.
+      rationale: Händelser från olika servrar kan bara ordnas när deras tidsstämplar går att jämföra.
+      criteria:
+        - method: test
+          text: Status för tidssynkronisering på varje server visar en avvikelse under 100 millisekunder.
+          threshold: "avvikelse < 100 ms"
+
+  - id: OBS-14
+    type: functional
+    obligation: may
+    priority: low
+    tags: [logging, log-level, configuration]
+    refs: ["The Twelve-Factor App, XI Logs"]
+    tests: [OBS-T11]
+    en:
+      title: Change of log level at runtime
+      description: An operator MAY change the log level of a running service without restarting it.
+      rationale: Detailed logging can then be turned on while a problem is happening and turned off again afterwards.
+      criteria:
+        - method: demonstration
+          text: Changing the level to debug makes debug entries appear within 1 minute, without a new process start.
+    sv:
+      title: Byte av loggnivå under drift
+      description: En operatör FÅR byta loggnivå för en körande tjänst utan att starta om den.
+      rationale: Detaljerad loggning kan då slås på medan ett problem pågår och slås av igen efteråt.
+      criteria:
+        - method: demonstration
+          text: När nivån ändras till debug syns debugposter inom 1 minut, utan att processen startas om.
+
+tests:
+  - id: OBS-T01
+    priority: high
+    execution: automated
+    tags: [logging, structured-logs]
+    refs: []
+    en:
+      title: Log lines are JSON with the mandatory fields
+      description: A script reads recent log lines from each service and validates them against the log schema.
+      preconditions: The services have run the standard smoke test so that recent log lines exist.
+      expected: Every sampled line is valid JSON with timestamp, level, service, message and correlation id.
+      steps:
+        - action: Fetch the last 100 log lines from each service.
+          expected: 100 lines per service are returned.
+        - action: Parse each line as JSON and check the five fields.
+          expected: Every line parses and contains all five fields.
+        - action: Check the format of the timestamp field.
+          expected: Every timestamp is ISO 8601 in UTC, ending with Z.
+          data: "2026-03-01T08:15:30.123Z"
+    sv:
+      title: Loggrader är JSON med de obligatoriska fälten
+      description: Ett skript läser de senaste loggraderna från varje tjänst och validerar dem mot loggschemat.
+      preconditions: Tjänsterna har kört standardröktestet så att det finns färska loggrader.
+      expected: Varje rad i urvalet är giltig JSON med tidsstämpel, nivå, tjänst, meddelande och korrelations-id.
+      steps:
+        - action: Hämta de senaste 100 loggraderna från varje tjänst.
+          expected: 100 rader per tjänst returneras.
+        - action: Tolka varje rad som JSON och kontrollera de fem fälten.
+          expected: Varje rad kan tolkas och innehåller alla fem fälten.
+        - action: Kontrollera formatet på tidsstämpelfältet.
+          expected: Varje tidsstämpel följer ISO 8601 i UTC och slutar med Z.
+          data: "2026-03-01T08:15:30.123Z"
+
+  - id: OBS-T02
+    priority: high
+    execution: automated
+    tags: [correlation-id, tracing]
+    refs: ["W3C Trace Context"]
+    en:
+      title: Correlation id follows a request through the services
+      description: An end-to-end test sends a request with a known trace header and searches the logs of every service for it.
+      preconditions: A test environment where one request passes at least 3 services; the logs are searchable.
+      expected: The same id appears in the logs of every service and in the outgoing calls.
+      steps:
+        - action: Send a request with a traceparent header containing a known trace id.
+          expected: The request succeeds.
+          data: "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        - action: Search the logs of all services for the trace id.
+          expected: Each of the 3 services has at least one log entry with that id.
+        - action: Inspect the outgoing calls recorded by the stub or proxy between the services.
+          expected: Every outgoing call carries a traceparent header with the same trace id.
+    sv:
+      title: Korrelations-id följer ett anrop genom tjänsterna
+      description: Ett test från början till slut skickar ett anrop med ett känt spårningshuvud och söker efter det i loggarna för varje tjänst.
+      preconditions: En testmiljö där ett anrop passerar minst 3 tjänster; loggarna är sökbara.
+      expected: Samma id finns i loggarna för varje tjänst och i de utgående anropen.
+      steps:
+        - action: Skicka ett anrop med ett traceparent-huvud som innehåller ett känt spårnings-id.
+          expected: Anropet lyckas.
+          data: "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        - action: Sök efter spårnings-id:t i loggarna för alla tjänster.
+          expected: Var och en av de 3 tjänsterna har minst en loggpost med detta id.
+        - action: Granska de utgående anrop som attrappen eller proxyn mellan tjänsterna har registrerat.
+          expected: Varje utgående anrop har ett traceparent-huvud med samma spårnings-id.
+
+  - id: OBS-T03
+    priority: critical
+    execution: automated
+    tags: [logging, secrets]
+    refs: ["OWASP Logging Cheat Sheet"]
+    en:
+      title: Search of the logs for known test secrets
+      description: A script runs a session with unique test secrets and then searches all logs for them.
+      preconditions: A test environment with a test user; access to all log stores, including the access logs of the proxy.
+      expected: None of the test secrets is found in any log.
+      steps:
+        - action: Sign in with a unique test password, call the API with a unique API key and save a record with a test personal identity number.
+          expected: All actions succeed.
+          data: "password Xq7!unique-2026, personal identity number 19121212-1212"
+        - action: Search every log store for the password, the session token, the API key and the full identity number.
+          expected: No search returns a match.
+    sv:
+      title: Sökning i loggarna efter kända testhemligheter
+      description: Ett skript kör en session med unika testhemligheter och söker sedan efter dem i alla loggar.
+      preconditions: En testmiljö med en testanvändare; åtkomst till alla loggarkiv, även proxyns åtkomstloggar.
+      expected: Ingen av testhemligheterna hittas i någon logg.
+      steps:
+        - action: Logga in med ett unikt testlösenord, anropa API:et med en unik API-nyckel och spara en post med ett testpersonnummer.
+          expected: Alla åtgärder lyckas.
+          data: "lösenord Xq7!unique-2026, personnummer 19121212-1212"
+        - action: Sök i varje loggarkiv efter lösenordet, sessionstoken, API-nyckeln och det fullständiga personnumret.
+          expected: Ingen sökning ger träff.
+
+  - id: OBS-T04
+    priority: high
+    execution: automated
+    tags: [metrics]
+    refs: []
+    en:
+      title: Request and resource metrics are exposed
+      description: A script sends a known number of requests and reads the metrics back from the monitoring system.
+      preconditions: The metrics endpoint of the service is scraped by the monitoring system.
+      expected: The request, error and duration metrics match the sent requests, and resource metrics arrive at least every 60 seconds.
+      steps:
+        - action: Send 45 successful and 5 failing requests to one endpoint.
+          expected: All 50 requests get a response.
+        - action: Query the request count, error count and duration histogram for the endpoint.
+          expected: The counts have increased by 50 and 5 and the histogram has 50 new observations.
+        - action: Query processor, memory, disk and connection pool usage for every instance over the last 10 minutes.
+          expected: Each metric has data points no more than 60 seconds apart.
+    sv:
+      title: Mätvärden för anrop och resurser exponeras
+      description: Ett skript skickar ett känt antal anrop och läser tillbaka mätvärdena från övervakningssystemet.
+      preconditions: Tjänstens mätvärdesändpunkt hämtas av övervakningssystemet.
+      expected: Mätvärdena för anrop, fel och svarstid stämmer med de skickade anropen, och resursmätvärden kommer minst var 60:e sekund.
+      steps:
+        - action: Skicka 45 lyckade och 5 misslyckade anrop till en ändpunkt.
+          expected: Alla 50 anrop får svar.
+        - action: Hämta antal anrop, antal fel och svarstidshistogrammet för ändpunkten.
+          expected: Antalen har ökat med 50 och 5 och histogrammet har 50 nya observationer.
+        - action: Hämta användning av processor, minne, disk och anslutningspool för varje instans de senaste 10 minuterna.
+          expected: Varje mätvärde har högst 60 sekunder mellan mätpunkterna.
+
+  - id: OBS-T05
+    priority: medium
+    execution: automated
+    tags: [tracing, sampling]
+    refs: ["OpenTelemetry specification"]
+    en:
+      title: Trace sampling and error traces
+      description: A script sends 1 000 requests, some of which fail, and counts the traces stored by the tracing backend.
+      preconditions: Tracing is configured with the production sampling settings in a test environment.
+      expected: At least 10 % of the requests and every failed request have a stored trace.
+      steps:
+        - action: Send 990 normal requests and 10 requests that force a server error, each with a unique trace id.
+          expected: The responses are 990 successes and 10 server errors.
+        - action: Look up all 1 000 trace ids in the tracing backend.
+          expected: At least 100 traces are found.
+        - action: Look up the 10 trace ids of the failed requests.
+          expected: All 10 traces are found and show the failing span.
+    sv:
+      title: Stickprov av spårningar och spårning av fel
+      description: Ett skript skickar 1 000 anrop, varav en del misslyckas, och räknar spårningarna som sparats i spårningssystemet.
+      preconditions: Spårning är konfigurerad med produktionens stickprovsinställningar i en testmiljö.
+      expected: Minst 10 % av anropen och varje misslyckat anrop har en sparad spårning.
+      steps:
+        - action: Skicka 990 vanliga anrop och 10 anrop som framtvingar ett serverfel, vart och ett med ett unikt spårnings-id.
+          expected: Svaren är 990 lyckade och 10 serverfel.
+        - action: Slå upp alla 1 000 spårnings-id i spårningssystemet.
+          expected: Minst 100 spårningar hittas.
+        - action: Slå upp de 10 spårnings-id:na för de misslyckade anropen.
+          expected: Alla 10 spårningar hittas och visar det felande spannet.
+
+  - id: OBS-T06
+    priority: critical
+    execution: manual
+    tags: [alerting, on-call]
+    refs: ["Google SRE workbook ch. 5"]
+    en:
+      title: Error rate and latency alerts reach the on-call engineer
+      description: Injects errors and delays in a test environment that uses the production alert rules and routes alerts to a test on-call rota.
+      preconditions: The alert rules of production are deployed in the test environment; a load test sends steady traffic.
+      expected: The error rate alert arrives within 5 minutes of the window being exceeded and the latency alert after 10 minutes of slow responses.
+      steps:
+        - action: Make 5 % of requests fail with status 500 for 10 minutes and note the time.
+          expected: The test on-call engineer receives an error rate alert no later than 10 minutes after the start (5-minute window plus 5 minutes).
+        - action: Stop the errors and inject a delay that keeps the 95th percentile at 3 seconds for 15 minutes.
+          expected: One latency alert arrives after more than 10 and at most 15 minutes.
+        - action: Remove the delay.
+          expected: Both alerts are resolved automatically.
+    sv:
+      title: Larm för felandel och svarstid når jourhavande
+      description: Injicerar fel och fördröjningar i en testmiljö som använder produktionens larmregler och skickar larm till ett testjourschema.
+      preconditions: Produktionens larmregler är driftsatta i testmiljön; ett lasttest skickar jämn trafik.
+      expected: Larmet för felandel kommer inom 5 minuter efter att fönstret överskridits och larmet för svarstid efter 10 minuter med långsamma svar.
+      steps:
+        - action: Låt 5 % av anropen misslyckas med status 500 i 10 minuter och notera tiden.
+          expected: Testjourhavande får ett larm om felandel senast 10 minuter efter starten (femminutersfönster plus 5 minuter).
+        - action: Stoppa felen och injicera en fördröjning som håller 95:e percentilen på 3 sekunder i 15 minuter.
+          expected: Ett larm om svarstid kommer efter mer än 10 och högst 15 minuter.
+        - action: Ta bort fördröjningen.
+          expected: Båda larmen återställs automatiskt.
+
+  - id: OBS-T07
+    priority: medium
+    execution: automated
+    tags: [alerting, runbook]
+    refs: []
+    en:
+      title: Every alert rule links to an existing runbook
+      description: A script reads all alert rules and checks the runbook link of each.
+      preconditions: The alert rules are stored as code in the repository.
+      expected: Every alert rule has a runbook link that resolves to a page with diagnostic steps.
+      steps:
+        - action: Parse all alert rule files and list rules without a runbook annotation.
+          expected: The list is empty.
+        - action: Request each runbook link.
+          expected: Each link returns a page, and each page contains a section with diagnostic steps.
+    sv:
+      title: Varje larmregel länkar till en befintlig driftinstruktion
+      description: Ett skript läser alla larmregler och kontrollerar länken till driftinstruktionen i var och en.
+      preconditions: Larmreglerna lagras som kod i kodförrådet.
+      expected: Varje larmregel har en länk till en driftinstruktion som leder till en sida med felsökningssteg.
+      steps:
+        - action: Tolka alla filer med larmregler och lista regler utan länk till driftinstruktion.
+          expected: Listan är tom.
+        - action: Hämta varje länk till en driftinstruktion.
+          expected: Varje länk ger en sida, och varje sida har ett avsnitt med felsökningssteg.
+
+  - id: OBS-T08
+    priority: medium
+    execution: manual
+    tags: [dashboard]
+    refs: ["Google SRE book ch. 6"]
+    en:
+      title: Service dashboards show the four golden signals
+      description: Opens the dashboard of each service and checks its content.
+      preconditions: Access to the monitoring tool; the list of services.
+      expected: Each service has a dashboard with rate, errors, latency percentiles and saturation over 24 hours.
+      steps:
+        - action: Open the dashboard of the first service with its default settings.
+          expected: The time range is the last 24 hours.
+        - action: Identify the panels on the dashboard.
+          expected: Request rate, error rate, latency percentiles (at least p50 and p95) and saturation are shown.
+        - action: Repeat for every service in the list.
+          expected: Every service has such a dashboard.
+    sv:
+      title: Översiktspanelerna visar de fyra gyllene signalerna
+      description: Öppnar översiktspanelen för varje tjänst och kontrollerar innehållet.
+      preconditions: Åtkomst till övervakningsverktyget; listan över tjänster.
+      expected: Varje tjänst har en panel med takt, fel, percentiler för svarstid och mättnad över 24 timmar.
+      steps:
+        - action: Öppna panelen för den första tjänsten med standardinställningarna.
+          expected: Tidsintervallet är de senaste 24 timmarna.
+        - action: Identifiera diagrammen i panelen.
+          expected: Anropstakt, felandel, percentiler för svarstid (minst p50 och p95) och mättnad visas.
+        - action: Upprepa för varje tjänst i listan.
+          expected: Varje tjänst har en sådan panel.
+
+  - id: OBS-T09
+    priority: high
+    execution: manual
+    tags: [log-retention]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.15"]
+    en:
+      title: Log retention and deletion
+      description: Checks that old log entries are still searchable within the retention period and gone after the deletion limit.
+      preconditions: The log system has run in its current configuration for more than 180 days.
+      expected: Entries from 89 days ago are found and no entries older than 180 days exist.
+      steps:
+        - action: Search for log entries of one service from 89 days ago.
+          expected: Entries are found.
+        - action: Search the log store and its archive for entries older than 180 days.
+          expected: No entries are found.
+        - action: Inspect the retention settings of the log store and the archive.
+          expected: Searchable retention is at least 90 days and deletion is set to 180 days.
+    sv:
+      title: Lagringstid och radering av loggar
+      description: Kontrollerar att gamla loggposter fortfarande är sökbara inom lagringstiden och borta efter raderingsgränsen.
+      preconditions: Loggsystemet har körts med sin nuvarande konfiguration i mer än 180 dagar.
+      expected: Poster från för 89 dagar sedan hittas och inga poster äldre än 180 dagar finns.
+      steps:
+        - action: Sök efter loggposter för en tjänst från för 89 dagar sedan.
+          expected: Poster hittas.
+        - action: Sök i loggarkivet och dess arkivkopior efter poster äldre än 180 dagar.
+          expected: Inga poster hittas.
+        - action: Granska inställningarna för lagringstid i loggarkivet och arkivkopiorna.
+          expected: Sökbar lagringstid är minst 90 dagar och radering är inställd på 180 dagar.
+
+  - id: OBS-T10
+    priority: medium
+    execution: automated
+    tags: [time-synchronisation]
+    refs: ["RFC 5905"]
+    en:
+      title: Clock offset of every server
+      description: A script reads the time synchronisation status of each server and compares the offset with the limit.
+      preconditions: The script can run a command on every server or read the time offset metric.
+      expected: Every server is synchronised with an offset below 100 milliseconds.
+      steps:
+        - action: Read the synchronisation status and offset of each server.
+          expected: Every server reports that it is synchronised to the common time source.
+        - action: Compare each offset with 100 milliseconds.
+          expected: Every offset is below 100 milliseconds.
+    sv:
+      title: Klockavvikelse på varje server
+      description: Ett skript läser status för tidssynkronisering på varje server och jämför avvikelsen med gränsen.
+      preconditions: Skriptet kan köra ett kommando på varje server eller läsa mätvärdet för tidsavvikelse.
+      expected: Varje server är synkroniserad med en avvikelse under 100 millisekunder.
+      steps:
+        - action: Läs synkroniseringsstatus och avvikelse för varje server.
+          expected: Varje server rapporterar att den är synkroniserad mot den gemensamma tidskällan.
+        - action: Jämför varje avvikelse med 100 millisekunder.
+          expected: Varje avvikelse är under 100 millisekunder.
+
+  - id: OBS-T11
+    priority: low
+    execution: manual
+    tags: [log-level, configuration]
+    refs: []
+    en:
+      title: Change of log level without restart
+      description: Changes the log level of a running service and checks the effect and the process uptime.
+      preconditions: An operator account with permission to change runtime settings; a running test service at level info.
+      expected: Debug entries appear within 1 minute and the process has not restarted.
+      steps:
+        - action: Note the process start time and change the log level to debug.
+          expected: The change is accepted.
+        - action: Send a request and read the log.
+          expected: Debug entries for the request appear within 1 minute.
+        - action: Compare the process start time with the noted value and set the level back to info.
+          expected: The start time is unchanged and debug entries stop.
+    sv:
+      title: Byte av loggnivå utan omstart
+      description: Byter loggnivå för en körande tjänst och kontrollerar effekten och processens drifttid.
+      preconditions: Ett operatörskonto med behörighet att ändra inställningar under drift; en körande testtjänst på nivån info.
+      expected: Debugposter syns inom 1 minut och processen har inte startats om.
+      steps:
+        - action: Notera processens starttid och byt loggnivå till debug.
+          expected: Ändringen godtas.
+        - action: Skicka ett anrop och läs loggen.
+          expected: Debugposter för anropet syns inom 1 minut.
+        - action: Jämför processens starttid med det noterade värdet och sätt tillbaka nivån till info.
+          expected: Starttiden är oförändrad och debugposterna upphör.
