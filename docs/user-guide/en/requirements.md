@@ -33,6 +33,8 @@ When you create a requirement with **Obligation** set to **Auto-detect from text
 
 Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`. Requirements written in Swedish use the Swedish keywords described under [The language analysis](#the-language-analysis). The [References](references.md) page lists these and other standards for requirements and testing.
 
+While you write, **Help: obligation levels** below the description (open for new requirements) shows the keywords of each level in the language of the interface, what they mean and an example, with tips on writing them. [Analytics](traceability-and-coverage.md#requirement-analytics) shows how the levels and keywords are spread over the project.
+
 ## The language analysis
 
 While you type the description, the **Requirement language analysis** box shows the detected obligation, a **Score** from 0 to 100, the keywords highlighted in your text and a list of **Findings**.
@@ -169,6 +171,24 @@ Every bulk change is recorded in each requirement's history.
 Without a mouse, use the folder's **⋮** actions button or the **Move** button of the selection.
 
 **Deleting a folder** asks what to do with the content: **Delete, keep content** moves subfolders and requirements to the parent folder; **Delete everything** deletes the subtree including all requirements in it.
+
+## Links to other items
+
+The **Links** tab of a requirement, a test and a run lists links to other things, inside the tool and outside it. **Add link** offers:
+
+| Link to | Choose |
+|---|---|
+| **Requirement**, **Test** | one or more items of the project with the item picker |
+| **Run** | a test run of the project |
+| **Archive file** | a document or saved report of the project's [document archive](documents.md) |
+| **Report** | a saved report definition; the link opens it under **Reports** |
+| **Web address** | an `https://`, `http://` or `mailto:` address, for example a design specification, a ticket or a wiki page |
+
+A **label** (optional) says what the link is, for example *Design spec* or *Jira ticket*. Links to items of the tool open them; files and web addresses open in a new tab. Under **Linked from** you see the requirements, tests and runs that link to this item, so links work in both directions.
+
+Links can only point to items of the same project. When a linked item is deleted its links go with it (and come back when you undo the deletion); when an item moves to another project, its links to items of the old project are dropped and its web links move along. Adding and removing links needs the permission to edit the item that carries them, and you only see links to kinds of items you may read. Adding and removing a link can be undone.
+
+**Keys and addresses in texts.** In comments, an item key such as `SHOP-REQ-12` or `SHOP-TC-3` becomes a link to that item, and a web address becomes a link that opens in a new tab. The address `/go/SHOP-TC-3` in the tool always opens that item, which is handy in e-mails and chats.
 
 ## Attachments
 

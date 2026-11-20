@@ -377,6 +377,28 @@ export interface Readiness {
   issues: ReadinessIssue[]
 }
 
+/** A link from a requirement, test or run to another item or a web address. */
+export interface ItemLink {
+  id: string
+  project_id: string
+  source_type: string
+  source_id: string
+  /** requirement | test | run | file | report | url */
+  target_type: string
+  target_id: string | null
+  url: string
+  label: string
+  created_by: string
+  created_at: string
+  source_key: string
+  source_title: string
+  target_key: string
+  target_title: string
+  /** files: document | report */
+  target_kind?: string
+  direction?: 'outgoing' | 'incoming' | string
+}
+
 /** A prerequisite between two tests (GET /tests/{id}/dependencies). */
 export interface TestDependency {
   id: string

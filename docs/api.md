@@ -277,6 +277,56 @@ with their files) for 30 days. The web client's undo uses it.
 | GET | `/projects/{pid}/trash` | project.read (entries of kinds the caller cannot read are left out) | `[TrashEntry]` newest first: `{id, project_id, kind, item_ids, keys, label, deleted_by, created_at}` |
 | POST | `/trash/{id}/restore` | the kind's write permission, plus its review permission when a restored item is `approved`/`rejected`/`ready` | puts the items back with their IDs and keys and removes the entry → TrashEntry; rows whose counterpart is gone (a test deleted since, a run, a category) are skipped and a missing folder puts the item at the root; 404 when unknown or already restored |
 
+### Item links
+
+Links from a requirement, test or run to another item of the same project
+or to a web address. Reading needs the read permission of the item, adding
+and removing the write permission of the item that carries the link (and
+the read permission of an internal target's kind).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/requirements/{id}/item-links`, `/tests/{id}/item-links`, `/runs/{id}/item-links` | `[ItemLink]`, outgoing first, then incoming (`direction`); links to kinds the caller cannot read are left out |
+| POST | same paths | `{"target_type", "target_id"?, "url"?, "label"?}` → 201 ItemLink. `target_type`: `requirement`, `test`, `run`, `file` (a `document` or `report` file of the project's archive), `report` (a report definition) or `url` (`http(s)://` or `mailto:`, at most 2000 characters); label at most 200 characters; same project only; no self-links; duplicates → 409 |
+| PATCH | `/item-links/{id}` | `{"label"}` |
+| DELETE | `/item-links/{id}` | 204 |
+
+`ItemLink`: `{id, project_id, source_type, source_id, target_type, target_id,
+url, label, created_by, created_at, source_key, source_title, target_key,
+target_title, target_kind?, direction}` (keys of runs, files and reports are
+their names). Deleting an item removes its links (the trash restores them);
+moving requirements or tests to another project drops their internal links
+and keeps web links.
+
+## Requirement analytics
+
+`GET /projects/{pid}/analytics?lang=` (requirement.read) analyses all
+requirements of the project; `lang` is `auto` (default, per requirement) or
+an analysis language. Test findings are included with `test.read`.
+
+```json
+{"summary": {"requirements": 20, "tests": 18, "with_findings": 3, "health": 85, "problems": 1, "warnings": 2, "infos": 1,
+             "covered": 17, "coverage_percent": 85, "average_score": 91},
+ "obligations": [{"value": "must", "count": 19, "percent": 95}, {"value": "shall", "count": 1, "percent": 5}],
+ "families": [{"family": "mandatory", "total": 20, "dominant": "MUST", "keywords": [{"value": "MUST", "count": 19, "percent": 95}, …]}],
+ "statuses": [{"value": "approved", "count": 12, "percent": 60}, …], "coverage": [{"value": "passed", …}],
+ "findings": [{"code": "inconsistent_keyword", "severity": "warning", "category": "consistency",
+               "params": {"family": "mandatory", "dominant": "MUST", "dominantPercent": "95", "keyword": "SHALL", "count": "1", …},
+               "items": [{"kind": "requirement", "id": "…", "key": "SHOP-REQ-7", "title": "…", "note": "SHALL"}], "total": 1}]}
+```
+
+Findings carry a `code` and `params` for clients to phrase, and are ordered
+problems, warnings, infos. Codes: `obligation_missing`, `keyword_missing`,
+`obligation_mismatch`, `multiple_levels`, `spread_all_mandatory`,
+`spread_no_mandatory`, `spread_many_optional`, `spread_many_should`,
+`spread_many_descriptive`, `inconsistent_keyword` (a keyword used where
+another of the same meaning has ≥ 75 %), `mixed_keywords`,
+`no_tests_mandatory`, `no_tests`, `tests_failing`, `tests_not_run`,
+`no_criteria`, `tests_not_ready`, `orphan_tests`, `empty_description`,
+`duplicate_titles`, `conflicts`, `low_quality`, `many_drafts`, `no_owner` and
+`language_rule` (with `params.rule`, a language analysis rule). At most 200
+items per finding (`total` gives the full count).
+
 ## Traceability
 
 Reading needs `project.read`; creating and deleting links needs

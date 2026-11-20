@@ -246,6 +246,10 @@ func snapshotItems(ctx context.Context, c conn, kind string, ids []string) (*tra
 			return nil, err
 		}
 	}
+	if _, err := add("item_links", `(source_type = ? AND source_id IN (`+in+`)) OR (target_type = ? AND target_id IN (`+in+`))`,
+		append(append(append([]any{kind}, idArgs...), kind), idArgs...)...); err != nil {
+		return nil, err
+	}
 	// attachments, with the files (and their contents) the deletion removes
 	entityTypes := make([]string, 0, len(attachEntities))
 	for et := range attachEntities {
@@ -530,6 +534,8 @@ func (s *Store) RestoreTrash(ctx context.Context, tenantID, id string) (*TrashEn
 					ok, err = need(row, "requirements", "source_id", "requirements", "target_id")
 				case "test_dependencies":
 					ok, err = need(row, "test_cases", "test_id", "test_cases", "depends_on_id")
+				case "item_links":
+					ok, err = linkEndsExist(row, exists)
 				case "test_executions":
 					ok, err = need(row, "test_runs", "run_id", "test_cases", "test_case_id")
 				case "step_results":
@@ -581,6 +587,25 @@ func (s *Store) RestoreTrash(ctx context.Context, tenantID, id string) (*TrashEn
 		return nil, err
 	}
 	return entry, nil
+}
+
+// linkEndsExist reports whether both ends of an item link snapshot row exist.
+func linkEndsExist(row map[string]any, exists func(table, id string) (bool, error)) (bool, error) {
+	for _, end := range []struct{ typ, id string }{{"source_type", "source_id"}, {"target_type", "target_id"}} {
+		typ, _ := row[end.typ].(string)
+		if typ == "url" {
+			continue
+		}
+		t, ok := linkTables[typ]
+		if !ok {
+			return false, nil
+		}
+		id, _ := row[end.id].(string)
+		if in, err := exists(t.table, id); err != nil || !in {
+			return false, err
+		}
+	}
+	return true, nil
 }
 
 // insertRow inserts a snapshot row, converting JSON values back to what

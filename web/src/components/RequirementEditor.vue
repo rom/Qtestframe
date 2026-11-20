@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ObligationHelp from './ObligationHelp.vue'
+import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
 import SplitButton from 'primevue/splitbutton'
 import AutoComplete from 'primevue/autocomplete'
@@ -62,6 +64,11 @@ const notify = useNotify()
 const prefs = usePrefsStore()
 const { t, te } = useI18n()
 const tabsId = uid('req-tabs')
+const linkCount = ref<number | null>(null)
+watch(
+  () => props.itemId,
+  () => (linkCount.value = null),
+)
 /** tab panel attributes for the content of a tab (only when the tabs are shown) */
 function panel(value: string) {
   return item.value ? { role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` } : {}
@@ -458,12 +465,14 @@ function criterionLabel(id: string | null) {
     <TabList>
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="relations"><i class="pi pi-sitemap" aria-hidden="true" /> {{ t('common.relations') }} <span class="count">{{ relationCount }}</span></Tab>
+      <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
+  <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="requirement" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
@@ -493,6 +502,7 @@ function criterionLabel(id: string | null) {
     <div v-field class="field">
       <label>{{ t('common.description') }}</label>
       <MentionInput v-model="form.description" multiline rows="5" auto-resize :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.descriptionPlaceholder')" />
+      <ObligationHelp v-if="canWrite" :open="isNew" />
     </div>
 
     <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis" role="region" :aria-label="t('analysis.title')" :aria-busy="analyzing">

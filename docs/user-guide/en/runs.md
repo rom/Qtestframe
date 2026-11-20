@@ -142,6 +142,10 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 
 Keep the token in your CI system's secret store, never in the repository. A token is bound to one organisation and never has more rights than its owner.
 
+## Links of a run
+
+The **Links** tab of the run page links the run to requirements, tests, other runs, archive files, reports and web addresses, for example the CI build or the release notes, see [Links](requirements.md#links-to-other-items).
+
 ## Attachments on runs and executions
 
 Runs and executions have **Attachments** too: log files, screenshots of a failure, test reports from other tools. In the runner, open the **Attachments** tab next to **Result** and drag files onto it or select **Choose files**; on the run page, attachments belong to the run as a whole. You can also attach a file from the project's [document archive](documents.md). Uploading and removing attachments on runs and executions needs **Tester** (the right to record results).

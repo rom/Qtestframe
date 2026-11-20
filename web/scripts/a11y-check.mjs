@@ -125,6 +125,10 @@ async function discover(request) {
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
     { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },
     run && { name: 'flow-run', path: `${p}/flow?run=${run.id}`, wait: '.stages, .empty' },
+    { name: 'analytics', path: `${p}/analytics`, wait: '.analytics-cards, .empty' },
+    { name: 'test-links', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-link)', wait: '.item-links' },
+    { name: 'link-dialog', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links button:has(.pi-link)'], wait: '.link-types' },
+    { name: 'new-requirement', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-plus)', wait: '.obligation-help' },
     { name: 'prompts', path: `${p}/prompts`, wait: '.prompts-grid, .p-message' },
     run && { name: 'run-readiness', path: `${p}/runs/${run.id}`, open: 'button.readiness-cell', wait: '.readiness-pop' },
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
@@ -348,9 +352,10 @@ async function main() {
           page.on('pageerror', (e) => errors.push(e.message))
           try {
             await page.goto(BASE + r.path, { waitUntil: 'domcontentloaded' })
-            if (r.open) {
+            // open: a selector, or several clicked one after another
+            for (const sel of r.open ? [].concat(r.open) : []) {
               await settle(page)
-              await page.locator(r.open).first().click()
+              await page.locator(sel).first().click()
             }
             await settle(page, r.wait)
             if (!r.anon && page.url().includes('/login')) throw new Error('redirected to login')

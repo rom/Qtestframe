@@ -147,6 +147,7 @@ const projectNav = computed(() => [
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
+  { to: 'analytics', icon: 'pi pi-chart-bar', label: t('nav.analytics') },
   { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
   { to: 'flow', icon: 'pi pi-share-alt', label: t('nav.flow') },
   ...(isSoftware(proj.project) ? [{ to: 'prompts', icon: 'pi pi-sparkles', label: t('nav.prompts') }] : []),

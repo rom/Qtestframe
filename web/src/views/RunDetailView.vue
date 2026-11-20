@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import MentionText from '@/components/MentionText.vue'
 import ColumnsMenu from '@/components/ColumnsMenu.vue'
 import { useColumnLayout, type ColumnDef } from '@/composables/columns'
@@ -63,6 +64,7 @@ const statusFilter = ref<string[]>([])
 const queryError = ref<unknown>(null)
 const composed = computed(() => and(q.value, anyOf('status', statusFilter.value)))
 const canWrite = computed(() => auth.can(P.runWrite))
+const linkCount = ref<number | null>(null)
 const canExecute = computed(() => auth.can(P.runExecute))
 const tab = ref('executions')
 const attachmentCount = ref<number | null>(null)
@@ -296,8 +298,12 @@ async function copySnippet() {
       <TabList>
         <Tab value="executions"><i class="pi pi-list" aria-hidden="true" /> {{ t('common.executions') }} <span class="count">{{ executions.length }}</span></Tab>
         <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
+        <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
       </TabList>
     </Tabs>
+    <div v-if="tab === 'links'" v-bind="panel('links')" class="card">
+      <ItemLinksPanel item-type="run" :item-id="runId" :project-id="proj.pid" :can-write="canWrite" @count="(n) => (linkCount = n)" />
+    </div>
     <div v-if="tab === 'attachments'" v-bind="panel('attachments')" class="card">
       <AttachmentsPanel type="run" :entity-id="runId" :project-id="proj.pid" :can-write="canExecute" @count="(n) => (attachmentCount = n)" />
     </div>
