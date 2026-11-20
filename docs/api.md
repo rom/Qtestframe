@@ -640,6 +640,8 @@ cycles are rejected (400); duplicates → 409.
 | POST | `/requirements/{id}/relations` | requirement.write | `{"target_id", "type"}` → Relation |
 | DELETE | `/relations/{id}` | requirement.write | |
 | GET | `/projects/{pid}/relations` | requirement.read | all relations of the project |
+| POST | `/projects/{pid}/relations/bulk` | requirement.write | `{"relations":[{source_id, target_id, type}]}` (max 1000) → `{"created":[Relation], "skipped":[{source_id, target_id, type, reason, message?}]}`; reasons `exists`, `self`, `not_found` (not in the project), `invalid` (unknown type or a `refines` cycle, with `message`) |
+| DELETE | `/projects/{pid}/relations/bulk` | requirement.write | `{"ids":[...]}` (max 1000) → `{"deleted":[Relation], "skipped":[{id, reason: "not_found"}]}`; the deleted relations are returned so they can be recreated |
 
 Requirement lists add `relation_count`. Query fields: `related` (keys of all
 related requirements), `parent` (keys this requirement refines), `child`

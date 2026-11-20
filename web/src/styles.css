@@ -224,6 +224,7 @@ label.required::after { content: ' *'; color: var(--p-red-600, #dc2626); }
 .tree-root.drop-target { outline: 2px dashed var(--p-primary-color); }
 .drag-handle { cursor: grab; color: var(--qtf-muted); }
 .bulkbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-radius: 8px; background: color-mix(in srgb, var(--p-primary-color) 10%, var(--qtf-card)); border: 1px solid color-mix(in srgb, var(--p-primary-color) 30%, transparent); margin-bottom: 10px; }
+:root:not(.app-dark) .bulkbar .p-button-success.p-button-outlined { color: var(--p-green-800); }
 .filterbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
 .query-input { min-width: min(260px, 100%); }
 .query-error { color: var(--p-red-700); font-size: 12px; margin-top: 4px; font-family: var(--qtf-mono); white-space: pre; overflow-x: auto; }

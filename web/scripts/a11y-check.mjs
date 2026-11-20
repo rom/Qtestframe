@@ -98,6 +98,10 @@ async function discover(request) {
   if (!project) throw new Error('no project found – run `qtestframe seed-demo` first')
   const pid = project.id
   const reqs = items(await api(request, 'GET', `/projects/${pid}/requirements`))
+  // a requirement with at least two relations, for the relations tab's bulk removal
+  const relCount = new Map()
+  for (const r of items(await api(request, 'GET', `/projects/${pid}/relations`))) for (const id of [r.source_id, r.target_id]) relCount.set(id, (relCount.get(id) ?? 0) + 1)
+  const relReq = reqs.find((r) => (relCount.get(r.id) ?? 0) > 1)
   const runs = items(await api(request, 'GET', `/projects/${pid}/runs`))
   const run = runs[0]
   const execs = run ? items(await api(request, 'GET', `/runs/${run.id}/executions`)) : []
@@ -178,6 +182,8 @@ async function discover(request) {
     { name: 'search', path: '/search?q=login' },
     { name: 'help', path: '/help' },
     { name: 'profile', path: '/profile' },
+    { name: 'relations-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-sitemap)'], wait: '.p-dialog [role="status"]' },
+    relReq && { name: 'requirement-relations', path: `${p}/requirements?item=${relReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-sitemap)', '.p-drawer [role="tabpanel"] .p-checkbox'], wait: '.p-drawer [role="tabpanel"] .p-button-danger' },
     { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
     { name: 'notifications', path: '/notifications' },
     { name: 'reviews', path: '/reviews' },

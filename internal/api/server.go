@@ -177,6 +177,8 @@ func (s *Server) routes() {
 	h("POST /api/v1/requirements/{id}/relations", s.handleCreateRelation, "requirement.write")
 	h("DELETE /api/v1/relations/{id}", s.handleDeleteRelation, "requirement.write")
 	h("GET /api/v1/projects/{pid}/relations", s.handleListProjectRelations, "requirement.read")
+	h("POST /api/v1/projects/{pid}/relations/bulk", s.handleBulkCreateRelations, "requirement.write")
+	h("DELETE /api/v1/projects/{pid}/relations/bulk", s.handleBulkDeleteRelations, "requirement.write")
 	h("GET /api/v1/requirements/{id}/comments", s.handleListComments(model.KindRequirement), "requirement.read")
 	h("POST /api/v1/requirements/{id}/comments", s.handleAddComment(model.KindRequirement), "requirement.read")
 	h("PATCH /api/v1/comments/{id}", s.handleUpdateComment)
