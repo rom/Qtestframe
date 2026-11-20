@@ -160,6 +160,8 @@ async function discover(request) {
     { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
+    // the folder tree is a side panel only on wide screens (a drawer otherwise)
+    { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', wide: true },
     { name: 'categories-bulk', path: `${p}/settings?tab=requirement`, open: '.category-grid .p-checkbox', wait: '.bulkbar' },
     { name: 'export', path: `${p}/export` },
     { name: 'documents', path: `${p}/documents` },
@@ -376,6 +378,7 @@ async function main() {
         await anon.addInitScript(local, { lang: cfg.lang, theme: cfg.theme })
         for (const r of pages) {
           if (r.narrow && vp.width > 1023) continue
+          if (r.wide && vp.width <= 1023) continue
           const page = await (r.anon ? anon : ctx).newPage()
           const label = `${cfg.name} ${vp.name} ${r.name}`
           const errors = []

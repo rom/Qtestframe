@@ -143,6 +143,7 @@ func (s *Server) routes() {
 	// folders & categories
 	h("GET /api/v1/projects/{pid}/folders", s.handleListFolders, "project.read")
 	h("POST /api/v1/projects/{pid}/folders", s.handleCreateFolder)
+	h("POST /api/v1/projects/{pid}/folders/bulk", s.handleBulkFolders)
 	h("PATCH /api/v1/folders/{id}", s.handleUpdateFolder)
 	h("POST /api/v1/folders/{id}/move", s.handleMoveFolder)
 	h("DELETE /api/v1/folders/{id}", s.handleDeleteFolder)

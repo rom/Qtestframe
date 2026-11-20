@@ -509,3 +509,108 @@ func (s *Server) handleBulkCategories(w http.ResponseWriter, r *http.Request, p 
 	s.audit(r.Context(), p, "category.bulk_"+req.Action, "category", strings.Join(req.IDs, ","), fmt.Sprintf("%d changed", n))
 	writeJSON(w, http.StatusOK, map[string]int{"changed": n})
 }
+
+// ---------------------------------------------------------------- folders, bulk
+
+// handleBulkFolders: POST /projects/{pid}/folders/bulk
+// {"ids": [...], "action": "move" | "delete", "parent_id", "project_id", "cascade"}.
+// The folders must be of one kind; a folder inside another selected folder
+// goes along with it. Moving checks the target first, so a move into a
+// selected folder changes nothing.
+func (s *Server) handleBulkFolders(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs       []string `json:"ids"`
+		Action    string   `json:"action"`
+		ParentID  *string  `json:"parent_id"`
+		ProjectID string   `json:"project_id"`
+		Cascade   bool     `json:"cascade"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if req.Action != "move" && req.Action != "delete" {
+		s.fail(w, r, badRequest("action must be move or delete"))
+		return
+	}
+	ids, err := bulkIDs(req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	ctx := r.Context()
+	var kind string
+	sel := map[string]bool{}
+	for _, id := range ids {
+		f, err := s.Store.GetFolder(ctx, p.TenantID(), id)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if f.ProjectID != pr.ID {
+			s.fail(w, r, fmt.Errorf("folder %s: %w", id, store.ErrNotFound))
+			return
+		}
+		if kind != "" && f.Kind != kind {
+			s.fail(w, r, badRequest("the folders must all be requirement folders or all test folders"))
+			return
+		}
+		kind = f.Kind
+		sel[id] = true
+	}
+	if !p.Can(kindPerm(kind)) {
+		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(kindPerm(kind))+" required")
+		return
+	}
+	all, err := s.Store.ListFolders(ctx, p.TenantID(), pr.ID, kind)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	// keep the top-most selected folders; the others move or go with them
+	inside := map[string]bool{}
+	for id := range sel {
+		for _, d := range store.Descendants(all, id) {
+			if d != id {
+				inside[d] = true
+			}
+		}
+	}
+	var top []string
+	for _, id := range ids {
+		if !inside[id] {
+			top = append(top, id)
+		}
+	}
+	if req.Action == "move" {
+		parent := req.ParentID
+		if parent != nil && *parent == "" {
+			parent = nil
+		}
+		if parent != nil && (sel[*parent] || inside[*parent]) {
+			s.fail(w, r, store.Conflictf("cannot move folders into themselves or their subfolders"))
+			return
+		}
+		for _, id := range top {
+			if err := s.Store.MoveFolder(ctx, p.TenantID(), id, parent, -1, req.ProjectID); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			s.audit(ctx, p, "folder.move", "folder", id, "bulk")
+		}
+		writeJSON(w, http.StatusOK, map[string]int{"moved": len(top)})
+		return
+	}
+	for _, id := range top {
+		if err := s.Store.DeleteFolder(ctx, p.TenantID(), id, req.Cascade); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		s.audit(ctx, p, "folder.delete", "folder", id, "bulk")
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"deleted": len(top)})
+}

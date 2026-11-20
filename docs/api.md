@@ -180,6 +180,7 @@ Reading needs `project.read`. Writing folders needs `requirement.write` or
 | POST | `/projects/{pid}/folders` | `{"kind","name","description","parent_id"}` |
 | PATCH | `/folders/{id}` | `{"name","description"}` |
 | POST | `/folders/{id}/move` | `{"parent_id": id\|null, "position": n, "project_id"?: id}` – moving to another project moves contained items too. Cycles are rejected (409). |
+| POST | `/projects/{pid}/folders/bulk` | `{"ids":[...], "action": "move\|delete", "parent_id"?, "project_id"?, "cascade"?}` – folders of one kind (write permission of that kind). Folders inside another selected folder go with it; a move into a selected folder is refused (409) before anything moves → `{"moved": n}` / `{"deleted": n}` |
 | DELETE | `/folders/{id}?cascade=true` | without cascade children/items are moved to the parent |
 | GET | `/projects/{pid}/categories?scope=` | list |
 | POST | `/projects/{pid}/categories` | `{"scope","dimension","name","color","description"}` |

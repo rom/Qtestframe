@@ -126,3 +126,17 @@ export function ancestorKeys(folders: readonly Folder[], id: string): string[] {
   }
   return out
 }
+
+/** Of the given folder ids, those not inside another given folder (in tree order of ids). */
+export function topMostFolders(folders: readonly Folder[], ids: readonly string[]): string[] {
+  const inside = new Set<string>()
+  for (const id of ids) for (const d of descendantIds(folders, id)) if (d !== id) inside.add(d)
+  return ids.filter((id) => !inside.has(id))
+}
+
+/** Checked folder ids of a PrimeVue checkbox tree selection. */
+export function checkedIds(keys: Record<string, { checked?: boolean; partialChecked?: boolean } | boolean | undefined>): string[] {
+  return Object.entries(keys)
+    .filter(([, v]) => v === true || (typeof v === 'object' && !!v?.checked))
+    .map(([k]) => k)
+}

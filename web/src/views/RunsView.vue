@@ -390,7 +390,7 @@ const runLayout = useColumnLayout(
           </TabPanel>
           <TabPanel value="folders">
             <div v-if="!testFolders.length" class="muted small">{{ t('runs.noFolders') }}</div>
-            <Tree v-else v-model:selection-keys="folderKeys" v-model:expanded-keys="folderExpanded" :value="testFolders" selection-mode="checkbox" :aria-label="t('runs.tabFolders', { count: selectedFolderIds.length })" style="max-height: 260px; overflow: auto; padding: 0; border: none" />
+            <Tree v-else v-model:selection-keys="folderKeys" v-model:expanded-keys="folderExpanded" :value="testFolders" selection-mode="checkbox" :aria-label="t('runs.tabFolders', { count: selectedFolderIds.length })" :pt="{ rootChildren: { 'aria-multiselectable': 'true' }, pcNodeCheckbox: { input: { 'aria-hidden': 'true', tabindex: '-1' } } }" style="max-height: 260px; overflow: auto; padding: 0; border: none" />
             <div class="small muted">{{ t('runs.foldersHint') }}</div>
           </TabPanel>
           <TabPanel value="query">
