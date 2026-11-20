@@ -12,7 +12,8 @@ import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { formatDate, formatDateTime, relativeTime } from '@/lib/format'
-import { grantableRoles } from '@/lib/permissions'
+import { grantableRoles, rolesWithin } from '@/lib/permissions'
+import { useRolesStore } from '@/stores/roles'
 import type { APIToken } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
@@ -24,7 +25,12 @@ const notify = useNotify()
 const { t } = useI18n()
 const tokens = ref<APIToken[]>([])
 const loading = ref(false)
-const roles = computed(() => enumOptions('role', grantableRoles(auth.me?.role ?? '', auth.isSuperAdmin)))
+const rolesStore = useRolesStore()
+void rolesStore.ensure()
+/** roles whose permissions the user holds (custom roles included); built-in ranks until loaded */
+const roles = computed(() =>
+  enumOptions('role', rolesStore.roles.length ? rolesWithin(rolesStore.roles, auth.me?.permissions ?? [], auth.isSuperAdmin) : grantableRoles(auth.me?.role ?? '', auth.isSuperAdmin)),
+)
 
 async function load() {
   loading.value = true

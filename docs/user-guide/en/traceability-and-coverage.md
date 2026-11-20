@@ -65,3 +65,20 @@ Coverage appears as a column and quick filter in the requirements list, as the q
 - **Recent runs**: the five newest runs with their progress; **All runs →** opens the run list.
 
 On the dashboard, a requirement counts as *covered* as soon as at least one test is linked, regardless of results.
+
+## Dependency graphs
+
+**Dependency graph** in the project sidebar draws how items build on each other. Choose **Requirements** or **Tests** at the top:
+
+- **Requirements**: the relations between requirements, such as *depends on*, *provides*, *refines*, *derived from*, *conflicts with*, *duplicates* and *relates to* (see [Relations](requirements.md#relations));
+- **Tests**: the [dependencies](tests.md#dependencies) between tests (*depends on*) and the shared steps (*calls*).
+
+The graph is read from left to right: prerequisites, parent requirements and sources are on the left, what builds on them to the right. Each box shows the key, the title and the coverage (requirements) or last result (tests), with a coloured bar in the same colours as elsewhere. Each relation type has its own colour and line style, explained next to its checkbox.
+
+- Untick a relation type to hide those lines; items left without relations disappear unless **Show items without relations** is on.
+- Type in **Highlight items…** to highlight matching items.
+- Right-click an item (or focus it and press <kbd>Space</kbd>) to highlight its neighbours; **Show all** ends this.
+- Select an item (or press <kbd>Enter</kbd>) to open it. Zoom with the magnifier buttons; scroll to move around.
+- **List** shows the same relations as a table, one item per row, which is easier to read with a screen reader or to print.
+
+Cycles (for example two requirements that depend on each other) are drawn, but one of their lines is shown without an arrow.

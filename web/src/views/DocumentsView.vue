@@ -21,6 +21,8 @@ import { ARCHIVE_KINDS, archiveParams, contentUrl, fileIcon, formatFileSize, lin
 import { formatDateTime, formatFullDateTime, getFormatLocale } from '@/lib/format'
 import { P } from '@/lib/permissions'
 import type { FileInfo } from '@/lib/types'
+import ColumnsMenu from '@/components/ColumnsMenu.vue'
+import { useColumnLayout, type ColumnDef } from '@/composables/columns'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
@@ -134,7 +136,16 @@ function open(f: FileInfo) {
   preview.value = f
   previewOpen.value = true
 }
-const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'test', 'run', 'execution'].includes(type) ? type : 'other'}`)
+// ---------- columns ----------
+const docColumns = computed<ColumnDef[]>(() => [
+  { field: 'kind', header: t('documents.kindCol') },
+  { field: 'size', header: t('files.size') },
+  { field: 'uploaded_by', header: t('files.uploader') },
+  { field: 'created_at', header: t('files.date') },
+  { field: 'links', header: t('documents.linkedTo'), sortable: false },
+])
+const docLayout = useColumnLayout(() => 'qtf.cols.documents', docColumns, () => ['kind', 'size', 'uploaded_by', 'created_at', 'links'])
+const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'test', 'run', 'execution', 'step'].includes(type) ? type : 'other'}`)
 </script>
 
 <template>
@@ -153,10 +164,32 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
     <div class="filterbar">
       <QueryInput v-model="q" scope="document" :error="error" :placeholder="t('documents.filterPlaceholder', { example: 'tag:spec type:pdf linked:*REQ-1' })" @submit="load" />
       <Select v-model="kind" :options="kindOptions" option-label="label" option-value="value" :placeholder="t('documents.allKinds')" :aria-label="t('documents.kindFilter')" style="min-width: 160px" @change="load" />
+      <ColumnsMenu
+        :columns="docColumns"
+        :order="docLayout.order.value"
+        @toggle="(id, on) => docLayout.toggle(id, on)"
+        @move="(id, d) => docLayout.move(id, d)"
+        @reset="docLayout.reset()"
+      />
       <Button icon="pi pi-refresh" text rounded severity="secondary" :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
     </div>
-    <DataTable v-stack :value="files" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(25)" :rows-per-page-options="prefs.rowsPerPage" size="small" sort-field="created_at" :sort-order="-1">
-      <Column field="name" :header="t('common.name')" sortable style="min-width: 220px" body-class="stack-main">
+    <DataTable
+      :ref="docLayout.bind"
+      v-stack
+      :value="files"
+      data-key="id"
+      :loading="loading"
+      :aria-busy="loading"
+      paginator
+      :rows="prefs.rowsFor(25)"
+      :rows-per-page-options="prefs.rowsPerPage"
+      size="small"
+      sort-field="created_at"
+      :sort-order="-1"
+      reorderable-columns
+      @column-reorder="docLayout.onReorder()"
+    >
+      <Column field="name" :header="t('common.name')" sortable :reorderable-column="false" style="min-width: 220px" body-class="stack-main">
         <template #body="{ data }">
           <div class="row nowrap" style="min-width: 0">
             <i :class="fileIcon(data.content_type, data.name)" style="font-size: 18px; color: var(--p-primary-color)" aria-hidden="true" />
@@ -169,13 +202,14 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
           </div>
         </template>
       </Column>
-      <Column field="kind" :header="t('documents.kindCol')" sortable style="width: 120px"><template #body="{ data }"><Tag :value="t(`documents.kind.${data.kind}`)" :severity="kindSeverity(data.kind)" /></template></Column>
-      <Column field="size" :header="t('files.size')" sortable style="width: 100px"><template #body="{ data }"><span class="small">{{ formatFileSize(data.size, getFormatLocale()) }}</span></template></Column>
-      <Column field="uploaded_by" :header="t('files.uploader')" sortable style="width: 200px">
+      <template v-for="c in docLayout.visible.value" :key="c.field">
+      <Column v-if="c.field === 'kind'" field="kind" column-key="kind" :header="c.header" sortable style="width: 120px"><template #body="{ data }"><Tag :value="t(`documents.kind.${data.kind}`)" :severity="kindSeverity(data.kind)" /></template></Column>
+      <Column v-else-if="c.field === 'size'" field="size" column-key="size" :header="c.header" sortable style="width: 100px"><template #body="{ data }"><span class="small">{{ formatFileSize(data.size, getFormatLocale()) }}</span></template></Column>
+      <Column v-else-if="c.field === 'uploaded_by'" field="uploaded_by" column-key="uploaded_by" :header="c.header" sortable style="width: 200px">
         <template #body="{ data }"><span class="row nowrap small" style="gap: 6px; min-width: 0"><UserAvatar :email="data.uploaded_by" :name="data.uploaded_by" :size="20" /><span class="ellipsis">{{ data.uploaded_by }}</span></span></template>
       </Column>
-      <Column field="created_at" :header="t('files.date')" sortable style="width: 150px"><template #body="{ data }"><span class="small" :title="formatFullDateTime(data.created_at)">{{ formatDateTime(data.created_at) }}</span></template></Column>
-      <Column :header="t('documents.linkedTo')" style="min-width: 160px">
+      <Column v-else-if="c.field === 'created_at'" field="created_at" column-key="created_at" :header="c.header" sortable style="width: 150px"><template #body="{ data }"><span class="small" :title="formatFullDateTime(data.created_at)">{{ formatDateTime(data.created_at) }}</span></template></Column>
+      <Column v-else-if="c.field === 'links'" column-key="links" :header="c.header" style="min-width: 160px">
         <template #body="{ data }">
           <div v-if="data.links?.length" class="row" style="gap: 4px">
             <template v-for="l in data.links" :key="l.entity_type + l.entity_id">
@@ -188,7 +222,8 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
           <span v-else class="small muted">—</span>
         </template>
       </Column>
-      <Column style="width: 150px">
+      </template>
+      <Column column-key="_actions" :reorderable-column="false" style="width: 150px">
         <template #body="{ data }">
           <div class="row nowrap" style="gap: 0">
             <Button v-if="previewKind(data) !== 'download'" icon="pi pi-eye" text rounded size="small" severity="secondary" :aria-label="t('files.previewNamed', { name: data.name })" v-tooltip="t('files.preview')" @click="open(data)" />

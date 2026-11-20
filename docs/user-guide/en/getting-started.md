@@ -33,7 +33,7 @@ The language buttons at the top of the sign-in page switch between English and S
 The dark bar on the left is the main navigation:
 
 - **Workspace:** **Projects** (all projects of the current organisation) and **Search** (search across projects).
-- **The open project:** once you open a project, its key and name appear with its sections: **Dashboard**, **Requirements**, **Tests**, **Operations** (test runs), **Traceability**, **Baselines**, **Categories & settings**, **Export** and, where available, **Documents** and **Reports**.
+- **The open project:** once you open a project, its key and name appear with its sections: **Dashboard**, **Requirements**, **Tests**, **Operations** (test runs), **Traceability**, **Dependency graph**, **Tags**, **Baselines**, **Categories & settings**, **Export** and, where available, **Documents** and **Reports**.
 - **Administration**, if your role allows it.
 
 Inside a project, the same sections are also shown as tabs at the top of the page, below the breadcrumb *Projects › project name*.

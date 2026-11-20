@@ -7,7 +7,8 @@ A **run** (test run, campaign) is a set of tests that you execute together, for 
 | View runs and results | Viewer |
 | Create, edit and delete runs, add tests | Tester |
 | Record results, import CI results | Tester |
-| Run automated scripts on the server | Manager |
+| Run automated scripts on the server | Test lead |
+| Change the [test execution settings](administration.md#test-execution-settings) | Test lead |
 
 ## The run list
 
@@ -82,7 +83,22 @@ The shortcuts work when the focus is not in a text field. Press <kbd>?</kbd> in 
 
 For an automated test the runner shows the **Script** and its **Output**. Select **Run script** to execute it on the server: the execution is set to *In progress*, the script runs, and the result is **Passed** for exit code 0 and **Failed** otherwise (or when it exceeds the time limit). The output and duration are stored.
 
-The button needs the **Manager** role. If the administrator has not enabled the script runner, the server answers that it is disabled; results then come from CI.
+The button needs the **Test lead** or **Manager** role (permission *script.execute*). If the administrator has not enabled the script runner, the server answers that it is disabled; results then come from CI.
+
+### Evidence
+
+Each step of a manual test has an **Evidence** section under *Actual result*: open it to record what proves the result. Write observations, values or links in the text field (for example *response time 120 ms, order 4711*), and add files such as screenshots or log extracts *(Tester)*. Files can be dropped onto the area or picked from the archive, like other [attachments](#attachments-on-runs-and-executions). The step's header shows how much evidence it has.
+
+Evidence is saved with the execution (select **Save**), stays with this run when the test changes later, and appears in the document archive as *Evidence of a test step*, linked to the step. Deleting the run deletes its evidence files.
+
+### When can a test be executed?
+
+Before a test is executed, Qtestframe checks that it is ready: the test has status **Ready**, the requirements it verifies are approved (or implemented or verified), and the tests it [depends on](tests.md#dependencies) have passed. What happens when a check fails is set in the [test execution settings](administration.md#test-execution-settings):
+
+- **blocked** (the default): the runner shows a red box with the reasons and links; **Pass**, **Fail** and **Run script** are disabled, and the server refuses such results. You can still mark the test **Blocked** or **Skipped**;
+- **allowed**: the reasons appear as an amber warning, and you can execute the test.
+
+The run page shows the same in its **Readiness** column, with a summary above the table, and the **New run** dialog marks picked tests that are not ready.
 
 ## Defects
 

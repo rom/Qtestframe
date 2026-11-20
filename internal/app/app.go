@@ -274,9 +274,6 @@ func cmdMemberAdd(args []string, env Env) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if !rbac.ValidRole(*role) {
-		return fmt.Errorf("invalid role %q", *role)
-	}
 	_, st, err := openStore(env.Ctx, *cfgPath)
 	if err != nil {
 		return err
@@ -285,6 +282,13 @@ func cmdMemberAdd(args []string, env Env) error {
 	t, err := st.GetTenantBySlug(env.Ctx, *tenant)
 	if err != nil {
 		return err
+	}
+	set, err := st.RoleSet(env.Ctx, t.ID)
+	if err != nil {
+		return err
+	}
+	if !set.Valid(*role) {
+		return fmt.Errorf("invalid role %q (roles: %s)", *role, strings.Join(set.Names(), ", "))
 	}
 	u, err := st.GetUserByEmail(env.Ctx, *email)
 	if err != nil {

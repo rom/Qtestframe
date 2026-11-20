@@ -263,7 +263,7 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 		if err != nil {
 			return err
 		}
-		if err := removeAttachments(ctx, c, "execution", execs); err != nil {
+		if err := removeExecutionAttachments(ctx, c, execs); err != nil {
 			return err
 		}
 		if err := removeAttachments(ctx, c, "run", []string{id}); err != nil {
@@ -339,13 +339,25 @@ func (s *Store) ListExecutions(ctx context.Context, tenantID, runID string) ([]m
 	return out, rows.Err()
 }
 
+// MaxEvidence bounds the evidence text of one step result.
+const MaxEvidence = 20000
+
+// StepResultExecution returns the execution a step result belongs to.
+func (s *Store) StepResultExecution(ctx context.Context, tenantID, stepResultID string) (string, error) {
+	var id string
+	err := s.c().row(ctx, `SELECT e.id FROM step_results sr JOIN test_executions e ON e.id = sr.execution_id WHERE sr.id = ? AND e.tenant_id = ?`, stepResultID, tenantID).Scan(&id)
+	return id, mapErr(err, "step result")
+}
+
 // GetExecution returns an execution with step results.
 func (s *Store) GetExecution(ctx context.Context, tenantID, id string) (*model.Execution, error) {
 	e, err := scanExecution(s.c().row(ctx, `SELECT `+execCols+` FROM test_executions e JOIN test_cases t ON t.id = e.test_case_id WHERE e.id = ? AND e.tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "execution")
 	}
-	rows, err := s.c().query(ctx, `SELECT id, step_id, position, action, expected, status, actual FROM step_results WHERE execution_id = ? ORDER BY position`, id)
+	rows, err := s.c().query(ctx, `SELECT sr.id, sr.step_id, sr.position, sr.action, sr.expected, sr.status, sr.actual, sr.evidence,
+		(SELECT COUNT(*) FROM attachments a WHERE a.entity_type = 'step' AND a.entity_id = sr.id)
+		FROM step_results sr WHERE sr.execution_id = ? ORDER BY sr.position`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +365,7 @@ func (s *Store) GetExecution(ctx context.Context, tenantID, id string) (*model.E
 	e.StepResults = []model.StepResult{}
 	for rows.Next() {
 		var sr model.StepResult
-		if err := rows.Scan(&sr.ID, &sr.StepID, &sr.Position, &sr.Action, &sr.Expected, &sr.Status, &sr.Actual); err != nil {
+		if err := rows.Scan(&sr.ID, &sr.StepID, &sr.Position, &sr.Action, &sr.Expected, &sr.Status, &sr.Actual, &sr.Evidence, &sr.AttachmentCount); err != nil {
 			return nil, err
 		}
 		e.StepResults = append(e.StepResults, sr)
@@ -421,7 +433,11 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 			}
 			e.StepResults[i].Status = sr.Status
 		}
+		if len(sr.Evidence) > MaxEvidence {
+			return nil, Invalidf("evidence of step %d is longer than %d characters", e.StepResults[i].Position+1, MaxEvidence)
+		}
 		e.StepResults[i].Actual = sr.Actual
+		e.StepResults[i].Evidence = sr.Evidence
 	}
 	status := e.Status
 	switch {
@@ -474,7 +490,7 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 			return err
 		}
 		for _, sr := range e.StepResults {
-			if _, err := c.exec(ctx, `UPDATE step_results SET status = ?, actual = ? WHERE id = ?`, sr.Status, sr.Actual, sr.ID); err != nil {
+			if _, err := c.exec(ctx, `UPDATE step_results SET status = ?, actual = ?, evidence = ? WHERE id = ?`, sr.Status, sr.Actual, sr.Evidence, sr.ID); err != nil {
 				return err
 			}
 		}

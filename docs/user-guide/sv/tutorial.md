@@ -63,8 +63,9 @@ Du kan dra mappar för att placera dem i varandra eller ändra ordningen. Välj 
 
 5. Låt **Kravnivå** stå på **Identifiera automatiskt från texten**: den identifierade nivån sparas när du skapar kravet. Du kan också välja en nivå själv; **Använd identifierad kravnivå** fyller i fältet med det analysen hittade.
 6. Sätt **Prioritet** till **Hög** och välj **Area / Core** under **Kategorier**.
+7. Sätt **Status** till **Godkänt**: i ett riktigt projekt gör du det när kravet har granskats. Som standard kan ett testfall bara exekveras när det är **Klart** och alla krav det verifierar är **Godkända**, **Implementerade** eller **Verifierade** (se [Inställningar för testexekvering](administration.md#inställningar-för-testexekvering)).
 
-> **Om språket:** analysen känner igen de engelska kravorden enligt RFC 2119. Skriv därför kravorden på engelska och med versaler, även i en svensk text: *Systemet MUST avbryta en kortbetalning …*. I det svenska gränssnittet förklaras nivåerna på svenska, till exempel *MUST (SKA)*.
+> **Om språket:** analysen förstår både svenska och engelska. Skriv du på svenska använder du de svenska kravorden: *Systemet SKA avbryta en kortbetalning …*; engelska kravord med versaler (MUST, SHALL …) fungerar också. Se [Språkanalysen](requirements.md#språkanalysen).
 
 Vilket kravord ska du använda?
 

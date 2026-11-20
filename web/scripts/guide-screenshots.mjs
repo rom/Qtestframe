@@ -175,6 +175,9 @@ class Api {
   patch(p, b) {
     return this.call('PATCH', p, b)
   }
+  put(p, b) {
+    return this.call('PUT', p, b)
+  }
   del(p) {
     return this.call('DELETE', p)
   }
@@ -834,6 +837,8 @@ async function main() {
       console.log(`\n[${lang}] preparing organisation ${D.tenant.slug} and project ${D.project.key}`)
       const t = await ensureTenant(api, me, D.tenant)
       me = t.me
+      // most tutorial requirements stay in review: allow their tests to run (the runner then shows a warning)
+      await api.put('/settings', { allow_unready_requirements: true }).catch(() => undefined)
       await api.patch('/auth/me', { preferences: { theme: 'light', language: lang, intro_done: true, date_format: 'iso', compact_tables: false } })
       const ids = await seedTutorial(api, D)
       me = await api.get('/auth/me')

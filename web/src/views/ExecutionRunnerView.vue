@@ -2,7 +2,8 @@
 import MentionInput from '@/components/MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import ReadinessBanner from '@/components/ReadinessBanner.vue'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
@@ -37,6 +38,7 @@ const proj = useProjectStore()
 const auth = useAuthStore()
 const meta = useMetaStore()
 const router = useRouter()
+const route = useRoute()
 const notify = useNotify()
 const { t } = useI18n()
 
@@ -48,6 +50,8 @@ interface StepState {
   data: string
   status: string
   actual: string
+  evidence: string
+  attachments: number
 }
 
 const run = ref<TestRun | null>(null)
@@ -66,12 +70,17 @@ const saving = ref(false)
 const running = ref(false)
 const snapshot = ref('')
 function stateKey() {
-  return JSON.stringify([notes.value, assignee.value, output.value, override.value, normalizeDefects(defects.value), steps.value.map((x) => [x.status, x.actual])])
+  return JSON.stringify([notes.value, assignee.value, output.value, override.value, normalizeDefects(defects.value), steps.value.map((x) => [x.status, x.actual, x.evidence])])
 }
 const dirty = computed(() => !!ex.value && stateKey() !== snapshot.value)
 const error = ref('')
 
 const canExecute = computed(() => auth.can(P.runExecute))
+/** the organisation settings forbid executing this test now (see ReadinessBanner) */
+const blocked = computed(() => !!ex.value?.readiness && !ex.value.readiness.allowed)
+/** results that count as executing the test (blocked/skipped/not run are always possible) */
+const EXECUTING = ['passed', 'failed', 'in_progress']
+const evidenceOpen = ref(false)
 const resultTab = ref('result')
 const attachmentCount = ref<number | null>(null)
 const rTabs = 'runner-tabs'
@@ -121,10 +130,15 @@ async function load() {
           data: r.data ?? ts?.data ?? '',
           status: r.status || 'not_run',
           actual: r.actual || '',
+          evidence: r.evidence || '',
+          attachments: r.attachment_count ?? 0,
         }
       })
     const firstOpen = steps.value.findIndex((s) => s.status === 'not_run' || !s.status)
-    current.value = firstOpen >= 0 ? firstOpen : 0
+    // ?step=<step result id> (links from the document archive) opens that step
+    const wanted = typeof route.query.step === 'string' ? steps.value.findIndex((s) => s.id === route.query.step) : -1
+    current.value = wanted >= 0 ? wanted : firstOpen >= 0 ? firstOpen : 0
+    evidenceOpen.value = wanted >= 0
     notes.value = e.notes || ''
     assignee.value = e.assignee || ''
     output.value = e.output || ''
@@ -148,6 +162,10 @@ watch(() => props.executionId, load, { immediate: true })
 function mark(status: string) {
   const s = steps.value[current.value]
   if (!s) return
+  if (blocked.value && EXECUTING.includes(status)) {
+    announce.value = t('readiness.blockedTitle')
+    return
+  }
   s.status = status
   announce.value = t('runner.marked', { n: current.value + 1, status: enumLabel('result', status) })
   if (current.value < steps.value.length - 1) current.value++
@@ -185,7 +203,7 @@ async function save(): Promise<boolean> {
   saving.value = true
   try {
     const body: Record<string, unknown> = { notes: notes.value, assignee: assignee.value, defects: normalizeDefects(defects.value) }
-    if (steps.value.length) body.step_results = steps.value.map((s) => ({ id: s.id, status: s.status, actual: s.actual }))
+    if (steps.value.length) body.step_results = steps.value.map((s) => ({ id: s.id, status: s.status, actual: s.actual, evidence: s.evidence }))
     if (override.value !== AUTO || !steps.value.length) body.status = effectiveStatus.value
     if (isAutomated.value) body.output = output.value
     const updated = await api.patch<Execution>(`/executions/${ex.value.id}`, body)
@@ -197,9 +215,21 @@ async function save(): Promise<boolean> {
     return true
   } catch (e) {
     notify.fail(e, t('runner.saveFailed'))
+    void refreshReadiness()
     return false
   } finally {
     saving.value = false
+  }
+}
+
+/** reload only the readiness (e.g. after the server refused a result) */
+async function refreshReadiness() {
+  if (!ex.value) return
+  try {
+    const e = await api.get<Execution>(`/executions/${ex.value.id}`)
+    if (ex.value && e) ex.value = { ...ex.value, readiness: e.readiness }
+  } catch {
+    /* keep the old state */
   }
 }
 
@@ -247,7 +277,8 @@ const statusOptions = computed(() => [
     label: steps.value.length ? t('runner.derived', { status: enumLabel('result', derived.value) }) : t('runner.unchanged', { status: enumLabel('result', ex.value?.status || 'not_run') }),
     value: AUTO,
   },
-  ...enumOptions('result', meta.meta.result_statuses),
+  // the saved result stays selectable (saving notes is not a new execution)
+  ...enumOptions('result', meta.meta.result_statuses).map((o) => ({ ...o, disabled: blocked.value && EXECUTING.includes(o.value) && o.value !== ex.value?.status })),
 ])
 </script>
 
@@ -280,6 +311,7 @@ const statusOptions = computed(() => [
   <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
   <div v-else-if="loading || !ex" class="empty"><ProgressSpinner style="width: 36px; height: 36px" :aria-label="t('common.loading')" /></div>
   <template v-else>
+    <ReadinessBanner :readiness="ex.readiness" :project-id="proj.pid" style="margin-bottom: 16px" />
     <div v-if="test?.preconditions || test?.description" class="card" style="margin-bottom: 16px">
       <div v-if="test?.description" style="white-space: pre-wrap">{{ test.description }}</div>
       <div v-if="test?.preconditions" style="margin-top: 8px">
@@ -298,7 +330,7 @@ const statusOptions = computed(() => [
             :label="t('runner.runScript')"
             icon="pi pi-play"
             :loading="running"
-            :disabled="!test?.script"
+            :disabled="!test?.script || blocked"
             @click="runScript"
           />
           <span v-else class="small muted">{{ t('runner.needsPermission') }}</span>
@@ -351,6 +383,40 @@ const statusOptions = computed(() => [
             <label>{{ t('runner.actual') }}</label>
             <Textarea v-model="steps[current].actual" rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.actualPlaceholder')" />
           </div>
+          <section class="evidence" :aria-labelledby="`evidence-${steps[current].id}`">
+            <button
+              :id="`evidence-${steps[current].id}`"
+              type="button"
+              class="evidence-toggle"
+              :aria-expanded="evidenceOpen"
+              :aria-controls="`evidence-body-${steps[current].id}`"
+              @click="evidenceOpen = !evidenceOpen"
+            >
+              <i :class="evidenceOpen ? 'pi pi-chevron-down' : 'pi pi-chevron-right'" aria-hidden="true" />
+              <i class="pi pi-camera" aria-hidden="true" />
+              <b>{{ t('evidence.title') }}</b>
+              <span v-if="steps[current].evidence || steps[current].attachments" class="count">{{ t('evidence.summary', { files: steps[current].attachments }) }}</span>
+            </button>
+            <HelpTip id="runner.evidence" :label="t('evidence.title')" />
+            <div v-show="evidenceOpen" :id="`evidence-body-${steps[current].id}`" class="grid" style="gap: 8px; margin-top: 8px">
+              <div v-field class="field">
+                <label>{{ t('evidence.text') }}</label>
+                <Textarea v-model="steps[current].evidence" rows="2" auto-resize :maxlength="20000" :disabled="!canExecute" :placeholder="t('evidence.placeholder')" />
+              </div>
+              <div>
+                <span class="field-label">{{ t('evidence.files') }}</span>
+                <AttachmentsPanel
+                  v-if="evidenceOpen"
+                  :key="steps[current].id"
+                  type="step"
+                  :entity-id="steps[current].id"
+                  :project-id="proj.pid"
+                  :can-write="canExecute"
+                  @count="(n) => steps[current] && (steps[current].attachments = n)"
+                />
+              </div>
+            </div>
+          </section>
           <div v-if="canExecute" class="runner-bar" role="toolbar" :aria-label="t('runner.markStep', { n: current + 1 })">
             <div class="runner-marks">
               <Button
@@ -363,6 +429,7 @@ const statusOptions = computed(() => [
                 :aria-pressed="steps[current].status === b.status"
                 :aria-keyshortcuts="b.key"
                 :aria-label="`${b.label} (${b.key})`"
+                :disabled="blocked && EXECUTING.includes(b.status)"
                 class="runner-mark"
                 v-tooltip.bottom="t('runner.shortcut', { key: b.key })"
                 @click="mark(b.status)"
@@ -418,7 +485,7 @@ const statusOptions = computed(() => [
         <div v-field class="field">
           <label>{{ t('runner.overallStatus') }}</label>
           <HelpTip id="runner.status" :label="t('runner.overallStatus')" />
-          <Select v-model="override" :options="statusOptions" option-label="label" option-value="value" :disabled="!canExecute" />
+          <Select v-model="override" :options="statusOptions" option-label="label" option-value="value" option-disabled="disabled" :disabled="!canExecute" />
           <span class="small" aria-live="polite">{{ t('runner.savedAs') }} <StatusTag :value="effectiveStatus" kind="result" /></span>
         </div>
         <div v-field class="field">
@@ -449,3 +516,26 @@ const statusOptions = computed(() => [
     </div>
   </template>
 </template>
+
+<style>
+.evidence {
+  border: 1px dashed var(--qtf-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.evidence-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.evidence-toggle:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+</style>

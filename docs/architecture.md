@@ -89,7 +89,8 @@ pair.
 | `internal/db` | Opens SQLite (single connection, WAL, foreign keys, busy timeout) or PostgreSQL; `?` → `$n` placeholder rebinding; embedded, dialect-templated migrations (`migrations/*.sql`). |
 | `internal/store` | Persistence of every entity; all tenant-owned lookups filter by `tenant_id`; key allocation, folder trees, moves across projects, category remapping, bulk updates, run/execution bookkeeping, last results and coverage computation. |
 | `internal/model` | Domain types shared by store, API and export; JSON tags define the REST contract; enumerations (statuses, obligation levels, evaluation methods, ...). |
-| `internal/rbac` | Fixed roles (`admin`, `manager`, `tester`, `viewer`), permission matrix, role ranking. |
+| `internal/rbac` | Permissions, built-in roles (`admin`, `manager`, `test_lead`, `tester`, `viewer`) with defaults, and `Set`: a tenant's roles after its changes and custom roles (ADR 0014). |
+| `internal/mention`, `internal/tagsuggest` | @mention handles and the people directory; tag suggestions from title and description. |
 | `internal/query` | Lexer, parser and evaluator of the filter/search language; matched-field and term extraction for highlighting. |
 | `internal/reqlang` | RFC 2119 / RFC 8174 keyword detection, obligation level, requirement lint rules and score. |
 | `internal/export` | Format-neutral `Dataset` rendered as CSV (ZIP for several sections), XLSX (`excelize`), PDF (`go-pdf/fpdf`) and DOCX (hand-written OOXML). |

@@ -25,6 +25,7 @@ import { useI18n } from 'vue-i18n'
 import { chooseLocal, currentLang, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
 import { enumLabel } from '@/i18n/labels'
 import type { Tenant } from '@/lib/types'
+import { useRolesStore } from '@/stores/roles'
 
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -58,6 +59,14 @@ onMounted(async () => {
     }
   }
 })
+
+// roles of the organisation: custom role labels everywhere, role selects
+const rolesStore = useRolesStore()
+watch(
+  () => auth.tenant?.id,
+  () => void rolesStore.ensure(true),
+  { immediate: true },
+)
 
 watch(
   () => route.fullPath,
@@ -136,6 +145,8 @@ const projectNav = computed(() => [
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
+  { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
+  { to: 'tags', icon: 'pi pi-hashtag', label: t('nav.tags') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
   { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },
   { to: 'reports', icon: 'pi pi-file-pdf', label: t('nav.reports') },
@@ -152,7 +163,7 @@ const tenantItems = computed(() =>
   })),
 )
 
-const showAdmin = computed(() => auth.can(P.memberRead) || auth.can(P.tokenManage) || auth.can(P.auditRead) || auth.isSuperAdmin)
+const showAdmin = computed(() => auth.can(P.memberRead) || auth.can(P.tokenManage) || auth.can(P.auditRead) || auth.can(P.settingsManage) || auth.isSuperAdmin)
 
 const userItems = computed(() => [
   { label: auth.user?.email ?? '', disabled: true, icon: 'pi pi-user' },

@@ -625,7 +625,7 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 		if err != nil {
 			return err
 		}
-		if err := removeAttachments(ctx, c, "execution", execs); err != nil {
+		if err := removeExecutionAttachments(ctx, c, execs); err != nil {
 			return err
 		}
 	}

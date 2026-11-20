@@ -42,14 +42,26 @@ describe('can', () => {
 
 describe('roles', () => {
   it('ranks roles', () => {
-    expect(roleRank('admin')).toBe(4)
+    expect(roleRank('admin')).toBe(5)
+    expect(roleRank('test_lead')).toBe(3)
     expect(roleRank('viewer')).toBe(1)
     expect(roleRank('nobody')).toBe(0)
   })
   it('grantable roles never exceed own role', () => {
     expect(grantableRoles('tester')).toEqual(['tester', 'viewer'])
-    expect(grantableRoles('viewer', true)).toEqual(['admin', 'manager', 'tester', 'viewer'])
+    expect(grantableRoles('viewer', true)).toEqual(['admin', 'manager', 'test_lead', 'tester', 'viewer'])
     expect(grantableRoles('')).toEqual([])
+  })
+  it('lists roles within the own permissions', async () => {
+    const { rolesWithin } = await import('./permissions')
+    const roles = [
+      { name: 'viewer', permissions: ['project.read'] },
+      { name: 'auditor', permissions: ['project.read', 'audit.read'] },
+      { name: 'empty', permissions: null },
+    ]
+    expect(rolesWithin(roles, ['project.read'])).toEqual(['viewer', 'empty'])
+    expect(rolesWithin(roles, ['project.read', 'audit.read'])).toEqual(['viewer', 'auditor', 'empty'])
+    expect(rolesWithin(roles, [], true)).toEqual(['viewer', 'auditor', 'empty'])
   })
 })
 

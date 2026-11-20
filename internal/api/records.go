@@ -24,9 +24,11 @@ var (
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
-			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention"},
+			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
+			"depends_on"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
-			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention"},
+			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
+			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on"},
 	}
 	runSchema = &query.Schema{
 		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
@@ -58,6 +60,9 @@ type projectContext struct {
 	refs map[string][]model.ItemRef
 	// test id → tests whose steps call it (set by filterTests)
 	calledBy map[string][]model.ItemRef
+	// test dependencies of the project; test id → keys of its prerequisites
+	deps       []model.TestDependency
+	prereqKeys map[string][]string
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -94,8 +99,8 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 	pc.related, pc.parents, pc.children = map[string][]string{}, map[string][]string{}, map[string][]string{}
 	pc.refs = map[string][]model.ItemRef{}
 	for _, r := range rels {
-		pc.refs[r.SourceID] = append(pc.refs[r.SourceID], model.ItemRef{Type: r.Type, Direction: "outgoing", ID: r.TargetID, Key: r.TargetKey, Title: r.TargetTitle})
-		pc.refs[r.TargetID] = append(pc.refs[r.TargetID], model.ItemRef{Type: r.Type, Direction: "incoming", ID: r.SourceID, Key: r.SourceKey, Title: r.SourceTitle})
+		pc.refs[r.SourceID] = append(pc.refs[r.SourceID], model.ItemRef{Type: r.Type, Direction: "outgoing", Kind: model.KindRequirement, ID: r.TargetID, Key: r.TargetKey, Title: r.TargetTitle})
+		pc.refs[r.TargetID] = append(pc.refs[r.TargetID], model.ItemRef{Type: r.Type, Direction: "incoming", Kind: model.KindRequirement, ID: r.SourceID, Key: r.SourceKey, Title: r.SourceTitle})
 		pc.related[r.SourceID] = append(pc.related[r.SourceID], r.TargetKey)
 		pc.related[r.TargetID] = append(pc.related[r.TargetID], r.SourceKey)
 		if r.Type == "refines" {
@@ -104,8 +109,17 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 		}
 	}
 	for _, l := range pc.links {
-		pc.refs[l.TestCaseID] = append(pc.refs[l.TestCaseID], model.ItemRef{Type: "verifies", Direction: "outgoing", ID: l.RequirementID, Key: l.RequirementKey})
-		pc.refs[l.RequirementID] = append(pc.refs[l.RequirementID], model.ItemRef{Type: "verifies", Direction: "incoming", ID: l.TestCaseID, Key: l.TestCaseKey})
+		pc.refs[l.TestCaseID] = append(pc.refs[l.TestCaseID], model.ItemRef{Type: "verifies", Direction: "outgoing", Kind: model.KindRequirement, ID: l.RequirementID, Key: l.RequirementKey})
+		pc.refs[l.RequirementID] = append(pc.refs[l.RequirementID], model.ItemRef{Type: "verifies", Direction: "incoming", Kind: model.KindTest, ID: l.TestCaseID, Key: l.TestCaseKey})
+	}
+	if pc.deps, err = s.Store.ListTestDependencies(ctx, tenantID, p.ID, ""); err != nil {
+		return nil, err
+	}
+	pc.prereqKeys = map[string][]string{}
+	for _, d := range pc.deps {
+		pc.refs[d.TestID] = append(pc.refs[d.TestID], model.ItemRef{Type: "depends_on", Direction: "outgoing", Kind: model.KindTest, ID: d.DependsOnID, Key: d.DependsOnKey, Title: d.DependsOnTitle})
+		pc.refs[d.DependsOnID] = append(pc.refs[d.DependsOnID], model.ItemRef{Type: "depends_on", Direction: "incoming", Kind: model.KindTest, ID: d.TestID, Key: d.TestKey, Title: d.TestTitle})
+		pc.prereqKeys[d.TestID] = append(pc.prereqKeys[d.TestID], d.DependsOnKey)
 	}
 	return pc, nil
 }
@@ -120,7 +134,7 @@ func (pc *projectContext) indexCalls(tests []model.TestCase) {
 				continue
 			}
 			seen[*st.CallTestID] = true
-			pc.calledBy[*st.CallTestID] = append(pc.calledBy[*st.CallTestID], model.ItemRef{Type: "calls", Direction: "incoming", ID: t.ID, Key: t.Key, Title: t.Title})
+			pc.calledBy[*st.CallTestID] = append(pc.calledBy[*st.CallTestID], model.ItemRef{Type: "calls", Direction: "incoming", Kind: model.KindTest, ID: t.ID, Key: t.Key, Title: t.Title})
 		}
 	}
 }
@@ -168,13 +182,13 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	for _, st := range t.Steps {
 		if st.CallTestID != nil && !seen[*st.CallTestID] {
 			seen[*st.CallTestID] = true
-			refs = append(refs, model.ItemRef{Type: "calls", Direction: "outgoing", ID: *st.CallTestID, Key: st.CallTestKey, Title: st.CallTestTitle})
+			refs = append(refs, model.ItemRef{Type: "calls", Direction: "outgoing", Kind: model.KindTest, ID: *st.CallTestID, Key: st.CallTestKey, Title: st.CallTestTitle})
 		}
 	}
 	refs = append(refs, pc.calledBy[t.ID]...)
 	for _, c := range t.CalledBy {
 		if pc.calledBy == nil {
-			refs = append(refs, model.ItemRef{Type: "calls", Direction: "incoming", ID: c.ID, Key: c.Key, Title: c.Title})
+			refs = append(refs, model.ItemRef{Type: "calls", Direction: "incoming", Kind: model.KindTest, ID: c.ID, Key: c.Key, Title: c.Title})
 		}
 	}
 	if len(refs) > 0 {
@@ -241,7 +255,8 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
 		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)},
-		"mention": mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
+		"mention":    mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
+		"depends_on": pc.prereqKeys[t.ID],
 	}
 }
 

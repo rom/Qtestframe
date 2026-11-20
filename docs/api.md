@@ -81,12 +81,35 @@ is unreachable); all other paths serve the web client.
 | POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?}` – creates the local user if it does not exist |
 | PATCH | `/members/{user_id}` | member.manage | `{"role"}`; the last admin cannot be demoted (409) |
 | DELETE | `/members/{user_id}` | member.manage | the last admin cannot be removed (409) |
-| GET | `/rbac` | any | `{"roles":[...],"matrix":{role:[perm]}}` |
+| GET | `/rbac` | any | `{"roles":[...],"matrix":{role:[perm]},"permissions":[...]}` – the effective matrix of the current tenant |
+| GET | `/roles` | any member | `{"items":[Role],"permissions":[...]}`; Role = `{name, label?, description?, permissions, builtin, customized?, editable, deletable, members, tokens}` |
+| POST | `/roles` | role.manage | `{"name","label","description"?,"permissions":[...]}` → 201 Role; `name` is 2–32 of `a-z0-9_` starting with a letter; 409 when it exists |
+| PUT | `/roles/{name}` | role.manage | `{"label"?,"description"?,"permissions"?}`; `admin` cannot be changed (400) |
+| POST | `/roles/{name}/reset` | role.manage | built-in roles only: back to the default permissions → 204 |
+| DELETE | `/roles/{name}` | role.manage | custom roles only; 409 while members or API tokens use it |
+| GET | `/settings` | any member | `TenantSettings` (below) |
+| PUT | `/settings` | settings.manage | `TenantSettings` → the stored settings |
 | GET | `/tokens` | token.manage | own tokens in tenant |
-| POST | `/tokens` | token.manage | `{"name","role","expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; role defaults to and cannot exceed own role; a token cannot create tokens) |
+| POST | `/tokens` | token.manage | `{"name","role","expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; role defaults to the own role, and its permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its role's and the user's current role's permissions) |
 | DELETE | `/tokens/{id}` | token.manage | |
 | GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user |
 | GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"` and `"version"` |
+
+Roles: nobody can grant a permission they do not hold (403 when a role
+change or new role adds one). Role changes are audited (`role.create`,
+`role.update`, `role.reset`, `role.delete`).
+
+`TenantSettings` (the test execution policy; every `false` is the strict
+default):
+
+```json
+{
+  "allow_unready_tests": false,
+  "allow_unready_requirements": false,
+  "ready_requirement_statuses": ["approved", "implemented", "verified"],
+  "allow_unmet_dependencies": false
+}
+```
 
 ## Projects
 
@@ -186,6 +209,18 @@ Reading needs `test.read`, writing `test.write`.
 | POST | `/projects/{pid}/tests/bulk` | like requirements (`status`, `priority`, `execution_type`, categories) |
 | DELETE | `/projects/{pid}/tests/bulk` | |
 | GET | `/tests/{id}/links` | `[TraceLink]` |
+| GET | `/tests/{id}/dependencies` | `[TestDependency]` both directions: `direction` = `outgoing` (this test depends on the other) or `incoming`; `other_last_result` is the latest result of the other test |
+| POST | `/tests/{id}/dependencies` | `{"depends_on_id"}` → 201 TestDependency; same project only; self-dependencies and cycles → 400, duplicates → 409 |
+| DELETE | `/test-dependencies/{id}` | |
+| GET | `/projects/{pid}/test-dependencies` | all dependencies of the project |
+| GET | `/projects/{pid}/readiness?test_ids=a,b` | `{"tests":{test_id: Readiness},"settings":TenantSettings}` – whether tests may be executed (all tests when `test_ids` is omitted) |
+
+`TestDependency`: `{id, project_id, test_id, depends_on_id, created_by,
+created_at, test_key, test_title, depends_on_key, depends_on_title}`.
+Test lists also carry `step_count` and `defects`; `relations` includes
+`depends_on` references (with `kind: "test"`). Query field `depends_on`
+(aliases `depends`, `dependency`, `prerequisite`) holds the keys of a
+test's prerequisites.
 
 ## Traceability
 
@@ -212,12 +247,45 @@ import) `run.execute`.
 | GET | `/runs/{id}` | `TestRun` |
 | PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}` |
 | DELETE | `/runs/{id}` | |
-| GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) |
+| GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness` |
 | POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` |
-| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"]}` |
-| GET | `/executions/{id}` | `Execution` with `step_results` and embedded `test` (TestCase incl. steps & script) |
-| PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual"}]}` – status derived from steps when omitted and steps given |
-| POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled) → execution with embedded `test` |
+| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness"}]}`; results of tests that may not be executed (see below) are not recorded |
+| GET | `/executions/{id}` | `Execution` with `step_results`, `readiness` and embedded `test` (TestCase incl. steps & script) |
+| PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}]}` – status derived from steps when omitted and steps given; 409 `not_ready` when the update records an execution that the settings forbid |
+| POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test` |
+
+**Readiness.** Before a result is recorded the server checks the test:
+status `ready`; every linked requirement in one of
+`ready_requirement_statuses`; every prerequisite (`/tests/{id}/dependencies`)
+`passed` – its execution in the same run when it is part of the run,
+otherwise its latest result. Each failed check is an issue; it is
+`blocking` unless the matching `allow_*` setting is on.
+
+```json
+"readiness": {"ready": false, "allowed": false, "issues": [
+  {"kind": "test_status", "id": "…", "key": "SHOP-TC-4", "title": "…", "status": "draft", "blocking": true},
+  {"kind": "requirement_status", "id": "…", "key": "SHOP-REQ-2", "title": "…", "status": "review", "blocking": true},
+  {"kind": "dependency", "id": "…", "key": "SHOP-TC-1", "title": "…", "status": "failed", "blocking": true}
+]}
+```
+
+Setting `status` (or a step status) to `in_progress`, `passed` or `failed`
+records an execution and needs `allowed`; `not_run`, `blocked`, `skipped`,
+assignee, notes and defects are always possible. A refusal is
+`409 {"code":"not_ready","error":"…","readiness":{…}}`.
+
+**Step evidence.** Step results carry `evidence` (text, at most 20 000
+characters) and `attachment_count`; files are attachments of the step
+result: `/step-results/{id}/attachments` (below). They appear in the
+document archive with link `entity_type: "step"`, `run_id` and
+`execution_id`, and are deleted with the run or the test.
+
+## Dependency graph and tags
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/graph?kind=requirement\|test` | project.read and requirement.read / test.read | `{"kind","nodes":[{id,key,title,status,result,folder}],"edges":[{id,source,target,type}]}`; `result` is the coverage of a requirement or the last result of a test. Requirement edges are relations; test edges are `depends_on` (test → prerequisite) and `calls` (shared steps) |
+| GET | `/projects/{pid}/tags` | project.read | `[{tag, requirements, tests, documents, total}]`, most used first |
 
 ## Profile and sessions
 
@@ -391,8 +459,8 @@ with `kind` = `attachment` | `document` | `report` | `avatar` | `icon`.
 | GET | `/files/{id}/content[?inline=1]` | same | download; `inline=1` only for images (png, jpeg, gif, webp), PDF and plain text, otherwise `attachment`. Always `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox` |
 | PATCH | `/files/{id}` | uploader, or `project.update` | `{name?, description?, tags?}` |
 | DELETE | `/files/{id}` | uploader, or `project.update` | removes the file and all its links |
-| GET | `/{requirements\|tests\|runs\|executions}/{id}/attachments` | read permission of the item | `[File]` |
-| POST | same | `requirement.write` / `test.write` / `run.execute` (runs and executions) | multipart upload → File (`kind: attachment`) |
+| GET | `/{requirements\|tests\|runs\|executions\|step-results}/{id}/attachments` | read permission of the item | `[File]`; `step-results` are the evidence files of an executed step |
+| POST | same | `requirement.write` / `test.write` / `run.execute` (runs, executions and step results) | multipart upload → File (`kind: attachment`) |
 | POST | `/{type}/{id}/attachments/link` | same | `{file_id}` attach an existing file of the same project |
 | DELETE | `/{type}/{id}/attachments/{file_id}` | same | unlink; an `attachment` file without remaining links is deleted |
 | GET | `/projects/{pid}/documents?q=&kind=` | project.read | document archive: every file of the project (attachments, documents, reports) |

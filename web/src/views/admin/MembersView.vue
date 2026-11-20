@@ -19,6 +19,7 @@ import { formatDate } from '@/lib/format'
 import { P } from '@/lib/permissions'
 import type { Membership } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
+import { useRolesStore } from '@/stores/roles'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
@@ -35,7 +36,8 @@ const rbac = ref<{ roles: string[] } | null>(null)
 const loading = ref(false)
 const filter = ref('')
 const canManage = computed(() => auth.can(P.memberManage))
-const roles = computed(() => enumOptions('role', rbac.value?.roles ?? meta.meta.roles))
+const rolesStore = useRolesStore()
+const roles = computed(() => enumOptions('role', rolesStore.roles.length ? rolesStore.roles.map((r) => r.name) : (rbac.value?.roles ?? meta.meta.roles)))
 const filtered = computed(() => {
   const f = filter.value.trim().toLowerCase()
   return f ? members.value.filter((m) => `${m.email} ${m.display_name} ${m.role}`.toLowerCase().includes(f)) : members.value
@@ -53,6 +55,7 @@ async function load() {
 }
 onMounted(async () => {
   load()
+  void rolesStore.ensure()
   try {
     rbac.value = await api.get<{ roles: string[] }>('/rbac')
   } catch {

@@ -37,6 +37,8 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { rememberFocus } from '@/lib/a11y'
 import RelationsCell from './RelationsCell.vue'
+import ColumnsMenu from './ColumnsMenu.vue'
+import { useColumnLayout } from '@/composables/columns'
 import MentionText from './MentionText.vue'
 import HelpLink from '@/guide/HelpLink.vue'
 const prefs = usePrefsStore()
@@ -192,20 +194,10 @@ const defaultCols = computed(() =>
     ? ['obligation', 'status', 'priority', 'coverage', 'linked_tests', 'category_ids']
     : ['execution_type', 'status', 'priority', 'last_result', 'linked_requirements', 'category_ids'],
 )
-const colKey = computed(() => `qtf.cols.${props.kind}`)
-const visibleFields = ref<string[]>(loadCols())
-function loadCols(): string[] {
-  try {
-    const v = JSON.parse(readPref(`qtf.cols.${props.kind}`) || 'null')
-    // the old count-only "Relations" column became the list of relations
-    if (Array.isArray(v)) return v.map((f) => (f === 'relation_count' ? 'relations' : f))
-  } catch {
-    /* ignore */
-  }
-  return defaultCols.value
-}
-watch(visibleFields, (v) => writePref(colKey.value, JSON.stringify(v)))
-const visibleColumns = computed(() => allColumns.value.filter((c) => visibleFields.value.includes(c.field)))
+// visible optional columns in their order (Columns menu, or drag a header);
+// the old count-only "Relations" column became the list of relations
+const layout = useColumnLayout(() => `qtf.cols.${props.kind}`, allColumns, () => defaultCols.value, { relation_count: 'relations' })
+const visibleColumns = layout.visible
 
 // ---------- drag rows to folders ----------
 function onRowDrag(e: DragEvent, row: Item) {
@@ -364,16 +356,12 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           <span v-if="selectedFolder" class="row small nowrap">
             <ToggleSwitch v-model="recursive" input-id="rec" /><label for="rec">{{ t('workspace.includeSubfolders') }}</label>
           </span>
-          <MultiSelect
-            v-model="visibleFields"
-            :options="allColumns"
-            option-label="header"
-            option-value="field"
-            :placeholder="t('common.columns')"
-            :max-selected-labels="0"
-            :selected-items-label="t('common.columns')"
-            style="min-width: 130px"
-            :aria-label="t('common.columns')"
+          <ColumnsMenu
+            :columns="allColumns"
+            :order="layout.order.value"
+            @toggle="(id, on) => layout.toggle(id, on)"
+            @move="(id, d) => layout.move(id, d)"
+            @reset="layout.reset()"
           />
           <Button icon="pi pi-refresh" severity="secondary" text rounded :aria-label="t('common.refresh')" v-tooltip="t('common.refresh')" @click="load" />
           <Button v-if="canWrite" :label="isReq ? t('workspace.newRequirement') : t('workspace.newTest')" icon="pi pi-plus" @click="openEditor(null)" />
@@ -447,8 +435,11 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       </div>
 
       <DataTable
+        :ref="layout.bind"
         v-model:selection="selection"
         v-stack
+        reorderable-columns
+        @column-reorder="layout.onReorder()"
         :value="items"
         data-key="id"
         :loading="loading"
@@ -467,21 +458,21 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         :current-page-report-template="pageReport"
         @row-click="(e) => openEditor((e.data as Item).id)"
       >
-        <Column selection-mode="multiple" style="width: 2.6rem" />
-        <Column v-if="canWrite" style="width: 2rem">
+        <Column selection-mode="multiple" column-key="_select" :reorderable-column="false" style="width: 2.6rem" />
+        <Column v-if="canWrite" column-key="_drag" :reorderable-column="false" style="width: 2rem">
           <template #body="{ data }">
             <i class="pi pi-bars drag-handle" draggable="true" aria-hidden="true" :title="t('workspace.dragToFolder')" @dragstart="onRowDrag($event, data as Item)" @click.stop />
           </template>
         </Column>
-        <Column field="key" :header="t('workspace.colKey')" sortable style="width: 130px">
+        <Column field="key" :header="t('workspace.colKey')" :reorderable-column="false" sortable style="width: 130px">
           <template #body="{ data }"><span class="key">{{ data.key }}</span></template>
         </Column>
-        <Column field="title" :header="t('workspace.colTitle')" sortable style="min-width: 240px" body-class="stack-main">
+        <Column field="title" :header="t('workspace.colTitle')" :reorderable-column="false" sortable style="min-width: 240px" body-class="stack-main">
           <template #body="{ data }">
             <button type="button" class="link-button item-title" :aria-label="t('workspace.openItem', { key: data.key, title: data.title })" @click.stop="openEditor((data as Item).id)">{{ data.title }}</button>
           </template>
         </Column>
-        <Column v-for="c in visibleColumns" :key="c.field" :field="c.field" :sort-field="c.sortField ?? c.field" :header="c.header" :sortable="c.sortable !== false" :style="c.width ? { width: c.width } : {}">
+        <Column v-for="c in visibleColumns" :key="c.field" :column-key="c.field" :field="c.field" :sort-field="c.sortField ?? c.field" :header="c.header" :sortable="c.sortable !== false" :style="c.width ? { width: c.width } : {}">
           <template #body="{ data }">
             <StatusTag v-if="c.field === 'obligation'" :value="data.obligation" kind="obligation" />
             <StatusTag v-else-if="c.field === 'status'" :value="data.status" />

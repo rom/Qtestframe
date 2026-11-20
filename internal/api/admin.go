@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"github.com/rom/qtestframe/internal/export"
 	"net/http"
@@ -17,6 +18,12 @@ import (
 )
 
 func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal) {
+	roles := rbac.Roles
+	if p.Tenant != nil {
+		if set, err := s.Store.RoleSet(r.Context(), p.TenantID()); err == nil {
+			roles = set.Names()
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"obligations":          model.Obligations,
 		"requirement_statuses": model.RequirementStatuses,
@@ -27,7 +34,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"evaluation_methods":   model.EvaluationMethods,
 		"run_statuses":         model.RunStatuses,
 		"result_statuses":      model.ResultStatuses,
-		"roles":                rbac.Roles,
+		"roles":                roles,
 		"runner_enabled":       s.Runner.Enabled(),
 		"auto_create_test":     s.Cfg.Requirements.AutoCreateTest,
 		"max_upload_mb":        s.Cfg.Files.MaxUploadMB,
@@ -39,7 +46,33 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 }
 
 func (s *Server) handleRBAC(w http.ResponseWriter, r *http.Request, p *Principal) {
-	writeJSON(w, http.StatusOK, map[string]any{"roles": rbac.Roles, "matrix": rbac.Matrix()})
+	if p.Tenant == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"roles": rbac.Roles, "matrix": rbac.Matrix(), "permissions": rbac.AllPermissionList})
+		return
+	}
+	set, err := s.Store.RoleSet(r.Context(), p.TenantID())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"roles": set.Names(), "matrix": set.Matrix(), "permissions": rbac.AllPermissionList})
+}
+
+// validRole reports whether role exists in the tenant.
+func (s *Server) validRole(ctx context.Context, tenantID, role string) (bool, error) {
+	set, err := s.Store.RoleSet(ctx, tenantID)
+	if err != nil {
+		return false, err
+	}
+	return set.Valid(role), nil
+}
+
+// errOr returns err when set, else fallback.
+func errOr(err, fallback error) error {
+	if err != nil {
+		return err
+	}
+	return fallback
 }
 
 func requireSuper(w http.ResponseWriter, p *Principal) bool {
@@ -255,8 +288,8 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
-	if !rbac.ValidRole(req.Role) {
-		s.fail(w, r, badRequest("invalid role %q", req.Role))
+	if ok, err := s.validRole(r.Context(), p.TenantID(), req.Role); err != nil || !ok {
+		s.fail(w, r, errOr(err, badRequest("invalid role %q", req.Role)))
 		return
 	}
 	ctx := r.Context()
@@ -316,8 +349,8 @@ func (s *Server) handleUpdateMember(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
-	if !rbac.ValidRole(req.Role) {
-		s.fail(w, r, badRequest("invalid role %q", req.Role))
+	if ok, err := s.validRole(r.Context(), p.TenantID(), req.Role); err != nil || !ok {
+		s.fail(w, r, errOr(err, badRequest("invalid role %q", req.Role)))
 		return
 	}
 	uid := r.PathValue("uid")
@@ -382,8 +415,13 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request, p *Pr
 	if req.Role == "" {
 		req.Role = p.Role
 	}
-	if !rbac.ValidRole(req.Role) || rbac.Rank(req.Role) > rbac.Rank(p.Role) {
-		s.fail(w, r, badRequest("role must be valid and not exceed your own role"))
+	set, err := s.Store.RoleSet(r.Context(), p.TenantID())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if !set.Valid(req.Role) || !rbac.Subset(set.PermissionsOf(req.Role), p.Permissions()) {
+		s.fail(w, r, badRequest("role must be valid and not exceed your own permissions"))
 		return
 	}
 	tok, prefix := auth.NewAPIToken()

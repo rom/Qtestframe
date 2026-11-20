@@ -5,6 +5,8 @@ export const P = {
   tenantManage: 'tenant.manage',
   memberRead: 'member.read',
   memberManage: 'member.manage',
+  roleManage: 'role.manage',
+  settingsManage: 'settings.manage',
   projectRead: 'project.read',
   projectCreate: 'project.create',
   projectUpdate: 'project.update',
@@ -25,7 +27,7 @@ export const P = {
 export type Permission = (typeof P)[keyof typeof P]
 
 /** Roles from most to least privileged (rbac.Roles). */
-export const ROLES = ['admin', 'manager', 'tester', 'viewer'] as const
+export const ROLES = ['admin', 'manager', 'test_lead', 'tester', 'viewer'] as const
 
 /**
  * Whether the current user holds a permission. Super admins hold every
@@ -50,7 +52,17 @@ export function roleRank(role: string): number {
   return i < 0 ? 0 : ROLES.length - i
 }
 
-/** Roles that may be granted by someone holding `role` (e.g. for API tokens). */
+/**
+ * Roles whose permissions are all held by the caller (who may then give
+ * them to an API token). `roles` are the organisation's roles with their
+ * permissions; super admins may grant any role.
+ */
+export function rolesWithin(roles: readonly { name: string; permissions: readonly string[] | null }[], mine: readonly string[], superAdmin = false): string[] {
+  const have = new Set(mine)
+  return roles.filter((r) => superAdmin || (r.permissions ?? []).every((p) => have.has(p))).map((r) => r.name)
+}
+
+/** Roles that may be granted by someone holding `role` (built-in roles only; see rolesWithin). */
 export function grantableRoles(role: string, superAdmin = false): string[] {
   if (superAdmin) return [...ROLES]
   const r = roleRank(role)

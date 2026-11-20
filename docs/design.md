@@ -469,7 +469,7 @@ equivalent query; the client uses this for quick filters
 | Entity | Fields (aliases) |
 |---|---|
 | Requirement | `id, key, title, description (desc), obligation, type, priority, status, source, rationale, owner, tag (tags), version, folder, category (categories), dimension, coverage, linked, related (relation), parent (parents), child (children), comments, mention (mentions), created_by, created_at, updated_at, criteria (criterion)` |
-| Test | `id, key, title, description (desc), preconditions, execution_type (type), script_language (language), script, expected, step (steps), priority, status, estimate, tag (tags), folder, category (categories), dimension, linked, last_result (result), defect (defects), calls, comments, mention (mentions), version, created_by, created_at, updated_at` |
+| Test | `id, key, title, description (desc), preconditions, execution_type (type), script_language (language), script, expected, step (steps), priority, status, estimate, tag (tags), folder, category (categories), dimension, linked, last_result (result), defect (defects), calls, depends_on (depends), comments, mention (mentions), version, created_by, created_at, updated_at` |
 | Run | `id, name, description, status, environment (env), build, created_by, created_at` |
 | Execution | `id, key, title, status, assignee, executed_by, notes, output, defect (defects), mention (mentions)` |
 | Audit entry | `action, entity, entity_id, user, details, created_at` |
@@ -560,30 +560,33 @@ construction.
 
 ## 12. RBAC matrix
 
-From `internal/rbac/rbac.go` (also served at `GET /api/v1/rbac`). Each user
-has one role per tenant; ranks are admin 4 > manager 3 > tester 2 >
-viewer 1.
+Defaults from `internal/rbac/rbac.go`. Each user has one role per tenant.
+Every tenant can change the permissions of all built-in roles except
+`admin` and create its own roles (table `roles`, [ADR 0014](adr/0014-tenant-configurable-roles.md));
+`GET /api/v1/roles` and `GET /api/v1/rbac` return the effective matrix.
 
-| Permission | viewer | tester | manager | admin | Used by |
-|---|:-:|:-:|:-:|:-:|---|
-| `project.read` | ✔ | ✔ | ✔ | ✔ | projects, dashboard, folders/categories (read), links, traceability, search |
-| `requirement.read` | ✔ | ✔ | ✔ | ✔ | requirement list/get/links |
-| `test.read` | ✔ | ✔ | ✔ | ✔ | test list/get/links |
-| `run.read` | ✔ | ✔ | ✔ | ✔ | runs, executions |
-| `member.read` | ✔ | ✔ | ✔ | ✔ | `GET /members` |
-| `export` | ✔ | ✔ | ✔ | ✔ | project export |
-| `test.write` | | ✔ | ✔ | ✔ | tests, test folders/categories, trace links |
-| `run.write` | | ✔ | ✔ | ✔ | create/update/delete runs, add tests |
-| `run.execute` | | ✔ | ✔ | ✔ | record results, CI import |
-| `token.manage` | | ✔ | ✔ | ✔ | own API tokens |
-| `requirement.write` | | | ✔ | ✔ | requirements, requirement folders/categories |
-| `project.create` | | | ✔ | ✔ | create projects |
-| `project.update` | | | ✔ | ✔ | rename project, all categories |
-| `script.execute` | | | ✔ | ✔ | server-side script runner |
-| `audit.read` | | | ✔ | ✔ | audit log |
-| `project.delete` | | | | ✔ | delete projects |
-| `member.manage` | | | | ✔ | add/change/remove members |
-| `tenant.manage` | | | | ✔ | rename own tenant |
+| Permission | viewer | tester | test_lead | manager | admin | Used by |
+|---|:-:|:-:|:-:|:-:|:-:|---|
+| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | projects, dashboard, folders/categories (read), links, traceability, search, graph, tags |
+| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | requirement list/get/links, people, tag suggestions |
+| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | test list/get/links/dependencies, readiness |
+| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | runs, executions |
+| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | `GET /members` |
+| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | project export |
+| `test.write` | | ✔ | ✔ | ✔ | ✔ | tests, test folders/categories, trace links, test dependencies |
+| `run.write` | | ✔ | ✔ | ✔ | ✔ | create/update/delete runs, add tests |
+| `run.execute` | | ✔ | ✔ | ✔ | ✔ | record results, step evidence, CI import |
+| `token.manage` | | ✔ | ✔ | ✔ | ✔ | own API tokens |
+| `script.execute` | | | ✔ | ✔ | ✔ | server-side script runner |
+| `audit.read` | | | ✔ | ✔ | ✔ | audit log |
+| `settings.manage` | | | ✔ | ✔ | ✔ | `PUT /settings` (test execution settings) |
+| `requirement.write` | | | | ✔ | ✔ | requirements, requirement folders/categories |
+| `project.create` | | | | ✔ | ✔ | create projects |
+| `project.update` | | | | ✔ | ✔ | rename project, all categories |
+| `project.delete` | | | | | ✔ | delete projects |
+| `member.manage` | | | | | ✔ | add/change/remove members |
+| `role.manage` | | | | | ✔ | create, change, reset and delete roles |
+| `tenant.manage` | | | | | ✔ | rename own tenant |
 
 Additional rules:
 
@@ -591,12 +594,15 @@ Additional rules:
   tenant, and alone may list/create/delete tenants and manage users. This
   applies only to session logins: requests authenticated with an API token
   are limited to the token's role.
-* **API tokens** carry a role not above the creator's role at creation, and
-  are capped at the user's current membership role on every request. Tokens
-  cannot create tokens.
+* **API tokens** carry a role whose permissions the creator holds at
+  creation; on every request they get the intersection of that role's and
+  the user's current role's permissions. Tokens cannot create tokens.
+* **Roles:** `admin` always has every permission and cannot be changed;
+  built-in roles cannot be deleted; custom roles only when unused. Nobody
+  can grant a permission they do not hold.
 * **Guards:** a tenant must keep at least one admin (409); a super admin
   cannot demote or disable themselves (409).
-* Any authenticated user may call `GET /auth/me`, `/meta`, `/rbac`,
+* Any authenticated user may call `GET /auth/me`, `/meta`, `/rbac`, `/roles`, `/settings`,
   `/tenants` (own tenants) and `POST /reqlang/analyze`.
 
 ## 13. Change history, relations, baselines and collaboration

@@ -18,26 +18,37 @@ An **organisation** (tenant) is an isolated workspace: its projects, members, to
 
 ### Roles and permissions
 
-Roles build on each other: each role can do everything the role before it can.
+Every organisation starts with five built-in roles. By default each role can do everything the role before it can:
 
-| Role | Can additionally |
+| Role | Can additionally (default) |
 |---|---|
 | **Viewer** | read all projects, requirements, tests, runs, documents and the member list; search; export and generate reports |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
-| **Manager** | write requirements and requirement folders, create and edit projects and all categories, create baselines, run automated scripts on the server, read the audit log |
-| **Admin** | delete projects, manage the members of the organisation, rename the organisation, reset members' passwords, delete any comment |
+| **Test lead** | run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
+| **Manager** | write requirements and requirement folders, create and edit projects and all categories, create baselines |
+| **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, delete any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
 
-The full matrix of permissions:
+The default matrix of permissions:
 
-| Permission | Viewer | Tester | Manager | Admin |
-|---|:-:|:-:|:-:|:-:|
-| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ |
-| `test.write`, `run.write`, `run.execute`, `token.manage` | | ✔ | ✔ | ✔ |
-| `requirement.write`, `project.create`, `project.update`, `script.execute`, `audit.read` | | | ✔ | ✔ |
-| `project.delete`, `member.manage`, `tenant.manage` | | | | ✔ |
+| Permission | Viewer | Tester | Test lead | Manager | Admin |
+|---|:-:|:-:|:-:|:-:|:-:|
+| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.write`, `run.write`, `run.execute`, `token.manage` | | ✔ | ✔ | ✔ | ✔ |
+| `script.execute`, `audit.read`, `settings.manage` | | | ✔ | ✔ | ✔ |
+| `requirement.write`, `project.create`, `project.update` | | | | ✔ | ✔ |
+| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | ✔ |
 
-The app shows the current matrix under **Administration → Role matrix**.
+### Change roles and create your own
+
+*(Admin, or any role with `role.manage`)* **Administration → Role matrix** shows the matrix of the organisation. Tick or untick a permission of any role except **Admin**; the changed cells are highlighted and a bar tells you how many roles have unsaved changes. Select **Save** to apply them; members with that role get the new permissions at once. You can only grant permissions that you hold yourself.
+
+- A built-in role whose permissions differ from the defaults is marked *changed*; its **Reset to default** button (↺) restores them.
+- **New role** creates your own role: enter a **Display name** (for example *Auditor*), a **Technical name** (lower-case letters, digits and `_`, used in the API and in SSO group mappings) and optionally a description, and choose the role whose permissions it starts with. Then adjust the permissions in the matrix.
+- Your own roles are marked *custom*. You can rename them (✎) and delete them (🗑) once no member or API token uses them.
+- New roles can be chosen under **Members**, for API tokens and in the identity-provider group mapping.
+
+**Admin** always has every permission, so an organisation cannot lock itself out.
 
 ![The role matrix with the permissions of each role](../images/en-admin-roles.png)
 
@@ -59,6 +70,23 @@ Buttons for actions you may not perform are hidden. If you are missing a button 
 *(Admin, for local accounts)*: select **Reset password** in the member's row. Qtestframe generates a **temporary password** and shows it **once**; copy it and give it to the person through a safe channel. The person is signed out everywhere and must choose a new password at the next sign-in.
 
 Admins can only reset passwords of people who belong to their organisation alone; for super admins and people who are members of other organisations too, a super admin must do it. Accounts that sign in through single sign-on have no password in Qtestframe.
+
+## Test execution settings
+
+*(Admin and Test lead, or any role with `settings.manage`)* **Administration → Test execution** decides when a test may be executed. By default a test can only be executed when:
+
+- the test has status **Ready**,
+- every requirement it verifies has one of the **ready statuses** (default **Approved**, **Implemented** and **Verified**), and
+- every test it [depends on](tests.md#dependencies) has passed: in the same run when that test is part of the run, otherwise its latest result.
+
+Each rule can be relaxed separately: **Allow executing tests that are not Ready**, **Allow executing tests of requirements that are not ready** and **Allow starting tests before their prerequisites have passed**. You can also choose which requirement statuses count as ready.
+
+What a rule forbids is refused by the server, also for API clients and CI imports. In the app you see it at once:
+
+- in the **New run** dialog, picked tests that are not ready are marked, with a warning;
+- on the run page, a **Readiness** column and a summary show which executions cannot be started yet;
+- in the execution runner, a red box lists the reasons, with links to the test, requirement or prerequisite, and **Pass**, **Fail** and **Run script** are disabled. You can still mark the test **Blocked** or **Skipped**, assign it and write notes;
+- when a rule is relaxed, the same reasons appear as an amber warning, and the test can be executed.
 
 ## API tokens
 

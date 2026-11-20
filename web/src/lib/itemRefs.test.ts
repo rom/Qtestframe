@@ -9,6 +9,7 @@ describe('item references', () => {
     expect(refKind(ref('verifies', 'outgoing', 'R'))).toBe('requirement')
     expect(refKind(ref('verifies', 'incoming', 'T'))).toBe('test')
     expect(refKind(ref('calls', 'incoming', 'T'))).toBe('test')
+    expect(refKind({ ...ref('depends_on', 'outgoing', 'T'), kind: 'test' })).toBe('test')
   })
   it('groups by type and direction in a stable order, without duplicates', () => {
     const g = groupRefs([

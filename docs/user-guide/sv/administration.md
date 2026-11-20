@@ -18,26 +18,37 @@ En **organisation** är en isolerad arbetsyta: dess projekt, medlemmar, API-nyck
 
 ### Roller och behörigheter
 
-Rollerna bygger på varandra: varje roll kan allt som rollen före den kan.
+Varje organisation börjar med fem inbyggda roller. Som standard kan varje roll allt som rollen före den kan:
 
-| Roll | Kan dessutom |
+| Roll | Kan dessutom (standard) |
 |---|---|
 | **Läsare** | läsa alla projekt, krav, testfall, körningar, dokument och medlemslistan; söka; exportera och ta fram rapporter |
 | **Testare** | skriva och länka testfall, hantera testmappar och testfallskategorier, skapa och redigera körningar, registrera utfall, importera utfall från CI, ladda upp bilagor till testfall, körningar och exekveringar, skapa egna API-nycklar |
-| **Ansvarig** | skriva krav och kravmappar, skapa och redigera projekt och alla kategorier, skapa baslinjer, köra automatiserade skript på servern, läsa händelseloggen |
-| **Administratör** | ta bort projekt, hantera organisationens medlemmar, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
+| **Testledare** | köra automatiserade skript på servern, läsa händelseloggen, ändra [inställningarna för testexekvering](#inställningar-för-testexekvering) |
+| **Ansvarig** | skriva krav och kravmappar, skapa och redigera projekt och alla kategorier, skapa baslinjer |
+| **Administratör** | allt: ta bort projekt, hantera medlemmar och roller, byta namn på organisationen, återställa medlemmars lösenord, ta bort alla kommentarer |
 | **Superadministratör** | allt i alla organisationer; hantera organisationer och användare; säkerhetskopiering och återställning |
 
-Hela matrisen med behörigheter:
+Standardmatrisen med behörigheter:
 
-| Behörighet | Läsare | Testare | Ansvarig | Administratör |
-|---|:-:|:-:|:-:|:-:|
-| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ |
-| `test.write`, `run.write`, `run.execute`, `token.manage` | | ✔ | ✔ | ✔ |
-| `requirement.write`, `project.create`, `project.update`, `script.execute`, `audit.read` | | | ✔ | ✔ |
-| `project.delete`, `member.manage`, `tenant.manage` | | | | ✔ |
+| Behörighet | Läsare | Testare | Testledare | Ansvarig | Administratör |
+|---|:-:|:-:|:-:|:-:|:-:|
+| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.write`, `run.write`, `run.execute`, `token.manage` | | ✔ | ✔ | ✔ | ✔ |
+| `script.execute`, `audit.read`, `settings.manage` | | | ✔ | ✔ | ✔ |
+| `requirement.write`, `project.create`, `project.update` | | | | ✔ | ✔ |
+| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | ✔ |
 
-Appen visar den aktuella matrisen under **Administration → Rollmatris**.
+### Ändra roller och skapa egna
+
+*(Administratör, eller en roll med `role.manage`)* **Administration → Rollmatris** visar organisationens matris. Kryssa i eller ur en behörighet för alla roller utom **Administratör**; ändrade celler markeras och en rad visar hur många roller som har osparade ändringar. Välj **Spara** för att tillämpa dem; medlemmar med rollen får de nya behörigheterna direkt. Du kan bara ge behörigheter som du själv har.
+
+- En inbyggd roll vars behörigheter skiljer sig från standard markeras *ändrad*; knappen **Återställ till standard** (↺) återställer dem.
+- **Ny roll** skapar en egen roll: ange ett **Visningsnamn** (till exempel *Revisor*), ett **Tekniskt namn** (gemener, siffror och `_`, används i API:t och i SSO-gruppmappningar) och gärna en beskrivning, och välj vilken roll den ska börja med behörigheterna från. Justera sedan behörigheterna i matrisen.
+- Egna roller markeras *egen*. Du kan byta namn på dem (✎) och ta bort dem (🗑) när ingen medlem eller API-nyckel använder dem.
+- Nya roller kan väljas under **Medlemmar**, för API-nycklar och i gruppmappningen från identitetsleverantören.
+
+**Administratör** har alltid alla behörigheter, så en organisation kan inte låsa ute sig själv.
 
 ![Rollmatrisen med behörigheterna för varje roll](../images/sv-admin-roles.png)
 
@@ -59,6 +70,23 @@ Knappar för åtgärder som du inte får utföra döljs. Om du saknar en knapp s
 *(Administratör, för lokala konton)*: välj **Återställ lösenord** på medlemmens rad. Qtestframe tar fram ett **tillfälligt lösenord** och visar det **en gång**; kopiera det och lämna det till personen på ett säkert sätt. Personen loggas ut överallt och måste välja ett nytt lösenord vid nästa inloggning.
 
 Administratörer kan bara återställa lösenord för personer som enbart tillhör deras egen organisation; för superadministratörer och personer som även är medlemmar i andra organisationer måste en superadministratör göra det. Konton som loggar in med enkel inloggning har inget lösenord i Qtestframe.
+
+## Inställningar för testexekvering
+
+*(Administratör och Testledare, eller en roll med `settings.manage`)* **Administration → Testexekvering** avgör när ett testfall får exekveras. Som standard kan ett testfall bara exekveras när:
+
+- testfallet har status **Klar**,
+- alla krav det verifierar har någon av de **klara statusarna** (standard **Godkänt**, **Implementerat** och **Verifierat**), och
+- alla testfall det [beror på](tests.md#beroenden) har godkänts: i samma körning när det testfallet ingår i körningen, annars dess senaste utfall.
+
+Varje regel kan lättas upp för sig: **Tillåt exekvering av testfall som inte är Klara**, **Tillåt exekvering av testfall för krav som inte är klara** och **Tillåt att testfall startas innan deras förutsättningar har godkänts**. Du kan också välja vilka kravstatusar som räknas som klara.
+
+Det en regel förbjuder avvisas av servern, även för API-klienter och CI-importer. I appen ser du det direkt:
+
+- i dialogen **Ny körning** markeras valda testfall som inte är klara, med en varning;
+- på körningens sida visar kolumnen **Redo** och en sammanfattning vilka exekveringar som inte kan startas än;
+- i exekveringsvyn listar en röd ruta orsakerna, med länkar till testfallet, kravet eller förutsättningen, och **Godkänd**, **Underkänd** och **Kör skript** är avstängda. Du kan fortfarande markera testfallet som **Blockerat** eller **Överhoppat**, tilldela det och skriva anteckningar;
+- när en regel är upplättad visas samma orsaker som en gul varning, och testfallet kan exekveras.
 
 ## API-nycklar
 
