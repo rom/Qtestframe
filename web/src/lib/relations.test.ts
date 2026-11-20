@@ -31,7 +31,9 @@ describe('relations', () => {
   })
   it('offers all types', () => {
     const o = relationTypeOptions()
-    expect(o).toHaveLength(6)
+    expect(o).toHaveLength(7)
+    expect(o.map((x) => x.value)).toContain('provides')
+    expect(o.map((x) => x.value)).not.toContain('verifies')
     expect(o[0]).toEqual({ label: 'refines (parent)', value: 'refines' })
   })
   it('finds the other end', () => {

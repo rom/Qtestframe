@@ -55,7 +55,7 @@ Exekveringsvyn visar en exekvering i taget. Rubriken anger vilken exekvering i k
 4. Registrera utfallet med **Godkänn**, **Underkänn**, **Blockerad** eller **Hoppa över**. Skriv vad som hände i **Faktiskt resultat** för allt annat än godkänt. Vyn går vidare till nästa steg.
 5. Under stegen:
    - **Samlat utfall** härleds från stegen (*Sparas som …*): något underkänt steg → **Underkänd**; annars något blockerat steg → **Blockerad**; alla godkända eller överhoppade med minst ett godkänt → **Godkänd**; alla överhoppade → **Överhoppad**; delvis utfört → **Pågår**. Du kan också ange det uttryckligen.
-   - **Tilldelad**: vem som ska exekvera testfallet.
+   - **Tilldelad**: vem som ska exekvera testfallet. Skriv `@` för att välja en person ([omnämnanden](requirements.md#nämn-personer)).
    - **Defekter**: defekt-id:n eller URL:er, var och en följd av <kbd>Enter</kbd>.
    - **Anteckningar**: iakttagelser, länkar, allt som är värt att spara.
 6. Välj **Spara**, eller **Spara och nästa** för att spara och öppna nästa exekvering. **Föregående** och **Nästa** växlar mellan exekveringar. *Osparade ändringar* påminner dig om att spara.

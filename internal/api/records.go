@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rom/qtestframe/internal/mention"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/store"
@@ -16,24 +17,24 @@ var (
 	requirementSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "obligation", "type", "priority", "status", "source", "rationale",
 			"owner", "tag", "version", "folder", "category", "dimension", "coverage", "linked", "created_by",
-			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments"},
+			"created_at", "updated_at", "criteria", "id", "related", "parent", "child", "comments", "mention"},
 		Aliases: map[string]string{"tags": "tag", "categories": "category", "desc": "description", "criterion": "criteria",
-			"relation": "related", "parents": "parent", "children": "child"},
+			"relation": "related", "parents": "parent", "children": "child", "mentions": "mention"},
 	}
 	testSchema = &query.Schema{
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
-			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version"},
+			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
-			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect"},
+			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention"},
 	}
 	runSchema = &query.Schema{
 		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
 		Aliases: map[string]string{"env": "environment"},
 	}
 	executionSchema = &query.Schema{
-		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect"},
-		Aliases: map[string]string{"defects": "defect"},
+		Fields:  []string{"key", "title", "status", "assignee", "executed_by", "notes", "output", "id", "defect", "mention"},
+		Aliases: map[string]string{"defects": "defect", "mentions": "mention"},
 	}
 )
 
@@ -53,6 +54,10 @@ type projectContext struct {
 	defects    map[string][]string
 	// requirement id → related keys; parent/child keys of refines relations
 	related, parents, children map[string][]string
+	// item id → references to related items (both directions)
+	refs map[string][]model.ItemRef
+	// test id → tests whose steps call it (set by filterTests)
+	calledBy map[string][]model.ItemRef
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -87,7 +92,10 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 		return nil, err
 	}
 	pc.related, pc.parents, pc.children = map[string][]string{}, map[string][]string{}, map[string][]string{}
+	pc.refs = map[string][]model.ItemRef{}
 	for _, r := range rels {
+		pc.refs[r.SourceID] = append(pc.refs[r.SourceID], model.ItemRef{Type: r.Type, Direction: "outgoing", ID: r.TargetID, Key: r.TargetKey, Title: r.TargetTitle})
+		pc.refs[r.TargetID] = append(pc.refs[r.TargetID], model.ItemRef{Type: r.Type, Direction: "incoming", ID: r.SourceID, Key: r.SourceKey, Title: r.SourceTitle})
 		pc.related[r.SourceID] = append(pc.related[r.SourceID], r.TargetKey)
 		pc.related[r.TargetID] = append(pc.related[r.TargetID], r.SourceKey)
 		if r.Type == "refines" {
@@ -95,7 +103,26 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 			pc.children[r.TargetID] = append(pc.children[r.TargetID], r.SourceKey)
 		}
 	}
+	for _, l := range pc.links {
+		pc.refs[l.TestCaseID] = append(pc.refs[l.TestCaseID], model.ItemRef{Type: "verifies", Direction: "outgoing", ID: l.RequirementID, Key: l.RequirementKey})
+		pc.refs[l.RequirementID] = append(pc.refs[l.RequirementID], model.ItemRef{Type: "verifies", Direction: "incoming", ID: l.TestCaseID, Key: l.TestCaseKey})
+	}
 	return pc, nil
+}
+
+// indexCalls records, for every test, the tests whose steps call it.
+func (pc *projectContext) indexCalls(tests []model.TestCase) {
+	pc.calledBy = map[string][]model.ItemRef{}
+	for _, t := range tests {
+		seen := map[string]bool{}
+		for _, st := range t.Steps {
+			if st.CallTestID == nil || seen[*st.CallTestID] {
+				continue
+			}
+			seen[*st.CallTestID] = true
+			pc.calledBy[*st.CallTestID] = append(pc.calledBy[*st.CallTestID], model.ItemRef{Type: "calls", Direction: "incoming", ID: t.ID, Key: t.Key, Title: t.Title})
+		}
+	}
 }
 
 func (pc *projectContext) catValues(ids []string) (names, dims []string) {
@@ -122,6 +149,8 @@ func (pc *projectContext) decorateRequirement(r *model.Requirement) {
 	r.Coverage = store.Coverage(pc.r2t[r.ID], pc.last)
 	r.CommentCount = pc.comments[r.ID]
 	r.Relations = pc.relCount[r.ID]
+	r.RelationRefs = pc.refs[r.ID]
+	r.CriteriaCount = len(r.Criteria)
 }
 
 func (pc *projectContext) decorateTest(t *model.TestCase) {
@@ -132,6 +161,25 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 		t.LastResult = model.ResultNotRun
 	}
 	t.CommentCount = pc.comments[t.ID]
+	t.StepCount = len(t.Steps)
+	t.Defects = pc.defects[t.ID]
+	refs := append([]model.ItemRef{}, pc.refs[t.ID]...)
+	seen := map[string]bool{}
+	for _, st := range t.Steps {
+		if st.CallTestID != nil && !seen[*st.CallTestID] {
+			seen[*st.CallTestID] = true
+			refs = append(refs, model.ItemRef{Type: "calls", Direction: "outgoing", ID: *st.CallTestID, Key: st.CallTestKey, Title: st.CallTestTitle})
+		}
+	}
+	refs = append(refs, pc.calledBy[t.ID]...)
+	for _, c := range t.CalledBy {
+		if pc.calledBy == nil {
+			refs = append(refs, model.ItemRef{Type: "calls", Direction: "incoming", ID: c.ID, Key: c.Key, Title: c.Title})
+		}
+	}
+	if len(refs) > 0 {
+		t.RelationRefs = refs
+	}
 }
 
 func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecord {
@@ -155,7 +203,18 @@ func (pc *projectContext) requirementRecord(r *model.Requirement) query.MapRecor
 		"updated_at": {ts(r.UpdatedAt)}, "criteria": crit,
 		"related": pc.related[r.ID], "parent": pc.parents[r.ID], "child": pc.children[r.ID],
 		"comments": {strconv.Itoa(r.CommentCount)},
+		"mention":  mentions(r.Owner, r.Title, r.Description, r.Rationale, r.Source),
 	}
+}
+
+// mentions returns the @handles in the given texts, each also as "@handle"
+// so that both mention:anna and mention:@anna match.
+func mentions(texts ...string) []string {
+	var out []string
+	for _, h := range mention.Extract(strings.Join(texts, "\n")) {
+		out = append(out, h, "@"+h)
+	}
+	return out
 }
 
 func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
@@ -182,6 +241,7 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"last_result": {t.LastResult}, "created_by": {t.CreatedBy}, "created_at": {ts(t.CreatedAt)},
 		"updated_at": {ts(t.UpdatedAt)}, "defect": pc.defects[t.ID], "calls": calls,
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)},
+		"mention": mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
 	}
 }
 
@@ -192,7 +252,8 @@ func runRecord(r *model.TestRun) query.MapRecord {
 
 func executionRecord(e *model.Execution) query.MapRecord {
 	return query.MapRecord{"id": {e.ID}, "key": {e.TestKey}, "title": {e.TestTitle}, "status": {e.Status},
-		"assignee": {e.Assignee}, "executed_by": {e.ExecutedBy}, "notes": {e.Notes}, "output": {e.Output}, "defect": e.Defects}
+		"assignee": {e.Assignee}, "executed_by": {e.ExecutedBy}, "notes": {e.Notes}, "output": {e.Output}, "defect": e.Defects,
+		"mention": mentions(e.Assignee, e.Notes)}
 }
 
 // folderFilter returns a predicate selecting items in folder (and

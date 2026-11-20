@@ -24,7 +24,9 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
   - Manual tests are executed step by step (action, expected result, data).
   - Automated tests are shell, bash, Python or JavaScript scripts, run server-side in a sandbox. CI systems can also import results.
 - **Change history:** every change of a requirement or test is versioned, with a field-level diff and one-click restore. **Baselines** freeze a project's state for a release and compare it with the current state or another baseline.
-- **Relations** between requirements (refines/decomposition, depends on, derived from, conflicts with, duplicates, relates to) and **comment threads** on requirements and tests.
+- **Relations** between requirements (refines/decomposition, depends on, provides, derived from, conflicts with, duplicates, relates to) and **comment threads** on requirements and tests. A **Relations** column in the requirement and test lists shows every relation in both directions (*depends on*, *provided by*, *verified by*, *calls* …), next to many other optional columns (owner, source, tags, criteria, steps, defects, created by …).
+- **@mentions:** type `@` in owner, assignee, descriptions, notes and comments to pick a user of the organisation or a person already named in the project; mentions are shown with name and avatar, and `mention:anna` finds them.
+- **Tag suggestions** from the title and description, preferring tags the project already uses.
 - **Test reuse and results:** shared steps (a step can call another test), execution history across runs, and defects linked to failed executions (with links into your issue tracker).
 - **Requirement ↔ test correlation:** every new requirement gets a linked draft test case by default, with one step per evaluation criterion, placed in a test folder that mirrors the requirement's folder.
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
@@ -243,15 +245,15 @@ Fields with several values (tags, categories, criteria, steps, linked items, def
 
 | List | Fields (aliases in parentheses) |
 |---|---|
-| Requirements | `id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder`, `category` (`categories`), `dimension`, `coverage`, `linked`, `related` (`relation`), `parent` (`parents`), `child` (`children`), `comments`, `criteria` (`criterion`), `created_by`, `created_at`, `updated_at` |
-| Tests | `id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category` (`categories`), `dimension`, `linked`, `last_result` (`result`), `defect` (`defects`), `calls`, `comments`, `version`, `created_by`, `created_at`, `updated_at` |
+| Requirements | `id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder`, `category` (`categories`), `dimension`, `coverage`, `linked`, `related` (`relation`), `parent` (`parents`), `child` (`children`), `comments`, `mention` (`mentions`), `criteria` (`criterion`), `created_by`, `created_at`, `updated_at` |
+| Tests | `id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category` (`categories`), `dimension`, `linked`, `last_result` (`result`), `defect` (`defects`), `calls`, `comments`, `mention` (`mentions`), `version`, `created_by`, `created_at`, `updated_at` |
 | Runs | `id`, `name`, `description`, `status`, `environment` (`env`), `build`, `created_by`, `created_at` |
-| Executions (run page) | `id`, `key`, `title`, `status`, `assignee`, `executed_by`, `notes`, `output`, `defect` (`defects`) |
+| Executions (run page) | `id`, `key`, `title`, `status`, `assignee`, `executed_by`, `notes`, `output`, `defect` (`defects`), `mention` (`mentions`) |
 | Audit log | `action`, `entity`, `entity_id`, `user`, `details`, `created_at` |
 | Document archive | `id`, `name`, `description`, `tag` (`tags`), `kind`, `type` (`content_type`), `uploaded_by` (`by`), `created_at`, `size`, `linked` |
 | Global search | the requirement, test and run fields, plus `project` (key or name) and `kind` (`requirement`, `test`, `run`) |
 
-What the fields hold: `folder` is the folder path (`Checkout / Payment`); `category` holds category names and `dimension` holds `Dimension/Name`; `linked`, `related`, `parent`, `child` and `calls` hold item keys; `criteria` holds description, method and threshold of every criterion; `step` holds action, expected result and data of every step; `coverage` is `none`, `not_run`, `passed`, `failed` or `partial`; `comments`, `version`, `estimate` (minutes) and `size` (bytes) are numbers. A field that does not exist in a list is an error, so `coverage:none` works for requirements but not for tests.
+What the fields hold: `folder` is the folder path (`Checkout / Payment`); `category` holds category names and `dimension` holds `Dimension/Name`; `linked`, `related`, `parent`, `child` and `calls` hold item keys; `criteria` holds description, method and threshold of every criterion; `step` holds action, expected result and data of every step; `mention` holds the @handles mentioned in the item (owner and text fields), so `mention:anna` and `mention:@anna` both work; `coverage` is `none`, `not_run`, `passed`, `failed` or `partial`; `comments`, `version`, `estimate` (minutes) and `size` (bytes) are numbers. A field that does not exist in a list is an error, so `coverage:none` works for requirements but not for tests.
 
 ### Examples
 
@@ -272,6 +274,7 @@ status:in_progress env:staging                 runs in progress on staging
 assignee:anna -status:passed                   (run page) Anna's executions that have not passed
 action:member.* created_at>=2026-01-01         (audit log) membership changes this year
 kind=requirement project:SHOP coverage:none    (search) uncovered requirements of SHOP
+mention:anna -status:approved                  items that mention @anna and are not approved
 ```
 
 ### Errors and limits

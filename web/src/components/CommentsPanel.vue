@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import MentionText from './MentionText.vue'
+import MentionInput from './MentionInput.vue'
 import { computed, ref, watch } from 'vue'
-import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import UserAvatar from './UserAvatar.vue'
@@ -117,17 +118,17 @@ function onKey(e: KeyboardEvent) {
             <Button v-if="canDelete(c)" icon="pi pi-trash" text rounded size="small" severity="danger" :aria-label="t('comments.delete')" v-tooltip="t('comments.delete')" @click="remove(c)" />
           </div>
           <div v-if="editing === c.id" class="grid" style="gap: 6px; margin-top: 4px">
-            <Textarea v-model="editText" rows="2" auto-resize :maxlength="MAX" :aria-label="t('comments.edit')" />
+            <MentionInput v-model="editText" multiline rows="2" auto-resize :maxlength="MAX" :aria-label="t('comments.edit')" />
             <div class="row" style="justify-content: flex-end">
               <Button :label="t('common.cancel')" text size="small" severity="secondary" @click="editing = null" />
               <Button :label="t('common.save')" icon="pi pi-check" size="small" :disabled="!editText.trim()" @click="saveEdit(c)" />
             </div>
           </div>
-          <div v-else class="body">{{ c.body }}</div>
+          <div v-else class="body"><MentionText :text="c.body" /></div>
         </div>
       </div>
       <div class="grid" style="gap: 6px; margin-top: 12px">
-        <Textarea v-model="draft" rows="3" auto-resize :placeholder="t('comments.placeholder')" :aria-label="t('comments.post')" :maxlength="MAX" @keydown="onKey" />
+        <MentionInput v-model="draft" multiline rows="3" auto-resize :placeholder="t('comments.placeholder')" :aria-label="t('comments.post')" :maxlength="MAX" @keydown="onKey" />
         <div class="row" style="justify-content: flex-end">
           <span v-if="draft.length > MAX - 500" class="small muted">{{ draft.length }}/{{ MAX }}</span>
           <Button :label="t('comments.post')" icon="pi pi-send" size="small" :loading="posting" :disabled="!draft.trim()" @click="post" />

@@ -4,7 +4,7 @@ The **Tests** section holds the test cases of a project. A test is either **manu
 
 Reading tests needs **Viewer**; creating, editing, linking and copying tests needs **Tester**.
 
-The page works like the [requirements page](requirements.md#the-requirements-page): folder tree, filter bar with quick filters (**Status**, **Execution**, **Priority**, **Last result**, **Category**), selectable columns and a table. Bulk edit, moving and deleting work the same way; the bulk toolbar has **Set execution** instead of *Set obligation*.
+The page works like the [requirements page](requirements.md#the-requirements-page): folder tree, filter bar with quick filters (**Status**, **Execution**, **Priority**, **Last result**, **Category**), selectable columns (including execution type, last result, linked requirements, language, steps, tags, **relations** — *verifies*, *calls* and *called by* — defects, created by and dates) and a table. Bulk edit, moving and deleting work the same way; the bulk toolbar has **Set execution** instead of *Set obligation*.
 
 ![The tests page with the test folder tree and the table with type, status and last result](../images/en-tests-list.png)
 
@@ -19,7 +19,7 @@ The page works like the [requirements page](requirements.md#the-requirements-pag
 | **Status** | Draft, Ready, Review or Deprecated. |
 | **Priority** | Critical, High, Medium or Low. |
 | **Estimate (minutes)** | Expected duration. |
-| **Folder**, **Categories**, **Tags** | Filing and classification. |
+| **Folder**, **Categories**, **Tags** | Filing and classification. **Suggested tags** under the tags field come from the title, description, preconditions and steps, as for [requirements](requirements.md#fields). |
 | **Overall expected result** | The expected outcome of the test as a whole. |
 
 ## Manual tests: steps

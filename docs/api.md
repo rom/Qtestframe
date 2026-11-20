@@ -262,6 +262,7 @@ stores a revision (a full JSON snapshot). Tests now also have a `version`.
 ## Requirement relations
 
 Types: `refines` (source is a child/decomposition of target), `depends_on`,
+`provides` (source supplies something the target needs),
 `derived_from`, `conflicts_with`, `duplicates`, `relates_to`. Both
 requirements must be in the same project; self-relations and `refines`
 cycles are rejected (400); duplicates → 409.
@@ -276,6 +277,60 @@ cycles are rejected (400); duplicates → 409.
 Requirement lists add `relation_count`. Query fields: `related` (keys of all
 related requirements), `parent` (keys this requirement refines), `child`
 (keys refining this requirement).
+
+Requirement and test responses (lists and single items) also carry
+`relations`, the related items in both directions, used by the Relations
+column:
+
+```json
+"relations": [
+  {"type": "depends_on", "direction": "incoming", "id": "…", "key": "SHOP-REQ-2", "title": "Account lockout"},
+  {"type": "verifies",   "direction": "incoming", "id": "…", "key": "SHOP-TC-1"}
+]
+```
+
+`type` is a relation type, `verifies` (a trace link: outgoing on the test,
+incoming on the requirement) or `calls` (a shared step: outgoing on the
+calling test, incoming on the called one). `direction` is `outgoing` when
+this item is the source. Requirements also carry `criteria_count`; tests
+carry `step_count` and `defects` (defects recorded on any execution).
+
+## People and @mentions
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/people` | requirement.read | `[Person]`: who can be mentioned in the project |
+
+`Person`: `{handle, name, kind, user_id?, email?, avatar?, uses?}`. `kind`
+is `user` for members of the organisation (handle = local part of the
+e-mail address, made unique with `-2`, `-3` …) or `person` for other names
+used as requirement owner or execution assignee (handle = the name in lower
+case with spaces replaced by dots). `uses` counts those owner and assignee
+values. Users come first, then people, each sorted by name.
+
+A mention is `@handle` anywhere in a text field (an `@` right after a
+letter or digit, as in an e-mail address, is not a mention). The query
+field `mention` (alias `mentions`) holds the handles mentioned in an item —
+for requirements in owner, title, description, rationale and source; for
+tests in title, description, preconditions, expected result and steps; for
+executions in assignee and notes — so both `mention:anna` and
+`mention:@anna` match.
+
+## Tag suggestions
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST | `/projects/{pid}/tags/suggest` | requirement.read | `{"title", "description", "tags"?, "limit"?}` → `[{tag, reason, score, uses?}]` |
+
+Suggestions come from the title and description (at most 100 000
+characters together); `tags` are the item's current tags, which are never
+suggested again; `limit` is 1–50 (default 8; 0 = default). `reason` is
+`existing` (a tag the project already uses, mentioned in the text, also in
+inflected form; `uses` is how many requirements and tests carry it, and its
+spelling is kept), `acronym` (an upper-case abbreviation such as GDPR) or
+`keyword` (a word of the title, or a word used more than once). English and
+Swedish stop words, requirement keywords (MUST, SKA …) and placeholders are
+never suggested. Existing tags rank first.
 
 ## Baselines
 
