@@ -1,0 +1,41 @@
+{
+  "name": "@qtestframe/playwright-reporter",
+  "version": "0.1.0",
+  "description": "Playwright reporter that records test results (and evidence of failures) in Qtestframe test runs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "playwright",
+    "reporter",
+    "qtestframe",
+    "test management"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.30.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "22.15.30",
+    "typescript": "5.8.3",
+    "vitest": "5.1.1"
+  }
+}

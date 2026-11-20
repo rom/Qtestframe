@@ -355,10 +355,32 @@ import) `run.execute`.
 | DELETE | `/runs/{id}` | |
 | GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness` |
 | POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` |
-| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness"}]}`; results of tests that may not be executed (see below) are not recorded |
+| POST | `/runs/{id}/results` | CI import: `{"results":[{"test_key","status","duration_ms","output"}]}` → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
+| POST | `/runs/{id}/junit?create_missing=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
 | GET | `/executions/{id}` | `Execution` with `step_results`, `readiness` and embedded `test` (TestCase incl. steps & script) |
 | PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}]}` – status derived from steps when omitted and steps given; 409 `not_ready` when the update records an execution that the settings forbid |
 | POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test` |
+
+**JUnit XML import.** `POST /runs/{id}/junit` reads `<testsuites>` or
+`<testsuite>` documents (suites may nest) as written by Playwright, pytest,
+go-junit-report, Maven Surefire, Gradle, Jest and Vitest. Each `<testcase>`
+is mapped to a test key: a testcase property named `qtestframe.key`,
+`test_key` or `qtestframe` (Playwright annotations with
+`embedAnnotationsAsProperties`), else the first match of
+`[A-Z][A-Z0-9]{1,15}[-_]TC[-_][0-9]+` in the name, then in the classname
+(underscores become hyphens, so `test_SHOP_TC_3` is `SHOP-TC-3`). Status:
+`<failure>` or `<error>` → `failed`, `<skipped>` → `skipped`, otherwise
+`passed`; `time` (seconds) becomes `duration_ms`; the output holds the
+failure/error/skipped messages and texts and `system-out`/`system-err`
+(at most 64 KiB). Several testcases with one key give one result: `failed`
+wins over `passed` (and `passed` over `skipped`), durations add up and the
+outputs are joined. Results then go through the same readiness check, run
+auto-completion and response as `/results`; `unmapped` lists the names of
+testcases without a key. With `create_missing=true` (needs `test.write`
+in addition to `run.execute`, else 403) every testcase without a key gets a
+test: an automated test of the run's project with exactly that title, or a
+new draft automated test titled after the testcase (listed in `created`);
+its result is recorded and the test added to the run.
 
 **Readiness.** Before a result is recorded the server checks the test:
 status `ready`; every linked requirement in one of

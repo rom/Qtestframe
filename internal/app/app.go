@@ -64,6 +64,11 @@ Usage:
                                                   replace ALL data with a backup
   qtestframe check-config [--config FILE] [--port N] [--listen HOST:PORT]
   qtestframe healthcheck [--config FILE] [--port N] [--url URL]
+  qtestframe report      --url URL --token T (--project KEY --run NAME [--create-run] | --run-id ID)
+                         (--junit FILE | --json FILE)... [FILE...] [--build B] [--environment E]
+                         [--create-missing] [--fail-on-unknown]
+                                                  upload automated test results to a server
+                                                  (QTF_URL and QTF_TOKEN are the defaults)
   qtestframe version
 
 The configuration file is YAML (see deploy/config.example.yaml); unknown keys
@@ -102,6 +107,8 @@ func Run(args []string, env Env) int {
 		err = cmdHealthcheck(args[1:], env)
 	case "check-config":
 		err = cmdCheckConfig(args[1:], env)
+	case "report":
+		err = cmdReport(args[1:], env)
 	case "sandbox-exec":
 		var c *runner.SandboxConfig
 		if c, err = runner.ParseSandboxArgs(args[1:], env.Stderr); err == nil {

@@ -142,6 +142,64 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 
 Keep the token in your CI system's secret store, never in the repository. A token is bound to one organisation and never has more rights than its owner.
 
+Besides this JSON format there are three easier ways for test tools that already write reports: JUnit XML, the `qtestframe report` command and the Playwright reporter.
+
+### Link automated tests to test keys
+
+Every automated test must say which Qtestframe test it executes. Put the test key (for example `SHOP-TC-12`) in one of these places:
+
+- **in the test name**, e.g. `test_login[SHOP-TC-12]`, `TestCart/SHOP-TC-12_add` or `SHOP-TC-12 pays by card`. Where a name may not contain hyphens, `SHOP_TC_12` works as well. The key may also be part of the class name.
+- **as a property of the test case** in the JUnit report, named `qtestframe.key` or `test_key`. With pytest: `record_property("test_key", "SHOP-TC-12")`.
+- **with Playwright** as a tag `@SHOP-TC-12` or an annotation `{ type: 'qtestframe', description: 'SHOP-TC-12' }`.
+
+Several test cases with the same key (for example the same test in two browsers) give one result: *failed* wins over *passed*, and the durations add up.
+
+### JUnit XML
+
+Almost every test tool writes JUnit XML: Playwright (`junit` reporter), pytest (`--junitxml`), Go (with go-junit-report), Maven Surefire and Gradle, Jest (jest-junit) and Vitest (`--reporter=junit`). Post the file to the run:
+
+```bash
+curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/junit" \
+  -H "Authorization: Bearer $QTF_TOKEN" \
+  -H "Content-Type: application/xml" \
+  --data-binary @results/junit.xml
+```
+
+- A test case with `<failure>` or `<error>` is recorded as *failed*, one with `<skipped>` as *skipped*, all others as *passed*. The duration comes from `time`; the output holds the failure message and `system-out`/`system-err`.
+- The answer lists, besides `updated`, `unknown` and `rejected`, the names of test cases without a key under `unmapped`.
+- Add `?create_missing=true` to create a draft automated test for every test case without a key (titled like the test case) and record its result. A later import finds the test again by its title. This needs the right to write tests.
+- Several files can be sent at once as a multipart upload (`-F file=@a.xml -F file=@b.xml`); together they may be at most 20 MB.
+
+### The qtestframe report command
+
+The `qtestframe` program can upload reports itself. It finds the run by name in the project, or creates it:
+
+```bash
+export QTF_URL=https://qtf.example.com QTF_TOKEN=qtf_…
+qtestframe report --project SHOP --run "Nightly $BUILD_NUMBER" --create-run \
+  --build "$BUILD_NUMBER" --environment staging \
+  --junit 'results/*.xml'
+```
+
+- `--run-id ID` reports into a known run instead of `--project`/`--run`.
+- `--junit` and `--json` (the JSON format above) take files or patterns and can be repeated.
+- `--create-missing` creates tests for test cases without a key, as above.
+- The command prints how many results were recorded and lists unknown keys, test cases without a key and rejected results with the reason. It ends with an error code when the upload fails, and with `--fail-on-unknown` also when results matched no test.
+
+### Playwright reporter
+
+For Playwright there is a reporter (`@qtestframe/playwright-reporter`, in `integrations/playwright-reporter` of the Qtestframe sources) that reports while the tests run, without a JUnit file:
+
+```ts
+// playwright.config.ts
+reporter: [
+  ['list'],
+  ['@qtestframe/playwright-reporter', { project: 'SHOP', run: 'Nightly', createRun: true }],
+],
+```
+
+It reads the server address and token from `QTF_URL` and `QTF_TOKEN`, takes the key from the annotation, tag or title, writes the error and the `test.step()` titles with their result into the output and uploads screenshots, traces and other attachments of failed tests as attachments of the execution. If reporting fails, it only logs a message; your test run is not affected.
+
 ## Links of a run
 
 The **Links** tab of the run page links the run to requirements, tests, other runs, archive files, reports and web addresses, for example the CI build or the release notes, see [Links](requirements.md#links-to-other-items).

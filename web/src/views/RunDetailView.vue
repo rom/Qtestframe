@@ -226,9 +226,19 @@ const ciSnippet = computed(
   -H "Content-Type: application/json" \\
   -d '{"results":[{"test_key":"${executions.value[0]?.test_key ?? 'PROJ-TC-1'}","status":"passed","duration_ms":1234,"output":"ok"}]}'`,
 )
-async function copySnippet() {
+const ciJunitSnippet = computed(
+  () => `curl -X POST ${origin}/api/v1/runs/${props.runId}/junit \\
+  -H "Authorization: Bearer qtf_<api-token>" \\
+  -H "Content-Type: application/xml" \\
+  --data-binary @results/junit.xml`,
+)
+const ciCliSnippet = computed(
+  () => `QTF_URL=${origin} QTF_TOKEN=qtf_<api-token> \\
+  qtestframe report --run-id ${props.runId} --junit 'results/*.xml'`,
+)
+async function copySnippet(text: string = ciSnippet.value) {
   try {
-    await navigator.clipboard.writeText(ciSnippet.value)
+    await navigator.clipboard.writeText(text)
     notify.ok(t('run.copied'))
   } catch {
     notify.info(t('errors.copyFailed'), t('errors.copyManually'))
@@ -452,9 +462,23 @@ async function copySnippet() {
       </i18n-t>
       <Panel :header="t('run.endpoint')" toggleable collapsed>
         <div class="mono">POST /api/v1/runs/{{ runId }}/results</div>
+        <div class="mono">POST /api/v1/runs/{{ runId }}/junit</div>
+      </Panel>
+      <Panel :header="t('run.ciJunitHeader')" toggleable collapsed>
+        <p class="small">{{ t('run.ciJunitIntro') }}</p>
+        <pre class="console" tabindex="0" :aria-label="t('run.ciJunitHeader')">{{ ciJunitSnippet }}</pre>
+        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text size="small" @click="copySnippet(ciJunitSnippet)" />
+      </Panel>
+      <Panel :header="t('run.ciCliHeader')" toggleable collapsed>
+        <p class="small">{{ t('run.ciCliIntro') }}</p>
+        <pre class="console" tabindex="0" :aria-label="t('run.ciCliHeader')">{{ ciCliSnippet }}</pre>
+        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text size="small" @click="copySnippet(ciCliSnippet)" />
+        <i18n-t keypath="run.ciPlaywright" tag="p" class="small muted">
+          <template #pkg><code>@qtestframe/playwright-reporter</code></template>
+        </i18n-t>
       </Panel>
       <template #footer>
-        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" @click="copySnippet" />
+        <Button :label="t('common.copy')" icon="pi pi-copy" severity="secondary" @click="copySnippet()" />
         <Button :label="t('common.close')" @click="ciDialog = false" />
       </template>
     </Dialog>
