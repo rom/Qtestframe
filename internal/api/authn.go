@@ -439,6 +439,7 @@ func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, u *model.
 	}
 	s.audit(r.Context(), p, "login", "user", u.ID, method)
 	s.recordLogin(r, u.ID, method, true) // after the session exists: see loginInfo
+	s.acceptOnSignIn(r.Context(), p)
 	if method != "local" {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return

@@ -159,7 +159,9 @@ func (s *Server) notifyUsers(ctx context.Context, p *Principal, users []string, 
 	}
 	if err := s.Store.AddNotifications(ctx, p.TenantID(), list); err != nil {
 		s.Log.Warn("notifications", "event", n.Event, "err", err)
+		return
 	}
+	s.mailNotifications(ctx, p, list)
 }
 
 // notifyMentions notifies the people @mentioned in text.

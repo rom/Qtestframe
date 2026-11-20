@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/rom/qtestframe/internal/auth"
+	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/prompt"
 	"github.com/rom/qtestframe/internal/query"
@@ -45,6 +46,8 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"prompt_kinds":         prompt.Kinds,
 		"test_types":           prompt.TestTypes,
 		"languages":            model.Languages,
+		"email_enabled":        s.emailOn(),
+		"email_digest_hour":    s.Cfg.Email.DigestHour,
 		"version":              Version,
 	})
 }
@@ -272,21 +275,46 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, p *Pri
 
 // ---------------------------------------------------------------- members
 
+// memberView is a member with their open invitation, if any.
+type memberView struct {
+	model.Membership
+	Invitation *invitationView `json:"invitation,omitempty"`
+}
+
 func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request, p *Principal) {
 	ms, err := s.Store.ListTenantMembers(r.Context(), p.TenantID())
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, listOf(ms))
+	invs, err := s.Store.OpenInvitations(r.Context(), p.TenantID())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	out := make([]memberView, len(ms))
+	for i, m := range ms {
+		out[i].Membership = m
+		if inv, ok := invs[m.UserID]; ok {
+			out[i].Invitation = s.viewInvitation(&inv)
+		}
+	}
+	writeJSON(w, http.StatusOK, listOf(out))
 }
 
+// handleAddMember: POST /members {"email", "role", "display_name"?,
+// "password"?, "invite"?, "sso"?}. With "invite", a person without an
+// account (or who never used it) gets an invitation e-mail instead of an
+// initial password; an existing user is told by e-mail that they were
+// added.
 func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Principal) {
 	var req struct {
 		Email       string `json:"email"`
 		Role        string `json:"role"`
 		DisplayName string `json:"display_name"`
 		Password    string `json:"password"`
+		Invite      bool   `json:"invite"`
+		SSO         bool   `json:"sso"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -294,6 +322,18 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 	}
 	if ok, err := s.validRole(r.Context(), p.TenantID(), req.Role); err != nil || !ok {
 		s.fail(w, r, errOr(err, badRequest("invalid role %q", req.Role)))
+		return
+	}
+	if req.Invite && !s.emailOn() {
+		s.fail(w, r, errEmailOff())
+		return
+	}
+	if req.Invite && req.Password != "" {
+		s.fail(w, r, badRequest("an invitation lets the person choose the password: leave the password empty"))
+		return
+	}
+	if req.Invite && mail.CheckAddress(store.NormalizeEmail(req.Email)) != nil {
+		s.fail(w, r, badRequest("a valid e-mail address is required"))
 		return
 	}
 	ctx := r.Context()
@@ -324,7 +364,21 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 		return
 	}
 	m.Email, m.Name = u.Email, u.DisplayName
-	writeJSON(w, http.StatusCreated, m)
+	out := memberView{Membership: *m}
+	if req.Invite {
+		if activated(u) {
+			s.sendAddedNotice(ctx, p, u, req.Role)
+		} else {
+			inv, err := s.invite(ctx, p, u, req.Role, req.SSO)
+			if err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			s.audit(ctx, p, "invitation.send", "user", u.ID, u.Email+" as "+req.Role)
+			out.Invitation = s.viewInvitation(inv)
+		}
+	}
+	writeJSON(w, http.StatusCreated, out)
 }
 
 func (s *Server) lastAdminGuard(w http.ResponseWriter, r *http.Request, p *Principal, uid string) bool {

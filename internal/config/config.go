@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -29,6 +30,31 @@ type Config struct {
 	Requirements Requirements `yaml:"requirements"`
 	Hardening    Hardening    `yaml:"hardening"`
 	Bootstrap    Bootstrap    `yaml:"bootstrap"`
+	// Email configures outgoing mail (notifications, invitations, reports).
+	Email Email `yaml:"email"`
+}
+
+// Email configures the SMTP server used for outgoing mail. Mail is on when
+// host is set, unless enabled is false. The password is never written in
+// the file: it comes from password_file or QTF_EMAIL_PASSWORD.
+type Email struct {
+	Enabled      *bool         `yaml:"enabled"`
+	Host         string        `yaml:"host"`
+	Port         int           `yaml:"port"`
+	Username     string        `yaml:"username"`
+	PasswordFile string        `yaml:"password_file"`
+	Password     string        `yaml:"-"`
+	From         string        `yaml:"from"`
+	FromName     string        `yaml:"from_name"`
+	TLS          string        `yaml:"tls"` // starttls | tls | none
+	Timeout      time.Duration `yaml:"timeout"`
+	// DigestHour is the hour of the day (UTC) when daily digests are sent.
+	DigestHour int `yaml:"digest_hour"`
+}
+
+// On reports whether outgoing mail is configured and enabled.
+func (e Email) On() bool {
+	return e.Host != "" && (e.Enabled == nil || *e.Enabled)
 }
 
 // Server holds HTTP listener settings.
@@ -191,6 +217,7 @@ func Default() Config {
 		Files:        Files{MaxUploadMB: 25},
 		Hardening:    Hardening{NoNewPrivs: true, Landlock: true, Seccomp: true, DropCapabilities: true},
 		Bootstrap:    Bootstrap{TenantSlug: "default", TenantName: "Default"},
+		Email:        Email{Port: 587, TLS: "starttls", Timeout: 30 * time.Second, DigestHour: 7, FromName: "Qtestframe"},
 	}
 }
 
@@ -287,6 +314,14 @@ func applyEnv(c *Config) {
 	set("QTF_LOG_FORMAT", &c.Logging.Format)
 	set("QTF_BOOTSTRAP_ADMIN_EMAIL", &c.Bootstrap.AdminEmail)
 	set("QTF_BOOTSTRAP_ADMIN_PASSWORD", &c.Bootstrap.AdminPassword)
+	set("QTF_EMAIL_HOST", &c.Email.Host)
+	set("QTF_EMAIL_USERNAME", &c.Email.Username)
+	set("QTF_EMAIL_FROM", &c.Email.From)
+	if v, ok := os.LookupEnv("QTF_EMAIL_PORT"); ok {
+		if n, err := strconv.Atoi(v); err == nil {
+			c.Email.Port = n
+		}
+	}
 	if v, ok := os.LookupEnv("QTF_COOKIE_SECURE"); ok {
 		c.Auth.CookieSecure = v == "1" || strings.EqualFold(v, "true")
 	}
@@ -318,6 +353,14 @@ func (c *Config) resolveSecrets() error {
 		if c.Bootstrap.AdminPassword, err = readSecret(c.Bootstrap.AdminPasswordFile); err != nil {
 			return err
 		}
+	}
+	if c.Email.PasswordFile != "" {
+		if c.Email.Password, err = readSecret(c.Email.PasswordFile); err != nil {
+			return err
+		}
+	}
+	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
+		c.Email.Password = env
 	}
 	for i := range c.Auth.OIDC {
 		o := &c.Auth.OIDC[i]
@@ -390,5 +433,43 @@ func (c *Config) Validate() error {
 	if c.Runner.Enabled && c.Runner.Timeout <= 0 {
 		errs = append(errs, errors.New("runner.timeout must be positive"))
 	}
+	errs = append(errs, c.Email.validate()...)
+	if c.Email.On() && c.Server.BaseURL == "" {
+		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
+	}
 	return errors.Join(errs...)
+}
+
+func (e Email) validate() []error {
+	if !e.On() {
+		return nil
+	}
+	var errs []error
+	if e.Host == "" {
+		return nil
+	}
+	if e.Port < 1 || e.Port > 65535 {
+		errs = append(errs, fmt.Errorf("email.port %d out of range 1-65535", e.Port))
+	}
+	switch e.TLS {
+	case "starttls", "tls", "none":
+	default:
+		errs = append(errs, fmt.Errorf("email.tls must be starttls, tls or none, got %q", e.TLS))
+	}
+	if a, err := mail.ParseAddress(e.From); err != nil || a.Name != "" || strings.ContainsAny(e.From, "\r\n") {
+		errs = append(errs, fmt.Errorf("email.from %q must be a plain e-mail address (put the name in email.from_name)", e.From))
+	}
+	if strings.ContainsAny(e.FromName, "\r\n") {
+		errs = append(errs, errors.New("email.from_name must be one line"))
+	}
+	if e.Password != "" && e.Username == "" {
+		errs = append(errs, errors.New("email.username is required with a password"))
+	}
+	if e.Timeout <= 0 {
+		errs = append(errs, errors.New("email.timeout must be positive"))
+	}
+	if e.DigestHour < 0 || e.DigestHour > 23 {
+		errs = append(errs, errors.New("email.digest_hour must be between 0 and 23"))
+	}
+	return errs
 }

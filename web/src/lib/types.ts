@@ -39,6 +39,8 @@ export interface Preferences {
   create_linked_test?: boolean | null
   /** first-login intro tour finished or skipped */
   intro_done?: boolean
+  /** e-mail for notifications: off (default) | immediate | digest */
+  email_notifications?: string
 }
 
 export interface SessionInfo {
@@ -63,6 +65,52 @@ export interface Membership {
   created_at: string
   /** avatar of the member (when the server includes it) */
   avatar?: string
+  /** open e-mail invitation (members list of the tenant) */
+  invitation?: InvitationInfo
+}
+
+/** An open invitation of a member (Membership.invitation). */
+export interface InvitationInfo {
+  id: string
+  sent_at: string
+  expires_at: string
+  sso: boolean
+  expired: boolean
+  invited_by: string
+}
+
+/** Scheduled e-mailing of a saved report. */
+export interface ReportSubscription {
+  id: string
+  project_id: string
+  definition_id: string
+  definition_name?: string
+  owner_id: string
+  owner_email?: string
+  frequency: string
+  weekday: number
+  day_of_month: number
+  time: string
+  timezone: string
+  format: string
+  recipients: string[]
+  addresses: string[]
+  message: string
+  enabled: boolean
+  next_run_at: string | null
+  last_run_at: string | null
+  last_sent_at: string | null
+  last_error: string
+  created_at: string
+  updated_at: string
+}
+
+/** A member who can get reports by e-mail. */
+export interface ReportRecipient {
+  user_id: string
+  email: string
+  display_name: string
+  role: string
 }
 
 /** The sign-in before the current one (Me.previous_login). */
@@ -572,6 +620,10 @@ export interface Meta {
   analysis_languages: string[]
   /** Server default for creating a linked test with each new requirement. */
   auto_create_test?: boolean
+  /** Whether the server can send e-mail (email section of the configuration). */
+  email_enabled?: boolean
+  /** Hour of the day (UTC) when daily digests are sent. */
+  email_digest_hour?: number
 }
 
 export interface Dashboard {

@@ -10,6 +10,8 @@ import { i18n, t } from './i18n'
 
 const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true } },
+  // e-mail invitation: choose name and password, or sign in with single sign-on
+  { path: '/invite/:token', name: 'invite', component: () => import('./views/InviteView.vue'), meta: { public: true } },
   // forced password change after an administrator reset (see beforeEach)
   { path: '/change-password', name: 'changePassword', component: () => import('./views/ChangePasswordView.vue'), meta: { passwordChange: true } },
   {

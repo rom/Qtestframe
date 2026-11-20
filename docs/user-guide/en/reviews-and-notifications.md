@@ -17,6 +17,16 @@ You are never notified about your own changes. Read notifications are cleaned up
 
 On **All notifications**, tick notifications (or **Select all shown**) to **Mark read**, **Mark unread** or **Delete** them together. **Delete read** removes every notification you have already read.
 
+### Notifications by e-mail
+
+When the server can send e-mail, you can also get your notifications by e-mail. Choose under **Profile → E-mail notifications** (or **E-mail notifications** on the notifications page):
+
+- **Off** (the default): notifications are only shown in the app.
+- **Immediately**: each notification is e-mailed to you, with a link to the item.
+- **Daily digest**: once a day you get one e-mail with the notifications you have not read yet and that were not e-mailed before. Nothing is sent on days without new notifications.
+
+You never get e-mails about your own actions. Every notification e-mail has a link back to this setting, so you can change it or turn it off at any time.
+
 ## Request a review
 
 Open a requirement or a test. Under the review bar, **Review requests** shows who has been asked and what they decided. Choose **Request review** (you need write permission for the item):

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -29,6 +29,8 @@ import { useI18n } from 'vue-i18n'
 import { chooseLocal, LANGUAGES, LANGUAGE_NAMES, type Lang } from '@/i18n'
 import { normalizeLang } from '@/i18n/select'
 import { enumLabel } from '@/i18n/labels'
+import { useMetaStore } from '@/stores/meta'
+import { EMAIL_MODES, emailMode, type EmailMode } from '@/lib/email'
 
 const auth = useAuthStore()
 const prefsStore = usePrefsStore()
@@ -305,9 +307,36 @@ async function loadLogins() {
   }
 }
 const loginRows = computed(() => logins.value.map((l) => ({ ...l, ua: parseUserAgent(l.user_agent) })))
-const methodLabel = (m: string) => (m && ['password', 'oidc', 'saml', 'local'].includes(m) ? t(`profile.method.${m}`) : m || '—')
+const methodLabel = (m: string) => (m && ['password', 'oidc', 'saml', 'local', 'invitation'].includes(m) ? t(`profile.method.${m}`) : m || '—')
+
+// ---------- e-mail notifications ----------
+const meta = useMetaStore()
+const route = useRoute()
+const emailEnabled = computed(() => !!meta.meta.email_enabled)
+const storedMail = computed(() => emailMode(auth.user?.preferences?.email_notifications))
+const mailMode = ref<EmailMode>(storedMail.value)
+watch(storedMail, (v) => (mailMode.value = v))
+const mailOptions = computed(() => EMAIL_MODES.map((m) => ({ label: t(`email.mode.${m}`), value: m })))
+const digestTime = computed(() => `${String(meta.meta.email_digest_hour ?? 7).padStart(2, '0')}:00`)
+const savingMail = ref(false)
+const mailError = ref('')
+async function saveMail() {
+  savingMail.value = true
+  mailError.value = ''
+  try {
+    await prefsStore.save({ email_notifications: mailMode.value === 'off' ? null : mailMode.value })
+    notify.ok(t('email.saved'), t(`email.mode.${mailMode.value}`))
+  } catch (e) {
+    mailError.value = errorMessage(e)
+  } finally {
+    savingMail.value = false
+  }
+}
 
 onMounted(() => {
+  void meta.load()
+  // the link in notification e-mails (/profile#email)
+  if (route.hash === '#email') requestAnimationFrame(() => document.getElementById('email')?.scrollIntoView({ block: 'start' }))
   loadProjects()
   loadRbac()
   loadSessions()
@@ -435,6 +464,26 @@ onMounted(() => {
           <Button type="submit" :label="t('profile.savePreferences')" icon="pi pi-check" :loading="savingPrefs" :disabled="!prefsDirty" />
         </div>
       </form>
+    </section>
+
+    <!-- e-mail notifications -->
+    <section id="email" class="card" aria-labelledby="h-email" style="grid-column: 1 / -1">
+      <h2 id="h-email"><i class="pi pi-envelope" aria-hidden="true" /> {{ t('email.profileTitle') }}</h2>
+      <Message v-if="!emailEnabled" severity="info" :closable="false">{{ t('email.notConfigured') }}</Message>
+      <template v-else>
+        <p class="small muted" style="margin: 0 0 12px">{{ t('email.profileIntro', { email: auth.user?.email ?? '' }) }} {{ t('email.ownActions') }}</p>
+        <Message v-if="mailError" severity="error" :closable="false" style="margin-bottom: 10px">{{ mailError }}</Message>
+        <form class="row" style="align-items: flex-end; gap: 12px" @submit.prevent="saveMail">
+          <div v-field class="field" style="min-width: 220px">
+            <label for="pf-mail">{{ t('email.profileLabel') }}</label>
+            <Select v-model="mailMode" input-id="pf-mail" :options="mailOptions" option-label="label" option-value="value" aria-describedby="pf-mail-hint" />
+          </div>
+          <Button type="submit" :label="t('common.save')" icon="pi pi-check" :loading="savingMail" :disabled="mailMode === storedMail" />
+        </form>
+        <p id="pf-mail-hint" class="small muted" style="margin: 8px 0 0">
+          {{ t(`email.modeHint.${mailMode}`) }}<template v-if="mailMode === 'digest'"> {{ t('email.digestTime', { time: digestTime }) }}</template>
+        </p>
+      </template>
     </section>
 
     <!-- security -->

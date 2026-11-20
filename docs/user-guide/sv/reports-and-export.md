@@ -91,6 +91,29 @@ Ta fram rapporten i valfritt format, som ovan. För att återanvända den välje
 
 **Ta bort sparade rapporter** tar bort de markerade sparade egna rapporterna (standardrapporter kan inte tas bort). Att spara i arkivet och att ta bort kräver behörighet att redigera krav eller testfall; att ladda ner kräver exportbehörighet.
 
+## Skicka en rapport med e-post
+
+När servern kan skicka e-post har varje standardrapport en kuvertknapp (**Skicka med e-post**), och verktyget för egna rapporter har också **Skicka med e-post**. Välj:
+
+- **Medlemmar**: personer i din organisation som får läsa projektet. En medlem som inte får läsa det rapporten visar (till exempel testkörningar) hoppas över, och meddelandet säger vem.
+- **Andra adresser**, åtskilda med kommatecken: personer utanför organisationen. Det kräver behörighet att ändra projektet, så att Qtestframe inte kan användas för att skicka e-post till vem som helst.
+- ett **Meddelande** om du vill och **Format**.
+
+Rapporten tas fram med dina behörigheter och bifogas e-postmeddelandet. Om det inte kan levereras får du en [notis](reviews-and-notifications.md#notiser).
+
+## Schemalagda rapporter
+
+**Schemalagda rapporter**, längst ned på sidan Rapporter, skickar [sparade egna rapporter](#egna-rapporter) med e-post enligt ett schema. *(Kräver behörighet att redigera krav eller tester.)* Välj **Schemalägg en rapport** och välj sedan den sparade rapporten, **Hur ofta** (varje dag, varje vecka på en veckodag eller varje månad på en dag från 1 till 28), **Tid** och **Tidszon**, **Format**, mottagarna och ett meddelande om du vill.
+
+Listan visar varje schema med dess mottagare, när det **Senast skickades** (eller felet vid senaste försöket) och **Nästa utskick**. Stäng av **Aktiv** för att pausa ett schema, välj **Skicka nu** för att skicka direkt (schemat ändras inte), eller ändra och ta bort det. Bara den som schemalade rapporten, eller någon som får ändra projektet, kan ändra schemat.
+
+Bra att veta:
+
+- Rapporten tas fram med behörigheterna hos den som schemalade den, vid den tidpunkt den skickas. Om personen inte längre är medlem eller inte längre får exportera visar schemat ett fel i stället för att skicka.
+- Medlemmar som inte längre får läsa rapporten hoppas över.
+- Om servern var nere när en rapport skulle skickas skickas den en gång när servern är igång igen, inte en gång för varje missat tillfälle.
+- När den sparade rapporten tas bort försvinner även dess scheman.
+
 ## Vilket ska jag välja?
 
 | Behov | Använd |
@@ -100,3 +123,4 @@ Ta fram rapporten i valfritt format, som ovan. För att återanvända den välje
 | En statusrapport till ett styrgruppsmöte | **Rapporter → Projektstatus**, PDF |
 | Underlag för en revision eller en release | **Rapporter → Kravtäckning** eller **Sammanfattning av körning**, sparad i arkivet, tillsammans med en [baslinje](baselines.md) |
 | En återkommande lista med egna kolumner | En sparad **anpassad rapport** |
+| Samma rapport i mottagarnas inkorg varje vecka | En sparad anpassad rapport under **Schemalagda rapporter** |

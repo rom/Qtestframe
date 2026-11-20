@@ -137,6 +137,25 @@ The most important settings:
 | `runner.enabled` | allow server-side execution of automated test scripts (default `false`) |
 | `logging.syslog` | ship logs to a central syslog server |
 | `bootstrap.admin_email`, `bootstrap.admin_password` | first administrator, created only when the database has no users |
+| `email.host`, `email.port`, `email.tls`, `email.from` | outgoing e-mail (SMTP) for notification e-mails, invitations and reports by e-mail; off while `host` is empty |
+
+**E-mail** is optional. With it, users can get their notifications by e-mail (each one immediately or a daily digest, chosen in the profile), administrators can invite new members by e-mail instead of setting an initial password, and reports can be sent by e-mail or on a schedule. Without it these features are hidden in the web client and the API answers that e-mail is not configured. Links in e-mails use `server.base_url`, which is then required. The password is never written in the file: use `password_file` (relative paths are resolved against `$CREDENTIALS_DIRECTORY`) or the `QTF_EMAIL_PASSWORD` environment variable.
+
+```yaml
+email:
+  host: smtp.example.com
+  port: 587                  # 587 = STARTTLS, 465 = implicit TLS
+  tls: starttls              # starttls (default) | tls | none (local relay only)
+  username: qtestframe       # leave out for a relay without authentication
+  password_file: /run/secrets/smtp-password
+  from: qtestframe@example.com
+  from_name: Qtestframe
+  timeout: 30s               # per message
+  digest_hour: 7             # hour (UTC) of the daily notification digest
+  # enabled: false           # keep the settings but send nothing
+```
+
+Administrators check the settings with **Administration → Members → Send test e-mail**, which shows the answer of the mail server when sending fails. Mail is sent in the background (never for a request that fails), failures are logged.
 
 To use **PostgreSQL**, set:
 
