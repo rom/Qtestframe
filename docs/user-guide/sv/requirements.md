@@ -17,7 +17,7 @@ Den valda mappen, filtret och det öppna kravet ingår i sidans adress, så du k
 
 ## Kravnivåer
 
-Varje krav har en **kravnivå** enligt RFC 2119 och RFC 8174:
+Varje krav har en **kravnivå** enligt [RFC 2119 och RFC 8174](references.md#kravord-rfc):
 
 | Nivå | Betydelse |
 |---|---|
@@ -31,11 +31,30 @@ Varje krav har en **kravnivå** enligt RFC 2119 och RFC 8174:
 
 När du skapar ett krav med **Kravnivå** satt till **Identifiera automatiskt från texten** identifieras nivån från titeln och beskrivningen. Om flera kravord förekommer vinner det starkaste (MUST NOT före MUST före SHALL NOT … före Beskrivande). Text utan kravord får ingen kravnivå och räknas som *ospecificerad* på översikten. Senare ändringar ändrar aldrig kravnivån automatiskt; använd **Använd identifierad kravnivå** i analysrutan eller välj nivån själv.
 
-Bara kravord med VERSALER har normativ betydelse (RFC 8174). Skriv `MUST`, inte `must`. Kravorden skrivs alltid på engelska, även i svenska krav.
+Bara kravord med VERSALER har normativ betydelse (RFC 8174). Skriv `MUST`, inte `must`. I krav som är skrivna på svenska används i stället de svenska kravorden (SKA, BÖR, FÅR …) som beskrivs under [Språkanalysen](#språkanalysen). Sidan [Referenser](references.md) listar dessa och andra standarder för krav och test.
 
 ## Språkanalysen
 
 Medan du skriver beskrivningen visar rutan **Språkanalys av kravet** den identifierade kravnivån, en **Poäng** från 0 till 100, kravorden markerade i texten och en lista med **Anmärkningar**.
+
+Analysen förstår **svenska** och **engelska**. Som standard (**Identifiera språk**) avgör den vilket språk texten är skriven på och visar det bredvid väljaren, till exempel *Identifierat: Svenska*; välj **Svenska** eller **Engelska** i väljaren för att tvinga fram ett språk. Valet sparas i webbläsaren. Anmärkningarna visas alltid på ditt gränssnittsspråk, oavsett vilket språk kravet är skrivet på.
+
+På svenska är kravorden:
+
+| Kravord | Kravnivå |
+|---|---|
+| **SKA**, **SKALL** | Ska (shall) |
+| **MÅSTE**, **OBLIGATORISK** | Måste (must) |
+| **BÖR**, **REKOMMENDERAS** | Bör (should) |
+| **FÅR** | Får (may) |
+| **FÅR INTE**, **FÅR EJ** | Får inte (must not) |
+| **SKA INTE**, **SKALL INTE** | Ska inte (shall not) |
+| **BÖR INTE**, **REKOMMENDERAS INTE** | Bör inte (should not) |
+| **BEHÖVER INTE**, **MÅSTE INTE**, **VALFRI** | Valfritt (optional) |
+| **KOMMER ATT** | Kommer att (will) |
+| **BESKRIVER**, **NOT:**, **ANMÄRKNING:** | Beskrivande |
+
+Engelska kravord med versaler (MUST, SHALL …) räknas också. Svenskan har ingen konvention om versaler, så regeln om kravord med gemener gäller bara engelska. Tänk på att *får* även betyder "tar emot": i *användaren får ett mejl* tolkas *får* som ett tillåtande kravord.
 
 ![Språkanalysen med markerade kravord, identifierad kravnivå, poäng och anmärkningar](../images/sv-requirements-analysis.png)
 
@@ -52,8 +71,9 @@ Medan du skriver beskrivningen visar rutan **Språkanalys av kravet** den identi
 | And/or | Varning | `and/or`: ange om båda eller något av alternativen krävs |
 | Passiv förmåga | Info | *be able to*, *be capable of*: beskriv beteendet i stället |
 | Undantagsklausul | Varning | *if possible, where applicable, unless, except*: gör villkoret explicit |
+| Tvetydig negation | Varning | bara svenska: *måste inte* läses ofta som ett förbud men betyder "behöver inte"; skriv *får inte* eller *behöver inte* |
 
-Analysen bygger på engelska ord; i krav som är skrivna på svenska fungerar framför allt kravorden, platshållarna och and/or.
+Tabellen visar de engelska orden. I svensk text letar reglerna efter motsvarande svenska ord, till exempel *snabb, enkel, användarvänlig, effektiv, tillräcklig, lämplig, ungefär, flexibel, robust, intuitiv, osv, vid behov, normalt, vanligtvis, skalbar, optimal, flera, många, rimlig, så snart som möjligt* (tvetydiga), *bestäms senare* (platshållare), *alla, alltid, aldrig, varje, ingen* (obegränsade), *och/eller*, *kunna, ha möjlighet att* (passiv förmåga) och *om möjligt, där tillämpligt, om inte, utom, förutom* (undantag).
 
 **Poäng** = 100 − 25 per fel − 10 per varning − 2 per info, aldrig under 0. Till exempel får *The system shall respond fast and/or retry TBD.* poängen 53: kravord med gemener (info), *fast* (varning), *and/or* (varning) och *TBD* (fel).
 
@@ -124,7 +144,7 @@ Fliken **Kommentarer** är en diskussionstråd för kravet. Skriv i fältet och 
 
 ## Versionshistorik och återställning
 
-Varje ändring skapar en ny **version**. Fliken **Versionshistorik** listar versionerna med vem som gjorde ändringen, när och vilken sorts ändring det var (skapad, ändrad, återställd, flyttad, massändring). Välj en version för att se en jämförelse fält för fält med den föregående.
+Varje ändring skapar en ny **version**. Fliken **Versionshistorik** listar versionerna med vem som gjorde ändringen (med avatar), när och vilken sorts ändring det var (skapad, ändrad, återställd, flyttad, massändring). Välj en version för att se en jämförelse fält för fält med den föregående.
 
 ![Fliken Versionshistorik med versioner och en jämförelse per fält](../images/sv-requirements-history.png)
 

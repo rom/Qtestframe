@@ -1,6 +1,7 @@
 // Translated texts for the requirement-language analysis. The API reports
-// issues in English; known rules get a message in the active language with
-// the parameters recovered from the API text, others keep the API message.
+// issues with an English message plus structured params; known rules get a
+// message in the active UI language from those params (or, for older
+// servers, params recovered from the API text), others keep the API message.
 import type { LanguageIssue } from '@/lib/types'
 
 export const ANALYSIS_RULES = [
@@ -15,10 +16,12 @@ export const ANALYSIS_RULES = [
   'long-sentence',
   'negative-requirement',
   'escape-clause',
+  'ambiguous-negation',
 ] as const
 
 /** Message parameters per rule; null when the API text does not have the expected shape. */
-export function issueParams(issue: Pick<LanguageIssue, 'rule' | 'message' | 'offset' | 'length'>, text = ''): Record<string, string> | null {
+export function issueParams(issue: Pick<LanguageIssue, 'rule' | 'message' | 'offset' | 'length' | 'params'>, text = ''): Record<string, string> | null {
+  if (issue.params && Object.keys(issue.params).length) return { ...issue.params }
   const msg = issue.message ?? ''
   const quoted = msg.match(/"((?:[^"\\]|\\.)*)"/)?.[1]
   const fragment = text && issue.length > 0 ? text.slice(issue.offset, issue.offset + issue.length) : ''
@@ -26,7 +29,7 @@ export function issueParams(issue: Pick<LanguageIssue, 'rule' | 'message' | 'off
   const paren = msg.match(/\(([^)]+)\)/)?.[1]
   switch (issue.rule) {
     case 'missing-keyword':
-      return {}
+      return { examples: msg.match(/\(([^)]*?),? *(?:\.\.\.|…)\)/)?.[1] ?? 'MUST, SHALL, SHOULD, MAY' }
     case 'lowercase-keyword': {
       const kw = msg.match(/uppercase (\S+) has/)?.[1] ?? term.toUpperCase()
       return term ? { term, keyword: kw } : null
@@ -45,6 +48,7 @@ export function issueParams(issue: Pick<LanguageIssue, 'rule' | 'message' | 'off
     case 'and-or':
     case 'passive-capability':
     case 'escape-clause':
+    case 'ambiguous-negation':
       return term ? { term } : null
     default:
       return null
@@ -56,7 +60,7 @@ export function issueParams(issue: Pick<LanguageIssue, 'rule' | 'message' | 'off
  * (keys `analysis.rules.<rule>`), else the API message.
  */
 export function issueMessage(
-  issue: Pick<LanguageIssue, 'rule' | 'message' | 'offset' | 'length'>,
+  issue: Pick<LanguageIssue, 'rule' | 'message' | 'offset' | 'length' | 'params'>,
   text: string,
   translate: (key: string, params: Record<string, string>) => string,
 ): string {

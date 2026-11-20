@@ -34,3 +34,15 @@ export function runnerAction(e: KeyLike): RunnerAction | null {
   if (k === 'ArrowUp' || lower === 'k') return { type: 'step', delta: -1 }
   return null
 }
+
+/**
+ * True for "?" pressed outside text fields, widgets and dialogs, without
+ * Ctrl/Cmd/Alt and not already handled (the runner uses "?" itself): it
+ * opens the user guide on the page that explains the current view.
+ */
+export function isHelpShortcut(e: KeyLike): boolean {
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.key !== '?') return false
+  if (isTypingTarget(e.target)) return false
+  const el = e.target as Element | null
+  return !el?.closest?.('[role="dialog"], [role="alertdialog"], .p-dialog, .p-popover, .p-overlay-mask')
+}

@@ -17,7 +17,7 @@ The current folder, filter and open requirement are part of the page address, so
 
 ## Obligation levels
 
-Every requirement has an **obligation** based on RFC 2119 and RFC 8174:
+Every requirement has an **obligation** based on [RFC 2119 and RFC 8174](references.md#requirement-key-words-rfcs):
 
 | Level | Meaning |
 |---|---|
@@ -31,11 +31,13 @@ Every requirement has an **obligation** based on RFC 2119 and RFC 8174:
 
 When you create a requirement with **Obligation** set to **Auto-detect from text**, the level is detected from the title and description. If several keywords appear, the strongest one wins (Must not before Must before Shall not … before Describe). Text without any keyword has no obligation and is counted as *unspecified* on the dashboard. Later edits never change the obligation automatically; use **Apply detected obligation** in the analysis box, or pick a level yourself.
 
-Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`.
+Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`. Requirements written in Swedish use the Swedish keywords described under [The language analysis](#the-language-analysis). The [References](references.md) page lists these and other standards for requirements and testing.
 
 ## The language analysis
 
 While you type the description, the **Requirement language analysis** box shows the detected obligation, a **Score** from 0 to 100, the keywords highlighted in your text and a list of **Findings**.
+
+The analysis understands **English** and **Swedish**. By default (**Detect language**) it works out the language of the text and shows it next to the selector, for example *Detected: Swedish*; pick **English** or **Swedish** in the selector to force one. Your choice is remembered in this browser. The findings are always shown in your interface language, whichever language the requirement is written in.
 
 ![The language analysis with highlighted keywords, the detected obligation, the score and findings](../images/en-requirements-analysis.png)
 
@@ -52,6 +54,9 @@ While you type the description, the **Requirement language analysis** box shows 
 | And/or | Warning | `and/or`: say whether both or either is required |
 | Passive capability | Info | *be able to*, *be capable of*: describe the behaviour instead |
 | Escape clause | Warning | *if possible, where applicable, unless, except*: make the condition explicit |
+| Ambiguous negation | Warning | Swedish only: *måste inte* is often read as a prohibition but means "need not"; write *får inte* or *behöver inte* |
+
+In Swedish text the keywords are **SKA**/**SKALL** (shall), **MÅSTE** (must), **BÖR** (should), **FÅR** (may), **FÅR INTE** (must not), **SKA INTE** (shall not), **BÖR INTE** (should not), **BEHÖVER INTE** and **VALFRI** (optional), **KOMMER ATT** (will) and **BESKRIVER**/**NOT:** (descriptive); upper-case English keywords also count. Swedish has no upper-case convention, so the lower-case rule only applies to English. The other rules use Swedish words, such as *snabb, användarvänlig, osv, och/eller, kunna, om möjligt, alla*. Note that *får* also means "receives", so a sentence like *användaren får ett mejl* is read as *may*.
 
 **Score** = 100 − 25 per error − 10 per warning − 2 per info, never below 0. For example *The system shall respond fast and/or retry TBD.* scores 53: a lower-case keyword (info), *fast* (warning), *and/or* (warning) and *TBD* (error).
 
@@ -122,7 +127,7 @@ The **Comments** tab is a discussion thread on the requirement. Write in the fie
 
 ## History and restore
 
-Every change creates a new **version**. The **History** tab lists the versions with who made the change, when and what kind of change it was (created, updated, restored, moved, bulk update). Select a version to see a field-by-field comparison with the previous one.
+Every change creates a new **version**. The **History** tab lists the versions with who made the change (with their avatar), when and what kind of change it was (created, updated, restored, moved, bulk update). Select a version to see a field-by-field comparison with the previous one.
 
 ![The history tab with versions and a field-level comparison](../images/en-requirements-history.png)
 

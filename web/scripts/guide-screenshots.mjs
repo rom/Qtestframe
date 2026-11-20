@@ -135,7 +135,7 @@ const DATA = {
     token: 'GitLab CI',
     search: 'betalning',
     weak: 'The system should respond fast and/or retry TBD.',
-    analysis: 'The checkout shall be user-friendly and should respond as soon as possible, if possible. TBD',
+    analysis: 'Kassan ska vara användarvänlig och bör svara så snart som möjligt, om möjligt. TBD',
     newReqTitle: 'Tidsgräns för kortbetalning',
   },
 }

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { QUERY_FIELDS, QUERY_HELP, QUERY_OPERATORS } from '@/lib/query'
 import { useI18n } from 'vue-i18n'
+import { queryGuidePath } from '@/guide/tips'
 defineProps<{ scope: keyof typeof QUERY_FIELDS }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 </script>
 
 <template>
@@ -30,5 +31,8 @@ const { t } = useI18n()
     <div style="display: flex; flex-wrap: wrap; gap: 4px">
       <code v-for="f in QUERY_FIELDS[scope]" :key="f" class="tag-chip">{{ f }}</code>
     </div>
+    <RouterLink :to="queryGuidePath(String(locale))" class="row nowrap" style="gap: 6px; margin-top: 10px; font-weight: 600">
+      <i class="pi pi-book" aria-hidden="true" />{{ t('guide.queryGuide') }}
+    </RouterLink>
   </div>
 </template>

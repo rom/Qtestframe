@@ -483,6 +483,8 @@ type Revision struct {
 	ChangedFields []string        `json:"changed_fields"`
 	Snapshot      json.RawMessage `json:"snapshot"`
 	UserEmail     string          `json:"user_email"`
+	UserName      string          `json:"user_name"`
+	UserAvatar    string          `json:"user_avatar"`
 	CreatedAt     time.Time       `json:"created_at"`
 }
 
@@ -550,6 +552,8 @@ type AuditEntry struct {
 	TenantID   string    `json:"tenant_id"`
 	UserID     string    `json:"user_id"`
 	UserEmail  string    `json:"user_email"`
+	UserName   string    `json:"user_name"`
+	UserAvatar string    `json:"user_avatar"`
 	Action     string    `json:"action"`
 	EntityType string    `json:"entity_type"`
 	EntityID   string    `json:"entity_id"`

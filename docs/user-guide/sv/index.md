@@ -29,6 +29,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Administration](administration.md) | Organisationer, användare, medlemmar och roller, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
 | [Tillgänglighet och språk](accessibility-and-languages.md) | Tangentbord, skärmläsare, teman, engelska och svenska, mobiler och surfplattor |
 | [Vanliga frågor](faq.md) | Svar på vanliga frågor |
+| [Referenser](references.md) | RFC 2119, RFC 8174 och andra RFC:er, NIST-publikationer samt standarder för krav och test |
 
 ## Viktiga begrepp
 

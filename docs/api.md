@@ -85,8 +85,8 @@ is unreachable); all other paths serve the web client.
 | GET | `/tokens` | token.manage | own tokens in tenant |
 | POST | `/tokens` | token.manage | `{"name","role","expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; role defaults to and cannot exceed own role; a token cannot create tokens) |
 | DELETE | `/tokens/{id}` | token.manage | |
-| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`) |
-| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"runner_enabled"` and `"version"` |
+| GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user |
+| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"` and `"version"` |
 
 ## Projects
 
@@ -152,17 +152,23 @@ Reading needs `requirement.read`, writing `requirement.write`;
 | POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?}}` |
 | DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
-| POST | `/reqlang/analyze` | `{"text"}` → `Analysis` (below) |
+| POST | `/reqlang/analyze` | `{"text", "language"?}` → `Analysis` (below). `language` is a pack code from `/meta` `analysis_languages` (`en`, `sv`); empty or `auto` detects it from the text; anything else → 400 |
 
 `Analysis`:
 ```json
 {
   "obligation": "must",
   "keywords": [{"keyword":"MUST","level":"must","offset":10,"length":4}],
-  "issues": [{"rule":"ambiguous-term","severity":"warning","message":"...","offset":0,"length":4}],
-  "score": 85
+  "issues": [{"rule":"ambiguous-term","severity":"warning","message":"...","offset":0,"length":4,"params":{"term":"fast"}}],
+  "score": 85,
+  "language": "en"
 }
 ```
+
+`message` is always English. `params` holds the values a client needs to
+translate it by `rule`: `term` (the matched text), `keyword`, `keywords`,
+`words`/`max` (`long-sentence`) and `examples` (`missing-keyword`, the
+pack's typical keywords). `language` is the pack that was used.
 
 ## Test cases
 
@@ -245,7 +251,7 @@ stores a revision (a full JSON snapshot). Tests now also have a `version`.
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/requirements/{id}/history` | `[Revision]` newest first: `{id, entity_type, entity_id, version, action, changed_fields, snapshot, user_email, created_at}` |
+| GET | `/requirements/{id}/history` | `[Revision]` newest first: `{id, entity_type, entity_id, version, action, changed_fields, snapshot, user_email, user_name, user_avatar, created_at}`; `user_name`/`user_avatar` come from the current user record (empty if the user no longer exists) |
 | GET | `/tests/{id}/history` | same for tests |
 | POST | `/requirements/{id}/restore` | `{"revision_id"}` → restores the snapshot's fields (title, description, obligation, type, priority, status, source, rationale, owner, tags, categories, criteria) as a new version → Requirement |
 | POST | `/tests/{id}/restore` | `{"revision_id"}` → restores fields and steps as a new version → TestCase |

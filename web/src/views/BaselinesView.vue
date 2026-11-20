@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -327,6 +328,7 @@ function remove(b: Baseline) {
       <div v-field class="field"><label for="bl-desc">{{ t('common.description') }}</label><Textarea id="bl-desc" v-model="form.description" rows="2" auto-resize /></div>
       <div v-field class="field">
         <label>{{ t('baselines.filter') }}</label>
+        <HelpTip id="baseline.filter" :label="t('baselines.filter')" />
         <QueryInput v-model="form.query" scope="requirement" :error="formError" :placeholder="t('baselines.filterPlaceholder', { example: 'status:approved' })" @submit="create" />
         <span class="small muted">{{ t('baselines.filterHint') }}</span>
       </div>

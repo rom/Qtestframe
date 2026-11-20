@@ -123,8 +123,9 @@ func (s *Store) AddRevision(ctx context.Context, tenantID, entityType, entityID 
 
 // ListRevisions returns the revisions of an entity, newest first.
 func (s *Store) ListRevisions(ctx context.Context, tenantID, entityType, entityID string) ([]model.Revision, error) {
-	rows, err := s.c().query(ctx, `SELECT id, entity_type, entity_id, version, action, changed_fields, snapshot, user_email, created_at FROM revisions
-		WHERE tenant_id = ? AND entity_type = ? AND entity_id = ? ORDER BY created_at DESC, version DESC`, tenantID, entityType, entityID)
+	rows, err := s.c().query(ctx, `SELECT r.id, r.entity_type, r.entity_id, r.version, r.action, r.changed_fields, r.snapshot, r.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), r.created_at
+		FROM revisions r LEFT JOIN users u ON u.email = r.user_email
+		WHERE r.tenant_id = ? AND r.entity_type = ? AND r.entity_id = ? ORDER BY r.created_at DESC, r.version DESC`, tenantID, entityType, entityID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,15 +143,16 @@ func (s *Store) ListRevisions(ctx context.Context, tenantID, entityType, entityI
 
 // GetRevision returns one revision of an entity.
 func (s *Store) GetRevision(ctx context.Context, tenantID, entityType, entityID, id string) (*model.Revision, error) {
-	r, err := scanRevision(s.c().row(ctx, `SELECT id, entity_type, entity_id, version, action, changed_fields, snapshot, user_email, created_at FROM revisions
-		WHERE id = ? AND tenant_id = ? AND entity_type = ? AND entity_id = ?`, id, tenantID, entityType, entityID))
+	r, err := scanRevision(s.c().row(ctx, `SELECT r.id, r.entity_type, r.entity_id, r.version, r.action, r.changed_fields, r.snapshot, r.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), r.created_at
+		FROM revisions r LEFT JOIN users u ON u.email = r.user_email
+		WHERE r.id = ? AND r.tenant_id = ? AND r.entity_type = ? AND r.entity_id = ?`, id, tenantID, entityType, entityID))
 	return r, mapErr(err, "revision")
 }
 
 func scanRevision(r interface{ Scan(...any) error }) (*model.Revision, error) {
 	var rev model.Revision
 	var changed, snap string
-	if err := r.Scan(&rev.ID, &rev.EntityType, &rev.EntityID, &rev.Version, &rev.Action, &changed, &snap, &rev.UserEmail, &rev.CreatedAt); err != nil {
+	if err := r.Scan(&rev.ID, &rev.EntityType, &rev.EntityID, &rev.Version, &rev.Action, &changed, &snap, &rev.UserEmail, &rev.UserName, &rev.UserAvatar, &rev.CreatedAt); err != nil {
 		return nil, err
 	}
 	_ = json.Unmarshal([]byte(changed), &rev.ChangedFields)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Tabs from 'primevue/tabs'
@@ -212,6 +213,7 @@ function deleteProject() {
             <div v-field class="field"><label>{{ t('common.description') }}</label><Textarea v-model="pform.description" rows="3" auto-resize :disabled="!auth.can(P.projectUpdate)" /></div>
             <div v-field class="field">
               <label for="defect-tpl">{{ t('settings.defectTemplate') }}</label>
+              <HelpTip id="settings.defectTemplate" :label="t('settings.defectTemplate')" />
               <InputText id="defect-tpl" v-model="pform.defect_url_template" class="mono" :placeholder="defectPlaceholder" :disabled="!auth.can(P.projectUpdate)" :invalid="templateIssue === 'not_url'" :aria-describedby="templateHint ? 'defect-tpl-hint defect-tpl-issue' : 'defect-tpl-hint'" />
               <span id="defect-tpl-hint" class="small muted">
                 <i18n-t keypath="settings.defectTemplateHint" tag="span"><template #placeholder><code>{id}</code></template></i18n-t>
@@ -237,7 +239,7 @@ function deleteProject() {
   <Dialog v-model:visible="createDialog" :header="createForm.fixedDimension ? t('settings.addValueTo', { dimension: createForm.dimension }) : t('settings.newCategoryDimension')" modal style="width: min(460px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="create">
       <Message v-if="dialogError" severity="error" :closable="false">{{ dialogError }}</Message>
-      <div v-if="!createForm.fixedDimension" v-field class="field"><label>{{ t('settings.dimension') }}</label><InputText v-model="createForm.dimension" :placeholder="t('settings.dimensionPlaceholder')" autofocus /></div>
+      <div v-if="!createForm.fixedDimension" v-field class="field"><label>{{ t('settings.dimension') }}</label><HelpTip id="settings.dimension" :label="t('settings.dimension')" /><InputText v-model="createForm.dimension" :placeholder="t('settings.dimensionPlaceholder')" autofocus /></div>
       <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="createForm.name" :placeholder="t('settings.namePlaceholder')" /></div>
       <div v-field class="field">
         <label>{{ t('settings.color') }}</label>

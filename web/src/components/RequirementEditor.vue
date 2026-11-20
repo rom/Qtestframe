@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -46,7 +47,7 @@ const emit = defineEmits<{ saved: [item: Requirement]; deleted: [id: string]; cl
 const meta = useMetaStore()
 const notify = useNotify()
 const prefs = usePrefsStore()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const tabsId = uid('req-tabs')
 /** tab panel attributes for the content of a tab (only when the tabs are shown) */
 function panel(value: string) {
@@ -180,6 +181,30 @@ async function loadLinks() {
 // ---------- language analysis ----------
 const analysis = ref<Analysis | null>(null)
 const analyzing = ref(false)
+const LANG_KEY = 'qtf.analysisLanguage'
+function storedLanguage(): string {
+  try {
+    return localStorage.getItem(LANG_KEY) || 'auto'
+  } catch {
+    return 'auto'
+  }
+}
+/** "auto" detects the language of the text; otherwise a pack code. */
+const analysisLanguage = ref(storedLanguage())
+const languageLabel = (code: string) => (te(`analysis.languages.${code}`) ? t(`analysis.languages.${code}`) : code)
+const languageOptions = computed(() => [
+  { value: 'auto', label: t('analysis.languageAuto') },
+  ...meta.meta.analysis_languages.map((c) => ({ value: c, label: languageLabel(c) })),
+])
+watch(analysisLanguage, (v) => {
+  try {
+    localStorage.setItem(LANG_KEY, v)
+  } catch {
+    /* per-viewer convenience only */
+  }
+  runAnalysis(form.value.description ?? '')
+  runAnalysis.flush()
+})
 const runAnalysis = debounce(async (text: string) => {
   if (!text.trim() || prefs.hideAnalysis) {
     analysis.value = null
@@ -187,7 +212,7 @@ const runAnalysis = debounce(async (text: string) => {
   }
   analyzing.value = true
   try {
-    analysis.value = await api.post<Analysis>('/reqlang/analyze', { text })
+    analysis.value = await api.post<Analysis>('/reqlang/analyze', { text, language: analysisLanguage.value })
   } catch {
     analysis.value = null
   } finally {
@@ -230,9 +255,10 @@ const issues = computed(() => {
   })
 })
 /** Issue message in the active language (known rules), else the API's English text. */
-function issueText(i: { rule: string; message: string; offset: number; length: number }): string {
+function issueText(i: { rule: string; message: string; offset: number; length: number; params?: Record<string, string> }): string {
   return issueMessage(i, form.value.description ?? '', (key, params) => t(key, params))
 }
+const noKeywordExamples = computed(() => analysis.value?.issues?.find((i) => i.rule === 'missing-keyword')?.params?.examples ?? 'MUST, SHALL, SHOULD, MAY')
 const detectedDiffers = computed(() => !!analysis.value?.obligation && analysis.value.obligation !== form.value.obligation)
 function applyDetected() {
   if (analysis.value?.obligation) form.value.obligation = analysis.value.obligation
@@ -381,7 +407,18 @@ function criterionLabel(id: string | null) {
         <span class="row">
           <i class="pi pi-sparkles" style="color: var(--p-primary-color)" />
           <b class="small">{{ t('analysis.title') }}</b>
+          <HelpTip id="req.analysis" :label="t('analysis.title')" />
           <ProgressSpinner v-if="analyzing" style="width: 14px; height: 14px" stroke-width="6" :aria-label="t('common.loading')" />
+          <Select
+            v-model="analysisLanguage"
+            :options="languageOptions"
+            option-label="label"
+            option-value="value"
+            size="small"
+            :aria-label="t('analysis.language')"
+            :title="t('analysis.language')"
+          />
+          <span v-if="analysis?.language && analysisLanguage === 'auto'" class="small muted">{{ t('analysis.detectedLanguage', { language: languageLabel(analysis.language) }) }}</span>
         </span>
         <span v-if="analysis" class="row" aria-live="polite" aria-atomic="true">
           <span class="small muted">{{ t('analysis.detected') }}</span>
@@ -397,7 +434,7 @@ function criterionLabel(id: string | null) {
         </template>
       </div>
       <div v-if="!analysis?.keywords?.length && analysis" class="small muted" style="margin-top: 6px">
-        {{ t('analysis.noKeyword') }}
+        {{ t('analysis.noKeyword', { examples: noKeywordExamples }) }}
       </div>
       <ul v-if="issues.length" style="margin: 8px 0 0; padding-left: 18px" aria-live="polite" :aria-label="t('analysis.issues')">
         <li v-for="(i, n) in issues" :key="n" class="small">
@@ -411,6 +448,7 @@ function criterionLabel(id: string | null) {
     <div class="form-grid">
       <div v-field class="field">
         <label>{{ t('requirements.obligation') }}</label>
+        <HelpTip id="req.obligation" :label="t('requirements.obligation')" />
         <Select v-model="form.obligation" :options="obligationOptions" option-label="label" option-value="value" :disabled="!canWrite">
           <template #value="{ value }">
             <StatusTag v-if="value" :value="value" kind="obligation" />
@@ -420,38 +458,47 @@ function criterionLabel(id: string | null) {
       </div>
       <div v-field class="field">
         <label>{{ t('common.status') }}</label>
+        <HelpTip id="req.status" :label="t('common.status')" />
         <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.type') }}</label>
+        <HelpTip id="req.type" :label="t('common.type')" />
         <Select v-model="form.type" :options="typeOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.priority') }}</label>
+        <HelpTip id="req.priority" :label="t('common.priority')" />
         <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.owner') }}</label>
+        <HelpTip id="req.owner" :label="t('common.owner')" />
         <InputText v-model="form.owner" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.source') }}</label>
+        <HelpTip id="req.source" :label="t('common.source')" />
         <InputText v-model="form.source" :disabled="!canWrite" :placeholder="t('requirements.sourcePlaceholder')" />
       </div>
       <div v-field class="field full">
         <label>{{ t('requirements.rationale') }}</label>
+        <HelpTip id="req.rationale" :label="t('requirements.rationale')" />
         <Textarea v-model="form.rationale" rows="2" auto-resize :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.folder') }}</label>
+        <HelpTip id="req.folder" :label="t('common.folder')" />
         <Select v-model="form.folder_id" :options="folderOptions" option-label="label" option-value="id" filter :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.categories') }}</label>
+        <HelpTip id="req.categories" :label="t('common.categories')" />
         <CategorySelect v-model="form.category_ids" :categories="categories" :disabled="!canWrite" />
       </div>
       <div v-field class="field full">
         <label>{{ t('common.tags') }}</label>
+        <HelpTip id="req.tags" :label="t('common.tags')" />
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
       </div>
     </div>
@@ -459,6 +506,7 @@ function criterionLabel(id: string | null) {
     <div>
       <div class="section-title">
         <i class="pi pi-verified" /> {{ t('requirements.criteria') }}
+        <HelpTip id="req.criteria" :label="t('requirements.criteria')" />
         <span class="grow" />
         <Button v-if="canWrite" size="small" :label="t('requirements.addCriterion')" icon="pi pi-plus" text @click="addCriterion" />
       </div>
@@ -503,6 +551,7 @@ function criterionLabel(id: string | null) {
         <Checkbox v-model="createTest" binary input-id="create-test" />
         {{ t('editor.alsoCreateTest') }}
       </label>
+      <HelpTip v-if="isNew && canWrite && canLink" id="req.linkedTest" :label="t('editor.alsoCreateTest')" />
       <Button :label="t('common.close')" severity="secondary" text @click="emit('close')" />
       <Button v-if="canWrite" type="submit" :label="isNew ? t('common.create') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
     </div>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Reports: standard templates, a custom report builder, saved definitions;
 // download or save to the document archive.
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
@@ -334,7 +335,7 @@ onMounted(() => {
           </div>
           <div v-field class="field"><label>{{ t('reports.reportTitle') }}</label><InputText v-model="form.title" :maxlength="200" /></div>
           <div class="form-grid" style="gap: 12px">
-            <div v-field class="field"><label>{{ t('reports.groupBy') }}</label><Select v-model="form.group_by" :options="fieldOptions" option-label="label" option-value="value" :placeholder="t('common.none')" /></div>
+            <div v-field class="field"><label>{{ t('reports.groupBy') }}</label><HelpTip id="report.groupBy" :label="t('reports.groupBy')" /><Select v-model="form.group_by" :options="fieldOptions" option-label="label" option-value="value" :placeholder="t('common.none')" /></div>
             <div v-field class="field"><label>{{ t('reports.sortBy') }}</label><Select v-model="form.sort_by" :options="fieldOptions" option-label="label" option-value="value" :placeholder="t('common.none')" /></div>
           </div>
           <div class="row" style="gap: 18px">
@@ -344,7 +345,7 @@ onMounted(() => {
         </div>
         <div class="grid" style="gap: 10px; align-content: start">
           <fieldset class="plain-fieldset">
-            <legend class="field-label">{{ t('reports.availableColumns') }}</legend>
+            <legend class="field-label">{{ t('reports.availableColumns') }} <HelpTip id="report.columns" :label="t('reports.availableColumns')" /></legend>
             <Message v-if="fieldsError" severity="warn" :closable="false" class="small">{{ t('reports.fieldsUnavailable') }}</Message>
             <div class="col-pick">
               <span v-for="f in fields" :key="f.id" class="row nowrap small">

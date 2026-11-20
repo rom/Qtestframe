@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import IconField from 'primevue/iconfield'
@@ -143,7 +144,8 @@ async function toggle(reqId: string, testId: string) {
       <InputText v-model="testFilter" :placeholder="t('traceability.filterTests')" :aria-label="t('traceability.filterTests')" />
     </IconField>
     <MultiSelect v-model="coverage" :options="coverageOptions" option-label="label" option-value="value" :placeholder="t('traceability.coverage')" :aria-label="t('traceability.coverage')" style="min-width: 150px" show-clear />
-    <span class="row small nowrap"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">{{ t('traceability.onlyLinked') }}</label></span>
+    <span class="row small nowrap"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">{{ t('traceability.onlyLinked') }}</label><HelpTip id="trace.onlyLinked" :label="t('traceability.onlyLinked')" /></span>
+    <HelpTip id="trace.coverage" :label="t('traceability.coverage')" />
     <ul class="row small muted plain-list trace-legend" :aria-label="t('traceability.legend')">
       <li v-for="(c, k) in COVERAGE_COLORS" :key="k" class="row nowrap" style="gap: 4px"><span aria-hidden="true" :style="{ width: '10px', height: '10px', borderRadius: '3px', background: c }" />{{ enumLabel('coverage', String(k)) }}</li>
     </ul>

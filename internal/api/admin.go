@@ -12,6 +12,7 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/rbac"
+	"github.com/rom/qtestframe/internal/reqlang"
 	"github.com/rom/qtestframe/internal/store"
 )
 
@@ -30,6 +31,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"runner_enabled":       s.Runner.Enabled(),
 		"auto_create_test":     s.Cfg.Requirements.AutoCreateTest,
 		"max_upload_mb":        s.Cfg.Files.MaxUploadMB,
+		"analysis_languages":   reqlang.Languages(),
 		"themes":               model.Themes,
 		"languages":            model.Languages,
 		"version":              Version,

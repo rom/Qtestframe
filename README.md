@@ -30,11 +30,12 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
 - **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
 - **Personal touches:** avatars for users and icons for projects (presets or uploaded images), a "last signed in" notice with failed attempts, and a first-login intro tour.
-- **Built-in user guide** in English and Swedish with a tutorial and FAQ, available under Help in the tool ([docs/user-guide](docs/user-guide/en/index.md)).
+- **Built-in user guide** in English and Swedish with a tutorial, FAQ and a [references](docs/user-guide/en/references.md) page (RFC 2119, RFC 8174, NIST, ISO/IEC/IEEE 29148 and 29119 and more), available under Help in the tool ([docs/user-guide](docs/user-guide/en/index.md)).
+- **Context-sensitive help:** an *i* next to form fields explains the field on mouse-over or keyboard focus and links to the matching section of the guide; <kbd>?</kbd> opens the guide page for the current view.
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
 - **Grouping:** nested folders for requirements and tests. Drag and drop moves items, whole folders, or entire category dimensions, also to another project.
 - **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dashboard, global search, administration.
-- **Filtering and search on every field** with a query language: field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
+- **Filtering and search on every field** with a [query language](#query-language): field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
 - **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**.
 - **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, tester, viewer + super admin), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
@@ -173,23 +174,13 @@ In the run, **Execute** walks through the tests one by one:
 
 ### 6. Filter and search
 
-Every table has a filter bar, and the search box at the top searches all projects. Both use the same query language:
+Every table has a filter field, and the search box in the top bar searches all projects of the organisation. Both use the same [query language](#query-language), described below. The **?** button next to every filter field lists the operators and fields of that list, and **Help → Query language** opens the full description in the built-in user guide.
 
-| Query | Finds |
-|---|---|
-| `login` | "login" in any field |
-| `status:approved priority=high` | both conditions (implicit AND) |
-| `obligation:must OR obligation:shall` | either |
-| `-status:obsolete` or `NOT status:obsolete` | negation |
-| `title~/^(login\|logout)/i` | regular expression, case-insensitive |
-| `key:*-REQ-1*` | glob |
-| `version>=2 updated_at>2026-01-01` | comparisons |
-| `category:Security coverage:none` | requirements in the Security area without any linked test |
-| `has:criteria` | field is not empty |
-| `child:*` | requirements that have been decomposed into children |
-| `defect:JIRA-*` (tests) | tests with a JIRA defect on any execution |
-
-The full syntax and field list is in [docs/api.md](docs/api.md#query-language).
+```text
+status:approved priority=high                  approved AND high priority
+coverage:none category:Security                security requirements without any test
+type=automated last_result:failed              failed automated tests
+```
 
 ### 7. Export
 
@@ -209,6 +200,83 @@ The user menu → **Profile & password** has your display name and preferences: 
 ### Categories & settings
 
 Manage category dimensions and values with their colours, rename or merge whole dimensions, and edit the project name and description.
+
+## Query language
+
+One small language filters every list in Qtestframe: requirements, tests, runs, executions, the traceability matrix, the audit log and the document archive. It is also used by the global search, by baselines, by exports and reports, and to select the tests of a new run. In the API it is the `q` parameter. Queries are evaluated by the server, so the same query gives the same result in the UI, in exports and in scripts.
+
+The same description, with more examples, is in the user guide: [Search and filters](docs/user-guide/en/search-and-filters.md) ([på svenska](docs/user-guide/sv/search-and-filters.md)). It is also available in the tool under **Help → Query language**.
+
+### Terms
+
+| You write | It finds |
+|---|---|
+| `login` | *login* anywhere in any field (case-insensitive) |
+| `"session timeout"` | the exact phrase anywhere |
+| `status:approved` | items whose status **contains** *approved* |
+| `priority=high` | priority **equals** *high* (case-insensitive) |
+| `priority!=low` | priority is not *low* |
+| `title~/^login.*(fail\|error)/i` | regular expression (RE2), `/i` ignores case |
+| `description!~/TBD/` | the regular expression does not match |
+| `key:*-REQ-1?` | glob: `*` any characters, `?` one character, matched against the whole value |
+| `version>=2`, `estimate<30` | numeric comparison |
+| `updated_at>=2026-01-01` | date comparison (timestamps are RFC 3339, UTC) |
+| `has:criteria` or `criteria:*` | the field is not empty |
+| `category=""` | the field is empty |
+| `/timeout/i` | regular expression over all fields |
+
+### Combining terms
+
+| You write | Meaning |
+|---|---|
+| `status:approved priority=high` | terms next to each other are combined with **AND** |
+| `a AND b`, `a && b` | both |
+| `a OR b`, `a \|\| b` | either |
+| `NOT a`, `!a`, `-a` | negation; `-` must be directly followed by the term |
+| `(tag:smoke OR tag:regression) -status:deprecated` | parentheses group terms |
+
+`NOT` binds tighter than `AND`, and `AND` tighter than `OR`. Keywords and field names are case-insensitive. Values with spaces need quotes (`category:"Network based"`); write `\"` for a quote inside quotes. An empty query matches everything.
+
+Fields with several values (tags, categories, criteria, steps, linked items, defects) match a positive condition if **any** value matches, and a negative one (`!=`, `!~`) only if **no** value matches.
+
+### Fields
+
+| List | Fields (aliases in parentheses) |
+|---|---|
+| Requirements | `id`, `key`, `title`, `description` (`desc`), `obligation`, `type`, `priority`, `status`, `source`, `rationale`, `owner`, `tag` (`tags`), `version`, `folder`, `category` (`categories`), `dimension`, `coverage`, `linked`, `related` (`relation`), `parent` (`parents`), `child` (`children`), `comments`, `criteria` (`criterion`), `created_by`, `created_at`, `updated_at` |
+| Tests | `id`, `key`, `title`, `description` (`desc`), `preconditions`, `execution_type` (`type`), `script_language` (`language`), `script`, `expected`, `step` (`steps`), `priority`, `status`, `estimate`, `tag` (`tags`), `folder`, `category` (`categories`), `dimension`, `linked`, `last_result` (`result`), `defect` (`defects`), `calls`, `comments`, `version`, `created_by`, `created_at`, `updated_at` |
+| Runs | `id`, `name`, `description`, `status`, `environment` (`env`), `build`, `created_by`, `created_at` |
+| Executions (run page) | `id`, `key`, `title`, `status`, `assignee`, `executed_by`, `notes`, `output`, `defect` (`defects`) |
+| Audit log | `action`, `entity`, `entity_id`, `user`, `details`, `created_at` |
+| Document archive | `id`, `name`, `description`, `tag` (`tags`), `kind`, `type` (`content_type`), `uploaded_by` (`by`), `created_at`, `size`, `linked` |
+| Global search | the requirement, test and run fields, plus `project` (key or name) and `kind` (`requirement`, `test`, `run`) |
+
+What the fields hold: `folder` is the folder path (`Checkout / Payment`); `category` holds category names and `dimension` holds `Dimension/Name`; `linked`, `related`, `parent`, `child` and `calls` hold item keys; `criteria` holds description, method and threshold of every criterion; `step` holds action, expected result and data of every step; `coverage` is `none`, `not_run`, `passed`, `failed` or `partial`; `comments`, `version`, `estimate` (minutes) and `size` (bytes) are numbers. A field that does not exist in a list is an error, so `coverage:none` works for requirements but not for tests.
+
+### Examples
+
+```text
+obligation=must status!=approved               MUST requirements not yet approved
+coverage:none category:Security                security requirements without any test
+coverage:failed priority=critical              critical requirements whose tests fail
+-has:criteria status:approved                  approved, but no evaluation criteria
+description~/\b(fast|easy|TBD)\b/i             weak wording
+folder:"Checkout / Payment"                    a folder and its subfolders
+child:*                                        requirements that have been decomposed
+linked:SHOP-TC-3                               requirements verified by SHOP-TC-3
+version>=3 updated_at>=2026-06-01              changed often and recently
+type=automated last_result:failed              failed automated tests
+-linked:*                                      tests not linked to any requirement
+defect:JIRA-*                                  tests with a JIRA defect
+status:in_progress env:staging                 runs in progress on staging
+assignee:anna -status:passed                   (run page) Anna's executions that have not passed
+action:member.* created_at>=2026-01-01         (audit log) membership changes this year
+kind=requirement project:SHOP coverage:none    (search) uncovered requirements of SHOP
+```
+
+### Errors and limits
+
+An invalid query is rejected with a message that points at the position of the problem (`400 invalid_query` with `position` in the API). The usual causes are an unknown field, an unclosed quote, parenthesis or regex, and a space after the operator (`status: approved`). Regular expressions use [RE2 syntax](https://github.com/google/re2/wiki/Syntax), so look-ahead and back-references are not supported. A query may be at most 4096 bytes long, with at most 64 regular expressions or globs and 128 levels of nesting. The grammar is in [docs/design.md §9](docs/design.md#9-query-language).
 
 ## Users, tenants and roles
 
@@ -323,3 +391,4 @@ make coverage
 | [docs/api.md](docs/api.md) | REST API and query language reference |
 | [docs/operations.md](docs/operations.md) | installation, TLS, OIDC/SAML, syslog, backup |
 | [docs/user-guide](docs/user-guide/en/index.md) | user guide with tutorial and FAQ (also [in Swedish](docs/user-guide/sv/index.md) and in the tool under Help) |
+| [docs/user-guide/en/references.md](docs/user-guide/en/references.md) | references: RFC 2119, RFC 8174 and other RFCs, NIST publications, requirement and testing standards |

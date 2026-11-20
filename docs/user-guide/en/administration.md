@@ -76,7 +76,7 @@ Use it as a bearer token: `Authorization: Bearer qtf_…`. A token belongs to on
 
 ## Audit log
 
-*(Manager)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins and sign-outs, membership changes and more. Newest entries come first.
+*(Manager)* **Administration → Audit log** records who did what and when in the organisation: creating, changing and deleting items, sign-ins and sign-outs, membership changes and more. Newest entries come first. Each entry shows the avatar of the person who did it.
 
 ![The audit log with time, user, action, entity and details](../images/en-admin-audit.png)
 

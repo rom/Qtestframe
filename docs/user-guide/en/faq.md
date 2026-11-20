@@ -118,6 +118,10 @@ The search in the top bar covers all projects of the **current organisation** th
 
 ## Settings and devices
 
+### What does a field mean?
+
+Point at the small **i** next to it, or move the keyboard focus there: a short explanation appears, with a link to the section of this guide that describes the field. Press <kbd>?</kbd> to open the guide page of the current view. For the standards behind requirement levels and testing, see [References](references.md).
+
 ### How do I change the language or theme?
 
 Language: **User menu → Language** (English or Svenska). Theme: the **Colour theme** picker in the top bar, or the sun/moon button for light and dark. Both are also in **Profile → Preferences** and are stored with your account, so they follow you to every device.

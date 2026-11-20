@@ -583,6 +583,14 @@ func TestRequirements(t *testing.T) {
 		t.Fatal(an)
 	}
 	a.m("POST", "/api/v1/reqlang/analyze", "", 400)
+	sv := a.m("POST", "/api/v1/reqlang/analyze", map[string]string{"text": "Systemet ska vara snabbt och/eller enkelt."}, 200)
+	if sv["obligation"] != "shall" || sv["language"] != "sv" || len(sv["issues"].([]any)) < 2 {
+		t.Fatal(sv)
+	}
+	if forced := a.m("POST", "/api/v1/reqlang/analyze", map[string]string{"text": "The system shall work.", "language": "sv"}, 200); forced["language"] != "sv" {
+		t.Fatal(forced)
+	}
+	a.m("POST", "/api/v1/reqlang/analyze", map[string]string{"text": "x", "language": "xx"}, 400)
 
 	// bulk
 	ids := []string{id, r2["id"].(string)}

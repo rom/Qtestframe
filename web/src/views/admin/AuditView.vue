@@ -116,7 +116,7 @@ const details = computed(() => prettyDetails(detail.value?.details))
     <DataTable v-stack :value="entries" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" :rows-per-page-options="prefs.rowsPerPage" size="small" sort-field="created_at" :sort-order="-1">
       <Column field="created_at" :header="t('common.time')" sortable style="width: 160px"><template #body="{ data }"><span class="small" :title="formatFullDateTime(data.created_at)">{{ formatDateTime(data.created_at) }}</span></template></Column>
       <Column field="user_email" :header="t('common.user')" sortable style="width: 220px">
-        <template #body="{ data }"><span class="row nowrap small" style="gap: 6px; min-width: 0"><UserAvatar v-if="data.user_email" :user-id="data.user_id" :email="data.user_email" :name="data.user_email" :size="20" /><span class="ellipsis">{{ data.user_email || t('common.system') }}</span></span></template>
+        <template #body="{ data }"><span class="row nowrap small" style="gap: 6px; min-width: 0"><UserAvatar v-if="data.user_email" :avatar="data.user_avatar" :user-id="data.user_id" :email="data.user_email" :name="data.user_name || data.user_email" :size="24" /><span class="ellipsis" :title="data.user_email">{{ data.user_email || t('common.system') }}</span></span></template>
       </Column>
       <Column field="action" :header="t('admin.action')" sortable style="width: 170px"><template #body="{ data }"><Tag :value="data.action" :severity="actionSeverity(data.action)" /></template></Column>
       <Column field="entity_type" :header="t('admin.entity')" sortable style="width: 130px" />
@@ -131,7 +131,7 @@ const details = computed(() => prettyDetails(detail.value?.details))
   <Drawer v-model:visible="drawer" position="right" :header="t('audit.entry')" class="audit-drawer" :style="{ width: 'min(520px, 100vw)' }">
     <dl v-if="detail" class="kv">
       <dt class="small muted">{{ t('common.time') }}</dt><dd>{{ formatFullDateTime(detail.created_at) }}</dd>
-      <dt class="small muted">{{ t('common.user') }}</dt><dd>{{ detail.user_email || t('common.system') }} <span v-if="detail.user_id" class="mono small muted">{{ detail.user_id }}</span></dd>
+      <dt class="small muted">{{ t('common.user') }}</dt><dd class="row nowrap" style="gap: 6px"><UserAvatar v-if="detail.user_email" :avatar="detail.user_avatar" :user-id="detail.user_id" :email="detail.user_email" :name="detail.user_name || detail.user_email" :size="28" />{{ detail.user_name ? `${detail.user_name} <${detail.user_email}>` : detail.user_email || t('common.system') }} <span v-if="detail.user_id" class="mono small muted">{{ detail.user_id }}</span></dd>
       <dt class="small muted">{{ t('admin.action') }}</dt><dd><Tag :value="detail.action" :severity="actionSeverity(detail.action)" /></dd>
       <dt class="small muted">{{ t('admin.entity') }}</dt><dd>{{ detail.entity_type || '—' }}</dd>
       <dt class="small muted">{{ t('admin.entityId') }}</dt><dd class="mono small" style="word-break: break-all">{{ detail.entity_id || '—' }}</dd>
