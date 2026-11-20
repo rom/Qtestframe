@@ -15,6 +15,7 @@ import FolderPickerDialog from './FolderPickerDialog.vue'
 import QueryInput from './QueryInput.vue'
 import StatusTag from './StatusTag.vue'
 import CategoryChips from './CategoryChips.vue'
+import DefectLinks from './DefectLinks.vue'
 import CategorySelect from './CategorySelect.vue'
 import RequirementEditor from './RequirementEditor.vue'
 import TestEditor from './TestEditor.vue'
@@ -35,6 +36,8 @@ import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { rememberFocus } from '@/lib/a11y'
+import RelationsCell from './RelationsCell.vue'
+import MentionText from './MentionText.vue'
 import HelpLink from '@/guide/HelpLink.vue'
 const prefs = usePrefsStore()
 /** below 1200 px the folder tree lives in a drawer opened by a "Folders" button */
@@ -137,6 +140,8 @@ interface Col {
   header: string
   width?: string
   sortable?: boolean
+  /** field to sort by when it differs from the displayed one */
+  sortField?: string
 }
 const allColumns = computed<Col[]>(() =>
   isReq.value
@@ -150,9 +155,15 @@ const allColumns = computed<Col[]>(() =>
         { field: 'category_ids', header: t('workspace.colCategories'), sortable: false },
         { field: 'folder_path', header: t('workspace.colFolder') },
         { field: 'owner', header: t('workspace.colOwner') },
+        { field: 'source', header: t('workspace.colSource') },
+        { field: 'tags', header: t('workspace.colTags'), sortable: false },
+        { field: 'relations', header: t('workspace.colRelations'), sortField: 'relation_count', width: '240px' },
+        { field: 'relation_count', header: t('workspace.colRelationCount'), width: '105px' },
+        { field: 'criteria_count', header: t('workspace.colCriteria'), width: '90px' },
         { field: 'version', header: t('workspace.colVersion'), width: '70px' },
-        { field: 'relation_count', header: t('workspace.colRelations'), width: '105px' },
         { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'created_by', header: t('workspace.colCreatedBy') },
+        { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
       ]
     : [
@@ -164,8 +175,15 @@ const allColumns = computed<Col[]>(() =>
         { field: 'category_ids', header: t('workspace.colCategories'), sortable: false },
         { field: 'folder_path', header: t('workspace.colFolder') },
         { field: 'estimated_minutes', header: t('workspace.colEstimate'), width: '100px' },
+        { field: 'script_language', header: t('workspace.colScriptLanguage'), width: '110px' },
+        { field: 'step_count', header: t('workspace.colSteps'), width: '80px' },
+        { field: 'tags', header: t('workspace.colTags'), sortable: false },
+        { field: 'relations', header: t('workspace.colRelations'), sortable: false, width: '240px' },
+        { field: 'defects', header: t('workspace.colDefects'), sortable: false },
         { field: 'version', header: t('workspace.colVersion'), width: '70px' },
         { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
+        { field: 'created_by', header: t('workspace.colCreatedBy') },
+        { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
       ],
 )
@@ -179,7 +197,8 @@ const visibleFields = ref<string[]>(loadCols())
 function loadCols(): string[] {
   try {
     const v = JSON.parse(readPref(`qtf.cols.${props.kind}`) || 'null')
-    if (Array.isArray(v)) return v
+    // the old count-only "Relations" column became the list of relations
+    if (Array.isArray(v)) return v.map((f) => (f === 'relation_count' ? 'relations' : f))
   } catch {
     /* ignore */
   }
@@ -462,7 +481,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <button type="button" class="link-button item-title" :aria-label="t('workspace.openItem', { key: data.key, title: data.title })" @click.stop="openEditor((data as Item).id)">{{ data.title }}</button>
           </template>
         </Column>
-        <Column v-for="c in visibleColumns" :key="c.field" :field="c.field" :header="c.header" :sortable="c.sortable !== false" :style="c.width ? { width: c.width } : {}">
+        <Column v-for="c in visibleColumns" :key="c.field" :field="c.field" :sort-field="c.sortField ?? c.field" :header="c.header" :sortable="c.sortable !== false" :style="c.width ? { width: c.width } : {}">
           <template #body="{ data }">
             <StatusTag v-if="c.field === 'obligation'" :value="data.obligation" kind="obligation" />
             <StatusTag v-else-if="c.field === 'status'" :value="data.status" />
@@ -473,7 +492,16 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
               <i :class="data.execution_type === 'automated' ? 'pi pi-bolt' : 'pi pi-user'" class="muted" />{{ enumLabel('executionType', data.execution_type) }}
             </span>
             <CategoryChips v-else-if="c.field === 'category_ids'" :ids="data.category_ids" :categories="categories" />
-            <span v-else-if="c.field === 'updated_at'" class="small muted">{{ formatDate(data.updated_at) }}</span>
+            <span v-else-if="c.field === 'updated_at' || c.field === 'created_at'" class="small muted">{{ formatDate(data[c.field]) }}</span>
+            <RelationsCell v-else-if="c.field === 'relations'" :refs="data.relations" :project-id="pid" />
+            <MentionText v-else-if="c.field === 'owner'" :text="data.owner" class="small" />
+            <span v-else-if="c.field === 'tags'" class="row small" style="gap: 4px">
+              <span v-for="tag in data.tags ?? []" :key="tag" class="tag-chip">{{ tag }}</span>
+            </span>
+            <DefectLinks v-else-if="c.field === 'defects'" :defects="data.defects" class="small" />
+            <span v-else-if="c.field === 'script_language'" class="small mono">{{ data.execution_type === 'automated' ? data.script_language : '' }}</span>
+            <span v-else-if="c.field === 'criteria_count' || c.field === 'step_count'" class="small" :class="{ muted: !data[c.field] }">{{ data[c.field] ?? 0 }}</span>
+            <span v-else-if="c.field === 'created_by' || c.field === 'source'" class="small">{{ data[c.field] }}</span>
             <span v-else-if="c.field === 'type'" class="small">{{ enumLabel('requirementType', data.type) }}</span>
             <span v-else-if="c.field === 'folder_path'" class="small muted">{{ data.folder_path }}</span>
             <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">

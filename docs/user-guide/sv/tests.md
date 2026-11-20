@@ -4,7 +4,7 @@ Delen **Testfall** innehåller projektets testfall. Ett testfall är antingen **
 
 Att läsa testfall kräver **Läsare**; att skapa, redigera, länka och kopiera testfall kräver **Testare**.
 
-Sidan fungerar som [kravsidan](requirements.md#kravsidan): mappträd, filterfält med snabbfilter (**Status**, **Exekvering**, **Prioritet**, **Senaste utfall**, **Kategori**), valbara kolumner och en tabell. Massändring, flytt och borttagning fungerar på samma sätt; verktygsfältet för massändring har **Ange exekvering** i stället för *Ange kravnivå*.
+Sidan fungerar som [kravsidan](requirements.md#kravsidan): mappträd, filterfält med snabbfilter (**Status**, **Exekvering**, **Prioritet**, **Senaste utfall**, **Kategori**), valbara kolumner (bland annat exekveringstyp, senaste utfall, länkade krav, språk, steg, taggar, **relationer** — *verifierar*, *anropar* och *anropas av* — defekter, skapad av och datum) och en tabell. Massändring, flytt och borttagning fungerar på samma sätt; verktygsfältet för massändring har **Ange exekvering** i stället för *Ange kravnivå*.
 
 ![Testfallssidan med testmappsträdet och tabellen med typ, status och senaste utfall](../images/sv-tests-list.png)
 
@@ -19,7 +19,7 @@ Sidan fungerar som [kravsidan](requirements.md#kravsidan): mappträd, filterfäl
 | **Status** | Utkast, Klart, Granskning eller Utfasat. |
 | **Prioritet** | Kritisk, Hög, Medel eller Låg. |
 | **Uppskattning (minuter)** | Förväntad tidsåtgång. |
-| **Mapp**, **Kategorier**, **Taggar** | Placering och klassificering. |
+| **Mapp**, **Kategorier**, **Taggar** | Placering och klassificering. **Föreslagna taggar** under taggfältet kommer från titeln, beskrivningen, förutsättningarna och stegen, som för [krav](requirements.md#fält). |
 | **Förväntat slutresultat** | Det förväntade utfallet av testfallet som helhet. |
 
 ## Manuella testfall: steg

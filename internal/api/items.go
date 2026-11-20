@@ -448,6 +448,7 @@ func (s *Server) filterTests(r *http.Request, p *Principal, pr *model.Project, p
 	if err != nil {
 		return nil, err
 	}
+	pc.indexCalls(tests)
 	inFolder := pc.folderFilter(folder, recursive)
 	out := make([]model.TestCase, 0, len(tests))
 	for i := range tests {

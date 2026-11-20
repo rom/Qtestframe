@@ -468,10 +468,10 @@ equivalent query; the client uses this for quick filters
 
 | Entity | Fields (aliases) |
 |---|---|
-| Requirement | `id, key, title, description (desc), obligation, type, priority, status, source, rationale, owner, tag (tags), version, folder, category (categories), dimension, coverage, linked, related (relation), parent (parents), child (children), comments, created_by, created_at, updated_at, criteria (criterion)` |
-| Test | `id, key, title, description (desc), preconditions, execution_type (type), script_language (language), script, expected, step (steps), priority, status, estimate, tag (tags), folder, category (categories), dimension, linked, last_result (result), defect (defects), calls, comments, version, created_by, created_at, updated_at` |
+| Requirement | `id, key, title, description (desc), obligation, type, priority, status, source, rationale, owner, tag (tags), version, folder, category (categories), dimension, coverage, linked, related (relation), parent (parents), child (children), comments, mention (mentions), created_by, created_at, updated_at, criteria (criterion)` |
+| Test | `id, key, title, description (desc), preconditions, execution_type (type), script_language (language), script, expected, step (steps), priority, status, estimate, tag (tags), folder, category (categories), dimension, linked, last_result (result), defect (defects), calls, comments, mention (mentions), version, created_by, created_at, updated_at` |
 | Run | `id, name, description, status, environment (env), build, created_by, created_at` |
-| Execution | `id, key, title, status, assignee, executed_by, notes, output, defect (defects)` |
+| Execution | `id, key, title, status, assignee, executed_by, notes, output, defect (defects), mention (mentions)` |
 | Audit entry | `action, entity, entity_id, user, details, created_at` |
 | Document | `id, name, description, tag (tags), kind, type (content_type), uploaded_by (by), created_at, size, linked` |
 | Search | union of requirement, test and run fields, plus `project` (key and name) and `kind` (`requirement`, `test`, `run`) |
@@ -626,6 +626,7 @@ Directed links between requirements of the same project:
 |---|---|
 | `refines` | source is a child (decomposition) of target; cycles are rejected |
 | `depends_on` | source needs target |
+| `provides` | source supplies a capability, interface or data that target needs |
 | `derived_from` | source was derived from target |
 | `conflicts_with` | the two cannot both be satisfied |
 | `duplicates` | source duplicates target |
@@ -634,6 +635,34 @@ Directed links between requirements of the same project:
 Query fields: `related`, `parent` (targets of `refines`) and `child`
 (sources of `refines`), e.g. `child:*` finds requirements that have been
 decomposed.
+
+The requirement and test lists can show a **Relations** column. The server
+adds `relations` to each item (`internal/api/records.go`): requirement
+relations in both directions, trace links as `verifies` (test → requirement)
+and shared steps as `calls` (calling test → called test). The client groups
+them by type and direction ("depends on REQ-2 · verified by TC-1").
+
+### People and @mentions
+
+`internal/mention` defines mentions: `@` followed by letters, digits, `.`,
+`_` and `-` (not ending in punctuation, not directly after a letter or
+digit). `GET /projects/{pid}/people` lists users of the organisation
+(handle = e-mail local part, de-duplicated with `-2` …) and other names
+used as owner or assignee (handle = name with spaces → `.`). Text fields
+for owner, description, rationale, preconditions, assignee, notes and
+comments suggest people after `@`; mentions of known people are shown as
+name chips with avatar. Owner and assignee stay free text, so a name
+without an account still works. The query field `mention` finds items that
+mention someone.
+
+### Tag suggestions
+
+`internal/tagsuggest` proposes tags from title and description: tags the
+project already uses that the text mentions (also inflected: *passwords* →
+*password*, *lösenordet* → *lösenord*), then acronyms (*GDPR*), then words
+of the title or words used more than once. English and Swedish stop words,
+requirement keywords and placeholders are excluded. The editors show the
+suggestions under the tags field; selecting one adds it.
 
 ### Baselines
 

@@ -149,6 +149,8 @@ func (s *Server) routes() {
 
 	// requirements
 	h("GET /api/v1/projects/{pid}/requirements", s.handleListRequirements, "requirement.read")
+	h("GET /api/v1/projects/{pid}/people", s.handlePeople, "requirement.read")
+	h("POST /api/v1/projects/{pid}/tags/suggest", s.handleSuggestTags, "requirement.read")
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/move", s.handleMoveItems(model.KindRequirement), "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/bulk", s.handleBulk(model.KindRequirement), "requirement.write")

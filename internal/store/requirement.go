@@ -28,6 +28,7 @@ func scanRequirement(r interface{ Scan(...any) error }) (*model.Requirement, err
 func ValidateRequirement(r *model.Requirement) error {
 	r.Tags = cleanTags(r.Tags)
 	r.Title = strings.TrimSpace(r.Title)
+	r.Owner = strings.TrimSpace(r.Owner)
 	if r.Title == "" {
 		return Invalidf("requirement title is required")
 	}

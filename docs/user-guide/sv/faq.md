@@ -30,6 +30,14 @@ Använd organisationsväljaren till vänster i övre fältet (på mobiler byggna
 
 ## Redigering
 
+### Hur hänvisar jag till en kollega i ett krav eller en kommentar?
+
+Skriv `@` följt av början på namnet och välj personen i listan, se [Nämn personer](requirements.md#nämn-personer). Listan innehåller organisationens användare och namn som redan används som ägare eller tilldelad i projektet. `mention:` i ett filter hittar det som nämner någon.
+
+### Var kommer de föreslagna taggarna ifrån?
+
+Från objektets titel och beskrivning. Taggar som projektet redan använder kommer först när texten nämner dem, sedan förkortningar och vanliga ord i texten. Vardagliga ord och kravord föreslås aldrig. Välj ett förslag för att lägga till det; strunta i de andra.
+
 ### Varför kan jag inte redigera ett krav?
 
 Att skriva krav kräver rollen **Ansvarig** i den aktuella organisationen. Med **Läsare** eller **Testare** öppnas redigeraren skrivskyddad, och knappar som **Nytt krav** och **Spara** döljs. Kontrollera din roll i användarmenyn och be en administratör om fler rättigheter om du behöver det. Testare kan ändå länka testfall till krav och kommentera dem.

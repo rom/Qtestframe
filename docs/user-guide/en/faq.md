@@ -30,6 +30,14 @@ Use the organisation switch at the left of the top bar (on phones, the building 
 
 ## Editing
 
+### How do I refer to a colleague in a requirement or comment?
+
+Type `@` followed by the start of their name, then pick them from the list, see [Mention people](requirements.md#mention-people). The list holds the users of the organisation and names already used as owner or assignee in the project. `mention:` in a filter finds what mentions someone.
+
+### Where do the suggested tags come from?
+
+From the title and description of the item. Tags the project already uses come first when the text mentions them, then abbreviations and frequent words. Common words and requirement keywords are never suggested. Select a suggestion to add it; ignore the others.
+
 ### Why can't I edit a requirement?
 
 Writing requirements needs the **Manager** role in the current organisation. With **Viewer** or **Tester** the editor opens read-only, and buttons such as **New requirement** and **Save** are hidden. Check your role in the user menu; ask an admin if you need more rights. Testers can still link tests to requirements and comment on them.

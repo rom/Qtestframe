@@ -55,7 +55,7 @@ The runner shows one execution at a time. Its header tells you which execution o
 4. Record the outcome with **Pass**, **Fail**, **Blocked** or **Skip**. For anything other than a pass, write what happened in **Actual result**. The runner moves on to the next step.
 5. Below the steps:
    - **Overall status** is derived from the steps (*Will be saved as …*): any failed step → **Failed**; otherwise any blocked step → **Blocked**; all passed or skipped with at least one pass → **Passed**; all skipped → **Skipped**; partly done → **In progress**. You can also set it explicitly.
-   - **Assignee**: who should execute the test.
+   - **Assignee**: who should execute the test. Type `@` to pick a person ([mentions](requirements.md#mention-people)).
    - **Defects**: defect IDs or URLs, each followed by <kbd>Enter</kbd>.
    - **Notes**: observations, links, anything worth keeping.
 6. Select **Save**, or **Save & next** to save and open the next execution. **Previous** and **Next** move between executions. *Unsaved changes* reminds you to save.

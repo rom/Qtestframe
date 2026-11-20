@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TagSuggestions from './TagSuggestions.vue'
+import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
@@ -399,7 +401,7 @@ function criterionLabel(id: string | null) {
     </div>
     <div v-field class="field">
       <label>{{ t('common.description') }}</label>
-      <Textarea v-model="form.description" rows="5" auto-resize :disabled="!canWrite" :placeholder="t('requirements.descriptionPlaceholder')" />
+      <MentionInput v-model="form.description" multiline rows="5" auto-resize :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.descriptionPlaceholder')" />
     </div>
 
     <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis" role="region" :aria-label="t('analysis.title')" :aria-busy="analyzing">
@@ -474,7 +476,7 @@ function criterionLabel(id: string | null) {
       <div v-field class="field">
         <label>{{ t('common.owner') }}</label>
         <HelpTip id="req.owner" :label="t('common.owner')" />
-        <InputText v-model="form.owner" :disabled="!canWrite" />
+        <MentionInput v-model="form.owner" :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.source') }}</label>
@@ -484,7 +486,7 @@ function criterionLabel(id: string | null) {
       <div v-field class="field full">
         <label>{{ t('requirements.rationale') }}</label>
         <HelpTip id="req.rationale" :label="t('requirements.rationale')" />
-        <Textarea v-model="form.rationale" rows="2" auto-resize :disabled="!canWrite" />
+        <MentionInput v-model="form.rationale" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.folder') }}</label>
@@ -500,6 +502,7 @@ function criterionLabel(id: string | null) {
         <label>{{ t('common.tags') }}</label>
         <HelpTip id="req.tags" :label="t('common.tags')" />
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
+        <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="form.description" :disabled="!canWrite" />
       </div>
     </div>
 

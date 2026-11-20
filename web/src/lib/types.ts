@@ -232,6 +232,19 @@ export interface Requirement {
   coverage?: string
   comment_count?: number
   relation_count?: number
+  /** Related items in both directions (requirement relations and verifying tests). */
+  relations?: ItemRef[] | null
+  criteria_count?: number
+}
+
+/** A reference from a list item to a related item (see lib/itemRefs.ts). */
+export interface ItemRef {
+  /** a relation type, "verifies" (test → requirement) or "calls" (test → test) */
+  type: string
+  direction: 'outgoing' | 'incoming' | string
+  id: string
+  key: string
+  title?: string
 }
 
 export interface TestStep {
@@ -280,6 +293,10 @@ export interface TestCase {
   last_result?: string
   comment_count?: number
   called_by?: TestRef[] | null
+  /** Requirements it verifies, tests it calls and tests that call it. */
+  relations?: ItemRef[] | null
+  step_count?: number
+  defects?: string[] | null
 }
 
 export interface TraceLink {

@@ -27,6 +27,7 @@ var derivedFields = map[string]bool{
 func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 	c := *r
 	c.FolderPath, c.LinkedTests, c.Coverage, c.CommentCount, c.Relations = "", 0, "", 0, 0
+	c.RelationRefs, c.CriteriaCount = nil, 0
 	if c.Criteria == nil {
 		c.Criteria = []model.EvaluationCriterion{}
 	}
@@ -38,6 +39,7 @@ func SnapshotRequirement(r *model.Requirement) json.RawMessage {
 func SnapshotTest(t *model.TestCase) json.RawMessage {
 	c := *t
 	c.FolderPath, c.LinkedReqs, c.LastResult, c.CommentCount, c.CalledBy = "", 0, "", 0, nil
+	c.RelationRefs, c.StepCount, c.Defects = nil, 0, nil
 	steps := make([]model.TestStep, len(c.Steps))
 	for i, st := range c.Steps {
 		st.CallTestKey, st.CallTestTitle = "", ""

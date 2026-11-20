@@ -320,6 +320,23 @@ type Requirement struct {
 	Coverage     string `json:"coverage,omitempty"` // none | not_run | passed | failed | partial
 	CommentCount int    `json:"comment_count"`
 	Relations    int    `json:"relation_count"`
+	// RelationRefs lists the related items in both directions: requirement
+	// relations and the tests that verify it ("verifies", incoming).
+	RelationRefs  []ItemRef `json:"relations,omitempty"`
+	CriteriaCount int       `json:"criteria_count,omitempty"`
+}
+
+// ItemRef is a derived reference from a requirement or test to a related
+// item, as shown in the list columns.
+type ItemRef struct {
+	// Type is a RelationTypes value, "verifies" (test → requirement) or
+	// "calls" (test → test whose steps it calls).
+	Type string `json:"type"`
+	// Direction is "outgoing" when this item is the source, else "incoming".
+	Direction string `json:"direction"`
+	ID        string `json:"id"`
+	Key       string `json:"key"`
+	Title     string `json:"title,omitempty"`
 }
 
 // EvaluationCriterion describes how a requirement is judged fulfilled.
@@ -383,6 +400,10 @@ type TestCase struct {
 	LastResult   string    `json:"last_result,omitempty"`
 	CommentCount int       `json:"comment_count"`
 	CalledBy     []TestRef `json:"called_by,omitempty"`
+	// RelationRefs: requirements it verifies, tests it calls and tests that call it.
+	RelationRefs []ItemRef `json:"relations,omitempty"`
+	StepCount    int       `json:"step_count,omitempty"`
+	Defects      []string  `json:"defects,omitempty"`
 }
 
 // TraceLink connects a requirement (optionally a specific criterion) to a test.
@@ -453,8 +474,9 @@ type Execution struct {
 }
 
 // Relation types between requirements. "refines" means the source is a
-// child (decomposition) of the target.
-var RelationTypes = []string{"refines", "depends_on", "derived_from", "conflicts_with", "duplicates", "relates_to"}
+// child (decomposition) of the target; "provides" means the source supplies
+// something (a capability, interface or data) that the target needs.
+var RelationTypes = []string{"refines", "depends_on", "provides", "derived_from", "conflicts_with", "duplicates", "relates_to"}
 
 // Relation links two requirements of the same project.
 type Relation struct {

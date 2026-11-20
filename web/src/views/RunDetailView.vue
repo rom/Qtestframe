@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import MentionText from '@/components/MentionText.vue'
+import MentionInput from '@/components/MentionInput.vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -129,6 +131,8 @@ function remove() {
 }
 
 // ---------- executions ----------
+/** assignee being edited per execution id (committed on blur or Enter) */
+const assigneeDraft = reactive<Record<string, string>>({})
 async function setAssignee(ex: Execution, value: string) {
   if (value === ex.assignee) return
   try {
@@ -268,8 +272,19 @@ async function copySnippet() {
         <Column field="status" :header="t('common.status')" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" kind="result" /></template></Column>
         <Column field="assignee" :header="t('run.assignee')" sortable style="width: 180px">
           <template #body="{ data }">
-            <InputText v-if="canWrite" :model-value="data.assignee" size="small" :placeholder="t('run.unassigned')" :aria-label="t('run.assigneeOf', { key: data.test_key })" class="w-full" @change="(e: Event) => setAssignee(data, (e.target as HTMLInputElement).value)" />
-            <span v-else>{{ data.assignee || '—' }}</span>
+            <MentionInput
+              v-if="canWrite"
+              :model-value="assigneeDraft[data.id] ?? data.assignee"
+              size="small"
+              :placeholder="t('run.unassigned')"
+              :aria-label="t('run.assigneeOf', { key: data.test_key })"
+              class="w-full"
+              @update:model-value="(v: string) => (assigneeDraft[data.id] = v)"
+              @blur="setAssignee(data, assigneeDraft[data.id] ?? data.assignee)"
+              @keydown.enter="setAssignee(data, assigneeDraft[data.id] ?? data.assignee)"
+            />
+            <MentionText v-else-if="data.assignee" :text="data.assignee" />
+            <span v-else>—</span>
           </template>
         </Column>
         <Column field="executed_by" :header="t('run.executedBy')" sortable style="width: 150px" />

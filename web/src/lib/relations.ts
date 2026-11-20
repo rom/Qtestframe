@@ -1,11 +1,15 @@
 // Requirement relation helpers (labels, grouping).
 import type { Relation } from './types'
 
-export const RELATION_TYPES = ['refines', 'depends_on', 'derived_from', 'conflicts_with', 'duplicates', 'relates_to'] as const
+export const RELATION_TYPES = ['refines', 'depends_on', 'provides', 'derived_from', 'conflicts_with', 'duplicates', 'relates_to'] as const
 
 const LABELS: Record<string, [outgoing: string, incoming: string]> = {
   refines: ['refines (parent)', 'refined by (child)'],
   depends_on: ['depends on', 'required by'],
+  provides: ['provides', 'provided by'],
+  // derived references in list columns (not relation types that can be created)
+  verifies: ['verifies', 'verified by'],
+  calls: ['calls', 'called by'],
   derived_from: ['derived from', 'source of'],
   conflicts_with: ['conflicts with', 'conflicts with'],
   duplicates: ['duplicates', 'duplicated by'],
@@ -22,6 +26,7 @@ export function relationLabel(type: string, direction: string | null | undefined
 
 /** Options for the "add relation" type select (outgoing direction). */
 export function relationTypeOptions(): { label: string; value: string }[] {
+  // only RELATION_TYPES can be created; verifies/calls come from links and steps
   return RELATION_TYPES.map((t) => ({ label: LABELS[t][0], value: t }))
 }
 

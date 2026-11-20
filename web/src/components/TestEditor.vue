@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TagSuggestions from './TagSuggestions.vue'
+import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
@@ -88,6 +90,10 @@ function blank() {
 }
 
 const form = ref(blank())
+/** text the tag suggestions look at: description, preconditions, expected result and step texts */
+const tagText = computed(() =>
+  [form.value.description, form.value.preconditions, form.value.expected_result, ...form.value.steps.flatMap((s) => [s.action, s.expected])].filter(Boolean).join('\n'),
+)
 const item = ref<TestCase | null>(null)
 const loading = ref(false)
 const saving = ref(false)
@@ -351,12 +357,12 @@ const scriptPlaceholder = computed(() => {
     <div class="form-grid">
       <div v-field class="field full">
         <label>{{ t('common.description') }}</label>
-        <Textarea v-model="form.description" rows="2" auto-resize :disabled="!canWrite" />
+        <MentionInput v-model="form.description" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
       <div v-field class="field full">
         <label>{{ t('tests.preconditions') }}</label>
         <HelpTip id="test.preconditions" :label="t('tests.preconditions')" />
-        <Textarea v-model="form.preconditions" rows="2" auto-resize :disabled="!canWrite" />
+        <MentionInput v-model="form.preconditions" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.status') }}</label>
@@ -383,6 +389,7 @@ const scriptPlaceholder = computed(() => {
       <div v-field class="field full">
         <label>{{ t('common.tags') }}</label>
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
+        <TagSuggestions v-model="form.tags" :project-id="projectId" :title="form.title" :description="tagText" :disabled="!canWrite" />
       </div>
     </div>
 

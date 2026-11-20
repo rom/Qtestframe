@@ -10,7 +10,7 @@ Reading requirements needs the role **Viewer**; creating and changing them needs
 
 - **Folder tree** (left): select **All requirements** or a folder. **Include subfolders** decides whether items of subfolders are listed. On narrow screens the tree opens with the **Folders** button.
 - **Filter bar**: a [query](search-and-filters.md) field plus quick filters for **Status**, **Obligation**, **Priority**, **Coverage** and **Category**. The quick filters are combined into a query that is shown under the bar (`q = …`). **Clear** resets all filters.
-- **Columns**: choose which columns the table shows: obligation, status, priority, type, coverage, linked tests, categories, folder, owner, version, relations, comments and updated date.
+- **Columns**: choose which columns the table shows: obligation, status, priority, type, coverage, linked tests, categories, folder, owner, source, tags, **relations**, relation count, criteria, version, comments, created by, created and updated date. The **Relations** column lists the related items grouped by relation, in both directions, for example *depends on SHOP-REQ-2*, *provided by SHOP-REQ-3* and *verified by SHOP-TC-1*; select a key to open the item. Your choice is remembered in this browser.
 - **Table**: sort by clicking a column header; select a row (or its title) to open the editor. The ID (for example `SHOP-REQ-12`) is assigned automatically.
 
 The current folder, filter and open requirement are part of the page address, so you can bookmark or share a filtered view.
@@ -72,12 +72,12 @@ If you do not want the box, turn it off in your profile: **Hide the live require
 | **Status** | Draft, Review, Approved, Implemented, Verified, Rejected or Obsolete. |
 | **Type** | Functional, Non-functional, Security, Performance, Usability, Interface, Constraint, Business or Regulatory. |
 | **Priority** | Critical, High, Medium or Low. |
-| **Owner** | Who is responsible for the requirement. |
+| **Owner** | Who is responsible for the requirement. Type `@` to pick a person, see [Mention people](#mention-people). |
 | **Source** | Where it comes from, for example *Customer spec §4.2*. |
 | **Rationale** | Why it exists. |
 | **Folder** | Where it is filed. |
 | **Categories** | Values of the project's requirement category dimensions, for example *Area / Security*. |
-| **Tags** | Free keywords; type a tag and press <kbd>Enter</kbd>. |
+| **Tags** | Free keywords; type a tag and press <kbd>Enter</kbd>, or select one of the **Suggested tags** below the field. Suggestions come from the title and description: tags the project already uses that the text mentions come first (a solid border), then abbreviations such as *GDPR* and words of the title or words used more than once (a dashed border). |
 
 The header of the editor shows the ID, the **version** (for example *v3*), the coverage and who changed it last. The version increases with every change.
 
@@ -114,12 +114,21 @@ The **Relations** tab connects requirements of the same project:
 |---|---|
 | **refines (parent)** / **refined by (child)** | decomposition: this requirement is a more detailed part of the other one |
 | **depends on** / **required by** | this requirement needs the other one |
+| **provides** / **provided by** | this requirement supplies something (a capability, an interface, data) that the other one needs |
 | **derived from** / **source of** | this requirement was derived from the other one |
 | **conflicts with** | both cannot be satisfied at the same time |
 | **duplicates** / **duplicated by** | the same content twice |
 | **relates to** | an informal relation |
 
 Select **Add relation…**, choose the type and then the requirements. A requirement cannot relate to itself, and *refines* relations may not form a cycle. In queries, `parent:`, `child:` and `related:` find requirements by their relations, for example `child:*` for requirements that have been decomposed.
+
+## Mention people
+
+Type `@` in **Owner**, **Description**, **Rationale**, a comment, or in a test's description and preconditions and an execution's **Assignee** and notes: a list of people appears. It holds the users of the organisation (with their avatar) and names that are already used as owner or assignee in the project but have no account (*no account*). Keep typing to narrow the list, use the arrow keys and <kbd>Enter</kbd> or <kbd>Tab</kbd> to insert, or <kbd>Esc</kbd> to close the list.
+
+A mention is written as `@handle`: for users the part of the e-mail address before the `@` (`@anna.berg` for *anna.berg@example.com*), for other people the name with dots instead of spaces (`@carl.carlsson`). Mentions of known people are shown as a chip with avatar and name, in the editor's comments and in the **Owner** column. Plain names still work: the owner is free text.
+
+To find everything that mentions someone, filter with `mention:anna.berg` (or `mention:@anna.berg`).
 
 ## Comments
 

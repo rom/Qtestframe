@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import MentionInput from '@/components/MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
-import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import ProgressBar from 'primevue/progressbar'
@@ -424,7 +424,7 @@ const statusOptions = computed(() => [
         <div v-field class="field">
           <label>{{ t('runner.assignee') }}</label>
           <HelpTip id="runner.assignee" :label="t('runner.assignee')" />
-          <InputText v-model="assignee" :disabled="!canExecute" :placeholder="t('runner.unassigned')" />
+          <MentionInput v-model="assignee" :disabled="!canExecute" :placeholder="t('runner.unassigned')" />
         </div>
         <div v-field class="field full">
           <label>{{ t('runner.defects') }}</label>
@@ -438,7 +438,7 @@ const statusOptions = computed(() => [
         <div v-field class="field full">
           <label>{{ t('runner.notes') }}</label>
           <HelpTip id="runner.notes" :label="t('runner.notes')" />
-          <Textarea v-model="notes" rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.notesPlaceholder')" />
+          <MentionInput v-model="notes" multiline rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.notesPlaceholder')" />
         </div>
       </div>
       <div v-if="canExecute" class="row" style="justify-content: flex-end; margin-top: 12px">
