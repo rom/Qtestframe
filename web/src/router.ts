@@ -63,6 +63,7 @@ const routes: RouteRecordRaw[] = [
           { path: '', name: 'admin', redirect: { name: 'members' } },
           { path: 'members', name: 'members', component: () => import('./views/admin/MembersView.vue'), meta: { perm: P.memberRead } },
           { path: 'tokens', name: 'tokens', component: () => import('./views/admin/TokensView.vue'), meta: { perm: P.tokenManage } },
+          { path: 'provisioning', name: 'provisioning', component: () => import('./views/admin/ProvisioningView.vue'), meta: { perm: P.tenantManage } },
           { path: 'audit', name: 'audit', component: () => import('./views/admin/AuditView.vue'), meta: { perm: P.auditRead } },
           { path: 'tenants', name: 'tenants', component: () => import('./views/admin/TenantsView.vue'), meta: { superAdmin: true } },
           { path: 'users', name: 'users', component: () => import('./views/admin/UsersView.vue'), meta: { superAdmin: true } },

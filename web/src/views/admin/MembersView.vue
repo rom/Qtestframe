@@ -38,6 +38,8 @@ const rbac = ref<{ roles: string[] } | null>(null)
 const loading = ref(false)
 const filter = ref('')
 const canManage = computed(() => auth.can(P.memberManage))
+/** some members are provisioned by SCIM (their role and membership are managed by the identity provider) */
+const hasScim = computed(() => members.value.some((m) => m.scim))
 const rolesStore = useRolesStore()
 const roles = computed(() => enumOptions('role', rolesStore.roles.length ? rolesStore.roles.map((r) => r.name) : (rbac.value?.roles ?? meta.meta.roles)))
 const filtered = computed(() => {
@@ -255,6 +257,10 @@ function resetPassword(m: Membership) {
       <RouterLink :to="{ name: 'rbac' }" class="p-button p-button-text p-button-secondary"><i class="pi pi-table" aria-hidden="true" />&nbsp;{{ t('admin.roleMatrix') }}</RouterLink>
       <Button v-if="canManage" :label="t('admin.addMember')" icon="pi pi-user-plus" @click="openAdd" />
     </div>
+    <Message v-if="hasScim" severity="info" :closable="false" class="scim-notice">
+      {{ t('provisioning.member.notice') }}
+      <RouterLink v-if="auth.can(P.tenantManage)" :to="{ name: 'provisioning' }">{{ t('provisioning.member.settingsLink') }}</RouterLink>
+    </Message>
     <div v-if="canManage && selection.length" class="bulkbar" role="toolbar" :aria-label="t('admin.bulk.toolbar')">
       <b>{{ t('common.selected', { count: selection.length }) }}</b>
       <Select
@@ -275,13 +281,13 @@ function resetPassword(m: Membership) {
     <DataTable v-model:selection="selection" v-stack :value="filtered" data-key="user_id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
       <Column v-if="canManage" selection-mode="multiple" style="width: 2.6rem" />
       <Column field="email" :header="t('common.email')" sortable body-class="stack-main">
-        <template #body="{ data }"><span class="row nowrap" style="gap: 8px; min-width: 0"><UserAvatar :avatar="data.avatar" :user-id="data.user_id" :email="data.email" :name="data.display_name || data.email" :size="28" /><span class="ellipsis">{{ data.email }}</span></span></template>
+        <template #body="{ data }"><span class="row nowrap" style="gap: 8px; min-width: 0"><UserAvatar :avatar="data.avatar" :user-id="data.user_id" :email="data.email" :name="data.display_name || data.email" :size="28" /><span class="ellipsis">{{ data.email }}</span><Tag v-if="data.scim" :value="t('provisioning.member.tag')" severity="info" class="scim-tag" v-tooltip="t('provisioning.member.hint')" /></span></template>
       </Column>
       <Column field="display_name" :header="t('common.name')" sortable />
       <Column field="role" :header="t('common.role')" sortable style="width: 200px">
         <template #body="{ data }">
           <Select
-            v-if="canManage && data.user_id !== auth.user?.id"
+            v-if="canManage && data.user_id !== auth.user?.id && !data.scim"
             :model-value="data.role"
             :options="roles"
             option-label="label"
@@ -297,8 +303,8 @@ function resetPassword(m: Membership) {
       <Column field="created_at" :header="t('admin.memberSince')" sortable style="width: 150px"><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column v-if="canManage" style="width: 100px">
         <template #body="{ data }">
-          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" />
-          <Button v-if="data.user_id !== auth.user?.id" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('admin.removeMember', { user: data.email })" v-tooltip="t('common.remove')" @click="remove(data)" />
+          <Button v-if="data.user_id !== auth.user?.id && !data.scim" icon="pi pi-key" text rounded severity="secondary" :aria-label="t('admin.resetPasswordOf', { user: data.email })" v-tooltip="t('admin.resetPasswordAction')" @click="resetPassword(data)" />
+          <Button v-if="data.user_id !== auth.user?.id && !data.scim" icon="pi pi-user-minus" text rounded severity="danger" :aria-label="t('admin.removeMember', { user: data.email })" v-tooltip="t('common.remove')" @click="remove(data)" />
         </template>
       </Column>
     </DataTable>
@@ -325,3 +331,12 @@ function resetPassword(m: Membership) {
 
   <TempPasswordDialog v-model:visible="tempOpen" :password="tempPassword" :user="tempUser" />
 </template>
+
+<style scoped>
+.scim-notice {
+  margin-bottom: 12px;
+}
+.scim-tag {
+  flex: none;
+}
+</style>

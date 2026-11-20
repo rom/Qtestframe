@@ -710,7 +710,8 @@ func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisio
 		u, err = s.Store.GetUserByEmail(ctx, id.Email)
 		if err == nil {
 			// Link an existing account only if it has no other external binding.
-			if u.AuthProvider != "local" && u.AuthProvider != id.Provider {
+			// (accounts created by SCIM provisioning wait for this first sign-in)
+			if u.AuthProvider != "local" && u.AuthProvider != scimAuthProvider && u.AuthProvider != id.Provider {
 				return nil, "", errors.New("e-mail already bound to another identity provider")
 			}
 			u.AuthProvider, u.ExternalID = id.Provider, id.Subject
@@ -752,7 +753,14 @@ func (s *Server) provision(ctx context.Context, id *auth.Identity, prov provisio
 		// roles the tenant does not have (e.g. a deleted custom role) rank 0
 		role := auth.MapRole(id.Groups, prov.RoleMapping, def, set.Rank)
 		existing, err := s.Store.GetMembership(ctx, t.ID, u.ID)
+		managed, serr := s.Store.IsSCIMUser(ctx, t.ID, u.ID)
+		if serr != nil {
+			return nil, "", serr
+		}
 		switch {
+		case managed:
+			// SCIM provisioning owns this membership (and its absence)
+			err = nil
 		case err != nil && prov.AutoProvision:
 			err = s.Store.SetMembership(ctx, t.ID, u.ID, role)
 		case err == nil && len(prov.RoleMapping) > 0 && existing.Role != role:

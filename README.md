@@ -55,7 +55,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dependency graph, tag cloud, dashboard, global search, administration. Table columns can be chosen and reordered (drag the header or use the Columns menu).
 - **Filtering and search on every field** with a [query language](#query-language): field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
 - **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**, and of requirements to **ReqIF 1.2** (`.reqif`, or `.reqifz` with attachments) for DOORS, Polarion, ProR and other requirement tools, with folders as headings and relations; an export imports back with all fields.
-- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
+- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **SCIM 2.0** user provisioning from Entra ID, Okta and other identity providers (group → role mapping, deactivation ends access), **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
 
 ## Quick start
@@ -332,7 +332,7 @@ echo 'Initial-pass-123' | ./bin/qtestframe user create --config examples/qtestfr
 ./bin/qtestframe member add --config examples/qtestframe.yaml --tenant acme --email alice@example.com --role manager
 ```
 
-For single sign-on, add `auth.oidc` (Keycloak, Entra ID, Okta, …) or `auth.saml` (ADFS, Keycloak, …) entries. Users can be provisioned automatically, with their role taken from IdP groups through `role_mapping`. See [docs/operations.md](docs/operations.md).
+For single sign-on, add `auth.oidc` (Keycloak, Entra ID, Okta, …) or `auth.saml` (ADFS, Keycloak, …) entries. Users can be provisioned automatically, with their role taken from IdP groups through `role_mapping`. See [docs/operations.md](docs/operations.md). Identity providers can also provision users ahead of their first sign-in with SCIM 2.0 at `/scim/v2` (Administration → Provisioning (SCIM); see [docs/api.md](docs/api.md#scim-20-provisioning)).
 
 ## Automation and CI
 

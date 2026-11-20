@@ -8717,6 +8717,169 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/scim:
+    get:
+      tags:
+      - Administration
+      summary: SCIM provisioning overview
+      operationId: getScim
+      description: |-
+        SCIM base URL, tokens (without secrets), settings, groups with their role mapping and counts
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/scim/settings:
+    patch:
+      tags:
+      - Administration
+      summary: Update SCIM settings
+      operationId: patchScimSettings
+      description: |-
+        `{"default_role"}` – the role of provisioned users without a mapped group (`""`: no access); roles are recomputed
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/scim/tokens:
+    post:
+      tags:
+      - Administration
+      summary: Create SCIM token
+      operationId: postScimTokens
+      description: |-
+        `{"name", "expires_days"?}` → the token with its secret, shown once (stored hashed); API tokens cannot create SCIM tokens
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/scim/tokens/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    delete:
+      tags:
+      - Administration
+      summary: Revoke SCIM token
+      operationId: deleteScimTokensById
+      description: '**Permission:** `tenant.manage`.'
+      x-permission: tenant.manage
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/scim/groups/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Administration
+      summary: Map SCIM group to role
+      operationId: patchScimGroupsById
+      description: |-
+        `{"role"}` (`""`: not mapped); refused (409) if no admin would remain
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/scim/events:
+    get:
+      tags:
+      - Administration
+      summary: Recent provisioning events
+      operationId: getScimEvents
+      description: |-
+        the latest SCIM entries of the audit log
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:

@@ -313,6 +313,9 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
+	if s.scimManaged(w, r, p, u.ID) {
+		return
+	}
 	if err := s.Store.SetMembership(ctx, p.TenantID(), u.ID, req.Role); err != nil {
 		s.fail(w, r, err)
 		return
@@ -347,6 +350,21 @@ func (s *Server) lastAdminGuard(w http.ResponseWriter, r *http.Request, p *Princ
 	return true
 }
 
+// scimManaged answers 409 and returns true when SCIM provisioning manages
+// the user's membership: changes by hand would be overwritten at the next
+// synchronisation, so they are made in the identity provider.
+func (s *Server) scimManaged(w http.ResponseWriter, r *http.Request, p *Principal, uid string) bool {
+	managed, err := s.Store.IsSCIMUser(r.Context(), p.TenantID(), uid)
+	if err != nil {
+		s.fail(w, r, err)
+		return true
+	}
+	if managed {
+		writeError(w, http.StatusConflict, "scim_managed", "this member is provisioned by SCIM: change the role or remove the user in the identity provider (group assignment), or map the groups under Administration → Provisioning (SCIM)")
+	}
+	return managed
+}
+
 func (s *Server) handleUpdateMember(w http.ResponseWriter, r *http.Request, p *Principal) {
 	var req struct{ Role string }
 	if err := decode(r, &req); err != nil {
@@ -358,6 +376,9 @@ func (s *Server) handleUpdateMember(w http.ResponseWriter, r *http.Request, p *P
 		return
 	}
 	uid := r.PathValue("uid")
+	if s.scimManaged(w, r, p, uid) {
+		return
+	}
 	if req.Role != rbac.RoleAdmin && !s.lastAdminGuard(w, r, p, uid) {
 		return
 	}
@@ -376,6 +397,9 @@ func (s *Server) handleUpdateMember(w http.ResponseWriter, r *http.Request, p *P
 
 func (s *Server) handleRemoveMember(w http.ResponseWriter, r *http.Request, p *Principal) {
 	uid := r.PathValue("uid")
+	if s.scimManaged(w, r, p, uid) {
+		return
+	}
 	if !s.lastAdminGuard(w, r, p, uid) {
 		return
 	}

@@ -63,6 +63,8 @@ export interface Membership {
   created_at: string
   /** avatar of the member (when the server includes it) */
   avatar?: string
+  /** provisioned by SCIM: the identity provider manages role and membership */
+  scim?: boolean
 }
 
 /** The sign-in before the current one (Me.previous_login). */

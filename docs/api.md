@@ -96,11 +96,11 @@ is unreachable); all other paths serve the web client.
 | GET | `/users` | super admin | list all users |
 | POST | `/users` | super admin | `{"email","display_name","password","super_admin"}` |
 | PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409) |
-| GET | `/members` | member.read | members of current tenant |
+| GET | `/members` | member.read | members of current tenant; `"scim": true` marks members provisioned by SCIM, whose role and membership only the identity provider changes (`PATCH`, `DELETE` and `POST /members` answer 409 `scim_managed` for them) |
 | POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?}` – creates the local user if it does not exist |
 | PATCH | `/members/{user_id}` | member.manage | `{"role"}`; the last admin cannot be demoted (409) |
 | DELETE | `/members/{user_id}` | member.manage | the last admin cannot be removed (409) |
-| POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"remove", "role"?}` (max 1000, all or nothing) → `{"changed":[{user_id, email, role}], "skipped":[{user_id, email, role, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `unchanged`. A change that would leave no admin is refused (409). For a removal, `role` is the role the member had |
+| POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"remove", "role"?}` (max 1000, all or nothing) → `{"changed":[{user_id, email, role}], "skipped":[{user_id, email, role, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `scim` (provisioned by SCIM), `unchanged`. A change that would leave no admin is refused (409). For a removal, `role` is the role the member had |
 | GET | `/rbac` | any | `{"roles":[...],"matrix":{role:[perm]},"permissions":[...]}` – the effective matrix of the current tenant |
 | GET | `/roles` | any member | `{"items":[Role],"permissions":[...]}`; Role = `{name, label?, description?, permissions, builtin, customized?, editable, deletable, members, tokens}` |
 | POST | `/roles` | role.manage | `{"name","label","description"?,"permissions":[...]}` → 201 Role; `name` is 2–32 of `a-z0-9_` starting with a letter; 409 when it exists |
@@ -996,6 +996,115 @@ Project icon files are served by `/files/{id}/content?inline=1`.
 
 CLI equivalents: `qtestframe backup --out FILE.zip`,
 `qtestframe restore --in FILE.zip --yes`.
+
+## SCIM 2.0 provisioning
+
+Identity providers (Microsoft Entra ID, Okta, OneLogin, JumpCloud …)
+provision the members of one tenant with SCIM 2.0 ([RFC 7643](https://www.rfc-editor.org/rfc/rfc7643),
+[RFC 7644](https://www.rfc-editor.org/rfc/rfc7644)). The service provider
+lives **outside** `/api/v1`, at `<base_url>/scim/v2`, and has its own
+authentication: `Authorization: Bearer qtfscim_…`, a **SCIM token** that is
+bound to one tenant. SCIM tokens do not work for `/api/v1`, and API tokens
+and sessions do not work for `/scim/v2`. Responses are
+`application/scim+json`; requests may be `application/scim+json` or
+`application/json`.
+
+### Model
+
+* **Users** are matched by e-mail (the primary or work address in `emails`,
+  else `userName`). A new user gets an account with `auth_provider` `scim`
+  and **no password**; the first OIDC/SAML sign-in links it to the provider
+  (as for just-in-time provisioning). An existing account with that e-mail
+  is taken over. `id` is the Qtestframe user id; `userName`, `externalId`
+  and `name` are kept per tenant.
+* `active: false` removes the tenant membership and ends the user's
+  sessions in the tenant and API tokens there; `active: true` restores the
+  membership. `DELETE /Users/{id}` removes the membership and the
+  provisioning record (the account stays).
+* **Groups → roles.** Groups pushed by the provider are mapped to roles by
+  a tenant admin (`PATCH /api/v1/scim/groups/{id}`). An active user gets the
+  most privileged role of their mapped groups (admin first, then by number
+  of permissions), else the tenant's default role (`default_role`, `""` =
+  no membership). Membership and role are recomputed on every user or group
+  change and when the mapping changes.
+* SCIM never changes `super_admin` and never leaves a tenant without an
+  admin (409). The e-mail and display name of a user who also belongs to
+  other tenants, or who is a super admin, are not changed (a different
+  e-mail is refused with 400 `mutability`).
+* Every request that writes is one transaction: when any part fails, nothing
+  is saved. Every change is audited with `user_email` `SCIM: <token name>`
+  (`scim.user.create|update|deactivate|reactivate|delete`,
+  `scim.group.create|update|delete`).
+* Rate limits: 1200 requests per minute per token, 20 failed
+  authentications per 5 minutes per client address (then 429 with
+  `Retry-After`).
+
+### Endpoints
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/scim/v2/ServiceProviderConfig` | patch yes, bulk no, filter yes (max 1000), sort no, ETag yes, changePassword no |
+| GET | `/scim/v2/ResourceTypes`, `/ResourceTypes/{User\|Group}` | |
+| GET | `/scim/v2/Schemas`, `/Schemas/{urn}` | core User and Group schemas |
+| GET | `/scim/v2/Users?filter=&startIndex=&count=&attributes=&excludedAttributes=` | ListResponse; `count` default 100, max 1000 |
+| POST | `/scim/v2/Users` | 201 with `Location`; 409 `uniqueness` for a known `userName` |
+| GET | `/scim/v2/Users/{id}` | `ETag` = `meta.version` |
+| PUT | `/scim/v2/Users/{id}` | replaces `userName`, `externalId`, `name`, `displayName`, `emails`, `active` (an absent `active` keeps the state) |
+| PATCH | `/scim/v2/Users/{id}` | PatchOp, see below |
+| DELETE | `/scim/v2/Users/{id}` | 204 |
+| GET | `/scim/v2/Groups?filter=&startIndex=&count=&excludedAttributes=members` | |
+| POST | `/scim/v2/Groups` | `{"displayName","externalId"?,"members"?:[{"value": user id}]}`; members must be provisioned users of the tenant (400 `invalidValue`) |
+| GET | `/scim/v2/Groups/{id}` | |
+| PUT | `/scim/v2/Groups/{id}` | replaces name and members |
+| PATCH | `/scim/v2/Groups/{id}` | PatchOp, see below → 200 with the group |
+| DELETE | `/scim/v2/Groups/{id}` | 204; its members' roles are recomputed |
+| any | `/scim/v2/Me`, `/scim/v2/Bulk` | 501 |
+
+**Filters** support `eq ne co sw ew gt ge lt le pr`, `and`, `or`, `not ( )`,
+parentheses, sub-attributes (`name.givenName`), schema-qualified names
+(`urn:ietf:params:scim:schemas:core:2.0:User:userName`) and value paths
+(`emails[type eq "work"]`, `emails[type eq "work"].value eq "a@example.com"`,
+`members[value eq "<id>"]`). Strings compare case-insensitively except `id`
+and `externalId`.
+
+**PATCH** (`{"schemas":["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+"Operations":[…]}`): `op` is `add`, `replace` or `remove` in any letter
+case. Users: paths `active` (boolean or `"True"`/`"False"`, as Entra ID
+sends), `userName`, `displayName`, `externalId`, `name`, `name.givenName`,
+`name.familyName`, `emails`, `emails[type eq "work"].value`; without a path
+the value is an object of such attributes, also with dotted keys
+(`{"op":"Replace","value":{"name.givenName":"Ada","active":false}}`).
+Attributes Qtestframe does not store (title, phone numbers, the enterprise
+extension …) are accepted and ignored. Groups: `displayName`, `externalId`,
+`members` (`add` a list, `replace` the list, `remove` with a list as value,
+with a filter path `members[value eq "<id>"]`, or without value for all),
+or a path-less object (`{"op":"replace","value":{"id":"…","displayName":"…"}}`,
+as Okta sends).
+
+Errors use the SCIM format:
+
+```json
+{"schemas":["urn:ietf:params:scim:api:messages:2.0:Error"],"status":"409","scimType":"uniqueness","detail":"a user with userName ada@example.com already exists"}
+```
+
+`scimType` is one of `invalidFilter`, `invalidPath`, `invalidSyntax`,
+`invalidValue`, `mutability`, `noTarget`, `uniqueness` (absent for 401,
+404, 409 last admin, 429, 501).
+
+### Administration (`/api/v1`, tenant.manage)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/scim` | `{"base_url", "default_role", "tokens":[SCIMToken], "groups":[{id, display_name, external_id, role, members}], "users", "active_users"}` |
+| PATCH | `/scim/settings` | `{"default_role": role or ""}`; recomputes all provisioned members (409 if the last admin would lose the role) |
+| POST | `/scim/tokens` | `{"name","expires_days"?}` → 201 `{"token":"qtfscim_…","item":SCIMToken}` (shown once, stored as SHA-256); API tokens cannot create SCIM tokens (403) |
+| DELETE | `/scim/tokens/{id}` | revokes at once → 204 |
+| PATCH | `/scim/groups/{id}` | `{"role": role or ""}`; recomputes the group's members (409 if the last admin would lose the role) |
+| GET | `/scim/events?limit=` | newest audit entries whose action starts with `scim.` (default 50, max 500) |
+
+`SCIMToken` = `{id, tenant_id, name, prefix, created_by, created_at, expires_at?, last_used?}`.
+Admin changes are audited as `scim.token.create`, `scim.token.delete`,
+`scim.settings` and `scim.group.role`.
 
 ## Reports
 

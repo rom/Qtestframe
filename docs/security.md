@@ -203,6 +203,42 @@ volumetric network attacks (use upstream filtering).
 Because accounts are linked by e-mail, only connect IdPs whose e-mail
 addresses are verified and controlled by your organisation.
 
+A user provisioned by SCIM (below) is managed by SCIM in that tenant: the
+OIDC/SAML login neither creates nor changes that membership, so
+`role_mapping` cannot undo a SCIM deactivation.
+
+### SCIM 2.0 provisioning
+
+`internal/api/scim.go`, `/scim/v2` ([api.md](api.md#scim-20-provisioning)).
+
+* **Token scope.** A SCIM token (`qtfscim_` + 256 random bits) is bound to
+  one tenant and only authenticates `/scim/v2`; the SCIM endpoints accept
+  nothing else (no session cookie, no API token), and the REST API rejects
+  SCIM tokens because they lack the `qtf_` prefix and live in their own
+  table (`scim_tokens`). Only tenant admins (`tenant.manage`) with a session
+  create and revoke them; API tokens cannot. The token is shown once and
+  stored as a SHA-256 hash; it can expire and is revoked at once.
+* **What a token can do.** Whoever holds it controls the membership of the
+  tenant, up to granting the admin role through a group mapped to admin.
+  It cannot change super-admin status, read or change project data, set
+  passwords, or affect other tenants: the e-mail and name of a user who also
+  belongs to another tenant (or is a super admin) are not changed, and
+  deactivation only removes the membership, sessions and API tokens in the
+  token's tenant. The tenant always keeps one admin (409). Treat the token
+  like an admin password and map only groups you control to privileged
+  roles; unmapped groups grant nothing beyond the default role.
+* **Linking.** Provisioned accounts have no password (`auth_provider`
+  `scim`), so they can only sign in through OIDC/SAML, which links them by
+  e-mail like any just-in-time account. Provision only addresses your
+  organisation controls.
+* **Rate limits and lockout.** 1200 requests per minute per token; 20
+  failed SCIM authentications per 5 minutes per client address block that
+  address (429). Failures are logged with the address.
+* **Atomicity and audit.** Each writing request is one database
+  transaction; every change is written to the audit log with the actor
+  `SCIM: <token name>`, and token and mapping changes with the admin who
+  made them.
+
 ## 4. Authorization and tenant isolation
 
 * Every user has exactly **one role per tenant**; a global **super admin**
