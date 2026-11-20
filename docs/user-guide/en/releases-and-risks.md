@@ -67,6 +67,8 @@ Each criterion shows whether it is met, the actual value next to the target (for
 
 The badge in the release list is the same evaluation, so you can see at a glance which releases are ready.
 
+A percentage criterion with nothing to measure is **not met**: a release without requirements in its scope, or without executions for *executed*, shows *Nothing to measure yet* and is a no-go. A release without any exit criteria is always a go.
+
 ## Mark a release released
 
 Select **Mark released** on an open release.
@@ -75,6 +77,18 @@ Select **Mark released** on an open release.
 - If it is a **no-go**, the dialog lists the criteria that are not met. You can still release with an **override**: write why in **Why release anyway?** (at least 3 characters) and select **Release anyway**. The note is saved with the release and in the audit log.
 
 When a release is marked released, Qtestframe creates the [baseline](baselines.md) *Release* followed by the release name: it freezes the scope requirements and their tests in the versions they had. The release then shows when and by whom it was released, the override note if there was one, and a link to the baseline.
+
+## Change many releases at once
+
+Tick releases in the list. The toolbar then offers:
+
+- **Set status**. Choosing **Released** releases only the ticked releases that are a go, each with its baseline; releases with a no-go are skipped and listed. To release despite a no-go, use **Mark released** on that release, which asks for the reason.
+- **Target date** for all of them (empty clears it).
+- **Copy exit criteria** from another release; they replace the criteria of the ticked releases.
+- **Add requirements** (pick them) or **Add by filter** (for example `obligation:must tag:payments`) to the scope of every ticked release.
+- **Delete**, after confirmation; the runs keep their results.
+
+Every release is checked before any is changed. Changes of status (other than *Released*), target date and exit criteria can be undone with the undo button.
 
 ## The risk register
 

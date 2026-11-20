@@ -21,6 +21,8 @@ import StatusTag from '@/components/StatusTag.vue'
 import SummaryBar from '@/components/SummaryBar.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
 import HelpLink from '@/guide/HelpLink.vue'
+import { valuesBefore } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { P } from '@/lib/permissions'
@@ -93,6 +95,103 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+// ---------- bulk ----------
+const selection = ref<Release[]>([])
+const selectedIds = computed(() => selection.value.map((r) => r.id))
+const bulkStatusOptions = computed(() => RELEASE_STATUSES.map((s) => ({ label: statusLabel(s), value: s })))
+const bulkStatus = ref<string | null>(null)
+const dateDialog = ref(false)
+const bulkDate = ref('')
+const criteriaDialog = ref(false)
+const criteriaFrom = ref<string | null>(null)
+const criteriaSources = computed(() => releases.value.map((r) => ({ label: `${r.name} – ${t('releasesView.bulk.criteriaCount', { n: r.exit_criteria.length }, r.exit_criteria.length)}`, value: r.id })))
+const scopePicker = ref(false)
+const bulkQueryDialog = ref(false)
+const bulkQuery = ref('')
+watch(releases, (list) => {
+  const ids = new Set(list.map((r) => r.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+type BulkSet = Partial<Pick<Release, 'status' | 'target_date' | 'exit_criteria'>>
+interface BulkResult {
+  updated: string[]
+  skipped: { id: string; name: string; reason: string }[]
+}
+async function bulkApply(set: BulkSet, extra: Record<string, unknown> = {}) {
+  const ids = [...selectedIds.value]
+  if (!ids.length) return
+  const path = `/projects/${proj.pid}/releases/bulk`
+  // releasing creates baselines and cannot be undone here
+  const undoable = Object.keys(set).length > 0 && set.status !== 'released'
+  const before = undoable ? valuesBefore(releases.value, ids, Object.keys(set) as (keyof Release & string)[]) : []
+  try {
+    const res = await api.post<BulkResult>(path, { ids, set, ...extra })
+    if (undoable && res.updated.length) {
+      recordUndo(
+        entry(
+          t('releasesView.bulk.undo', { n: ids.length }),
+          async () => {
+            for (const b of before) await api.patch(`/releases/${b.id}`, b.before)
+          },
+          () => api.post(path, { ids, set }),
+        ),
+      )
+    }
+    if (res.skipped.length)
+      notify.failText(
+        t('releasesView.bulk.someNoGo', { n: res.skipped.length, updated: res.updated.length }, res.skipped.length),
+        res.skipped.map((s) => `${s.name}: ${t(`releasesView.bulk.reason.${s.reason}`)}`).join('\n'),
+      )
+    else notify.ok(t('releasesView.bulk.updated', { n: res.updated.length }, res.updated.length))
+    await load()
+    if (selectedId.value && ids.includes(selectedId.value)) await loadReport(selectedId.value)
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+watch(bulkStatus, (v) => v && bulkApply({ status: v }).then(() => (bulkStatus.value = null)))
+function openDate() {
+  bulkDate.value = ''
+  dateDialog.value = true
+}
+async function applyDate() {
+  dateDialog.value = false
+  await bulkApply({ target_date: bulkDate.value })
+}
+function openCriteria() {
+  criteriaFrom.value = null
+  criteriaDialog.value = true
+}
+async function applyCriteria() {
+  const src = releases.value.find((r) => r.id === criteriaFrom.value)
+  criteriaDialog.value = false
+  if (src) await bulkApply({ exit_criteria: src.exit_criteria.map((c) => ({ ...c })) })
+}
+async function bulkAddScope(items: { id: string }[]) {
+  if (items.length) await bulkApply({}, { add_requirement_ids: items.map((i) => i.id) })
+}
+function openBulkQuery() {
+  bulkQuery.value = ''
+  bulkQueryDialog.value = true
+}
+async function applyBulkQuery() {
+  bulkQueryDialog.value = false
+  if (bulkQuery.value.trim()) await bulkApply({}, { query: bulkQuery.value.trim() })
+}
+function bulkDelete() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(t('releasesView.bulk.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      await api.del(`/projects/${proj.pid}/releases/bulk`, { ids })
+      notify.ok(t('releasesView.bulk.deleted', { n: ids.length }, ids.length))
+      selection.value = []
+      await load()
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
 }
 
 // requirements and runs of the project (scope names, runs of a release)
@@ -393,7 +492,18 @@ function itemNote(c: CriterionResult, note?: string) {
 
   <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
   <div v-else class="card">
+    <div v-if="selection.length && canWrite" class="bulkbar" role="toolbar" :aria-label="t('releasesView.bulk.toolbar')">
+      <b>{{ t('common.selected', { count: selection.length }) }}</b>
+      <Select v-model="bulkStatus" :options="bulkStatusOptions" option-label="label" option-value="value" :placeholder="t('releasesView.bulk.setStatus')" :aria-label="t('releasesView.bulk.setStatus')" size="small" style="min-width: 140px" />
+      <Button :label="t('releasesView.bulk.targetDate')" icon="pi pi-calendar" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openDate" />
+      <Button :label="t('releasesView.bulk.copyCriteria')" icon="pi pi-copy" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openCriteria" />
+      <Button :label="t('releasesView.bulk.addRequirements')" icon="pi pi-plus" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="scopePicker = true" />
+      <Button :label="t('releasesView.bulk.addByQuery')" icon="pi pi-filter" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openBulkQuery" />
+      <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+      <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+    </div>
     <DataTable
+      v-model:selection="selection"
       v-stack
       :value="releases"
       data-key="id"
@@ -407,6 +517,7 @@ function itemNote(c: CriterionResult, note?: string) {
       :row-class="(r: Release) => (r.id === selectedId ? 'p-datatable-row-selected' : '')"
       @row-click="(e) => open(e.data as Release)"
     >
+      <Column v-if="canWrite" selection-mode="multiple" style="width: 2.6rem" />
       <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
         <template #body="{ data }">
           <button type="button" class="link-button" style="font-weight: 600" :aria-pressed="data.id === selectedId" @click.stop="open(data as Release)"><i class="pi pi-box muted" aria-hidden="true" /> {{ data.name }}</button>
@@ -681,9 +792,41 @@ function itemNote(c: CriterionResult, note?: string) {
     :confirm-label="t('common.add')"
     @pick="addPicked"
   />
+  <Dialog v-model:visible="dateDialog" :header="t('releasesView.bulk.dateHeader', { n: selection.length }, selection.length)" modal style="width: min(420px, 96vw)">
+    <label for="bk-rel-date" class="block-label">{{ t('releasesView.targetDate') }}</label>
+    <InputText id="bk-rel-date" v-model="bulkDate" type="date" fluid aria-describedby="bk-rel-date-help" />
+    <small id="bk-rel-date-help" class="muted">{{ t('releasesView.bulk.emptyClears') }}</small>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="dateDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" @click="applyDate" />
+    </template>
+  </Dialog>
+  <Dialog v-model:visible="criteriaDialog" :header="t('releasesView.bulk.criteriaHeader', { n: selection.length }, selection.length)" modal style="width: min(480px, 96vw)">
+    <label for="bk-rel-crit" class="block-label">{{ t('releasesView.bulk.copyFrom') }}</label>
+    <Select v-model="criteriaFrom" input-id="bk-rel-crit" :options="criteriaSources" option-label="label" option-value="value" fluid aria-describedby="bk-rel-crit-help" />
+    <small id="bk-rel-crit-help" class="muted">{{ t('releasesView.bulk.copyHelp') }}</small>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="criteriaDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!criteriaFrom" @click="applyCriteria" />
+    </template>
+  </Dialog>
+  <Dialog v-model:visible="bulkQueryDialog" :header="t('releasesView.bulk.queryHeader', { n: selection.length }, selection.length)" modal style="width: min(560px, 96vw)">
+    <QueryInput v-model="bulkQuery" scope="requirement" :placeholder="t('releasesView.bulk.queryPlaceholder', { example: 'obligation:must tag:payments' })" @submit="applyBulkQuery" />
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="bulkQueryDialog = false" />
+      <Button :label="t('common.add')" icon="pi pi-plus" :disabled="!bulkQuery.trim()" @click="applyBulkQuery" />
+    </template>
+  </Dialog>
+  <ItemPickerDialog v-model:visible="scopePicker" kind="requirement" :project-id="proj.pid" :header="t('releasesView.bulk.pickHeader', { n: selection.length }, selection.length)" :confirm-label="t('common.add')" @pick="bulkAddScope" />
 </template>
 
 <style scoped>
+.block-label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
 .criteria-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .criterion { border: 1px solid var(--qtf-border); border-radius: var(--qtf-radius); padding: 8px 10px; }
 .criterion.met .criterion-head > i { color: var(--p-green-500); }

@@ -721,12 +721,18 @@ Reading needs `project.read`, changing `project.update`.
 | GET | `/releases/{id}` | Release with `requirement_ids` |
 | PATCH | `/releases/{id}` | any of the fields above, plus `release_note`, `override`. Setting `status` to `released` needs a go; without it 409 `{"code":"no_go","status":ReleaseStatusReport}` unless `override: true` and a `release_note`. Releasing sets `released_at`/`released_by` and creates the baseline "Release <name>" of the scope and its tests |
 | DELETE | `/releases/{id}` | runs keep their results and lose the release |
+| POST | `/projects/{pid}/releases/bulk` | `{"ids":[...], "set": {"status"?, "target_date"?, "exit_criteria"?}, "add_requirement_ids"?, "remove_requirement_ids"?, "query"?}` → `{"updated":[names], "skipped":[{id, name, reason}]}`. Setting `released` releases only the releases with a go (each with its baseline); the others are skipped with reason `no_go` (no override in bulk). Releasing cannot be combined with a scope change. Every release is validated before any is saved |
+| DELETE | `/projects/{pid}/releases/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/releases/{id}/requirements` | `{"add":[ids],"remove":[ids],"query":"<filter expr>"}` (the query adds its matches) → `{"added","removed","release"}` |
 | GET | `/releases/{id}/status` | `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}` |
 
 Runs belong to a release with `release_id` on `POST /projects/{pid}/runs`
 and `PATCH /runs/{id}` (`""` removes it). The results of a release are the
 latest result of each test in its runs.
+
+A percentage criterion with nothing to measure (an empty scope; no
+executions for `executed`) is not met and has `available: false`. A release
+without exit criteria is always a go.
 
 Exit criterion types (`threshold` in percent, default 100):
 

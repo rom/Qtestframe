@@ -67,6 +67,8 @@ Varje kriterium visar om det är uppfyllt, det faktiska värdet bredvid målet (
 
 Etiketten i listan över releaser bygger på samma utvärdering, så att du direkt ser vilka releaser som är klara.
 
+Ett procentkriterium utan något att mäta är **inte uppfyllt**: en release utan krav i omfattningen, eller utan exekveringar för *exekverade*, visar *Inget att mäta än* och får no-go. En release helt utan utgångskriterier får alltid go.
+
 ## Markera en release som släppt
 
 Välj **Markera som släppt** på en öppen release.
@@ -75,6 +77,18 @@ Välj **Markera som släppt** på en öppen release.
 - Är den **no-go** listar dialogen de kriterier som inte är uppfyllda. Du kan ändå släppa releasen genom att **åsidosätta** kriterierna: skriv varför i **Varför släppa ändå?** (minst 3 tecken) och välj **Släpp ändå**. Motiveringen sparas med releasen och i händelseloggen.
 
 När en release markeras som släppt skapar Qtestframe [baslinjen](baselines.md) *Release* följt av releasens namn: den fryser kraven i omfattningen och deras testfall i de versioner de hade. Releasen visar sedan när och av vem den släpptes, eventuell motivering och en länk till baslinjen.
+
+## Ändra många releaser på en gång
+
+Kryssa i releaser i listan. Verktygsfältet erbjuder då:
+
+- **Ange status**. Väljer du **Släppt** släpps bara de markerade releaser som har go, var och en med sin baslinje; releaser med no-go hoppas över och listas. För att släppa trots no-go använder du **Markera som släppt** på den releasen, som frågar efter skälet.
+- **Måldatum** för alla (tomt rensar).
+- **Kopiera utgångskriterier** från en annan release; de ersätter kriterierna för de markerade releaserna.
+- **Lägg till krav** (välj dem) eller **Lägg till med filter** (till exempel `obligation:must tag:payments`) i omfattningen för varje markerad release.
+- **Ta bort**, efter bekräftelse; körningarna behåller sina resultat.
+
+Alla releaser kontrolleras innan någon ändras. Ändringar av status (utom *Släppt*), måldatum och utgångskriterier kan ångras med ångra-knappen.
 
 ## Riskregistret
 

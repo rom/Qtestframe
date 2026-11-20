@@ -112,3 +112,75 @@ func TestBulkRisks(t *testing.T) {
 		t.Fatal(l)
 	}
 }
+
+func TestBulkReleases(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	pid := a.project("BRL")
+	q1 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Login", "description": "The user MUST log in."}, 201)["id"].(string)
+	q2 := a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "Logout", "description": "The user MAY log out."}, 201)["id"].(string)
+	// r1 has no criteria (go), r2 the defaults with an untested requirement (no-go)
+	r1 := a.m("POST", "/api/v1/projects/"+pid+"/releases", map[string]any{"name": "1.0", "exit_criteria": []any{}}, 201)["id"].(string)
+	r2 := a.m("POST", "/api/v1/projects/"+pid+"/releases", map[string]any{"name": "1.1"}, 201)["id"].(string)
+	r3 := a.m("POST", "/api/v1/projects/"+pid+"/releases", map[string]any{"name": "2.0"}, 201)["id"].(string)
+	a.m("POST", "/api/v1/releases/"+r2+"/requirements", map[string]any{"add": []string{q1}}, 200)
+	path := "/api/v1/projects/" + pid + "/releases/bulk"
+
+	a.m("POST", path, map[string]any{"ids": []string{r1}}, 400)
+	a.m("POST", path, map[string]any{"ids": []string{r1}, "set": map[string]any{"target_date": "soon"}}, 400)
+	a.m("POST", path, map[string]any{"ids": []string{r1}, "set": map[string]any{"status": "released"}, "add_requirement_ids": []string{q1}}, 400)
+	a.m("POST", path, map[string]any{"ids": []string{"missing"}, "set": map[string]any{"status": "active"}}, 404)
+
+	// scope by query and ids, target date and criteria copied to two releases
+	crit := []map[string]any{{"type": "coverage", "threshold": 80}, {"type": "no_failed"}}
+	res := a.m("POST", path, map[string]any{"ids": []string{r2, r3}, "set": map[string]any{"target_date": "2027-03-01", "exit_criteria": crit, "status": "active"}, "query": "title:Logout"}, 200)
+	if len(res["updated"].([]any)) != 2 {
+		t.Fatal(res)
+	}
+	got := a.m("GET", "/api/v1/releases/"+r3, nil, 200)
+	if got["target_date"] != "2027-03-01" || got["status"] != "active" || len(got["exit_criteria"].([]any)) != 2 || len(got["requirement_ids"].([]any)) != 1 || got["requirement_ids"].([]any)[0] != q2 {
+		t.Fatal(got)
+	}
+	a.m("POST", path, map[string]any{"ids": []string{r3}, "remove_requirement_ids": []string{q2}}, 200)
+	if got := a.m("GET", "/api/v1/releases/"+r3, nil, 200); got["requirement_count"].(float64) != 0 {
+		t.Fatal(got)
+	}
+
+	// releasing: go releases are released (with a baseline), no-go ones skipped
+	res = a.m("POST", path, map[string]any{"ids": []string{r1, r2}, "set": map[string]any{"status": "released"}}, 200)
+	if up := res["updated"].([]any); len(up) != 1 || up[0] != "1.0" {
+		t.Fatal(res)
+	}
+	if sk := res["skipped"].([]any); len(sk) != 1 || sk[0].(map[string]any)["reason"] != "no_go" {
+		t.Fatal(res)
+	}
+	if got := a.m("GET", "/api/v1/releases/"+r1, nil, 200); got["status"] != "released" || got["released_at"] == nil {
+		t.Fatal(got)
+	}
+	if got := a.m("GET", "/api/v1/releases/"+r2, nil, 200); got["status"] != "active" {
+		t.Fatal(got)
+	}
+	found := false
+	for _, b := range items(a.m("GET", "/api/v1/projects/"+pid+"/baselines", nil, 200)) {
+		found = found || b["name"] == "Release 1.0"
+	}
+	if !found {
+		t.Fatal("no baseline")
+	}
+	// an empty scope is nothing to measure: no-go, not a vacuous pass
+	if got := a.m("GET", "/api/v1/releases/"+r3+"/status", nil, 200); got["go"] != false || criterion(t, got, "coverage")["available"] != false {
+		t.Fatal(got)
+	}
+	res = a.m("POST", path, map[string]any{"ids": []string{r3}, "set": map[string]any{"status": "released"}}, 200)
+	if len(res["updated"].([]any)) != 0 || len(res["skipped"].([]any)) != 1 {
+		t.Fatal(res)
+	}
+	e.member("tester@example.com", "tester")
+	e.login("tester@example.com").m("POST", path, map[string]any{"ids": []string{r3}, "set": map[string]any{"status": "cancelled"}}, 403)
+	if res := a.m("DELETE", path, map[string]any{"ids": []string{r2, r3}}, 200); res["deleted"].(float64) != 2 {
+		t.Fatal(res)
+	}
+	if l := items(a.m("GET", "/api/v1/projects/"+pid+"/releases", nil, 200)); len(l) != 1 {
+		t.Fatal(l)
+	}
+}

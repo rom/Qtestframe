@@ -357,10 +357,11 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 		return state == model.ResultPassed, state
 	}
 	pctResult := func(c model.ExitCriterion, ok, total int, items []ReleaseItem) CriterionResult {
-		actual := 100.0
-		if total > 0 {
-			actual = round1(float64(ok) * 100 / float64(total))
+		// nothing to measure (an empty scope, no executions) is not a pass
+		if total == 0 {
+			return CriterionResult{ExitCriterion: c, Met: false, Total: 0, Items: []ReleaseItem{}, Available: false}
 		}
+		actual := round1(float64(ok) * 100 / float64(total))
 		return CriterionResult{ExitCriterion: c, Met: actual >= c.Threshold, Actual: actual, Total: total, Items: limitItems(items), Available: true}
 	}
 	var out []CriterionResult
@@ -579,3 +580,6 @@ func (s *Store) ReleaseNames(ctx context.Context, tenantID, projectID string) (m
 	}
 	return out, rows.Err()
 }
+
+// ValidateRelease checks and normalises a release's fields without saving it.
+func ValidateRelease(r *model.Release) error { return validateRelease(r) }

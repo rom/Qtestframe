@@ -14,6 +14,8 @@ import (
 func (s *Server) routesReleases(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/releases", s.handleListReleases, "project.read")
 	h("POST /api/v1/projects/{pid}/releases", s.handleCreateRelease, "project.update")
+	h("POST /api/v1/projects/{pid}/releases/bulk", s.handleBulkReleases, "project.update")
+	h("DELETE /api/v1/projects/{pid}/releases/bulk", s.handleBulkDeleteReleases, "project.update")
 	h("GET /api/v1/releases/{id}", s.handleGetRelease, "project.read")
 	h("PATCH /api/v1/releases/{id}", s.handleUpdateRelease, "project.update")
 	h("DELETE /api/v1/releases/{id}", s.handleDeleteRelease, "project.update")

@@ -317,3 +317,190 @@ func (s *Server) handleBulkDeleteRisks(w http.ResponseWriter, r *http.Request, p
 	}
 	writeJSON(w, http.StatusOK, map[string]int{"deleted": len(list)})
 }
+
+// ---------------------------------------------------------------- releases
+
+// handleBulkReleases: POST /projects/{pid}/releases/bulk
+// {"ids": [...], "set": {"status", "target_date", "exit_criteria"},
+// "add_requirement_ids", "remove_requirement_ids", "query"}.
+// Releasing needs a go for each release: releases with a no-go are
+// skipped (reason "no_go"); an override needs the single-release dialog.
+func (s *Server) handleBulkReleases(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs []string `json:"ids"`
+		Set struct {
+			Status       *string                `json:"status"`
+			TargetDate   *string                `json:"target_date"`
+			ExitCriteria *[]model.ExitCriterion `json:"exit_criteria"`
+		} `json:"set"`
+		AddRequirementIDs    []string `json:"add_requirement_ids"`
+		RemoveRequirementIDs []string `json:"remove_requirement_ids"`
+		Query                string   `json:"query"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	set := req.Set
+	fields := set.Status != nil || set.TargetDate != nil || set.ExitCriteria != nil
+	scope := len(req.AddRequirementIDs) > 0 || len(req.RemoveRequirementIDs) > 0 || req.Query != ""
+	if !fields && !scope {
+		s.fail(w, r, badRequest("nothing to change"))
+		return
+	}
+	if scope && set.Status != nil && *set.Status == "released" {
+		s.fail(w, r, badRequest("change the scope first, then mark the releases released"))
+		return
+	}
+	ids, err := bulkIDs(req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	ctx := r.Context()
+	var list []*model.Release
+	for _, id := range ids {
+		rel, err := s.Store.GetRelease(ctx, p.TenantID(), id)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if rel.ProjectID != pr.ID {
+			s.fail(w, r, fmt.Errorf("release %s: %w", id, store.ErrNotFound))
+			return
+		}
+		list = append(list, rel)
+	}
+	add := req.AddRequirementIDs
+	if req.Query != "" {
+		pc, err := s.loadContext(ctx, p.TenantID(), pr)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		matches, err := s.filterRequirements(r, p, pr, pc, req.Query, "", true)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		for _, q := range matches {
+			add = append(add, q.ID)
+		}
+	}
+	type skip struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		Reason string `json:"reason"`
+	}
+	updated, skipped := []string{}, []skip{}
+	// check every release before saving any
+	type plan struct {
+		rel       *model.Release
+		releasing bool
+		report    *store.ReleaseStatusReport
+	}
+	var plans []plan
+	for _, rel := range list {
+		pl := plan{rel: rel}
+		if set.Status != nil && *set.Status != rel.Status {
+			if *set.Status == "released" {
+				rep, err := s.releaseStatus(r, p, rel.ID)
+				if err != nil {
+					s.fail(w, r, err)
+					return
+				}
+				if !rep.Go {
+					skipped = append(skipped, skip{rel.ID, rel.Name, "no_go"})
+					continue
+				}
+				pl.releasing, pl.report = true, rep
+			}
+			rel.Status = *set.Status
+		}
+		if set.TargetDate != nil {
+			rel.TargetDate = *set.TargetDate
+		}
+		if set.ExitCriteria != nil {
+			rel.ExitCriteria = append([]model.ExitCriterion(nil), (*set.ExitCriteria)...)
+		}
+		if err := store.ValidateRelease(rel); err != nil {
+			s.fail(w, r, fmt.Errorf("%s: %w", rel.Name, err))
+			return
+		}
+		plans = append(plans, pl)
+	}
+	for _, pl := range plans {
+		rel := pl.rel
+		if scope {
+			if _, _, err := s.Store.SetReleaseRequirements(ctx, p.TenantID(), rel.ID, add, req.RemoveRequirementIDs); err != nil {
+				s.fail(w, r, fmt.Errorf("%s: %w", rel.Name, err))
+				return
+			}
+		}
+		if fields {
+			if err := s.Store.UpdateRelease(ctx, p.TenantID(), rel, p.User.Email); err != nil {
+				s.fail(w, r, fmt.Errorf("%s: %w", rel.Name, err))
+				return
+			}
+		}
+		updated = append(updated, rel.Name)
+		s.audit(ctx, p, "release.update", "release", rel.ID, rel.Name+" "+rel.Status+" (bulk)")
+		out, _ := s.Store.GetRelease(ctx, p.TenantID(), rel.ID)
+		if out == nil {
+			out = rel
+		}
+		s.notifyEvent(r, p, pr.ID, "release.updated", map[string]any{"release": out, "bulk": true})
+		if pl.releasing {
+			s.audit(ctx, p, "release.released", "release", rel.ID, rel.Name+" (go, bulk)")
+			s.releaseBaseline(r, p, out)
+			s.notifyEvent(r, p, pr.ID, "release.released", map[string]any{"release": out, "status": pl.report})
+		}
+	}
+	s.audit(ctx, p, "release.bulk_update", "release", "", fmt.Sprintf("%d updated, %d skipped", len(updated), len(skipped)))
+	writeJSON(w, http.StatusOK, map[string]any{"updated": updated, "skipped": skipped})
+}
+
+// handleBulkDeleteReleases: DELETE /projects/{pid}/releases/bulk {"ids": [...]}.
+func (s *Server) handleBulkDeleteReleases(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	ids, err := bulkIDs(req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	var list []*model.Release
+	for _, id := range ids {
+		rel, err := s.Store.GetRelease(r.Context(), p.TenantID(), id)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		if rel.ProjectID != pr.ID {
+			s.fail(w, r, fmt.Errorf("release %s: %w", id, store.ErrNotFound))
+			return
+		}
+		list = append(list, rel)
+	}
+	for _, rel := range list {
+		if err := s.Store.DeleteRelease(r.Context(), p.TenantID(), rel.ID); err != nil {
+			s.fail(w, r, fmt.Errorf("%s: %w", rel.Name, err))
+			return
+		}
+		s.audit(r.Context(), p, "release.delete", "release", rel.ID, rel.Name+" (bulk)")
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"deleted": len(list)})
+}
