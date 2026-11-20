@@ -80,3 +80,27 @@ func TestNamesFallBackToEnglish(t *testing.T) {
 		t.Fatal(n)
 	}
 }
+
+// Every group has areas, and the library stays large: a change that drops
+// whole areas by mistake fails here.
+func TestLibraryCoverage(t *testing.T) {
+	c, err := Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+	used := map[string]int{}
+	for _, a := range c.Areas {
+		used[a.Group]++
+		if len(a.Requirements) < 5 || len(a.Tests) < 5 {
+			t.Errorf("area %s has only %d requirements and %d tests", a.ID, len(a.Requirements), len(a.Tests))
+		}
+	}
+	for _, g := range c.Groups {
+		if used[g.ID] == 0 {
+			t.Errorf("group %s has no areas", g.ID)
+		}
+	}
+	if len(c.Requirements) < 350 || len(c.Tests) < 300 {
+		t.Errorf("the library shrank: %d requirements, %d tests", len(c.Requirements), len(c.Tests))
+	}
+}
