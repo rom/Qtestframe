@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -406,6 +407,7 @@ function criterionLabel(id: string | null) {
         <span class="row">
           <i class="pi pi-sparkles" style="color: var(--p-primary-color)" />
           <b class="small">{{ t('analysis.title') }}</b>
+          <HelpTip id="req.analysis" :label="t('analysis.title')" />
           <ProgressSpinner v-if="analyzing" style="width: 14px; height: 14px" stroke-width="6" :aria-label="t('common.loading')" />
           <Select
             v-model="analysisLanguage"
@@ -446,6 +448,7 @@ function criterionLabel(id: string | null) {
     <div class="form-grid">
       <div v-field class="field">
         <label>{{ t('requirements.obligation') }}</label>
+        <HelpTip id="req.obligation" :label="t('requirements.obligation')" />
         <Select v-model="form.obligation" :options="obligationOptions" option-label="label" option-value="value" :disabled="!canWrite">
           <template #value="{ value }">
             <StatusTag v-if="value" :value="value" kind="obligation" />
@@ -455,38 +458,47 @@ function criterionLabel(id: string | null) {
       </div>
       <div v-field class="field">
         <label>{{ t('common.status') }}</label>
+        <HelpTip id="req.status" :label="t('common.status')" />
         <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.type') }}</label>
+        <HelpTip id="req.type" :label="t('common.type')" />
         <Select v-model="form.type" :options="typeOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.priority') }}</label>
+        <HelpTip id="req.priority" :label="t('common.priority')" />
         <Select v-model="form.priority" :options="priorityOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.owner') }}</label>
+        <HelpTip id="req.owner" :label="t('common.owner')" />
         <InputText v-model="form.owner" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.source') }}</label>
+        <HelpTip id="req.source" :label="t('common.source')" />
         <InputText v-model="form.source" :disabled="!canWrite" :placeholder="t('requirements.sourcePlaceholder')" />
       </div>
       <div v-field class="field full">
         <label>{{ t('requirements.rationale') }}</label>
+        <HelpTip id="req.rationale" :label="t('requirements.rationale')" />
         <Textarea v-model="form.rationale" rows="2" auto-resize :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.folder') }}</label>
+        <HelpTip id="req.folder" :label="t('common.folder')" />
         <Select v-model="form.folder_id" :options="folderOptions" option-label="label" option-value="id" filter :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.categories') }}</label>
+        <HelpTip id="req.categories" :label="t('common.categories')" />
         <CategorySelect v-model="form.category_ids" :categories="categories" :disabled="!canWrite" />
       </div>
       <div v-field class="field full">
         <label>{{ t('common.tags') }}</label>
+        <HelpTip id="req.tags" :label="t('common.tags')" />
         <TagsInput v-model="form.tags" :disabled="!canWrite" />
       </div>
     </div>
@@ -494,6 +506,7 @@ function criterionLabel(id: string | null) {
     <div>
       <div class="section-title">
         <i class="pi pi-verified" /> {{ t('requirements.criteria') }}
+        <HelpTip id="req.criteria" :label="t('requirements.criteria')" />
         <span class="grow" />
         <Button v-if="canWrite" size="small" :label="t('requirements.addCriterion')" icon="pi pi-plus" text @click="addCriterion" />
       </div>
@@ -538,6 +551,7 @@ function criterionLabel(id: string | null) {
         <Checkbox v-model="createTest" binary input-id="create-test" />
         {{ t('editor.alsoCreateTest') }}
       </label>
+      <HelpTip v-if="isNew && canWrite && canLink" id="req.linkedTest" :label="t('editor.alsoCreateTest')" />
       <Button :label="t('common.close')" severity="secondary" text @click="emit('close')" />
       <Button v-if="canWrite" type="submit" :label="isNew ? t('common.create') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />
     </div>

@@ -118,6 +118,10 @@ Sökningen i övre fältet omfattar alla projekt i den **aktuella organisationen
 
 ## Inställningar och enheter
 
+### Vad betyder ett fält?
+
+Peka på det lilla **i** bredvid fältet, eller flytta tangentbordsfokus dit: en kort förklaring visas, med en länk till det avsnitt i handboken som beskriver fältet. Tryck <kbd>?</kbd> för att öppna handbokens sida för den aktuella vyn. Standarderna bakom kravnivåer och test finns under [Referenser](references.md).
+
 ### Hur byter jag språk eller tema?
 
 Språk: **Användarmeny → Språk** (English eller Svenska). Tema: **Färgtema** i övre fältet, eller sol-/måneknappen för ljust och mörkt. Båda finns också under **Profil → Inställningar** och sparas med ditt konto, så de följer med till alla enheter.

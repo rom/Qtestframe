@@ -17,7 +17,7 @@ Den valda mappen, filtret och det öppna kravet ingår i sidans adress, så du k
 
 ## Kravnivåer
 
-Varje krav har en **kravnivå** enligt RFC 2119 och RFC 8174:
+Varje krav har en **kravnivå** enligt [RFC 2119 och RFC 8174](references.md#kravord-rfc):
 
 | Nivå | Betydelse |
 |---|---|
@@ -31,7 +31,7 @@ Varje krav har en **kravnivå** enligt RFC 2119 och RFC 8174:
 
 När du skapar ett krav med **Kravnivå** satt till **Identifiera automatiskt från texten** identifieras nivån från titeln och beskrivningen. Om flera kravord förekommer vinner det starkaste (MUST NOT före MUST före SHALL NOT … före Beskrivande). Text utan kravord får ingen kravnivå och räknas som *ospecificerad* på översikten. Senare ändringar ändrar aldrig kravnivån automatiskt; använd **Använd identifierad kravnivå** i analysrutan eller välj nivån själv.
 
-Bara kravord med VERSALER har normativ betydelse (RFC 8174). Skriv `MUST`, inte `must`. Kravorden skrivs alltid på engelska, även i svenska krav.
+Bara kravord med VERSALER har normativ betydelse (RFC 8174). Skriv `MUST`, inte `must`. I krav som är skrivna på svenska används i stället de svenska kravorden (SKA, BÖR, FÅR …) som beskrivs under [Språkanalysen](#språkanalysen). Sidan [Referenser](references.md) listar dessa och andra standarder för krav och test.
 
 ## Språkanalysen
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref } from 'vue'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
@@ -86,7 +87,7 @@ async function download() {
       </button>
     </div>
     <fieldset class="plain-fieldset">
-    <legend class="section-title">{{ t('export.aspects') }}</legend>
+    <legend class="section-title">{{ t('export.aspects') }} <HelpTip id="export.aspects" :label="t('export.aspects')" /></legend>
     <div class="row" style="gap: 18px">
       <span v-for="a in aspects" :key="a.value" class="row nowrap">
         <Checkbox v-model="selected" :input-id="'a-' + a.value" :value="a.value" />
@@ -94,7 +95,7 @@ async function download() {
       </span>
     </div>
     </fieldset>
-    <div class="section-title">{{ t('export.filter') }}</div>
+    <div class="section-title">{{ t('export.filter') }} <HelpTip id="query.filter" :label="t('export.filter')" /></div>
     <QueryInput v-model="q" scope="requirement" :error="error" :placeholder="t('export.filterPlaceholder', { example: 'status:approved OR obligation:must' })" @submit="download" />
     <div class="row" style="margin-top: 18px">
       <span v-if="willZip" class="small muted"><i class="pi pi-info-circle" /> {{ t('export.zipHint') }}</span>

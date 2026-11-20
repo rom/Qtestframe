@@ -14,6 +14,7 @@ Everything can be done without a mouse.
 | Arrow keys | Move within menus, lists, tabs, the folder tree and selection buttons. |
 | <kbd>Ctrl</kbd>+<kbd>Enter</kbd> | Post a comment. |
 | <kbd>Enter</kbd> in a filter field | Apply the query. |
+| <kbd>?</kbd> | Open the user guide page for the current view (outside text fields). |
 
 ### Skip link
 
@@ -71,7 +72,7 @@ The user interface is available in **English** and **Swedish** (*Svenska*).
 - On the sign-in page, the language buttons apply before you sign in; after sign-in your preference wins.
 - Dates and numbers follow the chosen language unless you set another **Date format** in your preferences.
 - This user guide is available in both languages. If a page has not been translated yet, the English page is shown with a notice.
-- Your data is not translated: requirements, tests and comments stay in the language they were written in. The RFC 2119 keywords (MUST, SHOULD, …) are always written in English, also in the Swedish interface, where they are explained in Swedish (for example *MUST (SKA)*). The [language analysis](requirements.md#the-language-analysis) checks requirement texts written in either English or Swedish, with Swedish keywords such as *SKA* and *BÖR*.
+- Your data is not translated: requirements, tests and comments stay in the language they were written in. The RFC 2119 obligation levels (MUST, SHOULD, …) are always shown in English, also in the Swedish interface, where they are explained in Swedish (for example *MUST (SKA)*). The [language analysis](requirements.md#the-language-analysis) checks requirement texts written in either English or Swedish, with Swedish keywords such as *SKA* and *BÖR*.
 
 ## Phones and tablets
 

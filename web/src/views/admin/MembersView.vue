@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, ref } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -173,10 +174,11 @@ function resetPassword(m: Membership) {
     <form class="grid" style="gap: 12px" @submit.prevent="add">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
       <div v-field class="field"><label>{{ t('common.email') }}</label><InputText v-model="form.email" type="email" required autofocus /></div>
-      <div v-field class="field"><label>{{ t('common.role') }}</label><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
+      <div v-field class="field"><label>{{ t('common.role') }}</label><HelpTip id="member.role" :label="t('common.role')" /><Select v-model="form.role" :options="roles" option-label="label" option-value="value" /></div>
       <div v-field class="field"><label>{{ t('admin.displayNameNew') }}</label><InputText v-model="form.display_name" /></div>
       <div v-field class="field">
         <label>{{ t('admin.initialPassword') }}</label>
+        <HelpTip id="member.initialPassword" :label="t('admin.initialPassword')" />
         <Password v-model="form.password" toggle-mask fluid autocomplete="new-password" />
         <small class="muted">{{ t('admin.addMemberHint') }}</small>
       </div>

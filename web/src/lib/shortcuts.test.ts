@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runnerAction, RUNNER_SHORTCUTS } from './shortcuts'
+import { isHelpShortcut, runnerAction, RUNNER_SHORTCUTS } from './shortcuts'
 
 const key = (k: string, extra: Partial<KeyboardEvent> = {}, target: EventTarget | null = document.body) =>
   ({ key: k, target, ctrlKey: false, metaKey: false, altKey: false, ...extra }) as KeyboardEvent
@@ -40,5 +40,23 @@ describe('runnerAction', () => {
       const k: string = s.keys[0]
       expect(runnerAction(key(k))).not.toBeNull()
     }
+  })
+})
+
+describe('isHelpShortcut', () => {
+  it('is "?" outside fields, widgets and dialogs', () => {
+    expect(isHelpShortcut(key('?'))).toBe(true)
+    expect(isHelpShortcut(key('/'))).toBe(false)
+    expect(isHelpShortcut(key('?', { ctrlKey: true }))).toBe(false)
+    expect(isHelpShortcut({ ...key('?'), defaultPrevented: true })).toBe(false)
+    const input = document.createElement('input')
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    const button = document.createElement('button')
+    dialog.append(button)
+    document.body.append(input, dialog)
+    expect(isHelpShortcut(key('?', {}, input))).toBe(false)
+    expect(isHelpShortcut(key('?', {}, button))).toBe(false)
+    expect(isHelpShortcut(key('?', {}, null))).toBe(true)
   })
 })

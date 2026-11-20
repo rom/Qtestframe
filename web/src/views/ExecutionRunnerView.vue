@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
@@ -416,15 +417,18 @@ const statusOptions = computed(() => [
       <div class="form-grid">
         <div v-field class="field">
           <label>{{ t('runner.overallStatus') }}</label>
+          <HelpTip id="runner.status" :label="t('runner.overallStatus')" />
           <Select v-model="override" :options="statusOptions" option-label="label" option-value="value" :disabled="!canExecute" />
           <span class="small" aria-live="polite">{{ t('runner.savedAs') }} <StatusTag :value="effectiveStatus" kind="result" /></span>
         </div>
         <div v-field class="field">
           <label>{{ t('runner.assignee') }}</label>
+          <HelpTip id="runner.assignee" :label="t('runner.assignee')" />
           <InputText v-model="assignee" :disabled="!canExecute" :placeholder="t('runner.unassigned')" />
         </div>
         <div v-field class="field full">
           <label>{{ t('runner.defects') }}</label>
+          <HelpTip id="runner.defects" :label="t('runner.defects')" />
           <TagsInput v-model="defects" :disabled="!canExecute" icon="pi pi-exclamation-circle" :placeholder="t('runner.defectsPlaceholder')" />
           <span class="small row" style="gap: 4px">
             <DefectLinks :defects="defects" />
@@ -433,6 +437,7 @@ const statusOptions = computed(() => [
         </div>
         <div v-field class="field full">
           <label>{{ t('runner.notes') }}</label>
+          <HelpTip id="runner.notes" :label="t('runner.notes')" />
           <Textarea v-model="notes" rows="3" auto-resize :disabled="!canExecute" :placeholder="t('runner.notesPlaceholder')" />
         </div>
       </div>

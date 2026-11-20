@@ -17,7 +17,7 @@ The current folder, filter and open requirement are part of the page address, so
 
 ## Obligation levels
 
-Every requirement has an **obligation** based on RFC 2119 and RFC 8174:
+Every requirement has an **obligation** based on [RFC 2119 and RFC 8174](references.md#requirement-key-words-rfcs):
 
 | Level | Meaning |
 |---|---|
@@ -31,7 +31,7 @@ Every requirement has an **obligation** based on RFC 2119 and RFC 8174:
 
 When you create a requirement with **Obligation** set to **Auto-detect from text**, the level is detected from the title and description. If several keywords appear, the strongest one wins (Must not before Must before Shall not … before Describe). Text without any keyword has no obligation and is counted as *unspecified* on the dashboard. Later edits never change the obligation automatically; use **Apply detected obligation** in the analysis box, or pick a level yourself.
 
-Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`.
+Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`. Requirements written in Swedish use the Swedish keywords described under [The language analysis](#the-language-analysis). The [References](references.md) page lists these and other standards for requirements and testing.
 
 ## The language analysis
 

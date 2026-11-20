@@ -17,7 +17,11 @@ export const GUIDE_PAGES = [
   'administration',
   'accessibility-and-languages',
   'faq',
+  'references',
 ] as const
+
+/** A page id of the bundled guide. */
+export type GuidePage = (typeof GUIDE_PAGES)[number]
 
 /** The language every page exists in; other languages fall back to it. */
 export const GUIDE_FALLBACK_LANG = 'en'

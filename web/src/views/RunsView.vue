@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -186,11 +187,11 @@ const progress = (r: TestRun) => summarize(r.summary)
       <Message v-if="createError" severity="error" :closable="false">{{ createError }}</Message>
       <div class="form-grid">
         <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="form.name" autofocus /></div>
-        <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
-        <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="form.build" :placeholder="t('runs.buildPlaceholder')" /></div>
+        <div v-field class="field"><label>{{ t('common.environment') }}</label><HelpTip id="run.environment" :label="t('common.environment')" /><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
+        <div v-field class="field"><label>{{ t('common.build') }}</label><HelpTip id="run.build" :label="t('common.build')" /><InputText v-model="form.build" :placeholder="t('runs.buildPlaceholder')" /></div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>
       </div>
-      <div class="section-title" style="margin: 0">{{ t('runs.include') }}</div>
+      <div class="section-title" style="margin: 0">{{ t('runs.include') }} <HelpTip id="run.include" :label="t('runs.include')" /></div>
       <Tabs value="tests" scrollable>
         <TabList>
           <Tab value="tests">{{ t('runs.tabTests', { count: pickedTests.length }) }}</Tab>

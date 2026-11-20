@@ -48,10 +48,16 @@ Från vänster till höger:
 |---|---|
 | **Organisation** | Visar den aktuella organisationen och låter dig byta till en annan som du är medlem i. På mobiler är det en byggnadsikon. |
 | **Sökfältet** | Söker bland krav, testfall och körningar i alla projekt i organisationen. Skriv text eller en [fråga](search-and-filters.md) och tryck <kbd>Enter</kbd>. På mobiler är det en förstoringsglasknapp. |
-| **Hjälp** (?) | Öppnar **Användarhandbok**, **Hjälp för den här sidan** och **Starta introduktionsturen igen**. |
+| **Hjälp** (?) | Öppnar **Användarhandbok**, **Hjälp för den här sidan**, **Frågespråket**, **Referenser och standarder** och **Starta introduktionsturen igen**. |
 | **Färgtema** | Väljer ett av de elva temana, se [Teman](accessibility-and-languages.md#teman). |
 | **Ljust läge / Mörkt läge** | Växlar snabbt mellan ljust och mörkt. |
 | **Användarmeny** | Ditt namn och din roll, **Profil och lösenord**, ljust/mörkt läge, **Språk** och **Logga ut**. |
+
+### Hjälp där du behöver den
+
+- Många fält och avsnitt har ett litet **i** bredvid namnet. Peka på det med musen, eller flytta tangentbordsfokus dit, så visas vad fältet betyder. Välj det (eller tryck på det på en mobil) för att låta förklaringen vara kvar, och välj **Läs mer i användarhandboken** för att öppna avsnittet som beskriver det. <kbd>Esc</kbd> stänger förklaringen.
+- Tryck <kbd>?</kbd> var som helst utanför ett textfält för att öppna handbokens sida för den vy du är i (i exekveringsvyn visar <kbd>?</kbd> i stället vyns kortkommandon).
+- **?** bredvid varje filterfält listar operatorerna och fälten i [frågespråket](search-and-filters.md) för just den listan.
 
 ### Organisationer
 

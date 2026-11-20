@@ -468,16 +468,17 @@ equivalent query; the client uses this for quick filters
 
 | Entity | Fields (aliases) |
 |---|---|
-| Requirement | `id, key, title, description (desc), obligation, type, priority, status, source, rationale, owner, tag (tags), version, folder, category (categories), dimension, coverage, linked, created_by, created_at, updated_at, criteria (criterion)` |
-| Test | `id, key, title, description (desc), preconditions, execution_type (type), script_language (language), script, expected, step (steps), priority, status, estimate, tag (tags), folder, category (categories), dimension, linked, last_result (result), created_by, created_at, updated_at` |
+| Requirement | `id, key, title, description (desc), obligation, type, priority, status, source, rationale, owner, tag (tags), version, folder, category (categories), dimension, coverage, linked, related (relation), parent (parents), child (children), comments, created_by, created_at, updated_at, criteria (criterion)` |
+| Test | `id, key, title, description (desc), preconditions, execution_type (type), script_language (language), script, expected, step (steps), priority, status, estimate, tag (tags), folder, category (categories), dimension, linked, last_result (result), defect (defects), calls, comments, version, created_by, created_at, updated_at` |
 | Run | `id, name, description, status, environment (env), build, created_by, created_at` |
-| Execution | `id, key, title, status, assignee, executed_by, notes, output` |
+| Execution | `id, key, title, status, assignee, executed_by, notes, output, defect (defects)` |
 | Audit entry | `action, entity, entity_id, user, details, created_at` |
+| Document | `id, name, description, tag (tags), kind, type (content_type), uploaded_by (by), created_at, size, linked` |
 | Search | union of requirement, test and run fields, plus `project` (key and name) and `kind` (`requirement`, `test`, `run`) |
 
 Field contents: `category` holds category names, `dimension` holds
-`Dimension/Name`; `folder` is the folder path; `linked` holds the keys of
-linked items; `criteria` holds description, method and threshold of every
+`Dimension/Name`; `folder` is the folder path; `linked`, `related`, `parent`, `child` and `calls`
+hold item keys; `comments` is the number of comments; `criteria` holds description, method and threshold of every
 criterion; `step` holds action, expected and data of every step; `version`
 and `estimate` are numbers; timestamps are RFC 3339 UTC.
 

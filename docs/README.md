@@ -16,6 +16,7 @@ PrimeVue client, backed by SQLite or PostgreSQL.
 | [api.md](api.md) | integrators, client developers | REST API v1: conventions, errors, every endpoint, query language reference |
 | [security.md](security.md) | security reviewers, operators | threat model, authentication (local, sessions, API tokens, OIDC, SAML), authorisation and tenant isolation, web protections, TLS, secrets, audit and syslog, runner sandbox, OS hardening and how to verify it |
 | [operations.md](operations.md) | operators | installation (systemd, container), configuration, SQLite/PostgreSQL, TLS certificates, SSO setup for Keycloak/Entra ID/Okta/ADFS, central syslog, CLI, runner, backup/restore, upgrade, monitoring, troubleshooting, development setup |
+| [user-guide/en/references.md](user-guide/en/references.md) ([sv](user-guide/sv/references.md)) | everyone | references: RFC 2119 and RFC 8174 (requirement key words), other RFCs used by Qtestframe, NIST publications, ISO/IEC/IEEE 29148, 29119, ISO/IEC Directives Part 2, INCOSE, EARS, ISTQB, OWASP ASVS, WCAG |
 | [testing.md](testing.md) | developers | test strategy, API integration tests, PostgreSQL test runs, hardening tests in child processes, fake IdPs, frontend tests, the 85 % coverage floor, CI |
 
 ## Architecture decision records

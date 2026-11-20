@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
@@ -354,10 +355,12 @@ const scriptPlaceholder = computed(() => {
       </div>
       <div v-field class="field full">
         <label>{{ t('tests.preconditions') }}</label>
+        <HelpTip id="test.preconditions" :label="t('tests.preconditions')" />
         <Textarea v-model="form.preconditions" rows="2" auto-resize :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.status') }}</label>
+        <HelpTip id="test.status" :label="t('common.status')" />
         <Select v-model="form.status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
@@ -366,6 +369,7 @@ const scriptPlaceholder = computed(() => {
       </div>
       <div v-field class="field">
         <label>{{ t('tests.estimate') }}</label>
+        <HelpTip id="test.estimate" :label="t('tests.estimate')" />
         <InputNumber v-model="form.estimated_minutes" :min="0" show-buttons :disabled="!canWrite" fluid />
       </div>
       <div v-field class="field">
@@ -383,7 +387,7 @@ const scriptPlaceholder = computed(() => {
     </div>
 
     <template v-if="form.execution_type === 'automated'">
-      <div class="section-title"><i class="pi pi-code" /> {{ t('tests.script') }}</div>
+      <div class="section-title"><i class="pi pi-code" /> {{ t('tests.script') }} <HelpTip id="test.script" :label="t('tests.script')" /></div>
       <div class="row">
         <Select v-model="form.script_language" :options="languageOptions" option-label="label" option-value="value" :disabled="!canWrite" style="width: 160px" :aria-label="t('fields.script_language')" />
         <span class="small muted">{{ t('tests.scriptHint') }}</span>
@@ -394,8 +398,10 @@ const scriptPlaceholder = computed(() => {
     <div>
       <div class="section-title">
         <i class="pi pi-list" /> {{ t('tests.steps', { count: form.steps.length }) }}
+        <HelpTip id="test.steps" :label="t('tests.steps', { count: form.steps.length })" />
         <span class="grow" />
         <Button v-if="canWrite" size="small" :label="t('tests.insertCall')" icon="pi pi-directions" text v-tooltip.bottom="t('tests.insertCallHint')" @click="openCallPicker()" />
+        <HelpTip id="test.calls" :label="t('tests.insertCall')" />
         <Button v-if="canWrite" size="small" :label="t('tests.addStep')" icon="pi pi-plus" text @click="addStep()" />
       </div>
       <DataTable v-if="form.steps.length" v-stack :value="form.steps" data-key="uid" size="small" :reorderable-rows="canWrite" class="steps-table" @row-reorder="onReorder">
@@ -446,6 +452,7 @@ const scriptPlaceholder = computed(() => {
 
     <div v-field class="field">
       <label>{{ t('tests.overallExpected') }}</label>
+      <HelpTip id="test.expected" :label="t('tests.overallExpected')" />
       <Textarea v-model="form.expected_result" rows="2" auto-resize :disabled="!canWrite" />
     </div>
 

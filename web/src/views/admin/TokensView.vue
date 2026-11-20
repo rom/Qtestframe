@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, ref } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -129,11 +130,13 @@ const expired = (t: APIToken) => !!t.expires_at && new Date(t.expires_at).getTim
       <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="form.name" :placeholder="t('admin.tokenNamePlaceholder')" autofocus required /></div>
       <div v-field class="field">
         <label>{{ t('common.role') }}</label>
+        <HelpTip id="token.role" :label="t('common.role')" />
         <Select v-model="form.role" :options="roles" option-label="label" option-value="value" />
         <small class="muted">{{ t('admin.tokenRoleHint') }}</small>
       </div>
       <div v-field class="field">
         <label>{{ t('admin.expiresAfter') }}</label>
+        <HelpTip id="token.expires" :label="t('admin.expiresAfter')" />
         <InputNumber v-model="form.expires_days" :min="1" :max="3650" show-buttons fluid />
       </div>
       <div class="row" style="justify-content: flex-end">

@@ -48,10 +48,16 @@ From left to right:
 |---|---|
 | **Organisation** switch | Shows the current organisation and lets you switch to another one you are a member of. On phones it is a building icon. |
 | **Search** field | Searches requirements, tests and runs in all projects of the organisation. Type text or a [query](search-and-filters.md) and press <kbd>Enter</kbd>. On phones it is a magnifier button. |
-| **Help** (?) | Opens the **User guide**, **Help for this page** and **Restart intro tour**. |
+| **Help** (?) | Opens the **User guide**, **Help for this page**, **Query language**, **References and standards** and **Restart intro tour**. |
 | **Colour theme** | Picks one of the eleven themes, see [Themes](accessibility-and-languages.md#themes). |
 | **Light mode / Dark mode** | Switches between light and dark quickly. |
 | **User menu** | Your name and role, **Profile & password**, light/dark mode, **Language** and **Sign out**. |
+
+### Help where you need it
+
+- Many fields and sections have a small **i** next to their name. Point at it with the mouse, or move the keyboard focus to it, to see what the field means. Select it (or tap it on a phone) to keep the explanation open, and choose **Read more in the user guide** to open the section that describes it. <kbd>Esc</kbd> closes it.
+- Press <kbd>?</kbd> anywhere outside a text field to open the guide page for the current view (in the execution runner, <kbd>?</kbd> shows the runner's keyboard shortcuts instead).
+- The **?** next to every filter field lists the operators and fields of the [query language](search-and-filters.md) for that list.
 
 ### Organisations
 
