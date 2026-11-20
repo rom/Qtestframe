@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { entry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
 import Tree from 'primevue/tree'
 import ContextMenu from 'primevue/contextmenu'
@@ -83,7 +84,9 @@ function onDragLeave(target: string | null) {
 async function moveFolder(fid: string, target: string | null) {
   if (!canMoveFolder(props.folders, fid, target)) return
   try {
+    const old = props.folders.find((x) => x.id === fid)
     await api.post(`/folders/${fid}/move`, { parent_id: target })
+    if (old) recordUndo(entry(t('undo.a.folderMove', { name: old.name }), () => api.post(`/folders/${fid}/move`, { parent_id: old.parent_id ?? null }), () => api.post(`/folders/${fid}/move`, { parent_id: target })))
     if (target) expanded.value[target] = true
     notify.ok(t('folders.moved'))
     emit('changed')
@@ -182,16 +185,26 @@ async function saveName() {
   dialogError.value = ''
   try {
     if (nameMode.value === 'create') {
-      const f = await api.post<Folder>(`/projects/${props.projectId}/folders`, {
-        kind: props.kind,
-        name: nameForm.value.name,
-        description: nameForm.value.description,
-        parent_id: nameForm.value.parent,
-      })
+      const body = { kind: props.kind, name: nameForm.value.name, description: nameForm.value.description, parent_id: nameForm.value.parent }
+      const path = `/projects/${props.projectId}/folders`
+      const f = await api.post<Folder>(path, body)
+      if (f?.id)
+        recordUndo(
+          toggleEntry(
+            t('undo.a.folderCreate', { name: body.name }),
+            true,
+            f.id,
+            async () => (await api.post<Folder>(path, body)).id,
+            async (id) => void (await api.del(`/folders/${id}`)),
+          ),
+        )
       if (nameForm.value.parent) expanded.value[nameForm.value.parent] = true
       if (f?.id) selected.value = f.id
     } else {
-      await api.patch(`/folders/${nameForm.value.id}`, { name: nameForm.value.name, description: nameForm.value.description })
+      const old = props.folders.find((x) => x.id === nameForm.value.id)
+      const after = { name: nameForm.value.name, description: nameForm.value.description }
+      await api.patch(`/folders/${nameForm.value.id}`, after)
+      if (old) recordUndo(patchEntry(t('undo.a.folderRename', { name: old.name }), `/folders/${old.id}`, { name: old.name, description: old.description }, after))
     }
     nameDialog.value = false
     emit('changed')
@@ -205,6 +218,7 @@ async function saveName() {
 async function moveToRoot(f: Folder) {
   try {
     await api.post(`/folders/${f.id}/move`, { parent_id: null })
+    recordUndo(entry(t('undo.a.folderMove', { name: f.name }), () => api.post(`/folders/${f.id}/move`, { parent_id: f.parent_id ?? null }), () => api.post(`/folders/${f.id}/move`, { parent_id: null })))
     emit('changed')
   } catch (e) {
     notify.fail(e)

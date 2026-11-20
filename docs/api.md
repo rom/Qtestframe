@@ -59,7 +59,7 @@ is unreachable); all other paths serve the web client.
 {
   "user": User,
   "tenant": Tenant | null,
-  "role": "admin|manager|tester|viewer|",
+  "role": "admin|manager|test_lead|tester|reviewer|viewer|<custom>|",
   "permissions": ["project.read", ...],
   "memberships": [Membership],
   "csrf_token": "..."
@@ -116,11 +116,19 @@ default):
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/projects` | project.read |
-| POST | `/projects` | project.create – `{"key","name","description","seed_categories":true}` |
+| POST | `/projects` | project.create – `{"key","name","description","color"?,"seed_categories":true}` |
 | GET | `/projects/{pid}` | project.read |
-| PATCH | `/projects/{pid}` | project.update – `{"name","description"}` |
+| PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources"}` |
 | DELETE | `/projects/{pid}` | project.delete |
 | GET | `/projects/{pid}/dashboard` | project.read |
+| GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
+
+A `Project` has `color` (`#rrggbb` or `""` for the theme colour; anything
+else → 400), `requirement_sources` (the list the requirement editor offers
+for *Source*; at most 50 entries of at most 100 characters, trimmed and
+de-duplicated case-insensitively) and `custom_sources` (false while the
+project uses the defaults; sending `[]` or the default list returns to
+them).
 
 Dashboard response:
 ```json
@@ -164,16 +172,25 @@ Security, Operations).
 Reading needs `requirement.read`, writing `requirement.write`;
 `/reqlang/analyze` is open to any authenticated user.
 
+**Review decisions.** Setting `status` to `approved` or `rejected` needs
+`requirement.review` (tests: `ready` needs `test.review`), in PATCH, bulk
+`set`, create and restore. A caller with the review permission but without
+the write permission may PATCH or bulk-set `status` alone (the routes accept
+`requirement.read` and check the rest; anything else → 403 naming the
+missing permission). Decisions are audited as `requirement.review` /
+`test.review` with `old → new` in the details.
+
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/requirements?q=&folder_id=&recursive=true` | list `Requirement` (without criteria) incl. derived `folder_path`, `linked_tests`, `coverage`; `folder_id=root` (or `none`) lists unfiled items |
 | POST | `/projects/{pid}/requirements` | Requirement fields (`title` required; `obligation` auto-detected from title + description when empty); `criteria` array may be supplied. `create_test` (bool, default = server setting `requirements.auto_create_test`, which defaults to `true`) also creates a linked draft test; the response then contains `linked_test` (TestCase) |
 | GET | `/requirements/{id}` | includes `criteria` |
 | PATCH | `/requirements/{id}` | partial update; `criteria` (if present) replaces all criteria; bumps `version` |
-| DELETE | `/requirements/{id}` | |
+| DELETE | `/requirements/{id}` | 204; the response header `X-Trash-Id` names the [trash](#trash-undo-a-deletion) entry |
+| POST | `/requirements/{id}/copy` | requirement.write – `{"title"?, "relation"?}` → 201 Requirement: a copy as `draft` titled *Copy of …* (or `title`) with fields, tags, categories and new criteria; `relation` (a relation type, e.g. `derived_from`) also relates the copy to the original |
 | POST | `/projects/{pid}/requirements/move` | `{"ids":[...],"folder_id": id\|null, "position"?: n, "project_id"?: id}`; another `project_id` re-keys the items, remaps categories by dimension/name and drops their links ([design.md §5](design.md#5-move-semantics)) |
 | POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?}}` |
-| DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` |
+| DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` → `{"deleted": n, "trash_id"}` |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
 | POST | `/reqlang/analyze` | `{"text", "language"?}` → `Analysis` (below). `language` is a pack code from `/meta` `analysis_languages` (`en`, `sv`); empty or `auto` detects it from the text; anything else → 400 |
 
@@ -203,11 +220,11 @@ Reading needs `test.read`, writing `test.write`.
 | POST | `/projects/{pid}/tests` | TestCase fields, `steps` array |
 | GET | `/tests/{id}` | includes `steps` |
 | PATCH | `/tests/{id}` | partial; `steps` (if present) replaces all |
-| DELETE | `/tests/{id}` | |
-| POST | `/tests/{id}/copy` | duplicate → new TestCase |
+| DELETE | `/tests/{id}` | 204 with `X-Trash-Id` |
+| POST | `/tests/{id}/copy` | duplicate → new TestCase (status `draft`) |
 | POST | `/projects/{pid}/tests/move` | like requirements |
 | POST | `/projects/{pid}/tests/bulk` | like requirements (`status`, `priority`, `execution_type`, categories) |
-| DELETE | `/projects/{pid}/tests/bulk` | |
+| DELETE | `/projects/{pid}/tests/bulk` | → `{"deleted": n, "trash_id"}` |
 | GET | `/tests/{id}/links` | `[TraceLink]` |
 | GET | `/tests/{id}/dependencies` | `[TestDependency]` both directions: `direction` = `outgoing` (this test depends on the other) or `incoming`; `other_last_result` is the latest result of the other test |
 | POST | `/tests/{id}/dependencies` | `{"depends_on_id"}` → 201 TestDependency; same project only; self-dependencies and cycles → 400, duplicates → 409 |
@@ -221,6 +238,18 @@ Test lists also carry `step_count` and `defects`; `relations` includes
 `depends_on` references (with `kind: "test"`). Query field `depends_on`
 (aliases `depends`, `dependency`, `prerequisite`) holds the keys of a
 test's prerequisites.
+
+### Trash: undo a deletion
+
+Deleting requirements or tests keeps a snapshot of everything the deletion
+removed (criteria or steps, categories, trace links, relations,
+dependencies, execution and step results, comments, history, attachments
+with their files) for 30 days. The web client's undo uses it.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/trash` | project.read (entries of kinds the caller cannot read are left out) | `[TrashEntry]` newest first: `{id, project_id, kind, item_ids, keys, label, deleted_by, created_at}` |
+| POST | `/trash/{id}/restore` | the kind's write permission, plus its review permission when a restored item is `approved`/`rejected`/`ready` | puts the items back with their IDs and keys and removes the entry → TrashEntry; rows whose counterpart is gone (a test deleted since, a run, a category) are skipped and a missing folder puts the item at the root; 404 when unknown or already restored |
 
 ## Traceability
 

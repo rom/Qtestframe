@@ -18,26 +18,31 @@ An **organisation** (tenant) is an isolated workspace: its projects, members, to
 
 ### Roles and permissions
 
-Every organisation starts with five built-in roles. By default each role can do everything the role before it can:
+Every organisation starts with six built-in roles. By default each role in the table can do everything the role above it can, except **Reviewer**, which sits beside Tester:
 
 | Role | Can additionally (default) |
 |---|---|
 | **Viewer** | read all projects, requirements, tests, runs, documents and the member list; search; export and generate reports |
+| **Reviewer** | approve and reject requirements and mark tests ready (*requirement.review*, *test.review*), without editing their content |
 | **Tester** | write and link tests, manage test folders and categories, create and edit runs, record results, import CI results, upload attachments to tests, runs and executions, create own API tokens |
-| **Test lead** | run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
-| **Manager** | write requirements and requirement folders, create and edit projects and all categories, create baselines |
+| **Test lead** | mark tests ready (*test.review*), run automated scripts on the server, read the audit log, change the [test execution settings](#test-execution-settings) |
+| **Manager** | approve and reject requirements (*requirement.review*), write requirements and requirement folders, create and edit projects and all categories, create baselines |
 | **Admin** | everything: delete projects, manage members and roles, rename the organisation, reset members' passwords, delete any comment |
 | **Super admin** | everything in every organisation; manage organisations and users; backup and restore |
 
 The default matrix of permissions:
 
-| Permission | Viewer | Tester | Test lead | Manager | Admin |
-|---|:-:|:-:|:-:|:-:|:-:|
-| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ |
-| `test.write`, `run.write`, `run.execute`, `token.manage` | | ✔ | ✔ | ✔ | ✔ |
-| `script.execute`, `audit.read`, `settings.manage` | | | ✔ | ✔ | ✔ |
-| `requirement.write`, `project.create`, `project.update` | | | | ✔ | ✔ |
-| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | ✔ |
+| Permission | Viewer | Reviewer | Tester | Test lead | Manager | Admin |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| `project.read`, `requirement.read`, `test.read`, `run.read`, `member.read`, `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| `test.review` | | ✔ | | ✔ | ✔ | ✔ |
+| `requirement.review` | | ✔ | | | ✔ | ✔ |
+| `test.write`, `run.write`, `run.execute`, `token.manage` | | | ✔ | ✔ | ✔ | ✔ |
+| `script.execute`, `audit.read`, `settings.manage` | | | | ✔ | ✔ | ✔ |
+| `requirement.write`, `project.create`, `project.update` | | | | | ✔ | ✔ |
+| `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
+
+**Review decisions.** Setting a requirement to *Approved* or *Rejected* needs `requirement.review`; setting a test to *Ready* needs `test.review`. The same applies to bulk edits, to creating an item with that status and to restoring a version that has it. A reviewer without the write permission may change only the status; editing anything else still needs `requirement.write` or `test.write`. Each decision is recorded in the audit log as `requirement.review` or `test.review`. A copied requirement or test starts as *Draft*, so it is reviewed again.
 
 ### Change roles and create your own
 

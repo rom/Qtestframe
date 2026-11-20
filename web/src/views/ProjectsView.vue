@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
@@ -34,7 +35,7 @@ const filter = ref('')
 const layout = ref<'cards' | 'table'>((readPref('qtf.projects.layout') as 'cards' | 'table') || 'cards')
 const dialog = ref(false)
 const editing = ref<Project | null>(null)
-const form = ref({ key: '', name: '', description: '', seed_categories: true })
+const form = ref({ key: '', name: '', description: '', color: '', seed_categories: true })
 const formError = ref('')
 const saving = ref(false)
 
@@ -67,13 +68,13 @@ function setLayout(v: 'cards' | 'table') {
 
 function openCreate() {
   editing.value = null
-  form.value = { key: '', name: '', description: '', seed_categories: true }
+  form.value = { key: '', name: '', description: '', color: '', seed_categories: true }
   formError.value = ''
   dialog.value = true
 }
 function openEdit(p: Project) {
   editing.value = p
-  form.value = { key: p.key, name: p.name, description: p.description, seed_categories: false }
+  form.value = { key: p.key, name: p.name, description: p.description, color: p.color ?? '', seed_categories: false }
   formError.value = ''
   dialog.value = true
 }
@@ -90,7 +91,7 @@ async function save() {
   formError.value = ''
   try {
     if (editing.value) {
-      await api.patch(`/projects/${editing.value.id}`, { name: form.value.name, description: form.value.description })
+      await api.patch(`/projects/${editing.value.id}`, { name: form.value.name, description: form.value.description, color: form.value.color })
       notify.ok(t('projects.updated'))
     } else {
       const p = await api.post<Project>('/projects', form.value)
@@ -162,7 +163,7 @@ function open(p: Project) {
   <ul v-else-if="layout === 'cards'" class="project-cards plain-list" :aria-label="t('projects.title')">
     <li v-for="p in filtered" :key="p.id" class="card clickable" style="display: flex; flex-direction: column; gap: 8px" @click="open(p)">
       <div class="row nowrap">
-        <ProjectIcon :icon="p.icon" :project-key="p.key" :size="40" />
+        <ProjectIcon :icon="p.icon" :project-key="p.key" :color="p.color" :size="40" />
         <div class="grow">
           <RouterLink :to="{ name: 'dashboard', params: { projectId: p.id } }" class="project-link ellipsis" @click.stop>{{ p.name }}</RouterLink>
           <div class="key">{{ p.key }}</div>
@@ -182,7 +183,7 @@ function open(p: Project) {
     <DataTable v-stack :value="filtered" data-key="id" sort-field="key" :sort-order="1" row-hover @row-click="open($event.data)" class="clickable">
       <Column field="key" :header="t('common.key')" sortable><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
       <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
-        <template #body="{ data }"><span class="row nowrap" style="min-width: 0"><ProjectIcon :icon="data.icon" :project-key="data.key" :size="24" /><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink></span></template>
+        <template #body="{ data }"><span class="row nowrap" style="min-width: 0"><ProjectIcon :icon="data.icon" :project-key="data.key" :color="data.color" :size="24" /><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink></span></template>
       </Column>
       <Column field="description" :header="t('common.description')" />
       <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
@@ -212,6 +213,10 @@ function open(p: Project) {
       <div v-field class="field">
         <label>{{ t('common.description') }}</label>
         <Textarea v-model="form.description" rows="3" auto-resize />
+      </div>
+      <div class="field">
+        <span id="new-pcolor" class="field-label">{{ t('projectColor.label') }}</span>
+        <ProjectColorPicker v-model="form.color" aria-labelledby="new-pcolor" />
       </div>
       <div v-if="!editing" class="row">
         <Checkbox v-model="form.seed_categories" input-id="seed" binary />

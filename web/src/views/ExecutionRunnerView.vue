@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUndoStore } from '@/stores/undo'
+import { patchEntry, recordUndo } from '@/lib/undoActions'
 import MentionInput from '@/components/MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -158,6 +160,14 @@ onMounted(() => {
 })
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 watch(() => props.executionId, load, { immediate: true })
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => {
+    if (!dirty.value) void load()
+    void loadList()
+  },
+)
 
 function mark(status: string) {
   const s = steps.value[current.value]
@@ -206,7 +216,12 @@ async function save(): Promise<boolean> {
     if (steps.value.length) body.step_results = steps.value.map((s) => ({ id: s.id, status: s.status, actual: s.actual, evidence: s.evidence }))
     if (override.value !== AUTO || !steps.value.length) body.status = effectiveStatus.value
     if (isAutomated.value) body.output = output.value
+    const prev = ex.value
+    const before: Record<string, unknown> = { notes: prev.notes ?? '', assignee: prev.assignee ?? '', defects: normalizeDefects(prev.defects), status: prev.status || 'not_run' }
+    if (body.step_results) before.step_results = (prev.step_results ?? []).map((s) => ({ id: s.id, status: s.status, actual: s.actual, evidence: s.evidence }))
+    if (body.output !== undefined) before.output = prev.output ?? ''
     const updated = await api.patch<Execution>(`/executions/${ex.value.id}`, body)
+    recordUndo(patchEntry(t('undo.a.result', { key: prev.test?.key ?? '' }), `/executions/${prev.id}`, before, body))
     if (updated) ex.value = { ...ex.value, ...updated, test: ex.value.test }
     const row = list.value.find((e) => e.id === ex.value?.id)
     if (row) row.status = updated?.status ?? effectiveStatus.value
@@ -496,7 +511,7 @@ const statusOptions = computed(() => [
         <div v-field class="field full">
           <label>{{ t('runner.defects') }}</label>
           <HelpTip id="runner.defects" :label="t('runner.defects')" />
-          <TagsInput v-model="defects" :disabled="!canExecute" icon="pi pi-exclamation-circle" :placeholder="t('runner.defectsPlaceholder')" />
+          <TagsInput v-model="defects" plain :disabled="!canExecute" icon="pi pi-exclamation-circle" :placeholder="t('runner.defectsPlaceholder')" />
           <span class="small row" style="gap: 4px">
             <DefectLinks :defects="defects" />
             <span v-if="defects.length && !proj.project?.defect_url_template" class="muted">{{ t('runner.defectsHint') }}</span>

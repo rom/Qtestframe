@@ -1,6 +1,6 @@
 # Tillgänglighet och språk
 
-Qtestframe är utformat för att uppfylla **WCAG 2.1 nivå AA**. Det fungerar med enbart tangentbord, med skärmläsare, med webbläsarens zoom, på mobiler och surfplattor, på engelska och svenska och i elva färgteman.
+Qtestframe är utformat för att uppfylla **WCAG 2.1 nivå AA**. Det fungerar med enbart tangentbord, med skärmläsare, med webbläsarens zoom, på mobiler och surfplattor, på engelska och svenska och i sjutton färgteman.
 
 ## Tangentbord
 
@@ -15,6 +15,7 @@ Allt kan göras utan mus.
 | <kbd>Ctrl</kbd>+<kbd>Enter</kbd> | Skicka en kommentar. |
 | <kbd>Enter</kbd> i ett filterfält | Tillämpa frågan. |
 | <kbd>?</kbd> | Öppna handbokens sida för den aktuella vyn (utanför textfält). |
+| <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Skift</kbd>+<kbd>Z</kbd> eller <kbd>Ctrl</kbd>+<kbd>Y</kbd> | [Ångra / gör om](getting-started.md#ångra-och-gör-om) den senaste ändringen (utanför textfält; på Mac <kbd>⌘</kbd>). |
 
 ### Hopplänk
 
@@ -56,12 +57,14 @@ Välj tema med **Färgtema** i övre fältet eller under **Profil → Inställni
 | **Mörkt** | mörka ytor, skonsamt för ögonen i svagt ljus |
 | **Följ operativsystemet** | ljust eller mörkt, enligt inställningen i din dator eller mobil |
 | **Vår**, **Höst**, **Öken** | ljusa teman med årstidsfärger |
-| **Kamouflage**, **Stadskamouflage**, **Marinblått**, **Grön konsol** | mörka teman |
+| **Hav**, **Solnedgång**, **Nordisk**, **Lavendel** | ljusa teman: havsblått, varma kvällsfärger, lugnt gråblått, mjukt violett |
+| **Kamouflage**, **Stadskamouflage**, **Marinblått**, **Grön konsol**, **Skog** | mörka teman |
+| **Hög kontrast** | svart, vitt och gult med tydliga ramar och understrukna länkar, för nedsatt syn |
 | **Galet** | ett lekfullt, färgstarkt tema |
 
 Alla teman uppfyller AA-kraven på kontrast för text och kontroller. Qtestframe respekterar också systemets inställning för **minskad rörelse**.
 
-![Temaväljaren i övre fältet med de elva temana](../images/sv-theme-picker.png)
+![Temaväljaren i övre fältet](../images/sv-theme-picker.png)
 
 ## Språk
 

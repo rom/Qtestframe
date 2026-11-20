@@ -356,6 +356,7 @@ func (s *Store) CopyTest(ctx context.Context, tenantID, id, userID string) (*mod
 		t.Title = t.Title[:500]
 	}
 	t.CreatedBy = userID
+	t.Status = "draft" // a copy is reviewed again
 	for i := range t.Steps {
 		t.Steps[i].ID = ""
 	}

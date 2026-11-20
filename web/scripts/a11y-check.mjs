@@ -54,6 +54,12 @@ const ALL_CONFIGS = [
   { name: 'navy/en', theme: 'navy', lang: 'en' },
   { name: 'crazy/sv', theme: 'crazy', lang: 'sv' },
   { name: 'green_console/en', theme: 'green_console', lang: 'en' },
+  { name: 'ocean/sv', theme: 'ocean', lang: 'sv' },
+  { name: 'forest/en', theme: 'forest', lang: 'en' },
+  { name: 'sunset/sv', theme: 'sunset', lang: 'sv' },
+  { name: 'nordic/en', theme: 'nordic', lang: 'en' },
+  { name: 'lavender/sv', theme: 'lavender', lang: 'sv' },
+  { name: 'high_contrast/en', theme: 'high_contrast', lang: 'en' },
 ]
 
 const VIEWPORTS = pick(ALL_VIEWPORTS, 'QTF_A11Y_VIEWPORTS')
@@ -116,6 +122,10 @@ async function discover(request) {
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
+    { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
+    { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },
+    run && { name: 'flow-run', path: `${p}/flow?run=${run.id}`, wait: '.stages, .empty' },
+    { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },
     { name: 'baselines', path: `${p}/baselines` },
     { name: 'settings', path: `${p}/settings` },

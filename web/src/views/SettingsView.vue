@@ -14,6 +14,7 @@ import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import { api, errorMessage } from '@/lib/api'
 import AvatarPicker from '@/components/AvatarPicker.vue'
+import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
 import { groupBy } from '@/lib/collections'
 import { defaultCategoryColor, normalizeHex, readableTextColor } from '@/lib/colors'
 import { P } from '@/lib/permissions'
@@ -114,7 +115,19 @@ async function rename() {
 }
 
 // ---------- project ----------
-const pform = ref({ name: proj.project?.name ?? '', description: proj.project?.description ?? '', defect_url_template: proj.project?.defect_url_template ?? '' })
+const pform = ref({
+  name: proj.project?.name ?? '',
+  description: proj.project?.description ?? '',
+  defect_url_template: proj.project?.defect_url_template ?? '',
+  color: proj.project?.color ?? '',
+  /** requirement sources, one per line */
+  sources: (proj.project?.requirement_sources ?? []).join('\n'),
+})
+const sourceLines = () =>
+  pform.value.sources
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean)
 const templateIssue = computed(() => templateProblem(pform.value.defect_url_template))
 const templateHint = computed(() =>
   templateIssue.value === 'not_url'
@@ -126,8 +139,11 @@ const templateHint = computed(() =>
 const templateExample = computed(() => defectUrl('ABC-123', pform.value.defect_url_template))
 async function saveProject() {
   try {
-    const p = await api.patch<Project>(`/projects/${proj.pid}`, { ...pform.value, defect_url_template: pform.value.defect_url_template.trim() })
-    if (proj.project) Object.assign(proj.project, p ?? pform.value)
+    const { sources, ...rest } = pform.value
+    void sources
+    const p = await api.patch<Project>(`/projects/${proj.pid}`, { ...rest, defect_url_template: pform.value.defect_url_template.trim(), requirement_sources: sourceLines() })
+    if (proj.project && p) Object.assign(proj.project, p)
+    if (p?.requirement_sources) pform.value.sources = p.requirement_sources.join('\n')
     notify.ok(t('settings.projectSaved'))
   } catch (e) {
     notify.fail(e)
@@ -220,6 +236,20 @@ function deleteProject() {
                 <template v-if="templateExample"><br />{{ t('settings.example') }} ABC-123 → <a :href="templateExample" target="_blank" rel="noopener noreferrer">{{ templateExample }}</a></template>
               </span>
               <span v-if="templateHint" id="defect-tpl-issue" class="small warn-text" aria-live="polite">{{ templateHint }}</span>
+            </div>
+            <div class="field">
+              <span id="pcolor-label" class="field-label">{{ t('projectColor.label') }}</span>
+              <ProjectColorPicker v-model="pform.color" :disabled="!auth.can(P.projectUpdate)" aria-labelledby="pcolor-label" />
+              <span class="small muted">{{ t('projectColor.hint') }}</span>
+            </div>
+            <div v-field class="field">
+              <label>{{ t('settings.requirementSources') }}</label>
+              <HelpTip id="settings.sources" :label="t('settings.requirementSources')" />
+              <Textarea v-model="pform.sources" rows="5" auto-resize :disabled="!auth.can(P.projectUpdate)" aria-describedby="sources-hint" />
+              <span id="sources-hint" class="small muted">
+                {{ proj.project?.custom_sources ? t('settings.sourcesCustom') : t('settings.sourcesDefault') }}
+                <Button v-if="proj.project?.custom_sources && auth.can(P.projectUpdate)" :label="t('settings.sourcesReset')" text size="small" @click="pform.sources = ''" />
+              </span>
             </div>
             <div class="row">
               <Button v-if="auth.can(P.projectUpdate)" :label="t('common.save')" icon="pi pi-check" @click="saveProject" />

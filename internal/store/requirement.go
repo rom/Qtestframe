@@ -566,3 +566,28 @@ func (s *Store) BulkUpdateItems(ctx context.Context, tenantID, kind, projectID s
 	})
 	return n, err
 }
+
+// CopyRequirement creates a draft copy of a requirement (fields, criteria,
+// categories, tags, folder), titled "Copy of …" unless title is given.
+func (s *Store) CopyRequirement(ctx context.Context, tenantID, id, title, userID string) (*model.Requirement, error) {
+	rq, err := s.GetRequirement(ctx, tenantID, id)
+	if err != nil {
+		return nil, err
+	}
+	if t := strings.TrimSpace(title); t != "" {
+		rq.Title = t
+	} else {
+		rq.Title = "Copy of " + rq.Title
+	}
+	if len(rq.Title) > 500 {
+		rq.Title = rq.Title[:500]
+	}
+	rq.ID, rq.Key, rq.CreatedBy, rq.Status = "", "", userID, "draft"
+	for i := range rq.Criteria {
+		rq.Criteria[i].ID, rq.Criteria[i].RequirementID = "", ""
+	}
+	if err := s.CreateRequirement(ctx, tenantID, rq); err != nil {
+		return nil, err
+	}
+	return rq, nil
+}

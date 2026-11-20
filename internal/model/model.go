@@ -217,7 +217,7 @@ type Preferences struct {
 var (
 	// Themes: light/dark/system plus decorative colour themes.
 	Themes = []string{"light", "dark", "system", "spring", "autumn", "desert", "camouflage",
-		"city_camouflage", "navy", "green_console", "crazy"}
+		"city_camouflage", "navy", "green_console", "crazy", "ocean", "forest", "sunset", "nordic", "lavender", "high_contrast"}
 	// Languages of the web client ("" = browser language).
 	Languages   = []string{"en", "sv"}
 	StartPages  = []string{"projects", "last_project", "default_project", "search"}
@@ -288,10 +288,20 @@ type Project struct {
 	// "https://jira.example.com/browse/{id}".
 	DefectURLTemplate string `json:"defect_url_template"`
 	// Icon is "" (initials), "preset:<name>" or "file:<file id>".
-	Icon      string    `json:"icon"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Icon string `json:"icon"`
+	// Color is "" (theme colour) or "#rrggbb"; used for the icon and accents.
+	Color string `json:"color"`
+	// RequirementSources are offered for a requirement's source field (the
+	// defaults when the project has none of its own).
+	RequirementSources []string `json:"requirement_sources"`
+	// CustomSources reports whether RequirementSources are the project's own.
+	CustomSources bool      `json:"custom_sources"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
+
+// DefaultRequirementSources are offered when a project has no own list.
+var DefaultRequirementSources = []string{"Customer", "Contract", "Standard", "Regulation", "Stakeholder", "Product management", "Architecture", "Security analysis", "Internal", "Previous release"}
 
 // Folder is a node in the requirement or test hierarchy ("group").
 type Folder struct {

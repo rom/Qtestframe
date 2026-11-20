@@ -14,14 +14,73 @@ var projectKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,15}$`)
 
 // ---------------------------------------------------------------- projects
 
-const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, created_at, updated_at`
+const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, color, requirement_sources, created_at, updated_at`
 
 func scanProject(r interface{ Scan(...any) error }) (*model.Project, error) {
 	var p model.Project
-	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	var sources string
+	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.Color, &sources, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
+	p.RequirementSources = decodeTags(sources)
+	p.CustomSources = len(p.RequirementSources) > 0
+	if !p.CustomSources {
+		p.RequirementSources = append([]string{}, model.DefaultRequirementSources...)
+	}
 	return &p, nil
+}
+
+var colorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+
+// MaxRequirementSources bounds a project's source list.
+const MaxRequirementSources = 50
+
+// normalizeProjectExtras validates the colour and cleans the source list
+// (trimmed, de-duplicated case-insensitively, at most 100 characters each).
+func normalizeProjectExtras(p *model.Project) error {
+	p.Color = strings.ToLower(strings.TrimSpace(p.Color))
+	if p.Color != "" && !colorRe.MatchString(p.Color) {
+		return Invalidf("color must be empty or #rrggbb")
+	}
+	seen := map[string]bool{}
+	var out []string
+	for _, v := range p.RequirementSources {
+		v = strings.TrimSpace(v)
+		if v == "" || seen[strings.ToLower(v)] {
+			continue
+		}
+		if len([]rune(v)) > 100 {
+			return Invalidf("a requirement source may have at most 100 characters")
+		}
+		seen[strings.ToLower(v)] = true
+		out = append(out, v)
+	}
+	if len(out) > MaxRequirementSources {
+		return Invalidf("at most %d requirement sources", MaxRequirementSources)
+	}
+	p.RequirementSources = out
+	return nil
+}
+
+// storedSources is the JSON stored for a project's sources: [] when they
+// equal the defaults (so later default changes reach the project).
+func storedSources(p *model.Project) string {
+	if !p.CustomSources || equalStrings(p.RequirementSources, model.DefaultRequirementSources) {
+		return "[]"
+	}
+	return encodeTags(p.RequirementSources)
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // CreateProject inserts a project; when seed is true default categories
@@ -35,12 +94,16 @@ func (s *Store) CreateProject(ctx context.Context, tenantID string, p *model.Pro
 	if p.Name == "" {
 		return Invalidf("project name is required")
 	}
+	if err := normalizeProjectExtras(p); err != nil {
+		return err
+	}
+	defer effectiveSources(p)
 	p.ID, p.TenantID = newID(), tenantID
 	p.CreatedAt = s.now()
 	p.UpdatedAt = p.CreatedAt
 	return s.tx(ctx, func(c conn) error {
-		_, err := c.exec(ctx, `INSERT INTO projects (id, tenant_id, key, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			p.ID, p.TenantID, p.Key, p.Name, p.Description, p.CreatedAt, p.UpdatedAt)
+		_, err := c.exec(ctx, `INSERT INTO projects (id, tenant_id, key, name, description, color, requirement_sources, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			p.ID, p.TenantID, p.Key, p.Name, p.Description, p.Color, storedSources(p), p.CreatedAt, p.UpdatedAt)
 		if err != nil {
 			return mapErr(err, "project key")
 		}
@@ -119,15 +182,51 @@ func (s *Store) UpdateProject(ctx context.Context, tenantID string, p *model.Pro
 	if t := p.DefectURLTemplate; t != "" && (!strings.Contains(t, "{id}") || !(strings.HasPrefix(t, "https://") || strings.HasPrefix(t, "http://"))) {
 		return Invalidf("defect URL template must be an http(s) URL containing {id}")
 	}
-	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, icon = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.Icon, p.UpdatedAt, p.ID, tenantID)
+	if err := normalizeProjectExtras(p); err != nil {
+		return err
+	}
+	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, icon = ?, color = ?, requirement_sources = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.Icon, p.Color, storedSources(p), p.UpdatedAt, p.ID, tenantID)
 	if err != nil {
 		return err
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return mapErr(sql.ErrNoRows, "project")
 	}
+	effectiveSources(p)
 	return nil
+}
+
+// effectiveSources sets the source list as the API shows it after a save.
+func effectiveSources(p *model.Project) {
+	p.CustomSources = storedSources(p) != "[]"
+	if !p.CustomSources {
+		p.RequirementSources = append([]string{}, model.DefaultRequirementSources...)
+	}
+}
+
+// SourceCount is how many requirements of a project use a source.
+type SourceCount struct {
+	Source string `json:"source"`
+	Count  int    `json:"count"`
+}
+
+// RequirementSourceUsage lists the sources used by a project's requirements, most used first.
+func (s *Store) RequirementSourceUsage(ctx context.Context, tenantID, projectID string) ([]SourceCount, error) {
+	rows, err := s.c().query(ctx, `SELECT source, COUNT(*) FROM requirements WHERE tenant_id = ? AND project_id = ? AND source <> '' GROUP BY source ORDER BY COUNT(*) DESC, source`, tenantID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []SourceCount{}
+	for rows.Next() {
+		var c SourceCount
+		if err := rows.Scan(&c.Source, &c.Count); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
 }
 
 // DeleteProject deletes a project and everything in it.

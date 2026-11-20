@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUndoStore } from '@/stores/undo'
+import { recordUndo, toggleEntry } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
@@ -45,11 +47,28 @@ const exclude = computed(() => [
   ...relations.value.filter((r) => r.type === type.value && r.source_id === props.requirementId).map((r) => r.target_id),
 ])
 
+function relationEntry(created: boolean, r: Relation) {
+  const body = { target_id: r.target_id, type: r.type }
+  return toggleEntry(
+    t(created ? 'undo.a.relation' : 'undo.a.unrelation', { from: r.source_key, to: r.target_key }),
+    created,
+    r.id,
+    async () => (await api.post<Relation>(`/requirements/${r.source_id}/relations`, body)).id,
+    async (id) => void (await api.del(`/relations/${id}`)),
+  )
+}
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => void load(),
+)
+
 async function add(items: { id: string }[]) {
   let ok = 0
   for (const it of items) {
     try {
-      await api.post(`/requirements/${props.requirementId}/relations`, { target_id: it.id, type: type.value })
+      const rel = await api.post<Relation>(`/requirements/${props.requirementId}/relations`, { target_id: it.id, type: type.value })
+      if (rel?.id) recordUndo(relationEntry(true, rel))
       ok++
     } catch (e) {
       notify.fail(e, t('relations.addFailed'))
@@ -61,6 +80,7 @@ async function add(items: { id: string }[]) {
 async function remove(r: Relation) {
   try {
     await api.del(`/relations/${r.id}`)
+    recordUndo(relationEntry(false, r))
     relations.value = relations.value.filter((x) => x.id !== r.id)
     emit('count', relations.value.length)
   } catch (e) {

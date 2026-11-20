@@ -565,28 +565,30 @@ Every tenant can change the permissions of all built-in roles except
 `admin` and create its own roles (table `roles`, [ADR 0014](adr/0014-tenant-configurable-roles.md));
 `GET /api/v1/roles` and `GET /api/v1/rbac` return the effective matrix.
 
-| Permission | viewer | tester | test_lead | manager | admin | Used by |
-|---|:-:|:-:|:-:|:-:|:-:|---|
-| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | projects, dashboard, folders/categories (read), links, traceability, search, graph, tags |
-| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | requirement list/get/links, people, tag suggestions |
-| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | test list/get/links/dependencies, readiness |
-| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | runs, executions |
-| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | `GET /members` |
-| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | project export |
-| `test.write` | | ✔ | ✔ | ✔ | ✔ | tests, test folders/categories, trace links, test dependencies |
-| `run.write` | | ✔ | ✔ | ✔ | ✔ | create/update/delete runs, add tests |
-| `run.execute` | | ✔ | ✔ | ✔ | ✔ | record results, step evidence, CI import |
-| `token.manage` | | ✔ | ✔ | ✔ | ✔ | own API tokens |
-| `script.execute` | | | ✔ | ✔ | ✔ | server-side script runner |
-| `audit.read` | | | ✔ | ✔ | ✔ | audit log |
-| `settings.manage` | | | ✔ | ✔ | ✔ | `PUT /settings` (test execution settings) |
-| `requirement.write` | | | | ✔ | ✔ | requirements, requirement folders/categories |
-| `project.create` | | | | ✔ | ✔ | create projects |
-| `project.update` | | | | ✔ | ✔ | rename project, all categories |
-| `project.delete` | | | | | ✔ | delete projects |
-| `member.manage` | | | | | ✔ | add/change/remove members |
-| `role.manage` | | | | | ✔ | create, change, reset and delete roles |
-| `tenant.manage` | | | | | ✔ | rename own tenant |
+| Permission | viewer | reviewer | tester | test_lead | manager | admin | Used by |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|---|
+| `project.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | projects, dashboard, folders/categories (read), links, traceability, search, graph, tags |
+| `requirement.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | requirement list/get/links, people, tag suggestions |
+| `test.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | test list/get/links/dependencies, readiness |
+| `run.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | runs, executions |
+| `member.read` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | `GET /members` |
+| `export` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | project export |
+| `test.review` | | ✔ | | ✔ | ✔ | ✔ | set a test to `ready` (PATCH, bulk, create, restore) |
+| `requirement.review` | | ✔ | | | ✔ | ✔ | set a requirement to `approved`/`rejected` (PATCH, bulk, create, restore) |
+| `test.write` | | | ✔ | ✔ | ✔ | ✔ | tests, test folders/categories, trace links, test dependencies |
+| `run.write` | | | ✔ | ✔ | ✔ | ✔ | create/update/delete runs, add tests |
+| `run.execute` | | | ✔ | ✔ | ✔ | ✔ | record results, step evidence, CI import |
+| `token.manage` | | | ✔ | ✔ | ✔ | ✔ | own API tokens |
+| `script.execute` | | | | ✔ | ✔ | ✔ | server-side script runner |
+| `audit.read` | | | | ✔ | ✔ | ✔ | audit log |
+| `settings.manage` | | | | ✔ | ✔ | ✔ | `PUT /settings` (test execution settings) |
+| `requirement.write` | | | | | ✔ | ✔ | requirements, requirement folders/categories |
+| `project.create` | | | | | ✔ | ✔ | create projects |
+| `project.update` | | | | | ✔ | ✔ | rename project, all categories |
+| `project.delete` | | | | | | ✔ | delete projects |
+| `member.manage` | | | | | | ✔ | add/change/remove members |
+| `role.manage` | | | | | | ✔ | create, change, reset and delete roles |
+| `tenant.manage` | | | | | | ✔ | rename own tenant |
 
 Additional rules:
 
@@ -597,6 +599,12 @@ Additional rules:
 * **API tokens** carry a role whose permissions the creator holds at
   creation; on every request they get the intersection of that role's and
   the user's current role's permissions. Tokens cannot create tokens.
+* **Review decisions:** `approved`/`rejected` (requirements) and `ready`
+  (tests) need the kind's review permission; a reviewer without the write
+  permission may change the status alone (the PATCH and bulk routes require
+  only the read permission and check the rest in `internal/api/review.go`).
+  Restoring a deleted item from the trash needs the write permission and,
+  for items carrying a decision, the review permission.
 * **Roles:** `admin` always has every permission and cannot be changed;
   built-in roles cannot be deleted; custom roles only when unused. Nobody
   can grant a permission they do not hold.

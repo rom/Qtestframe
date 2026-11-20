@@ -19,8 +19,8 @@ import { presetFor, presetKey, presetTokens } from './presets'
 import { applyTheme, bootTheme, currentPresetKey, localTheme, resetThemeState } from './apply'
 import * as index from './index'
 
-const ALL = ['light', 'dark', 'system', 'spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy']
-const DARK = ['dark', 'camouflage', 'city_camouflage', 'navy', 'green_console']
+const ALL = ['light', 'dark', 'system', 'spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy', 'ocean', 'forest', 'sunset', 'nordic', 'lavender', 'high_contrast']
+const DARK = ['dark', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'forest', 'high_contrast']
 const PAINTED = THEME_IDS.filter((t) => t !== 'system') as ConcreteThemeId[]
 
 describe('contrast', () => {

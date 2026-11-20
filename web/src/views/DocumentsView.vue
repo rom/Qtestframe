@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Document archive: every file of the project (attachments, documents, reports).
+import { tagClass } from '@/lib/tagColors'
 import { computed, onMounted, ref } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -197,7 +198,7 @@ const entityLabel = (type: string) => t(`documents.entity.${['requirement', 'tes
               <button v-if="previewKind(data) !== 'download'" type="button" class="link-button doc-name" @click="open(data)">{{ data.name }}</button>
               <a v-else :href="contentUrl(data.id)" :download="data.name" class="doc-name">{{ data.name }}</a>
               <div v-if="data.description" class="small muted">{{ data.description }}</div>
-              <div v-if="data.tags?.length" class="row" style="gap: 4px; margin-top: 2px"><span v-for="tg in data.tags" :key="tg" class="tag-chip">{{ tg }}</span></div>
+              <div v-if="data.tags?.length" class="row" style="gap: 4px; margin-top: 2px"><span v-for="tg in data.tags" :key="tg" class="tag-chip" :class="tagClass(tg)">{{ tg }}</span></div>
             </div>
           </div>
         </template>

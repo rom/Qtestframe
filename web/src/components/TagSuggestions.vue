@@ -2,6 +2,7 @@
 // Tag suggestions under a tags field, from the item's title and description
 // (POST /projects/{pid}/tags/suggest). Tags the project already uses come
 // first; selecting a suggestion adds it to the item's tags.
+import { tagClass } from '@/lib/tagColors'
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api, asItems } from '@/lib/api'
@@ -56,8 +57,8 @@ function hint(s: Suggestion): string {
       v-for="s in visible()"
       :key="s.tag"
       type="button"
-      class="tag-suggestion"
-      :class="{ existing: s.reason === 'existing' }"
+      class="tag-suggestion tag-colored"
+      :class="[tagClass(s.tag), { existing: s.reason === 'existing' }]"
       :title="hint(s)"
       :aria-label="t('tagSuggest.add', { tag: s.tag, hint: hint(s) })"
       @click="add(s)"

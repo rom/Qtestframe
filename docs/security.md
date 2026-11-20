@@ -212,13 +212,25 @@ addresses are verified and controlled by your organisation.
 * Roles and permissions (`internal/rbac/rbac.go`; defaults below, the
   tenant's effective matrix is served at `GET /api/v1/roles`):
 
-| Permission | viewer | tester | test_lead | manager | admin |
-|---|:-:|:-:|:-:|:-:|:-:|
-| project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ | ✔ |
-| test.write, run.write, run.execute, token.manage | | ✔ | ✔ | ✔ | ✔ |
-| script.execute, audit.read, settings.manage | | | ✔ | ✔ | ✔ |
-| requirement.write, project.create, project.update | | | | ✔ | ✔ |
-| project.delete, member.manage, role.manage, tenant.manage | | | | | ✔ |
+| Permission | viewer | reviewer | tester | test_lead | manager | admin |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| project/requirement/test/run read, member.read, export | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| test.review | | ✔ | | ✔ | ✔ | ✔ |
+| requirement.review | | ✔ | | | ✔ | ✔ |
+| test.write, run.write, run.execute, token.manage | | | ✔ | ✔ | ✔ | ✔ |
+| script.execute, audit.read, settings.manage | | | | ✔ | ✔ | ✔ |
+| requirement.write, project.create, project.update | | | | | ✔ | ✔ |
+| project.delete, member.manage, role.manage, tenant.manage | | | | | | ✔ |
+
+* **Separation of duties:** approving requirements and marking tests
+  ready (review decisions) need `requirement.review` / `test.review`, so
+  authors without them cannot approve their own work; decisions are audited
+  as `requirement.review` / `test.review`. The **trash** of deleted
+  requirements and tests (30 days, `/trash/{id}/restore`) is tenant-scoped
+  and restoring needs the kind's write permission plus the review
+  permission for items that carry a decision; it holds copies of deleted
+  attachments, so a deletion is not an erasure until the entry expires
+  (or is removed with the project/tenant).
 
 * **Configurable roles** ([ADR 0014](adr/0014-tenant-configurable-roles.md)):
   holders of `role.manage` change the permissions of the built-in roles

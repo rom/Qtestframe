@@ -73,7 +73,7 @@ describe('ThemePicker', () => {
     await flush()
     const option = [...document.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes('Green console')) as HTMLElement
     expect(option).toBeTruthy()
-    expect(document.querySelectorAll('[role="option"]')).toHaveLength(11)
+    expect(document.querySelectorAll('[role="option"]')).toHaveLength(17)
     option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
     await flush()
     expect(onUpdate).toHaveBeenCalledWith('green_console')

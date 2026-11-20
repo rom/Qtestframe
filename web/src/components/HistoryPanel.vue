@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useUndoStore } from '@/stores/undo'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -41,6 +43,11 @@ const selectedId = ref<string | null>(null)
 const restoring = ref(false)
 const path = computed(() => `/${props.entity === 'requirement' ? 'requirements' : 'tests'}/${props.entityId}`)
 
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => void load(),
+)
 async function load() {
   loading.value = true
   error.value = ''
@@ -83,7 +90,13 @@ function restore() {
     accept: async () => {
       restoring.value = true
       try {
-        const item = await api.post(`${path.value}/restore`, { revision_id: r.id })
+        const current = revisions.value[0]
+        const p = path.value
+        const item = await api.post(`${p}/restore`, { revision_id: r.id })
+        if (current && current.id !== r.id) {
+          const key = (item as { key?: string } | undefined)?.key ?? ''
+          recordUndo(entry(t('undo.a.restoreVersion', { version: r.version, key }), () => api.post(`${p}/restore`, { revision_id: current.id }), () => api.post(`${p}/restore`, { revision_id: r.id })))
+        }
         notify.ok(t('history.restored'), t('common.versionShort', { version: r.version }))
         emit('restored', item)
         await load()

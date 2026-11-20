@@ -56,7 +56,7 @@ Usage:
   qtestframe migrate     [--config FILE]          apply database migrations
   qtestframe user create [--config FILE] --email E [--name N] [--password-stdin] [--super-admin]
   qtestframe tenant create [--config FILE] --slug S --name N
-  qtestframe member add  [--config FILE] --tenant SLUG --email E --role admin|manager|tester|viewer
+  qtestframe member add  [--config FILE] --tenant SLUG --email E --role admin|manager|test_lead|tester|reviewer|viewer
   qtestframe seed-demo   [--config FILE] [--tenant SLUG]
   qtestframe backup      [--config FILE] --out FILE.zip
                                                   write a logical backup of all data
@@ -701,6 +701,11 @@ func purgeSessions(ctx context.Context, st *store.Store, log *slog.Logger) {
 				log.Warn("session purge failed", "err", err)
 			} else if n > 0 {
 				log.Info("purged expired sessions", "count", n)
+			}
+			if n, err := st.PurgeTrash(ctx); err != nil {
+				log.Warn("trash purge failed", "err", err)
+			} else if n > 0 {
+				log.Info("purged expired trash entries", "count", n)
 			}
 		}
 	}

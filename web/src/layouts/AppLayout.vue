@@ -12,6 +12,7 @@ import ProjectIcon from '@/components/ProjectIcon.vue'
 import Dialog from 'primevue/dialog'
 import ThemePicker from '@/components/ThemePicker.vue'
 import HelpMenu from '@/guide/HelpMenu.vue'
+import UndoControls from '@/components/UndoControls.vue'
 import { useBreakpoint } from '@/lib/breakpoint'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -146,6 +147,7 @@ const projectNav = computed(() => [
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
   { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
+  { to: 'flow', icon: 'pi pi-share-alt', label: t('nav.flow') },
   { to: 'tags', icon: 'pi pi-hashtag', label: t('nav.tags') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
   { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },
@@ -251,7 +253,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
           <i class="pi pi-search" aria-hidden="true" /><span class="label">{{ t('nav.search') }}</span>
         </RouterLink>
         <template v-if="inProject">
-          <div class="section project-section" :title="proj.project?.name"><ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :size="18" /><span class="ellipsis">{{ proj.project?.key }} · {{ proj.project?.name }}</span></div>
+          <div class="section project-section" :title="proj.project?.name"><ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :color="proj.project?.color" :size="18" /><span class="ellipsis">{{ proj.project?.key }} · {{ proj.project?.name }}</span></div>
           <RouterLink
             v-for="n in projectNav"
             :key="n.to"
@@ -349,6 +351,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
           aria-haspopup="dialog"
           @click="searchOpen = true"
         />
+        <UndoControls />
         <HelpMenu />
         <ThemePicker compact :t="t" />
         <Button
