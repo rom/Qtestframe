@@ -39,6 +39,8 @@ is unreachable); all other paths serve the web client.
   Exceptions, because they call outside services: pushing and syncing
   defects with the tracker (`/defects/push`, `/defects/sync`), webhook
   tests and report batches, which save item by item.
+* **OpenAPI** – a machine-readable description of all routes is served at
+  `GET /api/v1/openapi.json` (see [OpenAPI description](#openapi-description)).
 * **IDs** are UUID strings. Times are RFC 3339.
 * **Lists** return `{"items": [...], "total": n}`. There is no pagination
   (except `limit` on search and audit).
@@ -1034,16 +1036,77 @@ queried. Response:
 
 ## Export
 
-`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx&aspects=requirements,criteria,tests,traceability,runs&q=`
+`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|reqif|reqifz&aspects=requirements,criteria,tests,traceability,runs&q=`
 (permission `export`)
 
 * `format` also accepts `excel` and `word`. `aspects` defaults to all;
   unknown aspects are a 400. `q` is applied to requirements if it is a valid
   requirement query and to tests if it is a valid test query.
 * CSV with more than one aspect is delivered as a ZIP of CSV files.
+* `reqif` and `reqifz` export the (filtered) requirements as
+  [ReqIF 1.2](#reqif-export); `aspects` does not apply. `reqif` is the XML
+  document (`application/xml`), `reqifz` a ZIP (`application/zip`) with the
+  document `<KEY>.reqif` and the requirements' attachments below
+  `files/<requirement key>/`.
 * Response has `Content-Disposition: attachment;
   filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
   neutralised in CSV; see [design.md §11](design.md#11-export-formats).
+
+### ReqIF export
+
+The document follows the ReqIF 1.2 schema
+(`http://www.omg.org/spec/ReqIF/20110401/reqif.xsd`, `REQ-IF-VERSION` 1.0
+as the standard prescribes); XHTML values use the prefix `xhtml:` bound to
+`http://www.w3.org/1999/xhtml`, as DOORS, Polarion and ProR expect.
+
+* `REQ-IF-HEADER`: `REQ-IF-TOOL-ID` `Qtestframe`, `SOURCE-TOOL-ID`
+  `Qtestframe <version>`, title `<KEY> – <name>`, creation time and a
+  comment with the filter.
+* `DATATYPES`: string, XHTML, integer, date and the enumerations
+  `Obligation` (`MUST` … `DESCRIBE`), `Type`, `Priority`, `Status`. Each
+  `ENUM-VALUE` has a readable `LONG-NAME` and the model code as
+  `EMBEDDED-VALUE/@OTHER-CONTENT`.
+* `SPEC-OBJECT-TYPE` *Requirement* with the attributes `ReqIF.ForeignID`
+  (key), `ReqIF.Name` (title), `ReqIF.Text` (description), `Obligation`,
+  `Type`, `Priority`, `Status`, `Source`, `Rationale`, `Owner`, `Tags`,
+  `Categories` (`Dimension/Value`, comma separated), `Acceptance criteria`
+  (XHTML list of `method: text (threshold: …)`), `Version`,
+  `ReqIF.ForeignCreatedBy`, `ReqIF.ForeignCreatedOn` and, in `.reqifz`,
+  `Attachments` (`<xhtml:object data="files/…">` per file). The
+  description is converted from Markdown (paragraphs, line breaks, lists,
+  headings, code blocks, bold, italics, code, links and images; images of
+  exported attachments point into the archive).
+* Folders are heading objects: `SPEC-OBJECT-TYPE` *Heading* with
+  `ReqIF.ChapterName`. One `SPECIFICATION` holds the folder tree as
+  `SPEC-HIERARCHY`: below a heading come the folder's requirements, then
+  its subfolders. With a filter only folders that contain exported
+  requirements are included.
+* Requirement relations between exported requirements are `SPEC-RELATION`s
+  (source → target) with one `SPEC-RELATION-TYPE` per relation type
+  (`Refines`, `Depends on`, …).
+* `IDENTIFIER`s are derived from the database ids (`qtf-req-<id>`,
+  `qtf-folder-<id>`, `qtf-rel-<id>`, …), so repeated exports keep them;
+  `LONG-NAME` of a requirement is its key, of a heading the folder name;
+  `LAST-CHANGE` is the item's last update.
+
+Importing the file again (`POST /projects/{pid}/requirements/import`)
+restores title, description (the importer reads the XHTML of a Qtestframe
+file back as Markdown), obligation, type, priority, status, source,
+rationale, owner, tags, criteria and folders; the key becomes the external
+ID (`ID: <key>` in the source). Relations, categories and attachments are
+not imported.
+
+## OpenAPI description
+
+`GET /api/v1/openapi.json` (and `/api/v1/openapi.yaml`, no authentication)
+serves an OpenAPI 3.1 description of every route: parameters, the main
+request and response bodies, the security schemes (session cookie with
+`X-CSRF-Token`, bearer tokens) and the permission of each operation
+(`x-permission` and in the description). Its source is
+[`docs/openapi.yaml`](openapi.yaml); a test fails when a route is added
+without describing it. View it with any OpenAPI viewer, for example by
+opening the JSON URL in Swagger UI, Redoc or an editor plug-in, or generate
+a client from it.
 
 ## Query language
 

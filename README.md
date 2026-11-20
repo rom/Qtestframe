@@ -54,7 +54,7 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Grouping:** nested folders for requirements and tests. Drag and drop moves items, whole folders, or entire category dimensions, also to another project.
 - **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dependency graph, tag cloud, dashboard, global search, administration. Table columns can be chosen and reordered (drag the header or use the Columns menu).
 - **Filtering and search on every field** with a [query language](#query-language): field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
-- **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**.
+- **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**, and of requirements to **ReqIF 1.2** (`.reqif`, or `.reqifz` with attachments) for DOORS, Polarion, ProR and other requirement tools, with folders as headings and relations; an export imports back with all fields.
 - **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
 
@@ -336,7 +336,7 @@ For single sign-on, add `auth.oidc` (Keycloak, Entra ID, Okta, …) or `auth.sam
 
 ## Automation and CI
 
-Create a token under **Administration → API tokens**. It is shown once and starts with `qtf_`. Use it as a Bearer token; every UI action is also available through the REST API ([docs/api.md](docs/api.md)).
+Create a token under **Administration → API tokens**. It is shown once and starts with `qtf_`. Use it as a Bearer token; every UI action is also available through the REST API ([docs/api.md](docs/api.md)). The server describes the API as **OpenAPI 3.1** at `/api/v1/openapi.json` (no sign-in needed; source [docs/openapi.yaml](docs/openapi.yaml)): open it in any OpenAPI viewer such as Swagger UI or Redoc, or generate a client from it.
 
 Report results from a CI pipeline into an existing run; tests are matched by key:
 
@@ -439,6 +439,7 @@ make coverage
 | [docs/security.md](docs/security.md) | threat model, authentication, RBAC, hardening |
 | [docs/testing.md](docs/testing.md) | test strategy and coverage |
 | [docs/api.md](docs/api.md) | REST API and query language reference |
+| [docs/openapi.yaml](docs/openapi.yaml) | OpenAPI 3.1 description of the REST API (served at `/api/v1/openapi.json`) |
 | [docs/operations.md](docs/operations.md) | installation, TLS, OIDC/SAML, syslog, backup |
 | [docs/user-guide](docs/user-guide/en/index.md) | user guide with tutorial and FAQ (also [in Swedish](docs/user-guide/sv/index.md) and in the tool under Help) |
 | [docs/user-guide/en/references.md](docs/user-guide/en/references.md) | references: RFC 2119, RFC 8174 and other RFCs, NIST publications, requirement and testing standards |
