@@ -594,6 +594,7 @@ func cmdServe(args []string, env Env) error {
 		ErrorLog:          slog.NewLogLogger(log.Handler(), slog.LevelWarn),
 	}
 	go purgeSessions(ctx, st, log)
+	go recordMetrics(ctx, st, log, time.Hour)
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)
@@ -694,6 +695,30 @@ func cmdHealthcheck(args []string, env Env) error {
 	}
 	fmt.Fprintln(env.Stdout, "ok")
 	return nil
+}
+
+// recordMetrics records the daily metric snapshot of every project: once at
+// start and then every interval for the projects that have no snapshot for
+// the current day (of the store's clock) yet, so each project gets one
+// snapshot per day.
+func recordMetrics(ctx context.Context, st *store.Store, log *slog.Logger, interval time.Duration) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		if n, err := st.RecordAllSnapshots(ctx); err != nil {
+			if ctx.Err() != nil {
+				return
+			}
+			log.Warn("metric snapshots failed", "err", err)
+		} else if n > 0 {
+			log.Info("recorded metric snapshots", "projects", n)
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
 }
 
 func purgeSessions(ctx context.Context, st *store.Store, log *slog.Logger) {

@@ -25,10 +25,10 @@ var (
 		Fields: []string{"key", "title", "description", "preconditions", "execution_type", "script_language", "script",
 			"expected", "step", "priority", "status", "estimate", "tag", "folder", "category", "dimension", "linked",
 			"last_result", "created_by", "created_at", "updated_at", "id", "defect", "calls", "comments", "version", "mention",
-			"depends_on", "suspect"},
+			"depends_on", "suspect", "flaky", "flakiness"},
 		Aliases: map[string]string{"type": "execution_type", "tags": "tag", "categories": "category", "steps": "step",
 			"desc": "description", "language": "script_language", "result": "last_result", "defects": "defect", "mentions": "mention",
-			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on"},
+			"depends": "depends_on", "dependency": "depends_on", "prerequisite": "depends_on", "flips": "flakiness"},
 	}
 	runSchema = &query.Schema{
 		Fields:  []string{"name", "description", "status", "environment", "build", "created_by", "created_at", "id"},
@@ -68,6 +68,8 @@ type projectContext struct {
 	// test dependencies of the project; test id → keys of its prerequisites
 	deps       []model.TestDependency
 	prereqKeys map[string][]string
+	// test id → flakiness score (pass/fail flips among the last results)
+	flaky map[string]int
 }
 
 func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Project) (*projectContext, error) {
@@ -96,6 +98,9 @@ func (s *Server) loadContext(ctx context.Context, tenantID string, p *model.Proj
 		}
 	}
 	if pc.last, err = s.Store.LastResults(ctx, tenantID, p.ID); err != nil {
+		return nil, err
+	}
+	if pc.flaky, err = s.Store.FlakyScores(ctx, tenantID, p.ID); err != nil {
 		return nil, err
 	}
 	if pc.openDefects, err = s.Store.OpenDefectCounts(ctx, tenantID, p.ID); err != nil {
@@ -199,6 +204,8 @@ func (pc *projectContext) decorateTest(t *model.TestCase) {
 	t.StepCount = len(t.Steps)
 	t.Defects = pc.defects[t.ID]
 	t.SuspectLinks = pc.suspect[t.ID]
+	t.Flakiness = pc.flaky[t.ID]
+	t.Flaky = t.Flakiness >= store.FlakyMinFlips
 	refs := append([]model.ItemRef{}, pc.refs[t.ID]...)
 	seen := map[string]bool{}
 	for _, st := range t.Steps {
@@ -282,6 +289,8 @@ func (pc *projectContext) testRecord(t *model.TestCase) query.MapRecord {
 		"comments": {strconv.Itoa(t.CommentCount)}, "version": {strconv.Itoa(t.Version)}, "suspect": {strconv.Itoa(t.SuspectLinks)},
 		"mention":    mentions(append([]string{t.Title, t.Description, t.Preconditions, t.ExpectedResult}, steps...)...),
 		"depends_on": pc.prereqKeys[t.ID],
+		"flaky":      {strconv.FormatBool(t.Flaky)},
+		"flakiness":  {strconv.Itoa(t.Flakiness)},
 	}
 }
 

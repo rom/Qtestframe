@@ -47,6 +47,13 @@ func New(d *db.DB) *Store {
 // SetClock overrides the time source (tests).
 func (s *Store) SetClock(f func() time.Time) { s.now = f }
 
+// WithClock returns a store over the same database with another time
+// source (e.g. to record backdated demo data).
+func (s *Store) WithClock(f func() time.Time) *Store { return &Store{DB: s.DB, now: f} }
+
+// Now returns the current time of the store's clock.
+func (s *Store) Now() time.Time { return s.now() }
+
 // querier is satisfied by *sql.DB and *sql.Tx.
 type querier interface {
 	ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error)

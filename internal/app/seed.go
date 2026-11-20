@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/reqlang"
@@ -11,7 +12,12 @@ import (
 
 // SeedDemo creates a demonstration project with folders, requirements,
 // evaluation criteria, test cases, links and a test run.
-func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Project, error) {
+func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.Project, error) {
+	// The project is created SeedHistoryDays ago and gets a history of
+	// nightly runs (trends, burn-up, flaky tests); the last run is today's.
+	clock := &seedClock{live: live}
+	clock.at = live.Now().AddDate(0, 0, -SeedHistoryDays)
+	st := live.WithClock(clock.now)
 	key := "DEMO"
 	ps, err := st.ListProjects(ctx, tenantID)
 	if err != nil {
@@ -112,6 +118,7 @@ func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Pro
 			return nil, err
 		}
 		reqs = append(reqs, r)
+		clock.advance(18 * time.Hour)
 	}
 
 	type testSpec struct {
@@ -175,6 +182,10 @@ func SeedDemo(ctx context.Context, st *store.Store, tenantID string) (*model.Pro
 			return nil, err
 		}
 	}
+	if err := seedHistory(ctx, st, clock, tenantID, p.ID, reqs, testIDs); err != nil {
+		return nil, err
+	}
+	clock.at = time.Time{} // today: the live clock
 	run := &model.TestRun{ProjectID: p.ID, Name: "Sprint 12 regression", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed"}
 	if err := st.CreateRun(ctx, tenantID, run, testIDs); err != nil {
 		return nil, err
