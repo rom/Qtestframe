@@ -237,6 +237,7 @@ func (s *Server) routes() {
 	s.routesBackup(h)
 	s.routesRoles(h)
 	s.routesDependencies(h)
+	s.routesJUnit(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

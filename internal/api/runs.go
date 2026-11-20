@@ -222,6 +222,22 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
+	s.recordResults(w, r, p, run, req.Results, "run.import", nil)
+}
+
+// rejectedResult is a result that was not recorded because the test may
+// not be executed.
+type rejectedResult struct {
+	TestKey   string     `json:"test_key"`
+	Readiness *Readiness `json:"readiness"`
+	// Reason spells out the blocking issues.
+	Reason string `json:"reason"`
+}
+
+// recordResults applies the readiness rules to CI results, records the
+// accepted ones and writes {"updated","unknown","rejected"} merged with
+// extra.
+func (s *Server) recordResults(w http.ResponseWriter, r *http.Request, p *Principal, run *model.TestRun, results []store.ImportResult, action string, extra map[string]any) {
 	rc, err := s.loadReadiness(r.Context(), p.TenantID(), run.ProjectID, run.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -232,16 +248,18 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		byKey[strings.ToUpper(t.Key)] = id
 	}
 	// results of tests that may not be executed are not recorded
-	type rejected struct {
-		TestKey   string     `json:"test_key"`
-		Readiness *Readiness `json:"readiness"`
-	}
-	rejects := []rejected{}
-	accepted := make([]store.ImportResult, 0, len(req.Results))
-	for _, res := range req.Results {
+	rejects := []rejectedResult{}
+	accepted := make([]store.ImportResult, 0, len(results))
+	for _, res := range results {
 		if id, ok := byKey[strings.ToUpper(strings.TrimSpace(res.TestKey))]; ok && activeResult(res.Status) {
 			if rd := rc.check(id); !rd.Allowed {
-				rejects = append(rejects, rejected{TestKey: res.TestKey, Readiness: rd})
+				var why []string
+				for _, i := range rd.Issues {
+					if i.Blocking {
+						why = append(why, issueText(i))
+					}
+				}
+				rejects = append(rejects, rejectedResult{TestKey: res.TestKey, Readiness: rd, Reason: strings.Join(why, "; ")})
 				continue
 			}
 		}
@@ -252,8 +270,12 @@ func (s *Server) handleImportResults(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "run.import", "run", run.ID, fmt.Sprintf("%d updated, %d rejected", n, len(rejects)))
-	writeJSON(w, http.StatusOK, map[string]any{"updated": n, "unknown": unknown, "rejected": rejects})
+	s.audit(r.Context(), p, action, "run", run.ID, fmt.Sprintf("%d updated, %d rejected", n, len(rejects)))
+	out := map[string]any{"updated": n, "unknown": unknown, "rejected": rejects}
+	for k, v := range extra {
+		out[k] = v
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 type executionDetail struct {

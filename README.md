@@ -340,6 +340,28 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 
 The run page has a **CI import** button that shows this command with the right run ID. Results of tests that may not be executed yet (see [Test execution settings](#test-execution-settings)) are not recorded; the response lists them under `rejected` with the reasons.
 
+### Reporting automated test results
+
+Tests are matched by a test key such as `SHOP-TC-7` in the test name (`test_login[SHOP-TC-7]`, `SHOP_TC_7` where hyphens are not allowed), the class name, a JUnit property `qtestframe.key`/`test_key`, or a Playwright tag/annotation.
+
+- **JUnit XML** – any tool that writes JUnit XML (Playwright, pytest, Go with go-junit-report, Maven Surefire, Gradle, Jest, Vitest …):
+
+  ```bash
+  curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/junit?create_missing=true" \
+    -H "Authorization: Bearer $QTF_TOKEN" -H "Content-Type: application/xml" --data-binary @junit.xml
+  ```
+
+  Failures and errors become `failed`, `<skipped>` `skipped`, the rest `passed`; several test cases with one key combine (failed wins, durations add up). `create_missing=true` creates draft automated tests for test cases without a key; otherwise they are listed under `unmapped`.
+- **Command line** – `qtestframe report` finds or creates the run and uploads JUnit XML or JSON files:
+
+  ```bash
+  QTF_URL=https://qtf.example.com QTF_TOKEN=qtf_… \
+    qtestframe report --project SHOP --run "Nightly $BUILD" --create-run --build "$BUILD" --junit 'reports/*.xml'
+  ```
+
+  It prints updated, unknown, unmapped and rejected results and exits non-zero on errors (and with `--fail-on-unknown` when results matched no test).
+- **Playwright reporter** – [`integrations/playwright-reporter`](integrations/playwright-reporter/README.md) (`@qtestframe/playwright-reporter`) reports while Playwright runs, includes `test.step()` results in the output and uploads screenshots and traces of failed tests as execution attachments.
+
 ## Command line reference
 
 | Command | Purpose |
@@ -352,6 +374,7 @@ The run page has a **CI import** button that shows this command with the right r
 | `qtestframe user create --email E [--name N] [--password-stdin] [--super-admin]` | create a local user |
 | `qtestframe member add --tenant S --email E --role R` | grant a role in a tenant |
 | `qtestframe healthcheck [--config F] [-p PORT] [--url U]` | probe `/healthz` (exit code 0 = healthy) |
+| `qtestframe report --url U --token T (--project KEY --run NAME [--create-run] \| --run-id ID) --junit F… \| --json F…` | upload automated test results (`QTF_URL`, `QTF_TOKEN`); see [Reporting automated test results](#reporting-automated-test-results) |
 | `qtestframe version` | print the version |
 
 Health endpoints for load balancers: `/healthz` (process alive) and `/readyz` (database reachable).
