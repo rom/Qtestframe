@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -19,6 +20,7 @@ func (s *Server) routesReviews(h routeFunc) {
 	h("GET /api/v1/review-checklists", s.handleReviewChecklists)
 	h("GET /api/v1/reviews", s.handleListReviews)
 	h("POST /api/v1/reviews", s.handleCreateReviews)
+	h("POST /api/v1/reviews/bulk", s.handleBulkReviewRequests)
 	h("GET /api/v1/reviews/{id}", s.handleGetReview)
 	h("PATCH /api/v1/reviews/{id}", s.handleUpdateReview)
 	h("GET /api/v1/baselines/{id}/signoffs", s.handleListSignoffs, "requirement.read")
@@ -49,6 +51,20 @@ func writePermOf(kind string) rbac.Permission {
 func (s *Server) handleListReviews(w http.ResponseWriter, r *http.Request, p *Principal) {
 	q := r.URL.Query()
 	f := store.ReviewFilter{ProjectID: q.Get("project_id"), EntityType: q.Get("entity_type"), EntityID: q.Get("entity_id"), Status: q.Get("status"), ReviewerID: q.Get("reviewer")}
+	if q.Get("requested_by") == "me" {
+		// the caller's own requests, across projects
+		f.RequestedBy = p.User.Email
+		if f.ReviewerID == "me" {
+			f.ReviewerID = p.User.ID
+		}
+		list, err := s.Store.ListReviewRequests(r.Context(), p.TenantID(), f)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, listOf(list))
+		return
+	}
 	if f.ReviewerID == "me" || (f.ProjectID == "" && f.EntityID == "") {
 		f.ReviewerID = p.User.ID
 	}
@@ -326,4 +342,113 @@ func (s *Server) signBaseline(r *http.Request, p *Principal, baselineID string, 
 		s.notifyEvent(r, p, b.ProjectID, "baseline.signed", map[string]any{"baseline_id": b.ID, "baseline": b.Name, "signoff": so})
 	}
 	return so, nil
+}
+
+// handleBulkReviewRequests: POST /reviews/bulk
+// {"ids": [...], "action", "comment", "due_date"}. Actions:
+//   - approve, request_changes: the caller's own pending requests (the
+//     checklist is not checked; the comment records the bulk decision;
+//     request_changes needs a comment);
+//   - cancel, remind, due_date: pending requests the caller asked for, or
+//     with write permission on the item.
+//
+// Requests that do not qualify are skipped with a reason.
+func (s *Server) handleBulkReviewRequests(w http.ResponseWriter, r *http.Request, p *Principal) {
+	var req struct {
+		IDs     []string `json:"ids"`
+		Action  string   `json:"action"`
+		Comment string   `json:"comment"`
+		DueDate string   `json:"due_date"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	actions := []string{"approve", "request_changes", "cancel", "remind", "due_date"}
+	if !slices.Contains(actions, req.Action) {
+		s.fail(w, r, badRequest("action must be one of %s", strings.Join(actions, ", ")))
+		return
+	}
+	comment := strings.TrimSpace(req.Comment)
+	if req.Action == "request_changes" && comment == "" {
+		s.fail(w, r, badRequest("say which changes are needed in the comment"))
+		return
+	}
+	if req.Action == "due_date" && strings.TrimSpace(req.DueDate) != "" && !store.ValidDate(strings.TrimSpace(req.DueDate)) {
+		s.fail(w, r, badRequest("due_date must be YYYY-MM-DD"))
+		return
+	}
+	ids, err := bulkIDs(req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	ctx := r.Context()
+	type item struct {
+		ID     string `json:"id"`
+		Key    string `json:"key"`
+		Reason string `json:"reason,omitempty"`
+	}
+	updated, skipped := []item{}, []item{}
+	var mine []model.ReviewRequest
+	for _, id := range ids {
+		v, err := s.Store.GetReviewRequest(ctx, p.TenantID(), id)
+		if err != nil {
+			s.fail(w, r, err)
+			return
+		}
+		own := v.ReviewerID == p.User.ID
+		manage := v.RequestedBy == p.User.Email || p.Can(writePermOf(v.EntityType))
+		switch {
+		case !own && !manage && !p.Can(readPermOf(v.EntityType)):
+			s.fail(w, r, fmt.Errorf("review request %s: %w", id, store.ErrNotFound))
+			return
+		case v.Status != "pending":
+			skipped = append(skipped, item{v.ID, v.EntityKey, "not_pending"})
+			continue
+		case (req.Action == "approve" || req.Action == "request_changes") && !own:
+			skipped = append(skipped, item{v.ID, v.EntityKey, "not_reviewer"})
+			continue
+		case req.Action != "approve" && req.Action != "request_changes" && !manage:
+			skipped = append(skipped, item{v.ID, v.EntityKey, "not_requester"})
+			continue
+		}
+		switch req.Action {
+		case "approve", "request_changes":
+			mine = append(mine, *v)
+			continue
+		case "cancel":
+			v.Status = "cancelled"
+			if err := s.Store.UpdateReviewRequest(ctx, p.TenantID(), v); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			s.audit(ctx, p, "review.cancelled", v.EntityType, v.EntityID, v.EntityKey+" ("+v.ReviewerEmail+", bulk)")
+		case "remind":
+			s.notifyUsers(ctx, p, []string{v.ReviewerID}, model.Notification{ProjectID: v.ProjectID, Event: "review.reminder",
+				Title: v.EntityKey + " " + v.EntityTitle, Body: excerpt(comment, 300), EntityType: v.EntityType, EntityID: v.EntityID})
+			s.audit(ctx, p, "review.remind", v.EntityType, v.EntityID, v.EntityKey+" ("+v.ReviewerEmail+")")
+		case "due_date":
+			if err := s.Store.SetReviewDueDate(ctx, p.TenantID(), v.ID, req.DueDate); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+			s.audit(ctx, p, "review.due_date", v.EntityType, v.EntityID, v.EntityKey+" "+req.DueDate)
+		}
+		updated = append(updated, item{ID: v.ID, Key: v.EntityKey})
+	}
+	if len(mine) > 0 {
+		status, note := "approved", "Approved in a bulk review."
+		if req.Action == "request_changes" {
+			status, note = "changes_requested", "Changes requested in a bulk review."
+		}
+		if comment != "" {
+			note += " " + comment
+		}
+		s.completeReviews(r, p, mine, status, note)
+		for _, v := range mine {
+			updated = append(updated, item{ID: v.ID, Key: v.EntityKey})
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"updated": updated, "skipped": skipped})
 }

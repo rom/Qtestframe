@@ -306,7 +306,6 @@ func (s *Server) bulkReviewCandidates(r *http.Request, p *Principal, pr *model.P
 // bulk review: approved for approve / mark ready, changes requested for
 // reject. The comment says it was a bulk decision.
 func (s *Server) completeOwnReviews(r *http.Request, p *Principal, list []model.ReviewRequest, decision, comment string) int {
-	ctx := r.Context()
 	status, note := "approved", "Approved in a bulk review."
 	if decision == "rejected" {
 		status, note = "changes_requested", "Rejected in a bulk review."
@@ -314,6 +313,13 @@ func (s *Server) completeOwnReviews(r *http.Request, p *Principal, list []model.
 	if comment != "" {
 		note += " " + comment
 	}
+	return s.completeReviews(r, p, list, status, note)
+}
+
+// completeReviews decides the caller's review requests with status and
+// note, notifies the requesters and settles the reviewer's notifications.
+func (s *Server) completeReviews(r *http.Request, p *Principal, list []model.ReviewRequest, status, note string) int {
+	ctx := r.Context()
 	n := 0
 	var done []string
 	defer func() {

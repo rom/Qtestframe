@@ -111,6 +111,7 @@ async function discover(request) {
   const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
   const hasDocuments = items(await api(request, 'GET', `/projects/${pid}/documents`)).length > 0
   const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
+  const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -147,6 +148,7 @@ async function discover(request) {
     { name: 'defects', path: `${p}/defects` },
     // with a selected row (bulk toolbar); only when the project has defects / risks
     hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    hasRequested && { name: 'reviews-bulk', path: '/reviews', open: ['.page-header .actions .p-selectbutton:first-child .p-togglebutton:nth-child(2)', '.p-datatable-tbody .p-checkbox'], wait: '.bulkbar' },
     hasWebhooks && { name: 'webhooks-bulk', path: `${p}/settings?tab=project`, open: 'section.webhooks .p-datatable-tbody .p-checkbox', wait: 'section.webhooks .bulkbar' },
     hasDocuments && { name: 'documents-bulk', path: `${p}/documents`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     hasBaselines && { name: 'baselines-bulk', path: `${p}/baselines`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },

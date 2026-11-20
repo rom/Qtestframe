@@ -102,3 +102,72 @@ func TestReviewRequestsAndSignoffs(t *testing.T) {
 		t.Fatal(l)
 	}
 }
+
+func TestBulkReviewRequestActions(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	e.member("rita@example.com", "reviewer")
+	e.member("olle@example.com", "reviewer")
+	rc := e.login("rita@example.com")
+	oc := e.login("olle@example.com")
+	f := qualityFixture(t, a, "BRR")
+	ask := func(id, kind string, who ...string) []string {
+		var out []string
+		for _, x := range items(a.m("POST", "/api/v1/reviews", map[string]any{"entity_type": kind, "entity_id": id, "reviewers": who}, 201)) {
+			out = append(out, x["id"].(string))
+		}
+		return out
+	}
+	r1 := ask(f.r1, "requirement", "rita@example.com")[0]
+	r2 := ask(f.r2, "requirement", "rita@example.com")[0]
+	t1 := ask(f.t1, "test", "rita@example.com")[0]
+	o1 := ask(f.r1, "requirement", "olle@example.com")[0]
+	path := "/api/v1/reviews/bulk"
+	rc.m("POST", path, map[string]any{"ids": []string{r1}, "action": "nope"}, 400)
+	rc.m("POST", path, map[string]any{"ids": []string{r1}, "action": "request_changes"}, 400)
+	rc.m("POST", path, map[string]any{"ids": []string{r1}, "action": "due_date", "due_date": "soon"}, 400)
+
+	// the requester's list
+	if l := items(a.m("GET", "/api/v1/reviews?requested_by=me&status=pending", nil, 200)); len(l) != 4 {
+		t.Fatal(l)
+	}
+	// Rita approves her two requirement reviews and Olle's is skipped
+	res := rc.m("POST", path, map[string]any{"ids": []string{r1, r2, o1}, "action": "approve", "comment": "Meeting 3 May"}, 200)
+	if len(res["updated"].([]any)) != 2 || len(res["skipped"].([]any)) != 1 || res["skipped"].([]any)[0].(map[string]any)["reason"] != "not_reviewer" {
+		t.Fatal(res)
+	}
+	if v := rc.m("GET", "/api/v1/reviews/"+r1, nil, 200); v["status"] != "approved" || v["comment"] != "Approved in a bulk review. Meeting 3 May" {
+		t.Fatal(v)
+	}
+	// already decided ones are skipped
+	res = rc.m("POST", path, map[string]any{"ids": []string{r1, t1}, "action": "request_changes", "comment": "Add test data"}, 200)
+	if len(res["updated"].([]any)) != 1 || res["skipped"].([]any)[0].(map[string]any)["reason"] != "not_pending" {
+		t.Fatal(res)
+	}
+	if v := rc.m("GET", "/api/v1/reviews/"+t1, nil, 200); v["status"] != "changes_requested" {
+		t.Fatal(v)
+	}
+	// the requester: remind Olle, change the due date, cancel; reviewers cannot
+	oc.m("POST", path, map[string]any{"ids": []string{o1}, "action": "cancel"}, 200)
+	if v := a.m("GET", "/api/v1/reviews/"+o1, nil, 200); v["status"] != "pending" {
+		t.Fatal("reviewer cancelled", v)
+	}
+	before := oc.m("GET", "/api/v1/notifications", nil, 200)["unread"].(float64)
+	a.m("POST", path, map[string]any{"ids": []string{o1}, "action": "remind", "comment": "Due Friday"}, 200)
+	n := oc.m("GET", "/api/v1/notifications", nil, 200)
+	if n["unread"].(float64) != before+1 || items(n)[0]["event"] != "review.reminder" {
+		t.Fatal(n)
+	}
+	a.m("POST", path, map[string]any{"ids": []string{o1}, "action": "due_date", "due_date": "2027-05-01"}, 200)
+	if v := a.m("GET", "/api/v1/reviews/"+o1, nil, 200); v["due_date"] != "2027-05-01" {
+		t.Fatal(v)
+	}
+	res = a.m("POST", path, map[string]any{"ids": []string{o1, r1}, "action": "cancel"}, 200)
+	if len(res["updated"].([]any)) != 1 || len(res["skipped"].([]any)) != 1 {
+		t.Fatal(res)
+	}
+	if v := a.m("GET", "/api/v1/reviews/"+o1, nil, 200); v["status"] != "cancelled" {
+		t.Fatal(v)
+	}
+	a.m("POST", path, map[string]any{"ids": []string{"missing"}, "action": "cancel"}, 404)
+}

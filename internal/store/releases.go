@@ -583,3 +583,6 @@ func (s *Store) ReleaseNames(ctx context.Context, tenantID, projectID string) (m
 
 // ValidateRelease checks and normalises a release's fields without saving it.
 func ValidateRelease(r *model.Release) error { return validateRelease(r) }
+
+// ValidDate reports whether s is a YYYY-MM-DD date.
+func ValidDate(s string) bool { return dateRe.MatchString(s) }

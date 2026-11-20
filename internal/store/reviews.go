@@ -172,14 +172,14 @@ func (s *Store) GetReviewRequest(ctx context.Context, tenantID, id string) (*mod
 
 // ReviewFilter selects review requests; empty fields match everything.
 type ReviewFilter struct {
-	ProjectID, EntityType, EntityID, ReviewerID, Status string
+	ProjectID, EntityType, EntityID, ReviewerID, Status, RequestedBy string
 }
 
 // ListReviewRequests lists review requests, newest first.
 func (s *Store) ListReviewRequests(ctx context.Context, tenantID string, f ReviewFilter) ([]model.ReviewRequest, error) {
 	where := []string{"r.tenant_id = ?"}
 	args := []any{tenantID}
-	for _, x := range []struct{ col, v string }{{"r.project_id", f.ProjectID}, {"r.entity_type", f.EntityType}, {"r.entity_id", f.EntityID}, {"r.reviewer_id", f.ReviewerID}, {"r.status", f.Status}} {
+	for _, x := range []struct{ col, v string }{{"r.project_id", f.ProjectID}, {"r.entity_type", f.EntityType}, {"r.entity_id", f.EntityID}, {"r.reviewer_id", f.ReviewerID}, {"r.status", f.Status}, {"r.requested_by", f.RequestedBy}} {
 		if x.v != "" {
 			where = append(where, x.col+" = ?")
 			args = append(args, x.v)
@@ -310,4 +310,20 @@ func (s *Store) SignoffCount(ctx context.Context, tenantID, baselineID string) (
 	var n int
 	err := s.c().row(ctx, `SELECT COUNT(*) FROM baseline_signoffs WHERE tenant_id = ? AND baseline_id = ?`, tenantID, baselineID).Scan(&n)
 	return n, err
+}
+
+// SetReviewDueDate changes the due date of a review request ("" removes it).
+func (s *Store) SetReviewDueDate(ctx context.Context, tenantID, id, due string) error {
+	due = strings.TrimSpace(due)
+	if due != "" && !dateRe.MatchString(due) {
+		return Invalidf("due_date must be YYYY-MM-DD")
+	}
+	res, err := s.c().exec(ctx, `UPDATE review_requests SET due_date = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, due, s.now(), id, tenantID)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return mapErr(sql.ErrNoRows, "review request")
+	}
+	return nil
 }
