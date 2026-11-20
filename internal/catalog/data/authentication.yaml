@@ -3,8 +3,8 @@ prefix: AUTH
 group: security
 name: {en: Authentication, sv: Autentisering}
 description:
-  en: Signing in, passwords, multi-factor authentication and protection against guessing attacks.
-  sv: Inloggning, lösenord, flerfaktorsautentisering och skydd mot gissningsattacker.
+  en: Signing in, passwords, credential storage, multi-factor authentication, account recovery, single sign-on and protection against guessing attacks.
+  sv: Inloggning, lösenord, lagring av inloggningsuppgifter, flerfaktorsautentisering, återställning av konto, enkel inloggning och skydd mot gissningsattacker.
 
 requirements:
   - id: AUTH-01
@@ -28,6 +28,370 @@ requirements:
       criteria:
         - method: test
           text: Ett lösenord med 11 tecken avvisas och ett lösenord med 12 tecken godtas.
+
+  - id: AUTH-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [password, breached-passwords]
+    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.1.7"]
+    tests: [AUTH-T02]
+    en:
+      title: Breached and common passwords are refused
+      description: The system MUST reject a new password that appears in a list of at least 100 000 breached or commonly used passwords.
+      rationale: Attackers try known leaked passwords first, so a long password that is on such a list gives no protection.
+      criteria:
+        - method: test
+          text: A password taken from the configured list is rejected with a message that it is too common, and a random password of the same length is accepted.
+        - method: inspection
+          text: The configured list contains at least 100 000 entries.
+    sv:
+      title: Läckta och vanliga lösenord avvisas
+      description: Systemet SKA avvisa ett nytt lösenord som finns i en lista med minst 100 000 läckta eller vanligt förekommande lösenord.
+      rationale: Angripare provar kända läckta lösenord först, så ett långt lösenord som finns på en sådan lista skyddar inte.
+      criteria:
+        - method: test
+          text: Ett lösenord från den konfigurerade listan avvisas med ett meddelande om att det är för vanligt, och ett slumpat lösenord med samma längd godtas.
+        - method: inspection
+          text: Den konfigurerade listan innehåller minst 100 000 poster.
+
+  - id: AUTH-03
+    type: security
+    obligation: must_not
+    priority: medium
+    tags: [password, password-policy]
+    refs: ["NIST SP 800-63B §5.1.1.2"]
+    tests: [AUTH-T03]
+    en:
+      title: No forced periodic password change
+      description: The system MUST NOT force users to change their password at fixed intervals when there is no evidence that the password is compromised.
+      rationale: Forced periodic changes lead users to choose predictable variations of the old password.
+      criteria:
+        - method: inspection
+          text: The password policy has no expiry period, and a password that is 400 days old still lets the user sign in without a change prompt.
+    sv:
+      title: Inget tvingat periodiskt lösenordsbyte
+      description: Systemet SKA INTE tvinga användare att byta lösenord med fasta intervall när det inte finns tecken på att lösenordet har röjts.
+      rationale: Tvingade periodiska byten får användare att välja förutsägbara varianter av det gamla lösenordet.
+      criteria:
+        - method: inspection
+          text: Lösenordspolicyn saknar giltighetstid, och ett lösenord som är 400 dagar gammalt fungerar för inloggning utan uppmaning om byte.
+
+  - id: AUTH-04
+    type: security
+    obligation: must
+    priority: medium
+    tags: [password, passphrase]
+    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.1.2"]
+    tests: [AUTH-T04]
+    en:
+      title: Long passphrases are accepted
+      description: The system MUST accept passwords of up to 64 characters, including spaces and Unicode characters, without truncating them.
+      rationale: Passphrases are both strong and memorable; truncation silently weakens them.
+      criteria:
+        - method: test
+          text: A 64-character passphrase with spaces and the letters å, ä and ö can be set, and signing in with only its first 63 characters fails.
+    sv:
+      title: Långa lösenfraser godtas
+      description: Systemet SKA godta lösenord på upp till 64 tecken, inklusive mellanslag och Unicode-tecken, utan att korta av dem.
+      rationale: Lösenfraser är både starka och lätta att minnas, och avkortning försvagar dem utan att någon märker det.
+      criteria:
+        - method: test
+          text: En lösenfras på 64 tecken med mellanslag och bokstäverna å, ä och ö kan sparas, och inloggning med bara de första 63 tecknen misslyckas.
+
+  - id: AUTH-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [password, credential-storage, hashing]
+    refs: ["OWASP ASVS 4.0 V2.4", "NIST SP 800-63B §5.1.1.2", "OWASP Top 10 2021 A02"]
+    tests: [AUTH-T05, CRY-T04]
+    en:
+      title: Passwords are stored as salted one-way hashes
+      description: The system MUST store passwords only as salted one-way hashes and never in plain text or with reversible encryption.
+      rationale: A stolen database then does not reveal the passwords, which users often reuse on other services.
+      criteria:
+        - method: inspection
+          text: The credential table holds only hash values with a per-user salt, and no column, log or backup contains a password in readable form.
+    sv:
+      title: Lösenord lagras som saltade envägshashar
+      description: Systemet SKA lagra lösenord enbart som saltade envägshashar och aldrig i klartext eller med reversibel kryptering.
+      rationale: En stulen databas avslöjar då inte lösenorden, som användare ofta återanvänder i andra tjänster.
+      criteria:
+        - method: inspection
+          text: Tabellen med inloggningsuppgifter innehåller bara hashvärden med ett salt per användare, och ingen kolumn, logg eller säkerhetskopia innehåller ett läsbart lösenord.
+
+  - id: AUTH-06
+    type: security
+    obligation: must
+    priority: critical
+    tags: [mfa, administrator]
+    refs: ["OWASP ASVS 4.0 V2.7", "NIST SP 800-63B §4.2", "ISO/IEC 27001:2022 A.8.5", "PCI DSS 4.0 Req. 8.4"]
+    tests: [AUTH-T06]
+    en:
+      title: Multi-factor authentication for administrators
+      description: The system MUST require a second authentication factor at every sign-in to an account with administrator rights.
+      rationale: Administrator accounts are the most valuable target, and a stolen password alone then cannot take them over.
+      criteria:
+        - method: test
+          text: An administrator who enters a correct password is not signed in until a valid second factor is given.
+        - method: test
+          text: An administrator account cannot be saved without an enrolled second factor.
+    sv:
+      title: Flerfaktorsautentisering för administratörer
+      description: Systemet SKA kräva en andra autentiseringsfaktor vid varje inloggning till ett konto med administratörsbehörighet.
+      rationale: Administratörskonton är det mest värdefulla målet, och ett stulet lösenord räcker då inte för att ta över dem.
+      criteria:
+        - method: test
+          text: En administratör som anger rätt lösenord loggas inte in förrän en giltig andra faktor har angetts.
+        - method: test
+          text: Ett administratörskonto kan inte sparas utan en registrerad andra faktor.
+
+  - id: AUTH-07
+    type: security
+    obligation: should
+    priority: high
+    tags: [mfa, totp, webauthn]
+    refs: ["NIST SP 800-63B §5.1.4", "NIST SP 800-63B §5.1.8", "OWASP ASVS 4.0 V2.8"]
+    tests: [AUTH-T07]
+    en:
+      title: Multi-factor authentication offered to every user
+      description: The system SHOULD let every user enrol a second factor based on TOTP authenticator apps or FIDO2/WebAuthn security keys.
+      rationale: Optional multi-factor authentication protects users who handle sensitive data even when it is not mandatory for them.
+      criteria:
+        - method: demonstration
+          text: A user without administrator rights enrols a TOTP app and a security key from the account settings and is asked for one of them at the next sign-in.
+    sv:
+      title: Flerfaktorsautentisering erbjuds alla användare
+      description: Systemet BÖR låta varje användare registrera en andra faktor i form av en TOTP-app eller en säkerhetsnyckel för FIDO2/WebAuthn.
+      rationale: Frivillig flerfaktorsautentisering skyddar användare som hanterar känsliga uppgifter även när den inte är tvingande för dem.
+      criteria:
+        - method: demonstration
+          text: En användare utan administratörsbehörighet registrerar en TOTP-app och en säkerhetsnyckel i kontoinställningarna och ombeds ange en av dem vid nästa inloggning.
+
+  - id: AUTH-08
+    type: security
+    obligation: may
+    priority: low
+    tags: [passkey, webauthn, passwordless]
+    refs: ["NIST SP 800-63B §5.1.8", "W3C Web Authentication Level 2"]
+    tests: [AUTH-T08]
+    en:
+      title: Passwordless sign-in with passkeys
+      description: The system MAY offer sign-in with a FIDO2/WebAuthn passkey as an alternative to the password.
+      rationale: Passkeys are bound to the site and resist phishing, and users then have no password to forget or reuse.
+      criteria:
+        - method: demonstration
+          text: A user registers a passkey and then signs in with it without entering a password.
+    sv:
+      title: Lösenordsfri inloggning med passkey
+      description: Systemet FÅR erbjuda inloggning med en passkey enligt FIDO2/WebAuthn som alternativ till lösenord.
+      rationale: En passkey är knuten till webbplatsen och står emot nätfiske, och användaren har inget lösenord att glömma eller återanvända.
+      criteria:
+        - method: demonstration
+          text: En användare registrerar en passkey och loggar sedan in med den utan att ange något lösenord.
+
+  - id: AUTH-09
+    type: security
+    obligation: must
+    priority: critical
+    tags: [brute-force, lockout, rate-limiting]
+    refs: ["NIST SP 800-63B §5.2.2", "OWASP ASVS 4.0 V2.2.1", "OWASP Top 10 2021 A07"]
+    tests: [AUTH-T09]
+    en:
+      title: Limit on failed sign-in attempts
+      description: The system MUST allow at most 10 failed sign-in attempts per account within 15 minutes and refuse further attempts on that account for the rest of the period.
+      rationale: Limiting attempts per account stops online password guessing without locking the account permanently.
+      criteria:
+        - method: test
+          text: After 10 failed attempts within 15 minutes, the 11th attempt is refused even with the correct password, and a sign-in succeeds again once the period has passed.
+    sv:
+      title: Begränsning av misslyckade inloggningsförsök
+      description: Systemet SKA tillåta högst 10 misslyckade inloggningsförsök per konto inom 15 minuter och avvisa fler försök mot kontot under resten av perioden.
+      rationale: En gräns per konto stoppar gissning av lösenord online utan att kontot spärras permanent.
+      criteria:
+        - method: test
+          text: Efter 10 misslyckade försök inom 15 minuter avvisas det elfte försöket även med rätt lösenord, och inloggning fungerar igen när perioden har gått ut.
+
+  - id: AUTH-10
+    type: security
+    obligation: must_not
+    priority: medium
+    tags: [login, user-enumeration]
+    refs: ["OWASP ASVS 4.0 V2.2", "OWASP Web Security Testing Guide WSTG-IDNT-04"]
+    tests: [AUTH-T10]
+    en:
+      title: Sign-in errors do not reveal accounts
+      description: The system MUST NOT show whether the user name or the password was wrong when a sign-in fails.
+      rationale: Different messages let an attacker find out which accounts exist and focus guessing on them.
+      criteria:
+        - method: test
+          text: A sign-in with an unknown user name and one with a wrong password give the same message and the same HTTP status.
+    sv:
+      title: Felmeddelanden vid inloggning avslöjar inte konton
+      description: Systemet SKA INTE visa om det var användarnamnet eller lösenordet som var fel när en inloggning misslyckas.
+      rationale: Olika meddelanden låter en angripare ta reda på vilka konton som finns och rikta gissningarna mot dem.
+      criteria:
+        - method: test
+          text: En inloggning med ett okänt användarnamn och en med fel lösenord ger samma meddelande och samma HTTP-status.
+
+  - id: AUTH-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [account-recovery, password-reset]
+    refs: ["OWASP ASVS 4.0 V2.5", "OWASP Forgot Password Cheat Sheet"]
+    tests: [AUTH-T11]
+    en:
+      title: Password reset links expire
+      description: The system MUST make a password reset link invalid 30 minutes after it was issued.
+      rationale: A short lifetime limits the damage when a reset e-mail is read by someone else or found later in a mailbox.
+      criteria:
+        - method: test
+          text: A reset link used after 29 minutes works and a link used after 31 minutes is refused.
+    sv:
+      title: Länkar för lösenordsåterställning upphör att gälla
+      description: Systemet SKA göra en länk för lösenordsåterställning ogiltig 30 minuter efter att den skapades.
+      rationale: En kort giltighetstid begränsar skadan när ett återställningsmejl läses av någon annan eller hittas senare i en inkorg.
+      criteria:
+        - method: test
+          text: En återställningslänk som används efter 29 minuter fungerar och en länk som används efter 31 minuter avvisas.
+
+  - id: AUTH-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [account-recovery, password-reset]
+    refs: ["OWASP ASVS 4.0 V2.5", "OWASP Forgot Password Cheat Sheet"]
+    tests: [AUTH-T11]
+    en:
+      title: Password reset links work only once
+      description: The system MUST invalidate a password reset link as soon as it has been used to set a new password.
+      rationale: A link that can be reused lets anyone who later obtains it take over the account again.
+      criteria:
+        - method: test
+          text: Opening the same reset link a second time after a successful reset shows that the link is no longer valid.
+    sv:
+      title: Länkar för lösenordsåterställning fungerar en gång
+      description: Systemet SKA ogiltigförklara en länk för lösenordsåterställning så snart den har använts för att välja ett nytt lösenord.
+      rationale: En länk som går att återanvända låter den som senare kommer över den ta över kontot igen.
+      criteria:
+        - method: test
+          text: Om samma återställningslänk öppnas en andra gång efter en lyckad återställning visas att länken inte längre är giltig.
+
+  - id: AUTH-13
+    type: security
+    obligation: must_not
+    priority: medium
+    tags: [account-recovery, security-questions]
+    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.5.6"]
+    tests: [AUTH-T12]
+    en:
+      title: No security questions for account recovery
+      description: The system MUST NOT use knowledge-based questions such as the name of a first pet to recover an account.
+      rationale: The answers are often public or easy to guess from social media and give weak protection.
+      criteria:
+        - method: review
+          text: The recovery flow and its configuration contain no security questions.
+    sv:
+      title: Inga säkerhetsfrågor vid återställning av konto
+      description: Systemet SKA INTE använda kunskapsbaserade frågor, till exempel namnet på ett första husdjur, för att återställa ett konto.
+      rationale: Svaren är ofta offentliga eller går att gissa från sociala medier och ger ett svagt skydd.
+      criteria:
+        - method: review
+          text: Flödet för kontoåterställning och dess konfiguration innehåller inga säkerhetsfrågor.
+
+  - id: AUTH-14
+    type: security
+    obligation: must
+    priority: critical
+    tags: [sso, saml, oidc]
+    refs: ["OWASP ASVS 4.0 V3.5", "OpenID Connect Core 1.0 §3.1.3.7", "OWASP SAML Security Cheat Sheet"]
+    tests: [AUTH-T13]
+    en:
+      title: Single sign-on assertions are fully validated
+      description: The system MUST reject a SAML assertion or OpenID Connect ID token whose signature, issuer, audience or expiry time is not valid.
+      rationale: A forged or replayed assertion that is accepted gives the attacker any identity they choose.
+      criteria:
+        - method: test
+          text: Tokens with a broken signature, a wrong issuer, a wrong audience or an expired time are each rejected, and a valid token is accepted.
+    sv:
+      title: Intyg vid enkel inloggning valideras fullständigt
+      description: Systemet SKA avvisa ett SAML-intyg eller en ID-token från OpenID Connect vars signatur, utfärdare, mottagare eller giltighetstid inte är giltig.
+      rationale: Ett förfalskat eller återanvänt intyg som godtas ger angriparen vilken identitet hen vill.
+      criteria:
+        - method: test
+          text: Token med trasig signatur, fel utfärdare, fel mottagare eller passerad giltighetstid avvisas var för sig, och en giltig token godtas.
+
+  - id: AUTH-15
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [default-credentials, installation]
+    refs: ["OWASP ASVS 4.0 V2.5.4", "OWASP Top 10 2021 A05", "PCI DSS 4.0 Req. 2.2.2"]
+    tests: [AUTH-T14]
+    en:
+      title: No default credentials
+      description: The system MUST NOT ship with a built-in account that has a known default password.
+      rationale: Default passwords are published in manuals and scanned for by automated attacks within hours of deployment.
+      criteria:
+        - method: test
+          text: A fresh installation asks for the first administrator password during setup and accepts no sign-in before that.
+        - method: review
+          text: The installation package and documentation contain no account with a preset password.
+    sv:
+      title: Inga standardinloggningar
+      description: Systemet SKA INTE levereras med ett inbyggt konto som har ett känt standardlösenord.
+      rationale: Standardlösenord står i manualer och söks efter av automatiska attacker inom några timmar efter driftsättning.
+      criteria:
+        - method: test
+          text: En ny installation ber om den första administratörens lösenord under installationen och tillåter ingen inloggning dessförinnan.
+        - method: review
+          text: Installationspaketet och dokumentationen innehåller inget konto med förinställt lösenord.
+
+  - id: AUTH-16
+    type: security
+    obligation: should
+    priority: medium
+    tags: [notification, account-change]
+    refs: ["OWASP ASVS 4.0 V2.2.3"]
+    tests: [AUTH-T15]
+    en:
+      title: Users are notified of credential changes
+      description: The system SHOULD send an e-mail to the user within 5 minutes after the password is changed or a second factor is removed.
+      rationale: The real account owner can then react quickly if someone else made the change.
+      criteria:
+        - method: test
+          text: Changing the password and removing a second factor each produce an e-mail to the registered address within 5 minutes.
+    sv:
+      title: Användare meddelas om ändrade inloggningsuppgifter
+      description: Systemet BÖR skicka ett mejl till användaren inom 5 minuter efter att lösenordet har bytts eller en andra faktor har tagits bort.
+      rationale: Den verkliga kontoinnehavaren kan då reagera direkt om någon annan har gjort ändringen.
+      criteria:
+        - method: test
+          text: Ett byte av lösenord och borttagning av en andra faktor ger var för sig ett mejl till den registrerade adressen inom 5 minuter.
+
+  - id: AUTH-17
+    type: security
+    obligation: must
+    priority: high
+    tags: [re-authentication, account-change]
+    refs: ["OWASP ASVS 4.0 V3.7.1", "NIST SP 800-63B §7.2"]
+    tests: [AUTH-T16]
+    en:
+      title: Re-authentication before changing credentials
+      description: The system MUST ask for the current password or a second factor before a user changes the password, the e-mail address or the multi-factor settings.
+      rationale: Someone who finds an unlocked, signed-in session then cannot take over the account permanently.
+      criteria:
+        - method: test
+          text: Each of the three changes is refused until the current password or a second factor has been entered.
+    sv:
+      title: Ny autentisering innan inloggningsuppgifter ändras
+      description: Systemet SKA be om det nuvarande lösenordet eller en andra faktor innan en användare byter lösenord, e-postadress eller inställningar för flerfaktorsautentisering.
+      rationale: Den som hittar en olåst, inloggad session kan då inte ta över kontot permanent.
+      criteria:
+        - method: test
+          text: Var och en av de tre ändringarna avvisas tills det nuvarande lösenordet eller en andra faktor har angetts.
 
 tests:
   - id: AUTH-T01
@@ -59,3 +423,443 @@ tests:
         - action: Ange ett nytt lösenord med 12 tecken och spara.
           expected: Lösenordet godtas och användaren får veta att det har bytts.
           data: Abcdefgh1!xy
+
+  - id: AUTH-T02
+    priority: high
+    execution: automated
+    tags: [password, breached-passwords]
+    refs: ["NIST SP 800-63B §5.1.1.2"]
+    en:
+      title: Breached passwords are rejected by the password API
+      description: A script sets passwords taken from the breached-password list and random passwords through the API.
+      preconditions: A test account exists and the script has a sample of 50 entries from the configured breached-password list.
+      expected: Every listed password is rejected and every random password is accepted.
+      steps:
+        - action: For each of the 50 listed passwords, call the change-password endpoint.
+          expected: Each call is rejected with a validation error that names the password as too common.
+          data: Password1234, qwertyuiop12, iloveyou2020
+        - action: Call the endpoint with 10 randomly generated passwords of 16 characters.
+          expected: Each call succeeds.
+        - action: Count the entries in the configured list.
+          expected: The list holds at least 100 000 entries.
+    sv:
+      title: Läckta lösenord avvisas av lösenordstjänsten
+      description: Ett skript väljer lösenord från listan över läckta lösenord och slumpade lösenord via API:et.
+      preconditions: Ett testkonto finns och skriptet har ett urval på 50 poster från den konfigurerade listan över läckta lösenord.
+      expected: Alla listade lösenord avvisas och alla slumpade lösenord godtas.
+      steps:
+        - action: Anropa tjänsten för lösenordsbyte med vart och ett av de 50 listade lösenorden.
+          expected: Varje anrop avvisas med ett valideringsfel som anger att lösenordet är för vanligt.
+          data: Password1234, qwertyuiop12, iloveyou2020
+        - action: Anropa tjänsten med 10 slumpade lösenord på 16 tecken.
+          expected: Varje anrop lyckas.
+        - action: Räkna posterna i den konfigurerade listan.
+          expected: Listan innehåller minst 100 000 poster.
+
+  - id: AUTH-T03
+    priority: medium
+    execution: manual
+    tags: [password, password-policy]
+    refs: ["NIST SP 800-63B §5.1.1.2"]
+    en:
+      title: An old password does not force a change
+      description: Checks that the password policy has no expiry period.
+      preconditions: A test account whose password change date has been set to 400 days ago in the test database.
+      expected: The user signs in without being asked to change the password.
+      steps:
+        - action: Open the password policy settings as an administrator.
+          expected: No setting forces a password change after a number of days, or it is turned off.
+        - action: Sign in with the test account.
+          expected: The user reaches the start page with no prompt to change the password.
+    sv:
+      title: Ett gammalt lösenord tvingar inte fram byte
+      description: Kontrollerar att lösenordspolicyn saknar giltighetstid.
+      preconditions: Ett testkonto vars datum för senaste lösenordsbyte har satts till 400 dagar bakåt i testdatabasen.
+      expected: Användaren loggar in utan att ombes byta lösenord.
+      steps:
+        - action: Öppna inställningarna för lösenordspolicyn som administratör.
+          expected: Det finns ingen inställning som tvingar fram lösenordsbyte efter ett antal dagar, eller så är den avstängd.
+        - action: Logga in med testkontot.
+          expected: Användaren kommer till startsidan utan uppmaning att byta lösenord.
+
+  - id: AUTH-T04
+    priority: medium
+    execution: manual
+    tags: [password, passphrase]
+    refs: ["NIST SP 800-63B §5.1.1.2"]
+    en:
+      title: A long passphrase with spaces and Unicode works in full
+      description: Checks that long passphrases are accepted and not truncated.
+      preconditions: A signed-in user is on the change-password page.
+      expected: The full passphrase is required to sign in.
+      steps:
+        - action: Set a 64-character passphrase that contains spaces and the letters å, ä and ö.
+          expected: The passphrase is accepted.
+          data: "blåbär och äppelpaj är godast på hösten när löven faller ner nu!!"
+        - action: Sign out and sign in with only the first 63 characters.
+          expected: The sign-in fails.
+        - action: Sign in with the full 64-character passphrase.
+          expected: The sign-in succeeds.
+    sv:
+      title: En lång lösenfras med mellanslag och Unicode fungerar i sin helhet
+      description: Kontrollerar att långa lösenfraser godtas och inte kortas av.
+      preconditions: En inloggad användare är på sidan för att byta lösenord.
+      expected: Hela lösenfrasen krävs för att logga in.
+      steps:
+        - action: Välj en lösenfras på 64 tecken som innehåller mellanslag och bokstäverna å, ä och ö.
+          expected: Lösenfrasen godtas.
+          data: "blåbär och äppelpaj är godast på hösten när löven faller ner nu!!"
+        - action: Logga ut och logga in med bara de första 63 tecknen.
+          expected: Inloggningen misslyckas.
+        - action: Logga in med hela lösenfrasen på 64 tecken.
+          expected: Inloggningen lyckas.
+
+  - id: AUTH-T05
+    priority: critical
+    execution: manual
+    tags: [credential-storage, hashing]
+    refs: ["OWASP ASVS 4.0 V2.4"]
+    en:
+      title: Stored credentials contain no readable passwords
+      description: Inspects the database, logs and a backup for passwords in readable form.
+      preconditions: Read access to a test database, its application logs and a recent backup; two test accounts with the same known password.
+      expected: Only salted hashes are stored and the known password appears nowhere.
+      steps:
+        - action: Look up the credential rows of the two test accounts.
+          expected: Each row holds a hash string, and the two hashes differ because of different salts.
+        - action: Search the database dump, the logs and the backup for the known password.
+          expected: The password is not found anywhere.
+          data: Testlösen0rd-2026
+    sv:
+      title: Lagrade inloggningsuppgifter innehåller inga läsbara lösenord
+      description: Granskar databasen, loggarna och en säkerhetskopia efter läsbara lösenord.
+      preconditions: Läsbehörighet till en testdatabas, dess applikationsloggar och en färsk säkerhetskopia; två testkonton med samma kända lösenord.
+      expected: Bara saltade hashar lagras och det kända lösenordet förekommer ingenstans.
+      steps:
+        - action: Slå upp raderna med inloggningsuppgifter för de två testkontona.
+          expected: Varje rad innehåller en hashsträng, och de två hasharna skiljer sig åt tack vare olika salt.
+        - action: Sök efter det kända lösenordet i databasdumpen, loggarna och säkerhetskopian.
+          expected: Lösenordet hittas ingenstans.
+          data: Testlösen0rd-2026
+
+  - id: AUTH-T06
+    priority: critical
+    execution: manual
+    tags: [mfa, administrator]
+    refs: ["OWASP ASVS 4.0 V2.7"]
+    en:
+      title: Administrators cannot sign in without a second factor
+      description: Checks that multi-factor authentication is enforced for administrator accounts.
+      preconditions: An administrator account with an enrolled TOTP app, and a user account without a second factor.
+      expected: Administrator access always needs a second factor.
+      steps:
+        - action: Sign in as the administrator with the correct password and close the second-factor prompt.
+          expected: The administrator is not signed in and no administrator page can be opened.
+        - action: Enter a valid TOTP code.
+          expected: The administrator is signed in.
+        - action: As the administrator, try to grant administrator rights to the user without a second factor.
+          expected: The change is refused until that user has enrolled a second factor.
+    sv:
+      title: Administratörer kan inte logga in utan en andra faktor
+      description: Kontrollerar att flerfaktorsautentisering krävs för administratörskonton.
+      preconditions: Ett administratörskonto med registrerad TOTP-app och ett användarkonto utan andra faktor.
+      expected: Administratörsåtkomst kräver alltid en andra faktor.
+      steps:
+        - action: Logga in som administratören med rätt lösenord och stäng rutan för den andra faktorn.
+          expected: Administratören loggas inte in och ingen administratörssida går att öppna.
+        - action: Ange en giltig TOTP-kod.
+          expected: Administratören loggas in.
+        - action: Försök som administratör ge administratörsbehörighet till användaren utan andra faktor.
+          expected: Ändringen avvisas tills användaren har registrerat en andra faktor.
+
+  - id: AUTH-T07
+    priority: high
+    execution: manual
+    tags: [mfa, totp, webauthn]
+    refs: ["NIST SP 800-63B §5.1.4", "NIST SP 800-63B §5.1.8"]
+    en:
+      title: An ordinary user enrols TOTP and a security key
+      description: Checks that users without administrator rights can enrol both kinds of second factor.
+      preconditions: A signed-in user without administrator rights, a TOTP app on a phone and a FIDO2 security key.
+      expected: Both factors are enrolled and requested at sign-in.
+      steps:
+        - action: Open the account settings and enrol the TOTP app by scanning the QR code and entering a code.
+          expected: The TOTP app is listed as an enrolled factor.
+        - action: Enrol the security key.
+          expected: The security key is listed as an enrolled factor.
+        - action: Sign out and sign in again with the password.
+          expected: The user is asked for one of the two factors before being signed in.
+    sv:
+      title: En vanlig användare registrerar TOTP och en säkerhetsnyckel
+      description: Kontrollerar att användare utan administratörsbehörighet kan registrera båda typerna av andra faktor.
+      preconditions: En inloggad användare utan administratörsbehörighet, en TOTP-app i en telefon och en säkerhetsnyckel för FIDO2.
+      expected: Båda faktorerna registreras och efterfrågas vid inloggning.
+      steps:
+        - action: Öppna kontoinställningarna och registrera TOTP-appen genom att skanna QR-koden och ange en kod.
+          expected: TOTP-appen visas som registrerad faktor.
+        - action: Registrera säkerhetsnyckeln.
+          expected: Säkerhetsnyckeln visas som registrerad faktor.
+        - action: Logga ut och logga in igen med lösenordet.
+          expected: Användaren ombeds ange en av de två faktorerna innan inloggningen slutförs.
+
+  - id: AUTH-T08
+    priority: low
+    execution: manual
+    tags: [passkey, webauthn]
+    refs: ["NIST SP 800-63B §5.1.8"]
+    en:
+      title: Sign in with a passkey instead of a password
+      description: Checks passwordless sign-in where the feature is offered.
+      preconditions: A signed-in user and a browser or device that supports passkeys.
+      expected: The user signs in with the passkey and no password.
+      steps:
+        - action: Register a passkey from the account settings.
+          expected: The passkey is listed under the account.
+        - action: Sign out and choose sign-in with passkey on the sign-in page.
+          expected: The user is signed in after confirming on the device, without entering a password.
+    sv:
+      title: Inloggning med passkey i stället för lösenord
+      description: Kontrollerar lösenordsfri inloggning där funktionen erbjuds.
+      preconditions: En inloggad användare och en webbläsare eller enhet som stöder passkeys.
+      expected: Användaren loggar in med sin passkey utan lösenord.
+      steps:
+        - action: Registrera en passkey i kontoinställningarna.
+          expected: Passkeyn visas under kontot.
+        - action: Logga ut och välj inloggning med passkey på inloggningssidan.
+          expected: Användaren loggas in efter bekräftelse på enheten, utan att ange något lösenord.
+
+  - id: AUTH-T09
+    priority: critical
+    execution: automated
+    tags: [brute-force, lockout]
+    refs: ["NIST SP 800-63B §5.2.2", "OWASP ASVS 4.0 V2.2.1"]
+    en:
+      title: Repeated failed sign-ins are throttled
+      description: A script sends failed sign-ins to one account and checks that further attempts are refused within the window.
+      preconditions: A test account with a known password and a clock the script can advance in the test environment.
+      expected: The 11th attempt within 15 minutes is refused and sign-in works again after the window.
+      steps:
+        - action: Send 10 sign-in requests with a wrong password within 1 minute.
+          expected: Each request fails with the normal sign-in error.
+        - action: Send an 11th request with the correct password.
+          expected: The request is refused with a throttling response.
+        - action: Advance the clock by 15 minutes and sign in with the correct password.
+          expected: The sign-in succeeds.
+    sv:
+      title: Upprepade misslyckade inloggningar begränsas
+      description: Ett skript skickar misslyckade inloggningar mot ett konto och kontrollerar att fler försök avvisas inom tidsfönstret.
+      preconditions: Ett testkonto med känt lösenord och en klocka som skriptet kan flytta fram i testmiljön.
+      expected: Det elfte försöket inom 15 minuter avvisas och inloggning fungerar igen efter tidsfönstret.
+      steps:
+        - action: Skicka 10 inloggningsförsök med fel lösenord inom 1 minut.
+          expected: Varje försök misslyckas med det vanliga inloggningsfelet.
+        - action: Skicka ett elfte försök med rätt lösenord.
+          expected: Försöket avvisas med ett svar om att gränsen är nådd.
+        - action: Flytta fram klockan 15 minuter och logga in med rätt lösenord.
+          expected: Inloggningen lyckas.
+
+  - id: AUTH-T10
+    priority: medium
+    execution: automated
+    tags: [login, user-enumeration]
+    refs: ["OWASP Web Security Testing Guide WSTG-IDNT-04"]
+    en:
+      title: Failed sign-ins look the same for unknown and known accounts
+      description: A script compares the responses to a sign-in with an unknown user name and with a wrong password.
+      preconditions: One existing test account and one user name that does not exist.
+      expected: The two responses cannot be told apart.
+      steps:
+        - action: Sign in with the unknown user name and an arbitrary password.
+          expected: The request fails; the script records the status, body and response time.
+          data: no-such-user@example.com
+        - action: Sign in with the existing account and a wrong password.
+          expected: Status and body are identical to the first response and the median response time over 20 tries differs by less than 50 ms.
+    sv:
+      title: Misslyckade inloggningar ser likadana ut för okända och kända konton
+      description: Ett skript jämför svaren på en inloggning med okänt användarnamn och med fel lösenord.
+      preconditions: Ett befintligt testkonto och ett användarnamn som inte finns.
+      expected: De två svaren går inte att skilja åt.
+      steps:
+        - action: Logga in med det okända användarnamnet och ett godtyckligt lösenord.
+          expected: Försöket misslyckas; skriptet sparar status, svarstext och svarstid.
+          data: no-such-user@example.com
+        - action: Logga in med det befintliga kontot och fel lösenord.
+          expected: Status och svarstext är identiska med det första svaret och mediansvarstiden över 20 försök skiljer sig med mindre än 50 ms.
+
+  - id: AUTH-T11
+    priority: high
+    execution: manual
+    tags: [account-recovery, password-reset]
+    refs: ["OWASP Forgot Password Cheat Sheet"]
+    en:
+      title: Reset links expire and cannot be reused
+      description: Checks the lifetime and single use of password reset links.
+      preconditions: A test account with access to its mailbox and a clock that can be advanced in the test environment.
+      expected: A reset link works once and only within 30 minutes.
+      steps:
+        - action: Request a reset link, advance the clock by 31 minutes and open the link.
+          expected: The page states that the link has expired.
+        - action: Request a new link, open it after 29 minutes and set a new password.
+          expected: The new password is saved.
+        - action: Open the same link again.
+          expected: The page states that the link is no longer valid.
+    sv:
+      title: Återställningslänkar slutar gälla och kan inte återanvändas
+      description: Kontrollerar giltighetstid och engångsanvändning för länkar till lösenordsåterställning.
+      preconditions: Ett testkonto med åtkomst till dess inkorg och en klocka som kan flyttas fram i testmiljön.
+      expected: En återställningslänk fungerar en gång och bara inom 30 minuter.
+      steps:
+        - action: Begär en återställningslänk, flytta fram klockan 31 minuter och öppna länken.
+          expected: Sidan visar att länken har slutat gälla.
+        - action: Begär en ny länk, öppna den efter 29 minuter och välj ett nytt lösenord.
+          expected: Det nya lösenordet sparas.
+        - action: Öppna samma länk igen.
+          expected: Sidan visar att länken inte längre är giltig.
+
+  - id: AUTH-T12
+    priority: medium
+    execution: manual
+    tags: [account-recovery, security-questions]
+    refs: ["NIST SP 800-63B §5.1.1.2"]
+    en:
+      title: Account recovery uses no security questions
+      description: Reviews the recovery flow for knowledge-based questions.
+      preconditions: Access to the recovery flow and to the administrator settings for recovery.
+      expected: Recovery relies on a link or code sent to a registered channel, never on personal questions.
+      steps:
+        - action: Go through the forgotten-password flow from start to end.
+          expected: No step asks a personal question.
+        - action: Review the administrator settings for account recovery.
+          expected: There is no option to set up security questions.
+    sv:
+      title: Kontoåterställning använder inga säkerhetsfrågor
+      description: Granskar flödet för kontoåterställning efter kunskapsbaserade frågor.
+      preconditions: Åtkomst till flödet för kontoåterställning och till administratörsinställningarna för återställning.
+      expected: Återställning bygger på en länk eller kod som skickas till en registrerad kanal, aldrig på personliga frågor.
+      steps:
+        - action: Gå igenom flödet för glömt lösenord från början till slut.
+          expected: Inget steg ställer en personlig fråga.
+        - action: Granska administratörsinställningarna för kontoåterställning.
+          expected: Det finns inget alternativ för att lägga upp säkerhetsfrågor.
+
+  - id: AUTH-T13
+    priority: critical
+    execution: automated
+    tags: [sso, saml, oidc]
+    refs: ["OpenID Connect Core 1.0 §3.1.3.7", "OWASP SAML Security Cheat Sheet"]
+    en:
+      title: Manipulated single sign-on tokens are rejected
+      description: A script posts altered ID tokens or SAML assertions to the sign-in callback.
+      preconditions: A test identity provider whose signing key the script controls, configured as trusted by the system.
+      expected: Only the unaltered, valid token creates a session.
+      steps:
+        - action: Send a valid token from the test identity provider.
+          expected: A session is created for the test user.
+        - action: Send the same token with one changed byte in the signature.
+          expected: The request is rejected and no session is created.
+        - action: Send tokens signed correctly but with a wrong issuer, a wrong audience and an expiry time in the past.
+          expected: Each token is rejected and no session is created.
+        - action: Send a token signed with the algorithm set to none.
+          expected: The token is rejected.
+    sv:
+      title: Manipulerade token för enkel inloggning avvisas
+      description: Ett skript skickar ändrade ID-token eller SAML-intyg till inloggningens återanropsadress.
+      preconditions: En testidentitetsleverantör vars signeringsnyckel skriptet styr, konfigurerad som betrodd i systemet.
+      expected: Bara den oförändrade, giltiga token skapar en session.
+      steps:
+        - action: Skicka en giltig token från testidentitetsleverantören.
+          expected: En session skapas för testanvändaren.
+        - action: Skicka samma token med en ändrad byte i signaturen.
+          expected: Anropet avvisas och ingen session skapas.
+        - action: Skicka korrekt signerade token med fel utfärdare, fel mottagare och en giltighetstid som har passerat.
+          expected: Varje token avvisas och ingen session skapas.
+        - action: Skicka en token där algoritmen är satt till none.
+          expected: Token avvisas.
+
+  - id: AUTH-T14
+    priority: critical
+    execution: manual
+    tags: [default-credentials, installation]
+    refs: ["OWASP Top 10 2021 A05"]
+    en:
+      title: A fresh installation has no default account
+      description: Checks that a new installation cannot be entered with known default credentials.
+      preconditions: A clean installation package and the product documentation.
+      expected: No sign-in is possible until the installer has chosen the first administrator password.
+      steps:
+        - action: Install the system and open the sign-in page before completing setup.
+          expected: The setup wizard is shown instead, asking for the first administrator account and password.
+        - action: Try common default credentials on the sign-in page and the API.
+          expected: Every attempt is refused.
+          data: admin/admin, admin/password, root/root
+        - action: Search the documentation and configuration files for preset passwords.
+          expected: None are found.
+    sv:
+      title: En ny installation saknar standardkonto
+      description: Kontrollerar att en ny installation inte går att logga in i med kända standarduppgifter.
+      preconditions: Ett rent installationspaket och produktens dokumentation.
+      expected: Ingen inloggning är möjlig förrän den som installerar har valt den första administratörens lösenord.
+      steps:
+        - action: Installera systemet och öppna inloggningssidan innan installationen är klar.
+          expected: Installationsguiden visas i stället och ber om det första administratörskontot och lösenordet.
+        - action: Prova vanliga standarduppgifter på inloggningssidan och i API:et.
+          expected: Varje försök avvisas.
+          data: admin/admin, admin/password, root/root
+        - action: Sök i dokumentationen och konfigurationsfilerna efter förinställda lösenord.
+          expected: Inga hittas.
+
+  - id: AUTH-T15
+    priority: medium
+    execution: manual
+    tags: [notification, account-change]
+    refs: ["OWASP ASVS 4.0 V2.2.3"]
+    en:
+      title: E-mail is sent when credentials change
+      description: Checks the security notifications for a changed password and a removed second factor.
+      preconditions: A signed-in test user with an enrolled TOTP app and access to the registered mailbox.
+      expected: Each change produces a notification within 5 minutes.
+      steps:
+        - action: Change the password.
+          expected: Within 5 minutes an e-mail arrives that names the change and the time, without the password.
+        - action: Remove the TOTP app as a second factor.
+          expected: Within 5 minutes an e-mail arrives that names the removed factor.
+    sv:
+      title: Mejl skickas när inloggningsuppgifter ändras
+      description: Kontrollerar säkerhetsmeddelandena för bytt lösenord och borttagen andra faktor.
+      preconditions: En inloggad testanvändare med registrerad TOTP-app och åtkomst till den registrerade inkorgen.
+      expected: Varje ändring ger ett meddelande inom 5 minuter.
+      steps:
+        - action: Byt lösenord.
+          expected: Inom 5 minuter kommer ett mejl som anger ändringen och tidpunkten, utan lösenordet.
+        - action: Ta bort TOTP-appen som andra faktor.
+          expected: Inom 5 minuter kommer ett mejl som anger vilken faktor som togs bort.
+
+  - id: AUTH-T16
+    priority: high
+    execution: manual
+    tags: [re-authentication, account-change]
+    refs: ["OWASP ASVS 4.0 V3.7.1"]
+    en:
+      title: Credential changes ask for the current password
+      description: Checks re-authentication before sensitive account changes.
+      preconditions: A test user has been signed in for more than 5 minutes.
+      expected: None of the changes is saved without re-authentication.
+      steps:
+        - action: Try to change the password without entering the current one.
+          expected: The change is refused and the current password is requested.
+        - action: Try to change the e-mail address.
+          expected: The current password or a second factor is requested before the change is saved.
+        - action: Try to turn off multi-factor authentication.
+          expected: The current password or a second factor is requested before the change is saved.
+    sv:
+      title: Ändrade inloggningsuppgifter kräver det nuvarande lösenordet
+      description: Kontrollerar ny autentisering före känsliga ändringar av kontot.
+      preconditions: En testanvändare har varit inloggad i mer än 5 minuter.
+      expected: Ingen av ändringarna sparas utan ny autentisering.
+      steps:
+        - action: Försök byta lösenord utan att ange det nuvarande.
+          expected: Ändringen avvisas och det nuvarande lösenordet efterfrågas.
+        - action: Försök byta e-postadress.
+          expected: Det nuvarande lösenordet eller en andra faktor efterfrågas innan ändringen sparas.
+        - action: Försök stänga av flerfaktorsautentiseringen.
+          expected: Det nuvarande lösenordet eller en andra faktor efterfrågas innan ändringen sparas.

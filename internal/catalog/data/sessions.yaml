@@ -1,0 +1,567 @@
+area: sessions
+prefix: SESS
+group: security
+name: {en: Session management, sv: Sessionshantering}
+description:
+  en: Session tokens, idle and absolute timeouts, sign-out, cookie attributes, session fixation, concurrent sessions and cross-site request forgery.
+  sv: Sessionstoken, tidsgränser för inaktivitet och total längd, utloggning, attribut på kakor, sessionsfixering, samtidiga sessioner och förfalskade anrop mellan webbplatser.
+
+requirements:
+  - id: SESS-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [session-token, randomness]
+    refs: ["OWASP ASVS 4.0 V3.2.2", "OWASP Session Management Cheat Sheet", "NIST SP 800-63B §7.1"]
+    tests: [SESS-T01]
+    en:
+      title: Session tokens are unpredictable
+      description: The system MUST generate session tokens with at least 128 bits of randomness from a cryptographically secure random number generator.
+      rationale: Predictable or short tokens can be guessed, which gives the attacker someone else's signed-in session.
+      criteria:
+        - method: test
+          text: A sample of 10 000 tokens contains no duplicates and passes a statistical randomness test.
+        - method: review
+          text: The code creates tokens with the platform's cryptographically secure generator and at least 16 random bytes.
+    sv:
+      title: Sessionstoken går inte att förutsäga
+      description: Systemet SKA skapa sessionstoken med minst 128 bitars slumpmässighet från en kryptografiskt säker slumptalsgenerator.
+      rationale: Förutsägbara eller korta token kan gissas, vilket ger angriparen någon annans inloggade session.
+      criteria:
+        - method: test
+          text: Ett urval på 10 000 token innehåller inga dubbletter och klarar ett statistiskt slumptest.
+        - method: review
+          text: Koden skapar token med plattformens kryptografiskt säkra generator och minst 16 slumpmässiga byte.
+
+  - id: SESS-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [session-fixation, login]
+    refs: ["OWASP ASVS 4.0 V3.2.1", "OWASP Web Security Testing Guide WSTG-SESS-03"]
+    tests: [SESS-T02]
+    en:
+      title: New session token at sign-in
+      description: The system MUST issue a new session token and invalidate the previous one when a user signs in or raises their privilege level.
+      rationale: Keeping the token from before sign-in allows session fixation, where the attacker plants a token and waits for the victim to sign in.
+      criteria:
+        - method: test
+          text: The token after sign-in differs from the token before, and the old token gives no access after sign-in.
+    sv:
+      title: Ny sessionstoken vid inloggning
+      description: Systemet SKA utfärda en ny sessionstoken och ogiltigförklara den tidigare när en användare loggar in eller höjer sin behörighetsnivå.
+      rationale: Om token från före inloggningen behålls blir sessionsfixering möjlig, där angriparen planterar en token och väntar på att offret loggar in.
+      criteria:
+        - method: test
+          text: Token efter inloggning skiljer sig från token före, och den gamla token ger ingen åtkomst efter inloggningen.
+
+  - id: SESS-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [timeout, idle-timeout]
+    refs: ["OWASP ASVS 4.0 V3.3.2", "NIST SP 800-63B §7.2", "PCI DSS 4.0 Req. 8.2.8"]
+    tests: [SESS-T03]
+    en:
+      title: Idle session timeout
+      description: The system MUST end a session after 30 minutes without any request from the user.
+      rationale: An unattended signed-in browser is otherwise open to anyone who passes by.
+      criteria:
+        - method: test
+          text: A request after 29 minutes of inactivity succeeds and a request after 31 minutes of inactivity is redirected to sign-in.
+    sv:
+      title: Tidsgräns för inaktiv session
+      description: Systemet SKA avsluta en session efter 30 minuter utan något anrop från användaren.
+      rationale: En obevakad inloggad webbläsare är annars öppen för vem som helst som går förbi.
+      criteria:
+        - method: test
+          text: Ett anrop efter 29 minuters inaktivitet lyckas och ett anrop efter 31 minuters inaktivitet skickas vidare till inloggningen.
+
+  - id: SESS-04
+    type: security
+    obligation: must
+    priority: medium
+    tags: [timeout, absolute-timeout]
+    refs: ["OWASP ASVS 4.0 V3.3.2", "NIST SP 800-63B §7.2"]
+    tests: [SESS-T04]
+    en:
+      title: Absolute session lifetime
+      description: The system MUST end a session 12 hours after sign-in, even while the user is active.
+      rationale: A maximum lifetime limits how long a stolen token can be used.
+      criteria:
+        - method: test
+          text: A session that sends a request every 5 minutes is ended 12 hours after sign-in.
+    sv:
+      title: Längsta livslängd för en session
+      description: Systemet SKA avsluta en session 12 timmar efter inloggningen, även om användaren är aktiv.
+      rationale: En högsta livslängd begränsar hur länge en stulen token kan användas.
+      criteria:
+        - method: test
+          text: En session som skickar ett anrop var femte minut avslutas 12 timmar efter inloggningen.
+
+  - id: SESS-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [logout]
+    refs: ["OWASP ASVS 4.0 V3.3.1", "OWASP Web Security Testing Guide WSTG-SESS-06"]
+    tests: [SESS-T05]
+    en:
+      title: Sign-out invalidates the session on the server
+      description: The system MUST invalidate the session token on the server when the user signs out.
+      rationale: Deleting only the cookie in the browser leaves a copied token valid.
+      criteria:
+        - method: test
+          text: A copy of the session token taken before sign-out is refused with 401 after sign-out.
+    sv:
+      title: Utloggning ogiltigförklarar sessionen på servern
+      description: Systemet SKA ogiltigförklara sessionstoken på servern när användaren loggar ut.
+      rationale: Om bara kakan i webbläsaren tas bort fortsätter en kopierad token att gälla.
+      criteria:
+        - method: test
+          text: En kopia av sessionstoken som togs före utloggningen avvisas med 401 efter utloggningen.
+
+  - id: SESS-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [cookies, secure-flag, httponly, samesite]
+    refs: ["OWASP ASVS 4.0 V3.4", "RFC 6265bis", "OWASP Web Security Testing Guide WSTG-SESS-02"]
+    tests: [SESS-T06]
+    en:
+      title: Session cookie attributes
+      description: The system MUST set the Secure, HttpOnly and SameSite=Lax or SameSite=Strict attributes on every cookie that holds a session token.
+      rationale: The attributes keep the token off unencrypted connections, away from scripts and out of most cross-site requests.
+      criteria:
+        - method: test
+          text: The Set-Cookie headers for session cookies contain Secure, HttpOnly and SameSite with the value Lax or Strict.
+    sv:
+      title: Attribut på sessionskakor
+      description: Systemet SKA sätta attributen Secure, HttpOnly och SameSite=Lax eller SameSite=Strict på varje kaka som innehåller en sessionstoken.
+      rationale: Attributen håller token borta från okrypterade förbindelser, från skript och från de flesta anrop mellan webbplatser.
+      criteria:
+        - method: test
+          text: Huvudena Set-Cookie för sessionskakor innehåller Secure, HttpOnly och SameSite med värdet Lax eller Strict.
+
+  - id: SESS-07
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [session-token, url]
+    refs: ["OWASP ASVS 4.0 V3.1.1", "OWASP Session Management Cheat Sheet"]
+    tests: [SESS-T07]
+    en:
+      title: Session tokens never appear in URLs
+      description: The system MUST NOT put session tokens in URLs, query strings or redirect targets.
+      rationale: URLs end up in browser history, proxy logs and Referer headers, where others can read them.
+      criteria:
+        - method: test
+          text: A proxy log of a complete user session shows no session token in any requested URL or Location header.
+    sv:
+      title: Sessionstoken förekommer aldrig i adresser
+      description: Systemet SKA INTE lägga sessionstoken i adresser, frågesträngar eller mål för omdirigeringar.
+      rationale: Adresser hamnar i webbläsarens historik, i proxyloggar och i Referer-huvuden, där andra kan läsa dem.
+      criteria:
+        - method: test
+          text: En proxylogg från en hel användarsession visar ingen sessionstoken i någon begärd adress eller i något Location-huvud.
+
+  - id: SESS-08
+    type: security
+    obligation: must
+    priority: critical
+    tags: [csrf]
+    refs: ["OWASP ASVS 4.0 V4.2.2", "OWASP Cross-Site Request Forgery Prevention Cheat Sheet", "OWASP Top 10 2021 A01"]
+    tests: [SESS-T08]
+    en:
+      title: Protection against cross-site request forgery
+      description: The system MUST reject a state-changing request authenticated by a cookie when it carries neither a valid anti-forgery token nor an Origin header of the system's own site.
+      rationale: Without the check, any web page the victim visits can send changes in the victim's name.
+      criteria:
+        - method: test
+          text: A POST request from a foreign origin with a valid session cookie and no anti-forgery token is rejected with 403.
+    sv:
+      title: Skydd mot förfalskade anrop mellan webbplatser
+      description: Systemet SKA avvisa ett ändrande anrop som autentiseras med en kaka när det varken har en giltig token mot förfalskning eller ett Origin-huvud från systemets egen webbplats.
+      rationale: Utan kontrollen kan varje webbsida som offret besöker skicka ändringar i offrets namn.
+      criteria:
+        - method: test
+          text: Ett POST-anrop från en främmande origin med en giltig sessionskaka och utan token mot förfalskning avvisas med 403.
+
+  - id: SESS-09
+    type: security
+    obligation: should
+    priority: medium
+    tags: [concurrent-sessions, session-overview]
+    refs: ["OWASP ASVS 4.0 V3.3.4"]
+    tests: [SESS-T09]
+    en:
+      title: Users see and end their active sessions
+      description: The system SHOULD show users a list of their active sessions with device, location and last activity, and let them end each one.
+      rationale: Users can then spot and close a session they do not recognise.
+      criteria:
+        - method: demonstration
+          text: With sessions in two browsers, the user sees both in the list and ending one makes its next request fail with 401.
+    sv:
+      title: Användare ser och avslutar sina aktiva sessioner
+      description: Systemet BÖR visa användare en lista över deras aktiva sessioner med enhet, plats och senaste aktivitet och låta dem avsluta var och en.
+      rationale: Användare kan då upptäcka och stänga en session som de inte känner igen.
+      criteria:
+        - method: demonstration
+          text: Med sessioner i två webbläsare ser användaren båda i listan, och när den ena avslutas misslyckas dess nästa anrop med 401.
+
+  - id: SESS-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [password-change, session-termination]
+    refs: ["OWASP ASVS 4.0 V3.3.3"]
+    tests: [SESS-T10]
+    en:
+      title: Password change ends other sessions
+      description: The system MUST end every other session of the account when its password is changed or reset.
+      rationale: An attacker who has stolen a session keeps access after the password change if other sessions survive.
+      criteria:
+        - method: test
+          text: After a password change in browser A, the session in browser B is refused with 401 on its next request, and browser A stays signed in.
+    sv:
+      title: Byte av lösenord avslutar andra sessioner
+      description: Systemet SKA avsluta kontots övriga sessioner när dess lösenord byts eller återställs.
+      rationale: En angripare som har stulit en session behåller åtkomsten efter lösenordsbytet om de andra sessionerna lever kvar.
+      criteria:
+        - method: test
+          text: Efter ett lösenordsbyte i webbläsare A avvisas sessionen i webbläsare B med 401 vid nästa anrop, och webbläsare A förblir inloggad.
+
+  - id: SESS-11
+    type: security
+    obligation: may
+    priority: low
+    tags: [concurrent-sessions, session-limit]
+    refs: ["NIST SP 800-53 AC-10"]
+    tests: [SESS-T11]
+    en:
+      title: Limit on concurrent sessions
+      description: The system MAY limit each account to 3 concurrent sessions and end the oldest session when a fourth one starts.
+      rationale: A limit makes shared or stolen accounts easier to notice.
+      criteria:
+        - method: test
+          text: Signing in from a fourth browser ends the session in the browser that signed in first.
+    sv:
+      title: Gräns för samtidiga sessioner
+      description: Systemet FÅR begränsa varje konto till 3 samtidiga sessioner och avsluta den äldsta sessionen när en fjärde startar.
+      rationale: En gräns gör delade eller stulna konton lättare att upptäcka.
+      criteria:
+        - method: test
+          text: En inloggning från en fjärde webbläsare avslutar sessionen i den webbläsare som loggade in först.
+
+tests:
+  - id: SESS-T01
+    priority: critical
+    execution: automated
+    tags: [session-token, randomness]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-01"]
+    en:
+      title: Session tokens are long, unique and random
+      description: A script collects session tokens from repeated sign-ins and analyses them.
+      preconditions: A test account and a script that can sign in 10 000 times without being throttled in the test environment.
+      expected: The tokens have at least 128 bits of entropy and no duplicates.
+      steps:
+        - action: Sign in 10 000 times and store each session token.
+          expected: All 10 000 tokens are stored.
+        - action: Check the length and character set of each token.
+          expected: Each token encodes at least 16 random bytes.
+        - action: Look for duplicates and run a statistical randomness test on the token bytes.
+          expected: There are no duplicates and the randomness test passes.
+    sv:
+      title: Sessionstoken är långa, unika och slumpmässiga
+      description: Ett skript samlar in sessionstoken från upprepade inloggningar och analyserar dem.
+      preconditions: Ett testkonto och ett skript som kan logga in 10 000 gånger utan att begränsas i testmiljön.
+      expected: Token har minst 128 bitars entropi och inga dubbletter.
+      steps:
+        - action: Logga in 10 000 gånger och spara varje sessionstoken.
+          expected: Alla 10 000 token sparas.
+        - action: Kontrollera längd och teckenuppsättning för varje token.
+          expected: Varje token kodar minst 16 slumpmässiga byte.
+        - action: Sök efter dubbletter och kör ett statistiskt slumptest på tokenbytena.
+          expected: Det finns inga dubbletter och slumptestet går igenom.
+
+  - id: SESS-T02
+    priority: critical
+    execution: manual
+    tags: [session-fixation]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-03"]
+    en:
+      title: The session token changes at sign-in
+      description: Compares the session token before and after sign-in.
+      preconditions: A browser with developer tools and a test account.
+      expected: Sign-in creates a new token and the old token is useless.
+      steps:
+        - action: Open the sign-in page and note the value of the session cookie.
+          expected: A value is noted, or no session cookie exists yet.
+        - action: Sign in and note the session cookie again.
+          expected: The value differs from the one noted before.
+        - action: Send a request to a signed-in page using the old value.
+          expected: The request is treated as not signed in.
+    sv:
+      title: Sessionstoken byts vid inloggning
+      description: Jämför sessionstoken före och efter inloggning.
+      preconditions: En webbläsare med utvecklarverktyg och ett testkonto.
+      expected: Inloggningen skapar en ny token och den gamla token är oanvändbar.
+      steps:
+        - action: Öppna inloggningssidan och anteckna värdet på sessionskakan.
+          expected: Ett värde antecknas, eller så finns ingen sessionskaka ännu.
+        - action: Logga in och anteckna sessionskakan igen.
+          expected: Värdet skiljer sig från det som antecknades tidigare.
+        - action: Skicka ett anrop till en sida som kräver inloggning med det gamla värdet.
+          expected: Anropet behandlas som ej inloggat.
+
+  - id: SESS-T03
+    priority: high
+    execution: automated
+    tags: [timeout, idle-timeout]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-07"]
+    en:
+      title: Session ends after 30 minutes of inactivity
+      description: A script signs in, waits and sends requests at the edge of the idle timeout.
+      preconditions: Two test accounts and a test environment clock the script can advance.
+      expected: The session survives 29 minutes of inactivity and ends after 31 minutes.
+      steps:
+        - action: Sign in with account 1, advance the clock by 29 minutes and request a signed-in page.
+          expected: The page is returned.
+        - action: Sign in with account 2, advance the clock by 31 minutes and request a signed-in page.
+          expected: The response redirects to sign-in or returns 401.
+    sv:
+      title: Sessionen avslutas efter 30 minuters inaktivitet
+      description: Ett skript loggar in, väntar och skickar anrop vid gränsen för tidsgränsen vid inaktivitet.
+      preconditions: Två testkonton och en klocka i testmiljön som skriptet kan flytta fram.
+      expected: Sessionen klarar 29 minuters inaktivitet och avslutas efter 31 minuter.
+      steps:
+        - action: Logga in med konto 1, flytta fram klockan 29 minuter och begär en sida som kräver inloggning.
+          expected: Sidan returneras.
+        - action: Logga in med konto 2, flytta fram klockan 31 minuter och begär en sida som kräver inloggning.
+          expected: Svaret skickar vidare till inloggningen eller är 401.
+
+  - id: SESS-T04
+    priority: medium
+    execution: automated
+    tags: [timeout, absolute-timeout]
+    refs: ["NIST SP 800-63B §7.2"]
+    en:
+      title: Active session ends after 12 hours
+      description: A script keeps a session active and checks that it still ends at the absolute limit.
+      preconditions: A test account and a test environment clock the script can advance.
+      expected: The session ends 12 hours after sign-in despite activity.
+      steps:
+        - action: Sign in, then advance the clock in steps of 5 minutes and send a request after each step until 11 hours and 55 minutes have passed.
+          expected: Every request succeeds.
+        - action: Advance the clock to 12 hours and 1 minute after sign-in and send a request.
+          expected: The response redirects to sign-in or returns 401.
+    sv:
+      title: En aktiv session avslutas efter 12 timmar
+      description: Ett skript håller en session aktiv och kontrollerar att den ändå avslutas vid den absoluta gränsen.
+      preconditions: Ett testkonto och en klocka i testmiljön som skriptet kan flytta fram.
+      expected: Sessionen avslutas 12 timmar efter inloggningen trots aktivitet.
+      steps:
+        - action: Logga in, flytta sedan fram klockan i steg om 5 minuter och skicka ett anrop efter varje steg tills 11 timmar och 55 minuter har gått.
+          expected: Varje anrop lyckas.
+        - action: Flytta fram klockan till 12 timmar och 1 minut efter inloggningen och skicka ett anrop.
+          expected: Svaret skickar vidare till inloggningen eller är 401.
+
+  - id: SESS-T05
+    priority: high
+    execution: manual
+    tags: [logout]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-06"]
+    en:
+      title: A copied token is useless after sign-out
+      description: Replays a session token after the user has signed out.
+      preconditions: A signed-in test user and a tool for sending HTTP requests with a chosen cookie.
+      expected: The server refuses the old token.
+      steps:
+        - action: Copy the session cookie value from the browser.
+          expected: The value is copied.
+        - action: Sign out in the browser.
+          expected: The sign-in page is shown.
+        - action: Send a request to a signed-in page with the copied cookie value.
+          expected: The response is 401 or a redirect to sign-in.
+    sv:
+      title: En kopierad token är oanvändbar efter utloggning
+      description: Återanvänder en sessionstoken efter att användaren har loggat ut.
+      preconditions: En inloggad testanvändare och ett verktyg för att skicka HTTP-anrop med en vald kaka.
+      expected: Servern avvisar den gamla token.
+      steps:
+        - action: Kopiera värdet på sessionskakan från webbläsaren.
+          expected: Värdet kopieras.
+        - action: Logga ut i webbläsaren.
+          expected: Inloggningssidan visas.
+        - action: Skicka ett anrop till en sida som kräver inloggning med det kopierade kakvärdet.
+          expected: Svaret är 401 eller en omdirigering till inloggningen.
+
+  - id: SESS-T06
+    priority: high
+    execution: automated
+    tags: [cookies, secure-flag, httponly, samesite]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-02"]
+    en:
+      title: Session cookies carry the security attributes
+      description: A script signs in and inspects every Set-Cookie header in the responses.
+      preconditions: A test account and the list of cookie names that hold session tokens.
+      expected: Every session cookie has Secure, HttpOnly and SameSite=Lax or Strict.
+      steps:
+        - action: Sign in over HTTPS and collect all Set-Cookie headers.
+          expected: At least one session cookie is set.
+        - action: Check the attributes of each session cookie.
+          expected: Each has Secure, HttpOnly and SameSite with the value Lax or Strict.
+        - action: In a browser console, read document.cookie.
+          expected: No session cookie is visible to the script.
+    sv:
+      title: Sessionskakor har säkerhetsattributen
+      description: Ett skript loggar in och granskar varje Set-Cookie-huvud i svaren.
+      preconditions: Ett testkonto och listan över namn på kakor som innehåller sessionstoken.
+      expected: Varje sessionskaka har Secure, HttpOnly och SameSite=Lax eller Strict.
+      steps:
+        - action: Logga in över HTTPS och samla in alla Set-Cookie-huvuden.
+          expected: Minst en sessionskaka sätts.
+        - action: Kontrollera attributen på varje sessionskaka.
+          expected: Var och en har Secure, HttpOnly och SameSite med värdet Lax eller Strict.
+        - action: Läs document.cookie i webbläsarens konsol.
+          expected: Ingen sessionskaka är synlig för skriptet.
+
+  - id: SESS-T07
+    priority: high
+    execution: automated
+    tags: [session-token, url]
+    refs: ["OWASP Session Management Cheat Sheet"]
+    en:
+      title: No session token in URLs during a user session
+      description: A script records the traffic of a scripted user session and searches all URLs for the token.
+      preconditions: A recorded browser session through a proxy that covers sign-in, navigation, a redirect and sign-out.
+      expected: The session token appears only in cookies.
+      steps:
+        - action: Extract the session token value from the recorded cookies.
+          expected: The token value is known.
+        - action: Search every request URL, query string and Location header in the recording for the token.
+          expected: No match is found.
+    sv:
+      title: Ingen sessionstoken i adresser under en användarsession
+      description: Ett skript spelar in trafiken från en skriptad användarsession och söker efter token i alla adresser.
+      preconditions: En inspelad webbläsarsession via en proxy som omfattar inloggning, navigering, en omdirigering och utloggning.
+      expected: Sessionstoken förekommer bara i kakor.
+      steps:
+        - action: Hämta sessionstokens värde från de inspelade kakorna.
+          expected: Värdet på token är känt.
+        - action: Sök efter token i varje begärd adress, frågesträng och Location-huvud i inspelningen.
+          expected: Ingen träff hittas.
+
+  - id: SESS-T08
+    priority: critical
+    execution: automated
+    tags: [csrf]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-05"]
+    en:
+      title: Forged cross-site requests are rejected
+      description: A script sends state-changing requests with a valid session cookie from a foreign origin.
+      preconditions: A signed-in test session whose cookie the script can use and a state-changing endpoint such as changing the display name.
+      expected: Only requests with a valid anti-forgery token or the system's own origin are accepted.
+      steps:
+        - action: Send a POST request with the session cookie, Origin set to a foreign site and no anti-forgery token.
+          expected: The response is 403 and the display name is unchanged.
+          data: "Origin: https://attacker.example"
+        - action: Send the same request with an anti-forgery token taken from another session.
+          expected: The response is 403.
+        - action: Send the request from the system's own page with its valid token.
+          expected: The change is saved.
+    sv:
+      title: Förfalskade anrop mellan webbplatser avvisas
+      description: Ett skript skickar ändrande anrop med en giltig sessionskaka från en främmande origin.
+      preconditions: En inloggad testsession vars kaka skriptet kan använda och en ändrande endpoint, till exempel byte av visningsnamn.
+      expected: Bara anrop med en giltig token mot förfalskning eller systemets egen origin godtas.
+      steps:
+        - action: Skicka ett POST-anrop med sessionskakan, Origin satt till en främmande webbplats och ingen token mot förfalskning.
+          expected: Svaret är 403 och visningsnamnet är oförändrat.
+          data: "Origin: https://attacker.example"
+        - action: Skicka samma anrop med en token mot förfalskning som tagits från en annan session.
+          expected: Svaret är 403.
+        - action: Skicka anropet från systemets egen sida med dess giltiga token.
+          expected: Ändringen sparas.
+
+  - id: SESS-T09
+    priority: medium
+    execution: manual
+    tags: [concurrent-sessions, session-overview]
+    refs: ["OWASP ASVS 4.0 V3.3.4"]
+    en:
+      title: A user ends one of their sessions from the session list
+      description: Checks the list of active sessions and ending a session from it.
+      preconditions: The same test user is signed in in two different browsers.
+      expected: Both sessions are listed and the chosen one ends.
+      steps:
+        - action: In browser A, open the list of active sessions.
+          expected: Two sessions are listed with device, approximate location and last activity time.
+        - action: End the session that belongs to browser B.
+          expected: The session disappears from the list.
+        - action: Reload a page in browser B.
+          expected: Browser B is sent to the sign-in page.
+    sv:
+      title: En användare avslutar en av sina sessioner från sessionslistan
+      description: Kontrollerar listan över aktiva sessioner och att en session kan avslutas därifrån.
+      preconditions: Samma testanvändare är inloggad i två olika webbläsare.
+      expected: Båda sessionerna visas och den valda avslutas.
+      steps:
+        - action: Öppna listan över aktiva sessioner i webbläsare A.
+          expected: Två sessioner visas med enhet, ungefärlig plats och tid för senaste aktivitet.
+        - action: Avsluta sessionen som hör till webbläsare B.
+          expected: Sessionen försvinner från listan.
+        - action: Ladda om en sida i webbläsare B.
+          expected: Webbläsare B skickas till inloggningssidan.
+
+  - id: SESS-T10
+    priority: high
+    execution: manual
+    tags: [password-change, session-termination]
+    refs: ["OWASP ASVS 4.0 V3.3.3"]
+    en:
+      title: Other sessions end when the password is changed
+      description: Changes the password in one browser and checks the session in another.
+      preconditions: The same test user is signed in in browsers A and B.
+      expected: Browser B is signed out and browser A stays signed in.
+      steps:
+        - action: Change the password in browser A.
+          expected: The change is confirmed and browser A stays signed in.
+        - action: Reload a page in browser B.
+          expected: Browser B is sent to the sign-in page.
+    sv:
+      title: Andra sessioner avslutas när lösenordet byts
+      description: Byter lösenord i en webbläsare och kontrollerar sessionen i en annan.
+      preconditions: Samma testanvändare är inloggad i webbläsare A och B.
+      expected: Webbläsare B loggas ut och webbläsare A förblir inloggad.
+      steps:
+        - action: Byt lösenord i webbläsare A.
+          expected: Bytet bekräftas och webbläsare A förblir inloggad.
+        - action: Ladda om en sida i webbläsare B.
+          expected: Webbläsare B skickas till inloggningssidan.
+
+  - id: SESS-T11
+    priority: low
+    execution: automated
+    tags: [concurrent-sessions, session-limit]
+    refs: ["NIST SP 800-53 AC-10"]
+    en:
+      title: A fourth session ends the oldest one
+      description: A script opens four sessions for one account and checks which remain valid.
+      preconditions: The concurrent session limit is set to 3 for the test account.
+      expected: Only the three most recent sessions remain valid.
+      steps:
+        - action: Sign in four times in sequence with separate cookie stores and keep each token.
+          expected: Four sign-ins succeed.
+        - action: Send a request with each of the four tokens.
+          expected: The first token is refused with 401 and the other three succeed.
+    sv:
+      title: En fjärde session avslutar den äldsta
+      description: Ett skript öppnar fyra sessioner för ett konto och kontrollerar vilka som fortfarande gäller.
+      preconditions: Gränsen för samtidiga sessioner är satt till 3 för testkontot.
+      expected: Bara de tre senaste sessionerna gäller.
+      steps:
+        - action: Logga in fyra gånger i följd med separata lager för kakor och spara varje token.
+          expected: Fyra inloggningar lyckas.
+        - action: Skicka ett anrop med var och en av de fyra token.
+          expected: Den första token avvisas med 401 och de andra tre lyckas.

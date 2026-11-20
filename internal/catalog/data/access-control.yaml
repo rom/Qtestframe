@@ -1,0 +1,575 @@
+area: access-control
+prefix: ACC
+group: security
+name: {en: Access control, sv: Behörighetsstyrning}
+description:
+  en: Roles and permissions, least privilege, object-level authorisation, administration functions, segregation of duties and tenant isolation.
+  sv: Roller och behörigheter, minsta möjliga behörighet, behörighetskontroll per objekt, administrationsfunktioner, åtskillnad av arbetsuppgifter och isolering mellan kunder.
+
+requirements:
+  - id: ACC-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [authorisation, deny-by-default]
+    refs: ["OWASP ASVS 4.0 V4.1", "OWASP Top 10 2021 A01", "NIST SP 800-53 AC-3"]
+    tests: [ACC-T01]
+    en:
+      title: Access is denied by default
+      description: The system MUST deny a request on the server when no explicit permission grants the signed-in user access to the requested function.
+      rationale: When a new function is added without a rule, deny by default keeps it closed instead of open to everyone.
+      criteria:
+        - method: test
+          text: Every endpoint called without a session or with a user who has no role returns 401 or 403.
+        - method: review
+          text: The authorisation code has a final rule that denies access when no other rule matched.
+    sv:
+      title: Åtkomst nekas som standard
+      description: Systemet SKA neka en begäran på servern när ingen uttrycklig behörighet ger den inloggade användaren åtkomst till den begärda funktionen.
+      rationale: När en ny funktion läggs till utan regel förblir den stängd i stället för öppen för alla.
+      criteria:
+        - method: test
+          text: Varje endpoint som anropas utan session eller av en användare utan roll svarar 401 eller 403.
+        - method: review
+          text: Behörighetskoden har en sista regel som nekar åtkomst när ingen annan regel matchade.
+
+  - id: ACC-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [authorisation, idor, object-level]
+    refs: ["OWASP ASVS 4.0 V4.2.1", "OWASP Top 10 2021 A01", "OWASP API Security Top 10 2023 API1"]
+    tests: [ACC-T02]
+    en:
+      title: Object-level authorisation on every request
+      description: The system MUST check on the server, for each request, that the signed-in user has access to the specific record identified in the request.
+      rationale: Checking only the function lets a user read or change other users' records by changing an id in the URL.
+      criteria:
+        - method: test
+          text: User A who requests a record owned by user B, by changing the id in the URL or body, receives 403 or 404 and no data.
+    sv:
+      title: Behörighetskontroll per objekt vid varje begäran
+      description: Systemet SKA för varje begäran kontrollera på servern att den inloggade användaren har åtkomst till just den post som anges i begäran.
+      rationale: Om bara funktionen kontrolleras kan en användare läsa eller ändra andras poster genom att byta ett id i adressen.
+      criteria:
+        - method: test
+          text: Användare A som begär en post som ägs av användare B, genom att ändra id i adressen eller i anropets innehåll, får 403 eller 404 och inga data.
+
+  - id: ACC-03
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [authorisation, client-side]
+    refs: ["OWASP ASVS 4.0 V4.1.2", "OWASP Top 10 2021 A01"]
+    tests: [ACC-T03]
+    en:
+      title: Roles sent by the client are not trusted
+      description: The system MUST NOT base authorisation decisions on role or permission values sent by the client in parameters, hidden fields, headers or cookies.
+      rationale: Any value sent from the browser can be changed by the user, so trusting it lets users grant themselves rights.
+      criteria:
+        - method: test
+          text: Adding or changing a role parameter, header or cookie in a request does not change the result of the authorisation check.
+    sv:
+      title: Roller som klienten skickar litas inte på
+      description: Systemet SKA INTE grunda behörighetsbeslut på roll- eller behörighetsvärden som klienten skickar i parametrar, dolda fält, huvuden eller kakor.
+      rationale: Användaren kan ändra varje värde som skickas från webbläsaren, så om systemet litar på dem kan användare ge sig själva behörigheter.
+      criteria:
+        - method: test
+          text: Att lägga till eller ändra en rollparameter, ett huvud eller en kaka i ett anrop ändrar inte utfallet av behörighetskontrollen.
+
+  - id: ACC-04
+    type: security
+    obligation: should
+    priority: medium
+    tags: [rbac, roles]
+    refs: ["NIST SP 800-53 AC-2", "NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.5.15"]
+    tests: [ACC-T04]
+    en:
+      title: Permissions are granted through roles
+      description: The system SHOULD grant permissions to users only through named roles and not directly to individual user accounts.
+      rationale: Roles make it possible to review and change who can do what without inspecting each account.
+      criteria:
+        - method: inspection
+          text: The user administration offers no way to attach a single permission to a user, and every permission a user has can be traced to a role.
+    sv:
+      title: Behörigheter ges via roller
+      description: Systemet BÖR ge användare behörigheter enbart via namngivna roller och inte direkt till enskilda användarkonton.
+      rationale: Roller gör det möjligt att granska och ändra vem som kan göra vad utan att gå igenom varje konto.
+      criteria:
+        - method: inspection
+          text: Användaradministrationen har inget sätt att koppla en enskild behörighet till en användare, och varje behörighet en användare har går att spåra till en roll.
+
+  - id: ACC-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [least-privilege, provisioning]
+    refs: ["NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.8.2", "OWASP ASVS 4.0 V4.1.3"]
+    tests: [ACC-T05]
+    en:
+      title: New accounts start with the least privileged role
+      description: The system MUST give a newly created account the role with the fewest permissions until an administrator assigns another role.
+      rationale: Accounts that start with broad rights tend to keep them, which widens the damage of a compromised account.
+      criteria:
+        - method: test
+          text: An account created through registration, invitation and the API has only the least privileged role.
+    sv:
+      title: Nya konton börjar med den minst privilegierade rollen
+      description: Systemet SKA ge ett nytt konto den roll som har minst behörigheter tills en administratör tilldelar en annan roll.
+      rationale: Konton som börjar med breda behörigheter tenderar att behålla dem, vilket ökar skadan om kontot kapas.
+      criteria:
+        - method: test
+          text: Ett konto som skapas via registrering, inbjudan och API:et har bara den minst privilegierade rollen.
+
+  - id: ACC-06
+    type: security
+    obligation: must
+    priority: critical
+    tags: [administrator, privileged-functions]
+    refs: ["OWASP ASVS 4.0 V4.3.1", "NIST SP 800-53 AC-6(9)", "ISO/IEC 27001:2022 A.8.2"]
+    tests: [ACC-T06]
+    en:
+      title: Administration functions need the administrator role
+      description: The system MUST refuse user, role and configuration management requests from any account without the administrator role.
+      rationale: Administration functions can change every other control, so they need the strictest protection.
+      criteria:
+        - method: test
+          text: A list of every administration endpoint called by an ordinary user returns 403 for each one.
+    sv:
+      title: Administrationsfunktioner kräver administratörsrollen
+      description: Systemet SKA avvisa anrop för hantering av användare, roller och konfiguration från konton som saknar administratörsrollen.
+      rationale: Administrationsfunktioner kan ändra alla andra skydd och behöver därför det striktaste skyddet.
+      criteria:
+        - method: test
+          text: En lista med varje administrationsendpoint som anropas av en vanlig användare ger 403 för var och en.
+
+  - id: ACC-07
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [segregation-of-duties, approval]
+    refs: ["NIST SP 800-53 AC-5", "ISO/IEC 27001:2022 A.5.3"]
+    tests: [ACC-T07]
+    en:
+      title: Segregation of duties for approvals
+      description: The system MUST NOT let the user who created or last changed an item be the one who approves it.
+      rationale: Requiring a second person stops a single user from pushing through an unchecked change or payment.
+      criteria:
+        - method: test
+          text: The creator of an item sees no approve action, and a direct approve request from the creator is refused with 403.
+    sv:
+      title: Åtskillnad av arbetsuppgifter vid godkännande
+      description: Systemet SKA INTE låta den användare som skapade eller senast ändrade ett objekt vara den som godkänner det.
+      rationale: Krav på en andra person hindrar en enskild användare från att driva igenom en ogranskad ändring eller betalning.
+      criteria:
+        - method: test
+          text: Den som skapade ett objekt ser ingen godkännandeåtgärd, och ett direkt anrop för godkännande från samma person avvisas med 403.
+
+  - id: ACC-08
+    type: security
+    obligation: must
+    priority: critical
+    tags: [multi-tenancy, tenant-isolation]
+    refs: ["OWASP ASVS 4.0 V4.2", "ISO/IEC 27001:2022 A.8.3", "OWASP Multi-Tenant Security Cheat Sheet"]
+    tests: [ACC-T08]
+    en:
+      title: Tenant data is isolated
+      description: The system MUST limit every read and write of tenant data to the tenant of the signed-in user.
+      rationale: A missing tenant filter in a single query can expose one customer's data to every other customer.
+      criteria:
+        - method: test
+          text: A user of tenant A who uses ids, search, export and reports never receives or changes data that belongs to tenant B.
+    sv:
+      title: Kunddata är isolerade per kund
+      description: Systemet SKA begränsa varje läsning och skrivning av kunddata till den kund som den inloggade användaren tillhör.
+      rationale: Ett saknat kundfilter i en enda fråga kan visa en kunds data för alla andra kunder.
+      criteria:
+        - method: test
+          text: En användare hos kund A som använder id, sökning, export och rapporter får aldrig se eller ändra data som tillhör kund B.
+
+  - id: ACC-09
+    type: security
+    obligation: should
+    priority: medium
+    tags: [access-review, reporting]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "NIST SP 800-53 AC-2(3)", "PCI DSS 4.0 Req. 7.2.4"]
+    tests: [ACC-T09]
+    en:
+      title: Report for periodic access reviews
+      description: The system SHOULD let an administrator export a list of every account with its roles and last sign-in date for review every 90 days.
+      rationale: Regular reviews find accounts that no longer need their access, such as those of people who changed jobs.
+      criteria:
+        - method: demonstration
+          text: The administrator exports the report as CSV and it lists each account, its roles and the date of its last sign-in.
+    sv:
+      title: Rapport för regelbunden behörighetsgranskning
+      description: Systemet BÖR låta en administratör exportera en lista över varje konto med dess roller och senaste inloggningsdatum för granskning var 90:e dag.
+      rationale: Regelbundna granskningar hittar konton som inte längre behöver sin behörighet, till exempel hos personer som har bytt tjänst.
+      criteria:
+        - method: demonstration
+          text: Administratören exporterar rapporten som CSV, och den visar varje konto, dess roller och datum för senaste inloggning.
+
+  - id: ACC-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [revocation, roles]
+    refs: ["NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18"]
+    tests: [ACC-T10]
+    en:
+      title: Revoked permissions take effect within one minute
+      description: The system MUST enforce a removed role or disabled account within 1 minute, including in sessions that are already active.
+      rationale: When someone leaves or misuses their access, waiting for their session to expire leaves the access open.
+      criteria:
+        - method: test
+          text: A user whose role is removed while signed in is refused the corresponding function within 1 minute without signing out.
+    sv:
+      title: Återkallade behörigheter gäller inom en minut
+      description: Systemet SKA tillämpa en borttagen roll eller ett inaktiverat konto inom 1 minut, även i sessioner som redan är aktiva.
+      rationale: När någon slutar eller missbrukar sin åtkomst lämnar en väntan på att sessionen ska löpa ut åtkomsten öppen.
+      criteria:
+        - method: test
+          text: En användare vars roll tas bort under pågående inloggning nekas motsvarande funktion inom 1 minut utan att logga ut.
+
+  - id: ACC-11
+    type: security
+    obligation: may
+    priority: low
+    tags: [just-in-time, elevation]
+    refs: ["NIST SP 800-53 AC-2(2)", "NIST SP 800-53 AC-6"]
+    tests: [ACC-T11]
+    en:
+      title: Time-limited elevated access
+      description: The system MAY offer temporary elevated roles that are removed automatically after at most 8 hours.
+      rationale: Granting elevated rights only for the time a task takes reduces the number of standing privileged accounts.
+      criteria:
+        - method: test
+          text: A temporary role granted with a duration of 8 hours is gone after 8 hours without manual action, and the removal is logged.
+    sv:
+      title: Tidsbegränsad utökad behörighet
+      description: Systemet FÅR erbjuda tillfälliga utökade roller som tas bort automatiskt efter högst 8 timmar.
+      rationale: Att ge utökade behörigheter bara under den tid en uppgift tar minskar antalet konton med permanent hög behörighet.
+      criteria:
+        - method: test
+          text: En tillfällig roll som ges med en varaktighet på 8 timmar är borta efter 8 timmar utan manuell åtgärd, och borttagningen loggas.
+
+tests:
+  - id: ACC-T01
+    priority: critical
+    execution: automated
+    tags: [authorisation, deny-by-default]
+    refs: ["OWASP ASVS 4.0 V4.1"]
+    en:
+      title: Every endpoint refuses callers without permission
+      description: A script calls every route from the API description without a session and with a user who has no role.
+      preconditions: The machine-readable API description lists every route, and a test account without any role exists.
+      expected: No route returns data or performs an action for the two callers.
+      steps:
+        - action: Call each route without a session.
+          expected: Each response is 401, except routes marked as public in the API description.
+        - action: Call each route signed in as the account without a role.
+          expected: Each response is 403, except routes marked as public.
+        - action: Compare the routes served by the application with the routes in the API description.
+          expected: The application serves no route that is missing from the description.
+    sv:
+      title: Varje endpoint avvisar anropare utan behörighet
+      description: Ett skript anropar varje väg i API-beskrivningen utan session och med en användare som saknar roll.
+      preconditions: Den maskinläsbara API-beskrivningen listar varje väg, och ett testkonto utan roll finns.
+      expected: Ingen väg returnerar data eller utför en åtgärd för de två anroparna.
+      steps:
+        - action: Anropa varje väg utan session.
+          expected: Varje svar är 401, förutom vägar som är markerade som publika i API-beskrivningen.
+        - action: Anropa varje väg inloggad som kontot utan roll.
+          expected: Varje svar är 403, förutom vägar som är markerade som publika.
+        - action: Jämför vägarna som applikationen svarar på med vägarna i API-beskrivningen.
+          expected: Applikationen svarar inte på någon väg som saknas i beskrivningen.
+
+  - id: ACC-T02
+    priority: critical
+    execution: automated
+    tags: [idor, object-level]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-04"]
+    en:
+      title: Records of another user cannot be reached by changing ids
+      description: A script requests, updates and deletes records owned by user B while signed in as user A.
+      preconditions: Two test users A and B with the same role, each owning at least one record of every record type.
+      expected: User A cannot read, change or delete any record owned by B.
+      steps:
+        - action: As user A, send GET requests for each of B's record ids.
+          expected: Each response is 403 or 404 and contains none of B's data.
+        - action: As user A, send PUT and DELETE requests for each of B's record ids.
+          expected: Each response is 403 or 404, and B's records are unchanged when read as B.
+        - action: As user A, include B's record ids in nested fields of a create request.
+          expected: The request is refused or the nested ids are ignored.
+    sv:
+      title: Andra användares poster kan inte nås genom att byta id
+      description: Ett skript hämtar, uppdaterar och tar bort poster som ägs av användare B när det är inloggat som användare A.
+      preconditions: Två testanvändare A och B med samma roll, som var och en äger minst en post av varje posttyp.
+      expected: Användare A kan inte läsa, ändra eller ta bort någon post som B äger.
+      steps:
+        - action: Skicka som användare A GET-anrop för vart och ett av B:s post-id.
+          expected: Varje svar är 403 eller 404 och innehåller inga av B:s data.
+        - action: Skicka som användare A PUT- och DELETE-anrop för vart och ett av B:s post-id.
+          expected: Varje svar är 403 eller 404, och B:s poster är oförändrade när de läses som B.
+        - action: Ta som användare A med B:s post-id i nästlade fält i ett anrop som skapar en post.
+          expected: Anropet avvisas eller de nästlade id:na ignoreras.
+
+  - id: ACC-T03
+    priority: critical
+    execution: manual
+    tags: [authorisation, client-side]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-03"]
+    en:
+      title: Tampered role values do not grant rights
+      description: Uses an intercepting proxy to add or change role values in requests from an ordinary user.
+      preconditions: An ordinary test user and an intercepting proxy between browser and server.
+      expected: The user's rights are unchanged whatever role values are sent.
+      steps:
+        - action: Add a role parameter with the value admin to a request for an administration page.
+          expected: The response is 403.
+          data: role=admin
+        - action: Change a cookie or header that looks like it carries a role or permission and repeat the request.
+          expected: The response is 403.
+          data: "X-User-Role: admin"
+        - action: Re-enable a disabled button in the browser developer tools and click it.
+          expected: The server refuses the action with 403.
+    sv:
+      title: Manipulerade rollvärden ger inga behörigheter
+      description: Använder en avlyssnande proxy för att lägga till eller ändra rollvärden i anrop från en vanlig användare.
+      preconditions: En vanlig testanvändare och en avlyssnande proxy mellan webbläsare och server.
+      expected: Användarens behörigheter är oförändrade oavsett vilka rollvärden som skickas.
+      steps:
+        - action: Lägg till en rollparameter med värdet admin i ett anrop till en administrationssida.
+          expected: Svaret är 403.
+          data: role=admin
+        - action: Ändra en kaka eller ett huvud som ser ut att bära en roll eller behörighet och upprepa anropet.
+          expected: Svaret är 403.
+          data: "X-User-Role: admin"
+        - action: Aktivera en inaktiverad knapp i webbläsarens utvecklarverktyg och klicka på den.
+          expected: Servern avvisar åtgärden med 403.
+
+  - id: ACC-T04
+    priority: medium
+    execution: manual
+    tags: [rbac, roles]
+    refs: ["NIST SP 800-53 AC-6"]
+    en:
+      title: Every user permission comes from a role
+      description: Reviews the user administration and the permission data model.
+      preconditions: Administrator access and read access to the permission tables or configuration.
+      expected: No permission is attached directly to a user account.
+      steps:
+        - action: Open a user account in the user administration and look for ways to add a single permission.
+          expected: Only roles can be added to the account.
+        - action: Query the permission data for rows that link a permission directly to a user.
+          expected: No such rows exist.
+    sv:
+      title: Varje användarbehörighet kommer från en roll
+      description: Granskar användaradministrationen och datamodellen för behörigheter.
+      preconditions: Administratörsåtkomst och läsbehörighet till behörighetstabellerna eller konfigurationen.
+      expected: Ingen behörighet är kopplad direkt till ett användarkonto.
+      steps:
+        - action: Öppna ett användarkonto i användaradministrationen och leta efter sätt att lägga till en enskild behörighet.
+          expected: Bara roller kan läggas till på kontot.
+        - action: Sök i behörighetsdata efter rader som kopplar en behörighet direkt till en användare.
+          expected: Inga sådana rader finns.
+
+  - id: ACC-T05
+    priority: high
+    execution: manual
+    tags: [least-privilege, provisioning]
+    refs: ["NIST SP 800-53 AC-6"]
+    en:
+      title: New accounts receive only the least privileged role
+      description: Creates accounts through each supported channel and checks their role.
+      preconditions: Self-registration, invitations and the user API are enabled in the test environment.
+      expected: Every new account has only the least privileged role.
+      steps:
+        - action: Register a new account through self-registration.
+          expected: The account has only the least privileged role.
+        - action: Invite a user without choosing a role and accept the invitation.
+          expected: The account has only the least privileged role.
+        - action: Create a user through the API without a role field.
+          expected: The account has only the least privileged role.
+    sv:
+      title: Nya konton får bara den minst privilegierade rollen
+      description: Skapar konton via varje kanal som stöds och kontrollerar deras roll.
+      preconditions: Självregistrering, inbjudningar och användar-API:et är påslagna i testmiljön.
+      expected: Varje nytt konto har bara den minst privilegierade rollen.
+      steps:
+        - action: Registrera ett nytt konto via självregistrering.
+          expected: Kontot har bara den minst privilegierade rollen.
+        - action: Bjud in en användare utan att välja roll och acceptera inbjudan.
+          expected: Kontot har bara den minst privilegierade rollen.
+        - action: Skapa en användare via API:et utan rollfält.
+          expected: Kontot har bara den minst privilegierade rollen.
+
+  - id: ACC-T06
+    priority: critical
+    execution: automated
+    tags: [administrator, privileged-functions]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-03"]
+    en:
+      title: Ordinary users cannot call administration functions
+      description: A script calls every administration endpoint as an ordinary user and as an administrator.
+      preconditions: A list of administration endpoints, an ordinary test user and an administrator test user.
+      expected: Only the administrator can use the administration endpoints.
+      steps:
+        - action: Call each administration endpoint as the ordinary user.
+          expected: Each response is 403 and nothing is changed.
+        - action: Call each administration endpoint as the administrator.
+          expected: Each call succeeds.
+    sv:
+      title: Vanliga användare kan inte anropa administrationsfunktioner
+      description: Ett skript anropar varje administrationsendpoint som vanlig användare och som administratör.
+      preconditions: En lista över administrationsendpoints, en vanlig testanvändare och en testadministratör.
+      expected: Bara administratören kan använda administrationsendpoints.
+      steps:
+        - action: Anropa varje administrationsendpoint som den vanliga användaren.
+          expected: Varje svar är 403 och inget ändras.
+        - action: Anropa varje administrationsendpoint som administratören.
+          expected: Varje anrop lyckas.
+
+  - id: ACC-T07
+    priority: high
+    execution: manual
+    tags: [segregation-of-duties, approval]
+    refs: ["NIST SP 800-53 AC-5"]
+    en:
+      title: The creator of an item cannot approve it
+      description: Checks the four-eyes principle on an item that needs approval.
+      preconditions: Two users who both have the approver role.
+      expected: Only a different user can approve the item.
+      steps:
+        - action: As user 1, create an item that needs approval.
+          expected: User 1 sees no approve action on the item.
+        - action: As user 1, send the approve request directly to the API.
+          expected: The request is refused with 403.
+        - action: As user 2, approve the item.
+          expected: The item is approved and user 2 is recorded as the approver.
+    sv:
+      title: Den som skapar ett objekt kan inte godkänna det
+      description: Kontrollerar fyraögonprincipen för ett objekt som kräver godkännande.
+      preconditions: Två användare som båda har rollen som godkännare.
+      expected: Bara en annan användare kan godkänna objektet.
+      steps:
+        - action: Skapa som användare 1 ett objekt som kräver godkännande.
+          expected: Användare 1 ser ingen godkännandeåtgärd för objektet.
+        - action: Skicka som användare 1 anropet för godkännande direkt till API:et.
+          expected: Anropet avvisas med 403.
+        - action: Godkänn objektet som användare 2.
+          expected: Objektet godkänns och användare 2 registreras som godkännare.
+
+  - id: ACC-T08
+    priority: critical
+    execution: automated
+    tags: [multi-tenancy, tenant-isolation]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet"]
+    en:
+      title: Cross-tenant access attempts fail
+      description: A script signed in to tenant A tries to reach tenant B's data through ids, search, export and reports.
+      preconditions: Two test tenants A and B with data of every type; tenant B's data contains a unique marker string.
+      expected: No response to tenant A contains tenant B's data or marker.
+      steps:
+        - action: Request tenant B's record ids directly as a user of tenant A.
+          expected: Each response is 403 or 404.
+        - action: Search for the marker string as a user of tenant A.
+          expected: No results are returned.
+          data: TENANT-B-MARKER-7f3a
+        - action: Run every export and report as a user of tenant A and search the output for the marker.
+          expected: The marker is not found.
+    sv:
+      title: Försök till åtkomst mellan kunder misslyckas
+      description: Ett skript som är inloggat hos kund A försöker nå kund B:s data via id, sökning, export och rapporter.
+      preconditions: Två testkunder A och B med data av varje typ; kund B:s data innehåller en unik markörsträng.
+      expected: Inget svar till kund A innehåller kund B:s data eller markör.
+      steps:
+        - action: Begär kund B:s post-id direkt som användare hos kund A.
+          expected: Varje svar är 403 eller 404.
+        - action: Sök efter markörsträngen som användare hos kund A.
+          expected: Inga träffar returneras.
+          data: TENANT-B-MARKER-7f3a
+        - action: Kör varje export och rapport som användare hos kund A och sök efter markören i resultatet.
+          expected: Markören hittas inte.
+
+  - id: ACC-T09
+    priority: medium
+    execution: manual
+    tags: [access-review, reporting]
+    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    en:
+      title: Access review report lists accounts, roles and last sign-in
+      description: Exports the access review report and compares it with the user administration.
+      preconditions: An administrator and at least 5 test accounts with different roles, one of which has never signed in.
+      expected: The report is complete and matches the user administration.
+      steps:
+        - action: Export the access review report as CSV.
+          expected: A file is downloaded with one row per account.
+        - action: Compare the roles and last sign-in dates with the user administration.
+          expected: Every row matches, and the account that never signed in has an empty sign-in date.
+    sv:
+      title: Rapporten för behörighetsgranskning visar konton, roller och senaste inloggning
+      description: Exporterar rapporten för behörighetsgranskning och jämför den med användaradministrationen.
+      preconditions: En administratör och minst 5 testkonton med olika roller, varav ett aldrig har loggat in.
+      expected: Rapporten är fullständig och stämmer med användaradministrationen.
+      steps:
+        - action: Exportera rapporten för behörighetsgranskning som CSV.
+          expected: En fil laddas ned med en rad per konto.
+        - action: Jämför roller och datum för senaste inloggning med användaradministrationen.
+          expected: Varje rad stämmer, och kontot som aldrig har loggat in har ett tomt inloggningsdatum.
+
+  - id: ACC-T10
+    priority: high
+    execution: manual
+    tags: [revocation, roles]
+    refs: ["NIST SP 800-53 AC-2"]
+    en:
+      title: Removing a role affects an active session
+      description: Removes a role and disables an account while the users are signed in.
+      preconditions: Two test users, each signed in in their own browser, one of them with an editor role.
+      expected: Both changes take effect within 1 minute without signing out.
+      steps:
+        - action: As an administrator, remove the editor role from the first user.
+          expected: Within 1 minute the first user is refused when saving an edit.
+        - action: As an administrator, disable the second user's account.
+          expected: Within 1 minute the second user's next request is refused and the session ends.
+    sv:
+      title: En borttagen roll påverkar en aktiv session
+      description: Tar bort en roll och inaktiverar ett konto medan användarna är inloggade.
+      preconditions: Två testanvändare som är inloggade i var sin webbläsare, varav en har en redaktörsroll.
+      expected: Båda ändringarna gäller inom 1 minut utan utloggning.
+      steps:
+        - action: Ta som administratör bort redaktörsrollen från den första användaren.
+          expected: Inom 1 minut nekas den första användaren när hen sparar en ändring.
+        - action: Inaktivera som administratör den andra användarens konto.
+          expected: Inom 1 minut avvisas den andra användarens nästa anrop och sessionen avslutas.
+
+  - id: ACC-T11
+    priority: low
+    execution: automated
+    tags: [just-in-time, elevation]
+    refs: ["NIST SP 800-53 AC-2(2)"]
+    en:
+      title: Temporary elevated role is removed automatically
+      description: A script grants a temporary role, advances the clock and checks that the role is gone.
+      preconditions: Temporary roles are enabled and the test environment clock can be advanced.
+      expected: The role disappears after its duration and the removal is logged.
+      steps:
+        - action: Grant a test user a temporary administrator role for 8 hours.
+          expected: The user can open an administration page.
+        - action: Advance the clock by 8 hours and 1 minute and repeat the request.
+          expected: The response is 403.
+        - action: Read the audit log for the user.
+          expected: The log shows both the grant and the automatic removal with their times.
+    sv:
+      title: Tillfällig utökad roll tas bort automatiskt
+      description: Ett skript ger en tillfällig roll, flyttar fram klockan och kontrollerar att rollen är borta.
+      preconditions: Tillfälliga roller är påslagna och klockan i testmiljön kan flyttas fram.
+      expected: Rollen försvinner efter sin varaktighet och borttagningen loggas.
+      steps:
+        - action: Ge en testanvändare en tillfällig administratörsroll i 8 timmar.
+          expected: Användaren kan öppna en administrationssida.
+        - action: Flytta fram klockan 8 timmar och 1 minut och upprepa anropet.
+          expected: Svaret är 403.
+        - action: Läs granskningsloggen för användaren.
+          expected: Loggen visar både tilldelningen och den automatiska borttagningen med tidpunkter.

@@ -1,0 +1,483 @@
+area: security-logging
+prefix: SLOG
+group: security
+name: {en: Security logging and monitoring, sv: Säkerhetsloggning och övervakning}
+description:
+  en: Logging of security events, keeping secrets out of logs, log integrity and retention, alerting on suspicious activity and time synchronisation.
+  sv: Loggning av säkerhetshändelser, hemligheter som hålls borta från loggar, loggarnas integritet och lagringstid, larm vid misstänkt aktivitet och tidssynkronisering.
+
+requirements:
+  - id: SLOG-01
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-events, logging]
+    refs: ["OWASP ASVS 4.0 V7.2", "OWASP Top 10 2021 A09", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [SLOG-T01]
+    en:
+      title: Security events are logged
+      description: The system MUST log successful and failed sign-ins, sign-outs, password and multi-factor changes, permission changes and denied access attempts.
+      rationale: Without these events an attack cannot be detected while it happens or reconstructed afterwards.
+      criteria:
+        - method: test
+          text: Each of the listed events, triggered once in the test environment, produces exactly one log record.
+    sv:
+      title: Säkerhetshändelser loggas
+      description: Systemet SKA logga lyckade och misslyckade inloggningar, utloggningar, ändringar av lösenord och flerfaktorsinställningar, ändrade behörigheter och nekade åtkomstförsök.
+      rationale: Utan de här händelserna går det varken att upptäcka en attack medan den pågår eller att rekonstruera den efteråt.
+      criteria:
+        - method: test
+          text: Var och en av de listade händelserna ger, när den utlöses en gång i testmiljön, exakt en loggpost.
+
+  - id: SLOG-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [log-content, logging]
+    refs: ["OWASP ASVS 4.0 V7.1.3", "NIST SP 800-53 AU-3", "OWASP Logging Cheat Sheet"]
+    tests: [SLOG-T01]
+    en:
+      title: Content of a security log record
+      description: The system MUST include the time in UTC, the user or client id, the source IP address, the event type and the outcome in each security log record.
+      rationale: Investigators need to know who did what, from where and when, and whether it succeeded.
+      criteria:
+        - method: inspection
+          text: Ten sampled security log records each contain all five fields with non-empty values.
+    sv:
+      title: Innehåll i en säkerhetsloggpost
+      description: Systemet SKA ta med tidpunkt i UTC, användar- eller klient-id, källans IP-adress, händelsetyp och utfall i varje säkerhetsloggpost.
+      rationale: Den som utreder en händelse behöver veta vem som gjorde vad, varifrån och när, och om det lyckades.
+      criteria:
+        - method: inspection
+          text: Tio stickprov bland säkerhetsloggposterna innehåller vart och ett alla fem fälten med ifyllda värden.
+
+  - id: SLOG-03
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [secrets, sensitive-data, logging]
+    refs: ["OWASP ASVS 4.0 V7.1.1", "OWASP ASVS 4.0 V7.1.2", "OWASP Logging Cheat Sheet", "PCI DSS 4.0 Req. 3.3"]
+    tests: [SLOG-T02]
+    en:
+      title: No secrets in logs
+      description: The system MUST NOT write passwords, session tokens, API keys, one-time codes or full payment card numbers to any log.
+      rationale: Logs are read by many people and tools and are kept for a long time, so a secret written there is effectively disclosed.
+      criteria:
+        - method: test
+          text: After a scripted session that uses known secret values, a search of all logs finds none of them.
+    sv:
+      title: Inga hemligheter i loggar
+      description: Systemet SKA INTE skriva lösenord, sessionstoken, API-nycklar, engångskoder eller fullständiga kortnummer till någon logg.
+      rationale: Loggar läses av många personer och verktyg och sparas länge, så en hemlighet som skrivs dit är i praktiken röjd.
+      criteria:
+        - method: test
+          text: Efter en skriptad session som använder kända hemliga värden hittar en sökning i alla loggar inget av dem.
+
+  - id: SLOG-04
+    type: security
+    obligation: must
+    priority: medium
+    tags: [log-injection, encoding]
+    refs: ["OWASP ASVS 4.0 V7.3.1", "OWASP Logging Cheat Sheet"]
+    tests: [SLOG-T03]
+    en:
+      title: Protection against log injection
+      description: The system MUST encode line breaks and control characters in user-supplied values before it writes them to a log.
+      rationale: Unencoded line breaks let an attacker forge log records that mislead investigators or monitoring rules.
+      criteria:
+        - method: test
+          text: A user name with an embedded line break produces one log record in which the line break is shown as an escape sequence.
+    sv:
+      title: Skydd mot injektion i loggar
+      description: Systemet SKA koda radbrytningar och styrtecken i värden från användare innan de skrivs till en logg.
+      rationale: Okodade radbrytningar låter en angripare förfalska loggposter som vilseleder utredare och övervakningsregler.
+      criteria:
+        - method: test
+          text: Ett användarnamn med en inbäddad radbrytning ger en enda loggpost där radbrytningen visas som en escape-sekvens.
+
+  - id: SLOG-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [log-integrity, central-logging]
+    refs: ["OWASP ASVS 4.0 V7.3.3", "NIST SP 800-53 AU-9", "ISO/IEC 27001:2022 A.8.15", "PCI DSS 4.0 Req. 10.3"]
+    tests: [SLOG-T04]
+    en:
+      title: Logs are protected from change
+      description: The system MUST send security log records within 1 minute to a central store where the application's own accounts cannot change or delete them.
+      rationale: An attacker who takes over the application otherwise erases the traces of the attack.
+      criteria:
+        - method: test
+          text: A new log record appears in the central store within 1 minute, and an attempt to delete it with the application's credentials is refused.
+    sv:
+      title: Loggar skyddas mot ändring
+      description: Systemet SKA skicka säkerhetsloggposter inom 1 minut till ett centralt lager där applikationens egna konton inte kan ändra eller radera dem.
+      rationale: En angripare som tar över applikationen sopar annars igen spåren efter attacken.
+      criteria:
+        - method: test
+          text: En ny loggpost syns i det centrala lagret inom 1 minut, och ett försök att radera den med applikationens inloggningsuppgifter avvisas.
+
+  - id: SLOG-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [alerting, credential-stuffing]
+    refs: ["OWASP ASVS 4.0 V7.2", "NIST SP 800-53 SI-4", "ISO/IEC 27001:2022 A.8.16", "OWASP Top 10 2021 A09"]
+    tests: [SLOG-T05]
+    en:
+      title: Alert on mass sign-in failures
+      description: The system MUST alert the security on-call within 15 minutes when more than 50 sign-ins fail within 5 minutes across all accounts.
+      rationale: Credential stuffing spreads attempts over many accounts and is not caught by per-account limits alone.
+      criteria:
+        - method: test
+          text: 60 failed sign-ins spread over 30 accounts within 5 minutes create an alert that reaches the on-call channel within 15 minutes.
+    sv:
+      title: Larm vid många misslyckade inloggningar
+      description: Systemet SKA larma säkerhetsjouren inom 15 minuter när mer än 50 inloggningar misslyckas inom 5 minuter sammanlagt för alla konton.
+      rationale: Attacker med läckta inloggningsuppgifter sprider försöken över många konton och fångas inte av gränser per konto.
+      criteria:
+        - method: test
+          text: 60 misslyckade inloggningar fördelade på 30 konton inom 5 minuter skapar ett larm som når jourkanalen inom 15 minuter.
+
+  - id: SLOG-07
+    type: security
+    obligation: should
+    priority: medium
+    tags: [alerting, privileged-access]
+    refs: ["NIST SP 800-53 AC-2(4)", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [SLOG-T06]
+    en:
+      title: Alert on new administrator rights
+      description: The system SHOULD alert the security on-call within 15 minutes when an account is given the administrator role.
+      rationale: Granting administrator rights is a common step after an account takeover and is rare in normal operation.
+      criteria:
+        - method: test
+          text: Granting the administrator role to a test account creates an alert with the account, the granting user and the time within 15 minutes.
+    sv:
+      title: Larm vid ny administratörsbehörighet
+      description: Systemet BÖR larma säkerhetsjouren inom 15 minuter när ett konto tilldelas administratörsrollen.
+      rationale: Att ge administratörsbehörighet är ett vanligt steg efter att ett konto har kapats och sker sällan i normal drift.
+      criteria:
+        - method: test
+          text: När administratörsrollen ges till ett testkonto skapas inom 15 minuter ett larm med kontot, den som tilldelade rollen och tidpunkten.
+
+  - id: SLOG-08
+    type: security
+    obligation: must
+    priority: medium
+    tags: [time-synchronisation, ntp]
+    refs: ["NIST SP 800-53 AU-8", "ISO/IEC 27001:2022 A.8.17", "PCI DSS 4.0 Req. 10.6"]
+    tests: [SLOG-T07]
+    en:
+      title: Synchronised clocks
+      description: The system MUST keep the clock of every server within 1 second of a common NTP time source.
+      rationale: Events from different servers can only be put in the right order when their clocks agree.
+      criteria:
+        - method: inspection
+          text: Each server has the same NTP source configured and its measured offset is below 1 second.
+    sv:
+      title: Synkroniserade klockor
+      description: Systemet SKA hålla klockan på varje server inom 1 sekund från en gemensam NTP-tidskälla.
+      rationale: Händelser från olika servrar går bara att lägga i rätt ordning när deras klockor stämmer överens.
+      criteria:
+        - method: inspection
+          text: Varje server har samma NTP-källa konfigurerad och dess uppmätta avvikelse är under 1 sekund.
+
+  - id: SLOG-09
+    type: security
+    obligation: should
+    priority: medium
+    tags: [log-retention]
+    refs: ["PCI DSS 4.0 Req. 10.5.1", "NIST SP 800-53 AU-11", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [SLOG-T08]
+    en:
+      title: Retention of security logs
+      description: The system SHOULD keep security log records for at least 12 months, with the latest 3 months searchable without a restore.
+      rationale: Breaches are often found months after they started, and investigators then need the old records.
+      criteria:
+        - method: inspection
+          text: The retention setting of the log store is 12 months or more, and a search for a record that is 80 days old returns it directly.
+    sv:
+      title: Lagringstid för säkerhetsloggar
+      description: Systemet BÖR spara säkerhetsloggposter i minst 12 månader, varav de senaste 3 månaderna går att söka i utan återläsning.
+      rationale: Intrång upptäcks ofta flera månader efter att de började, och den som utreder behöver då de gamla posterna.
+      criteria:
+        - method: inspection
+          text: Lagringstiden för logglagret är 12 månader eller mer, och en sökning efter en post som är 80 dagar gammal ger träff direkt.
+
+  - id: SLOG-10
+    type: security
+    obligation: may
+    priority: low
+    tags: [siem, log-format]
+    refs: ["RFC 5424", "OWASP Logging Cheat Sheet"]
+    tests: [SLOG-T09]
+    en:
+      title: Structured log format for a SIEM
+      description: The system MAY write security log records as one JSON object per line so that a SIEM can read them without custom parsing.
+      rationale: A structured format lets monitoring tools filter and correlate events without fragile text patterns.
+      criteria:
+        - method: inspection
+          text: Each security log line is a valid JSON object with named fields for time, actor, source, event and outcome.
+    sv:
+      title: Strukturerat loggformat för SIEM
+      description: Systemet FÅR skriva säkerhetsloggposter som ett JSON-objekt per rad så att ett SIEM-system kan läsa dem utan egen tolkning.
+      rationale: Ett strukturerat format låter övervakningsverktyg filtrera och samköra händelser utan bräckliga textmönster.
+      criteria:
+        - method: inspection
+          text: Varje rad i säkerhetsloggen är ett giltigt JSON-objekt med namngivna fält för tid, aktör, källa, händelse och utfall.
+
+tests:
+  - id: SLOG-T01
+    priority: high
+    execution: automated
+    tags: [security-events, log-content]
+    refs: ["OWASP Logging Cheat Sheet"]
+    en:
+      title: Security events produce complete log records
+      description: A script triggers each security event once and reads the resulting log records.
+      preconditions: A test account, an administrator test account and read access to the security log of the test environment.
+      expected: Every event is logged once with all required fields.
+      steps:
+        - action: Sign in successfully, fail a sign-in, sign out, change the password and enrol a second factor.
+          expected: One log record exists for each of the five events.
+        - action: As the administrator, add a role to the test account; as the test account, open an administration page.
+          expected: One record exists for the role change and one for the denied access.
+        - action: Check the fields of each of the seven records.
+          expected: Each has a UTC time, a user id, a source IP address, an event type and an outcome.
+    sv:
+      title: Säkerhetshändelser ger fullständiga loggposter
+      description: Ett skript utlöser varje säkerhetshändelse en gång och läser de loggposter som uppstår.
+      preconditions: Ett testkonto, ett testkonto för administratör och läsbehörighet till säkerhetsloggen i testmiljön.
+      expected: Varje händelse loggas en gång med alla obligatoriska fält.
+      steps:
+        - action: Logga in, misslyckas med en inloggning, logga ut, byt lösenord och registrera en andra faktor.
+          expected: Det finns en loggpost för var och en av de fem händelserna.
+        - action: Lägg som administratör till en roll på testkontot och öppna som testkontot en administrationssida.
+          expected: Det finns en post för rolländringen och en för den nekade åtkomsten.
+        - action: Kontrollera fälten i var och en av de sju posterna.
+          expected: Var och en har tid i UTC, användar-id, källans IP-adress, händelsetyp och utfall.
+
+  - id: SLOG-T02
+    priority: critical
+    execution: automated
+    tags: [secrets, sensitive-data]
+    refs: ["OWASP Logging Cheat Sheet"]
+    en:
+      title: Known secret values never reach the logs
+      description: A script runs a session with recognisable secret values and searches every log for them.
+      preconditions: Access to all application, access and error logs of the test environment, and a test payment card number if payments exist.
+      expected: None of the secret values is found in any log.
+      steps:
+        - action: Sign in with a marked password, use the session, create an API key, enter a one-time code and submit a test card number.
+          expected: Every action succeeds or fails as normal.
+          data: "Pw-MARKER-9921, 4111111111111111"
+        - action: Trigger an error in the same session so that error logging runs.
+          expected: An error is logged.
+        - action: Search all logs for the password, session token, API key, one-time code and full card number.
+          expected: No match is found; at most the last four digits of the card appear.
+    sv:
+      title: Kända hemliga värden hamnar aldrig i loggarna
+      description: Ett skript kör en session med igenkännbara hemliga värden och söker efter dem i varje logg.
+      preconditions: Åtkomst till alla applikations-, åtkomst- och felloggar i testmiljön och ett testkortnummer om betalningar finns.
+      expected: Inget av de hemliga värdena hittas i någon logg.
+      steps:
+        - action: Logga in med ett märkt lösenord, använd sessionen, skapa en API-nyckel, ange en engångskod och skicka ett testkortnummer.
+          expected: Varje åtgärd lyckas eller misslyckas som vanligt.
+          data: "Pw-MARKER-9921, 4111111111111111"
+        - action: Utlös ett fel i samma session så att felloggningen körs.
+          expected: Ett fel loggas.
+        - action: Sök i alla loggar efter lösenordet, sessionstoken, API-nyckeln, engångskoden och hela kortnumret.
+          expected: Ingen träff hittas; högst kortets sista fyra siffror förekommer.
+
+  - id: SLOG-T03
+    priority: medium
+    execution: automated
+    tags: [log-injection]
+    refs: ["OWASP Logging Cheat Sheet"]
+    en:
+      title: Line breaks in user input do not forge log records
+      description: A script signs in with a user name that contains a line break followed by a fake log record.
+      preconditions: Read access to the security log in the test environment.
+      expected: Exactly one record is written and the line break is escaped.
+      steps:
+        - action: Send a failed sign-in with a user name that contains a line break and a forged success record.
+          expected: The sign-in fails.
+          data: "alice\\n2026-01-01T00:00:00Z LOGIN_SUCCESS user=admin"
+        - action: Read the new records in the security log.
+          expected: There is one record for the failed sign-in, the line break is shown as an escape sequence and no separate success record exists.
+    sv:
+      title: Radbrytningar i indata förfalskar inte loggposter
+      description: Ett skript loggar in med ett användarnamn som innehåller en radbrytning följd av en falsk loggpost.
+      preconditions: Läsbehörighet till säkerhetsloggen i testmiljön.
+      expected: Exakt en post skrivs och radbrytningen är kodad.
+      steps:
+        - action: Skicka en misslyckad inloggning med ett användarnamn som innehåller en radbrytning och en förfalskad post om lyckad inloggning.
+          expected: Inloggningen misslyckas.
+          data: "alice\\n2026-01-01T00:00:00Z LOGIN_SUCCESS user=admin"
+        - action: Läs de nya posterna i säkerhetsloggen.
+          expected: Det finns en post för den misslyckade inloggningen, radbrytningen visas som en escape-sekvens och ingen separat post om lyckad inloggning finns.
+
+  - id: SLOG-T04
+    priority: high
+    execution: manual
+    tags: [log-integrity, central-logging]
+    refs: ["NIST SP 800-53 AU-9"]
+    en:
+      title: Central log records arrive in time and cannot be deleted
+      description: Checks forwarding latency and write protection of the central log store.
+      preconditions: Access to the central log store and the credentials the application uses to send logs.
+      expected: Records arrive within 1 minute and the application cannot alter them.
+      steps:
+        - action: Trigger a failed sign-in and note the time.
+          expected: The record is searchable in the central store within 1 minute.
+        - action: With the application's log credentials, try to delete or overwrite the record.
+          expected: The operation is refused.
+        - action: Stop the application server and check the central store.
+          expected: All records sent before the stop are still present.
+    sv:
+      title: Centrala loggposter kommer fram i tid och kan inte raderas
+      description: Kontrollerar fördröjningen vid vidarebefordran och skrivskyddet i det centrala logglagret.
+      preconditions: Åtkomst till det centrala logglagret och de inloggningsuppgifter som applikationen använder för att skicka loggar.
+      expected: Posterna kommer fram inom 1 minut och applikationen kan inte ändra dem.
+      steps:
+        - action: Utlös en misslyckad inloggning och anteckna tiden.
+          expected: Posten går att söka fram i det centrala lagret inom 1 minut.
+        - action: Försök radera eller skriva över posten med applikationens inloggningsuppgifter för loggning.
+          expected: Åtgärden avvisas.
+        - action: Stoppa applikationsservern och kontrollera det centrala lagret.
+          expected: Alla poster som skickades före stoppet finns kvar.
+
+  - id: SLOG-T05
+    priority: high
+    execution: automated
+    tags: [alerting, credential-stuffing]
+    refs: ["NIST SP 800-53 SI-4"]
+    en:
+      title: Credential stuffing raises an alert
+      description: A script simulates failed sign-ins spread over many accounts and checks the alert channel.
+      preconditions: 30 test accounts, a monitored test alert channel and the alert rule active in the test environment.
+      expected: An alert reaches the channel within 15 minutes.
+      steps:
+        - action: Send 60 failed sign-ins spread evenly over the 30 accounts within 5 minutes.
+          expected: Every attempt fails with the normal error.
+        - action: Watch the alert channel for 15 minutes from the first attempt.
+          expected: One alert arrives that states the number of failures and the time window.
+    sv:
+      title: Massinloggning med läckta uppgifter ger larm
+      description: Ett skript simulerar misslyckade inloggningar fördelade på många konton och bevakar larmkanalen.
+      preconditions: 30 testkonton, en bevakad larmkanal för test och larmregeln aktiv i testmiljön.
+      expected: Ett larm når kanalen inom 15 minuter.
+      steps:
+        - action: Skicka 60 misslyckade inloggningar jämnt fördelade på de 30 kontona inom 5 minuter.
+          expected: Varje försök misslyckas med det vanliga felet.
+        - action: Bevaka larmkanalen i 15 minuter från det första försöket.
+          expected: Ett larm kommer som anger antalet misslyckanden och tidsfönstret.
+
+  - id: SLOG-T06
+    priority: medium
+    execution: manual
+    tags: [alerting, privileged-access]
+    refs: ["NIST SP 800-53 AC-2(4)"]
+    en:
+      title: Granting administrator rights raises an alert
+      description: Grants the administrator role and checks the alert channel.
+      preconditions: Two administrator test accounts, an ordinary test account and a monitored test alert channel.
+      expected: An alert with the details arrives within 15 minutes.
+      steps:
+        - action: As administrator 1, give the ordinary test account the administrator role.
+          expected: The role is granted.
+        - action: Watch the alert channel for 15 minutes.
+          expected: An alert arrives that names the account, administrator 1 and the time.
+    sv:
+      title: Tilldelad administratörsbehörighet ger larm
+      description: Ger administratörsrollen till ett konto och bevakar larmkanalen.
+      preconditions: Två testkonton för administratörer, ett vanligt testkonto och en bevakad larmkanal för test.
+      expected: Ett larm med uppgifterna kommer inom 15 minuter.
+      steps:
+        - action: Ge som administratör 1 det vanliga testkontot administratörsrollen.
+          expected: Rollen tilldelas.
+        - action: Bevaka larmkanalen i 15 minuter.
+          expected: Ett larm kommer som anger kontot, administratör 1 och tidpunkten.
+
+  - id: SLOG-T07
+    priority: medium
+    execution: automated
+    tags: [time-synchronisation, ntp]
+    refs: ["NIST SP 800-53 AU-8"]
+    en:
+      title: Server clocks are within one second of NTP
+      description: A script queries the time configuration and offset of every server.
+      preconditions: Shell or monitoring access to every server of the environment.
+      expected: All servers use the same NTP source with an offset below 1 second.
+      steps:
+        - action: Read the configured time source on each server.
+          expected: Every server lists the same NTP source.
+        - action: Measure the offset of each server against that source.
+          expected: Every offset is below 1 second.
+    sv:
+      title: Serverklockor ligger inom en sekund från NTP
+      description: Ett skript hämtar tidskonfiguration och avvikelse för varje server.
+      preconditions: Skal- eller övervakningsåtkomst till varje server i miljön.
+      expected: Alla servrar använder samma NTP-källa med en avvikelse under 1 sekund.
+      steps:
+        - action: Läs den konfigurerade tidskällan på varje server.
+          expected: Varje server anger samma NTP-källa.
+        - action: Mät avvikelsen för varje server mot den källan.
+          expected: Varje avvikelse är under 1 sekund.
+
+  - id: SLOG-T08
+    priority: medium
+    execution: manual
+    tags: [log-retention]
+    refs: ["PCI DSS 4.0 Req. 10.5.1"]
+    en:
+      title: Old security log records can be found
+      description: Inspects retention settings and searches for records of different ages.
+      preconditions: Access to the log store of an environment that has been running for more than 12 months.
+      expected: Records up to 3 months are searchable directly and records up to 12 months exist.
+      steps:
+        - action: Read the retention setting of the log store and its archive.
+          expected: The combined retention is 12 months or more.
+        - action: Search for a security record that is 80 days old.
+          expected: The record is returned without a restore.
+        - action: Retrieve a record that is 11 months old from the archive.
+          expected: The record is retrieved.
+    sv:
+      title: Gamla säkerhetsloggposter går att hitta
+      description: Granskar inställningarna för lagringstid och söker efter poster av olika ålder.
+      preconditions: Åtkomst till logglagret i en miljö som har varit i drift i mer än 12 månader.
+      expected: Poster upp till 3 månader går att söka direkt och poster upp till 12 månader finns kvar.
+      steps:
+        - action: Läs lagringstiden för logglagret och dess arkiv.
+          expected: Den sammanlagda lagringstiden är 12 månader eller mer.
+        - action: Sök efter en säkerhetspost som är 80 dagar gammal.
+          expected: Posten returneras utan återläsning.
+        - action: Hämta en post som är 11 månader gammal från arkivet.
+          expected: Posten hämtas.
+
+  - id: SLOG-T09
+    priority: low
+    execution: automated
+    tags: [siem, log-format]
+    refs: ["OWASP Logging Cheat Sheet"]
+    en:
+      title: Security log lines are valid JSON
+      description: A script parses every line of a day's security log as JSON and checks the field names.
+      preconditions: A security log file from the test environment that covers one day of activity.
+      expected: Every line parses and has the agreed fields.
+      steps:
+        - action: Parse each line as a JSON object.
+          expected: No line fails to parse.
+        - action: Check each object for the fields time, actor, source, event and outcome.
+          expected: All five fields are present in every object.
+    sv:
+      title: Raderna i säkerhetsloggen är giltig JSON
+      description: Ett skript tolkar varje rad i ett dygns säkerhetslogg som JSON och kontrollerar fältnamnen.
+      preconditions: En säkerhetsloggfil från testmiljön som täcker ett dygns aktivitet.
+      expected: Varje rad går att tolka och har de överenskomna fälten.
+      steps:
+        - action: Tolka varje rad som ett JSON-objekt.
+          expected: Ingen rad misslyckas.
+        - action: Kontrollera att varje objekt har fälten time, actor, source, event och outcome.
+          expected: Alla fem fälten finns i varje objekt.
