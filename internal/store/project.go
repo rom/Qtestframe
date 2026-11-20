@@ -754,16 +754,7 @@ func (s *Store) RenameDimension(ctx context.Context, tenantID, projectID, scope,
 			n++
 			if target, ok := existing[cat.Name]; ok {
 				// merge assignments into the existing category
-				for _, tbl := range []string{"requirement_categories", "test_case_categories"} {
-					col := "requirement_id"
-					if tbl == "test_case_categories" {
-						col = "test_case_id"
-					}
-					if _, err := c.exec(ctx, `INSERT INTO `+tbl+` (`+col+`, category_id) SELECT `+col+`, ? FROM `+tbl+` WHERE category_id = ? AND `+col+` NOT IN (SELECT `+col+` FROM `+tbl+` WHERE category_id = ?)`, target, cat.ID, target); err != nil {
-						return err
-					}
-				}
-				if _, err := c.exec(ctx, `DELETE FROM categories WHERE id = ?`, cat.ID); err != nil {
+				if err := mergeCategory(ctx, c, cat.ID, target); err != nil {
 					return err
 				}
 				continue
@@ -857,4 +848,149 @@ func removeCategories(ctx context.Context, c conn, kind, itemID string, ids []st
 		}
 	}
 	return nil
+}
+
+// mergeCategory moves the assignments of category from to category to
+// (items that already have to keep one) and deletes from.
+func mergeCategory(ctx context.Context, c conn, from, to string) error {
+	for _, tbl := range []string{"requirement_categories", "test_case_categories"} {
+		col := "requirement_id"
+		if tbl == "test_case_categories" {
+			col = "test_case_id"
+		}
+		if _, err := c.exec(ctx, `INSERT INTO `+tbl+` (`+col+`, category_id) SELECT `+col+`, ? FROM `+tbl+` WHERE category_id = ? AND `+col+` NOT IN (SELECT `+col+` FROM `+tbl+` WHERE category_id = ?)`, to, from, to); err != nil {
+			return err
+		}
+	}
+	_, err := c.exec(ctx, `DELETE FROM categories WHERE id = ?`, from)
+	return err
+}
+
+// CategoryBulk is a bulk change of category values.
+type CategoryBulk struct {
+	// Action: move (to Dimension), color (Color), merge (into TargetID),
+	// copy (to the other scope) or delete.
+	Action    string
+	Dimension string
+	Color     string
+	TargetID  string
+}
+
+// BulkCategories applies one change to category values of one project and
+// scope, all or nothing. It returns the number of values changed (for copy:
+// created; values that already exist in the other scope are skipped).
+func (s *Store) BulkCategories(ctx context.Context, tenantID, projectID string, ids []string, b CategoryBulk) (int, error) {
+	ids = uniq(ids)
+	if len(ids) == 0 {
+		return 0, Invalidf("choose at least one category")
+	}
+	all, err := s.ListCategories(ctx, tenantID, projectID, "")
+	if err != nil {
+		return 0, err
+	}
+	byID := map[string]model.Category{}
+	for _, c := range all {
+		byID[c.ID] = c
+	}
+	var sel []model.Category
+	for _, id := range ids {
+		c, ok := byID[id]
+		if !ok {
+			return 0, mapErr(sql.ErrNoRows, "category")
+		}
+		if len(sel) > 0 && c.Scope != sel[0].Scope {
+			return 0, Invalidf("the categories must all be of requirements or all of tests")
+		}
+		sel = append(sel, c)
+	}
+	scope := sel[0].Scope
+	n := 0
+	err = s.tx(ctx, func(cn conn) error {
+		switch b.Action {
+		case "delete":
+			for _, c := range sel {
+				if _, err := cn.exec(ctx, `DELETE FROM categories WHERE id = ?`, c.ID); err != nil {
+					return err
+				}
+				n++
+			}
+		case "color":
+			if !colorRe.MatchString(b.Color) {
+				return Invalidf("color must be #rrggbb")
+			}
+			for _, c := range sel {
+				if _, err := cn.exec(ctx, `UPDATE categories SET color = ? WHERE id = ?`, b.Color, c.ID); err != nil {
+					return err
+				}
+				n++
+			}
+		case "move":
+			to := strings.TrimSpace(b.Dimension)
+			if to == "" || strings.Contains(to, "/") {
+				return Invalidf("the dimension name is invalid")
+			}
+			existing := map[string]string{}
+			for _, c := range all {
+				if c.Scope == scope && c.Dimension == to {
+					existing[strings.ToLower(c.Name)] = c.ID
+				}
+			}
+			for _, c := range sel {
+				if c.Dimension == to {
+					continue
+				}
+				n++
+				if target, ok := existing[strings.ToLower(c.Name)]; ok {
+					if err := mergeCategory(ctx, cn, c.ID, target); err != nil {
+						return err
+					}
+					continue
+				}
+				if _, err := cn.exec(ctx, `UPDATE categories SET dimension = ? WHERE id = ?`, to, c.ID); err != nil {
+					return err
+				}
+				existing[strings.ToLower(c.Name)] = c.ID
+			}
+		case "merge":
+			target, ok := byID[b.TargetID]
+			if !ok || target.Scope != scope {
+				return Invalidf("choose the value to keep among values of the same kind")
+			}
+			for _, c := range sel {
+				if c.ID == target.ID {
+					continue
+				}
+				if err := mergeCategory(ctx, cn, c.ID, target.ID); err != nil {
+					return err
+				}
+				n++
+			}
+		case "copy":
+			other := model.KindTest
+			if scope == model.KindTest {
+				other = model.KindRequirement
+			}
+			have := map[string]bool{}
+			for _, c := range all {
+				if c.Scope == other {
+					have[strings.ToLower(c.Dimension+"/"+c.Name)] = true
+				}
+			}
+			for _, c := range sel {
+				if have[strings.ToLower(c.Dimension+"/"+c.Name)] {
+					continue
+				}
+				if _, err := cn.exec(ctx, `INSERT INTO categories (id, tenant_id, project_id, scope, dimension, name, color, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+					newID(), tenantID, projectID, other, c.Dimension, c.Name, c.Color, c.Description); err != nil {
+					return mapErr(err, "category")
+				}
+				have[strings.ToLower(c.Dimension+"/"+c.Name)] = true
+				n++
+			}
+		default:
+			return Invalidf("action must be move, color, merge, copy or delete")
+		}
+		return nil
+	})
+	return n, err
 }

@@ -149,6 +149,7 @@ func (s *Server) routes() {
 	h("GET /api/v1/projects/{pid}/categories", s.handleListCategories, "project.read")
 	h("POST /api/v1/projects/{pid}/categories", s.handleCreateCategory)
 	h("POST /api/v1/projects/{pid}/categories/move", s.handleMoveDimension)
+	h("POST /api/v1/projects/{pid}/categories/bulk", s.handleBulkCategories)
 	h("PATCH /api/v1/categories/{id}", s.handleUpdateCategory)
 	h("DELETE /api/v1/categories/{id}", s.handleDeleteCategory)
 

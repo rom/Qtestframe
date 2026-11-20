@@ -1,10 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/rbac"
+	"github.com/rom/qtestframe/internal/store"
 )
 
 // project loads the {pid} project of the principal's tenant.
@@ -451,4 +454,58 @@ func (s *Server) handleRequirementSources(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"configured": pr.RequirementSources, "custom": pr.CustomSources, "used": used})
+}
+
+// handleBulkCategories: POST /projects/{pid}/categories/bulk
+// {"ids": [...], "action": "move|color|merge|copy|delete", "dimension", "color", "target_id"}.
+// The values must be of one scope; the change is all or nothing.
+func (s *Server) handleBulkCategories(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs       []string `json:"ids"`
+		Action    string   `json:"action"`
+		Dimension string   `json:"dimension"`
+		Color     string   `json:"color"`
+		TargetID  string   `json:"target_id"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if len(req.IDs) == 0 {
+		s.fail(w, r, badRequest("choose at least one category"))
+		return
+	}
+	first, err := s.Store.GetCategory(r.Context(), p.TenantID(), req.IDs[0])
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if first.ProjectID != pr.ID {
+		s.fail(w, r, fmt.Errorf("category %s: %w", first.ID, store.ErrNotFound))
+		return
+	}
+	if !canEditCategories(w, p, first.Scope) {
+		return
+	}
+	// copying writes categories of the other scope as well
+	if req.Action == "copy" {
+		other := model.KindTest
+		if first.Scope == model.KindTest {
+			other = model.KindRequirement
+		}
+		if !canEditCategories(w, p, other) {
+			return
+		}
+	}
+	n, err := s.Store.BulkCategories(r.Context(), p.TenantID(), pr.ID, req.IDs, store.CategoryBulk{Action: req.Action, Dimension: req.Dimension, Color: req.Color, TargetID: req.TargetID})
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	s.audit(r.Context(), p, "category.bulk_"+req.Action, "category", strings.Join(req.IDs, ","), fmt.Sprintf("%d changed", n))
+	writeJSON(w, http.StatusOK, map[string]int{"changed": n})
 }

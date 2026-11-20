@@ -160,6 +160,7 @@ async function discover(request) {
     { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
+    { name: 'categories-bulk', path: `${p}/settings?tab=requirement`, open: '.category-grid .p-checkbox', wait: '.bulkbar' },
     { name: 'export', path: `${p}/export` },
     { name: 'documents', path: `${p}/documents` },
     { name: 'reports', path: `${p}/reports` },

@@ -78,6 +78,7 @@ An item can have any number of category values, also several of the same dimensi
 - Select a colour swatch to recolour a value; it is shown in that colour everywhere.
 - **Rename dimension** moves all values to a new dimension name. If the target dimension already has a value with the same name, the two are merged.
 - Deleting a value removes it from all items.
+- Tick values (across dimensions of one tab) to change several at once: **Move to dimension** (an existing one or a new name; a value with the same name there absorbs the moved one), **Colour**, **Merge** (choose the value to keep; items with the others get it and the others are deleted, for example to clean up duplicates such as *UI* and *User interface*), **Copy to tests** / **Copy to requirements** (values that already exist there are skipped) and **Delete**. Each change is all or nothing; colour changes can be undone.
 
 In queries, `category:Negative` matches the value name and `dimension:Polarity/Negative` the full form.
 

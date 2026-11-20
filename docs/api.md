@@ -186,6 +186,7 @@ Reading needs `project.read`. Writing folders needs `requirement.write` or
 | PATCH | `/categories/{id}` | same fields |
 | DELETE | `/categories/{id}` | |
 | POST | `/projects/{pid}/categories/move` | `{"scope","dimension","new_dimension"}` – rename/move a whole category dimension |
+| POST | `/projects/{pid}/categories/bulk` | `{"ids":[...], "action": "move\|color\|merge\|copy\|delete", "dimension"?, "color"?, "target_id"?}` – values of one scope, all or nothing → `{"changed": n}`. `move`: to `dimension` (a value with the same name there absorbs the moved one); `color`: `#rrggbb`; `merge`: into `target_id` (assignments move, the others are deleted); `copy`: to the other scope (existing ones skipped; needs edit rights there too) |
 
 Default categories seeded for new projects (scope `test`): dimension
 `Polarity` (Positive, Negative), `Interface` (External, Internal), `Medium`

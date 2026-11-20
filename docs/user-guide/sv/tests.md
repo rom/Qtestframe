@@ -78,6 +78,7 @@ Ett objekt kan ha hur många kategorivärden som helst, även flera i samma dime
 - Välj en färgruta för att ändra ett värdes färg; värdet visas i den färgen överallt.
 - **Byt namn på dimension** flyttar alla värden till ett nytt dimensionsnamn. Om måldimensionen redan har ett värde med samma namn slås de ihop.
 - När du tar bort ett värde tas det bort från alla objekt.
+- Kryssa i värden (i alla dimensioner på en flik) för att ändra flera på en gång: **Flytta till dimension** (en befintlig eller ett nytt namn; ett värde med samma namn där tar över det flyttade), **Färg**, **Slå ihop** (välj värdet som ska behållas; poster med de andra får det och de andra tas bort, till exempel för att städa bort dubbletter som *UI* och *User interface*), **Kopiera till testfall** / **Kopiera till krav** (värden som redan finns där hoppas över) och **Ta bort**. Varje ändring görs helt eller inte alls; färgändringar kan ångras.
 
 I frågor matchar `category:Negative` värdets namn och `dimension:Polarity/Negative` den fullständiga formen.
 
