@@ -18,6 +18,16 @@ Filtrera med snabbfiltren **Status** och **Allvarlighetsgrad**, eller med [fråg
 
 Välj en defekt för att öppna och redigera den. Välj **Ny defekt** för att rapportera en.
 
+## Ändra många defekter på en gång
+
+Kryssa i defekter i listan (rubrikens kryssruta markerar hela sidan). Verktygsfältet ändrar alla på en gång:
+
+- **Ange status** och **Ange allvarlighetsgrad**, samt **Tilldela…** för att ge dem till någon (tomt tar bort tilldelningen). Den nya ansvariga får en notis. Kräver behörighet att spara utfall (`run.execute`).
+- **Skicka till Jira/GitHub** skapar ett ärende för varje markerad defekt som saknar ett; defekter som redan har ett ärende lämnas orörda. **Synkronisera** läser status för de markerade defekternas ärenden. Båda visas när en ärendehanterare är ansluten.
+- **Ta bort** (behörighet att ändra projektet), efter bekräftelse.
+
+Alla defekter kontrolleras innan någon ändras, så ett felaktigt värde ändrar ingenting. Ändringar av status, allvarlighetsgrad och tilldelning kan ångras med ångra-knappen i övre fältet.
+
 ## Statusar och allvarlighetsgrader
 
 | Status | Betydelse |

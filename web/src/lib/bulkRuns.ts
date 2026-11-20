@@ -67,3 +67,22 @@ export function rejectedText(items: ExecBulkItem[], max = 3): string {
   const head = items.slice(0, max).map((i) => `${i.key}: ${i.reason ?? ''}`)
   return items.length > max ? `${head.join('\n')}\n…` : head.join('\n')
 }
+
+/** The previous values of the given fields per item (for undoing a bulk change). */
+export function valuesBefore<T extends { id: string }>(rows: T[], ids: string[], fields: (keyof T & string)[]): { id: string; before: Record<string, unknown> }[] {
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  return ids.flatMap((id) => {
+    const r = byId.get(id)
+    if (!r) return []
+    const before: Record<string, unknown> = {}
+    for (const f of fields) before[f] = r[f]
+    return [{ id, before }]
+  })
+}
+
+/** Result of pushing several defects to the tracker. */
+export interface PushResult {
+  pushed: { key: string; external_key: string }[]
+  skipped: string[]
+  failed: { key: string; error: string }[]
+}

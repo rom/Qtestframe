@@ -18,6 +18,16 @@ Filter with the quick filters **Status** and **Severity**, or with the [query la
 
 Select a defect to open and edit it. Select **New defect** to report one.
 
+## Change many defects at once
+
+Tick defects in the list (the header checkbox ticks the whole page). The toolbar changes all of them at once:
+
+- **Set status** and **Set severity**, and **Assign…** to give them to someone (empty removes the assignee). The new assignee is notified. This needs permission to record results (`run.execute`).
+- **Push to Jira/GitHub** creates an issue for each ticked defect that has none yet; defects that already have an issue are left alone. **Sync** reads the status of the ticked defects' issues. Both are shown when a tracker is connected.
+- **Delete** (permission to change the project), after confirmation.
+
+Every defect is checked before any is changed, so one wrong value changes nothing. Status, severity and assignee changes can be undone with the undo button in the top bar.
+
 ## Statuses and severities
 
 | Status | Meaning |

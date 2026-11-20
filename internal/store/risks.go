@@ -252,3 +252,6 @@ func (s *Store) RequirementRiskLevels(ctx context.Context, tenantID, projectID s
 	}
 	return out, rows.Err()
 }
+
+// ValidateRisk checks and normalises a risk's fields without saving it.
+func ValidateRisk(k *model.Risk) error { return validateRisk(k) }

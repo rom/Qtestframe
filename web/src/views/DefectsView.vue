@@ -15,6 +15,9 @@ import QueryInput from '@/components/QueryInput.vue'
 import DefectTag from '@/components/DefectTag.vue'
 import DefectFormDialog from '@/components/DefectFormDialog.vue'
 import HelpLink from '@/guide/HelpLink.vue'
+import MentionInput from '@/components/MentionInput.vue'
+import { valuesBefore, type PushResult } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { and, anyOf } from '@/lib/query'
 import {
@@ -129,6 +132,96 @@ async function sync(d: Defect) {
 }
 const syncing = ref(false)
 const lastSync = ref<SyncResult | null>(null)
+
+// ---------- bulk ----------
+const selection = ref<Defect[]>([])
+const canBulk = computed(() => canReport.value || canDelete.value)
+const selectedIds = computed(() => selection.value.map((d) => d.id))
+const bulkStatus = ref<string | null>(null)
+const bulkSeverity = ref<string | null>(null)
+const assignDialog = ref(false)
+const bulkAssignee = ref('')
+const bulkBusy = ref('')
+watch(defects, (list) => {
+  const ids = new Set(list.map((d) => d.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+async function bulkSet(set: Partial<Pick<Defect, 'status' | 'severity' | 'assignee'>>) {
+  const ids = [...selectedIds.value]
+  if (!ids.length) return
+  const before = valuesBefore(defects.value, ids, Object.keys(set) as (keyof Defect & string)[])
+  const path = `/projects/${proj.pid}/defects/bulk`
+  try {
+    await api.post(path, { ids, set })
+    recordUndo(
+      entry(
+        t('defectsView.bulk.undo', { n: ids.length }),
+        async () => {
+          for (const b of before) await api.patch(`/defects/${b.id}`, b.before)
+        },
+        () => api.post(path, { ids, set }),
+      ),
+    )
+    notify.ok(t('defectsView.bulk.updated', { n: ids.length }, ids.length))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+watch(bulkStatus, (v) => v && bulkSet({ status: v }).then(() => (bulkStatus.value = null)))
+watch(bulkSeverity, (v) => v && bulkSet({ severity: v }).then(() => (bulkSeverity.value = null)))
+function openAssign() {
+  bulkAssignee.value = ''
+  assignDialog.value = true
+}
+async function applyAssign() {
+  assignDialog.value = false
+  await bulkSet({ assignee: bulkAssignee.value.trim() })
+}
+async function bulkPush() {
+  bulkBusy.value = 'push'
+  try {
+    const res = await api.post<PushResult>(`/projects/${proj.pid}/defects/push`, { ids: selectedIds.value })
+    trackerMessage.value = ''
+    if (res.failed.length) {
+      lastSync.value = { synced: res.pushed.length, changed: 0, failed: res.failed }
+      notify.failText(t('defectsView.bulk.pushFailed', { n: res.failed.length }, res.failed.length), res.failed.map((f) => `${f.key}: ${f.error}`).join('\n'))
+    } else notify.ok(t('defectsView.bulk.pushed', { n: res.pushed.length }, res.pushed.length), res.skipped.length ? t('defectsView.bulk.alreadyLinked', { n: res.skipped.length }, res.skipped.length) : undefined)
+    await load()
+  } catch (e) {
+    failTracker(e)
+  } finally {
+    bulkBusy.value = ''
+  }
+}
+async function bulkSync() {
+  bulkBusy.value = 'sync'
+  lastSync.value = null
+  try {
+    const res = syncResult(await api.post<SyncResult>(`/projects/${proj.pid}/defects/sync`, { ids: selectedIds.value }))
+    lastSync.value = res
+    trackerMessage.value = ''
+    notify.ok(t('defectsView.syncAllDone', { synced: res.synced, changed: res.changed }, res.synced))
+    await load()
+  } catch (e) {
+    failTracker(e)
+  } finally {
+    bulkBusy.value = ''
+  }
+}
+function bulkDelete() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(t('defectsView.bulk.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      await api.del(`/projects/${proj.pid}/defects/bulk`, { ids })
+      notify.ok(t('defectsView.bulk.deleted', { n: ids.length }, ids.length))
+      selection.value = []
+      await load()
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
 async function syncAll() {
   syncing.value = true
   lastSync.value = null
@@ -280,7 +373,22 @@ onMounted(() => {
       <MultiSelect v-model="statuses" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('common.status')" :aria-label="t('common.status')" style="min-width: 150px" show-clear @change="load" />
       <MultiSelect v-model="severities" :options="severityOptions" option-label="label" option-value="value" :placeholder="t('defectsView.severityLabel')" :aria-label="t('defectsView.severityLabel')" style="min-width: 150px" show-clear @change="load" />
     </div>
-    <DataTable v-stack :value="defects" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(25)" row-hover class="clickable" @row-click="(e) => openEdit(e.data as Defect)">
+    <div v-if="selection.length && canBulk" class="bulkbar" role="toolbar" :aria-label="t('defectsView.bulk.toolbar')">
+      <b>{{ t('common.selected', { count: selection.length }) }}</b>
+      <template v-if="canReport">
+        <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('defectsView.bulk.setStatus')" :aria-label="t('defectsView.bulk.setStatus')" size="small" style="min-width: 140px" />
+        <Select v-model="bulkSeverity" :options="severityOptions" option-label="label" option-value="value" :placeholder="t('defectsView.bulk.setSeverity')" :aria-label="t('defectsView.bulk.setSeverity')" size="small" style="min-width: 150px" />
+        <Button :label="t('defectsView.bulk.assign')" icon="pi pi-user" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openAssign" />
+        <template v-if="trackerType">
+          <Button :label="t('defectsView.bulk.push', { tracker: trackerName })" icon="pi pi-upload" size="small" severity="secondary" outlined :loading="bulkBusy === 'push'" @click="bulkPush" />
+          <Button :label="t('defectsView.bulk.sync')" icon="pi pi-sync" size="small" severity="secondary" outlined :loading="bulkBusy === 'sync'" @click="bulkSync" />
+        </template>
+      </template>
+      <Button v-if="canDelete" :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+      <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+    </div>
+    <DataTable v-model:selection="selection" v-stack :value="defects" data-key="id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(25)" row-hover class="clickable" @row-click="(e) => openEdit(e.data as Defect)">
+      <Column v-if="canBulk" selection-mode="multiple" style="width: 2.6rem" />
       <Column field="key" :header="t('common.key')" sortable :sort-field="sortKey" style="width: 120px">
         <template #body="{ data }">
           <a href="#" class="key" @click.prevent.stop="openEdit(data)">{{ data.key }}</a>
@@ -369,4 +477,21 @@ onMounted(() => {
       </div>
     </form>
   </Dialog>
+  <Dialog v-model:visible="assignDialog" :header="t('defectsView.bulk.assignHeader', { n: selection.length }, selection.length)" modal style="width: min(440px, 96vw)">
+    <label for="bk-def-assignee" class="block-label">{{ t('defectsView.assignee') }}</label>
+    <MentionInput id="bk-def-assignee" v-model="bulkAssignee" :project-id="proj.pid" :placeholder="t('defectsView.bulk.emptyUnassigns')" :aria-label="t('defectsView.assignee')" />
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="assignDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" @click="applyAssign" />
+    </template>
+  </Dialog>
 </template>
+
+<style scoped>
+.block-label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+</style>

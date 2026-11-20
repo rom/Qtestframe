@@ -754,6 +754,8 @@ changing and linking `run.execute`; deleting `project.update`.
 | GET | `/defects/{id}` | Defect with `links` (key and title of each item) |
 | PATCH | `/defects/{id}` | any field above |
 | DELETE | `/defects/{id}` | |
+| POST | `/projects/{pid}/defects/bulk` | `{"ids":[...], "set": {"status"?, "severity"?, "priority"?, "assignee"?}}` → `{"updated": n}`; every defect is validated before any is saved |
+| DELETE | `/projects/{pid}/defects/bulk` | `{"ids":[...]}` → `{"deleted": n}` (project.update) |
 | POST / DELETE | `/defects/{id}/links` | `{"entity_type","entity_id"}` (same project) |
 | GET | `/requirements/{id}/defects`, `/tests/{id}/defects`, `/executions/{id}/defects` | `[LinkedDefect]` with `via`; a requirement includes the defects of its tests and their executions |
 
@@ -770,7 +772,8 @@ Severities: `critical`, `major`, `minor`, `trivial`. Requirements carry
 | POST | `/projects/{pid}/defect-tracker/check` | project.update | 200 or 502 `tracker_error` |
 | POST | `/defects/{id}/push` | run.execute | creates the issue → Defect with `external_key`, `external_url`; 409 when already linked |
 | POST | `/defects/{id}/sync` | run.execute | reads the issue status and maps it onto the defect |
-| POST | `/projects/{pid}/defects/sync` | run.execute | all linked defects → `{"synced","changed","failed":[{key,error}]}` |
+| POST | `/projects/{pid}/defects/sync` | run.execute | all linked defects, or only `{"ids":[...]}` → `{"synced","changed","failed":[{key,error}]}` |
+| POST | `/projects/{pid}/defects/push` | run.execute | `{"ids":[...]}`: creates issues for those without one → `{"pushed":[{key,external_key}],"skipped":[keys already linked],"failed":[{key,error}]}` |
 | POST | `/projects/{pid}/defects/import` | run.execute | `{"external_key","severity","links"}` creates a defect from an existing issue |
 
 Jira uses REST API v2 at the site URL with e-mail + API token (basic
@@ -791,6 +794,8 @@ Reading needs `requirement.read`, changing `requirement.write`.
 | GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
 | POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3) |
 | GET / PATCH / DELETE | `/risks/{id}` | |
+| POST | `/projects/{pid}/risks/bulk` | `{"ids":[...], "set": {"status"?, "owner"?, "category"?, "likelihood"?, "impact"?}, "add_requirement_ids"?, "remove_requirement_ids"?}` → `{"updated": n}`; every risk is validated before any is saved |
+| DELETE | `/projects/{pid}/risks/bulk` | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
 | GET | `/requirements/{id}/risks` | the risks a requirement addresses |
 

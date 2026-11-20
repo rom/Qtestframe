@@ -475,3 +475,6 @@ func deleteDefectLinks(ctx context.Context, c conn, entityType string, ids []str
 	_, err := c.exec(ctx, `DELETE FROM defect_links WHERE entity_type = ? AND entity_id IN (`+placeholders(len(ids))+`)`, append([]any{entityType}, anySlice(ids)...)...)
 	return err
 }
+
+// ValidateDefect checks and normalises a defect's fields without saving it.
+func ValidateDefect(d *model.Defect) error { return validateDefect(d) }

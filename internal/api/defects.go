@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"sort"
 	"strings"
 
@@ -24,6 +25,9 @@ var defectSchema = &query.Schema{
 func (s *Server) routesDefects(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/defects", s.handleListDefects, "project.read")
 	h("POST /api/v1/projects/{pid}/defects", s.handleCreateDefect, "run.execute")
+	h("POST /api/v1/projects/{pid}/defects/bulk", s.handleBulkDefects, "run.execute")
+	h("DELETE /api/v1/projects/{pid}/defects/bulk", s.handleBulkDeleteDefects, "project.update")
+	h("POST /api/v1/projects/{pid}/defects/push", s.handleBulkPushDefects, "run.execute")
 	h("GET /api/v1/defects/{id}", s.handleGetDefect, "project.read")
 	h("PATCH /api/v1/defects/{id}", s.handleUpdateDefect, "run.execute")
 	h("DELETE /api/v1/defects/{id}", s.handleDeleteDefect, "project.update")
@@ -335,6 +339,15 @@ func (s *Server) handlePushDefect(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
+	if err := s.pushDefect(r, p, c, t, d); err != nil {
+		s.trackerFail(w, r, err)
+		return
+	}
+	s.writeDefect(w, r, p, d.ID, http.StatusOK)
+}
+
+// pushDefect creates the tracker issue of a defect and links it.
+func (s *Server) pushDefect(r *http.Request, p *Principal, c tracker.Client, t *model.DefectTracker, d *model.Defect) error {
 	desc := d.Description
 	var refs []string
 	for _, l := range d.Links {
@@ -347,16 +360,14 @@ func (s *Server) handlePushDefect(w http.ResponseWriter, r *http.Request, p *Pri
 	}
 	is, err := c.Create(r.Context(), tracker.NewIssue{Title: d.Key + " " + d.Title, Description: desc, Severity: d.Severity, Priority: d.Priority})
 	if err != nil {
-		s.trackerFail(w, r, err)
-		return
+		return err
 	}
 	applyIssue(d, t, is)
 	if err := s.Store.MarkDefectSynced(r.Context(), p.TenantID(), d, is.Status, ""); err != nil {
-		s.fail(w, r, err)
-		return
+		return err
 	}
 	s.audit(r.Context(), p, "defect.push", "defect", d.ID, d.Key+" → "+is.Key)
-	s.writeDefect(w, r, p, d.ID, http.StatusOK)
+	return nil
 }
 
 // syncDefect reads the issue's status and maps it onto the defect.
@@ -414,6 +425,23 @@ func (s *Server) handleSyncDefects(w http.ResponseWriter, r *http.Request, p *Pr
 	if err != nil {
 		s.fail(w, r, err)
 		return
+	}
+	// an optional body {"ids": [...]} limits the sync to those defects
+	if body, err := readBody(r); err == nil && len(strings.TrimSpace(string(body))) > 0 {
+		var req struct {
+			IDs []string `json:"ids"`
+		}
+		if err := json.Unmarshal(body, &req); err != nil {
+			s.fail(w, r, badRequest("invalid JSON: %v", err))
+			return
+		}
+		if req.IDs != nil {
+			want := map[string]bool{}
+			for _, id := range req.IDs {
+				want[id] = true
+			}
+			list = slices.DeleteFunc(list, func(d model.Defect) bool { return !want[d.ID] })
+		}
 	}
 	synced, changed := 0, 0
 	var failed []map[string]string

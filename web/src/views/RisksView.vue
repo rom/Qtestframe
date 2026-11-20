@@ -17,6 +17,8 @@ import Tag from 'primevue/tag'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import HelpLink from '@/guide/HelpLink.vue'
+import { valuesBefore } from '@/lib/bulkRuns'
+import { entry, recordUndo } from '@/lib/undoActions'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { filterRisks, heatGrid, levelCounts, levelRank, riskLevel, riskLevelSeverity, riskScore, riskStatusSeverity, RISK_LEVELS, RISK_SCALE, RISK_STATUSES, type HeatCell } from '@/lib/risks'
@@ -88,6 +90,83 @@ const counts = computed(() => levelCounts(risks.value.filter((r) => r.status !==
 const levelOptions = computed(() => RISK_LEVELS.map((v) => ({ label: levelLabel(v), value: v })))
 const statusOptions = computed(() => RISK_STATUSES.map((v) => ({ label: statusLabel(v), value: v })))
 const scaleOptions = (label: (n: number) => string) => RISK_SCALE.map((n) => ({ label: `${n} – ${label(n)}`, value: n }))
+
+// ---------- bulk ----------
+const selection = ref<Risk[]>([])
+const selectedIds = computed(() => selection.value.map((k) => k.id))
+const bulkStatus = ref<string | null>(null)
+const bulkLikelihood = ref<number | null>(null)
+const bulkImpact = ref<number | null>(null)
+const ownerDialog = ref(false)
+const bulkOwner = ref('')
+const bulkCategory = ref('')
+const bulkOwnerOn = ref(true)
+const bulkCategoryOn = ref(false)
+const bulkPicker = ref(false)
+// only rows that are shown stay selected, so a bulk action never changes hidden risks
+watch(filtered, (list) => {
+  const ids = new Set(list.map((k) => k.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+type RiskSet = Partial<Pick<Risk, 'status' | 'likelihood' | 'impact' | 'owner' | 'category'>>
+async function bulkSet(set: RiskSet, extra: Record<string, unknown> = {}) {
+  const ids = [...selectedIds.value]
+  if (!ids.length) return
+  const before = valuesBefore(risks.value, ids, Object.keys(set) as (keyof Risk & string)[])
+  const path = `/projects/${proj.pid}/risks/bulk`
+  try {
+    await api.post(path, { ids, set, ...extra })
+    if (before.length && Object.keys(set).length) {
+      recordUndo(
+        entry(
+          t('risksView.bulk.undo', { n: ids.length }),
+          async () => {
+            for (const b of before) await api.patch(`/risks/${b.id}`, b.before)
+          },
+          () => api.post(path, { ids, set }),
+        ),
+      )
+    }
+    notify.ok(t('risksView.bulk.updated', { n: ids.length }, ids.length))
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  }
+}
+watch(bulkStatus, (v) => v && bulkSet({ status: v }).then(() => (bulkStatus.value = null)))
+watch(bulkLikelihood, (v) => v && bulkSet({ likelihood: v }).then(() => (bulkLikelihood.value = null)))
+watch(bulkImpact, (v) => v && bulkSet({ impact: v }).then(() => (bulkImpact.value = null)))
+function openOwner() {
+  bulkOwner.value = ''
+  bulkCategory.value = ''
+  bulkOwnerOn.value = true
+  bulkCategoryOn.value = false
+  ownerDialog.value = true
+}
+async function applyOwner() {
+  const set: RiskSet = {}
+  if (bulkOwnerOn.value) set.owner = bulkOwner.value.trim()
+  if (bulkCategoryOn.value) set.category = bulkCategory.value.trim()
+  ownerDialog.value = false
+  await bulkSet(set)
+}
+async function bulkLink(items: { id: string }[]) {
+  if (!items.length) return
+  await bulkSet({}, { add_requirement_ids: items.map((i) => i.id) })
+}
+function bulkDelete() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(t('risksView.bulk.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      await api.del(`/projects/${proj.pid}/risks/bulk`, { ids })
+      notify.ok(t('risksView.bulk.deleted', { n: ids.length }, ids.length))
+      selection.value = []
+      await load()
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
 const isCell = (c: HeatCell) => cell.value?.likelihood === c.likelihood && cell.value?.impact === c.impact
 function toggleCell(c: HeatCell) {
   cell.value = isCell(c) ? null : { likelihood: c.likelihood, impact: c.impact }
@@ -278,7 +357,18 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         <Button v-if="hasFilter" :label="t('common.clear')" text size="small" severity="secondary" @click="clearFilters" />
         <span class="small muted" role="status">{{ t('risksView.shown', { count: filtered.length, total: risks.length }) }}</span>
       </div>
+      <div v-if="selection.length && canWrite" class="bulkbar" role="toolbar" :aria-label="t('risksView.bulk.toolbar')">
+        <b>{{ t('common.selected', { count: selection.length }) }}</b>
+        <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('risksView.bulk.setStatus')" :aria-label="t('risksView.bulk.setStatus')" size="small" style="min-width: 140px" />
+        <Select v-model="bulkLikelihood" :options="scaleOptions(likelihoodLabel)" option-label="label" option-value="value" :placeholder="t('risksView.bulk.setLikelihood')" :aria-label="t('risksView.bulk.setLikelihood')" size="small" style="min-width: 150px" />
+        <Select v-model="bulkImpact" :options="scaleOptions(impactLabel)" option-label="label" option-value="value" :placeholder="t('risksView.bulk.setImpact')" :aria-label="t('risksView.bulk.setImpact')" size="small" style="min-width: 150px" />
+        <Button :label="t('risksView.bulk.ownerCategory')" icon="pi pi-user" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openOwner" />
+        <Button :label="t('risksView.bulk.link')" icon="pi pi-link" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkPicker = true" />
+        <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+        <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+      </div>
       <DataTable
+        v-model:selection="selection"
         v-stack
         :value="filtered"
         data-key="id"
@@ -293,6 +383,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         :sort-order="-1"
         @row-click="(e) => openEdit(e.data as Risk)"
       >
+        <Column v-if="canWrite" selection-mode="multiple" style="width: 2.6rem" />
         <Column field="key" :header="t('common.key')" sortable style="width: 130px"><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
         <Column field="title" :header="t('common.title')" sortable body-class="stack-main" style="min-width: 200px">
           <template #body="{ data }">
@@ -383,10 +474,37 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
       </div>
     </form>
   </Dialog>
+  <ItemPickerDialog v-model:visible="bulkPicker" kind="requirement" :project-id="proj.pid" :header="t('risksView.bulk.linkHeader', { n: selection.length }, selection.length)" :confirm-label="t('common.link')" @pick="bulkLink" />
+  <Dialog v-model:visible="ownerDialog" :header="t('risksView.bulk.ownerHeader', { n: selection.length }, selection.length)" modal style="width: min(440px, 96vw)">
+    <div class="bulk-form">
+      <div class="row">
+        <Checkbox v-model="bulkOwnerOn" binary input-id="bk-risk-owner-on" />
+        <label for="bk-risk-owner-on">{{ t('risksView.bulk.setOwner') }}</label>
+      </div>
+      <InputText v-model="bulkOwner" :disabled="!bulkOwnerOn" :aria-label="t('risksView.bulk.setOwner')" :placeholder="t('risksView.bulk.emptyClears')" />
+      <div class="row">
+        <Checkbox v-model="bulkCategoryOn" binary input-id="bk-risk-cat-on" />
+        <label for="bk-risk-cat-on">{{ t('risksView.bulk.setCategory') }}</label>
+      </div>
+      <InputText v-model="bulkCategory" :disabled="!bulkCategoryOn" :aria-label="t('risksView.bulk.setCategory')" :placeholder="t('risksView.bulk.emptyClears')" />
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" text severity="secondary" @click="ownerDialog = false" />
+      <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!bulkOwnerOn && !bulkCategoryOn" @click="applyOwner" />
+    </template>
+  </Dialog>
   <ItemPickerDialog v-model:visible="picker" kind="requirement" :project-id="proj.pid" :exclude="form.requirement_ids" :header="t('risksView.linkRequirements')" :confirm-label="t('common.link')" @pick="addLinked" />
 </template>
 
 <style scoped>
+.bulk-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bulk-form .row {
+  gap: 8px;
+}
 .risk-top { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; }
 .heat-wrap { overflow-x: auto; }
 .heat { border-collapse: separate; border-spacing: 4px; margin: 0 auto; }

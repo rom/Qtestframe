@@ -105,6 +105,8 @@ async function discover(request) {
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
+  const hasDefects = items(await api(request, 'GET', `/projects/${pid}/defects`)).length > 0
+  const hasRisks = items(await api(request, 'GET', `/projects/${pid}/risks`)).length > 0
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -139,6 +141,9 @@ async function discover(request) {
     { name: 'releases', path: `${p}/releases` },
     { name: 'risks', path: `${p}/risks`, wait: '.heat' },
     { name: 'defects', path: `${p}/defects` },
+    // with a selected row (bulk toolbar); only when the project has defects / risks
+    hasDefects && { name: 'defects-bulk', path: `${p}/defects`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
+    hasRisks && { name: 'risks-bulk', path: `${p}/risks`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     { name: 'defect-dialog', path: `${p}/defects`, open: '.page-header .actions button:has(.pi-plus)', wait: '.p-dialog' },
     { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },

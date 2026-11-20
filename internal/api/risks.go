@@ -15,6 +15,8 @@ import (
 func (s *Server) routesRisks(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/risks", s.handleListRisks, "requirement.read")
 	h("POST /api/v1/projects/{pid}/risks", s.handleCreateRisk, "requirement.write")
+	h("POST /api/v1/projects/{pid}/risks/bulk", s.handleBulkRisks, "requirement.write")
+	h("DELETE /api/v1/projects/{pid}/risks/bulk", s.handleBulkDeleteRisks, "requirement.write")
 	h("GET /api/v1/risks/{id}", s.handleGetRisk, "requirement.read")
 	h("PATCH /api/v1/risks/{id}", s.handleUpdateRisk, "requirement.write")
 	h("DELETE /api/v1/risks/{id}", s.handleDeleteRisk, "requirement.write")

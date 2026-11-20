@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BULK_RESULTS, execCounts, execUndo, rejectedText, runsBefore } from './bulkRuns'
+import { BULK_RESULTS, execCounts, execUndo, rejectedText, runsBefore, valuesBefore } from './bulkRuns'
 
 describe('runsBefore', () => {
   const runs = [
@@ -35,5 +35,15 @@ describe('executions', () => {
     expect(rejectedText(r.slice(0, 2))).toBe('A: r1\nB: r2')
     expect(rejectedText(r)).toBe('A: r1\nB: r2\nC: r3\n…')
     expect(rejectedText([{ ...it1('e', 'x'), reason: undefined }])).toBe('E: ')
+  })
+})
+
+describe('valuesBefore', () => {
+  it('copies the chosen fields of the chosen rows', () => {
+    const rows = [
+      { id: 'a', status: 'open', severity: 'minor', title: 'x' },
+      { id: 'b', status: 'closed', severity: 'major', title: 'y' },
+    ]
+    expect(valuesBefore(rows, ['b', 'z'], ['status', 'severity'])).toEqual([{ id: 'b', before: { status: 'closed', severity: 'major' } }])
   })
 })
