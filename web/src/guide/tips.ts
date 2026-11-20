@@ -54,6 +54,7 @@ export const TIPS = {
   'baseline.filter': { page: 'baselines', anchor: { en: 'create-a-baseline', sv: 'skapa-en-baslinje' } },
   'trace.onlyLinked': { page: 'traceability-and-coverage', anchor: { en: 'the-traceability-matrix', sv: 'spårbarhetsmatrisen' } },
   'trace.bulk': { page: 'traceability-and-coverage', anchor: { en: 'link-several-at-once', sv: 'länka-flera-på-en-gång' } },
+  'trace.rules': { page: 'traceability-and-coverage', anchor: { en: 'traceability-rules', sv: 'spårbarhetsregler' } },
   'trace.coverage': { page: 'traceability-and-coverage', anchor: { en: 'how-coverage-is-calculated', sv: 'så-beräknas-täckningen' } },
   'token.role': { page: 'administration', anchor: { en: 'api-tokens', sv: 'api-nycklar' } },
   'token.expires': { page: 'administration', anchor: { en: 'api-tokens', sv: 'api-nycklar' } },

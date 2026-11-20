@@ -637,6 +637,68 @@ export interface Traceability {
   links: TraceLink[]
 }
 
+/** Traceability rule kinds (internal/model TraceRuleKinds). */
+export type TraceRuleKind = 'verified_by' | 'verifies' | 'relation' | 'item_link'
+
+export interface TraceRuleFields {
+  name: string
+  description: string
+  /** error | warning */
+  severity: string
+  enabled: boolean
+  /** requirement | test */
+  scope: string
+  selector: string
+  kind: TraceRuleKind | string
+  min: number
+  not_suspect?: boolean
+  passed?: boolean
+  relation_type?: string
+  /** incoming | outgoing | '' (any) */
+  direction?: string
+  target_type?: string
+  target_query?: string
+  every?: boolean
+}
+
+export interface TraceRule extends TraceRuleFields {
+  id: string
+  project_id: string
+  position: number
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TraceViolation {
+  kind: string
+  id: string
+  key: string
+  title: string
+  found: number
+  required: number
+  total: number
+}
+
+export interface TraceRuleResult {
+  rule: TraceRule
+  matched: number
+  violations: TraceViolation[]
+  violation_count: number
+  passed: boolean
+  error?: string
+}
+
+export interface TraceRulesReport {
+  results: TraceRuleResult[]
+  passed: boolean
+  summary: Record<string, number>
+}
+
+export interface ItemTraceViolation extends TraceViolation {
+  rule: TraceRule
+}
+
 export interface SearchHit {
   type: 'requirement' | 'test' | 'run' | string
   id: string
@@ -681,11 +743,11 @@ export interface TenantSettings {
 // ---------------------------------------------------------------- releases
 
 export interface ExitCriterion {
-  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated */
+  /** coverage, passed, mandatory_passed, executed, no_failed, approved, no_suspect, no_open_defects, risks_mitigated, trace_rules */
   type: string
   /** percent for percentage criteria */
   threshold?: number
-  /** minimum severity (defects) or risk level (risks) */
+  /** minimum severity (defects), risk level (risks) or rule severity (trace_rules: error | warning) */
   level?: string
 }
 

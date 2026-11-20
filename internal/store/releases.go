@@ -70,6 +70,14 @@ func validateRelease(r *model.Release) error {
 		if c.Threshold == 0 && percentCriterion(c.Type) {
 			c.Threshold = 100
 		}
+		if c.Type == "trace_rules" {
+			if c.Level == "" {
+				c.Level = "error"
+			}
+			if c.Level != "error" && c.Level != "warning" {
+				return Invalidf("the level of trace_rules must be error or warning")
+			}
+		}
 	}
 	return nil
 }
@@ -296,6 +304,9 @@ type ReleaseData struct {
 	OpenDefects func(level string) []ReleaseItem
 	// OpenRisks returns the unmitigated risks at or above a level (nil when unknown).
 	OpenRisks func(level string) []ReleaseItem
+	// RuleViolations returns the items of the scope that break traceability
+	// rules of at least a severity (nil when unknown).
+	RuleViolations func(level string) []ReleaseItem
 }
 
 // ReleaseItem is something a criterion refers to.
@@ -432,6 +443,13 @@ func EvaluateExitCriteria(criteria []model.ExitCriterion, d ReleaseData) []Crite
 			}
 			open := d.OpenDefects(c.Level)
 			out = append(out, CriterionResult{ExitCriterion: c, Met: len(open) == 0, Actual: float64(len(open)), Items: limitItems(open), Available: true})
+		case "trace_rules":
+			if d.RuleViolations == nil {
+				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
+				continue
+			}
+			bad := d.RuleViolations(c.Level)
+			out = append(out, CriterionResult{ExitCriterion: c, Met: len(bad) == 0, Actual: float64(len(bad)), Items: limitItems(bad), Available: true})
 		case "risks_mitigated":
 			if d.OpenRisks == nil {
 				out = append(out, CriterionResult{ExitCriterion: c, Met: true})
@@ -458,8 +476,10 @@ func limitItems(items []ReleaseItem) []ReleaseItem {
 }
 
 // ReleaseStatus evaluates a release. defects and risks provide the open
-// defects and risks of the scope (nil when not available).
-func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects, risks func(scope []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
+// defects and risks of the scope, rules the items of the scope (scope
+// requirements and the tests linked to them) that break traceability rules
+// (each nil when not available).
+func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects, risks func(scope []string, level string) []ReleaseItem, rules ...func(projectID string, reqs, tests []string, level string) []ReleaseItem) (*ReleaseStatusReport, error) {
 	rel, err := s.GetRelease(ctx, tenantID, id)
 	if err != nil {
 		return nil, err
@@ -552,6 +572,21 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	}
 	if risks != nil {
 		d.OpenRisks = func(level string) []ReleaseItem { return risks(rel.RequirementIDs, level) }
+	}
+	if len(rules) > 0 && rules[0] != nil {
+		var scopeTests []string
+		seen := map[string]bool{}
+		for _, rid := range rel.RequirementIDs {
+			for _, tid := range tests[rid] {
+				if !seen[tid] {
+					seen[tid] = true
+					scopeTests = append(scopeTests, tid)
+				}
+			}
+		}
+		d.RuleViolations = func(level string) []ReleaseItem {
+			return rules[0](rel.ProjectID, rel.RequirementIDs, scopeTests, level)
+		}
 	}
 	rep := &ReleaseStatusReport{Release: rel, Criteria: EvaluateExitCriteria(rel.ExitCriteria, d), Summary: sum}
 	rep.Go = true

@@ -10,6 +10,7 @@ import AutoComplete from 'primevue/autocomplete'
 import { useProjectStore } from '@/stores/project'
 import { filterSources, mergeSources } from '@/lib/sources'
 import ReviewBar from './ReviewBar.vue'
+import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
@@ -558,6 +559,7 @@ function criterionLabel(id: string | null) {
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <ReviewBar v-if="item" kind="requirement" :item="item" @changed="onReviewed" />
+    <TraceRuleViolations v-if="item" kind="requirement" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${relationCount}/${linkCount}`" />
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>

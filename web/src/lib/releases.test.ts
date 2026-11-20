@@ -21,15 +21,27 @@ const t = (key: string, params?: Record<string, unknown>) => (params ? `${key} $
 const level = (kind: string, v: string) => `${kind}:${v}`
 const result = (p: Partial<CriterionResult>): CriterionResult => ({ type: 'coverage', met: true, actual: 0, total: 0, items: [], available: true, ...p })
 
+describe('trace rules criterion', () => {
+  it('cleans the level and links rule items to the rules', () => {
+    expect(cleanCriteria([{ type: 'trace_rules', level: 'warning', threshold: 5 }, { type: 'trace_rules', level: 'x' }, { type: 'trace_rules' }])).toEqual([
+      { type: 'trace_rules', level: 'warning' },
+      { type: 'trace_rules', level: 'error' },
+      { type: 'trace_rules', level: 'error' },
+    ])
+    expect(releaseItemRoute({ kind: 'trace_rule', id: 'r1' }, 'p1')).toEqual({ name: 'traceability', params: { projectId: 'p1' }, query: { view: 'rules' } })
+  })
+})
+
 describe('criterion parameters', () => {
   it('knows what each type takes', () => {
-    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel'])
+    expect(CRITERION_TYPES.map(criterionParam)).toEqual(['threshold', 'threshold', 'none', 'threshold', 'none', 'threshold', 'none', 'severity', 'riskLevel', 'ruleSeverity'])
   })
   it('creates criteria with defaults', () => {
     expect(newCriterion('passed')).toEqual({ type: 'passed', threshold: 100 })
     expect(newCriterion('no_open_defects')).toEqual({ type: 'no_open_defects', level: 'major' })
     expect(newCriterion('risks_mitigated')).toEqual({ type: 'risks_mitigated', level: 'high' })
     expect(newCriterion('no_failed')).toEqual({ type: 'no_failed' })
+    expect(newCriterion('trace_rules')).toEqual({ type: 'trace_rules', level: 'error' })
   })
   it('keeps the threshold when the type stays a percentage', () => {
     expect(changeCriterionType({ type: 'coverage', threshold: 80 }, 'passed')).toEqual({ type: 'passed', threshold: 80 })
@@ -67,6 +79,8 @@ describe('criterion text and values', () => {
     expect(criterionText({ type: 'risks_mitigated', level: 'high' }, t, level)).toContain('riskLevel:high')
     expect(criterionText({ type: 'risks_mitigated' }, t, level)).toBe('releasesView.criterion.risks_mitigated.any')
     expect(criterionText({ type: 'no_failed' }, t, level)).toBe('releasesView.criterion.no_failed.label')
+    expect(criterionText({ type: 'trace_rules', level: 'error' }, t, level)).toBe('releasesView.criterion.trace_rules.errorsOnly')
+    expect(criterionText({ type: 'trace_rules', level: 'warning' }, t, level)).toBe('releasesView.criterion.trace_rules.withWarnings')
   })
   it('gives actual and target', () => {
     expect(resultValues(result({ type: 'passed', actual: 80, threshold: 95 }))).toEqual({ actual: '80 %', target: '≥ 95 %' })

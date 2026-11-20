@@ -186,6 +186,20 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 		return nil, err
 	}
 	clock.at = time.Time{} // today: the live clock
+	// traceability rules (see Traceability → Rules)
+	for _, tr := range []model.TraceRule{
+		{Name: "Every MUST requirement is verified by a test", Description: "Mandatory requirements (MUST, SHALL) need at least one linked test.",
+			Severity: "error", Scope: model.KindRequirement, Selector: "obligation:must OR obligation:shall", Kind: model.TraceVerifiedBy, Min: 1},
+		{Name: "No suspect links on MUST requirements", Description: "Review the tests of a mandatory requirement after it changed.",
+			Severity: "warning", Scope: model.KindRequirement, Selector: "obligation:must OR obligation:shall", Kind: model.TraceVerifiedBy,
+			TraceRuleOptions: model.TraceRuleOptions{NotSuspect: true, Every: true}},
+		{Name: "Every test verifies a requirement", Severity: "warning", Scope: model.KindTest, Kind: model.TraceVerifies, Min: 1},
+	} {
+		tr.ProjectID, tr.Enabled, tr.CreatedBy = p.ID, true, "seed"
+		if err := st.CreateTraceRule(ctx, tenantID, &tr); err != nil {
+			return nil, err
+		}
+	}
 	run := &model.TestRun{ProjectID: p.ID, Name: "Sprint 12 regression", Environment: "staging", Build: "1.4.0-rc1", CreatedBy: "seed"}
 	if err := st.CreateRun(ctx, tenantID, run, testIDs); err != nil {
 		return nil, err

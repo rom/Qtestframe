@@ -270,5 +270,8 @@ func (s *Server) releaseStatus(r *http.Request, p *Principal, id string) (*store
 	ctx := r.Context()
 	return s.Store.ReleaseStatus(ctx, p.TenantID(), id,
 		func(scope []string, level string) []store.ReleaseItem { return s.releaseDefects(r, p, scope, level) },
-		func(scope []string, level string) []store.ReleaseItem { return s.releaseRisks(r, p, scope, level) })
+		func(scope []string, level string) []store.ReleaseItem { return s.releaseRisks(r, p, scope, level) },
+		func(projectID string, reqs, tests []string, level string) []store.ReleaseItem {
+			return s.releaseRuleViolations(r, p, projectID, reqs, tests, level)
+		})
 }

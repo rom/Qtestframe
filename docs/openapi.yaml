@@ -8964,6 +8964,257 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/trace-rules:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: List traceability rules
+      operationId: getProjectsByPidTraceRules
+      description: |-
+        the project's rules `[TraceRule]` (name, description, severity, enabled, scope, selector, kind, min, options)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Traceability
+      summary: Create traceability rule
+      operationId: postProjectsByPidTraceRules
+      description: |-
+        `{name, description?, severity: error|warning, enabled?, scope: requirement|test, selector?, kind: verified_by|verifies|relation|item_link, min?, options?}` → TraceRule; at most 200 per project
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/trace-rules/evaluate:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Traceability
+      summary: Evaluate traceability rules
+      operationId: getProjectsByPidTraceRulesEvaluate
+      description: |-
+        per enabled rule (all with `?all=1`; one with `?rule_id=`) the matching and violating items (`?limit=` per rule) and pass/fail
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/trace-rules/preview:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Traceability
+      summary: Preview a traceability rule
+      operationId: postProjectsByPidTraceRulesPreview
+      description: |-
+        evaluates an unsaved rule (same body as create)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/trace-rules/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Traceability
+      summary: Get traceability rule
+      operationId: getTraceRulesById
+      description: '**Permission:** `project.read`.'
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags:
+      - Traceability
+      summary: Update traceability rule
+      operationId: patchTraceRulesById
+      description: |-
+        partial update of a rule
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Traceability
+      summary: Delete traceability rule
+      operationId: deleteTraceRulesById
+      description: '**Permission:** `project.update`.'
+      x-permission: project.update
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/trace-rules:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Requirements
+      summary: Rules a requirement breaks
+      operationId: getRequirementsByIdTraceRules
+      description: |-
+        the enabled rules the requirement breaks, with what is missing
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/tests/{id}/trace-rules:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Tests
+      summary: Rules a test breaks
+      operationId: getTestsByIdTraceRules
+      description: |-
+        the enabled rules the test breaks, with what is missing
+
+        **Permission:** `test.read`.
+      x-permission: test.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:

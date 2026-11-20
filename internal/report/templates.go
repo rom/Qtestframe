@@ -8,6 +8,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
+	"github.com/rom/qtestframe/internal/tracerules"
 )
 
 var (
@@ -217,7 +218,7 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 			orphans.Rows = append(orphans.Rows, []string{t.Key, t.Title, humanize(t.Status), humanize(lastResult(t))})
 		}
 	}
-	return &export.Dataset{Sections: []export.Section{
+	sections := []export.Section{
 		kpiSection("summary", "Summary",
 			kv{"Requirements", itoa(len(d.Requirements))},
 			kv{"Tests", itoa(len(d.Tests))},
@@ -226,7 +227,35 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 			kv{"Tests without requirements", itoa(len(orphans.Rows))},
 		),
 		matrix, orphans,
-	}}, nil
+	}
+	if len(d.TraceRules) > 0 {
+		sections = append(sections, traceRuleSections(d.TraceRules)...)
+	}
+	return &export.Dataset{Sections: sections}, nil
+}
+
+// traceRuleSections lists the traceability rules with their results and
+// the items that break them.
+func traceRuleSections(results []tracerules.Result) []export.Section {
+	rules := export.Section{Name: "trace_rules", Title: "Traceability rules",
+		Columns: []string{"Rule", "Severity", "Applies to", "Selector", "Matching items", "Violations", "Result"}}
+	viol := export.Section{Name: "trace_rule_violations", Title: "Traceability rule violations",
+		Columns: []string{"Rule", "Severity", "Item", "Title", "Found", "Required"}}
+	for _, res := range results {
+		result := "Passed"
+		switch {
+		case res.Error != "":
+			result = "Invalid: " + res.Error
+		case !res.Passed:
+			result = "Failed"
+		}
+		rules.Rows = append(rules.Rows, []string{res.Rule.Name, humanize(res.Rule.Severity), humanize(res.Rule.Scope) + "s", res.Rule.Selector,
+			itoa(res.Matched), itoa(res.ViolationCount), result})
+		for _, v := range res.Violations {
+			viol.Rows = append(viol.Rows, []string{res.Rule.Name, humanize(res.Rule.Severity), v.Key, v.Title, itoa(v.Found), itoa(v.Required)})
+		}
+	}
+	return []export.Section{rules, viol}
 }
 
 // ---------------------------------------------------------------- run summary

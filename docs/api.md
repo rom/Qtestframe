@@ -593,6 +593,47 @@ Reading needs `project.read`; creating and deleting links needs
 | DELETE | `/links/{id}` | |
 | GET | `/projects/{pid}/traceability?q=&tq=` | `{"requirements":[{id,key,title,obligation,coverage}], "tests":[{id,key,title,last_result}], "links":[TraceLink]}`; `q` filters requirements, `tq` tests |
 
+### Traceability rules
+
+Rules say that the items matching a selector must have at least `min`
+traces of a kind. Reading and evaluating needs `project.read` (the
+per-item routes `requirement.read` / `test.read`); creating, changing and
+deleting rules needs `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/trace-rules` | `[TraceRule]` in their order |
+| POST | `/projects/{pid}/trace-rules` | TraceRule fields (below) → 201 TraceRule; a new rule is enabled unless `enabled: false`; at most 200 rules per project |
+| GET / PATCH / DELETE | `/trace-rules/{id}` | PATCH changes the fields given |
+| GET | `/projects/{pid}/trace-rules/evaluate?all=&rule_id=&limit=` | evaluates the enabled rules (`all=1`: also the disabled ones; `rule_id`: one rule) → `{"results":[TraceRuleResult], "passed", "summary":{rules, passed, failed, errors, warnings, violations}}`; `passed` is false when an enabled rule of severity `error` fails. `limit` bounds the violations listed per rule (default 500), `violation_count` is always the full number |
+| POST | `/projects/{pid}/trace-rules/preview?limit=` | evaluates an unsaved rule (the body of a POST) → TraceRuleResult |
+| GET | `/requirements/{id}/trace-rules`, `/tests/{id}/trace-rules` | the enabled rules the item breaks → `{"items":[{rule, kind, id, key, title, found, required, total}]}` |
+
+TraceRule: `{"id","project_id","name","description","severity":"error|warning","enabled","scope":"requirement|test","selector":"<query>","kind","min","not_suspect"?,"passed"?,"relation_type"?,"direction"?,"target_type"?,"target_query"?,"every"?,"position","created_by","created_at","updated_at"}`.
+`selector` is a [query](#query-language) on the items of `scope` (empty: all).
+Options that do not apply to the kind are cleared.
+
+| `kind` | Applies to | Counts | Options |
+|---|---|---|---|
+| `verified_by` | requirements | its trace links to tests | `not_suspect`, `passed` (the test's last result is passed), `target_query` (on the test) |
+| `verifies` | tests | its trace links to requirements | `not_suspect`, `target_query` (on the requirement) |
+| `relation` | requirements | its relations to other requirements | `relation_type` (empty: any), `direction` (`incoming`: the other requirement is the source, e.g. `refines` + `incoming` = refined by child requirements; `outgoing`; empty: both), `target_query` |
+| `item_link` | requirements, tests | its item links | `target_type` (`requirement`, `test`, `run`, `file`, `report`, `url`; empty: any), `direction`, `target_query` (needs `target_type` requirement or test) |
+
+`min` is 1 to 1000 (default 1). With `every: true` an item also breaks the
+rule when one of its traces (of the relation type, direction and target
+type) does not meet the conditions; `min` may then be 0, e.g. "no suspect
+link": `{"kind":"verified_by","not_suspect":true,"every":true,"min":0}`.
+An invalid selector or target query is a 400 `invalid_query` whose message
+starts with `selector:` or `target_query:`.
+
+TraceRuleResult: `{"rule":TraceRule, "matched": n, "violations":[{kind, id, key, title, found, required, total}], "violation_count": n, "passed", "error"?}`;
+`found` counts the qualifying traces, `total` the traces before the
+conditions (`not_suspect`, `passed`, `target_query`). The **Traceability**
+report lists the enabled rules and their violations (sections
+`trace_rules` and `trace_rule_violations`, evaluated on the report's
+requirements and tests).
+
 ## Operations (runs and executions)
 
 Permissions: reading `run.read`; creating, updating, deleting runs and
@@ -861,6 +902,7 @@ Exit criterion types (`threshold` in percent, default 100):
 | `no_suspect` | no scope requirement has a suspect link |
 | `no_open_defects` | no open defect of at least severity `level` (critical, major, minor, trivial) is linked to the scope |
 | `risks_mitigated` | no identified or mitigating risk of at least `level` (low, medium, high, critical) addresses a scope requirement |
+| `trace_rules` | no scope requirement and no test linked to one breaks an enabled [traceability rule](#traceability-rules) of severity `level` (`error`, the default: errors only; `warning`: errors and warnings). The items list each item once with the names of the rules it breaks as `note` |
 
 ## Defects
 

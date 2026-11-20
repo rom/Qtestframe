@@ -10,6 +10,7 @@ import ConflictDialog from './ConflictDialog.vue'
 import { fieldConflicts, staleOf, TEST_FIELDS, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import ReviewBar from './ReviewBar.vue'
+import TraceRuleViolations from './TraceRuleViolations.vue'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
@@ -475,6 +476,7 @@ const scriptPlaceholder = computed(() => {
     </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <ReviewBar v-if="item" kind="test" :item="item" @changed="onReviewed" />
+    <TraceRuleViolations v-if="item" kind="test" :item-id="item.id" :project-id="projectId" :stamp="`${item.version}/${links.length}/${linkCount}`" />
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>

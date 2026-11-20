@@ -70,6 +70,7 @@ const guideEn = {
     baseline_filter: "An optional query that limits which requirements and tests are frozen in the baseline, for example status:approved.",
     trace_bulk: "Tick requirements, optionally choose tests, then link, unlink or confirm suspect links for all of them at once. With no tests chosen, the actions take all tests.",
     trace_onlyLinked: "Show only tests that are linked to at least one requirement, which makes large matrices easier to read.",
+    trace_rules: "Rules say how items must be traced, for example that every MUST requirement is verified by a test. Each rule shows how many items it applies to and which items break it.",
     trace_coverage: "Coverage comes from the latest result of every linked test: none (no tests), not run, passed (all passed), failed (any failed) or partial.",
     token_role: "The highest role the token may use. It is also limited by your own current role in the organisation.",
     token_expires: "When the token stops working. Short-lived tokens limit the damage if one leaks.",

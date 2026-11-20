@@ -290,6 +290,7 @@ func (s *Server) routes() {
 	// SCIM provisioning: its own token authentication (scim.go)
 	s.routesSCIM(m)
 	s.routesSCIMAdmin(h)
+	s.routesTraceRules(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -480,7 +481,8 @@ func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.As(err, &qe):
 		pos := qe.Pos
-		writeJSON(w, http.StatusBadRequest, apiError{Error: qe.Error(), Code: "invalid_query", Position: &pos})
+		// err may name the query it belongs to ("selector: query: …")
+		writeJSON(w, http.StatusBadRequest, apiError{Error: err.Error(), Code: "invalid_query", Position: &pos})
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", err.Error())
 	case errors.Is(err, store.ErrConflict):
