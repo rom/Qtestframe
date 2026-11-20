@@ -279,11 +279,11 @@ func (s *Server) handleSignBaseline(w http.ResponseWriter, r *http.Request, p *P
 	}
 	if p.User.PasswordHash != "" {
 		if !auth.CheckPassword(p.User.PasswordHash, req.Password) {
-			writeError(w, http.StatusUnauthorized, "reauth_failed", "the password is not correct")
+			writeError(w, http.StatusForbidden, "reauth_failed", "the password is not correct")
 			return
 		}
 	} else if time.Since(p.Session.CreatedAt) > 15*time.Minute {
-		writeError(w, http.StatusUnauthorized, "reauth_required", "sign in again (less than 15 minutes ago) to sign")
+		writeError(w, http.StatusForbidden, "reauth_required", "sign in again (less than 15 minutes ago) to sign")
 		return
 	}
 	name := p.User.DisplayName

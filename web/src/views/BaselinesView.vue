@@ -17,6 +17,7 @@ import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
 import QueryInput from '@/components/QueryInput.vue'
+import BaselineSignoffs from '@/components/BaselineSignoffs.vue'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { formatDateTime, formatFullDateTime } from '@/lib/format'
 import { P } from '@/lib/permissions'
@@ -259,6 +260,7 @@ function remove(b: Baseline) {
         <Button icon="pi pi-times" text rounded severity="secondary" :aria-label="t('common.close')" v-tooltip="t('common.close')" @click="closeDetail" />
       </div>
       <p v-if="detail.description" class="muted" style="margin: 0 0 8px">{{ detail.description }}</p>
+      <BaselineSignoffs :baseline-id="detail.id" />
       <Tabs :id="tabsId" v-model:value="tab" class="editor-tabs" style="margin-top: 4px" scrollable>
         <TabList>
           <Tab value="items"><i class="pi pi-list" /> {{ t('baselines.items') }} <span class="count">{{ detail.items?.length ?? 0 }}</span></Tab>

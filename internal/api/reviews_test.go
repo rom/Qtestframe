@@ -80,7 +80,7 @@ func TestReviewRequestsAndSignoffs(t *testing.T) {
 	b := a.m("POST", "/api/v1/projects/"+f.pid+"/baselines", map[string]any{"name": "B1"}, 201)
 	bid := b["id"].(string)
 	v.m("POST", "/api/v1/baselines/"+bid+"/signoffs", map[string]any{"meaning": "approved", "password": testPassword}, 403)
-	rc.m("POST", "/api/v1/baselines/"+bid+"/signoffs", map[string]any{"meaning": "approved", "password": "wrong"}, 401)
+	rc.m("POST", "/api/v1/baselines/"+bid+"/signoffs", map[string]any{"meaning": "approved", "password": "wrong"}, 403)
 	rc.m("POST", "/api/v1/baselines/"+bid+"/signoffs", map[string]any{"meaning": "liked", "password": testPassword}, 400)
 	so := rc.m("POST", "/api/v1/baselines/"+bid+"/signoffs", map[string]any{"meaning": "approved", "comment": "OK", "password": testPassword}, 201)
 	if so["user_email"] != "rita@example.com" || len(so["content_hash"].(string)) != 64 || so["valid"] != true {

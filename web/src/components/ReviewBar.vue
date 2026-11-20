@@ -6,6 +6,7 @@ import { patchEntry, recordUndo } from '@/lib/undoActions'
 import { computed, ref } from 'vue'
 import Button from 'primevue/button'
 import StatusTag from './StatusTag.vue'
+import ReviewRequestsPanel from './ReviewRequestsPanel.vue'
 import { api } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { useAuthStore } from '@/stores/auth'
@@ -13,7 +14,7 @@ import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
 
-const props = defineProps<{ kind: 'requirement' | 'test'; item: { id: string; key: string; status: string } }>()
+const props = defineProps<{ kind: 'requirement' | 'test'; item: { id: string; key: string; status: string; project_id?: string } }>()
 const emit = defineEmits<{ changed: [item: unknown] }>()
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -47,6 +48,7 @@ async function decide(status: string) {
 </script>
 
 <template>
+  <div class="review-stack">
   <div v-if="canReview && open.length" class="review-bar row" role="group" :aria-label="t('review.title')">
     <i class="pi pi-verified" aria-hidden="true" />
     <span class="grow small">
@@ -66,9 +68,16 @@ async function decide(status: string) {
       @click="decide(d.status)"
     />
   </div>
+  <ReviewRequestsPanel :kind="kind" :item="item" />
+  </div>
 </template>
 
 <style scoped>
+.review-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .review-bar {
   gap: 8px;
   padding: 8px 12px;
