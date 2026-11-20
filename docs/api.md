@@ -656,7 +656,143 @@ and tests of a project.
 | POST | `/projects/{pid}/baselines` | requirement.write | `{"name", "description", "query"?}` (`query` filters requirements and tests like the export filter) → Baseline |
 | GET | `/baselines/{id}` | requirement.read | Baseline with `items` |
 | GET | `/baselines/{id}/compare?to=current\|<baseline_id>` | requirement.read | BaselineDiff `{from, to, added, removed, changed, unchanged}`; each entry `{entity_type, entity_id, key, title, from_version, to_version, changed_fields}` |
-| DELETE | `/baselines/{id}` | requirement.write | |
+| DELETE | `/baselines/{id}` | requirement.write | 409 when the baseline is signed |
+| GET | `/baselines/{id}/signoffs` | requirement.read | `[Signoff]` `{id, user_email, user_name, meaning, comment, content_hash, signed_at, valid}`; `valid` is false when the content no longer has the signed hash |
+| POST | `/baselines/{id}/signoffs` | requirement.review or test.review | electronic signature `{"meaning": "authored\|reviewed\|approved\|released", "comment", "password"}`. The password is checked again (403 `reauth_failed`); single sign-on accounts need a session less than 15 minutes old (403 `reauth_required`); API tokens cannot sign. `content_hash` is the SHA-256 of the baseline's items. 409 when the user already signed with that meaning. Audited as `baseline.signed`. |
+
+## Releases
+
+A release is a version of the product: the requirements it contains
+(scope), the runs that test it and exit criteria that decide go / no-go.
+Reading needs `project.read`, changing `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/releases` | `[Release]` with `requirement_count`, `run_count` |
+| POST | `/projects/{pid}/releases` | `{"name","version","description","status","target_date":"YYYY-MM-DD","exit_criteria":[ExitCriterion]}`; without `exit_criteria` the defaults are used |
+| GET | `/releases/{id}` | Release with `requirement_ids` |
+| PATCH | `/releases/{id}` | any of the fields above, plus `release_note`, `override`. Setting `status` to `released` needs a go; without it 409 `{"code":"no_go","status":ReleaseStatusReport}` unless `override: true` and a `release_note`. Releasing sets `released_at`/`released_by` and creates the baseline "Release <name>" of the scope and its tests |
+| DELETE | `/releases/{id}` | runs keep their results and lose the release |
+| POST | `/releases/{id}/requirements` | `{"add":[ids],"remove":[ids],"query":"<filter expr>"}` (the query adds its matches) → `{"added","removed","release"}` |
+| GET | `/releases/{id}/status` | `ReleaseStatusReport {release, go, criteria:[{type, threshold, level, met, actual, total, items:[{kind,id,key,title,note}], available}], summary}` |
+
+Runs belong to a release with `release_id` on `POST /projects/{pid}/runs`
+and `PATCH /runs/{id}` (`""` removes it). The results of a release are the
+latest result of each test in its runs.
+
+Exit criterion types (`threshold` in percent, default 100):
+
+| Type | Met when |
+|---|---|
+| `coverage` | at least `threshold` % of the scope requirements have tests |
+| `passed` | at least `threshold` % of the scope requirements have all their tests passed |
+| `mandatory_passed` | every MUST/SHALL requirement has all tests passed |
+| `executed` | at least `threshold` % of the release executions have a result |
+| `no_failed` | no test of the release failed or is blocked |
+| `approved` | at least `threshold` % of the scope requirements are approved, implemented or verified |
+| `no_suspect` | no scope requirement has a suspect link |
+| `no_open_defects` | no open defect of at least severity `level` (critical, major, minor, trivial) is linked to the scope |
+| `risks_mitigated` | no identified or mitigating risk of at least `level` (low, medium, high, critical) addresses a scope requirement |
+
+## Defects
+
+Defects have keys like `SHOP-BUG-3`. Reading needs `project.read`; creating,
+changing and linking `run.execute`; deleting `project.update`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/defects?q=` | `[Defect]`; query fields `key, title, description, status, severity, priority, assignee, external, created_by, open, linked` |
+| POST | `/projects/{pid}/defects` | `{"title","description","status","severity","priority","assignee","external_key","external_url","links":[{"entity_type":"requirement\|test\|execution","entity_id"}]}` |
+| GET | `/defects/{id}` | Defect with `links` (key and title of each item) |
+| PATCH | `/defects/{id}` | any field above |
+| DELETE | `/defects/{id}` | |
+| POST / DELETE | `/defects/{id}/links` | `{"entity_type","entity_id"}` (same project) |
+| GET | `/requirements/{id}/defects`, `/tests/{id}/defects`, `/executions/{id}/defects` | `[LinkedDefect]` with `via`; a requirement includes the defects of its tests and their executions |
+
+Statuses: `open`, `in_progress` (open), `resolved`, `closed`, `rejected`.
+Severities: `critical`, `major`, `minor`, `trivial`. Requirements carry
+`open_defects` (query field `defects`).
+
+**Jira and GitHub.** Each project can be connected to one tracker.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github, url, project_key, repo, issue_type, labels, user, has_token}`; the token is never returned |
+| PUT | `/projects/{pid}/defect-tracker` | project.update | same fields plus `token` (write-only; empty keeps the saved one) and `clear_token` |
+| POST | `/projects/{pid}/defect-tracker/check` | project.update | 200 or 502 `tracker_error` |
+| POST | `/defects/{id}/push` | run.execute | creates the issue → Defect with `external_key`, `external_url`; 409 when already linked |
+| POST | `/defects/{id}/sync` | run.execute | reads the issue status and maps it onto the defect |
+| POST | `/projects/{pid}/defects/sync` | run.execute | all linked defects → `{"synced","changed","failed":[{key,error}]}` |
+| POST | `/projects/{pid}/defects/import` | run.execute | `{"external_key","severity","links"}` creates a defect from an existing issue |
+
+Jira uses REST API v2 at the site URL with e-mail + API token (basic
+auth), or a personal access token when `user` is empty. GitHub uses
+`https://api.github.com` (or a GitHub Enterprise API URL) and `repo`
+`owner/name`; a fine-grained token needs Issues read and write. Status
+mapping: Jira status categories To Do → `open`, In Progress →
+`in_progress`, Done → `closed` (a resolution such as Won't Do or Duplicate
+→ `rejected`); GitHub open → `open`, closed → `closed`, closed as not
+planned → `rejected`.
+
+## Risks
+
+Reading needs `requirement.read`, changing `requirement.write`.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/projects/{pid}/risks` | `[Risk]`, highest score first |
+| POST | `/projects/{pid}/risks` | `{"title","description","category","likelihood":1-5,"impact":1-5,"status","mitigation","owner","requirement_ids":[...]}` (likelihood and impact default to 3) |
+| GET / PATCH / DELETE | `/risks/{id}` | |
+| POST | `/risks/{id}/requirements` | `{"add":[ids],"remove":[ids]}` |
+| GET | `/requirements/{id}/risks` | the risks a requirement addresses |
+
+`score` is likelihood × impact; `level` is `low` (1–4), `medium` (5–9),
+`high` (10–16) or `critical` (17–25). Statuses: `identified`, `mitigating`
+(open), `mitigated`, `accepted`, `closed`. `covered` and `verified` count
+the linked requirements with tests and with all tests passed. Requirements
+carry `risk_level`, the highest level of their open risks (query field
+`risk`).
+
+## Reviews
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/review-checklists` | default checklist texts per kind |
+| GET | `/reviews?project_id=&entity_type=&entity_id=&status=&reviewer=me` | review requests; without a project or item, the caller's own |
+| POST | `/reviews` | `{"entity_type":"requirement\|test","entity_id","reviewers":[user id, e-mail or handle],"message","due_date","checklist":[{"text"}]}` (write permission on the item) → the new requests; reviewers with a pending request for the item are skipped |
+| GET | `/reviews/{id}` | ReviewRequest with `entity_key`, `entity_title`, `outdated` (the item changed since) |
+| PATCH | `/reviews/{id}` | reviewer: `{"checklist":[{"checked","note"}],"comment","decision":"approved\|changes_requested"}`. Approving needs every point checked or noted; requesting changes needs a comment. Requester (or write permission): `{"cancel":true}`. 409 once decided |
+
+## Notifications and webhooks
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/notifications?unread=1&limit=` | signed in | `{"items":[Notification],"unread":n}` |
+| POST | `/notifications/read` | signed in | `{"ids":[...]}`, or `{}` for all |
+| GET | `/webhook-events` | signed in | event names |
+| GET | `/projects/{pid}/webhooks` | project.update | `[Webhook]` without secrets (`has_secret`) |
+| POST | `/projects/{pid}/webhooks` | project.update | `{"name","url","events":["*"\|event...],"enabled","secret"?}` → Webhook with `secret` (shown only here) |
+| PATCH | `/webhooks/{id}` | project.update | the same fields; `"rotate_secret": true` returns a new secret |
+| DELETE | `/webhooks/{id}` | project.update | |
+| POST | `/webhooks/{id}/test` | project.update | sends `ping` now → `{"ok","status","error"}` |
+
+Users are notified (never about their own actions) when they are made
+owner, assignee of an execution or a defect, are @mentioned in a
+description, comment or execution notes, get a review request or a
+decision on one, and when a defect assigned to them changes status.
+
+A webhook delivery is `POST <url>` with `Content-Type: application/json`,
+headers `X-Qtestframe-Event`, `X-Qtestframe-Webhook` and
+`X-Qtestframe-Signature: sha256=<hex HMAC-SHA256 of the body with the
+secret>`, and body
+`{"id","event","project_id","actor","time","data"}`. Events:
+`requirement.created/updated`, `test.created/updated`,
+`run.created/updated/completed`, `execution.updated`,
+`defect.created/updated/status/assigned`, `risk.created/updated`,
+`release.created/updated/released`, `comment.created`,
+`review.requested/completed`, `baseline.signed`. Deliveries run in the
+background with a 10 s timeout, are not retried and do not follow
+redirects; the latest outcome is stored as `last_status`, `last_error`.
 
 ## Comments
 
