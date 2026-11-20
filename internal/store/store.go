@@ -21,7 +21,18 @@ var (
 	ErrNotFound = errors.New("not found")
 	ErrConflict = errors.New("conflict")
 	ErrInvalid  = errors.New("invalid")
+	// ErrStale: the item was saved by someone else since it was read (the
+	// version no longer matches). It is also an ErrConflict.
+	ErrStale = fmt.Errorf("%w: it was changed by someone else in the meantime", ErrConflict)
 )
+
+// sameVersion checks that an UPDATE … AND version = ? hit its row.
+func sameVersion(res sql.Result) error {
+	if n, err := res.RowsAffected(); err == nil && n == 0 {
+		return ErrStale
+	}
+	return nil
+}
 
 // Invalidf returns an ErrInvalid wrapping a formatted message.
 func Invalidf(format string, a ...any) error {

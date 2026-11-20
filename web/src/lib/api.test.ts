@@ -65,6 +65,14 @@ describe('request', () => {
     expect(init.body).toBe('{"name":"n"}')
   })
 
+  it('sends If-Match for the version a change is based on', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve(res(200, { id: '1' }, { 'Content-Type': 'application/json' })))
+    await api.patch('/x', { a: 1 }, { ifMatch: 4 })
+    expect(fetchMock.mock.calls[0][1].headers['If-Match']).toBe('"4"')
+    await api.patch('/x', { a: 1 }, { ifMatch: '' })
+    expect(fetchMock.mock.calls[1][1].headers['If-Match']).toBeUndefined()
+  })
+
   it('supports patch, put and delete with body', async () => {
     setCsrfToken('t')
     fetchMock.mockImplementation(() => Promise.resolve(res(204)))

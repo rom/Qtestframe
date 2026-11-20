@@ -273,6 +273,7 @@ func (s *Server) handleGetRequirement(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, rq.Version)
 	writeJSON(w, http.StatusOK, rq)
 }
 
@@ -281,6 +282,9 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 	rq, err := s.Store.GetRequirement(ctx, p.TenantID(), r.PathValue("id"))
 	if err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if !s.requireVersion(w, r, p, "requirement", rq.ID, rq.Version) {
 		return
 	}
 	body, err := readBody(r)
@@ -308,7 +312,10 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	s.ensureInitialRevision(ctx, p, model.KindRequirement, rq.ID)
-	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), rq, keys["criteria"]); err != nil {
+	if err := s.Store.UpdateRequirement(ctx, p.TenantID(), rq, keys["criteria"]); isStale(err) {
+		s.staleItem(w, r, p, "requirement", rq.ID)
+		return
+	} else if err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -324,6 +331,7 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, out.Version)
 	writeJSON(w, http.StatusOK, out)
 }
 
@@ -558,6 +566,7 @@ func (s *Server) handleGetTest(w http.ResponseWriter, r *http.Request, p *Princi
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, t.Version)
 	writeJSON(w, http.StatusOK, t)
 }
 
@@ -566,6 +575,9 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	t, err := s.Store.GetTest(ctx, p.TenantID(), r.PathValue("id"))
 	if err != nil {
 		s.fail(w, r, err)
+		return
+	}
+	if !s.requireVersion(w, r, p, "test", t.ID, t.Version) {
 		return
 	}
 	body, err := readBody(r)
@@ -593,7 +605,10 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	s.ensureInitialRevision(ctx, p, model.KindTest, t.ID)
-	if err := s.Store.UpdateTest(ctx, p.TenantID(), t, keys["steps"]); err != nil {
+	if err := s.Store.UpdateTest(ctx, p.TenantID(), t, keys["steps"]); isStale(err) {
+		s.staleItem(w, r, p, "test", t.ID)
+		return
+	} else if err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -609,6 +624,7 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 		s.fail(w, r, err)
 		return
 	}
+	setVersionTag(w, out.Version)
 	writeJSON(w, http.StatusOK, out)
 }
 

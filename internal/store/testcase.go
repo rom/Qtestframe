@@ -330,8 +330,13 @@ func (s *Store) UpdateTest(ctx context.Context, tenantID string, t *model.TestCa
 		if err := s.checkFolder(ctx, c, tenantID, t.ProjectID, model.KindTest, t.FolderID); err != nil {
 			return err
 		}
-		if _, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, updated_at = ?, version = ? WHERE id = ?`,
-			nullStr(t.FolderID), t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script, t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.UpdatedAt, t.Version, t.ID); err != nil {
+		// AND version: a save that raced with another one fails (ErrStale)
+		res, err := c.exec(ctx, `UPDATE test_cases SET folder_id = ?, title = ?, description = ?, preconditions = ?, execution_type = ?, script_language = ?, script = ?, expected_result = ?, priority = ?, status = ?, estimated_min = ?, tags = ?, updated_at = ?, version = ? WHERE id = ? AND version = ?`,
+			nullStr(t.FolderID), t.Title, t.Description, t.Preconditions, t.ExecutionType, t.ScriptLanguage, t.Script, t.ExpectedResult, t.Priority, t.Status, t.EstimatedMin, encodeTags(t.Tags), t.UpdatedAt, t.Version, t.ID, old.Version)
+		if err != nil {
+			return err
+		}
+		if err := sameVersion(res); err != nil {
 			return err
 		}
 		if err := setCategories(ctx, c, model.KindTest, t.ProjectID, t.ID, t.CategoryIDs); err != nil {

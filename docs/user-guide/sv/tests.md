@@ -132,7 +132,7 @@ Kolumnen **Senaste utfall** visar det senaste utfallet. I frågor hittar `last_r
 
 ## Kommentarer och versionshistorik
 
-**Kommentarer** och **Versionshistorik** fungerar precis som för [krav](requirements.md#kommentarer). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort.
+**Kommentarer** och **Versionshistorik** fungerar precis som för [krav](requirements.md#kommentarer). När du återställer en version av ett testfall återställs fälten och stegen som en ny version; stegen får nya id:n och anrop till borttagna testfall tas bort. Om någon annan sparar ett testfall medan du redigerar det kan du jämföra och välja i stället för att skriva över den andras ändringar, se [När någon annan har sparat först](requirements.md#när-någon-annan-har-sparat-först).
 
 ## Länkar
 

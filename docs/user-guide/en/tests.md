@@ -132,7 +132,7 @@ The table column **Last result** shows the most recent result. In queries, `last
 
 ## Comments and history
 
-**Comments** and **History** work exactly as for [requirements](requirements.md#comments). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped.
+**Comments** and **History** work exactly as for [requirements](requirements.md#comments). Restoring a test version restores its fields and steps as a new version; steps get new IDs and calls to deleted tests are dropped. If someone else saves a test while you edit it, you can compare and choose instead of overwriting their changes, see [When someone else saved first](requirements.md#when-someone-else-saved-first).
 
 ## Links
 

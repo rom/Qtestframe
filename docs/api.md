@@ -27,7 +27,8 @@ is unreachable); all other paths serve the web client.
 * **Errors** – non-2xx responses have the body
   `{"error": "<message>", "code": "<machine_code>"}`. Codes: `bad_request`
   (400), `unauthorized` (401), `forbidden` (403), `not_found` (404),
-  `conflict` (409, also for duplicates and a disabled runner),
+  `conflict` (409, also for duplicates and a disabled runner), `stale`
+  (412, see *Concurrent edits*),
   `invalid_query` (400), `rate_limited` (429, login), `unavailable` (503,
   `/readyz`), `internal` (500).
 * **Bulk requests are all or nothing** – every bulk endpoint (the `…/bulk`
@@ -39,6 +40,13 @@ is unreachable); all other paths serve the web client.
   Exceptions, because they call outside services: pushing and syncing
   defects with the tracker (`/defects/push`, `/defects/sync`), webhook
   tests and report batches, which save item by item.
+* **Concurrent edits** – `GET` and `PATCH` of a requirement or test answer
+  with `ETag: "<version>"`. Send `If-Match: "<version>"` with a `PATCH` to
+  save only if nobody saved in between; otherwise the answer is `412` with
+  code `stale` and `{"error", "code", "current": <the saved item>,
+  "changed_by", "changed_at"}`. Without `If-Match` the change is saved as
+  before (two saves that race are still refused with 412). The web client
+  always sends it and lets the user compare and merge.
 * **IDs** are UUID strings. Times are RFC 3339.
 * **Lists** return `{"items": [...], "total": n}`. There is no pagination
   (except `limit` on search and audit).

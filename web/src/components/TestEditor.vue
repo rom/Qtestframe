@@ -6,6 +6,8 @@ import { isSoftware } from '@/lib/projectTypes'
 import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
+import ConflictDialog from './ConflictDialog.vue'
+import { fieldConflicts, staleOf, TEST_FIELDS, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import ReviewBar from './ReviewBar.vue'
 import { P } from '@/lib/permissions'
@@ -293,6 +295,42 @@ function bodyOf(f: typeof form.value) {
       ),
   }
 }
+// ---------- someone saved in between ----------
+const conflictOpen = ref(false)
+const conflictList = ref<FieldConflict[]>([])
+const stale = ref<Stale<TestCase> | null>(null)
+function showConflict(st: Stale<TestCase>) {
+  stale.value = st
+  conflictList.value = item.value ? fieldConflicts(TEST_FIELDS.fields, item.value, st.current, form.value, TEST_FIELDS.normalize) : []
+  conflictOpen.value = true
+}
+async function reloadTheirs() {
+  conflictOpen.value = false
+  await load()
+}
+/** save only what was changed here, on top of the newer version */
+async function mergeMine() {
+  const st = stale.value
+  if (!st || !loaded.value) return
+  saving.value = true
+  const body = bodyOf(form.value)
+  const keys = changedKeys(loaded.value, body, Object.keys(body))
+  try {
+    const saved = await api.patch<TestCase>(`/tests/${props.itemId}`, pickBefore(body, keys), { ifMatch: st.current.version })
+    conflictOpen.value = false
+    notify.ok(t('conflict.merged'), saved?.key)
+    if (saved?.id && keys.length) recordUndo(patchEntry(t('undo.a.edit', { key: saved.key }), `/tests/${saved.id}`, pickBefore(st.current, keys), pickBefore(body, keys)))
+    emit('saved', saved)
+    await load()
+  } catch (e) {
+    const again = staleOf<TestCase>(e)
+    if (again) showConflict(again)
+    else error.value = errorMessage(e)
+  } finally {
+    saving.value = false
+  }
+}
+
 async function save() {
   saving.value = true
   error.value = ''
@@ -301,7 +339,7 @@ async function save() {
   try {
     const saved = isNew.value
       ? await api.post<TestCase>(`/projects/${props.projectId}/tests`, body)
-      : await api.patch<TestCase>(`/tests/${props.itemId}`, body)
+      : await api.patch<TestCase>(`/tests/${props.itemId}`, body, { ifMatch: item.value?.version })
     notify.ok(isNew.value ? t('tests.created') : t('tests.saved'), saved?.key)
     if (saved?.id) {
       if (isNew.value) recordUndo(createdEntry(t('undo.a.create', { key: saved.key }), delTest(saved.id)))
@@ -313,7 +351,9 @@ async function save() {
     emit('saved', saved)
     if (!isNew.value) await load() // refresh version, call-step keys and called_by
   } catch (e) {
-    error.value = errorMessage(e)
+    const st = staleOf<TestCase>(e)
+    if (st) showConflict(st)
+    else error.value = errorMessage(e)
   } finally {
     saving.value = false
   }
@@ -603,4 +643,5 @@ const scriptPlaceholder = computed(() => {
     />
   </form>
   </template>
+  <ConflictDialog v-model:visible="conflictOpen" :conflicts="conflictList" :changed-by="stale?.changedBy ?? ''" :changed-at="stale?.changedAt ?? ''" :saving="saving" @reload="reloadTheirs" @merge="mergeMine" />
 </template>
