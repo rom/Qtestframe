@@ -523,7 +523,7 @@ tests:
           expected: The scanner reports no findings.
         - action: Push a commit with a fake API key to a test branch.
           expected: The pipeline check fails and names the file and line of the secret.
-          data: "AKIAIOSFODNN7EXAMPLE"
+          data: A fake key in the format of the cloud provider's documentation example (never a real credential)
     sv:
       title: Sökning efter hemligheter i kodförrådet
       description: Ett verktyg som söker efter hemligheter (till exempel gitleaks) körs över hela historiken och som kontroll i pipelinen för nya incheckningar.
@@ -534,7 +534,7 @@ tests:
           expected: Verktyget rapporterar inga fynd.
         - action: Skicka upp en incheckning med en falsk API-nyckel till en testgren.
           expected: Kontrollen i pipelinen misslyckas och anger fil och rad för hemligheten.
-          data: "AKIAIOSFODNN7EXAMPLE"
+          data: En falsk nyckel i samma format som exemplet i molnleverantörens dokumentation (aldrig en riktig nyckel)
 
   - id: DEP-T09
     priority: medium
