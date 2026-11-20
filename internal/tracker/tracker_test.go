@@ -61,6 +61,12 @@ func TestJira(t *testing.T) {
 	if !errors.As(err, &te) || te.Status != 404 || !strings.Contains(err.Error(), "does not exist") {
 		t.Fatal(err)
 	}
+	// keys that are not Jira keys never reach the tracker
+	for _, k := range []string{"", "SHOP", "SHOP-1/../../x", "#12"} {
+		if _, err := c.Get(ctx, k); !errors.Is(err, ErrBadKey) {
+			t.Errorf("%q: %v", k, err)
+		}
+	}
 	bad, _ := New(&model.DefectTracker{Type: "jira", URL: srv.URL, ProjectKey: "SHOP", Token: "x"}, srv.Client())
 	if err := bad.Check(ctx); err == nil {
 		t.Fatal("bearer token accepted")
@@ -113,8 +119,8 @@ func TestGitHub(t *testing.T) {
 	if is, err := c.Get(ctx, "#13"); err != nil || is.Mapped != "rejected" {
 		t.Fatal(is, err)
 	}
-	if _, err := c.Get(ctx, "abc"); err == nil {
-		t.Fatal("bad key")
+	if _, err := c.Get(ctx, "abc"); !errors.Is(err, ErrBadKey) {
+		t.Fatal("bad key", err)
 	}
 	if _, err := New(&model.DefectTracker{}, nil); err == nil {
 		t.Fatal("no tracker")

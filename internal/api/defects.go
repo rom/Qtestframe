@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"sort"
 	"strings"
@@ -286,6 +287,10 @@ func (s *Server) trackerClient(r *http.Request, p *Principal, projectID string) 
 
 // trackerFail reports an error of the external tracker as 502.
 func (s *Server) trackerFail(w http.ResponseWriter, r *http.Request, err error) {
+	if errors.Is(err, tracker.ErrBadKey) {
+		s.fail(w, r, badRequest("%v", err))
+		return
+	}
 	if _, ok := err.(*tracker.Error); ok || strings.Contains(err.Error(), "cannot reach") || strings.Contains(err.Error(), "unexpected answer") {
 		writeError(w, http.StatusBadGateway, "tracker_error", err.Error())
 		return
@@ -448,6 +453,10 @@ func (s *Server) handleImportDefect(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
+	if req.ExternalKey = strings.TrimSpace(req.ExternalKey); req.ExternalKey == "" {
+		s.fail(w, r, badRequest("external_key is required"))
+		return
+	}
 	c, t, err := s.trackerClient(r, p, pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -457,6 +466,14 @@ func (s *Server) handleImportDefect(w http.ResponseWriter, r *http.Request, p *P
 	if err != nil {
 		s.trackerFail(w, r, err)
 		return
+	}
+	if existing, err := s.Store.ListDefects(r.Context(), p.TenantID(), pr.ID); err == nil {
+		for _, x := range existing {
+			if strings.EqualFold(x.ExternalKey, is.Key) {
+				s.fail(w, r, store.Conflictf("%s is already defect %s", is.Key, x.Key))
+				return
+			}
+		}
 	}
 	d := &model.Defect{ProjectID: pr.ID, Title: is.Title, Status: is.Mapped, Severity: req.Severity, CreatedBy: p.User.Email, Links: req.Links}
 	applyIssue(d, t, is)
