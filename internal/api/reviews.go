@@ -263,44 +263,67 @@ func (s *Server) handleListSignoffs(w http.ResponseWriter, r *http.Request, p *P
 // confirm their identity: with their password, or for single sign-on
 // accounts with a sign-in less than 15 minutes old. API tokens cannot sign.
 func (s *Server) handleSignBaseline(w http.ResponseWriter, r *http.Request, p *Principal) {
+	var req signRequest
+	if !s.checkSigner(w, r, p, &req) {
+		return
+	}
+	so, err := s.signBaseline(r, p, r.PathValue("id"), req)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, so)
+}
+
+type signRequest struct {
+	Meaning  string `json:"meaning"`
+	Comment  string `json:"comment"`
+	Password string `json:"password"`
+	// IDs: the baselines of a bulk sign-off.
+	IDs []string `json:"ids"`
+}
+
+// checkSigner decodes the request and confirms that the caller may sign:
+// a browser session, a review permission and their password (or a recent
+// single sign-on). It writes the error and returns false otherwise.
+func (s *Server) checkSigner(w http.ResponseWriter, r *http.Request, p *Principal, req *signRequest) bool {
 	if p.Token != nil || p.Session == nil {
 		writeError(w, http.StatusForbidden, "forbidden", "baselines are signed in the browser, not with an API token")
-		return
+		return false
 	}
 	if !p.Can(rbac.RequirementRev) && !p.Can(rbac.TestReview) {
 		writeError(w, http.StatusForbidden, "forbidden", "permission requirement.review or test.review required")
-		return
+		return false
 	}
-	var req struct {
-		Meaning  string `json:"meaning"`
-		Comment  string `json:"comment"`
-		Password string `json:"password"`
-	}
-	if err := decode(r, &req); err != nil {
+	if err := decode(r, req); err != nil {
 		s.fail(w, r, err)
-		return
+		return false
 	}
 	if p.User.PasswordHash != "" {
 		if !auth.CheckPassword(p.User.PasswordHash, req.Password) {
 			writeError(w, http.StatusForbidden, "reauth_failed", "the password is not correct")
-			return
+			return false
 		}
 	} else if time.Since(p.Session.CreatedAt) > 15*time.Minute {
 		writeError(w, http.StatusForbidden, "reauth_required", "sign in again (less than 15 minutes ago) to sign")
-		return
+		return false
 	}
+	return true
+}
+
+// signBaseline records the caller's signature on one baseline.
+func (s *Server) signBaseline(r *http.Request, p *Principal, baselineID string, req signRequest) (*model.Signoff, error) {
 	name := p.User.DisplayName
 	if name == "" {
 		name = p.User.Email
 	}
-	so := &model.Signoff{BaselineID: r.PathValue("id"), UserID: p.User.ID, UserEmail: p.User.Email, UserName: name, Meaning: req.Meaning, Comment: strings.TrimSpace(req.Comment)}
+	so := &model.Signoff{BaselineID: baselineID, UserID: p.User.ID, UserEmail: p.User.Email, UserName: name, Meaning: req.Meaning, Comment: strings.TrimSpace(req.Comment)}
 	if err := s.Store.SignBaseline(r.Context(), p.TenantID(), so); err != nil {
-		s.fail(w, r, err)
-		return
+		return nil, err
 	}
 	s.audit(r.Context(), p, "baseline.signed", "baseline", so.BaselineID, so.Meaning+" "+so.ContentHash[:12])
 	if b, err := s.Store.GetBaseline(r.Context(), p.TenantID(), so.BaselineID); err == nil {
 		s.notifyEvent(r, p, b.ProjectID, "baseline.signed", map[string]any{"baseline_id": b.ID, "baseline": b.Name, "signoff": so})
 	}
-	writeJSON(w, http.StatusCreated, so)
+	return so, nil
 }

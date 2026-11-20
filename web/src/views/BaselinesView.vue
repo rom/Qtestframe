@@ -18,6 +18,7 @@ import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
 import QueryInput from '@/components/QueryInput.vue'
 import BaselineSignoffs from '@/components/BaselineSignoffs.vue'
+import Password from 'primevue/password'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { formatDateTime, formatFullDateTime } from '@/lib/format'
 import { P } from '@/lib/permissions'
@@ -180,6 +181,77 @@ async function create() {
   }
 }
 const formMessage = computed(() => (formError.value && !(formError.value instanceof ApiError && formError.value.code === 'invalid_query') ? errorMessage(formError.value) : ''))
+// ---------- bulk ----------
+const selection = ref<Baseline[]>([])
+const selectedIds = computed(() => selection.value.map((b) => b.id))
+const canSign = computed(() => auth.can(P.requirementReview) || auth.can(P.testReview))
+const canBulk = computed(() => canWrite.value || canSign.value)
+const signoffKey = ref(0)
+const signDialog = ref(false)
+const signMeaning = ref('approved')
+const signComment = ref('')
+const signPassword = ref('')
+const signError = ref('')
+const signBusy = ref(false)
+const needsPassword = computed(() => (auth.user?.auth_provider ?? 'local') === 'local')
+const meanings = computed(() => ['authored', 'reviewed', 'approved', 'released'].map((m) => ({ label: t(`signoff.meaning.${m}`), value: m })))
+watch(baselines, (list) => {
+  const ids = new Set(list.map((b) => b.id))
+  selection.value = selection.value.filter((s) => ids.has(s.id))
+})
+interface BulkBaseline {
+  id: string
+  name: string
+  reason?: string
+}
+function openSign() {
+  signMeaning.value = 'approved'
+  signComment.value = ''
+  signPassword.value = ''
+  signError.value = ''
+  signDialog.value = true
+}
+async function bulkSign() {
+  signBusy.value = true
+  signError.value = ''
+  try {
+    const res = await api.post<{ signed: BulkBaseline[]; skipped: BulkBaseline[] }>(`/projects/${proj.pid}/baselines/signoffs`, {
+      ids: selectedIds.value,
+      meaning: signMeaning.value,
+      comment: signComment.value,
+      password: signPassword.value,
+    })
+    signDialog.value = false
+    notify.ok(
+      t('baselines.bulk.signed', { n: res.signed.length }, res.signed.length),
+      res.skipped.length ? t('baselines.bulk.alreadySigned', { n: res.skipped.length }, res.skipped.length) : undefined,
+    )
+    signoffKey.value++
+  } catch (e) {
+    if (e instanceof ApiError && (e.code === 'reauth_failed' || e.code === 'reauth_required')) signError.value = t(`signoff.${e.code}`)
+    else notify.fail(e)
+  } finally {
+    signBusy.value = false
+    signPassword.value = ''
+  }
+}
+function bulkDelete() {
+  const ids = [...selectedIds.value]
+  notify.confirmDanger(t('baselines.bulk.confirmDelete', { n: ids.length }, ids.length), async () => {
+    try {
+      const res = await api.del<{ deleted: number; skipped: BulkBaseline[] }>(`/projects/${proj.pid}/baselines/bulk`, { ids })
+      if (res.skipped.length)
+        notify.info(t('baselines.bulk.keptSigned', { n: res.skipped.length, deleted: res.deleted }, res.skipped.length), res.skipped.map((s) => s.name).join(', '))
+      else notify.ok(t('baselines.bulk.deleted', { n: res.deleted }, res.deleted))
+      if (selectedId.value && ids.includes(selectedId.value) && !res.skipped.some((s) => s.id === selectedId.value)) closeDetail()
+      selection.value = []
+      await load()
+    } catch (e) {
+      notify.fail(e)
+    }
+  })
+}
+
 function remove(b: Baseline) {
   notify.confirmDanger(t('baselines.confirmDelete', { name: b.name }), async () => {
     try {
@@ -208,7 +280,14 @@ function remove(b: Baseline) {
 
   <Message v-if="error" severity="error" :closable="false">{{ t('baselines.unavailable', { error }) }}</Message>
   <div v-else class="card">
+    <div v-if="selection.length && canBulk" class="bulkbar" role="toolbar" :aria-label="t('baselines.bulk.toolbar')">
+      <b>{{ t('common.selected', { count: selection.length }) }}</b>
+      <Button v-if="canSign" :label="t('baselines.bulk.sign')" icon="pi pi-pencil" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openSign" />
+      <Button v-if="canWrite" :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
+      <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+    </div>
     <DataTable
+      v-model:selection="selection"
       v-stack
       :value="baselines"
       data-key="id"
@@ -222,6 +301,7 @@ function remove(b: Baseline) {
       :row-class="(b: Baseline) => (b.id === selectedId ? 'p-datatable-row-selected' : '')"
       @row-click="(e) => open(e.data as Baseline)"
     >
+      <Column v-if="canBulk" selection-mode="multiple" style="width: 2.6rem" />
       <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
         <template #body="{ data }"><button type="button" class="link-button" style="font-weight: 600" :aria-pressed="data.id === selectedId" @click.stop="open(data as Baseline)"><i class="pi pi-flag muted" aria-hidden="true" /> {{ data.name }}</button></template>
       </Column>
@@ -260,7 +340,7 @@ function remove(b: Baseline) {
         <Button icon="pi pi-times" text rounded severity="secondary" :aria-label="t('common.close')" v-tooltip="t('common.close')" @click="closeDetail" />
       </div>
       <p v-if="detail.description" class="muted" style="margin: 0 0 8px">{{ detail.description }}</p>
-      <BaselineSignoffs :baseline-id="detail.id" />
+      <BaselineSignoffs :key="signoffKey" :baseline-id="detail.id" />
       <Tabs :id="tabsId" v-model:value="tab" class="editor-tabs" style="margin-top: 4px" scrollable>
         <TabList>
           <Tab value="items"><i class="pi pi-list" /> {{ t('baselines.items') }} <span class="count">{{ detail.items?.length ?? 0 }}</span></Tab>
@@ -340,4 +420,46 @@ function remove(b: Baseline) {
       </div>
     </form>
   </Dialog>
+  <Dialog v-model:visible="signDialog" modal :header="t('baselines.bulk.signHeader', { n: selection.length }, selection.length)" :style="{ width: 'min(480px, 96vw)' }">
+    <p class="small">{{ t('baselines.bulk.signExplain') }}</p>
+    <ul class="small sign-list">
+      <li v-for="b in selection" :key="b.id"><i class="pi pi-flag muted" aria-hidden="true" /> {{ b.name }}</li>
+    </ul>
+    <div class="sign-form">
+      <label for="bk-so-meaning">{{ t('signoff.meaningLabel') }}</label>
+      <Select v-model="signMeaning" input-id="bk-so-meaning" :options="meanings" option-label="label" option-value="value" fluid />
+      <label for="bk-so-comment">{{ t('signoff.comment') }}</label>
+      <Textarea id="bk-so-comment" v-model="signComment" rows="2" auto-resize fluid />
+      <template v-if="needsPassword">
+        <label for="bk-so-pw">{{ t('signoff.password') }}</label>
+        <Password v-model="signPassword" input-id="bk-so-pw" :feedback="false" toggle-mask fluid autocomplete="current-password" @keydown.enter="bulkSign" />
+      </template>
+      <p v-else class="small muted">{{ t('signoff.ssoHint') }}</p>
+      <Message v-if="signError" severity="error" :closable="false">{{ signError }}</Message>
+    </div>
+    <template #footer>
+      <Button :label="t('common.cancel')" severity="secondary" text @click="signDialog = false" />
+      <Button :label="t('baselines.bulk.signAll', { n: selection.length }, selection.length)" icon="pi pi-check" :disabled="needsPassword && !signPassword" :loading="signBusy" @click="bulkSign" />
+    </template>
+  </Dialog>
 </template>
+
+<style scoped>
+.sign-list {
+  margin: 0 0 8px;
+  padding-left: 4px;
+  list-style: none;
+  max-height: 140px;
+  overflow: auto;
+}
+.sign-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sign-form label {
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 6px;
+}
+</style>

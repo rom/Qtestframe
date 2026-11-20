@@ -184,3 +184,49 @@ func TestBulkReleases(t *testing.T) {
 		t.Fatal(l)
 	}
 }
+
+func TestBulkBaselines(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	e.member("rita@example.com", "reviewer")
+	rc := e.login("rita@example.com")
+	pid := a.project("BBL")
+	a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": "R"}, 201)
+	var ids []string
+	for _, n := range []string{"B1", "B2", "B3"} {
+		ids = append(ids, a.m("POST", "/api/v1/projects/"+pid+"/baselines", map[string]any{"name": n}, 201)["id"].(string))
+	}
+	sign := "/api/v1/projects/" + pid + "/baselines/signoffs"
+	rc.m("POST", sign, map[string]any{"ids": ids[:2], "meaning": "approved", "password": "wrong"}, 403)
+	rc.m("POST", sign, map[string]any{"ids": ids[:2], "meaning": "liked", "password": testPassword}, 400)
+	rc.m("POST", sign, map[string]any{"ids": []string{}, "meaning": "approved", "password": testPassword}, 400)
+	e.member("tester@example.com", "tester")
+	e.login("tester@example.com").m("POST", sign, map[string]any{"ids": ids[:2], "meaning": "approved", "password": testPassword}, 403)
+
+	res := rc.m("POST", sign, map[string]any{"ids": ids[:2], "meaning": "approved", "comment": "Sprint review", "password": testPassword}, 200)
+	signed := res["signed"].([]any)
+	if len(signed) != 2 || len(signed[0].(map[string]any)["content_hash"].(string)) != 64 {
+		t.Fatal(res)
+	}
+	// once more: the first two are skipped, the third is signed
+	res = rc.m("POST", sign, map[string]any{"ids": ids, "meaning": "approved", "password": testPassword}, 200)
+	if len(res["signed"].([]any)) != 1 || len(res["skipped"].([]any)) != 2 || res["skipped"].([]any)[0].(map[string]any)["reason"] != "already" {
+		t.Fatal(res)
+	}
+	if l := items(a.m("GET", "/api/v1/baselines/"+ids[0]+"/signoffs", nil, 200)); len(l) != 1 || l[0]["comment"] != "Sprint review" || l[0]["valid"] != true {
+		t.Fatal(l)
+	}
+
+	// deleting: signed baselines are kept
+	b4 := a.m("POST", "/api/v1/projects/"+pid+"/baselines", map[string]any{"name": "B4"}, 201)["id"].(string)
+	del := "/api/v1/projects/" + pid + "/baselines/bulk"
+	rc.m("DELETE", del, map[string]any{"ids": []string{b4}}, 403)
+	res = a.m("DELETE", del, map[string]any{"ids": append([]string{b4}, ids...)}, 200)
+	if res["deleted"].(float64) != 1 || len(res["skipped"].([]any)) != 3 || res["skipped"].([]any)[0].(map[string]any)["reason"] != "signed" {
+		t.Fatal(res)
+	}
+	if l := items(a.m("GET", "/api/v1/projects/"+pid+"/baselines", nil, 200)); len(l) != 3 {
+		t.Fatal(l)
+	}
+	a.m("DELETE", del, map[string]any{"ids": []string{"missing"}}, 404)
+}

@@ -706,6 +706,8 @@ and tests of a project.
 | GET | `/baselines/{id}/compare?to=current\|<baseline_id>` | requirement.read | BaselineDiff `{from, to, added, removed, changed, unchanged}`; each entry `{entity_type, entity_id, key, title, from_version, to_version, changed_fields}` |
 | DELETE | `/baselines/{id}` | requirement.write | 409 when the baseline is signed |
 | GET | `/baselines/{id}/signoffs` | requirement.read | `[Signoff]` `{id, user_email, user_name, meaning, comment, content_hash, signed_at, valid}`; `valid` is false when the content no longer has the signed hash |
+| DELETE | `/projects/{pid}/baselines/bulk` | requirement.write | `{"ids":[...]}` → `{"deleted": n, "skipped":[{id, name, reason: "signed"}]}`; signed baselines are kept |
+| POST | `/projects/{pid}/baselines/signoffs` | requirement.review or test.review | bulk sign-off: `{"ids":[...], "meaning", "comment", "password"}` with the same identity checks as below → `{"signed":[{id, name, content_hash}], "skipped":[{id, name, reason: "already"}]}` |
 | POST | `/baselines/{id}/signoffs` | requirement.review or test.review | electronic signature `{"meaning": "authored\|reviewed\|approved\|released", "comment", "password"}`. The password is checked again (403 `reauth_failed`); single sign-on accounts need a session less than 15 minutes old (403 `reauth_required`); API tokens cannot sign. `content_hash` is the SHA-256 of the baseline's items. 409 when the user already signed with that meaning. Audited as `baseline.signed`. |
 
 ## Releases

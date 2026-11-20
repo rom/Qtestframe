@@ -2215,6 +2215,18 @@ const en = {
     },
   },
   baselines: {
+    bulk: {
+      toolbar: 'Actions for the selected baselines',
+      sign: 'Sign…',
+      signHeader: 'Sign {n} baseline | Sign {n} baselines',
+      signExplain: 'One confirmation signs each of these baselines. Every signature records the fingerprint of its own baseline.',
+      signAll: 'Sign {n} baseline | Sign {n} baselines',
+      signed: '{n} baseline signed | {n} baselines signed',
+      alreadySigned: '{n} already had your signature with this meaning | {n} already had your signature with this meaning',
+      confirmDelete: 'Delete the selected baseline? Signed baselines are kept. | Delete the {n} selected baselines? Signed baselines are kept.',
+      deleted: '{n} baseline deleted | {n} baselines deleted',
+      keptSigned: '{n} signed baseline was kept ({deleted} deleted) | {n} signed baselines were kept ({deleted} deleted)',
+    },
     title: 'Baselines',
     subtitle: 'Frozen versions of the project’s requirements and tests, e.g. for a release or an audit. Compare them with each other or with the current state.',
     new: 'New baseline',

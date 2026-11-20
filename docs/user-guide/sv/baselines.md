@@ -44,6 +44,13 @@ Objekten matchas på sin identitet, inte på nyckeln: ett krav som har flyttats 
 
 För att se detaljerna i en ändring öppnar du objektet och tittar på fliken **Versionshistorik**; den visar skillnaden fält för fält för varje version.
 
+## Signera eller ta bort många baslinjer
+
+Kryssa i baslinjer i listan:
+
+- **Signera…** signerar varje markerad baslinje med en bekräftelse: välj vad din signatur betyder, skriv en kommentar och ange ditt lösenord en gång. Varje signatur sparar fingeravtrycket av sin egen baslinje. Baslinjer som du redan har signerat med den betydelsen hoppas över. Att signera kräver granskningsbehörighet; se [Signera en baslinje](reviews-and-notifications.md#signera-en-baslinje).
+- **Ta bort** tar bort de markerade baslinjerna efter bekräftelse. **Signerade baslinjer behålls**: de listas i stället för att tas bort.
+
 ## Typiska användningsfall
 
 - **Release:** skapa *Release 1.0* när specifikationen är godkänd; under nästa release jämför du med nuläget för att skriva release notes.

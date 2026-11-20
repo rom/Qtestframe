@@ -181,6 +181,8 @@ func (s *Server) routes() {
 	h("DELETE /api/v1/comments/{id}", s.handleDeleteComment)
 	h("GET /api/v1/projects/{pid}/baselines", s.handleListBaselines, "requirement.read")
 	h("POST /api/v1/projects/{pid}/baselines", s.handleCreateBaseline, "requirement.write")
+	h("DELETE /api/v1/projects/{pid}/baselines/bulk", s.handleBulkDeleteBaselines, "requirement.write")
+	h("POST /api/v1/projects/{pid}/baselines/signoffs", s.handleBulkSignBaselines, "requirement.read")
 	h("GET /api/v1/baselines/{id}", s.handleGetBaseline, "requirement.read")
 	h("GET /api/v1/baselines/{id}/compare", s.handleCompareBaseline, "requirement.read")
 	h("DELETE /api/v1/baselines/{id}", s.handleDeleteBaseline, "requirement.write")

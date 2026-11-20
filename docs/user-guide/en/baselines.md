@@ -44,6 +44,13 @@ The **current state** includes all items of the project, also those outside the 
 
 To see the details of a change, open the item and look at its **History** tab; it shows the field-by-field difference of every version.
 
+## Sign or delete many baselines
+
+Tick baselines in the list:
+
+- **Sign…** signs every ticked baseline with one confirmation: choose what your signature means, add a comment and enter your password once. Each signature records the fingerprint of its own baseline. Baselines you already signed with that meaning are skipped. Signing needs the review permission; see [Sign a baseline](reviews-and-notifications.md#sign-a-baseline).
+- **Delete** removes the ticked baselines after confirmation. **Signed baselines are kept**: they are listed instead of deleted.
+
 ## Typical uses
 
 - **Release:** create *Release 1.0* when the specification is approved; during the next release, compare with the current state to write release notes.

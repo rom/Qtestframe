@@ -2,8 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/store"
@@ -503,4 +506,111 @@ func (s *Server) handleBulkDeleteReleases(w http.ResponseWriter, r *http.Request
 		s.audit(r.Context(), p, "release.delete", "release", rel.ID, rel.Name+" (bulk)")
 	}
 	writeJSON(w, http.StatusOK, map[string]int{"deleted": len(list)})
+}
+
+// ---------------------------------------------------------------- baselines
+
+type bulkBaseline struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Reason      string `json:"reason,omitempty"`
+	ContentHash string `json:"content_hash,omitempty"`
+}
+
+func (s *Server) bulkBaselinesOf(r *http.Request, p *Principal, projectID string, ids []string) ([]*model.Baseline, error) {
+	ids, err := bulkIDs(ids)
+	if err != nil {
+		return nil, err
+	}
+	var out []*model.Baseline
+	for _, id := range ids {
+		b, err := s.Store.GetBaseline(r.Context(), p.TenantID(), id)
+		if err != nil {
+			return nil, err
+		}
+		if b.ProjectID != projectID {
+			return nil, fmt.Errorf("baseline %s: %w", id, store.ErrNotFound)
+		}
+		out = append(out, b)
+	}
+	return out, nil
+}
+
+// handleBulkDeleteBaselines: DELETE /projects/{pid}/baselines/bulk {"ids": [...]}.
+// Signed baselines are kept and listed in skipped (reason "signed").
+func (s *Server) handleBulkDeleteBaselines(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := decode(r, &req); err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	list, err := s.bulkBaselinesOf(r, p, pr.ID, req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	ctx := r.Context()
+	skipped := []bulkBaseline{}
+	n := 0
+	for _, b := range list {
+		if c, err := s.Store.SignoffCount(ctx, p.TenantID(), b.ID); err != nil {
+			s.fail(w, r, err)
+			return
+		} else if c > 0 {
+			skipped = append(skipped, bulkBaseline{ID: b.ID, Name: b.Name, Reason: "signed"})
+			continue
+		}
+		if err := s.Store.DeleteBaseline(ctx, p.TenantID(), b.ID); err != nil {
+			s.fail(w, r, fmt.Errorf("%s: %w", b.Name, err))
+			return
+		}
+		n++
+		s.audit(ctx, p, "baseline.delete", "baseline", b.ID, b.Name+" (bulk)")
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"deleted": n, "skipped": skipped})
+}
+
+// handleBulkSignBaselines: POST /projects/{pid}/baselines/signoffs
+// {"ids": [...], "meaning", "comment", "password"}: one confirmation signs
+// every baseline; each signature has the fingerprint of its own baseline.
+// Baselines the caller already signed with that meaning are skipped
+// (reason "already").
+func (s *Server) handleBulkSignBaselines(w http.ResponseWriter, r *http.Request, p *Principal) {
+	pr, ok := s.project(w, r, p)
+	if !ok {
+		return
+	}
+	var req signRequest
+	if !s.checkSigner(w, r, p, &req) {
+		return
+	}
+	if !slices.Contains(model.SignoffMeanings, req.Meaning) {
+		s.fail(w, r, badRequest("meaning must be one of %s", strings.Join(model.SignoffMeanings, ", ")))
+		return
+	}
+	list, err := s.bulkBaselinesOf(r, p, pr.ID, req.IDs)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	signed, skipped := []bulkBaseline{}, []bulkBaseline{}
+	for _, b := range list {
+		so, err := s.signBaseline(r, p, b.ID, req)
+		if errors.Is(err, store.ErrConflict) {
+			skipped = append(skipped, bulkBaseline{ID: b.ID, Name: b.Name, Reason: "already"})
+			continue
+		}
+		if err != nil {
+			s.fail(w, r, fmt.Errorf("%s: %w", b.Name, err))
+			return
+		}
+		signed = append(signed, bulkBaseline{ID: b.ID, Name: b.Name, ContentHash: so.ContentHash})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"signed": signed, "skipped": skipped})
 }

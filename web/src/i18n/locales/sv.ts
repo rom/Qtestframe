@@ -2217,6 +2217,18 @@ const sv: Messages = {
     },
   },
   baselines: {
+    bulk: {
+      toolbar: 'Åtgärder för de markerade baslinjerna',
+      sign: 'Signera…',
+      signHeader: 'Signera {n} baslinje | Signera {n} baslinjer',
+      signExplain: 'En bekräftelse signerar var och en av baslinjerna. Varje signatur sparar fingeravtrycket av sin egen baslinje.',
+      signAll: 'Signera {n} baslinje | Signera {n} baslinjer',
+      signed: '{n} baslinje signerad | {n} baslinjer signerade',
+      alreadySigned: '{n} hade redan din signatur med den här betydelsen | {n} hade redan din signatur med den här betydelsen',
+      confirmDelete: 'Ta bort den markerade baslinjen? Signerade baslinjer behålls. | Ta bort de {n} markerade baslinjerna? Signerade baslinjer behålls.',
+      deleted: '{n} baslinje borttagen | {n} baslinjer borttagna',
+      keptSigned: '{n} signerad baslinje behölls ({deleted} borttagna) | {n} signerade baslinjer behölls ({deleted} borttagna)',
+    },
     title: 'Baslinjer',
     subtitle: 'Frysta versioner av projektets krav och testfall, t.ex. inför en release eller en revision. Jämför dem med varandra eller med nuläget.',
     new: 'Ny baslinje',
