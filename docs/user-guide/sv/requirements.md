@@ -170,6 +170,7 @@ Den som har granskningsbehörighet (`requirement.review`) kan godkänna eller av
 - **Bara poster med status**: som standard bara krav i *Granskning*. Lägg till *Utkast* för att godkänna utkast direkt.
 - **Ta med ändå, trots**: se nedan.
 - **Kommentar**: läggs till på varje krav som ändras, till exempel "Godkänt på granskningsmötet 12 mars".
+- **Slutför också mina öppna granskningsförfrågningar**: visas när [granskningsförfrågningar](reviews-and-notifications.md) till dig är öppna för några av kraven; påslaget som standard. Dina förfrågningar beslutas då tillsammans med kraven (*Godkänd* när du godkänner, *Ändringar begärda* när du avslår), och de som frågade får en notis. Checklistorna bockas inte för; granskningen sparar att den beslutades i en massgranskning. Förfrågningar till andra granskare håller fortfarande kravet utanför.
 
 Förhandsgranskningen visar vilka krav som ändras och vilka som hoppas över, grupperade efter orsak:
 
@@ -182,7 +183,7 @@ Förhandsgranskningen visar vilka krav som ändras och vilka som hoppas över, g
 | Har misstänkta länkar | ett länkat test har ändrats sedan länken bekräftades |
 | Saknar kravnivå | för att godkänna krävs en kravnivå (inte för att avslå) |
 
-Välj en kontroll under **Ta med ändå, trots** för att godkänna de kraven ändå. Inget sparas förrän du väljer knappen längst ner. Varje ändring registreras i kravets versionshistorik och i granskningsloggen, och hela steget kan ångras med ångra-knappen i övre fältet (för att ångra krävs skrivbehörighet).
+Välj en kontroll under **Ta med ändå, trots** för att godkänna de kraven ändå. Inget sparas förrän du väljer knappen längst ner. Varje ändring registreras i kravets versionshistorik och i granskningsloggen, och hela steget kan ångras med ångra-knappen i övre fältet (för att ångra krävs skrivbehörighet; slutförda granskningsförfrågningar förblir beslutade).
 
 ## Massändring
 

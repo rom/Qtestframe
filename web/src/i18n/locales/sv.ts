@@ -2068,6 +2068,10 @@ const sv: Messages = {
     copied: 'Kopierad',
   },
   bulkReview: {
+    completeMine: 'Slutför också min öppna granskningsförfrågan för dessa poster som {outcome} | Slutför också mina {n} öppna granskningsförfrågningar för dessa poster som {outcome}',
+    completeMineHelp: 'Checklistorna bockas inte för; varje granskning sparar att den beslutades i en massgranskning. Andra granskares förfrågningar fortsätter att hindra sina poster.',
+    willComplete: '{n} av dina granskningsförfrågningar slutförs | {n} av dina granskningsförfrågningar slutförs',
+    reviewsDone: '{n} av dina granskningsförfrågningar slutförd | {n} av dina granskningsförfrågningar slutförda',
     nothingToDo: 'Inget att ändra',
     buttonRequirement: 'Godkänn eller avslå…',
     buttonTest: 'Markera som klara…',

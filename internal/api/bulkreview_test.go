@@ -131,3 +131,66 @@ func TestBulkReviewTests(t *testing.T) {
 		t.Fatal(res)
 	}
 }
+
+func TestBulkReviewCompletesOwnReviews(t *testing.T) {
+	e := newEnv(t)
+	a := e.login("admin@example.com")
+	e.member("rita@example.com", "reviewer")
+	e.member("olle@example.com", "reviewer")
+	rc := e.login("rita@example.com")
+	pid := a.project("BC")
+	mk := func(title string) string {
+		return a.m("POST", "/api/v1/projects/"+pid+"/requirements", map[string]any{"title": title, "description": "The system MUST " + title + ".", "status": "review"}, 201)["id"].(string)
+	}
+	r1, r2, r3 := mk("one"), mk("two"), mk("three")
+	ask := func(id string, who ...string) string {
+		return items(a.m("POST", "/api/v1/reviews", map[string]any{"entity_type": "requirement", "entity_id": id, "reviewers": who}, 201))[0]["id"].(string)
+	}
+	mine1 := ask(r1, "rita@example.com")
+	ask(r2, "rita@example.com", "olle@example.com") // Olle's request still blocks r2
+	mine3 := ask(r3, "rita@example.com")
+	path := "/api/v1/projects/" + pid + "/requirements/review"
+
+	// without the option, my own open requests block too
+	pre := rc.m("POST", path, map[string]any{"decision": "approved", "all": true, "dry_run": true}, 200)
+	if len(pre["updated"].([]any)) != 0 || pre["reviews_completed"].(float64) != 0 || pre["my_reviews"].(float64) != 3 {
+		t.Fatal(pre)
+	}
+	// with it, only other people's requests block; the preview counts mine
+	pre = rc.m("POST", path, map[string]any{"decision": "approved", "all": true, "complete_reviews": true, "dry_run": true}, 200)
+	if got := bulkKeys(pre["updated"]); len(got) != 2 || pre["my_reviews"].(float64) != 3 || pre["reviews_completed"].(float64) != 2 {
+		t.Fatal(pre)
+	}
+	if got := bulkKeys(pre["skipped"]); len(got) != 1 || got[0] != "BC-REQ-2:pending_review" {
+		t.Fatal(pre)
+	}
+	if got := rc.m("GET", "/api/v1/reviews/"+mine1, nil, 200); got["status"] != "pending" {
+		t.Fatal("dry run changed a review", got)
+	}
+
+	res := rc.m("POST", path, map[string]any{"decision": "approved", "ids": []string{r1}, "complete_reviews": true, "comment": "Meeting 12 March"}, 200)
+	if res["reviews_completed"].(float64) != 1 {
+		t.Fatal(res)
+	}
+	got := rc.m("GET", "/api/v1/reviews/"+mine1, nil, 200)
+	if got["status"] != "approved" || got["decided_at"] == nil || got["comment"] != "Approved in a bulk review. Meeting 12 March" {
+		t.Fatal(got)
+	}
+	// my "asked you to review" notification for r1 is settled; the others are not
+	if n := rc.m("GET", "/api/v1/notifications", nil, 200); n["unread"].(float64) != 2 {
+		t.Fatal(n)
+	}
+	// the requester hears about it
+	if n := a.m("GET", "/api/v1/notifications", nil, 200); n["unread"].(float64) != 1 || items(n)[0]["event"] != "review.completed" {
+		t.Fatal(n)
+	}
+	// rejecting completes mine as "changes requested"
+	rc.m("POST", path, map[string]any{"decision": "rejected", "ids": []string{r3}, "complete_reviews": true}, 200)
+	if got := rc.m("GET", "/api/v1/reviews/"+mine3, nil, 200); got["status"] != "changes_requested" || got["comment"] != "Rejected in a bulk review." {
+		t.Fatal(got)
+	}
+	acts := auditActions(t, e)
+	if !acts["review.approved"] || !acts["review.changes_requested"] {
+		t.Fatal(acts)
+	}
+}

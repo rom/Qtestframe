@@ -352,7 +352,8 @@ needed).
 
 ```json
 {"decision": "approved", "ids": ["…"], "query": "folder:Payments", "all": false,
- "from": ["review"], "ignore": ["no_obligation"], "comment": "…", "dry_run": true}
+ "from": ["review"], "ignore": ["no_obligation"], "comment": "…",
+ "complete_reviews": true, "dry_run": true}
 ```
 
 - `decision`: `approved` or `rejected` for requirements, `ready` for tests.
@@ -367,11 +368,21 @@ needed).
   `no_script` (automated test without script). The last six can be listed
   in `ignore` to include such items anyway.
 - `comment` is added as a comment to every changed item.
+- `complete_reviews`: the caller's own open review requests no longer
+  count as `pending_review`, and after the change those of the changed
+  items are decided: `approved` for approve / ready, `changes_requested`
+  for reject, with the comment "Approved in a bulk review." (or
+  "Rejected …") plus `comment`. Checklists are left as they are; the
+  requester is notified, and each is audited (`review.approved` /
+  `review.changes_requested`) and sent as a `review.completed` webhook.
+  Other reviewers' open requests still skip the item.
 - `dry_run` returns the preview without changing anything.
 
 Response: `{"decision", "dry_run", "updated": [{id, key, title, status}],
-"skipped": [{id, key, title, status, reason}]}` (`status` is the status
-before). Each change gets a revision (`bulk_update`), an audit entry
+"skipped": [{id, key, title, status, reason}], "my_reviews",
+"reviews_completed"}` (`status` is the status before; `my_reviews` counts
+the caller's open review requests for the chosen items,
+`reviews_completed` those completed, or in a dry run to be completed). Each change gets a revision (`bulk_update`), an audit entry
 `requirement.review` / `test.review` and a `requirement.updated` /
 `test.updated` webhook; the call is audited as `…bulk_review`.
 

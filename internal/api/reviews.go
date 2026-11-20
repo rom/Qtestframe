@@ -228,6 +228,9 @@ func (s *Server) handleUpdateReview(w http.ResponseWriter, r *http.Request, p *P
 		s.fail(w, r, err)
 		return
 	}
+	if v.Status != "pending" && v.ReviewerID == p.User.ID {
+		_ = s.Store.MarkEntityNotificationsRead(ctx, p.TenantID(), p.User.ID, "review.requested", []string{v.EntityID})
+	}
 	if v.Status != "pending" {
 		s.audit(ctx, p, "review."+v.Status, v.EntityType, v.EntityID, v.EntityKey+" ("+v.ReviewerEmail+")")
 		if v.Status != "cancelled" {

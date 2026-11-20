@@ -45,6 +45,11 @@ type bulkReviewResult struct {
 	DryRun   bool             `json:"dry_run"`
 	Updated  []bulkReviewItem `json:"updated"`
 	Skipped  []bulkReviewItem `json:"skipped"`
+	// MyReviews: the caller's open review requests for the chosen items;
+	// ReviewsCompleted: how many of them were (or, in a dry run, would be)
+	// completed (those of the updated items, with complete_reviews).
+	MyReviews        int `json:"my_reviews"`
+	ReviewsCompleted int `json:"reviews_completed"`
 }
 
 // bulkReviewCandidate is what the checks need of an item.
@@ -91,24 +96,31 @@ func bulkReviewReason(kind string, c bulkReviewCandidate, decision string, from 
 }
 
 // reviewStates returns, per item of kind in the project, "pending" when a
-// review request is open, else the decision of the latest decided one.
-func (s *Server) reviewStates(r *http.Request, p *Principal, projectID, kind string) map[string]string {
+// review request is open, else the decision of the latest decided one, and
+// the caller's own open requests per item. With exceptMine, the caller's
+// own open requests do not count as "pending".
+func (s *Server) reviewStates(r *http.Request, p *Principal, projectID, kind string, exceptMine bool) (map[string]string, map[string][]model.ReviewRequest) {
 	list, err := s.Store.ListReviewRequests(r.Context(), p.TenantID(), store.ReviewFilter{ProjectID: projectID, EntityType: kind})
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 	out := map[string]string{}
+	mine := map[string][]model.ReviewRequest{}
 	// newest first: the first decided request per item is the latest decision
 	for _, v := range list {
+		own := v.Status == "pending" && v.ReviewerID == p.User.ID
+		if own {
+			mine[v.EntityID] = append(mine[v.EntityID], v)
+		}
 		switch {
-		case v.Status == "pending":
+		case v.Status == "pending" && !(own && exceptMine):
 			out[v.EntityID] = "pending"
-		case v.Status == "cancelled" || out[v.EntityID] != "":
+		case v.Status == "pending", v.Status == "cancelled", out[v.EntityID] != "":
 		default:
 			out[v.EntityID] = v.Status
 		}
 	}
-	return out
+	return out, mine
 }
 
 // handleBulkReview: POST /projects/{pid}/requirements/review and
@@ -129,6 +141,10 @@ func (s *Server) handleBulkReview(kind string) handlerFunc {
 			Ignore   []string `json:"ignore"`
 			Comment  string   `json:"comment"`
 			DryRun   bool     `json:"dry_run"`
+			// CompleteReviews also decides the caller's own open review
+			// requests for the changed items (their checklists are left as
+			// they are).
+			CompleteReviews bool `json:"complete_reviews"`
 		}
 		if err := decode(r, &req); err != nil {
 			s.fail(w, r, err)
@@ -186,10 +202,12 @@ func (s *Server) handleBulkReview(kind string) handlerFunc {
 			s.fail(w, r, badRequest("at most %d items at a time (%d selected)", maxBulkReview, len(cands)))
 			return
 		}
-		states := s.reviewStates(r, p, pr.ID, kind)
+		states, mine := s.reviewStates(r, p, pr.ID, kind, req.CompleteReviews)
 		res := bulkReviewResult{Decision: req.Decision, DryRun: req.DryRun, Updated: []bulkReviewItem{}, Skipped: []bulkReviewItem{}}
 		var ids []string
+		var own []model.ReviewRequest
 		for _, c := range cands {
+			res.MyReviews += len(mine[c.ID])
 			if reason := bulkReviewReason(kind, c, req.Decision, req.From, states[c.ID], ignore); reason != "" {
 				c.Reason = reason
 				res.Skipped = append(res.Skipped, c.bulkReviewItem)
@@ -197,6 +215,10 @@ func (s *Server) handleBulkReview(kind string) handlerFunc {
 			}
 			res.Updated = append(res.Updated, c.bulkReviewItem)
 			ids = append(ids, c.ID)
+			own = append(own, mine[c.ID]...)
+		}
+		if req.CompleteReviews {
+			res.ReviewsCompleted = len(own)
 		}
 		if req.DryRun || len(ids) == 0 {
 			writeJSON(w, http.StatusOK, res)
@@ -224,7 +246,10 @@ func (s *Server) handleBulkReview(kind string) handlerFunc {
 			}
 			s.notifyEvent(r, p, pr.ID, kind+".updated", map[string]any{"kind": kind, "id": it.ID, "key": it.Key, "title": it.Title, "status": decision, "bulk": true})
 		}
-		s.audit(ctx, p, kind+".bulk_review", kind, "", fmt.Sprintf("%s: %d updated, %d skipped", decision, len(res.Updated), len(res.Skipped)))
+		if req.CompleteReviews {
+			res.ReviewsCompleted = s.completeOwnReviews(r, p, own, decision, comment)
+		}
+		s.audit(ctx, p, kind+".bulk_review", kind, "", fmt.Sprintf("%s: %d updated, %d skipped, %d own reviews completed", decision, len(res.Updated), len(res.Skipped), res.ReviewsCompleted))
 		writeJSON(w, http.StatusOK, res)
 	}
 }
@@ -275,4 +300,41 @@ func (s *Server) bulkReviewCandidates(r *http.Request, p *Principal, pr *model.P
 		sel = append(sel, c)
 	}
 	return sel, nil
+}
+
+// completeOwnReviews decides the caller's open review requests after a
+// bulk review: approved for approve / mark ready, changes requested for
+// reject. The comment says it was a bulk decision.
+func (s *Server) completeOwnReviews(r *http.Request, p *Principal, list []model.ReviewRequest, decision, comment string) int {
+	ctx := r.Context()
+	status, note := "approved", "Approved in a bulk review."
+	if decision == "rejected" {
+		status, note = "changes_requested", "Rejected in a bulk review."
+	}
+	if comment != "" {
+		note += " " + comment
+	}
+	n := 0
+	var done []string
+	defer func() {
+		// the "asked you to review" notifications of these are settled
+		if err := s.Store.MarkEntityNotificationsRead(ctx, p.TenantID(), p.User.ID, "review.requested", done); err != nil {
+			s.Log.Warn("bulk review: mark notifications read", "err", err)
+		}
+	}()
+	for i := range list {
+		v := &list[i]
+		v.Status, v.Comment = status, note
+		if err := s.Store.UpdateReviewRequest(ctx, p.TenantID(), v); err != nil {
+			s.Log.Warn("bulk review: complete review request", "id", v.ID, "err", err)
+			continue
+		}
+		n++
+		done = append(done, v.EntityID)
+		s.audit(ctx, p, "review."+status, v.EntityType, v.EntityID, v.EntityKey+" ("+v.ReviewerEmail+", bulk)")
+		s.notifyUsers(ctx, p, s.recipients(ctx, p, v.RequestedBy), model.Notification{ProjectID: v.ProjectID, Event: "review.completed",
+			Title: v.EntityKey + " " + v.EntityTitle + ": " + status, Body: excerpt(note, 300), EntityType: v.EntityType, EntityID: v.EntityID})
+		s.notifyEvent(r, p, v.ProjectID, "review.completed", map[string]any{"review": v, "bulk": true})
+	}
+	return n
 }

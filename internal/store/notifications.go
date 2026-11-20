@@ -252,3 +252,14 @@ func (s *Store) RecordWebhookDelivery(ctx context.Context, id string, status int
 	_, err := s.c().exec(ctx, `UPDATE webhooks SET last_delivery_at = ?, last_status = ?, last_error = ? WHERE id = ?`, s.now(), status, errText, id)
 	return err
 }
+
+// MarkEntityNotificationsRead marks a user's unread notifications of one
+// event about the given items read (e.g. review requests that are done).
+func (s *Store) MarkEntityNotificationsRead(ctx context.Context, tenantID, userID, event string, entityIDs []string) error {
+	if len(entityIDs) == 0 {
+		return nil
+	}
+	args := append([]any{s.now(), tenantID, userID, event}, anySlice(entityIDs)...)
+	_, err := s.c().exec(ctx, `UPDATE notifications SET read_at = ? WHERE tenant_id = ? AND user_id = ? AND event = ? AND read_at IS NULL AND entity_id IN (`+placeholders(len(entityIDs))+`)`, args...)
+	return err
+}

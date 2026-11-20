@@ -12,6 +12,7 @@ import Textarea from 'primevue/textarea'
 import { api } from '@/lib/api'
 import { canApprove, canRequestChanges, openChecklistItems } from '@/lib/notifications'
 import { useNotify } from '@/composables/notify'
+import { useNotificationsStore } from '@/stores/notifications'
 import type { ChecklistItem, ReviewRequest } from '@/lib/types'
 
 const props = defineProps<{ review: ReviewRequest | null }>()
@@ -19,6 +20,7 @@ const visible = defineModel<boolean>('visible', { default: false })
 const emit = defineEmits<{ saved: [review: ReviewRequest] }>()
 const { t } = useI18n()
 const notify = useNotify()
+const notifications = useNotificationsStore()
 const list = ref<ChecklistItem[]>([])
 const comment = ref('')
 const busy = ref('')
@@ -51,7 +53,10 @@ async function save(decision = '') {
     })
     notify.ok(decision ? t(`reviews.done.${decision}`, { key: out.entity_key }) : t('reviews.saved'))
     emit('saved', out)
-    if (decision) visible.value = false
+    if (decision) {
+      void notifications.load()
+      visible.value = false
+    }
   } catch (e) {
     notify.fail(e)
   } finally {

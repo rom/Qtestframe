@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_FROM, decisionsFor, fromOptions, groupSkipped, ignorableChecks, scopeBody, undoGroups } from './bulkReview'
+import { reviewOutcome, DEFAULT_FROM, decisionsFor, fromOptions, groupSkipped, ignorableChecks, scopeBody, undoGroups } from './bulkReview'
 
 describe('bulk review options', () => {
   it('decisions and checks per kind', () => {
@@ -9,6 +9,11 @@ describe('bulk review options', () => {
     expect(ignorableChecks('test')).toEqual(expect.arrayContaining(['no_steps', 'no_script']))
     expect(ignorableChecks('test')).not.toContain('no_obligation')
     expect(DEFAULT_FROM).toEqual(['review'])
+  })
+  it('review outcome per decision', () => {
+    expect(reviewOutcome('approved')).toBe('approved')
+    expect(reviewOutcome('ready')).toBe('approved')
+    expect(reviewOutcome('rejected')).toBe('changes_requested')
   })
   it('from statuses leave out the target', () => {
     expect(fromOptions('requirement', 'approved')).not.toContain('approved')

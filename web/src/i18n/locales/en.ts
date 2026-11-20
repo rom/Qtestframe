@@ -2066,6 +2066,10 @@ const en = {
     copied: 'Copied',
   },
   bulkReview: {
+    completeMine: 'Also complete my open review request for these items as {outcome} | Also complete my {n} open review requests for these items as {outcome}',
+    completeMineHelp: 'Their checklists are not ticked; each review records that it was decided in bulk. Requests of other reviewers keep blocking their items.',
+    willComplete: '{n} of your review requests completed | {n} of your review requests completed',
+    reviewsDone: '{n} of your review requests completed | {n} of your review requests completed',
     nothingToDo: 'Nothing to change',
     buttonRequirement: 'Approve or reject…',
     buttonTest: 'Mark ready…',

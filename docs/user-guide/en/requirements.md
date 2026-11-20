@@ -153,6 +153,7 @@ Holders of the review permission (`requirement.review`) can approve or reject ma
 - **Only items with status**: by default only requirements in *Review*. Add *Draft* to approve drafts directly.
 - **Include anyway, despite**: see below.
 - **Comment**: added to every requirement that changes, for example "Approved in the review meeting of 12 March".
+- **Also complete my open review requests**: shown when [review requests](reviews-and-notifications.md) to you are open for some of the requirements; on by default. Your requests are then decided together with the requirements (*Approved* when you approve, *Changes requested* when you reject), and the people who asked are notified. Their checklists are not ticked; the review records that it was decided in bulk. Requests to other reviewers still keep a requirement out.
 
 The preview shows which requirements change and which are skipped, grouped by the reason:
 
@@ -165,7 +166,7 @@ The preview shows which requirements change and which are skipped, grouped by th
 | Has suspect links | a linked test changed since the link was confirmed |
 | No obligation level | approving needs an obligation level (rejecting does not) |
 
-Choose a check under **Include anyway, despite** to approve those requirements anyway. Nothing is saved until you choose the button at the bottom. Each change is recorded in the requirement's history and the audit log, and the whole step can be undone with the undo button in the top bar (undo needs write permission).
+Choose a check under **Include anyway, despite** to approve those requirements anyway. Nothing is saved until you choose the button at the bottom. Each change is recorded in the requirement's history and the audit log, and the whole step can be undone with the undo button in the top bar (undo needs write permission; completed review requests stay decided).
 
 ## Bulk edit
 

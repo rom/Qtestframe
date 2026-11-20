@@ -36,6 +36,8 @@ Each reviewer gets a separate request and a notification. A person who already h
 
 If the item changes after the request was sent, the review is marked "changed since" so everyone can see that the decision was about an older version.
 
+Many reviews at once: when you approve or reject requirements, or mark tests ready, in a [bulk review](requirements.md#approve-many-requirements-at-once), you can complete your open requests for those items in the same step. They are then decided without the checklist and marked as decided in bulk.
+
 A review request records a decision; it does not change the item's status. Holders of the review permission still approve a requirement or mark a test ready with the review bar.
 
 ## Sign a baseline

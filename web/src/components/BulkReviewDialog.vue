@@ -5,6 +5,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
+import Checkbox from 'primevue/checkbox'
 import Dialog from 'primevue/dialog'
 import Message from 'primevue/message'
 import MultiSelect from 'primevue/multiselect'
@@ -15,21 +16,24 @@ import Textarea from 'primevue/textarea'
 import StatusTag from './StatusTag.vue'
 import { api, errorMessage } from '@/lib/api'
 import { enumLabel, enumOptions } from '@/i18n/labels'
-import { DEFAULT_FROM, decisionsFor, fromOptions, groupSkipped, ignorableChecks, scopeBody, undoGroups, type BulkReviewResult, type BulkScope, type ReviewKind } from '@/lib/bulkReview'
+import { DEFAULT_FROM, reviewOutcome, decisionsFor, fromOptions, groupSkipped, ignorableChecks, scopeBody, undoGroups, type BulkReviewResult, type BulkScope, type ReviewKind } from '@/lib/bulkReview'
 import { entry, recordUndo } from '@/lib/undoActions'
 import { useNotify } from '@/composables/notify'
+import { useNotificationsStore } from '@/stores/notifications'
 
 const props = defineProps<{ kind: ReviewKind; projectId: string; selected: string[]; shown: string[] }>()
 const visible = defineModel<boolean>('visible', { default: false })
 const emit = defineEmits<{ done: [] }>()
 const { t } = useI18n()
 const notify = useNotify()
+const notifications = useNotificationsStore()
 
 const scope = ref<BulkScope>('selected')
 const decision = ref('')
 const from = ref<string[]>([...DEFAULT_FROM])
 const ignore = ref<string[]>([])
 const comment = ref('')
+const completeReviews = ref(true)
 const preview = ref<BulkReviewResult | null>(null)
 const loading = ref(false)
 const saving = ref(false)
@@ -58,6 +62,7 @@ watch(visible, (v) => {
   from.value = [...DEFAULT_FROM]
   ignore.value = []
   comment.value = ''
+  completeReviews.value = true
   openReasons.value = {}
   void load()
 })
@@ -69,7 +74,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const res = await api.post<BulkReviewResult>(path.value, { decision: decision.value, from: from.value, ignore: ignore.value, dry_run: true, ...scopeBody(scope.value, props.selected, props.shown) })
+    const res = await api.post<BulkReviewResult>(path.value, { decision: decision.value, from: from.value, ignore: ignore.value, complete_reviews: completeReviews.value, dry_run: true, ...scopeBody(scope.value, props.selected, props.shown) })
     if (mine === seq) preview.value = res
   } catch (e) {
     if (mine === seq) {
@@ -80,7 +85,7 @@ async function load() {
     if (mine === seq) loading.value = false
   }
 }
-watch([scope, decision, from, ignore], load, { deep: true })
+watch([scope, decision, from, ignore, completeReviews], load, { deep: true })
 watch(decision, (d) => (from.value = from.value.filter((s) => s !== d)))
 
 async function apply() {
@@ -93,6 +98,7 @@ async function apply() {
       from: from.value,
       ignore: ignore.value,
       comment: comment.value,
+      complete_reviews: completeReviews.value,
     })
     const groups = undoGroups(res.updated)
     const bulk = `/projects/${props.projectId}/${props.kind === 'requirement' ? 'requirements' : 'tests'}/bulk`
@@ -106,7 +112,9 @@ async function apply() {
         () => api.post(path.value, { decision: target, ids: res.updated.map((u) => u.id), from: groups.map((g) => g.status), ignore: ignorableChecks(props.kind) }),
       ),
     )
-    notify.ok(t('bulkReview.done', { n: res.updated.length, status: enumLabel('status', target) }, res.updated.length), res.skipped.length ? t('bulkReview.skippedAfter', { n: res.skipped.length }, res.skipped.length) : undefined)
+    const details = [res.reviews_completed ? t('bulkReview.reviewsDone', { n: res.reviews_completed }, res.reviews_completed) : '', res.skipped.length ? t('bulkReview.skippedAfter', { n: res.skipped.length }, res.skipped.length) : ''].filter(Boolean).join(' · ')
+    notify.ok(t('bulkReview.done', { n: res.updated.length, status: enumLabel('status', target) }, res.updated.length), details || undefined)
+    if (res.reviews_completed) void notifications.load()
     visible.value = false
     emit('done')
   } catch (e) {
@@ -142,6 +150,13 @@ async function apply() {
         <MultiSelect v-model="ignore" input-id="br-ignore" :options="checkOpts" option-label="label" option-value="value" display="chip" fluid :placeholder="t('bulkReview.ignoreNone')" aria-describedby="br-ignore-help" />
         <small id="br-ignore-help" class="muted">{{ t('bulkReview.ignoreHelp') }}</small>
       </div>
+      <div v-if="preview?.my_reviews" class="own row">
+        <Checkbox v-model="completeReviews" binary input-id="br-own" aria-describedby="br-own-help" />
+        <div>
+          <label for="br-own">{{ t('bulkReview.completeMine', { n: preview.my_reviews, outcome: t(`reviews.status.${reviewOutcome(decision)}`) }, preview.my_reviews) }}</label>
+          <small id="br-own-help" class="muted block">{{ t('bulkReview.completeMineHelp') }}</small>
+        </div>
+      </div>
       <div>
         <label for="br-comment" class="lbl">{{ t('bulkReview.comment') }}</label>
         <Textarea id="br-comment" v-model="comment" rows="2" auto-resize fluid aria-describedby="br-comment-help" />
@@ -156,6 +171,7 @@ async function apply() {
           <p class="summary">
             <b>{{ t('bulkReview.willChange', { n: count, status: enumLabel('status', decision) }, count) }}</b>
             <span v-if="preview.skipped.length" class="muted"> · {{ t('bulkReview.willSkip', { n: preview.skipped.length }, preview.skipped.length) }}</span>
+            <span v-if="preview.reviews_completed" class="muted"> · {{ t('bulkReview.willComplete', { n: preview.reviews_completed }, preview.reviews_completed) }}</span>
           </p>
           <ul v-if="count" class="items">
             <li v-for="it in preview.updated.slice(0, 50)" :key="it.id" class="row">
@@ -233,6 +249,21 @@ async function apply() {
   font-weight: 600;
   font-size: 13px;
   margin-bottom: 4px;
+}
+.own {
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  padding: 8px 12px;
+  border: 1px solid var(--qtf-border);
+  border-radius: 8px;
+}
+.own :deep(.p-checkbox) {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.block {
+  display: block;
 }
 .preview {
   border-top: 1px solid var(--qtf-border);

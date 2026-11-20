@@ -16,6 +16,15 @@ export interface BulkReviewResult {
   dry_run: boolean
   updated: BulkReviewItem[]
   skipped: BulkReviewItem[]
+  /** the caller's open review requests for the chosen items */
+  my_reviews: number
+  /** how many of them are (or would be) completed */
+  reviews_completed: number
+}
+
+/** The review request decision a bulk decision completes them with. */
+export function reviewOutcome(decision: string): 'approved' | 'changes_requested' {
+  return decision === 'rejected' ? 'changes_requested' : 'approved'
 }
 
 /** Decisions per kind, the first being the default. */
