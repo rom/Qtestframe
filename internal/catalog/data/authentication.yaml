@@ -1,0 +1,61 @@
+area: authentication
+prefix: AUTH
+group: security
+name: {en: Authentication, sv: Autentisering}
+description:
+  en: Signing in, passwords, multi-factor authentication and protection against guessing attacks.
+  sv: Inloggning, lösenord, flerfaktorsautentisering och skydd mot gissningsattacker.
+
+requirements:
+  - id: AUTH-01
+    type: security
+    obligation: must
+    priority: high
+    tags: [password]
+    refs: ["NIST SP 800-63B §5.1.1.2", "OWASP ASVS 4.0 V2.1"]
+    tests: [AUTH-T01]
+    en:
+      title: Minimum password length
+      description: The system MUST reject a new password shorter than 12 characters.
+      rationale: Short passwords are guessed quickly in offline attacks against stolen password hashes.
+      criteria:
+        - method: test
+          text: A password of 11 characters is rejected and a password of 12 characters is accepted.
+    sv:
+      title: Minsta lösenordslängd
+      description: Systemet SKA avvisa ett nytt lösenord som är kortare än 12 tecken.
+      rationale: Korta lösenord gissas snabbt vid offlineattacker mot stulna lösenordshashar.
+      criteria:
+        - method: test
+          text: Ett lösenord med 11 tecken avvisas och ett lösenord med 12 tecken godtas.
+
+tests:
+  - id: AUTH-T01
+    priority: high
+    execution: manual
+    tags: [password]
+    refs: ["NIST SP 800-63B §5.1.1.2"]
+    en:
+      title: Password shorter than the minimum length is rejected
+      description: Checks the minimum password length when a user sets a new password.
+      preconditions: A signed-in user is on the change-password page.
+      expected: Only passwords of at least the minimum length are accepted.
+      steps:
+        - action: Enter a new password of 11 characters and save.
+          expected: The password is rejected with a message that states the minimum length.
+          data: Abcdefgh1!x
+        - action: Enter a new password of 12 characters and save.
+          expected: The password is accepted and the user is told it was changed.
+          data: Abcdefgh1!xy
+    sv:
+      title: Lösenord som är kortare än minimilängden avvisas
+      description: Kontrollerar minsta lösenordslängd när en användare väljer ett nytt lösenord.
+      preconditions: En inloggad användare är på sidan för att byta lösenord.
+      expected: Bara lösenord med minst minimilängden godtas.
+      steps:
+        - action: Ange ett nytt lösenord med 11 tecken och spara.
+          expected: Lösenordet avvisas med ett meddelande som anger minimilängden.
+          data: Abcdefgh1!x
+        - action: Ange ett nytt lösenord med 12 tecken och spara.
+          expected: Lösenordet godtas och användaren får veta att det har bytts.
+          data: Abcdefgh1!xy
