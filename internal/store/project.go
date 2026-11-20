@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -14,12 +15,12 @@ var projectKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,15}$`)
 
 // ---------------------------------------------------------------- projects
 
-const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, color, requirement_sources, created_at, updated_at`
+const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, color, requirement_sources, type, tech_context, created_at, updated_at`
 
 func scanProject(r interface{ Scan(...any) error }) (*model.Project, error) {
 	var p model.Project
 	var sources string
-	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.Color, &sources, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.Color, &sources, &p.Type, &p.TechContext, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
 	p.RequirementSources = decodeTags(sources)
@@ -32,6 +33,9 @@ func scanProject(r interface{ Scan(...any) error }) (*model.Project, error) {
 
 var colorRe = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
+// MaxTechContext bounds the technical context of a project.
+const MaxTechContext = 8000
+
 // MaxRequirementSources bounds a project's source list.
 const MaxRequirementSources = 50
 
@@ -41,6 +45,17 @@ func normalizeProjectExtras(p *model.Project) error {
 	p.Color = strings.ToLower(strings.TrimSpace(p.Color))
 	if p.Color != "" && !colorRe.MatchString(p.Color) {
 		return Invalidf("color must be empty or #rrggbb")
+	}
+	p.Type = strings.ToLower(strings.TrimSpace(p.Type))
+	if p.Type == "" {
+		p.Type = "general"
+	}
+	if !slices.Contains(model.ProjectTypes, p.Type) {
+		return Invalidf("type must be one of %s", strings.Join(model.ProjectTypes, ", "))
+	}
+	p.TechContext = strings.TrimSpace(p.TechContext)
+	if len([]rune(p.TechContext)) > MaxTechContext {
+		return Invalidf("tech_context may have at most %d characters", MaxTechContext)
 	}
 	seen := map[string]bool{}
 	var out []string
@@ -102,8 +117,8 @@ func (s *Store) CreateProject(ctx context.Context, tenantID string, p *model.Pro
 	p.CreatedAt = s.now()
 	p.UpdatedAt = p.CreatedAt
 	return s.tx(ctx, func(c conn) error {
-		_, err := c.exec(ctx, `INSERT INTO projects (id, tenant_id, key, name, description, color, requirement_sources, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			p.ID, p.TenantID, p.Key, p.Name, p.Description, p.Color, storedSources(p), p.CreatedAt, p.UpdatedAt)
+		_, err := c.exec(ctx, `INSERT INTO projects (id, tenant_id, key, name, description, color, requirement_sources, type, tech_context, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			p.ID, p.TenantID, p.Key, p.Name, p.Description, p.Color, storedSources(p), p.Type, p.TechContext, p.CreatedAt, p.UpdatedAt)
 		if err != nil {
 			return mapErr(err, "project key")
 		}
@@ -185,8 +200,8 @@ func (s *Store) UpdateProject(ctx context.Context, tenantID string, p *model.Pro
 	if err := normalizeProjectExtras(p); err != nil {
 		return err
 	}
-	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, icon = ?, color = ?, requirement_sources = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
-		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.Icon, p.Color, storedSources(p), p.UpdatedAt, p.ID, tenantID)
+	res, err := s.c().exec(ctx, `UPDATE projects SET name = ?, description = ?, defect_url_template = ?, icon = ?, color = ?, requirement_sources = ?, type = ?, tech_context = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+		strings.TrimSpace(p.Name), p.Description, p.DefectURLTemplate, p.Icon, p.Color, storedSources(p), p.Type, p.TechContext, p.UpdatedAt, p.ID, tenantID)
 	if err != nil {
 		return err
 	}

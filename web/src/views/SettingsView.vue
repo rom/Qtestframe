@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Tabs from 'primevue/tabs'
 import TabList from 'primevue/tablist'
 import Tab from 'primevue/tab'
@@ -15,6 +15,7 @@ import Message from 'primevue/message'
 import { api, errorMessage } from '@/lib/api'
 import AvatarPicker from '@/components/AvatarPicker.vue'
 import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
+import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
 import { groupBy } from '@/lib/collections'
 import { defaultCategoryColor, normalizeHex, readableTextColor } from '@/lib/colors'
 import { P } from '@/lib/permissions'
@@ -32,7 +33,8 @@ const defectPlaceholder = 'https://jira.example.com/browse/{id}'
 const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
-const tab = ref<string>('requirement')
+const route = useRoute()
+const tab = ref<string>(['requirement', 'test', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
 
 function canEdit(scope: ItemKind) {
   return auth.can(scope === 'requirement' ? P.requirementWrite : P.testWrite) || auth.can(P.projectUpdate)
@@ -120,6 +122,8 @@ const pform = ref({
   description: proj.project?.description ?? '',
   defect_url_template: proj.project?.defect_url_template ?? '',
   color: proj.project?.color ?? '',
+  type: proj.project?.type || 'general',
+  tech_context: proj.project?.tech_context ?? '',
   /** requirement sources, one per line */
   sources: (proj.project?.requirement_sources ?? []).join('\n'),
 })
@@ -236,6 +240,16 @@ function deleteProject() {
                 <template v-if="templateExample"><br />{{ t('settings.example') }} ABC-123 → <a :href="templateExample" target="_blank" rel="noopener noreferrer">{{ templateExample }}</a></template>
               </span>
               <span v-if="templateHint" id="defect-tpl-issue" class="small warn-text" aria-live="polite">{{ templateHint }}</span>
+            </div>
+            <div class="field">
+              <label for="ptype">{{ t('projectType.label') }}</label>
+              <ProjectTypeSelect v-model="pform.type" input-id="ptype" :disabled="!auth.can(P.projectUpdate)" />
+              <span class="small muted">{{ t('projectType.hint') }}</span>
+            </div>
+            <div v-if="pform.type === 'software'" class="field">
+              <label for="ptech">{{ t('projectType.techContext') }}</label>
+              <Textarea id="ptech" v-model="pform.tech_context" rows="5" auto-resize maxlength="8000" :placeholder="t('projectType.techPlaceholder')" :disabled="!auth.can(P.projectUpdate)" aria-describedby="ptech-hint" />
+              <span id="ptech-hint" class="small muted">{{ t('projectType.techHint') }}</span>
             </div>
             <div class="field">
               <span id="pcolor-label" class="field-label">{{ t('projectColor.label') }}</span>

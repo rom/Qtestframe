@@ -19,10 +19,18 @@ const raw = new MarkdownIt({ html: true })
 function inline(md: string): Token[] {
   return raw.parse(md, {}).flatMap((t) => t.children ?? [])
 }
+// rendered once per page: the link check asks for the same page many times
+const anchorCache = new Map<string, Set<string>>()
 function anchors(lang: string, page: string): Set<string> {
-  const p = getPage(lang, page)!
-  const r = renderGuide(p.markdown, { lang, assets: {} })
-  return new Set([...r.html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]))
+  const key = `${lang}/${page}`
+  let set = anchorCache.get(key)
+  if (!set) {
+    const p = getPage(lang, page)!
+    const r = renderGuide(p.markdown, { lang, assets: {} })
+    set = new Set([...r.html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]))
+    anchorCache.set(key, set)
+  }
+  return set
 }
 
 describe('the bundled user guide', () => {

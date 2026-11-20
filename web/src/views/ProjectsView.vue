@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import ProjectColorPicker from '@/components/ProjectColorPicker.vue'
+import ProjectTypeSelect from '@/components/ProjectTypeSelect.vue'
+import { PROJECT_TYPE_ICONS, type ProjectType } from '@/lib/projectTypes'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
@@ -35,7 +37,7 @@ const filter = ref('')
 const layout = ref<'cards' | 'table'>((readPref('qtf.projects.layout') as 'cards' | 'table') || 'cards')
 const dialog = ref(false)
 const editing = ref<Project | null>(null)
-const form = ref({ key: '', name: '', description: '', color: '', seed_categories: true })
+const form = ref({ key: '', name: '', description: '', color: '', type: 'general', seed_categories: true })
 const formError = ref('')
 const saving = ref(false)
 
@@ -68,13 +70,13 @@ function setLayout(v: 'cards' | 'table') {
 
 function openCreate() {
   editing.value = null
-  form.value = { key: '', name: '', description: '', color: '', seed_categories: true }
+  form.value = { key: '', name: '', description: '', color: '', type: 'general', seed_categories: true }
   formError.value = ''
   dialog.value = true
 }
 function openEdit(p: Project) {
   editing.value = p
-  form.value = { key: p.key, name: p.name, description: p.description, color: p.color ?? '', seed_categories: false }
+  form.value = { key: p.key, name: p.name, description: p.description, color: p.color ?? '', type: p.type || 'general', seed_categories: false }
   formError.value = ''
   dialog.value = true
 }
@@ -91,7 +93,7 @@ async function save() {
   formError.value = ''
   try {
     if (editing.value) {
-      await api.patch(`/projects/${editing.value.id}`, { name: form.value.name, description: form.value.description, color: form.value.color })
+      await api.patch(`/projects/${editing.value.id}`, { name: form.value.name, description: form.value.description, color: form.value.color, type: form.value.type })
       notify.ok(t('projects.updated'))
     } else {
       const p = await api.post<Project>('/projects', form.value)
@@ -166,7 +168,10 @@ function open(p: Project) {
         <ProjectIcon :icon="p.icon" :project-key="p.key" :color="p.color" :size="40" />
         <div class="grow">
           <RouterLink :to="{ name: 'dashboard', params: { projectId: p.id } }" class="project-link ellipsis" @click.stop>{{ p.name }}</RouterLink>
-          <div class="key">{{ p.key }}</div>
+          <div class="row nowrap" style="gap: 6px">
+            <span class="key">{{ p.key }}</span>
+            <span v-if="p.type && p.type !== 'general'" class="type-badge small"><i :class="PROJECT_TYPE_ICONS[p.type as ProjectType]" aria-hidden="true" />{{ t(`projectType.${p.type}`) }}</span>
+          </div>
         </div>
         <div class="row nowrap" @click.stop>
           <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: p.name })" v-tooltip="t('common.edit')" @click="openEdit(p)" />
@@ -215,6 +220,10 @@ function open(p: Project) {
         <Textarea v-model="form.description" rows="3" auto-resize />
       </div>
       <div class="field">
+        <label for="new-ptype">{{ t('projectType.label') }}</label>
+        <ProjectTypeSelect v-model="form.type" input-id="new-ptype" />
+      </div>
+      <div class="field">
         <span id="new-pcolor" class="field-label">{{ t('projectColor.label') }}</span>
         <ProjectColorPicker v-model="form.color" aria-labelledby="new-pcolor" />
       </div>
@@ -229,3 +238,15 @@ function open(p: Project) {
     </form>
   </Dialog>
 </template>
+
+<style>
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--qtf-border);
+  color: var(--qtf-muted);
+}
+</style>

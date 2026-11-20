@@ -880,6 +880,22 @@ html, body { overflow-x: clip; }
 .app-dark .readiness-cell.blocked {
   color: var(--p-red-300);
 }
+button.readiness-cell { text-decoration: underline dotted; text-underline-offset: 3px; overflow-wrap: normal; text-align: start; }
+button.readiness-cell:focus-visible { outline: 2px solid var(--p-primary-color); outline-offset: 2px; }
+.readiness-pop { max-width: min(560px, 94vw); }
+.readiness-pop .readiness-banner { margin: 0; }
+/* inside the popover the message keeps the card colours (the tinted message
+   background over the popover would lower the contrast of its red text) */
+.readiness-pop .readiness-banner.p-message {
+  background: var(--qtf-card);
+  color: var(--qtf-text);
+  outline: none;
+  box-shadow: none;
+}
+.readiness-pop .readiness-banner .p-message-text { color: var(--qtf-text); }
+.readiness-pop .readiness-banner a { color: var(--p-primary-color); }
+.readiness-pop .readiness-banner .pi-ban { color: var(--p-red-700, #b91c1c); }
+.app-dark .readiness-pop .readiness-banner .pi-ban { color: var(--p-red-300, #fca5a5); }
 
 /* links inside messages take the message colour (contrast in every theme) */
 .p-message a {

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import { isSoftware } from '@/lib/projectTypes'
+import { useProjectStore } from '@/stores/project'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
@@ -54,9 +57,15 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ saved: [item: TestCase]; deleted: [id: string]; copied: [item: TestCase]; close: [] }>()
 const meta = useMetaStore()
+const proj = useProjectStore()
 const notify = useNotify()
 const { t } = useI18n()
 const tabsId = newId('test-tabs')
+const linkCount = ref<number | null>(null)
+watch(
+  () => props.itemId,
+  () => (linkCount.value = null),
+)
 /** tab panel attributes for the content of a tab (only when the tabs are shown) */
 function panel(value: string) {
   return item.value ? { role: 'tabpanel', id: `${tabsId}_tabpanel_${value}`, 'aria-labelledby': `${tabsId}_tab_${value}` } : {}
@@ -375,12 +384,14 @@ const scriptPlaceholder = computed(() => {
     <TabList>
       <Tab value="details"><i class="pi pi-file-edit" aria-hidden="true" /> {{ t('common.details') }}</Tab>
       <Tab value="executions"><i class="pi pi-play-circle" aria-hidden="true" /> {{ t('common.executions') }} <span v-if="execCount !== null" class="count">{{ execCount }}</span></Tab>
+      <Tab value="links"><i class="pi pi-link" aria-hidden="true" /> {{ t('links.title') }} <span v-if="linkCount !== null" class="count">{{ linkCount }}</span></Tab>
       <Tab value="comments"><i class="pi pi-comments" aria-hidden="true" /> {{ t('common.comments') }} <span class="count">{{ commentCount }}</span></Tab>
       <Tab value="attachments"><i class="pi pi-paperclip" aria-hidden="true" /> {{ t('files.tab') }} <span v-if="attachmentCount !== null" class="count">{{ attachmentCount }}</span></Tab>
       <Tab value="history"><i class="pi pi-history" aria-hidden="true" /> {{ t('common.history') }}</Tab>
     </TabList>
   </Tabs>
   <div v-if="item && tab === 'executions'" v-bind="panel('executions')"><TestExecutionsPanel :project-id="projectId" :test-id="item.id" @count="(n) => (execCount = n)" /></div>
+  <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="test" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="test" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="test" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
@@ -542,6 +553,7 @@ const scriptPlaceholder = computed(() => {
       <Button v-if="item && canWrite" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="remove" />
       <Button v-if="item && canWrite" :label="t('common.copy')" icon="pi pi-copy" severity="secondary" text style="margin-right: auto" @click="copy" />
       <span v-else style="margin-right: auto" />
+      <RouterLink v-if="item && isSoftware(proj.project)" :to="{ name: 'prompts', params: { projectId }, query: { kind: 'automate_tests', ids: item.id } }" class="small row nowrap" style="gap: 4px"><i class="pi pi-sparkles" aria-hidden="true" />{{ t('prompts.forItem') }}</RouterLink>
       <RouterLink v-if="item" :to="{ name: 'flow', params: { projectId }, query: { test: item.id } }" class="small row nowrap" style="gap: 4px"><i class="pi pi-share-alt" aria-hidden="true" />{{ t('flow.flowOfTest') }}</RouterLink>
       <Button :label="t('common.close')" severity="secondary" text @click="emit('close')" />
       <Button v-if="canWrite" type="submit" :label="isNew ? t('common.create') : t('common.save')" icon="pi pi-check" :loading="saving" :disabled="!form.title.trim()" />

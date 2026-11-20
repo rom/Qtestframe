@@ -3,6 +3,7 @@
 // download or save to the document archive.
 import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
@@ -49,6 +50,7 @@ const proj = useProjectStore()
 const auth = useAuthStore()
 const notify = useNotify()
 const { t, te } = useI18n()
+const route = useRoute()
 const canExport = computed(() => auth.can(P.export))
 const canSave = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
 const base = computed(() => `/projects/${proj.pid}/reports`)
@@ -258,7 +260,14 @@ onMounted(() => {
   loadTemplates()
   loadRuns()
   loadFields()
-  loadDefinitions()
+  void loadDefinitions().then(() => {
+    // opened from a link (?definition=<id>)
+    const id = typeof route.query.definition === 'string' ? route.query.definition : null
+    if (id && definitions.value.some((d) => d.id === id)) {
+      selectedDef.value = id
+      loadDefinition(id)
+    }
+  })
 })
 </script>
 

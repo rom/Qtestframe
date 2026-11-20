@@ -29,6 +29,8 @@ import { P } from '@/lib/permissions'
 import ColumnsMenu from '@/components/ColumnsMenu.vue'
 import { useColumnLayout, type ColumnDef } from '@/composables/columns'
 import type { Readiness, TestCase, TestRun } from '@/lib/types'
+import { readinessSummary } from '@/lib/readiness'
+import { enumLabel } from '@/i18n/labels'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
@@ -273,7 +275,7 @@ const runLayout = useColumnLayout(
                   v-if="pickedReadiness[tc.id] && !pickedReadiness[tc.id].ready"
                   class="readiness-cell small"
                   :class="{ blocked: !pickedReadiness[tc.id].allowed }"
-                  :title="pickedReadiness[tc.id].issues.map((i) => i.key).join(', ')"
+                  :title="readinessSummary(pickedReadiness[tc.id], t, enumLabel)"
                 >
                   <i :class="pickedReadiness[tc.id].allowed ? 'pi pi-exclamation-triangle' : 'pi pi-ban'" aria-hidden="true" />
                   {{ pickedReadiness[tc.id].allowed ? t('readiness.notReady', { count: pickedReadiness[tc.id].issues.length }, pickedReadiness[tc.id].issues.length) : t('readiness.cannotRun') }}

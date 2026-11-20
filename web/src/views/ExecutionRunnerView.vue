@@ -6,6 +6,7 @@ import HelpTip from '@/guide/HelpTip.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ReadinessBanner from '@/components/ReadinessBanner.vue'
+import { readinessOfError, readinessSummary } from '@/lib/readiness'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
@@ -229,7 +230,11 @@ async function save(): Promise<boolean> {
     notify.ok(t('runner.saved'), enumLabel('result', updated?.status ?? effectiveStatus.value))
     return true
   } catch (e) {
-    notify.fail(e, t('runner.saveFailed'))
+    const rd = readinessOfError(e)
+    if (rd && ex.value) {
+      ex.value = { ...ex.value, readiness: rd }
+      notify.failText(t('readiness.saveRefused'), readinessSummary(rd, t, enumLabel))
+    } else notify.fail(e, t('runner.saveFailed'))
     void refreshReadiness()
     return false
   } finally {
@@ -254,6 +259,21 @@ async function go(target: Execution | null, saveFirst = false) {
     if (!(await save())) return
   }
   router.push({ name: 'execute', params: { projectId: proj.pid, runId: props.runId, executionId: target.id } })
+}
+
+// the last execution: save, then back to the run (which completes itself
+// once every test has a result), or on to a test that still has none
+const OPEN = ['not_run', 'in_progress']
+async function finish() {
+  if (canExecute.value && !(await save())) return
+  const open = list.value.filter((e) => OPEN.includes(e.status))
+  if (open.length) {
+    notify.info(t('runner.stillOpen', { count: open.length }, open.length))
+    if (open[0].id !== ex.value?.id) router.push({ name: 'execute', params: { projectId: proj.pid, runId: props.runId, executionId: open[0].id } })
+    return
+  }
+  notify.ok(t('runner.runCompleted'))
+  router.push({ name: 'run', params: { projectId: proj.pid, runId: props.runId } })
 }
 
 async function runScript() {
@@ -526,7 +546,8 @@ const statusOptions = computed(() => [
       <div v-if="canExecute" class="row" style="justify-content: flex-end; margin-top: 12px">
         <span v-if="dirty" class="small muted" style="margin-right: auto"><i class="pi pi-circle-fill" aria-hidden="true" style="font-size: 8px; color: var(--p-amber-500)" /> {{ t('runner.unsaved') }}</span>
         <Button :label="t('common.save')" icon="pi pi-save" severity="secondary" :loading="saving" @click="save" />
-        <Button :label="t('runner.saveNext')" icon="pi pi-angle-double-right" icon-pos="right" :loading="saving" :disabled="!nextEx" @click="go(nextEx, true)" />
+        <Button v-if="nextEx" :label="t('runner.saveNext')" icon="pi pi-angle-double-right" icon-pos="right" :loading="saving" @click="go(nextEx, true)" />
+        <Button v-else :label="t('runner.saveFinish')" icon="pi pi-flag-fill" icon-pos="right" :loading="saving" @click="finish" />
       </div>
     </div>
   </template>

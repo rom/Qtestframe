@@ -82,3 +82,23 @@ The graph is read from left to right: prerequisites, parent requirements and sou
 - **List** shows the same relations as a table, one item per row, which is easier to read with a screen reader or to print.
 
 Cycles (for example two requirements that depend on each other) are drawn, but one of their lines is shown without an arrow.
+
+## Requirement analytics
+
+**Analytics** in the project navigation analyses all requirements of the project at once (open it again or select **Analyse again** after changes). At the top: the **health** (the share of requirements without problems or warnings), the number of requirements and tests, the share **covered by tests** (rejected and obsolete requirements are not counted) and the average **language score**.
+
+- **Obligation levels** shows how many requirements have each level, including those with **no obligation**.
+- **Keywords per meaning** groups the keywords that mean the same (MUST, SHALL and REQUIRED; MAY and OPTIONAL …) and shows how each is used, so you see the convention of the project at a glance.
+
+**Findings** lists what the analysis noticed, problems first, each with an explanation, **what to do** and the requirements (or tests) concerned; select a key to open the item. Filter by severity or category:
+
+| Category | Findings |
+|---|---|
+| Obligation levels | requirements without an obligation level; a level in the field but no keyword in the text; field and text disagree; several levels in one requirement; the spread: almost everything mandatory, no mandatory requirements, many optional (MAY) or many SHOULD or descriptive requirements |
+| Consistency | a keyword used by a few requirements while another with the same meaning dominates, for example *SHALL is used in 1 requirement, while MUST is used in 95 %*; keywords with the same meaning used about equally |
+| Coverage | mandatory and other requirements without tests; failing or not yet run tests; requirements without acceptance criteria |
+| Tests | tests that verify no requirement; accepted requirements without a test that is Ready |
+| Quality | empty descriptions, duplicate titles, conflicting requirements, low language scores, many drafts, requirements without an owner |
+| Language | the findings of the [language analysis](requirements.md#the-language-analysis) summed up per rule: ambiguous terms, TBDs, escape clauses … |
+
+**Language** chooses the language of the analysis (detected per requirement by default). Test findings are shown when you may read tests.

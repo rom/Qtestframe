@@ -32,13 +32,15 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request, p *
 		Name           string `json:"name"`
 		Description    string `json:"description"`
 		Color          string `json:"color"`
+		Type           string `json:"type"`
+		TechContext    string `json:"tech_context"`
 		SeedCategories *bool  `json:"seed_categories"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	pr := &model.Project{Key: req.Key, Name: req.Name, Description: req.Description, Color: req.Color}
+	pr := &model.Project{Key: req.Key, Name: req.Name, Description: req.Description, Color: req.Color, Type: req.Type, TechContext: req.TechContext}
 	seed := req.SeedCategories == nil || *req.SeedCategories
 	if err := s.Store.CreateProject(r.Context(), p.TenantID(), pr, seed); err != nil {
 		s.fail(w, r, err)
@@ -66,6 +68,8 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request, p *
 		Icon               *string   `json:"icon"`
 		Color              *string   `json:"color"`
 		RequirementSources *[]string `json:"requirement_sources"`
+		Type               *string   `json:"type"`
+		TechContext        *string   `json:"tech_context"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -84,6 +88,12 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request, p *
 	}
 	if req.Color != nil {
 		pr.Color = *req.Color
+	}
+	if req.Type != nil {
+		pr.Type = *req.Type
+	}
+	if req.TechContext != nil {
+		pr.TechContext = *req.TechContext
 	}
 	if req.RequirementSources != nil {
 		// an empty list returns to the defaults

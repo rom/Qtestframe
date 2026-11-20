@@ -33,6 +33,8 @@ When you create a requirement with **Obligation** set to **Auto-detect from text
 
 Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`. Requirements written in Swedish use the Swedish keywords described under [The language analysis](#the-language-analysis). The [References](references.md) page lists these and other standards for requirements and testing.
 
+While you write, **Help: obligation levels** below the description (open for new requirements) shows the keywords of each level in the language of the interface, what they mean and an example, with tips on writing them. [Analytics](traceability-and-coverage.md#requirement-analytics) shows how the levels and keywords are spread over the project.
+
 ## The language analysis
 
 While you type the description, the **Requirement language analysis** box shows the detected obligation, a **Score** from 0 to 100, the keywords highlighted in your text and a list of **Findings**.
@@ -170,6 +172,24 @@ Without a mouse, use the folder's **⋮** actions button or the **Move** button 
 
 **Deleting a folder** asks what to do with the content: **Delete, keep content** moves subfolders and requirements to the parent folder; **Delete everything** deletes the subtree including all requirements in it.
 
+## Links to other items
+
+The **Links** tab of a requirement, a test and a run lists links to other things, inside the tool and outside it. **Add link** offers:
+
+| Link to | Choose |
+|---|---|
+| **Requirement**, **Test** | one or more items of the project with the item picker |
+| **Run** | a test run of the project |
+| **Archive file** | a document or saved report of the project's [document archive](documents.md) |
+| **Report** | a saved report definition; the link opens it under **Reports** |
+| **Web address** | an `https://`, `http://` or `mailto:` address, for example a design specification, a ticket or a wiki page |
+
+A **label** (optional) says what the link is, for example *Design spec* or *Jira ticket*. Links to items of the tool open them; files and web addresses open in a new tab. Under **Linked from** you see the requirements, tests and runs that link to this item, so links work in both directions.
+
+Links can only point to items of the same project. When a linked item is deleted its links go with it (and come back when you undo the deletion); when an item moves to another project, its links to items of the old project are dropped and its web links move along. Adding and removing links needs the permission to edit the item that carries them, and you only see links to kinds of items you may read. Adding and removing a link can be undone.
+
+**Keys and addresses in texts.** In comments, an item key such as `SHOP-REQ-12` or `SHOP-TC-3` becomes a link to that item, and a web address becomes a link that opens in a new tab. The address `/go/SHOP-TC-3` in the tool always opens that item, which is handy in e-mails and chats.
+
 ## Attachments
 
 The **Attachments** tab of the editor holds files that belong to the requirement: drawings, specifications, mails, screenshots. Drag files onto the tab or choose them to upload (up to 25 MB per file unless your administrator set another limit); several files upload one after another, with progress. Images, PDF files and plain text can be previewed; other files are downloaded.
@@ -181,6 +201,29 @@ Uploading and removing attachments needs the **Manager** role (the same as editi
 ## Copy a requirement
 
 **Copy** in the editor creates a new requirement based on this one: titled *Copy of …*, with a new key in the same folder and the description, obligation, type, priority, source, rationale, owner, tags, categories and evaluation criteria. The copy starts as **Draft** and opens in the editor so you can adapt it. **▾ → Copy and relate as derived from** also records the relation *derived from* the original. Links to tests, comments and history are not copied.
+
+## AI prompts (software projects)
+
+In a project whose **project type** is **Software** (set it when you create the project, or under **Categories & settings → Project**), **AI prompts** appears in the project navigation. It builds a ready-to-use prompt for an AI assistant (for example a coding assistant) from the project's requirements or tests. Qtestframe only writes the text; you copy it into the assistant your organisation allows. Nothing is sent to an AI service.
+
+1. Choose what the prompt is for:
+
+   | From | Prompt | What the assistant is asked to do |
+   |---|---|---|
+   | requirements | **Implement requirements** | write the code, traceable to the requirement keys, with tests; list open questions |
+   | requirements | **Review requirements** | check them against ISO/IEC/IEEE 29148 and RFC 2119; propose rewrites and measurable criteria |
+   | requirements | **Design test cases** | derive test cases of a **test type**, as JSON that can be imported with the API |
+   | tests | **Automate test cases** | write automated tests in your **test framework**, one per test case, named after its key |
+   | tests | **Review tests** | check quality and coverage against the requirements they verify |
+   | tests | **Plan a test type** | a test plan for one test type: scope, tools, entry and exit criteria, tests to add |
+
+2. Choose the items: **all**, those **matching a filter** (the [query language](search-and-filters.md)), or **selected** ones. You can also start from a requirement or test: **AI prompt** at the bottom of the editor, or **AI prompt** in the bulk toolbar for the selected rows.
+3. Choose the **test type** (unit, integration, system, acceptance, end-to-end, API, regression, smoke, performance, security, usability or accessibility), the **test framework or tools** (suggestions such as pytest, Playwright, JUnit 5 or Go testing; any text is fine), the **language of the prompt** (English or Swedish) and any **additional instructions**.
+4. Select **Build prompt**, then **Copy** or **Download (.md)**.
+
+A prompt contains the project's **technical context**, the items with their obligation, status, description, rationale, criteria with thresholds, relations, linked tests or requirements, steps with test data and expected results, prerequisites and, for automation, the current script, followed by instructions and the expected form of the answer. Describe the languages, frameworks, architecture and conventions of the project once under **Categories & settings → Project → Technical context**; every prompt includes it.
+
+Reading the items is enough to build a prompt. A prompt holds at most 200 items. Only paste prompts into AI services that your organisation allows for this information.
 
 ## Delete a requirement
 

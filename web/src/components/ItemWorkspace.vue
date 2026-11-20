@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isSoftware } from '@/lib/projectTypes'
 import { useUndoStore } from '@/stores/undo'
 import { deletedEntry, entry, recordUndo } from '@/lib/undoActions'
 import { tagClass } from '@/lib/tagColors'
@@ -481,6 +482,15 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-plus" size="small" severity="secondary" outlined :aria-label="t('workspace.addCategories')" v-tooltip.bottom="t('workspace.addCategories')" @click="openCatDialog('add')" />
         <Button :label="t('workspace.categoriesButton')" icon="pi pi-minus" size="small" severity="secondary" outlined :aria-label="t('workspace.removeCategories')" v-tooltip.bottom="t('workspace.removeCategories')" @click="openCatDialog('remove')" />
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
+        <Button
+          v-if="isSoftware(proj.project)"
+          :label="t('prompts.forSelection')"
+          icon="pi pi-sparkles"
+          size="small"
+          severity="secondary"
+          outlined
+          @click="$router.push({ name: 'prompts', params: { projectId: pid }, query: { kind: isReq ? 'implement' : 'automate_tests', ids: selectedIds.join(',') } })"
+        />
         <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>

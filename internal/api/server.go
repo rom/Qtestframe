@@ -150,6 +150,8 @@ func (s *Server) routes() {
 	// requirements
 	h("GET /api/v1/projects/{pid}/requirements", s.handleListRequirements, "requirement.read")
 	h("GET /api/v1/projects/{pid}/people", s.handlePeople, "requirement.read")
+	h("GET /api/v1/projects/{pid}/analytics", s.handleAnalytics, "requirement.read")
+	h("POST /api/v1/projects/{pid}/prompts", s.handlePrompt, "project.read") // read of the items' kind: see prompts.go
 	h("GET /api/v1/projects/{pid}/requirement-sources", s.handleRequirementSources, "requirement.read")
 	h("POST /api/v1/projects/{pid}/tags/suggest", s.handleSuggestTags, "requirement.read")
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
@@ -187,6 +189,14 @@ func (s *Server) routes() {
 	h("GET /api/v1/tests/{id}", s.handleGetTest, "test.read")
 	h("PATCH /api/v1/tests/{id}", s.handleUpdateTest, "test.read") // write or review: see review.go
 	h("DELETE /api/v1/tests/{id}", s.handleDeleteTest, "test.write")
+	h("GET /api/v1/requirements/{id}/item-links", s.handleListItemLinks(model.KindRequirement), "requirement.read")
+	h("POST /api/v1/requirements/{id}/item-links", s.handleCreateItemLink(model.KindRequirement), "requirement.write")
+	h("GET /api/v1/tests/{id}/item-links", s.handleListItemLinks(model.KindTest), "test.read")
+	h("POST /api/v1/tests/{id}/item-links", s.handleCreateItemLink(model.KindTest), "test.write")
+	h("GET /api/v1/runs/{id}/item-links", s.handleListItemLinks("run"), "run.read")
+	h("POST /api/v1/runs/{id}/item-links", s.handleCreateItemLink("run"), "run.write")
+	h("PATCH /api/v1/item-links/{id}", s.handleUpdateItemLink, "project.read") // write of the source: see itemlinks.go
+	h("DELETE /api/v1/item-links/{id}", s.handleDeleteItemLink, "project.read")
 	h("GET /api/v1/projects/{pid}/trash", s.handleListTrash, "project.read")
 	h("POST /api/v1/trash/{id}/restore", s.handleRestoreTrash, "project.read") // write of the kind: see trash.go
 	h("POST /api/v1/tests/{id}/copy", s.handleCopyTest, "test.write")

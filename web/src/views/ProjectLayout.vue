@@ -5,6 +5,7 @@ import ProgressSpinner from 'primevue/progressspinner'
 import Message from 'primevue/message'
 import ProjectIcon from '@/components/ProjectIcon.vue'
 import { useProjectStore } from '@/stores/project'
+import { isSoftware } from '@/lib/projectTypes'
 import { usePrefsStore } from '@/stores/prefs'
 import { errorMessage } from '@/lib/api'
 import { ref } from 'vue'
@@ -37,8 +38,10 @@ const tabs = computed(() => [
   { to: 'tests', icon: 'pi pi-check-square', label: t('nav.tests') },
   { to: 'runs', icon: 'pi pi-play-circle', label: t('nav.operations') },
   { to: 'traceability', icon: 'pi pi-th-large', label: t('nav.traceability') },
+  { to: 'analytics', icon: 'pi pi-chart-bar', label: t('nav.analytics') },
   { to: 'graph', icon: 'pi pi-sitemap', label: t('nav.graph') },
   { to: 'flow', icon: 'pi pi-share-alt', label: t('nav.flow') },
+  ...(isSoftware(proj.project) ? [{ to: 'prompts', icon: 'pi pi-sparkles', label: t('nav.prompts') }] : []),
   { to: 'tags', icon: 'pi pi-hashtag', label: t('nav.tags') },
   { to: 'baselines', icon: 'pi pi-flag', label: t('nav.baselines') },
   { to: 'documents', icon: 'pi pi-folder', label: t('nav.documents') },

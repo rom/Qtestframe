@@ -148,10 +148,36 @@ func (s *Store) AddExecutions(ctx context.Context, tenantID, runID string, testI
 	var n int
 	err = s.tx(ctx, func(c conn) error {
 		var err error
-		n, err = s.addExecutions(ctx, c, tenantID, run.ProjectID, runID, testIDs)
-		return err
+		if n, err = s.addExecutions(ctx, c, tenantID, run.ProjectID, runID, testIDs); err != nil || n == 0 {
+			return err
+		}
+		// new tests to execute reopen a completed run
+		return syncRunStatus(ctx, c, runID, s.now(), true)
 	})
 	return n, err
+}
+
+// syncRunStatus completes a run once every execution has a final result
+// (passed, failed, blocked or skipped). With reopen, a completed run that
+// has executions without a final result again goes back to in_progress.
+// Aborted runs are left alone; a planned run without results stays planned.
+func syncRunStatus(ctx context.Context, c conn, runID string, now time.Time, reopen bool) error {
+	var total, open int
+	if err := c.row(ctx, `SELECT COUNT(*), COALESCE(SUM(CASE WHEN status IN ('not_run', 'in_progress') THEN 1 ELSE 0 END), 0) FROM test_executions WHERE run_id = ?`, runID).Scan(&total, &open); err != nil {
+		return err
+	}
+	if total == 0 {
+		return nil
+	}
+	if open == 0 {
+		_, err := c.exec(ctx, `UPDATE test_runs SET status = 'completed', started_at = COALESCE(started_at, ?), completed_at = ? WHERE id = ? AND status IN ('planned', 'in_progress')`, now, now, runID)
+		return err
+	}
+	if reopen {
+		_, err := c.exec(ctx, `UPDATE test_runs SET status = 'in_progress', completed_at = NULL WHERE id = ? AND status = 'completed'`, runID)
+		return err
+	}
+	return nil
 }
 
 // GetRun returns a run with its result summary.
@@ -267,6 +293,9 @@ func (s *Store) DeleteRun(ctx context.Context, tenantID, id string) error {
 			return err
 		}
 		if err := removeAttachments(ctx, c, "run", []string{id}); err != nil {
+			return err
+		}
+		if err := deleteItemLinks(ctx, c, "run", []string{id}); err != nil {
 			return err
 		}
 		res, err := c.exec(ctx, `DELETE FROM test_runs WHERE id = ? AND tenant_id = ?`, id, tenantID)
@@ -439,6 +468,7 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 		e.StepResults[i].Actual = sr.Actual
 		e.StepResults[i].Evidence = sr.Evidence
 	}
+	wasFinal := finalResult(e.Status)
 	status := e.Status
 	switch {
 	case u.Status != nil:
@@ -450,7 +480,7 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 	if status != model.ResultNotRun && e.StartedAt == nil {
 		e.StartedAt = &now
 	}
-	final := status == model.ResultPassed || status == model.ResultFailed || status == model.ResultBlocked || status == model.ResultSkipped
+	final := finalResult(status)
 	if final {
 		e.FinishedAt = &now
 		if u.DurationMS != nil {
@@ -499,12 +529,18 @@ func (s *Store) UpdateExecution(ctx context.Context, tenantID, id, user string, 
 				return err
 			}
 		}
-		return nil
+		// the last final result completes the run; taking one back reopens it
+		return syncRunStatus(ctx, c, e.RunID, now, wasFinal && !final)
 	})
 	if err != nil {
 		return nil, err
 	}
 	return e, nil
+}
+
+// finalResult: the execution is done (passed, failed, blocked or skipped).
+func finalResult(status string) bool {
+	return status == model.ResultPassed || status == model.ResultFailed || status == model.ResultBlocked || status == model.ResultSkipped
 }
 
 // ImportResult is one automated result reported by CI.

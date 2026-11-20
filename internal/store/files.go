@@ -201,6 +201,9 @@ func (s *Store) DeleteFile(ctx context.Context, tenantID, id string) error {
 				return err
 			}
 		}
+		if err := deleteItemLinks(ctx, c, "file", []string{id}); err != nil {
+			return err
+		}
 		res, err := c.exec(ctx, `DELETE FROM files WHERE id = ? AND tenant_id = ?`, id, tenantID)
 		if err != nil {
 			return err
@@ -390,14 +393,16 @@ func (s *Store) UpdateReportDefinition(ctx context.Context, tenantID string, d *
 
 // DeleteReportDefinition removes a saved report.
 func (s *Store) DeleteReportDefinition(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM report_definitions WHERE id = ? AND tenant_id = ?`, id, tenantID)
-	if err != nil {
-		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return mapErr(sql.ErrNoRows, "report definition")
-	}
-	return nil
+	return s.tx(ctx, func(c conn) error {
+		res, err := c.exec(ctx, `DELETE FROM report_definitions WHERE id = ? AND tenant_id = ?`, id, tenantID)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return mapErr(sql.ErrNoRows, "report definition")
+		}
+		return deleteItemLinks(ctx, c, "report", []string{id})
+	})
 }
 
 // ---------------------------------------------------------------- login events

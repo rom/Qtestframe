@@ -35,7 +35,7 @@ When a test is added, its current steps (with shared steps expanded) are copied 
 
 ![A run with its status, progress, pass rate and the list of executions](../images/en-run-detail.png)
 
-- **Run status**: **Planned**, **In progress**, **Completed** or **Aborted**. The start time is set when the run first becomes *In progress* (also automatically when the first result is recorded); the end time when it becomes *Completed* or *Aborted*.
+- **Run status**: **Planned**, **In progress**, **Completed** or **Aborted**. The start time is set when the run first becomes *In progress* (also automatically when the first result is recorded); the end time when it becomes *Completed* or *Aborted*. A run becomes **Completed by itself** when every test in it has a final result (passed, failed, blocked or skipped), also a run with a single test. It goes back to *In progress* when a result is taken back to *Not run* or *In progress*, or when tests are added. You can still set the status by hand; an *Aborted* run is never changed automatically.
 - **Progress** and **Pass rate** summarise the executions.
 - **Execute** opens the runner at the first execution that has not been run yet.
 - **Add tests** adds more tests; **CI import** shows how a pipeline reports results; **Edit run** changes name, description, environment and build; **Delete** removes the run with all its results.
@@ -59,7 +59,7 @@ The runner shows one execution at a time. Its header tells you which execution o
    - **Assignee**: who should execute the test. Type `@` to pick a person ([mentions](requirements.md#mention-people)).
    - **Defects**: defect IDs or URLs, each followed by <kbd>Enter</kbd>.
    - **Notes**: observations, links, anything worth keeping.
-6. Select **Save**, or **Save & next** to save and open the next execution. **Previous** and **Next** move between executions. *Unsaved changes* reminds you to save.
+6. Select **Save**, or **Save & next** to save and open the next execution. On the last execution the button is **Save & finish**: it saves and returns to the run page, where the run is completed once every test has a result; if some still have none, it says how many and opens the first of them. **Previous** and **Next** move between executions. *Unsaved changes* reminds you to save.
 
 A test without steps shows only the overall result, notes and defects.
 
@@ -98,7 +98,13 @@ Before a test is executed, Qtestframe checks that it is ready: the test has stat
 - **blocked** (the default): the runner shows a red box with the reasons and links; **Pass**, **Fail** and **Run script** are disabled, and the server refuses such results. You can still mark the test **Blocked** or **Skipped**;
 - **allowed**: the reasons appear as an amber warning, and you can execute the test.
 
-The run page shows the same in its **Readiness** column, with a summary above the table, and the **New run** dialog marks picked tests that are not ready.
+Each reason says exactly what is wrong, what to do about it and which setting decides, for example:
+
+- *SHOP-TC-4 has status Draft; only tests with status Ready can be executed.* — **What to do:** finish the test and have it reviewed and marked Ready (needs *test.review*). *Blocked by the execution setting “Allow executing tests that are not Ready”, which is off.*
+- *It verifies SHOP-REQ-2, which has status Approved; the execution settings require linked requirements to be Implemented or Verified.* — **What to do:** move the requirement on when it has been implemented, or ask an administrator to add its status to the ready statuses.
+- *It depends on SHOP-TC-1, which is Failed in this run; a prerequisite must have passed first.* — **What to do:** execute SHOP-TC-1 first and make it pass, or add it to the run.
+
+So you can tell whether the test itself, a requirement, a prerequisite or an organisation setting stops it. The run page shows the same in its **Readiness** column (select the entry to see the full explanation), with a summary above the table; the tooltips of the disabled Pass and Fail buttons and any refused result name the reasons too, and the **New run** dialog marks picked tests that are not ready.
 
 ## Defects
 
@@ -135,6 +141,10 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 - An invalid status stops the import with an error; results before it stay applied.
 
 Keep the token in your CI system's secret store, never in the repository. A token is bound to one organisation and never has more rights than its owner.
+
+## Links of a run
+
+The **Links** tab of the run page links the run to requirements, tests, other runs, archive files, reports and web addresses, for example the CI build or the release notes, see [Links](requirements.md#links-to-other-items).
 
 ## Attachments on runs and executions
 

@@ -35,7 +35,7 @@ När ett testfall läggs till kopieras dess aktuella steg (med delade steg utvec
 
 ![En körning med status, förlopp, andel godkända och listan över exekveringar](../images/sv-run-detail.png)
 
-- **Körningens status**: **Planerad**, **Pågår**, **Slutförd** eller **Avbruten**. Starttiden sätts när körningen första gången får status *Pågår* (även automatiskt när det första utfallet registreras), sluttiden när den blir *Slutförd* eller *Avbruten*.
+- **Körningens status**: **Planerad**, **Pågår**, **Slutförd** eller **Avbruten**. Starttiden sätts när körningen första gången får status *Pågår* (även automatiskt när det första utfallet registreras), sluttiden när den blir *Slutförd* eller *Avbruten*. En körning blir **Slutförd av sig själv** när varje testfall i den har ett slutligt utfall (godkänt, underkänt, blockerat eller överhoppat), även en körning med ett enda testfall. Den går tillbaka till *Pågår* när ett utfall återställs till *Ej kört* eller *Pågår*, eller när testfall läggs till. Du kan fortfarande ändra statusen för hand; en *Avbruten* körning ändras aldrig automatiskt.
 - **Förlopp** och **Andel godkända** sammanfattar exekveringarna.
 - **Exekvera** öppnar exekveringsvyn vid den första exekveringen som ännu inte har körts.
 - **Lägg till testfall** lägger till fler testfall; **CI-import** visar hur en pipeline rapporterar utfall; **Redigera körning** ändrar namn, beskrivning, miljö och bygge; **Ta bort** tar bort körningen med alla dess utfall.
@@ -59,7 +59,7 @@ Exekveringsvyn visar en exekvering i taget. Rubriken anger vilken exekvering i k
    - **Tilldelad**: vem som ska exekvera testfallet. Skriv `@` för att välja en person ([omnämnanden](requirements.md#nämn-personer)).
    - **Defekter**: defekt-id:n eller URL:er, var och en följd av <kbd>Enter</kbd>.
    - **Anteckningar**: iakttagelser, länkar, allt som är värt att spara.
-6. Välj **Spara**, eller **Spara och nästa** för att spara och öppna nästa exekvering. **Föregående** och **Nästa** växlar mellan exekveringar. *Osparade ändringar* påminner dig om att spara.
+6. Välj **Spara**, eller **Spara och nästa** för att spara och öppna nästa exekvering. På den sista exekveringen heter knappen **Spara och avsluta**: den sparar och går tillbaka till körningens sida, där körningen blir slutförd när alla testfall har ett utfall; saknar några fortfarande utfall säger den hur många och öppnar det första av dem. **Föregående** och **Nästa** växlar mellan exekveringar. *Osparade ändringar* påminner dig om att spara.
 
 Ett testfall utan steg visar bara samlat utfall, anteckningar och defekter.
 
@@ -100,7 +100,13 @@ Innan ett testfall exekveras kontrollerar Qtestframe att det är klart: testfall
 - **blockerat** (standard): exekveringsvyn visar en röd ruta med orsaker och länkar; **Godkänd**, **Underkänd** och **Kör skript** är avstängda, och servern avvisar sådana utfall. Du kan fortfarande markera testfallet som **Blockerat** eller **Överhoppat**;
 - **tillåtet**: orsakerna visas som en gul varning, och du kan exekvera testfallet.
 
-Körningens sida visar samma sak i kolumnen **Redo**, med en sammanfattning ovanför tabellen, och dialogen **Ny körning** markerar valda testfall som inte är klara.
+Varje orsak säger exakt vad som är fel, vad du kan göra åt det och vilken inställning som avgör, till exempel:
+
+- *SHOP-TC-4 har status Utkast; bara testfall med status Klart kan exekveras.* — **Gör så här:** gör klart testfallet och låt det granskas och markeras som Klart (kräver *test.review*). *Blockeras av exekveringsinställningen ”Tillåt exekvering av testfall som inte är Klara”, som är avslagen.*
+- *Det verifierar SHOP-REQ-2, som har status Godkänt; inställningarna för exekvering kräver att länkade krav är Implementerat eller Verifierat.* — **Gör så här:** flytta kravet vidare när det har implementerats, eller be en administratör lägga till dess status bland de klara statusarna.
+- *Det beror på SHOP-TC-1, som är Underkänt i den här körningen; ett förutsättande test måste ha godkänts först.* — **Gör så här:** exekvera SHOP-TC-1 först så att det godkänns, eller lägg till det i körningen.
+
+Så ser du om det är testfallet självt, ett krav, ett förutsättande test eller en inställning i organisationen som stoppar det. Körningens sida visar samma sak i kolumnen **Redo** (välj posten för att se hela förklaringen), med en sammanfattning ovanför tabellen; knappbeskrivningarna för de avstängda knapparna Godkänd och Underkänd och ett avvisat utfall anger också orsakerna, och dialogen **Ny körning** markerar valda testfall som inte är klara.
 
 ## Defekter
 
@@ -137,6 +143,10 @@ curl -X POST "https://qtf.example.com/api/v1/runs/$RUN_ID/results" \
 - En ogiltig status stoppar importen med ett fel; utfall före den förblir sparade.
 
 Förvara nyckeln i CI-systemets hemlighetslager, aldrig i kodförrådet. En API-nyckel är knuten till en organisation och har aldrig fler rättigheter än sin ägare.
+
+## Länkar för en körning
+
+Fliken **Länkar** på körningens sida länkar körningen till krav, testfall, andra körningar, arkivfiler, rapporter och webbadresser, till exempel CI-bygget eller versionsinformationen, se [Länkar](requirements.md#länkar).
 
 ## Bilagor till körningar och exekveringar
 

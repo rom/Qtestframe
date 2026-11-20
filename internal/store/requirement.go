@@ -480,6 +480,13 @@ func (s *Store) moveItemsToProject(ctx context.Context, c conn, tenantID, kind s
 		if _, err := c.exec(ctx, `DELETE FROM trace_links WHERE `+linkCol+` = ?`, id); err != nil {
 			return err
 		}
+		// links never cross projects: internal ones are dropped, external ones move along
+		if _, err := c.exec(ctx, `DELETE FROM item_links WHERE target_type <> 'url' AND ((source_type = ? AND source_id = ?) OR (target_type = ? AND target_id = ?))`, kind, id, kind, id); err != nil {
+			return err
+		}
+		if _, err := c.exec(ctx, `UPDATE item_links SET project_id = ? WHERE source_type = ? AND source_id = ?`, to, kind, id); err != nil {
+			return err
+		}
 	}
 	return nil
 }

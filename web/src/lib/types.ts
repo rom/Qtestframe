@@ -176,6 +176,10 @@ export interface Project {
   /** offered for a requirement's source (the defaults unless custom_sources) */
   requirement_sources?: string[]
   custom_sources?: boolean
+  /** general | software | hardware | system | business (software enables prompts) */
+  type?: string
+  /** technology of a software project, included in prompts */
+  tech_context?: string
   created_at: string
   updated_at: string
 }
@@ -358,6 +362,12 @@ export interface ReadinessIssue {
   status: string
   /** blocking issues prevent execution; others are warnings */
   blocking: boolean
+  /** statuses (or the result) that would clear the issue */
+  required?: string[]
+  /** the execution setting that decides whether it blocks */
+  setting?: string
+  /** prerequisites: the status is the result in the same run */
+  in_run?: boolean
 }
 
 /** Whether a test may be executed (organisation settings, statuses, prerequisites). */
@@ -365,6 +375,28 @@ export interface Readiness {
   ready: boolean
   allowed: boolean
   issues: ReadinessIssue[]
+}
+
+/** A link from a requirement, test or run to another item or a web address. */
+export interface ItemLink {
+  id: string
+  project_id: string
+  source_type: string
+  source_id: string
+  /** requirement | test | run | file | report | url */
+  target_type: string
+  target_id: string | null
+  url: string
+  label: string
+  created_by: string
+  created_at: string
+  source_key: string
+  source_title: string
+  target_key: string
+  target_title: string
+  /** files: document | report */
+  target_kind?: string
+  direction?: 'outgoing' | 'incoming' | string
 }
 
 /** A prerequisite between two tests (GET /tests/{id}/dependencies). */

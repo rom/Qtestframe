@@ -295,10 +295,22 @@ type Project struct {
 	// defaults when the project has none of its own).
 	RequirementSources []string `json:"requirement_sources"`
 	// CustomSources reports whether RequirementSources are the project's own.
-	CustomSources bool      `json:"custom_sources"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	CustomSources bool `json:"custom_sources"`
+	// Type is one of ProjectTypes; "software" enables prompt generation.
+	Type string `json:"type"`
+	// TechContext describes the technology of a software project (languages,
+	// frameworks, architecture, conventions); generated prompts include it.
+	TechContext string    `json:"tech_context"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
+
+// ProjectTypes are the kinds of project. Software projects get extra
+// features (prompt generation for requirements and tests).
+var ProjectTypes = []string{"general", "software", "hardware", "system", "business"}
+
+// ProjectTypeSoftware is the project type with software features.
+const ProjectTypeSoftware = "software"
 
 // DefaultRequirementSources are offered when a project has no own list.
 var DefaultRequirementSources = []string{"Customer", "Contract", "Standard", "Regulation", "Stakeholder", "Product management", "Architecture", "Security analysis", "Internal", "Previous release"}
@@ -535,6 +547,38 @@ type Relation struct {
 	TargetKey   string    `json:"target_key"`
 	TargetTitle string    `json:"target_title"`
 	// Direction relative to the requirement queried: outgoing | incoming.
+	Direction string `json:"direction,omitempty"`
+}
+
+// ItemLinkSourceTypes are the items that can carry links.
+var ItemLinkSourceTypes = []string{KindRequirement, KindTest, "run"}
+
+// ItemLinkTargetTypes are what a link can point to: an item of the same
+// project, a file of its archive (document or saved report), a report
+// definition, or an external URL.
+var ItemLinkTargetTypes = []string{KindRequirement, KindTest, "run", "file", "report", "url"}
+
+// ItemLink is a link from a requirement, test or run to another item of
+// the project or to an external URL.
+type ItemLink struct {
+	ID         string    `json:"id"`
+	ProjectID  string    `json:"project_id"`
+	SourceType string    `json:"source_type"`
+	SourceID   string    `json:"source_id"`
+	TargetType string    `json:"target_type"`
+	TargetID   *string   `json:"target_id"`
+	URL        string    `json:"url"`
+	Label      string    `json:"label"`
+	CreatedBy  string    `json:"created_by"`
+	CreatedAt  time.Time `json:"created_at"`
+	// Derived: keys (or names) and titles of both ends; TargetKind is the
+	// kind of a file (document, report, attachment).
+	SourceKey   string `json:"source_key"`
+	SourceTitle string `json:"source_title"`
+	TargetKey   string `json:"target_key"`
+	TargetTitle string `json:"target_title"`
+	TargetKind  string `json:"target_kind,omitempty"`
+	// Direction relative to the item queried: outgoing | incoming.
 	Direction string `json:"direction,omitempty"`
 }
 

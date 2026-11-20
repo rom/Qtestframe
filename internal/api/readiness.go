@@ -27,6 +27,16 @@ type ReadinessIssue struct {
 	// Blocking issues prevent execution; others are warnings because the
 	// organisation settings allow them.
 	Blocking bool `json:"blocking"`
+	// Required lists the statuses (or result) that would clear the issue:
+	// ["ready"] for a test, the ready requirement statuses of the
+	// organisation for a requirement, ["passed"] for a prerequisite.
+	Required []string `json:"required"`
+	// Setting names the organisation setting (TenantSettings JSON field)
+	// that decides whether the issue blocks execution.
+	Setting string `json:"setting"`
+	// InRun (prerequisites): the status is the result of the prerequisite in
+	// the same run; otherwise it is its latest result anywhere.
+	InRun bool `json:"in_run,omitempty"`
 }
 
 // Readiness tells whether a test may be executed (see TenantSettings).
@@ -109,7 +119,8 @@ func (s *Server) loadReadiness(ctx context.Context, tenantID, projectID, runID s
 func (rc *readinessContext) check(testID string) *Readiness {
 	out := &Readiness{Issues: []ReadinessIssue{}}
 	if t, ok := rc.tests[testID]; ok && t.Status != model.ReadyTestStatus {
-		out.Issues = append(out.Issues, ReadinessIssue{Kind: IssueTestStatus, ID: t.ID, Key: t.Key, Title: t.Title, Status: t.Status, Blocking: !rc.settings.AllowUnreadyTests})
+		out.Issues = append(out.Issues, ReadinessIssue{Kind: IssueTestStatus, ID: t.ID, Key: t.Key, Title: t.Title, Status: t.Status,
+			Blocking: !rc.settings.AllowUnreadyTests, Required: []string{model.ReadyTestStatus}, Setting: "allow_unready_tests"})
 	}
 	seen := map[string]bool{}
 	for _, rid := range rc.t2r[testID] {
@@ -118,7 +129,8 @@ func (rc *readinessContext) check(testID string) *Readiness {
 			continue
 		}
 		seen[rid] = true
-		out.Issues = append(out.Issues, ReadinessIssue{Kind: IssueRequirementStatus, ID: r.ID, Key: r.Key, Title: r.Title, Status: r.Status, Blocking: !rc.settings.AllowUnreadyRequirements})
+		out.Issues = append(out.Issues, ReadinessIssue{Kind: IssueRequirementStatus, ID: r.ID, Key: r.Key, Title: r.Title, Status: r.Status,
+			Blocking: !rc.settings.AllowUnreadyRequirements, Required: append([]string{}, rc.settings.ReadyRequirementStatuses...), Setting: "allow_unready_requirements"})
 	}
 	for _, d := range rc.deps[testID] {
 		status, inRun := rc.inRun[d.DependsOnID]
@@ -129,7 +141,8 @@ func (rc *readinessContext) check(testID string) *Readiness {
 			status = model.ResultNotRun
 		}
 		if status != model.ResultPassed {
-			out.Issues = append(out.Issues, ReadinessIssue{Kind: IssueDependency, ID: d.DependsOnID, Key: d.DependsOnKey, Title: d.DependsOnTitle, Status: status, Blocking: !rc.settings.AllowUnmetDependencies})
+			out.Issues = append(out.Issues, ReadinessIssue{Kind: IssueDependency, ID: d.DependsOnID, Key: d.DependsOnKey, Title: d.DependsOnTitle, Status: status,
+				Blocking: !rc.settings.AllowUnmetDependencies, Required: []string{model.ResultPassed}, Setting: "allow_unmet_dependencies", InRun: inRun})
 		}
 	}
 	out.Ready = len(out.Issues) == 0
@@ -172,16 +185,8 @@ func starts(u store.ExecutionUpdate, cur *model.Execution) bool {
 func notReady(w http.ResponseWriter, key string, rd *Readiness) {
 	var parts []string
 	for _, i := range rd.Issues {
-		if !i.Blocking {
-			continue
-		}
-		switch i.Kind {
-		case IssueTestStatus:
-			parts = append(parts, fmt.Sprintf("test %s is %s, not ready", i.Key, i.Status))
-		case IssueRequirementStatus:
-			parts = append(parts, fmt.Sprintf("requirement %s is %s", i.Key, i.Status))
-		default:
-			parts = append(parts, fmt.Sprintf("prerequisite %s has not passed (%s)", i.Key, i.Status))
+		if i.Blocking {
+			parts = append(parts, issueText(i))
 		}
 	}
 	writeJSON(w, http.StatusConflict, map[string]any{
@@ -231,4 +236,37 @@ func (s *Server) handleTestReadiness(w http.ResponseWriter, r *http.Request, p *
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"tests": out, "settings": rc.settings})
+}
+
+// issueText explains a readiness issue in one sentence (English; the web
+// client builds its own, translated text from the fields).
+func issueText(i ReadinessIssue) string {
+	switch i.Kind {
+	case IssueTestStatus:
+		return fmt.Sprintf("the test %s has status %q, but only tests with status \"ready\" may be executed (setting %s is off)", i.Key, i.Status, i.Setting)
+	case IssueRequirementStatus:
+		return fmt.Sprintf("it verifies requirement %s, which has status %q, but the execution settings require linked requirements to be %s (setting %s is off)",
+			i.Key, i.Status, quoteList(i.Required), i.Setting)
+	default:
+		where := "its latest result"
+		if i.InRun {
+			where = "its result in this run"
+		}
+		return fmt.Sprintf("the prerequisite test %s has not passed (%s is %q) (setting %s is off)", i.Key, where, i.Status, i.Setting)
+	}
+}
+
+// quoteList: ["a","b","c"] → "a", "b" or "c".
+func quoteList(v []string) string {
+	q := make([]string, len(v))
+	for i, s := range v {
+		q[i] = fmt.Sprintf("%q", s)
+	}
+	switch len(q) {
+	case 0:
+		return "ready for testing"
+	case 1:
+		return q[0]
+	}
+	return strings.Join(q[:len(q)-1], ", ") + " or " + q[len(q)-1]
 }

@@ -116,9 +116,10 @@ default):
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/projects` | project.read |
-| POST | `/projects` | project.create – `{"key","name","description","color"?,"seed_categories":true}` |
+| POST | `/projects` | project.create – `{"key","name","description","color"?,"type"?,"tech_context"?,"seed_categories":true}` |
 | GET | `/projects/{pid}` | project.read |
-| PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources"}` |
+| PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
+| POST | `/projects/{pid}/prompts` | project.read + the read permission of the items' kind – see [Prompts](#prompts-software-projects) |
 | DELETE | `/projects/{pid}` | project.delete |
 | GET | `/projects/{pid}/dashboard` | project.read |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
@@ -128,7 +129,32 @@ else → 400), `requirement_sources` (the list the requirement editor offers
 for *Source*; at most 50 entries of at most 100 characters, trimmed and
 de-duplicated case-insensitively) and `custom_sources` (false while the
 project uses the defaults; sending `[]` or the default list returns to
-them).
+them). `type` is one of `/meta` `project_types` (`general` by default,
+`software`, `hardware`, `system`, `business`); `tech_context` (at most 8000
+characters) describes the technology of a software project and is included
+in prompts.
+
+### Prompts (software projects)
+
+`POST /projects/{pid}/prompts` builds a prompt for an AI assistant
+(Markdown); it is read-only and nothing is sent to an AI service. Only for
+projects of type `software` (else 400).
+
+```json
+{"kind": "automate_tests", "lang": "en", "test_type": "integration", "framework": "pytest",
+ "notes": "…", "test_ids": ["…"], "q": "tag:checkout"}
+```
+
+* `kind` (`/meta` `prompt_kinds`): `implement`, `review_requirements`,
+  `design_tests` (requirements; need `requirement.read`), `automate_tests`,
+  `review_tests`, `test_strategy` (tests; need `test.read`; the last two also
+  include the requirements the tests verify when the caller may read them).
+* Items: `requirement_ids` / `test_ids` (must belong to the project), else
+  those matching `q`, else all; more than 200 → 400.
+* `test_type` (`/meta` `test_types`) is required for `design_tests` and
+  `test_strategy`; `lang` is `en` (default) or `sv`; `framework` ≤ 200 and
+  `notes` ≤ 8000 characters.
+* Response: `{"kind", "lang", "title", "prompt", "items"}`.
 
 Dashboard response:
 ```json
@@ -251,6 +277,56 @@ with their files) for 30 days. The web client's undo uses it.
 | GET | `/projects/{pid}/trash` | project.read (entries of kinds the caller cannot read are left out) | `[TrashEntry]` newest first: `{id, project_id, kind, item_ids, keys, label, deleted_by, created_at}` |
 | POST | `/trash/{id}/restore` | the kind's write permission, plus its review permission when a restored item is `approved`/`rejected`/`ready` | puts the items back with their IDs and keys and removes the entry → TrashEntry; rows whose counterpart is gone (a test deleted since, a run, a category) are skipped and a missing folder puts the item at the root; 404 when unknown or already restored |
 
+### Item links
+
+Links from a requirement, test or run to another item of the same project
+or to a web address. Reading needs the read permission of the item, adding
+and removing the write permission of the item that carries the link (and
+the read permission of an internal target's kind).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/requirements/{id}/item-links`, `/tests/{id}/item-links`, `/runs/{id}/item-links` | `[ItemLink]`, outgoing first, then incoming (`direction`); links to kinds the caller cannot read are left out |
+| POST | same paths | `{"target_type", "target_id"?, "url"?, "label"?}` → 201 ItemLink. `target_type`: `requirement`, `test`, `run`, `file` (a `document` or `report` file of the project's archive), `report` (a report definition) or `url` (`http(s)://` or `mailto:`, at most 2000 characters); label at most 200 characters; same project only; no self-links; duplicates → 409 |
+| PATCH | `/item-links/{id}` | `{"label"}` |
+| DELETE | `/item-links/{id}` | 204 |
+
+`ItemLink`: `{id, project_id, source_type, source_id, target_type, target_id,
+url, label, created_by, created_at, source_key, source_title, target_key,
+target_title, target_kind?, direction}` (keys of runs, files and reports are
+their names). Deleting an item removes its links (the trash restores them);
+moving requirements or tests to another project drops their internal links
+and keeps web links.
+
+## Requirement analytics
+
+`GET /projects/{pid}/analytics?lang=` (requirement.read) analyses all
+requirements of the project; `lang` is `auto` (default, per requirement) or
+an analysis language. Test findings are included with `test.read`.
+
+```json
+{"summary": {"requirements": 20, "tests": 18, "with_findings": 3, "health": 85, "problems": 1, "warnings": 2, "infos": 1,
+             "covered": 17, "coverage_percent": 85, "average_score": 91},
+ "obligations": [{"value": "must", "count": 19, "percent": 95}, {"value": "shall", "count": 1, "percent": 5}],
+ "families": [{"family": "mandatory", "total": 20, "dominant": "MUST", "keywords": [{"value": "MUST", "count": 19, "percent": 95}, …]}],
+ "statuses": [{"value": "approved", "count": 12, "percent": 60}, …], "coverage": [{"value": "passed", …}],
+ "findings": [{"code": "inconsistent_keyword", "severity": "warning", "category": "consistency",
+               "params": {"family": "mandatory", "dominant": "MUST", "dominantPercent": "95", "keyword": "SHALL", "count": "1", …},
+               "items": [{"kind": "requirement", "id": "…", "key": "SHOP-REQ-7", "title": "…", "note": "SHALL"}], "total": 1}]}
+```
+
+Findings carry a `code` and `params` for clients to phrase, and are ordered
+problems, warnings, infos. Codes: `obligation_missing`, `keyword_missing`,
+`obligation_mismatch`, `multiple_levels`, `spread_all_mandatory`,
+`spread_no_mandatory`, `spread_many_optional`, `spread_many_should`,
+`spread_many_descriptive`, `inconsistent_keyword` (a keyword used where
+another of the same meaning has ≥ 75 %), `mixed_keywords`,
+`no_tests_mandatory`, `no_tests`, `tests_failing`, `tests_not_run`,
+`no_criteria`, `tests_not_ready`, `orphan_tests`, `empty_description`,
+`duplicate_titles`, `conflicts`, `low_quality`, `many_drafts`, `no_owner` and
+`language_rule` (with `params.rule`, a language analysis rule). At most 200
+items per finding (`total` gives the full count).
+
 ## Traceability
 
 Reading needs `project.read`; creating and deleting links needs
@@ -274,7 +350,7 @@ import) `run.execute`.
 | GET | `/projects/{pid}/runs?q=` | list `TestRun` with `summary` |
 | POST | `/projects/{pid}/runs` | `{"name","description","environment","build","test_ids":[...],"folder_ids":[...],"query":"<filter expr>"}` – union of explicit tests, tests in folders (recursive) and tests matching query |
 | GET | `/runs/{id}` | `TestRun` |
-| PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}` |
+| PATCH | `/runs/{id}` | `{"name","description","status","environment","build"}`. A run also changes status by itself: the first result moves a `planned` run to `in_progress`; when every execution has a final result (`passed`, `failed`, `blocked`, `skipped`) a `planned`/`in_progress` run becomes `completed`; taking a result back to `not_run`/`in_progress`, or adding tests, reopens a `completed` run. `aborted` runs are never changed automatically. |
 | DELETE | `/runs/{id}` | |
 | GET | `/runs/{id}/executions?q=` | list `Execution` (no step results) with `readiness` |
 | POST | `/runs/{id}/executions` | add tests: `{"test_ids":[...]}` |
@@ -292,11 +368,22 @@ otherwise its latest result. Each failed check is an issue; it is
 
 ```json
 "readiness": {"ready": false, "allowed": false, "issues": [
-  {"kind": "test_status", "id": "…", "key": "SHOP-TC-4", "title": "…", "status": "draft", "blocking": true},
-  {"kind": "requirement_status", "id": "…", "key": "SHOP-REQ-2", "title": "…", "status": "review", "blocking": true},
-  {"kind": "dependency", "id": "…", "key": "SHOP-TC-1", "title": "…", "status": "failed", "blocking": true}
+  {"kind": "test_status", "id": "…", "key": "SHOP-TC-4", "title": "…", "status": "draft", "blocking": true,
+   "required": ["ready"], "setting": "allow_unready_tests"},
+  {"kind": "requirement_status", "id": "…", "key": "SHOP-REQ-2", "title": "…", "status": "review", "blocking": true,
+   "required": ["approved", "implemented", "verified"], "setting": "allow_unready_requirements"},
+  {"kind": "dependency", "id": "…", "key": "SHOP-TC-1", "title": "…", "status": "failed", "blocking": true,
+   "required": ["passed"], "setting": "allow_unmet_dependencies", "in_run": true}
 ]}
 ```
+
+`required` lists the statuses (or result) that would clear an issue,
+`setting` names the [execution setting](#administration) that decides
+whether it blocks, and `in_run` tells whether a prerequisite's status is its
+result in this run (else its latest result). The `error` text of a refusal
+spells each blocking issue out, e.g. *the test SHOP-TC-4 has status "draft",
+but only tests with status "ready" may be executed (setting
+allow_unready_tests is off)*.
 
 Setting `status` (or a step status) to `in_progress`, `passed` or `failed`
 records an execution and needs `allowed`; `not_run`, `blocked`, `skipped`,

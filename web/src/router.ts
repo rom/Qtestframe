@@ -38,6 +38,8 @@ const routes: RouteRecordRaw[] = [
           },
           { path: 'traceability', name: 'traceability', component: () => import('./views/TraceabilityView.vue') },
           { path: 'graph', name: 'graph', component: () => import('./views/GraphView.vue') },
+          { path: 'analytics', name: 'analytics', component: () => import('./views/AnalyticsView.vue'), meta: { perm: P.requirementRead } },
+          { path: 'prompts', name: 'prompts', component: () => import('./views/PromptsView.vue') },
           { path: 'flow', name: 'flow', component: () => import('./views/FlowView.vue'), meta: { perm: P.testRead } },
           { path: 'tags', name: 'tags', component: () => import('./views/TagsView.vue') },
           { path: 'settings', name: 'settings', component: () => import('./views/SettingsView.vue') },
@@ -48,6 +50,7 @@ const routes: RouteRecordRaw[] = [
         ],
       },
       { path: 'search', name: 'search', component: () => import('./views/SearchView.vue') },
+      { path: 'go/:key', name: 'go', component: () => import('./views/GoView.vue') },
       {
         path: 'admin',
         component: () => import('./views/admin/AdminLayout.vue'),
