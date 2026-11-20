@@ -395,6 +395,10 @@ func (s *Server) handleCompareBaseline(w http.ResponseWriter, r *http.Request, p
 
 func (s *Server) handleDeleteBaseline(w http.ResponseWriter, r *http.Request, p *Principal) {
 	id := r.PathValue("id")
+	if n, err := s.Store.SignoffCount(r.Context(), p.TenantID(), id); err == nil && n > 0 {
+		s.fail(w, r, store.Conflictf("the baseline is signed (%d signatures) and cannot be deleted", n))
+		return
+	}
 	if err := s.Store.DeleteBaseline(r.Context(), p.TenantID(), id); err != nil {
 		s.fail(w, r, err)
 		return

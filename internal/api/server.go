@@ -249,6 +249,7 @@ func (s *Server) routes() {
 	s.routesDefects(h)
 	s.routesRisks(h)
 	s.routesNotifications(h)
+	s.routesReviews(h)
 	s.routesJUnit(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {

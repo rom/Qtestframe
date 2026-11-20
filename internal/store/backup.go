@@ -35,7 +35,7 @@ var BackupTables = []string{
 	"test_case_categories", "trace_links", "test_runs", "test_executions", "step_results",
 	"audit_log", "revisions", "requirement_relations", "baselines", "baseline_items", "comments",
 	"files", "file_blobs", "attachments", "report_definitions", "login_events", "roles", "test_dependencies",
-	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks",
+	"trash", "item_links", "release_requirements", "defects", "defect_links", "risks", "risk_requirements", "notifications", "webhooks", "review_requests", "baseline_signoffs",
 }
 
 // tables that exist but are deliberately not part of a backup.

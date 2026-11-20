@@ -632,6 +632,9 @@ func deleteEntityData(ctx context.Context, c conn, entityType string, ids []stri
 			return err
 		}
 	}
+	if _, err := c.exec(ctx, `DELETE FROM review_requests WHERE entity_type = ? AND entity_id IN (`+placeholders(len(ids))+`)`, append([]any{entityType}, anySlice(ids)...)...); err != nil {
+		return err
+	}
 	if err := deleteItemLinks(ctx, c, entityType, ids); err != nil {
 		return err
 	}

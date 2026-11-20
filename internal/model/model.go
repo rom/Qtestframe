@@ -729,6 +729,67 @@ type Webhook struct {
 	LastError      string     `json:"last_error"`
 }
 
+// Review request statuses and decisions.
+var (
+	ReviewStatuses  = []string{"pending", "approved", "changes_requested", "cancelled"}
+	ReviewDecisions = []string{"approved", "changes_requested"}
+	// SignoffMeanings say what a signature on a baseline means.
+	SignoffMeanings = []string{"authored", "reviewed", "approved", "released"}
+)
+
+// DefaultReviewChecklists are the checklist items a new review gets per kind.
+var DefaultReviewChecklists = map[string][]string{
+	KindRequirement: {"Clear and unambiguous", "Verifiable (can be tested)", "Obligation level is right (MUST/SHOULD/MAY)", "No conflict or duplicate with other requirements", "Acceptance criteria are complete"},
+	KindTest:        {"Preconditions and test data are stated", "Steps can be repeated by someone else", "Every step has an expected result", "Linked to the requirements it verifies"},
+}
+
+// ChecklistItem is one point of a review checklist.
+type ChecklistItem struct {
+	Text    string `json:"text"`
+	Checked bool   `json:"checked"`
+	Note    string `json:"note,omitempty"`
+}
+
+// ReviewRequest asks one person to review a requirement or test.
+type ReviewRequest struct {
+	ID            string          `json:"id"`
+	ProjectID     string          `json:"project_id"`
+	EntityType    string          `json:"entity_type"`
+	EntityID      string          `json:"entity_id"`
+	EntityKey     string          `json:"entity_key"`
+	EntityTitle   string          `json:"entity_title"`
+	EntityVersion int             `json:"entity_version"`
+	ReviewerID    string          `json:"reviewer_id"`
+	ReviewerEmail string          `json:"reviewer_email"`
+	ReviewerName  string          `json:"reviewer_name"`
+	RequestedBy   string          `json:"requested_by"`
+	Message       string          `json:"message"`
+	Checklist     []ChecklistItem `json:"checklist"`
+	Status        string          `json:"status"`
+	Comment       string          `json:"comment"`
+	DueDate       string          `json:"due_date"`
+	DecidedAt     *time.Time      `json:"decided_at"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+	// Outdated: the item changed after the review was requested.
+	Outdated bool `json:"outdated"`
+}
+
+// Signoff is an electronic signature on a baseline.
+type Signoff struct {
+	ID          string    `json:"id"`
+	BaselineID  string    `json:"baseline_id"`
+	UserID      string    `json:"user_id"`
+	UserEmail   string    `json:"user_email"`
+	UserName    string    `json:"user_name"`
+	Meaning     string    `json:"meaning"`
+	Comment     string    `json:"comment"`
+	ContentHash string    `json:"content_hash"`
+	SignedAt    time.Time `json:"signed_at"`
+	// Valid: the baseline content still has the hash that was signed.
+	Valid bool `json:"valid"`
+}
+
 // ReleaseStatuses are the states of a release.
 var ReleaseStatuses = []string{"planned", "active", "released", "cancelled"}
 
