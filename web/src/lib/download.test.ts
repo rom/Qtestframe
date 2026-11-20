@@ -1,5 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
-import { filenameFromDisposition, sanitizeFilename, saveBlob } from './download'
+import { exportExtension, filenameFromDisposition, isReqIFFormat, sanitizeFilename, saveBlob } from './download'
+
+describe('export formats', () => {
+  it('recognises ReqIF', () => {
+    expect(isReqIFFormat('reqif')).toBe(true)
+    expect(isReqIFFormat('reqifz')).toBe(true)
+    expect(isReqIFFormat('xlsx')).toBe(false)
+  })
+  it('names the file extension', () => {
+    expect(exportExtension('csv', 2)).toBe('zip')
+    expect(exportExtension('csv', 1)).toBe('csv')
+    expect(exportExtension('reqifz', 5)).toBe('reqifz')
+    expect(exportExtension('xlsx', 3)).toBe('xlsx')
+  })
+})
 
 describe('filenameFromDisposition', () => {
   it('handles missing header', () => {

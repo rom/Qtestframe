@@ -13,7 +13,19 @@ import (
 // prefixes used by different tools do not matter.
 
 type rqDoc struct {
+	Header  rqHeader  `xml:"THE-HEADER>REQ-IF-HEADER"`
 	Content rqContent `xml:"CORE-CONTENT>REQ-IF-CONTENT"`
+}
+
+type rqHeader struct {
+	ToolID       string `xml:"REQ-IF-TOOL-ID"`
+	SourceToolID string `xml:"SOURCE-TOOL-ID"`
+}
+
+// fromQtestframe reports whether the document was exported by Qtestframe:
+// its XHTML is then read back as the Markdown it was made from.
+func (h rqHeader) fromQtestframe() bool {
+	return strings.TrimSpace(h.ToolID) == "Qtestframe" || strings.HasPrefix(strings.TrimSpace(h.SourceToolID), "Qtestframe")
 }
 
 type rqContent struct {
@@ -145,6 +157,7 @@ func parseReqIFDoc(data []byte, opt Options, res *Result) error {
 		return invalidf("not a valid ReqIF file (%v)", err)
 	}
 	c := doc.Content
+	markdown := doc.Header.fromQtestframe()
 	if len(c.Objects) == 0 && len(c.Specs) == 0 {
 		return invalidf("not a ReqIF file: no SPEC-OBJECTS found")
 	}
@@ -206,7 +219,7 @@ func parseReqIFDoc(data []byte, opt Options, res *Result) error {
 			if name == "" {
 				continue
 			}
-			text := reqifValue(v, enum)
+			text := reqifValue(v, enum, markdown)
 			if text == "" {
 				continue
 			}
@@ -311,9 +324,12 @@ func containsColumn(cols []Column, header string) bool {
 }
 
 // reqifValue returns the text of an attribute value of any type.
-func reqifValue(v rqValue, enum map[string]string) string {
+func reqifValue(v rqValue, enum map[string]string, markdown bool) string {
 	switch v.XMLName.Local {
 	case "ATTRIBUTE-VALUE-XHTML":
+		if markdown {
+			return xhtmlMarkdown(v.XHTML.Inner)
+		}
 		return xhtmlText(v.XHTML.Inner)
 	case "ATTRIBUTE-VALUE-ENUMERATION":
 		var names []string

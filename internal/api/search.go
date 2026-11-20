@@ -170,9 +170,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, p *Princip
 	if !ok {
 		return
 	}
+	if rf := reqifFormat(r.URL.Query().Get("format")); rf != "" {
+		// ReqIF holds requirements only; aspects do not apply.
+		s.exportReqIF(w, r, p, pr, rf == "reqifz")
+		return
+	}
 	f, err := export.ParseFormat(r.URL.Query().Get("format"))
 	if err != nil {
-		s.fail(w, r, badRequest("%v", err))
+		s.fail(w, r, badRequest("%v (or reqif, reqifz)", err))
 		return
 	}
 	aspects := allAspects

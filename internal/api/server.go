@@ -51,6 +51,9 @@ type Server struct {
 	limiter *rateLimiter
 	mux     *http.ServeMux
 	once    sync.Once
+	// routeTable records every registered "METHOD /path" pattern (see
+	// Routes); the OpenAPI test compares it with docs/openapi.yaml.
+	routeTable []Route
 	// hooks tracks webhook deliveries in flight (see WaitWebhooks).
 	hooks sync.WaitGroup
 }
@@ -87,13 +90,18 @@ func (s *Server) Handler() http.Handler {
 func (s *Server) routes() {
 	m := http.NewServeMux()
 	s.mux = m
-	m.HandleFunc("GET /healthz", s.handleHealth)
-	m.HandleFunc("GET /readyz", s.handleReady)
-
 	h := func(pattern string, fn handlerFunc, perm ...string) {
+		s.routeTable = append(s.routeTable, Route{Pattern: pattern, Permissions: perm})
 		m.Handle(pattern, s.authed(fn, perm...))
 	}
-	pub := func(pattern string, fn http.HandlerFunc) { m.HandleFunc(pattern, fn) }
+	pub := func(pattern string, fn http.HandlerFunc) {
+		s.routeTable = append(s.routeTable, Route{Pattern: pattern, Public: true})
+		m.HandleFunc(pattern, fn)
+	}
+	pub("GET /healthz", s.handleHealth)
+	pub("GET /readyz", s.handleReady)
+	pub("GET /api/v1/openapi.json", s.handleOpenAPI)
+	pub("GET /api/v1/openapi.yaml", s.handleOpenAPI)
 
 	// auth
 	pub("GET /api/v1/auth/providers", s.handleProviders)
