@@ -16,6 +16,10 @@ import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
 import Message from 'primevue/message'
 import MultiSelect from 'primevue/multiselect'
+import Select from 'primevue/select'
+import Tag from 'primevue/tag'
+import { useReleaseOptions } from '@/composables/releases'
+import { runReleaseName } from '@/lib/releases'
 import QueryInput from '@/components/QueryInput.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import SummaryBar from '@/components/SummaryBar.vue'
@@ -68,11 +72,15 @@ async function load() {
     loading.value = false
   }
 }
-onMounted(load)
+const rel = useReleaseOptions(() => proj.pid)
+onMounted(() => {
+  load()
+  if (auth.can(P.projectRead)) rel.load()
+})
 
 // ---------- create ----------
 const dialog = ref(false)
-const form = ref({ name: '', description: '', environment: '', build: '', query: '' })
+const form = ref({ name: '', description: '', environment: '', build: '', query: '', release_id: '' })
 const pickedTests = ref<TestCase[]>([])
 const folderKeys = ref<Record<string, { checked: boolean; partialChecked: boolean }>>({})
 const folderExpanded = ref<Record<string, boolean>>({})
@@ -86,7 +94,7 @@ const previewError = ref<unknown>(null)
 
 function openCreate() {
   const d = new Date()
-  form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '' }
+  form.value = { name: t('runs.defaultName', { date: d.toISOString().slice(0, 10) }), description: '', environment: '', build: '', query: '', release_id: '' }
   pickedTests.value = []
   folderKeys.value = {}
   folderExpanded.value = allKeys(testFolders.value)
@@ -132,8 +140,10 @@ async function create() {
   saving.value = true
   createError.value = ''
   try {
+    const { release_id, ...fields } = form.value
     const run = await api.post<TestRun>(`/projects/${proj.pid}/runs`, {
-      ...form.value,
+      ...fields,
+      ...(release_id ? { release_id } : {}),
       test_ids: pickedTests.value.map((t) => t.id),
       folder_ids: selectedFolderIds.value,
     })
@@ -166,6 +176,7 @@ const runColumns = computed<ColumnDef[]>(() => [
   { field: 'status', header: t('common.status') },
   { field: 'environment', header: t('common.environment') },
   { field: 'build', header: t('common.build') },
+  { field: 'release', header: t('releasesView.release'), sortField: 'release_id' },
   { field: 'progress', header: t('runs.progress'), sortable: false },
   { field: 'executions', header: t('runs.executions'), sortable: false },
   { field: 'created_by', header: t('workspace.colCreatedBy') },
@@ -174,7 +185,7 @@ const runColumns = computed<ColumnDef[]>(() => [
 const runLayout = useColumnLayout(
   () => 'qtf.cols.runs',
   runColumns,
-  () => ['status', 'environment', 'build', 'progress', 'executions', 'created_at'],
+  () => ['status', 'environment', 'build', 'release', 'progress', 'executions', 'created_at'],
 )
 </script>
 
@@ -230,6 +241,11 @@ const runLayout = useColumnLayout(
       <Column v-if="c.field === 'status'" field="status" column-key="status" :header="c.header" sortable style="width: 130px"><template #body="{ data }"><StatusTag :value="data.status" /></template></Column>
       <Column v-else-if="c.field === 'environment'" field="environment" column-key="environment" :header="c.header" sortable />
       <Column v-else-if="c.field === 'build'" field="build" column-key="build" :header="c.header" sortable><template #body="{ data }"><span class="mono">{{ data.build }}</span></template></Column>
+      <Column v-else-if="c.field === 'release'" field="release_id" column-key="release" :header="c.header" sortable>
+        <template #body="{ data }">
+          <RouterLink v-if="runReleaseName(data, rel.names.value)" :to="{ name: 'releases', params: { projectId: proj.pid }, query: { r: data.release_id } }" @click.stop><Tag :value="runReleaseName(data, rel.names.value)" icon="pi pi-box" severity="secondary" /></RouterLink>
+        </template>
+      </Column>
       <Column v-else-if="c.field === 'progress'" column-key="progress" :header="c.header" style="min-width: 220px">
         <template #body="{ data }"><SummaryBar :summary="data.summary" show-text /></template>
       </Column>
@@ -253,6 +269,10 @@ const runLayout = useColumnLayout(
         <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="form.name" autofocus /></div>
         <div v-field class="field"><label>{{ t('common.environment') }}</label><HelpTip id="run.environment" :label="t('common.environment')" /><InputText v-model="form.environment" :placeholder="t('runs.envPlaceholder')" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><HelpTip id="run.build" :label="t('common.build')" /><InputText v-model="form.build" :placeholder="t('runs.buildPlaceholder')" /></div>
+        <div v-if="rel.releases.value.length" v-field class="field full">
+          <label for="run-release">{{ t('releasesView.release') }}</label>
+          <Select v-model="form.release_id" input-id="run-release" :options="rel.options.value" option-label="label" option-value="value" />
+        </div>
         <div v-field class="field full"><label>{{ t('common.description') }}</label><Textarea v-model="form.description" rows="2" auto-resize /></div>
       </div>
       <div class="section-title" style="margin: 0">{{ t('runs.include') }} <HelpTip id="run.include" :label="t('runs.include')" /></div>

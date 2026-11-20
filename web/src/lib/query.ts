@@ -151,7 +151,7 @@ export const QUERY_FIELDS: Record<'requirement' | 'test' | 'run' | 'execution' |
   requirement: [
     'key', 'title', 'description', 'obligation', 'type', 'priority', 'status', 'source', 'rationale', 'owner',
     'tag', 'version', 'folder', 'category', 'dimension', 'coverage', 'linked', 'created_by', 'created_at',
-    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'mention', 'suspect',
+    'updated_at', 'criteria', 'related', 'parent', 'child', 'comments', 'mention', 'suspect', 'risk', 'defects',
   ],
   test: [
     'key', 'title', 'description', 'preconditions', 'execution_type', 'type', 'script_language', 'script',

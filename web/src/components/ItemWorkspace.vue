@@ -10,6 +10,7 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import MultiSelect from 'primevue/multiselect'
 import Select from 'primevue/select'
+import Tag from 'primevue/tag'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Drawer from 'primevue/drawer'
 import Dialog from 'primevue/dialog'
@@ -30,6 +31,7 @@ import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
 import { dragIds, encodeIds, ITEMS_MIME } from '@/lib/dnd'
 import { folderPath } from '@/lib/tree'
 import { formatDate } from '@/lib/format'
+import { levelRank, riskLevelSeverity } from '@/lib/risks'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import { P } from '@/lib/permissions'
@@ -149,7 +151,7 @@ interface Col {
   width?: string
   sortable?: boolean
   /** field to sort by when it differs from the displayed one */
-  sortField?: string
+  sortField?: string | ((item: any) => string)
 }
 const allColumns = computed<Col[]>(() =>
   isReq.value
@@ -171,6 +173,8 @@ const allColumns = computed<Col[]>(() =>
         { field: 'version', header: t('workspace.colVersion'), width: '70px' },
         { field: 'comment_count', header: t('workspace.colComments'), width: '120px' },
         { field: 'suspect_links', header: t('workspace.colSuspect'), width: '110px' },
+        { field: 'risk_level', header: t('risksView.colRisk'), width: '105px', sortField: (r: Item) => String(levelRank((r as Requirement).risk_level)) },
+        { field: 'open_defects', header: t('risksView.colOpenDefects'), width: '115px' },
         { field: 'created_by', header: t('workspace.colCreatedBy') },
         { field: 'created_at', header: t('workspace.colCreated'), width: '115px' },
         { field: 'updated_at', header: t('workspace.colUpdated'), width: '115px' },
@@ -579,6 +583,11 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <span v-else-if="c.field === 'folder_path'" class="small muted">{{ data.folder_path }}</span>
             <span v-else-if="c.field === 'suspect_links'" class="small" :class="data.suspect_links ? 'suspect' : 'muted'">
               <i v-if="data.suspect_links" class="pi pi-exclamation-triangle" aria-hidden="true" /> {{ data.suspect_links ?? 0 }}
+            </span>
+            <Tag v-else-if="c.field === 'risk_level' && data.risk_level" :value="t(`risksView.level.${data.risk_level}`)" :severity="riskLevelSeverity(data.risk_level)" />
+            <span v-else-if="c.field === 'risk_level'" class="muted small">—</span>
+            <span v-else-if="c.field === 'open_defects'" class="small" :class="data.open_defects ? 'suspect' : 'muted'">
+              <i v-if="data.open_defects" class="pi pi-exclamation-circle" aria-hidden="true" /> {{ data.open_defects ?? 0 }}
             </span>
             <span v-else-if="c.field === 'comment_count' || c.field === 'relation_count'" class="small" :class="{ muted: !data[c.field] }">
               <i :class="c.field === 'comment_count' ? 'pi pi-comments' : 'pi pi-sitemap'" class="muted" style="font-size: 11px" /> {{ data[c.field] ?? 0 }}
