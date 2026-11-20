@@ -86,6 +86,7 @@ async function markAll() {
       <SelectButton v-model="filter" :options="filters" option-label="label" option-value="value" :allow-empty="false" :aria-label="t('notifications.filter')" />
       <Button :label="t('notifications.markAll')" icon="pi pi-check" outlined :disabled="!store.unread" @click="markAll" />
       <Button :label="t('notifications.bulk.deleteRead')" icon="pi pi-trash" severity="danger" outlined :disabled="!hasRead" @click="deleteRead" />
+      <RouterLink :to="{ name: 'profile', hash: '#email' }" class="p-button p-button-text p-button-secondary"><i class="pi pi-envelope" aria-hidden="true" />&nbsp;{{ t('email.profileTitle') }}</RouterLink>
       </div>
     </div>
     <p v-if="!shown.length" class="muted">{{ t('notifications.empty') }}</p>

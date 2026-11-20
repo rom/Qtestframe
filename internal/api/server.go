@@ -21,6 +21,7 @@ import (
 
 	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
 	"github.com/rom/qtestframe/internal/runner"
@@ -60,6 +61,14 @@ type Server struct {
 	routeTable []Route
 	// hooks tracks webhook deliveries in flight (see WaitWebhooks).
 	hooks sync.WaitGroup
+
+	// Mail sends e-mail; nil when e-mail is not configured (email.host).
+	Mail mail.Sender
+	// Clock is the time of the e-mail jobs (tests); nil = time.Now.
+	Clock func() time.Time
+	// mails tracks e-mails in flight (see WaitMail).
+	mails       sync.WaitGroup
+	mailLimiter *rateLimiter
 }
 
 // New creates a server and its identity providers.
@@ -73,6 +82,11 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		// identity providers sync in bursts (Entra ID: initial cycle)
 		scimLimiter:     newRateLimiter(1200, time.Minute),
 		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
+		// report e-mails per user (no open relay)
+		mailLimiter: newRateLimiter(30, 10*time.Minute),
+	}
+	if e := cfg.Email; e.On() {
+		s.Mail = mail.NewSMTP(mail.SMTPConfig{Host: e.Host, Port: e.Port, Username: e.Username, Password: e.Password, TLS: e.TLS, Timeout: e.Timeout})
 	}
 	base := strings.TrimSuffix(cfg.Server.BaseURL, "/")
 	for _, o := range cfg.Auth.OIDC {
@@ -114,6 +128,9 @@ func (s *Server) routes() {
 	pub("GET /api/v1/auth/providers", s.handleProviders)
 	pub("POST /api/v1/auth/login", s.handleLogin)
 	pub("POST /api/v1/auth/logout", s.handleLogout)
+	// e-mail invitations (invitations.go): the token is the credential
+	pub("GET /api/v1/invitations/{token}", s.handleGetInvitation)
+	pub("POST /api/v1/invitations/{token}/accept", s.handleAcceptInvitation)
 	pub("GET /api/v1/auth/oidc/{name}/login", s.handleOIDCLogin)
 	pub("GET /api/v1/auth/oidc/{name}/callback", s.handleOIDCCallback)
 	pub("GET /api/v1/auth/saml/{name}/metadata", s.handleSAMLMetadata)
@@ -138,7 +155,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/users", s.handleCreateUser)
 	h("PATCH /api/v1/users/{id}", s.handleUpdateUser)
 	h("GET /api/v1/members", s.handleListMembers, "member.read")
-	h("POST /api/v1/members", s.handleAddMember, "member.manage")
+	h("POST /api/v1/members", s.atomic(s.handleAddMember), "member.manage")
 	h("POST /api/v1/members/bulk", s.atomic(s.handleBulkMembers), "member.manage")
 	h("PATCH /api/v1/members/{uid}", s.handleUpdateMember, "member.manage")
 	h("DELETE /api/v1/members/{uid}", s.handleRemoveMember, "member.manage")
@@ -291,6 +308,7 @@ func (s *Server) routes() {
 	s.routesSCIM(m)
 	s.routesSCIMAdmin(h)
 	s.routesTraceRules(h)
+	s.routesEmail(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

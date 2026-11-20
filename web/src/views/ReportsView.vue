@@ -52,6 +52,10 @@ import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { uid } from '@/lib/a11y'
 import HelpLink from '@/guide/HelpLink.vue'
+import ReportEmailDialog from '@/components/ReportEmailDialog.vue'
+import ReportSubscriptions from '@/components/ReportSubscriptions.vue'
+import { useMetaStore } from '@/stores/meta'
+import type { ReportSource } from '@/lib/email'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
@@ -60,6 +64,14 @@ const { t, te } = useI18n()
 const route = useRoute()
 const canExport = computed(() => auth.can(P.export))
 const canSave = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
+const meta = useMetaStore()
+const emailOn = computed(() => !!meta.meta.email_enabled)
+
+// ---------- send by e-mail ----------
+const mail = reactive({ open: false, source: null as ReportSource | null, name: '', formats: REPORT_FORMATS as readonly ReportFormat[], format: 'pdf' as ReportFormat })
+function openMail(source: ReportSource, name: string, formats: readonly ReportFormat[], format: ReportFormat) {
+  Object.assign(mail, { source, name, formats, format, open: true })
+}
 const base = computed(() => `/projects/${proj.pid}/reports`)
 const formatOptions = (formats: readonly ReportFormat[] = REPORT_FORMATS) => formats.map((f) => ({ label: FORMAT_INFO[f].label, value: f, icon: FORMAT_INFO[f].icon }))
 
@@ -131,6 +143,16 @@ function generateTemplate(tpl: ReportTemplate, archive: boolean) {
   runReport(generateBody({ template: tpl.id, params: templateParams(tpl, c.params) }, c.format, archive, archive ? `${name}` : undefined), tpl.id, c)
 }
 
+function mailTemplate(tpl: ReportTemplate) {
+  const c = cards[tpl.id]
+  if (missingParams(tpl, c.params).length) {
+    c.error = new Error(t('reports.missingRun'))
+    return
+  }
+  c.error = null
+  openMail({ template: tpl.id, params: templateParams(tpl, c.params) }, tplName(tpl), tpl.formats, c.format)
+}
+
 // ---------- custom builder ----------
 const form = ref<CustomForm>(blankCustomForm())
 const customFormat = ref<ReportFormat>('pdf')
@@ -184,6 +206,12 @@ function generateCustom(archive: boolean) {
   runReport(generateBody({ custom: cfg }, customFormat.value, archive, archive ? name : undefined), name, custom)
 }
 const scope = computed(() => form.value.entity || 'requirement')
+function mailCustom() {
+  showProblems.value = true
+  if (problems.value.length) return
+  const cfg = buildCustomConfig(form.value)
+  openMail({ custom: cfg }, cfg.title || current.value?.name || t('reports.customName'), REPORT_FORMATS, customFormat.value)
+}
 
 // ---------- saved definitions ----------
 const definitions = ref<ReportDefinition[]>([])
@@ -326,6 +354,7 @@ function deleteDefinition() {
 }
 
 onMounted(() => {
+  void meta.load()
   if (!canExport.value) return
   loadTemplates()
   loadRuns()
@@ -386,6 +415,7 @@ onMounted(() => {
           <div class="row card-actions">
             <Button :label="t('reports.download')" icon="pi pi-download" size="small" :loading="cards[tpl.id].busy === 'download'" :disabled="!!cards[tpl.id].busy" :aria-describedby="`tpl-${tpl.id}`" @click="generateTemplate(tpl, false)" />
             <Button :label="t('reports.saveToArchive')" icon="pi pi-folder-plus" size="small" severity="secondary" outlined :loading="cards[tpl.id].busy === 'archive'" :disabled="!!cards[tpl.id].busy" :aria-describedby="`tpl-${tpl.id}`" @click="generateTemplate(tpl, true)" />
+            <Button v-if="emailOn" icon="pi pi-envelope" size="small" severity="secondary" text :aria-label="t('email.send.buttonOf', { name: tplName(tpl) })" v-tooltip="t('email.send.button')" @click="mailTemplate(tpl)" />
           </div>
         </li>
       </ul>
@@ -459,6 +489,7 @@ onMounted(() => {
           <Button v-if="current" :label="t('common.delete')" icon="pi pi-trash" severity="danger" text @click="deleteDefinition" />
           <Button :label="t('reports.saveDefinition')" icon="pi pi-save" severity="secondary" text @click="openSave" />
         </template>
+        <Button v-if="emailOn" :label="t('email.send.button')" icon="pi pi-envelope" severity="secondary" text @click="mailCustom" />
         <Button :label="t('reports.saveToArchive')" icon="pi pi-folder-plus" severity="secondary" outlined :loading="custom.busy === 'archive'" :disabled="!!custom.busy" @click="generateCustom(true)" />
         <Button :label="t('reports.download')" icon="pi pi-download" :loading="custom.busy === 'download'" :disabled="!!custom.busy" @click="generateCustom(false)" />
       </div>
@@ -496,7 +527,10 @@ onMounted(() => {
         </ul>
       </Message>
     </section>
+    <ReportSubscriptions v-if="emailOn" :definitions="definitions" :can-save="canSave" />
   </template>
+
+  <ReportEmailDialog v-model:visible="mail.open" :source="mail.source" :name="mail.name" :formats="mail.formats" :format="mail.format" />
 
   <Dialog v-model:visible="saveOpen" modal :header="t('reports.saveDefinition')" :style="{ width: 'min(460px, calc(100vw - 16px))' }">
     <form class="grid" style="gap: 12px" @submit.prevent="saveDefinition">

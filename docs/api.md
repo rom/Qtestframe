@@ -96,8 +96,10 @@ is unreachable); all other paths serve the web client.
 | GET | `/users` | super admin | list all users |
 | POST | `/users` | super admin | `{"email","display_name","password","super_admin"}` |
 | PATCH | `/users/{id}` | super admin | `{"display_name","disabled","super_admin","password"}`; disabling or setting a password ends the user's sessions; you cannot demote or disable yourself (409) |
-| GET | `/members` | member.read | members of current tenant; `"scim": true` marks members provisioned by SCIM, whose role and membership only the identity provider changes (`PATCH`, `DELETE` and `POST /members` answer 409 `scim_managed` for them) |
-| POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?}` – creates the local user if it does not exist |
+| GET | `/members` | member.read | members of current tenant; `"scim": true` marks members provisioned by SCIM, whose role and membership only the identity provider changes (`PATCH`, `DELETE` and `POST /members` answer 409 `scim_managed` for them); a member with an open e-mail invitation has `"invitation": {id, sent_at, expires_at, sso, expired, invited_by}` |
+| POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?,"invite"?,"sso"?}` – creates the local user if it does not exist. With `"invite": true` (needs e-mail, see [E-mail](#e-mail)) a person without a used account gets an invitation e-mail instead of an initial password (`password` must then be empty), and the answer has `invitation`; an existing account only gets an e-mail that it was added. `"sso": true` invites to sign in with single sign-on |
+| POST | `/members/{user_id}/invitation` | member.manage | sends a new invitation link (the old link stops working) → invitation; 409 when the person already uses the account |
+| DELETE | `/members/{user_id}/invitation` | member.manage | revokes the open invitation → `{"revoked": true, "removed": bool}`; a person who never used the account is also removed from the tenant |
 | PATCH | `/members/{user_id}` | member.manage | `{"role"}`; the last admin cannot be demoted (409) |
 | DELETE | `/members/{user_id}` | member.manage | the last admin cannot be removed (409) |
 | POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"remove", "role"?}` (max 1000, all or nothing) → `{"changed":[{user_id, email, role}], "skipped":[{user_id, email, role, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `scim` (provisioned by SCIM), `unchanged`. A change that would leave no admin is refused (409). For a removal, `role` is the role the member had |
@@ -113,7 +115,8 @@ is unreachable); all other paths serve the web client.
 | POST | `/tokens` | token.manage | `{"name","role","expires_days"?}` → `{"token":"qtf_...", "item": APIToken}` (token only shown once; role defaults to the own role, and its permissions must all be held by the creator; a token cannot create tokens; on every request a token gets the intersection of its role's and the user's current role's permissions) |
 | DELETE | `/tokens/{id}` | token.manage | |
 | GET | `/audit?limit=&q=` | audit.read | audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user |
-| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"` and `"version"` |
+| GET | `/meta` | any | enumerations: `{"obligations","requirement_statuses","requirement_types","priorities","test_statuses","script_languages","evaluation_methods","run_statuses","result_statuses","roles"}` plus `"analysis_languages"` (language packs of `/reqlang/analyze`), `"runner_enabled"`, `"email_enabled"`, `"email_digest_hour"` (UTC) and `"version"` |
+| POST | `/admin/email/test` | tenant.manage | sends a test e-mail to the caller's own address now → `{"ok", "to", "error"?}` with the SMTP error; 400 when e-mail is not configured |
 
 Roles: nobody can grant a permission they do not hold (403 when a role
 change or new role adds one). Role changes are audited (`role.create`,
@@ -997,6 +1000,11 @@ carry `risk_level`, the highest level of their open risks (query field
 | DELETE | `/projects/{pid}/webhooks/bulk` | project.update | `{"ids":[...]}` → `{"deleted": n}` |
 | POST | `/projects/{pid}/webhooks/test` | project.update | `{"ids":[...]}` (at most 50) sends `ping` to each → `{"results":[{id, name, ok, status, error}]}` |
 
+Users choose in their profile whether notifications are also e-mailed:
+preference `email_notifications` (`PATCH /auth/me`
+`{"preferences":{"email_notifications":"off"|"immediate"|"digest"}}`,
+default off). See [E-mail](#e-mail).
+
 Users are notified (never about their own actions) when they are made
 owner, assignee of an execution or a defect, are @mentioned in a
 description, comment or execution notes, get a review request or a
@@ -1261,6 +1269,51 @@ Custom report config (`CustomConfig`):
 | POST | `/reports/definitions/{id}/generate` | export | `{format, archive?}` |
 | POST | `/projects/{pid}/reports/batch` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
 | DELETE | `/projects/{pid}/reports/definitions/bulk` | requirement.write or test.write | `{"ids":[...]}` → `{"deleted": n}` |
+| GET | `/projects/{pid}/reports/recipients` | export | members who may read the project `{"items":[{user_id, email, display_name, role}], "addresses_allowed": bool, "email_enabled": bool}` |
+| POST | `/projects/{pid}/reports/email` | export | `{template + params? \| custom \| definition_id, format, recipients: [user ids], addresses?: [...], message?}` → 202 `{"queued": n, "skipped": [{user_id, reason}]}`. The report is rendered now and e-mailed in the background as an attachment. Members who may not read what the report shows are skipped (`no_access`, `disabled`); `addresses` (other e-mail addresses) need project.update (403). At most 50 recipients; 30 report e-mails per user in 10 minutes (429). A failed delivery becomes an in-app notification (`report.email_failed`) of the sender |
+| GET | `/projects/{pid}/reports/subscriptions` | export | `{"items":[ReportSubscription], "email_enabled"}` |
+| POST | `/projects/{pid}/reports/subscriptions` | export + (requirement.write or test.write) | `{definition_id, frequency: daily\|weekly\|monthly, weekday?: 0–6 (0 = Sunday), day_of_month?: 1–28, time: "HH:MM", timezone: IANA name, format, recipients: [user ids], addresses?, message?, enabled?}` → 201; the caller is the owner. Not with an API token |
+| PATCH | `/reports/subscriptions/{id}` | owner or project.update (and requirement.write or test.write) | the same fields except `definition_id`; the next run is computed again |
+| DELETE | `/reports/subscriptions/{id}` | owner or project.update | |
+| POST | `/reports/subscriptions/{id}/send` | owner or project.update | sends the report now and waits for the mail server → the subscription with `last_sent_at` / `last_error` (the schedule is unchanged) |
+
+`ReportSubscription` = `{id, project_id, definition_id, definition_name,
+owner_id, owner_email, frequency, weekday, day_of_month, time, timezone,
+format, recipients, addresses, message, enabled, next_run_at, last_run_at,
+last_sent_at, last_error, created_at, updated_at}`. A scheduled report is
+generated with the owner's permissions at the time it is sent (the owner
+must still be an enabled member with `export`; outside addresses are only
+used while the owner holds project.update) and goes to the recipients who
+may still read it. A subscription that missed runs while the server was
+down is sent once, then the next run is computed from that moment.
+Deleting the saved report deletes its subscriptions.
+
+## E-mail
+
+E-mail is configured in the `email` section of the server configuration
+(see the README). Without it, `/meta` reports `"email_enabled": false`
+and the e-mail endpoints answer 400 `e-mail is not configured`. Messages
+are sent in the background after the request's transaction is committed
+(never for a request that fails), with the configured timeout; failures
+are logged.
+
+- **Notification e-mails**: `immediate` mails each notification with a
+  link to the item; `digest` sends one e-mail a day (at `email.digest_hour`
+  UTC) with the unread notifications that were not mailed yet. Every
+  notification e-mail links to the profile (`/profile#email`) to change
+  the setting, also as `List-Unsubscribe` header.
+- **Invitations**: the link `/invite/{token}` is valid for 7 days and can
+  be used once; only a SHA-256 hash of the token is stored. Public
+  endpoints (rate limited per client address):
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/invitations/{token}` | public | `{email, display_name, tenant_name, role, invited_by, expires_at, sso, local}`; 404 for an unknown, used or revoked link, 410 when it expired |
+| POST | `/invitations/{token}/accept` | public | `{"display_name","password"}` (password policy as everywhere) sets name and password, closes the invitation and signs in → the same answer as `/auth/login` (`Me`, session cookie). 400 for single sign-on invitations: those are accepted by signing in with the identity provider |
+
+Audit actions: `invitation.send`, `invitation.resend`, `invitation.revoke`,
+`invitation.accept`, `email.test`, `report.email`,
+`report_subscription.create/update/delete/send`.
 
 ## Search
 

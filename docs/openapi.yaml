@@ -9215,6 +9215,352 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/admin/email/test:
+    post:
+      tags:
+      - Administration
+      summary: Send a test e-mail
+      operationId: postAdminEmailTest
+      description: |-
+        sends a test message to the caller's own address now → `{ok, to, error}` with the SMTP error; 409 when e-mail is not configured
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{uid}/invitation:
+    parameters:
+    - name: uid
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Members
+      summary: Resend invitation
+      operationId: postMembersByUidInvitation
+      description: |-
+        sends a new invitation link (the old link stops working) → invitation; 409 when the person already uses the account
+
+        **Permission:** `member.manage`.
+      x-permission: member.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Members
+      summary: Revoke invitation
+      operationId: deleteMembersByUidInvitation
+      description: |-
+        → `{"revoked": true, "removed": bool}`; a person who never used the account is also removed from the tenant
+
+        **Permission:** `member.manage`.
+      x-permission: member.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/invitations/{token}:
+    parameters:
+    - name: token
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      tags:
+      - Auth
+      summary: Describe an invitation
+      operationId: getInvitationsByToken
+      description: |-
+        public, rate limited: the organisation, inviter and e-mail of an open invitation; 404 when unknown or used, 410 when expired
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/invitations/{token}/accept:
+    parameters:
+    - name: token
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Auth
+      summary: Accept an invitation
+      operationId: postInvitationsByTokenAccept
+      description: |-
+        public, rate limited: `{display_name, password}` (password policy applies) → signs the person in, the same answer as login
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/reports/recipients:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Reports and export
+      summary: Report recipients
+      operationId: getProjectsByPidReportsRecipients
+      description: |-
+        members who may receive the project's reports by e-mail
+
+        **Permission:** `export`.
+      x-permission: export
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/reports/email:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Reports and export
+      summary: Send a report by e-mail
+      operationId: postProjectsByPidReportsEmail
+      description: |-
+        `{template | config | definition_id, format, recipients:[user ids], addresses?, message?}` → 202 `{queued, skipped}`; other addresses need `project.update`; at most 50 recipients
+
+        **Permission:** `export`.
+      x-permission: export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '202':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/reports/subscriptions:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Reports and export
+      summary: List scheduled reports
+      operationId: getProjectsByPidReportsSubscriptions
+      description: '**Permission:** `export`.'
+      x-permission: export
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Reports and export
+      summary: Schedule a report
+      operationId: postProjectsByPidReportsSubscriptions
+      description: |-
+        `{definition_id, frequency: daily|weekly|monthly, weekday?, day_of_month?, time, timezone, format, recipients, addresses?, message?, enabled?}` → ReportSubscription; also needs requirement.write or test.write
+
+        **Permission:** `export`.
+      x-permission: export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/reports/subscriptions/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Reports and export
+      summary: Update scheduled report
+      operationId: patchReportsSubscriptionsById
+      description: |-
+        the owner or `project.update`
+
+        **Permission:** `export`.
+      x-permission: export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Reports and export
+      summary: Delete scheduled report
+      operationId: deleteReportsSubscriptionsById
+      description: |-
+        the owner or `project.update`
+
+        **Permission:** `export`.
+      x-permission: export
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/reports/subscriptions/{id}/send:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Reports and export
+      summary: Send a scheduled report now
+      operationId: postReportsSubscriptionsByIdSend
+      description: |-
+        sends now and waits, so the answer shows a delivery error
+
+        **Permission:** `export`.
+      x-permission: export
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:

@@ -375,3 +375,75 @@ func TestShippedConfigFilesLoad(t *testing.T) {
 		}
 	}
 }
+
+func TestEmailConfig(t *testing.T) {
+	clearEnv(t)
+	dir := t.TempDir()
+	if c := Default(); c.Email.On() || c.Email.Port != 587 || c.Email.TLS != "starttls" {
+		t.Fatalf("defaults: %+v", c.Email)
+	}
+	pw := writeFile(t, dir, "smtp-pass", "s3cret\n")
+	p := writeFile(t, dir, "c.yaml", `
+server:
+  base_url: https://qtf.example.com
+email:
+  host: smtp.example.com
+  port: 465
+  username: qtf
+  password_file: `+pw+`
+  from: noreply@example.com
+  from_name: Qtestframe Test
+  tls: tls
+  digest_hour: 6
+`)
+	c, err := Load(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.Email.On() || c.Email.Password != "s3cret" || c.Email.Port != 465 || c.Email.DigestHour != 6 {
+		t.Fatalf("%+v", c.Email)
+	}
+	t.Setenv("QTF_EMAIL_PASSWORD", "from-env")
+	t.Setenv("QTF_EMAIL_PORT", "2525")
+	t.Setenv("QTF_EMAIL_FROM", "other@example.com")
+	if c, err = Load(p); err != nil || c.Email.Password != "from-env" || c.Email.Port != 2525 || c.Email.From != "other@example.com" {
+		t.Fatalf("%+v %v", c.Email, err)
+	}
+	// a plain password in the file is not accepted (strict keys)
+	bad := writeFile(t, dir, "bad.yaml", "email:\n  host: x\n  password: secret\n")
+	if _, err := Load(bad); err == nil {
+		t.Fatal("email.password accepted")
+	}
+	off := false
+	for name, mut := range map[string]func(*Email){
+		"port":      func(e *Email) { e.Port = 0 },
+		"tls":       func(e *Email) { e.TLS = "ssl" },
+		"from":      func(e *Email) { e.From = "Name <a@b.c>" },
+		"from crlf": func(e *Email) { e.From = "a@b.c\r\nBcc: x@y.z" },
+		"name":      func(e *Email) { e.FromName = "a\nb" },
+		"user":      func(e *Email) { e.Username, e.Password = "", "x" },
+		"timeout":   func(e *Email) { e.Timeout = 0 },
+		"digest":    func(e *Email) { e.DigestHour = 24 },
+	} {
+		c := Default()
+		c.Server.BaseURL = "https://x"
+		c.Email.Host, c.Email.From = "smtp.example.com", "a@b.c"
+		mut(&c.Email)
+		if err := c.Validate(); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	c = Default()
+	c.Email.Host, c.Email.From = "smtp.example.com", "a@b.c"
+	if err := c.Validate(); err == nil || !strings.Contains(err.Error(), "base_url") {
+		t.Fatal("base_url not required", err)
+	}
+	c.Email.Enabled = &off
+	if c.Email.On() || c.Validate() != nil {
+		t.Fatal("disabled e-mail is validated")
+	}
+	bad2 := writeFile(t, dir, "missing.yaml", "email:\n  password_file: "+filepath.Join(dir, "nope")+"\n")
+	if _, err := Load(bad2); err == nil {
+		t.Fatal("missing password file")
+	}
+}

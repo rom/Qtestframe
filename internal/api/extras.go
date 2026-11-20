@@ -577,6 +577,9 @@ func validatePreferences(pr model.Preferences, memberOf func(tenantID string) bo
 			return badRequest("unknown time zone %q", pr.Timezone)
 		}
 	}
+	if pr.EmailNotifications != "" && !model.Valid(model.EmailModes, pr.EmailNotifications) {
+		return badRequest("email_notifications must be one of %s", strings.Join(model.EmailModes, ", "))
+	}
 	if pr.DefaultTenant != "" && !memberOf(pr.DefaultTenant) {
 		return badRequest("default_tenant_id must be a tenant you are a member of")
 	}

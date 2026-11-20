@@ -595,6 +595,11 @@ func cmdServe(args []string, env Env) error {
 	}
 	go purgeSessions(ctx, st, log)
 	go recordMetrics(ctx, st, log, time.Hour)
+	// e-mail digests and scheduled reports (only when e-mail is configured)
+	if cfg.Email.On() {
+		log.Info("e-mail enabled", "host", cfg.Email.Host, "port", cfg.Email.Port, "tls", cfg.Email.TLS, "from", cfg.Email.From)
+	}
+	srv.StartJobs(ctx)
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)
@@ -609,7 +614,9 @@ func cmdServe(args []string, env Env) error {
 	log.Info("shutting down")
 	sctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	return hs.Shutdown(sctx)
+	err = hs.Shutdown(sctx)
+	srv.WaitMail() // e-mails in flight (each is bounded by email.timeout)
+	return err
 }
 
 // certReloader serves the current key pair and reloads it on SIGHUP

@@ -107,6 +107,29 @@ Generate the report in any format, as above. To reuse it, select **Save report d
 
 **Delete saved reports** removes the ticked saved custom reports (standard reports cannot be deleted). Saving to the archive and deleting need permission to edit requirements or tests; downloading needs the export permission.
 
+## Send a report by e-mail
+
+When the server can send e-mail, every standard report has an envelope button (**Send by e-mail**), and the custom report builder has **Send by e-mail** too. Choose:
+
+- **Members**: people of your organisation who may read the project. A member who may not read what the report shows (for example test runs) is left out, and the message says who.
+- **Other addresses**, separated by commas: people outside the organisation. This needs the permission to update the project, so that Qtestframe cannot be used to send e-mail to anyone.
+- an optional **Message** and the **Format**.
+
+The report is created with your permissions and attached to the e-mail. If it cannot be delivered, you get a [notification](reviews-and-notifications.md#notifications).
+
+## Scheduled reports
+
+**Scheduled reports**, at the bottom of the Reports page, e-mails [saved custom reports](#custom-reports) on a schedule. *(Requires permission to edit requirements or tests.)* Select **Schedule a report**, then choose the saved report, **How often** (daily, weekly on a weekday, or monthly on a day from 1 to 28), the **Time** and **Time zone**, the **Format**, the recipients and an optional message.
+
+The list shows each schedule with its recipients, when it was **Last sent** (or the error of the last attempt), and the **Next run**. Turn **Active** off to pause a schedule, **Send now** to send it at once (the schedule stays as it is), or edit and delete it. Only the person who scheduled a report, or someone who may update the project, can change it.
+
+Good to know:
+
+- The report is created with the permissions of the person who scheduled it, at the time it is sent. If that person is no longer a member or may no longer export, the schedule shows an error instead of sending.
+- Members who may no longer read the report are left out.
+- If the server was down when a report was due, it is sent once when the server is back, not once for every missed time.
+- Deleting the saved report also deletes its schedules.
+
 ## Which one to use?
 
 | Need | Use |
@@ -117,3 +140,4 @@ Generate the report in any format, as above. To reuse it, select **Save report d
 | A status report for a steering meeting | **Reports → Project status**, PDF |
 | Evidence for an audit or a release | **Reports → Requirements coverage** or **Run summary**, saved to the archive, together with a [baseline](baselines.md) |
 | A recurring list with your own columns | A saved **custom report** |
+| The same report in people's inbox every week | A saved custom report under **Scheduled reports** |

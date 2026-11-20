@@ -18,6 +18,8 @@
 #   QTF_COOKIE_SECURE     auth.cookie_secure (true/1 or false/0)
 #   QTF_BOOTSTRAP_ADMIN_EMAIL / QTF_BOOTSTRAP_ADMIN_PASSWORD   bootstrap.*
 #   QTF_OIDC_<NAME>_CLIENT_SECRET   client secret of OIDC provider <name>
+#   QTF_EMAIL_HOST / QTF_EMAIL_PORT / QTF_EMAIL_USERNAME / QTF_EMAIL_FROM   email.*
+#   QTF_EMAIL_PASSWORD    SMTP password (instead of email.password_file)
 #
 # Secret file paths (*_file) that are RELATIVE are resolved against
 # $CREDENTIALS_DIRECTORY, i.e. with `LoadCredential=oidc-corp:...` in the unit
@@ -207,6 +209,24 @@ runner:
   # Block socket creation for sandboxed scripts (seccomp). Leave false if
   # network-based tests must reach services.
   deny_network: false
+
+# Outgoing e-mail (SMTP): notifications by e-mail (each user chooses off,
+# immediately or a daily digest in the profile), invitations of new members,
+# reports sent by e-mail and scheduled reports. Off while host is empty.
+# Links in e-mails use server.base_url, which is then required.
+email:
+  host: ""                 # e.g. smtp.example.com
+  port: 587                # 587 = submission with STARTTLS, 465 = implicit TLS
+  tls: starttls            # starttls (required upgrade) | tls | none (local relay only)
+  username: ""             # empty = no authentication
+  # The password is never written here: a file with one line (relative
+  # paths are resolved against $CREDENTIALS_DIRECTORY) or QTF_EMAIL_PASSWORD.
+  password_file: ""
+  from: "qtestframe@example.com"   # envelope sender and From address
+  from_name: "Qtestframe"
+  timeout: 30s             # per message, connection included
+  digest_hour: 7           # hour of the day (UTC) for the daily digest
+  # enabled: false         # keep the settings but send nothing
 
 # In-process self-sandboxing applied at start-up. Keep all enabled; turn
 # single items off only to diagnose problems on unusual kernels (Landlock

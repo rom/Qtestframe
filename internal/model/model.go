@@ -216,6 +216,8 @@ type Preferences struct {
 	HideAnalysis     bool   `json:"hide_analysis,omitempty"` // hide live requirement language analysis
 	CreateLinkedTest *bool  `json:"create_linked_test,omitempty"`
 	IntroDone        bool   `json:"intro_done,omitempty"` // first-login intro tour finished or skipped // personal default for the editor checkbox
+	// EmailNotifications: off (default) | immediate | digest (see EmailModes).
+	EmailNotifications string `json:"email_notifications,omitempty"`
 }
 
 // Preference value sets.

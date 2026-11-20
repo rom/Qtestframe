@@ -125,6 +125,8 @@ async function discover(request) {
   // a requirement that breaks a traceability rule (seed-demo has rules)
   const ruleReport = await api(request, 'GET', `/projects/${pid}/trace-rules/evaluate`).catch(() => null)
   const ruleViolator = (ruleReport?.results ?? []).flatMap((r) => r.violations ?? []).find((v) => v.kind === 'requirement')
+  const emailOn = (await api(request, 'GET', '/meta').catch(() => ({}))).email_enabled === true
+  const hasDefinitions = items(await api(request, 'GET', `/projects/${pid}/reports/definitions`).catch(() => [])).length > 0
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -191,6 +193,9 @@ async function discover(request) {
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },
     { name: 'reports', path: `${p}/reports` },
+    emailOn && { name: 'reports-email', path: `${p}/reports`, open: '.report-card button:has(.pi-envelope)', wait: '.report-mail-dialog' },
+    emailOn && { name: 'reports-subscriptions', path: `${p}/reports`, wait: 'section.subscriptions' },
+    emailOn && hasDefinitions && { name: 'reports-subscription-dialog', path: `${p}/reports`, open: 'section.subscriptions button:has(.pi-calendar-plus)', wait: '.subscription-dialog' },
     { name: 'reports-batch', path: `${p}/reports`, open: 'section:has(#h-batch) .p-datatable-tbody .p-checkbox', wait: 'section:has(#h-batch) .bulkbar' },
     { name: 'requirement-attachments', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     run && { name: 'run-attachments', path: `${p}/runs/${run.id}`, open: '[role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
@@ -206,6 +211,9 @@ async function discover(request) {
     { name: 'notifications', path: '/notifications' },
     { name: 'reviews', path: '/reviews' },
     { name: 'members', path: '/admin/members' },
+    { name: 'members-add', path: '/admin/members', open: '.filterbar button:has(.pi-user-plus)', wait: '.p-dialog' },
+    // public invitation page (an unknown token shows the explanation)
+    { name: 'invite', path: '/invite/not-a-valid-token', anon: true, wait: '.p-message' },
     { name: 'members-bulk', path: '/admin/members', open: '.p-datatable-tbody tr .p-checkbox', wait: '.bulkbar' },
     { name: 'rbac', path: '/admin/roles' },
     { name: 'execution-settings', path: '/admin/execution', wait: '.setting' },
