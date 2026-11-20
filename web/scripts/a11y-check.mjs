@@ -195,6 +195,7 @@ async function discover(request) {
     { name: 'notifications', path: '/notifications' },
     { name: 'reviews', path: '/reviews' },
     { name: 'members', path: '/admin/members' },
+    { name: 'members-bulk', path: '/admin/members', open: '.p-datatable-tbody tr .p-checkbox', wait: '.bulkbar' },
     { name: 'rbac', path: '/admin/roles' },
     { name: 'execution-settings', path: '/admin/execution', wait: '.setting' },
     { name: 'backup', path: '/admin/backup' },

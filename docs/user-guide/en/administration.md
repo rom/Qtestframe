@@ -68,7 +68,8 @@ Buttons for actions you may not perform are hidden. If you are missing a button 
 - **Add member** *(Admin)*: enter the **E-mail** and choose the **Role**. If the person already has an account, they are added with that role. If the e-mail is unknown, a local account is created; give a **Display name** and an **Initial password**, and tell the person to change it after the first sign-in.
 - **Change a role** *(Admin)*: pick another role in the member's row. It applies immediately, also to the person's API tokens.
 - **Remove** *(Admin)*: removes the membership; the account itself remains.
-- An organisation must keep at least **one admin**: the last admin cannot be demoted or removed.
+- **Several members at once** *(Admin)*: tick members (or the box in the header for all shown), then choose a role under **Set role** or select **Remove**, and confirm. Your own membership is left as it is, as are members who already have the role; the message says which were skipped. Both can be undone (removed members are added back with their old roles).
+- An organisation must keep at least **one admin**: the last admin cannot be demoted or removed, and a change of several members that would leave no admin is refused as a whole.
 
 ### Reset a password
 

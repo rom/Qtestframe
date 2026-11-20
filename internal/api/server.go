@@ -124,6 +124,7 @@ func (s *Server) routes() {
 	h("PATCH /api/v1/users/{id}", s.handleUpdateUser)
 	h("GET /api/v1/members", s.handleListMembers, "member.read")
 	h("POST /api/v1/members", s.handleAddMember, "member.manage")
+	h("POST /api/v1/members/bulk", s.atomic(s.handleBulkMembers), "member.manage")
 	h("PATCH /api/v1/members/{uid}", s.handleUpdateMember, "member.manage")
 	h("DELETE /api/v1/members/{uid}", s.handleRemoveMember, "member.manage")
 	h("POST /api/v1/members/{uid}/reset-password", s.handleResetPassword, "member.manage")

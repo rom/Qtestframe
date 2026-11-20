@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import HelpTip from '@/guide/HelpTip.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -25,6 +25,8 @@ import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, enumOptions } from '@/i18n/labels'
+import { entry, recordUndo } from '@/lib/undoActions'
+import { useUndoStore } from '@/stores/undo'
 const prefs = usePrefsStore()
 
 const auth = useAuthStore()
@@ -81,6 +83,117 @@ function remove(m: Membership) {
       notify.fail(e)
     }
   })
+}
+
+// ---------- several members at once ----------
+interface BulkMember {
+  user_id: string
+  email?: string
+  role?: string
+  reason?: string
+}
+interface BulkResult {
+  changed: BulkMember[]
+  skipped: BulkMember[]
+}
+const selection = ref<Membership[]>([])
+const bulkRole = ref<string | null>(null)
+const bulkBusy = ref(false)
+const undoStore = useUndoStore()
+watch(
+  () => undoStore.version,
+  () => void load(),
+)
+watch(members, (l) => (selection.value = selection.value.filter((m) => l.some((x) => x.user_id === m.user_id))))
+
+function skippedText(res: BulkResult): string {
+  return res.skipped.map((x) => `${x.email || x.user_id}: ${t(`admin.bulk.reason.${x.reason}`)}`).join('\n')
+}
+function report(res: BulkResult, done: string) {
+  if (res.skipped.length) notify.failText(t('admin.bulk.partly', { n: res.changed.length, skipped: res.skipped.length }), skippedText(res))
+  else notify.ok(done)
+}
+const post = (body: Record<string, unknown>) => api.post<BulkResult>('/members/bulk', body)
+
+function bulkSetRole(role: string | null) {
+  if (!role) return
+  const chosen = [...selection.value]
+  const n = chosen.length
+  notify.confirmDanger(
+    t('admin.bulk.confirmRole', { n, role: enumLabel('role', role) }, n),
+    async () => {
+      bulkBusy.value = true
+      try {
+        const before = new Map(chosen.map((m) => [m.user_id, m.role]))
+        const res = await post({ user_ids: chosen.map((m) => m.user_id), action: 'role', role })
+        const label = t('admin.bulk.roleSet', { n: res.changed.length, role: enumLabel('role', role) }, res.changed.length)
+        report(res, label)
+        if (res.changed.length) {
+          // back to the old roles, one request per old role
+          const byOld = new Map<string, string[]>()
+          for (const c of res.changed) {
+            const old = before.get(c.user_id) ?? ''
+            byOld.set(old, [...(byOld.get(old) ?? []), c.user_id])
+          }
+          const ids = res.changed.map((c) => c.user_id)
+          recordUndo(
+            entry(
+              label,
+              async () => {
+                for (const [old, list] of byOld) await post({ user_ids: list, action: 'role', role: old })
+              },
+              () => post({ user_ids: ids, action: 'role', role }),
+            ),
+          )
+        }
+        selection.value = []
+        await load()
+      } catch (e) {
+        notify.fail(e)
+      } finally {
+        bulkBusy.value = false
+        bulkRole.value = null
+      }
+    },
+    t('admin.bulk.roleHeader'),
+    t('admin.bulk.roleAction'),
+  )
+}
+
+function bulkRemove() {
+  const chosen = [...selection.value]
+  const n = chosen.length
+  notify.confirmDanger(
+    t('admin.bulk.confirmRemove', { n, tenant: auth.tenant?.name ?? '' }, n),
+    async () => {
+      bulkBusy.value = true
+      try {
+        const res = await post({ user_ids: chosen.map((m) => m.user_id), action: 'remove' })
+        const label = t('admin.bulk.removed', { n: res.changed.length }, res.changed.length)
+        report(res, label)
+        if (res.changed.length) {
+          const gone = res.changed.map((c) => ({ email: c.email ?? '', role: c.role ?? 'viewer', user_id: c.user_id }))
+          recordUndo(
+            entry(
+              label,
+              async () => {
+                for (const m of gone) await api.post('/members', { email: m.email, role: m.role })
+              },
+              () => post({ user_ids: gone.map((m) => m.user_id), action: 'remove' }),
+            ),
+          )
+        }
+        selection.value = []
+        await load()
+      } catch (e) {
+        notify.fail(e)
+      } finally {
+        bulkBusy.value = false
+      }
+    },
+    t('admin.bulk.removeHeader'),
+    t('common.remove'),
+  )
 }
 
 const dialog = ref(false)
@@ -142,7 +255,25 @@ function resetPassword(m: Membership) {
       <RouterLink :to="{ name: 'rbac' }" class="p-button p-button-text p-button-secondary"><i class="pi pi-table" aria-hidden="true" />&nbsp;{{ t('admin.roleMatrix') }}</RouterLink>
       <Button v-if="canManage" :label="t('admin.addMember')" icon="pi pi-user-plus" @click="openAdd" />
     </div>
-    <DataTable v-stack :value="filtered" data-key="user_id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
+    <div v-if="canManage && selection.length" class="bulkbar" role="toolbar" :aria-label="t('admin.bulk.toolbar')">
+      <b>{{ t('common.selected', { count: selection.length }) }}</b>
+      <Select
+        v-model="bulkRole"
+        :options="roles"
+        option-label="label"
+        option-value="value"
+        :placeholder="t('admin.bulk.setRole')"
+        :aria-label="t('admin.bulk.setRole')"
+        size="small"
+        style="min-width: 160px"
+        :disabled="bulkBusy"
+        @update:model-value="bulkSetRole"
+      />
+      <Button :label="t('common.remove')" icon="pi pi-user-minus" size="small" severity="danger" outlined :disabled="bulkBusy" @click="bulkRemove" />
+      <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
+    </div>
+    <DataTable v-model:selection="selection" v-stack :value="filtered" data-key="user_id" :loading="loading" :aria-busy="loading" paginator :rows="prefs.rowsFor(50)" sort-field="email" :sort-order="1">
+      <Column v-if="canManage" selection-mode="multiple" style="width: 2.6rem" />
       <Column field="email" :header="t('common.email')" sortable body-class="stack-main">
         <template #body="{ data }"><span class="row nowrap" style="gap: 8px; min-width: 0"><UserAvatar :avatar="data.avatar" :user-id="data.user_id" :email="data.email" :name="data.display_name || data.email" :size="28" /><span class="ellipsis">{{ data.email }}</span></span></template>
       </Column>

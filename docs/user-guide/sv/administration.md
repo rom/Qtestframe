@@ -68,7 +68,8 @@ Knappar för åtgärder som du inte får utföra döljs. Om du saknar en knapp s
 - **Lägg till medlem** *(Administratör)*: ange **E-post** och välj **Roll**. Om personen redan har ett konto läggs hon eller han till med den rollen. Om e-postadressen är okänd skapas ett lokalt konto; ange ett **Visningsnamn** och ett **Första lösenord**, och be personen att byta det efter första inloggningen.
 - **Ändra roll** *(Administratör)*: välj en annan roll på medlemmens rad. Ändringen gäller direkt, även för personens API-nycklar.
 - **Ta bort** *(Administratör)*: tar bort medlemskapet; själva kontot finns kvar.
-- En organisation måste ha minst **en administratör**: den sista administratören kan inte nedgraderas eller tas bort.
+- **Flera medlemmar på en gång** *(Administratör)*: kryssa i medlemmar (eller rutan i rubriken för alla visade), välj sedan en roll under **Ange roll** eller välj **Ta bort**, och bekräfta. Ditt eget medlemskap lämnas som det är, liksom medlemmar som redan har rollen; meddelandet visar vilka som hoppades över. Båda kan ångras (borttagna medlemmar läggs tillbaka med sina tidigare roller).
+- En organisation måste ha minst **en administratör**: den sista administratören kan inte nedgraderas eller tas bort, och en ändring av flera medlemmar som skulle lämna organisationen utan administratör avvisas i sin helhet.
 
 ### Återställa ett lösenord
 
