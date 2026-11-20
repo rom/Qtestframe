@@ -22,6 +22,30 @@ Anchors are GitHub-style slugs of the headings.
   all links and anchors resolve, that images have alt texts, and that the FAQ
   has at least 25 questions (`web/src/guide/content.test.ts`).
 
+## PDF and single-file Markdown
+
+`make guide` exports the guide as one document per language into
+`dist/user-guide/`:
+
+- `qtestframe-user-guide-<lang>.md`: all pages joined in reading order, with
+  links between pages turned into anchors of the joined file and the
+  screenshots it uses copied to `dist/user-guide/images/`;
+- `qtestframe-user-guide-<lang>.pdf`: the same content printed on A4, a new
+  page for every chapter, page numbers in the footer and bookmarks for the
+  headings.
+
+```bash
+make guide
+```
+
+`make guide-md` writes only the Markdown files. `GUIDE_LANGS=sv` limits the
+languages, `GUIDE_OUT=…` changes the folder. The export uses the guide code of
+the web client (`web/src/guide/compile.ts`, through
+`web/scripts/guide-export.mjs`), so page order, language fallback and anchors
+match the in-app guide. The PDF needs Chrome or Chromium: Playwright's
+(`cd web && npx playwright-core install chromium`), a system Chrome, or the
+executable in `QTF_CHROME`.
+
 ## Screenshots
 
 `web/scripts/guide-screenshots.mjs` (npm script `guide:screenshots`) captures

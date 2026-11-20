@@ -14,7 +14,8 @@
     "e2e": "playwright test",
     "typecheck:e2e": "tsc -p e2e/tsconfig.json",
     "a11y": "node scripts/a11y-check.mjs",
-    "guide:screenshots": "node scripts/guide-screenshots.mjs"
+    "guide:screenshots": "node scripts/guide-screenshots.mjs",
+    "guide:export": "node scripts/guide-export.mjs"
   },
   "dependencies": {
     "@primevue/themes": "4.5.4",
