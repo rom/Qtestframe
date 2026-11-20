@@ -113,6 +113,16 @@ async function discover(request) {
   const tests = items(await api(request, 'GET', `/projects/${pid}/tests`))
   const manual = new Set(tests.filter((t) => t.execution_type === 'manual').map((t) => t.id))
   const ex = execs.find((e) => manual.has(e.test_case_id)) ?? execs[0]
+  // a run with an execution that is not ready (its readiness cell opens a popover)
+  let readinessRun = null
+  for (const r of runs) {
+    const list = r.id === run?.id ? execs : items(await api(request, 'GET', `/runs/${r.id}/executions`))
+    if (list.some((e) => e.readiness && !e.readiness.ready)) {
+      readinessRun = r
+      break
+    }
+  }
+  const hasTags = items(await api(request, 'GET', `/projects/${pid}/tags`).catch(() => [])).length > 0
   // configurations and a data-driven test (seed-demo: "Cross-browser smoke")
   const crossRun = runs.find((r) => (r.configurations ?? []).length > 0)
   const crossExecs = crossRun ? items(await api(request, 'GET', `/runs/${crossRun.id}/executions`)) : []
@@ -158,7 +168,7 @@ async function discover(request) {
     { name: 'graph', path: `${p}/graph`, wait: '.graph-node, .empty' },
     { name: 'graph-tests', path: `${p}/graph?kind=test`, wait: '.graph-node, .empty' },
     { name: 'tags', path: `${p}/tags`, wait: '.tag-cloud, .empty' },
-    { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
+    hasTags && { name: 'tags-bulk', path: `${p}/tags`, open: '.tag-cloud .cloud-tag', wait: '.bulkbar' },
     { name: 'flow', path: `${p}/flow?test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-svg, .empty' },
     { name: 'flow-list', path: `${p}/flow?view=list&test=${ex?.test_case_id ?? tests[0]?.id ?? ''}`, wait: '.flow-list, .empty' },
     run && { name: 'flow-run', path: `${p}/flow?run=${run.id}`, wait: '.stages, .empty' },
@@ -167,7 +177,7 @@ async function discover(request) {
     { name: 'link-dialog', path: `${p}/tests?item=${tests[0]?.id ?? ''}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links button:has(.pi-link)'], wait: '.link-types' },
     { name: 'new-requirement', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-plus)', wait: '.obligation-help' },
     { name: 'prompts', path: `${p}/prompts`, wait: '.prompts-grid, .p-message' },
-    run && { name: 'run-readiness', path: `${p}/runs/${run.id}`, open: 'button.readiness-cell', wait: '.readiness-pop' },
+    readinessRun && { name: 'run-readiness', path: `${p}/runs/${readinessRun.id}`, open: 'button.readiness-cell', wait: '.readiness-pop' },
     { name: 'undo-menu', path: `${p}/tests`, open: '.undo-controls button:has(.pi-history)', wait: '.undo-menu' },
     { name: 'columns-menu', path: `${p}/requirements`, open: 'button:has(.pi-table)', wait: '.columns-menu' },
     { name: 'baselines', path: `${p}/baselines` },
@@ -278,7 +288,7 @@ async function keyboardChecks(browser, state, routes) {
     await page.waitForTimeout(900)
     const afterNav = await active(page)
     check('route change focuses the page heading', afterNav?.tag === 'H1', JSON.stringify(afterNav))
-    const live = await page.evaluate(() => document.querySelector('[role="status"][aria-live="polite"].sr-only')?.textContent?.trim())
+    const live = await page.evaluate(() => document.querySelector('#route-announcer')?.textContent?.trim())
     check('route change is announced', live && live.length > 0, String(live))
     // editor drawer: open with the keyboard, focus stays inside, Escape returns focus
     if (route('requirements')) {

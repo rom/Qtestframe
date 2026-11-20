@@ -110,7 +110,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	for _, sp := range specs {
 		r := &model.Requirement{ProjectID: p.ID, FolderID: &sp.folder.ID, Title: sp.title, Description: sp.desc,
 			Obligation: reqlang.DetectObligation(sp.desc), Type: sp.typ, Priority: sp.prio, Status: sp.status,
-			CategoryIDs: []string{cat("Area", sp.area)}, Criteria: sp.criteria, CreatedBy: "seed", Source: "Customer RFP v1.2"}
+			CategoryIDs: []string{cat("Area", sp.area)}, Criteria: sp.criteria, CreatedBy: "seed", Source: "Customer RFP v1.2",
+			// a tag per area, so the tag cloud has something to show
+			Tags: []string{strings.ToLower(sp.area)}}
 		if strings.HasPrefix(sp.desc, "This section describes") {
 			r.Obligation = model.ObligationDescribe
 		}
@@ -145,7 +147,7 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	var testIDs []string
 	for _, ts := range tspecs {
 		t := &model.TestCase{ProjectID: p.ID, FolderID: &ts.folder.ID, Title: ts.title, ExecutionType: ts.exec,
-			Steps: ts.steps, Script: ts.script, Status: "ready", CreatedBy: "seed"}
+			Steps: ts.steps, Script: ts.script, Status: "ready", CreatedBy: "seed", Tags: []string{ts.exec}}
 		if ts.script != "" {
 			t.ScriptLanguage = "sh"
 		}
