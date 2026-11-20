@@ -21,6 +21,7 @@ func (s *Server) routesReviews(h routeFunc) {
 	h("GET /api/v1/reviews", s.handleListReviews)
 	h("POST /api/v1/reviews", s.handleCreateReviews)
 	h("POST /api/v1/reviews/bulk", s.atomic(s.handleBulkReviewRequests))
+	h("GET /api/v1/reviews/in-review", s.handleInReview)
 	h("GET /api/v1/reviews/{id}", s.handleGetReview)
 	h("PATCH /api/v1/reviews/{id}", s.handleUpdateReview)
 	h("GET /api/v1/baselines/{id}/signoffs", s.handleListSignoffs, "requirement.read")
@@ -451,4 +452,66 @@ func (s *Server) handleBulkReviewRequests(w http.ResponseWriter, r *http.Request
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"updated": updated, "skipped": skipped})
+}
+
+// inReviewItem is a requirement or test in status "review" with the reasons
+// it concerns the caller.
+type inReviewItem struct {
+	store.InReviewItem
+	// Reasons: owner (the requirement's owner names the caller), author
+	// (the caller created it), requested (an open review request to the
+	// caller), reviewer (the caller may review items of this kind).
+	Reasons []string `json:"reasons"`
+	// RequestID is the caller's open review request for the item, if any.
+	RequestID string `json:"request_id,omitempty"`
+}
+
+// handleInReview: GET /reviews/in-review lists the requirements and tests in
+// status "review", across projects, that concern the caller: they own or
+// wrote it, were asked to review it, or may review items of its kind. Items
+// waiting longest come first.
+func (s *Server) handleInReview(w http.ResponseWriter, r *http.Request, p *Principal) {
+	ctx := r.Context()
+	items, err := s.Store.ListInReview(ctx, p.TenantID())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	pending, err := s.Store.ListReviewRequests(ctx, p.TenantID(), store.ReviewFilter{ReviewerID: p.User.ID, Status: "pending"})
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	requested := map[string]string{}
+	for _, rq := range pending {
+		requested[rq.EntityType+":"+rq.EntityID] = rq.ID
+	}
+	people := s.peopleIndex(ctx, p)
+	isMe := func(name string) bool {
+		name = strings.ToLower(strings.TrimSpace(name))
+		return name != "" && (people[name] == p.User.ID || name == strings.ToLower(p.User.Email))
+	}
+	out := []inReviewItem{}
+	for _, it := range items {
+		if !p.Can(readPermOf(it.EntityType)) {
+			continue
+		}
+		x := inReviewItem{InReviewItem: it, Reasons: []string{}}
+		if it.EntityType == model.KindRequirement && isMe(it.Owner) {
+			x.Reasons = append(x.Reasons, "owner")
+		}
+		if isMe(it.CreatedBy) {
+			x.Reasons = append(x.Reasons, "author")
+		}
+		if id, ok := requested[it.EntityType+":"+it.EntityID]; ok {
+			x.Reasons, x.RequestID = append(x.Reasons, "requested"), id
+		}
+		if p.Can(reviewPerm(it.EntityType)) {
+			x.Reasons = append(x.Reasons, "reviewer")
+		}
+		if len(x.Reasons) > 0 {
+			out = append(out, x)
+		}
+	}
+	writeJSON(w, http.StatusOK, listOf(out))
 }

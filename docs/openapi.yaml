@@ -9880,6 +9880,30 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/reviews/in-review:
+    get:
+      tags:
+      - Reviews
+      summary: Items awaiting review
+      operationId: getReviewsInReview
+      description: |-
+        requirements and tests in status `review`, across projects, that concern the caller, oldest change first: `[{entity_type, entity_id, key, title, project_id, project_key, project_name, owner, created_by, version, updated_at, reasons, request_id?}]`; `reasons` are `owner` (the requirement's owner names the caller by e-mail, name or @handle), `author`, `requested` (an open review request to the caller, `request_id`) and `reviewer` (the caller may review items of this kind)
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
