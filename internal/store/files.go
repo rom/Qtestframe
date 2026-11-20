@@ -80,7 +80,7 @@ func (s *Store) CreateFile(ctx context.Context, tenantID string, f *model.FileIn
 // GetFile returns file metadata (with links) of a tenant. Pass tenantID ""
 // to look up global files (avatars).
 func (s *Store) GetFile(ctx context.Context, tenantID, id string) (*model.FileInfo, error) {
-	f, err := scanFile(s.c().row(ctx, `SELECT `+fileCols+` FROM files WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	f, err := scanFile(s.c(ctx).row(ctx, `SELECT `+fileCols+` FROM files WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "file")
 	}
@@ -97,7 +97,7 @@ func (s *Store) GetFile(ctx context.Context, tenantID, id string) (*model.FileIn
 // FileData returns the content of a file.
 func (s *Store) FileData(ctx context.Context, id string) ([]byte, error) {
 	var data []byte
-	err := s.c().row(ctx, `SELECT data FROM file_blobs WHERE file_id = ?`, id).Scan(&data)
+	err := s.c(ctx).row(ctx, `SELECT data FROM file_blobs WHERE file_id = ?`, id).Scan(&data)
 	return data, mapErr(err, "file")
 }
 
@@ -116,7 +116,7 @@ func (s *Store) ListFiles(ctx context.Context, tenantID, projectID, kind string)
 }
 
 func (s *Store) listFiles(ctx context.Context, q string, args ...any) ([]model.FileInfo, error) {
-	rows, err := s.c().query(ctx, q, args...)
+	rows, err := s.c(ctx).query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (s *Store) fileLinks(ctx context.Context, ids []string) (map[string][]model
 	if len(ids) == 0 {
 		return out, nil
 	}
-	rows, err := s.c().query(ctx, `SELECT a.file_id, a.entity_type, a.entity_id, COALESCE(r.key, t.key, ru.name, et.key, ''), COALESCE(e.run_id, ''), COALESCE(sr.execution_id, '')
+	rows, err := s.c(ctx).query(ctx, `SELECT a.file_id, a.entity_type, a.entity_id, COALESCE(r.key, t.key, ru.name, et.key, ''), COALESCE(e.run_id, ''), COALESCE(sr.execution_id, '')
 		FROM attachments a
 		LEFT JOIN requirements r ON a.entity_type = 'requirement' AND r.id = a.entity_id
 		LEFT JOIN test_cases t ON a.entity_type = 'test' AND t.id = a.entity_id
@@ -183,7 +183,7 @@ func (s *Store) fileLinks(ctx context.Context, ids []string) (map[string][]model
 func (s *Store) UpdateFile(ctx context.Context, tenantID string, f *model.FileInfo) error {
 	f.Name = CleanFileName(f.Name)
 	f.Tags = cleanTags(f.Tags)
-	res, err := s.c().exec(ctx, `UPDATE files SET name = ?, description = ?, tags = ? WHERE id = ? AND tenant_id = ?`, f.Name, f.Description, encodeTags(f.Tags), f.ID, tenantID)
+	res, err := s.c(ctx).exec(ctx, `UPDATE files SET name = ?, description = ?, tags = ? WHERE id = ? AND tenant_id = ?`, f.Name, f.Description, encodeTags(f.Tags), f.ID, tenantID)
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (s *Store) DeleteFile(ctx context.Context, tenantID, id string) error {
 
 // Attach links a file to an item.
 func (s *Store) Attach(ctx context.Context, fileID, entityType, entityID string) error {
-	_, err := s.c().exec(ctx, `INSERT INTO attachments (file_id, entity_type, entity_id) VALUES (?, ?, ?)`, fileID, entityType, entityID)
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO attachments (file_id, entity_type, entity_id) VALUES (?, ?, ?)`, fileID, entityType, entityID)
 	return mapErr(err, "attachment")
 }
 
@@ -332,7 +332,7 @@ func (s *Store) CreateReportDefinition(ctx context.Context, tenantID string, d *
 	}
 	d.ID, d.CreatedAt = newID(), s.now()
 	d.UpdatedAt = d.CreatedAt
-	_, err := s.c().exec(ctx, `INSERT INTO report_definitions (id, tenant_id, project_id, name, description, config, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO report_definitions (id, tenant_id, project_id, name, description, config, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		d.ID, tenantID, d.ProjectID, d.Name, d.Description, string(d.Config), d.CreatedBy, d.CreatedAt, d.UpdatedAt)
 	return mapErr(err, "report name")
 }
@@ -351,13 +351,13 @@ func scanReportDef(r interface{ Scan(...any) error }) (*model.ReportDefinition, 
 
 // GetReportDefinition returns a saved report.
 func (s *Store) GetReportDefinition(ctx context.Context, tenantID, id string) (*model.ReportDefinition, error) {
-	d, err := scanReportDef(s.c().row(ctx, `SELECT `+reportDefCols+` FROM report_definitions WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	d, err := scanReportDef(s.c(ctx).row(ctx, `SELECT `+reportDefCols+` FROM report_definitions WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	return d, mapErr(err, "report definition")
 }
 
 // ListReportDefinitions returns the saved reports of a project.
 func (s *Store) ListReportDefinitions(ctx context.Context, tenantID, projectID string) ([]model.ReportDefinition, error) {
-	rows, err := s.c().query(ctx, `SELECT `+reportDefCols+` FROM report_definitions WHERE tenant_id = ? AND project_id = ? ORDER BY name`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+reportDefCols+` FROM report_definitions WHERE tenant_id = ? AND project_id = ? ORDER BY name`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -380,7 +380,7 @@ func (s *Store) UpdateReportDefinition(ctx context.Context, tenantID string, d *
 		return Invalidf("report name is required (max 200 characters)")
 	}
 	d.UpdatedAt = s.now()
-	res, err := s.c().exec(ctx, `UPDATE report_definitions SET name = ?, description = ?, config = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE report_definitions SET name = ?, description = ?, config = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
 		d.Name, d.Description, string(d.Config), d.UpdatedAt, d.ID, tenantID)
 	if err != nil {
 		return mapErr(err, "report name")
@@ -410,7 +410,7 @@ func (s *Store) DeleteReportDefinition(ctx context.Context, tenantID, id string)
 // RecordLogin stores a sign-in attempt.
 func (s *Store) RecordLogin(ctx context.Context, e *model.LoginEvent) error {
 	e.ID, e.CreatedAt = newID(), s.now()
-	_, err := s.c().exec(ctx, `INSERT INTO login_events (id, user_id, success, method, ip, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO login_events (id, user_id, success, method, ip, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		e.ID, e.UserID, e.Success, e.Method, e.IP, truncate(e.UserAgent, 512), e.CreatedAt)
 	return err
 }
@@ -420,7 +420,7 @@ func (s *Store) ListLogins(ctx context.Context, userID string, limit int) ([]mod
 	if limit <= 0 || limit > 500 {
 		limit = 50
 	}
-	rows, err := s.c().query(ctx, `SELECT id, user_id, success, method, ip, user_agent, created_at FROM login_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`, userID, limit)
+	rows, err := s.c(ctx).query(ctx, `SELECT id, user_id, success, method, ip, user_agent, created_at FROM login_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`, userID, limit)
 	if err != nil {
 		return nil, err
 	}

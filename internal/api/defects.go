@@ -25,8 +25,8 @@ var defectSchema = &query.Schema{
 func (s *Server) routesDefects(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/defects", s.handleListDefects, "project.read")
 	h("POST /api/v1/projects/{pid}/defects", s.handleCreateDefect, "run.execute")
-	h("POST /api/v1/projects/{pid}/defects/bulk", s.handleBulkDefects, "run.execute")
-	h("DELETE /api/v1/projects/{pid}/defects/bulk", s.handleBulkDeleteDefects, "project.update")
+	h("POST /api/v1/projects/{pid}/defects/bulk", s.atomic(s.handleBulkDefects), "run.execute")
+	h("DELETE /api/v1/projects/{pid}/defects/bulk", s.atomic(s.handleBulkDeleteDefects), "project.update")
 	h("POST /api/v1/projects/{pid}/defects/push", s.handleBulkPushDefects, "run.execute")
 	h("GET /api/v1/defects/{id}", s.handleGetDefect, "project.read")
 	h("PATCH /api/v1/defects/{id}", s.handleUpdateDefect, "run.execute")

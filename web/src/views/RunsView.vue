@@ -25,6 +25,7 @@ import QueryInput from '@/components/QueryInput.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import SummaryBar from '@/components/SummaryBar.vue'
 import ItemPickerDialog from '@/components/ItemPickerDialog.vue'
+import BulkItemLinksDialog from '@/components/BulkItemLinksDialog.vue'
 import { api, ApiError, asItems, errorMessage } from '@/lib/api'
 import { anyOf, and } from '@/lib/query'
 import { buildTree, allKeys } from '@/lib/tree'
@@ -165,6 +166,7 @@ async function create() {
 const selection = ref<TestRun[]>([])
 const canBulk = computed(() => auth.can(P.runWrite))
 const selectedIds = computed(() => selection.value.map((r) => r.id))
+const bulkLinksOpen = ref(false)
 const bulkStatus = ref<string | null>(null)
 const bulkRelease = ref<string | null>(null)
 const envDialog = ref(false)
@@ -287,6 +289,7 @@ const runLayout = useColumnLayout(
       <Select v-model="bulkStatus" :options="statusOptions" option-label="label" option-value="value" :placeholder="t('runs.bulk.setStatus')" :aria-label="t('runs.bulk.setStatus')" size="small" style="min-width: 150px" />
       <Select v-if="rel.releases.value.length" v-model="bulkRelease" :options="rel.options.value" option-label="label" option-value="value" :placeholder="t('runs.bulk.setRelease')" :aria-label="t('runs.bulk.setRelease')" size="small" style="min-width: 150px" />
       <Button :label="t('runs.bulk.envBuild')" icon="pi pi-server" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="openEnv" />
+      <Button :label="t('links.title')" icon="pi pi-link" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkLinksOpen = true" />
       <Button :label="t('common.delete')" icon="pi pi-trash" size="small" severity="danger" outlined @click="bulkDelete" />
       <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
     </div>
@@ -428,6 +431,7 @@ const runLayout = useColumnLayout(
       <Button :label="t('common.apply')" icon="pi pi-check" :disabled="!bulkEnvOn && !bulkBuildOn" @click="applyEnv" />
     </template>
   </Dialog>
+  <BulkItemLinksDialog v-if="canBulk" v-model:visible="bulkLinksOpen" source-type="run" :project-id="proj.pid" :selected="selectedIds" />
 </template>
 
 <style scoped>

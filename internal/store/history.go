@@ -111,7 +111,7 @@ func normalize(key string, v any) any {
 // against the previous revision.
 func (s *Store) AddRevision(ctx context.Context, tenantID, entityType, entityID string, version int, action, user string, snapshot json.RawMessage) error {
 	var prev string
-	err := s.c().row(ctx, `SELECT snapshot FROM revisions WHERE entity_type = ? AND entity_id = ? ORDER BY created_at DESC, version DESC LIMIT 1`, entityType, entityID).Scan(&prev)
+	err := s.c(ctx).row(ctx, `SELECT snapshot FROM revisions WHERE entity_type = ? AND entity_id = ? ORDER BY created_at DESC, version DESC LIMIT 1`, entityType, entityID).Scan(&prev)
 	var changed []string
 	switch {
 	case err == nil:
@@ -122,14 +122,14 @@ func (s *Store) AddRevision(ctx context.Context, tenantID, entityType, entityID 
 		return err
 	}
 	cf, _ := json.Marshal(changed)
-	_, err = s.c().exec(ctx, `INSERT INTO revisions (id, tenant_id, entity_type, entity_id, version, action, changed_fields, snapshot, user_email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO revisions (id, tenant_id, entity_type, entity_id, version, action, changed_fields, snapshot, user_email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		newID(), tenantID, entityType, entityID, version, action, string(cf), string(snapshot), user, s.now())
 	return err
 }
 
 // ListRevisions returns the revisions of an entity, newest first.
 func (s *Store) ListRevisions(ctx context.Context, tenantID, entityType, entityID string) ([]model.Revision, error) {
-	rows, err := s.c().query(ctx, `SELECT r.id, r.entity_type, r.entity_id, r.version, r.action, r.changed_fields, r.snapshot, r.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), r.created_at
+	rows, err := s.c(ctx).query(ctx, `SELECT r.id, r.entity_type, r.entity_id, r.version, r.action, r.changed_fields, r.snapshot, r.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), r.created_at
 		FROM revisions r LEFT JOIN users u ON u.email = r.user_email
 		WHERE r.tenant_id = ? AND r.entity_type = ? AND r.entity_id = ? ORDER BY r.created_at DESC, r.version DESC`, tenantID, entityType, entityID)
 	if err != nil {
@@ -149,7 +149,7 @@ func (s *Store) ListRevisions(ctx context.Context, tenantID, entityType, entityI
 
 // GetRevision returns one revision of an entity.
 func (s *Store) GetRevision(ctx context.Context, tenantID, entityType, entityID, id string) (*model.Revision, error) {
-	r, err := scanRevision(s.c().row(ctx, `SELECT r.id, r.entity_type, r.entity_id, r.version, r.action, r.changed_fields, r.snapshot, r.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), r.created_at
+	r, err := scanRevision(s.c(ctx).row(ctx, `SELECT r.id, r.entity_type, r.entity_id, r.version, r.action, r.changed_fields, r.snapshot, r.user_email, COALESCE(u.display_name, ''), COALESCE(u.avatar, ''), r.created_at
 		FROM revisions r LEFT JOIN users u ON u.email = r.user_email
 		WHERE r.id = ? AND r.tenant_id = ? AND r.entity_type = ? AND r.entity_id = ?`, id, tenantID, entityType, entityID))
 	return r, mapErr(err, "revision")
@@ -224,14 +224,14 @@ func (s *Store) CreateRelation(ctx context.Context, tenantID string, rel *model.
 	}
 	rel.ID, rel.ProjectID, rel.CreatedAt = newID(), src.ProjectID, s.now()
 	rel.SourceKey, rel.SourceTitle, rel.TargetKey, rel.TargetTitle = src.Key, src.Title, dst.Key, dst.Title
-	_, err = s.c().exec(ctx, `INSERT INTO requirement_relations (id, tenant_id, project_id, source_id, target_id, type, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO requirement_relations (id, tenant_id, project_id, source_id, target_id, type, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		rel.ID, tenantID, rel.ProjectID, rel.SourceID, rel.TargetID, rel.Type, rel.CreatedBy, rel.CreatedAt)
 	return mapErr(err, "relation")
 }
 
 // refinesEdges returns child → parents for all refines relations.
 func (s *Store) refinesEdges(ctx context.Context, projectID string) (map[string][]string, error) {
-	rows, err := s.c().query(ctx, `SELECT source_id, target_id FROM requirement_relations WHERE project_id = ? AND type = 'refines'`, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT source_id, target_id FROM requirement_relations WHERE project_id = ? AND type = 'refines'`, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (s *Store) ListRelations(ctx context.Context, tenantID, projectID, requirem
 		q += ` AND (r.source_id = ? OR r.target_id = ?)`
 		args = append(args, requirementID, requirementID)
 	}
-	rows, err := s.c().query(ctx, q+` ORDER BY r.type, s.seq, t.seq`, args...)
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY r.type, s.seq, t.seq`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -284,13 +284,13 @@ func (s *Store) ListRelations(ctx context.Context, tenantID, projectID, requirem
 
 // GetRelation returns one relation.
 func (s *Store) GetRelation(ctx context.Context, tenantID, id string) (*model.Relation, error) {
-	rel, err := scanRelation(s.c().row(ctx, relationSelect+` WHERE r.id = ? AND r.tenant_id = ?`, id, tenantID))
+	rel, err := scanRelation(s.c(ctx).row(ctx, relationSelect+` WHERE r.id = ? AND r.tenant_id = ?`, id, tenantID))
 	return rel, mapErr(err, "relation")
 }
 
 // DeleteRelation removes a relation.
 func (s *Store) DeleteRelation(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM requirement_relations WHERE id = ? AND tenant_id = ?`, id, tenantID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM requirement_relations WHERE id = ? AND tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return err
 	}
@@ -348,7 +348,7 @@ func scanBaseline(r interface{ Scan(...any) error }) (*model.Baseline, error) {
 
 // ListBaselines returns the baselines of a project, newest first.
 func (s *Store) ListBaselines(ctx context.Context, tenantID, projectID string) ([]model.Baseline, error) {
-	rows, err := s.c().query(ctx, baselineSelect+` WHERE b.tenant_id = ? AND b.project_id = ? ORDER BY b.created_at DESC`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, baselineSelect+` WHERE b.tenant_id = ? AND b.project_id = ? ORDER BY b.created_at DESC`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -366,11 +366,11 @@ func (s *Store) ListBaselines(ctx context.Context, tenantID, projectID string) (
 
 // GetBaseline returns a baseline with its items.
 func (s *Store) GetBaseline(ctx context.Context, tenantID, id string) (*model.Baseline, error) {
-	b, err := scanBaseline(s.c().row(ctx, baselineSelect+` WHERE b.id = ? AND b.tenant_id = ?`, id, tenantID))
+	b, err := scanBaseline(s.c(ctx).row(ctx, baselineSelect+` WHERE b.id = ? AND b.tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "baseline")
 	}
-	rows, err := s.c().query(ctx, `SELECT entity_type, entity_id, key, title, version, snapshot FROM baseline_items WHERE baseline_id = ? ORDER BY entity_type, key`, id)
+	rows, err := s.c(ctx).query(ctx, `SELECT entity_type, entity_id, key, title, version, snapshot FROM baseline_items WHERE baseline_id = ? ORDER BY entity_type, key`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +426,7 @@ func splitKey(k string) (string, int) {
 
 // DeleteBaseline removes a baseline.
 func (s *Store) DeleteBaseline(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM baselines WHERE id = ? AND tenant_id = ?`, id, tenantID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM baselines WHERE id = ? AND tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return err
 	}
@@ -503,14 +503,14 @@ func (s *Store) AddComment(ctx context.Context, tenantID string, c *model.Commen
 	}
 	c.ID, c.Body, c.CreatedAt = newID(), body, s.now()
 	c.UpdatedAt = c.CreatedAt
-	_, err = s.c().exec(ctx, `INSERT INTO comments (id, tenant_id, entity_type, entity_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO comments (id, tenant_id, entity_type, entity_id, user_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		c.ID, tenantID, c.EntityType, c.EntityID, c.UserID, c.Body, c.CreatedAt, c.UpdatedAt)
 	return err
 }
 
 // ListComments returns the comments of an entity, oldest first.
 func (s *Store) ListComments(ctx context.Context, tenantID, entityType, entityID string) ([]model.Comment, error) {
-	rows, err := s.c().query(ctx, commentSelect+` WHERE c.tenant_id = ? AND c.entity_type = ? AND c.entity_id = ? ORDER BY c.created_at`, tenantID, entityType, entityID)
+	rows, err := s.c(ctx).query(ctx, commentSelect+` WHERE c.tenant_id = ? AND c.entity_type = ? AND c.entity_id = ? ORDER BY c.created_at`, tenantID, entityType, entityID)
 	if err != nil {
 		return nil, err
 	}
@@ -528,7 +528,7 @@ func (s *Store) ListComments(ctx context.Context, tenantID, entityType, entityID
 
 // GetComment returns one comment.
 func (s *Store) GetComment(ctx context.Context, tenantID, id string) (*model.Comment, error) {
-	c, err := scanComment(s.c().row(ctx, commentSelect+` WHERE c.id = ? AND c.tenant_id = ?`, id, tenantID))
+	c, err := scanComment(s.c(ctx).row(ctx, commentSelect+` WHERE c.id = ? AND c.tenant_id = ?`, id, tenantID))
 	return c, mapErr(err, "comment")
 }
 
@@ -539,13 +539,13 @@ func (s *Store) UpdateComment(ctx context.Context, tenantID string, c *model.Com
 		return err
 	}
 	c.Body, c.UpdatedAt = body, s.now()
-	_, err = s.c().exec(ctx, `UPDATE comments SET body = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, c.Body, c.UpdatedAt, c.ID, tenantID)
+	_, err = s.c(ctx).exec(ctx, `UPDATE comments SET body = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, c.Body, c.UpdatedAt, c.ID, tenantID)
 	return err
 }
 
 // DeleteComment removes a comment.
 func (s *Store) DeleteComment(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM comments WHERE id = ? AND tenant_id = ?`, id, tenantID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM comments WHERE id = ? AND tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return err
 	}
@@ -559,7 +559,7 @@ func (s *Store) DeleteComment(ctx context.Context, tenantID, id string) error {
 // project (entity id → count).
 func (s *Store) ProjectCounts(ctx context.Context, tenantID, projectID string) (comments, relations map[string]int, err error) {
 	comments, relations = map[string]int{}, map[string]int{}
-	rows, err := s.c().query(ctx, `SELECT c.entity_id, COUNT(*) FROM comments c WHERE c.tenant_id = ? AND (
+	rows, err := s.c(ctx).query(ctx, `SELECT c.entity_id, COUNT(*) FROM comments c WHERE c.tenant_id = ? AND (
 		c.entity_id IN (SELECT id FROM requirements WHERE project_id = ?) OR c.entity_id IN (SELECT id FROM test_cases WHERE project_id = ?))
 		GROUP BY c.entity_id`, tenantID, projectID, projectID)
 	if err != nil {
@@ -575,7 +575,7 @@ func (s *Store) ProjectCounts(ctx context.Context, tenantID, projectID string) (
 		comments[id] = n
 	}
 	rows.Close()
-	rows, err = s.c().query(ctx, `SELECT source_id, target_id FROM requirement_relations WHERE tenant_id = ? AND project_id = ?`, tenantID, projectID)
+	rows, err = s.c(ctx).query(ctx, `SELECT source_id, target_id FROM requirement_relations WHERE tenant_id = ? AND project_id = ?`, tenantID, projectID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -593,7 +593,7 @@ func (s *Store) ProjectCounts(ctx context.Context, tenantID, projectID string) (
 
 // TestDefects returns test id → defects recorded on any of its executions.
 func (s *Store) TestDefects(ctx context.Context, tenantID, projectID string) (map[string][]string, error) {
-	rows, err := s.c().query(ctx, `SELECT e.test_case_id, e.defects FROM test_executions e JOIN test_runs r ON r.id = e.run_id
+	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, e.defects FROM test_executions e JOIN test_runs r ON r.id = e.run_id
 		WHERE r.project_id = ? AND e.tenant_id = ? AND e.defects <> '[]'`, projectID, tenantID)
 	if err != nil {
 		return nil, err

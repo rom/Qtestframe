@@ -24,7 +24,7 @@ func (s *Store) ListTestDependencies(ctx context.Context, tenantID, projectID, t
 		q += ` AND (d.test_id = ? OR d.depends_on_id = ?)`
 		args = append(args, testID, testID)
 	}
-	rows, err := s.c().query(ctx, q+` ORDER BY t.seq, o.seq`, args...)
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY t.seq, o.seq`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (s *Store) AddTestDependency(ctx context.Context, tenantID string, d *model
 	}
 	d.ID, d.ProjectID, d.CreatedAt = newID(), a.ProjectID, s.now()
 	d.TestKey, d.TestTitle, d.DependsOnKey, d.DependsOnTitle = a.Key, a.Title, b.Key, b.Title
-	_, err = s.c().exec(ctx, `INSERT INTO test_dependencies (id, tenant_id, project_id, test_id, depends_on_id, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO test_dependencies (id, tenant_id, project_id, test_id, depends_on_id, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		d.ID, tenantID, d.ProjectID, d.TestID, d.DependsOnID, d.CreatedBy, d.CreatedAt)
 	return mapErr(err, "dependency")
 }
@@ -97,7 +97,7 @@ func (s *Store) AddTestDependency(ctx context.Context, tenantID string, d *model
 // GetTestDependency returns one dependency.
 func (s *Store) GetTestDependency(ctx context.Context, tenantID, id string) (*model.TestDependency, error) {
 	var d model.TestDependency
-	err := s.c().row(ctx, depSelect+` WHERE d.tenant_id = ? AND d.id = ?`, tenantID, id).Scan(&d.ID, &d.ProjectID, &d.TestID, &d.DependsOnID,
+	err := s.c(ctx).row(ctx, depSelect+` WHERE d.tenant_id = ? AND d.id = ?`, tenantID, id).Scan(&d.ID, &d.ProjectID, &d.TestID, &d.DependsOnID,
 		&d.CreatedBy, &d.CreatedAt, &d.TestKey, &d.TestTitle, &d.DependsOnKey, &d.DependsOnTitle)
 	if err != nil {
 		return nil, mapErr(err, "dependency")
@@ -107,7 +107,7 @@ func (s *Store) GetTestDependency(ctx context.Context, tenantID, id string) (*mo
 
 // DeleteTestDependency removes a dependency.
 func (s *Store) DeleteTestDependency(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM test_dependencies WHERE tenant_id = ? AND id = ?`, tenantID, id)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM test_dependencies WHERE tenant_id = ? AND id = ?`, tenantID, id)
 	if err != nil {
 		return err
 	}

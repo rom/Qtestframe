@@ -103,7 +103,8 @@ func (s *Server) handleBulkCreateLinks(w http.ResponseWriter, r *http.Request, p
 			continue
 		}
 		l := model.TraceLink{RequirementID: x.RequirementID, TestCaseID: x.TestCaseID, CriterionID: in.CriterionID}
-		if err := s.Store.CreateLink(ctx, p.TenantID(), &l); errors.Is(err, store.ErrInvalid) {
+		err := s.Store.Savepoint(ctx, func() error { return s.Store.CreateLink(ctx, p.TenantID(), &l) })
+		if errors.Is(err, store.ErrInvalid) {
 			skip("invalid") // e.g. a criterion of another requirement
 			continue
 		} else if err != nil {

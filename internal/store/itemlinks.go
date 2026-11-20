@@ -92,7 +92,7 @@ func (s *Store) CreateItemLink(ctx context.Context, tenantID string, l *model.It
 	if utf8.RuneCountInString(l.Label) > MaxLinkLabel {
 		return Invalidf("label may have at most %d characters", MaxLinkLabel)
 	}
-	c := s.c()
+	c := s.c(ctx)
 	src, err := resolveLinkEnds(ctx, c, tenantID, l.SourceType, []string{l.SourceID})
 	if err != nil {
 		return err
@@ -170,7 +170,7 @@ func scanItemLink(r interface{ Scan(...any) error }) (*model.ItemLink, error) {
 
 // GetItemLink returns a link.
 func (s *Store) GetItemLink(ctx context.Context, tenantID, id string) (*model.ItemLink, error) {
-	l, err := scanItemLink(s.c().row(ctx, `SELECT `+itemLinkCols+` FROM item_links WHERE tenant_id = ? AND id = ?`, tenantID, id))
+	l, err := scanItemLink(s.c(ctx).row(ctx, `SELECT `+itemLinkCols+` FROM item_links WHERE tenant_id = ? AND id = ?`, tenantID, id))
 	if err != nil {
 		return nil, mapErr(err, "link")
 	}
@@ -180,7 +180,7 @@ func (s *Store) GetItemLink(ctx context.Context, tenantID, id string) (*model.It
 // ListItemLinks lists the links of an item: those it carries (outgoing)
 // and those pointing at it (incoming), outgoing first.
 func (s *Store) ListItemLinks(ctx context.Context, tenantID, itemType, itemID string) ([]model.ItemLink, error) {
-	rows, err := s.c().query(ctx, `SELECT `+itemLinkCols+` FROM item_links WHERE tenant_id = ? AND ((source_type = ? AND source_id = ?) OR (target_type = ? AND target_id = ?)) ORDER BY created_at, id`,
+	rows, err := s.c(ctx).query(ctx, `SELECT `+itemLinkCols+` FROM item_links WHERE tenant_id = ? AND ((source_type = ? AND source_id = ?) OR (target_type = ? AND target_id = ?)) ORDER BY created_at, id`,
 		tenantID, itemType, itemID, itemType, itemID)
 	if err != nil {
 		return nil, err
@@ -216,6 +216,58 @@ func (s *Store) ListItemLinks(ctx context.Context, tenantID, itemType, itemID st
 	return out, nil
 }
 
+// LinkSourceProjects returns the project of each existing source item of
+// one type (requirement, test or run); unknown ids are left out.
+func (s *Store) LinkSourceProjects(ctx context.Context, tenantID, sourceType string, ids []string) (map[string]string, error) {
+	ends, err := resolveLinkEnds(ctx, s.c(ctx), tenantID, sourceType, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]string, len(ends))
+	for id, e := range ends {
+		out[id] = e.project
+	}
+	return out, nil
+}
+
+// ListProjectItemLinks returns the links carried by items of one source
+// type in a project (all source types when sourceType is empty), oldest
+// first.
+func (s *Store) ListProjectItemLinks(ctx context.Context, tenantID, projectID, sourceType string) ([]model.ItemLink, error) {
+	q := `SELECT ` + itemLinkCols + ` FROM item_links WHERE tenant_id = ? AND project_id = ?`
+	args := []any{tenantID, projectID}
+	if sourceType != "" {
+		q += ` AND source_type = ?`
+		args = append(args, sourceType)
+	}
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY created_at, id`, args...)
+	if err != nil {
+		return nil, err
+	}
+	var ptrs []*model.ItemLink
+	for rows.Next() {
+		l, err := scanItemLink(rows)
+		if err != nil {
+			rows.Close()
+			return nil, err
+		}
+		l.Direction = "outgoing"
+		ptrs = append(ptrs, l)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if err := s.decorateItemLinks(ctx, tenantID, ptrs); err != nil {
+		return nil, err
+	}
+	out := make([]model.ItemLink, 0, len(ptrs))
+	for _, l := range ptrs {
+		out = append(out, *l)
+	}
+	return out, nil
+}
+
 // decorateItemLinks fills keys and titles of both ends.
 func (s *Store) decorateItemLinks(ctx context.Context, tenantID string, links []*model.ItemLink) error {
 	ids := map[string][]string{}
@@ -227,7 +279,7 @@ func (s *Store) decorateItemLinks(ctx context.Context, tenantID string, links []
 	}
 	ends := map[string]map[string]linkEnd{}
 	for typ, list := range ids {
-		m, err := resolveLinkEnds(ctx, s.c(), tenantID, typ, list)
+		m, err := resolveLinkEnds(ctx, s.c(ctx), tenantID, typ, list)
 		if err != nil {
 			return err
 		}
@@ -255,7 +307,7 @@ func (s *Store) UpdateItemLinkLabel(ctx context.Context, tenantID, id, label str
 	if utf8.RuneCountInString(label) > MaxLinkLabel {
 		return Invalidf("label may have at most %d characters", MaxLinkLabel)
 	}
-	res, err := s.c().exec(ctx, `UPDATE item_links SET label = ? WHERE tenant_id = ? AND id = ?`, label, tenantID, id)
+	res, err := s.c(ctx).exec(ctx, `UPDATE item_links SET label = ? WHERE tenant_id = ? AND id = ?`, label, tenantID, id)
 	if err != nil {
 		return err
 	}
@@ -267,7 +319,7 @@ func (s *Store) UpdateItemLinkLabel(ctx context.Context, tenantID, id, label str
 
 // DeleteItemLink removes a link.
 func (s *Store) DeleteItemLink(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM item_links WHERE tenant_id = ? AND id = ?`, tenantID, id)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM item_links WHERE tenant_id = ? AND id = ?`, tenantID, id)
 	if err != nil {
 		return err
 	}
@@ -292,7 +344,7 @@ func deleteItemLinks(ctx context.Context, c conn, typ string, ids []string) erro
 
 // CountItemLinks returns the number of links (both directions) per item of a type.
 func (s *Store) CountItemLinks(ctx context.Context, tenantID, projectID, typ string) (map[string]int, error) {
-	rows, err := s.c().query(ctx, `SELECT source_id, target_id, source_type, target_type FROM item_links WHERE tenant_id = ? AND project_id = ? AND (source_type = ? OR target_type = ?)`, tenantID, projectID, typ, typ)
+	rows, err := s.c(ctx).query(ctx, `SELECT source_id, target_id, source_type, target_type FROM item_links WHERE tenant_id = ? AND project_id = ? AND (source_type = ? OR target_type = ?)`, tenantID, projectID, typ, typ)
 	if err != nil {
 		return nil, err
 	}

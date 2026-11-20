@@ -5,6 +5,8 @@
 // this item from elsewhere are listed as "Linked from".
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
+import Checkbox from 'primevue/checkbox'
+import { deleteItemLinks, itemLinksUndo } from '@/composables/itemLinksBulk'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
@@ -162,6 +164,32 @@ async function remove(l: ItemLink) {
   }
 }
 
+// ---------- remove several ----------
+const sel = ref<string[]>([])
+watch(links, (l) => (sel.value = sel.value.filter((id) => l.some((x) => x.id === id))))
+const allSelected = computed({
+  get: () => outgoing.value.length > 0 && sel.value.length === outgoing.value.length,
+  set: (v: boolean) => (sel.value = v ? outgoing.value.map((l) => l.id) : []),
+})
+const removing = ref(false)
+async function removeSelected() {
+  const pid = props.projectId
+  removing.value = true
+  try {
+    const deleted = await deleteItemLinks(pid, sel.value)
+    const n = deleted.length
+    const text = t('links.bulk.removed', { n }, n)
+    notify.ok(text)
+    if (n) recordUndo(itemLinksUndo(text, pid, deleted, false))
+    sel.value = []
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    removing.value = false
+  }
+}
+
 const exclude = computed(() => [
   ...(type.value === props.itemType ? [props.itemId] : []),
   ...outgoing.value.filter((l) => l.target_type === type.value && l.target_id).map((l) => l.target_id as string),
@@ -176,10 +204,15 @@ const target = (l: ItemLink, incomingSide = false) => linkTarget(l, props.projec
       <h3 class="plain-heading small-heading">{{ t('links.title') }} <span v-if="links.length" class="count">{{ links.length }}</span></h3>
       <Button v-if="canWrite" :label="t('links.add')" icon="pi pi-link" size="small" text @click="openAdd" />
     </div>
+    <div v-if="canWrite && outgoing.length > 1" class="row small" style="margin-bottom: 4px">
+      <span class="row nowrap"><Checkbox v-model="allSelected" binary :input-id="'links-all-' + itemId" /><label :for="'links-all-' + itemId">{{ t('links.bulk.selectAll') }}</label></span>
+      <Button v-if="sel.length" :label="t('links.bulk.removeN', { n: sel.length }, sel.length)" icon="pi pi-trash" size="small" severity="danger" outlined :loading="removing" @click="removeSelected" />
+    </div>
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
     <p v-else-if="!loading && !links.length" class="small muted" style="margin: 0">{{ t('links.none') }}</p>
     <ul v-if="outgoing.length" class="plain-list link-list">
       <li v-for="l in outgoing" :key="l.id" class="row nowrap">
+        <Checkbox v-if="canWrite && outgoing.length > 1" v-model="sel" :value="l.id" :aria-label="t('links.bulk.selectOne', { name: l.label || l.target_key || l.url })" />
         <i :class="LINK_ICONS[l.target_type as LinkType] ?? 'pi pi-link'" aria-hidden="true" class="muted" />
         <span class="sr-only">{{ t(`links.type.${l.target_type}`) }}:</span>
         <template v-if="target(l).external">

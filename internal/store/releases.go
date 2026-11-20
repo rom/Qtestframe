@@ -108,7 +108,7 @@ func (s *Store) CreateRelease(ctx context.Context, tenantID string, r *model.Rel
 	r.CreatedAt = s.now()
 	r.UpdatedAt = r.CreatedAt
 	crit, _ := json.Marshal(r.ExitCriteria)
-	_, err := s.c().exec(ctx, `INSERT INTO releases (id, tenant_id, project_id, name, version, description, status, target_date, exit_criteria, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO releases (id, tenant_id, project_id, name, version, description, status, target_date, exit_criteria, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, tenantID, r.ProjectID, r.Name, r.Version, r.Description, r.Status, r.TargetDate, string(crit), r.CreatedBy, r.CreatedAt, r.UpdatedAt)
 	return mapErr(err, "release name")
 }
@@ -128,7 +128,7 @@ func (s *Store) UpdateRelease(ctx context.Context, tenantID string, r *model.Rel
 		r.ReleasedAt, r.ReleasedBy = nil, ""
 	}
 	crit, _ := json.Marshal(r.ExitCriteria)
-	res, err := s.c().exec(ctx, `UPDATE releases SET name = ?, version = ?, description = ?, status = ?, target_date = ?, exit_criteria = ?, released_at = ?, released_by = ?, release_note = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE releases SET name = ?, version = ?, description = ?, status = ?, target_date = ?, exit_criteria = ?, released_at = ?, released_by = ?, release_note = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
 		r.Name, r.Version, r.Description, r.Status, r.TargetDate, string(crit), nullTime(r.ReleasedAt), r.ReleasedBy, r.ReleaseNote, r.UpdatedAt, r.ID, tenantID)
 	if err != nil {
 		return mapErr(err, "release name")
@@ -141,11 +141,11 @@ func (s *Store) UpdateRelease(ctx context.Context, tenantID string, r *model.Rel
 
 // GetRelease returns a release with its requirement IDs and counts.
 func (s *Store) GetRelease(ctx context.Context, tenantID, id string) (*model.Release, error) {
-	r, err := scanRelease(s.c().row(ctx, `SELECT `+releaseCols+` FROM releases WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	r, err := scanRelease(s.c(ctx).row(ctx, `SELECT `+releaseCols+` FROM releases WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "release")
 	}
-	rows, err := s.c().query(ctx, `SELECT rr.requirement_id FROM release_requirements rr JOIN requirements q ON q.id = rr.requirement_id WHERE rr.release_id = ? ORDER BY q.seq`, id)
+	rows, err := s.c(ctx).query(ctx, `SELECT rr.requirement_id FROM release_requirements rr JOIN requirements q ON q.id = rr.requirement_id WHERE rr.release_id = ? ORDER BY q.seq`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (s *Store) GetRelease(ctx context.Context, tenantID, id string) (*model.Rel
 		r.RequirementIDs = []string{}
 	}
 	r.Requirements = len(r.RequirementIDs)
-	if err := s.c().row(ctx, `SELECT COUNT(*) FROM test_runs WHERE release_id = ?`, id).Scan(&r.Runs); err != nil {
+	if err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM test_runs WHERE release_id = ?`, id).Scan(&r.Runs); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -164,7 +164,7 @@ func (s *Store) GetRelease(ctx context.Context, tenantID, id string) (*model.Rel
 
 // ListReleases lists the releases of a project, newest first.
 func (s *Store) ListReleases(ctx context.Context, tenantID, projectID string) ([]model.Release, error) {
-	rows, err := s.c().query(ctx, `SELECT `+releaseCols+` FROM releases WHERE tenant_id = ? AND project_id = ? ORDER BY created_at DESC`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+releaseCols+` FROM releases WHERE tenant_id = ? AND project_id = ? ORDER BY created_at DESC`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (s *Store) ListReleases(ctx context.Context, tenantID, projectID string) ([
 		return nil, err
 	}
 	counts := func(q string) (map[string]int, error) {
-		rows, err := s.c().query(ctx, q, projectID)
+		rows, err := s.c(ctx).query(ctx, q, projectID)
 		if err != nil {
 			return nil, err
 		}
@@ -484,7 +484,7 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 	}
 	d := ReleaseData{Results: map[string]string{}}
 	// latest result per test in the release's runs
-	rows, err := s.c().query(ctx, `SELECT e.test_case_id, t.key, t.title, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e
+	rows, err := s.c(ctx).query(ctx, `SELECT e.test_case_id, t.key, t.title, e.status, e.finished_at, e.started_at, r.created_at FROM test_executions e
 		JOIN test_runs r ON r.id = e.run_id JOIN test_cases t ON t.id = e.test_case_id WHERE r.release_id = ? AND r.tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return nil, err
@@ -565,7 +565,7 @@ func (s *Store) ReleaseStatus(ctx context.Context, tenantID, id string, defects,
 
 // ReleaseNames returns the names of releases by ID (for run lists).
 func (s *Store) ReleaseNames(ctx context.Context, tenantID, projectID string) (map[string]string, error) {
-	rows, err := s.c().query(ctx, `SELECT id, name FROM releases WHERE tenant_id = ? AND project_id = ?`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT id, name FROM releases WHERE tenant_id = ? AND project_id = ?`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}

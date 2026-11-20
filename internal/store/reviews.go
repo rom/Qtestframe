@@ -161,7 +161,7 @@ func (s *Store) decorateReviews(ctx context.Context, tenantID string, list []mod
 
 // GetReviewRequest returns one review request.
 func (s *Store) GetReviewRequest(ctx context.Context, tenantID, id string) (*model.ReviewRequest, error) {
-	v, err := scanReview(s.c().row(ctx, `SELECT `+reviewCols+reviewFrom+` WHERE r.id = ? AND r.tenant_id = ?`, id, tenantID))
+	v, err := scanReview(s.c(ctx).row(ctx, `SELECT `+reviewCols+reviewFrom+` WHERE r.id = ? AND r.tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "review request")
 	}
@@ -185,7 +185,7 @@ func (s *Store) ListReviewRequests(ctx context.Context, tenantID string, f Revie
 			args = append(args, x.v)
 		}
 	}
-	rows, err := s.c().query(ctx, `SELECT `+reviewCols+reviewFrom+` WHERE `+strings.Join(where, " AND ")+` ORDER BY r.created_at DESC, r.id LIMIT 500`, args...)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+reviewCols+reviewFrom+` WHERE `+strings.Join(where, " AND ")+` ORDER BY r.created_at DESC, r.id LIMIT 500`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (s *Store) UpdateReviewRequest(ctx context.Context, tenantID string, v *mod
 		v.DecidedAt = &t
 	}
 	list, _ := json.Marshal(v.Checklist)
-	res, err := s.c().exec(ctx, `UPDATE review_requests SET checklist = ?, comment = ?, status = ?, decided_at = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE review_requests SET checklist = ?, comment = ?, status = ?, decided_at = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
 		string(list), v.Comment, v.Status, nullTime(v.DecidedAt), v.UpdatedAt, v.ID, tenantID)
 	if err != nil {
 		return err
@@ -272,7 +272,7 @@ func (s *Store) SignBaseline(ctx context.Context, tenantID string, so *model.Sig
 	so.ContentHash = BaselineHash(b)
 	so.SignedAt = s.now()
 	so.Valid = true
-	_, err = s.c().exec(ctx, `INSERT INTO baseline_signoffs (id, tenant_id, baseline_id, user_id, user_email, user_name, meaning, comment, content_hash, signed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO baseline_signoffs (id, tenant_id, baseline_id, user_id, user_email, user_name, meaning, comment, content_hash, signed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		so.ID, tenantID, so.BaselineID, so.UserID, so.UserEmail, so.UserName, so.Meaning, so.Comment, so.ContentHash, so.SignedAt)
 	if err != nil && db.IsUniqueViolation(err) {
 		return Conflictf("you have already signed this baseline as %q", so.Meaning)
@@ -288,7 +288,7 @@ func (s *Store) ListSignoffs(ctx context.Context, tenantID, baselineID string) (
 		return nil, err
 	}
 	hash := BaselineHash(b)
-	rows, err := s.c().query(ctx, `SELECT id, baseline_id, user_id, user_email, user_name, meaning, comment, content_hash, signed_at FROM baseline_signoffs WHERE tenant_id = ? AND baseline_id = ? ORDER BY signed_at, id`, tenantID, baselineID)
+	rows, err := s.c(ctx).query(ctx, `SELECT id, baseline_id, user_id, user_email, user_name, meaning, comment, content_hash, signed_at FROM baseline_signoffs WHERE tenant_id = ? AND baseline_id = ? ORDER BY signed_at, id`, tenantID, baselineID)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func (s *Store) ListSignoffs(ctx context.Context, tenantID, baselineID string) (
 // SignoffCount returns the number of signatures of a baseline.
 func (s *Store) SignoffCount(ctx context.Context, tenantID, baselineID string) (int, error) {
 	var n int
-	err := s.c().row(ctx, `SELECT COUNT(*) FROM baseline_signoffs WHERE tenant_id = ? AND baseline_id = ?`, tenantID, baselineID).Scan(&n)
+	err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM baseline_signoffs WHERE tenant_id = ? AND baseline_id = ?`, tenantID, baselineID).Scan(&n)
 	return n, err
 }
 
@@ -318,7 +318,7 @@ func (s *Store) SetReviewDueDate(ctx context.Context, tenantID, id, due string) 
 	if due != "" && !dateRe.MatchString(due) {
 		return Invalidf("due_date must be YYYY-MM-DD")
 	}
-	res, err := s.c().exec(ctx, `UPDATE review_requests SET due_date = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, due, s.now(), id, tenantID)
+	res, err := s.c(ctx).exec(ctx, `UPDATE review_requests SET due_date = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`, due, s.now(), id, tenantID)
 	if err != nil {
 		return err
 	}

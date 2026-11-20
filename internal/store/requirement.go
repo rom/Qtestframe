@@ -179,11 +179,11 @@ func replaceCriteria(ctx context.Context, c conn, r *model.Requirement) error {
 
 // GetRequirement returns a requirement with criteria and categories.
 func (s *Store) GetRequirement(ctx context.Context, tenantID, id string) (*model.Requirement, error) {
-	r, err := scanRequirement(s.c().row(ctx, `SELECT `+reqCols+` FROM requirements WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	r, err := scanRequirement(s.c(ctx).row(ctx, `SELECT `+reqCols+` FROM requirements WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "requirement")
 	}
-	rows, err := s.c().query(ctx, `SELECT category_id FROM requirement_categories WHERE requirement_id = ? ORDER BY category_id`, id)
+	rows, err := s.c(ctx).query(ctx, `SELECT category_id FROM requirement_categories WHERE requirement_id = ? ORDER BY category_id`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (s *Store) GetRequirement(ctx context.Context, tenantID, id string) (*model
 	if r.CategoryIDs == nil {
 		r.CategoryIDs = []string{}
 	}
-	crit, err := s.listCriteria(ctx, s.c(), `WHERE requirement_id = ?`, id)
+	crit, err := s.listCriteria(ctx, s.c(ctx), `WHERE requirement_id = ?`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (s *Store) listCriteria(ctx context.Context, c conn, where string, args ...
 // ListRequirements returns all requirements of a project including
 // category assignments and criteria.
 func (s *Store) ListRequirements(ctx context.Context, tenantID, projectID string) ([]model.Requirement, error) {
-	rows, err := s.c().query(ctx, `SELECT `+reqCols+` FROM requirements WHERE tenant_id = ? AND project_id = ? ORDER BY position, seq`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+reqCols+` FROM requirements WHERE tenant_id = ? AND project_id = ? ORDER BY position, seq`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -238,11 +238,11 @@ func (s *Store) ListRequirements(ctx context.Context, tenantID, projectID string
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	cats, err := categoryAssignments(ctx, s.c(), model.KindRequirement, projectID)
+	cats, err := categoryAssignments(ctx, s.c(ctx), model.KindRequirement, projectID)
 	if err != nil {
 		return nil, err
 	}
-	crit, err := s.listCriteria(ctx, s.c(), `WHERE requirement_id IN (SELECT id FROM requirements WHERE project_id = ?)`, projectID)
+	crit, err := s.listCriteria(ctx, s.c(ctx), `WHERE requirement_id IN (SELECT id FROM requirements WHERE project_id = ?)`, projectID)
 	if err != nil {
 		return nil, err
 	}

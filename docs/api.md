@@ -30,6 +30,15 @@ is unreachable); all other paths serve the web client.
   `conflict` (409, also for duplicates and a disabled runner),
   `invalid_query` (400), `rate_limited` (429, login), `unavailable` (503,
   `/readyz`), `internal` (500).
+* **Bulk requests are all or nothing** – every bulk endpoint (the `…/bulk`
+  routes, bulk review, sign-offs and restore, link confirmation, execution
+  and notification batches) runs in one database transaction. An error
+  answer (4xx/5xx) means none of the changes was saved; items listed in
+  `skipped` with a reason are part of a successful answer, so the others
+  were saved. Webhooks for the changes are sent only after they are saved.
+  Exceptions, because they call outside services: pushing and syncing
+  defects with the tracker (`/defects/push`, `/defects/sync`), webhook
+  tests and report batches, which save item by item.
 * **IDs** are UUID strings. Times are RFC 3339.
 * **Lists** return `{"items": [...], "total": n}`. There is no pagination
   (except `limit` on search and audit).
@@ -81,6 +90,7 @@ is unreachable); all other paths serve the web client.
 | POST | `/members` | member.manage | `{"email","role","display_name"?,"password"?}` – creates the local user if it does not exist |
 | PATCH | `/members/{user_id}` | member.manage | `{"role"}`; the last admin cannot be demoted (409) |
 | DELETE | `/members/{user_id}` | member.manage | the last admin cannot be removed (409) |
+| POST | `/members/bulk` | member.manage | `{"user_ids":[...], "action": "role"\|"remove", "role"?}` (max 1000, all or nothing) → `{"changed":[{user_id, email, role}], "skipped":[{user_id, email, role, reason}]}`; reasons `self` (your own membership is never changed in bulk), `not_found`, `unchanged`. A change that would leave no admin is refused (409). For a removal, `role` is the role the member had |
 | GET | `/rbac` | any | `{"roles":[...],"matrix":{role:[perm]},"permissions":[...]}` – the effective matrix of the current tenant |
 | GET | `/roles` | any member | `{"items":[Role],"permissions":[...]}`; Role = `{name, label?, description?, permissions, builtin, customized?, editable, deletable, members, tokens}` |
 | POST | `/roles` | role.manage | `{"name","label","description"?,"permissions":[...]}` → 201 Role; `name` is 2–32 of `a-z0-9_` starting with a letter; 409 when it exists |
@@ -443,6 +453,9 @@ the read permission of an internal target's kind).
 | POST | same paths | `{"target_type", "target_id"?, "url"?, "label"?}` → 201 ItemLink. `target_type`: `requirement`, `test`, `run`, `file` (a `document` or `report` file of the project's archive), `report` (a report definition) or `url` (`http(s)://` or `mailto:`, at most 2000 characters); label at most 200 characters; same project only; no self-links; duplicates → 409 |
 | PATCH | `/item-links/{id}` | `{"label"}` |
 | DELETE | `/item-links/{id}` | 204 |
+| GET | `/projects/{pid}/item-links?source_type=requirement\|test\|run` | the outgoing links of the project's items (of one source type, or all), without links the caller cannot read |
+| POST | `/projects/{pid}/item-links/bulk` | `{"links":[{source_type, source_id, target_type, target_id?, url?, label?}]}` (max 1000) → `{"created":[ItemLink], "skipped":[{source_type, source_id, target_type, target_id, url, reason, message?}]}`; reasons `exists`, `not_found` (the source is not in the project), `not_allowed` (no write permission for the source's kind or no read permission for the target's), `invalid` (e.g. a self-link or a bad address, with `message`) |
+| DELETE | `/projects/{pid}/item-links/bulk` | `{"ids":[...]}` (max 1000) → `{"deleted":[ItemLink], "skipped":[{id, reason: "not_found"\|"not_allowed"}]}`; the deleted links are returned so they can be recreated |
 
 `ItemLink`: `{id, project_id, source_type, source_id, target_type, target_id,
 url, label, created_by, created_at, source_key, source_title, target_key,
@@ -640,6 +653,8 @@ cycles are rejected (400); duplicates → 409.
 | POST | `/requirements/{id}/relations` | requirement.write | `{"target_id", "type"}` → Relation |
 | DELETE | `/relations/{id}` | requirement.write | |
 | GET | `/projects/{pid}/relations` | requirement.read | all relations of the project |
+| POST | `/projects/{pid}/relations/bulk` | requirement.write | `{"relations":[{source_id, target_id, type}]}` (max 1000) → `{"created":[Relation], "skipped":[{source_id, target_id, type, reason, message?}]}`; reasons `exists`, `self`, `not_found` (not in the project), `invalid` (unknown type or a `refines` cycle, with `message`) |
+| DELETE | `/projects/{pid}/relations/bulk` | requirement.write | `{"ids":[...]}` (max 1000) → `{"deleted":[Relation], "skipped":[{id, reason: "not_found"}]}`; the deleted relations are returned so they can be recreated |
 
 Requirement lists add `relation_count`. Query fields: `related` (keys of all
 related requirements), `parent` (keys this requirement refines), `child`

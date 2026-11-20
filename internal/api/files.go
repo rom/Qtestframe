@@ -36,8 +36,8 @@ func (s *Server) routesFiles(h routeFunc) {
 	}
 	h("GET /api/v1/projects/{pid}/documents", s.handleListDocuments, "project.read")
 	h("POST /api/v1/projects/{pid}/documents", s.handleUploadDocument, "project.read")
-	h("POST /api/v1/projects/{pid}/documents/bulk", s.handleBulkDocuments, "project.read")
-	h("DELETE /api/v1/projects/{pid}/documents/bulk", s.handleBulkDeleteDocuments, "project.read")
+	h("POST /api/v1/projects/{pid}/documents/bulk", s.atomic(s.handleBulkDocuments), "project.read")
+	h("DELETE /api/v1/projects/{pid}/documents/bulk", s.atomic(s.handleBulkDeleteDocuments), "project.read")
 	h("POST /api/v1/projects/{pid}/documents/zip", s.handleDocumentsZip, "project.read")
 	h("PUT /api/v1/auth/me/avatar", s.handleUploadAvatar)
 	h("GET /api/v1/avatars/{id}", s.handleAvatar)

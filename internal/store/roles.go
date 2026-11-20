@@ -13,7 +13,7 @@ import (
 // RoleSet returns the roles of a tenant: the built-in roles with the
 // tenant's changes, plus its custom roles.
 func (s *Store) RoleSet(ctx context.Context, tenantID string) (rbac.Set, error) {
-	rows, err := s.c().query(ctx, `SELECT name, label, description, permissions FROM roles WHERE tenant_id = ?`, tenantID)
+	rows, err := s.c(ctx).query(ctx, `SELECT name, label, description, permissions FROM roles WHERE tenant_id = ?`, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (s *Store) ResetRole(ctx context.Context, tenantID, name string) error {
 	if !rbac.IsBuiltin(name) {
 		return Invalidf("only built-in roles can be reset")
 	}
-	_, err := s.c().exec(ctx, `DELETE FROM roles WHERE tenant_id = ? AND name = ?`, tenantID, name)
+	_, err := s.c(ctx).exec(ctx, `DELETE FROM roles WHERE tenant_id = ? AND name = ?`, tenantID, name)
 	return err
 }
 
@@ -116,7 +116,7 @@ func (s *Store) RoleUsage(ctx context.Context, tenantID string) (members, tokens
 		{`SELECT role, COUNT(*) FROM memberships WHERE tenant_id = ? GROUP BY role`, members},
 		{`SELECT role, COUNT(*) FROM api_tokens WHERE tenant_id = ? GROUP BY role`, tokens},
 	} {
-		rows, err := s.c().query(ctx, q.sql, tenantID)
+		rows, err := s.c(ctx).query(ctx, q.sql, tenantID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -162,7 +162,7 @@ func (s *Store) DeleteRole(ctx context.Context, tenantID, name string) error {
 // TenantSettings returns a tenant's settings with defaults filled in.
 func (s *Store) TenantSettings(ctx context.Context, tenantID string) (*model.TenantSettings, error) {
 	var raw string
-	if err := s.c().row(ctx, `SELECT settings FROM tenants WHERE id = ?`, tenantID).Scan(&raw); err != nil {
+	if err := s.c(ctx).row(ctx, `SELECT settings FROM tenants WHERE id = ?`, tenantID).Scan(&raw); err != nil {
 		return nil, mapErr(err, "tenant")
 	}
 	var st model.TenantSettings
@@ -191,7 +191,7 @@ func (s *Store) SaveTenantSettings(ctx context.Context, tenantID string, st *mod
 	}
 	st.ReadyRequirementStatuses = statuses
 	raw, _ := json.Marshal(st)
-	res, err := s.c().exec(ctx, `UPDATE tenants SET settings = ? WHERE id = ?`, string(raw), tenantID)
+	res, err := s.c(ctx).exec(ctx, `UPDATE tenants SET settings = ? WHERE id = ?`, string(raw), tenantID)
 	if err != nil {
 		return err
 	}

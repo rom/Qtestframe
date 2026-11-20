@@ -3,6 +3,8 @@ import { useUndoStore } from '@/stores/undo'
 import { recordUndo, toggleEntry } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
+import Checkbox from 'primevue/checkbox'
+import { deleteRelations, relationsUndo } from '@/composables/relationsBulk'
 import Select from 'primevue/select'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
@@ -77,6 +79,32 @@ async function add(items: { id: string }[]) {
   if (ok) notify.ok(t('relations.added', ok))
   await load()
 }
+// ---------- remove several ----------
+const sel = ref<string[]>([])
+watch(relations, (l) => (sel.value = sel.value.filter((id) => l.some((r) => r.id === id))))
+const allSelected = computed({
+  get: () => relations.value.length > 0 && sel.value.length === relations.value.length,
+  set: (v: boolean) => (sel.value = v ? relations.value.map((r) => r.id) : []),
+})
+const removing = ref(false)
+async function removeSelected() {
+  const pid = props.projectId
+  removing.value = true
+  try {
+    const deleted = await deleteRelations(pid, sel.value)
+    const n = deleted.length
+    const label = t('relations.bulk.removed', { n }, n)
+    notify.ok(label)
+    if (n) recordUndo(relationsUndo(label, pid, deleted, false))
+    sel.value = []
+    await load()
+  } catch (e) {
+    notify.fail(e)
+  } finally {
+    removing.value = false
+  }
+}
+
 async function remove(r: Relation) {
   try {
     await api.del(`/relations/${r.id}`)
@@ -96,6 +124,19 @@ async function remove(r: Relation) {
       <Select v-model="type" :options="typeOptions" option-label="label" option-value="value" size="small" style="min-width: 200px" :aria-label="t('relations.type')" />
       <Button :label="t('relations.add')" icon="pi pi-plus" size="small" text @click="picker = true" />
     </div>
+    <div v-if="canWrite && relations.length > 1" class="row small" style="margin-bottom: 8px">
+      <span class="row nowrap"><Checkbox v-model="allSelected" binary :input-id="'rel-all-' + requirementId" /><label :for="'rel-all-' + requirementId">{{ t('relations.bulk.selectAll') }}</label></span>
+      <Button
+        v-if="sel.length"
+        :label="t('relations.bulk.removeN', { n: sel.length }, sel.length)"
+        icon="pi pi-trash"
+        size="small"
+        severity="danger"
+        outlined
+        :loading="removing"
+        @click="removeSelected"
+      />
+    </div>
     <Message v-if="error" severity="error" :closable="false">{{ t('relations.unavailable', { error }) }}</Message>
     <div v-else-if="loading && !relations.length" class="empty"><ProgressSpinner style="width: 30px; height: 30px" :aria-label="t('common.loading')" /></div>
     <div v-else-if="!relations.length" class="muted small">{{ t('relations.none') }}</div>
@@ -104,6 +145,7 @@ async function remove(r: Relation) {
         <i :class="g.direction === 'incoming' ? 'pi pi-arrow-left' : 'pi pi-arrow-right'" /> {{ relationText(g.type, g.direction) }} ({{ g.items.length }})
       </div>
       <div v-for="r in g.items" :key="r.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
+        <Checkbox v-if="canWrite && relations.length > 1" v-model="sel" :value="r.id" :aria-label="t('relations.bulk.selectOne', { key: otherEnd(r, requirementId).key, type: relationText(g.type, g.direction) })" />
         <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: otherEnd(r, requirementId).id } }" class="key">
           {{ otherEnd(r, requirementId).key }}
         </RouterLink>

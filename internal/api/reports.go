@@ -30,7 +30,7 @@ func (s *Server) routesReports(h routeFunc) {
 	h("PATCH /api/v1/reports/definitions/{id}", s.handleUpdateReportDefinition)
 	h("DELETE /api/v1/reports/definitions/{id}", s.handleDeleteReportDefinition)
 	h("POST /api/v1/projects/{pid}/reports/batch", s.handleReportBatch, "export")
-	h("DELETE /api/v1/projects/{pid}/reports/definitions/bulk", s.handleBulkDeleteReportDefinitions)
+	h("DELETE /api/v1/projects/{pid}/reports/definitions/bulk", s.atomic(s.handleBulkDeleteReportDefinitions))
 	h("POST /api/v1/reports/definitions/{id}/generate", s.handleGenerateReportDefinition, "export")
 }
 

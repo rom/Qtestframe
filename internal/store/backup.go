@@ -83,7 +83,7 @@ func (m *BackupManifest) Rows() int {
 
 // SchemaVersion returns the highest applied migration.
 func (s *Store) SchemaVersion(ctx context.Context) (int, error) {
-	return schemaVersion(ctx, s.c())
+	return schemaVersion(ctx, s.c(ctx))
 }
 
 func schemaVersion(ctx context.Context, c conn) (int, error) {

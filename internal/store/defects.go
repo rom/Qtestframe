@@ -117,7 +117,7 @@ func (s *Store) UpdateDefect(ctx context.Context, tenantID string, d *model.Defe
 		t := d.UpdatedAt
 		d.ResolvedAt = &t
 	}
-	res, err := s.c().exec(ctx, `UPDATE defects SET title = ?, description = ?, status = ?, severity = ?, priority = ?, assignee = ?, external_system = ?, external_key = ?, external_url = ?, external_status = ?, synced_at = ?, updated_at = ?, resolved_at = ? WHERE id = ? AND tenant_id = ?`,
+	res, err := s.c(ctx).exec(ctx, `UPDATE defects SET title = ?, description = ?, status = ?, severity = ?, priority = ?, assignee = ?, external_system = ?, external_key = ?, external_url = ?, external_status = ?, synced_at = ?, updated_at = ?, resolved_at = ? WHERE id = ? AND tenant_id = ?`,
 		d.Title, d.Description, d.Status, d.Severity, d.Priority, d.Assignee, d.ExternalSystem, d.ExternalKey, d.ExternalURL, d.ExternalStatus, nullTime(d.SyncedAt), d.UpdatedAt, nullTime(d.ResolvedAt), d.ID, tenantID)
 	if err != nil {
 		return err
@@ -130,7 +130,7 @@ func (s *Store) UpdateDefect(ctx context.Context, tenantID string, d *model.Defe
 
 // GetDefect returns a defect with its links.
 func (s *Store) GetDefect(ctx context.Context, tenantID, id string) (*model.Defect, error) {
-	d, err := scanDefect(s.c().row(ctx, `SELECT `+defectCols+` FROM defects WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	d, err := scanDefect(s.c(ctx).row(ctx, `SELECT `+defectCols+` FROM defects WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "defect")
 	}
@@ -147,7 +147,7 @@ func (s *Store) GetDefect(ctx context.Context, tenantID, id string) (*model.Defe
 
 // ListDefects lists the defects of a project (newest first) with links.
 func (s *Store) ListDefects(ctx context.Context, tenantID, projectID string) ([]model.Defect, error) {
-	rows, err := s.c().query(ctx, `SELECT `+defectCols+` FROM defects WHERE tenant_id = ? AND project_id = ? ORDER BY seq DESC`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+defectCols+` FROM defects WHERE tenant_id = ? AND project_id = ? ORDER BY seq DESC`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (s *Store) defectLinks(ctx context.Context, tenantID string, ids []string) 
 	if len(ids) == 0 {
 		return out, nil
 	}
-	rows, err := s.c().query(ctx, `SELECT l.defect_id, l.entity_type, l.entity_id,
+	rows, err := s.c(ctx).query(ctx, `SELECT l.defect_id, l.entity_type, l.entity_id,
 		COALESCE(r.key, t.key, et.key, ru.name, ''), COALESCE(r.title, t.title, et.title, '')
 		FROM defect_links l
 		LEFT JOIN requirements r ON l.entity_type = 'requirement' AND r.id = l.entity_id
@@ -237,7 +237,7 @@ func (s *Store) LinkDefect(ctx context.Context, tenantID, defectID string, l mod
 	if err != nil {
 		return err
 	}
-	return addDefectLink(ctx, s.c(), tenantID, d.ProjectID, d.ID, l)
+	return addDefectLink(ctx, s.c(ctx), tenantID, d.ProjectID, d.ID, l)
 }
 
 // UnlinkDefect removes a link.
@@ -245,7 +245,7 @@ func (s *Store) UnlinkDefect(ctx context.Context, tenantID, defectID string, l m
 	if _, err := s.GetDefect(ctx, tenantID, defectID); err != nil {
 		return err
 	}
-	res, err := s.c().exec(ctx, `DELETE FROM defect_links WHERE defect_id = ? AND entity_type = ? AND entity_id = ?`, defectID, l.EntityType, l.EntityID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM defect_links WHERE defect_id = ? AND entity_type = ? AND entity_id = ?`, defectID, l.EntityType, l.EntityID)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func (s *Store) DefectsOf(ctx context.Context, tenantID, entityType, entityID st
 	refs := []ref{{entityType, entityID, entityType}}
 	switch entityType {
 	case model.KindRequirement:
-		rows, err := s.c().query(ctx, `SELECT test_case_id FROM trace_links WHERE requirement_id = ? AND tenant_id = ?`, entityID, tenantID)
+		rows, err := s.c(ctx).query(ctx, `SELECT test_case_id FROM trace_links WHERE requirement_id = ? AND tenant_id = ?`, entityID, tenantID)
 		if err != nil {
 			return nil, err
 		}
@@ -315,7 +315,7 @@ func (s *Store) DefectsOf(ctx context.Context, tenantID, entityType, entityID st
 	seen := map[string]bool{}
 	out := []LinkedDefect{}
 	for _, r := range refs {
-		rows, err := s.c().query(ctx, `SELECT defect_id FROM defect_links WHERE entity_type = ? AND entity_id = ?`, r.typ, r.id)
+		rows, err := s.c(ctx).query(ctx, `SELECT defect_id FROM defect_links WHERE entity_type = ? AND entity_id = ?`, r.typ, r.id)
 		if err != nil {
 			return nil, err
 		}
@@ -339,7 +339,7 @@ func (s *Store) DefectsOf(ctx context.Context, tenantID, entityType, entityID st
 }
 
 func (s *Store) executionIDs(ctx context.Context, testID string) ([]string, error) {
-	rows, err := s.c().query(ctx, `SELECT id FROM test_executions WHERE test_case_id = ?`, testID)
+	rows, err := s.c(ctx).query(ctx, `SELECT id FROM test_executions WHERE test_case_id = ?`, testID)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +370,7 @@ func (s *Store) OpenDefectsOfRequirements(ctx context.Context, tenantID string, 
 // OpenDefectCounts returns, per requirement of a project, the number of
 // open defects linked to it directly or through its tests.
 func (s *Store) OpenDefectCounts(ctx context.Context, tenantID, projectID string) (map[string]int, error) {
-	rows, err := s.c().query(ctx, `SELECT DISTINCT d.id, COALESCE(tl.requirement_id, el.requirement_id, l.entity_id) FROM defects d
+	rows, err := s.c(ctx).query(ctx, `SELECT DISTINCT d.id, COALESCE(tl.requirement_id, el.requirement_id, l.entity_id) FROM defects d
 		JOIN defect_links l ON l.defect_id = d.id
 		LEFT JOIN trace_links tl ON l.entity_type = 'test' AND tl.test_case_id = l.entity_id
 		LEFT JOIN test_executions e ON l.entity_type = 'execution' AND e.id = l.entity_id
@@ -401,7 +401,7 @@ var jiraKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9_]{0,19}$`)
 // (for the server's own use; the API masks it).
 func (s *Store) DefectTracker(ctx context.Context, tenantID, projectID string) (*model.DefectTracker, error) {
 	var raw string
-	if err := s.c().row(ctx, `SELECT defect_tracker FROM projects WHERE id = ? AND tenant_id = ?`, projectID, tenantID).Scan(&raw); err != nil {
+	if err := s.c(ctx).row(ctx, `SELECT defect_tracker FROM projects WHERE id = ? AND tenant_id = ?`, projectID, tenantID).Scan(&raw); err != nil {
 		return nil, mapErr(err, "project")
 	}
 	var t model.DefectTracker
@@ -452,7 +452,7 @@ func (s *Store) SaveDefectTracker(ctx context.Context, tenantID, projectID strin
 	}
 	t.HasToken = false
 	raw, _ := json.Marshal(t)
-	_, err = s.c().exec(ctx, `UPDATE projects SET defect_tracker = ? WHERE id = ? AND tenant_id = ?`, string(raw), projectID, tenantID)
+	_, err = s.c(ctx).exec(ctx, `UPDATE projects SET defect_tracker = ? WHERE id = ? AND tenant_id = ?`, string(raw), projectID, tenantID)
 	t.HasToken = t.Token != ""
 	return err
 }

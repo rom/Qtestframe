@@ -132,7 +132,7 @@ func replaceSteps(ctx context.Context, c conn, t *model.TestCase) error {
 }
 
 func (s *Store) listSteps(ctx context.Context, where string, args ...any) (map[string][]model.TestStep, error) {
-	rows, err := s.c().query(ctx, `SELECT s.id, s.test_case_id, s.position, s.action, s.expected, s.data, s.call_test_id, COALESCE(c.key, ''), COALESCE(c.title, '')
+	rows, err := s.c(ctx).query(ctx, `SELECT s.id, s.test_case_id, s.position, s.action, s.expected, s.data, s.call_test_id, COALESCE(c.key, ''), COALESCE(c.title, '')
 		FROM test_steps s LEFT JOIN test_cases c ON c.id = s.call_test_id `+where+` ORDER BY s.position`, args...)
 	if err != nil {
 		return nil, err
@@ -154,11 +154,11 @@ func (s *Store) listSteps(ctx context.Context, where string, args ...any) (map[s
 
 // GetTest returns a test case with steps and categories.
 func (s *Store) GetTest(ctx context.Context, tenantID, id string) (*model.TestCase, error) {
-	t, err := scanTest(s.c().row(ctx, `SELECT `+testCols+` FROM test_cases WHERE id = ? AND tenant_id = ?`, id, tenantID))
+	t, err := scanTest(s.c(ctx).row(ctx, `SELECT `+testCols+` FROM test_cases WHERE id = ? AND tenant_id = ?`, id, tenantID))
 	if err != nil {
 		return nil, mapErr(err, "test")
 	}
-	rows, err := s.c().query(ctx, `SELECT category_id FROM test_case_categories WHERE test_case_id = ? ORDER BY category_id`, id)
+	rows, err := s.c(ctx).query(ctx, `SELECT category_id FROM test_case_categories WHERE test_case_id = ? ORDER BY category_id`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (s *Store) GetTest(ctx context.Context, tenantID, id string) (*model.TestCa
 
 // calledBy lists tests that contain a call step to test id.
 func (s *Store) calledBy(ctx context.Context, id string) ([]model.TestRef, error) {
-	rows, err := s.c().query(ctx, `SELECT DISTINCT t.id, t.key, t.title, t.seq FROM test_steps s JOIN test_cases t ON t.id = s.test_case_id WHERE s.call_test_id = ? ORDER BY t.seq`, id)
+	rows, err := s.c(ctx).query(ctx, `SELECT DISTINCT t.id, t.key, t.title, t.seq FROM test_steps s JOIN test_cases t ON t.id = s.test_case_id WHERE s.call_test_id = ? ORDER BY t.seq`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -220,14 +220,14 @@ func (s *Store) validateCalls(ctx context.Context, tenantID, projectID, testID s
 	}
 	for _, id := range uniq(targets) {
 		var n int
-		if err := s.c().row(ctx, `SELECT COUNT(*) FROM test_cases WHERE id = ? AND tenant_id = ? AND project_id = ?`, id, tenantID, projectID).Scan(&n); err != nil {
+		if err := s.c(ctx).row(ctx, `SELECT COUNT(*) FROM test_cases WHERE id = ? AND tenant_id = ? AND project_id = ?`, id, tenantID, projectID).Scan(&n); err != nil {
 			return err
 		}
 		if n == 0 {
 			return Invalidf("called test %s not found in project", id)
 		}
 	}
-	rows, err := s.c().query(ctx, `SELECT s.test_case_id, s.call_test_id FROM test_steps s JOIN test_cases t ON t.id = s.test_case_id WHERE t.project_id = ? AND s.call_test_id IS NOT NULL AND s.test_case_id <> ?`, projectID, testID)
+	rows, err := s.c(ctx).query(ctx, `SELECT s.test_case_id, s.call_test_id FROM test_steps s JOIN test_cases t ON t.id = s.test_case_id WHERE t.project_id = ? AND s.call_test_id IS NOT NULL AND s.test_case_id <> ?`, projectID, testID)
 	if err != nil {
 		return err
 	}
@@ -269,7 +269,7 @@ func (s *Store) validateCalls(ctx context.Context, tenantID, projectID, testID s
 
 // ListTests returns all tests of a project with categories and steps.
 func (s *Store) ListTests(ctx context.Context, tenantID, projectID string) ([]model.TestCase, error) {
-	rows, err := s.c().query(ctx, `SELECT `+testCols+` FROM test_cases WHERE tenant_id = ? AND project_id = ? ORDER BY position, seq`, tenantID, projectID)
+	rows, err := s.c(ctx).query(ctx, `SELECT `+testCols+` FROM test_cases WHERE tenant_id = ? AND project_id = ? ORDER BY position, seq`, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (s *Store) ListTests(ctx context.Context, tenantID, projectID string) ([]mo
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	cats, err := categoryAssignments(ctx, s.c(), model.KindTest, projectID)
+	cats, err := categoryAssignments(ctx, s.c(ctx), model.KindTest, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -403,7 +403,7 @@ func (s *Store) CreateLink(ctx context.Context, tenantID string, l *model.TraceL
 	l.ProjectID = r.ProjectID
 	l.CreatedAt = s.now()
 	l.RequirementKey, l.TestCaseKey = r.Key, t.Key
-	_, err = s.c().exec(ctx, `INSERT INTO trace_links (id, tenant_id, project_id, requirement_id, test_case_id, criterion_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	_, err = s.c(ctx).exec(ctx, `INSERT INTO trace_links (id, tenant_id, project_id, requirement_id, test_case_id, criterion_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		l.ID, tenantID, l.ProjectID, l.RequirementID, l.TestCaseID, nullStr(l.CriterionID), l.CreatedAt)
 	return mapErr(err, "link")
 }
@@ -427,7 +427,7 @@ func (s *Store) ListLinks(ctx context.Context, tenantID, projectID, requirementI
 		q += ` AND l.test_case_id = ?`
 		args = append(args, testID)
 	}
-	rows, err := s.c().query(ctx, q+` ORDER BY r.seq, t.seq`, args...)
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY r.seq, t.seq`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +455,7 @@ func (s *Store) GetLink(ctx context.Context, tenantID, id string) (*model.TraceL
 	var l model.TraceLink
 	var crit sql.NullString
 	var since sql.NullTime
-	err := s.c().row(ctx, `SELECT id, project_id, requirement_id, test_case_id, criterion_id, created_at, suspect_since, suspect_reason FROM trace_links WHERE id = ? AND tenant_id = ?`, id, tenantID).
+	err := s.c(ctx).row(ctx, `SELECT id, project_id, requirement_id, test_case_id, criterion_id, created_at, suspect_since, suspect_reason FROM trace_links WHERE id = ? AND tenant_id = ?`, id, tenantID).
 		Scan(&l.ID, &l.ProjectID, &l.RequirementID, &l.TestCaseID, &crit, &l.CreatedAt, &since, &l.SuspectReason)
 	if err != nil {
 		return nil, mapErr(err, "link")
@@ -470,7 +470,7 @@ func (s *Store) GetLink(ctx context.Context, tenantID, id string) (*model.TraceL
 
 // DeleteLink removes a link.
 func (s *Store) DeleteLink(ctx context.Context, tenantID, id string) error {
-	res, err := s.c().exec(ctx, `DELETE FROM trace_links WHERE id = ? AND tenant_id = ?`, id, tenantID)
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM trace_links WHERE id = ? AND tenant_id = ?`, id, tenantID)
 	if err != nil {
 		return err
 	}

@@ -358,7 +358,7 @@ func selectRows(ctx context.Context, c conn, q string, args ...any) ([]map[strin
 // PurgeTrash deletes trash entries older than TrashRetention (all tenants)
 // and returns the count.
 func (s *Store) PurgeTrash(ctx context.Context) (int64, error) {
-	res, err := s.c().exec(ctx, `DELETE FROM trash WHERE created_at < ?`, s.now().Add(-TrashRetention))
+	res, err := s.c(ctx).exec(ctx, `DELETE FROM trash WHERE created_at < ?`, s.now().Add(-TrashRetention))
 	if err != nil {
 		return 0, err
 	}
@@ -367,7 +367,7 @@ func (s *Store) PurgeTrash(ctx context.Context) (int64, error) {
 
 // ListTrash lists the restorable deletions of a project, newest first.
 func (s *Store) ListTrash(ctx context.Context, tenantID, projectID string) ([]TrashEntry, error) {
-	rows, err := s.c().query(ctx, `SELECT id, project_id, kind, item_ids, keys, label, deleted_by, created_at FROM trash
+	rows, err := s.c(ctx).query(ctx, `SELECT id, project_id, kind, item_ids, keys, label, deleted_by, created_at FROM trash
 		WHERE tenant_id = ? AND project_id = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 200`, tenantID, projectID, s.now().Add(-TrashRetention))
 	if err != nil {
 		return nil, err
@@ -399,7 +399,7 @@ func scanTrash(r scanner) (*TrashEntry, error) {
 
 // GetTrash returns a trash entry.
 func (s *Store) GetTrash(ctx context.Context, tenantID, id string) (*TrashEntry, error) {
-	e, err := scanTrash(s.c().row(ctx, `SELECT id, project_id, kind, item_ids, keys, label, deleted_by, created_at FROM trash WHERE tenant_id = ? AND id = ?`, tenantID, id))
+	e, err := scanTrash(s.c(ctx).row(ctx, `SELECT id, project_id, kind, item_ids, keys, label, deleted_by, created_at FROM trash WHERE tenant_id = ? AND id = ?`, tenantID, id))
 	if err != nil {
 		return nil, mapErr(err, "trash entry")
 	}
@@ -409,7 +409,7 @@ func (s *Store) GetTrash(ctx context.Context, tenantID, id string) (*TrashEntry,
 // TrashStatuses returns the status of each item in a trash entry, so the
 // caller can check who may restore it.
 func (s *Store) TrashStatuses(ctx context.Context, tenantID, id string) ([]string, error) {
-	snap, _, err := s.loadTrash(ctx, s.c(), tenantID, id)
+	snap, _, err := s.loadTrash(ctx, s.c(ctx), tenantID, id)
 	if err != nil {
 		return nil, err
 	}
