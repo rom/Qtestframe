@@ -249,6 +249,118 @@ requirements:
         - method: test
           text: Ett bygge i ett nät som blockerar de publika registren lyckas med enbart den interna spegeln.
 
+  - id: SUP-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [provenance, slsa, attestation]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.3.1", "NIST SP 800-204D", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
+    tests: [SUP-T11]
+    en:
+      title: Signed build provenance for each release artefact
+      description: The system MUST be released with a signed provenance attestation for each artefact that names the source commit, the build pipeline run and the build inputs.
+      rationale: Provenance lets the deployment step and the customer check that an artefact came from the expected source and pipeline, and not from a developer's laptop or a tampered build.
+      criteria:
+        - method: test
+          text: A provenance verification tool accepts each artefact of the latest release against the expected repository and builder, and rejects an artefact built locally.
+    sv:
+      title: Signerad byggproveniens för varje leveransartefakt
+      description: Systemet SKA levereras med ett signerat proveniensintyg för varje artefakt som anger källkodens commit, pipelinekörningen och byggets indata.
+      rationale: Proveniensen låter driftsättningssteget och kunden kontrollera att en artefakt kommer från förväntad källa och pipeline, och inte från en utvecklares dator eller ett manipulerat bygge.
+      criteria:
+        - method: test
+          text: Ett verktyg för verifiering av proveniens godtar varje artefakt i den senaste leveransen mot förväntat förråd och byggsystem och avvisar en artefakt som byggts lokalt.
+
+  - id: SUP-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [dependency-confusion, registry, internal-packages]
+    refs: ["CWE-427", "OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "NIST SP 800-218 PW.4.1", "ISO/IEC 27001:2022 A.8.30"]
+    tests: [SUP-T12]
+    en:
+      title: Internal package names resolved only from the internal registry
+      description: The system MUST be built with a package configuration that resolves the organisation's internal package names and scopes only from the internal registry.
+      rationale: When a build looks for an internal name in public registries too, an attacker can publish a package with the same name and a higher version and have it built in.
+      criteria:
+        - method: test
+          text: With a public test package of an internal name and a higher version available, the build still uses the internal package.
+    sv:
+      title: Interna paketnamn hämtas bara från det interna registret
+      description: Systemet SKA byggas med en paketkonfiguration som hämtar organisationens interna paketnamn och namnrymder enbart från det interna registret.
+      rationale: När ett bygge söker efter ett internt namn även i publika register kan en angripare publicera ett paket med samma namn och högre version och få det inbyggt.
+      criteria:
+        - method: test
+          text: När ett publikt testpaket med ett internt namn och en högre version finns tillgängligt använder bygget ändå det interna paketet.
+
+  - id: SUP-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [dependencies, cooldown, malicious-packages]
+    refs: ["OpenSSF Scorecard", "NIST SP 800-218 PW.4.4", "ISO/IEC 27001:2022 A.8.30"]
+    tests: [SUP-T13]
+    en:
+      title: New dependency versions wait 7 days
+      description: The system SHOULD take in a new version of a third-party package only when it has been published for at least 7 days, apart from security fixes approved by the security champion.
+      rationale: Hijacked maintainer accounts and malicious packages are mostly found and pulled by the registries within days, before a delayed update would pick them up.
+      criteria:
+        - method: test
+          text: The update tool does not propose a version published 3 days ago, and proposes it 8 days after publication.
+          threshold: "≥ 7 days since publication"
+    sv:
+      title: Nya versioner av beroenden väntar 7 dagar
+      description: Systemet BÖR ta in en ny version av ett tredjepartspaket först när den har varit publicerad i minst 7 dagar, med säkerhetsrättningar som den säkerhetsansvariga utvecklaren godkänt som enda avsteg.
+      rationale: Kapade konton hos underhållare och skadliga paket upptäcks och tas oftast bort av registren inom några dagar, innan en fördröjd uppdatering hinner ta in dem.
+      criteria:
+        - method: test
+          text: Uppdateringsverktyget föreslår inte en version som publicerades för 3 dagar sedan, men föreslår den 8 dagar efter publiceringen.
+          threshold: "≥ 7 dagar sedan publicering"
+
+  - id: SUP-15
+    type: security
+    obligation: should
+    priority: medium
+    tags: [install-scripts, build, dependencies]
+    refs: ["OWASP Top 10 CI/CD Security Risks CICD-SEC-3", "NIST SP 800-204D", "ISO/IEC 27001:2022 A.8.30"]
+    tests: [SUP-T14]
+    en:
+      title: Package install scripts are turned off
+      description: The system SHOULD be built with package install scripts turned off, with an allow-list of the packages whose scripts are reviewed and permitted.
+      rationale: Install scripts run with the rights of the build and are the usual way a malicious package steals tokens from a build machine.
+      criteria:
+        - method: test
+          text: A test package with an install script that writes a marker file leaves no marker after the build, while an allow-listed package's script runs.
+    sv:
+      title: Installationsskript i paket är avstängda
+      description: Systemet BÖR byggas med installationsskript i paket avstängda, med en tillåtelselista över de paket vars skript har granskats och tillåts.
+      rationale: Installationsskript körs med byggets rättigheter och är det vanliga sättet för ett skadligt paket att stjäla token från en byggmaskin.
+      criteria:
+        - method: test
+          text: Ett testpaket med ett installationsskript som skriver en markeringsfil lämnar ingen markering efter bygget, medan skriptet i ett paket på tillåtelselistan körs.
+
+  - id: SUP-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [ci-cd, pinning, third-party-actions]
+    refs: ["OpenSSF Scorecard", "OWASP Top 10 CI/CD Security Risks CICD-SEC-8", "SLSA v1.0", "ISO/IEC 27001:2022 A.8.30"]
+    tests: [SUP-T15]
+    en:
+      title: Third-party pipeline steps pinned by commit hash
+      description: The build pipeline MUST refer to each third-party action, plugin or build image by a full commit hash or image digest, and not by a tag or branch name.
+      rationale: A tag can be moved to malicious code by whoever controls the third-party project, and the next build then runs it with access to the pipeline's secrets.
+      criteria:
+        - method: inspection
+          text: A scan of the pipeline definitions finds no third-party reference by tag or branch.
+    sv:
+      title: Tredjepartssteg i pipelinen låses med commit-hash
+      description: Byggpipelinen SKA referera till varje tredjepartsåtgärd, insticksprogram eller byggavbild med en fullständig commit-hash eller avbildssammanfattning, och inte med en etikett eller ett grennamn.
+      rationale: En etikett kan flyttas till skadlig kod av den som styr tredjepartsprojektet, och nästa bygge kör den då med åtkomst till pipelinens hemligheter.
+      criteria:
+        - method: inspection
+          text: En genomsökning av pipelinedefinitionerna hittar ingen tredjepartsreferens via etikett eller gren.
+
 tests:
   - id: SUP-T01
     priority: high
@@ -527,3 +639,135 @@ tests:
           expected: Bygget lyckas.
         - action: Läs byggagentens nätverkslogg.
           expected: Varje nedladdning av paket gick till den interna spegeln.
+
+  - id: SUP-T11
+    priority: high
+    execution: automated
+    tags: [provenance, slsa]
+    refs: ["SLSA v1.0 Build L2"]
+    en:
+      title: Provenance of release artefacts verifies
+      description: Verifies the provenance of the latest release and of a locally built artefact.
+      preconditions: The artefacts and provenance attestations of the latest release, a provenance verification tool and a locally built copy of one artefact.
+      expected: Release artefacts verify against the expected source and builder; the local build does not.
+      steps:
+        - action: Verify each release artefact with its provenance, giving the expected repository and builder identity.
+          expected: Each verification passes and names the source commit and pipeline run.
+        - action: Verify the locally built artefact against the same provenance.
+          expected: Verification fails because the digest does not match.
+    sv:
+      title: Proveniensen för leveransartefakter kan verifieras
+      description: Verifierar proveniensen för den senaste leveransen och för en lokalt byggd artefakt.
+      preconditions: Artefakterna och proveniensintygen för den senaste leveransen, ett verktyg för verifiering av proveniens och en lokalt byggd kopia av en artefakt.
+      expected: Leveransartefakterna kan verifieras mot förväntad källa och byggsystem; det lokala bygget kan inte det.
+      steps:
+        - action: Verifiera varje leveransartefakt med dess proveniens och ange förväntat förråd och byggsystemets identitet.
+          expected: Varje verifiering går igenom och anger källkodens commit och pipelinekörningen.
+        - action: Verifiera den lokalt byggda artefakten mot samma proveniens.
+          expected: Verifieringen misslyckas eftersom sammanfattningen inte stämmer.
+
+  - id: SUP-T12
+    priority: high
+    execution: manual
+    tags: [dependency-confusion]
+    refs: ["CWE-427"]
+    en:
+      title: Build ignores a public package with an internal name
+      description: Publishes a package with an internal name and a higher version to a test public registry and runs the build.
+      preconditions: A test public registry that the build can reach, and one internal package name used by the system, such as an internal scope.
+      expected: The build uses the internal package.
+      steps:
+        - action: Publish a package with the internal name and version 99.0.0 to the test public registry.
+          expected: The package is available there.
+        - action: Run the build with an empty package cache.
+          expected: The build log and the lock file show the internal registry as the source of the package and the internal version.
+    sv:
+      title: Bygget ignorerar ett publikt paket med ett internt namn
+      description: Publicerar ett paket med ett internt namn och högre version i ett publikt testregister och kör bygget.
+      preconditions: Ett publikt testregister som bygget når, och ett internt paketnamn som systemet använder, till exempel en intern namnrymd.
+      expected: Bygget använder det interna paketet.
+      steps:
+        - action: Publicera ett paket med det interna namnet och version 99.0.0 i det publika testregistret.
+          expected: Paketet finns tillgängligt där.
+        - action: Kör bygget med tom paketcache.
+          expected: Byggloggen och låsfilen visar det interna registret som källa för paketet och den interna versionen.
+
+  - id: SUP-T13
+    priority: medium
+    execution: manual
+    tags: [cooldown]
+    refs: ["OpenSSF Scorecard"]
+    en:
+      title: Recently published versions are not proposed
+      description: Checks the dependency update tool's behaviour for a version published a few days ago.
+      preconditions: A test repository with the update tool configured as in production and a dependency with a version published 3 days ago.
+      expected: The version is held back until 7 days after publication.
+      steps:
+        - action: Run the update tool.
+          expected: No update to the 3-day-old version is proposed.
+        - action: Advance the tool's clock or wait until 8 days after publication and run it again.
+          expected: An update to the version is proposed.
+    sv:
+      title: Nyligen publicerade versioner föreslås inte
+      description: Kontrollerar hur verktyget för uppdatering av beroenden hanterar en version som publicerades för några dagar sedan.
+      preconditions: Ett testförråd med uppdateringsverktyget inställt som i produktion och ett beroende med en version som publicerades för 3 dagar sedan.
+      expected: Versionen hålls tillbaka till 7 dagar efter publiceringen.
+      steps:
+        - action: Kör uppdateringsverktyget.
+          expected: Ingen uppdatering till den 3 dagar gamla versionen föreslås.
+        - action: Ställ fram verktygets klocka eller vänta till 8 dagar efter publiceringen och kör det igen.
+          expected: En uppdatering till versionen föreslås.
+
+  - id: SUP-T14
+    priority: medium
+    execution: automated
+    tags: [install-scripts]
+    refs: ["OWASP Top 10 CI/CD Security Risks CICD-SEC-3"]
+    en:
+      title: Install scripts of unlisted packages do not run
+      description: Adds two test packages with install scripts, one of them on the allow-list, and runs the build.
+      preconditions: Two test packages whose install scripts write a marker file to the build directory, and a test branch.
+      expected: Only the allow-listed package's script runs.
+      steps:
+        - action: Add both test packages as dependencies and put only the second on the allow-list.
+          expected: The lock file contains both packages.
+        - action: Run the build and look for the marker files.
+          expected: The marker of the first package is missing and the marker of the second exists.
+    sv:
+      title: Installationsskript i paket som inte är listade körs inte
+      description: Lägger till två testpaket med installationsskript, varav ett på tillåtelselistan, och kör bygget.
+      preconditions: Två testpaket vars installationsskript skriver en markeringsfil i byggkatalogen, och en testgren.
+      expected: Endast skriptet i paketet på tillåtelselistan körs.
+      steps:
+        - action: Lägg till båda testpaketen som beroenden och sätt bara det andra på tillåtelselistan.
+          expected: Låsfilen innehåller båda paketen.
+        - action: Kör bygget och leta efter markeringsfilerna.
+          expected: Markeringen från det första paketet saknas och markeringen från det andra finns.
+
+  - id: SUP-T15
+    priority: high
+    execution: automated
+    tags: [pinning, third-party-actions]
+    refs: ["OpenSSF Scorecard"]
+    en:
+      title: Pipeline definitions pin third-party steps
+      description: A script scans the pipeline definitions for third-party references.
+      preconditions: Read access to every pipeline definition in the repositories of the system.
+      expected: Each third-party action, plugin and image is referenced by a full commit hash or digest.
+      steps:
+        - action: Extract each third-party reference from the pipeline definitions.
+          expected: A list of references is produced.
+        - action: Check that each reference ends in a 40-character commit hash or a sha256 digest.
+          expected: No reference uses a tag or branch name.
+          data: "uses: owner/action@v4 (fail), uses: owner/action@<40 hex characters> (pass)"
+    sv:
+      title: Pipelinedefinitionerna låser tredjepartssteg
+      description: Ett skript söker igenom pipelinedefinitionerna efter tredjepartsreferenser.
+      preconditions: Läsbehörighet till varje pipelinedefinition i systemets förråd.
+      expected: Varje tredjepartsåtgärd, insticksprogram och avbild refereras med fullständig commit-hash eller sammanfattning.
+      steps:
+        - action: Plocka ut varje tredjepartsreferens ur pipelinedefinitionerna.
+          expected: En lista med referenser tas fram.
+        - action: Kontrollera att varje referens slutar med en commit-hash på 40 tecken eller en sha256-sammanfattning.
+          expected: Ingen referens använder en etikett eller ett grennamn.
+          data: "uses: owner/action@v4 (underkänd), uses: owner/action@<40 hexadecimala tecken> (godkänd)"
