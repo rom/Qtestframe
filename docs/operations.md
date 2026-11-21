@@ -624,7 +624,22 @@ upgrade afterwards). On SQLite the server is busy while a backup streams.
 
 Developers: a migration that adds a table must also add it to
 `store.BackupTables` (in foreign-key order) — backups refuse to run while
-the database has tables the backup does not know.
+the database has tables the backup does not know — and either to the
+project archive tables or to `store.ProjectArchiveExcluded`
+(`internal/store/projectarchive.go`; `TestProjectArchiveTablesCovered`
+fails otherwise).
+
+### Moving a single project
+
+To move or copy **one** project rather than the whole installation, users
+with the permissions `project.update` and `export` use **Save project**
+(`GET /api/v1/projects/{pid}/archive`); anyone who may create projects
+loads the file on the target server with **Load project**
+(`POST /api/v1/projects/import`). The project gets new ids and a key of the
+user's choice in the target organisation. Archives of an older schema
+version load into a newer server, not the other way round. Secrets
+(webhook secrets, the tracker token) are not part of the file and must be
+set again. See the [API reference](api.md#project-archives-save-load-duplicate).
 
 ### Database-level backup
 
