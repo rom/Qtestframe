@@ -253,6 +253,122 @@ requirements:
         - method: test
           text: Anrop med en nyckel misslyckas med 401 inom 1 minut efter att nyckeln har återkallats i administrationen.
 
+  - id: APIS-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [oauth, refresh-token, token-rotation]
+    refs: ["RFC 9700 §4.14", "OWASP ASVS 5.0 V10 OAuth and OIDC", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [APIS-T12]
+    en:
+      title: Refresh tokens rotate and reuse revokes the grant
+      description: The system MUST issue a new refresh token on each use and revoke every token of the grant when a refresh token that has already been used is presented again.
+      rationale: A stolen refresh token gives long-term access; rotation with reuse detection exposes the theft the first time the attacker or the real client uses an old token.
+      criteria:
+        - method: test
+          text: After one refresh the old refresh token is refused, and presenting it also makes the new access and refresh tokens invalid.
+    sv:
+      title: Uppdateringstoken roteras och återanvändning återkallar behörigheten
+      description: Systemet SKA utfärda en ny uppdateringstoken vid varje användning och återkalla varje token för behörigheten när en redan använd uppdateringstoken visas upp igen.
+      rationale: En stulen uppdateringstoken ger åtkomst länge; rotation med upptäckt av återanvändning avslöjar stölden första gången angriparen eller den riktiga klienten använder en gammal token.
+      criteria:
+        - method: test
+          text: Efter en uppdatering avvisas den gamla uppdateringstoken, och när den visas upp blir även de nya åtkomst- och uppdateringstoken ogiltiga.
+
+  - id: APIS-13
+    type: security
+    obligation: should
+    priority: medium
+    tags: [oauth, sender-constrained, dpop, mtls]
+    refs: ["RFC 9449", "RFC 8705", "RFC 9700 §2.2", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [APIS-T13]
+    en:
+      title: Sender-constrained tokens for write access
+      description: The system SHOULD bind access tokens with write scopes to the client's key by DPoP or mutual TLS and refuse such a token presented without proof of that key.
+      rationale: A bearer token copied from a log or a proxy works for anyone; a bound token is useless without the client's private key.
+      criteria:
+        - method: test
+          text: A write request with a bound token and a valid proof succeeds, and the same token with a missing proof or a proof from another key is refused with 401.
+    sv:
+      title: Avsändarbundna token för skrivåtkomst
+      description: Systemet BÖR binda åtkomsttoken med skrivbehörighet till klientens nyckel med DPoP eller ömsesidig TLS och avvisa en sådan token som visas upp utan bevis på nyckeln.
+      rationale: En innehavartoken som kopierats från en logg eller en proxy fungerar för vem som helst; en bunden token är oanvändbar utan klientens privata nyckel.
+      criteria:
+        - method: test
+          text: Ett skrivanrop med en bunden token och ett giltigt bevis lyckas, och samma token utan bevis eller med ett bevis från en annan nyckel avvisas med 401.
+
+  - id: APIS-14
+    type: security
+    obligation: must
+    priority: critical
+    tags: [jwt, token-validation]
+    refs: ["RFC 8725 §3.1", "RFC 9068 §4", "OWASP ASVS 5.0 V9 self-contained tokens", "OWASP API Security Top 10 2023 API2"]
+    tests: [APIS-T14]
+    en:
+      title: JWT access tokens are checked against a fixed algorithm list
+      description: The system MUST accept a JWT access token only when it is signed with an algorithm from a configured allow-list and its issuer, audience and expiry time match the API.
+      rationale: Libraries that trust the algorithm named in the token header can be tricked into accepting unsigned tokens or tokens signed with the public key as an HMAC secret.
+      criteria:
+        - method: test
+          text: Tokens with alg none, with HS256 using the public key, with a wrong audience or with a past expiry time are all refused.
+    sv:
+      title: JWT-åtkomsttoken kontrolleras mot en fast lista med algoritmer
+      description: Systemet SKA godta en JWT-åtkomsttoken endast när den är signerad med en algoritm från en konfigurerad tillåtelselista och dess utfärdare, mottagare och utgångstid stämmer med API:et.
+      rationale: Bibliotek som litar på algoritmen som anges i tokenhuvudet kan luras att godta osignerade token eller token som signerats med den publika nyckeln som HMAC-hemlighet.
+      criteria:
+        - method: test
+          text: Token med alg none, med HS256 och den publika nyckeln, med fel mottagare eller med passerad utgångstid avvisas.
+
+  - id: APIS-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [api-inventory, versioning, attack-surface]
+    refs: ["OWASP API Security Top 10 2023 API9", "ISO/IEC 27001:2022 A.5.9", "NIST SP 800-53 CM-8"]
+    tests: [APIS-T15]
+    en:
+      title: Inventory of exposed API endpoints
+      description: The system MUST respond only on API endpoints that are listed in the published API description, and answer 404 for every other path under the API base address.
+      rationale: Old versions, debug routes and forgotten test endpoints are often unprotected and unknown to the team that patches the API.
+      criteria:
+        - method: test
+          text: A crawl of the API host finds no endpoint that answers with data and is missing from the API description.
+        - method: inspection
+          text: Each retired API version answers 404 or 410 on every path.
+    sv:
+      title: Förteckning över exponerade API-ändpunkter
+      description: Systemet SKA svara endast på API-ändpunkter som finns i den publicerade API-beskrivningen och svara 404 för varje annan sökväg under API:ets basadress.
+      rationale: Gamla versioner, felsökningsvägar och bortglömda teständpunkter är ofta oskyddade och okända för teamet som rättar API:et.
+      criteria:
+        - method: test
+          text: En genomsökning av API-värden hittar ingen ändpunkt som svarar med data och saknas i API-beskrivningen.
+        - method: inspection
+          text: Varje avvecklad API-version svarar 404 eller 410 på varje sökväg.
+
+  - id: APIS-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [business-flows, abuse, rate-limit]
+    refs: ["OWASP API Security Top 10 2023 API6", "CWE-799", "ISO/IEC 27001:2022 A.8.6"]
+    tests: [APIS-T16]
+    en:
+      title: Limits on sensitive business flows
+      description: The system MUST limit account creation, invitation sending and voucher redemption to 10 requests per hour for each source address and each account.
+      rationale: These flows are abused by scripts for spam, fake accounts and fraud even when every single request is valid and authorised.
+      criteria:
+        - method: test
+          text: The 11th request within one hour from the same source or account is refused with 429, while a request from another source still succeeds.
+          threshold: "10 per hour"
+    sv:
+      title: Gränser för känsliga affärsflöden
+      description: Systemet SKA begränsa skapande av konton, utskick av inbjudningar och inlösen av värdekoder till 10 anrop per timme för varje källadress och varje konto.
+      rationale: Dessa flöden missbrukas av skript för skräppost, falska konton och bedrägerier även när varje enskilt anrop är giltigt och behörigt.
+      criteria:
+        - method: test
+          text: Det 11:e anropet inom en timme från samma källa eller konto avvisas med 429, medan ett anrop från en annan källa fortfarande lyckas.
+          threshold: "10 per timme"
+
 tests:
   - id: APIS-T01
     priority: critical
@@ -587,3 +703,159 @@ tests:
           expected: Nyckeln visas som återkallad.
         - action: Läs skriptets resultat.
           expected: Anropen svarar 401 senast 1 minut efter den antecknade tiden.
+
+  - id: APIS-T12
+    priority: high
+    execution: automated
+    tags: [refresh-token, token-rotation]
+    refs: ["RFC 9700 §4.14"]
+    en:
+      title: Reused refresh token revokes the token family
+      description: A script refreshes a token, then replays the old refresh token.
+      preconditions: A registered test client and a user grant that returned an access token and a refresh token R1.
+      expected: R1 cannot be reused, and its reuse revokes the newer tokens.
+      steps:
+        - action: Exchange R1 for new tokens.
+          expected: A new access token and a new refresh token R2 are returned.
+        - action: Exchange R1 again.
+          expected: The request is refused with invalid_grant.
+        - action: Call the API with the new access token and exchange R2.
+          expected: The access token is refused with 401 and R2 is refused with invalid_grant.
+    sv:
+      title: Återanvänd uppdateringstoken återkallar tokenfamiljen
+      description: Ett skript uppdaterar en token och spelar sedan upp den gamla uppdateringstoken igen.
+      preconditions: En registrerad testklient och en användarbehörighet som gav en åtkomsttoken och en uppdateringstoken R1.
+      expected: R1 kan inte återanvändas, och återanvändningen återkallar de nyare token.
+      steps:
+        - action: Byt R1 mot nya token.
+          expected: En ny åtkomsttoken och en ny uppdateringstoken R2 returneras.
+        - action: Byt R1 igen.
+          expected: Anropet avvisas med invalid_grant.
+        - action: Anropa API:et med den nya åtkomsttoken och byt R2.
+          expected: Åtkomsttoken avvisas med 401 och R2 avvisas med invalid_grant.
+
+  - id: APIS-T13
+    priority: medium
+    execution: automated
+    tags: [dpop, sender-constrained]
+    refs: ["RFC 9449"]
+    en:
+      title: Bound tokens need proof of the client key
+      description: A script obtains a DPoP-bound token and sends write requests with and without a valid proof.
+      preconditions: A test client with two key pairs, K1 registered for DPoP and K2 unknown to the system.
+      expected: The token works only with a fresh proof signed by K1.
+      steps:
+        - action: Obtain a token with a write scope using a DPoP proof signed by K1.
+          expected: The token response has token_type DPoP.
+        - action: Send a write request with the token and a new proof signed by K1.
+          expected: The request succeeds.
+        - action: Send the same request with the token as a plain bearer token, and again with a proof signed by K2.
+          expected: Both requests are refused with 401.
+    sv:
+      title: Bundna token kräver bevis på klientnyckeln
+      description: Ett skript hämtar en DPoP-bunden token och skickar skrivanrop med och utan giltigt bevis.
+      preconditions: En testklient med två nyckelpar, K1 registrerat för DPoP och K2 okänt för systemet.
+      expected: Token fungerar bara med ett nytt bevis signerat med K1.
+      steps:
+        - action: Hämta en token med skrivbehörighet med ett DPoP-bevis signerat med K1.
+          expected: Tokensvaret har token_type DPoP.
+        - action: Skicka ett skrivanrop med token och ett nytt bevis signerat med K1.
+          expected: Anropet lyckas.
+        - action: Skicka samma anrop med token som vanlig innehavartoken, och igen med ett bevis signerat med K2.
+          expected: Båda anropen avvisas med 401.
+
+  - id: APIS-T14
+    priority: critical
+    execution: automated
+    tags: [jwt, token-validation]
+    refs: ["RFC 8725 §3.1", "RFC 9068 §4"]
+    en:
+      title: Forged and mismatched JWT access tokens are refused
+      description: A script sends altered JWT access tokens to a protected API endpoint.
+      preconditions: A valid JWT access token for the API and the authorisation server's public key.
+      expected: Only the unaltered token with matching claims is accepted.
+      steps:
+        - action: Call the endpoint with the valid token.
+          expected: The call succeeds.
+        - action: Call it with the token re-encoded with alg none and no signature.
+          expected: The call is refused with 401.
+        - action: Call it with the token signed with HS256 using the public key as the secret.
+          expected: The call is refused with 401.
+        - action: Call it with correctly signed tokens that have a wrong audience and an expiry time in the past.
+          expected: Both calls are refused with 401.
+    sv:
+      title: Förfalskade och felaktiga JWT-åtkomsttoken avvisas
+      description: Ett skript skickar ändrade JWT-åtkomsttoken till en skyddad API-ändpunkt.
+      preconditions: En giltig JWT-åtkomsttoken för API:et och auktoriseringsserverns publika nyckel.
+      expected: Endast den oförändrade token med matchande anspråk godtas.
+      steps:
+        - action: Anropa ändpunkten med den giltiga token.
+          expected: Anropet lyckas.
+        - action: Anropa den med token omkodad med alg none och utan signatur.
+          expected: Anropet avvisas med 401.
+        - action: Anropa den med token signerad med HS256 och den publika nyckeln som hemlighet.
+          expected: Anropet avvisas med 401.
+        - action: Anropa den med korrekt signerade token som har fel mottagare och en utgångstid som passerats.
+          expected: Båda anropen avvisas med 401.
+
+  - id: APIS-T15
+    priority: high
+    execution: automated
+    tags: [api-inventory]
+    refs: ["OWASP API Security Top 10 2023 API9"]
+    en:
+      title: No API endpoints outside the published description
+      description: A script compares the paths that answer on the API host with the published API description.
+      preconditions: The published OpenAPI description, a word list of common paths and a test account.
+      expected: Every path that returns data is in the description, and retired versions return 404 or 410.
+      steps:
+        - action: Request every path in the word list and every path of the description under each known version prefix.
+          expected: The responses are recorded.
+          data: "/v0/, /v1/, /beta/, /debug/, /internal/, /swagger.json, /actuator/"
+        - action: Compare the paths that answered 2xx with the description.
+          expected: No path outside the description answered with data.
+        - action: Request the paths of a retired version.
+          expected: Each answers 404 or 410.
+    sv:
+      title: Inga API-ändpunkter utanför den publicerade beskrivningen
+      description: Ett skript jämför de sökvägar som svarar på API-värden med den publicerade API-beskrivningen.
+      preconditions: Den publicerade OpenAPI-beskrivningen, en ordlista med vanliga sökvägar och ett testkonto.
+      expected: Varje sökväg som returnerar data finns i beskrivningen, och avvecklade versioner svarar 404 eller 410.
+      steps:
+        - action: Anropa varje sökväg i ordlistan och varje sökväg i beskrivningen under varje känt versionsprefix.
+          expected: Svaren registreras.
+          data: "/v0/, /v1/, /beta/, /debug/, /internal/, /swagger.json, /actuator/"
+        - action: Jämför sökvägarna som svarade 2xx med beskrivningen.
+          expected: Ingen sökväg utanför beskrivningen svarade med data.
+        - action: Anropa sökvägarna för en avvecklad version.
+          expected: Var och en svarar 404 eller 410.
+
+  - id: APIS-T16
+    priority: high
+    execution: automated
+    tags: [business-flows, rate-limit]
+    refs: ["OWASP API Security Top 10 2023 API6"]
+    en:
+      title: Sensitive flows stop after 10 requests per hour
+      description: A script repeats account creation, invitations and voucher redemption from one source and one account.
+      preconditions: A test environment with rate limits as in production, two source addresses and test vouchers.
+      expected: The 11th request in an hour is refused per source and per account, and another source is unaffected.
+      steps:
+        - action: Create 11 accounts from source A within 10 minutes.
+          expected: The first 10 succeed and the 11th is refused with 429.
+        - action: Send 11 invitations, then redeem 11 test vouchers, from one account within 10 minutes.
+          expected: The 11th invitation and the 11th redemption are refused with 429.
+        - action: Create an account from source B.
+          expected: The request succeeds.
+    sv:
+      title: Känsliga flöden stoppas efter 10 anrop per timme
+      description: Ett skript upprepar skapande av konton, inbjudningar och inlösen av värdekoder från en källa och ett konto.
+      preconditions: En testmiljö med samma anropsgränser som i produktion, två källadresser och testvärdekoder.
+      expected: Det 11:e anropet under en timme avvisas per källa och per konto, och en annan källa påverkas inte.
+      steps:
+        - action: Skapa 11 konton från källa A inom 10 minuter.
+          expected: De första 10 lyckas och det 11:e avvisas med 429.
+        - action: Skicka 11 inbjudningar och lös sedan in 11 testvärdekoder från ett konto inom 10 minuter.
+          expected: Den 11:e inbjudan och den 11:e inlösen avvisas med 429.
+        - action: Skapa ett konto från källa B.
+          expected: Anropet lyckas.
