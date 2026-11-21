@@ -2643,3 +2643,76 @@ sources:
     name: {en: "IEEE 802.11 Wireless LAN medium access control and physical layer specifications", sv: "IEEE 802.11 Specifikationer för åtkomstkontroll och fysiskt lager i trådlösa lokala nät"}
     match: ["IEEE 802.11"]
     url: https://standards.ieee.org/ieee/802.11/10548/
+
+  # Software catalogue: security and privacy groups
+  - id: w3c-clear-site-data
+    kind: standard
+    jurisdiction: international
+    name: {en: "W3C Clear Site Data", sv: "W3C Clear Site Data (rensning av webbplatsdata)"}
+    match: ["W3C Clear Site Data"]
+    url: https://www.w3.org/TR/clear-site-data/
+  - id: nist-800-63c
+    kind: guideline
+    jurisdiction: US
+    short: NIST SP 800-63C
+    name: {en: "NIST SP 800-63C Digital Identity Guidelines: Federation and Assertions", sv: "NIST SP 800-63C Riktlinjer för digital identitet: federation och intyg"}
+    match: ["NIST SP 800-63C"]
+    url: https://pages.nist.gov/800-63-4/sp800-63c.html
+  - id: nist-ir-8547
+    kind: guideline
+    jurisdiction: US
+    short: NIST IR 8547
+    name: {en: "NIST IR 8547 Transition to Post-Quantum Cryptography Standards", sv: "NIST IR 8547 Övergång till standarder för postkvantkryptografi"}
+    match: ["NIST IR 8547"]
+    url: https://csrc.nist.gov/pubs/ir/8547/ipd
+  - id: eu-pqc-roadmap
+    kind: guideline
+    jurisdiction: EU
+    name: {en: "NIS Cooperation Group: Coordinated Implementation Roadmap for the Transition to Post-Quantum Cryptography", sv: "NIS-samarbetsgruppen: samordnad färdplan för övergången till postkvantkryptografi"}
+    match: ["NIS Cooperation Group PQC Roadmap"]
+    url: https://digital-strategy.ec.europa.eu/en/library/coordinated-implementation-roadmap-transition-post-quantum-cryptography
+  - id: owasp-cicd-top-10
+    kind: practice
+    jurisdiction: international
+    name: {en: "OWASP Top 10 CI/CD Security Risks", sv: "OWASP Top 10 CI/CD Security Risks (säkerhetsrisker i CI/CD)"}
+    match: ["OWASP Top 10 CI/CD Security Risks"]
+    url: https://owasp.org/www-project-top-10-ci-cd-security-risks/
+  - id: nist-800-204d
+    kind: guideline
+    jurisdiction: US
+    short: NIST SP 800-204D
+    name: {en: "NIST SP 800-204D Software supply chain security in DevSecOps CI/CD pipelines", sv: "NIST SP 800-204D Säkerhet i leveranskedjan för programvara i CI/CD-pipelines för DevSecOps"}
+    match: ["NIST SP 800-204D"]
+    url: https://csrc.nist.gov/pubs/sp/800/204/d/final
+  - id: cis-benchmarks
+    kind: practice
+    jurisdiction: international
+    name: {en: "CIS Benchmarks for containers (CIS Kubernetes Benchmark, CIS Docker Benchmark)", sv: "CIS-riktmärken för containrar (CIS Kubernetes Benchmark, CIS Docker Benchmark)"}
+    match: ["CIS Kubernetes Benchmark", "CIS Docker Benchmark"]
+    url: https://www.cisecurity.org/benchmark/kubernetes
+  - id: kubernetes-security
+    kind: practice
+    jurisdiction: international
+    name: {en: "Kubernetes security documentation (Pod Security Standards, RBAC good practices, auditing, encryption at rest)", sv: "Kubernetes säkerhetsdokumentation (Pod Security Standards, god praxis för RBAC, granskning, kryptering vid lagring)"}
+    match: ["Kubernetes "]
+    url: https://kubernetes.io/docs/concepts/security/
+  - id: owasp-mastg
+    kind: practice
+    jurisdiction: international
+    short: OWASP MASTG
+    name: {en: "OWASP Mobile Application Security Testing Guide (MASTG)", sv: "OWASP Mobile Application Security Testing Guide (MASTG, testguide för mobilappar)"}
+    match: ["OWASP MASTG"]
+    url: https://mas.owasp.org/MASTG/
+  - id: dsa
+    kind: law
+    jurisdiction: EU
+    short: DSA
+    name: {en: "Digital Services Act, Regulation (EU) 2022/2065", sv: "Förordningen om digitala tjänster (EU) 2022/2065"}
+    match: ["Regulation (EU) 2022/2065"]
+    url: https://eur-lex.europa.eu/eli/reg/2022/2065/oj
+  - id: se-dataskyddslag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Swedish Data Protection Act (2018:218), supplementing the GDPR", sv: "Lag (2018:218) med kompletterande bestämmelser till EU:s dataskyddsförordning"}
+    match: ["Lag (2018:218)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018218-med-kompletterande-bestammelser_sfs-2018-218/

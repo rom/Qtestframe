@@ -227,6 +227,100 @@ requirements:
         - method: demonstration
           text: Rapporten för den senaste månaden visar varje datakategori med antal, och antalen stämmer med gallringsloggen.
 
+  - id: RET-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [media-sanitisation, decommissioning]
+    refs: ["NIST SP 800-88 Rev. 2", "ISO/IEC 27001:2022 A.7.14", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(b)"]
+    tests: [RET-T11]
+    en:
+      title: Storage media sanitised before reuse or disposal
+      description: The operator MUST purge or destroy each storage device that has held the system's data before it is reused outside the system, returned or disposed of, and keep a certificate of sanitisation for each device.
+      rationale: Disks and backup tapes leave the data centre with readable data unless they are sanitised, and a certificate is the only evidence that it was done.
+      criteria:
+        - method: inspection
+          text: For each device taken out of service in the last 12 months there is a certificate with serial number, method, date and the person who performed and verified it.
+    sv:
+      title: Lagringsmedier saneras före återanvändning eller kassering
+      description: Driftansvarig SKA rensa eller förstöra varje lagringsenhet som har innehållit systemets data innan den återanvänds utanför systemet, lämnas tillbaka eller kasseras, och spara ett saneringsintyg för varje enhet.
+      rationale: Diskar och säkerhetskopieband lämnar datahallen med läsbara data om de inte saneras, och ett intyg är det enda beviset på att det har gjorts.
+      criteria:
+        - method: inspection
+          text: För varje enhet som tagits ur drift de senaste 12 månaderna finns ett intyg med serienummer, metod, datum och den person som utförde och verifierade saneringen.
+
+  - id: RET-12
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [application-logs, personal-data, retention]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27701:2025 (retention)", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [RET-T12]
+    en:
+      title: Application and debug logs deleted after 30 days
+      description: The system MUST delete application and debug log records that contain personal data 30 days after they were written, while security logs follow their own retention period.
+      rationale: Technical logs pick up names, addresses and request content, and keeping them longer than troubleshooting needs breaks the storage limitation principle.
+      criteria:
+        - method: test
+          text: An application log record written 31 days ago cannot be found in any log store, while a security log record of the same date is still there.
+          threshold: "30 days"
+    sv:
+      title: Applikations- och felsökningsloggar raderas efter 30 dagar
+      description: Systemet SKA radera applikations- och felsökningsloggposter som innehåller personuppgifter 30 dagar efter att de skrevs, medan säkerhetsloggar följer sin egen lagringstid.
+      rationale: Tekniska loggar fångar upp namn, adresser och innehåll i anrop, och att spara dem längre än felsökningen behöver bryter mot principen om lagringsminimering.
+      criteria:
+        - method: test
+          text: En applikationsloggpost som skrevs för 31 dagar sedan går inte att hitta i något logglager, medan en säkerhetsloggpost från samma datum finns kvar.
+          threshold: "30 dagar"
+
+  - id: RET-13
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [soft-delete, trash, purge]
+    refs: ["GDPR Art. 17", "GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.10"]
+    tests: [RET-T13]
+    en:
+      title: Items in the trash are purged after 30 days
+      description: The system MUST permanently delete an item that a user has moved to the trash 30 days after it was moved, including its files, versions and comments.
+      rationale: A trash that is never emptied keeps data that the user believes is gone and that erasure requests and retention rules expect to be deleted.
+      criteria:
+        - method: test
+          text: An item moved to the trash 31 days ago, with an attached file and two versions, is gone from the trash, the database and the file storage, while an item moved 29 days ago can still be restored.
+          threshold: "30 days"
+    sv:
+      title: Objekt i papperskorgen rensas bort efter 30 dagar
+      description: Systemet SKA slutgiltigt radera ett objekt som en användare har flyttat till papperskorgen 30 dagar efter flytten, inklusive dess filer, versioner och kommentarer.
+      rationale: En papperskorg som aldrig töms behåller data som användaren tror är borta och som raderingsbegäranden och gallringsregler förutsätter är raderade.
+      criteria:
+        - method: test
+          text: Ett objekt som flyttades till papperskorgen för 31 dagar sedan, med en bifogad fil och två versioner, är borta från papperskorgen, databasen och fillagringen, medan ett objekt som flyttades för 29 dagar sedan fortfarande kan återställas.
+          threshold: "30 dagar"
+
+  - id: RET-14
+    type: business
+    obligation: should
+    priority: low
+    tags: [retention-schedule, review, governance]
+    refs: ["GDPR Art. 5(2)", "ISO 15489-1:2016 (records retention)", "ISO/IEC 27701:2025 (retention)"]
+    tests: [RET-T14]
+    en:
+      title: Yearly review of the retention periods
+      description: The owner of each data category SHOULD review its retention period and legal basis every 12 months and record the decision, with the date and the law or need that justifies the period.
+      rationale: Laws, contracts and business needs change, and a retention schedule that nobody reviews ends up either too long or in breach of a new duty to keep records.
+      criteria:
+        - method: inspection
+          text: Each data category in the retention schedule has a review entry less than 12 months old with a named owner and a justification.
+          threshold: "≤ 12 months"
+    sv:
+      title: Årlig översyn av lagringstiderna
+      description: Ägaren av varje datakategori BÖR se över dess lagringstid och rättsliga grund var 12:e månad och dokumentera beslutet, med datum och den lag eller det behov som motiverar tiden.
+      rationale: Lagar, avtal och verksamhetens behov ändras, och en gallringsplan som ingen ser över blir antingen för lång eller bryter mot en ny skyldighet att bevara handlingar.
+      criteria:
+        - method: inspection
+          text: Varje datakategori i gallringsplanen har en översynspost som är yngre än 12 månader med namngiven ägare och motivering.
+          threshold: "≤ 12 månader"
+
 tests:
   - id: RET-T01
     priority: high
@@ -519,3 +613,111 @@ tests:
           expected: Rapporten visar varje datakategori med ett antal.
         - action: Räkna posterna per kategori i gallringsloggen för samma månad.
           expected: Antalen stämmer med rapporten.
+
+  - id: RET-T11
+    priority: high
+    execution: manual
+    tags: [media-sanitisation]
+    refs: ["NIST SP 800-88 Rev. 2"]
+    en:
+      title: Each decommissioned device has a sanitisation certificate
+      description: Compares the list of devices taken out of service with the sanitisation certificates.
+      preconditions: The asset register with devices taken out of service in the last 12 months, and the sanitisation certificates.
+      expected: Every device has a complete certificate.
+      steps:
+        - action: List the storage devices taken out of service in the last 12 months.
+          expected: A list with serial numbers is produced.
+        - action: Find the certificate of each device.
+          expected: Each has a certificate with serial number, method (purge or destroy), date, performer and verifier.
+    sv:
+      title: Varje urdriftstagen enhet har ett saneringsintyg
+      description: Jämför listan över enheter som tagits ur drift med saneringsintygen.
+      preconditions: Tillgångsregistret med enheter som tagits ur drift de senaste 12 månaderna och saneringsintygen.
+      expected: Varje enhet har ett fullständigt intyg.
+      steps:
+        - action: Lista de lagringsenheter som tagits ur drift de senaste 12 månaderna.
+          expected: En lista med serienummer tas fram.
+        - action: Leta upp intyget för varje enhet.
+          expected: Var och en har ett intyg med serienummer, metod (rensning eller förstöring), datum, utförare och kontrollant.
+
+  - id: RET-T12
+    priority: medium
+    execution: automated
+    tags: [application-logs]
+    refs: ["GDPR Art. 5(1)(e)"]
+    en:
+      title: Old application logs are gone and security logs remain
+      description: A script searches the log stores for records of a known date 31 days back.
+      preconditions: An application log record and a security log record with a unique marker, both written 31 days ago in the test environment.
+      expected: The application record is deleted and the security record is kept.
+      steps:
+        - action: Search every application and debug log store for the marker.
+          expected: No record is found.
+        - action: Search the security log store for the marker.
+          expected: The security record is found.
+    sv:
+      title: Gamla applikationsloggar är borta och säkerhetsloggar finns kvar
+      description: Ett skript söker i logglagren efter poster från ett känt datum 31 dagar tillbaka.
+      preconditions: En applikationsloggpost och en säkerhetsloggpost med en unik markering, båda skrivna för 31 dagar sedan i testmiljön.
+      expected: Applikationsposten är raderad och säkerhetsposten finns kvar.
+      steps:
+        - action: Sök efter markeringen i varje logglager för applikation och felsökning.
+          expected: Ingen post hittas.
+        - action: Sök efter markeringen i logglagret för säkerhet.
+          expected: Säkerhetsposten hittas.
+
+  - id: RET-T13
+    priority: medium
+    execution: automated
+    tags: [trash, purge]
+    refs: ["GDPR Art. 17"]
+    en:
+      title: Trash purge removes items with files and versions
+      description: A script moves items to the trash, advances the clock and runs the purge job.
+      preconditions: Two items with an attached file and two versions each, and a test environment clock the script can advance.
+      expected: Only the item older than 30 days in the trash is purged, completely.
+      steps:
+        - action: Move item A to the trash, advance the clock by 2 days and move item B to the trash.
+          expected: Both items are in the trash.
+        - action: Advance the clock so that A has been in the trash for 31 days and B for 29 days, and run the purge job.
+          expected: A is gone from the trash; B can still be restored.
+        - action: Look up item A's record, versions and file in the database and file storage.
+          expected: None of them exists.
+    sv:
+      title: Rensningen av papperskorgen tar bort objekt med filer och versioner
+      description: Ett skript flyttar objekt till papperskorgen, ställer fram klockan och kör rensningsjobbet.
+      preconditions: Två objekt med en bifogad fil och två versioner vardera, och en klocka i testmiljön som skriptet kan ställa fram.
+      expected: Endast objektet som legat i papperskorgen i mer än 30 dagar rensas, och helt.
+      steps:
+        - action: Flytta objekt A till papperskorgen, ställ fram klockan 2 dagar och flytta objekt B till papperskorgen.
+          expected: Båda objekten ligger i papperskorgen.
+        - action: Ställ fram klockan så att A har legat i papperskorgen i 31 dagar och B i 29 dagar, och kör rensningsjobbet.
+          expected: A är borta från papperskorgen; B kan fortfarande återställas.
+        - action: Slå upp objekt A:s post, versioner och fil i databasen och fillagringen.
+          expected: Inget av dem finns.
+
+  - id: RET-T14
+    priority: low
+    execution: manual
+    tags: [retention-schedule, review]
+    refs: ["GDPR Art. 5(2)"]
+    en:
+      title: Retention schedule has current reviews
+      description: Checks the review entries of each data category in the retention schedule.
+      preconditions: The retention schedule with its review history.
+      expected: Each category was reviewed in the last 12 months by a named owner with a justification.
+      steps:
+        - action: For each data category, find the latest review entry.
+          expected: Each entry is less than 12 months old.
+        - action: Read each entry.
+          expected: It names the owner and the law or need that justifies the period.
+    sv:
+      title: Gallringsplanen har aktuella översyner
+      description: Kontrollerar översynsposterna för varje datakategori i gallringsplanen.
+      preconditions: Gallringsplanen med dess översynshistorik.
+      expected: Varje kategori har setts över de senaste 12 månaderna av en namngiven ägare med motivering.
+      steps:
+        - action: Leta upp den senaste översynsposten för varje datakategori.
+          expected: Varje post är yngre än 12 månader.
+        - action: Läs varje post.
+          expected: Den anger ägaren och den lag eller det behov som motiverar tiden.

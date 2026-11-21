@@ -393,6 +393,120 @@ requirements:
         - method: test
           text: Var och en av de tre ändringarna avvisas tills det nuvarande lösenordet eller en andra faktor har angetts.
 
+  - id: AUTH-18
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [mfa, phishing-resistant, administrators]
+    refs: ["NIST SP 800-63B-4 (phishing resistance)", "CISA Implementing Phishing-Resistant MFA", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.1"]
+    tests: [AUTH-T17]
+    en:
+      title: No SMS or voice codes for administrator accounts
+      description: The system MUST NOT accept a one-time code sent by SMS or voice call as the second factor for an account with the administrator role.
+      rationale: Codes sent over the phone network can be phished in real time or redirected by SIM swapping, and administrator accounts are the main target.
+      criteria:
+        - method: test
+          text: An administrator cannot register or use an SMS or voice factor, while a passkey or security key is accepted.
+    sv:
+      title: Inga sms- eller röstkoder för administratörskonton
+      description: Systemet SKA INTE godta en engångskod som skickas med sms eller röstsamtal som andra faktor för ett konto med administratörsrollen.
+      rationale: Koder som skickas över telenätet kan nätfiskas i realtid eller ledas om genom byte av SIM-kort, och administratörskonton är det främsta målet.
+      criteria:
+        - method: test
+          text: En administratör kan inte registrera eller använda en sms- eller röstfaktor, medan en passkey eller säkerhetsnyckel godtas.
+
+  - id: AUTH-19
+    type: security
+    obligation: must
+    priority: high
+    tags: [mfa, otp, replay]
+    refs: ["RFC 6238", "NIST SP 800-63B-4 (single-factor OTP)", "OWASP ASVS 5.0 V6 authentication", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [AUTH-T18]
+    en:
+      title: One-time codes are used once and expire
+      description: The system MUST accept each one-time code only once and refuse a time-based code more than 30 seconds outside its time step.
+      rationale: A code that can be replayed or that stays valid for long gives an attacker who reads it over the shoulder or from a phishing page a working second factor.
+      criteria:
+        - method: test
+          text: A correct code is refused the second time it is entered, and a code from two time steps back is refused.
+          threshold: "tolerance ≤ 1 time step of 30 s"
+    sv:
+      title: Engångskoder används en gång och går ut
+      description: Systemet SKA godta varje engångskod endast en gång och avvisa en tidsbaserad kod som ligger mer än 30 sekunder utanför sitt tidssteg.
+      rationale: En kod som kan återanvändas eller som gäller länge ger en angripare som läser den över axeln eller från en nätfiskesida en fungerande andra faktor.
+      criteria:
+        - method: test
+          text: En korrekt kod avvisas andra gången den anges, och en kod från två tidssteg tillbaka avvisas.
+          threshold: "tolerans ≤ 1 tidssteg om 30 s"
+
+  - id: AUTH-20
+    type: security
+    obligation: should
+    priority: medium
+    tags: [mfa, recovery-codes, account-recovery]
+    refs: ["NIST SP 800-63B-4 (account recovery)", "OWASP Multifactor Authentication Cheat Sheet", "ISO/IEC 27001:2022 A.5.17"]
+    tests: [AUTH-T19]
+    en:
+      title: Single-use recovery codes for a lost second factor
+      description: The system SHOULD give the user 10 single-use recovery codes when multi-factor authentication is turned on and store them only as salted hashes.
+      rationale: Without a recovery path users lose access when a phone breaks, and support staff are then pushed into weak identity checks over the phone.
+      criteria:
+        - method: test
+          text: Ten codes are shown once, each works only once, and the database holds only hash values of them.
+    sv:
+      title: Återställningskoder för engångsbruk vid förlorad andra faktor
+      description: Systemet BÖR ge användaren 10 återställningskoder för engångsbruk när flerfaktorsautentisering slås på och lagra dem enbart som saltade hashvärden.
+      rationale: Utan en väg tillbaka förlorar användare åtkomsten när en telefon går sönder, och supporten tvingas då till svaga identitetskontroller per telefon.
+      criteria:
+        - method: test
+          text: Tio koder visas en gång, var och en fungerar bara en gång och databasen innehåller endast hashvärden av dem.
+
+  - id: AUTH-21
+    type: security
+    obligation: must
+    priority: high
+    tags: [federation, single-sign-on, account-linking]
+    refs: ["OpenID Connect Core 1.0 §5.7", "NIST SP 800-63C-4 (subscriber accounts)", "OWASP SAML Security Cheat Sheet", "ISO/IEC 27001:2022 A.5.16"]
+    tests: [AUTH-T20]
+    en:
+      title: Federated accounts are linked by issuer and subject
+      description: The system MUST link a federated sign-in to a local account by the identity provider's issuer and subject identifier, and not by the email address in the assertion.
+      rationale: Email addresses can be reassigned or set freely at some identity providers, so linking on email lets one person take over another person's account.
+      criteria:
+        - method: test
+          text: A sign-in with a known email address but a new subject identifier creates no access to the existing account.
+    sv:
+      title: Federerade konton kopplas via utfärdare och subjekt
+      description: Systemet SKA koppla en federerad inloggning till ett lokalt konto via identitetsleverantörens utfärdare och subjektidentifierare, och inte via e-postadressen i intyget.
+      rationale: E-postadresser kan återanvändas eller sättas fritt hos vissa identitetsleverantörer, så en koppling via e-post låter en person ta över en annan persons konto.
+      criteria:
+        - method: test
+          text: En inloggning med en känd e-postadress men en ny subjektidentifierare ger ingen åtkomst till det befintliga kontot.
+
+  - id: AUTH-22
+    type: security
+    obligation: should
+    priority: medium
+    tags: [notification, new-device, login]
+    refs: ["OWASP Authentication Cheat Sheet", "NIST SP 800-63B-4 (authentication event notification)", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [AUTH-T21]
+    en:
+      title: Notice of sign-in from a new device
+      description: The system SHOULD email the user within 5 minutes after a successful sign-in from a device or browser that has not been used with the account in the past 90 days.
+      rationale: The notice lets the user discover a stolen password before more harm is done.
+      criteria:
+        - method: test
+          text: A sign-in from a new browser profile sends a message with time, approximate location and device type; a second sign-in from the same profile sends none.
+          threshold: "≤ 5 min"
+    sv:
+      title: Meddelande vid inloggning från ny enhet
+      description: Systemet BÖR skicka e-post till användaren inom 5 minuter efter en lyckad inloggning från en enhet eller webbläsare som inte har använts med kontot de senaste 90 dagarna.
+      rationale: Meddelandet låter användaren upptäcka ett stulet lösenord innan mer skada sker.
+      criteria:
+        - method: test
+          text: En inloggning från en ny webbläsarprofil skickar ett meddelande med tid, ungefärlig plats och enhetstyp; en andra inloggning från samma profil skickar inget.
+          threshold: "≤ 5 min"
+
 tests:
   - id: AUTH-T01
     priority: high
@@ -863,3 +977,155 @@ tests:
           expected: Det nuvarande lösenordet eller en andra faktor efterfrågas innan ändringen sparas.
         - action: Försök stänga av flerfaktorsautentiseringen.
           expected: Det nuvarande lösenordet eller en andra faktor efterfrågas innan ändringen sparas.
+
+  - id: AUTH-T17
+    priority: high
+    execution: manual
+    tags: [mfa, phishing-resistant]
+    refs: ["NIST SP 800-63B-4 (phishing resistance)", "ISO/IEC 27001:2022 A.8.5"]
+    en:
+      title: Administrators cannot use SMS or voice codes
+      description: Tries to register and use phone-based second factors for an administrator account.
+      preconditions: A test administrator account, a test phone number and a security key or passkey.
+      expected: Only phishing-resistant factors are possible for the administrator.
+      steps:
+        - action: As the administrator, open the second-factor settings and try to add SMS and voice call.
+          expected: Neither option is offered, or the attempt is refused with a message.
+        - action: Give an ordinary user with an SMS factor the administrator role.
+          expected: The user is asked to register a passkey or security key before administrator functions open.
+        - action: Register a security key and sign in with it.
+          expected: Sign-in succeeds.
+    sv:
+      title: Administratörer kan inte använda sms- eller röstkoder
+      description: Försöker registrera och använda telefonbaserade andra faktorer för ett administratörskonto.
+      preconditions: Ett administratörskonto för test, ett testtelefonnummer och en säkerhetsnyckel eller passkey.
+      expected: Endast nätfiskeresistenta faktorer går att använda för administratören.
+      steps:
+        - action: Öppna inställningarna för andra faktor som administratör och försök lägga till sms och röstsamtal.
+          expected: Inget av alternativen erbjuds, eller så avvisas försöket med ett meddelande.
+        - action: Ge en vanlig användare med sms-faktor administratörsrollen.
+          expected: Användaren ombeds registrera en passkey eller säkerhetsnyckel innan administratörsfunktionerna öppnas.
+        - action: Registrera en säkerhetsnyckel och logga in med den.
+          expected: Inloggningen lyckas.
+
+  - id: AUTH-T18
+    priority: high
+    execution: automated
+    tags: [otp, replay]
+    refs: ["RFC 6238"]
+    en:
+      title: Replayed and old one-time codes are refused
+      description: A script generates time-based codes from a known test seed and submits them at sign-in.
+      preconditions: A test account with a time-based one-time code factor enrolled from a known test seed.
+      expected: Each code works once, and codes outside the tolerance are refused.
+      steps:
+        - action: Sign in with the password and the current code.
+          expected: Sign-in succeeds.
+        - action: Sign out and sign in again with the same code within the same time step.
+          expected: The code is refused.
+        - action: Sign in with the code from two time steps back.
+          expected: The code is refused.
+          data: "time step 30 s, code for t − 60 s"
+    sv:
+      title: Återanvända och gamla engångskoder avvisas
+      description: Ett skript skapar tidsbaserade koder från ett känt testfrö och skickar dem vid inloggning.
+      preconditions: Ett testkonto med en faktor för tidsbaserade engångskoder registrerad från ett känt testfrö.
+      expected: Varje kod fungerar en gång och koder utanför toleransen avvisas.
+      steps:
+        - action: Logga in med lösenordet och den aktuella koden.
+          expected: Inloggningen lyckas.
+        - action: Logga ut och logga in igen med samma kod inom samma tidssteg.
+          expected: Koden avvisas.
+        - action: Logga in med koden från två tidssteg tillbaka.
+          expected: Koden avvisas.
+          data: "tidssteg 30 s, kod för t − 60 s"
+
+  - id: AUTH-T19
+    priority: medium
+    execution: manual
+    tags: [recovery-codes]
+    refs: ["NIST SP 800-63B-4 (account recovery)"]
+    en:
+      title: Recovery codes are single-use and stored hashed
+      description: Turns on multi-factor authentication, uses a recovery code and inspects how the codes are stored.
+      preconditions: A test account without a second factor and read access to the test database.
+      expected: Ten codes are issued once, each works once, and only hashes are stored.
+      steps:
+        - action: Turn on multi-factor authentication and note the recovery codes shown.
+          expected: Ten codes are shown with a prompt to save them, and they cannot be shown again later.
+        - action: Sign in with the password and the first recovery code instead of the second factor, then sign out and repeat with the same code.
+          expected: The first sign-in succeeds and the second is refused.
+        - action: Look up the stored recovery codes in the database.
+          expected: Only salted hash values are stored and none matches a code in plain text.
+    sv:
+      title: Återställningskoder är för engångsbruk och lagras hashade
+      description: Slår på flerfaktorsautentisering, använder en återställningskod och granskar hur koderna lagras.
+      preconditions: Ett testkonto utan andra faktor och läsbehörighet till testdatabasen.
+      expected: Tio koder utfärdas en gång, var och en fungerar en gång och endast hashvärden lagras.
+      steps:
+        - action: Slå på flerfaktorsautentisering och anteckna återställningskoderna som visas.
+          expected: Tio koder visas med en uppmaning att spara dem, och de går inte att visa igen senare.
+        - action: Logga in med lösenordet och den första återställningskoden i stället för andra faktorn, logga ut och upprepa med samma kod.
+          expected: Den första inloggningen lyckas och den andra avvisas.
+        - action: Slå upp de lagrade återställningskoderna i databasen.
+          expected: Endast saltade hashvärden lagras och inget motsvarar en kod i klartext.
+
+  - id: AUTH-T20
+    priority: high
+    execution: manual
+    tags: [federation, account-linking]
+    refs: ["OpenID Connect Core 1.0 §5.7"]
+    en:
+      title: Federated sign-in is not linked by email address
+      description: Signs in through a test identity provider with a new subject that carries the email address of an existing account.
+      preconditions: A test identity provider where the tester controls subject identifiers and email claims, and an existing account linked to subject A.
+      expected: Only the issuer and subject decide which local account is used.
+      steps:
+        - action: Sign in through the identity provider as subject A.
+          expected: The existing account opens.
+        - action: Sign in as a new subject B whose email claim equals the email of the existing account.
+          expected: The existing account does not open; the system creates a separate account or refuses the sign-in.
+        - action: Sign in with subject A from a second issuer configured in the system.
+          expected: The existing account does not open.
+    sv:
+      title: Federerad inloggning kopplas inte via e-postadress
+      description: Loggar in via en testidentitetsleverantör med ett nytt subjekt som har e-postadressen för ett befintligt konto.
+      preconditions: En testidentitetsleverantör där testaren styr subjektidentifierare och e-postanspråk, och ett befintligt konto kopplat till subjekt A.
+      expected: Endast utfärdare och subjekt avgör vilket lokalt konto som används.
+      steps:
+        - action: Logga in via identitetsleverantören som subjekt A.
+          expected: Det befintliga kontot öppnas.
+        - action: Logga in som ett nytt subjekt B vars e-postanspråk är detsamma som det befintliga kontots e-post.
+          expected: Det befintliga kontot öppnas inte; systemet skapar ett separat konto eller avvisar inloggningen.
+        - action: Logga in med subjekt A från en andra utfärdare som är konfigurerad i systemet.
+          expected: Det befintliga kontot öppnas inte.
+
+  - id: AUTH-T21
+    priority: medium
+    execution: manual
+    tags: [notification, new-device]
+    refs: ["OWASP Authentication Cheat Sheet"]
+    en:
+      title: Sign-in from a new device sends a notice
+      description: Signs in from a new browser profile and from a known one and checks the mailbox.
+      preconditions: A test account with a test mailbox and a browser profile that has signed in before.
+      expected: Only the sign-in from the new device produces a notice, within 5 minutes.
+      steps:
+        - action: Sign in from the known browser profile.
+          expected: No notice arrives within 10 minutes.
+        - action: Sign in from a new browser profile and note the time.
+          expected: A notice arrives within 5 minutes with the time, approximate location and device type.
+        - action: Follow the link in the notice that reports the sign-in as unknown.
+          expected: The user is guided to change the password and end other sessions.
+    sv:
+      title: Inloggning från ny enhet ger ett meddelande
+      description: Loggar in från en ny webbläsarprofil och från en känd och kontrollerar e-postlådan.
+      preconditions: Ett testkonto med en testbrevlåda och en webbläsarprofil som har loggat in tidigare.
+      expected: Endast inloggningen från den nya enheten ger ett meddelande, inom 5 minuter.
+      steps:
+        - action: Logga in från den kända webbläsarprofilen.
+          expected: Inget meddelande kommer inom 10 minuter.
+        - action: Logga in från en ny webbläsarprofil och anteckna tiden.
+          expected: Ett meddelande kommer inom 5 minuter med tid, ungefärlig plats och enhetstyp.
+        - action: Följ länken i meddelandet som anmäler inloggningen som okänd.
+          expected: Användaren leds till att byta lösenord och avsluta andra sessioner.

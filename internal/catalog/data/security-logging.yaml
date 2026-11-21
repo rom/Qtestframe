@@ -275,6 +275,122 @@ requirements:
           text: En inloggning på ett administratörskonto från en adress i ett nytt land ger ett larm med konto, land och tid inom 10 minuter, och en inloggning från ett känt land ger inget larm.
           threshold: "≤ 10 min"
 
+  - id: SLOG-13
+    type: security
+    obligation: should
+    priority: high
+    tags: [alerting, data-exfiltration, export]
+    refs: ["NIST SP 800-53 SI-4", "MITRE ATT&CK TA0010 (exfiltration)", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [SLOG-T12]
+    en:
+      title: Alert on bulk export by one user
+      description: The system SHOULD alert the security on-call within 15 minutes when one user exports or downloads more than 1 000 records within 1 hour.
+      rationale: Data theft by insiders or with stolen accounts often looks like normal use, one export at a time, until the totals are added up.
+      criteria:
+        - method: test
+          text: Exporting 1 001 records within 1 hour raises an alert naming the user and the volume, and exporting 999 records raises none.
+          threshold: "> 1 000 records per hour per user"
+    sv:
+      title: Larm vid massexport av en användare
+      description: Systemet BÖR larma säkerhetsjouren inom 15 minuter när en användare exporterar eller laddar ned mer än 1 000 poster inom 1 timme.
+      rationale: Datastöld av insiders eller med stulna konton liknar ofta vanlig användning, en export i taget, tills summorna läggs ihop.
+      criteria:
+        - method: test
+          text: Export av 1 001 poster inom 1 timme ger ett larm som anger användaren och mängden, och export av 999 poster ger inget.
+          threshold: "> 1 000 poster per timme och användare"
+
+  - id: SLOG-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [alerting, authorisation, enumeration]
+    refs: ["OWASP Logging Cheat Sheet", "OWASP Top 10 2021 A09", "NIST SP 800-53 AU-6", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [SLOG-T13]
+    en:
+      title: Alert on repeated denied access by one user
+      description: The system SHOULD alert the security on-call within 15 minutes when one signed-in user gets more than 20 responses of 403 or 404 on record identifiers within 5 minutes.
+      rationale: A burst of denied requests for many different record identifiers is the trace of someone probing for records they may not read.
+      criteria:
+        - method: test
+          text: 21 denied requests for different record identifiers within 5 minutes raise one alert, and 19 raise none.
+          threshold: "> 20 denials in 5 min"
+    sv:
+      title: Larm vid upprepad nekad åtkomst för en användare
+      description: Systemet BÖR larma säkerhetsjouren inom 15 minuter när mer än 20 anrop mot postidentifierare från en inloggad användare besvaras med 403 eller 404 inom 5 minuter.
+      rationale: En serie nekade anrop mot olika postidentifierare är spåret efter någon som letar efter poster som personen saknar rätt att läsa.
+      criteria:
+        - method: test
+          text: 21 nekade anrop mot olika postidentifierare inom 5 minuter ger ett larm, och 19 ger inget.
+          threshold: "> 20 nekanden på 5 min"
+
+  - id: SLOG-15
+    type: security
+    obligation: must
+    priority: medium
+    tags: [correlation, tracing]
+    refs: ["W3C Trace Context", "OpenTelemetry specification (logs data model)", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [SLOG-T14]
+    en:
+      title: Correlation identifier across services
+      description: The system MUST write the trace identifier of the incoming request in each log record that a service writes while handling that request.
+      rationale: An investigation must follow one attacker request through the front end, the API and the back-end services without guessing from timestamps.
+      criteria:
+        - method: test
+          text: One request with a known traceparent header gives log records with the same trace identifier in each service it passes.
+    sv:
+      title: Korrelationsidentifierare mellan tjänster
+      description: Systemet SKA skriva spårningsidentifieraren för det inkommande anropet i varje loggpost som en tjänst skriver medan den hanterar anropet.
+      rationale: En utredning ska kunna följa ett anrop från en angripare genom webbgränssnittet, API:et och de bakomliggande tjänsterna utan att gissa utifrån tidsstämplar.
+      criteria:
+        - method: test
+          text: Ett anrop med ett känt traceparent-huvud ger loggposter med samma spårningsidentifierare i varje tjänst som anropet passerar.
+
+  - id: SLOG-16
+    type: security
+    obligation: should
+    priority: medium
+    tags: [detection, alert-testing]
+    refs: ["NIST SP 800-53 SI-4", "NIST SP 800-61 Rev. 3 (detection)", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [SLOG-T15]
+    en:
+      title: Monthly test of each security alert rule
+      description: The supplier SHOULD trigger each security alert rule with test events once a month and record whether the alert reached the on-call within its time limit.
+      rationale: Alert rules break silently when log formats, field names or routing change, and the gap is otherwise found during a real attack.
+      criteria:
+        - method: inspection
+          text: The test record for the last 3 months has one entry per alert rule and month, with the time from event to alert.
+          threshold: "every rule tested every month"
+    sv:
+      title: Månatligt test av varje larmregel för säkerhet
+      description: Leverantören BÖR utlösa varje larmregel för säkerhet med testhändelser en gång i månaden och registrera om larmet nådde jouren inom sin tidsgräns.
+      rationale: Larmregler slutar tyst att fungera när loggformat, fältnamn eller vidarekoppling ändras, och luckan upptäcks annars under ett verkligt angrepp.
+      criteria:
+        - method: inspection
+          text: Testregistret för de senaste 3 månaderna har en post per larmregel och månad, med tiden från händelse till larm.
+          threshold: "varje regel testad varje månad"
+
+  - id: SLOG-17
+    type: security
+    obligation: should
+    priority: medium
+    tags: [privacy, pseudonymisation, logs]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 32(1)(a)", "OWASP Logging Cheat Sheet", "ISO/IEC 27701:2025 (de-identification)"]
+    tests: [SLOG-T16]
+    en:
+      title: Users identified by id, not by name, in logs
+      description: The system SHOULD identify users in technical and security logs by their internal user id, and write no names, email addresses or personal identity numbers.
+      rationale: Logs are copied to many tools and kept long; an internal id still lets investigators find the person while the logs themselves hold less personal data.
+      criteria:
+        - method: test
+          text: A search of one day of logs for the names, email addresses and identity numbers of the test users returns no hits, while their user ids are present.
+    sv:
+      title: Användare anges med id och inte med namn i loggar
+      description: Systemet BÖR identifiera användare i tekniska loggar och säkerhetsloggar med deras interna användar-id, och inte skriva namn, e-postadresser eller personnummer.
+      rationale: Loggar kopieras till många verktyg och sparas länge; ett internt id låter ändå utredare hitta personen medan själva loggarna innehåller färre personuppgifter.
+      criteria:
+        - method: test
+          text: En sökning i en dags loggar efter testanvändarnas namn, e-postadresser och personnummer ger inga träffar, medan deras användar-id finns med.
+
 tests:
   - id: SLOG-T01
     priority: high
@@ -589,3 +705,143 @@ tests:
         - action: Logga in på kontot via en utgång i ett land som inte använts de senaste 90 dagarna och notera tiden.
           expected: Inom 10 minuter får säkerhetsteamet ett larm med konto, land och tid.
           data: "utgång i ett nytt land"
+
+  - id: SLOG-T12
+    priority: high
+    execution: automated
+    tags: [alerting, export]
+    refs: ["NIST SP 800-53 SI-4"]
+    en:
+      title: Bulk export raises an alert
+      description: A script exports records as two users, one above and one below the threshold.
+      preconditions: Two test users with export rights, a data set of 2 000 records and access to the on-call alert channel in the test environment.
+      expected: Only the export above 1 000 records raises an alert, within 15 minutes.
+      steps:
+        - action: As user A, export 1 001 records in four batches within 30 minutes.
+          expected: An alert naming user A and 1 001 records reaches the on-call channel within 15 minutes of the last batch.
+        - action: As user B, export 999 records within 30 minutes.
+          expected: No alert is raised for user B.
+    sv:
+      title: Massexport ger ett larm
+      description: Ett skript exporterar poster som två användare, en över och en under tröskeln.
+      preconditions: Två testanvändare med exportbehörighet, en datamängd med 2 000 poster och åtkomst till jourens larmkanal i testmiljön.
+      expected: Endast exporten över 1 000 poster ger ett larm, inom 15 minuter.
+      steps:
+        - action: Exportera som användare A 1 001 poster i fyra omgångar inom 30 minuter.
+          expected: Ett larm som anger användare A och 1 001 poster når jourens kanal inom 15 minuter efter den sista omgången.
+        - action: Exportera som användare B 999 poster inom 30 minuter.
+          expected: Inget larm ges för användare B.
+
+  - id: SLOG-T13
+    priority: medium
+    execution: automated
+    tags: [alerting, enumeration]
+    refs: ["OWASP Top 10 2021 A09"]
+    en:
+      title: Probing for other users' records raises an alert
+      description: A script requests record identifiers that the test user may not read.
+      preconditions: Two test users, one that owns 30 records and one without access to them.
+      expected: More than 20 denials in 5 minutes raise one alert; fewer raise none.
+      steps:
+        - action: As the user without access, request 19 different records of the other user within 5 minutes.
+          expected: Each request is denied and no alert is raised.
+        - action: Wait 10 minutes, then request 21 different records within 5 minutes.
+          expected: One alert naming the user and the number of denials reaches the on-call within 15 minutes.
+    sv:
+      title: Letande efter andra användares poster ger ett larm
+      description: Ett skript anropar postidentifierare som testanvändaren saknar rätt att läsa.
+      preconditions: Två testanvändare, en som äger 30 poster och en utan åtkomst till dem.
+      expected: Mer än 20 nekanden på 5 minuter ger ett larm; färre ger inget.
+      steps:
+        - action: Anropa som användaren utan åtkomst 19 olika poster hos den andra användaren inom 5 minuter.
+          expected: Varje anrop nekas och inget larm ges.
+        - action: Vänta 10 minuter och anropa sedan 21 olika poster inom 5 minuter.
+          expected: Ett larm som anger användaren och antalet nekanden når jouren inom 15 minuter.
+
+  - id: SLOG-T14
+    priority: medium
+    execution: automated
+    tags: [correlation, tracing]
+    refs: ["W3C Trace Context"]
+    en:
+      title: Trace identifier follows a request through the services
+      description: Sends a request with a known trace identifier and searches the central log for it.
+      preconditions: A test environment where the services ship logs to the central store, and the list of services a record update passes.
+      expected: Each service on the path writes the same trace identifier.
+      steps:
+        - action: Send a request that updates a record with a traceparent header.
+          expected: The request succeeds.
+          data: "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        - action: Search the central log for the trace identifier 4bf92f3577b34da6a3ce929d0e0e4736.
+          expected: Log records from each service on the list are found with that identifier.
+    sv:
+      title: Spårningsidentifieraren följer ett anrop genom tjänsterna
+      description: Skickar ett anrop med en känd spårningsidentifierare och söker efter den i den centrala loggen.
+      preconditions: En testmiljö där tjänsterna skickar loggar till det centrala lagret, och listan över de tjänster som en uppdatering av en post passerar.
+      expected: Varje tjänst på vägen skriver samma spårningsidentifierare.
+      steps:
+        - action: Skicka ett anrop som uppdaterar en post med ett traceparent-huvud.
+          expected: Anropet lyckas.
+          data: "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+        - action: Sök i den centrala loggen efter spårningsidentifieraren 4bf92f3577b34da6a3ce929d0e0e4736.
+          expected: Loggposter från varje tjänst i listan hittas med den identifieraren.
+
+  - id: SLOG-T15
+    priority: medium
+    execution: manual
+    tags: [detection, alert-testing]
+    refs: ["NIST SP 800-53 SI-4"]
+    en:
+      title: Each alert rule was tested in the last 3 months
+      description: Compares the list of security alert rules with the alert test record.
+      preconditions: An export of the active alert rules and the alert test record.
+      expected: Every rule has a monthly test entry with the measured time to alert.
+      steps:
+        - action: List the active security alert rules.
+          expected: A list of rules is produced.
+        - action: For each rule, find the test entries of the last 3 months.
+          expected: Each rule has three entries, each with the time from test event to alert.
+        - action: Compare each measured time with the rule's time limit.
+          expected: Each failed entry has a ticket with a fix.
+    sv:
+      title: Varje larmregel har testats de senaste 3 månaderna
+      description: Jämför listan över larmregler för säkerhet med testregistret för larm.
+      preconditions: En export av de aktiva larmreglerna och testregistret för larm.
+      expected: Varje regel har en månatlig testpost med uppmätt tid till larm.
+      steps:
+        - action: Lista de aktiva larmreglerna för säkerhet.
+          expected: En lista med regler tas fram.
+        - action: Leta upp testposterna för de senaste 3 månaderna för varje regel.
+          expected: Varje regel har tre poster, var och en med tiden från testhändelse till larm.
+        - action: Jämför varje uppmätt tid med regelns tidsgräns.
+          expected: Varje underkänd post har ett ärende med en åtgärd.
+
+  - id: SLOG-T16
+    priority: medium
+    execution: automated
+    tags: [privacy, logs]
+    refs: ["GDPR Art. 5(1)(c)"]
+    en:
+      title: Logs hold user ids and no direct identifiers
+      description: Signs in and works as test users with known personal data and searches the logs for that data.
+      preconditions: Three test users with known names, email addresses and test personal identity numbers, and search access to the central log.
+      expected: The logs contain the users' ids but none of their names, addresses or numbers.
+      steps:
+        - action: As each test user, sign in, fail a sign-in once, edit a record and sign out.
+          expected: The actions succeed or fail as intended.
+        - action: Search the logs of that day for each test user's name, email address and identity number.
+          expected: There are no hits.
+        - action: Search the logs for each test user's internal id.
+          expected: Each id is found in the sign-in and edit events.
+    sv:
+      title: Loggar innehåller användar-id och inga direkta identifierare
+      description: Loggar in och arbetar som testanvändare med kända personuppgifter och söker efter uppgifterna i loggarna.
+      preconditions: Tre testanvändare med kända namn, e-postadresser och testpersonnummer, och sökbehörighet till den centrala loggen.
+      expected: Loggarna innehåller användarnas id men inga av deras namn, adresser eller nummer.
+      steps:
+        - action: Logga in som varje testanvändare, misslyckas med en inloggning en gång, redigera en post och logga ut.
+          expected: Åtgärderna lyckas eller misslyckas som avsett.
+        - action: Sök i dagens loggar efter varje testanvändares namn, e-postadress och personnummer.
+          expected: Det finns inga träffar.
+        - action: Sök i loggarna efter varje testanvändares interna id.
+          expected: Varje id hittas i händelserna för inloggning och redigering.

@@ -1,0 +1,710 @@
+area: container-security
+prefix: CNSEC
+group: security
+catalogue: software
+name: {en: Container and Kubernetes security, sv: Säkerhet för containrar och Kubernetes}
+description:
+  en: Hardening of container images and workloads, admission control, cluster access, secrets at rest, runtime detection, audit logging and benchmark checks for container platforms such as Kubernetes.
+  sv: Härdning av containeravbilder och arbetslaster, kontroll vid driftsättning, åtkomst till klustret, lagrade hemligheter, upptäckt under körning, granskningsloggning och kontroll mot riktmärken för containerplattformar som Kubernetes.
+
+requirements:
+  - id: CNSEC-01
+    type: security
+    obligation: must
+    priority: high
+    tags: [non-root, pod-security, runtime-user]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "Kubernetes Pod Security Standards (restricted)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.9"]
+    tests: [CNSEC-T01]
+    en:
+      title: Containers run as a non-root user
+      description: The system MUST run each application container as a user with a non-zero user id and set runAsNonRoot, so that the platform refuses to start it as root.
+      rationale: A process running as root inside a container is one kernel flaw or misconfiguration away from root on the host.
+      criteria:
+        - method: test
+          text: Each running application container reports a non-zero user id, and a test pod without a user setting whose image runs as root is refused at start.
+    sv:
+      title: Containrar körs som en användare som inte är root
+      description: Systemet SKA köra varje applikationscontainer som en användare med ett användar-id som inte är noll och sätta runAsNonRoot, så att plattformen vägrar starta den som root.
+      rationale: En process som körs som root i en container är bara ett kärnfel eller en felinställning från root på värden.
+      criteria:
+        - method: test
+          text: Varje körande applikationscontainer rapporterar ett användar-id som inte är noll, och en testpodd utan användarinställning vars avbild körs som root nekas vid start.
+
+  - id: CNSEC-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [admission-control, privileged, host-namespaces]
+    refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "IEC 62443-3-3 SR 7.6"]
+    tests: [CNSEC-T02]
+    en:
+      title: Restricted pod security enforced at admission
+      description: The cluster MUST reject at admission every workload in an application namespace that asks for privileged mode, host network, host PID, host IPC, host path volumes or privilege escalation.
+      rationale: Each of these settings removes the isolation between the container and the node, and checking them at admission stops them before anything runs.
+      criteria:
+        - method: test
+          text: Test manifests with each of the six settings are rejected by the API server with a message naming the violated rule.
+    sv:
+      title: Begränsad poddsäkerhet tillämpas vid driftsättning
+      description: Klustret SKA vid driftsättning avvisa varje arbetslast i en applikationsnamnrymd som begär privilegierat läge, värdens nätverk, värdens PID, värdens IPC, volymer från värdens sökvägar eller höjda privilegier.
+      rationale: Var och en av dessa inställningar tar bort isoleringen mellan containern och noden, och kontroll vid driftsättningen stoppar dem innan något körs.
+      criteria:
+        - method: test
+          text: Testmanifest med var och en av de sex inställningarna avvisas av API-servern med ett meddelande som anger den regel som bryts.
+
+  - id: CNSEC-03
+    type: security
+    obligation: should
+    priority: medium
+    tags: [read-only-filesystem, immutability]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (general policies)", "ISO/IEC 27001:2022 A.8.9"]
+    tests: [CNSEC-T03]
+    en:
+      title: Read-only root file system
+      description: The system SHOULD run each application container with a read-only root file system and give it write access only to listed volumes for temporary and data files.
+      rationale: A read-only file system stops an attacker from changing binaries or dropping tools into the container, and makes drift from the image impossible.
+      criteria:
+        - method: test
+          text: Writing a file to /usr/bin in a running container fails with a read-only error, while writing to the listed temporary volume succeeds.
+    sv:
+      title: Skrivskyddat rotfilsystem
+      description: Systemet BÖR köra varje applikationscontainer med ett skrivskyddat rotfilsystem och ge den skrivrätt enbart till listade volymer för tillfälliga filer och datafiler.
+      rationale: Ett skrivskyddat filsystem hindrar en angripare från att ändra program eller lägga in verktyg i containern, och gör avvikelser från avbilden omöjliga.
+      criteria:
+        - method: test
+          text: Att skriva en fil till /usr/bin i en körande container misslyckas med ett fel om skrivskydd, medan skrivning till den listade tillfälliga volymen lyckas.
+
+  - id: CNSEC-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [linux-capabilities, seccomp, least-privilege]
+    refs: ["Kubernetes Pod Security Standards (restricted)", "NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (pod security)", "ISO/IEC 27001:2022 A.8.2"]
+    tests: [CNSEC-T04]
+    en:
+      title: All capabilities dropped and a seccomp profile applied
+      description: The system MUST start each application container with all Linux capabilities dropped, adding back only capabilities listed with a reason, and with the runtime's default seccomp profile or a stricter one.
+      rationale: Default capabilities and unfiltered system calls give a compromised process tools for network attacks and container escape that applications rarely need.
+      criteria:
+        - method: inspection
+          text: Each workload specification drops ALL, every added capability has a recorded reason, and each pod sets a seccomp profile of RuntimeDefault or Localhost.
+    sv:
+      title: Alla förmågor tas bort och en seccomp-profil används
+      description: Systemet SKA starta varje applikationscontainer med alla Linux-förmågor borttagna, där bara förmågor som listats med ett skäl läggs tillbaka, och med körmiljöns standardprofil för seccomp eller en striktare.
+      rationale: Standardförmågor och ofiltrerade systemanrop ger en komprometterad process verktyg för nätverksangrepp och utbrytning ur containern som applikationer sällan behöver.
+      criteria:
+        - method: inspection
+          text: Varje arbetslastspecifikation tar bort ALL, varje tillagd förmåga har ett registrerat skäl, och varje podd anger en seccomp-profil av typen RuntimeDefault eller Localhost.
+
+  - id: CNSEC-05
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [resource-limits, denial-of-service, noisy-neighbour]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "CIS Kubernetes Benchmark (general policies)", "ISO/IEC 27001:2022 A.8.6"]
+    tests: [CNSEC-T05]
+    en:
+      title: CPU and memory limits on every container
+      description: The cluster MUST reject a workload in an application namespace whose containers do not set both requests and limits for CPU and memory.
+      rationale: A single container without limits can starve the node, so a bug or an attack in one service takes down the services that share the node.
+      criteria:
+        - method: test
+          text: A manifest without a memory limit is rejected at admission, and a container that allocates memory beyond its limit is stopped without affecting other pods on the node.
+    sv:
+      title: Gränser för processor och minne på varje container
+      description: Klustret SKA avvisa en arbetslast i en applikationsnamnrymd vars containrar inte anger både begäran och gräns för processor och minne.
+      rationale: En enda container utan gränser kan svälta ut noden, så att ett fel eller ett angrepp i en tjänst slår ut de tjänster som delar noden.
+      criteria:
+        - method: test
+          text: Ett manifest utan minnesgräns avvisas vid driftsättning, och en container som allokerar mer minne än sin gräns stoppas utan att andra poddar på noden påverkas.
+
+  - id: CNSEC-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [image-provenance, registry, digest]
+    refs: ["NIST SP 800-190 §4.2 (registry countermeasures)", "NIST SP 800-190 §4.1 (image countermeasures)", "SLSA v1.0", "ISO/IEC 27001:2022 A.8.32"]
+    tests: [CNSEC-T06]
+    en:
+      title: Images only from the approved registry and by digest
+      description: The cluster MUST admit workloads only when each container image comes from the organisation's approved registry and is referenced by its sha256 digest.
+      rationale: Tags can be moved and public registries host look-alike images, so a reference by tag or to an outside registry can run code that nobody reviewed.
+      criteria:
+        - method: test
+          text: A manifest with an image from a public registry and one with an image by tag only are both rejected, and one by digest from the approved registry is admitted.
+    sv:
+      title: Avbilder endast från det godkända registret och via sammanfattning
+      description: Klustret SKA bara godta arbetslaster där varje containeravbild kommer från organisationens godkända register och refereras med sin sha256-sammanfattning.
+      rationale: Etiketter kan flyttas och publika register har avbilder som liknar äkta, så en referens via etikett eller till ett externt register kan köra kod som ingen har granskat.
+      criteria:
+        - method: test
+          text: Ett manifest med en avbild från ett publikt register och ett med en avbild endast via etikett avvisas båda, och ett via sammanfattning från det godkända registret godtas.
+
+  - id: CNSEC-07
+    type: security
+    obligation: should
+    priority: medium
+    tags: [minimal-images, distroless, attack-surface]
+    refs: ["NIST SP 800-190 §4.1 (image countermeasures)", "CIS Docker Benchmark (container images and build file)", "ISO/IEC 27001:2022 A.8.9"]
+    tests: [CNSEC-T07]
+    en:
+      title: Production images without shell or package manager
+      description: The system SHOULD build production images from a base image that contains no shell, package manager or compiler.
+      rationale: Tools inside the image are what an attacker uses after getting in, and every extra package adds vulnerabilities to patch.
+      criteria:
+        - method: test
+          text: Running sh, apt, apk or gcc in each production image fails because the program is missing.
+    sv:
+      title: Produktionsavbilder utan skal eller pakethanterare
+      description: Systemet BÖR bygga produktionsavbilder från en basavbild som saknar skal, pakethanterare och kompilator.
+      rationale: Verktyg i avbilden är det en angripare använder efter att ha tagit sig in, och varje extra paket ger fler sårbarheter att rätta.
+      criteria:
+        - method: test
+          text: Att köra sh, apt, apk eller gcc i varje produktionsavbild misslyckas eftersom programmet saknas.
+
+  - id: CNSEC-08
+    type: security
+    obligation: must
+    priority: critical
+    tags: [api-server, cluster-access, authentication]
+    refs: ["CIS Kubernetes Benchmark (control plane components)", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.20", "IEC 62443-3-3 SR 1.1"]
+    tests: [CNSEC-T08]
+    en:
+      title: Cluster API reachable only through single sign-on from listed networks
+      description: The Kubernetes API server MUST refuse anonymous requests, accept users only through the organisation's single sign-on, and be reachable only from listed administration networks.
+      rationale: An exposed API server with anonymous access or static tokens is a direct path to every workload and secret in the cluster.
+      criteria:
+        - method: test
+          text: An anonymous request is refused with 401, a request from an address outside the listed networks gets no connection, and a single sign-on user from a listed network is authenticated.
+    sv:
+      title: Klustrets API nås bara via single sign-on från listade nät
+      description: Kubernetes API-server SKA avvisa anonyma anrop, godta användare enbart via organisationens single sign-on och bara kunna nås från listade administrationsnät.
+      rationale: En exponerad API-server med anonym åtkomst eller statiska token är en direkt väg till varje arbetslast och hemlighet i klustret.
+      criteria:
+        - method: test
+          text: Ett anonymt anrop avvisas med 401, ett anrop från en adress utanför de listade näten får ingen förbindelse, och en användare med single sign-on från ett listat nät autentiseras.
+
+  - id: CNSEC-09
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [rbac, service-accounts, least-privilege]
+    refs: ["CIS Kubernetes Benchmark (RBAC and service accounts)", "Kubernetes RBAC Good Practices", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.2"]
+    tests: [CNSEC-T09]
+    en:
+      title: No cluster-admin for workloads and no automatic service account tokens
+      description: The cluster MUST NOT bind the cluster-admin role or wildcard permissions to a workload service account, or mount a service account token into a pod that has not declared a need for API access.
+      rationale: A token mounted by default, or one with broad rights, turns a single compromised pod into control over the cluster.
+      criteria:
+        - method: inspection
+          text: The role bindings list no service account with cluster-admin or a "*" verb or resource, and pods without a declared API need have automountServiceAccountToken set to false.
+    sv:
+      title: Ingen cluster-admin för arbetslaster och inga automatiska token för tjänstekonton
+      description: Klustret SKA INTE koppla rollen cluster-admin eller jokerteckenbehörigheter till ett tjänstekonto för en arbetslast och inte montera en token för tjänstekontot i en podd som inte angett behov av API-åtkomst.
+      rationale: En token som monteras som standard, eller en med breda rättigheter, gör en enda komprometterad podd till kontroll över klustret.
+      criteria:
+        - method: inspection
+          text: Rollkopplingarna visar inget tjänstekonto med cluster-admin eller "*" som verb eller resurs, och poddar utan angivet API-behov har automountServiceAccountToken satt till false.
+
+  - id: CNSEC-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [secrets, etcd, encryption-at-rest]
+    refs: ["CIS Kubernetes Benchmark (control plane components)", "Kubernetes Encrypting Confidential Data at Rest", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CNSEC-T10]
+    en:
+      title: Cluster secrets encrypted at rest with an external key
+      description: The cluster MUST encrypt Secret objects in its datastore with a key held in an external key management service.
+      rationale: Kubernetes stores secrets only base64-encoded by default, so a copy of the datastore or one of its backups otherwise exposes every credential.
+      criteria:
+        - method: test
+          text: A test secret read directly from the datastore is ciphertext with the KMS provider prefix, and the key is listed in the key management service.
+    sv:
+      title: Klustrets hemligheter krypteras vid lagring med en extern nyckel
+      description: Klustret SKA kryptera Secret-objekt i sitt datalager med en nyckel som förvaras i en extern nyckelhanteringstjänst.
+      rationale: Kubernetes lagrar som standard hemligheter endast base64-kodade, så en kopia av datalagret eller en av dess säkerhetskopior visar annars varje autentiseringsuppgift.
+      criteria:
+        - method: test
+          text: En testhemlighet som läses direkt ur datalagret är chiffertext med KMS-leverantörens prefix, och nyckeln finns listad i nyckelhanteringstjänsten.
+
+  - id: CNSEC-11
+    type: security
+    obligation: should
+    priority: high
+    tags: [runtime-detection, alerting]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)", "MITRE ATT&CK Containers Matrix", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [CNSEC-T11]
+    en:
+      title: Alert on unexpected processes in a container
+      description: The system SHOULD alert the security on-call within 5 minutes when a shell or a process not in the workload's expected list starts in a production container.
+      rationale: An interactive shell or a crypto miner in a production container is a strong sign of compromise, and the image's fixed contents make it easy to detect.
+      criteria:
+        - method: test
+          text: Starting a shell with kubectl exec in a production test pod raises an alert naming the pod and the process within 5 minutes.
+          threshold: "≤ 5 min"
+    sv:
+      title: Larm vid oväntade processer i en container
+      description: Systemet BÖR larma säkerhetsjouren inom 5 minuter när ett skal eller en process som inte finns i arbetslastens lista över förväntade processer startar i en produktionscontainer.
+      rationale: Ett interaktivt skal eller ett program för kryptobrytning i en produktionscontainer är ett starkt tecken på intrång, och avbildens fasta innehåll gör det lätt att upptäcka.
+      criteria:
+        - method: test
+          text: Att starta ett skal med kubectl exec i en testpodd i produktion ger inom 5 minuter ett larm som anger podden och processen.
+          threshold: "≤ 5 min"
+
+  - id: CNSEC-12
+    type: security
+    obligation: must
+    priority: medium
+    tags: [audit-logging, kubernetes-api]
+    refs: ["CIS Kubernetes Benchmark (logging)", "Kubernetes Auditing", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [CNSEC-T12]
+    en:
+      title: Cluster API audit log sent to the central store
+      description: The cluster MUST write an audit log of every request to the API server that changes an object or reads a Secret, and send it to the central log store within 1 minute.
+      rationale: The API audit log is the only record of who changed workloads, roles or secrets in the cluster.
+      criteria:
+        - method: test
+          text: Creating a role binding and reading a secret give two audit events with user, verb, resource and time in the central store within 1 minute.
+          threshold: "≤ 1 min"
+    sv:
+      title: Granskningslogg för klustrets API skickas till det centrala lagret
+      description: Klustret SKA skriva en granskningslogg över varje anrop till API-servern som ändrar ett objekt eller läser en Secret, och skicka den till det centrala logglagret inom 1 minut.
+      rationale: Granskningsloggen för API:et är den enda registreringen av vem som ändrade arbetslaster, roller eller hemligheter i klustret.
+      criteria:
+        - method: test
+          text: Att skapa en rollkoppling och läsa en hemlighet ger två granskningshändelser med användare, verb, resurs och tid i det centrala lagret inom 1 minut.
+          threshold: "≤ 1 min"
+
+  - id: CNSEC-13
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [supported-versions, patching, nodes]
+    refs: ["Kubernetes Version Skew Policy", "NIST SP 800-190 §4.5 (host OS countermeasures)", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2"]
+    tests: [CNSEC-T13]
+    en:
+      title: Cluster on a supported version with patched nodes
+      description: The operator MUST keep each cluster on a Kubernetes minor version that still receives patches from its maintainer, and apply node operating system security updates within 30 days of release.
+      rationale: Versions out of support get no fixes for new vulnerabilities, and the nodes carry every container on them.
+      criteria:
+        - method: inspection
+          text: The control plane version is on the maintainer's list of supported versions, and no node has a security update older than 30 days pending.
+          threshold: "node updates ≤ 30 days"
+    sv:
+      title: Klustret på en version som stöds och med uppdaterade noder
+      description: Driftansvarig SKA hålla varje kluster på en mindre version av Kubernetes som fortfarande förses med rättningar av sin förvaltare, och installera säkerhetsuppdateringar för nodernas operativsystem inom 30 dagar efter att de släppts.
+      rationale: Versioner utan stöd får inga rättningar för nya sårbarheter, och noderna bär varje container som körs på dem.
+      criteria:
+        - method: inspection
+          text: Kontrollplanets version finns i förvaltarens lista över versioner som stöds, och ingen nod har en säkerhetsuppdatering som väntat i mer än 30 dagar.
+          threshold: "noduppdateringar ≤ 30 dagar"
+
+  - id: CNSEC-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [benchmark, configuration-scan]
+    refs: ["CIS Kubernetes Benchmark", "NIST SP 800-190 §4.3 (orchestrator countermeasures)", "ISO/IEC 27001:2022 A.8.9"]
+    tests: [CNSEC-T14]
+    en:
+      title: Monthly benchmark scan of each cluster
+      description: The operator SHOULD scan each cluster against the CIS Kubernetes Benchmark every month and fix or record an accepted exception for each failed check within 30 days.
+      rationale: Cluster settings drift with upgrades and manual changes, and a regular scan against a published benchmark finds the gaps.
+      criteria:
+        - method: inspection
+          text: Scan reports exist for each of the last 3 months, and each failed check is fixed in the next report or has an exception with owner and reason.
+          threshold: "fix or exception ≤ 30 days"
+    sv:
+      title: Månatlig skanning av varje kluster mot ett riktmärke
+      description: Driftansvarig BÖR skanna varje kluster mot CIS Kubernetes Benchmark varje månad och rätta varje underkänd kontroll, eller registrera ett godkänt undantag för den, inom 30 dagar.
+      rationale: Klustrets inställningar glider med uppgraderingar och manuella ändringar, och en regelbunden skanning mot ett publicerat riktmärke hittar luckorna.
+      criteria:
+        - method: inspection
+          text: Skanningsrapporter finns för var och en av de senaste 3 månaderna, och varje underkänd kontroll är rättad i nästa rapport eller har ett undantag med ägare och skäl.
+          threshold: "rättning eller undantag ≤ 30 dagar"
+
+tests:
+  - id: CNSEC-T01
+    priority: high
+    execution: automated
+    tags: [non-root]
+    refs: ["Kubernetes Pod Security Standards (restricted)"]
+    en:
+      title: No application container runs as root
+      description: A script reads the user id of each running container and tries to start a root container.
+      preconditions: Read access to the application namespaces and permission to create a test pod in a test application namespace.
+      expected: Every container runs as non-root and a root pod is refused.
+      steps:
+        - action: For each running application container, run id -u through the container runtime or read the effective user from the pod status.
+          expected: Each user id is greater than 0.
+        - action: Create a test pod from an image that runs as root, without a securityContext.
+          expected: The pod is rejected or fails to start with an error about runAsNonRoot.
+    sv:
+      title: Ingen applikationscontainer körs som root
+      description: Ett skript läser användar-id för varje körande container och försöker starta en container som root.
+      preconditions: Läsbehörighet till applikationsnamnrymderna och behörighet att skapa en testpodd i en testnamnrymd för applikationer.
+      expected: Varje container körs som annan än root och en rootpodd nekas.
+      steps:
+        - action: Kör id -u via containermiljön i varje körande applikationscontainer eller läs den gällande användaren ur poddens status.
+          expected: Varje användar-id är större än 0.
+        - action: Skapa en testpodd från en avbild som körs som root, utan securityContext.
+          expected: Podden avvisas eller startar inte, med ett fel om runAsNonRoot.
+
+  - id: CNSEC-T02
+    priority: critical
+    execution: automated
+    tags: [admission-control, privileged]
+    refs: ["Kubernetes Pod Security Standards (restricted)"]
+    en:
+      title: Dangerous pod settings are rejected at admission
+      description: A script applies six test manifests, each with one dangerous setting, to an application namespace.
+      preconditions: Permission to create pods in a test application namespace with the same admission policy as production.
+      expected: Each manifest is rejected with the violated rule named.
+      steps:
+        - action: Apply manifests with privileged true, hostNetwork true, hostPID true, hostIPC true, a hostPath volume and allowPrivilegeEscalation true.
+          expected: Each is rejected by the API server.
+          data: "privileged, hostNetwork, hostPID, hostIPC, hostPath, allowPrivilegeEscalation"
+        - action: Apply a manifest that meets the restricted profile.
+          expected: The pod is admitted and starts.
+    sv:
+      title: Farliga poddinställningar avvisas vid driftsättning
+      description: Ett skript lägger in sex testmanifest, vart och ett med en farlig inställning, i en applikationsnamnrymd.
+      preconditions: Behörighet att skapa poddar i en testnamnrymd för applikationer med samma driftsättningspolicy som i produktion.
+      expected: Varje manifest avvisas med den brutna regeln angiven.
+      steps:
+        - action: Lägg in manifest med privileged true, hostNetwork true, hostPID true, hostIPC true, en hostPath-volym och allowPrivilegeEscalation true.
+          expected: Vart och ett avvisas av API-servern.
+          data: "privileged, hostNetwork, hostPID, hostIPC, hostPath, allowPrivilegeEscalation"
+        - action: Lägg in ett manifest som uppfyller den begränsade profilen.
+          expected: Podden godtas och startar.
+
+  - id: CNSEC-T03
+    priority: medium
+    execution: manual
+    tags: [read-only-filesystem]
+    refs: ["NIST SP 800-190 §4.4 (container countermeasures)"]
+    en:
+      title: Root file system cannot be written
+      description: Tries to write to the root file system and to the temporary volume of a running container in a test environment.
+      preconditions: A running application container in the test environment and a debug method allowed there.
+      expected: Only the listed volume is writable.
+      steps:
+        - action: Try to create a file in /usr/bin.
+          expected: The write fails with a read-only file system error.
+        - action: Create a file in the listed temporary volume.
+          expected: The file is created.
+    sv:
+      title: Rotfilsystemet går inte att skriva till
+      description: Försöker skriva till rotfilsystemet och till den tillfälliga volymen i en körande container i en testmiljö.
+      preconditions: En körande applikationscontainer i testmiljön och en felsökningsmetod som är tillåten där.
+      expected: Endast den listade volymen är skrivbar.
+      steps:
+        - action: Försök skapa en fil i /usr/bin.
+          expected: Skrivningen misslyckas med ett fel om skrivskyddat filsystem.
+        - action: Skapa en fil i den listade tillfälliga volymen.
+          expected: Filen skapas.
+
+  - id: CNSEC-T04
+    priority: high
+    execution: automated
+    tags: [linux-capabilities, seccomp]
+    refs: ["Kubernetes Pod Security Standards (restricted)"]
+    en:
+      title: Workloads drop capabilities and use seccomp
+      description: A script inspects every workload specification in the application namespaces.
+      preconditions: Read access to the workload specifications and the list of approved added capabilities with reasons.
+      expected: All workloads drop ALL capabilities, add only approved ones and use a seccomp profile.
+      steps:
+        - action: Read the capabilities settings of each container.
+          expected: Each drops ALL, and each added capability is on the approved list.
+        - action: Read the seccomp profile of each pod.
+          expected: Each is RuntimeDefault or Localhost.
+    sv:
+      title: Arbetslaster tar bort förmågor och använder seccomp
+      description: Ett skript granskar varje arbetslastspecifikation i applikationsnamnrymderna.
+      preconditions: Läsbehörighet till arbetslastspecifikationerna och listan över godkända tillagda förmågor med skäl.
+      expected: Alla arbetslaster tar bort förmågan ALL, lägger bara till godkända och använder en seccomp-profil.
+      steps:
+        - action: Läs inställningarna för förmågor i varje container.
+          expected: Var och en tar bort ALL, och varje tillagd förmåga finns på den godkända listan.
+        - action: Läs seccomp-profilen för varje podd.
+          expected: Var och en är RuntimeDefault eller Localhost.
+
+  - id: CNSEC-T05
+    priority: medium
+    execution: automated
+    tags: [resource-limits]
+    refs: ["CIS Kubernetes Benchmark (general policies)"]
+    en:
+      title: Workloads without limits are refused and limits hold
+      description: Applies a manifest without a memory limit and runs a container that exceeds its limit.
+      preconditions: A test application namespace with the admission policy as in production and a test image that allocates memory on request.
+      expected: Missing limits are refused and an overrunning container is stopped alone.
+      steps:
+        - action: Apply a manifest without a memory limit.
+          expected: The manifest is rejected.
+        - action: Start the test image with a 256 MiB limit and make it allocate 512 MiB.
+          expected: The container is killed for running out of memory and restarted.
+        - action: Check the other pods on the same node during the test.
+          expected: They keep running without restarts.
+    sv:
+      title: Arbetslaster utan gränser nekas och gränserna håller
+      description: Lägger in ett manifest utan minnesgräns och kör en container som överskrider sin gräns.
+      preconditions: En testnamnrymd för applikationer med driftsättningspolicyn som i produktion och en testavbild som allokerar minne på begäran.
+      expected: Saknade gränser nekas och en container som överskrider gränsen stoppas ensam.
+      steps:
+        - action: Lägg in ett manifest utan minnesgräns.
+          expected: Manifestet avvisas.
+        - action: Starta testavbilden med en gräns på 256 MiB och låt den allokera 512 MiB.
+          expected: Containern avbryts för minnesbrist och startas om.
+        - action: Kontrollera de andra poddarna på samma nod under testet.
+          expected: De fortsätter att köra utan omstarter.
+
+  - id: CNSEC-T06
+    priority: high
+    execution: automated
+    tags: [image-provenance, registry]
+    refs: ["NIST SP 800-190 §4.2 (registry countermeasures)"]
+    en:
+      title: Only digest references to the approved registry are admitted
+      description: Applies manifests with different image references.
+      preconditions: Permission to create pods in a test application namespace and an image in the approved registry with its digest.
+      expected: Only the digest reference to the approved registry is admitted.
+      steps:
+        - action: Apply a manifest with an image from a public registry.
+          expected: The manifest is rejected.
+          data: "docker.io/library/nginx:latest"
+        - action: Apply a manifest with the approved registry image by tag.
+          expected: The manifest is rejected.
+        - action: Apply a manifest with the approved registry image by sha256 digest.
+          expected: The manifest is admitted.
+    sv:
+      title: Endast referenser via sammanfattning till det godkända registret godtas
+      description: Lägger in manifest med olika avbildsreferenser.
+      preconditions: Behörighet att skapa poddar i en testnamnrymd för applikationer och en avbild i det godkända registret med dess sammanfattning.
+      expected: Endast referensen via sammanfattning till det godkända registret godtas.
+      steps:
+        - action: Lägg in ett manifest med en avbild från ett publikt register.
+          expected: Manifestet avvisas.
+          data: "docker.io/library/nginx:latest"
+        - action: Lägg in ett manifest med avbilden från det godkända registret via etikett.
+          expected: Manifestet avvisas.
+        - action: Lägg in ett manifest med avbilden från det godkända registret via sha256-sammanfattning.
+          expected: Manifestet godtas.
+
+  - id: CNSEC-T07
+    priority: medium
+    execution: automated
+    tags: [minimal-images]
+    refs: ["NIST SP 800-190 §4.1 (image countermeasures)"]
+    en:
+      title: Production images lack shells and build tools
+      description: A script tries to run common tools in each production image.
+      preconditions: The list of production images and a test environment where they can be started with a command override.
+      expected: None of the tools exists in any image.
+      steps:
+        - action: Start each image with the command sh, then apt, apk and gcc.
+          expected: Each start fails because the executable is not found.
+          data: "sh, bash, apt, apk, yum, gcc"
+    sv:
+      title: Produktionsavbilder saknar skal och byggverktyg
+      description: Ett skript försöker köra vanliga verktyg i varje produktionsavbild.
+      preconditions: Listan över produktionsavbilder och en testmiljö där de kan startas med ett utbytt kommando.
+      expected: Inget av verktygen finns i någon avbild.
+      steps:
+        - action: Starta varje avbild med kommandot sh, och sedan apt, apk och gcc.
+          expected: Varje start misslyckas eftersom programmet inte hittas.
+          data: "sh, bash, apt, apk, yum, gcc"
+
+  - id: CNSEC-T08
+    priority: critical
+    execution: manual
+    tags: [api-server, cluster-access]
+    refs: ["CIS Kubernetes Benchmark (control plane components)"]
+    en:
+      title: Cluster API refuses anonymous and outside access
+      description: Calls the API server anonymously, from outside the listed networks and as a single sign-on user.
+      preconditions: The API server address, a client outside the listed networks, a client on a listed administration network and a single sign-on test user.
+      expected: Only the authenticated user on a listed network gets in.
+      steps:
+        - action: From the listed network, send a request without credentials to /api.
+          expected: The response is 401.
+        - action: From the outside client, connect to the API server.
+          expected: No connection is established.
+        - action: From the listed network, sign in through single sign-on and list namespaces the user may see.
+          expected: The request succeeds.
+    sv:
+      title: Klustrets API avvisar anonym åtkomst och åtkomst utifrån
+      description: Anropar API-servern anonymt, från en plats utanför de listade näten och som användare med single sign-on.
+      preconditions: API-serverns adress, en klient utanför de listade näten, en klient på ett listat administrationsnät och en testanvändare med single sign-on.
+      expected: Endast den autentiserade användaren på ett listat nät kommer in.
+      steps:
+        - action: Skicka från det listade nätet ett anrop utan autentisering till /api.
+          expected: Svaret är 401.
+        - action: Anslut till API-servern från klienten utanför.
+          expected: Ingen förbindelse upprättas.
+        - action: Logga in via single sign-on från det listade nätet och lista de namnrymder användaren får se.
+          expected: Anropet lyckas.
+
+  - id: CNSEC-T09
+    priority: high
+    execution: automated
+    tags: [rbac, service-accounts]
+    refs: ["CIS Kubernetes Benchmark (RBAC and service accounts)"]
+    en:
+      title: Service accounts have no broad rights and tokens are not mounted by default
+      description: A script reviews role bindings and pod token settings.
+      preconditions: Read access to the cluster's RBAC objects and pod specifications, and the list of pods with a declared API need.
+      expected: No service account has broad rights and only declared pods mount tokens.
+      steps:
+        - action: List all role and cluster role bindings with service account subjects.
+          expected: None refers to cluster-admin or to a role with "*" in verbs or resources.
+        - action: For each pod not on the API-need list, read automountServiceAccountToken.
+          expected: Each is false and no token is mounted at /var/run/secrets/kubernetes.io/serviceaccount.
+    sv:
+      title: Tjänstekonton har inga breda rättigheter och token monteras inte som standard
+      description: Ett skript granskar rollkopplingar och poddarnas inställningar för token.
+      preconditions: Läsbehörighet till klustrets RBAC-objekt och poddspecifikationer, och listan över poddar med angivet API-behov.
+      expected: Inget tjänstekonto har breda rättigheter och endast angivna poddar monterar token.
+      steps:
+        - action: Lista alla roll- och klusterrollkopplingar med tjänstekonton som subjekt.
+          expected: Ingen hänvisar till cluster-admin eller till en roll med "*" bland verb eller resurser.
+        - action: Läs automountServiceAccountToken för varje podd som inte finns på listan över API-behov.
+          expected: Var och en är false och ingen token är monterad i /var/run/secrets/kubernetes.io/serviceaccount.
+
+  - id: CNSEC-T10
+    priority: high
+    execution: manual
+    tags: [secrets, etcd]
+    refs: ["Kubernetes Encrypting Confidential Data at Rest"]
+    en:
+      title: Secrets in the datastore are encrypted
+      description: Creates a secret and reads its raw value from the cluster datastore.
+      preconditions: A test cluster configured as production, with direct read access to the datastore and the key management console.
+      expected: The stored value is ciphertext from the KMS provider.
+      steps:
+        - action: Create a secret with a known test value.
+          expected: The secret is created.
+        - action: Read the secret's key directly from the datastore.
+          expected: The value starts with the KMS provider prefix and does not contain the test value or its base64 form.
+          data: "k8s:enc:kms:"
+        - action: Look up the key named in the encryption configuration in the key management console.
+          expected: The key exists and is enabled.
+    sv:
+      title: Hemligheter i datalagret är krypterade
+      description: Skapar en hemlighet och läser dess råa värde ur klustrets datalager.
+      preconditions: Ett testkluster konfigurerat som produktion, med direkt läsbehörighet till datalagret och konsolen för nyckelhantering.
+      expected: Det lagrade värdet är chiffertext från KMS-leverantören.
+      steps:
+        - action: Skapa en hemlighet med ett känt testvärde.
+          expected: Hemligheten skapas.
+        - action: Läs hemlighetens nyckel direkt ur datalagret.
+          expected: Värdet börjar med KMS-leverantörens prefix och innehåller inte testvärdet eller dess base64-form.
+          data: "k8s:enc:kms:"
+        - action: Slå upp nyckeln som anges i krypteringskonfigurationen i konsolen för nyckelhantering.
+          expected: Nyckeln finns och är aktiverad.
+
+  - id: CNSEC-T11
+    priority: high
+    execution: manual
+    tags: [runtime-detection]
+    refs: ["MITRE ATT&CK Containers Matrix"]
+    en:
+      title: A shell in a production container raises an alert
+      description: Starts an interactive shell in a test pod in production and watches the alert channel.
+      preconditions: A test pod in a production namespace built for this check with a shell, approval for the test, and access to the on-call alert channel.
+      expected: An alert names the pod and the process within 5 minutes.
+      steps:
+        - action: Run kubectl exec with an interactive shell in the test pod and note the time.
+          expected: The shell opens.
+        - action: Watch the on-call alert channel.
+          expected: An alert with the pod name and the shell process arrives within 5 minutes of the noted time.
+    sv:
+      title: Ett skal i en produktionscontainer ger ett larm
+      description: Startar ett interaktivt skal i en testpodd i produktion och bevakar larmkanalen.
+      preconditions: En testpodd i en produktionsnamnrymd byggd för kontrollen med ett skal, godkännande av testet och åtkomst till jourens larmkanal.
+      expected: Ett larm anger podden och processen inom 5 minuter.
+      steps:
+        - action: Kör kubectl exec med ett interaktivt skal i testpodden och anteckna tiden.
+          expected: Skalet öppnas.
+        - action: Bevaka jourens larmkanal.
+          expected: Ett larm med poddens namn och skalprocessen kommer inom 5 minuter efter den antecknade tiden.
+
+  - id: CNSEC-T12
+    priority: medium
+    execution: automated
+    tags: [audit-logging]
+    refs: ["Kubernetes Auditing"]
+    en:
+      title: Changes and secret reads appear in the central audit log
+      description: Creates a role binding and reads a secret, then searches the central log store.
+      preconditions: A test cluster user with rights to create role bindings and read a test secret, and search access to the central log store.
+      expected: Both events arrive within 1 minute with user, verb, resource and time.
+      steps:
+        - action: Create a role binding in a test namespace and read the test secret, noting the time.
+          expected: Both requests succeed.
+        - action: Search the central log store for the two events.
+          expected: Both are found within 1 minute of the noted time, with the user, the verb, the resource and the time.
+    sv:
+      title: Ändringar och läsningar av hemligheter syns i den centrala granskningsloggen
+      description: Skapar en rollkoppling och läser en hemlighet, och söker sedan i det centrala logglagret.
+      preconditions: En klusteranvändare för test med rätt att skapa rollkopplingar och läsa en testhemlighet, och sökbehörighet till det centrala logglagret.
+      expected: Båda händelserna kommer fram inom 1 minut med användare, verb, resurs och tid.
+      steps:
+        - action: Skapa en rollkoppling i en testnamnrymd och läs testhemligheten, och anteckna tiden.
+          expected: Båda anropen lyckas.
+        - action: Sök efter de två händelserna i det centrala logglagret.
+          expected: Båda hittas inom 1 minut från den antecknade tiden, med användaren, verbet, resursen och tiden.
+
+  - id: CNSEC-T13
+    priority: high
+    execution: manual
+    tags: [supported-versions, patching]
+    refs: ["Kubernetes Version Skew Policy"]
+    en:
+      title: Cluster version is supported and nodes are patched
+      description: Compares the cluster version with the supported versions and checks pending node updates.
+      preconditions: Read access to the cluster and its nodes and the maintainer's list of supported versions.
+      expected: The version is supported and no node has a security update pending for more than 30 days.
+      steps:
+        - action: Read the control plane version and compare it with the list of supported minor versions.
+          expected: The version is on the list.
+        - action: List pending security updates on each node with their release dates.
+          expected: None was released more than 30 days ago.
+    sv:
+      title: Klustrets version stöds och noderna är uppdaterade
+      description: Jämför klustrets version med de versioner som stöds och kontrollerar väntande uppdateringar på noderna.
+      preconditions: Läsbehörighet till klustret och dess noder och förvaltarens lista över versioner som stöds.
+      expected: Versionen stöds och ingen nod har en säkerhetsuppdatering som väntat i mer än 30 dagar.
+      steps:
+        - action: Läs kontrollplanets version och jämför den med listan över mindre versioner som stöds.
+          expected: Versionen finns på listan.
+        - action: Lista väntande säkerhetsuppdateringar på varje nod med deras utgivningsdatum.
+          expected: Ingen släpptes för mer än 30 dagar sedan.
+
+  - id: CNSEC-T14
+    priority: medium
+    execution: manual
+    tags: [benchmark]
+    refs: ["CIS Kubernetes Benchmark"]
+    en:
+      title: Benchmark failures are fixed or accepted
+      description: Reviews the monthly benchmark reports of the last 3 months.
+      preconditions: The benchmark scan reports and the exception register.
+      expected: Each month was scanned and each failure is fixed or accepted within 30 days.
+      steps:
+        - action: List the scan reports of the last 3 months for each cluster.
+          expected: There is one report per cluster and month.
+        - action: For each failed check, look for it in the next report and in the exception register.
+          expected: Each is either passed in the next report or has an exception with owner and reason dated within 30 days.
+    sv:
+      title: Underkända kontroller mot riktmärket rättas eller godtas
+      description: Granskar de månatliga skanningsrapporterna mot riktmärket för de senaste 3 månaderna.
+      preconditions: Skanningsrapporterna och registret över undantag.
+      expected: Varje månad har skannats och varje underkänd kontroll har rättats eller godtagits inom 30 dagar.
+      steps:
+        - action: Lista skanningsrapporterna för de senaste 3 månaderna för varje kluster.
+          expected: Det finns en rapport per kluster och månad.
+        - action: Leta upp varje underkänd kontroll i nästa rapport och i registret över undantag.
+          expected: Var och en är antingen godkänd i nästa rapport eller har ett undantag med ägare och skäl daterat inom 30 dagar.

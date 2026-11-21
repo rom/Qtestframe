@@ -295,6 +295,120 @@ requirements:
         - method: test
           text: När en administratör har stängt av AI-funktionerna är AI-kontrollerna dolda för varje användare och loggen över utgående trafik visar inga anrop till modelleverantören för organisationen.
 
+  - id: AIML-13
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [opt-out, user-choice, personal-data]
+    refs: ["GDPR Art. 21", "GDPR Art. 25(1)", "ISO/IEC 42001:2023 A.8 (information for interested parties)"]
+    tests: [AIML-T11]
+    en:
+      title: Users can keep their content out of AI features
+      description: The system SHOULD let each user turn off the processing of their own records and comments by AI features, and honour the choice from the next request on.
+      rationale: Some users object to having their texts read by a model, and a personal switch respects that without the organisation turning off the feature for everyone.
+      criteria:
+        - method: test
+          text: After user A opts out, a summary requested by user B over a project leaves out A's comments, and the request to the model contains none of A's text.
+    sv:
+      title: Användare kan hålla sitt innehåll utanför AI-funktionerna
+      description: Systemet BÖR låta varje användare stänga av AI-funktionernas behandling av användarens egna poster och kommentarer, och respektera valet från och med nästa anrop.
+      rationale: En del användare motsätter sig att en modell läser deras texter, och ett personligt reglage respekterar det utan att organisationen stänger av funktionen för alla.
+      criteria:
+        - method: test
+          text: När användare A har valt bort behandlingen utelämnar en sammanfattning som användare B begär över ett projekt A:s kommentarer, och anropet till modellen innehåller ingen text från A.
+
+  - id: AIML-14
+    type: security
+    obligation: should
+    priority: high
+    tags: [data-minimisation, pseudonymisation, prompts]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25(1)", "OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "ISO/IEC 27701:2025 (de-identification)"]
+    tests: [AIML-T12]
+    en:
+      title: Direct identifiers removed before text is sent to an external model
+      description: The system SHOULD replace personal identity numbers, email addresses and phone numbers in text with placeholders before it sends the text to an external model provider, and put the values back in the answer.
+      rationale: Identifiers are seldom needed for a summary or a draft, and removing them limits what the provider holds if its logs leak.
+      criteria:
+        - method: test
+          text: A prompt built from a record with a test identity number, email and phone number reaches the provider with placeholders only, and the answer shown to the user has the original values.
+    sv:
+      title: Direkta identifierare tas bort innan text skickas till en extern modell
+      description: Systemet BÖR ersätta personnummer, e-postadresser och telefonnummer i text med platshållare innan texten skickas till en extern modelleverantör, och sätta tillbaka värdena i svaret.
+      rationale: Identifierare behövs sällan för en sammanfattning eller ett utkast, och när de tas bort begränsas vad leverantören har om dess loggar läcker.
+      criteria:
+        - method: test
+          text: En prompt som byggs från en post med ett testpersonnummer, en e-postadress och ett telefonnummer når leverantören med enbart platshållare, och svaret som visas för användaren har de ursprungliga värdena.
+
+  - id: AIML-15
+    type: functional
+    obligation: must
+    priority: high
+    tags: [conversation-history, erasure, memory]
+    refs: ["GDPR Art. 17", "ISO/IEC 27701:2025 (access, correction or erasure)"]
+    tests: [AIML-T13]
+    en:
+      title: Users delete their AI conversations and memory
+      description: The system MUST let a user delete a single AI conversation, the whole conversation history and any facts stored as memory, and remove them from storage and search within 24 hours.
+      rationale: Conversations often hold personal and confidential details the user regrets sharing, and the right to erasure covers them.
+      criteria:
+        - method: test
+          text: A deleted conversation and a deleted memory item no longer appear in the interface, in the API or in the database 24 hours after deletion, and the model no longer uses the memory.
+          threshold: "≤ 24 h"
+    sv:
+      title: Användare raderar sina AI-konversationer och sitt minne
+      description: Systemet SKA låta en användare radera en enskild AI-konversation, hela konversationshistoriken och fakta som sparats som minne, och ta bort dem från lagring och sökning inom 24 timmar.
+      rationale: Konversationer innehåller ofta personliga och konfidentiella uppgifter som användaren ångrar att ha delat, och rätten till radering omfattar dem.
+      criteria:
+        - method: test
+          text: En raderad konversation och en raderad minnespost syns inte längre i gränssnittet, i API:et eller i databasen 24 timmar efter raderingen, och modellen använder inte längre minnet.
+          threshold: "≤ 24 h"
+
+  - id: AIML-16
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [transparency, model-provider, processing-location]
+    refs: ["GDPR Art. 13(1)(e)", "GDPR Art. 28(2)", "GDPR Art. 44"]
+    tests: [AIML-T14]
+    en:
+      title: Model providers and processing regions shown to administrators
+      description: The system SHOULD list for each AI feature, in the organisation's settings, the model provider, its sub-processors and the regions where prompts are processed and stored.
+      rationale: Administrators must know who receives their data and where, to update their records of processing and to judge transfers outside the EEA.
+      criteria:
+        - method: inspection
+          text: The settings page names the provider, sub-processors and regions for each AI feature, and they match the data processing agreement.
+    sv:
+      title: Modelleverantörer och behandlingsregioner visas för administratörer
+      description: Systemet BÖR för varje AI-funktion visa modelleverantören, dess underbiträden och de regioner där prompter behandlas och lagras i organisationens inställningar.
+      rationale: Administratörer behöver veta vem som tar emot deras data och var, för att hålla registret över behandlingar aktuellt och bedöma överföringar utanför EES.
+      criteria:
+        - method: inspection
+          text: Inställningssidan anger leverantör, underbiträden och regioner för varje AI-funktion, och de stämmer med personuppgiftsbiträdesavtalet.
+
+  - id: AIML-17
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [explanation, automated-decisions, data-subject-rights]
+    refs: ["GDPR Art. 22(3)", "GDPR Art. 15(1)(h)", "EU AI Act (Regulation (EU) 2024/1689) Art. 86 (right to explanation)"]
+    tests: [AIML-T15]
+    en:
+      title: Explanation of AI-assisted decisions about a person
+      description: The system MUST store, for each decision concerning a person in which AI output was used, the main factors of the output and the reviewer's reasons, so that an explanation can be given to the person within 30 days of a request.
+      rationale: A person affected by such a decision has the right to understand it and to contest it, which needs more than the final yes or no.
+      criteria:
+        - method: test
+          text: For a test decision, the stored record shows the AI output, its main factors, the reviewer and the reasons, and an explanation letter can be produced from it.
+          threshold: "explanation within 30 days"
+    sv:
+      title: Förklaring av AI-stödda beslut om en person
+      description: Systemet SKA för varje beslut om en person där AI-utdata använts lagra utdatans viktigaste faktorer och granskarens skäl, så att en förklaring kan lämnas till personen inom 30 dagar efter en begäran.
+      rationale: En person som berörs av ett sådant beslut har rätt att förstå det och att invända mot det, vilket kräver mer än det slutliga ja eller nej.
+      criteria:
+        - method: test
+          text: För ett testbeslut visar den lagrade posten AI-utdatan, dess viktigaste faktorer, granskaren och skälen, och ett förklaringsbrev kan tas fram ur den.
+          threshold: "förklaring inom 30 dagar"
+
 tests:
   - id: AIML-T01
     priority: high
@@ -603,3 +717,149 @@ tests:
           expected: AI-kontrollerna försvinner för användaren när sidan läses in igen.
         - action: Använd funktionerna som tidigare anropade modellen i 10 minuter och läs sedan loggen över utgående trafik.
           expected: Inga anrop till modelleverantören loggas för organisationen.
+
+  - id: AIML-T11
+    priority: medium
+    execution: manual
+    tags: [opt-out]
+    refs: ["GDPR Art. 21"]
+    en:
+      title: Opted-out user's text is not sent to the model
+      description: One user opts out and another requests an AI summary of shared content.
+      preconditions: Users A and B in the same project, each with comments, and a way to inspect the requests sent to the model provider in the test environment.
+      expected: The summary and the model request contain none of A's text.
+      steps:
+        - action: As user A, turn off AI processing of own content in the profile settings.
+          expected: The setting is saved.
+        - action: As user B, request a summary of the project's comments.
+          expected: A summary is shown and does not mention A's comments.
+        - action: Inspect the request sent to the model provider.
+          expected: It contains B's comments and none of A's.
+    sv:
+      title: Text från en användare som valt bort behandling skickas inte till modellen
+      description: En användare väljer bort behandlingen och en annan begär en AI-sammanfattning av delat innehåll.
+      preconditions: Användarna A och B i samma projekt, var och en med kommentarer, och ett sätt att granska anropen till modelleverantören i testmiljön.
+      expected: Sammanfattningen och anropet till modellen innehåller ingen text från A.
+      steps:
+        - action: Stäng av AI-behandling av eget innehåll i profilinställningarna som användare A.
+          expected: Inställningen sparas.
+        - action: Begär som användare B en sammanfattning av projektets kommentarer.
+          expected: En sammanfattning visas och nämner inte A:s kommentarer.
+        - action: Granska anropet som skickades till modelleverantören.
+          expected: Det innehåller B:s kommentarer och inga av A:s.
+
+  - id: AIML-T12
+    priority: high
+    execution: automated
+    tags: [pseudonymisation, prompts]
+    refs: ["GDPR Art. 5(1)(c)"]
+    en:
+      title: Identifiers are replaced before the model call
+      description: A script asks for a draft from a record with known identifiers and captures the outgoing model request.
+      preconditions: A test record with a test personal identity number, an email address and a phone number, and a capturing proxy in front of the model provider.
+      expected: The provider receives placeholders and the user sees the real values.
+      steps:
+        - action: Ask the AI feature to draft a reply based on the test record.
+          expected: A draft is shown.
+        - action: Search the captured request for the three test values.
+          expected: None is found; placeholders appear in their place.
+        - action: Read the draft shown to the user.
+          expected: The draft contains the original values where the model used the placeholders.
+    sv:
+      title: Identifierare ersätts före anropet till modellen
+      description: Ett skript ber om ett utkast från en post med kända identifierare och fångar det utgående anropet till modellen.
+      preconditions: En testpost med ett testpersonnummer, en e-postadress och ett telefonnummer, och en fångande proxy framför modelleverantören.
+      expected: Leverantören får platshållare och användaren ser de riktiga värdena.
+      steps:
+        - action: Be AI-funktionen skriva ett utkast till svar utifrån testposten.
+          expected: Ett utkast visas.
+        - action: Sök i det fångade anropet efter de tre testvärdena.
+          expected: Inget hittas; platshållare finns i deras ställe.
+        - action: Läs utkastet som visas för användaren.
+          expected: Utkastet innehåller de ursprungliga värdena där modellen använde platshållarna.
+
+  - id: AIML-T13
+    priority: high
+    execution: manual
+    tags: [erasure, memory]
+    refs: ["GDPR Art. 17"]
+    en:
+      title: Deleted conversations and memory are gone after 24 hours
+      description: Creates a conversation and a memory item, deletes them and checks every place they were stored.
+      preconditions: A test user with the AI assistant, read access to the test database and the search index.
+      expected: Nothing of the deleted items remains after 24 hours and the model does not use the memory.
+      steps:
+        - action: Hold a conversation that contains a unique test phrase and ask the assistant to remember a test fact.
+          expected: The conversation is listed and the fact appears in the memory settings.
+        - action: Delete the conversation and the memory item and note the time.
+          expected: Both disappear from the interface at once.
+        - action: After 24 hours, search the API, the database and the search index for the test phrase and fact, and ask the assistant about the fact.
+          expected: Nothing is found and the assistant does not know the fact.
+    sv:
+      title: Raderade konversationer och minnen är borta efter 24 timmar
+      description: Skapar en konversation och en minnespost, raderar dem och kontrollerar varje plats där de lagrats.
+      preconditions: En testanvändare med AI-assistenten, läsbehörighet till testdatabasen och sökindexet.
+      expected: Inget av de raderade posterna finns kvar efter 24 timmar och modellen använder inte minnet.
+      steps:
+        - action: För en konversation som innehåller en unik testfras och be assistenten komma ihåg ett testfaktum.
+          expected: Konversationen listas och faktumet syns i minnesinställningarna.
+        - action: Radera konversationen och minnesposten och anteckna tiden.
+          expected: Båda försvinner direkt från gränssnittet.
+        - action: Sök efter 24 timmar i API:et, databasen och sökindexet efter testfrasen och faktumet, och fråga assistenten om faktumet.
+          expected: Inget hittas och assistenten känner inte till faktumet.
+
+  - id: AIML-T14
+    priority: medium
+    execution: manual
+    tags: [transparency, model-provider]
+    refs: ["GDPR Art. 28(2)"]
+    en:
+      title: AI settings name providers and regions
+      description: Compares the AI settings page with the data processing agreement.
+      preconditions: An administrator account and the current data processing agreement with its list of sub-processors.
+      expected: Each AI feature shows provider, sub-processors and regions that match the agreement.
+      steps:
+        - action: Open the AI section of the organisation settings.
+          expected: Each AI feature lists a provider, sub-processors and processing and storage regions.
+        - action: Compare the listed values with the agreement.
+          expected: They match, with no provider or region missing.
+    sv:
+      title: AI-inställningarna anger leverantörer och regioner
+      description: Jämför sidan med AI-inställningar med personuppgiftsbiträdesavtalet.
+      preconditions: Ett administratörskonto och det gällande biträdesavtalet med dess lista över underbiträden.
+      expected: Varje AI-funktion visar leverantör, underbiträden och regioner som stämmer med avtalet.
+      steps:
+        - action: Öppna AI-avsnittet i organisationens inställningar.
+          expected: Varje AI-funktion listar en leverantör, underbiträden och regioner för behandling och lagring.
+        - action: Jämför de listade värdena med avtalet.
+          expected: De stämmer, och ingen leverantör eller region saknas.
+
+  - id: AIML-T15
+    priority: high
+    execution: manual
+    tags: [explanation, automated-decisions]
+    refs: ["GDPR Art. 22(3)"]
+    en:
+      title: An AI-assisted decision can be explained
+      description: Makes a test decision with AI support and produces an explanation from the stored record.
+      preconditions: A test case where an AI feature scores an application, and a reviewer account.
+      expected: The record holds the output, the main factors, the reviewer and the reasons.
+      steps:
+        - action: Let the AI feature score the test application, and as reviewer reject it with a reason.
+          expected: The decision is saved.
+        - action: Open the decision record.
+          expected: It shows the AI output, its main factors, the reviewer's name and the reasons.
+        - action: Produce the explanation letter for the applicant.
+          expected: The letter states the decision, the main factors and how to contest it.
+    sv:
+      title: Ett AI-stött beslut kan förklaras
+      description: Fattar ett testbeslut med AI-stöd och tar fram en förklaring ur den lagrade posten.
+      preconditions: Ett testärende där en AI-funktion poängsätter en ansökan, och ett granskarkonto.
+      expected: Posten innehåller utdatan, de viktigaste faktorerna, granskaren och skälen.
+      steps:
+        - action: Låt AI-funktionen poängsätta testansökan och avslå den som granskare med ett skäl.
+          expected: Beslutet sparas.
+        - action: Öppna beslutsposten.
+          expected: Den visar AI-utdatan, dess viktigaste faktorer, granskarens namn och skälen.
+        - action: Ta fram förklaringsbrevet till sökanden.
+          expected: Brevet anger beslutet, de viktigaste faktorerna och hur man invänder mot det.

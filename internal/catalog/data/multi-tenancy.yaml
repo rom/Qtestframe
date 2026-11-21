@@ -265,6 +265,98 @@ requirements:
         - method: inspection
           text: Kundens granskningslogg visar varje supportåtkomst med tekniker, godkännare och period.
 
+  - id: TEN-12
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [data-residency, region]
+    refs: ["CSA Cloud Controls Matrix v4 DSP-19", "ISO/IEC 27018:2025 (geographical location of PII)", "GDPR Art. 44", "ISO/IEC 27001:2022 A.5.34"]
+    tests: [TEN-T10]
+    en:
+      title: Tenant data stays in the chosen region
+      description: The system MUST store the data, backups and search indexes of a tenant only in the hosting region that the tenant chose at sign-up.
+      rationale: Many customers have legal or contractual limits on where their data may be kept, and a copy in another region breaks them even when the primary data is in place.
+      criteria:
+        - method: inspection
+          text: For a test tenant in the EU region, the storage locations of its database, files, backups and search index are all in that region.
+    sv:
+      title: Kunddata stannar i den valda regionen
+      description: Systemet SKA lagra en kunds data, säkerhetskopior och sökindex enbart i den driftregion som kunden valde vid registreringen.
+      rationale: Många kunder har lagliga eller avtalsmässiga begränsningar för var deras data får finnas, och en kopia i en annan region bryter mot dem även när huvuddata ligger rätt.
+      criteria:
+        - method: inspection
+          text: För en testkund i EU-regionen ligger lagringsplatserna för dess databas, filer, säkerhetskopior och sökindex alla i den regionen.
+
+  - id: TEN-13
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [audit-log, tenant-administration]
+    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)", "CSA Cloud Controls Matrix v4 LOG", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [TEN-T11]
+    en:
+      title: Tenant administrators read their own audit log
+      description: The system SHOULD let a tenant's administrators search and export the audit and sign-in events of their own tenant for the last 12 months.
+      rationale: Customers must be able to investigate their own incidents and answer their auditors without opening a support case with the supplier.
+      criteria:
+        - method: test
+          text: A tenant administrator finds the sign-ins and changes of the own tenant for a chosen period and gets no event from another tenant.
+          threshold: "12 months"
+    sv:
+      title: Kundens administratörer läser sin egen granskningslogg
+      description: Systemet BÖR låta en kunds administratörer söka i och exportera gransknings- och inloggningshändelserna för den egna kunden för de senaste 12 månaderna.
+      rationale: Kunder behöver kunna utreda sina egna incidenter och svara sina revisorer utan att öppna ett supportärende hos leverantören.
+      criteria:
+        - method: test
+          text: En administratör hos kunden hittar inloggningar och ändringar i den egna kunden för en vald period och får ingen händelse från en annan kund.
+          threshold: "12 månader"
+
+  - id: TEN-14
+    type: security
+    obligation: must
+    priority: medium
+    tags: [logging, tenant-id]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3"]
+    tests: [TEN-T12]
+    en:
+      title: Tenant identifier in each log record
+      description: The system MUST write the tenant identifier in each application and security log record that it writes while handling a request or job for a tenant.
+      rationale: An incident in one tenant can only be scoped, and its log data handed to that customer, when each record shows which tenant it belongs to.
+      criteria:
+        - method: test
+          text: Requests and a background job for two test tenants give log records that each carry the right tenant identifier.
+    sv:
+      title: Kundidentifierare i varje loggpost
+      description: Systemet SKA skriva kundidentifieraren i varje applikations- och säkerhetsloggpost som det skriver när det hanterar ett anrop eller ett jobb för en kund.
+      rationale: En incident hos en kund kan bara avgränsas, och dess loggdata lämnas ut till den kunden, när varje post visar vilken kund den hör till.
+      criteria:
+        - method: test
+          text: Anrop och ett bakgrundsjobb för två testkunder ger loggposter som var och en har rätt kundidentifierare.
+
+  - id: TEN-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [custom-domains, dns, subdomain-takeover]
+    refs: ["OWASP Web Security Testing Guide WSTG-CONF-10", "ISO/IEC 27001:2022 A.8.20"]
+    tests: [TEN-T13]
+    en:
+      title: Custom domains verified before use and released when removed
+      description: The system MUST activate a tenant's custom domain only after a DNS TXT record proves the tenant controls it, and stop serving the domain within 1 hour after the tenant removes it.
+      rationale: Without proof of control one tenant can claim another organisation's domain, and a domain left pointing at the service can be taken over by anyone who adds it later.
+      criteria:
+        - method: test
+          text: A domain without the TXT record stays inactive, one with it is activated, and a removed domain answers with no tenant content 1 hour later.
+          threshold: "≤ 1 h after removal"
+    sv:
+      title: Egna domäner verifieras före användning och släpps när de tas bort
+      description: Systemet SKA aktivera en kunds egen domän först när en TXT-post i DNS visar att kunden kontrollerar domänen, och sluta betjäna domänen inom 1 timme efter att kunden har tagit bort den.
+      rationale: Utan bevis på kontroll kan en kund lägga beslag på en annan organisations domän, och en domän som fortsätter att peka mot tjänsten kan tas över av den som lägger till den senare.
+      criteria:
+        - method: test
+          text: En domän utan TXT-posten förblir inaktiv, en med posten aktiveras, och en borttagen domän svarar utan kundinnehåll 1 timme senare.
+          threshold: "≤ 1 h efter borttagning"
+
 tests:
   - id: TEN-T01
     priority: critical
@@ -561,3 +653,119 @@ tests:
           expected: Den rapporteras inte, eftersom dess raderingsperiod inte har gått ut.
         - action: Radera den kvarlämnade posten och kör jobbet igen.
           expected: Jobbet rapporterar inga data för avslutade kunder.
+
+  - id: TEN-T10
+    priority: high
+    execution: manual
+    tags: [data-residency]
+    refs: ["CSA Cloud Controls Matrix v4 DSP-19"]
+    en:
+      title: All copies of a tenant's data are in its region
+      description: Creates a tenant in one region and checks where each copy of its data is stored.
+      preconditions: A test tenant created in the EU region with records, files and a completed backup, and read access to the hosting configuration.
+      expected: Database, files, backups and search index are all in the chosen region.
+      steps:
+        - action: Look up the storage location of the tenant's database and file storage.
+          expected: Both are in the EU region.
+        - action: Look up the location of the latest backup and of any backup replica.
+          expected: Each is in the EU region.
+        - action: Look up the location of the search index and of any analytics copy of the tenant's data.
+          expected: Each is in the EU region.
+    sv:
+      title: Varje kopia av kundens data finns i dess region
+      description: Skapar en kund i en region och kontrollerar var varje kopia av dess data lagras.
+      preconditions: En testkund skapad i EU-regionen med poster, filer och en genomförd säkerhetskopiering, och läsbehörighet till driftkonfigurationen.
+      expected: Databas, filer, säkerhetskopior och sökindex ligger alla i den valda regionen.
+      steps:
+        - action: Slå upp lagringsplatsen för kundens databas och fillagring.
+          expected: Båda ligger i EU-regionen.
+        - action: Slå upp platsen för den senaste säkerhetskopian och för varje kopia av den.
+          expected: Var och en ligger i EU-regionen.
+        - action: Slå upp platsen för sökindexet och för varje analyskopia av kundens data.
+          expected: Var och en ligger i EU-regionen.
+
+  - id: TEN-T11
+    priority: medium
+    execution: manual
+    tags: [audit-log, tenant-administration]
+    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)"]
+    en:
+      title: Tenant administrator searches and exports own events
+      description: Generates events in two tenants and searches the audit log as one tenant's administrator.
+      preconditions: Two test tenants, A and B, each with an administrator and a user.
+      expected: The administrator of A sees and exports only events of A.
+      steps:
+        - action: Sign in and change a record as the user of A, and do the same as the user of B.
+          expected: The actions succeed.
+        - action: As administrator of A, search the audit log for today.
+          expected: The sign-in and change of A's user are listed and nothing from B.
+        - action: Export the result.
+          expected: The export contains the same events and no event of tenant B.
+    sv:
+      title: Kundens administratör söker och exporterar egna händelser
+      description: Skapar händelser hos två kunder och söker i granskningsloggen som den ena kundens administratör.
+      preconditions: Två testkunder, A och B, var och en med en administratör och en användare.
+      expected: Administratören hos A ser och exporterar bara händelser hos A.
+      steps:
+        - action: Logga in och ändra en post som användaren hos A, och gör samma sak som användaren hos B.
+          expected: Åtgärderna lyckas.
+        - action: Sök i granskningsloggen för i dag som administratör hos A.
+          expected: Inloggningen och ändringen av A:s användare listas och inget från B.
+        - action: Exportera resultatet.
+          expected: Exporten innehåller samma händelser och ingen händelse från kund B.
+
+  - id: TEN-T12
+    priority: medium
+    execution: automated
+    tags: [logging, tenant-id]
+    refs: ["NIST SP 800-53 AU-3"]
+    en:
+      title: Log records carry the tenant identifier
+      description: A script sends requests and queues a job for two tenants and checks the log records.
+      preconditions: Two test tenants with known identifiers and search access to the central log.
+      expected: Each record written for a tenant carries that tenant's identifier.
+      steps:
+        - action: Send a read request and a failing write request for each tenant, and queue an export job for tenant A.
+          expected: The requests are answered and the job completes.
+        - action: Search the log records written for these requests and the job.
+          expected: Each record has a tenant field with the identifier of the right tenant, and none lacks it.
+    sv:
+      title: Loggposter har kundidentifieraren
+      description: Ett skript skickar anrop och köar ett jobb för två kunder och kontrollerar loggposterna.
+      preconditions: Två testkunder med kända identifierare och sökbehörighet till den centrala loggen.
+      expected: Varje post som skrivs för en kund har den kundens identifierare.
+      steps:
+        - action: Skicka ett läsanrop och ett misslyckat skrivanrop för varje kund, och köa ett exportjobb för kund A.
+          expected: Anropen besvaras och jobbet slutförs.
+        - action: Sök fram de loggposter som skrevs för anropen och jobbet.
+          expected: Varje post har ett kundfält med rätt kunds identifierare, och ingen saknar det.
+
+  - id: TEN-T13
+    priority: high
+    execution: manual
+    tags: [custom-domains, subdomain-takeover]
+    refs: ["OWASP Web Security Testing Guide WSTG-CONF-10"]
+    en:
+      title: Custom domain needs DNS proof and is released on removal
+      description: Adds a custom domain with and without the verification record and then removes it.
+      preconditions: A test tenant administrator and a test domain whose DNS the tester controls.
+      expected: Only a verified domain is activated, and a removed domain stops serving tenant content within 1 hour.
+      steps:
+        - action: Add the test domain to the tenant without creating the TXT record.
+          expected: The domain stays pending and requests to it show no tenant content.
+        - action: Create the TXT record with the value shown by the system and wait for verification.
+          expected: The domain is activated and serves the tenant's pages.
+        - action: Remove the domain from the tenant, note the time and request it after 1 hour.
+          expected: The response shows no tenant content and the domain can only be added again with a new verification.
+    sv:
+      title: Egen domän kräver DNS-bevis och släpps vid borttagning
+      description: Lägger till en egen domän med och utan verifieringsposten och tar sedan bort den.
+      preconditions: En administratör hos en testkund och en testdomän vars DNS testaren styr.
+      expected: Bara en verifierad domän aktiveras, och en borttagen domän slutar visa kundinnehåll inom 1 timme.
+      steps:
+        - action: Lägg till testdomänen hos kunden utan att skapa TXT-posten.
+          expected: Domänen förblir väntande och anrop till den visar inget kundinnehåll.
+        - action: Skapa TXT-posten med värdet som systemet visar och vänta på verifieringen.
+          expected: Domänen aktiveras och visar kundens sidor.
+        - action: Ta bort domänen från kunden, anteckna tiden och anropa den efter 1 timme.
+          expected: Svaret visar inget kundinnehåll och domänen kan bara läggas till igen med en ny verifiering.
