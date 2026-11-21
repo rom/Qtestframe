@@ -1,0 +1,552 @@
+area: sv-sla
+prefix: SVSLA
+group: quality
+catalogue: services
+name: {en: Service levels and customer satisfaction, sv: Servicenivåer och kundnöjdhet}
+description:
+  en: The service level agreement, availability, response and resolution times, priority rules, monthly reports, service credits, access to measurement data, service reviews, satisfaction surveys, complaints and continual improvement of a delivered service.
+  sv: Servicenivåavtalet, tillgänglighet, svarstider och lösningstider, regler för prioritet, månadsrapporter, vite och avdrag, tillgång till mätdata, uppföljningsmöten, nöjdhetsundersökningar, klagomål och ständig förbättring av en levererad tjänst.
+
+requirements:
+  - id: SVSLA-01
+    type: business
+    obligation: must
+    priority: critical
+    tags: [sla, service-level-agreement]
+    refs: ["ISO/IEC 20000-1:2018 §8.3.3", "ITIL 4 Service level management"]
+    tests: [SVSLA-T01]
+    en:
+      title: Service level agreement with measurable targets
+      description: The service level agreement MUST state for each service its service hours, availability target, response and resolution times per priority, the measurement method and the reporting interval.
+      rationale: A target without a measurement method leads to disputes, and a service without targets cannot be followed up.
+      criteria:
+        - method: review
+          text: For each service in the agreement, the 6 listed items are stated with numbers and a measurement method.
+    sv:
+      title: Servicenivåavtal med mätbara mål
+      description: Servicenivåavtalet SKA för varje tjänst ange servicetid, mål för tillgänglighet, svarstider och lösningstider per prioritet, mätmetod och rapporteringsintervall.
+      rationale: Ett mål utan mätmetod leder till tvister, och en tjänst utan mål går inte att följa upp.
+      criteria:
+        - method: review
+          text: För varje tjänst i avtalet anges de 6 uppräknade delarna med siffror och en mätmetod.
+
+  - id: SVSLA-02
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [availability, sla]
+    refs: ["ITIL 4 Availability management", "ISO/IEC 20000-1:2018 §8.7.2"]
+    tests: [SVSLA-T02]
+    en:
+      title: Monthly availability of at least 99.8 % in service hours
+      description: The provider MUST keep each service available for at least 99.8 % of the service hours of each calendar month, measured by an external probe at intervals of at most 5 minutes.
+      rationale: The availability target is the core of the agreement, and an external probe measures what the users experience.
+      criteria:
+        - method: analysis
+          text: The probe data of the last 3 months shows at least 99.8 % availability in the service hours of each month.
+          threshold: ≥ 99.8 % per month
+    sv:
+      title: Tillgänglighet per månad på minst 99,8 % under servicetiden
+      description: Leverantören SKA hålla varje tjänst tillgänglig minst 99,8 % av servicetiden varje kalendermånad, mätt med en extern mätpunkt med högst 5 minuters intervall.
+      rationale: Målet för tillgänglighet är kärnan i avtalet, och en extern mätpunkt mäter det som användarna upplever.
+      criteria:
+        - method: analysis
+          text: Mätdata från de senaste 3 månaderna visar minst 99,8 % tillgänglighet under servicetiden varje månad.
+          threshold: ≥ 99,8 % per månad
+
+  - id: SVSLA-03
+    type: performance
+    obligation: must
+    priority: high
+    tags: [response-time, incidents, sla]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.1"]
+    tests: [SVSLA-T03]
+    en:
+      title: Response within 15 minutes for priority 1 incidents
+      description: The provider MUST start work on an incident and inform the reporter within 15 minutes for priority 1, 1 hour for priority 2 and 4 hours for priority 3, counted in service hours.
+      rationale: The reporter needs to know that someone is working on the problem, and response times by priority focus the effort where the impact is greatest.
+      criteria:
+        - method: analysis
+          text: The ticket data of the last month shows the first response within the time of its priority for at least 95 % of incidents of each priority.
+          threshold: P1 15 min, P2 1 h, P3 4 h for ≥ 95 %
+    sv:
+      title: Svar inom 15 minuter för incidenter med prioritet 1
+      description: Leverantören SKA påbörja arbetet med en incident och informera anmälaren inom 15 minuter för prioritet 1, 1 timme för prioritet 2 och 4 timmar för prioritet 3, räknat i servicetid.
+      rationale: Anmälaren behöver veta att någon arbetar med problemet, och svarstider per prioritet lägger insatsen där påverkan är som störst.
+      criteria:
+        - method: analysis
+          text: Ärendedata för den senaste månaden visar det första svaret inom tiden för sin prioritet för minst 95 % av incidenterna i varje prioritet.
+          threshold: P1 15 min, P2 1 h, P3 4 h för ≥ 95 %
+
+  - id: SVSLA-04
+    type: performance
+    obligation: must
+    priority: high
+    tags: [resolution-time, incidents, sla]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.1"]
+    tests: [SVSLA-T03]
+    en:
+      title: Resolution within 4 hours for priority 1 incidents
+      description: The provider MUST restore the service for 95 % of the incidents in each month within 4 hours for priority 1, 8 hours for priority 2 and 3 working days for priority 3, counted in service hours.
+      rationale: Resolution time is what the business loses during an incident, so it is the main measure of the support.
+      criteria:
+        - method: analysis
+          text: The ticket data of the last month shows at least 95 % of the incidents of each priority resolved within its time, with waiting time on the customer excluded only where the ticket shows it.
+          threshold: P1 4 h, P2 8 h, P3 3 working days for ≥ 95 %
+    sv:
+      title: Lösning inom 4 timmar för incidenter med prioritet 1
+      description: Leverantören SKA återställa tjänsten för 95 % av incidenterna varje månad inom 4 timmar för prioritet 1, 8 timmar för prioritet 2 och 3 arbetsdagar för prioritet 3, räknat i servicetid.
+      rationale: Lösningstiden är det som verksamheten förlorar under en incident, så den är det främsta måttet på supporten.
+      criteria:
+        - method: analysis
+          text: Ärendedata för den senaste månaden visar att minst 95 % av incidenterna i varje prioritet lösts inom sin tid, där väntan på kunden bara räknas bort när ärendet visar den.
+          threshold: P1 4 h, P2 8 h, P3 3 arbetsdagar för ≥ 95 %
+
+  - id: SVSLA-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [priority, impact, urgency]
+    refs: ["ITIL 4 Incident management"]
+    tests: [SVSLA-T01]
+    en:
+      title: Priority set from impact and urgency
+      description: The service level agreement MUST define the incident priority as a matrix of impact and urgency, with a written definition of each impact and urgency level.
+      rationale: A shared matrix stops each party from setting priorities by feeling and makes the response and resolution targets fair.
+      criteria:
+        - method: review
+          text: The agreement contains the matrix, each level of impact and urgency is defined in words, and a sample of 10 tickets has the priority that the matrix gives.
+    sv:
+      title: Prioritet bestäms av påverkan och brådska
+      description: Servicenivåavtalet SKA definiera incidentens prioritet som en matris av påverkan och brådska, med en skriftlig definition av varje nivå av påverkan och brådska.
+      rationale: En gemensam matris hindrar att parterna sätter prioritet efter känsla och gör målen för svar och lösning rättvisa.
+      criteria:
+        - method: review
+          text: Avtalet innehåller matrisen, varje nivå av påverkan och brådska är definierad i ord, och ett urval av 10 ärenden har den prioritet som matrisen ger.
+
+  - id: SVSLA-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [service-report, reporting]
+    refs: ["ISO/IEC 20000-1:2018 §8.3.3", "ITIL 4 Measurement and reporting"]
+    tests: [SVSLA-T04]
+    en:
+      title: Monthly service report within 10 working days
+      description: The provider MUST deliver a service report within 10 working days after each month end, with the availability, the incidents per priority, each target breach with its cause, the changes made and the requests fulfilled.
+      rationale: The report is the customer's main view of the service and the basis for service credits and reviews.
+      criteria:
+        - method: review
+          text: Each report of the last 6 months arrived within 10 working days and contains the 5 listed parts.
+          threshold: ≤ 10 working days after month end
+    sv:
+      title: Månatlig tjänsterapport inom 10 arbetsdagar
+      description: Leverantören SKA leverera en tjänsterapport inom 10 arbetsdagar efter varje månadsskifte, med tillgänglighet, incidenter per prioritet, varje målöverträdelse med orsak, genomförda ändringar och utförda beställningar.
+      rationale: Rapporten är kundens främsta bild av tjänsten och underlaget för avdrag och uppföljningsmöten.
+      criteria:
+        - method: review
+          text: Varje rapport för de senaste 6 månaderna kom inom 10 arbetsdagar och innehåller de 5 uppräknade delarna.
+          threshold: ≤ 10 arbetsdagar efter månadsskiftet
+
+  - id: SVSLA-07
+    type: business
+    obligation: must
+    priority: medium
+    tags: [service-credits, invoice]
+    refs: []
+    tests: [SVSLA-T04]
+    en:
+      title: Service credits on the next invoice
+      description: When a monthly target is missed, the provider MUST deduct the service credit of the agreement on the next invoice without the customer having to claim it.
+      rationale: Credits that have to be claimed are often forgotten, which weakens the provider's incentive to meet the targets.
+      criteria:
+        - method: review
+          text: For each month in the last 12 months with a missed target in the report, the next invoice shows the deduction calculated as the agreement states.
+    sv:
+      title: Avdrag på nästa faktura
+      description: När ett månadsmål inte nås SKA leverantören dra av det avdrag som avtalet anger på nästa faktura utan att kunden behöver begära det.
+      rationale: Avdrag som måste begäras glöms ofta bort, vilket försvagar leverantörens drivkraft att nå målen.
+      criteria:
+        - method: review
+          text: För varje månad under de senaste 12 månaderna med ett missat mål i rapporten visar nästa faktura avdraget beräknat enligt avtalet.
+
+  - id: SVSLA-08
+    type: business
+    obligation: must
+    priority: medium
+    tags: [measurement-data, transparency, audit]
+    refs: ["ISO/IEC 20000-1:2018 §9.1"]
+    tests: [SVSLA-T05]
+    en:
+      title: Measurement data handed over within 5 working days
+      description: The provider MUST hand over the raw measurement data behind a service report, with probe results and ticket time stamps, within 5 working days of a request from the customer.
+      rationale: The customer has to be able to check the reported figures, and the right to the raw data keeps the report honest.
+      criteria:
+        - method: test
+          text: A request for the data behind the latest report is answered within 5 working days, and the availability and resolution figures can be recalculated from it.
+          threshold: ≤ 5 working days
+    sv:
+      title: Mätdata lämnas ut inom 5 arbetsdagar
+      description: Leverantören SKA lämna ut de underliggande mätdata till en tjänsterapport, med mätresultat och tidsstämplar för ärenden, inom 5 arbetsdagar efter en begäran från kunden.
+      rationale: Kunden behöver kunna kontrollera de rapporterade siffrorna, och rätten till rådata håller rapporten ärlig.
+      criteria:
+        - method: test
+          text: En begäran om underlaget till den senaste rapporten besvaras inom 5 arbetsdagar, och siffrorna för tillgänglighet och lösning går att räkna om från det.
+          threshold: ≤ 5 arbetsdagar
+
+  - id: SVSLA-09
+    type: business
+    obligation: should
+    priority: medium
+    tags: [service-review, governance]
+    refs: ["ITIL 4 Service level management", "ITIL 4 Relationship management"]
+    tests: [SVSLA-T06]
+    en:
+      title: Quarterly service review with recorded actions
+      description: The provider and the customer SHOULD hold a service review every quarter that goes through the reports, the target breaches and the improvement actions, with minutes listing each action, its owner and its due date.
+      rationale: Reports alone do not change anything, and a regular review turns the figures into agreed actions.
+      criteria:
+        - method: review
+          text: Minutes exist for each quarter of the last year, each with actions, owners and due dates, and the actions of each meeting are followed up at the next.
+          threshold: 4 per year
+    sv:
+      title: Kvartalsvis uppföljningsmöte med dokumenterade åtgärder
+      description: Leverantören och kunden BÖR hålla ett uppföljningsmöte varje kvartal där rapporterna, målöverträdelserna och förbättringsåtgärderna gås igenom, med ett protokoll som listar varje åtgärd, dess ägare och slutdatum.
+      rationale: Rapporter ändrar ingenting i sig själva, och ett regelbundet möte gör siffrorna till överenskomna åtgärder.
+      criteria:
+        - method: review
+          text: Protokoll finns för varje kvartal under det senaste året, vart och ett med åtgärder, ägare och slutdatum, och åtgärderna från varje möte följs upp vid nästa.
+          threshold: 4 per år
+
+  - id: SVSLA-10
+    type: business
+    obligation: should
+    priority: medium
+    tags: [customer-satisfaction, survey]
+    refs: ["ISO 10004:2018", "ISO 9001:2015 §9.1.2"]
+    tests: [SVSLA-T07]
+    en:
+      title: Satisfaction survey after each closed ticket
+      description: The provider SHOULD send a satisfaction survey with a scale from 1 to 5 to the reporter of each closed ticket and keep a monthly average of at least 4.0.
+      rationale: Short surveys right after the contact measure the experience while it is fresh and point to the teams that need support.
+      criteria:
+        - method: analysis
+          text: The survey data of the last 3 months shows a survey sent for each closed ticket and a monthly average of at least 4.0.
+          threshold: average ≥ 4.0 of 5
+    sv:
+      title: Nöjdhetsenkät efter varje stängt ärende
+      description: Leverantören BÖR skicka en nöjdhetsenkät med en skala från 1 till 5 till anmälaren av varje stängt ärende och hålla ett månadsgenomsnitt på minst 4,0.
+      rationale: Korta enkäter direkt efter kontakten mäter upplevelsen medan den är färsk och pekar ut de grupper som behöver stöd.
+      criteria:
+        - method: analysis
+          text: Enkätdata för de senaste 3 månaderna visar en enkät skickad för varje stängt ärende och ett månadsgenomsnitt på minst 4,0.
+          threshold: genomsnitt ≥ 4,0 av 5
+
+  - id: SVSLA-11
+    type: business
+    obligation: must
+    priority: medium
+    tags: [complaints, customer]
+    refs: ["ISO 10002:2018"]
+    tests: [SVSLA-T08]
+    en:
+      title: Complaints acknowledged within 2 and answered within 10 working days
+      description: The provider MUST acknowledge each complaint concerning the service within 2 working days and give a written answer with the decision and the actions within 10 working days.
+      rationale: Complaints that are not answered escalate, while a quick and clear answer often keeps the customer relationship.
+      criteria:
+        - method: review
+          text: The complaint log of the last 6 months shows each complaint acknowledged within 2 and answered within 10 working days.
+          threshold: ≤ 2 and ≤ 10 working days
+    sv:
+      title: Klagomål bekräftas inom 2 och besvaras inom 10 arbetsdagar
+      description: Leverantören SKA bekräfta varje klagomål på tjänsten inom 2 arbetsdagar och ge ett skriftligt svar med beslut och åtgärder inom 10 arbetsdagar.
+      rationale: Klagomål som inte besvaras eskalerar, medan ett tydligt svar i god tid ofta räddar kundrelationen.
+      criteria:
+        - method: review
+          text: Klagomålsloggen för de senaste 6 månaderna visar varje klagomål bekräftat inom 2 och besvarat inom 10 arbetsdagar.
+          threshold: ≤ 2 och ≤ 10 arbetsdagar
+
+  - id: SVSLA-12
+    type: business
+    obligation: must
+    priority: medium
+    tags: [continual-improvement, improvement-register]
+    refs: ["ISO/IEC 20000-1:2018 §10.2", "ITIL 4 Continual improvement"]
+    tests: [SVSLA-T09]
+    en:
+      title: Improvement register evaluated each quarter
+      description: The provider MUST keep an improvement register in which each proposal from reports, reviews, surveys and complaints gets a decision with a reason within 3 months of being entered.
+      rationale: Improvement ideas that are collected but never decided on discourage the people who raise them.
+      criteria:
+        - method: inspection
+          text: The register has no proposal older than 3 months without a decision, and each decision has a reason.
+          threshold: ≤ 3 months to decision
+    sv:
+      title: Förbättringsregister som utvärderas varje kvartal
+      description: Leverantören SKA föra ett förbättringsregister där varje förslag från rapporter, uppföljningsmöten, enkäter och klagomål fått ett motiverat beslut inom 3 månader efter att det förts in.
+      rationale: Förbättringsförslag som samlas in men aldrig beslutas tar modet ur dem som lämnar dem.
+      criteria:
+        - method: inspection
+          text: Registret har inget förslag som är äldre än 3 månader utan beslut, och varje beslut har en motivering.
+          threshold: ≤ 3 månader till beslut
+
+tests:
+  - id: SVSLA-T01
+    priority: critical
+    execution: manual
+    tags: [sla, priority]
+    refs: ["ISO/IEC 20000-1:2018 §8.3.3"]
+    en:
+      title: Review of the service level agreement and its priority matrix
+      description: Reviews the agreement for each service and applies the priority matrix to a sample of tickets.
+      preconditions: The signed service level agreement and an export of 10 recent incident tickets with impact and urgency.
+      expected: Each service has the 6 items with numbers, the matrix is defined, and each sampled ticket has the matrix priority.
+      steps:
+        - action: For each service, find the service hours, availability target, response times, resolution times, measurement method and reporting interval.
+          expected: Each is stated with numbers.
+        - action: Read the priority matrix and the definitions of each impact and urgency level.
+          expected: Each level is defined in words.
+        - action: Apply the matrix to the 10 tickets.
+          expected: Each ticket has the priority that the matrix gives.
+          data: 10 tickets
+    sv:
+      title: Granskning av servicenivåavtalet och dess prioritetsmatris
+      description: Granskar avtalet för varje tjänst och tillämpar prioritetsmatrisen på ett urval av ärenden.
+      preconditions: Det undertecknade servicenivåavtalet och en export av 10 nya incidentärenden med påverkan och brådska.
+      expected: Varje tjänst har de 6 delarna med siffror, matrisen är definierad, och varje valt ärende har matrisens prioritet.
+      steps:
+        - action: Hitta servicetid, mål för tillgänglighet, svarstider, lösningstider, mätmetod och rapporteringsintervall för varje tjänst.
+          expected: Var och en anges med siffror.
+        - action: Läs prioritetsmatrisen och definitionerna av varje nivå av påverkan och brådska.
+          expected: Varje nivå är definierad i ord.
+        - action: Tillämpa matrisen på de 10 ärendena.
+          expected: Varje ärende har den prioritet som matrisen ger.
+          data: 10 ärenden
+
+  - id: SVSLA-T02
+    priority: critical
+    execution: automated
+    tags: [availability]
+    refs: []
+    en:
+      title: Availability calculated from the probe data
+      description: A script calculates the availability in service hours per month from the external probe results.
+      preconditions: The external probe results for the last 3 months and the service hours of the agreement.
+      expected: Each month has at least 99.8 % availability in service hours.
+      steps:
+        - action: Check the interval between probe results.
+          expected: No gap is longer than 5 minutes.
+        - action: Count the failed probe intervals inside the service hours per month and compute the availability.
+          expected: Each month is at least 99.8 %.
+          data: Limit 99.8 %
+    sv:
+      title: Tillgänglighet beräknad från mätdata
+      description: Ett skript beräknar tillgängligheten under servicetiden per månad från den externa mätpunktens resultat.
+      preconditions: Den externa mätpunktens resultat för de senaste 3 månaderna och avtalets servicetid.
+      expected: Varje månad har minst 99,8 % tillgänglighet under servicetiden.
+      steps:
+        - action: Kontrollera intervallet mellan mätresultaten.
+          expected: Inget glapp är längre än 5 minuter.
+        - action: Räkna de misslyckade mätintervallen inom servicetiden per månad och beräkna tillgängligheten.
+          expected: Varje månad ligger på minst 99,8 %.
+          data: Gräns 99,8 %
+
+  - id: SVSLA-T03
+    priority: high
+    execution: automated
+    tags: [response-time, resolution-time]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.1"]
+    en:
+      title: Response and resolution times from the ticket data
+      description: A script computes the response and resolution time of each incident of the last month in service hours.
+      preconditions: A ticket export with priority, creation, first response, resolution and customer waiting time stamps, and the calendar of service hours.
+      expected: At least 95 % of incidents of each priority meet both their response and resolution times.
+      steps:
+        - action: Compute the response time in service hours for each incident and the share within target per priority.
+          expected: Each priority is at least 95 %.
+          data: P1 15 min, P2 1 h, P3 4 h
+        - action: Compute the resolution time minus recorded customer waiting time and the share within target per priority.
+          expected: Each priority is at least 95 %.
+          data: P1 4 h, P2 8 h, P3 3 working days
+    sv:
+      title: Svarstider och lösningstider från ärendedata
+      description: Ett skript beräknar svarstid och lösningstid i servicetid för varje incident under den senaste månaden.
+      preconditions: En ärendeexport med prioritet och tidsstämplar för registrering, första svar, lösning och väntan på kunden, och kalendern för servicetid.
+      expected: Minst 95 % av incidenterna i varje prioritet håller både svarstid och lösningstid.
+      steps:
+        - action: Beräkna svarstiden i servicetid för varje incident och andelen inom målet per prioritet.
+          expected: Varje prioritet ligger på minst 95 %.
+          data: P1 15 min, P2 1 h, P3 4 h
+        - action: Beräkna lösningstiden minus registrerad väntan på kunden och andelen inom målet per prioritet.
+          expected: Varje prioritet ligger på minst 95 %.
+          data: P1 4 h, P2 8 h, P3 3 arbetsdagar
+
+  - id: SVSLA-T04
+    priority: high
+    execution: manual
+    tags: [service-report, service-credits]
+    refs: []
+    en:
+      title: Service reports and the credits on the invoices
+      description: Reviews the service reports for timing and contents and compares missed targets with the invoices.
+      preconditions: The service reports of the last 12 months with their arrival dates and the invoices of the same period.
+      expected: Each report arrived on time with the 5 parts, and each missed target has its deduction on the next invoice.
+      steps:
+        - action: Compare the arrival date of each of the last 6 reports with the month end.
+          expected: Each arrived within 10 working days.
+        - action: Check each of these reports for availability, incidents per priority, breaches with causes, changes and requests.
+          expected: Each contains the 5 parts.
+        - action: For each month with a missed target, find the deduction on the next invoice.
+          expected: The deduction is there and matches the calculation in the agreement.
+    sv:
+      title: Tjänsterapporter och avdragen på fakturorna
+      description: Granskar tjänsterapporternas tidpunkt och innehåll och jämför missade mål med fakturorna.
+      preconditions: Tjänsterapporterna för de senaste 12 månaderna med ankomstdatum och fakturorna för samma period.
+      expected: Varje rapport kom i tid med de 5 delarna, och varje missat mål har sitt avdrag på nästa faktura.
+      steps:
+        - action: Jämför ankomstdatumet för var och en av de 6 senaste rapporterna med månadsskiftet.
+          expected: Varje rapport kom inom 10 arbetsdagar.
+        - action: Kontrollera att var och en av dessa rapporter har tillgänglighet, incidenter per prioritet, överträdelser med orsak, ändringar och beställningar.
+          expected: Varje rapport innehåller de 5 delarna.
+        - action: Hitta avdraget på nästa faktura för varje månad med ett missat mål.
+          expected: Avdraget finns och stämmer med beräkningen i avtalet.
+
+  - id: SVSLA-T05
+    priority: medium
+    execution: manual
+    tags: [measurement-data]
+    refs: []
+    en:
+      title: Request for the data behind the latest report
+      description: Requests the raw data behind the latest service report and recalculates two figures from it.
+      preconditions: The latest service report and a contact at the provider for data requests.
+      expected: The data arrives within 5 working days, and the recalculated figures match the report.
+      steps:
+        - action: Send a written request for the probe results and ticket time stamps behind the report and note the date.
+          expected: The request is acknowledged.
+        - action: Note the date the data arrives.
+          expected: It arrives within 5 working days.
+        - action: Recalculate the availability and the resolution share for priority 1 from the data.
+          expected: Both match the report to 1 decimal.
+    sv:
+      title: Begäran om underlaget till den senaste rapporten
+      description: Begär de rådata som ligger bakom den senaste tjänsterapporten och räknar om två siffror från dem.
+      preconditions: Den senaste tjänsterapporten och en kontaktperson hos leverantören för begäran om data.
+      expected: Underlaget kommer inom 5 arbetsdagar, och de omräknade siffrorna stämmer med rapporten.
+      steps:
+        - action: Skicka en skriftlig begäran om mätresultaten och tidsstämplarna för ärenden bakom rapporten och anteckna datumet.
+          expected: Begäran bekräftas.
+        - action: Anteckna datumet då underlaget kommer.
+          expected: Det kommer inom 5 arbetsdagar.
+        - action: Räkna om tillgängligheten och andelen lösta incidenter för prioritet 1 från underlaget.
+          expected: Båda stämmer med rapporten på 1 decimal.
+
+  - id: SVSLA-T06
+    priority: medium
+    execution: manual
+    tags: [service-review]
+    refs: ["ITIL 4 Service level management"]
+    en:
+      title: Minutes of the quarterly service reviews
+      description: Reviews the minutes of the service reviews of the last year.
+      preconditions: The minutes of the service reviews of the last 4 quarters.
+      expected: There is one review per quarter with actions, owners and due dates, followed up at the next meeting.
+      steps:
+        - action: List the review dates.
+          expected: There is one review in each of the 4 quarters.
+        - action: Read the action list of each review.
+          expected: Each action has an owner and a due date.
+        - action: For each review except the latest, find its actions in the next review's minutes.
+          expected: Each action is reported as done, moved with a new date or closed with a reason.
+    sv:
+      title: Protokoll från de kvartalsvisa uppföljningsmötena
+      description: Granskar protokollen från uppföljningsmötena under det senaste året.
+      preconditions: Protokollen från uppföljningsmötena under de senaste 4 kvartalen.
+      expected: Det finns ett möte per kvartal med åtgärder, ägare och slutdatum som följs upp vid nästa möte.
+      steps:
+        - action: Lista datumen för mötena.
+          expected: Det finns ett möte i vart och ett av de 4 kvartalen.
+        - action: Läs åtgärdslistan från varje möte.
+          expected: Varje åtgärd har en ägare och ett slutdatum.
+        - action: Hitta åtgärderna från varje möte utom det senaste i protokollet från nästa möte.
+          expected: Varje åtgärd rapporteras som klar, flyttad med nytt datum eller stängd med motivering.
+
+  - id: SVSLA-T07
+    priority: medium
+    execution: automated
+    tags: [customer-satisfaction]
+    refs: ["ISO 10004:2018"]
+    en:
+      title: Survey coverage and monthly satisfaction average
+      description: A script matches closed tickets with sent surveys and computes the monthly average of the answers.
+      preconditions: Exports of closed tickets and survey answers for the last 3 months.
+      expected: Each closed ticket has a sent survey, and each monthly average is at least 4.0.
+      steps:
+        - action: Match each closed ticket with a sent survey.
+          expected: No closed ticket lacks a survey.
+        - action: Compute the average answer per month.
+          expected: Each month is at least 4.0.
+          data: Scale 1 to 5
+    sv:
+      title: Täckning för enkäter och månadsgenomsnitt för nöjdhet
+      description: Ett skript matchar stängda ärenden mot skickade enkäter och beräknar månadsgenomsnittet för svaren.
+      preconditions: Exporter av stängda ärenden och enkätsvar för de senaste 3 månaderna.
+      expected: Varje stängt ärende har en skickad enkät, och varje månadsgenomsnitt är minst 4,0.
+      steps:
+        - action: Matcha varje stängt ärende mot en skickad enkät.
+          expected: Inget stängt ärende saknar enkät.
+        - action: Beräkna genomsnittligt svar per månad.
+          expected: Varje månad ligger på minst 4,0.
+          data: Skala 1 till 5
+
+  - id: SVSLA-T08
+    priority: medium
+    execution: manual
+    tags: [complaints]
+    refs: ["ISO 10002:2018"]
+    en:
+      title: Complaint handling times
+      description: Reviews the complaint log and a test complaint for acknowledgement and answer times.
+      preconditions: The complaint log of the last 6 months and permission to send a test complaint.
+      expected: Each complaint, including the test, is acknowledged within 2 and answered within 10 working days.
+      steps:
+        - action: For each logged complaint, count the working days to acknowledgement and to answer.
+          expected: Each is within 2 and 10 working days.
+        - action: Send a test complaint through the published channel and note the date.
+          expected: An acknowledgement arrives within 2 working days and a written answer with decision and actions within 10.
+    sv:
+      title: Handläggningstider för klagomål
+      description: Granskar klagomålsloggen och ett testklagomål med avseende på tid till bekräftelse och svar.
+      preconditions: Klagomålsloggen för de senaste 6 månaderna och tillstånd att skicka ett testklagomål.
+      expected: Varje klagomål, även testet, bekräftas inom 2 och besvaras inom 10 arbetsdagar.
+      steps:
+        - action: Räkna arbetsdagarna till bekräftelse och till svar för varje loggat klagomål.
+          expected: Var och en ligger inom 2 respektive 10 arbetsdagar.
+        - action: Skicka ett testklagomål via den publicerade kanalen och anteckna datumet.
+          expected: En bekräftelse kommer inom 2 arbetsdagar och ett skriftligt svar med beslut och åtgärder inom 10.
+
+  - id: SVSLA-T09
+    priority: medium
+    execution: manual
+    tags: [continual-improvement]
+    refs: ["ITIL 4 Continual improvement"]
+    en:
+      title: Inspection of the improvement register
+      description: Inspects the improvement register for proposals without a decision and decisions without a reason.
+      preconditions: An export of the improvement register with entry and decision dates.
+      expected: No proposal older than 3 months lacks a decision, and each decision has a reason.
+      steps:
+        - action: Filter the proposals entered more than 3 months ago without a decision.
+          expected: The list is empty.
+        - action: Read the decisions of 10 proposals.
+          expected: Each decision has a reason.
+    sv:
+      title: Granskning av förbättringsregistret
+      description: Granskar förbättringsregistret med avseende på förslag utan beslut och beslut utan motivering.
+      preconditions: En export av förbättringsregistret med datum för registrering och beslut.
+      expected: Inget förslag som är äldre än 3 månader saknar beslut, och varje beslut har en motivering.
+      steps:
+        - action: Filtrera fram förslag som registrerades för mer än 3 månader sedan och saknar beslut.
+          expected: Listan är tom.
+        - action: Läs besluten för 10 förslag.
+          expected: Varje beslut har en motivering.
