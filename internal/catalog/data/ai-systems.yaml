@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [model-provider, data-processing, training]
-    refs: ["GDPR Art. 28 (processor)", "ISO/IEC 42001:2023 Annex A.7 (data for AI systems)"]
+    refs: ["GDPR Art. 28 (processor)", "ISO/IEC 42001:2023 Annex A.7 (data for AI systems)", "ISO/IEC 27001:2022 A.5.20", "ISO/IEC 27018:2019 (purpose of processing in the public cloud)", "Regulation (EU) 2022/2554 (DORA) Art. 30"]
     tests: [AIML-T03]
     en:
       title: Customer data is not used to train external models
@@ -106,7 +106,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [logging, retention]
-    refs: ["GDPR Art. 5(1)(e) (storage limitation)", "EU AI Act (Regulation (EU) 2024/1689) Art. 12 (record-keeping)"]
+    refs: ["GDPR Art. 5(1)(e) (storage limitation)", "EU AI Act (Regulation (EU) 2024/1689) Art. 12 (record-keeping)", "ISO/IEC 27001:2022 A.8.15"]
     tests: [AIML-T04]
     en:
       title: Prompt and response logs kept for 30 days
@@ -130,7 +130,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [prompt-injection, tool-use, confirmation]
-    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM06 (excessive agency)"]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "OWASP Top 10 for LLM Applications 2025 LLM06 (excessive agency)", "ISO/IEC 27001:2022 A.8.26"]
     tests: [AIML-T05]
     en:
       title: Model output cannot trigger privileged actions on its own
@@ -156,7 +156,7 @@ requirements:
     obligation: should
     priority: high
     tags: [output-filtering, personal-data, secrets]
-    refs: ["OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)"]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM02 (sensitive information disclosure)", "ISO/IEC 27001:2022 A.8.12", "GDPR Art. 32"]
     tests: [AIML-T06]
     en:
       title: Answers are filtered for personal identity numbers and secrets
@@ -180,7 +180,7 @@ requirements:
     obligation: must
     priority: high
     tags: [evaluation, release, quality]
-    refs: ["ISO/IEC 42001:2023 Annex A.6.2.4 (AI system verification and validation)", "NIST AI RMF 1.0 MEASURE 2.3"]
+    refs: ["ISO/IEC 42001:2023 Annex A.6.2.4 (AI system verification and validation)", "NIST AI RMF 1.0 MEASURE 2.3", "ISO/IEC 27001:2022 A.8.32"]
     tests: [AIML-T07]
     en:
       title: Evaluation set passed before a model or prompt change is released
@@ -426,7 +426,7 @@ tests:
     priority: critical
     execution: manual
     tags: [prompt-injection, tool-use]
-    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01"]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01", "ISO/IEC 27001:2022 A.8.26"]
     en:
       title: Hidden instructions in a document do not trigger actions
       description: Asks the assistant to summarise a document with a hidden instruction and tries a proposed action as a read-only user.
@@ -486,7 +486,7 @@ tests:
     priority: high
     execution: automated
     tags: [evaluation, release]
-    refs: ["NIST AI RMF 1.0 MEASURE 2.3"]
+    refs: ["NIST AI RMF 1.0 MEASURE 2.3", "ISO/IEC 27001:2022 A.8.32"]
     en:
       title: The evaluation gate blocks a weaker prompt
       description: Runs the evaluation set for the current prompt and for a deliberately weakened prompt in the release pipeline.

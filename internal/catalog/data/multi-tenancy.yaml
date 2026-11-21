@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [tenant-context, authorisation]
-    refs: ["OWASP ASVS 4.0.3 §4.1.2", "OWASP Top 10:2021 A01 (broken access control)", "CSA Cloud Controls Matrix v4 DSP-17"]
+    refs: ["OWASP ASVS 4.0.3 §4.1.2", "OWASP Top 10:2021 A01 (broken access control)", "CSA Cloud Controls Matrix v4 DSP-17", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     tests: [TEN-T01]
     en:
       title: The tenant comes from the authenticated session
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [data-layer, row-level-security]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1 (segregation in virtual computing environments)"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1 (segregation in virtual computing environments)", "ISO/IEC 27001:2022 A.8.3"]
     tests: [TEN-T02]
     en:
       title: Tenant filter enforced in the data layer
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cache, isolation]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet (shared resources)", "CWE-524 (use of cache containing sensitive information)"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet (shared resources)", "CWE-524 (use of cache containing sensitive information)", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2015 CLD.9.5.1"]
     tests: [TEN-T03]
     en:
       title: Cache entries are separated per tenant
@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: high
     tags: [search, isolation]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2015 CLD.9.5.1"]
     tests: [TEN-T03]
     en:
       title: Search results contain only the tenant's documents
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [background-jobs, tenant-context]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2015 CLD.9.5.1"]
     tests: [TEN-T04]
     en:
       title: Background jobs run in the tenant that queued them
@@ -126,7 +126,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [encryption, keys]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5 §6.2", "CSA Cloud Controls Matrix v4 CEK-03"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §6.2", "CSA Cloud Controls Matrix v4 CEK-03", "ISO/IEC 27001:2022 A.8.24"]
     tests: [TEN-T05]
     en:
       title: Separate encryption key for each tenant
@@ -148,7 +148,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [quota, noisy-neighbour, rate-limit]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "AWS Well-Architected SaaS Lens (noisy neighbour)"]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "AWS Well-Architected SaaS Lens (noisy neighbour)", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2"]
     tests: [TEN-T06]
     en:
       title: Resource quota per tenant
@@ -172,7 +172,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [export, portability, offboarding]
-    refs: ["GDPR Art. 20 (right to data portability)", "EU Data Act (Regulation (EU) 2023/2854) Art. 23–25 (switching between data processing services)"]
+    refs: ["GDPR Art. 20 (right to data portability)", "EU Data Act (Regulation (EU) 2023/2854) Art. 23–25 (switching between data processing services)", "Regulation (EU) 2022/2554 (DORA) Art. 28(8)"]
     tests: [TEN-T07]
     en:
       title: Export of a whole tenant
@@ -196,7 +196,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deletion, offboarding]
-    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 Annex A 8.10 (information deletion)"]
+    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 A.8.10 (information deletion)", "ISO/IEC 27017:2015 CLD.8.1.5", "ISO/IEC 27018:2019 (return, transfer and disposal of PII)"]
     tests: [TEN-T07, TEN-T09]
     en:
       title: Deletion of a tenant after the contract ends
@@ -220,7 +220,7 @@ requirements:
     obligation: must
     priority: high
     tags: [regression-test, pipeline, isolation]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4 (insecure direct object references)"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4 (insecure direct object references)", "ISO/IEC 27001:2022 A.8.29"]
     tests: [TEN-T02]
     en:
       title: Cross-tenant tests for each endpoint
@@ -242,7 +242,7 @@ requirements:
     obligation: should
     priority: high
     tags: [support-access, approval]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09"]
+    refs: ["ISO/IEC 27001:2022 A.8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09", "IEC 62443-2-4 (remote access by the service provider)"]
     tests: [TEN-T08]
     en:
       title: Support access to a tenant needs its approval
@@ -270,7 +270,7 @@ tests:
     priority: critical
     execution: automated
     tags: [tenant-context, api]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     en:
       title: A tenant id chosen by the client is ignored
       description: Sends requests from organisation A in which the id of organisation B is placed in the URL, a header and the body.
@@ -432,7 +432,7 @@ tests:
     priority: medium
     execution: automated
     tags: [quota, load-test]
-    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2"]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2"]
     en:
       title: One busy tenant does not slow down the others
       description: A load test runs normal traffic for nine tenants while a tenth sends five times its quota.

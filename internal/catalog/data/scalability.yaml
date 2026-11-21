@@ -134,7 +134,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [autoscaling, horizontal-scaling]
-    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 Annex A 8.6 (capacity management)"]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 A.8.6 (capacity management)"]
     tests: [SCAL-T05]
     en:
       title: Automatic scale-out
@@ -158,7 +158,7 @@ requirements:
     obligation: must
     priority: high
     tags: [capacity, headroom]
-    refs: ["ITIL 4 Capacity and performance management", "Google SRE book ch. 18 (Software Engineering in SRE: capacity planning)"]
+    refs: ["ITIL 4 Capacity and performance management", "Google SRE book ch. 18 (Software Engineering in SRE: capacity planning)", "ISO/IEC 27001:2022 A.8.6"]
     tests: [SCAL-T06]
     en:
       title: Capacity headroom in production
@@ -182,7 +182,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [capacity, planning]
-    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 Annex A 8.6 (capacity management)"]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 A.8.6 (capacity management)"]
     tests: [SCAL-T06]
     en:
       title: Quarterly capacity forecast
@@ -206,7 +206,7 @@ requirements:
     obligation: must
     priority: high
     tags: [rate-limit, quota, api]
-    refs: ["RFC 6585 §4 (429 Too Many Requests)", "RFC 9110 §10.2.3 (Retry-After)", "OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)"]
+    refs: ["RFC 6585 §4 (429 Too Many Requests)", "RFC 9110 §10.2.3 (Retry-After)", "OWASP API Security Top 10 2023 API4 (unrestricted resource consumption)", "IEC 62443-3-3 SR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     tests: [SCAL-T07]
     en:
       title: Rate limit per API client
@@ -254,7 +254,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [quota, storage, notification]
-    refs: ["ITIL 4 Capacity and performance management"]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 A.8.6"]
     tests: [SCAL-T09]
     en:
       title: Warning before the storage quota is used up
@@ -450,7 +450,7 @@ tests:
     priority: medium
     execution: manual
     tags: [capacity, review]
-    refs: ["ITIL 4 Capacity and performance management"]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 A.8.6"]
     en:
       title: Review of capacity headroom and forecast
       description: Reviews the capacity report and the 12-month forecast against the measured load.
@@ -480,7 +480,7 @@ tests:
     priority: high
     execution: automated
     tags: [rate-limit, api]
-    refs: ["RFC 6585 §4"]
+    refs: ["RFC 6585 §4", "IEC 62443-3-3 SR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     en:
       title: Rate limit returns 429 with Retry-After
       description: A script sends requests from one API client above the limit and checks the responses.

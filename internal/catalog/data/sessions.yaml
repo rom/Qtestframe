@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [session-token, randomness]
-    refs: ["OWASP ASVS 4.0 V3.2.2", "OWASP Session Management Cheat Sheet", "NIST SP 800-63B §7.1"]
+    refs: ["OWASP ASVS 4.0 V3.2.2", "OWASP Session Management Cheat Sheet", "NIST SP 800-63B §7.1", "IEC 62443-3-3 SR 3.8", "IEC 62443-4-2 CR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     tests: [SESS-T01]
     en:
       title: Session tokens are unpredictable
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [session-fixation, login]
-    refs: ["OWASP ASVS 4.0 V3.2.1", "OWASP Web Security Testing Guide WSTG-SESS-03"]
+    refs: ["OWASP ASVS 4.0 V3.2.1", "OWASP Web Security Testing Guide WSTG-SESS-03", "IEC 62443-3-3 SR 3.8", "IEC 62443-4-2 CR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     tests: [SESS-T02]
     en:
       title: New session token at sign-in
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [timeout, idle-timeout]
-    refs: ["OWASP ASVS 4.0 V3.3.2", "NIST SP 800-63B §7.2", "PCI DSS 4.0 Req. 8.2.8"]
+    refs: ["OWASP ASVS 4.0 V3.3.2", "NIST SP 800-63B §7.2", "PCI DSS 4.0 Req. 8.2.8", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 2.6", "IEC 62443-4-2 CR 2.6"]
     tests: [SESS-T03]
     en:
       title: Idle session timeout
@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [timeout, absolute-timeout]
-    refs: ["OWASP ASVS 4.0 V3.3.2", "NIST SP 800-63B §7.2"]
+    refs: ["OWASP ASVS 4.0 V3.3.2", "NIST SP 800-63B §7.2", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 2.6"]
     tests: [SESS-T04]
     en:
       title: Absolute session lifetime
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [logout]
-    refs: ["OWASP ASVS 4.0 V3.3.1", "OWASP Web Security Testing Guide WSTG-SESS-06"]
+    refs: ["OWASP ASVS 4.0 V3.3.1", "OWASP Web Security Testing Guide WSTG-SESS-06", "IEC 62443-3-3 SR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     tests: [SESS-T05]
     en:
       title: Sign-out invalidates the session on the server
@@ -126,7 +126,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cookies, secure-flag, httponly, samesite]
-    refs: ["OWASP ASVS 4.0 V3.4", "RFC 6265bis", "OWASP Web Security Testing Guide WSTG-SESS-02"]
+    refs: ["OWASP ASVS 4.0 V3.4", "RFC 6265bis", "OWASP Web Security Testing Guide WSTG-SESS-02", "IEC 62443-3-3 SR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     tests: [SESS-T06]
     en:
       title: Session cookie attributes
@@ -148,7 +148,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [session-token, url]
-    refs: ["OWASP ASVS 4.0 V3.1.1", "OWASP Session Management Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V3.1.1", "OWASP Session Management Cheat Sheet", "IEC 62443-3-3 SR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     tests: [SESS-T07]
     en:
       title: Session tokens never appear in URLs
@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [csrf]
-    refs: ["OWASP ASVS 4.0 V4.2.2", "OWASP Cross-Site Request Forgery Prevention Cheat Sheet", "OWASP Top 10 2021 A01"]
+    refs: ["OWASP ASVS 4.0 V4.2.2", "OWASP Cross-Site Request Forgery Prevention Cheat Sheet", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.28"]
     tests: [SESS-T08]
     en:
       title: Protection against cross-site request forgery
@@ -192,7 +192,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [concurrent-sessions, session-overview]
-    refs: ["OWASP ASVS 4.0 V3.3.4"]
+    refs: ["OWASP ASVS 4.0 V3.3.4", "ISO/IEC 27001:2022 A.8.5"]
     tests: [SESS-T09]
     en:
       title: Users see and end their active sessions
@@ -214,7 +214,7 @@ requirements:
     obligation: must
     priority: high
     tags: [password-change, session-termination]
-    refs: ["OWASP ASVS 4.0 V3.3.3"]
+    refs: ["OWASP ASVS 4.0 V3.3.3", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27001:2022 A.5.17"]
     tests: [SESS-T10]
     en:
       title: Password change ends other sessions
@@ -236,7 +236,7 @@ requirements:
     obligation: may
     priority: low
     tags: [concurrent-sessions, session-limit]
-    refs: ["NIST SP 800-53 AC-10"]
+    refs: ["NIST SP 800-53 AC-10", "IEC 62443-3-3 SR 2.7", "IEC 62443-4-2 CR 2.7", "ISO/IEC 27001:2022 A.8.5"]
     tests: [SESS-T11]
     en:
       title: Limit on concurrent sessions
@@ -258,7 +258,7 @@ tests:
     priority: critical
     execution: automated
     tags: [session-token, randomness]
-    refs: ["OWASP Web Security Testing Guide WSTG-SESS-01"]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-01", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "IEC 62443-3-3 SR 3.8", "IEC 62443-4-2 CR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     en:
       title: Session tokens are long, unique and random
       description: A script collects session tokens from repeated sign-ins and analyses them.
@@ -288,7 +288,7 @@ tests:
     priority: critical
     execution: manual
     tags: [session-fixation]
-    refs: ["OWASP Web Security Testing Guide WSTG-SESS-03"]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-03", "IEC 62443-3-3 SR 3.8", "IEC 62443-4-2 CR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     en:
       title: The session token changes at sign-in
       description: Compares the session token before and after sign-in.
@@ -318,7 +318,7 @@ tests:
     priority: high
     execution: automated
     tags: [timeout, idle-timeout]
-    refs: ["OWASP Web Security Testing Guide WSTG-SESS-07"]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-07", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 2.6", "IEC 62443-4-2 CR 2.6"]
     en:
       title: Session ends after 30 minutes of inactivity
       description: A script signs in, waits and sends requests at the edge of the idle timeout.
@@ -344,7 +344,7 @@ tests:
     priority: medium
     execution: automated
     tags: [timeout, absolute-timeout]
-    refs: ["NIST SP 800-63B §7.2"]
+    refs: ["NIST SP 800-63B §7.2", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 2.6"]
     en:
       title: Active session ends after 12 hours
       description: A script keeps a session active and checks that it still ends at the absolute limit.
@@ -370,7 +370,7 @@ tests:
     priority: high
     execution: manual
     tags: [logout]
-    refs: ["OWASP Web Security Testing Guide WSTG-SESS-06"]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-06", "IEC 62443-3-3 SR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     en:
       title: A copied token is useless after sign-out
       description: Replays a session token after the user has signed out.
@@ -400,7 +400,7 @@ tests:
     priority: high
     execution: automated
     tags: [cookies, secure-flag, httponly, samesite]
-    refs: ["OWASP Web Security Testing Guide WSTG-SESS-02"]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-02", "IEC 62443-3-3 SR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     en:
       title: Session cookies carry the security attributes
       description: A script signs in and inspects every Set-Cookie header in the responses.
@@ -430,7 +430,7 @@ tests:
     priority: high
     execution: automated
     tags: [session-token, url]
-    refs: ["OWASP Session Management Cheat Sheet"]
+    refs: ["OWASP Session Management Cheat Sheet", "IEC 62443-3-3 SR 3.8", "ISO/IEC 27001:2022 A.8.5"]
     en:
       title: No session token in URLs during a user session
       description: A script records the traffic of a scripted user session and searches all URLs for the token.
@@ -456,7 +456,7 @@ tests:
     priority: critical
     execution: automated
     tags: [csrf]
-    refs: ["OWASP Web Security Testing Guide WSTG-SESS-05"]
+    refs: ["OWASP Web Security Testing Guide WSTG-SESS-05", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: Forged cross-site requests are rejected
       description: A script sends state-changing requests with a valid session cookie from a foreign origin.
@@ -488,7 +488,7 @@ tests:
     priority: medium
     execution: manual
     tags: [concurrent-sessions, session-overview]
-    refs: ["OWASP ASVS 4.0 V3.3.4"]
+    refs: ["OWASP ASVS 4.0 V3.3.4", "ISO/IEC 27001:2022 A.8.5"]
     en:
       title: A user ends one of their sessions from the session list
       description: Checks the list of active sessions and ending a session from it.
@@ -518,7 +518,7 @@ tests:
     priority: high
     execution: manual
     tags: [password-change, session-termination]
-    refs: ["OWASP ASVS 4.0 V3.3.3"]
+    refs: ["OWASP ASVS 4.0 V3.3.3", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27001:2022 A.5.17"]
     en:
       title: Other sessions end when the password is changed
       description: Changes the password in one browser and checks the session in another.
@@ -544,7 +544,7 @@ tests:
     priority: low
     execution: automated
     tags: [concurrent-sessions, session-limit]
-    refs: ["NIST SP 800-53 AC-10"]
+    refs: ["NIST SP 800-53 AC-10", "IEC 62443-3-3 SR 2.7", "IEC 62443-4-2 CR 2.7", "ISO/IEC 27001:2022 A.8.5"]
     en:
       title: A fourth session ends the oldest one
       description: A script opens four sessions for one account and checks which remain valid.

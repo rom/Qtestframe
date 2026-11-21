@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [plan, roles, documentation]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.24 (information security incident management planning and preparation)", "NIST SP 800-61 Rev. 2 §2.3 (incident response policy, plan and procedure)", "ISO/IEC 27035-1:2023"]
+    refs: ["ISO/IEC 27001:2022 A.5.24 (information security incident management planning and preparation)", "NIST SP 800-61 Rev. 2 §2.3 (incident response policy, plan and procedure)", "ISO/IEC 27035-1:2023", "Regulation (EU) 2022/2554 (DORA) Art. 17", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)", "IEC 62443-2-1:2024 (event and incident management)"]
     tests: [INC-T01]
     en:
       title: Documented and reviewed incident response plan
@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: high
     tags: [severity, response-time]
-    refs: ["NIST SP 800-61 Rev. 2 §3.2.6 (incident prioritization)", "ITIL 4 Incident management practice"]
+    refs: ["NIST SP 800-61 Rev. 2 §3.2.6 (incident prioritization)", "ITIL 4 Incident management practice", "ISO/IEC 27001:2022 A.5.25", "Regulation (EU) 2022/2554 (DORA) Art. 18", "ISO/IEC 27035-1:2023"]
     tests: [INC-T02]
     en:
       title: Severity levels with response times
@@ -64,7 +64,7 @@ requirements:
     obligation: must
     priority: high
     tags: [on-call, escalation]
-    refs: ["Google SRE Book ch. 11 (being on-call)", "ISO/IEC 27001:2022 Annex A 5.26 (response to information security incidents)"]
+    refs: ["Google SRE Book ch. 11 (being on-call)", "ISO/IEC 27001:2022 A.5.26 (response to information security incidents)", "Regulation (EU) 2022/2554 (DORA) Art. 17"]
     tests: [INC-T02, INC-T07]
     en:
       title: On-call rotation around the clock
@@ -92,7 +92,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [incident-commander, coordination]
-    refs: ["FEMA Incident Command System (ICS) principles", "Google SRE Book ch. 14 (managing incidents)"]
+    refs: ["FEMA Incident Command System (ICS) principles", "Google SRE Book ch. 14 (managing incidents)", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27035-2:2023"]
     tests: [INC-T03]
     en:
       title: Incident commander and incident channel
@@ -116,7 +116,7 @@ requirements:
     obligation: should
     priority: high
     tags: [customer-communication]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.26", "ITIL 4 Incident management practice (communication)"]
+    refs: ["ISO/IEC 27001:2022 A.5.26", "ITIL 4 Incident management practice (communication)", "Regulation (EU) 2022/2554 (DORA) Art. 19(3)", "Regulation (EU) 2024/2847 (CRA) Art. 14(8)"]
     tests: [INC-T03]
     en:
       title: Affected customers are told within 60 minutes
@@ -140,7 +140,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [personal-data-breach, gdpr, supervisory-authority]
-    refs: ["GDPR Art. 33 (notification to the supervisory authority)", "GDPR Art. 34 (communication to the data subject)", "EDPB Guidelines 9/2022 on personal data breach notification"]
+    refs: ["GDPR Art. 33 (notification to the supervisory authority)", "GDPR Art. 34 (communication to the data subject)", "EDPB Guidelines 9/2022 on personal data breach notification", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2019 (notification of a data breach)", "ISO/IEC 27001:2022 A.5.5"]
     tests: [INC-T04]
     en:
       title: Personal data breaches reported within 72 hours
@@ -168,7 +168,7 @@ requirements:
     obligation: should
     priority: high
     tags: [nis2, early-warning, csirt]
-    refs: ["NIS2 Directive (EU) 2022/2555 Art. 23 (reporting obligations)"]
+    refs: ["NIS2 Directive (EU) 2022/2555 Art. 23 (reporting obligations)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14", "ISO/IEC 27001:2022 A.5.5"]
     tests: [INC-T04]
     en:
       title: Early warning of reportable incidents within 24 hours
@@ -192,7 +192,7 @@ requirements:
     obligation: must
     priority: high
     tags: [evidence, forensics]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.28 (collection of evidence)", "ISO/IEC 27037:2012 (identification, collection, acquisition and preservation of digital evidence)"]
+    refs: ["ISO/IEC 27001:2022 A.5.28 (collection of evidence)", "ISO/IEC 27037:2012 (identification, collection, acquisition and preservation of digital evidence)"]
     tests: [INC-T05]
     en:
       title: Evidence is preserved before systems are cleaned
@@ -214,7 +214,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [timeline, record]
-    refs: ["NIST SP 800-61 Rev. 2 §3.2.5 (incident documentation)"]
+    refs: ["NIST SP 800-61 Rev. 2 §3.2.5 (incident documentation)", "ISO/IEC 27001:2022 A.5.26"]
     tests: [INC-T05]
     en:
       title: Timeline recorded during the incident
@@ -236,7 +236,7 @@ requirements:
     obligation: must
     priority: high
     tags: [post-incident-review, learning]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.27 (learning from information security incidents)", "Google SRE Book ch. 15 (postmortem culture)"]
+    refs: ["ISO/IEC 27001:2022 A.5.27 (learning from information security incidents)", "Google SRE Book ch. 15 (postmortem culture)", "Regulation (EU) 2022/2554 (DORA) Art. 13", "ISO/IEC 27035-1:2023"]
     tests: [INC-T06]
     en:
       title: Post-incident review within 5 working days
@@ -260,7 +260,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [action-items, follow-up]
-    refs: ["ISO/IEC 27001:2022 §10.2 (nonconformity and corrective action)"]
+    refs: ["ISO/IEC 27001:2022 §10.2 (nonconformity and corrective action)", "Regulation (EU) 2022/2554 (DORA) Art. 13"]
     tests: [INC-T06]
     en:
       title: Actions from reviews are closed within 30 days
@@ -284,7 +284,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [exercise, tabletop]
-    refs: ["NIST SP 800-84 (guide to test, training and exercise programs)", "ISO/IEC 27001:2022 Annex A 5.24"]
+    refs: ["NIST SP 800-84 (guide to test, training and exercise programs)", "ISO/IEC 27001:2022 A.5.24", "ISO/IEC 27035-2:2023", "Directive (EU) 2022/2557 (CER) Art. 13(1)(f)"]
     tests: [INC-T03, INC-T08]
     en:
       title: Incident exercises twice a year
@@ -308,7 +308,7 @@ tests:
     priority: high
     execution: manual
     tags: [plan, review]
-    refs: ["NIST SP 800-61 Rev. 2 §2.3"]
+    refs: ["NIST SP 800-61 Rev. 2 §2.3", "Regulation (EU) 2022/2554 (DORA) Art. 17", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)", "IEC 62443-2-1:2024 (event and incident management)"]
     en:
       title: Review of the incident response plan and contact list
       description: Reads the plan, checks its review date and verifies the contact list.
@@ -374,7 +374,7 @@ tests:
     priority: high
     execution: manual
     tags: [exercise, communication, incident-commander]
-    refs: ["NIST SP 800-84"]
+    refs: ["NIST SP 800-84", "ISO/IEC 27035-2:2023", "ISO/IEC 27001:2022 A.5.26", "Regulation (EU) 2022/2554 (DORA) Art. 19(3)", "Regulation (EU) 2024/2847 (CRA) Art. 14(8)", "Directive (EU) 2022/2557 (CER) Art. 13(1)(f)"]
     en:
       title: Outage exercise with customer communication
       description: Runs a simulated severity 1 outage and measures the time to commander, channel and customer notices, then checks the exercise history.
@@ -408,7 +408,7 @@ tests:
     priority: critical
     execution: manual
     tags: [personal-data-breach, nis2, tabletop]
-    refs: ["GDPR Art. 33", "NIS2 Directive (EU) 2022/2555 Art. 23"]
+    refs: ["GDPR Art. 33", "NIS2 Directive (EU) 2022/2555 Art. 23", "ISO/IEC 27001:2022 A.5.5", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2019 (notification of a data breach)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14"]
     en:
       title: Tabletop exercise for a personal data breach
       description: Simulates the discovery of a breach on a Friday afternoon and measures the time to the notification decisions.
@@ -444,7 +444,7 @@ tests:
     priority: high
     execution: manual
     tags: [evidence, timeline]
-    refs: ["ISO/IEC 27037:2012"]
+    refs: ["ISO/IEC 27037:2012", "ISO/IEC 27001:2022 A.5.26"]
     en:
       title: Evidence collection and timeline in a security exercise
       description: The team handles a planted compromise of a test server, secures evidence before rebuilding, and keeps a timeline.
@@ -542,7 +542,7 @@ tests:
     priority: medium
     execution: manual
     tags: [exercise, review]
-    refs: ["NIST SP 800-84"]
+    refs: ["NIST SP 800-84", "ISO/IEC 27035-2:2023", "Directive (EU) 2022/2557 (CER) Art. 13(1)(f)"]
     en:
       title: Exercise history and follow-up
       description: Reads the exercise reports of the last 12 months and checks their scenarios, findings and actions.

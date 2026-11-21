@@ -284,7 +284,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [webhooks, signature]
-    refs: ["RFC 2104", "Standard Webhooks specification 1.0", "OWASP ASVS 4.0.3 V13.1"]
+    refs: ["RFC 2104", "Standard Webhooks specification 1.0", "OWASP ASVS 4.0.3 V13.1", "ISO/IEC 27001:2022 A.5.14", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
     tests: [API-T07]
     en:
       title: Signed webhook requests
@@ -542,7 +542,7 @@ tests:
     priority: critical
     execution: automated
     tags: [webhooks, signature]
-    refs: ["RFC 2104", "Standard Webhooks specification 1.0"]
+    refs: ["RFC 2104", "Standard Webhooks specification 1.0", "ISO/IEC 27001:2022 A.5.14", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
     en:
       title: Webhook delivery time and signature verification
       description: An integration test registers a webhook receiver, makes item changes and verifies timing and signatures.

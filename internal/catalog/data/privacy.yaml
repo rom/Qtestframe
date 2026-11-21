@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [gdpr, right-of-access, data-subject-rights]
-    refs: ["GDPR Art. 15", "GDPR Art. 12(3)", "ISO/IEC 27701:2019 §7.3.8"]
+    refs: ["GDPR Art. 15", "GDPR Art. 12(3)", "ISO/IEC 27701:2019 §7.3.8", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T01]
     en:
       title: Right of access
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [gdpr, rectification, data-subject-rights]
-    refs: ["GDPR Art. 16", "GDPR Art. 19"]
+    refs: ["GDPR Art. 16", "GDPR Art. 19", "ISO/IEC 27701:2019 §7.3.6", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T02]
     en:
       title: Right to rectification
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [gdpr, erasure, data-subject-rights]
-    refs: ["GDPR Art. 17", "GDPR Art. 12(3)", "ISO/IEC 27701:2019 §7.3.6"]
+    refs: ["GDPR Art. 17", "GDPR Art. 12(3)", "ISO/IEC 27701:2019 §7.3.6", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T03]
     en:
       title: Right to erasure
@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [gdpr, data-portability, export]
-    refs: ["GDPR Art. 20"]
+    refs: ["GDPR Art. 20", "ISO/IEC 27701:2019 §7.3.8", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T04]
     en:
       title: Right to data portability
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [gdpr, consent]
-    refs: ["GDPR Art. 7(1)", "GDPR Art. 4(11)", "ISO/IEC 27701:2019 §7.2.4"]
+    refs: ["GDPR Art. 7(1)", "GDPR Art. 4(11)", "ISO/IEC 27701:2019 §7.2.4", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T05]
     en:
       title: Consent is recorded
@@ -126,7 +126,7 @@ requirements:
     obligation: must
     priority: high
     tags: [gdpr, consent, withdrawal]
-    refs: ["GDPR Art. 7(3)"]
+    refs: ["GDPR Art. 7(3)", "ISO/IEC 27701:2019 §7.3.4", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T06]
     en:
       title: Consent can be withdrawn
@@ -148,7 +148,7 @@ requirements:
     obligation: must_not
     priority: medium
     tags: [gdpr, data-minimisation]
-    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25", "ISO/IEC 27701:2019 §7.4.1"]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25", "ISO/IEC 27701:2019 §7.4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(g)", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T07]
     en:
       title: Data minimisation in forms
@@ -192,7 +192,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [gdpr, privacy-notice, transparency]
-    refs: ["GDPR Art. 13", "GDPR Art. 12(1)"]
+    refs: ["GDPR Art. 13", "GDPR Art. 12(1)", "ISO/IEC 27701:2019 §7.3.3", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T09]
     en:
       title: Privacy notice where data is collected
@@ -214,7 +214,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [cookies, tracking, consent]
-    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 6(1)(a)", "Swedish Electronic Communications Act (LEK) ch. 9 §28"]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 6(1)(a)", "Swedish Electronic Communications Act (LEK) ch. 9 §28", "GDPR Art. 25(2)", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T10]
     en:
       title: No tracking before consent
@@ -258,7 +258,7 @@ requirements:
     obligation: must
     priority: high
     tags: [dpia, risk-assessment]
-    refs: ["GDPR Art. 35 (data protection impact assessment)", "EDPB/WP29 Guidelines on DPIA (WP248 rev.01)"]
+    refs: ["GDPR Art. 35 (data protection impact assessment)", "EDPB/WP29 Guidelines on DPIA (WP248 rev.01)", "ISO/IEC 27701:2019 §7.2.5", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T12]
     en:
       title: Impact assessment before high-risk processing
@@ -280,7 +280,7 @@ requirements:
     obligation: must
     priority: high
     tags: [third-country-transfer, sub-processors]
-    refs: ["GDPR Art. 44–46 (transfers to third countries)", "GDPR Art. 28(2) (engaging sub-processors)", "EDPB Recommendations 01/2020 on supplementary measures"]
+    refs: ["GDPR Art. 44–46 (transfers to third countries)", "GDPR Art. 28(2) (engaging sub-processors)", "EDPB Recommendations 01/2020 on supplementary measures", "ISO/IEC 27701:2019 §7.5.1", "ISO/IEC 27018:2019 (geographical location of PII)", "Regulation (EU) 2022/2554 (DORA) Art. 30", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T13]
     en:
       title: Transfers outside the EEA have a documented safeguard
@@ -302,7 +302,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [pseudonymisation, analytics]
-    refs: ["GDPR Art. 4(5) and Art. 25(1) (pseudonymisation, data protection by design)", "ENISA: Pseudonymisation techniques and best practices (2019)"]
+    refs: ["GDPR Art. 4(5) and Art. 25(1) (pseudonymisation, data protection by design)", "ENISA: Pseudonymisation techniques and best practices (2019)", "ISO/IEC 27001:2022 A.8.11", "GDPR Art. 32(1)(a)"]
     tests: [PRIV-T14]
     en:
       title: Analytics data is pseudonymised
@@ -324,7 +324,7 @@ tests:
     priority: high
     execution: manual
     tags: [gdpr, right-of-access]
-    refs: ["GDPR Art. 15"]
+    refs: ["GDPR Art. 15", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Data subject access request returns all data
       description: Runs an access request for a test person and compares the result with the personal data inventory.
@@ -354,7 +354,7 @@ tests:
     priority: medium
     execution: manual
     tags: [gdpr, rectification]
-    refs: ["GDPR Art. 16", "GDPR Art. 19"]
+    refs: ["GDPR Art. 16", "GDPR Art. 19", "ISO/IEC 27701:2019 §7.3.6", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Profile correction reaches connected systems
       description: Corrects a test user's e-mail address and checks the system and its connected systems.
@@ -382,7 +382,7 @@ tests:
     priority: high
     execution: manual
     tags: [gdpr, erasure]
-    refs: ["GDPR Art. 17"]
+    refs: ["GDPR Art. 17", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Erasure request removes the person's data
       description: Carries out an erasure request and searches every store for the person's identifiers.
@@ -412,7 +412,7 @@ tests:
     priority: medium
     execution: automated
     tags: [gdpr, data-portability]
-    refs: ["GDPR Art. 20"]
+    refs: ["GDPR Art. 20", "ISO/IEC 27701:2019 §7.3.8", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Data export is complete and machine-readable
       description: A script requests the user's data export and checks its format and content.
@@ -442,7 +442,7 @@ tests:
     priority: high
     execution: automated
     tags: [gdpr, consent]
-    refs: ["GDPR Art. 7(1)"]
+    refs: ["GDPR Art. 7(1)", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Consent creates a complete record
       description: A script gives consent for a purpose and reads the stored consent record.
@@ -468,7 +468,7 @@ tests:
     priority: high
     execution: manual
     tags: [gdpr, consent, withdrawal]
-    refs: ["GDPR Art. 7(3)"]
+    refs: ["GDPR Art. 7(3)", "ISO/IEC 27701:2019 §7.3.4", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Withdrawn consent stops processing
       description: Withdraws a consent and checks that the related processing stops.
@@ -498,7 +498,7 @@ tests:
     priority: medium
     execution: manual
     tags: [gdpr, data-minimisation]
-    refs: ["GDPR Art. 5(1)(c)"]
+    refs: ["GDPR Art. 5(1)(c)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(g)", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Mandatory personal data fields are justified
       description: Reviews each form that collects personal data against the personal data inventory.
@@ -558,7 +558,7 @@ tests:
     priority: medium
     execution: automated
     tags: [privacy-notice]
-    refs: ["GDPR Art. 13"]
+    refs: ["GDPR Art. 13", "ISO/IEC 27701:2019 §7.3.3", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Forms that collect personal data link to the privacy notice
       description: A browser script opens every form that collects personal data and follows its privacy notice link.
@@ -584,7 +584,7 @@ tests:
     priority: high
     execution: automated
     tags: [cookies, tracking]
-    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 25(2)", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: No tracking cookies or requests before consent
       description: A headless browser visits the site with an empty profile and records cookies and network requests before and after consent.
@@ -640,7 +640,7 @@ tests:
     priority: high
     execution: manual
     tags: [dpia, review]
-    refs: ["GDPR Art. 35"]
+    refs: ["GDPR Art. 35", "ISO/IEC 27701:2019 §7.2.5", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Impact assessments exist for high-risk processing
       description: Screens the record of processing activities against the high-risk criteria and checks the assessments.

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sbom, dependency-inventory]
-    refs: ["OWASP ASVS 4.0 V14.2.5", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3"]
+    refs: ["OWASP ASVS 4.0 V14.2.5", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
     tests: [SUP-T01]
     en:
       title: Software bill of materials for each release
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [vulnerability-scanning, ci]
-    refs: ["OWASP Top 10 2021 A06", "NIST SP 800-218 RV.1.1", "ISO/IEC 27001:2022 A.8.8"]
+    refs: ["OWASP Top 10 2021 A06", "NIST SP 800-218 RV.1.1", "ISO/IEC 27001:2022 A.8.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "IEC 62443-4-1 SVV-3"]
     tests: [SUP-T02]
     en:
       title: Dependency vulnerability scan on every build
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [patching, critical-vulnerabilities]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2"]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)"]
     tests: [SUP-T03]
     en:
       title: Critical vulnerabilities fixed within 7 days
@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [patching, high-vulnerabilities]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2"]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)"]
     tests: [SUP-T03]
     en:
       title: High vulnerabilities fixed within 30 days
@@ -100,7 +100,7 @@ requirements:
     obligation: must
     priority: high
     tags: [code-signing, deployment]
-    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.2.1", "OWASP Top 10 2021 A08"]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.2.1", "OWASP Top 10 2021 A08", "IEC 62443-3-3 SR 3.4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "IEC 62443-4-1 SM-6", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
     tests: [SUP-T04]
     en:
       title: Signed release artefacts
@@ -122,7 +122,7 @@ requirements:
     obligation: must
     priority: high
     tags: [pinned-versions, lock-file]
-    refs: ["NIST SP 800-218 PW.4.1", "OWASP Top 10 2021 A08", "SLSA v1.0"]
+    refs: ["NIST SP 800-218 PW.4.1", "OWASP Top 10 2021 A08", "SLSA v1.0", "ISO/IEC 27001:2022 A.5.21", "IEC 62443-4-1 SM-9"]
     tests: [SUP-T05]
     en:
       title: Pinned dependency versions
@@ -144,7 +144,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [third-party-review, dependency-selection]
-    refs: ["ISO/IEC 27001:2022 A.5.19", "ISO/IEC 27001:2022 A.5.21", "NIST SP 800-218 PW.4.4", "OpenSSF Scorecard"]
+    refs: ["ISO/IEC 27001:2022 A.5.19", "ISO/IEC 27001:2022 A.5.21", "NIST SP 800-218 PW.4.4", "OpenSSF Scorecard", "Regulation (EU) 2024/2847 (CRA) Art. 13(5)", "IEC 62443-4-1 SM-9", "ISO/IEC 27036-3:2023"]
     tests: [SUP-T06]
     en:
       title: Review before adding a third-party component
@@ -166,7 +166,7 @@ requirements:
     obligation: must
     priority: high
     tags: [build-pipeline, provenance]
-    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PO.5", "ISO/IEC 27001:2022 A.8.32"]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PO.5", "ISO/IEC 27001:2022 A.8.32", "IEC 62443-4-1 SM-7"]
     tests: [SUP-T07]
     en:
       title: Releases are built only by the pipeline
@@ -188,7 +188,7 @@ requirements:
     obligation: should_not
     priority: medium
     tags: [end-of-life, unmaintained]
-    refs: ["OWASP Top 10 2021 A06", "OWASP ASVS 4.0 V14.2.1"]
+    refs: ["OWASP Top 10 2021 A06", "OWASP ASVS 4.0 V14.2.1", "ISO/IEC 27001:2022 A.8.8"]
     tests: [SUP-T08]
     en:
       title: No end-of-life components
@@ -232,7 +232,7 @@ requirements:
     obligation: may
     priority: low
     tags: [package-registry, mirror]
-    refs: ["NIST SP 800-218 PO.3", "SLSA v1.0"]
+    refs: ["NIST SP 800-218 PO.3", "SLSA v1.0", "ISO/IEC 27001:2022 A.5.21"]
     tests: [SUP-T10]
     en:
       title: Packages fetched through an internal mirror
@@ -254,7 +254,7 @@ tests:
     priority: high
     execution: automated
     tags: [sbom]
-    refs: ["CycloneDX 1.5", "SPDX 2.3"]
+    refs: ["CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
     en:
       title: Release contains a complete and valid SBOM
       description: A pipeline step validates the SBOM of a release and compares it with the resolved dependency tree.
@@ -280,7 +280,7 @@ tests:
     priority: critical
     execution: automated
     tags: [vulnerability-scanning, ci]
-    refs: ["OWASP Top 10 2021 A06"]
+    refs: ["OWASP Top 10 2021 A06", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3", "IEC 62443-4-1 SVV-3"]
     en:
       title: A known vulnerable dependency stops the build
       description: A test branch adds a dependency version with a published critical vulnerability and runs the pipeline.
@@ -312,7 +312,7 @@ tests:
     priority: critical
     execution: manual
     tags: [patching]
-    refs: ["PCI DSS 4.0 Req. 6.3.3"]
+    refs: ["PCI DSS 4.0 Req. 6.3.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)"]
     en:
       title: Patch times meet the deadlines
       description: Reviews the vulnerability records of the last 12 months against the patch deadlines.
@@ -342,7 +342,7 @@ tests:
     priority: high
     execution: automated
     tags: [code-signing, deployment]
-    refs: ["SLSA v1.0"]
+    refs: ["SLSA v1.0", "IEC 62443-3-3 SR 3.4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "IEC 62443-4-1 SM-6", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
     en:
       title: Unsigned or altered artefacts are not deployed
       description: A script feeds the deployment step a correct, an altered and an unsigned artefact.
@@ -372,7 +372,7 @@ tests:
     priority: high
     execution: automated
     tags: [pinned-versions, lock-file]
-    refs: ["NIST SP 800-218 PW.4.1"]
+    refs: ["NIST SP 800-218 PW.4.1", "ISO/IEC 27001:2022 A.5.21", "IEC 62443-4-1 SM-9"]
     en:
       title: Builds use the lock file in frozen mode
       description: A pipeline check verifies that lock files exist and that the build refuses to change them.
@@ -398,7 +398,7 @@ tests:
     priority: medium
     execution: manual
     tags: [third-party-review]
-    refs: ["ISO/IEC 27001:2022 A.5.21"]
+    refs: ["ISO/IEC 27001:2022 A.5.21", "Regulation (EU) 2024/2847 (CRA) Art. 13(5)", "IEC 62443-4-1 SM-9", "ISO/IEC 27036-3:2023"]
     en:
       title: New dependencies have a review record
       description: Compares dependencies added in the last 6 months with the review records.
@@ -424,7 +424,7 @@ tests:
     priority: high
     execution: manual
     tags: [build-pipeline, provenance]
-    refs: ["SLSA v1.0 Build L2"]
+    refs: ["SLSA v1.0 Build L2", "IEC 62443-4-1 SM-7"]
     en:
       title: Production artefacts trace back to the pipeline
       description: Follows the provenance of each production artefact to a pipeline run and a commit.
@@ -454,7 +454,7 @@ tests:
     priority: medium
     execution: automated
     tags: [end-of-life]
-    refs: ["OWASP Top 10 2021 A06"]
+    refs: ["OWASP Top 10 2021 A06", "ISO/IEC 27001:2022 A.8.8"]
     en:
       title: SBOM check against end-of-life dates
       description: A script compares the components in the SBOM with a database of published end-of-life dates.
@@ -506,7 +506,7 @@ tests:
     priority: low
     execution: automated
     tags: [package-registry, mirror]
-    refs: ["NIST SP 800-218 PO.3"]
+    refs: ["NIST SP 800-218 PO.3", "ISO/IEC 27001:2022 A.5.21"]
     en:
       title: Build succeeds with only the internal mirror
       description: The pipeline runs a build in a network where public package registries are blocked.

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [validation, server-side]
-    refs: ["OWASP ASVS 4.0 V5.1", "OWASP Input Validation Cheat Sheet", "NIST SP 800-53 SI-10"]
+    refs: ["OWASP ASVS 4.0 V5.1", "OWASP Input Validation Cheat Sheet", "NIST SP 800-53 SI-10", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "IEC 62443-4-2 CR 3.5"]
     tests: [INP-T01]
     en:
       title: Server-side validation of input
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [injection, sql-injection]
-    refs: ["OWASP ASVS 4.0 V5.3.4", "OWASP Top 10 2021 A03", "OWASP SQL Injection Prevention Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V5.3.4", "OWASP Top 10 2021 A03", "OWASP SQL Injection Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [INP-T02]
     en:
       title: Parameterised database queries
@@ -64,7 +64,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [injection, command-injection]
-    refs: ["OWASP ASVS 4.0 V5.3.8", "OWASP Top 10 2021 A03", "OWASP OS Command Injection Defense Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V5.3.8", "OWASP Top 10 2021 A03", "OWASP OS Command Injection Defense Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [INP-T03]
     en:
       title: No user input in shell commands
@@ -90,7 +90,7 @@ requirements:
     obligation: must
     priority: high
     tags: [injection, ldap-injection]
-    refs: ["OWASP ASVS 4.0 V5.3.7", "OWASP LDAP Injection Prevention Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V5.3.7", "OWASP LDAP Injection Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [INP-T04]
     en:
       title: Escaped input in LDAP filters
@@ -112,7 +112,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [xss, output-encoding]
-    refs: ["OWASP ASVS 4.0 V5.3.3", "OWASP Top 10 2021 A03", "OWASP Cross Site Scripting Prevention Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V5.3.3", "OWASP Top 10 2021 A03", "OWASP Cross Site Scripting Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
     tests: [INP-T05]
     en:
       title: Context-aware output encoding
@@ -138,7 +138,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [xss, content-security-policy]
-    refs: ["OWASP ASVS 4.0 V14.4.3", "W3C Content Security Policy Level 3"]
+    refs: ["OWASP ASVS 4.0 V14.4.3", "W3C Content Security Policy Level 3", "ISO/IEC 27001:2022 A.8.26", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)"]
     tests: [INP-T06]
     en:
       title: Content Security Policy without inline scripts
@@ -160,7 +160,7 @@ requirements:
     obligation: must
     priority: high
     tags: [file-upload]
-    refs: ["OWASP ASVS 4.0 V12.1", "OWASP ASVS 4.0 V12.2", "OWASP File Upload Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V12.1", "OWASP ASVS 4.0 V12.2", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [INP-T07]
     en:
       title: Uploaded files are checked by type and size
@@ -182,7 +182,7 @@ requirements:
     obligation: must
     priority: high
     tags: [file-upload, storage]
-    refs: ["OWASP ASVS 4.0 V12.4", "OWASP ASVS 4.0 V12.5", "OWASP File Upload Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V12.4", "OWASP ASVS 4.0 V12.5", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
     tests: [INP-T08]
     en:
       title: Uploaded files are stored outside the web root
@@ -208,7 +208,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [deserialisation]
-    refs: ["OWASP ASVS 4.0 V5.5", "OWASP Top 10 2021 A08", "OWASP Deserialization Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V5.5", "OWASP Top 10 2021 A08", "OWASP Deserialization Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [INP-T09]
     en:
       title: No deserialisation of untrusted objects
@@ -234,7 +234,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [ssrf, outbound-requests]
-    refs: ["OWASP ASVS 4.0 V5.2.6", "OWASP Top 10 2021 A10", "OWASP Server-Side Request Forgery Prevention Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V5.2.6", "OWASP Top 10 2021 A10", "OWASP Server-Side Request Forgery Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
     tests: [INP-T10]
     en:
       title: Protection against server-side request forgery
@@ -256,7 +256,7 @@ requirements:
     obligation: must
     priority: high
     tags: [xml, xxe]
-    refs: ["OWASP ASVS 4.0 V5.5.2", "OWASP XML External Entity Prevention Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V5.5.2", "OWASP XML External Entity Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [INP-T11]
     en:
       title: XML parsers do not resolve external entities
@@ -278,7 +278,7 @@ tests:
     priority: critical
     execution: automated
     tags: [validation, server-side]
-    refs: ["OWASP Input Validation Cheat Sheet"]
+    refs: ["OWASP Input Validation Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "IEC 62443-4-2 CR 3.5"]
     en:
       title: Invalid input sent directly to the API is rejected
       description: A script derives invalid values from each endpoint's schema and sends them without the browser.
@@ -310,7 +310,7 @@ tests:
     priority: critical
     execution: automated
     tags: [sql-injection, dast]
-    refs: ["OWASP Web Security Testing Guide WSTG-INPV-05"]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-05", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: SQL injection scan and code check
       description: A DAST scanner sends SQL injection payloads to every parameter, and a static analysis rule checks how queries are built.
@@ -338,7 +338,7 @@ tests:
     priority: critical
     execution: manual
     tags: [command-injection]
-    refs: ["OWASP Web Security Testing Guide WSTG-INPV-12"]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-12", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: Shell metacharacters do not run extra commands
       description: Sends shell metacharacters in fields that are passed to external programs, such as a file name for conversion.
@@ -372,7 +372,7 @@ tests:
     priority: high
     execution: manual
     tags: [ldap-injection]
-    refs: ["OWASP Web Security Testing Guide WSTG-INPV-06"]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-06", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: LDAP filter injection does not widen a search or sign in
       description: Sends LDAP filter syntax in the user name and in directory search fields.
@@ -406,7 +406,7 @@ tests:
     priority: critical
     execution: automated
     tags: [xss, dast]
-    refs: ["OWASP Web Security Testing Guide WSTG-INPV-01", "OWASP Web Security Testing Guide WSTG-INPV-02"]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-01", "OWASP Web Security Testing Guide WSTG-INPV-02", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: Cross-site scripting payloads are shown as text
       description: A browser-driven script saves XSS payloads in every text field and opens the pages that show them; a DAST scan covers reflected input.
@@ -438,7 +438,7 @@ tests:
     priority: medium
     execution: automated
     tags: [content-security-policy]
-    refs: ["W3C Content Security Policy Level 3"]
+    refs: ["W3C Content Security Policy Level 3", "ISO/IEC 27001:2022 A.8.26", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)"]
     en:
       title: HTML responses carry a strict Content Security Policy
       description: A script crawls the application and checks the Content-Security-Policy header of every HTML response.
@@ -464,7 +464,7 @@ tests:
     priority: high
     execution: manual
     tags: [file-upload]
-    refs: ["OWASP Web Security Testing Guide WSTG-BUSL-08", "OWASP Web Security Testing Guide WSTG-BUSL-09"]
+    refs: ["OWASP Web Security Testing Guide WSTG-BUSL-08", "OWASP Web Security Testing Guide WSTG-BUSL-09", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: Uploads are checked for size and real file type
       description: Uploads files at the size limit, above it, and with a misleading extension.
@@ -496,7 +496,7 @@ tests:
     priority: high
     execution: manual
     tags: [file-upload, storage, path-traversal]
-    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-01"]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-01", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: Uploaded files cannot be executed or overwrite files
       description: Uploads a file with a path in its name and checks where and how it is stored.
@@ -528,7 +528,7 @@ tests:
     priority: critical
     execution: manual
     tags: [deserialisation]
-    refs: ["OWASP Deserialization Cheat Sheet"]
+    refs: ["OWASP Deserialization Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: Serialised object payloads are not executed
       description: Reviews the parsing of untrusted data and sends a known gadget-chain payload to endpoints that accept serialised data.
@@ -554,7 +554,7 @@ tests:
     priority: critical
     execution: automated
     tags: [ssrf]
-    refs: ["OWASP Server-Side Request Forgery Prevention Cheat Sheet"]
+    refs: ["OWASP Server-Side Request Forgery Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: User-supplied URLs to internal addresses are refused
       description: A script registers webhook or import URLs that point to internal addresses and checks that no request is made.
@@ -586,7 +586,7 @@ tests:
     priority: high
     execution: automated
     tags: [xml, xxe]
-    refs: ["OWASP Web Security Testing Guide WSTG-INPV-07"]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-07", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: XML with external entities is rejected
       description: A script uploads XML documents with an external entity to every XML input.

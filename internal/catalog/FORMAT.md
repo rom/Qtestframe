@@ -61,8 +61,12 @@ tests:
 
 - **Original text.** Base items on standards and good practice (OWASP ASVS,
   OWASP Top 10, WCAG 2.2, ISO/IEC 25010, NIST SP 800-63B, GDPR, ISO/IEC 27001
-  Annex A, ISTQB, …) but write every sentence yourself and cite the standard
-  in `refs` by name and section only. Never copy normative text.
+  Annex A and the rest of the ISO/IEC 27000 series, IEC 62443, the EU
+  regulations listed below, ISTQB, …) but write every sentence yourself and
+  cite the standard in `refs` by name and section only. Never copy
+  normative text. Cite only what the item really implements, keep a `refs`
+  list to at most 8 entries, and spell each source the same way everywhere
+  (see *Citing standards* below).
 - **Generic and reusable.** Write "the system", "a user", "an administrator";
   no product names. Put the adjustable value (12 characters, 2 seconds,
   99.9 %) in the text so a team can edit it after adding the item.
@@ -100,3 +104,41 @@ tests:
 - **Swedish** is natural, idiomatic Swedish (not word-for-word), using the
   terms of the Swedish user interface: krav, testfall, körning, organisation,
   administratör, inloggning.
+
+## Citing standards
+
+Use one spelling per source so that the catalogue search (which looks in
+`refs`) finds every item that cites it. An optional topic in brackets may
+follow the clause, e.g. `"ISO/IEC 27001:2022 A.8.13 (information backup)"`.
+A test cites the standards of the requirements it verifies that its steps
+actually check.
+
+| Source | Spelling in `refs` |
+|---|---|
+| ISO/IEC 27001 Annex A controls (2022 numbering) | `ISO/IEC 27001:2022 A.8.5` (not "Annex A 8.5") |
+| ISO/IEC 27002 implementation guidance | `ISO/IEC 27002:2022 §8.5` |
+| ISO/IEC 27005 information security risk management | `ISO/IEC 27005:2022 §7 (risk assessment process)` |
+| ISO/IEC 27017 cloud services | `ISO/IEC 27017:2015 CLD.9.5.1` |
+| ISO/IEC 27018 PII in public clouds | `ISO/IEC 27018:2019 (topic)` |
+| ISO/IEC 27019 energy utility industry | `ISO/IEC 27019:2024 (topic)` |
+| ISO/IEC 27031 ICT readiness for business continuity | `ISO/IEC 27031:2011` |
+| ISO/IEC 27033 network security | `ISO/IEC 27033-1:2015` |
+| ISO/IEC 27034 application security | `ISO/IEC 27034-1:2011` |
+| ISO/IEC 27035 incident management | `ISO/IEC 27035-1:2023`, `ISO/IEC 27035-2:2023` |
+| ISO/IEC 27036 supplier relationships | `ISO/IEC 27036-3:2023` |
+| ISO/IEC 27040 storage security | `ISO/IEC 27040:2024` |
+| ISO/IEC 27701 privacy information management | `ISO/IEC 27701:2019 §7.3.6` |
+| IEC 62443-3-3 system security requirements | `IEC 62443-3-3 SR 1.7` |
+| IEC 62443-4-2 component security requirements | `IEC 62443-4-2 CR 1.7` |
+| IEC 62443-4-1 secure product development lifecycle | `IEC 62443-4-1 SM-9`, `SR-2`, `SI-1`, `SVV-3`, `DM-4`, `SUM-5` … |
+| IEC 62443-2-1 security programme, IEC 62443-2-4 service providers | `IEC 62443-2-1:2024 (topic)`, `IEC 62443-2-4 (topic)` |
+| GDPR (Regulation (EU) 2016/679) | `GDPR Art. 32(1)(a)` |
+| Cyber Resilience Act | `Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)`, `… Annex I Part II §2`, `… Art. 14` |
+| DORA (digital operational resilience, financial sector) | `Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)` |
+| CER (resilience of critical entities) | `Directive (EU) 2022/2557 (CER) Art. 13(1)(d)` |
+| NIS2 | `NIS2 Directive (EU) 2022/2555 Art. 23` |
+| Radio Equipment Directive, Art. 3(3)(d)–(f) as applied by Delegated Regulation (EU) 2022/30, with the harmonised standard EN 18031-1/-2/-3 and its mechanism (AUM, ACM, SCM, SSM, SUM, RLM, CCK, CRY, GEC, DLM …) | `Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)` |
+
+Cite the RED only for items that make sense for internet-connected radio
+equipment, and IEC 62443 where the item fits an industrial system or
+component.

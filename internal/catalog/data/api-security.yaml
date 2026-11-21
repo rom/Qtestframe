@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [api, authentication]
-    refs: ["OWASP API Security Top 10 2023 API2", "OWASP ASVS 4.0 V13.1", "RFC 6749"]
+    refs: ["OWASP API Security Top 10 2023 API2", "OWASP ASVS 4.0 V13.1", "RFC 6749", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.2", "IEC 62443-4-2 CR 1.2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)"]
     tests: [APIS-T01]
     en:
       title: Every API client is authenticated
@@ -34,7 +34,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [api-key, url]
-    refs: ["OWASP ASVS 4.0 V13.1.3", "OWASP REST Security Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V13.1.3", "OWASP REST Security Cheat Sheet", "ISO/IEC 27001:2022 A.5.17"]
     tests: [APIS-T02]
     en:
       title: No credentials in query strings
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: high
     tags: [rate-limiting, api]
-    refs: ["OWASP API Security Top 10 2023 API4", "OWASP ASVS 4.0 V11.1.4", "RFC 6585 §4"]
+    refs: ["OWASP API Security Top 10 2023 API4", "OWASP ASVS 4.0 V11.1.4", "RFC 6585 §4", "IEC 62443-3-3 SR 7.1", "IEC 62443-4-2 CR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 RLM)"]
     tests: [APIS-T03]
     en:
       title: Rate limit per API client
@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [access-token, expiry, oauth]
-    refs: ["RFC 9700 §2.2", "OWASP ASVS 4.0 V3.5", "RFC 7519 §4.1.4"]
+    refs: ["RFC 9700 §2.2", "OWASP ASVS 4.0 V3.5", "RFC 7519 §4.1.4", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27001:2022 A.5.17"]
     tests: [APIS-T04]
     en:
       title: Short-lived access tokens
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [scopes, oauth, authorisation]
-    refs: ["RFC 6749 §3.3", "OWASP API Security Top 10 2023 API5", "OWASP ASVS 4.0 V13.1.4"]
+    refs: ["RFC 6749 §3.3", "OWASP API Security Top 10 2023 API5", "OWASP ASVS 4.0 V13.1.4", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     tests: [APIS-T05]
     en:
       title: Token scopes limit API operations
@@ -126,7 +126,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [cors]
-    refs: ["OWASP ASVS 4.0 V14.5.3", "OWASP Web Security Testing Guide WSTG-CLNT-07", "Fetch Living Standard §3.2"]
+    refs: ["OWASP ASVS 4.0 V14.5.3", "OWASP Web Security Testing Guide WSTG-CLNT-07", "Fetch Living Standard §3.2", "ISO/IEC 27001:2022 A.8.26"]
     tests: [APIS-T06]
     en:
       title: CORS limited to listed origins
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [request-size, denial-of-service]
-    refs: ["OWASP API Security Top 10 2023 API4", "OWASP ASVS 4.0 V13.1.1"]
+    refs: ["OWASP API Security Top 10 2023 API4", "OWASP ASVS 4.0 V13.1.1", "IEC 62443-3-3 SR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     tests: [APIS-T07]
     en:
       title: Limit on request body size
@@ -170,7 +170,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [error-handling, information-disclosure]
-    refs: ["OWASP ASVS 4.0 V7.4.1", "OWASP Top 10 2021 A05", "OWASP Error Handling Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V7.4.1", "OWASP Top 10 2021 A05", "OWASP Error Handling Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
     tests: [APIS-T08]
     en:
       title: Error responses do not leak internals
@@ -192,7 +192,7 @@ requirements:
     obligation: must
     priority: high
     tags: [mass-assignment, api]
-    refs: ["OWASP API Security Top 10 2023 API3", "OWASP ASVS 4.0 V5.1.2", "OWASP Mass Assignment Cheat Sheet"]
+    refs: ["OWASP API Security Top 10 2023 API3", "OWASP ASVS 4.0 V5.1.2", "OWASP Mass Assignment Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [APIS-T09]
     en:
       title: Protection against mass assignment
@@ -214,7 +214,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [pagination, api]
-    refs: ["OWASP API Security Top 10 2023 API4"]
+    refs: ["OWASP API Security Top 10 2023 API4", "IEC 62443-3-3 SR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     tests: [APIS-T10]
     en:
       title: Upper limit on page size
@@ -236,7 +236,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [api-key, revocation]
-    refs: ["OWASP ASVS 4.0 V3.5", "NIST SP 800-53 IA-5"]
+    refs: ["OWASP ASVS 4.0 V3.5", "NIST SP 800-53 IA-5", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5"]
     tests: [APIS-T11]
     en:
       title: API keys can be revoked at once
@@ -258,7 +258,7 @@ tests:
     priority: critical
     execution: automated
     tags: [api, authentication]
-    refs: ["OWASP API Security Top 10 2023 API2"]
+    refs: ["OWASP API Security Top 10 2023 API2", "ISO/IEC 27001:2022 A.8.5", "IEC 62443-3-3 SR 1.2", "IEC 62443-4-2 CR 1.2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(d)"]
     en:
       title: Non-public endpoints reject missing and invalid credentials
       description: A script calls every endpoint in the API description with no, expired and malformed credentials.
@@ -290,7 +290,7 @@ tests:
     priority: high
     execution: automated
     tags: [api-key, url]
-    refs: ["OWASP REST Security Cheat Sheet"]
+    refs: ["OWASP REST Security Cheat Sheet", "ISO/IEC 27001:2022 A.5.17"]
     en:
       title: Credentials in the query string are refused
       description: A script sends a valid API key and a valid token as query parameters.
@@ -320,7 +320,7 @@ tests:
     priority: high
     execution: automated
     tags: [rate-limiting]
-    refs: ["OWASP API Security Top 10 2023 API4"]
+    refs: ["OWASP API Security Top 10 2023 API4", "IEC 62443-3-3 SR 7.1", "IEC 62443-4-2 CR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 RLM)"]
     en:
       title: Requests above the rate limit get 429
       description: A script sends a burst of requests from one client and counts the responses.
@@ -350,7 +350,7 @@ tests:
     priority: high
     execution: automated
     tags: [access-token, expiry]
-    refs: ["RFC 7519 §4.1.4"]
+    refs: ["RFC 7519 §4.1.4", "ISO/IEC 27001:2022 A.8.5", "ISO/IEC 27001:2022 A.5.17"]
     en:
       title: Access tokens expire within 60 minutes
       description: A script decodes a new token and uses it after its lifetime.
@@ -376,7 +376,7 @@ tests:
     priority: critical
     execution: automated
     tags: [scopes, authorisation]
-    refs: ["RFC 6749 §3.3"]
+    refs: ["RFC 6749 §3.3", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     en:
       title: A read-only token cannot write or delete
       description: A script uses a token with only a read scope against read, write and delete operations.
@@ -406,7 +406,7 @@ tests:
     priority: high
     execution: automated
     tags: [cors]
-    refs: ["OWASP Web Security Testing Guide WSTG-CLNT-07"]
+    refs: ["OWASP Web Security Testing Guide WSTG-CLNT-07", "ISO/IEC 27001:2022 A.8.26"]
     en:
       title: CORS headers only for trusted origins
       description: A script sends preflight and simple requests with listed, unlisted and null origins.
@@ -438,7 +438,7 @@ tests:
     priority: medium
     execution: automated
     tags: [request-size]
-    refs: ["OWASP API Security Top 10 2023 API4"]
+    refs: ["OWASP API Security Top 10 2023 API4", "IEC 62443-3-3 SR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     en:
       title: Oversized request bodies are rejected with 413
       description: A script sends bodies at and just above the size limit and watches memory use.
@@ -468,7 +468,7 @@ tests:
     priority: high
     execution: automated
     tags: [error-handling, information-disclosure]
-    refs: ["OWASP Web Security Testing Guide WSTG-ERRH-01"]
+    refs: ["OWASP Web Security Testing Guide WSTG-ERRH-01", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
     en:
       title: Error responses contain no internal details
       description: A script provokes client and server errors and searches the responses for internal details.
@@ -502,7 +502,7 @@ tests:
     priority: high
     execution: automated
     tags: [mass-assignment]
-    refs: ["OWASP API Security Top 10 2023 API3"]
+    refs: ["OWASP API Security Top 10 2023 API3", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: Protected fields cannot be set through the API
       description: A script adds protected fields to create and update requests.
@@ -534,7 +534,7 @@ tests:
     priority: medium
     execution: automated
     tags: [pagination]
-    refs: ["OWASP API Security Top 10 2023 API4"]
+    refs: ["OWASP API Security Top 10 2023 API4", "IEC 62443-3-3 SR 7.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     en:
       title: Page size is capped at 100
       description: A script asks a list endpoint for very large pages.
@@ -562,7 +562,7 @@ tests:
     priority: medium
     execution: manual
     tags: [api-key, revocation]
-    refs: ["NIST SP 800-53 IA-5"]
+    refs: ["NIST SP 800-53 IA-5", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5"]
     en:
       title: A revoked API key stops working within one minute
       description: Revokes an API key in the administration while a client uses it.

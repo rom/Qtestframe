@@ -144,7 +144,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [scheduled-reports, access-control]
-    refs: ["OWASP ASVS 4.0.3 V4.2.1", "OWASP Top 10 2021 A01"]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3"]
     tests: [RPT-T06]
     en:
       title: Scheduled reports limited to the recipient's permissions
@@ -382,7 +382,7 @@ tests:
     priority: critical
     execution: automated
     tags: [scheduled-reports, access-control]
-    refs: ["OWASP ASVS 4.0.3 V4.2.1"]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1", "ISO/IEC 27001:2022 A.8.3"]
     en:
       title: Scheduled report respects each recipient's permissions
       description: An integration test sends a scheduled report to recipients with different access and inspects the content of each delivered report.

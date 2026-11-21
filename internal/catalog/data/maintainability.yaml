@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [code-review, branch-protection]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.28 (secure coding)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)"]
+    refs: ["ISO/IEC 27001:2022 A.8.28 (secure coding)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "IEC 62443-4-1 SI-1"]
     tests: [MNT-T01]
     en:
       title: Review of every change
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [coding-standard, linting, ci]
-    refs: ["ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "ISO/IEC 27001:2022 Annex A 8.28 (secure coding)"]
+    refs: ["ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "ISO/IEC 27001:2022 A.8.28 (secure coding)", "ISO/IEC 27002:2022 §8.28", "IEC 62443-4-1 SI-2"]
     tests: [MNT-T02]
     en:
       title: Coding standard checked in the pipeline
@@ -152,7 +152,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [static-analysis, sast, ci]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.25 (secure development life cycle)", "OWASP ASVS 4.0 V1.1 (secure software development lifecycle)"]
+    refs: ["ISO/IEC 27001:2022 A.8.25 (secure development life cycle)", "OWASP ASVS 4.0 V1.1 (secure software development lifecycle)", "IEC 62443-4-1 SI-1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3"]
     tests: [MNT-T05]
     en:
       title: No merge with severe static analysis findings
@@ -198,7 +198,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [documentation, architecture]
-    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)"]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "ISO/IEC 27001:2022 A.8.27"]
     tests: [MNT-T06]
     en:
       title: Current architecture description
@@ -244,7 +244,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [documentation, operations]
-    refs: ["ITIL 4 Knowledge management", "ISO/IEC 25010:2011 §4.2.8.2 (installability)"]
+    refs: ["ITIL 4 Knowledge management", "ISO/IEC 25010:2011 §4.2.8.2 (installability)", "ISO/IEC 27001:2022 A.5.37"]
     tests: [MNT-T08]
     en:
       title: Operations manual
@@ -266,7 +266,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [dependencies, vulnerabilities]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.8 (management of technical vulnerabilities)", "OWASP Top 10 2021 A06 (vulnerable and outdated components)"]
+    refs: ["ISO/IEC 27001:2022 A.8.8 (management of technical vulnerabilities)", "OWASP Top 10 2021 A06 (vulnerable and outdated components)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "ISO/IEC 27019:2024 (patch management)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 GEC)"]
     tests: [MNT-T09]
     en:
       title: Patching of critical vulnerabilities in dependencies
@@ -290,7 +290,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [dependencies, automation]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.8 (management of technical vulnerabilities)", "The Twelve-Factor App, II Dependencies"]
+    refs: ["ISO/IEC 27001:2022 A.8.8 (management of technical vulnerabilities)", "The Twelve-Factor App, II Dependencies", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)"]
     tests: [MNT-T09]
     en:
       title: Automated dependency update proposals
@@ -504,7 +504,7 @@ tests:
     priority: medium
     execution: manual
     tags: [documentation, architecture, review]
-    refs: ["ISO/IEC/IEEE 42010:2022"]
+    refs: ["ISO/IEC/IEEE 42010:2022", "ISO/IEC 27001:2022 A.8.27"]
     en:
       title: Review of the architecture description
       description: Compares the architecture description with the running system.
@@ -594,7 +594,7 @@ tests:
     priority: critical
     execution: automated
     tags: [dependencies, vulnerabilities]
-    refs: ["OWASP Top 10 2021 A06"]
+    refs: ["OWASP Top 10 2021 A06", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "ISO/IEC 27019:2024 (patch management)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 GEC)"]
     en:
       title: Dependency audit and update timeliness
       description: A pipeline job scans the dependencies for known vulnerabilities, and the history of advisories and update pull requests is checked.

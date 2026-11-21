@@ -638,7 +638,8 @@ development (security, privacy, performance, reliability, operations,
 usability, accessibility, common functionality, domain-specific functionality
 such as checkout and billing), in English and Swedish.
 The texts are written for Qtestframe and cite the standards they are based
-on (OWASP ASVS, WCAG, ISO/IEC 25010, NIST SP 800-63B …) in `refs` by name
+on (OWASP ASVS, WCAG, ISO/IEC 25010, NIST SP 800-63B, ISO/IEC 27001, IEC 62443,
+GDPR, CRA, DORA …) in `refs` by name
 and section, without copying them. The content lives in
 `internal/catalog/data` (format: `internal/catalog/FORMAT.md`) and ships
 with the binary.

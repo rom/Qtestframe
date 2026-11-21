@@ -110,7 +110,7 @@ requirements:
     obligation: must
     priority: high
     tags: [graceful-degradation, search]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)"]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     tests: [RES-T04]
     en:
       title: Core functions work without the search service
@@ -200,7 +200,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [error-message, information-disclosure]
-    refs: ["OWASP ASVS 4.0 V7.4.1 (generic error messages)", "OWASP Top 10 2021 A05 (security misconfiguration)"]
+    refs: ["OWASP ASVS 4.0 V7.4.1 (generic error messages)", "OWASP Top 10 2021 A05 (security misconfiguration)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
     tests: [RES-T07]
     en:
       title: No internal details in error responses
@@ -244,7 +244,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [bulkhead, isolation, dependency]
-    refs: ["Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    refs: ["Google SRE book ch. 22 (Addressing Cascading Failures)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
     tests: [RES-T08]
     en:
       title: Isolated resources per dependency
@@ -292,7 +292,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [fault-injection, chaos-engineering]
-    refs: ["ISTQB CTAL-TTA (reliability testing)", "Google SRE book ch. 17 (Testing for Reliability)"]
+    refs: ["ISTQB CTAL-TTA (reliability testing)", "Google SRE book ch. 17 (Testing for Reliability)", "Regulation (EU) 2022/2554 (DORA) Art. 24", "Regulation (EU) 2022/2554 (DORA) Art. 25", "ISO/IEC 27001:2022 A.5.30"]
     tests: [RES-T10]
     en:
       title: Regular fault-injection tests
@@ -494,7 +494,7 @@ tests:
     priority: high
     execution: manual
     tags: [error-message, information-disclosure]
-    refs: ["OWASP ASVS 4.0 V7.4.1"]
+    refs: ["OWASP ASVS 4.0 V7.4.1", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
     en:
       title: Error messages for users and API clients
       description: Provokes user errors and server errors and reviews the resulting messages and responses.
@@ -584,7 +584,7 @@ tests:
     priority: medium
     execution: manual
     tags: [fault-injection, review]
-    refs: ["Google SRE book ch. 17"]
+    refs: ["Google SRE book ch. 17", "Regulation (EU) 2022/2554 (DORA) Art. 24", "Regulation (EU) 2022/2554 (DORA) Art. 25", "ISO/IEC 27001:2022 A.5.30"]
     en:
       title: Review of the fault-injection schedule
       description: Checks that every critical dependency has been tested with injected faults during the last quarter.
