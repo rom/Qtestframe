@@ -17,6 +17,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import QueryInput from '@/components/QueryInput.vue'
+import SourceMultiSelect from '@/components/SourceMultiSelect.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { moveItem } from '@/lib/collections'
@@ -401,6 +402,15 @@ onMounted(() => {
               <template v-else-if="p.name === 'query'">
                 <span class="field-label" aria-hidden="true">{{ t('reports.filter') }}</span>
                 <QueryInput v-model="cards[tpl.id].params.query" :scope="tpl.id === 'test_inventory' ? 'test' : 'requirement'" :error="cards[tpl.id].error" :placeholder="t('reports.filterPlaceholder')" />
+              </template>
+              <template v-else-if="p.name === 'sources'">
+                <label :for="`tpl-src-${tpl.id}`">{{ t('reports.sources') }}</label>
+                <SourceMultiSelect
+                  :input-id="`tpl-src-${tpl.id}`"
+                  :model-value="(cards[tpl.id].params.sources ?? '').split(',').filter(Boolean)"
+                  :placeholder="t('analytics.compliance.usedSources')"
+                  @update:model-value="(v: string[]) => (cards[tpl.id].params.sources = v.join(','))"
+                />
               </template>
               <template v-else>
                 <label>{{ p.name }}</label>

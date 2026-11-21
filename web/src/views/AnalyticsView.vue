@@ -4,6 +4,7 @@
 // obligation, tests or criteria, failing coverage, duplicates, conflicts
 // and the language findings summed up per rule.
 import ItemRef from '../components/ItemRef.vue'
+import ComplianceSection from '@/components/ComplianceSection.vue'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -223,6 +224,7 @@ const healthClass = computed(() => {
         </ul>
       </section>
     </template>
+    <ComplianceSection :project-id="proj.pid" />
   </template>
 </template>
 

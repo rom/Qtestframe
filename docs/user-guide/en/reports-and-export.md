@@ -68,6 +68,7 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Run summary** | one run: totals, executions, defects and durations | the run (required) |
 | **Defects** | all defects recorded on executions, grouped by defect | – |
 | **Test inventory** | tests by folder, type, status and category | optional filter |
+| **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](traceability-and-coverage.md#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
 
 ![The reports page with the standard reports and the custom report builder](../images/en-reports.png)
 

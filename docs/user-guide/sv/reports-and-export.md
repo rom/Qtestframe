@@ -70,6 +70,7 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 | **Sammanfattning av körning** | en körning: summor, exekveringar, defekter och tidsåtgång | körningen (obligatorisk) |
 | **Defekter** | alla defekter som registrerats på exekveringar, grupperade per defekt | – |
 | **Testförteckning** | testfall per mapp, typ, status och kategori | valfritt filter |
+| **Efterlevnad** | efterlevnad av lagar, standarder och bästa praxis: per källa, per avsnitt, de katalogkrav som saknas och de krav som inte är uppfyllda (se [Efterlevnad av lagar och standarder](traceability-and-coverage.md#efterlevnad-av-lagar-och-standarder)) | valfria lagar, standarder och bästa praxis (standard: de som projektet använder) |
 
 ![Rapportsidan med standardrapporterna och rapportbyggaren](../images/sv-reports.png)
 

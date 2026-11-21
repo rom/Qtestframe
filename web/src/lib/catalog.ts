@@ -13,6 +13,8 @@ export interface CatalogArea {
   id: string
   prefix: string
   group: string
+  /** catalogue type (software, hardware, …) */
+  catalogue?: string
   name: string
   description: string
   requirements: number
@@ -32,6 +34,16 @@ export interface CatalogTagCount {
   count: number
 }
 
+/** A type of catalogue (software, hardware, …) with its counts. */
+export interface CatalogType {
+  id: string
+  name: string
+  description: string
+  areas: number
+  requirements: number
+  tests: number
+}
+
 export interface CatalogOverview {
   languages: string[]
   lang: string
@@ -40,6 +52,35 @@ export interface CatalogOverview {
   tests: number
   requirement_tags: CatalogTagCount[]
   test_tags: CatalogTagCount[]
+  catalogues?: CatalogType[]
+}
+
+/** A law, regulation, standard or best practice the catalogue cites (GET /catalog/sources). */
+export interface CatalogSource {
+  id: string
+  /** law | directive | standard | practice | guideline */
+  kind: string
+  jurisdiction?: string
+  short?: string
+  name: string
+  url?: string
+  /** requirements citing it */
+  requirements: number
+  /** tests citing it or verifying such a requirement */
+  tests: number
+  catalogues: string[]
+}
+
+export interface CatalogSourceKind {
+  id: string
+  name: string
+}
+
+/** GET /catalog/sources */
+export interface CatalogSources {
+  lang: string
+  kinds: CatalogSourceKind[]
+  sources: CatalogSource[]
 }
 
 /** A project item with the catalogue id it was copied from. */
@@ -53,6 +94,9 @@ interface CatalogBase {
   id: string
   area: string
   group: string
+  catalogue?: string
+  /** ids of the reference sources its refs cite */
+  sources?: string[]
   priority: string
   tags: string[]
   refs: string[]
@@ -197,10 +241,14 @@ export interface CatalogFilters {
   tags: string[]
   executions: string[]
   hideInProject: boolean
+  /** catalogue type ("" = every type) */
+  catalogue?: string
+  /** reference sources to comply with (any of them) */
+  sources?: string[]
 }
 
 export function emptyFilters(): CatalogFilters {
-  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], hideInProject: false }
+  return { node: 'all', q: '', types: [], obligations: [], priorities: [], tags: [], executions: [], hideInProject: false, catalogue: '', sources: [] }
 }
 
 /** Number of filters set besides the tree node and the search. */
@@ -217,9 +265,23 @@ export function matchesNode(item: CatalogItem, node: NodeKey): boolean {
 
 const okAny = (want: readonly string[], v: string) => !want.length || want.includes(v)
 
+/**
+ * The sources an item brings: a requirement those it cites, a test those it
+ * cites and those of the requirements it verifies (as the server's ?source=).
+ */
+export function itemSources(item: CatalogItem, reqById?: ReadonlyMap<string, CatalogRequirement>): string[] {
+  const own = item.sources ?? []
+  if (isRequirement(item) || !reqById) return own
+  const out = new Set(own)
+  for (const r of item.requirements) for (const s of reqById.get(r)?.sources ?? []) out.add(s)
+  return [...out]
+}
+
 /** Whether the item passes the field filters (not the node or the search). */
-export function matchesFields(item: CatalogItem, f: CatalogFilters, inProject: ReadonlySet<string>): boolean {
+export function matchesFields(item: CatalogItem, f: CatalogFilters, inProject: ReadonlySet<string>, reqById?: ReadonlyMap<string, CatalogRequirement>): boolean {
   if (f.hideInProject && inProject.has(item.id)) return false
+  if (f.catalogue && (item.catalogue ?? 'software') !== f.catalogue) return false
+  if (f.sources?.length && !itemSources(item, reqById).some((s) => f.sources!.includes(s))) return false
   if (!okAny(f.priorities, item.priority)) return false
   if (f.tags.length && !item.tags.some((t) => f.tags.includes(t))) return false
   if (isRequirement(item)) return okAny(f.types, item.type) && okAny(f.obligations, item.obligation)
@@ -230,12 +292,17 @@ export function matchesFields(item: CatalogItem, f: CatalogFilters, inProject: R
  * Items passing the filters: ranked by relevance when searching, else in
  * catalogue order. `node: false` ignores the tree node (for the counts).
  */
-export function filterCatalog<T extends CatalogItem>(items: readonly T[], f: CatalogFilters, inProject: ReadonlySet<string>, opts: { node?: boolean } = {}): T[] {
+export function filterCatalog<T extends CatalogItem>(
+  items: readonly T[],
+  f: CatalogFilters,
+  inProject: ReadonlySet<string>,
+  opts: { node?: boolean; reqById?: ReadonlyMap<string, CatalogRequirement> } = {},
+): T[] {
   const words = terms(f.q)
   const hits: { item: T; score: number; i: number }[] = []
   items.forEach((item, i) => {
     if (opts.node !== false && !matchesNode(item, f.node)) return
-    if (!matchesFields(item, f, inProject)) return
+    if (!matchesFields(item, f, inProject, opts.reqById)) return
     const score = searchScore(item, words)
     if (score > 0) hits.push({ item, score, i })
   })
@@ -263,18 +330,69 @@ export interface CatalogTreeNode {
   children?: CatalogTreeNode[]
 }
 
-/** Groups and areas as tree nodes with counts for the kind. */
-export function catalogTree(groups: readonly CatalogGroup[], kind: CatalogKind, counts: ReadonlyMap<NodeKey, number>): CatalogTreeNode[] {
+/** Groups and areas as tree nodes with counts for the kind; with a catalogue type only its areas (and groups with such areas). */
+export function catalogTree(groups: readonly CatalogGroup[], kind: CatalogKind, counts: ReadonlyMap<NodeKey, number>, catalogue = ''): CatalogTreeNode[] {
   const total = (x: { requirements: number; tests: number }) => (kind === 'requirement' ? x.requirements : x.tests)
+  const inType = (a: CatalogArea) => !catalogue || (a.catalogue ?? 'software') === catalogue
   return groups
-    .filter((g) => total(g) > 0)
-    .map((g) => ({
+    .map((g) => ({ g, areas: g.areas.filter((a) => inType(a) && total(a) > 0) }))
+    .filter(({ areas }) => areas.length > 0)
+    .map(({ g, areas }) => ({
       key: `g:${g.id}`,
       label: g.name,
       count: counts.get(`g:${g.id}`) ?? 0,
-      total: total(g),
-      children: g.areas.filter((a) => total(a) > 0).map((a) => ({ key: `a:${a.id}`, label: a.name, count: counts.get(`a:${a.id}`) ?? 0, total: total(a) })),
+      total: areas.reduce((n, a) => n + total(a), 0),
+      children: areas.map((a) => ({ key: `a:${a.id}`, label: a.name, count: counts.get(`a:${a.id}`) ?? 0, total: total(a) })),
     }))
+}
+
+// ---------------------------------------------------------------- catalogue types and sources
+
+/** The catalogue type that fits a project type (model.ProjectTypes), "" (every type) when none fits or it has no areas. */
+export function defaultCatalogue(projectType: string | undefined, available: readonly string[]): string {
+  const want: Record<string, string> = { software: 'software', hardware: 'hardware', system: 'system', business: 'governance' }
+  const id = want[projectType ?? ''] ?? ''
+  return id && available.includes(id) ? id : ''
+}
+
+export interface SourceGroup {
+  kind: string
+  label: string
+  sources: CatalogSource[]
+}
+
+/** Sources matching the search (name, short name, id or jurisdiction), grouped by kind in the order of kinds; empty groups are left out. */
+export function groupSources(sources: readonly CatalogSource[], kinds: readonly CatalogSourceKind[], q = ''): SourceGroup[] {
+  const words = terms(q)
+  const hit = (s: CatalogSource) => {
+    const text = [s.name, s.short ?? '', s.id, s.jurisdiction ?? ''].join(' ').toLowerCase()
+    return words.every((w) => text.includes(w))
+  }
+  const order = kinds.map((k) => k.id)
+  for (const s of sources) if (!order.includes(s.kind)) order.push(s.kind)
+  return order
+    .map((k) => ({ kind: k, label: kinds.find((x) => x.id === k)?.name ?? k, sources: sources.filter((s) => s.kind === k && hit(s)) }))
+    .filter((g) => g.sources.length > 0)
+}
+
+/** Short label of a source: its short name, else its name. */
+export const sourceLabel = (s: Pick<CatalogSource, 'name' | 'short'>) => s.short || s.name
+
+/** The catalogue requirements citing any of the sources, and the tests that verify them (ids, catalogue order). */
+export function complianceSet(reqs: readonly CatalogRequirement[], sources: readonly string[]): { requirements: string[]; tests: string[] } {
+  const out = { requirements: [] as string[], tests: [] as string[] }
+  if (!sources.length) return out
+  const tests = new Set<string>()
+  for (const r of reqs) {
+    if (!(r.sources ?? []).some((s) => sources.includes(s))) continue
+    out.requirements.push(r.id)
+    for (const t of r.tests) {
+      if (tests.has(t)) continue
+      tests.add(t)
+      out.tests.push(t)
+    }
+  }
+  return out
 }
 
 /** The label of a tree node ("" for "all" or an unknown key). */

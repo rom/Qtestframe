@@ -3,12 +3,16 @@ import {
   activeFilters,
   areaName,
   catalogTree,
+  complianceSet,
   createdQuery,
+  defaultCatalogue,
   emptyFilters,
   filterCatalog,
+  groupSources,
   importPlan,
   inProjectSet,
   isRequirement,
+  itemSources,
   keywordSegments,
   matchesNode,
   nodeCounts,
@@ -16,11 +20,13 @@ import {
   originText,
   searchScore,
   selectionState,
+  sourceLabel,
   tagOptions,
   terms,
   toggleIds,
   type CatalogGroup,
   type CatalogRequirement,
+  type CatalogSource,
   type CatalogTest,
 } from './catalog'
 
@@ -212,5 +218,71 @@ describe('display', () => {
   it('describes the origin', () => {
     expect(originText('AUTH-01', ['NIST', 'OWASP'])).toBe('AUTH-01 · NIST · OWASP')
     expect(originText('AUTH-01', null)).toBe('AUTH-01')
+  })
+})
+
+describe('catalogue types and sources', () => {
+  const cra = req('CRA-01', { sources: ['cra', 'iso-27001'], tests: ['CRA-T01', 'AUTH-T01'], catalogue: 'hardware' })
+  const gdpr = req('PRIV-01', { sources: ['gdpr'], tests: ['AUTH-T01'] })
+  const all = [cra, gdpr, req('X-01')]
+  const byId = new Map(all.map((r) => [r.id, r]))
+  it('filters by catalogue type and source', () => {
+    const f = { ...emptyFilters(), sources: ['cra'] }
+    expect(filterCatalog(all, f, new Set()).map((x) => x.id)).toEqual(['CRA-01'])
+    expect(filterCatalog(all, { ...emptyFilters(), sources: ['cra', 'gdpr'] }, new Set()).map((x) => x.id)).toEqual(['CRA-01', 'PRIV-01'])
+    expect(filterCatalog(all, { ...emptyFilters(), catalogue: 'software' }, new Set()).map((x) => x.id)).toEqual(['PRIV-01', 'X-01'])
+    // a test brings the sources of the requirements it verifies
+    const ts = [test('CRA-T01', { requirements: ['CRA-01'] }), test('OWN-T01', { sources: ['gdpr'] }), test('NONE-T01')]
+    expect(filterCatalog(ts, f, new Set(), { reqById: byId }).map((x) => x.id)).toEqual(['CRA-T01'])
+    expect(itemSources(ts[1])).toEqual(['gdpr'])
+    expect(itemSources(ts[0], byId).sort()).toEqual(['cra', 'iso-27001'])
+  })
+  it('lists the requirements and tests of sources', () => {
+    expect(complianceSet(all, ['cra', 'gdpr'])).toEqual({ requirements: ['CRA-01', 'PRIV-01'], tests: ['CRA-T01', 'AUTH-T01'] })
+    expect(complianceSet(all, [])).toEqual({ requirements: [], tests: [] })
+  })
+  it('defaults the catalogue type from the project type', () => {
+    expect(defaultCatalogue('hardware', ['software', 'hardware'])).toBe('hardware')
+    expect(defaultCatalogue('business', ['software', 'governance'])).toBe('governance')
+    expect(defaultCatalogue('business', ['software'])).toBe('')
+    expect(defaultCatalogue('general', ['software'])).toBe('')
+    expect(defaultCatalogue(undefined, ['software'])).toBe('')
+  })
+  it('groups and searches sources', () => {
+    const src = (id: string, kind: string, name: string, short?: string): CatalogSource => ({ id, kind, name, short, requirements: 1, tests: 1, catalogues: [], jurisdiction: 'EU' })
+    const list = [src('gdpr', 'law', 'General Data Protection Regulation', 'GDPR'), src('nis2', 'directive', 'NIS2 Directive'), src('iso', 'standard', 'ISO/IEC 27001'), src('x', 'other', 'Other')]
+    const kinds = [
+      { id: 'law', name: 'Laws' },
+      { id: 'directive', name: 'Directives' },
+      { id: 'standard', name: 'Standards' },
+    ]
+    expect(groupSources(list, kinds).map((g) => [g.kind, g.label, g.sources.length])).toEqual([
+      ['law', 'Laws', 1],
+      ['directive', 'Directives', 1],
+      ['standard', 'Standards', 1],
+      ['other', 'other', 1],
+    ])
+    expect(groupSources(list, kinds, 'gdpr').map((g) => g.kind)).toEqual(['law'])
+    expect(groupSources(list, kinds, '27001 iso').map((g) => g.sources[0].id)).toEqual(['iso'])
+    expect(sourceLabel(list[0])).toBe('GDPR')
+    expect(sourceLabel(list[1])).toBe('NIS2 Directive')
+  })
+  it('limits the tree to the areas of a catalogue type', () => {
+    const gs: CatalogGroup[] = [
+      {
+        id: 'security',
+        name: 'Security',
+        requirements: 3,
+        tests: 3,
+        areas: [
+          { id: 'a', prefix: 'A', group: 'security', catalogue: 'software', name: 'A', description: '', requirements: 1, tests: 1 },
+          { id: 'b', prefix: 'B', group: 'security', catalogue: 'hardware', name: 'B', description: '', requirements: 2, tests: 2 },
+        ],
+      },
+      { id: 'other', name: 'Other', requirements: 1, tests: 1, areas: [{ id: 'c', prefix: 'C', group: 'other', name: 'C', description: '', requirements: 1, tests: 1 }] },
+    ]
+    const tree = catalogTree(gs, 'requirement', new Map(), 'hardware')
+    expect(tree.map((n) => [n.key, n.total, n.children?.map((c) => c.key)])).toEqual([['g:security', 2, ['a:b']]])
+    expect(catalogTree(gs, 'requirement', new Map(), 'software').map((n) => n.key)).toEqual(['g:security', 'g:other'])
   })
 })

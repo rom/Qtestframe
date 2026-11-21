@@ -20,11 +20,23 @@ Open **Catalogue** in the project sidebar, or select **Add from catalogue** at t
 
 - Switch between **Requirements** and **Tests** at the top.
 - Choose **English** or **Svenska** for the language of the texts. The items are added in this language.
+- **Catalogue type** limits the catalogue to one kind of work: *Software*, *Hardware*, *Equipment*, *Systems*, *Communications solutions*, *Projects*, *Services*, *Buildings and facilities*, *Governance*, *Documentation* or *Education* (only the types that have content are listed). It starts with the type that fits the project: software projects show *Software*, hardware projects *Hardware*, system projects *Systems* and business projects *Governance*; general projects show **All types**. The tree, the lists and the laws and standards follow the choice.
 - On the left, **Groups and areas** lists the catalogue's groups (for example *Security*) and their areas (for example *Authentication*) with the number of items that match the current search and filters. Select **Everything** to see all areas. Use the arrow keys to move in the tree and Enter to select. On a narrow screen the tree opens with the **Areas** button.
 - The **search** field finds items whose title, ID, tags, cited standards or description contain all the words you type (type `62443` or `27001`, for example, to list the items that cite that standard). The best matches come first: an exact ID such as `AUTH-01`, then the words in the title, then the other fields.
 - Narrow the list with **Type**, **Obligation** and **Priority** (requirements), **Execution** (tests) and **Tags**. **Hide items already in the project** leaves out what you have added before.
 
 Each row shows the ID, the title, the obligation and priority, and how many catalogue tests verify the requirement (or how many requirements the test verifies). **In project** marks items that the project already has; hover over it to see their keys.
+
+## Comply with laws, standards and best practices
+
+When the project has to meet a regulation or a standard, let the catalogue find the requirements for it:
+
+1. Under **Comply with laws, standards and best practices**, select **Choose laws and standards…**.
+2. The dialog lists every law, regulation, directive, standard, best practice and guideline that the catalogue cites, grouped by kind (*Laws and regulations*, *Directives*, *Standards and specifications*, *Best practices and frameworks*, *Guidelines and guidance*). Each shows its abbreviation, its jurisdiction (EU, Sweden, international …) and how many catalogue requirements cite it and how many tests verify them, counted in the chosen catalogue type. Type in the search field to find one by name, abbreviation or jurisdiction (`CRA`, `27001`, `Sweden`). Tick the sources one by one, or a whole kind with the box at its heading; the link icon opens the text of the source where one is known.
+3. Select **Show the requirements**. Both tabs now list only the items for the chosen sources: the requirements that cite one of them and, under each, the catalogue tests that verify it (**Verified by:**; select a test to preview it). A tag on each requirement shows which of the chosen sources it cites.
+4. The box sums up how many requirements cite the sources, how many tests verify them and how many the project already has. **Add the N missing requirements with their tests** ticks the requirements the project does not have yet and opens the usual dialog (see below), which adds them with their tests and trace links, skips duplicates and creates the folders you choose.
+
+Remove a source with the × on its chip, or **Clear the choice** to see the whole catalogue again. The choice is part of the page address, so you can bookmark or share it. Among the sources are the EU regulations and directives (GDPR, CRA, NIS2 and its implementing regulation, DORA, CER, RED with EN 18031, the AI Act, ePrivacy, eIDAS …), Swedish law (the Cybersecurity Act, the Protective Security Act and Ordinance, the Act on accessibility of digital public services …), standards (ISO/IEC 27001, 27002 and the other 27000 parts, IEC 62443-2-1 to 4-2, ISO/IEC 29147 and 30111, ISO/IEC 25010, WCAG 2.2, IEC 61508, 61511, 61850 …) and best practices (OWASP ASVS and Top 10, NIST SP 800-63, ITIL 4, Google SRE …). How far the project meets them is shown under [Compliance with laws and standards](traceability-and-coverage.md#compliance-with-laws-and-standards) in the requirement analytics.
 
 ## Preview an item
 
