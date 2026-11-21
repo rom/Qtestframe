@@ -27,8 +27,10 @@ import {
   trackerDirty,
   trackerError,
   trackerForm,
+  trackerName,
   trackerPayload,
   validateTracker,
+  validGitLabProject,
   validIssueKey,
   viaKind,
 } from './defectTracker'
@@ -132,8 +134,26 @@ describe('reporting from an execution', () => {
 describe('tracker settings', () => {
   const jira = { ...trackerForm(null), type: 'jira', url: 'https://acme.atlassian.net/', project_key: 'shop', user: ' qa@acme.test ', issue_type: '' }
   const gh = { ...trackerForm(null), type: 'github', repo: 'acme/shop', labels: 'bug ' }
+  const gl = { ...trackerForm(null), type: 'gitlab', project: 'qa/web/shop', labels: 'qtf', milestone: ' R1 ', assignee: 'alice', requirement_labels: ' {type} ', comment_on_pass: true }
+  const req = { requirement_labels: '', comment_on_pass: false }
   it('fills the form from saved settings', () => {
-    expect(trackerForm({ type: 'github', repo: 'a/b', has_token: true })).toEqual({ type: 'github', url: '', project_key: '', repo: 'a/b', issue_type: '', labels: '', user: '', token: '' })
+    expect(trackerForm({ type: 'github', repo: 'a/b', has_token: true })).toEqual({
+      type: 'github',
+      url: '',
+      project_key: '',
+      repo: 'a/b',
+      project: '',
+      issue_type: '',
+      labels: '',
+      milestone: '',
+      assignee: '',
+      requirement_labels: '',
+      requirement_issue_type: '',
+      comment_on_pass: false,
+      user: '',
+      token: '',
+    })
+    expect(trackerForm({ type: 'gitlab', project: '42', comment_on_pass: true })).toMatchObject({ project: '42', comment_on_pass: true })
     expect(trackerForm(undefined).type).toBe('')
   })
   it('validates like the server', () => {
@@ -142,19 +162,48 @@ describe('tracker settings', () => {
     expect(validateTracker({ ...jira, url: 'acme.atlassian.net', project_key: '1X' })).toEqual({ url: 'jiraUrl', project_key: 'projectKey' })
     expect(validateTracker(gh)).toEqual({})
     expect(validateTracker({ ...gh, url: 'ftp://x', repo: 'shop' })).toEqual({ url: 'githubUrl', repo: 'repo' })
-    expect(validateTracker({ ...gh, type: 'gitlab' })).toEqual({ type: 'type' })
+    expect(validateTracker(gl)).toEqual({})
+    expect(validateTracker({ ...gl, project: '42', url: 'https://gitlab.example/' })).toEqual({})
+    expect(validateTracker({ ...gl, project: 'https://gitlab.example/qa/shop', url: 'https://gitlab.example' })).toEqual({})
+    expect(validateTracker({ ...gl, project: 'https://gitlab.com/qa/shop/' })).toEqual({})
+    expect(validateTracker({ ...gl, url: 'http://gitlab.example', project: 'shop' })).toEqual({ url: 'gitlabUrl', project: 'gitlabProject' })
+    expect(validateTracker({ ...gl, project: 'qa/../x' })).toEqual({ project: 'gitlabProject' })
+    expect(validateTracker({ ...gl, project: 'qa/x y' })).toEqual({ project: 'gitlabProject' })
+    expect(validateTracker({ ...gh, type: 'youtrack' })).toEqual({ type: 'type' })
+  })
+  it('validates GitLab projects', () => {
+    for (const ok of ['42', 'g/p', 'g/sub/p.web', '/g/p/', 'g/.hidden']) expect(validGitLabProject(ok), ok).toBe(true)
+    for (const bad of ['', 'p', 'g/..', 'g//p', '-g/p', 'g/p p']) expect(validGitLabProject(bad), bad).toBe(false)
   })
   it('sends only the fields of the type and a token when typed', () => {
     expect(trackerPayload(trackerForm(null))).toEqual({ type: '' })
-    expect(trackerPayload(jira)).toEqual({ type: 'jira', url: 'https://acme.atlassian.net', project_key: 'SHOP', issue_type: '', user: 'qa@acme.test' })
-    expect(trackerPayload({ ...gh, token: ' ghp_x ' })).toEqual({ type: 'github', url: '', repo: 'acme/shop', labels: 'bug', token: 'ghp_x' })
-    expect(trackerPayload(gh, true)).toEqual({ type: 'github', url: '', repo: 'acme/shop', labels: 'bug', clear_token: true })
+    expect(trackerPayload(jira)).toEqual({ type: 'jira', url: 'https://acme.atlassian.net', project_key: 'SHOP', issue_type: '', user: 'qa@acme.test', requirement_issue_type: '', ...req })
+    expect(trackerPayload({ ...gh, token: ' ghp_x ' })).toEqual({ type: 'github', url: '', repo: 'acme/shop', labels: 'bug', milestone: '', assignee: '', ...req, token: 'ghp_x' })
+    expect(trackerPayload(gh, true)).toEqual({ type: 'github', url: '', repo: 'acme/shop', labels: 'bug', milestone: '', assignee: '', ...req, clear_token: true })
+    expect(trackerPayload(gl)).toEqual({ type: 'gitlab', url: '', project: 'qa/web/shop', labels: 'qtf', milestone: 'R1', assignee: 'alice', requirement_labels: '{type}', comment_on_pass: true })
   })
   it('notices changes', () => {
     const saved = { type: 'github', url: 'https://api.github.com', repo: 'acme/shop', labels: '', has_token: true }
     expect(trackerDirty(trackerForm(saved), saved)).toBe(false)
     expect(trackerDirty({ ...trackerForm(saved), repo: 'acme/web' }, saved)).toBe(true)
+    expect(trackerDirty({ ...trackerForm(saved), comment_on_pass: true }, saved)).toBe(true)
     expect(trackerDirty({ ...trackerForm(saved), token: 'x' }, saved)).toBe(true)
+  })
+  it('names the trackers', () => {
+    expect(trackerName('gitlab')).toBe('GitLab')
+    expect(trackerName('github')).toBe('GitHub')
+    expect(trackerName('jira')).toBe('Jira')
+    expect(trackerName('')).toBe('')
+    expect(trackerName(undefined)).toBe('')
+  })
+  it('knows GitLab issue keys', () => {
+    expect(issueKeyExample({ type: 'gitlab', project: 'qa/shop' })).toBe('qa/shop#123')
+    expect(issueKeyExample({ type: 'gitlab', project: '42' })).toBe('group/project#123')
+    expect(validIssueKey({ type: 'gitlab' }, 'qa/web/shop#12')).toBe(true)
+    expect(validIssueKey({ type: 'gitlab' }, '#12')).toBe(true)
+    expect(validIssueKey({ type: 'gitlab' }, 'shop#12')).toBe(false)
+    expect(normalizeIssueKey({ type: 'gitlab', project: 'QA/Shop' }, '#7')).toBe('qa/shop#7')
+    expect(normalizeIssueKey({ type: 'gitlab' }, 'qa/web/shop#7')).toBe('qa/web/shop#7')
   })
   it('explains issue keys', () => {
     expect(issueKeyExample({ type: 'jira', project_key: 'SHOP' })).toBe('SHOP-123')

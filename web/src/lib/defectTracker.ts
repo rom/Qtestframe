@@ -1,5 +1,5 @@
-// Defects (PROJ-BUG-n) and the project's connection to Jira or GitHub
-// Issues: status and severity order, links, tracker form checks and the
+// Defects (PROJ-BUG-n) and the project's connection to Jira, GitHub Issues or
+// GitLab: status and severity order, links, tracker form checks and the
 // errors the tracker reports. Mirrors internal/model and internal/store.
 import { ApiError } from './api'
 import type { Defect, DefectLink, DefectTracker, Execution } from './types'
@@ -12,10 +12,13 @@ export const DEFECT_PRIORITIES = ['critical', 'high', 'medium', 'low'] as const
 /** the items a defect can be linked to from the UI */
 export const DEFECT_LINK_TYPES = ['requirement', 'test', 'execution'] as const
 export type DefectLinkType = (typeof DEFECT_LINK_TYPES)[number]
-export const TRACKER_TYPES = ['', 'jira', 'github'] as const
+export const TRACKER_TYPES = ['', 'jira', 'github', 'gitlab'] as const
 export type TrackerType = (typeof TRACKER_TYPES)[number]
 
 export const GITHUB_API_URL = 'https://api.github.com'
+export const GITLAB_URL = 'https://gitlab.com'
+/** The label mapping of issues from requirements when none is set (internal/model). */
+export const DEFAULT_REQUIREMENT_LABELS = 'requirement, type::{type}, priority::{priority}, {tags}'
 
 /** Whether the status counts as open (exit criterion no_open_defects). */
 export function isOpenDefect(status: string | null | undefined): boolean {
@@ -198,8 +201,15 @@ export interface TrackerForm {
   url: string
   project_key: string
   repo: string
+  /** GitLab project ID or path */
+  project: string
   issue_type: string
   labels: string
+  milestone: string
+  assignee: string
+  requirement_labels: string
+  requirement_issue_type: string
+  comment_on_pass: boolean
   user: string
   /** a new token; empty keeps the saved one */
   token: string
@@ -211,14 +221,28 @@ export function trackerForm(t: Partial<DefectTracker> | null | undefined): Track
     url: t?.url ?? '',
     project_key: t?.project_key ?? '',
     repo: t?.repo ?? '',
+    project: t?.project ?? '',
     issue_type: t?.issue_type ?? '',
     labels: t?.labels ?? '',
+    milestone: t?.milestone ?? '',
+    assignee: t?.assignee ?? '',
+    requirement_labels: t?.requirement_labels ?? '',
+    requirement_issue_type: t?.requirement_issue_type ?? '',
+    comment_on_pass: !!t?.comment_on_pass,
     user: t?.user ?? '',
     token: '',
   }
 }
 
-export type TrackerField = 'type' | 'url' | 'project_key' | 'repo'
+/** A GitLab project: a numeric ID or a path group/[subgroup/…]project (as the server checks it). */
+export function validGitLabProject(p: string): boolean {
+  const v = p.trim().replace(/^\/+|\/+$/g, '')
+  if (/^\d+$/.test(v)) return true
+  const segs = v.split('/')
+  return segs.length >= 2 && segs.every((s) => /^[A-Za-z0-9_.][A-Za-z0-9_.-]*$/.test(s) && s.replace(/\./g, '') !== '')
+}
+
+export type TrackerField = 'type' | 'url' | 'project_key' | 'repo' | 'project'
 /** Problems of a tracker form as field → message id (tracker.invalid.<id>), as the server checks them. */
 export function validateTracker(f: TrackerForm): Partial<Record<TrackerField, string>> {
   const out: Partial<Record<TrackerField, string>> = {}
@@ -235,6 +259,14 @@ export function validateTracker(f: TrackerForm): Partial<Record<TrackerField, st
       if (url && !httpUrl) out.url = 'githubUrl'
       if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(f.repo.trim())) out.repo = 'repo'
       break
+    case 'gitlab': {
+      if (url && !/^https:\/\/[^\s/]+/i.test(url)) out.url = 'gitlabUrl'
+      // a pasted project address is reduced to the path, as on the server
+      const base = (url || GITLAB_URL).replace(/\/+$/, '').replace(/\/api\/v4$/, '')
+      const p = f.project.trim().startsWith(base + '/') ? f.project.trim().slice(base.length + 1) : f.project
+      if (!validGitLabProject(p)) out.project = 'gitlabProject'
+      break
+    }
     default:
       out.type = 'type'
   }
@@ -246,10 +278,13 @@ export function trackerPayload(f: TrackerForm, clearToken = false): Record<strin
   if (!f.type) return { type: '' }
   const body: Record<string, unknown> = { type: f.type, url: f.url.trim().replace(/\/+$/, '') }
   if (f.type === 'jira') {
-    Object.assign(body, { project_key: f.project_key.trim().toUpperCase(), issue_type: f.issue_type.trim(), user: f.user.trim() })
+    Object.assign(body, { project_key: f.project_key.trim().toUpperCase(), issue_type: f.issue_type.trim(), user: f.user.trim(), requirement_issue_type: f.requirement_issue_type.trim() })
   } else {
-    Object.assign(body, { repo: f.repo.trim(), labels: f.labels.trim() })
+    if (f.type === 'gitlab') body.project = f.project.trim()
+    else body.repo = f.repo.trim()
+    Object.assign(body, { labels: f.labels.trim(), milestone: f.milestone.trim(), assignee: f.assignee.trim() })
   }
+  Object.assign(body, { requirement_labels: f.requirement_labels.trim(), comment_on_pass: f.comment_on_pass })
   if (f.token.trim()) body.token = f.token.trim()
   else if (clearToken) body.clear_token = true
   return body
@@ -260,10 +295,17 @@ export function trackerDirty(f: TrackerForm, saved: Partial<DefectTracker> | nul
   return JSON.stringify(trackerPayload(f)) !== JSON.stringify(trackerPayload(trackerForm(saved))) || !!f.token.trim()
 }
 
+/** The tracker's product name (GitLab, GitHub, Jira; "" for none). */
+export function trackerName(type: string | null | undefined): string {
+  return TRACKER_NAMES[type ?? ''] ?? ''
+}
+const TRACKER_NAMES: Record<string, string> = { jira: 'Jira', github: 'GitHub', gitlab: 'GitLab' }
+
 /** Example of an issue key for the import dialog. */
 export function issueKeyExample(t: Partial<DefectTracker> | null | undefined): string {
   if (t?.type === 'jira') return `${t.project_key || 'SHOP'}-123`
   if (t?.type === 'github') return `${t.repo || 'owner/repo'}#123`
+  if (t?.type === 'gitlab') return `${t.project && !/^\d+$/.test(t.project) ? t.project : 'group/project'}#123`
   return ''
 }
 
@@ -272,15 +314,17 @@ export function validIssueKey(t: Partial<DefectTracker> | null | undefined, key:
   const k = key.trim()
   if (t?.type === 'jira') return /^[A-Z][A-Z0-9_]*-\d+$/i.test(k)
   if (t?.type === 'github') return /^(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)?#?\d+$/.test(k)
+  if (t?.type === 'gitlab') return /^(?:[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+)?#?\d+$/.test(k)
   return false
 }
 
-/** The issue key as the server stores it (SHOP-12, owner/repo#12), for comparing. */
+/** The issue key as the server stores it (SHOP-12, owner/repo#12, group/project#12), for comparing. */
 export function normalizeIssueKey(t: Partial<DefectTracker> | null | undefined, key: string): string {
   const k = key.trim()
-  if (t?.type === 'github') {
-    const m = /^(?:([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+))?#?(\d+)$/.exec(k)
-    return m ? `${(m[1] || t.repo || '').toLowerCase()}#${m[2]}` : k.toLowerCase()
+  if (t?.type === 'github' || t?.type === 'gitlab') {
+    const own = t.type === 'github' ? t.repo : t.project
+    const m = /^(?:([A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)+))?#?(\d+)$/.exec(k)
+    return m ? `${(m[1] || own || '').toLowerCase()}#${m[2]}` : k.toLowerCase()
   }
   return k.toUpperCase()
 }

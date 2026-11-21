@@ -67,7 +67,9 @@ tags:
 - name: Releases
   description: Releases and exit criteria
 - name: Defects
-  description: Defects and the defect tracker
+  description: Defects and the issue tracker (Jira, GitHub or GitLab)
+- name: Requirement issues
+  description: Issues created from requirements in GitLab, GitHub or Jira
 - name: Risks
   description: Risks
 - name: Reviews
@@ -7568,7 +7570,7 @@ paths:
       summary: Get tracker
       operationId: getProjectsByPidDefectTracker
       description: |-
-        `{type: ""|jira|github, url, project_key, repo, issue_type, labels, user, has_token}`; the token is never returned
+        `{type: ""|jira|github|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -7632,6 +7634,213 @@ paths:
 
         **Permission:** `project.update`.
       x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/issue:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Requirement issues
+      summary: Requirement issue
+      operationId: getRequirementsByIdIssue
+      description: |-
+        `{tracker, link, preview}`: the tracker type (`""` when none), the requirement's link to its issue in that tracker (an `ItemLink` with `issue`, or null) and `preview` `{title, description, labels}` of the issue as it would be created or updated now
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Requirement issues
+      summary: Create requirement issue
+      operationId: postRequirementsByIdIssue
+      description: |-
+        Creates the issue in the project's tracker (GitLab, GitHub or Jira) and links it: 201 `{link}`. Title `[KEY] title`; description with the text, rationale, criteria, details, linked tests with their latest results and a `/go/{key}` link; labels mapped with `requirement_labels`. 409 `issue_exists` with `link` when the requirement already has one
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '201':
+          description: Created (`{link}`)
+        '409':
+          description: The requirement already has an issue in the tracker (`issue_exists`, with `link`)
+        '502':
+          description: The tracker failed (`tracker_error`; 401, 403, 404, 422 and rate limits are explained in `error`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Requirement issues
+      summary: Update requirement issue
+      operationId: putRequirementsByIdIssue
+      description: |-
+        Pushes the requirement's current title and description into its issue (Markdown: only the part between the Qtestframe markers is replaced) → `{link}`; 404 when it has none
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '502':
+          description: The tracker failed (`tracker_error`; 401, 403, 404, 422 and rate limits are explained in `error`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/issue/sync:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Requirement issues
+      summary: Sync requirement issue
+      operationId: postRequirementsByIdIssueSync
+      description: |-
+        Reads the issue's state back → `{link, changed, commented}`; with `comment_on_pass` it comments once on the open issue when all linked tests passed
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '502':
+          description: The tracker failed (`tracker_error`; 401, 403, 404, 422 and rate limits are explained in `error`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/issues:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirement issues
+      summary: Bulk create requirement issues
+      operationId: postProjectsByPidRequirementsIssues
+      description: |-
+        `{"ids":[...], "update": false}` (at most 100): creates the issues of the requirements without one; those with one are skipped, or updated with `update` → `{"created":[{key,issue_key,url,state}],"updated":[...],"skipped":[...],"failed":[{key,error}]}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/issues/sync:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirement issues
+      summary: Sync requirement issues
+      operationId: postProjectsByPidRequirementsIssuesSync
+      description: |-
+        Optional `{"ids":[...]}`: reads back the state of the issues of the project's requirements (or of those) → `{"synced","changed","commented","failed":[{key,error}]}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
       requestBody:
         required: false
         content:
@@ -13245,12 +13454,27 @@ components:
           type: string
         issue_type:
           type: string
+        project:
+          type: string
+          description: GitLab project ID or path (group/subgroup/project)
         labels:
           type: string
+        milestone:
+          type: string
+        assignee:
+          type: string
+        requirement_labels:
+          type: string
+          description: Label templates for issues from requirements ({type}, {priority}, {obligation}, {status}, {tags}); empty for the default, none for no labels
+        requirement_issue_type:
+          type: string
+        comment_on_pass:
+          type: boolean
         user:
           type: string
         token:
           type: string
+          writeOnly: true
         has_token:
           type: boolean
     Risk:
@@ -13546,6 +13770,30 @@ components:
           type: string
         direction:
           type: string
+        issue:
+          $ref: '#/components/schemas/LinkedIssue'
+    LinkedIssue:
+      type: object
+      description: The tracker issue of a link created from a requirement
+      properties:
+        tracker:
+          type: string
+          enum: [gitlab, github, jira]
+        key:
+          type: string
+        status:
+          type: string
+        state:
+          type: string
+          enum: [open, closed]
+        synced_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        passed_at:
+          type: string
+          format: date-time
     TestDependency:
       type: object
       properties:

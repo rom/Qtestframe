@@ -543,14 +543,15 @@ Further measures:
 * Secret files are read once at start-up, before Landlock is applied
   (SIGHUP re-reads only the TLS key pair); they are not logged. Core dumps
   are disabled (`LimitCORE=0`).
-* **Secrets stored in the database.** Defect tracker tokens (Jira, GitHub)
+* **Secrets stored in the database.** Defect tracker tokens (Jira, GitHub, GitLab)
   and webhook signing secrets are stored per project in the database,
   **encrypted** (see below; earlier versions stored them in plain text,
   which no longer holds), so that the server can use them. The API never returns a tracker token
   (`has_token` only), and returns a webhook secret only once, when it is
   created or rotated. Use tracker tokens with the smallest scope that works
   (GitHub fine-grained token with Issues read/write on one repository; a
-  Jira user that can only create and browse issues in the project).
+  GitLab project access token with the `api` scope and the Reporter role;
+  a Jira user that can only create and browse issues in the project).
 * **System settings secrets.** The SMTP password and OIDC client secrets
   entered in Administration → System settings are stored in the database
   (table `system_settings`) **encrypted**, like tracker tokens (earlier
@@ -597,7 +598,7 @@ with the primitives of `internal/secrets`:
 | --- | --- |
 | TOTP secrets (authenticator apps) | `user_mfa.totp_secret` |
 | Webhook signing secrets | `webhooks.secret` |
-| Defect tracker token (Jira, GitHub) | `projects.defect_tracker` → `token` |
+| Defect tracker token (Jira, GitHub, GitLab) | `projects.defect_tracker` → `token` |
 | Values of secret web test variables | `projects.web_tests` → `variables[].value` |
 | SMTP password | `system_settings` `email.password` |
 | OIDC client secrets | `system_settings` `auth.oidc` → `client_secret` |

@@ -584,6 +584,28 @@ export interface ItemLink {
   /** files: document | report */
   target_kind?: string
   direction?: 'outgoing' | 'incoming' | string
+  /** a link to an issue created from a requirement in the project's tracker */
+  issue?: LinkedIssue
+}
+
+/** The tracker issue of an item link (internal/model LinkedIssue). */
+export interface LinkedIssue {
+  /** gitlab | github | jira */
+  tracker: string
+  /** group/project#12, owner/repo#12 or SHOP-12 */
+  key: string
+  /** the tracker's own status */
+  status: string
+  state: 'open' | 'closed' | string
+  synced_at: string | null
+  passed_at?: string
+}
+
+/** GET /requirements/{id}/issue */
+export interface RequirementIssueInfo {
+  tracker: string
+  link: ItemLink | null
+  preview: { title: string; description: string; labels: string[] } | null
 }
 
 /** A prerequisite between two tests (GET /tests/{id}/dependencies). */
@@ -1020,13 +1042,22 @@ export interface LinkedDefect extends Defect {
 }
 
 export interface DefectTracker {
-  /** "", jira or github */
+  /** "", jira, github or gitlab */
   type: string
   url: string
   project_key: string
   repo: string
+  /** GitLab project ID or path */
+  project?: string
   issue_type: string
   labels: string
+  milestone?: string
+  assignee?: string
+  /** label templates of issues from requirements ("" default, "none") */
+  requirement_labels?: string
+  /** Jira issue type of issues from requirements */
+  requirement_issue_type?: string
+  comment_on_pass?: boolean
   user: string
   /** write-only */
   token?: string
