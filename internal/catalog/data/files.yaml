@@ -1,0 +1,627 @@
+area: files
+prefix: FILE
+group: functional
+name: {en: Files and attachments, sv: Filer och bilagor}
+description:
+  en: Uploading with progress and resumption, drag and drop with a keyboard alternative, file type checks, malware scanning, authorised downloads, file names, checksums, versions, previews, storage quotas and removal of attachments.
+  sv: Uppladdning med förlopp och återupptagning, dra och släpp med alternativ för tangentbord, kontroll av filtyp, sökning efter skadlig kod, behörighetsstyrda nedladdningar, filnamn, kontrollsummor, versioner, förhandsvisning, lagringskvoter och borttagning av bilagor.
+
+requirements:
+  - id: FILE-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [upload, progress, size-limit]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    tests: [FILE-T01]
+    en:
+      title: Upload of files up to 100 MB with progress
+      description: The system MUST accept attachments of up to 100 MB per file, show the upload progress in percent and reject a larger file before the transfer starts with a message that states the limit.
+      rationale: Test evidence such as logs and screen recordings is often tens of megabytes, and users need to know whether an upload is moving.
+      criteria:
+        - method: test
+          text: A 100 MB file uploads with a progress display in percent; a 101 MB file is rejected at once with a message stating 100 MB.
+          threshold: 100 MB per file
+    sv:
+      title: Uppladdning av filer upp till 100 MB med förlopp
+      description: Systemet SKA ta emot bilagor på upp till 100 MB per fil, visa uppladdningens förlopp i procent och avvisa en större fil innan överföringen börjar med ett meddelande som anger gränsen.
+      rationale: Testunderlag som loggar och skärminspelningar är ofta tiotals megabyte, och användaren behöver veta att uppladdningen går framåt.
+      criteria:
+        - method: test
+          text: En fil på 100 MB laddas upp med förloppsvisning i procent; en fil på 101 MB avvisas direkt med ett meddelande om 100 MB.
+          threshold: 100 MB per fil
+
+  - id: FILE-02
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [upload, resume, network]
+    refs: ["ISO/IEC 25010:2023 fault tolerance"]
+    tests: [FILE-T02]
+    en:
+      title: Interrupted uploads resumed
+      description: An upload of a file larger than 10 MB SHOULD continue from the last received part when the network connection returns within 10 minutes.
+      rationale: Restarting a long upload from zero after a short network loss wastes time and mobile data.
+      criteria:
+        - method: test
+          text: A 50 MB upload interrupted at 60 percent for 2 minutes continues from at least 55 percent and completes with the correct checksum.
+    sv:
+      title: Avbrutna uppladdningar återupptas
+      description: En uppladdning av en fil större än 10 MB BÖR fortsätta från den senast mottagna delen när nätverksanslutningen är tillbaka inom 10 minuter.
+      rationale: Att börja om en lång uppladdning från noll efter ett kort avbrott slösar tid och mobildata.
+      criteria:
+        - method: test
+          text: En uppladdning på 50 MB som avbryts vid 60 procent i 2 minuter fortsätter från minst 55 procent och slutförs med rätt kontrollsumma.
+
+  - id: FILE-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [file-type, content-inspection]
+    refs: ["OWASP ASVS 5.0 V5 file handling", "OWASP File Upload Cheat Sheet"]
+    tests: [FILE-T03]
+    en:
+      title: File type checked from the content
+      description: The system MUST accept only file types on a configured allow list and MUST determine the type from the file's content, not from its name or the declared media type.
+      rationale: A renamed executable or HTML file passes a check on the extension and can harm the users who open it.
+      criteria:
+        - method: test
+          text: An executable renamed to ".pdf", an HTML file renamed to ".png" and a file whose declared media type is false are rejected; genuine PDF and PNG files are accepted.
+    sv:
+      title: Filtypen kontrolleras utifrån innehållet
+      description: Systemet SKA bara ta emot filtyper som finns på en konfigurerad lista över tillåtna typer och avgöra typen utifrån filens innehåll, inte utifrån namnet eller den angivna medietypen.
+      rationale: En omdöpt körbar fil eller HTML-fil passerar en kontroll av filändelsen och kan skada de användare som öppnar den.
+      criteria:
+        - method: test
+          text: En körbar fil omdöpt till ".pdf", en HTML-fil omdöpt till ".png" och en fil med falsk angiven medietyp avvisas; äkta PDF- och PNG-filer godtas.
+
+  - id: FILE-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [malware, quarantine]
+    refs: ["OWASP ASVS 5.0 V5 file handling", "ISO/IEC 27001:2022 Annex A 8.7"]
+    tests: [FILE-T04]
+    en:
+      title: Malware scan before a file is available
+      description: The system MUST scan each uploaded file for malware before other users can download it, and MUST quarantine a detected file and inform the uploader within 5 minutes.
+      rationale: Attachments are shared between users and are a common way to spread malware inside an organisation.
+      criteria:
+        - method: test
+          text: The EICAR test file is marked as quarantined within 5 minutes, cannot be downloaded and the uploader is notified; a clean file becomes available after the scan.
+          threshold: ≤ 5 min
+    sv:
+      title: Sökning efter skadlig kod innan en fil blir tillgänglig
+      description: Systemet SKA söka igenom varje uppladdad fil efter skadlig kod innan andra användare kan ladda ned den, sätta en upptäckt fil i karantän och meddela den som laddade upp den inom 5 minuter.
+      rationale: Bilagor delas mellan användare och är ett vanligt sätt att sprida skadlig kod inom en organisation.
+      criteria:
+        - method: test
+          text: Testfilen EICAR markeras som satt i karantän inom 5 minuter, kan inte laddas ned och den som laddade upp den aviseras; en ren fil blir tillgänglig efter sökningen.
+          threshold: ≤ 5 min
+
+  - id: FILE-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [download, access-control, signed-url]
+    refs: ["OWASP ASVS 5.0 V8 authorization", "OWASP Top 10 2021 A01"]
+    tests: [FILE-T05]
+    en:
+      title: Downloads checked against permissions
+      description: Each download MUST check that the requesting user has read access to the item the file belongs to, and a download address handed to the browser MUST expire within 5 minutes.
+      rationale: A file address that works for anyone who has it turns every forwarded link into a data leak.
+      criteria:
+        - method: test
+          text: A non-member gets a refusal for a file's download address, and a member's download address stops working 5 minutes after it was issued.
+          threshold: address valid ≤ 5 min
+    sv:
+      title: Nedladdningar kontrolleras mot behörigheter
+      description: Varje nedladdning SKA kontrollera att användaren har läsrätt till posten som filen hör till, och en nedladdningsadress som lämnas till webbläsaren slutar gälla inom 5 minuter.
+      rationale: En filadress som fungerar för alla som har den gör varje vidarebefordrad länk till en dataläcka.
+      criteria:
+        - method: test
+          text: En icke-medlem nekas på en fils nedladdningsadress, och en medlems nedladdningsadress slutar fungera 5 minuter efter att den utfärdades.
+          threshold: adressen gäller ≤ 5 min
+
+  - id: FILE-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [download, content-disposition, headers]
+    refs: ["OWASP ASVS 5.0 V3 web frontend security", "RFC 6266"]
+    tests: [FILE-T05]
+    en:
+      title: Attachments served as downloads
+      description: The system MUST serve attachments with the "nosniff" content type option and, for each type other than images and PDF, with a content disposition that makes the browser download the file instead of displaying it.
+      rationale: A browser that renders an uploaded HTML or SVG file in the application's origin runs any script it contains.
+      criteria:
+        - method: inspection
+          text: The responses for a text file, an SVG file and an Office document carry "attachment" and "nosniff"; an image and a PDF carry "nosniff".
+    sv:
+      title: Bilagor levereras som nedladdningar
+      description: Systemet SKA leverera bilagor med innehållstypsalternativet "nosniff" och, för varje annan typ än bilder och PDF, med en innehållsdisposition som gör att webbläsaren laddar ned filen i stället för att visa den.
+      rationale: En webbläsare som visar en uppladdad HTML- eller SVG-fil i programmets ursprung kör varje skript som filen innehåller.
+      criteria:
+        - method: inspection
+          text: Svaren för en textfil, en SVG-fil och ett Office-dokument har "attachment" och "nosniff"; en bild och en PDF har "nosniff".
+
+  - id: FILE-07
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [file-name, unicode, path-traversal]
+    refs: ["OWASP ASVS 5.0 V5 file handling", "Unicode UAX #15"]
+    tests: [FILE-T06]
+    en:
+      title: Original file names kept and made safe
+      description: The system MUST keep the original file name, including non-ASCII letters, for display and download, and MUST remove path separators and control characters from it before use.
+      rationale: Users find files by their names, while names with path parts or control characters can overwrite or hide files.
+      criteria:
+        - method: test
+          text: '"Testrapport åäö – 2026.pdf" downloads under the same name; "../../x.pdf" is stored and shown as "x.pdf"; a name with a newline character is shown without it.'
+    sv:
+      title: Ursprungliga filnamn behålls och görs säkra
+      description: Systemet SKA behålla det ursprungliga filnamnet, även bokstäver utanför ASCII, vid visning och nedladdning och ta bort sökvägsavgränsare och styrtecken ur namnet innan det används.
+      rationale: Användare hittar filer på namnet, medan namn med sökvägsdelar eller styrtecken kan skriva över eller dölja filer.
+      criteria:
+        - method: test
+          text: '"Testrapport åäö – 2026.pdf" laddas ned med samma namn; "../../x.pdf" sparas och visas som "x.pdf"; ett namn med radbrytningstecken visas utan det.'
+
+  - id: FILE-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [checksum, integrity]
+    refs: ["NIST FIPS 180-4", "ISO/IEC 25010:2023 integrity"]
+    tests: [FILE-T06]
+    en:
+      title: Checksum of each file shown
+      description: The system SHOULD compute a SHA-256 checksum of each uploaded file and show it in the file's details.
+      rationale: A checksum lets reviewers confirm that a piece of test evidence is the file that was originally attached.
+      criteria:
+        - method: test
+          text: The checksum shown for an uploaded file equals the SHA-256 checksum computed locally from the original and from the downloaded file.
+    sv:
+      title: Kontrollsumma för varje fil visas
+      description: Systemet BÖR beräkna en SHA-256-kontrollsumma för varje uppladdad fil och visa den i filens detaljer.
+      rationale: En kontrollsumma låter granskare bekräfta att ett testunderlag är den fil som ursprungligen bifogades.
+      criteria:
+        - method: test
+          text: Kontrollsumman som visas för en uppladdad fil är lika med den SHA-256-summa som beräknas lokalt från originalet och från den nedladdade filen.
+
+  - id: FILE-09
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [versions]
+    refs: ["ISO 9001:2015 §7.5.3"]
+    tests: [FILE-T07]
+    en:
+      title: Earlier versions of an attachment kept
+      description: When a user uploads a new version of an attachment, the system SHOULD keep the 10 previous versions with their upload time and uploader, each available for download.
+      rationale: Documents are revised, and reviewers need to see what an earlier decision was based on.
+      criteria:
+        - method: test
+          text: After 12 versions of one attachment, versions 3 to 12 are listed with time and uploader and each downloads with its own checksum.
+          threshold: 10 previous versions
+    sv:
+      title: Tidigare versioner av en bilaga behålls
+      description: När en användare laddar upp en ny version av en bilaga BÖR systemet behålla de 10 föregående versionerna med tid och uppladdare, var och en tillgänglig för nedladdning.
+      rationale: Dokument revideras, och granskare behöver se vad ett tidigare beslut grundades på.
+      criteria:
+        - method: test
+          text: Efter 12 versioner av en bilaga listas version 3 till 12 med tid och uppladdare och var och en laddas ned med sin egen kontrollsumma.
+          threshold: 10 föregående versioner
+
+  - id: FILE-10
+    type: usability
+    obligation: may
+    priority: low
+    tags: [preview, pdf, images]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [FILE-T08]
+    en:
+      title: Preview of images and PDF files
+      description: The system MAY show a preview of PNG, JPEG and PDF attachments of up to 20 MB in the browser without a download.
+      rationale: Looking at a screenshot in place is quicker than downloading and opening it.
+      criteria:
+        - method: demonstration
+          text: A PNG, a JPEG and a 15-page PDF open in a preview with page navigation, and a 25 MB PDF offers only a download.
+    sv:
+      title: Förhandsvisning av bilder och PDF-filer
+      description: Systemet FÅR visa en förhandsvisning av bilagor i formaten PNG, JPEG och PDF på upp till 20 MB i webbläsaren utan nedladdning.
+      rationale: Att titta på en skärmbild på plats går fortare än att ladda ned och öppna den.
+      criteria:
+        - method: demonstration
+          text: En PNG, en JPEG och en PDF på 15 sidor öppnas i en förhandsvisning med sidnavigering, och en PDF på 25 MB erbjuds bara för nedladdning.
+
+  - id: FILE-11
+    type: usability
+    obligation: must
+    priority: high
+    tags: [drag-and-drop, keyboard, accessibility]
+    refs: ["WCAG 2.2 SC 2.5.7", "WCAG 2.2 SC 2.1.1"]
+    tests: [FILE-T01]
+    en:
+      title: File picker as an alternative to drag and drop
+      description: Each place where files can be dropped MUST also offer a button that opens the system file picker and that can be reached and operated with the keyboard.
+      rationale: Users who cannot drag with a mouse or touch must still be able to attach files.
+      criteria:
+        - method: test
+          text: On each drop area, a file can be attached with the keyboard alone through the button and the system file picker.
+    sv:
+      title: Filväljare som alternativ till dra och släpp
+      description: Varje ställe där filer kan släppas SKA också erbjuda en knapp som öppnar systemets filväljare och som kan nås och användas med tangentbordet.
+      rationale: Användare som inte kan dra med mus eller finger måste ändå kunna bifoga filer.
+      criteria:
+        - method: test
+          text: På varje släppyta kan en fil bifogas med enbart tangentbordet via knappen och systemets filväljare.
+
+  - id: FILE-12
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [quota, storage]
+    refs: ["ISO/IEC 25010:2023 capacity"]
+    tests: [FILE-T09]
+    en:
+      title: Storage quota with a warning
+      description: The system SHOULD enforce a configurable storage quota per organisation, notify the administrators when 80 percent of it is used and reject uploads that would exceed it with a message stating the remaining space.
+      rationale: Storage costs money, and a warning in advance avoids a sudden stop of uploads during a test cycle.
+      criteria:
+        - method: test
+          text: With a 1 GB quota, the administrators are notified once at 800 MB, and an upload that would pass 1 GB is rejected with the remaining space stated.
+          threshold: warning at 80 %
+    sv:
+      title: Lagringskvot med varning
+      description: Systemet BÖR tillämpa en konfigurerbar lagringskvot per organisation, avisera administratörerna när 80 procent av den används och avvisa uppladdningar som skulle överskrida den med ett meddelande om återstående utrymme.
+      rationale: Lagring kostar pengar, och en varning i förväg undviker att uppladdningar plötsligt stoppas mitt i en testomgång.
+      criteria:
+        - method: test
+          text: Med en kvot på 1 GB aviseras administratörerna en gång vid 800 MB, och en uppladdning som skulle passera 1 GB avvisas med återstående utrymme angivet.
+          threshold: varning vid 80 %
+
+  - id: FILE-13
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [deletion, storage, retention]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.10", "GDPR Art. 5(1)(e)"]
+    tests: [FILE-T10]
+    en:
+      title: Attachments removed with their item
+      description: When an item is deleted permanently, the system MUST remove its attachments and their earlier versions from storage within 24 hours.
+      rationale: Files left behind after their item is gone keep data longer than intended and cannot be found or managed.
+      criteria:
+        - method: test
+          text: 24 hours after an item with 3 attachments is deleted permanently, the storage holds none of the 3 files or their versions.
+          threshold: ≤ 24 h
+    sv:
+      title: Bilagor tas bort med sin post
+      description: När en post tas bort permanent SKA systemet ta bort dess bilagor och deras tidigare versioner ur lagringen inom 24 timmar.
+      rationale: Filer som blir kvar när posten är borta sparar data längre än avsett och kan inte hittas eller hanteras.
+      criteria:
+        - method: test
+          text: 24 timmar efter att en post med 3 bilagor tagits bort permanent finns ingen av de 3 filerna eller deras versioner kvar i lagringen.
+          threshold: ≤ 24 h
+
+tests:
+  - id: FILE-T01
+    priority: high
+    execution: manual
+    tags: [upload, keyboard]
+    refs: ["WCAG 2.2 SC 2.5.7"]
+    en:
+      title: Upload size limit, progress and keyboard file picker
+      description: Uploads files at and above the limit, by drag and drop and with the keyboard.
+      preconditions: Test files of 100 MB and 101 MB, a signed-in user and an item with an attachment area.
+      expected: The 100 MB file uploads with progress, the 101 MB file is rejected at once, and the keyboard route works.
+      steps:
+        - action: Drag the 100 MB file onto the attachment area.
+          expected: A progress display in percent rises to 100 and the file is listed.
+          data: 100 MB
+        - action: Drag the 101 MB file onto the area.
+          expected: The file is rejected before any transfer with a message stating 100 MB.
+          data: 101 MB
+        - action: With the keyboard only, move to the attach button, open the file picker and choose a small file.
+          expected: The file is attached without using the mouse.
+    sv:
+      title: Storleksgräns, förlopp och filväljare med tangentbord
+      description: Laddar upp filer vid och över gränsen, med dra och släpp och med tangentbordet.
+      preconditions: Testfiler på 100 MB och 101 MB, en inloggad användare och en post med en yta för bilagor.
+      expected: Filen på 100 MB laddas upp med förlopp, filen på 101 MB avvisas direkt och vägen med tangentbordet fungerar.
+      steps:
+        - action: Dra filen på 100 MB till ytan för bilagor.
+          expected: En förloppsvisning i procent stiger till 100 och filen listas.
+          data: 100 MB
+        - action: Dra filen på 101 MB till ytan.
+          expected: Filen avvisas innan någon överföring med ett meddelande om 100 MB.
+          data: 101 MB
+        - action: Gå med enbart tangentbordet till bifoga-knappen, öppna filväljaren och välj en liten fil.
+          expected: Filen bifogas utan att musen används.
+
+  - id: FILE-T02
+    priority: medium
+    execution: manual
+    tags: [upload, resume]
+    refs: []
+    en:
+      title: Upload resumed after a network interruption
+      description: Interrupts the network during a large upload and restores it.
+      preconditions: A 50 MB test file with a known SHA-256 checksum and a way to cut the network of the test computer.
+      expected: The upload continues from the last part and the stored file is identical.
+      steps:
+        - action: Start uploading the 50 MB file and cut the network at 60 percent.
+          expected: The progress stops and a message states that the upload is waiting for the connection.
+          data: 50 MB, cut at 60 %
+        - action: Restore the network after 2 minutes.
+          expected: The progress continues from at least 55 percent.
+        - action: When the upload is complete, compare the shown checksum with the known one.
+          expected: The checksums are equal.
+    sv:
+      title: Uppladdning återupptas efter ett nätverksavbrott
+      description: Bryter nätverket under en stor uppladdning och återställer det.
+      preconditions: En testfil på 50 MB med känd SHA-256-kontrollsumma och ett sätt att bryta testdatorns nätverk.
+      expected: Uppladdningen fortsätter från den senaste delen och den sparade filen är identisk.
+      steps:
+        - action: Börja ladda upp filen på 50 MB och bryt nätverket vid 60 procent.
+          expected: Förloppet stannar och ett meddelande anger att uppladdningen väntar på anslutningen.
+          data: 50 MB, avbrott vid 60 %
+        - action: Återställ nätverket efter 2 minuter.
+          expected: Förloppet fortsätter från minst 55 procent.
+        - action: Jämför den visade kontrollsumman med den kända när uppladdningen är klar.
+          expected: Kontrollsummorna är lika.
+
+  - id: FILE-T03
+    priority: critical
+    execution: automated
+    tags: [file-type]
+    refs: ["OWASP File Upload Cheat Sheet"]
+    en:
+      title: Disguised files rejected
+      description: An API test uploads files whose names or declared types do not match their content.
+      preconditions: An allow list of PDF, PNG, JPEG, TXT and DOCX, and a set of disguised test files.
+      expected: Disguised files are rejected and genuine files accepted.
+      steps:
+        - action: Upload a Windows executable named "report.pdf".
+          expected: The upload is rejected with a message that the file type is not allowed.
+          data: report.pdf (executable content)
+        - action: Upload an HTML file named "image.png" with the declared type image/png.
+          expected: The upload is rejected.
+          data: image.png (HTML content)
+        - action: Upload a genuine PDF with the declared type application/octet-stream.
+          expected: The upload is accepted and stored as PDF.
+    sv:
+      title: Förklädda filer avvisas
+      description: Ett API-test laddar upp filer vars namn eller angivna typ inte stämmer med innehållet.
+      preconditions: En lista över tillåtna typer med PDF, PNG, JPEG, TXT och DOCX, och en uppsättning förklädda testfiler.
+      expected: Förklädda filer avvisas och äkta filer godtas.
+      steps:
+        - action: Ladda upp en körbar Windows-fil med namnet "report.pdf".
+          expected: Uppladdningen avvisas med ett meddelande om att filtypen inte är tillåten.
+          data: report.pdf (körbart innehåll)
+        - action: Ladda upp en HTML-fil med namnet "image.png" och den angivna typen image/png.
+          expected: Uppladdningen avvisas.
+          data: image.png (HTML-innehåll)
+        - action: Ladda upp en äkta PDF med den angivna typen application/octet-stream.
+          expected: Uppladdningen godtas och sparas som PDF.
+
+  - id: FILE-T04
+    priority: high
+    execution: manual
+    tags: [malware]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.7"]
+    en:
+      title: EICAR test file quarantined
+      description: Uploads the harmless EICAR anti-malware test file and a clean file.
+      preconditions: The EICAR test file, a clean text file, an uploader and a second user with access to the item.
+      expected: The EICAR file is quarantined and the clean file becomes available.
+      steps:
+        - action: Upload the EICAR test file.
+          expected: Within 5 minutes the file is marked as quarantined and the uploader is notified.
+          data: EICAR test file
+        - action: As the second user try to download the EICAR file.
+          expected: The download is refused.
+        - action: Upload the clean file and wait for the scan.
+          expected: The file becomes available and the second user can download it.
+    sv:
+      title: Testfilen EICAR sätts i karantän
+      description: Laddar upp den ofarliga testfilen EICAR för sökning efter skadlig kod och en ren fil.
+      preconditions: Testfilen EICAR, en ren textfil, en uppladdare och en andra användare med åtkomst till posten.
+      expected: EICAR-filen sätts i karantän och den rena filen blir tillgänglig.
+      steps:
+        - action: Ladda upp testfilen EICAR.
+          expected: Inom 5 minuter markeras filen som satt i karantän och uppladdaren aviseras.
+          data: testfilen EICAR
+        - action: Försök ladda ned EICAR-filen som den andra användaren.
+          expected: Nedladdningen nekas.
+        - action: Ladda upp den rena filen och vänta på sökningen.
+          expected: Filen blir tillgänglig och den andra användaren kan ladda ned den.
+
+  - id: FILE-T05
+    priority: critical
+    execution: automated
+    tags: [download, headers, access-control]
+    refs: ["OWASP ASVS 5.0 V8 authorization", "RFC 6266"]
+    en:
+      title: Download permission, address expiry and response headers
+      description: An API test downloads attachments as a member and a non-member and inspects the responses.
+      preconditions: An item with a TXT, an SVG, a DOCX, a PNG and a PDF attachment, a member and a non-member with API tokens, and a controllable clock.
+      expected: Only the member can download, addresses expire after 5 minutes and the headers are as required.
+      steps:
+        - action: Request a download address for the TXT file as the non-member.
+          expected: The request is refused.
+        - action: Request a download address as the member, use it, then use it again after moving the clock 6 minutes.
+          expected: The first use returns the file and the second is refused as expired.
+          data: 6 min
+        - action: Download each of the 5 files as the member and read the response headers.
+          expected: TXT, SVG and DOCX carry "Content-Disposition attachment"; all 5 carry "X-Content-Type-Options nosniff".
+    sv:
+      title: Nedladdningsbehörighet, adressens giltighet och svarshuvuden
+      description: Ett API-test laddar ned bilagor som medlem och som icke-medlem och granskar svaren.
+      preconditions: En post med en TXT-, en SVG-, en DOCX-, en PNG- och en PDF-bilaga, en medlem och en icke-medlem med API-token och en styrbar klocka.
+      expected: Bara medlemmen kan ladda ned, adresser slutar gälla efter 5 minuter och svarshuvudena är de som krävs.
+      steps:
+        - action: Begär en nedladdningsadress för TXT-filen som icke-medlemmen.
+          expected: Begäran nekas.
+        - action: Begär en nedladdningsadress som medlemmen, använd den och använd den igen efter att klockan flyttats 6 minuter.
+          expected: Första användningen ger filen och den andra nekas eftersom adressen har gått ut.
+          data: 6 min
+        - action: Ladda ned var och en av de 5 filerna som medlemmen och läs svarshuvudena.
+          expected: TXT, SVG och DOCX har "Content-Disposition attachment"; alla 5 har "X-Content-Type-Options nosniff".
+
+  - id: FILE-T06
+    priority: medium
+    execution: automated
+    tags: [file-name, checksum]
+    refs: ["NIST FIPS 180-4"]
+    en:
+      title: File names and checksums
+      description: An integration test uploads files with special names and compares checksums.
+      preconditions: Three small test files and their SHA-256 checksums computed locally.
+      expected: Names are kept or made safe as required and checksums match.
+      steps:
+        - action: Upload a file named "Testrapport åäö – 2026.pdf" and download it.
+          expected: The download has the same name and the shown checksum equals the local one.
+          data: "Testrapport åäö – 2026.pdf"
+        - action: Upload a file named "../../x.pdf".
+          expected: The file is stored and shown as "x.pdf" and no file outside the storage area is written.
+          data: "../../x.pdf"
+        - action: Upload a file whose name contains a newline character.
+          expected: The name is shown without the newline.
+    sv:
+      title: Filnamn och kontrollsummor
+      description: Ett integrationstest laddar upp filer med speciella namn och jämför kontrollsummor.
+      preconditions: Tre små testfiler och deras SHA-256-kontrollsummor beräknade lokalt.
+      expected: Namnen behålls eller görs säkra enligt kraven och kontrollsummorna stämmer.
+      steps:
+        - action: Ladda upp en fil med namnet "Testrapport åäö – 2026.pdf" och ladda ned den.
+          expected: Nedladdningen har samma namn och den visade kontrollsumman är lika med den lokala.
+          data: "Testrapport åäö – 2026.pdf"
+        - action: Ladda upp en fil med namnet "../../x.pdf".
+          expected: Filen sparas och visas som "x.pdf" och ingen fil skrivs utanför lagringsytan.
+          data: "../../x.pdf"
+        - action: Ladda upp en fil vars namn innehåller ett radbrytningstecken.
+          expected: Namnet visas utan radbrytningen.
+
+  - id: FILE-T07
+    priority: medium
+    execution: automated
+    tags: [versions]
+    refs: []
+    en:
+      title: Version history of an attachment
+      description: An integration test uploads 12 versions of one attachment and checks the kept versions.
+      preconditions: An item and 12 different files with the same name and known checksums.
+      expected: The 10 previous versions and the current one are kept with their metadata.
+      steps:
+        - action: Upload the 12 files one after another as new versions of the same attachment.
+          expected: Version 12 is the current version.
+        - action: List the versions.
+          expected: Versions 3 to 12 are listed with upload time and uploader; versions 1 and 2 are gone.
+        - action: Download versions 3 and 11.
+          expected: Each download matches the checksum of its original file.
+    sv:
+      title: Versionshistorik för en bilaga
+      description: Ett integrationstest laddar upp 12 versioner av en bilaga och kontrollerar de behållna versionerna.
+      preconditions: En post och 12 olika filer med samma namn och kända kontrollsummor.
+      expected: De 10 föregående versionerna och den aktuella behålls med sin metadata.
+      steps:
+        - action: Ladda upp de 12 filerna efter varandra som nya versioner av samma bilaga.
+          expected: Version 12 är den aktuella versionen.
+        - action: Lista versionerna.
+          expected: Version 3 till 12 listas med uppladdningstid och uppladdare; version 1 och 2 är borta.
+        - action: Ladda ned version 3 och 11.
+          expected: Varje nedladdning stämmer med kontrollsumman för sin originalfil.
+
+  - id: FILE-T08
+    priority: low
+    execution: manual
+    tags: [preview]
+    refs: []
+    en:
+      title: Preview of images and PDF files
+      description: Opens attachments of the supported types and one that is too large.
+      preconditions: An item with a PNG, a JPEG, a 15-page PDF of 5 MB and a PDF of 25 MB.
+      expected: The supported files open in a preview and the large PDF offers a download only.
+      steps:
+        - action: Open the PNG and the JPEG.
+          expected: Each image is shown in a preview without a download.
+        - action: Open the 15-page PDF and go to page 15.
+          expected: The preview shows page 15.
+        - action: Open the 25 MB PDF.
+          expected: Only a download is offered, with a note on the 20 MB preview limit.
+    sv:
+      title: Förhandsvisning av bilder och PDF-filer
+      description: Öppnar bilagor av de typer som stöds och en som är för stor.
+      preconditions: En post med en PNG, en JPEG, en PDF på 15 sidor och 5 MB och en PDF på 25 MB.
+      expected: Filerna som stöds öppnas i förhandsvisning och den stora PDF:en erbjuds bara för nedladdning.
+      steps:
+        - action: Öppna PNG- och JPEG-bilden.
+          expected: Varje bild visas i förhandsvisning utan nedladdning.
+        - action: Öppna PDF:en på 15 sidor och gå till sidan 15.
+          expected: Förhandsvisningen visar sidan 15.
+        - action: Öppna PDF:en på 25 MB.
+          expected: Bara nedladdning erbjuds, med en upplysning om gränsen 20 MB för förhandsvisning.
+
+  - id: FILE-T09
+    priority: medium
+    execution: automated
+    tags: [quota]
+    refs: []
+    en:
+      title: Quota warning and rejection
+      description: An integration test fills an organisation's storage towards a small quota.
+      preconditions: An organisation with a quota of 1 GB, 2 administrators and a mail catcher.
+      expected: One warning at 80 percent and a rejection above the quota.
+      steps:
+        - action: Upload files until 790 MB are used.
+          expected: No warning has been sent.
+          data: 790 MB
+        - action: Upload a 20 MB file and then another 20 MB file.
+          expected: After passing 800 MB both administrators receive one warning; the second upload sends no new warning.
+        - action: Upload a file that would bring the total above 1 GB.
+          expected: The upload is rejected with the remaining space stated.
+    sv:
+      title: Varning och avvisning vid lagringskvot
+      description: Ett integrationstest fyller en organisations lagring mot en liten kvot.
+      preconditions: En organisation med en kvot på 1 GB, 2 administratörer och en e-postfångare.
+      expected: En varning vid 80 procent och en avvisning över kvoten.
+      steps:
+        - action: Ladda upp filer tills 790 MB används.
+          expected: Ingen varning har skickats.
+          data: 790 MB
+        - action: Ladda upp en fil på 20 MB och sedan ytterligare en på 20 MB.
+          expected: Efter att 800 MB passerats får båda administratörerna en varning; den andra uppladdningen ger ingen ny varning.
+        - action: Ladda upp en fil som skulle ta summan över 1 GB.
+          expected: Uppladdningen avvisas med återstående utrymme angivet.
+
+  - id: FILE-T10
+    priority: medium
+    execution: automated
+    tags: [deletion, storage]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.10"]
+    en:
+      title: Attachments removed after permanent deletion
+      description: An integration test deletes an item permanently and inspects the file storage after the clean-up job.
+      preconditions: An item with 3 attachments, one of them with 2 earlier versions, and read access to the file storage.
+      expected: None of the files or versions remains after 24 hours.
+      steps:
+        - action: Note the storage keys of the 3 attachments and their versions.
+          expected: 5 stored objects are listed.
+        - action: Delete the item permanently, emptying the recycle bin.
+          expected: The item is gone from the application.
+        - action: Run the clean-up job or move the clock 24 hours forward, then look up the 5 storage keys.
+          expected: None of the 5 objects exists.
+    sv:
+      title: Bilagor tas bort efter permanent borttagning
+      description: Ett integrationstest tar bort en post permanent och granskar fillagringen efter rensningsjobbet.
+      preconditions: En post med 3 bilagor, varav en med 2 tidigare versioner, och läsåtkomst till fillagringen.
+      expected: Ingen av filerna eller versionerna finns kvar efter 24 timmar.
+      steps:
+        - action: Anteckna lagringsnycklarna för de 3 bilagorna och deras versioner.
+          expected: 5 lagrade objekt listas.
+        - action: Ta bort posten permanent genom att tömma papperskorgen.
+          expected: Posten är borta ur programmet.
+        - action: Kör rensningsjobbet eller flytta klockan 24 timmar framåt och slå sedan upp de 5 lagringsnycklarna.
+          expected: Inget av de 5 objekten finns.

@@ -1,0 +1,563 @@
+area: scheduling
+prefix: SCHED
+group: functional
+name: {en: Scheduling and calendars, sv: Schemaläggning och kalendrar}
+description:
+  en: Recurring events, daylight saving time, changing one occurrence or a series, time zones of participants, iCalendar export and invitations, double booking, working days and holidays, calendar views with keyboard alternatives, reminders and planned jobs.
+  sv: Återkommande händelser, sommartid, ändring av ett tillfälle eller en serie, deltagarnas tidszoner, export och inbjudningar i iCalendar-format, dubbelbokning, arbetsdagar och helgdagar, kalendervyer med alternativ för tangentbord, påminnelser och planerade jobb.
+
+requirements:
+  - id: SCHED-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [recurrence]
+    refs: ["RFC 5545 §3.3.10"]
+    tests: [SCHED-T01]
+    en:
+      title: Recurring events
+      description: The system MUST support events that repeat daily, on chosen weekdays, monthly on a day number or on an ordinal weekday such as the second Tuesday, ending after a count or on a date.
+      rationale: Test cycles, reviews and maintenance windows follow such patterns, and creating each occurrence by hand leads to gaps.
+      criteria:
+        - method: test
+          text: A series "second Tuesday of each month, 6 times" from 2026-01-01 produces exactly the 6 expected dates.
+    sv:
+      title: Återkommande händelser
+      description: Systemet SKA hantera händelser som upprepas dagligen, på valda veckodagar, månadsvis på ett datum eller på en veckodag i ordning som andra tisdagen, och som slutar efter ett antal gånger eller på ett datum.
+      rationale: Testomgångar, granskningar och underhållsfönster följer sådana mönster, och att skapa varje tillfälle för hand leder till luckor.
+      criteria:
+        - method: test
+          text: En serie "andra tisdagen varje månad, 6 gånger" från 2026-01-01 ger exakt de 6 förväntade datumen.
+
+  - id: SCHED-02
+    type: functional
+    obligation: must
+    priority: high
+    tags: [recurrence, daylight-saving, time-zone]
+    refs: ["RFC 5545 §3.3.5", "IANA Time Zone Database"]
+    tests: [SCHED-T02]
+    en:
+      title: Local time kept across daylight saving changes
+      description: A recurring event MUST keep its local start time in the organiser's time zone when daylight saving time begins or ends.
+      rationale: A weekly 09:00 meeting that moves to 08:00 after a clock change makes people miss it.
+      criteria:
+        - method: test
+          text: A weekly event at 09:00 Europe/Stockholm starts at 09:00 local time in the weeks before and after 2026-03-29 and 2026-10-25.
+    sv:
+      title: Lokal tid behålls vid byte till och från sommartid
+      description: En återkommande händelse SKA behålla sin lokala starttid i organisatörens tidszon när sommartid börjar eller slutar.
+      rationale: Ett veckomöte kl. 09.00 som flyttas till 08.00 efter ett tidsomslag gör att folk missar det.
+      criteria:
+        - method: test
+          text: En veckohändelse kl. 09.00 Europe/Stockholm börjar kl. 09.00 lokal tid veckorna före och efter 2026-03-29 och 2026-10-25.
+
+  - id: SCHED-03
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [recurrence, exceptions]
+    refs: ["RFC 5545 §3.8.4.4"]
+    tests: [SCHED-T03]
+    en:
+      title: Change of one occurrence, the following ones or the whole series
+      description: When a user changes an occurrence of a recurring event, the system SHOULD ask whether the change applies to that occurrence, to it and the following ones, or to the whole series.
+      rationale: Moving one meeting because of a holiday should not move the rest of the series.
+      criteria:
+        - method: test
+          text: Each of the three choices changes exactly the expected occurrences of a series of 10.
+    sv:
+      title: Ändring av ett tillfälle, de följande eller hela serien
+      description: När en användare ändrar ett tillfälle i en återkommande händelse BÖR systemet fråga om ändringen gäller det tillfället, det och de följande, eller hela serien.
+      rationale: Att flytta ett möte på grund av en helgdag ska inte flytta resten av serien.
+      criteria:
+        - method: test
+          text: Vart och ett av de tre valen ändrar exakt de förväntade tillfällena i en serie med 10 tillfällen.
+
+  - id: SCHED-04
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [icalendar, export, subscription]
+    refs: ["RFC 5545", "RFC 7986"]
+    tests: [SCHED-T04]
+    en:
+      title: Calendar export and subscription in iCalendar format
+      description: The system SHOULD offer each user a personal calendar address in iCalendar format with their events, which common calendar programs can subscribe to and which the user can revoke.
+      rationale: People plan in their own calendar program and should not have to copy dates by hand.
+      criteria:
+        - method: test
+          text: The subscription address validates as iCalendar, shows the user's events in 2 calendar programs, and stops working after it has been revoked.
+    sv:
+      title: Kalenderexport och prenumeration i iCalendar-format
+      description: Systemet BÖR erbjuda varje användare en personlig kalenderadress i iCalendar-format med hens händelser, som vanliga kalenderprogram kan prenumerera på och som användaren kan återkalla.
+      rationale: Människor planerar i sitt eget kalenderprogram och ska inte behöva skriva av datum för hand.
+      criteria:
+        - method: test
+          text: Prenumerationsadressen valideras som iCalendar, visar användarens händelser i 2 kalenderprogram och slutar fungera när den har återkallats.
+
+  - id: SCHED-05
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [icalendar, invitations]
+    refs: ["RFC 5546", "RFC 6047"]
+    tests: [SCHED-T04]
+    en:
+      title: Invitations, updates and cancellations as calendar messages
+      description: Invitations by e-mail SHOULD carry a calendar attachment, and later changes and cancellations SHOULD use the same event identifier with a higher sequence number so that calendar programs update the existing entry.
+      rationale: Without the same identifier, a changed time creates a second entry and the old one stays.
+      criteria:
+        - method: test
+          text: An invitation, a time change and a cancellation sent to a test mailbox create, move and remove one entry in the calendar program.
+    sv:
+      title: Inbjudningar, ändringar och avbokningar som kalendermeddelanden
+      description: Inbjudningar via e-post BÖR ha en kalenderbilaga, och senare ändringar och avbokningar BÖR använda samma händelseidentitet med högre sekvensnummer så att kalenderprogram uppdaterar den befintliga posten.
+      rationale: Utan samma identitet skapar en ändrad tid en andra post och den gamla blir kvar.
+      criteria:
+        - method: test
+          text: En inbjudan, en tidsändring och en avbokning till en testbrevlåda skapar, flyttar och tar bort en enda post i kalenderprogrammet.
+
+  - id: SCHED-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [booking, resources, conflicts]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [SCHED-T05]
+    en:
+      title: Double booking of a resource prevented
+      description: The system MUST reject a booking of a resource, such as a test lab or a device, that overlaps an existing booking of the same resource by at least 1 minute, and MUST name the conflicting booking.
+      rationale: Two teams arriving at the same lab at the same time lose a test window.
+      criteria:
+        - method: test
+          text: A booking 10:00–11:00 rejects 10:59–12:00 with the conflict named and accepts 11:00–12:00; two simultaneous requests for the same slot give one booking.
+    sv:
+      title: Dubbelbokning av en resurs förhindras
+      description: Systemet SKA avvisa en bokning av en resurs, till exempel ett testlabb eller en enhet, som överlappar en befintlig bokning av samma resurs med minst 1 minut, och ange den krockande bokningen.
+      rationale: Två team som kommer till samma labb samtidigt förlorar ett testfönster.
+      criteria:
+        - method: test
+          text: En bokning 10.00–11.00 gör att 10.59–12.00 avvisas med krocken angiven och att 11.00–12.00 godtas; två samtidiga begäranden om samma tid ger en bokning.
+
+  - id: SCHED-07
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [working-days, holidays, due-dates]
+    refs: ["ISO 8601-1:2019"]
+    tests: [SCHED-T06]
+    en:
+      title: Working days and holidays per organisation
+      description: The system SHOULD let an administrator define the working days and public holidays of the organisation and SHOULD use them when it calculates deadlines given in working days.
+      rationale: A deadline of "5 working days" that counts Christmas Day is wrong for everyone.
+      criteria:
+        - method: test
+          text: With 2026-12-24 to 2026-12-26 as holidays, a deadline of 5 working days from 2026-12-21 falls on 2026-12-30.
+    sv:
+      title: Arbetsdagar och helgdagar per organisation
+      description: Systemet BÖR låta en administratör ange organisationens arbetsdagar och helgdagar och använda dem när systemet beräknar tidsfrister som anges i arbetsdagar.
+      rationale: En tidsfrist på "5 arbetsdagar" som räknar juldagen blir fel för alla.
+      criteria:
+        - method: test
+          text: Med 2026-12-24 till 2026-12-26 som helgdagar infaller en tidsfrist på 5 arbetsdagar från 2026-12-21 den 2026-12-30.
+
+  - id: SCHED-08
+    type: usability
+    obligation: must
+    priority: high
+    tags: [calendar-views, accessibility, agenda]
+    refs: ["WCAG 2.2 SC 1.3.1", "WCAG 2.2 SC 2.1.1"]
+    tests: [SCHED-T07]
+    en:
+      title: Agenda list as an alternative to the calendar grid
+      description: Each calendar view MUST be available as an agenda list that shows each event with its date, start and end time and title in reading order, and that works with the keyboard and screen readers.
+      rationale: Calendar grids are hard to read with a screen reader or on a small screen.
+      criteria:
+        - method: test
+          text: For a week with 8 events, the agenda list shows all 8 in time order, and a screen reader reads date, time and title of each.
+    sv:
+      title: Agendalista som alternativ till kalenderrutnätet
+      description: Varje kalendervy SKA finnas som en agendalista som visar varje händelse med datum, start- och sluttid och titel i läsordning och som fungerar med tangentbord och skärmläsare.
+      rationale: Kalenderrutnät är svåra att läsa med skärmläsare eller på en liten skärm.
+      criteria:
+        - method: test
+          text: För en vecka med 8 händelser visar agendalistan alla 8 i tidsordning, och en skärmläsare läser upp datum, tid och titel för var och en.
+
+  - id: SCHED-09
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [drag-and-drop, keyboard, accessibility]
+    refs: ["WCAG 2.2 SC 2.5.7"]
+    tests: [SCHED-T07]
+    en:
+      title: Rescheduling without dragging
+      description: When events can be moved by dragging in the calendar, the system MUST also offer a way to change the date and time through fields in the event's edit form.
+      rationale: Users who cannot drag still need to reschedule events.
+      criteria:
+        - method: test
+          text: An event moved by dragging and one moved through the edit form fields both end up at the chosen date and time.
+    sv:
+      title: Flytt av händelser utan att dra
+      description: När händelser kan flyttas genom att dras i kalendern SKA systemet också erbjuda ett sätt att ändra datum och tid via fält i händelsens redigeringsformulär.
+      rationale: Användare som inte kan dra behöver ändå kunna flytta händelser.
+      criteria:
+        - method: test
+          text: En händelse som flyttas genom att dras och en som flyttas via fälten i redigeringsformuläret hamnar båda på det valda datumet och den valda tiden.
+
+  - id: SCHED-10
+    type: functional
+    obligation: may
+    priority: low
+    tags: [reminders]
+    refs: ["RFC 5545 §3.6.6"]
+    tests: [SCHED-T08]
+    en:
+      title: Reminders before an event
+      description: The system MAY let a participant choose a reminder from 5 minutes to 7 days before an event, delivered in the app and by e-mail at the chosen time with a deviation of at most 2 minutes.
+      rationale: Reminders reduce missed reviews and test sessions.
+      criteria:
+        - method: test
+          text: A reminder set to 15 minutes before an event at 14:00 arrives between 13:45 and 13:47.
+          threshold: ≤ 2 min deviation
+    sv:
+      title: Påminnelser före en händelse
+      description: Systemet FÅR låta en deltagare välja en påminnelse från 5 minuter till 7 dagar före en händelse, som levereras i appen och via e-post vid den valda tiden med högst 2 minuters avvikelse.
+      rationale: Påminnelser minskar antalet missade granskningar och testpass.
+      criteria:
+        - method: test
+          text: En påminnelse 15 minuter före en händelse kl. 14.00 kommer mellan 13.45 och 13.47.
+          threshold: ≤ 2 min avvikelse
+
+  - id: SCHED-11
+    type: functional
+    obligation: must
+    priority: high
+    tags: [time-zone, participants]
+    refs: ["IANA Time Zone Database", "ISO 8601-1:2019"]
+    tests: [SCHED-T02]
+    en:
+      title: Event times in each viewer's time zone
+      description: The system MUST show each event's time in the viewer's own time zone and MUST state the organiser's time zone in the event's details.
+      rationale: Distributed teams otherwise convert times in their heads and arrive an hour early or late.
+      criteria:
+        - method: test
+          text: An event at 09:00 Europe/Stockholm on 2026-06-10 is shown at 03:00 to a viewer in America/New_York, with "Europe/Stockholm" in the details.
+    sv:
+      title: Händelsetider i varje läsares tidszon
+      description: Systemet SKA visa varje händelses tid i läsarens egen tidszon och ange organisatörens tidszon i händelsens detaljer.
+      rationale: Annars räknar distribuerade team om tider i huvudet och kommer en timme för tidigt eller för sent.
+      criteria:
+        - method: test
+          text: En händelse kl. 09.00 Europe/Stockholm den 2026-06-10 visas kl. 03.00 för en läsare i America/New_York, med "Europe/Stockholm" i detaljerna.
+
+  - id: SCHED-12
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [scheduled-jobs, timing]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    tests: [SCHED-T09]
+    en:
+      title: Planned jobs start on time
+      description: A planned job, such as a scheduled test run or report, SHOULD start within 60 seconds after its planned time, and a job missed during downtime SHOULD start within 5 minutes after the system is available again.
+      rationale: Nightly runs that start late or not at all leave teams without results in the morning.
+      criteria:
+        - method: test
+          text: Of 20 planned jobs, each starts within 60 seconds of its time; a job planned during a 10-minute stop starts within 5 minutes after the restart.
+          threshold: ≤ 60 s; missed jobs ≤ 5 min after restart
+    sv:
+      title: Planerade jobb startar i tid
+      description: Ett planerat jobb, till exempel en schemalagd körning eller rapport, BÖR starta inom 60 sekunder efter sin planerade tid, och ett jobb som missats under ett driftstopp BÖR starta inom 5 minuter efter att systemet är tillgängligt igen.
+      rationale: Nattliga körningar som startar sent eller inte alls lämnar teamen utan resultat på morgonen.
+      criteria:
+        - method: test
+          text: Av 20 planerade jobb startar vart och ett inom 60 sekunder från sin tid; ett jobb som planerats under ett stopp på 10 minuter startar inom 5 minuter efter omstarten.
+          threshold: ≤ 60 s; missade jobb ≤ 5 min efter omstart
+
+tests:
+  - id: SCHED-T01
+    priority: high
+    execution: automated
+    tags: [recurrence]
+    refs: ["RFC 5545 §3.3.10"]
+    en:
+      title: Expansion of recurrence rules
+      description: A unit test expands recurrence rules and compares the dates with fixed expected lists.
+      preconditions: The recurrence expansion function and a table of rules with their expected dates.
+      expected: Every rule gives exactly the expected dates.
+      steps:
+        - action: Expand "monthly on the second Tuesday, 6 times" from 2026-01-01.
+          expected: 2026-01-13, 02-10, 03-10, 04-14, 05-12 and 06-09.
+          data: "FREQ=MONTHLY;BYDAY=2TU;COUNT=6"
+        - action: Expand "weekly on Monday and Thursday until 2026-02-28" from 2026-02-01.
+          expected: 8 dates, from 2026-02-02 to 2026-02-26.
+          data: "FREQ=WEEKLY;BYDAY=MO,TH;UNTIL=20260228"
+        - action: Expand "monthly on day 31, 4 times" from 2026-01-31.
+          expected: Months without a 31st are skipped, giving 2026-01-31, 03-31, 05-31 and 07-31.
+          data: "FREQ=MONTHLY;BYMONTHDAY=31;COUNT=4"
+    sv:
+      title: Utvidgning av upprepningsregler
+      description: Ett enhetstest utvidgar upprepningsregler och jämför datumen med fasta förväntade listor.
+      preconditions: Funktionen som utvidgar upprepningar och en tabell med regler och förväntade datum.
+      expected: Varje regel ger exakt de förväntade datumen.
+      steps:
+        - action: Utvidga "månadsvis andra tisdagen, 6 gånger" från 2026-01-01.
+          expected: 2026-01-13, 02-10, 03-10, 04-14, 05-12 och 06-09.
+          data: "FREQ=MONTHLY;BYDAY=2TU;COUNT=6"
+        - action: Utvidga "veckovis måndag och torsdag till 2026-02-28" från 2026-02-01.
+          expected: 8 datum, från 2026-02-02 till 2026-02-26.
+          data: "FREQ=WEEKLY;BYDAY=MO,TH;UNTIL=20260228"
+        - action: Utvidga "månadsvis den 31:a, 4 gånger" från 2026-01-31.
+          expected: Månader utan den 31:a hoppas över, vilket ger 2026-01-31, 03-31, 05-31 och 07-31.
+          data: "FREQ=MONTHLY;BYMONTHDAY=31;COUNT=4"
+
+  - id: SCHED-T02
+    priority: high
+    execution: automated
+    tags: [time-zone, daylight-saving]
+    refs: ["IANA Time Zone Database"]
+    en:
+      title: Daylight saving changes and viewer time zones
+      description: An integration test creates a weekly event in Stockholm time and reads it as viewers in two time zones.
+      preconditions: An organiser in Europe/Stockholm and viewers in Europe/Stockholm and America/New_York.
+      expected: The local start time stays 09:00 for the organiser and the viewer in New York sees converted times with the organiser's zone.
+      steps:
+        - action: Create a weekly event every Wednesday at 09:00 from 2026-03-18 to 2026-04-08.
+          expected: 4 occurrences are created.
+        - action: Read the occurrences as the Stockholm viewer.
+          expected: Each starts at 09:00, before and after 2026-03-29.
+        - action: Read the occurrences as the New York viewer.
+          expected: The times are 04:00, 04:00, 03:00 and 03:00, and the details state "Europe/Stockholm".
+          data: "US change 2026-03-08, EU change 2026-03-29"
+        - action: Repeat with a series around 2026-10-25.
+          expected: The Stockholm viewer sees 09:00 before and after the change.
+    sv:
+      title: Byte av sommartid och läsarnas tidszoner
+      description: Ett integrationstest skapar en veckohändelse i Stockholmstid och läser den som läsare i två tidszoner.
+      preconditions: En organisatör i Europe/Stockholm och läsare i Europe/Stockholm och America/New_York.
+      expected: Den lokala starttiden förblir 09.00 för organisatören och läsaren i New York ser omräknade tider med organisatörens tidszon.
+      steps:
+        - action: Skapa en veckohändelse varje onsdag kl. 09.00 från 2026-03-18 till 2026-04-08.
+          expected: 4 tillfällen skapas.
+        - action: Läs tillfällena som läsaren i Stockholm.
+          expected: Varje tillfälle börjar kl. 09.00, före och efter 2026-03-29.
+        - action: Läs tillfällena som läsaren i New York.
+          expected: Tiderna är 04.00, 04.00, 03.00 och 03.00, och detaljerna anger "Europe/Stockholm".
+          data: "byte i USA 2026-03-08, i EU 2026-03-29"
+        - action: Upprepa med en serie runt 2026-10-25.
+          expected: Läsaren i Stockholm ser 09.00 före och efter bytet.
+
+  - id: SCHED-T03
+    priority: medium
+    execution: manual
+    tags: [recurrence, exceptions]
+    refs: ["RFC 5545 §3.8.4.4"]
+    en:
+      title: Changing one, the following or all occurrences
+      description: Changes occurrences of a series of 10 with each of the three choices.
+      preconditions: Three identical weekly series of 10 occurrences at 10:00.
+      expected: Each choice changes exactly the expected occurrences.
+      steps:
+        - action: In series 1 move occurrence 4 to 11:00 and choose "this occurrence".
+          expected: Only occurrence 4 starts at 11:00.
+        - action: In series 2 move occurrence 4 to 11:00 and choose "this and following".
+          expected: Occurrences 1 to 3 start at 10:00 and 4 to 10 at 11:00.
+        - action: In series 3 move occurrence 4 to 11:00 and choose "the whole series".
+          expected: All 10 occurrences start at 11:00.
+    sv:
+      title: Ändra ett, de följande eller alla tillfällen
+      description: Ändrar tillfällen i en serie med 10 tillfällen med vart och ett av de tre valen.
+      preconditions: Tre likadana veckoserier med 10 tillfällen kl. 10.00.
+      expected: Varje val ändrar exakt de förväntade tillfällena.
+      steps:
+        - action: Flytta tillfälle 4 i serie 1 till kl. 11.00 och välj "detta tillfälle".
+          expected: Bara tillfälle 4 börjar kl. 11.00.
+        - action: Flytta tillfälle 4 i serie 2 till kl. 11.00 och välj "detta och följande".
+          expected: Tillfälle 1 till 3 börjar kl. 10.00 och 4 till 10 kl. 11.00.
+        - action: Flytta tillfälle 4 i serie 3 till kl. 11.00 och välj "hela serien".
+          expected: Alla 10 tillfällen börjar kl. 11.00.
+
+  - id: SCHED-T04
+    priority: medium
+    execution: manual
+    tags: [icalendar]
+    refs: ["RFC 5545", "RFC 5546"]
+    en:
+      title: Calendar subscription and invitation updates
+      description: Subscribes to the personal calendar address and follows an invitation through a change and a cancellation in a calendar program.
+      preconditions: A user with 3 events, an iCalendar validator, 2 calendar programs and a test mailbox connected to one of them.
+      expected: The feed is valid and the invitation creates, moves and removes one entry.
+      steps:
+        - action: Validate the personal calendar address with the validator and subscribe to it in both programs.
+          expected: The feed is valid and both programs show the 3 events.
+        - action: Invite the test mailbox to a new event, then change its time, then cancel it.
+          expected: The calendar program shows one entry that moves to the new time and is then removed.
+        - action: Revoke the calendar address and refresh the subscriptions.
+          expected: The programs can no longer load the feed.
+    sv:
+      title: Kalenderprenumeration och uppdatering av inbjudningar
+      description: Prenumererar på den personliga kalenderadressen och följer en inbjudan genom en ändring och en avbokning i ett kalenderprogram.
+      preconditions: En användare med 3 händelser, en iCalendar-validerare, 2 kalenderprogram och en testbrevlåda kopplad till ett av dem.
+      expected: Flödet är giltigt och inbjudan skapar, flyttar och tar bort en enda post.
+      steps:
+        - action: Validera den personliga kalenderadressen med valideraren och prenumerera på den i båda programmen.
+          expected: Flödet är giltigt och båda programmen visar de 3 händelserna.
+        - action: Bjud in testbrevlådan till en ny händelse, ändra sedan tiden och avboka den därefter.
+          expected: Kalenderprogrammet visar en post som flyttas till den nya tiden och sedan tas bort.
+        - action: Återkalla kalenderadressen och uppdatera prenumerationerna.
+          expected: Programmen kan inte längre läsa in flödet.
+
+  - id: SCHED-T05
+    priority: high
+    execution: automated
+    tags: [booking, conflicts]
+    refs: []
+    en:
+      title: Overlapping and simultaneous bookings
+      description: An API test books a resource with overlapping and adjacent times and sends two requests at once.
+      preconditions: A resource "Lab 1" with a booking 10:00–11:00 on a test day.
+      expected: Overlaps are rejected with the conflict named, adjacent bookings are accepted, and simultaneous requests give one booking.
+      steps:
+        - action: Book Lab 1 from 10:59 to 12:00.
+          expected: The booking is rejected and the response names the 10:00–11:00 booking.
+          data: 10:59–12:00
+        - action: Book Lab 1 from 11:00 to 12:00.
+          expected: The booking is accepted.
+          data: 11:00–12:00
+        - action: Send two requests for 13:00–14:00 in parallel.
+          expected: One is accepted and the other is rejected as a conflict.
+    sv:
+      title: Överlappande och samtidiga bokningar
+      description: Ett API-test bokar en resurs med överlappande och angränsande tider och skickar två begäranden samtidigt.
+      preconditions: En resurs "Labb 1" med en bokning 10.00–11.00 en testdag.
+      expected: Överlapp avvisas med krocken angiven, angränsande bokningar godtas och samtidiga begäranden ger en bokning.
+      steps:
+        - action: Boka Labb 1 från 10.59 till 12.00.
+          expected: Bokningen avvisas och svaret anger bokningen 10.00–11.00.
+          data: 10.59–12.00
+        - action: Boka Labb 1 från 11.00 till 12.00.
+          expected: Bokningen godtas.
+          data: 11.00–12.00
+        - action: Skicka två begäranden om 13.00–14.00 parallellt.
+          expected: En godtas och den andra avvisas som krock.
+
+  - id: SCHED-T06
+    priority: medium
+    execution: automated
+    tags: [working-days, holidays]
+    refs: []
+    en:
+      title: Deadlines in working days
+      description: A unit test calculates deadlines with an organisation calendar that has holidays.
+      preconditions: An organisation calendar with Monday to Friday as working days and 2026-12-24, 2026-12-25 and 2026-12-26 as holidays.
+      expected: Weekends and holidays are skipped.
+      steps:
+        - action: Calculate 5 working days from Monday 2026-12-21.
+          expected: The deadline is Wednesday 2026-12-30.
+          data: 2026-12-21 + 5 working days
+        - action: Calculate 1 working day from Friday 2026-12-18.
+          expected: The deadline is Monday 2026-12-21.
+        - action: Remove the holidays and calculate 5 working days from 2026-12-21 again.
+          expected: The deadline is Monday 2026-12-28.
+    sv:
+      title: Tidsfrister i arbetsdagar
+      description: Ett enhetstest beräknar tidsfrister med en organisationskalender som har helgdagar.
+      preconditions: En organisationskalender med måndag till fredag som arbetsdagar och 2026-12-24, 2026-12-25 och 2026-12-26 som helgdagar.
+      expected: Helger och helgdagar hoppas över.
+      steps:
+        - action: Beräkna 5 arbetsdagar från måndag 2026-12-21.
+          expected: Tidsfristen är onsdag 2026-12-30.
+          data: 2026-12-21 + 5 arbetsdagar
+        - action: Beräkna 1 arbetsdag från fredag 2026-12-18.
+          expected: Tidsfristen är måndag 2026-12-21.
+        - action: Ta bort helgdagarna och beräkna 5 arbetsdagar från 2026-12-21 igen.
+          expected: Tidsfristen är måndag 2026-12-28.
+
+  - id: SCHED-T07
+    priority: high
+    execution: manual
+    tags: [calendar-views, accessibility]
+    refs: ["WCAG 2.2 SC 2.5.7"]
+    en:
+      title: Agenda list and rescheduling without dragging
+      description: Reads a week in the agenda list with a screen reader and moves events by dragging and through the form.
+      preconditions: A week with 8 events, a screen reader running and two events that can be moved.
+      expected: The agenda list is complete and readable, and both ways of moving an event work.
+      steps:
+        - action: Open the week as an agenda list and move through it with the keyboard.
+          expected: All 8 events are listed in time order and the screen reader reads date, time and title of each.
+        - action: Drag the first movable event from Monday 10:00 to Tuesday 14:00 in the week grid.
+          expected: The event is saved at Tuesday 14:00.
+        - action: Open the second event with the keyboard and change date and start time in the form to Thursday 09:00.
+          expected: The event is saved at Thursday 09:00 without any dragging.
+    sv:
+      title: Agendalista och flytt utan att dra
+      description: Läser en vecka i agendalistan med skärmläsare och flyttar händelser genom att dra och via formuläret.
+      preconditions: En vecka med 8 händelser, en skärmläsare igång och två händelser som kan flyttas.
+      expected: Agendalistan är fullständig och läsbar, och båda sätten att flytta en händelse fungerar.
+      steps:
+        - action: Öppna veckan som agendalista och gå igenom den med tangentbordet.
+          expected: Alla 8 händelser listas i tidsordning och skärmläsaren läser upp datum, tid och titel för var och en.
+        - action: Dra den första flyttbara händelsen från måndag 10.00 till tisdag 14.00 i veckorutnätet.
+          expected: Händelsen sparas på tisdag 14.00.
+        - action: Öppna den andra händelsen med tangentbordet och ändra datum och starttid i formuläret till torsdag 09.00.
+          expected: Händelsen sparas på torsdag 09.00 utan att något dras.
+
+  - id: SCHED-T08
+    priority: low
+    execution: automated
+    tags: [reminders]
+    refs: []
+    en:
+      title: Reminder delivery time
+      description: An integration test with a controllable clock sets reminders and records when they are delivered.
+      preconditions: An event at 14:00, a participant, a mail catcher and a controllable clock.
+      expected: Reminders arrive within 2 minutes of the chosen time, and values outside the range are refused.
+      steps:
+        - action: Set a reminder 15 minutes before the event and run the clock from 13:40 to 13:50.
+          expected: The in-app reminder and the e-mail arrive between 13:45 and 13:47.
+          data: 15 min before 14:00
+        - action: Try to set reminders 4 minutes and 8 days before the event.
+          expected: Both values are refused with the allowed range stated.
+          data: 4 min, 8 days
+    sv:
+      title: Leveranstid för påminnelser
+      description: Ett integrationstest med styrbar klocka ställer in påminnelser och registrerar när de levereras.
+      preconditions: En händelse kl. 14.00, en deltagare, en e-postfångare och en styrbar klocka.
+      expected: Påminnelser kommer inom 2 minuter från den valda tiden, och värden utanför intervallet avvisas.
+      steps:
+        - action: Ställ in en påminnelse 15 minuter före händelsen och kör klockan från 13.40 till 13.50.
+          expected: Påminnelsen i appen och e-postmeddelandet kommer mellan 13.45 och 13.47.
+          data: 15 min före kl. 14.00
+        - action: Försök ställa in påminnelser 4 minuter och 8 dagar före händelsen.
+          expected: Båda värdena avvisas med det tillåtna intervallet angivet.
+          data: 4 min, 8 dagar
+
+  - id: SCHED-T09
+    priority: medium
+    execution: automated
+    tags: [scheduled-jobs]
+    refs: []
+    en:
+      title: Start time of planned jobs and catch-up after a stop
+      description: A test plans jobs, measures their start times and stops the system over one planned time.
+      preconditions: A test environment where 20 jobs can be planned at one-minute intervals and the scheduler can be stopped.
+      expected: Each job starts within 60 seconds, and a missed job starts within 5 minutes of the restart.
+      steps:
+        - action: Plan 20 jobs one minute apart and record each start time.
+          expected: Each job starts no later than 60 seconds after its planned time.
+          data: 20 jobs
+        - action: Plan a job 5 minutes ahead, stop the system for 10 minutes and start it again.
+          expected: The missed job starts within 5 minutes after the restart and is run once.
+    sv:
+      title: Starttid för planerade jobb och ikapptagning efter ett stopp
+      description: Ett test planerar jobb, mäter deras starttider och stoppar systemet över en planerad tid.
+      preconditions: En testmiljö där 20 jobb kan planeras med en minuts mellanrum och schemaläggaren kan stoppas.
+      expected: Varje jobb startar inom 60 sekunder, och ett missat jobb startar inom 5 minuter efter omstarten.
+      steps:
+        - action: Planera 20 jobb med en minuts mellanrum och registrera varje starttid.
+          expected: Varje jobb startar senast 60 sekunder efter sin planerade tid.
+          data: 20 jobb
+        - action: Planera ett jobb 5 minuter fram, stoppa systemet i 10 minuter och starta det igen.
+          expected: Det missade jobbet startar inom 5 minuter efter omstarten och körs en gång.

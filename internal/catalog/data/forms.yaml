@@ -1,0 +1,633 @@
+area: forms
+prefix: FORM
+group: usability
+name: {en: Forms and data entry, sv: Formulär och datainmatning}
+description:
+  en: Input purpose and keyboards, error summaries, timing of inline validation, multi-step forms, drafts, pasting, character counters, tolerant input formats and double submission.
+  sv: Fältens syfte och tangentbord, felsammanfattningar, när fält valideras, formulär i flera steg, utkast, inklistring, teckenräknare, toleranta inmatningsformat och dubbla inskick.
+
+requirements:
+  - id: FORM-01
+    type: usability
+    obligation: must
+    priority: high
+    tags: [autocomplete, personal-data]
+    refs: ["WCAG 2.2 SC 1.3.5", "HTML Living Standard autofill"]
+    tests: [FORM-T01]
+    en:
+      title: Input purpose declared for personal data fields
+      description: Each form field that asks for the user's own name, e-mail address, telephone number, postal address or organisation MUST declare its purpose with the matching autocomplete token.
+      rationale: Browsers and assistive tools can then fill the field from stored data, which saves typing and helps users with motor or cognitive impairments.
+      criteria:
+        - method: inspection
+          text: An automated scan of the forms finds the matching autocomplete token on each field for name, e-mail, telephone, address and organisation.
+          threshold: 0 fields without a token
+    sv:
+      title: Syftet anges för fält med personuppgifter
+      description: Varje formulärfält som frågar efter användarens eget namn, e-postadress, telefonnummer, postadress eller organisation SKA ange sitt syfte med motsvarande autocomplete-värde.
+      rationale: Webbläsare och hjälpmedel kan då fylla i fältet från sparade uppgifter, vilket sparar inmatning och hjälper användare med motoriska eller kognitiva funktionsnedsättningar.
+      criteria:
+        - method: inspection
+          text: En automatisk genomsökning av formulären hittar rätt autocomplete-värde på varje fält för namn, e-post, telefon, adress och organisation.
+          threshold: 0 fält utan värde
+
+  - id: FORM-02
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [mobile, keyboard, input-type]
+    refs: ["ISO 9241-143:2012", "HTML Living Standard input types"]
+    tests: [FORM-T02]
+    en:
+      title: Input type matches the expected content
+      description: Fields for e-mail addresses, telephone numbers, numbers, dates and web addresses SHOULD use the input type for that content so that touch devices show the matching on-screen keyboard.
+      rationale: A numeric keyboard for a quantity or an "@" key for an e-mail address halves the number of taps on a phone.
+      criteria:
+        - method: demonstration
+          text: On one iOS and one Android phone each of the five field kinds opens the keyboard layout for its content.
+    sv:
+      title: Fälttypen motsvarar det förväntade innehållet
+      description: Fält för e-postadresser, telefonnummer, tal, datum och webbadresser BÖR använda fälttypen för just det innehållet så att pekenheter visar motsvarande skärmtangentbord.
+      rationale: Ett numeriskt tangentbord för ett antal eller en "@"-tangent för en e-postadress halverar antalet tryck på en mobiltelefon.
+      criteria:
+        - method: demonstration
+          text: På en iOS-telefon och en Android-telefon öppnar var och en av de fem fälttyperna tangentbordslayouten för sitt innehåll.
+
+  - id: FORM-03
+    type: usability
+    obligation: must
+    priority: high
+    tags: [errors, error-summary, focus]
+    refs: ["WCAG 2.2 SC 3.3.1", "WCAG 2.2 SC 3.3.3", "ISO 9241-110:2020 user error robustness"]
+    tests: [FORM-T03]
+    en:
+      title: Error summary after a failed submission
+      description: When a submitted form has errors, the form MUST show a summary at its top that lists each error with a link to the field and MUST move the keyboard focus to that summary.
+      rationale: In long forms an error further down is easily missed; the summary tells every user, including screen reader users, what to correct and where.
+      criteria:
+        - method: test
+          text: Submitting a form with 3 invalid fields shows a summary with 3 entries, the focus is on the summary, and each link moves the focus to its field.
+    sv:
+      title: Felsammanfattning efter misslyckat inskick
+      description: När ett inskickat formulär innehåller fel SKA formuläret överst visa en sammanfattning som listar varje fel med en länk till fältet och flytta tangentbordsfokus till sammanfattningen.
+      rationale: I långa formulär missar man lätt ett fel längre ned; sammanfattningen visar alla användare, även skärmläsaranvändare, vad som ska rättas och var.
+      criteria:
+        - method: test
+          text: När ett formulär med 3 ogiltiga fält skickas in visas en sammanfattning med 3 rader, fokus står på sammanfattningen och varje länk flyttar fokus till sitt fält.
+
+  - id: FORM-04
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [inline-validation, errors]
+    refs: ["ISO 9241-143:2012", "Nielsen heuristic 5"]
+    tests: [FORM-T04]
+    en:
+      title: Inline validation when the user leaves a field
+      description: The form SHOULD validate a field for the first time when the focus leaves it and then remove a shown error within 500 milliseconds after the user types a valid value, without the user leaving the field.
+      rationale: Errors shown while the user is still typing are distracting, while an error that stays after the value is fixed is confusing.
+      criteria:
+        - method: test
+          text: Typing a partial e-mail address shows no error until the field loses focus; correcting the value afterwards removes the error while the focus stays in the field.
+          threshold: error removed ≤ 500 ms after a valid value
+    sv:
+      title: Fältvalidering när användaren lämnar fältet
+      description: Formuläret BÖR validera ett fält första gången när fokus lämnar fältet och därefter ta bort ett visat fel inom 500 millisekunder efter att användaren har skrivit ett giltigt värde, utan att fältet lämnas.
+      rationale: Fel som visas medan användaren fortfarande skriver stör, och ett fel som ligger kvar efter att värdet rättats förvirrar.
+      criteria:
+        - method: test
+          text: En halvskriven e-postadress ger inget fel förrän fältet tappar fokus; när värdet sedan rättas försvinner felet medan fokus stannar i fältet.
+          threshold: felet borta ≤ 500 ms efter ett giltigt värde
+
+  - id: FORM-05
+    type: usability
+    obligation: must
+    priority: high
+    tags: [redundant-entry, multi-step]
+    refs: ["WCAG 2.2 SC 3.3.7"]
+    tests: [FORM-T05]
+    en:
+      title: No redundant entry within one process
+      description: Information that the user has already entered in an earlier step of the same process MUST be filled in automatically or offered for selection when a later step asks for it again.
+      rationale: Typing the same address twice costs time and is a barrier for users with memory or motor impairments.
+      criteria:
+        - method: test
+          text: In a process that asks for a delivery and a billing address, the billing step offers the delivery address with one control.
+    sv:
+      title: Ingen upprepad inmatning i samma process
+      description: Uppgifter som användaren redan har angett i ett tidigare steg av samma process SKA fyllas i automatiskt eller erbjudas som val när ett senare steg frågar efter dem igen.
+      rationale: Att skriva samma adress två gånger tar tid och är ett hinder för användare med nedsatt minne eller motorik.
+      criteria:
+        - method: test
+          text: I en process som frågar efter leverans- och fakturaadress erbjuder faktureringssteget leveransadressen med en enda kontroll.
+
+  - id: FORM-06
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [multi-step, progress]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 1"]
+    tests: [FORM-T05]
+    en:
+      title: Step indicator in multi-step forms
+      description: A form divided into 3 or more steps SHOULD show the number and name of the current step and the total number of steps on each step.
+      rationale: Users who know how much is left are less likely to abandon the form.
+      criteria:
+        - method: inspection
+          text: Each step of a 4-step form shows a text such as "Step 2 of 4 – Address" that is also exposed to screen readers.
+    sv:
+      title: Stegindikator i formulär med flera steg
+      description: Ett formulär som är uppdelat i 3 steg eller fler BÖR på varje steg visa det aktuella stegets nummer och namn och det totala antalet steg.
+      rationale: Användare som vet hur mycket som återstår avbryter mer sällan formuläret.
+      criteria:
+        - method: inspection
+          text: Varje steg i ett formulär med 4 steg visar en text som "Steg 2 av 4 – Adress" som även exponeras för skärmläsare.
+
+  - id: FORM-07
+    type: functional
+    obligation: must
+    priority: high
+    tags: [multi-step, data-loss]
+    refs: ["ISO 9241-110:2020 controllability"]
+    tests: [FORM-T05]
+    en:
+      title: Values kept when moving back between steps
+      description: Moving back to an earlier step of a multi-step form, with the form's own control or the browser's back button, MUST keep the values entered in every step.
+      rationale: Losing entered data when correcting an earlier answer forces users to start over.
+      criteria:
+        - method: test
+          text: After going back from step 3 to step 1 with the browser's back button and forward again, the values of steps 1 to 3 are unchanged.
+    sv:
+      title: Värden behålls vid återgång mellan steg
+      description: När användaren går tillbaka till ett tidigare steg i ett flerstegsformulär, med formulärets egen kontroll eller webbläsarens bakåtknapp, SKA värdena i varje steg behållas.
+      rationale: Om inmatade uppgifter försvinner när ett tidigare svar rättas måste användaren börja om.
+      criteria:
+        - method: test
+          text: Efter att ha gått från steg 3 till steg 1 med webbläsarens bakåtknapp och framåt igen är värdena i steg 1 till 3 oförändrade.
+
+  - id: FORM-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [draft, autosave]
+    refs: ["ISO 9241-110:2020 user error robustness"]
+    tests: [FORM-T06]
+    en:
+      title: Drafts saved automatically
+      description: A form with more than 10 fields SHOULD save the entered values as a draft at least every 30 seconds and offer to restore the draft when the user opens the form again after closing the browser.
+      rationale: Long forms are often interrupted, and a lost session should not mean lost work.
+      criteria:
+        - method: test
+          text: Values typed 30 seconds before the browser is closed are offered for restoring when the form is opened again.
+          threshold: ≤ 30 s of input lost
+    sv:
+      title: Utkast sparas automatiskt
+      description: Ett formulär med fler än 10 fält BÖR spara de inmatade värdena som utkast minst var 30:e sekund och erbjuda att återställa utkastet när användaren öppnar formuläret igen efter att ha stängt webbläsaren.
+      rationale: Långa formulär avbryts ofta, och en förlorad session ska inte betyda förlorat arbete.
+      criteria:
+        - method: test
+          text: Värden som skrevs 30 sekunder innan webbläsaren stängdes erbjuds för återställning när formuläret öppnas igen.
+          threshold: ≤ 30 s inmatning går förlorad
+
+  - id: FORM-09
+    type: usability
+    obligation: must_not
+    priority: high
+    tags: [paste, password]
+    refs: ["WCAG 2.2 SC 3.3.8", "NIST SP 800-63B §5.1.1.2"]
+    tests: [FORM-T07]
+    en:
+      title: Pasting into fields is not blocked
+      description: The system MUST NOT prevent the user from pasting text into a text field, including password, confirmation and one-time code fields.
+      rationale: Blocking paste stops the use of password managers and burdens users who cannot retype or memorise text.
+      criteria:
+        - method: test
+          text: Pasting into the password, password confirmation, e-mail confirmation and one-time code fields inserts the pasted text.
+    sv:
+      title: Inklistring i fält blockeras inte
+      description: Systemet SKA INTE hindra användaren från att klistra in text i ett textfält, inklusive fält för lösenord, bekräftelse och engångskod.
+      rationale: Blockerad inklistring hindrar lösenordshanterare och belastar användare som inte kan skriva av eller memorera text.
+      criteria:
+        - method: test
+          text: Inklistring i fälten för lösenord, bekräftat lösenord, bekräftad e-postadress och engångskod för in den inklistrade texten.
+
+  - id: FORM-10
+    type: usability
+    obligation: should
+    priority: low
+    tags: [character-counter, length]
+    refs: ["ISO 9241-143:2012", "WCAG 2.2 SC 4.1.3"]
+    tests: [FORM-T08]
+    en:
+      title: Remaining characters shown for limited fields
+      description: A text field with a maximum length SHOULD show the number of remaining characters once the user has used 80 percent of the limit and SHOULD announce it to screen readers at most every 2 seconds.
+      rationale: Users can shorten their text in time instead of finding out that it was cut or rejected.
+      criteria:
+        - method: test
+          text: In a field limited to 200 characters a counter appears at 160 characters and shows 0 at 200; a screen reader announces the count while typing without repeating it on every keystroke.
+    sv:
+      title: Återstående tecken visas i begränsade fält
+      description: Ett textfält med högsta längd BÖR visa antalet återstående tecken när användaren har använt 80 procent av gränsen och läsa upp antalet för skärmläsare högst varannan sekund.
+      rationale: Användaren hinner korta sin text i stället för att upptäcka att den har klippts eller avvisats.
+      criteria:
+        - method: test
+          text: I ett fält som är begränsat till 200 tecken visas en räknare vid 160 tecken och den visar 0 vid 200; en skärmläsare läser upp antalet under skrivandet utan att upprepa det vid varje tangenttryckning.
+
+  - id: FORM-11
+    type: functional
+    obligation: must
+    priority: high
+    tags: [double-submit, idempotency]
+    refs: ["ISO 9241-110:2020 user error robustness", "RFC 9110 §9.2.2"]
+    tests: [FORM-T09]
+    en:
+      title: Double submission creates one record
+      description: Submitting the same form twice within 10 seconds, by a double click or a repeated request, MUST create exactly one record.
+      rationale: Duplicate orders, tickets or payments are costly to detect and undo.
+      criteria:
+        - method: test
+          text: A double click on the submit button and a replayed submission request each result in one record.
+    sv:
+      title: Dubbelt inskick skapar en post
+      description: Om samma formulär skickas in två gånger inom 10 sekunder, genom ett dubbelklick eller en upprepad begäran, SKA exakt en post skapas.
+      rationale: Dubbla beställningar, ärenden eller betalningar är dyra att upptäcka och rätta.
+      criteria:
+        - method: test
+          text: Ett dubbelklick på skicka-knappen och en upprepad inskicksbegäran ger var för sig en enda post.
+
+  - id: FORM-12
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [input-format, tolerance]
+    refs: ["ISO 9241-110:2020 user error robustness", "Postel's robustness principle"]
+    tests: [FORM-T10]
+    en:
+      title: Tolerant input formats
+      description: Fields for telephone numbers, card numbers, postal codes and amounts SHOULD accept spaces, hyphens and leading or trailing blanks and remove them before validation.
+      rationale: Users copy values in the format they see on documents, and rejecting a space is an avoidable error.
+      criteria:
+        - method: test
+          text: The values "070-123 45 67", " 123 45 " and "1 234,50" are accepted and stored without separators where the field's format requires it.
+    sv:
+      title: Toleranta inmatningsformat
+      description: Fält för telefonnummer, kortnummer, postnummer och belopp BÖR godta mellanslag, bindestreck och inledande eller avslutande blanksteg och ta bort dem före valideringen.
+      rationale: Användare kopierar värden i det format de ser på dokument, och att avvisa ett mellanslag är ett onödigt fel.
+      criteria:
+        - method: test
+          text: Värdena "070-123 45 67", " 123 45 " och "1 234,50" godtas och sparas utan avgränsare där fältets format kräver det.
+
+  - id: FORM-13
+    type: usability
+    obligation: must
+    priority: high
+    tags: [review, error-prevention, legal]
+    refs: ["WCAG 2.2 SC 3.3.4", "ISO 9241-110:2020 user error robustness"]
+    tests: [FORM-T05]
+    en:
+      title: Review step before a binding submission
+      description: A form that creates a legal or financial commitment MUST show a review page with every entered value and a control to change each section before the user confirms.
+      rationale: Mistakes in binding submissions are expensive, and a review step lets users catch them in time.
+      criteria:
+        - method: test
+          text: Before confirming an order, the review page lists every entered value, and each section's change control opens that section with its values kept.
+    sv:
+      title: Granskningssteg före ett bindande inskick
+      description: Ett formulär som skapar ett juridiskt eller ekonomiskt åtagande SKA visa en granskningssida med varje inmatat värde och en kontroll för att ändra varje avsnitt innan användaren bekräftar.
+      rationale: Misstag i bindande inskick blir dyra, och ett granskningssteg låter användaren upptäcka dem i tid.
+      criteria:
+        - method: test
+          text: Före bekräftelsen av en beställning listar granskningssidan varje inmatat värde, och varje avsnitts ändra-kontroll öppnar avsnittet med värdena kvar.
+
+tests:
+  - id: FORM-T01
+    priority: high
+    execution: automated
+    tags: [autocomplete]
+    refs: ["WCAG 2.2 SC 1.3.5"]
+    en:
+      title: Autocomplete tokens on personal data fields
+      description: A script scans every form for fields that ask for the user's own personal data and checks their autocomplete tokens.
+      preconditions: A list of the pages with forms and a mapping from field labels to expected tokens.
+      expected: Each personal data field declares the expected token.
+      steps:
+        - action: Load each page with a form and collect the input fields with their labels and autocomplete attributes.
+          expected: The script lists every field with its label.
+        - action: Compare the fields for name, e-mail, telephone, address and organisation with the mapping.
+          expected: Each of them has the expected token, for example "email" for the e-mail address.
+          data: "name, email, tel, street-address, postal-code, organization"
+        - action: Fill in the profile form with the browser's autofill.
+          expected: The browser fills name, e-mail and telephone into the right fields.
+    sv:
+      title: Autocomplete-värden på fält med personuppgifter
+      description: Ett skript går igenom varje formulär efter fält som frågar efter användarens egna personuppgifter och kontrollerar deras autocomplete-värden.
+      preconditions: En lista över sidorna med formulär och en tabell från fältetiketter till förväntade värden.
+      expected: Varje fält med personuppgifter anger det förväntade värdet.
+      steps:
+        - action: Läs in varje sida med formulär och samla fälten med etiketter och autocomplete-attribut.
+          expected: Skriptet listar varje fält med dess etikett.
+        - action: Jämför fälten för namn, e-post, telefon, adress och organisation med tabellen.
+          expected: Vart och ett har det förväntade värdet, till exempel "email" för e-postadressen.
+          data: "name, email, tel, street-address, postal-code, organization"
+        - action: Fyll i profilformuläret med webbläsarens autofyll.
+          expected: Webbläsaren fyller i namn, e-post och telefon i rätt fält.
+
+  - id: FORM-T02
+    priority: medium
+    execution: manual
+    tags: [mobile, keyboard]
+    refs: ["ISO 9241-143:2012"]
+    en:
+      title: On-screen keyboard per field type
+      description: Checks on two phones that each field kind opens the matching on-screen keyboard.
+      preconditions: One iOS and one Android phone with current browsers, and a form with e-mail, telephone, number, date and web address fields.
+      expected: Each field opens the keyboard layout for its content on both phones.
+      steps:
+        - action: Tap the e-mail field.
+          expected: The keyboard shows an "@" key.
+        - action: Tap the telephone field and the number field.
+          expected: A numeric keypad opens for both.
+        - action: Tap the date field.
+          expected: The platform's date picker or a numeric keyboard opens.
+        - action: Tap the web address field.
+          expected: The keyboard shows "/" and ".com" or a "." key.
+    sv:
+      title: Skärmtangentbord per fälttyp
+      description: Kontrollerar på två telefoner att varje fälttyp öppnar motsvarande skärmtangentbord.
+      preconditions: En iOS- och en Android-telefon med aktuella webbläsare och ett formulär med fält för e-post, telefon, tal, datum och webbadress.
+      expected: Varje fält öppnar tangentbordslayouten för sitt innehåll på båda telefonerna.
+      steps:
+        - action: Tryck på e-postfältet.
+          expected: Tangentbordet visar en "@"-tangent.
+        - action: Tryck på telefonfältet och talfältet.
+          expected: Ett numeriskt tangentbord öppnas för båda.
+        - action: Tryck på datumfältet.
+          expected: Plattformens datumväljare eller ett numeriskt tangentbord öppnas.
+        - action: Tryck på webbadressfältet.
+          expected: Tangentbordet visar "/" och ".com" eller en "."-tangent.
+
+  - id: FORM-T03
+    priority: high
+    execution: manual
+    tags: [errors, error-summary]
+    refs: ["WCAG 2.2 SC 3.3.1"]
+    en:
+      title: Error summary with links and focus
+      description: Submits a form with several errors and checks the summary with a keyboard and a screen reader.
+      preconditions: A form with at least 6 fields, a screen reader running, and test data with 3 invalid values.
+      expected: The summary lists the 3 errors, receives the focus and links to each field.
+      steps:
+        - action: Fill in the form with 3 invalid values and submit it with the keyboard.
+          expected: A summary with 3 entries appears at the top of the form and the screen reader reads its heading.
+          data: "empty name; e-mail 'anna@'; date 2026-02-30"
+        - action: Activate the second link in the summary.
+          expected: The focus moves to the e-mail field and its error text is read out.
+        - action: Correct the 3 values and submit again.
+          expected: The form is accepted and the summary is gone.
+    sv:
+      title: Felsammanfattning med länkar och fokus
+      description: Skickar in ett formulär med fel och kontrollerar sammanfattningen med tangentbord och skärmläsare.
+      preconditions: Ett formulär med minst 6 fält, en skärmläsare igång och testdata med 3 ogiltiga värden.
+      expected: Sammanfattningen listar de 3 felen, får fokus och länkar till varje fält.
+      steps:
+        - action: Fyll i formuläret med 3 ogiltiga värden och skicka in det med tangentbordet.
+          expected: En sammanfattning med 3 rader visas överst i formuläret och skärmläsaren läser upp dess rubrik.
+          data: "tomt namn; e-post 'anna@'; datum 2026-02-30"
+        - action: Aktivera den andra länken i sammanfattningen.
+          expected: Fokus flyttas till e-postfältet och dess feltext läses upp.
+        - action: Rätta de 3 värdena och skicka in igen.
+          expected: Formuläret godtas och sammanfattningen är borta.
+
+  - id: FORM-T04
+    priority: medium
+    execution: automated
+    tags: [inline-validation]
+    refs: ["ISO 9241-143:2012"]
+    en:
+      title: Timing of inline validation
+      description: A browser test types into a validated field and checks when the error appears and disappears.
+      preconditions: A form with an e-mail field that is validated on the client.
+      expected: The error appears only after the field loses focus and disappears within 500 ms of a valid value.
+      steps:
+        - action: Type "anna@exa" into the e-mail field without leaving it.
+          expected: No error message is shown.
+          data: anna@exa
+        - action: Move the focus to the next field.
+          expected: An error message for the e-mail field is shown.
+        - action: Return to the e-mail field and complete the value to "anna@example.org".
+          expected: The error message disappears within 500 ms while the focus is still in the field.
+          data: anna@example.org
+    sv:
+      title: När fältvalidering sker
+      description: Ett webbläsartest skriver i ett validerat fält och kontrollerar när felet visas och försvinner.
+      preconditions: Ett formulär med ett e-postfält som valideras i klienten.
+      expected: Felet visas först när fältet tappar fokus och försvinner inom 500 ms efter ett giltigt värde.
+      steps:
+        - action: Skriv "anna@exa" i e-postfältet utan att lämna det.
+          expected: Inget felmeddelande visas.
+          data: anna@exa
+        - action: Flytta fokus till nästa fält.
+          expected: Ett felmeddelande för e-postfältet visas.
+        - action: Gå tillbaka till e-postfältet och skriv klart värdet till "anna@example.org".
+          expected: Felmeddelandet försvinner inom 500 ms medan fokus fortfarande står i fältet.
+          data: anna@example.org
+
+  - id: FORM-T05
+    priority: high
+    execution: manual
+    tags: [multi-step, review, redundant-entry]
+    refs: ["WCAG 2.2 SC 3.3.7", "WCAG 2.2 SC 3.3.4"]
+    en:
+      title: Multi-step form with step indicator, reuse of data and review
+      description: Walks through a 4-step order form forwards and backwards and checks the indicator, kept values, reused address and the review page.
+      preconditions: A 4-step order form (contact, delivery address, billing address, review) and a signed-in test user.
+      expected: Every step shows its position, values survive moving back, the delivery address can be reused and the review page lists everything.
+      steps:
+        - action: Fill in steps 1 and 2 and look at the step indicator on each step.
+          expected: The steps show "Step 1 of 4 – Contact" and "Step 2 of 4 – Delivery address".
+        - action: On step 3 choose to use the delivery address as billing address.
+          expected: The billing fields are filled with the delivery address with one control.
+        - action: Press the browser's back button twice, then go forward to step 3 again.
+          expected: The values of steps 1 to 3 are unchanged.
+        - action: Continue to the review page and use the change control of the contact section.
+          expected: The review lists every value; the contact step opens with its values and returns to the review after saving.
+    sv:
+      title: Formulär i flera steg med stegindikator, återanvända uppgifter och granskning
+      description: Går igenom ett beställningsformulär med 4 steg framåt och bakåt och kontrollerar indikatorn, behållna värden, återanvänd adress och granskningssidan.
+      preconditions: Ett beställningsformulär med 4 steg (kontakt, leveransadress, fakturaadress, granskning) och en inloggad testanvändare.
+      expected: Varje steg visar sin position, värdena finns kvar efter återgång, leveransadressen kan återanvändas och granskningssidan listar allt.
+      steps:
+        - action: Fyll i steg 1 och 2 och titta på stegindikatorn i varje steg.
+          expected: Stegen visar "Steg 1 av 4 – Kontakt" och "Steg 2 av 4 – Leveransadress".
+        - action: Välj i steg 3 att använda leveransadressen som fakturaadress.
+          expected: Fakturafälten fylls med leveransadressen med en enda kontroll.
+        - action: Tryck på webbläsarens bakåtknapp två gånger och gå sedan framåt till steg 3 igen.
+          expected: Värdena i steg 1 till 3 är oförändrade.
+        - action: Fortsätt till granskningssidan och använd ändra-kontrollen för kontaktavsnittet.
+          expected: Granskningen listar varje värde; kontaktsteget öppnas med sina värden och återgår till granskningen efter att ha sparats.
+
+  - id: FORM-T06
+    priority: medium
+    execution: manual
+    tags: [draft, autosave]
+    refs: ["ISO 9241-110:2020 user error robustness"]
+    en:
+      title: Draft restored after the browser is closed
+      description: Fills in a long form, closes the browser and checks that the draft is offered.
+      preconditions: A form with more than 10 fields and a signed-in user.
+      expected: The values entered up to 30 seconds before closing are restored on request.
+      steps:
+        - action: Fill in 8 fields, wait 35 seconds, fill in 1 more field and close the browser at once.
+          expected: The browser closes without a save action by the user.
+        - action: Open the browser, sign in and open the form again.
+          expected: The form offers to restore a draft and states when it was saved.
+        - action: Choose to restore the draft.
+          expected: At least the first 8 fields contain the entered values.
+        - action: Discard the draft on a second attempt.
+          expected: The form opens empty and the draft is no longer offered.
+    sv:
+      title: Utkast återställs efter att webbläsaren stängts
+      description: Fyller i ett långt formulär, stänger webbläsaren och kontrollerar att utkastet erbjuds.
+      preconditions: Ett formulär med fler än 10 fält och en inloggad användare.
+      expected: Värdena som angavs fram till 30 sekunder före stängningen återställs på begäran.
+      steps:
+        - action: Fyll i 8 fält, vänta 35 sekunder, fyll i 1 fält till och stäng genast webbläsaren.
+          expected: Webbläsaren stängs utan att användaren har sparat.
+        - action: Öppna webbläsaren, logga in och öppna formuläret igen.
+          expected: Formuläret erbjuder att återställa ett utkast och anger när det sparades.
+        - action: Välj att återställa utkastet.
+          expected: Minst de 8 första fälten innehåller de angivna värdena.
+        - action: Förkasta utkastet vid ett andra försök.
+          expected: Formuläret öppnas tomt och utkastet erbjuds inte längre.
+
+  - id: FORM-T07
+    priority: high
+    execution: automated
+    tags: [paste, password]
+    refs: ["WCAG 2.2 SC 3.3.8"]
+    en:
+      title: Paste accepted in sensitive fields
+      description: A browser test pastes text from the clipboard into password, confirmation and one-time code fields.
+      preconditions: The sign-up, change-password and two-factor pages, and a test password generated at run time.
+      expected: Each paste inserts the full text.
+      steps:
+        - action: Paste the generated password into the password and confirmation fields.
+          expected: Both fields contain the full pasted value and the form can be submitted.
+        - action: Paste an e-mail address into the e-mail confirmation field.
+          expected: The field contains the pasted address.
+          data: anna@example.org
+        - action: Paste a 6-digit code into the one-time code field.
+          expected: The field contains the 6 digits.
+          data: "123456"
+    sv:
+      title: Inklistring godtas i känsliga fält
+      description: Ett webbläsartest klistrar in text från urklipp i fält för lösenord, bekräftelse och engångskod.
+      preconditions: Sidorna för registrering, lösenordsbyte och tvåfaktorsinloggning, och ett testlösenord som skapas vid körningen.
+      expected: Varje inklistring för in hela texten.
+      steps:
+        - action: Klistra in det skapade lösenordet i fälten för lösenord och bekräftelse.
+          expected: Båda fälten innehåller hela det inklistrade värdet och formuläret kan skickas in.
+        - action: Klistra in en e-postadress i fältet för bekräftad e-postadress.
+          expected: Fältet innehåller den inklistrade adressen.
+          data: anna@example.org
+        - action: Klistra in en kod med 6 siffror i fältet för engångskod.
+          expected: Fältet innehåller de 6 siffrorna.
+          data: "123456"
+
+  - id: FORM-T08
+    priority: low
+    execution: manual
+    tags: [character-counter]
+    refs: ["WCAG 2.2 SC 4.1.3"]
+    en:
+      title: Character counter in a limited field
+      description: Types into a field limited to 200 characters and checks the counter visually and with a screen reader.
+      preconditions: A text field with a maximum of 200 characters and a screen reader running.
+      expected: The counter appears at 160 characters, reaches 0 at 200 and is announced without repeating on every key.
+      steps:
+        - action: Paste 150 characters into the field.
+          expected: No counter is shown.
+        - action: Type 10 more characters.
+          expected: The counter shows 40 remaining characters.
+        - action: Type continuously for 5 seconds while listening to the screen reader.
+          expected: The count is announced at most every 2 seconds.
+        - action: Fill the field to 200 characters.
+          expected: The counter shows 0 and further typing adds no characters.
+    sv:
+      title: Teckenräknare i ett begränsat fält
+      description: Skriver i ett fält som är begränsat till 200 tecken och kontrollerar räknaren visuellt och med skärmläsare.
+      preconditions: Ett textfält med högst 200 tecken och en skärmläsare igång.
+      expected: Räknaren visas vid 160 tecken, når 0 vid 200 och läses upp utan upprepning vid varje tangent.
+      steps:
+        - action: Klistra in 150 tecken i fältet.
+          expected: Ingen räknare visas.
+        - action: Skriv 10 tecken till.
+          expected: Räknaren visar 40 återstående tecken.
+        - action: Skriv oavbrutet i 5 sekunder och lyssna på skärmläsaren.
+          expected: Antalet läses upp högst varannan sekund.
+        - action: Fyll fältet till 200 tecken.
+          expected: Räknaren visar 0 och fler tangenttryck lägger inte till några tecken.
+
+  - id: FORM-T09
+    priority: high
+    execution: automated
+    tags: [double-submit]
+    refs: ["RFC 9110 §9.2.2"]
+    en:
+      title: Double click and replayed submission
+      description: An end-to-end test submits a form twice in quick succession and replays the request, then counts the records.
+      preconditions: An empty test project and a form that creates a record.
+      expected: Each attempt results in exactly one record.
+      steps:
+        - action: Double-click the submit button with 100 ms between the clicks.
+          expected: The button is disabled after the first click and one record exists.
+          data: 100 ms
+        - action: Capture the submission request and send it again within 10 seconds.
+          expected: The server answers with the existing record or a duplicate notice, and the count is still one.
+    sv:
+      title: Dubbelklick och upprepat inskick
+      description: Ett end-to-end-test skickar in ett formulär två gånger tätt efter varandra och spelar upp begäran igen, och räknar sedan posterna.
+      preconditions: Ett tomt testprojekt och ett formulär som skapar en post.
+      expected: Varje försök ger exakt en post.
+      steps:
+        - action: Dubbelklicka på skicka-knappen med 100 ms mellan klicken.
+          expected: Knappen inaktiveras efter första klicket och en post finns.
+          data: 100 ms
+        - action: Fånga inskicksbegäran och skicka den igen inom 10 sekunder.
+          expected: Servern svarar med den befintliga posten eller ett meddelande om dubblett, och antalet är fortfarande ett.
+
+  - id: FORM-T10
+    priority: medium
+    execution: automated
+    tags: [input-format]
+    refs: ["ISO 9241-110:2020 user error robustness"]
+    en:
+      title: Separators accepted in formatted fields
+      description: A unit test feeds values with spaces and hyphens to the field parsers and checks the stored values.
+      preconditions: The parsers for telephone number, postal code and amount.
+      expected: Values with separators are accepted and normalised.
+      steps:
+        - action: Parse the telephone number "070-123 45 67".
+          expected: The value is accepted and stored as 0701234567.
+          data: "070-123 45 67"
+        - action: Parse the postal code " 123 45 ".
+          expected: The value is accepted and stored as 12345.
+          data: '" 123 45 "'
+        - action: Parse the amount "1 234,50" with the Swedish locale.
+          expected: The value is accepted and stored as 1234.50.
+          data: "1 234,50"
+    sv:
+      title: Avgränsare godtas i formaterade fält
+      description: Ett enhetstest ger fältens tolkare värden med mellanslag och bindestreck och kontrollerar de sparade värdena.
+      preconditions: Tolkarna för telefonnummer, postnummer och belopp.
+      expected: Värden med avgränsare godtas och normaliseras.
+      steps:
+        - action: Tolka telefonnumret "070-123 45 67".
+          expected: Värdet godtas och sparas som 0701234567.
+          data: "070-123 45 67"
+        - action: Tolka postnumret " 123 45 ".
+          expected: Värdet godtas och sparas som 12345.
+          data: '" 123 45 "'
+        - action: Tolka beloppet "1 234,50" med svensk språkinställning.
+          expected: Värdet godtas och sparas som 1234.50.
+          data: "1 234,50"

@@ -577,7 +577,8 @@ and keeps web links.
 
 A built-in library of standard requirements and tests for software
 development (security, privacy, performance, reliability, operations,
-usability, accessibility, common functionality), in English and Swedish.
+usability, accessibility, common functionality, domain-specific functionality
+such as checkout and billing), in English and Swedish.
 The texts are written for Qtestframe and cite the standards they are based
 on (OWASP ASVS, WCAG, ISO/IEC 25010, NIST SP 800-63B …) in `refs` by name
 and section, without copying them. The content lives in

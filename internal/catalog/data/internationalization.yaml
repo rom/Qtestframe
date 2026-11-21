@@ -3,8 +3,8 @@ prefix: I18N
 group: usability
 name: {en: Internationalisation, sv: Internationalisering}
 description:
-  en: Translatable texts, locale formats for dates, numbers and currency, time zones, Unicode, right-to-left readiness, sorting and language selection.
-  sv: Översättningsbara texter, lokala format för datum, tal och valuta, tidszoner, Unicode, stöd för höger-till-vänster-skrift, sortering och val av språk.
+  en: Translatable texts, locale formats for dates, numbers and currency, time zones, Unicode, right-to-left readiness, sorting, language selection, content in several languages with fallback, completeness of translations, international names and addresses, and currencies.
+  sv: Översättningsbara texter, lokala format för datum, tal och valuta, tidszoner, Unicode, stöd för höger-till-vänster-skrift, sortering, val av språk, innehåll på flera språk med reservspråk, fullständiga översättningar, internationella namn och adresser samt valutor.
 
 requirements:
   - id: I18N-01
@@ -317,6 +317,116 @@ requirements:
         - method: inspection
           text: En genomgång av alla bildfiler hittar ingen bild med ord, bortsett från logotyper.
 
+  - id: I18N-15
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [multilingual-content, translation]
+    refs: ["W3C Internationalization Best Practices", "ISO 639-1"]
+    tests: [I18N-T10]
+    en:
+      title: Content in several languages per item
+      description: The system SHOULD let users store the text fields of an item in each language enabled for the organisation and SHOULD show readers the text in their interface language.
+      rationale: Organisations that work in two languages otherwise keep parallel copies that drift apart.
+      criteria:
+        - method: test
+          text: An item with an English and a Swedish title shows the Swedish title to a Swedish reader and the English title to an English reader.
+    sv:
+      title: Innehåll på flera språk per post
+      description: Systemet BÖR låta användare spara en posts textfält på varje språk som är aktiverat för organisationen och visa läsarna texten på deras gränssnittsspråk.
+      rationale: Organisationer som arbetar på två språk håller annars parallella kopior som glider isär.
+      criteria:
+        - method: test
+          text: En post med engelsk och svensk titel visar den svenska titeln för en svensk läsare och den engelska för en engelsk läsare.
+
+  - id: I18N-16
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [multilingual-content, fallback]
+    refs: ["W3C Internationalization Best Practices"]
+    tests: [I18N-T10]
+    en:
+      title: Marked fallback when a translation is missing
+      description: When a text field has no translation in the reader's language, the system SHOULD show the text in the item's original language with a visible marker that names that language.
+      rationale: An empty field looks like missing data, while an unmarked text in another language confuses the reader.
+      criteria:
+        - method: test
+          text: An item with only an English description shows the English text to a Swedish reader with the marker "English".
+    sv:
+      title: Markerad reservtext när en översättning saknas
+      description: När ett textfält saknar översättning till läsarens språk BÖR systemet visa texten på postens ursprungsspråk med en synlig markering som anger det språket.
+      rationale: Ett tomt fält ser ut som saknade uppgifter, medan en omarkerad text på ett annat språk förvirrar läsaren.
+      criteria:
+        - method: test
+          text: En post med bara en engelsk beskrivning visar den engelska texten för en svensk läsare med markeringen "Engelska".
+
+  - id: I18N-17
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [translation, completeness, build]
+    refs: ["ISO/IEC 25010:2023 maintainability"]
+    tests: [I18N-T11]
+    en:
+      title: Missing interface translations fail the build
+      description: The build MUST fail when a user interface text key exists in the default language but is missing or empty in another supported language.
+      rationale: A missing key otherwise shows a raw key or an English text in the middle of a translated page.
+      criteria:
+        - method: test
+          text: Removing one Swedish key from the resource files makes the build fail with the name of the key.
+    sv:
+      title: Saknade översättningar i gränssnittet stoppar bygget
+      description: Bygget SKA misslyckas när en textnyckel i användargränssnittet finns på standardspråket men saknas eller är tom på ett annat språk som stöds.
+      rationale: En saknad nyckel visar annars en rå nyckel eller en engelsk text mitt på en översatt sida.
+      criteria:
+        - method: test
+          text: Om en svensk nyckel tas bort ur resursfilerna misslyckas bygget med nyckelns namn.
+
+  - id: I18N-18
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [personal-names, addresses]
+    refs: ["W3C Personal names around the world", "UPU S42"]
+    tests: [I18N-T12]
+    en:
+      title: Names and addresses in international formats
+      description: Forms SHOULD accept a person's name in a single field of up to 200 characters, including people with only one name, and SHOULD lay out postal address fields according to the chosen country.
+      rationale: Fixed first and last name fields and one national address layout exclude or misspell users from other cultures.
+      criteria:
+        - method: test
+          text: A one-word name, a name of 150 characters with hyphens and apostrophes, and addresses for Sweden, Japan and the United States are accepted and shown as entered.
+    sv:
+      title: Namn och adresser i internationella format
+      description: Formulär BÖR godta en persons namn i ett enda fält på upp till 200 tecken, även för personer med bara ett namn, och ordna fälten för postadress efter det valda landet.
+      rationale: Fasta fält för förnamn och efternamn och en enda nationell adresslayout utesluter eller felstavar användare från andra kulturer.
+      criteria:
+        - method: test
+          text: Ett namn med ett ord, ett namn på 150 tecken med bindestreck och apostrofer samt adresser för Sverige, Japan och USA godtas och visas som de angavs.
+
+  - id: I18N-19
+    type: functional
+    obligation: must
+    priority: high
+    tags: [currency, amounts]
+    refs: ["ISO 4217", "Unicode CLDR"]
+    tests: [I18N-T13]
+    en:
+      title: Currency stated with every amount
+      description: Where amounts in different currencies can occur, the system MUST store each amount with its ISO 4217 currency code and MUST show the currency next to each amount, with the number of decimals the currency uses.
+      rationale: An amount without a currency is ambiguous, and rounding a currency without minor units to 2 decimals is wrong.
+      criteria:
+        - method: test
+          text: Amounts in SEK, EUR and JPY are stored with their codes and shown with the currency next to each amount, with 2 decimals for SEK and EUR and none for JPY.
+    sv:
+      title: Valuta anges vid varje belopp
+      description: Där belopp i olika valutor kan förekomma SKA systemet spara varje belopp med dess valutakod enligt ISO 4217 och visa valutan vid varje belopp, med det antal decimaler som valutan använder.
+      rationale: Ett belopp utan valuta är tvetydigt, och att avrunda en valuta utan underenheter till 2 decimaler blir fel.
+      criteria:
+        - method: test
+          text: Belopp i SEK, EUR och JPY sparas med sina koder och visas med valutan vid varje belopp, med 2 decimaler för SEK och EUR och utan decimaler för JPY.
+
 tests:
   - id: I18N-T01
     priority: high
@@ -593,3 +703,129 @@ tests:
           expected: Pluralformerna är grammatiskt korrekta.
         - action: Gå igenom alla bildfiler och illustrationer.
           expected: Ingen bild innehåller ord som behöver översättas.
+
+  - id: I18N-T10
+    priority: medium
+    execution: manual
+    tags: [multilingual-content]
+    refs: []
+    en:
+      title: Item text per language and marked fallback
+      description: Stores an item with texts in two languages and one field in English only, and reads it in both interface languages.
+      preconditions: An organisation with English and Swedish enabled, and one reader with each interface language.
+      expected: Each reader sees their language, and the untranslated field is shown in English with a marker.
+      steps:
+        - action: Create an item with the English title "Login lockout" and the Swedish title "Spärr vid inloggning", and an English description only.
+          expected: The item is saved with both titles.
+          data: Login lockout / Spärr vid inloggning
+        - action: Open the item as the English reader.
+          expected: The title is "Login lockout" and the description is shown without a marker.
+        - action: Open the item as the Swedish reader.
+          expected: The title is "Spärr vid inloggning" and the description is shown in English with the marker "Engelska".
+    sv:
+      title: Posttext per språk och markerad reservtext
+      description: Sparar en post med texter på två språk och ett fält bara på engelska, och läser den med båda gränssnittsspråken.
+      preconditions: En organisation med engelska och svenska aktiverade, och en läsare med vardera gränssnittsspråket.
+      expected: Varje läsare ser sitt språk, och fältet utan översättning visas på engelska med en markering.
+      steps:
+        - action: Skapa en post med den engelska titeln "Login lockout" och den svenska titeln "Spärr vid inloggning", och bara en engelsk beskrivning.
+          expected: Posten sparas med båda titlarna.
+          data: Login lockout / Spärr vid inloggning
+        - action: Öppna posten som den engelska läsaren.
+          expected: Titeln är "Login lockout" och beskrivningen visas utan markering.
+        - action: Öppna posten som den svenska läsaren.
+          expected: Titeln är "Spärr vid inloggning" och beskrivningen visas på engelska med markeringen "Engelska".
+
+  - id: I18N-T11
+    priority: high
+    execution: automated
+    tags: [translation, build]
+    refs: []
+    en:
+      title: Build check of translation keys
+      description: The build compares the keys of each language's resource file with the default language.
+      preconditions: A working copy of the source code with resource files for English and Swedish.
+      expected: The build passes with complete files and fails with a missing or empty key.
+      steps:
+        - action: Run the build with the files unchanged.
+          expected: The key check passes.
+        - action: Remove one key from the Swedish file and run the build.
+          expected: The build fails and names the missing key.
+        - action: Restore the key with an empty value and run the build.
+          expected: The build fails and names the empty key.
+    sv:
+      title: Kontroll av översättningsnycklar i bygget
+      description: Bygget jämför nycklarna i varje språks resursfil med standardspråket.
+      preconditions: En arbetskopia av källkoden med resursfiler för engelska och svenska.
+      expected: Bygget går igenom med fullständiga filer och misslyckas med en saknad eller tom nyckel.
+      steps:
+        - action: Kör bygget med oförändrade filer.
+          expected: Nyckelkontrollen går igenom.
+        - action: Ta bort en nyckel ur den svenska filen och kör bygget.
+          expected: Bygget misslyckas och anger den saknade nyckeln.
+        - action: Lägg tillbaka nyckeln med ett tomt värde och kör bygget.
+          expected: Bygget misslyckas och anger den tomma nyckeln.
+
+  - id: I18N-T12
+    priority: medium
+    execution: manual
+    tags: [personal-names, addresses]
+    refs: ["W3C Personal names around the world"]
+    en:
+      title: International names and addresses
+      description: Enters names of different shapes and addresses for three countries.
+      preconditions: A form with a name field and a postal address with a country choice, and fictitious test names and addresses.
+      expected: Each value is accepted and shown exactly as entered.
+      steps:
+        - action: Enter a fictitious one-word name and save.
+          expected: The name is accepted without asking for a last name.
+          data: a one-word name
+        - action: Enter a fictitious name of 150 characters with hyphens and apostrophes and save.
+          expected: The name is accepted and shown in full.
+        - action: Choose Sweden, Japan and the United States in turn and enter a fictitious address for each.
+          expected: The address fields change order and labels by country, and each address is shown as entered.
+    sv:
+      title: Internationella namn och adresser
+      description: Matar in namn av olika form och adresser för tre länder.
+      preconditions: Ett formulär med ett namnfält och en postadress med val av land, och påhittade testnamn och testadresser.
+      expected: Varje värde godtas och visas exakt som det angavs.
+      steps:
+        - action: Ange ett påhittat namn som består av ett ord och spara.
+          expected: Namnet godtas utan att efternamn efterfrågas.
+          data: ett namn med ett ord
+        - action: Ange ett påhittat namn på 150 tecken med bindestreck och apostrofer och spara.
+          expected: Namnet godtas och visas i sin helhet.
+        - action: Välj i tur och ordning Sverige, Japan och USA och ange en påhittad adress för vart och ett.
+          expected: Adressfälten byter ordning och etiketter efter land, och varje adress visas som den angavs.
+
+  - id: I18N-T13
+    priority: high
+    execution: automated
+    tags: [currency]
+    refs: ["ISO 4217"]
+    en:
+      title: Amounts with currency codes and decimals
+      description: A unit test stores and formats amounts in three currencies for two locales.
+      preconditions: The amount storage and the formatting function with the locales sv-SE and en-GB.
+      expected: Codes are kept and each currency is shown with its own decimals.
+      steps:
+        - action: Store 1234.50 SEK, 1234.50 EUR and 1234.5 JPY and read them back.
+          expected: Each amount comes back with its currency code; the JPY amount is rounded to 1235.
+          data: "1234.50 SEK; 1234.50 EUR; 1234.5 JPY"
+        - action: Format the amounts with sv-SE.
+          expected: The results are "1 234,50 kr", "1 234,50 €" and "1 235 JPY".
+        - action: Format the amounts with en-GB.
+          expected: The results are "SEK 1,234.50", "€1,234.50" and "JP¥1,235".
+    sv:
+      title: Belopp med valutakoder och decimaler
+      description: Ett enhetstest sparar och formaterar belopp i tre valutor för två språkinställningar.
+      preconditions: Lagringen av belopp och formateringsfunktionen med språkinställningarna sv-SE och en-GB.
+      expected: Koderna behålls och varje valuta visas med sina egna decimaler.
+      steps:
+        - action: Spara 1234.50 SEK, 1234.50 EUR och 1234.5 JPY och läs tillbaka dem.
+          expected: Varje belopp kommer tillbaka med sin valutakod; beloppet i JPY avrundas till 1235.
+          data: "1234.50 SEK; 1234.50 EUR; 1234.5 JPY"
+        - action: Formatera beloppen med sv-SE.
+          expected: Resultaten är "1 234,50 kr", "1 234,50 €" och "1 235 JPY".
+        - action: Formatera beloppen med en-GB.
+          expected: Resultaten är "SEK 1,234.50", "€1,234.50" och "JP¥1,235".

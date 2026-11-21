@@ -1,0 +1,701 @@
+area: mobile
+prefix: MOB
+group: usability
+name: {en: Mobile apps, sv: Mobilappar}
+description:
+  en: Supported platform versions, platform design guidelines, back navigation, offline reading and editing with synchronisation, push notifications, touch targets, orientation, system font size, start time and data stored on the device.
+  sv: Plattformsversioner som stöds, plattformarnas designriktlinjer, bakåtnavigering, läsning och redigering utan uppkoppling med synkronisering, push-aviseringar, pekytor, skärmorientering, systemets textstorlek, starttid och data som lagras på enheten.
+
+requirements:
+  - id: MOB-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [platform-versions, compatibility]
+    refs: ["ISO/IEC 25010:2023 compatibility"]
+    tests: [MOB-T01]
+    en:
+      title: Supported operating system versions
+      description: The app MUST run on the current and the 2 previous major versions of iOS and Android at the time of each release.
+      rationale: A stated support window lets the organisation plan device updates and keeps the test matrix bounded.
+      criteria:
+        - method: test
+          text: The smoke test suite passes on the 3 supported major versions of each platform before each release.
+          threshold: 3 major versions per platform
+    sv:
+      title: Operativsystemversioner som stöds
+      description: Appen SKA fungera på den aktuella och de 2 föregående huvudversionerna av iOS och Android vid tidpunkten för varje release.
+      rationale: Ett angivet stödfönster låter organisationen planera uppdateringar av enheter och håller testmatrisen avgränsad.
+      criteria:
+        - method: test
+          text: Röktesterna går igenom på de 3 huvudversioner som stöds för varje plattform före varje release.
+          threshold: 3 huvudversioner per plattform
+
+  - id: MOB-02
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [platform-guidelines, navigation]
+    refs: ["Apple Human Interface Guidelines", "Material Design"]
+    tests: [MOB-T02]
+    en:
+      title: Platform design guidelines followed
+      description: The app SHOULD use the navigation patterns, system controls and gestures that the platform's design guidelines prescribe, with deviations listed and justified in the design documentation.
+      rationale: Users transfer what they know from other apps on the same platform and make fewer errors.
+      criteria:
+        - method: review
+          text: A review of the 10 most used screens against the guidelines finds no undocumented deviation in navigation, controls or gestures.
+    sv:
+      title: Plattformens designriktlinjer följs
+      description: Appen BÖR använda de navigeringsmönster, systemkontroller och gester som plattformens designriktlinjer anger, med avvikelser listade och motiverade i designdokumentationen.
+      rationale: Användare tar med sig det de kan från andra appar på samma plattform och gör färre fel.
+      criteria:
+        - method: review
+          text: En granskning av de 10 mest använda skärmarna mot riktlinjerna hittar ingen odokumenterad avvikelse i navigering, kontroller eller gester.
+
+  - id: MOB-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [navigation, back]
+    refs: ["Material Design", "ISO 9241-110:2020 controllability"]
+    tests: [MOB-T03]
+    en:
+      title: System back action returns to the previous screen
+      description: The system back gesture or back button MUST return to the previous screen of the app and MUST ask for confirmation before it discards unsaved input.
+      rationale: An app that closes or loses data on the back gesture breaks the user's expectation of the platform.
+      criteria:
+        - method: test
+          text: On 5 screens 3 levels deep the back gesture returns one level at a time, and on a form with unsaved input it shows a confirmation.
+    sv:
+      title: Systemets bakåthandling går till föregående skärm
+      description: Systemets bakåtgest eller bakåtknapp SKA gå tillbaka till appens föregående skärm och be om bekräftelse innan osparad inmatning kastas.
+      rationale: En app som stängs eller tappar data vid bakåtgesten bryter mot användarens förväntningar på plattformen.
+      criteria:
+        - method: test
+          text: På 5 skärmar 3 nivåer ned går bakåtgesten tillbaka en nivå i taget, och i ett formulär med osparad inmatning visas en bekräftelse.
+
+  - id: MOB-04
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [offline, cache]
+    refs: ["ISO/IEC 25010:2023 availability"]
+    tests: [MOB-T04]
+    en:
+      title: Recently opened items readable offline
+      description: The app SHOULD keep the 50 items the user opened most recently on the device and show them without a network connection.
+      rationale: Field and lab staff often lose coverage and still need the instructions they were working on.
+      criteria:
+        - method: test
+          text: In flight mode the 50 most recently opened items open with their full text, and the 51st shows a message that it is unavailable offline.
+          threshold: 50 items
+    sv:
+      title: Senast öppnade poster kan läsas utan uppkoppling
+      description: Appen BÖR spara de 50 poster som användaren senast öppnade på enheten och visa dem utan nätverksanslutning.
+      rationale: Personal i fält och laboratorium tappar ofta täckningen och behöver ändå instruktionerna de arbetar med.
+      criteria:
+        - method: test
+          text: I flygplansläge öppnas de 50 senast öppnade posterna med full text, och den 51:a visar ett meddelande om att den inte finns tillgänglig utan uppkoppling.
+          threshold: 50 poster
+
+  - id: MOB-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [offline, sync]
+    refs: ["ISO/IEC 25010:2023 fault tolerance"]
+    tests: [MOB-T05]
+    en:
+      title: Offline changes synchronised after reconnection
+      description: Changes made without a network connection MUST be kept on the device in the order they were made and sent to the server within 60 seconds after the connection returns.
+      rationale: Users must be able to rely on work done offline reaching the server without repeating it.
+      criteria:
+        - method: test
+          text: Three changes made in flight mode appear on the server in their original order within 60 seconds after flight mode is turned off, also after the app was restarted in between.
+          threshold: ≤ 60 s after reconnection
+    sv:
+      title: Ändringar utan uppkoppling synkroniseras efter återanslutning
+      description: Ändringar som görs utan nätverksanslutning SKA sparas på enheten i den ordning de gjordes och skickas till servern inom 60 sekunder efter att anslutningen har återkommit.
+      rationale: Användare ska kunna lita på att arbete som gjorts utan uppkoppling når servern utan att behöva göras om.
+      criteria:
+        - method: test
+          text: Tre ändringar som görs i flygplansläge syns på servern i sin ursprungliga ordning inom 60 sekunder efter att flygplansläget stängts av, även om appen startats om under tiden.
+          threshold: ≤ 60 s efter återanslutning
+
+  - id: MOB-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [offline, sync, conflict]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [MOB-T06]
+    en:
+      title: Synchronisation conflicts shown to the user
+      description: When an item changed offline was also changed on the server, the app MUST show both versions to the user and keep the server version until the user decides.
+      rationale: Silently overwriting either version loses work and leads to wrong records.
+      criteria:
+        - method: test
+          text: Editing the same field offline on the phone and online in a browser produces a conflict view on the phone, and the server keeps its version until the user chooses.
+    sv:
+      title: Synkroniseringskonflikter visas för användaren
+      description: När en post som ändrats utan uppkoppling också har ändrats på servern SKA appen visa båda versionerna för användaren och behålla serverns version tills användaren har bestämt sig.
+      rationale: Att tyst skriva över någon av versionerna förstör arbete och leder till felaktiga uppgifter.
+      criteria:
+        - method: test
+          text: När samma fält redigeras utan uppkoppling i telefonen och med uppkoppling i en webbläsare visas en konfliktvy i telefonen, och servern behåller sin version tills användaren väljer.
+
+  - id: MOB-07
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [offline, status]
+    refs: ["Nielsen heuristic 1", "WCAG 2.2 SC 4.1.3"]
+    tests: [MOB-T04]
+    en:
+      title: Offline state visible
+      description: The app SHOULD show a visible and announced offline indicator within 5 seconds after the network connection is lost, together with the number of changes waiting to be sent.
+      rationale: Users who know they are offline do not wait for actions that cannot complete.
+      criteria:
+        - method: test
+          text: After flight mode is turned on the indicator appears within 5 seconds, is read by the screen reader and shows the number of queued changes.
+          threshold: ≤ 5 s
+    sv:
+      title: Läget utan uppkoppling syns
+      description: Appen BÖR visa en synlig indikator som även läses upp inom 5 sekunder efter att nätverksanslutningen förlorats, tillsammans med antalet ändringar som väntar på att skickas.
+      rationale: Användare som vet att de saknar uppkoppling väntar inte på handlingar som inte kan slutföras.
+      criteria:
+        - method: test
+          text: Efter att flygplansläget slagits på visas indikatorn inom 5 sekunder, läses upp av skärmläsaren och visar antalet ändringar i kö.
+          threshold: ≤ 5 s
+
+  - id: MOB-08
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [push, permissions]
+    refs: ["Apple Human Interface Guidelines", "Material Design"]
+    tests: [MOB-T07]
+    en:
+      title: Push permission requested in context
+      description: The app SHOULD ask for permission to send push notifications only after the user has turned on a notification type in the app, not already at the first start.
+      rationale: A request without context is often declined, and a declined system prompt is hard to undo.
+      criteria:
+        - method: test
+          text: A fresh installation shows no system permission prompt at the first start; turning on a notification type shows an explanation and then the system prompt.
+    sv:
+      title: Behörighet för push-aviseringar efterfrågas i sitt sammanhang
+      description: Appen BÖR be om behörighet att skicka push-aviseringar först när användaren har slagit på en aviseringstyp i appen, inte redan vid första starten.
+      rationale: En fråga utan sammanhang avböjs ofta, och en avböjd systemfråga är svår att ångra.
+      criteria:
+        - method: test
+          text: En ny installation visar ingen systemfråga om behörighet vid första starten; när en aviseringstyp slås på visas en förklaring och därefter systemfrågan.
+
+  - id: MOB-09
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [push, confidentiality, lock-screen]
+    refs: ["OWASP MASVS-PLATFORM", "ISO/IEC 27001:2022 Annex A 8.12"]
+    tests: [MOB-T07]
+    en:
+      title: No confidential content in push notifications
+      description: A push notification MUST NOT contain more than the item type, its identifier and the kind of event, so that nothing confidential appears on a locked screen.
+      rationale: Lock screens are visible to anyone near the device and notification texts pass through the platform's push service.
+      criteria:
+        - method: inspection
+          text: Each push notification template contains only the item type, identifier and event kind.
+    sv:
+      title: Inget konfidentiellt innehåll i push-aviseringar
+      description: En push-avisering SKA INTE innehålla mer än posttypen, dess identitet och typen av händelse, så att inget konfidentiellt visas på en låst skärm.
+      rationale: Låsskärmar syns för alla i närheten av enheten och aviseringstexter passerar plattformens push-tjänst.
+      criteria:
+        - method: inspection
+          text: Varje mall för push-aviseringar innehåller bara posttyp, identitet och händelsetyp.
+
+  - id: MOB-10
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [push, deep-link]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [MOB-T07]
+    en:
+      title: Notification opens the related item
+      description: Tapping a push notification MUST open the item it refers to, after sign-in when the session has ended.
+      rationale: A notification that only opens the start screen forces the user to search for the item.
+      criteria:
+        - method: test
+          text: Tapping a notification about test run TR-12 opens TR-12, both with an active session and after the session expired and the user signed in again.
+    sv:
+      title: Aviseringen öppnar posten den gäller
+      description: Ett tryck på en push-avisering SKA öppna posten som aviseringen gäller, efter inloggning när sessionen har upphört.
+      rationale: En avisering som bara öppnar startskärmen tvingar användaren att leta efter posten.
+      criteria:
+        - method: test
+          text: Ett tryck på en avisering om körningen TR-12 öppnar TR-12, både med aktiv session och efter att sessionen gått ut och användaren loggat in igen.
+
+  - id: MOB-11
+    type: usability
+    obligation: must
+    priority: high
+    tags: [touch-targets, accessibility]
+    refs: ["WCAG 2.2 SC 2.5.8", "Apple Human Interface Guidelines", "Material Design"]
+    tests: [MOB-T08]
+    en:
+      title: Touch targets of platform size
+      description: Each interactive element of the app MUST have a touch target of at least 44 by 44 points on iOS and 48 by 48 density-independent pixels on Android.
+      rationale: Small targets cause wrong taps, especially for users with tremor or large fingers.
+      criteria:
+        - method: inspection
+          text: An accessibility scanner on the 10 most used screens reports no touch target below the platform size.
+          threshold: ≥ 44 × 44 pt (iOS), ≥ 48 × 48 dp (Android)
+    sv:
+      title: Pekytor i plattformens storlek
+      description: Varje interaktivt element i appen SKA ha en pekyta på minst 44 gånger 44 punkter i iOS och 48 gånger 48 densitetsoberoende pixlar i Android.
+      rationale: Små pekytor ger feltryck, särskilt för användare med darrningar eller grova fingrar.
+      criteria:
+        - method: inspection
+          text: En tillgänglighetsskanner på de 10 mest använda skärmarna rapporterar ingen pekyta under plattformens storlek.
+          threshold: ≥ 44 × 44 pt (iOS), ≥ 48 × 48 dp (Android)
+
+  - id: MOB-12
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [orientation, accessibility]
+    refs: ["WCAG 2.2 SC 1.3.4"]
+    tests: [MOB-T09]
+    en:
+      title: Portrait and landscape orientation
+      description: Each screen of the app MUST work in both portrait and landscape orientation, keeping entered input when the orientation changes.
+      rationale: Users with a device mounted on a wheelchair or a stand cannot rotate it.
+      criteria:
+        - method: test
+          text: Rotating the device on 10 screens shows the full content in both orientations, and a half-filled form keeps its input.
+    sv:
+      title: Stående och liggande orientering
+      description: Varje skärm i appen SKA fungera i både stående och liggande orientering och behålla inmatade värden när orienteringen ändras.
+      rationale: Användare med enheten monterad på en rullstol eller ett stativ kan inte vrida den.
+      criteria:
+        - method: test
+          text: När enheten vrids på 10 skärmar visas hela innehållet i båda orienteringarna, och ett halvifyllt formulär behåller sin inmatning.
+
+  - id: MOB-13
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [start-time, performance]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    tests: [MOB-T10]
+    en:
+      title: Cold start within 2 seconds
+      description: On the reference device the app SHOULD show its first interactive screen within 2 seconds of a cold start for 90 percent of starts.
+      rationale: Slow starts make users leave the app before they reach their task.
+      criteria:
+        - method: test
+          text: Of 20 cold starts on each reference device, at least 18 show the first interactive screen within 2 seconds.
+          threshold: ≤ 2 s for 90 % of cold starts
+    sv:
+      title: Kallstart inom 2 sekunder
+      description: På referensenheten BÖR appen visa sin första interaktiva skärm inom 2 sekunder efter en kallstart vid 90 procent av starterna.
+      rationale: Långsamma starter får användare att lämna appen innan de når sin uppgift.
+      criteria:
+        - method: test
+          text: Av 20 kallstarter på varje referensenhet visar minst 18 den första interaktiva skärmen inom 2 sekunder.
+          threshold: ≤ 2 s för 90 % av kallstarterna
+
+  - id: MOB-14
+    type: security
+    obligation: must
+    priority: critical
+    tags: [local-storage, encryption, sign-out]
+    refs: ["OWASP MASVS-STORAGE", "OWASP MASVS-CRYPTO"]
+    tests: [MOB-T11]
+    en:
+      title: Data on the device protected and removed at sign-out
+      description: The app MUST keep cached items and tokens encrypted with keys held by the platform's key store and MUST delete them when the user signs out.
+      rationale: Lost or shared phones must not expose the organisation's data.
+      criteria:
+        - method: inspection
+          text: A file system dump of a test device shows no readable item text or token, and after sign-out the app's storage holds no cached items or tokens.
+    sv:
+      title: Data på enheten skyddas och tas bort vid utloggning
+      description: Appen SKA hålla cachade poster och token krypterade med nycklar som förvaras i plattformens nyckellager och radera dem när användaren loggar ut.
+      rationale: Borttappade eller delade telefoner får inte röja organisationens data.
+      criteria:
+        - method: inspection
+          text: En avbildning av filsystemet på en testenhet visar ingen läsbar posttext eller token, och efter utloggning innehåller appens lagring inga cachade poster eller token.
+
+  - id: MOB-15
+    type: usability
+    obligation: must
+    priority: high
+    tags: [font-size, accessibility]
+    refs: ["WCAG 2.2 SC 1.4.4", "Apple Human Interface Guidelines", "Material Design"]
+    tests: [MOB-T09]
+    en:
+      title: System font size respected
+      description: The app MUST scale its text with the operating system's font size setting up to 200 percent without cutting off or overlapping text.
+      rationale: Many users with low vision rely on the system font size rather than a zoom function.
+      criteria:
+        - method: test
+          text: With the largest standard system font size, the 10 most used screens show all text without truncation or overlap.
+          threshold: up to 200 %
+    sv:
+      title: Systemets textstorlek respekteras
+      description: Appen SKA skala sin text med operativsystemets inställning för textstorlek upp till 200 procent utan att text klipps eller överlappar.
+      rationale: Användare med nedsatt syn förlitar sig ofta på systemets textstorlek snarare än på en zoomfunktion.
+      criteria:
+        - method: test
+          text: Med systemets största vanliga textstorlek visar de 10 mest använda skärmarna hela texten utan avkortning eller överlappning.
+          threshold: upp till 200 %
+
+tests:
+  - id: MOB-T01
+    priority: high
+    execution: automated
+    tags: [platform-versions]
+    refs: ["ISO/IEC 25010:2023 compatibility"]
+    en:
+      title: Smoke tests on the supported platform versions
+      description: The release pipeline runs the smoke test suite on devices or emulators with each supported major version.
+      preconditions: A device farm with the current and the 2 previous major versions of iOS and Android.
+      expected: The suite passes on all 6 platform versions.
+      steps:
+        - action: Run the smoke tests on the 3 iOS versions.
+          expected: Each run passes without failures.
+        - action: Run the smoke tests on the 3 Android versions.
+          expected: Each run passes without failures.
+        - action: Try to install the app on the next older major version of each platform.
+          expected: The store or the app states that the version is not supported.
+    sv:
+      title: Röktester på plattformsversionerna som stöds
+      description: Releaseflödet kör röktesterna på enheter eller emulatorer med varje huvudversion som stöds.
+      preconditions: En enhetspark med den aktuella och de 2 föregående huvudversionerna av iOS och Android.
+      expected: Testerna går igenom på alla 6 plattformsversionerna.
+      steps:
+        - action: Kör röktesterna på de 3 iOS-versionerna.
+          expected: Varje körning går igenom utan fel.
+        - action: Kör röktesterna på de 3 Android-versionerna.
+          expected: Varje körning går igenom utan fel.
+        - action: Försök installera appen på närmast äldre huvudversion av varje plattform.
+          expected: Butiken eller appen anger att versionen inte stöds.
+
+  - id: MOB-T02
+    priority: medium
+    execution: manual
+    tags: [platform-guidelines]
+    refs: ["Apple Human Interface Guidelines", "Material Design"]
+    en:
+      title: Review against the platform design guidelines
+      description: A designer reviews the most used screens on both platforms against the platform guidelines.
+      preconditions: The app on one iOS and one Android device, the list of the 10 most used screens and the documented deviations.
+      expected: Every deviation found is documented and justified.
+      steps:
+        - action: On each screen compare the navigation bar, tab bar and back navigation with the guidelines.
+          expected: The patterns match the platform or are listed as deviations.
+        - action: Compare the date pickers, switches, menus and share action with the platform's system controls.
+          expected: System controls are used or the deviation is listed.
+        - action: Try the platform's standard gestures, such as swipe back on iOS and pull to refresh.
+          expected: The gestures behave as on the platform's own apps.
+    sv:
+      title: Granskning mot plattformarnas designriktlinjer
+      description: En designer granskar de mest använda skärmarna på båda plattformarna mot plattformarnas riktlinjer.
+      preconditions: Appen på en iOS- och en Android-enhet, listan över de 10 mest använda skärmarna och de dokumenterade avvikelserna.
+      expected: Varje avvikelse som hittas är dokumenterad och motiverad.
+      steps:
+        - action: Jämför på varje skärm navigeringsfältet, flikfältet och bakåtnavigeringen med riktlinjerna.
+          expected: Mönstren följer plattformen eller finns listade som avvikelser.
+        - action: Jämför datumväljare, reglage, menyer och delningsfunktion med plattformens systemkontroller.
+          expected: Systemkontroller används eller avvikelsen är listad.
+        - action: Pröva plattformens vanliga gester, till exempel svep bakåt i iOS och dra för att uppdatera.
+          expected: Gesterna fungerar som i plattformens egna appar.
+
+  - id: MOB-T03
+    priority: high
+    execution: manual
+    tags: [navigation, back]
+    refs: []
+    en:
+      title: Back navigation and unsaved input
+      description: Navigates three levels deep and uses the system back action, also from a form with unsaved input.
+      preconditions: The app on an Android device with gesture navigation and a signed-in user.
+      expected: Back returns one level at a time and unsaved input is not lost without confirmation.
+      steps:
+        - action: Open a project, a requirement in it and the requirement's test list, then use the back gesture three times.
+          expected: Each gesture returns one level, and the third returns to the project list.
+        - action: Open the edit form of a requirement, change the title and use the back gesture.
+          expected: A confirmation asks whether to discard the change.
+        - action: Choose to stay.
+          expected: The form is still open with the changed title.
+    sv:
+      title: Bakåtnavigering och osparad inmatning
+      description: Navigerar tre nivåer ned och använder systemets bakåthandling, även från ett formulär med osparad inmatning.
+      preconditions: Appen på en Android-enhet med gestnavigering och en inloggad användare.
+      expected: Bakåt går tillbaka en nivå i taget och osparad inmatning försvinner inte utan bekräftelse.
+      steps:
+        - action: Öppna ett projekt, ett krav i det och kravets testfallslista, och använd sedan bakåtgesten tre gånger.
+          expected: Varje gest går tillbaka en nivå, och den tredje leder till projektlistan.
+        - action: Öppna redigeringsformuläret för ett krav, ändra titeln och använd bakåtgesten.
+          expected: En bekräftelse frågar om ändringen ska kastas.
+        - action: Välj att stanna kvar.
+          expected: Formuläret är fortfarande öppet med den ändrade titeln.
+
+  - id: MOB-T04
+    priority: medium
+    execution: manual
+    tags: [offline, status]
+    refs: []
+    en:
+      title: Offline indicator and reading cached items
+      description: Opens items, turns on flight mode and checks the indicator and the cached items.
+      preconditions: A signed-in user who has opened 51 different items in the app, a screen reader running.
+      expected: The indicator appears within 5 seconds and the 50 most recent items can be read offline.
+      steps:
+        - action: Turn on flight mode and time the offline indicator.
+          expected: The indicator appears within 5 seconds and the screen reader announces it.
+        - action: Open the most recently opened item and the 50th most recent.
+          expected: Both open with their full text.
+        - action: Open the item that was opened first.
+          expected: A message states that the item is not available offline.
+        - action: Make one change and look at the indicator.
+          expected: The indicator shows 1 change waiting to be sent.
+    sv:
+      title: Indikator utan uppkoppling och läsning av cachade poster
+      description: Öppnar poster, slår på flygplansläget och kontrollerar indikatorn och de cachade posterna.
+      preconditions: En inloggad användare som har öppnat 51 olika poster i appen, och en skärmläsare igång.
+      expected: Indikatorn visas inom 5 sekunder och de 50 senaste posterna kan läsas utan uppkoppling.
+      steps:
+        - action: Slå på flygplansläget och ta tid på indikatorn.
+          expected: Indikatorn visas inom 5 sekunder och skärmläsaren läser upp den.
+        - action: Öppna den senast öppnade posten och den 50:e senaste.
+          expected: Båda öppnas med full text.
+        - action: Öppna posten som öppnades först.
+          expected: Ett meddelande anger att posten inte finns tillgänglig utan uppkoppling.
+        - action: Gör en ändring och titta på indikatorn.
+          expected: Indikatorn visar 1 ändring som väntar på att skickas.
+
+  - id: MOB-T05
+    priority: high
+    execution: manual
+    tags: [offline, sync]
+    refs: []
+    en:
+      title: Offline changes reach the server in order
+      description: Makes three changes offline, restarts the app and reconnects.
+      preconditions: A signed-in user, the app in flight mode, and a browser session on another device to watch the server data.
+      expected: The three changes reach the server in their original order within 60 seconds.
+      steps:
+        - action: Record the results of 3 test steps in flight mode in a fixed order.
+          expected: The app accepts the changes and shows 3 queued changes.
+          data: "step 1 passed, step 2 failed, step 3 passed"
+        - action: Close the app completely and open it again, still in flight mode.
+          expected: The 3 changes are still queued.
+        - action: Turn off flight mode and watch the browser session.
+          expected: Within 60 seconds the 3 results appear on the server with timestamps in the original order.
+    sv:
+      title: Ändringar utan uppkoppling når servern i ordning
+      description: Gör tre ändringar utan uppkoppling, startar om appen och ansluter igen.
+      preconditions: En inloggad användare, appen i flygplansläge och en webbläsarsession på en annan enhet för att följa serverns data.
+      expected: De tre ändringarna når servern i sin ursprungliga ordning inom 60 sekunder.
+      steps:
+        - action: Registrera resultatet av 3 teststeg i flygplansläge i en bestämd ordning.
+          expected: Appen tar emot ändringarna och visar 3 ändringar i kö.
+          data: "steg 1 godkänt, steg 2 underkänt, steg 3 godkänt"
+        - action: Stäng appen helt och öppna den igen, fortfarande i flygplansläge.
+          expected: De 3 ändringarna finns kvar i kön.
+        - action: Stäng av flygplansläget och följ webbläsarsessionen.
+          expected: Inom 60 sekunder syns de 3 resultaten på servern med tidsstämplar i den ursprungliga ordningen.
+
+  - id: MOB-T06
+    priority: high
+    execution: manual
+    tags: [offline, conflict]
+    refs: []
+    en:
+      title: Conflict between an offline and an online change
+      description: Changes the same field offline on the phone and online in a browser, then reconnects the phone.
+      preconditions: A requirement opened on the phone and in a browser by the same user.
+      expected: The phone shows both versions and the server keeps its version until the user chooses.
+      steps:
+        - action: On the phone in flight mode change the title to "Title A".
+          expected: The change is queued.
+          data: Title A
+        - action: In the browser change the same title to "Title B" and save.
+          expected: The server stores "Title B".
+          data: Title B
+        - action: Turn off flight mode on the phone.
+          expected: The phone shows a conflict view with "Title A" and "Title B", and the server still holds "Title B".
+        - action: Choose "Title A" on the phone.
+          expected: The server stores "Title A" and the history shows both changes.
+    sv:
+      title: Konflikt mellan en ändring utan och en med uppkoppling
+      description: Ändrar samma fält utan uppkoppling i telefonen och med uppkoppling i en webbläsare och ansluter sedan telefonen.
+      preconditions: Ett krav som är öppet i telefonen och i en webbläsare av samma användare.
+      expected: Telefonen visar båda versionerna och servern behåller sin version tills användaren väljer.
+      steps:
+        - action: Ändra i telefonen i flygplansläge titeln till "Titel A".
+          expected: Ändringen läggs i kö.
+          data: Titel A
+        - action: Ändra i webbläsaren samma titel till "Titel B" och spara.
+          expected: Servern sparar "Titel B".
+          data: Titel B
+        - action: Stäng av flygplansläget i telefonen.
+          expected: Telefonen visar en konfliktvy med "Titel A" och "Titel B", och servern har fortfarande "Titel B".
+        - action: Välj "Titel A" i telefonen.
+          expected: Servern sparar "Titel A" och historiken visar båda ändringarna.
+
+  - id: MOB-T07
+    priority: high
+    execution: manual
+    tags: [push]
+    refs: ["OWASP MASVS-PLATFORM"]
+    en:
+      title: Push permission, content and opening the item
+      description: Installs the app afresh, turns on a notification type and checks the prompt, the lock screen text and the link.
+      preconditions: A device without the app, a test user who is assigned to test run TR-12, and a way to trigger an event on TR-12.
+      expected: The prompt comes in context, the lock screen shows no confidential text, and the notification opens TR-12.
+      steps:
+        - action: Install and start the app and sign in.
+          expected: No system prompt for notifications is shown.
+        - action: Turn on notifications for assigned test runs.
+          expected: An explanation is shown, followed by the system prompt; allow it.
+        - action: Lock the device and trigger a comment on TR-12.
+          expected: The lock screen shows only the item type, "TR-12" and the event kind, without the comment text.
+        - action: Wait until the session has expired, then tap the notification.
+          expected: After sign-in the app opens TR-12.
+    sv:
+      title: Behörighet, innehåll och öppning av posten för push-aviseringar
+      description: Installerar appen på nytt, slår på en aviseringstyp och kontrollerar frågan, texten på låsskärmen och länken.
+      preconditions: En enhet utan appen, en testanvändare som är tilldelad körningen TR-12 och ett sätt att utlösa en händelse på TR-12.
+      expected: Frågan kommer i sitt sammanhang, låsskärmen visar ingen konfidentiell text och aviseringen öppnar TR-12.
+      steps:
+        - action: Installera och starta appen och logga in.
+          expected: Ingen systemfråga om aviseringar visas.
+        - action: Slå på aviseringar för tilldelade körningar.
+          expected: En förklaring visas följd av systemfrågan; tillåt aviseringar.
+        - action: Lås enheten och utlös en kommentar på TR-12.
+          expected: Låsskärmen visar bara posttyp, "TR-12" och händelsetyp, utan kommentarens text.
+        - action: Vänta tills sessionen har gått ut och tryck sedan på aviseringen.
+          expected: Efter inloggning öppnar appen TR-12.
+
+  - id: MOB-T08
+    priority: high
+    execution: automated
+    tags: [touch-targets]
+    refs: ["WCAG 2.2 SC 2.5.8"]
+    en:
+      title: Touch target sizes measured
+      description: UI tests run the platform accessibility checks on the most used screens and report undersized targets.
+      preconditions: UI test suites for iOS and Android with the platform accessibility checks enabled.
+      expected: No interactive element is below the platform size.
+      steps:
+        - action: Run the iOS UI tests with the accessibility audit on the 10 most used screens.
+          expected: No element is reported below 44 by 44 points.
+          data: 44 × 44 pt
+        - action: Run the Android UI tests with the accessibility checks on the same screens.
+          expected: No element is reported below 48 by 48 dp.
+          data: 48 × 48 dp
+    sv:
+      title: Pekytornas storlek mäts
+      description: Gränssnittstester kör plattformarnas tillgänglighetskontroller på de mest använda skärmarna och rapporterar för små pekytor.
+      preconditions: Gränssnittstester för iOS och Android med plattformarnas tillgänglighetskontroller påslagna.
+      expected: Inget interaktivt element är mindre än plattformens storlek.
+      steps:
+        - action: Kör gränssnittstesterna för iOS med tillgänglighetsgranskning på de 10 mest använda skärmarna.
+          expected: Inget element rapporteras under 44 gånger 44 punkter.
+          data: 44 × 44 pt
+        - action: Kör gränssnittstesterna för Android med tillgänglighetskontrollerna på samma skärmar.
+          expected: Inget element rapporteras under 48 gånger 48 dp.
+          data: 48 × 48 dp
+
+  - id: MOB-T09
+    priority: medium
+    execution: manual
+    tags: [orientation, font-size]
+    refs: ["WCAG 2.2 SC 1.3.4", "WCAG 2.2 SC 1.4.4"]
+    en:
+      title: Orientation and largest system font size
+      description: Rotates the device on the main screens and repeats the check with the largest system font size.
+      preconditions: A phone with the app, a signed-in user and the list of the 10 most used screens.
+      expected: Every screen works in both orientations and at the largest font size without lost input or cut text.
+      steps:
+        - action: Open each screen in portrait orientation and rotate to landscape.
+          expected: The full content is shown in both orientations.
+        - action: Half fill a form and rotate the device twice.
+          expected: The input is unchanged.
+        - action: Set the system font size to the largest standard value and open each screen.
+          expected: All text is shown without truncation or overlap.
+    sv:
+      title: Orientering och systemets största textstorlek
+      description: Vrider enheten på huvudskärmarna och upprepar kontrollen med systemets största textstorlek.
+      preconditions: En telefon med appen, en inloggad användare och listan över de 10 mest använda skärmarna.
+      expected: Varje skärm fungerar i båda orienteringarna och med största textstorlek utan förlorad inmatning eller klippt text.
+      steps:
+        - action: Öppna varje skärm i stående orientering och vrid till liggande.
+          expected: Hela innehållet visas i båda orienteringarna.
+        - action: Fyll i halva formuläret och vrid enheten två gånger.
+          expected: Inmatningen är oförändrad.
+        - action: Ställ in systemets textstorlek på det största vanliga värdet och öppna varje skärm.
+          expected: All text visas utan avkortning eller överlappning.
+
+  - id: MOB-T10
+    priority: medium
+    execution: automated
+    tags: [start-time, performance]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
+    en:
+      title: Cold start time on reference devices
+      description: A performance script cold-starts the app 20 times on each reference device and measures the time to the first interactive screen.
+      preconditions: One reference device per platform, the release build installed and a signed-in user.
+      expected: At least 18 of 20 cold starts per device reach the first interactive screen within 2 seconds.
+      steps:
+        - action: Force-stop the app, clear it from memory and start it, 20 times per device, recording the time to the first interactive screen.
+          expected: 20 measurements per device are recorded.
+          data: 20 cold starts
+        - action: Count the measurements of 2 seconds or less.
+          expected: At least 18 per device.
+          data: ≤ 2 s
+    sv:
+      title: Kallstartstid på referensenheter
+      description: Ett prestandaskript kallstartar appen 20 gånger på varje referensenhet och mäter tiden till den första interaktiva skärmen.
+      preconditions: En referensenhet per plattform, releaseversionen installerad och en inloggad användare.
+      expected: Minst 18 av 20 kallstarter per enhet når den första interaktiva skärmen inom 2 sekunder.
+      steps:
+        - action: Tvångsstoppa appen, rensa den ur minnet och starta den, 20 gånger per enhet, och registrera tiden till den första interaktiva skärmen.
+          expected: 20 mätvärden per enhet registreras.
+          data: 20 kallstarter
+        - action: Räkna mätvärdena som är 2 sekunder eller kortare.
+          expected: Minst 18 per enhet.
+          data: ≤ 2 s
+
+  - id: MOB-T11
+    priority: critical
+    execution: manual
+    tags: [local-storage, encryption]
+    refs: ["OWASP MASVS-STORAGE"]
+    en:
+      title: Device storage inspected before and after sign-out
+      description: A security tester inspects the app's storage on a test device while signed in and after sign-out.
+      preconditions: A test device with file system access for testing, the app with 20 cached items and a signed-in test user.
+      expected: Cached data and tokens are unreadable while signed in and absent after sign-out.
+      steps:
+        - action: Copy the app's data directory and search it for the title of a cached item and for the session token.
+          expected: Neither is found in readable form.
+        - action: Check where the encryption key is kept.
+          expected: The key is held by the platform's key store and not in the app's files.
+        - action: Sign out, copy the data directory again and search it.
+          expected: No cached item and no token remains.
+    sv:
+      title: Enhetens lagring granskas före och efter utloggning
+      description: En säkerhetstestare granskar appens lagring på en testenhet medan användaren är inloggad och efter utloggning.
+      preconditions: En testenhet med åtkomst till filsystemet för test, appen med 20 cachade poster och en inloggad testanvändare.
+      expected: Cachade data och token är oläsbara under inloggning och borta efter utloggning.
+      steps:
+        - action: Kopiera appens datakatalog och sök i den efter titeln på en cachad post och efter sessionens token.
+          expected: Inget av dem hittas i läsbar form.
+        - action: Kontrollera var krypteringsnyckeln förvaras.
+          expected: Nyckeln förvaras i plattformens nyckellager och inte i appens filer.
+        - action: Logga ut, kopiera datakatalogen igen och sök i den.
+          expected: Ingen cachad post och ingen token finns kvar.
