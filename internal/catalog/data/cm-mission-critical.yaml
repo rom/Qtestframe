@@ -1,0 +1,602 @@
+area: cm-mission-critical
+prefix: CMMC
+group: quality
+catalogue: communications
+name: {en: Mission-critical communications, sv: Verksamhetskritisk kommunikation}
+description:
+  en: Group communication for emergency services, utilities and other users who rely on it in a crisis, with access time and voice delay, priority and pre-emption, emergency alerts, direct mode, backup power, a fallback dispatch centre, end-to-end encryption, interworking with land mobile radio, recording and exercises.
+  sv: Gruppkommunikation för räddningstjänst, energibolag och andra som är beroende av den i en kris, med tillträdestid och talfördröjning, prioritet och undanträngning, nödlarm, direktläge, reservkraft, reservledningscentral, totalsträckskryptering, samtrafik med landmobil radio, inspelning och övningar.
+
+requirements:
+  - id: CMMC-01
+    type: performance
+    obligation: must
+    priority: critical
+    tags: [push-to-talk, access-time, mcptt]
+    refs: ["3GPP TS 22.179 (MCPTT performance)"]
+    tests: [CMMC-T01]
+    en:
+      title: Talk permission within 300 ms in a group call
+      description: The system MUST give a user talk permission in an ongoing group call within 300 ms after the push-to-talk button is pressed for 95 % of the requests.
+      rationale: Responders talk in short bursts, and a delay before talking cuts off the first words of each message.
+      criteria:
+        - method: test
+          text: Of 200 talk requests in an ongoing group call under normal load, at least 95 % are granted within 300 ms.
+          threshold: ≤ 300 ms for 95 %
+    sv:
+      title: Taltillstånd inom 300 ms i ett gruppsamtal
+      description: Systemet SKA ge en användare taltillstånd i ett pågående gruppsamtal inom 300 ms efter att sändknappen tryckts in för 95 % av förfrågningarna.
+      rationale: Insatspersonal talar i korta stötar, och en fördröjning innan talet släpps fram klipper bort de första orden i varje meddelande.
+      criteria:
+        - method: test
+          text: Av 200 förfrågningar om taltillstånd i ett pågående gruppsamtal under normal last beviljas minst 95 % inom 300 ms.
+          threshold: ≤ 300 ms för 95 %
+
+  - id: CMMC-02
+    type: performance
+    obligation: must
+    priority: high
+    tags: [voice-delay, mouth-to-ear, mcptt]
+    refs: ["3GPP TS 22.179 (MCPTT performance)"]
+    tests: [CMMC-T01]
+    en:
+      title: Voice delay from speaker to listener at most 300 ms
+      description: The system MUST deliver speech from the talking terminal to the listening terminals of a group with a mouth-to-ear delay of at most 300 ms for 95 % of the measurements.
+      rationale: Longer delays make listeners answer before the speaker has finished, which causes collisions on a shared talk group.
+      criteria:
+        - method: test
+          text: Measurements with an audio delay meter between 2 terminals in the same group show at most 300 ms for at least 95 % of 100 samples.
+          threshold: ≤ 300 ms for 95 %
+    sv:
+      title: Talfördröjning från talare till lyssnare högst 300 ms
+      description: Systemet SKA överföra tal från den talande terminalen till gruppens lyssnande terminaler med en fördröjning från mun till öra på högst 300 ms för 95 % av mätningarna.
+      rationale: Längre fördröjning gör att lyssnarna svarar innan talaren är klar, vilket ger krockar i en gemensam talgrupp.
+      criteria:
+        - method: test
+          text: Mätningar med en mätare för ljudfördröjning mellan 2 terminaler i samma grupp visar högst 300 ms för minst 95 % av 100 mätvärden.
+          threshold: ≤ 300 ms för 95 %
+
+  - id: CMMC-03
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [priority, pre-emption, emergency-call]
+    refs: ["3GPP TS 22.280 (priority and pre-emption)"]
+    tests: [CMMC-T02]
+    en:
+      title: Emergency group call pre-empts lower-priority calls
+      description: When a radio cell has no free capacity, the system MUST set up an emergency group call within 1 second by pre-empting the ongoing call with the lowest priority.
+      rationale: In a major incident the network fills up, and an emergency call that waits for free capacity can cost lives.
+      criteria:
+        - method: test
+          text: With a test cell filled by calls of normal priority, an emergency group call is set up within 1 second and one normal-priority call is released.
+          threshold: ≤ 1 s
+    sv:
+      title: Nödgruppsamtal tränger undan samtal med lägre prioritet
+      description: När en radiocell saknar ledig kapacitet SKA systemet koppla upp ett nödgruppsamtal inom 1 sekund genom att tränga undan det pågående samtalet med lägst prioritet.
+      rationale: Vid en omfattande händelse fylls nätet, och ett nödsamtal som väntar på ledig kapacitet kan kosta liv.
+      criteria:
+        - method: test
+          text: När en testcell är fylld med samtal med normal prioritet kopplas ett nödgruppsamtal upp inom 1 sekund och ett samtal med normal prioritet kopplas ner.
+          threshold: ≤ 1 s
+
+  - id: CMMC-04
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [emergency-alert, location, dispatch]
+    refs: ["3GPP TS 22.280 (emergency alert)"]
+    tests: [CMMC-T03]
+    en:
+      title: Emergency alert reaches the dispatcher within 2 seconds
+      description: When a user presses the emergency button, the system MUST show the alert with the user's identity, talk group and last known position at the dispatch position within 2 seconds.
+      rationale: The emergency button is used when the user cannot talk, so the identity and the position are all the dispatcher has to send help.
+      criteria:
+        - method: test
+          text: Pressing the emergency button on a test terminal shows an alert with identity, group and a position no older than 30 seconds at the dispatch position within 2 seconds.
+          threshold: ≤ 2 s
+    sv:
+      title: Nödlarm når operatören inom 2 sekunder
+      description: När en användare trycker på nödknappen SKA systemet visa larmet med användarens identitet, talgrupp och senast kända position på operatörsplatsen inom 2 sekunder.
+      rationale: Nödknappen används när användaren inte kan tala, så identiteten och positionen är det enda operatören har för att skicka hjälp.
+      criteria:
+        - method: test
+          text: När nödknappen trycks på en testterminal visas ett larm med identitet, grupp och en position som är högst 30 sekunder gammal på operatörsplatsen inom 2 sekunder.
+          threshold: ≤ 2 s
+
+  - id: CMMC-05
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [availability, service-level]
+    refs: ["ITIL 4 Availability management"]
+    tests: [CMMC-T04]
+    en:
+      title: Group communication available 99.999 % of the year
+      description: The group communication service MUST be available in the agreed coverage area for at least 99.999 % of each year, counting each minute in which group calls cannot be set up as unavailable.
+      rationale: A mission-critical service is needed exactly during storms, fires and power cuts, so the target leaves at most about 5 minutes of downtime a year.
+      criteria:
+        - method: analysis
+          text: The availability report for the last 12 months shows at least 99.999 % with each outage minute counted.
+          threshold: ≥ 99.999 % per year
+    sv:
+      title: Gruppkommunikation tillgänglig 99,999 % av året
+      description: Tjänsten för gruppkommunikation SKA vara tillgänglig i det avtalade täckningsområdet minst 99,999 % av varje år, där varje minut då gruppsamtal inte går att koppla upp räknas som otillgänglig.
+      rationale: En verksamhetskritisk tjänst behövs just vid stormar, bränder och strömavbrott, så målet ger högst runt 5 minuters avbrott per år.
+      criteria:
+        - method: analysis
+          text: Tillgänglighetsrapporten för de senaste 12 månaderna visar minst 99,999 % med varje avbrottsminut medräknad.
+          threshold: ≥ 99,999 % per år
+
+  - id: CMMC-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [direct-mode, off-network, resilience]
+    refs: ["3GPP TS 22.179 (off-network)", "ETSI EN 300 396"]
+    tests: [CMMC-T05]
+    en:
+      title: Group calls in direct mode without the network
+      description: Terminals MUST set up group calls directly between each other, without any base station, at a distance of at least 1 km in open terrain.
+      rationale: Responders inside tunnels and collapsed buildings or in areas where the network is down still have to talk to each other.
+      criteria:
+        - method: test
+          text: With the network switched off, 2 terminals 1 km apart in open terrain hold a direct mode group call with understandable speech.
+          threshold: ≥ 1 km in open terrain
+    sv:
+      title: Gruppsamtal i direktläge utan nätet
+      description: Terminalerna SKA koppla upp gruppsamtal direkt mellan varandra, utan basstation, på ett avstånd av minst 1 km i öppen terräng.
+      rationale: Insatspersonal i tunnlar, rasade byggnader eller områden där nätet ligger nere behöver fortfarande tala med varandra.
+      criteria:
+        - method: test
+          text: När nätet är avstängt håller 2 terminaler 1 km från varandra i öppen terräng ett gruppsamtal i direktläge med begripligt tal.
+          threshold: ≥ 1 km i öppen terräng
+
+  - id: CMMC-07
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [backup-power, base-station, resilience]
+    refs: []
+    tests: [CMMC-T06]
+    en:
+      title: Base station sites run 8 hours without mains power
+      description: Each base station site MUST keep carrying group calls for at least 8 hours after the loss of mains power, on batteries or a backup generator.
+      rationale: Storms that cut power also create the incidents that responders have to handle, and a site that dies with the mains leaves them without coverage.
+      criteria:
+        - method: test
+          text: With mains power disconnected at a chosen site, the site carries a group call every hour for 8 hours.
+          threshold: ≥ 8 h
+        - method: inspection
+          text: The site register shows the battery capacity or generator fuel of each site, calculated for at least 8 hours at full load.
+    sv:
+      title: Basstationsplatser drivs i 8 timmar utan nätström
+      description: Varje basstationsplats SKA fortsätta att föra gruppsamtal i minst 8 timmar efter bortfall av nätström, på batterier eller reservelverk.
+      rationale: Stormar som slår ut strömmen skapar också de händelser som insatspersonalen behöver hantera, och en plats som slocknar med elnätet lämnar dem utan täckning.
+      criteria:
+        - method: test
+          text: När nätströmmen är bortkopplad på en vald plats för platsen ett gruppsamtal varje timme i 8 timmar.
+          threshold: ≥ 8 h
+        - method: inspection
+          text: Platsregistret visar batterikapacitet eller bränslemängd för varje plats, beräknad för minst 8 timmar vid full last.
+
+  - id: CMMC-08
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [dispatch, fallback-site, continuity]
+    refs: ["ISO 22301:2019 §8.4"]
+    tests: [CMMC-T07]
+    en:
+      title: Fallback dispatch centre takes over within 15 minutes
+      description: The organisation MUST keep a fallback dispatch centre at another location that takes over each talk group and the emergency alerts within 15 minutes after the main centre is evacuated or loses its connection.
+      rationale: A fire or power failure in the dispatch centre should not silence the responders in the field.
+      criteria:
+        - method: test
+          text: In an exercise, the fallback centre answers a test emergency alert and talks in each talk group within 15 minutes after the main centre is disconnected.
+          threshold: ≤ 15 min
+    sv:
+      title: Reservledningscentralen tar över inom 15 minuter
+      description: Organisationen SKA ha en reservledningscentral på en annan plats som tar över varje talgrupp och nödlarmen inom 15 minuter efter att den ordinarie centralen utrymts eller tappat anslutningen.
+      rationale: En brand eller ett strömavbrott i ledningscentralen ska inte tysta insatspersonalen ute på fältet.
+      criteria:
+        - method: test
+          text: Vid en övning besvarar reservcentralen ett testnödlarm och talar i varje talgrupp inom 15 minuter efter att den ordinarie centralen kopplats bort.
+          threshold: ≤ 15 min
+
+  - id: CMMC-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [end-to-end-encryption, group-call, keys]
+    refs: ["3GPP TS 33.180", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CMMC-T08]
+    en:
+      title: Group calls encrypted end to end
+      description: The system MUST encrypt group call speech and data end to end between the terminals with keys that are managed by the user organisation and not by the network operator.
+      rationale: Responders exchange personal and operational information, and end-to-end keys keep it confidential even from the operator of a shared network.
+      criteria:
+        - method: test
+          text: A capture at the network operator's core during a test group call contains no readable speech, and a terminal without the current group key cannot follow the call.
+        - method: inspection
+          text: The key management procedure assigns key generation and distribution to the user organisation.
+    sv:
+      title: Gruppsamtal krypteras hela vägen
+      description: Systemet SKA kryptera tal och data i gruppsamtal hela vägen mellan terminalerna med nycklar som hanteras av användarorganisationen och inte av nätoperatören.
+      rationale: Insatspersonal utbyter personuppgifter och operativ information, och nycklar hela vägen håller den konfidentiell även för operatören av ett delat nät.
+      criteria:
+        - method: test
+          text: En inspelning i nätoperatörens kärnnät under ett testgruppsamtal innehåller inget läsbart tal, och en terminal utan den aktuella gruppnyckeln kan inte följa samtalet.
+        - method: inspection
+          text: Rutinen för nyckelhantering lägger generering och distribution av nycklar hos användarorganisationen.
+
+  - id: CMMC-10
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [interworking, land-mobile-radio, tetra]
+    refs: ["3GPP TS 23.283"]
+    tests: [CMMC-T09]
+    en:
+      title: Talk groups shared with the land mobile radio system
+      description: During a migration from a land mobile radio system, the broadband mission-critical system SHOULD connect the agreed talk groups of both systems so that speech in one reaches the members in the other within 1 second.
+      rationale: Organisations migrate in stages, and responders on the old and the new system have to work in the same incidents.
+      criteria:
+        - method: test
+          text: A transmission from a terminal on the land mobile radio system is heard on a broadband terminal in the linked group within 1 second, and the other way round.
+          threshold: ≤ 1 s
+    sv:
+      title: Talgrupper delas med det landmobila radiosystemet
+      description: Under en övergång från ett landmobilt radiosystem BÖR det verksamhetskritiska bredbandssystemet koppla ihop de avtalade talgrupperna i båda systemen så att tal i det ena når medlemmarna i det andra inom 1 sekund.
+      rationale: Organisationer byter system i etapper, och insatspersonal på det gamla och det nya systemet behöver arbeta vid samma händelser.
+      criteria:
+        - method: test
+          text: En sändning från en terminal i det landmobila radiosystemet hörs på en bredbandsterminal i den sammankopplade gruppen inom 1 sekund, och omvänt.
+          threshold: ≤ 1 s
+
+  - id: CMMC-11
+    type: functional
+    obligation: must
+    priority: high
+    tags: [recording, audit, evidence]
+    refs: ["ISO/IEC 27001:2022 A.8.15"]
+    tests: [CMMC-T10]
+    en:
+      title: Group and emergency calls recorded for 1 year
+      description: The system MUST record each group call and each emergency call with time, talk group and the identity of each speaker, and keep the recordings for 1 year.
+      rationale: Recordings are needed to reconstruct incidents, to learn from them and as evidence in investigations.
+      criteria:
+        - method: test
+          text: A test group call with 2 speakers is found by time and group, plays back both speakers and shows their identities.
+        - method: inspection
+          text: The retention setting of the recording system is 1 year, and the oldest recording available is about 1 year old.
+          threshold: 1 year
+    sv:
+      title: Gruppsamtal och nödsamtal spelas in och sparas i 1 år
+      description: Systemet SKA spela in varje gruppsamtal och varje nödsamtal med tid, talgrupp och varje talares identitet, och spara inspelningarna i 1 år.
+      rationale: Inspelningar behövs för att återskapa händelser, för att lära av dem och som bevis vid utredningar.
+      criteria:
+        - method: test
+          text: Ett testgruppsamtal med 2 talare hittas via tid och grupp, spelas upp med båda talarna och visar deras identiteter.
+        - method: inspection
+          text: Inspelningssystemets inställda lagringstid är 1 år, och den äldsta tillgängliga inspelningen är runt 1 år gammal.
+          threshold: 1 år
+
+  - id: CMMC-12
+    type: business
+    obligation: should
+    priority: medium
+    tags: [exercise, failover, continuity]
+    refs: ["ISO 22301:2019 §8.5"]
+    tests: [CMMC-T07]
+    en:
+      title: Failover exercise twice a year
+      description: The organisation SHOULD exercise the move to the fallback dispatch centre and to direct mode twice a year and record the time taken and the problems found in each exercise.
+      rationale: Fallback routines that are not practised fail when they are needed, and recorded times show whether the 15-minute target is realistic.
+      criteria:
+        - method: review
+          text: The exercise records of the last 12 months show 2 exercises, each with the measured takeover time and a list of problems with actions.
+          threshold: 2 per year
+    sv:
+      title: Övning av omkoppling två gånger per år
+      description: Organisationen BÖR öva övergången till reservledningscentralen och till direktläge två gånger per år och dokumentera den tid det tog och de problem som hittades vid varje övning.
+      rationale: Reservrutiner som inte övas fungerar inte när de behövs, och dokumenterade tider visar om målet på 15 minuter är realistiskt.
+      criteria:
+        - method: review
+          text: Övningsprotokollen för de senaste 12 månaderna visar 2 övningar, var och en med uppmätt tid för övertagandet och en lista över problem med åtgärder.
+          threshold: 2 per år
+
+tests:
+  - id: CMMC-T01
+    priority: critical
+    execution: manual
+    tags: [push-to-talk, access-time, voice-delay]
+    refs: ["3GPP TS 22.179 (MCPTT performance)"]
+    en:
+      title: Talk permission time and voice delay in a group call
+      description: Measures the time to talk permission and the mouth-to-ear delay between test terminals in one group.
+      preconditions: 2 test terminals in the same talk group in normal coverage, a test tool that logs push-to-talk events, and an audio delay meter.
+      expected: At least 95 % of talk requests are granted within 300 ms, and at least 95 % of delay samples are at most 300 ms.
+      steps:
+        - action: Make 200 talk requests from terminal A in an ongoing group call and log the time to permission.
+          expected: At least 190 requests are granted within 300 ms.
+          data: 200 requests
+        - action: Feed a test tone into terminal A and measure the delay to terminal B 100 times.
+          expected: At least 95 samples are at most 300 ms.
+    sv:
+      title: Tid till taltillstånd och talfördröjning i ett gruppsamtal
+      description: Mäter tiden till taltillstånd och fördröjningen från mun till öra mellan testterminaler i en grupp.
+      preconditions: 2 testterminaler i samma talgrupp med normal täckning, ett testverktyg som loggar händelser för sändknappen och en mätare för ljudfördröjning.
+      expected: Minst 95 % av förfrågningarna om taltillstånd beviljas inom 300 ms, och minst 95 % av fördröjningsmätningarna är högst 300 ms.
+      steps:
+        - action: Gör 200 förfrågningar om taltillstånd från terminal A i ett pågående gruppsamtal och logga tiden till tillstånd.
+          expected: Minst 190 förfrågningar beviljas inom 300 ms.
+          data: 200 förfrågningar
+        - action: Mata in en testton i terminal A och mät fördröjningen till terminal B 100 gånger.
+          expected: Minst 95 mätvärden är högst 300 ms.
+
+  - id: CMMC-T02
+    priority: critical
+    execution: manual
+    tags: [priority, pre-emption]
+    refs: ["3GPP TS 22.280 (priority and pre-emption)"]
+    en:
+      title: Emergency group call in a full cell
+      description: Fills a test cell with normal-priority calls and starts an emergency group call.
+      preconditions: A test cell, enough terminals or a load generator to fill its capacity with normal-priority calls, and a terminal with emergency call rights.
+      expected: The emergency call is set up within 1 second, and the lowest-priority call is released.
+      steps:
+        - action: Fill the cell with normal-priority calls until a new normal call is refused.
+          expected: The cell reports no free capacity.
+        - action: Start an emergency group call and note the time.
+          expected: The emergency call is set up within 1 second.
+        - action: Check which call was released.
+          expected: One normal-priority call was released, and the other calls continue.
+    sv:
+      title: Nödgruppsamtal i en full cell
+      description: Fyller en testcell med samtal med normal prioritet och startar ett nödgruppsamtal.
+      preconditions: En testcell, tillräckligt många terminaler eller en lastgenerator för att fylla dess kapacitet med samtal med normal prioritet, och en terminal med behörighet till nödsamtal.
+      expected: Nödsamtalet kopplas upp inom 1 sekund, och samtalet med lägst prioritet kopplas ner.
+      steps:
+        - action: Fyll cellen med samtal med normal prioritet tills ett nytt normalt samtal nekas.
+          expected: Cellen rapporterar ingen ledig kapacitet.
+        - action: Starta ett nödgruppsamtal och anteckna tiden.
+          expected: Nödsamtalet kopplas upp inom 1 sekund.
+        - action: Kontrollera vilket samtal som kopplades ner.
+          expected: Ett samtal med normal prioritet kopplades ner, och de andra samtalen fortsätter.
+
+  - id: CMMC-T03
+    priority: critical
+    execution: manual
+    tags: [emergency-alert, location]
+    refs: []
+    en:
+      title: Emergency button on a test terminal
+      description: Presses the emergency button on a test terminal with a current position fix and times the alert at the dispatch position.
+      preconditions: A test terminal with position reporting, a dispatcher informed of the test and a synchronised clock at both ends.
+      expected: The alert shows identity, group and a current position within 2 seconds.
+      steps:
+        - action: Press the emergency button and note the time.
+          expected: The terminal shows that the alert is sent.
+        - action: Read the alert at the dispatch position.
+          expected: The alert appears within 2 seconds with identity, talk group and a position no older than 30 seconds.
+        - action: Cancel the alert as the dispatcher.
+          expected: The terminal shows that the alert is acknowledged.
+    sv:
+      title: Nödknappen på en testterminal
+      description: Trycker på nödknappen på en testterminal med en aktuell positionsbestämning och mäter tiden till larmet på operatörsplatsen.
+      preconditions: En testterminal med positionsrapportering, en operatör som informerats om testet och synkroniserade klockor i båda ändar.
+      expected: Larmet visar identitet, grupp och en aktuell position inom 2 sekunder.
+      steps:
+        - action: Tryck på nödknappen och anteckna tiden.
+          expected: Terminalen visar att larmet är skickat.
+        - action: Läs larmet på operatörsplatsen.
+          expected: Larmet visas inom 2 sekunder med identitet, talgrupp och en position som är högst 30 sekunder gammal.
+        - action: Kvittera larmet som operatör.
+          expected: Terminalen visar att larmet är kvitterat.
+
+  - id: CMMC-T04
+    priority: critical
+    execution: manual
+    tags: [availability]
+    refs: []
+    en:
+      title: Yearly availability of the group communication service
+      description: Computes the yearly availability from the outage records and the monitoring data.
+      preconditions: The outage records and the call setup monitoring for the last 12 months.
+      expected: The availability is at least 99.999 %.
+      steps:
+        - action: List each period in which group calls could not be set up in the coverage area, with its duration in minutes.
+          expected: The list matches the outage records and the monitoring alarms.
+        - action: Compute the availability as the share of minutes in the year without an outage.
+          expected: The result is at least 99.999 %.
+          data: 525 600 minutes per year
+    sv:
+      title: Årlig tillgänglighet för tjänsten för gruppkommunikation
+      description: Beräknar den årliga tillgängligheten utifrån avbrottsrapporterna och övervakningsdata.
+      preconditions: Avbrottsrapporterna och övervakningen av samtalsuppkoppling för de senaste 12 månaderna.
+      expected: Tillgängligheten är minst 99,999 %.
+      steps:
+        - action: Lista varje period då gruppsamtal inte gick att koppla upp i täckningsområdet, med varaktighet i minuter.
+          expected: Listan stämmer med avbrottsrapporterna och övervakningens larm.
+        - action: Beräkna tillgängligheten som andelen minuter under året utan avbrott.
+          expected: Resultatet är minst 99,999 %.
+          data: 525 600 minuter per år
+
+  - id: CMMC-T05
+    priority: high
+    execution: manual
+    tags: [direct-mode, off-network]
+    refs: ["ETSI EN 300 396"]
+    en:
+      title: Direct mode group call at 1 km
+      description: Holds a direct mode group call between 2 terminals 1 km apart in open terrain without network.
+      preconditions: 2 terminals set to the same direct mode group, an open test site with a measured 1 km distance and no network coverage or the network switched off.
+      expected: The call is set up and speech is understood in both directions.
+      steps:
+        - action: Place the terminals 1 km apart and start a direct mode group call from terminal A.
+          expected: Terminal B receives the call.
+          data: 1 km in open terrain
+        - action: Read a test sentence from each terminal in turn.
+          expected: The listener repeats each sentence correctly.
+    sv:
+      title: Gruppsamtal i direktläge på 1 km
+      description: Håller ett gruppsamtal i direktläge mellan 2 terminaler 1 km från varandra i öppen terräng utan nät.
+      preconditions: 2 terminaler inställda på samma grupp i direktläge, en öppen testplats med uppmätt avstånd på 1 km och ingen nättäckning eller nätet avstängt.
+      expected: Samtalet kopplas upp och talet uppfattas i båda riktningarna.
+      steps:
+        - action: Placera terminalerna 1 km från varandra och starta ett gruppsamtal i direktläge från terminal A.
+          expected: Terminal B tar emot samtalet.
+          data: 1 km i öppen terräng
+        - action: Läs en testmening från var och en av terminalerna i tur och ordning.
+          expected: Lyssnaren upprepar varje mening korrekt.
+
+  - id: CMMC-T06
+    priority: critical
+    execution: manual
+    tags: [backup-power, base-station]
+    refs: []
+    en:
+      title: Base station site on backup power for 8 hours
+      description: Disconnects mains power at a chosen base station site and checks the service every hour.
+      preconditions: An agreed test window at the site, a terminal in the site's coverage area and the site register.
+      expected: The site carries a group call every hour for 8 hours, and the register shows at least 8 hours for each site.
+      steps:
+        - action: Disconnect mains power at the site and note the time.
+          expected: The site switches to batteries or generator without dropping ongoing calls.
+        - action: Set up a group call through the site every hour for 8 hours.
+          expected: Each call is set up.
+        - action: Check the calculated backup time of each site in the register.
+          expected: Each site has at least 8 hours at full load.
+    sv:
+      title: Basstationsplats på reservkraft i 8 timmar
+      description: Kopplar bort nätströmmen på en vald basstationsplats och kontrollerar tjänsten varje timme.
+      preconditions: Ett avtalat testfönster på platsen, en terminal i platsens täckningsområde och platsregistret.
+      expected: Platsen för ett gruppsamtal varje timme i 8 timmar, och registret visar minst 8 timmar för varje plats.
+      steps:
+        - action: Koppla bort nätströmmen på platsen och anteckna tiden.
+          expected: Platsen går över till batterier eller elverk utan att pågående samtal bryts.
+        - action: Koppla upp ett gruppsamtal via platsen varje timme i 8 timmar.
+          expected: Varje samtal kopplas upp.
+        - action: Kontrollera den beräknade reservtiden för varje plats i registret.
+          expected: Varje plats har minst 8 timmar vid full last.
+
+  - id: CMMC-T07
+    priority: high
+    execution: manual
+    tags: [dispatch, fallback-site, exercise]
+    refs: ["ISO 22301:2019 §8.5"]
+    en:
+      title: Takeover by the fallback dispatch centre
+      description: Disconnects the main dispatch centre in an exercise and times the takeover by the fallback centre, then reviews the exercise records.
+      preconditions: An agreed exercise, staff at the fallback centre and the exercise records of the last 12 months.
+      expected: The fallback centre handles alerts and talk groups within 15 minutes, and 2 exercises are recorded in the last 12 months.
+      steps:
+        - action: Disconnect the main centre from the system and note the time.
+          expected: The main centre's positions go offline.
+        - action: Send a test emergency alert and call each talk group from a field terminal.
+          expected: The fallback centre answers the alert and each group within 15 minutes of the disconnection.
+        - action: Review the exercise records of the last 12 months.
+          expected: There are 2 exercises, each with a takeover time and a list of problems with actions.
+    sv:
+      title: Reservledningscentralen tar över
+      description: Kopplar bort den ordinarie ledningscentralen vid en övning och mäter tiden tills reservcentralen tagit över, och granskar sedan övningsprotokollen.
+      preconditions: En avtalad övning, personal på reservcentralen och övningsprotokollen för de senaste 12 månaderna.
+      expected: Reservcentralen hanterar larm och talgrupper inom 15 minuter, och 2 övningar finns dokumenterade under de senaste 12 månaderna.
+      steps:
+        - action: Koppla bort den ordinarie centralen från systemet och anteckna tiden.
+          expected: Den ordinarie centralens operatörsplatser går ner.
+        - action: Skicka ett testnödlarm och anropa varje talgrupp från en terminal ute på fältet.
+          expected: Reservcentralen besvarar larmet och varje grupp inom 15 minuter från bortkopplingen.
+        - action: Granska övningsprotokollen för de senaste 12 månaderna.
+          expected: Det finns 2 övningar, var och en med tid för övertagandet och en lista över problem med åtgärder.
+
+  - id: CMMC-T08
+    priority: high
+    execution: manual
+    tags: [end-to-end-encryption, keys]
+    refs: ["3GPP TS 33.180"]
+    en:
+      title: End-to-end encrypted group call seen from the core network
+      description: Captures a test group call at the operator's core and tries to follow it with a terminal that lacks the group key.
+      preconditions: A capture point at the operator's core agreed with the operator, 2 terminals with the current group key and 1 terminal with an old key.
+      expected: The capture has no readable speech, and the terminal with the old key cannot follow the call.
+      steps:
+        - action: Hold a group call between the 2 terminals with the current key while capturing at the core.
+          expected: The terminals hear each other.
+        - action: Try to play back the captured media.
+          expected: No speech can be heard.
+        - action: Let the terminal with the old key join the group.
+          expected: The terminal does not play the speech of the call.
+        - action: Read the key management procedure.
+          expected: Key generation and distribution are assigned to the user organisation.
+    sv:
+      title: Gruppsamtal med totalsträckskryptering sett från kärnnätet
+      description: Spelar in ett testgruppsamtal i operatörens kärnnät och försöker följa det med en terminal som saknar gruppnyckeln.
+      preconditions: En inspelningspunkt i operatörens kärnnät avtalad med operatören, 2 terminaler med den aktuella gruppnyckeln och 1 terminal med en gammal nyckel.
+      expected: Inspelningen har inget läsbart tal, och terminalen med den gamla nyckeln kan inte följa samtalet.
+      steps:
+        - action: Håll ett gruppsamtal mellan de 2 terminalerna med den aktuella nyckeln medan inspelningen pågår i kärnnätet.
+          expected: Terminalerna hör varandra.
+        - action: Försök spela upp den inspelade mediaströmmen.
+          expected: Inget tal hörs.
+        - action: Låt terminalen med den gamla nyckeln gå med i gruppen.
+          expected: Terminalen spelar inte upp talet i samtalet.
+        - action: Läs rutinen för nyckelhantering.
+          expected: Generering och distribution av nycklar ligger hos användarorganisationen.
+
+  - id: CMMC-T09
+    priority: medium
+    execution: manual
+    tags: [interworking, land-mobile-radio]
+    refs: ["3GPP TS 23.283"]
+    en:
+      title: Speech between linked talk groups in both systems
+      description: Transmits from a terminal in each system to a linked talk group and times when the speech is heard in the other system.
+      preconditions: A linked talk group in the land mobile radio system and the broadband system, one terminal on each and an audio delay meter.
+      expected: Speech is heard in the other system within 1 second in both directions.
+      steps:
+        - action: Transmit a test tone from the land mobile radio terminal.
+          expected: The broadband terminal plays the tone within 1 second.
+        - action: Transmit a test tone from the broadband terminal.
+          expected: The land mobile radio terminal plays the tone within 1 second.
+    sv:
+      title: Tal mellan sammankopplade talgrupper i båda systemen
+      description: Sänder från en terminal i vardera systemet till en sammankopplad talgrupp och mäter när talet hörs i det andra systemet.
+      preconditions: En sammankopplad talgrupp i det landmobila radiosystemet och bredbandssystemet, en terminal i vardera och en mätare för ljudfördröjning.
+      expected: Talet hörs i det andra systemet inom 1 sekund i båda riktningarna.
+      steps:
+        - action: Sänd en testton från terminalen i det landmobila radiosystemet.
+          expected: Bredbandsterminalen spelar upp tonen inom 1 sekund.
+        - action: Sänd en testton från bredbandsterminalen.
+          expected: Terminalen i det landmobila radiosystemet spelar upp tonen inom 1 sekund.
+
+  - id: CMMC-T10
+    priority: high
+    execution: manual
+    tags: [recording, retention]
+    refs: []
+    en:
+      title: Finding and playing back a recorded group call
+      description: Holds a test group call with 2 speakers, then finds and plays it back and checks the retention setting.
+      preconditions: Access to the recording system and 2 test terminals in one talk group.
+      expected: The call is found by time and group and plays back both speakers with their identities, and recordings are kept for 1 year.
+      steps:
+        - action: Hold a group call where each terminal talks once, and note the time.
+          expected: The call ends normally.
+        - action: Search the recording system by time and talk group and play back the call.
+          expected: Both speakers are heard, each shown with the terminal identity.
+        - action: Read the retention setting and the date of the oldest recording.
+          expected: The setting is 1 year, and the oldest recording is about 1 year old.
+    sv:
+      title: Söka fram och spela upp ett inspelat gruppsamtal
+      description: Håller ett testgruppsamtal med 2 talare, söker sedan fram och spelar upp det och kontrollerar lagringstiden.
+      preconditions: Åtkomst till inspelningssystemet och 2 testterminaler i en talgrupp.
+      expected: Samtalet hittas via tid och grupp och spelas upp med båda talarna och deras identiteter, och inspelningar sparas i 1 år.
+      steps:
+        - action: Håll ett gruppsamtal där varje terminal talar en gång, och anteckna tiden.
+          expected: Samtalet avslutas normalt.
+        - action: Sök i inspelningssystemet via tid och talgrupp och spela upp samtalet.
+          expected: Båda talarna hörs, var och en visad med terminalens identitet.
+        - action: Läs den inställda lagringstiden och datumet för den äldsta inspelningen.
+          expected: Inställningen är 1 år, och den äldsta inspelningen är runt 1 år gammal.

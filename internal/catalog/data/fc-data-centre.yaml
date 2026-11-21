@@ -1,0 +1,654 @@
+area: fc-data-centre
+prefix: FCDC
+group: quality
+catalogue: facilities
+name: {en: Technical rooms and data centres, sv: Tekniska utrymmen och datacenter}
+description:
+  en: Availability class, dual power paths, UPS and generator autonomy and tests, redundant cooling and inlet temperature, smoke detection, gas extinguishing and room integrity, water leak detection, physical access, cabling records and energy efficiency reporting for data centres and technical rooms.
+  sv: Tillgänglighetsklass, dubbla elvägar, reservtid och prov för UPS och reservelverk, redundant kyla och inloppstemperatur, rökdetektering, gassläcksystem och rummets täthet, vattenlarm, fysiskt tillträde, kabeldokumentation och rapportering av energieffektivitet för datacenter och tekniska utrymmen.
+
+requirements:
+  - id: FCDC-01
+    type: constraint
+    obligation: must
+    priority: critical
+    tags: [availability-class, design]
+    refs: ["EN 50600-1 (availability classes)"]
+    tests: [FCDC-T01]
+    en:
+      title: Availability class chosen and documented for each infrastructure
+      description: The data centre design MUST state the availability class according to EN 50600-1 for power supply, environmental control and telecommunications cabling, and show how each infrastructure meets its class.
+      rationale: The availability class links the business need to concrete design choices such as redundancy and maintenance without shutdown.
+      criteria:
+        - method: review
+          text: The design documentation names a class for each of the 3 infrastructures and has a single-line diagram or description that shows the redundancy of each.
+    sv:
+      title: Tillgänglighetsklass vald och dokumenterad för varje infrastruktur
+      description: Utformningen av datacentret SKA ange tillgänglighetsklass enligt EN 50600-1 för elförsörjning, klimatstyrning och telekablage, och visa hur varje infrastruktur uppfyller sin klass.
+      rationale: Tillgänglighetsklassen kopplar verksamhetens behov till konkreta val i utformningen, som redundans och underhåll utan avbrott.
+      criteria:
+        - method: review
+          text: Dokumentationen av utformningen anger en klass för var och en av de 3 infrastrukturerna och har ett enlinjeschema eller en beskrivning som visar redundansen för var och en.
+
+  - id: FCDC-02
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [power, dual-feed, redundancy]
+    refs: ["EN 50600-2-2 (power distribution)"]
+    tests: [FCDC-T02]
+    en:
+      title: Two independent power paths to each rack
+      description: Each IT rack MUST be fed by 2 power paths (A and B) from separate UPS systems and distribution boards, so that the loss of one path leaves each dual-corded device running.
+      rationale: Most power failures in a data centre happen in a single UPS, breaker or distribution board, not in the grid.
+      criteria:
+        - method: inspection
+          text: The single-line diagram and the labels show A and B feeds from separate UPS systems and boards to each rack.
+        - method: test
+          text: Opening the A-side breaker of a test rack in a maintenance window leaves each dual-corded device in it running.
+    sv:
+      title: Två oberoende elvägar till varje rack
+      description: Varje IT-rack SKA matas via 2 elvägar (A och B) från separata UPS-system och fördelningscentraler, så att bortfall av den ena vägen låter varje enhet med dubbla nätaggregat fortsätta att gå.
+      rationale: De flesta strömavbrott i ett datacenter inträffar i en enskild UPS, brytare eller fördelningscentral, inte i elnätet.
+      criteria:
+        - method: inspection
+          text: Enlinjeschemat och märkningen visar A- och B-matning från separata UPS-system och centraler till varje rack.
+        - method: test
+          text: När brytaren på A-sidan till ett testrack öppnas i ett servicefönster fortsätter varje enhet med dubbla nätaggregat i racket att gå.
+
+  - id: FCDC-03
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [ups, generator, autonomy]
+    refs: ["EN 50600-2-2 (power distribution)"]
+    tests: [FCDC-T03]
+    en:
+      title: UPS bridges until the generator takes the load within 60 seconds
+      description: The power system MUST bridge a mains failure with the UPS carrying the full IT load for at least 10 minutes and the backup generator taking over the load within 60 seconds of the failure.
+      rationale: The UPS covers the start of the generator, and the margin covers a second start attempt.
+      criteria:
+        - method: test
+          text: In a mains failure test, the generator takes the load within 60 seconds, and the latest UPS battery test shows at least 10 minutes at full load.
+          threshold: generator ≤ 60 s, UPS ≥ 10 min
+    sv:
+      title: UPS:en överbryggar tills reservelverket tagit lasten inom 60 sekunder
+      description: Elsystemet SKA överbrygga ett nätbortfall genom att UPS:en bär hela IT-lasten i minst 10 minuter och reservelverket tar över lasten inom 60 sekunder från bortfallet.
+      rationale: UPS:en täcker reservelverkets start, och marginalen räcker till ett andra startförsök.
+      criteria:
+        - method: test
+          text: Vid ett prov med nätbortfall tar reservelverket lasten inom 60 sekunder, och det senaste batteriprovet på UPS:en visar minst 10 minuter vid full last.
+          threshold: elverk ≤ 60 s, UPS ≥ 10 min
+
+  - id: FCDC-04
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [generator, fuel, autonomy]
+    refs: ["EN 50600-2-2 (power distribution)"]
+    tests: [FCDC-T04]
+    en:
+      title: Fuel on site for 48 hours at full load
+      description: The site MUST store enough fuel to run the backup generators at full load for 48 hours, with a contract for refuelling within 24 hours.
+      rationale: Long grid outages after storms last for days, and fuel deliveries are slow when many sites need them at once.
+      criteria:
+        - method: analysis
+          text: The tank volume divided by the generators' fuel use at full load gives at least 48 hours, the fuel level log shows the tanks at least 90 % full, and the refuelling contract states 24 hours.
+          threshold: ≥ 48 h
+    sv:
+      title: Bränsle på plats för 48 timmar vid full last
+      description: Anläggningen SKA lagra bränsle för att driva reservelverken vid full last i 48 timmar, med ett avtal om påfyllning inom 24 timmar.
+      rationale: Långa elavbrott efter stormar varar i dagar, och bränsleleveranser går långsamt när många anläggningar behöver dem samtidigt.
+      criteria:
+        - method: analysis
+          text: Tankvolymen delad med reservelverkens bränsleförbrukning vid full last ger minst 48 timmar, nivåloggen visar tankarna minst 90 % fulla, och påfyllningsavtalet anger 24 timmar.
+          threshold: ≥ 48 h
+
+  - id: FCDC-05
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [generator, load-test, maintenance]
+    refs: ["EN 50600-2-6 (management and operational information)"]
+    tests: [FCDC-T04]
+    en:
+      title: Monthly generator run and yearly full-load test
+      description: The operator MUST run each backup generator under load for at least 1 hour each month and test it at full load for 4 hours each year, recording start time, load and faults.
+      rationale: Generators that only start when the grid fails often do not start, and only regular load tests reveal fuel, battery and cooling faults.
+      criteria:
+        - method: review
+          text: The test log of the last 12 months shows a monthly run of at least 1 hour for each generator and a full-load test of 4 hours, each with start time, load and faults.
+          threshold: 1 h monthly, 4 h yearly
+    sv:
+      title: Månatlig provkörning och årligt prov vid full last för reservelverk
+      description: Driftansvarig SKA provköra varje reservelverk med last i minst 1 timme varje månad och prova det vid full last i 4 timmar varje år, och dokumentera starttid, last och fel.
+      rationale: Elverk som bara startar när elnätet fallerar startar ofta inte, och bara regelbundna lastprov avslöjar fel i bränsle, batteri och kylning.
+      criteria:
+        - method: review
+          text: Provloggen för de senaste 12 månaderna visar en månatlig körning på minst 1 timme för varje elverk och ett prov vid full last i 4 timmar, var och en med starttid, last och fel.
+          threshold: 1 h per månad, 4 h per år
+
+  - id: FCDC-06
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [cooling, redundancy, temperature]
+    refs: ["EN 50600-2-3 (environmental control)", "ASHRAE TC 9.9 Thermal Guidelines for Data Processing Environments"]
+    tests: [FCDC-T05]
+    en:
+      title: Rack inlet temperature between 18 and 27 °C with one cooling unit out
+      description: The cooling system MUST keep the inlet air temperature of each rack between 18 °C and 27 °C at the design IT load with any one cooling unit out of service.
+      rationale: Higher inlet temperatures shorten the life of IT equipment and trigger shutdowns, and the N+1 margin covers maintenance and failures.
+      criteria:
+        - method: test
+          text: With one cooling unit switched off at a load of at least 80 % of design, the inlet sensors of each rack stay between 18 °C and 27 °C for 2 hours.
+          threshold: 18–27 °C with N+1
+    sv:
+      title: Inloppstemperatur i racken mellan 18 och 27 °C med en kylenhet ur drift
+      description: Kylsystemet SKA hålla inloppsluftens temperatur i varje rack mellan 18 °C och 27 °C vid dimensionerande IT-last med en godtycklig kylenhet ur drift.
+      rationale: Högre inloppstemperaturer förkortar livslängden för IT-utrustningen och ger nedstängningar, och marginalen N+1 täcker underhåll och fel.
+      criteria:
+        - method: test
+          text: Med en kylenhet avstängd vid en last på minst 80 % av den dimensionerande håller inloppsgivarna i varje rack mellan 18 °C och 27 °C i 2 timmar.
+          threshold: 18–27 °C med N+1
+
+  - id: FCDC-07
+    type: functional
+    obligation: must
+    priority: high
+    tags: [monitoring, temperature, alarms]
+    refs: ["EN 50600-2-6 (management and operational information)"]
+    tests: [FCDC-T05]
+    en:
+      title: Temperature alarm within 5 minutes above 27 °C
+      description: The monitoring system MUST alarm the operations staff within 5 minutes when the inlet temperature of a rack has been above 27 °C for 5 minutes.
+      rationale: A failed cooling unit can raise temperatures to shutdown level within half an hour, so staff have to know at once.
+      criteria:
+        - method: test
+          text: Heating a rack inlet sensor above 27 °C for 5 minutes raises an alarm to the on-duty staff within 5 minutes.
+          threshold: alarm ≤ 5 min after 5 min above 27 °C
+    sv:
+      title: Temperaturlarm inom 5 minuter över 27 °C
+      description: Övervakningssystemet SKA larma driftpersonalen inom 5 minuter när inloppstemperaturen i ett rack legat över 27 °C i 5 minuter.
+      rationale: En kylenhet som går sönder kan höja temperaturen till nedstängningsnivå inom en halvtimme, så personalen behöver få veta det direkt.
+      criteria:
+        - method: test
+          text: När en inloppsgivare i ett rack värms över 27 °C i 5 minuter går ett larm till personalen i tjänst inom 5 minuter.
+          threshold: larm ≤ 5 min efter 5 min över 27 °C
+
+  - id: FCDC-08
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [fire-detection, aspirating-smoke-detection]
+    refs: ["EN 54-20", "EN 50600-2-5 (security systems)"]
+    tests: [FCDC-T06]
+    en:
+      title: Very early smoke detection in IT rooms with alarm to a staffed centre
+      description: Each IT room MUST have aspirating smoke detection of class A according to EN 54-20 that sends pre-alarms and fire alarms to a centre staffed around the clock.
+      rationale: Fires in electronics start with smouldering cables and power supplies, and very early detection gives time to act before an extinguishing release.
+      criteria:
+        - method: test
+          text: Test smoke at a sampling hole raises a pre-alarm at the staffed centre, and the detector's certificate states class A.
+    sv:
+      title: Mycket tidig rökdetektering i IT-rum med larm till en bemannad central
+      description: Varje IT-rum SKA ha luftsamplande rökdetektering av klass A enligt EN 54-20 som skickar förlarm och brandlarm till en central som är bemannad dygnet runt.
+      rationale: Bränder i elektronik börjar med glödande kablar och nätaggregat, och mycket tidig detektering ger tid att agera innan ett släcksystem löser ut.
+      criteria:
+        - method: test
+          text: Teströk vid ett samplingshål ger ett förlarm hos den bemannade centralen, och detektorns certifikat anger klass A.
+
+  - id: FCDC-09
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [gas-extinguishing, room-integrity, hold-time]
+    refs: ["EN 15004-1"]
+    tests: [FCDC-T07]
+    en:
+      title: Gas extinguishing room holds the concentration for 10 minutes
+      description: A room protected by a gas extinguishing system MUST pass a yearly room integrity test showing that it holds the extinguishing concentration for at least 10 minutes.
+      rationale: New cable penetrations and changed doors let the gas leak out, and a room that cannot hold the concentration lets the fire reignite.
+      criteria:
+        - method: test
+          text: The door fan test report from the last 12 months shows a calculated hold time of at least 10 minutes.
+          threshold: hold time ≥ 10 min
+    sv:
+      title: Rum med gassläcksystem håller koncentrationen i 10 minuter
+      description: Ett rum som skyddas av ett gassläcksystem SKA klara ett årligt täthetsprov som visar att det håller släckkoncentrationen i minst 10 minuter.
+      rationale: Nya kabelgenomföringar och ändrade dörrar låter gasen läcka ut, och ett rum som inte håller koncentrationen låter branden blossa upp igen.
+      criteria:
+        - method: test
+          text: Rapporten från täthetsprovet med dörrfläkt under de senaste 12 månaderna visar en beräknad hålltid på minst 10 minuter.
+          threshold: hålltid ≥ 10 min
+
+  - id: FCDC-10
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [water-leak, detection]
+    refs: ["EN 50600-2-3 (environmental control)"]
+    tests: [FCDC-T08]
+    en:
+      title: Water leak detection under the floor and at cooling units
+      description: The IT rooms SHOULD have water leak detection under the raised floor and around each cooling unit and water pipe that raises an alarm to the operations staff within 1 minute.
+      rationale: Leaks from cooling circuits and drains spread unseen under a raised floor until they reach power cables.
+      criteria:
+        - method: test
+          text: Wetting a sensor cable at a cooling unit raises an alarm with the location within 1 minute.
+          threshold: ≤ 1 min
+    sv:
+      title: Vattenlarm under golvet och vid kylenheter
+      description: IT-rummen BÖR ha vattenlarm under det upphöjda golvet och runt varje kylenhet och vattenledning som larmar driftpersonalen inom 1 minut.
+      rationale: Läckor från kylkretsar och avlopp sprider sig osynligt under ett upphöjt golv tills de når elkablarna.
+      criteria:
+        - method: test
+          text: När en givarkabel vid en kylenhet blöts ner går ett larm med platsen inom 1 minut.
+          threshold: ≤ 1 min
+
+  - id: FCDC-11
+    type: security
+    obligation: must
+    priority: critical
+    tags: [physical-access, two-factor, logging]
+    refs: ["EN 50600-2-5 (security systems)", "ISO/IEC 27001:2022 A.7.2", "ISO/IEC 27001:2022 A.7.6"]
+    tests: [FCDC-T09]
+    en:
+      title: Data hall entry with two factors and logging
+      description: Entry to each data hall MUST require 2 factors, such as a card and a PIN or a card and a biometric check, with each entry and exit logged with person and time.
+      rationale: Physical access to servers bypasses most logical controls, so it needs the strongest entry protection on the site.
+      criteria:
+        - method: test
+          text: A valid card alone is refused at the data hall door, card and second factor open it, and the entry is found in the log with name and time.
+    sv:
+      title: Tillträde till datahallen med två faktorer och loggning
+      description: Tillträde till varje datahall SKA kräva 2 faktorer, till exempel kort och kod eller kort och biometrisk kontroll, med varje in- och utpassage loggad med person och tid.
+      rationale: Fysisk åtkomst till servrar kringgår de flesta logiska skydd, så den behöver anläggningens starkaste skydd för tillträde.
+      criteria:
+        - method: test
+          text: Ett giltigt kort ensamt nekas vid datahallens dörr, kort och andra faktor öppnar den, och passagen hittas i loggen med namn och tid.
+
+  - id: FCDC-12
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [cabling, labelling, records]
+    refs: ["EN 50600-2-4 (telecommunications cabling infrastructure)"]
+    tests: [FCDC-T10]
+    en:
+      title: Cables labelled at both ends and recorded
+      description: Each power and data cable in the data hall MUST carry a label at both ends with an identifier that is found in the cabling records with both end points.
+      rationale: Unlabelled cables make each change risky and fault finding slow, and they are a common cause of outages during work.
+      criteria:
+        - method: inspection
+          text: Of 30 cables picked in 3 racks, each has the same identifier at both ends, and each is in the records with the right end points.
+    sv:
+      title: Kablar märkta i båda ändar och dokumenterade
+      description: Varje el- och datakabel i datahallen SKA vara märkt i båda ändar med en identitet som finns i kabeldokumentationen med båda ändpunkterna.
+      rationale: Omärkta kablar gör varje ändring riskfylld och felsökningen långsam, och de är en vanlig orsak till avbrott vid arbeten.
+      criteria:
+        - method: inspection
+          text: Av 30 kablar som väljs i 3 rack har var och en samma identitet i båda ändar, och var och en finns i dokumentationen med rätt ändpunkter.
+
+  - id: FCDC-13
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [energy-efficiency, pue]
+    refs: ["EN 50600-4-2 (power usage effectiveness)"]
+    tests: [FCDC-T11]
+    en:
+      title: Power usage effectiveness measured each month
+      description: The operator SHOULD measure the power usage effectiveness of the data centre each month from metered total facility energy and IT energy, and keep the yearly value at or below 1.4.
+      rationale: Measuring energy use is the first step towards lowering it, and a target keeps cooling and power losses in view.
+      criteria:
+        - method: analysis
+          text: The monthly values of the last 12 months are calculated from meter readings, and the yearly value is at most 1.4.
+          threshold: PUE ≤ 1.4 per year
+    sv:
+      title: Effektanvändningseffektivitet mäts varje månad
+      description: Driftansvarig BÖR varje månad mäta datacentrets effektanvändningseffektivitet (PUE) från uppmätt total energi för anläggningen och IT-energi, och hålla årsvärdet på högst 1,4.
+      rationale: Att mäta energianvändningen är första steget mot att minska den, och ett mål håller förlusterna i kyla och el synliga.
+      criteria:
+        - method: analysis
+          text: Månadsvärdena för de senaste 12 månaderna är beräknade från mätaravläsningar, och årsvärdet är högst 1,4.
+          threshold: PUE ≤ 1,4 per år
+
+  - id: FCDC-14
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [energy-efficiency, reporting, eed]
+    refs: ["Directive (EU) 2023/1791 (EED) Art. 12 (data centres)"]
+    tests: [FCDC-T11]
+    en:
+      title: Yearly energy performance report for a data centre of 500 kW or more
+      description: The operator of a data centre with an installed IT power demand of at least 500 kW MUST report its energy performance indicators to the European database each year.
+      rationale: The Energy Efficiency Directive sets this reporting duty so that the energy use of larger data centres becomes visible and comparable.
+      criteria:
+        - method: review
+          text: The installed IT power is documented, and a confirmation of the latest yearly report to the European database is on file.
+    sv:
+      title: Årlig rapport om energiprestanda för datacenter på 500 kW eller mer
+      description: Den som driver ett datacenter med ett installerat effektbehov för IT på minst 500 kW SKA varje år rapportera dess nyckeltal för energiprestanda till den europeiska databasen.
+      rationale: Energieffektivitetsdirektivet ställer upp rapporteringsskyldigheten så att energianvändningen i större datacenter blir synlig och jämförbar.
+      criteria:
+        - method: review
+          text: Den installerade IT-effekten är dokumenterad, och en bekräftelse på den senaste årliga rapporten till den europeiska databasen finns arkiverad.
+
+tests:
+  - id: FCDC-T01
+    priority: critical
+    execution: manual
+    tags: [availability-class]
+    refs: ["EN 50600-1 (availability classes)"]
+    en:
+      title: Review of the availability class in the design
+      description: Reviews the design documentation for the stated availability class and the redundancy of each infrastructure.
+      preconditions: The design documentation, the single-line diagrams and the cooling and cabling schematics.
+      expected: Each of the 3 infrastructures has a class and a description of how it meets it.
+      steps:
+        - action: Find the availability class for power, environmental control and cabling.
+          expected: Each has a stated class.
+        - action: Compare the redundancy in each schematic with the class.
+          expected: The schematics show the paths and spare units that the class calls for.
+    sv:
+      title: Granskning av tillgänglighetsklassen i utformningen
+      description: Granskar dokumentationen av utformningen med avseende på angiven tillgänglighetsklass och redundansen för varje infrastruktur.
+      preconditions: Dokumentationen av utformningen, enlinjescheman och scheman för kyla och kablage.
+      expected: Var och en av de 3 infrastrukturerna har en klass och en beskrivning av hur den uppfylls.
+      steps:
+        - action: Hitta tillgänglighetsklassen för el, klimatstyrning och kablage.
+          expected: Var och en har en angiven klass.
+        - action: Jämför redundansen i varje schema med klassen.
+          expected: Schemana visar de vägar och reservenheter som klassen förutsätter.
+
+  - id: FCDC-T02
+    priority: critical
+    execution: manual
+    tags: [power, dual-feed]
+    refs: ["EN 50600-2-2 (power distribution)"]
+    en:
+      title: A-side power removed from a test rack
+      description: Checks the A and B feeds on the diagram and the labels, then opens the A-side breaker of a test rack.
+      preconditions: A maintenance window, a test rack with dual-corded devices and the single-line diagram.
+      expected: Each rack has separate A and B feeds, and the devices keep running on B.
+      steps:
+        - action: Trace the A and B feeds of 5 racks on the diagram and on the labels.
+          expected: Each rack is fed from 2 different UPS systems and boards.
+        - action: Open the A-side breaker of the test rack.
+          expected: Each dual-corded device keeps running.
+        - action: Close the breaker again.
+          expected: The devices report both power supplies as normal.
+    sv:
+      title: A-sidans matning bryts till ett testrack
+      description: Kontrollerar A- och B-matningen i schemat och på märkningen och öppnar sedan brytaren på A-sidan till ett testrack.
+      preconditions: Ett servicefönster, ett testrack med enheter med dubbla nätaggregat och enlinjeschemat.
+      expected: Varje rack har separat A- och B-matning, och enheterna fortsätter att gå på B.
+      steps:
+        - action: Följ A- och B-matningen till 5 rack i schemat och på märkningen.
+          expected: Varje rack matas från 2 olika UPS-system och centraler.
+        - action: Öppna brytaren på A-sidan till testracket.
+          expected: Varje enhet med dubbla nätaggregat fortsätter att gå.
+        - action: Slå till brytaren igen.
+          expected: Enheterna rapporterar båda nätaggregaten som normala.
+
+  - id: FCDC-T03
+    priority: critical
+    execution: manual
+    tags: [ups, generator]
+    refs: ["EN 50600-2-2 (power distribution)"]
+    en:
+      title: Mains failure test with generator takeover
+      description: Disconnects the incoming mains in a planned test and times the generator takeover, then reviews the UPS battery test.
+      preconditions: A planned test window approved by operations, staff at the switchgear and the latest UPS battery test report.
+      expected: The generator takes the load within 60 seconds, and the UPS lasts at least 10 minutes at full load.
+      steps:
+        - action: Open the incoming mains breaker and note the time.
+          expected: The UPS carries the IT load without interruption.
+        - action: Note when the generator takes the load.
+          expected: The takeover happens within 60 seconds.
+        - action: Read the autonomy measured in the latest UPS battery test.
+          expected: It is at least 10 minutes at full load.
+    sv:
+      title: Prov med nätbortfall och övertag av reservelverket
+      description: Kopplar bort inkommande nät vid ett planerat prov och mäter tiden tills reservelverket tar över, och granskar sedan batteriprovet på UPS:en.
+      preconditions: Ett planerat provfönster godkänt av driften, personal vid ställverket och rapporten från det senaste batteriprovet på UPS:en.
+      expected: Reservelverket tar lasten inom 60 sekunder, och UPS:en räcker minst 10 minuter vid full last.
+      steps:
+        - action: Öppna brytaren för inkommande nät och anteckna tiden.
+          expected: UPS:en bär IT-lasten utan avbrott.
+        - action: Anteckna när reservelverket tar lasten.
+          expected: Övertaget sker inom 60 sekunder.
+        - action: Läs den reservtid som uppmättes vid det senaste batteriprovet på UPS:en.
+          expected: Den är minst 10 minuter vid full last.
+
+  - id: FCDC-T04
+    priority: high
+    execution: manual
+    tags: [generator, fuel]
+    refs: []
+    en:
+      title: Fuel autonomy and generator test log
+      description: Calculates the fuel autonomy and reviews the generator test log of the last 12 months.
+      preconditions: Tank volumes, the generators' fuel use at full load, the fuel level log, the refuelling contract and the test log.
+      expected: The fuel lasts at least 48 hours, the tanks are kept full, refuelling is contracted within 24 hours, and the tests are done.
+      steps:
+        - action: Divide the tank volume by the fuel use at full load.
+          expected: The result is at least 48 hours.
+          data: Litres divided by litres per hour
+        - action: Read the fuel level log and the refuelling contract.
+          expected: The tanks were at least 90 % full at each reading, and the contract states 24 hours.
+        - action: Check the test log for a monthly run of 1 hour and a yearly 4-hour full-load test per generator.
+          expected: Each test is there with start time, load and faults.
+    sv:
+      title: Reservtid för bränslet och provlogg för reservelverken
+      description: Beräknar hur länge bränslet räcker och granskar provloggen för reservelverken under de senaste 12 månaderna.
+      preconditions: Tankvolymer, reservelverkens bränsleförbrukning vid full last, nivåloggen, påfyllningsavtalet och provloggen.
+      expected: Bränslet räcker minst 48 timmar, tankarna hålls fulla, påfyllning är avtalad inom 24 timmar, och proven är gjorda.
+      steps:
+        - action: Dela tankvolymen med förbrukningen vid full last.
+          expected: Resultatet är minst 48 timmar.
+          data: Liter delat med liter per timme
+        - action: Läs nivåloggen och påfyllningsavtalet.
+          expected: Tankarna var minst 90 % fulla vid varje avläsning, och avtalet anger 24 timmar.
+        - action: Kontrollera att provloggen har en månatlig körning på 1 timme och ett årligt prov vid full last i 4 timmar per elverk.
+          expected: Varje prov finns med starttid, last och fel.
+
+  - id: FCDC-T05
+    priority: critical
+    execution: manual
+    tags: [cooling, temperature, alarms]
+    refs: ["ASHRAE TC 9.9 Thermal Guidelines for Data Processing Environments"]
+    en:
+      title: Cooling with one unit out and the temperature alarm
+      description: Switches off one cooling unit at high load and logs the rack inlet temperatures, then tests the temperature alarm with a heated sensor.
+      preconditions: A maintenance window, an IT load of at least 80 % of design (real or from load banks), inlet sensors in each rack and a heat source for one sensor.
+      expected: Each inlet stays within 18–27 °C for 2 hours, and the alarm reaches the staff within 5 minutes.
+      steps:
+        - action: Switch off the cooling unit that serves the largest load and log each inlet sensor every minute for 2 hours.
+          expected: Each value stays between 18 °C and 27 °C.
+          data: ≥ 80 % of design load
+        - action: Heat one inlet sensor above 27 °C and keep it there.
+          expected: An alarm reaches the on-duty staff within 5 minutes after the first 5 minutes above 27 °C.
+    sv:
+      title: Kylning med en enhet ur drift och temperaturlarmet
+      description: Stänger av en kylenhet vid hög last och loggar inloppstemperaturerna i racken, och testar sedan temperaturlarmet med en uppvärmd givare.
+      preconditions: Ett servicefönster, en IT-last på minst 80 % av den dimensionerande (verklig eller från lastbankar), inloppsgivare i varje rack och en värmekälla för en givare.
+      expected: Varje inlopp håller sig inom 18–27 °C i 2 timmar, och larmet når personalen inom 5 minuter.
+      steps:
+        - action: Stäng av den kylenhet som försörjer den största lasten och logga varje inloppsgivare varje minut i 2 timmar.
+          expected: Varje värde håller sig mellan 18 °C och 27 °C.
+          data: ≥ 80 % av dimensionerande last
+        - action: Värm en inloppsgivare över 27 °C och håll den där.
+          expected: Ett larm når personalen i tjänst inom 5 minuter efter de första 5 minuterna över 27 °C.
+
+  - id: FCDC-T06
+    priority: critical
+    execution: manual
+    tags: [fire-detection]
+    refs: ["EN 54-20"]
+    en:
+      title: Test smoke at an aspirating detector
+      description: Introduces test smoke at a sampling hole with the extinguishing release disabled and checks the alarm at the staffed centre.
+      preconditions: The extinguishing release disabled for the test by the fire protection contractor, the staffed centre informed and test smoke for aspirating detectors.
+      expected: A pre-alarm reaches the centre, and the detector is certified as class A.
+      steps:
+        - action: Apply test smoke at the sampling hole farthest from the detector.
+          expected: The detector raises a pre-alarm.
+        - action: Ask the staffed centre for the alarm.
+          expected: The centre has received the pre-alarm with the room name.
+        - action: Read the detector's certificate.
+          expected: It states class A according to EN 54-20.
+    sv:
+      title: Teströk vid en luftsamplande detektor
+      description: Tillför teströk vid ett samplingshål med släcksystemets utlösning frånkopplad och kontrollerar larmet hos den bemannade centralen.
+      preconditions: Släcksystemets utlösning frånkopplad för testet av brandskyddsentreprenören, den bemannade centralen informerad och teströk för luftsamplande detektorer.
+      expected: Ett förlarm når centralen, och detektorn är certifierad i klass A.
+      steps:
+        - action: Tillför teströk vid det samplingshål som ligger längst från detektorn.
+          expected: Detektorn ger förlarm.
+        - action: Fråga den bemannade centralen om larmet.
+          expected: Centralen har tagit emot förlarmet med rummets namn.
+        - action: Läs detektorns certifikat.
+          expected: Det anger klass A enligt EN 54-20.
+
+  - id: FCDC-T07
+    priority: high
+    execution: manual
+    tags: [gas-extinguishing, room-integrity]
+    refs: ["EN 15004-1"]
+    en:
+      title: Review of the room integrity test
+      description: Reviews the latest door fan test report for each room protected by gas extinguishing.
+      preconditions: The list of gas-protected rooms and their room integrity test reports.
+      expected: Each room has a report from the last 12 months with a hold time of at least 10 minutes.
+      steps:
+        - action: Find the latest report for each gas-protected room.
+          expected: Each report is less than 12 months old.
+        - action: Read the calculated hold time in each report.
+          expected: Each is at least 10 minutes.
+          data: ≥ 10 min
+    sv:
+      title: Granskning av täthetsprovet
+      description: Granskar den senaste rapporten från täthetsprov med dörrfläkt för varje rum som skyddas av gassläcksystem.
+      preconditions: Listan över rum med gassläcksystem och deras rapporter från täthetsprov.
+      expected: Varje rum har en rapport från de senaste 12 månaderna med en hålltid på minst 10 minuter.
+      steps:
+        - action: Hitta den senaste rapporten för varje rum med gassläcksystem.
+          expected: Varje rapport är mindre än 12 månader gammal.
+        - action: Läs den beräknade hålltiden i varje rapport.
+          expected: Var och en är minst 10 minuter.
+          data: ≥ 10 min
+
+  - id: FCDC-T08
+    priority: medium
+    execution: manual
+    tags: [water-leak]
+    refs: []
+    en:
+      title: Wet sensor cable at a cooling unit
+      description: Wets the leak sensor cable at a cooling unit and times the alarm.
+      preconditions: A leak detection zone at a cooling unit and the operations staff informed of the test.
+      expected: An alarm with the location arrives within 1 minute.
+      steps:
+        - action: Wet the sensor cable with a damp cloth and note the time.
+          expected: The leak detection panel shows the zone.
+        - action: Check the alarm at the operations staff.
+          expected: The alarm with the location arrived within 1 minute.
+    sv:
+      title: Blöt givarkabel vid en kylenhet
+      description: Blöter ner givarkabeln för vattenlarm vid en kylenhet och mäter tiden till larm.
+      preconditions: En zon för vattenlarm vid en kylenhet och driftpersonalen informerad om testet.
+      expected: Ett larm med platsen kommer inom 1 minut.
+      steps:
+        - action: Blöt givarkabeln med en fuktig trasa och anteckna tiden.
+          expected: Centralen för vattenlarm visar zonen.
+        - action: Kontrollera larmet hos driftpersonalen.
+          expected: Larmet med platsen kom inom 1 minut.
+
+  - id: FCDC-T09
+    priority: critical
+    execution: manual
+    tags: [physical-access]
+    refs: ["ISO/IEC 27001:2022 A.7.2"]
+    en:
+      title: Two-factor entry to the data hall
+      description: Tries to enter the data hall with a card alone and with card and second factor, then checks the log.
+      preconditions: A test card with access to the data hall and its second factor.
+      expected: The card alone is refused, both factors open the door, and the entry is logged.
+      steps:
+        - action: Present the card without the second factor.
+          expected: The door stays locked.
+        - action: Present the card with the second factor and note the time.
+          expected: The door opens.
+        - action: Search the access log for the entry.
+          expected: The entry is logged with the card holder's name and the time.
+    sv:
+      title: Tillträde med två faktorer till datahallen
+      description: Försöker gå in i datahallen med bara kort och med kort och andra faktor, och kontrollerar sedan loggen.
+      preconditions: Ett testkort med tillträde till datahallen och dess andra faktor.
+      expected: Kortet ensamt nekas, båda faktorerna öppnar dörren, och passagen loggas.
+      steps:
+        - action: Visa kortet utan andra faktor.
+          expected: Dörren förblir låst.
+        - action: Visa kortet med andra faktor och anteckna tiden.
+          expected: Dörren öppnas.
+        - action: Sök efter passagen i passerloggen.
+          expected: Passagen är loggad med korthavarens namn och tiden.
+
+  - id: FCDC-T10
+    priority: medium
+    execution: manual
+    tags: [cabling]
+    refs: ["EN 50600-2-4 (telecommunications cabling infrastructure)"]
+    en:
+      title: Cable labels compared with the records
+      description: Picks cables in 3 racks and compares their labels with the cabling records.
+      preconditions: Access to 3 racks and to the cabling records.
+      expected: Each picked cable has matching labels at both ends and correct records.
+      steps:
+        - action: Pick 10 cables in each of the 3 racks and read the labels at both ends.
+          expected: Both ends carry the same identifier.
+          data: 30 cables
+        - action: Look up each identifier in the records.
+          expected: Each is recorded with the end points found on site.
+    sv:
+      title: Kabelmärkning jämförs med dokumentationen
+      description: Väljer kablar i 3 rack och jämför deras märkning med kabeldokumentationen.
+      preconditions: Åtkomst till 3 rack och till kabeldokumentationen.
+      expected: Varje vald kabel har samma märkning i båda ändar och rätt dokumentation.
+      steps:
+        - action: Välj 10 kablar i vart och ett av de 3 racken och läs märkningen i båda ändar.
+          expected: Båda ändarna har samma identitet.
+          data: 30 kablar
+        - action: Slå upp varje identitet i dokumentationen.
+          expected: Var och en är dokumenterad med de ändpunkter som finns på plats.
+
+  - id: FCDC-T11
+    priority: medium
+    execution: manual
+    tags: [energy-efficiency, pue, reporting]
+    refs: ["EN 50600-4-2 (power usage effectiveness)", "Directive (EU) 2023/1791 (EED) Art. 12 (data centres)"]
+    en:
+      title: Power usage effectiveness and the yearly energy report
+      description: Recalculates the power usage effectiveness from meter readings and checks the yearly report to the European database.
+      preconditions: Monthly meter readings for total facility energy and IT energy for 12 months, the installed IT power and the report confirmation.
+      expected: The yearly value is at most 1.4, and the report confirmation is on file for a site of 500 kW or more.
+      steps:
+        - action: Divide the total facility energy by the IT energy for each month and for the year.
+          expected: The monthly values match the reported ones, and the yearly value is at most 1.4.
+          data: PUE = total energy / IT energy
+        - action: Read the installed IT power and, if it is 500 kW or more, find the confirmation of the latest yearly report.
+          expected: The confirmation is on file and dated within the last 12 months.
+    sv:
+      title: Effektanvändningseffektivitet och den årliga energirapporten
+      description: Räknar om effektanvändningseffektiviteten från mätaravläsningar och kontrollerar den årliga rapporten till den europeiska databasen.
+      preconditions: Månatliga mätaravläsningar för anläggningens totala energi och IT-energi för 12 månader, den installerade IT-effekten och bekräftelsen på rapporten.
+      expected: Årsvärdet är högst 1,4, och bekräftelsen på rapporten finns arkiverad för en anläggning på 500 kW eller mer.
+      steps:
+        - action: Dela anläggningens totala energi med IT-energin för varje månad och för året.
+          expected: Månadsvärdena stämmer med de rapporterade, och årsvärdet är högst 1,4.
+          data: PUE = total energi / IT-energi
+        - action: Läs den installerade IT-effekten och, om den är 500 kW eller mer, hitta bekräftelsen på den senaste årliga rapporten.
+          expected: Bekräftelsen finns arkiverad och är daterad inom de senaste 12 månaderna.

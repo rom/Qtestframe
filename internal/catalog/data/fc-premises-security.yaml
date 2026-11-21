@@ -1,0 +1,628 @@
+area: fc-premises-security
+prefix: FCSEC
+group: security
+catalogue: facilities
+name: {en: Building and premises security, sv: Skydd av byggnader och lokaler}
+description:
+  en: Security zones, electronic access control, removal and review of access rights, door alarms, intrusion alarm grade, burglar-resistant perimeter, video surveillance, visitors and keys, physical security for security-sensitive activity, and the security of building automation systems.
+  sv: Säkerhetszoner, elektronisk passerkontroll, borttagning och granskning av behörigheter, dörrlarm, larmklass för inbrottslarm, inbrottsskyddat skalskydd, kamerabevakning, besökare och nycklar, fysisk säkerhet för säkerhetskänslig verksamhet och säkerheten i system för fastighetsautomation.
+
+requirements:
+  - id: FCSEC-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [zoning, perimeter, floor-plan]
+    refs: ["ISO/IEC 27001:2022 A.7.1", "ISO/IEC 27001:2022 A.7.3"]
+    tests: [FCSEC-T01]
+    en:
+      title: Premises divided into documented security zones
+      description: The premises MUST be divided into security zones (public, office, restricted and high security), with each zone's boundary, entrances and access rule shown on current floor plans.
+      rationale: Zones make it clear where stronger protection is needed and let access rights follow the sensitivity of each area.
+      criteria:
+        - method: inspection
+          text: The floor plans show each zone with its boundary and entrances, and a walk through the premises finds each marked entrance with the access control the plans state.
+    sv:
+      title: Lokalerna indelade i dokumenterade säkerhetszoner
+      description: Lokalerna SKA vara indelade i säkerhetszoner (allmän, kontor, begränsad och hög säkerhet), med varje zons gräns, entréer och åtkomstregel utmärkta på aktuella planritningar.
+      rationale: Zoner gör det tydligt var ett starkare skydd behövs och låter behörigheterna följa hur känsligt varje område är.
+      criteria:
+        - method: inspection
+          text: Planritningarna visar varje zon med gräns och entréer, och en rundvandring i lokalerna hittar varje markerad entré med den passerkontroll som ritningarna anger.
+
+  - id: FCSEC-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [access-control, card, pin]
+    refs: ["EN 60839-11-1", "ISO/IEC 27001:2022 A.7.2"]
+    tests: [FCSEC-T02]
+    en:
+      title: Card at restricted zones, card and PIN at high-security zones
+      description: The electronic access control system MUST require a personal card at each entrance to a restricted zone and a personal card together with a PIN code at each entrance to a high-security zone.
+      rationale: A lost or borrowed card alone should not open the most sensitive rooms.
+      criteria:
+        - method: test
+          text: At each tested high-security door, a valid card without the PIN is refused and the card with the right PIN opens the door, and each restricted door opens with a valid card.
+    sv:
+      title: Kort till begränsade zoner, kort och kod till zoner med hög säkerhet
+      description: Det elektroniska passersystemet SKA kräva ett personligt kort vid varje entré till en begränsad zon och ett personligt kort tillsammans med en kod vid varje entré till en zon med hög säkerhet.
+      rationale: Ett borttappat eller lånat kort ska inte ensamt kunna öppna de känsligaste rummen.
+      criteria:
+        - method: test
+          text: Vid varje testad dörr till hög säkerhet nekas ett giltigt kort utan kod och kortet med rätt kod öppnar dörren, och varje dörr till begränsad zon öppnas med ett giltigt kort.
+
+  - id: FCSEC-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [access-rights, offboarding, lost-card]
+    refs: ["ISO/IEC 27001:2022 A.7.2", "ISO/IEC 27001:2022 A.5.18"]
+    tests: [FCSEC-T03]
+    en:
+      title: Access card blocked within 1 hour
+      description: The access control system MUST block a card within 1 hour after its holder's employment or contract ends or after the card is reported lost.
+      rationale: A card that keeps working after it should have stopped gives former staff and finders access to the premises.
+      criteria:
+        - method: test
+          text: A test card reported lost in the system is refused at a reader within 1 hour of the report.
+          threshold: ≤ 1 h
+    sv:
+      title: Passerkort spärras inom 1 timme
+      description: Passersystemet SKA spärra ett kort inom 1 timme efter att innehavarens anställning eller uppdrag upphört eller efter att kortet anmälts förlorat.
+      rationale: Ett kort som fungerar efter att det borde ha slutat ger tidigare anställda och upphittare tillträde till lokalerna.
+      criteria:
+        - method: test
+          text: Ett testkort som anmäls förlorat i systemet nekas vid en läsare inom 1 timme från anmälan.
+          threshold: ≤ 1 h
+
+  - id: FCSEC-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [access-review, zone-owner]
+    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    tests: [FCSEC-T03]
+    en:
+      title: Access rights to restricted zones reviewed every quarter
+      description: The owner of each restricted and high-security zone MUST review the list of card holders with access to the zone every quarter and have each access that is no longer needed removed.
+      rationale: Access rights pile up as people change roles, and only a regular review removes what is no longer needed.
+      criteria:
+        - method: review
+          text: Each restricted and high-security zone has a signed review from the last quarter, and the removals it lists are no longer in the system.
+          threshold: every 3 months
+    sv:
+      title: Behörigheter till begränsade zoner granskas varje kvartal
+      description: Ägaren till varje begränsad zon och zon med hög säkerhet SKA varje kvartal granska listan över korthavare med tillträde till zonen och låta ta bort varje behörighet som inte längre behövs.
+      rationale: Behörigheter samlas på hög när människor byter roller, och bara en regelbunden granskning tar bort det som inte längre behövs.
+      criteria:
+        - method: review
+          text: Varje begränsad zon och zon med hög säkerhet har en undertecknad granskning från det senaste kvartalet, och de borttagningar den listar finns inte längre i systemet.
+          threshold: var 3:e månad
+
+  - id: FCSEC-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [door-alarm, forced-door, held-open]
+    refs: ["EN 60839-11-1", "ISO/IEC 27001:2022 A.7.4"]
+    tests: [FCSEC-T04]
+    en:
+      title: Alarm for a forced door or a door held open for 30 seconds
+      description: The access control system MUST raise an alarm at the security centre within 5 seconds when a controlled door is forced open or held open for more than 30 seconds.
+      rationale: A door wedged open or forced makes the zone boundary useless until someone closes it.
+      criteria:
+        - method: test
+          text: Holding a controlled door open for 35 seconds and opening it without a card each raise an alarm with the door's name at the security centre within 5 seconds.
+          threshold: held open > 30 s, alarm ≤ 5 s
+    sv:
+      title: Larm för uppbruten dörr eller dörr som hålls öppen i 30 sekunder
+      description: Passersystemet SKA larma säkerhetscentralen inom 5 sekunder när en kontrollerad dörr bryts upp eller hålls öppen i mer än 30 sekunder.
+      rationale: En dörr som ställts upp eller brutits upp gör zongränsen verkningslös tills någon stänger den.
+      criteria:
+        - method: test
+          text: När en kontrollerad dörr hålls öppen i 35 sekunder och när den öppnas utan kort larmar systemet med dörrens namn hos säkerhetscentralen inom 5 sekunder i båda fallen.
+          threshold: öppen > 30 s, larm ≤ 5 s
+
+  - id: FCSEC-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [intrusion-alarm, grade-3]
+    refs: ["EN 50131-1", "ISO/IEC 27001:2022 A.7.4"]
+    tests: [FCSEC-T05]
+    en:
+      title: Intrusion alarm of grade 3 in restricted zones
+      description: The intrusion alarm system that protects restricted and high-security zones MUST meet grade 3 of EN 50131-1 and transmit alarms to a staffed alarm receiving centre.
+      rationale: Grade 3 is designed against intruders with tools and some knowledge of alarm systems, which matches the threat to these zones.
+      criteria:
+        - method: inspection
+          text: The installation certificate states grade 3 for the system, and the alarm receiving centre confirms receipt of a test alarm from each restricted zone.
+    sv:
+      title: Inbrottslarm i larmklass 3 i begränsade zoner
+      description: Inbrottslarmet som skyddar begränsade zoner och zoner med hög säkerhet SKA uppfylla grad 3 enligt EN 50131-1 och överföra larm till en bemannad larmcentral.
+      rationale: Grad 3 är utformad mot inkräktare med verktyg och viss kunskap om larmsystem, vilket motsvarar hotet mot de zonerna.
+      criteria:
+        - method: inspection
+          text: Anläggningsintyget anger grad 3 för systemet, och larmcentralen bekräftar att ett provlarm från varje begränsad zon tagits emot.
+
+  - id: FCSEC-07
+    type: security
+    obligation: should
+    priority: medium
+    tags: [burglar-resistance, doors, windows]
+    refs: ["EN 1627", "ISO/IEC 27001:2022 A.7.1"]
+    tests: [FCSEC-T01]
+    en:
+      title: Burglar-resistant doors and windows at the high-security perimeter
+      description: Doors, windows and other openings in the perimeter of a high-security zone SHOULD be of resistance class RC3 or higher according to EN 1627.
+      rationale: An alarm only reports an intrusion, while burglar-resistant openings delay it until the response arrives.
+      criteria:
+        - method: inspection
+          text: The product certificates of each door and window in the high-security perimeter state RC3 or higher, and the installed products match the certificates.
+    sv:
+      title: Inbrottsskyddade dörrar och fönster i skalet till hög säkerhet
+      description: Dörrar, fönster och andra öppningar i skalet till en zon med hög säkerhet BÖR ha motståndsklass RC3 eller högre enligt EN 1627.
+      rationale: Ett larm meddelar bara ett intrång, medan inbrottsskyddade öppningar fördröjer det tills insatsen är på plats.
+      criteria:
+        - method: inspection
+          text: Produktcertifikaten för varje dörr och fönster i skalet till hög säkerhet anger RC3 eller högre, och de installerade produkterna stämmer med certifikaten.
+
+  - id: FCSEC-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [video-surveillance, retention, signage]
+    refs: ["Kamerabevakningslag (2018:1200)", "GDPR Art. 5(1)(e)", "EN 62676-4"]
+    tests: [FCSEC-T06]
+    en:
+      title: Video recordings erased after 30 days and cameras signposted
+      description: Video surveillance MUST be signposted in each monitored area with the operator and a contact for questions, and its recordings erased automatically 30 days after they are made.
+      rationale: Video of staff and visitors is personal data that is kept only as long as its purpose needs, and people have the right to know they are filmed.
+      criteria:
+        - method: test
+          text: A search for recordings older than 30 days returns nothing, and each camera's area has a sign with the operator and contact.
+          threshold: ≤ 30 days
+    sv:
+      title: Kamerainspelningar raderas efter 30 dagar och kamerorna är skyltade
+      description: Kamerabevakningen SKA vara skyltad i varje bevakat område med den som bedriver bevakningen och en kontakt för frågor, och dess inspelningar raderas automatiskt 30 dagar efter att de gjorts.
+      rationale: Video av personal och besökare är personuppgifter som bara sparas så länge syftet kräver, och människor har rätt att veta att de filmas.
+      criteria:
+        - method: test
+          text: En sökning efter inspelningar som är äldre än 30 dagar ger inget resultat, och varje kameras område har en skylt med den som bedriver bevakningen och kontakten.
+          threshold: ≤ 30 dagar
+
+  - id: FCSEC-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [visitors, escort, badge]
+    refs: ["ISO/IEC 27001:2022 A.7.2"]
+    tests: [FCSEC-T07]
+    en:
+      title: Visitors registered, badged and escorted in restricted zones
+      description: The reception MUST register each visitor with name, organisation, host and time, issue a visible visitor badge and ensure that the host escorts the visitor in each restricted zone.
+      rationale: Unregistered visitors cannot be accounted for in an evacuation or an investigation.
+      criteria:
+        - method: test
+          text: A test visitor is registered with the 4 items, gets a visible badge, and is stopped by staff when trying to enter a restricted zone without the host.
+    sv:
+      title: Besökare registreras, får besöksbricka och följs i begränsade zoner
+      description: Receptionen SKA registrera varje besökare med namn, organisation, värd och tid, lämna ut en synlig besöksbricka och se till att värden följer med besökaren i varje begränsad zon.
+      rationale: Besökare som inte är registrerade går inte att redovisa vid en utrymning eller en utredning.
+      criteria:
+        - method: test
+          text: En testbesökare registreras med de 4 uppgifterna, får en synlig bricka och stoppas av personal när hen försöker gå in i en begränsad zon utan värden.
+
+  - id: FCSEC-10
+    type: security
+    obligation: must
+    priority: medium
+    tags: [keys, master-keys, key-register]
+    refs: ["ISO/IEC 27001:2022 A.7.2"]
+    tests: [FCSEC-T08]
+    en:
+      title: Register of mechanical keys checked each year
+      description: The facility manager MUST keep a register of each mechanical key and master key with the holder's signed receipt, and check each year that each registered key is with its holder.
+      rationale: Mechanical keys cannot be blocked like cards, so a lost key that nobody notices can force a lock change.
+      criteria:
+        - method: inspection
+          text: The register lists each key with holder and signed receipt, and the latest yearly check is less than 12 months old with each missing key followed up.
+          threshold: once per 12 months
+    sv:
+      title: Register över mekaniska nycklar kontrolleras varje år
+      description: Fastighetsförvaltaren SKA föra ett register över varje mekanisk nyckel och huvudnyckel med innehavarens undertecknade kvittens och varje år kontrollera att varje registrerad nyckel finns hos sin innehavare.
+      rationale: Mekaniska nycklar går inte att spärra som kort, så en förlorad nyckel som ingen märker kan tvinga fram ett låsbyte.
+      criteria:
+        - method: inspection
+          text: Registret listar varje nyckel med innehavare och undertecknad kvittens, och den senaste årliga kontrollen är mindre än 12 månader gammal med varje saknad nyckel uppföljd.
+          threshold: en gång per 12 månader
+
+  - id: FCSEC-11
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [protective-security, security-analysis, physical-security]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "PMFS 2022:1"]
+    tests: [FCSEC-T09]
+    en:
+      title: Physical protection of security-sensitive activity based on the security analysis
+      description: In premises where security-sensitive activity takes place, the zoning, access control, intrusion protection and the handling of classified material MUST follow the measures decided on the basis of the protective security analysis.
+      rationale: Swedish protective security law makes the operator decide its physical measures from its own analysis, and the premises have to match that decision.
+      criteria:
+        - method: review
+          text: Each physical measure in the protective security plan can be found on the premises, and each zone for classified activity has the protection the plan states.
+    sv:
+      title: Fysiskt skydd för säkerhetskänslig verksamhet utgår från säkerhetsskyddsanalysen
+      description: I lokaler där säkerhetskänslig verksamhet bedrivs SKA zonindelning, passerkontroll, inbrottsskydd och hantering av säkerhetsskyddsklassificerade uppgifter följa de åtgärder som beslutats utifrån säkerhetsskyddsanalysen.
+      rationale: Säkerhetsskyddslagen gör verksamhetsutövaren ansvarig för att besluta om fysiska åtgärder utifrån sin egen analys, och lokalerna behöver stämma med det beslutet.
+      criteria:
+        - method: review
+          text: Varje fysisk åtgärd i säkerhetsskyddsplanen återfinns i lokalerna, och varje zon för säkerhetsskyddsklassificerad verksamhet har det skydd som planen anger.
+
+  - id: FCSEC-12
+    type: security
+    obligation: must
+    priority: critical
+    tags: [building-automation, segmentation, remote-access]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 1.13"]
+    tests: [FCSEC-T10]
+    en:
+      title: Building automation network separated from office network and internet
+      description: The building automation network MUST be separated from the office network and the internet, with remote access for service only through a VPN with multi-factor authentication.
+      rationale: Controllers for heating, ventilation and access control exposed to the internet are found by scanners within hours and can be taken over.
+      criteria:
+        - method: test
+          text: An external scan finds no building automation port, connections from the office network to the controllers fail, and the service VPN refuses a login without the second factor.
+    sv:
+      title: Nätet för fastighetsautomation åtskilt från kontorsnät och internet
+      description: Nätet för fastighetsautomation SKA vara åtskilt från kontorsnätet och internet, med distansåtkomst för service bara via VPN med flerfaktorsautentisering.
+      rationale: Styrenheter för värme, ventilation och passerkontroll som syns på internet hittas av skannrar inom några timmar och kan tas över.
+      criteria:
+        - method: test
+          text: En extern skanning hittar ingen port för fastighetsautomation, anslutningar från kontorsnätet till styrenheterna misslyckas, och service-VPN:et nekar en inloggning utan andra faktor.
+
+  - id: FCSEC-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [building-automation, default-passwords, accounts]
+    refs: ["IEC 62443-3-3 SR 1.1", "IEC 62443-3-3 SR 1.5"]
+    tests: [FCSEC-T10]
+    en:
+      title: Personal accounts and no default passwords in building automation
+      description: Each building automation controller and workstation MUST be accessed with personal accounts, with each default password from the manufacturer replaced before the system is taken into use.
+      rationale: Default passwords for controllers are published in manuals, and shared accounts hide who changed a setpoint.
+      criteria:
+        - method: test
+          text: Login attempts with the manufacturer's default credentials on 10 controllers fail, and the user list shows only personal accounts.
+    sv:
+      title: Personliga konton och inga standardlösenord i fastighetsautomationen
+      description: Varje styrenhet och arbetsstation för fastighetsautomation SKA nås med personliga konton, där varje standardlösenord från tillverkaren byts ut innan systemet tas i bruk.
+      rationale: Standardlösenord för styrenheter publiceras i manualer, och delade konton döljer vem som ändrade ett börvärde.
+      criteria:
+        - method: test
+          text: Inloggningsförsök med tillverkarens standarduppgifter i 10 styrenheter misslyckas, och användarlistan visar bara personliga konton.
+
+  - id: FCSEC-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [building-automation, patching, firmware]
+    refs: ["IEC 62443-2-4 (patch management)"]
+    tests: [FCSEC-T10]
+    en:
+      title: Building automation software updates assessed every quarter
+      description: The service provider for building automation SHOULD assess the manufacturers' security updates for each controller and server every quarter and install the relevant ones within 3 months of their release.
+      rationale: Building automation often runs for decades without updates, while its vulnerabilities are published like any other software.
+      criteria:
+        - method: review
+          text: The update log shows a quarterly assessment for each controller type, and each update rated relevant was installed within 3 months of release.
+          threshold: assessment every 3 months, install ≤ 3 months
+    sv:
+      title: Programvaruuppdateringar i fastighetsautomationen bedöms varje kvartal
+      description: Serviceleverantören för fastighetsautomation BÖR varje kvartal bedöma tillverkarnas säkerhetsuppdateringar för varje styrenhet och server och installera de relevanta inom 3 månader från att de släppts.
+      rationale: Fastighetsautomation körs ofta i årtionden utan uppdateringar, medan dess sårbarheter publiceras som för all annan programvara.
+      criteria:
+        - method: review
+          text: Uppdateringsloggen visar en kvartalsvis bedömning för varje typ av styrenhet, och varje uppdatering som bedömts relevant installerades inom 3 månader från att den släppts.
+          threshold: bedömning var 3:e månad, installation ≤ 3 månader
+
+tests:
+  - id: FCSEC-T01
+    priority: critical
+    execution: manual
+    tags: [zoning, perimeter]
+    refs: ["ISO/IEC 27001:2022 A.7.1"]
+    en:
+      title: Walk-through of zones, entrances and perimeter openings
+      description: Walks through the premises with the floor plans and checks each zone entrance and the openings of the high-security perimeter.
+      preconditions: Current floor plans with zones and entrances, the product certificates of the perimeter doors and windows, and an escort with access to each zone.
+      expected: Each entrance on the plans exists with the stated control, and each perimeter opening of the high-security zone is RC3 or higher.
+      steps:
+        - action: Walk each zone boundary and compare the entrances with the plans.
+          expected: Each entrance on the plans exists, and no entrance exists that is missing from the plans.
+        - action: At each entrance, note the access control installed.
+          expected: The access control matches the rule of the zone on the plans.
+        - action: Compare the label of each door and window in the high-security perimeter with its certificate.
+          expected: Each certificate states RC3 or higher and matches the installed product.
+    sv:
+      title: Rundvandring av zoner, entréer och öppningar i skalet
+      description: Går igenom lokalerna med planritningarna och kontrollerar varje entré till en zon och öppningarna i skalet till hög säkerhet.
+      preconditions: Aktuella planritningar med zoner och entréer, produktcertifikaten för dörrar och fönster i skalet och en följeslagare med tillträde till varje zon.
+      expected: Varje entré på ritningarna finns med angiven kontroll, och varje öppning i skalet till hög säkerhet har RC3 eller högre.
+      steps:
+        - action: Gå längs varje zongräns och jämför entréerna med ritningarna.
+          expected: Varje entré på ritningarna finns, och det finns ingen entré som saknas på ritningarna.
+        - action: Anteckna den passerkontroll som är installerad vid varje entré.
+          expected: Passerkontrollen stämmer med zonens regel på ritningarna.
+        - action: Jämför märkningen på varje dörr och fönster i skalet till hög säkerhet med dess certifikat.
+          expected: Varje certifikat anger RC3 eller högre och stämmer med den installerade produkten.
+
+  - id: FCSEC-T02
+    priority: critical
+    execution: manual
+    tags: [access-control]
+    refs: ["EN 60839-11-1"]
+    en:
+      title: Card and PIN at restricted and high-security doors
+      description: Tries a valid test card with and without the PIN at doors of both zone types.
+      preconditions: A test card with access to 3 restricted and 3 high-security doors and its PIN.
+      expected: Restricted doors open with the card, and high-security doors open only with card and PIN.
+      steps:
+        - action: Present the card at each restricted door.
+          expected: Each door opens.
+        - action: Present the card at each high-security door without entering the PIN.
+          expected: Each door stays locked.
+        - action: Present the card and enter the right PIN at each high-security door.
+          expected: Each door opens.
+    sv:
+      title: Kort och kod vid dörrar till begränsade zoner och hög säkerhet
+      description: Prövar ett giltigt testkort med och utan kod vid dörrar till båda zontyperna.
+      preconditions: Ett testkort med tillträde till 3 dörrar i begränsad zon och 3 dörrar till hög säkerhet, och dess kod.
+      expected: Dörrar till begränsad zon öppnas med kortet, och dörrar till hög säkerhet öppnas bara med kort och kod.
+      steps:
+        - action: Visa kortet vid varje dörr till begränsad zon.
+          expected: Varje dörr öppnas.
+        - action: Visa kortet vid varje dörr till hög säkerhet utan att slå koden.
+          expected: Varje dörr förblir låst.
+        - action: Visa kortet och slå rätt kod vid varje dörr till hög säkerhet.
+          expected: Varje dörr öppnas.
+
+  - id: FCSEC-T03
+    priority: critical
+    execution: manual
+    tags: [access-rights, lost-card, access-review]
+    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    en:
+      title: Blocking a lost card and checking the access reviews
+      description: Reports a test card as lost and times the block, then checks the quarterly access reviews.
+      preconditions: A working test card, the access control administration and the latest reviews of each restricted and high-security zone.
+      expected: The card is refused within 1 hour, and each zone has a current review whose removals are done.
+      steps:
+        - action: Report the test card as lost in the system and note the time.
+          expected: The card is marked as blocked.
+        - action: Present the card at a reader every 10 minutes.
+          expected: The card is refused within 1 hour of the report.
+        - action: For each zone, find the latest review and look up 3 of the removed holders in the system.
+          expected: Each review is from the last quarter and signed, and none of the removed holders still has access.
+    sv:
+      title: Spärr av ett förlorat kort och kontroll av behörighetsgranskningarna
+      description: Anmäler ett testkort som förlorat och mäter tiden till spärr, och kontrollerar sedan de kvartalsvisa behörighetsgranskningarna.
+      preconditions: Ett fungerande testkort, administrationen av passersystemet och de senaste granskningarna för varje begränsad zon och zon med hög säkerhet.
+      expected: Kortet nekas inom 1 timme, och varje zon har en aktuell granskning vars borttagningar är genomförda.
+      steps:
+        - action: Anmäl testkortet som förlorat i systemet och anteckna tiden.
+          expected: Kortet markeras som spärrat.
+        - action: Visa kortet vid en läsare var 10:e minut.
+          expected: Kortet nekas inom 1 timme från anmälan.
+        - action: Hitta den senaste granskningen för varje zon och slå upp 3 av de borttagna korthavarna i systemet.
+          expected: Varje granskning är från det senaste kvartalet och undertecknad, och ingen av de borttagna korthavarna har kvar tillträde.
+
+  - id: FCSEC-T04
+    priority: high
+    execution: manual
+    tags: [door-alarm]
+    refs: []
+    en:
+      title: Door forced and door held open
+      description: Opens a controlled door without a card and holds it open beyond the limit while the security centre watches.
+      preconditions: A controlled door, a staff member at the security centre informed of the test and synchronised clocks.
+      expected: Both events raise an alarm with the door's name within 5 seconds.
+      steps:
+        - action: Open the door from the outside with a mechanical key, without a card.
+          expected: A forced-door alarm with the door's name appears at the security centre within 5 seconds.
+        - action: Open the door with a valid card and hold it open for 35 seconds.
+          expected: A held-open alarm appears within 5 seconds after the 30-second limit.
+          data: 35 s
+    sv:
+      title: Uppbruten dörr och dörr som hålls öppen
+      description: Öppnar en kontrollerad dörr utan kort och håller den öppen längre än gränsen medan säkerhetscentralen följer larmen.
+      preconditions: En kontrollerad dörr, en medarbetare på säkerhetscentralen som informerats om testet och synkroniserade klockor.
+      expected: Båda händelserna ger larm med dörrens namn inom 5 sekunder.
+      steps:
+        - action: Öppna dörren utifrån med en mekanisk nyckel, utan kort.
+          expected: Ett larm om uppbruten dörr med dörrens namn visas hos säkerhetscentralen inom 5 sekunder.
+        - action: Öppna dörren med ett giltigt kort och håll den öppen i 35 sekunder.
+          expected: Ett larm om öppen dörr visas inom 5 sekunder efter gränsen på 30 sekunder.
+          data: 35 s
+
+  - id: FCSEC-T05
+    priority: high
+    execution: manual
+    tags: [intrusion-alarm]
+    refs: ["EN 50131-1"]
+    en:
+      title: Intrusion alarm certificate and test alarms
+      description: Inspects the installation certificate and sends a test alarm from each restricted zone to the alarm receiving centre.
+      preconditions: The installation certificate of the intrusion alarm system, a set system and an agreement with the alarm receiving centre on the test.
+      expected: The certificate states grade 3, and the centre confirms each test alarm.
+      steps:
+        - action: Read the grade on the installation certificate.
+          expected: It states grade 3 for the system covering the restricted and high-security zones.
+        - action: Trigger a detector in each restricted and high-security zone.
+          expected: The alarm receiving centre confirms each alarm with the zone name.
+    sv:
+      title: Anläggningsintyg och provlarm för inbrottslarmet
+      description: Granskar anläggningsintyget och skickar ett provlarm från varje begränsad zon till larmcentralen.
+      preconditions: Inbrottslarmets anläggningsintyg, ett tillkopplat system och en överenskommelse med larmcentralen om provet.
+      expected: Intyget anger grad 3, och centralen bekräftar varje provlarm.
+      steps:
+        - action: Läs graden i anläggningsintyget.
+          expected: Det anger grad 3 för systemet som täcker de begränsade zonerna och zonerna med hög säkerhet.
+        - action: Lös ut en detektor i varje begränsad zon och zon med hög säkerhet.
+          expected: Larmcentralen bekräftar varje larm med zonens namn.
+
+  - id: FCSEC-T06
+    priority: high
+    execution: manual
+    tags: [video-surveillance, retention]
+    refs: ["Kamerabevakningslag (2018:1200)"]
+    en:
+      title: Video retention and camera signs
+      description: Searches the video system for old recordings and walks the monitored areas to check the signs.
+      preconditions: Operator access to the video system and the camera plan.
+      expected: No recording is older than 30 days, and each monitored area has a sign with operator and contact.
+      steps:
+        - action: Search each camera for recordings from 31 days ago.
+          expected: No recording is found.
+          data: 31 days ago
+        - action: Walk to each camera area on the plan.
+          expected: Each area has a sign that names the operator and a contact.
+    sv:
+      title: Lagringstid för video och skyltar för kameror
+      description: Söker efter gamla inspelningar i kamerasystemet och går igenom de bevakade områdena för att kontrollera skyltarna.
+      preconditions: Operatörsbehörighet till kamerasystemet och kameraplanen.
+      expected: Ingen inspelning är äldre än 30 dagar, och varje bevakat område har en skylt med den som bedriver bevakningen och kontakten.
+      steps:
+        - action: Sök efter inspelningar från för 31 dagar sedan för varje kamera.
+          expected: Ingen inspelning hittas.
+          data: 31 dagar sedan
+        - action: Gå till varje kameras område enligt planen.
+          expected: Varje område har en skylt som anger den som bedriver bevakningen och en kontakt.
+
+  - id: FCSEC-T07
+    priority: high
+    execution: manual
+    tags: [visitors]
+    refs: []
+    en:
+      title: Test visitor at the reception
+      description: A tester arrives as a visitor, is registered and then tries to enter a restricted zone without the host.
+      preconditions: A tester unknown to the reception, a host who has agreed to the test and the security manager's approval.
+      expected: The visitor is registered, badged and stopped when alone at a restricted zone.
+      steps:
+        - action: Let the tester announce the visit at the reception.
+          expected: The reception registers name, organisation, host and time and hands out a visible badge.
+        - action: Let the tester follow staff through a restricted door without the host.
+          expected: Staff stop the tester and contact the host or the reception.
+    sv:
+      title: Testbesökare i receptionen
+      description: En testare kommer som besökare, registreras och försöker sedan gå in i en begränsad zon utan värden.
+      preconditions: En testare som receptionen inte känner, en värd som godkänt testet och säkerhetschefens godkännande.
+      expected: Besökaren registreras, får bricka och stoppas när hen är ensam vid en begränsad zon.
+      steps:
+        - action: Låt testaren anmäla besöket i receptionen.
+          expected: Receptionen registrerar namn, organisation, värd och tid och lämnar ut en synlig bricka.
+        - action: Låt testaren följa efter personal genom en dörr till begränsad zon utan värden.
+          expected: Personalen stoppar testaren och kontaktar värden eller receptionen.
+
+  - id: FCSEC-T08
+    priority: medium
+    execution: manual
+    tags: [keys]
+    refs: []
+    en:
+      title: Key register and yearly key check
+      description: Inspects the key register and the latest yearly check and samples key holders.
+      preconditions: The key register with receipts, the latest yearly check and 5 key holders available.
+      expected: Each key has a holder and receipt, the check is current, and the sampled holders show their keys.
+      steps:
+        - action: Check each register entry for holder and signed receipt.
+          expected: Each entry has both.
+        - action: Read the date of the latest yearly check and its list of missing keys.
+          expected: The check is less than 12 months old, and each missing key has a recorded action.
+        - action: Ask 5 holders to show their registered keys.
+          expected: Each holder shows the keys listed in the register.
+    sv:
+      title: Nyckelregister och årlig nyckelkontroll
+      description: Granskar nyckelregistret och den senaste årliga kontrollen och gör stickprov hos nyckelinnehavare.
+      preconditions: Nyckelregistret med kvittenser, den senaste årliga kontrollen och 5 tillgängliga nyckelinnehavare.
+      expected: Varje nyckel har innehavare och kvittens, kontrollen är aktuell, och de utvalda innehavarna visar sina nycklar.
+      steps:
+        - action: Kontrollera att varje post i registret har innehavare och undertecknad kvittens.
+          expected: Varje post har båda.
+        - action: Läs datumet för den senaste årliga kontrollen och dess lista över saknade nycklar.
+          expected: Kontrollen är mindre än 12 månader gammal, och varje saknad nyckel har en dokumenterad åtgärd.
+        - action: Be 5 innehavare visa sina registrerade nycklar.
+          expected: Varje innehavare visar de nycklar som finns i registret.
+
+  - id: FCSEC-T09
+    priority: critical
+    execution: manual
+    tags: [protective-security]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)"]
+    en:
+      title: Physical measures in the protective security plan found on site
+      description: Compares the physical measures decided in the protective security plan with the premises.
+      preconditions: The protective security plan with its physical measures, access for a person with the right security clearance and an escort.
+      expected: Each decided measure is in place, and each zone for classified activity has the stated protection.
+      steps:
+        - action: List each physical measure in the plan with its location.
+          expected: A checklist of measures and locations is produced.
+        - action: Visit each location and check the measure.
+          expected: Each measure is in place as described.
+        - action: For each zone for classified activity, compare its access control and intrusion protection with the plan.
+          expected: Each zone has the protection the plan states.
+    sv:
+      title: De fysiska åtgärderna i säkerhetsskyddsplanen finns på plats
+      description: Jämför de fysiska åtgärder som beslutats i säkerhetsskyddsplanen med lokalerna.
+      preconditions: Säkerhetsskyddsplanen med dess fysiska åtgärder, tillträde för en person med rätt säkerhetsprövning och en följeslagare.
+      expected: Varje beslutad åtgärd finns på plats, och varje zon för säkerhetsskyddsklassificerad verksamhet har det angivna skyddet.
+      steps:
+        - action: Lista varje fysisk åtgärd i planen med dess plats.
+          expected: En checklista med åtgärder och platser tas fram.
+        - action: Besök varje plats och kontrollera åtgärden.
+          expected: Varje åtgärd finns på plats enligt beskrivningen.
+        - action: Jämför passerkontroll och inbrottsskydd för varje zon för säkerhetsskyddsklassificerad verksamhet med planen.
+          expected: Varje zon har det skydd som planen anger.
+
+  - id: FCSEC-T10
+    priority: critical
+    execution: manual
+    tags: [building-automation]
+    refs: ["IEC 62443-3-3 SR 5.1", "IEC 62443-3-3 SR 1.1"]
+    en:
+      title: Network, accounts and updates of the building automation system
+      description: Scans and probes the building automation network, tries default credentials and reviews the update log.
+      preconditions: Permission for an external scan, a test computer in the office network, the manufacturers' default credentials for the controller types, a service VPN account and the update log.
+      expected: The system is unreachable from the internet and the office network, defaults do not work, only personal accounts exist, and updates are assessed each quarter.
+      steps:
+        - action: Scan the organisation's external addresses for building automation ports.
+          expected: No such port answers.
+          data: For example BACnet UDP 47808 and Modbus TCP 502
+        - action: From the office network, try to reach 10 controllers.
+          expected: Each connection fails.
+        - action: Log in to the service VPN without the second factor, then with it.
+          expected: The first login is refused and the second succeeds.
+        - action: Try the default credentials on the 10 controllers and read their user lists.
+          expected: Each login fails, and each list shows only personal accounts.
+        - action: Read the update log for the last 4 quarters.
+          expected: Each quarter has an assessment per controller type, and each relevant update was installed within 3 months.
+    sv:
+      title: Nät, konton och uppdateringar i systemet för fastighetsautomation
+      description: Skannar och prövar nätet för fastighetsautomation, testar standarduppgifter och granskar uppdateringsloggen.
+      preconditions: Tillstånd för en extern skanning, en testdator i kontorsnätet, tillverkarnas standarduppgifter för typerna av styrenheter, ett konto i service-VPN:et och uppdateringsloggen.
+      expected: Systemet går inte att nå från internet och kontorsnätet, standarduppgifterna fungerar inte, bara personliga konton finns, och uppdateringar bedöms varje kvartal.
+      steps:
+        - action: Skanna organisationens externa adresser efter portar för fastighetsautomation.
+          expected: Ingen sådan port svarar.
+          data: Till exempel BACnet UDP 47808 och Modbus TCP 502
+        - action: Försök nå 10 styrenheter från kontorsnätet.
+          expected: Varje anslutning misslyckas.
+        - action: Logga in i service-VPN:et utan andra faktor och sedan med den.
+          expected: Den första inloggningen nekas och den andra lyckas.
+        - action: Pröva standarduppgifterna i de 10 styrenheterna och läs deras användarlistor.
+          expected: Varje inloggning misslyckas, och varje lista visar bara personliga konton.
+        - action: Läs uppdateringsloggen för de senaste 4 kvartalen.
+          expected: Varje kvartal har en bedömning per typ av styrenhet, och varje relevant uppdatering installerades inom 3 månader.
