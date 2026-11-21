@@ -38,7 +38,7 @@ onMounted(() => {
 
 const tenantRoles = computed(() => roles.roles.map((r) => ({ label: enumLabel('role', r.name), value: r.name })))
 const serverRoles = computed(() =>
-  (view.value?.server_roles ?? []).map((r) => ({ label: r === 'super_admin' ? t('mfa.policy.superAdmin') : enumLabel('role', r), value: r })),
+  (view.value?.server_roles ?? []).map((r) => ({ label: enumLabel('role', r), value: r })),
 )
 function summary(p: MfaPolicy, opts: { label: string; value: string }[]): string {
   if (p.mode === 'roles') {

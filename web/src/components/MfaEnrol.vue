@@ -81,7 +81,7 @@ async function copyKey() {
               <rect width="100%" height="100%" fill="#fff" />
               <path :d="qr.path" fill="#000" />
             </svg>
-            <div class="key">
+            <div class="qr-side">
               <a :href="setup.otpauth_uri" class="small">{{ t('mfa.openApp') }}</a>
               <button type="button" class="link-button small" :aria-expanded="showKey" aria-controls="mfa-manual-key" @click="showKey = !showKey">{{ t('mfa.cannotScan') }}</button>
               <div v-if="showKey" id="mfa-manual-key" class="manual">
@@ -128,7 +128,7 @@ async function copyKey() {
   border-radius: 6px;
   border: 1px solid var(--qtf-border);
 }
-.key {
+.qr-side {
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -136,6 +136,7 @@ async function copyKey() {
   justify-items: start;
 }
 .manual {
+  overflow-wrap: anywhere;
   display: grid;
   gap: 6px;
   justify-items: start;

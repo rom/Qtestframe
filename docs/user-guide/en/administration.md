@@ -8,6 +8,7 @@
 | **Role matrix** (roles and permissions) | everyone |
 | **API tokens** | Tester and up (your own tokens) |
 | **Provisioning (SCIM)** | Admins |
+| **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
 | **Audit log** | Manager and up |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
@@ -89,6 +90,23 @@ If the person already has an account, they are added at once and get an e-mail t
 *(Admin, for local accounts)*: select **Reset password** in the member's row. Qtestframe generates a **temporary password** and shows it **once**; copy it and give it to the person through a safe channel. The person is signed out everywhere and must choose a new password at the next sign-in.
 
 Admins can only reset passwords of people who belong to their organisation alone; for super admins and people who are members of other organisations too, a super admin must do it. Accounts that sign in through single sign-on have no password in Qtestframe.
+
+### Reset multi-factor authentication
+
+The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or **Missing** when the [MFA policy](#multi-factor-authentication) requires it for the member but they have not set it up yet.
+
+*(Admin)* When someone has lost both their phone and their recovery codes, select **Reset MFA** (the shield) in their row and confirm. Their authenticator app, recovery codes and remembered devices are removed, they are signed out everywhere and told by a notification and an e-mail. They then sign in with their password alone, or, if MFA is required for them, set up a new authenticator app at the next sign-in. Make sure the request really comes from that person before you reset. As for passwords, admins can only reset people who belong to their organisation alone; super admins can reset anyone, also under [Users](#users). Every reset is recorded in the [audit log](#audit-log).
+
+## Multi-factor authentication
+
+**Administration → Multi-factor authentication** decides who must use a second factor (an authenticator app, see [your profile](getting-started.md#multi-factor-authentication)) when signing in with a password. The page shows how many members already use it.
+
+- **Policy of the organisation** *(Admin)*: **Optional** (the default: everyone may, nobody must), **Required for everyone** or **Required for some roles**, for example only for admins. It applies to the members by their role in this organisation.
+- **Server policy** *(Super admin)*: the same choices for every user of the installation; a role counts in any organisation, and *Super admin* can be chosen as a role. An organisation can require more than the server, never less.
+- **Grace period**: people the policy newly covers may keep signing in without a second factor for this many days; they see a reminder with the date. Afterwards they must set it up at their next sign-in before they can do anything else. **0** means at the next sign-in.
+- **Remember this device** *(Super admin, server policy)*: the number of days a browser may skip the code after the user chose *Remember this device*; **0** (the default) turns the option off.
+
+API tokens are not affected. People who sign in with single sign-on normally get their second factor from the identity provider; whether Qtestframe asks for its own code as well is set per provider in the server configuration (`local_mfa`). Every policy change is recorded in the [audit log](#audit-log).
 
 ## E-mail
 

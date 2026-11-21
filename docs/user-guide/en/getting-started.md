@@ -11,6 +11,7 @@ Open the address your administrator gave you (for a local trial installation `ht
 1. Enter your **E-mail** and **Password** and select **Sign in**.
 2. If you belong to several organisations and want to start in a particular one, select **Sign in to a specific organisation…** and enter its short name (slug), for example `acme`. Without it you start in your default organisation (see [Preferences](#preferences)) or the one you used last.
 3. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
+4. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
 
 The language buttons at the top of the sign-in page switch between English and Swedish before you sign in. After sign-in, the language in your preferences wins.
 
@@ -23,6 +24,7 @@ The language buttons at the top of the sign-in page switch between English and S
   ![The intro tour: a step card next to the highlighted Requirements entry of the sidebar, with Back, Next and Skip tour](../images/en-intro-tour.png)
 - **Sign-in information.** On later sign-ins Qtestframe can show when and from where you last signed in, and how many failed attempts there have been since. If you do not recognise a sign-in, change your password and sign out your other sessions (see [Security](#security)).
 - **A forced password change.** If an administrator has reset your password, you must choose a new one before you can continue.
+- **Multi-factor authentication required.** If your organisation requires a second factor and you have not set one up, a reminder tells you by when; after that date you must [set up an authenticator app](#multi-factor-authentication) at sign-in before you can continue.
 
 ## The layout
 
@@ -120,7 +122,29 @@ Preferences are stored with your account and applied on every device. Change the
 - **Password**: for local accounts, enter your **Current password** and the **New password** twice, then select **Change password**. If you sign in with single sign-on, your password is managed by your identity provider.
 - **API tokens**: tokens for CI pipelines and scripts are created under **Administration → API tokens** (see [API tokens](administration.md#api-tokens)).
 - **Active sessions**: every browser and device that is signed in with your account, with browser, IP address, sign-in time and last activity. **Sign out** ends one session; **Sign out all other sessions** ends all except the one you are using.
-- **Sign-in history**: your recent sign-ins and failed attempts, if shown.
+- **Sign-in history**: your recent sign-ins and failed attempts, if shown. Wrong codes of the second factor are listed as failed attempts with the method *Second factor*.
+
+### Multi-factor authentication
+
+A second factor protects your account even if someone learns your password: after the password you enter a 6-digit code from an **authenticator app** on your phone, for example Microsoft Authenticator, Google Authenticator, 1Password or FreeOTP.
+
+**Turn it on**
+
+1. In your profile, under **Multi-factor authentication**, select **Set up authenticator app**.
+2. Scan the QR code with the app. On a phone, **Open in an authenticator app on this device** adds the account directly; if you cannot scan, select **Cannot scan the code? Enter the key by hand** and type the setup key into the app.
+3. Enter the 6-digit code the app shows and select **Turn on**.
+4. Qtestframe shows ten **recovery codes**. Save them now (**Copy** or **Download**), for example in a password manager: they are shown only this once. Each code works once and lets you sign in without your phone. Then select **I have saved the codes**.
+
+From then on, every sign-in with your password asks for a code. API tokens are not affected.
+
+**Later**
+
+- **New recovery codes** creates ten new codes (the old ones stop working). Do this when only a few are left; the profile warns you.
+- **Forget remembered devices** makes every browser where you chose *Remember this device* ask for a code again.
+- **Turn off** removes the authenticator app and your recovery codes; both need a current code (or a recovery code). If your organisation requires multi-factor authentication, you cannot turn it off. You get an e-mail when it is turned off.
+- **New phone or lost phone**: with a recovery code you can still sign in; turn MFA off and set it up again with the new phone. Without phone and recovery codes, ask an administrator to [reset your multi-factor authentication](administration.md#reset-multi-factor-authentication).
+
+If you sign in with single sign-on, your identity provider usually asks for the second factor; Qtestframe asks for its own code only if the server is configured to do so.
 
 ## Next steps
 

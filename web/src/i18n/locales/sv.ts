@@ -4025,7 +4025,6 @@ const sv: Messages = {
       roles: 'Roller',
       rolesHint: 'Till exempel administratörer.',
       rolesNeeded: 'Välj minst en roll.',
-      superAdmin: 'Superadministratör',
       grace: 'Övergångsperiod',
       graceDays: 'Dagar att konfigurera',
       graceHint: 'Användare som policyn börjar gälla för kan fortsätta logga in utan andra faktor i så här många dagar (de ser en påminnelse); därefter måste de konfigurera den vid nästa inloggning. 0 betyder vid nästa inloggning.',

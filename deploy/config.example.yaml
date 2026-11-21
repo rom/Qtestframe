@@ -137,6 +137,14 @@ auth:
   #    email_claim: email
   #    name_claim: name
   #    groups_claim: groups
+  #    # Qtestframe's own second factor (authenticator app) for sign-ins
+  #    # through this provider: off (default; the IdP is responsible for
+  #    # MFA), unless_idp_mfa (asked unless the ID token's amr contains
+  #    # "mfa" or one of mfa_amr_values, or its acr is one of
+  #    # mfa_acr_values) or always. See docs/security.md.
+  #    local_mfa: off
+  #    mfa_amr_values: [mfa]
+  #    mfa_acr_values: []
   #    # IdP group -> tenant role (applied to default_tenant on every login;
   #    # highest matching role wins).
   #    role_mapping:

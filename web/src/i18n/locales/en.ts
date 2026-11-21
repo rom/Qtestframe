@@ -4026,7 +4026,6 @@ const en = {
       roles: 'Roles',
       rolesHint: 'For example administrators.',
       rolesNeeded: 'Choose at least one role.',
-      superAdmin: 'Super administrator',
       grace: 'Grace period',
       graceDays: 'Days to set it up',
       graceHint: 'Users the policy newly covers may keep signing in without a second factor for this many days (they see a reminder); afterwards they must set it up at their next sign-in. 0 means at the next sign-in.',
