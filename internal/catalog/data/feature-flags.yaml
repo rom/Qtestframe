@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration, validation, startup]
-    refs: ["The Twelve-Factor App, III (config)", "ISO/IEC 27001:2022 Annex A 8.9 (configuration management)"]
+    refs: ["The Twelve-Factor App, III (config)", "ISO/IEC 27001:2022 A.8.9 (configuration management)"]
     tests: [FLAG-T01]
     en:
       title: Invalid configuration stops the start
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration, version-control, review]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.9 (configuration management)", "ISO/IEC 27001:2022 Annex A 8.32 (change management)"]
+    refs: ["ISO/IEC 27001:2022 A.8.9 (configuration management)", "ISO/IEC 27001:2022 A.8.32 (change management)", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(e)"]
     tests: [FLAG-T02]
     en:
       title: Configuration changes are versioned and reviewed
@@ -62,7 +62,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [configuration, visibility, masking]
-    refs: ["OWASP ASVS 4.0.3 §14.3 (unintended security disclosure)"]
+    refs: ["OWASP ASVS 4.0.3 §14.3 (unintended security disclosure)", "ISO/IEC 27001:2022 A.8.11"]
     tests: [FLAG-T01, FLAG-T08]
     en:
       title: Effective configuration is visible with secrets masked
@@ -178,7 +178,7 @@ requirements:
     obligation: must
     priority: high
     tags: [feature-flag, audit]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.15 (logging)", "ISO/IEC 27001:2022 Annex A 8.32 (change management)"]
+    refs: ["ISO/IEC 27001:2022 A.8.15 (logging)", "ISO/IEC 27001:2022 A.8.32 (change management)"]
     tests: [FLAG-T03]
     en:
       title: Flag changes are recorded
@@ -246,7 +246,7 @@ requirements:
     obligation: must
     priority: high
     tags: [feature-flag, authorisation, server-side]
-    refs: ["OWASP ASVS 4.0.3 §4.1.1 (access control enforced on a trusted service layer)"]
+    refs: ["OWASP ASVS 4.0.3 §4.1.1 (access control enforced on a trusted service layer)", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     tests: [FLAG-T07]
     en:
       title: Flags that hide functions are also checked on the server

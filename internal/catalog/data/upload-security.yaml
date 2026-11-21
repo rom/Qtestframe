@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [file-type, allow-list, content-sniffing]
-    refs: ["OWASP ASVS 4.0.3 §12.2 (file integrity)", "OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)"]
+    refs: ["OWASP ASVS 4.0.3 §12.2 (file integrity)", "OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [UPLS-T01]
     en:
       title: Allow-list of file types checked against the content
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [file-type, extension]
-    refs: ["OWASP File Upload Cheat Sheet (extension validation)", "CWE-434"]
+    refs: ["OWASP File Upload Cheat Sheet (extension validation)", "CWE-434", "ISO/IEC 27001:2022 A.8.28"]
     tests: [UPLS-T01]
     en:
       title: File extension matches the detected type
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [malware, scanning]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.7 (protection against malware)", "OWASP File Upload Cheat Sheet (file content validation)"]
+    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "OWASP File Upload Cheat Sheet (file content validation)", "IEC 62443-3-3 SR 3.2"]
     tests: [UPLS-T02]
     en:
       title: Malware scan before a file is shared
@@ -84,7 +84,7 @@ requirements:
     obligation: must
     priority: high
     tags: [malware, quarantine, notification]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.7 (protection against malware)"]
+    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "IEC 62443-3-3 SR 3.2"]
     tests: [UPLS-T02]
     en:
       title: Infected files are quarantined and the uploader is told
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [storage, file-name, path-traversal]
-    refs: ["OWASP ASVS 4.0.3 §12.3 (file execution)", "CWE-22 (path traversal)"]
+    refs: ["OWASP ASVS 4.0.3 §12.3 (file execution)", "CWE-22 (path traversal)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [UPLS-T03]
     en:
       title: Files are stored under generated names outside the web root
@@ -178,7 +178,7 @@ requirements:
     obligation: must
     priority: high
     tags: [archive, zip-bomb, denial-of-service]
-    refs: ["OWASP ASVS 4.0.3 §12.1.2 (compressed files)", "CWE-409 (improper handling of highly compressed data)"]
+    refs: ["OWASP ASVS 4.0.3 §12.1.2 (compressed files)", "CWE-409 (improper handling of highly compressed data)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [UPLS-T05]
     en:
       title: Limits on unpacked archives
@@ -202,7 +202,7 @@ requirements:
     obligation: must
     priority: high
     tags: [archive, path-traversal, zip-slip]
-    refs: ["CWE-22 (path traversal)", "OWASP File Upload Cheat Sheet"]
+    refs: ["CWE-22 (path traversal)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
     tests: [UPLS-T05, UPLS-T09]
     en:
       title: Archive entries stay in the target directory
@@ -224,7 +224,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [image, metadata, privacy]
-    refs: ["GDPR Art. 5(1)(c) (data minimisation)", "OWASP File Upload Cheat Sheet (image rewriting)"]
+    refs: ["GDPR Art. 5(1)(c) (data minimisation)", "OWASP File Upload Cheat Sheet (image rewriting)", "GDPR Art. 25(2)", "ISO/IEC 27001:2022 A.5.34"]
     tests: [UPLS-T06]
     en:
       title: Location and device data are removed from images
@@ -246,7 +246,7 @@ requirements:
     obligation: must
     priority: high
     tags: [download, authorisation, signed-url]
-    refs: ["OWASP ASVS 4.0.3 §4.2.1 (operation level access control)", "OWASP Top 10:2021 A01 (broken access control)"]
+    refs: ["OWASP ASVS 4.0.3 §4.2.1 (operation level access control)", "OWASP Top 10:2021 A01 (broken access control)", "ISO/IEC 27001:2022 A.8.3"]
     tests: [UPLS-T07]
     en:
       title: Download links are checked and expire after 15 minutes
@@ -270,7 +270,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [file-name, xss, display]
-    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79 (cross-site scripting)"]
+    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [UPLS-T08]
     en:
       title: Original file names are shown as plain text
@@ -292,7 +292,7 @@ tests:
     priority: critical
     execution: automated
     tags: [file-type, upload]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.10.9 (test upload of malicious files)"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.10.9 (test upload of malicious files)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: Uploads are checked by content and extension
       description: Uploads valid files and files whose name or content type has been changed, and checks which are accepted.
@@ -550,7 +550,7 @@ tests:
     priority: high
     execution: automated
     tags: [archive, zip-slip, unit-test]
-    refs: ["CWE-22"]
+    refs: ["CWE-22", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: Archive extraction rejects unsafe entries
       description: A unit test feeds the archive extraction routine with entries that point outside the target directory.

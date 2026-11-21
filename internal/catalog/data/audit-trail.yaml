@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [audit-trail, change-history]
-    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3"]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3", "IEC 62443-3-3 SR 2.8", "IEC 62443-4-2 CR 2.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(l)"]
     tests: [AUD-T01]
     en:
       title: Every change is recorded in the audit trail
@@ -34,7 +34,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [audit-trail, immutability]
-    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-9"]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-9", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
     tests: [AUD-T02]
     en:
       title: Audit entries cannot be changed or deleted
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [tamper-evidence, hash-chain]
-    refs: ["NIST SP 800-53 AU-9(3)", "NIST SP 800-53 AU-10", "ISO/IEC 27001:2022 A.8.15"]
+    refs: ["NIST SP 800-53 AU-9(3)", "NIST SP 800-53 AU-10", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9"]
     tests: [AUD-T03]
     en:
       title: Tamper-evident audit trail
@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: high
     tags: [audit-trail, retention-period]
-    refs: ["21 CFR Part 11 §11.10(c)", "EU GMP Annex 11 §17", "Swedish Bookkeeping Act (1999:1078) ch. 7 §2"]
+    refs: ["21 CFR Part 11 §11.10(c)", "EU GMP Annex 11 §17", "Swedish Bookkeeping Act (1999:1078) ch. 7 §2", "ISO/IEC 27001:2022 A.5.33", "ISO/IEC 27001:2022 A.8.15"]
     tests: [AUD-T04]
     en:
       title: Retention of audit records
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [audit-trail, export, auditor]
-    refs: ["21 CFR Part 11 §11.10(b)", "EU GMP Annex 11 §8", "ISO/IEC 27001:2022 A.5.35"]
+    refs: ["21 CFR Part 11 §11.10(b)", "EU GMP Annex 11 §8", "ISO/IEC 27001:2022 A.5.35", "IEC 62443-3-3 SR 6.1", "IEC 62443-4-2 CR 6.1"]
     tests: [AUD-T05]
     en:
       title: Export of the audit trail for auditors
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [e-signature, re-authentication]
-    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "EU GMP Annex 11 §14", "eIDAS Regulation (EU) No 910/2014 Art. 26"]
+    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "EU GMP Annex 11 §14", "eIDAS Regulation (EU) No 910/2014 Art. 26", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
     tests: [AUD-T07]
     en:
       title: Electronic signature with re-authentication
@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: high
     tags: [e-signature, record-linking]
-    refs: ["21 CFR Part 11 §11.70", "EU GMP Annex 11 §14"]
+    refs: ["21 CFR Part 11 §11.70", "EU GMP Annex 11 §14", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
     tests: [AUD-T08]
     en:
       title: Signatures are bound to the signed content
@@ -236,7 +236,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [audit-trail, read-access, sensitive-data]
-    refs: ["Swedish Patient Data Act (2008:355) Ch. 4 §3 (access logging)", "HIPAA Security Rule 45 CFR §164.312(b) (audit controls)"]
+    refs: ["Swedish Patient Data Act (2008:355) Ch. 4 §3 (access logging)", "HIPAA Security Rule 45 CFR §164.312(b) (audit controls)", "ISO/IEC 27001:2022 A.8.15", "GDPR Art. 32(1)(b)"]
     tests: [AUD-T11]
     en:
       title: Reading a sensitive record is recorded
@@ -282,7 +282,7 @@ tests:
     priority: critical
     execution: automated
     tags: [audit-trail, change-history]
-    refs: ["21 CFR Part 11 §11.10(e)"]
+    refs: ["21 CFR Part 11 §11.10(e)", "IEC 62443-3-3 SR 2.8", "IEC 62443-4-2 CR 2.8", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(l)"]
     en:
       title: Create, change and delete appear in the audit trail
       description: A script creates, changes and deletes a record and reads the resulting audit entries.
@@ -314,7 +314,7 @@ tests:
     priority: critical
     execution: manual
     tags: [audit-trail, immutability]
-    refs: ["NIST SP 800-53 AU-9"]
+    refs: ["NIST SP 800-53 AU-9", "ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)"]
     en:
       title: Administrators cannot alter the audit trail
       description: Tries to change and delete audit entries as an administrator and inspects the database rights.
@@ -344,7 +344,7 @@ tests:
     priority: high
     execution: automated
     tags: [tamper-evidence, hash-chain]
-    refs: ["NIST SP 800-53 AU-9(3)"]
+    refs: ["NIST SP 800-53 AU-9(3)", "IEC 62443-3-3 SR 3.9", "IEC 62443-4-2 CR 3.9"]
     en:
       title: Hash chain verification detects tampering
       description: A script verifies the audit hash chain, alters the database directly and verifies again.
@@ -374,7 +374,7 @@ tests:
     priority: high
     execution: manual
     tags: [audit-trail, retention-period]
-    refs: ["EU GMP Annex 11 §17"]
+    refs: ["EU GMP Annex 11 §17", "ISO/IEC 27001:2022 A.5.33", "ISO/IEC 27001:2022 A.8.15"]
     en:
       title: Audit entries are kept for 7 years
       description: Inspects the retention setting and runs the retention job on aged audit entries.
@@ -400,7 +400,7 @@ tests:
     priority: high
     execution: manual
     tags: [audit-trail, export, auditor]
-    refs: ["21 CFR Part 11 §11.10(b)"]
+    refs: ["21 CFR Part 11 §11.10(b)", "IEC 62443-3-3 SR 6.1", "IEC 62443-4-2 CR 6.1"]
     en:
       title: Audit export is complete and has a checksum
       description: Exports the audit trail for one record and one month and compares it with the view in the system.
@@ -456,7 +456,7 @@ tests:
     priority: critical
     execution: manual
     tags: [e-signature, re-authentication]
-    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)"]
+    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200(a)", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
     en:
       title: Signing requires re-authentication and records its meaning
       description: Signs a record with and without re-authentication and checks what is stored.
@@ -486,7 +486,7 @@ tests:
     priority: high
     execution: manual
     tags: [e-signature, record-linking]
-    refs: ["21 CFR Part 11 §11.70"]
+    refs: ["21 CFR Part 11 §11.70", "IEC 62443-3-3 SR 2.12", "IEC 62443-4-2 CR 2.12"]
     en:
       title: Changing a signed record invalidates the signature
       description: Changes a field of a signed record and checks the signature status.

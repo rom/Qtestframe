@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [tls, transport-encryption]
-    refs: ["OWASP ASVS 4.0 V9.1", "NIST SP 800-52 Rev. 2", "OWASP Top 10 2021 A02", "PCI DSS 4.0 Req. 4.2.1"]
+    refs: ["OWASP ASVS 4.0 V9.1", "NIST SP 800-52 Rev. 2", "OWASP Top 10 2021 A02", "PCI DSS 4.0 Req. 4.2.1", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
     tests: [CRY-T01]
     en:
       title: TLS 1.2 or later for external connections
@@ -38,7 +38,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [tls, hsts]
-    refs: ["OWASP ASVS 4.0 V14.4.5", "RFC 6797"]
+    refs: ["OWASP ASVS 4.0 V14.4.5", "RFC 6797", "ISO/IEC 27001:2022 A.8.24"]
     tests: [CRY-T01]
     en:
       title: HTTP Strict Transport Security
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [tls, internal-traffic]
-    refs: ["OWASP ASVS 4.0 V9.2.2", "NIST SP 800-53 SC-8", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["OWASP ASVS 4.0 V9.2.2", "NIST SP 800-53 SC-8", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "ISO/IEC 27033-1:2015", "Regulation (EU) 2022/2554 (DORA) Art. 9(3)(a)"]
     tests: [CRY-T02]
     en:
       title: Encrypted connections between internal components
@@ -82,7 +82,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [tls, certificate-validation]
-    refs: ["OWASP ASVS 4.0 V9.2.1", "OWASP Top 10 2021 A02", "OWASP Transport Layer Security Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V9.2.1", "OWASP Top 10 2021 A02", "OWASP Transport Layer Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
     tests: [CRY-T03]
     en:
       title: Certificate validation is never turned off
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [password-hashing, argon2]
-    refs: ["OWASP Password Storage Cheat Sheet", "OWASP ASVS 4.0 V2.4.1", "NIST SP 800-63B §5.1.1.2", "RFC 9106"]
+    refs: ["OWASP Password Storage Cheat Sheet", "OWASP ASVS 4.0 V2.4.1", "NIST SP 800-63B §5.1.1.2", "RFC 9106", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5"]
     tests: [CRY-T04]
     en:
       title: Password hashing algorithm and work factor
@@ -134,7 +134,7 @@ requirements:
     obligation: must
     priority: high
     tags: [encryption-at-rest, aes]
-    refs: ["OWASP ASVS 4.0 V6.1", "NIST SP 800-53 SC-28", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.5"]
+    refs: ["OWASP ASVS 4.0 V6.1", "NIST SP 800-53 SC-28", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.5", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "GDPR Art. 32(1)(a)", "ISO/IEC 27040:2024"]
     tests: [CRY-T05]
     en:
       title: Encryption of stored data
@@ -156,7 +156,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [secrets, source-code]
-    refs: ["OWASP ASVS 4.0 V2.10.4", "OWASP ASVS 4.0 V6.4.1", "OWASP Secrets Management Cheat Sheet", "OWASP Top 10 2021 A05"]
+    refs: ["OWASP ASVS 4.0 V2.10.4", "OWASP ASVS 4.0 V6.4.1", "OWASP Secrets Management Cheat Sheet", "OWASP Top 10 2021 A05", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-4-1 SM-8", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)"]
     tests: [CRY-T06]
     en:
       title: No secrets in source code or images
@@ -182,7 +182,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [key-management, key-rotation]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.7.4"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3", "ISO/IEC 27001:2022 A.8.24", "PCI DSS 4.0 Req. 3.7.4", "IEC 62443-3-3 SR 4.3"]
     tests: [CRY-T07]
     en:
       title: Rotation of encryption keys
@@ -208,7 +208,7 @@ requirements:
     obligation: must
     priority: high
     tags: [randomness, csprng]
-    refs: ["OWASP ASVS 4.0 V6.3", "NIST SP 800-90A Rev. 1"]
+    refs: ["OWASP ASVS 4.0 V6.3", "NIST SP 800-90A Rev. 1", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3"]
     tests: [CRY-T08, SESS-T01]
     en:
       title: Cryptographically secure random numbers
@@ -230,7 +230,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [weak-algorithms]
-    refs: ["OWASP ASVS 4.0 V6.2", "NIST SP 800-131A Rev. 2", "OWASP Top 10 2021 A02"]
+    refs: ["OWASP ASVS 4.0 V6.2", "NIST SP 800-131A Rev. 2", "OWASP Top 10 2021 A02", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)"]
     tests: [CRY-T09]
     en:
       title: No broken cryptographic algorithms
@@ -252,7 +252,7 @@ requirements:
     obligation: may
     priority: low
     tags: [key-management, hsm, kms]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5", "PCI DSS 4.0 Req. 3.6"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5", "PCI DSS 4.0 Req. 3.6", "ISO/IEC 27001:2022 A.8.24"]
     tests: [CRY-T10]
     en:
       title: Master keys in a hardware security module
@@ -274,7 +274,7 @@ tests:
     priority: critical
     execution: automated
     tags: [tls, hsts]
-    refs: ["OWASP Web Security Testing Guide WSTG-CRYP-01"]
+    refs: ["OWASP Web Security Testing Guide WSTG-CRYP-01", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
     en:
       title: TLS scan of public host names
       description: A TLS scanner checks protocol versions, cipher suites and the HSTS header of each public host name.
@@ -304,7 +304,7 @@ tests:
     priority: high
     execution: manual
     tags: [tls, internal-traffic]
-    refs: ["NIST SP 800-53 SC-8"]
+    refs: ["NIST SP 800-53 SC-8", "IEC 62443-3-3 SR 4.1", "IEC 62443-3-3 SR 3.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "ISO/IEC 27033-1:2015", "Regulation (EU) 2022/2554 (DORA) Art. 9(3)(a)"]
     en:
       title: Internal connections are encrypted
       description: Inspects the configuration of internal connections and captures traffic on the internal network.
@@ -330,7 +330,7 @@ tests:
     priority: critical
     execution: automated
     tags: [certificate-validation]
-    refs: ["OWASP Transport Layer Security Cheat Sheet"]
+    refs: ["OWASP Transport Layer Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.9", "IEC 62443-4-2 CR 1.9", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SCM)"]
     en:
       title: Outgoing calls fail on invalid certificates
       description: A script points the system's outgoing integrations at test servers with invalid certificates.
@@ -362,7 +362,7 @@ tests:
     priority: critical
     execution: manual
     tags: [password-hashing, argon2]
-    refs: ["OWASP Password Storage Cheat Sheet"]
+    refs: ["OWASP Password Storage Cheat Sheet", "ISO/IEC 27001:2022 A.5.17", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 1.5", "IEC 62443-4-2 CR 1.5", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
     en:
       title: Password hashes use Argon2id with the agreed work factor
       description: Inspects the stored password hashes and checks the upgrade of old hashes.
@@ -390,7 +390,7 @@ tests:
     priority: high
     execution: manual
     tags: [encryption-at-rest]
-    refs: ["NIST SP 800-53 SC-28"]
+    refs: ["NIST SP 800-53 SC-28", "IEC 62443-3-3 SR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "GDPR Art. 32(1)(a)", "ISO/IEC 27040:2024"]
     en:
       title: Stored data and backups are encrypted
       description: Inspects the encryption settings of each data store and backup target.
@@ -420,7 +420,7 @@ tests:
     priority: critical
     execution: automated
     tags: [secrets, secret-scanning]
-    refs: ["OWASP Secrets Management Cheat Sheet"]
+    refs: ["OWASP Secrets Management Cheat Sheet", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-4-1 SM-8", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CCK)"]
     en:
       title: Secret scan of history and images
       description: A secret scanner runs over the full version control history and every released container image.
@@ -450,7 +450,7 @@ tests:
     priority: medium
     execution: manual
     tags: [key-rotation]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.3", "IEC 62443-3-3 SR 4.3"]
     en:
       title: Key rotation under load
       description: Rotates the data encryption key while the system is in use and checks the key inventory.
@@ -480,7 +480,7 @@ tests:
     priority: high
     execution: automated
     tags: [randomness, csprng, static-analysis]
-    refs: ["OWASP ASVS 4.0 V6.3"]
+    refs: ["OWASP ASVS 4.0 V6.3", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3"]
     en:
       title: No general-purpose random functions for security values
       description: A static analysis rule searches the code for general-purpose random functions near security values.
@@ -508,7 +508,7 @@ tests:
     priority: high
     execution: automated
     tags: [weak-algorithms, static-analysis]
-    refs: ["NIST SP 800-131A Rev. 2"]
+    refs: ["NIST SP 800-131A Rev. 2", "ISO/IEC 27001:2022 A.8.24", "IEC 62443-3-3 SR 4.3", "IEC 62443-4-2 CR 4.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)"]
     en:
       title: Scan for weak cryptographic algorithms
       description: A static analysis rule and a configuration check look for weak algorithms and modes.
@@ -534,7 +534,7 @@ tests:
     priority: low
     execution: manual
     tags: [hsm, kms]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5", "ISO/IEC 27001:2022 A.8.24"]
     en:
       title: Key-encryption key cannot be exported
       description: Inspects the key management service and how the application uses the key-encryption key.

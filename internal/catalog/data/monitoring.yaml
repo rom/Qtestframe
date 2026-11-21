@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [logging, structured-logs]
-    refs: ["The Twelve-Factor App, XI Logs", "OWASP ASVS 4.0 V7.1 (log content)", "ISO/IEC 27001:2022 Annex A 8.15 (logging)"]
+    refs: ["The Twelve-Factor App, XI Logs", "OWASP ASVS 4.0 V7.1 (log content)", "ISO/IEC 27001:2022 A.8.15 (logging)"]
     tests: [OBS-T01]
     en:
       title: Structured log entries
@@ -56,7 +56,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [logging, secrets, personal-data]
-    refs: ["OWASP ASVS 4.0 V7.1.1 (no credentials in logs)", "OWASP Logging Cheat Sheet", "GDPR Art. 5(1)(c) (data minimisation)"]
+    refs: ["OWASP ASVS 4.0 V7.1.1 (no credentials in logs)", "OWASP Logging Cheat Sheet", "GDPR Art. 5(1)(c) (data minimisation)", "ISO/IEC 27001:2022 A.8.15"]
     tests: [OBS-T03]
     en:
       title: No secrets or identity numbers in logs
@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [metrics, red]
-    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems: the four golden signals)", "ISO/IEC 27001:2022 Annex A 8.16 (monitoring activities)"]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems: the four golden signals)", "ISO/IEC 27001:2022 A.8.16 (monitoring activities)"]
     tests: [OBS-T04]
     en:
       title: Request metrics per endpoint
@@ -100,7 +100,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [metrics, resource-use, saturation]
-    refs: ["Google SRE book ch. 6 (saturation)", "ISO/IEC 27001:2022 Annex A 8.6 (capacity management)"]
+    refs: ["Google SRE book ch. 6 (saturation)", "ISO/IEC 27001:2022 A.8.6 (capacity management)"]
     tests: [OBS-T04]
     en:
       title: Resource metrics
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [alerting, error-rate, on-call]
-    refs: ["Google SRE workbook ch. 5 (Alerting on SLOs)", "ITIL 4 Monitoring and event management"]
+    refs: ["Google SRE workbook ch. 5 (Alerting on SLOs)", "ITIL 4 Monitoring and event management", "ISO/IEC 27001:2022 A.8.16", "Regulation (EU) 2022/2554 (DORA) Art. 10"]
     tests: [OBS-T06]
     en:
       title: Alert on high error rate
@@ -172,7 +172,7 @@ requirements:
     obligation: should
     priority: high
     tags: [alerting, latency]
-    refs: ["Google SRE book ch. 6 (latency)", "Google SRE workbook ch. 5 (Alerting on SLOs)"]
+    refs: ["Google SRE book ch. 6 (latency)", "Google SRE workbook ch. 5 (Alerting on SLOs)", "ISO/IEC 27001:2022 A.8.16", "Regulation (EU) 2022/2554 (DORA) Art. 10"]
     tests: [OBS-T06]
     en:
       title: Alert on slow responses
@@ -196,7 +196,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [alerting, runbook]
-    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)", "ITIL 4 Monitoring and event management"]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)", "ITIL 4 Monitoring and event management", "ISO/IEC 27001:2022 A.5.37"]
     tests: [OBS-T07]
     en:
       title: Runbook link in every alert
@@ -240,7 +240,7 @@ requirements:
     obligation: must
     priority: high
     tags: [log-retention, logging]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.15 (logging)", "ITIL 4 Information security management"]
+    refs: ["ISO/IEC 27001:2022 A.8.15 (logging)", "ITIL 4 Information security management"]
     tests: [OBS-T09]
     en:
       title: Minimum retention of application logs
@@ -264,7 +264,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [log-retention, personal-data]
-    refs: ["GDPR Art. 5(1)(e) (storage limitation)"]
+    refs: ["GDPR Art. 5(1)(e) (storage limitation)", "ISO/IEC 27001:2022 A.8.15"]
     tests: [OBS-T09]
     en:
       title: Deletion of old application logs
@@ -288,7 +288,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [time-synchronisation, logging]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.17 (clock synchronization)", "RFC 5905 (NTPv4)"]
+    refs: ["ISO/IEC 27001:2022 A.8.17 (clock synchronization)", "RFC 5905 (NTPv4)", "IEC 62443-3-3 SR 2.11", "IEC 62443-4-2 CR 2.11", "ISO/IEC 27019:2024 (clock synchronisation)"]
     tests: [OBS-T10]
     en:
       title: Synchronised clocks
@@ -398,7 +398,7 @@ tests:
     priority: critical
     execution: automated
     tags: [logging, secrets]
-    refs: ["OWASP Logging Cheat Sheet"]
+    refs: ["OWASP Logging Cheat Sheet", "ISO/IEC 27001:2022 A.8.15"]
     en:
       title: Search of the logs for known test secrets
       description: A script runs a session with unique test secrets and then searches all logs for them.
@@ -486,7 +486,7 @@ tests:
     priority: critical
     execution: manual
     tags: [alerting, on-call]
-    refs: ["Google SRE workbook ch. 5"]
+    refs: ["Google SRE workbook ch. 5", "ISO/IEC 27001:2022 A.8.16", "Regulation (EU) 2022/2554 (DORA) Art. 10"]
     en:
       title: Error rate and latency alerts reach the on-call engineer
       description: Injects errors and delays in a test environment that uses the production alert rules and routes alerts to a test on-call rota.
@@ -572,7 +572,7 @@ tests:
     priority: high
     execution: manual
     tags: [log-retention]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.15"]
+    refs: ["ISO/IEC 27001:2022 A.8.15"]
     en:
       title: Log retention and deletion
       description: Checks that old log entries are still searchable within the retention period and gone after the deletion limit.
@@ -602,7 +602,7 @@ tests:
     priority: medium
     execution: automated
     tags: [time-synchronisation]
-    refs: ["RFC 5905"]
+    refs: ["RFC 5905", "IEC 62443-3-3 SR 2.11", "IEC 62443-4-2 CR 2.11", "ISO/IEC 27019:2024 (clock synchronisation)"]
     en:
       title: Clock offset of every server
       description: A script reads the time synchronisation status of each server and compares the offset with the limit.

@@ -56,7 +56,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [separation-of-duties, approval]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.3", "21 CFR Part 11 §11.10"]
+    refs: ["ISO/IEC 27001:2022 A.5.3", "21 CFR Part 11 §11.10"]
     tests: [WFL-T02]
     en:
       title: No approval of one's own item
@@ -214,7 +214,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [delegation, absence]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.3"]
+    refs: ["ISO/IEC 27001:2022 A.5.3"]
     tests: [WFL-T06]
     en:
       title: Delegation of approvals during absence
@@ -358,7 +358,7 @@ tests:
     priority: critical
     execution: manual
     tags: [separation-of-duties, rejection]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.3"]
+    refs: ["ISO/IEC 27001:2022 A.5.3"]
     en:
       title: Self-approval blocked and rejection reason required
       description: The author, the last editor and an independent approver act on the same item.

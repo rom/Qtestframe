@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: high
     tags: [masking, display]
-    refs: ["PCI DSS v4.0 Requirement 3.4.1 (PAN masked when displayed)"]
+    refs: ["PCI DSS v4.0 Requirement 3.4.1 (PAN masked when displayed)", "ISO/IEC 27001:2022 A.8.11"]
     tests: [PAY-T02]
     en:
       title: Card numbers are masked when shown
@@ -100,7 +100,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [webhook, signature, replay]
-    refs: ["OWASP ASVS 4.0.3 §13.2.6", "PCI DSS v4.0 Requirement 6.2.4 (common software attacks)"]
+    refs: ["OWASP ASVS 4.0.3 §13.2.6", "PCI DSS v4.0 Requirement 6.2.4 (common software attacks)", "IEC 62443-3-3 SR 3.1"]
     tests: [PAY-T04]
     en:
       title: Payment notifications are verified
@@ -146,7 +146,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sca, 3-d-secure, psd2]
-    refs: ["PSD2 (Directive (EU) 2015/2366) Art. 97", "Commission Delegated Regulation (EU) 2018/389 (RTS on strong customer authentication)"]
+    refs: ["PSD2 (Directive (EU) 2015/2366) Art. 97", "Commission Delegated Regulation (EU) 2018/389 (RTS on strong customer authentication)", "ISO/IEC 27001:2022 A.8.5", "Directive 2014/53/EU (RED) Art. 3(3)(f) (EN 18031-3 AUM)"]
     tests: [PAY-T06]
     en:
       title: Strong customer authentication for card payments in the EEA
@@ -168,7 +168,7 @@ requirements:
     obligation: must
     priority: high
     tags: [reconciliation, settlement]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.16 (monitoring activities)"]
+    refs: ["ISO/IEC 27001:2022 A.8.16 (monitoring activities)"]
     tests: [PAY-T07]
     en:
       title: Daily reconciliation with the payment provider

@@ -196,7 +196,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [push, confidentiality, lock-screen]
-    refs: ["OWASP MASVS-PLATFORM", "ISO/IEC 27001:2022 Annex A 8.12"]
+    refs: ["OWASP MASVS-PLATFORM", "ISO/IEC 27001:2022 A.8.12"]
     tests: [MOB-T07]
     en:
       title: No confidential content in push notifications
@@ -310,7 +310,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [local-storage, encryption, sign-out]
-    refs: ["OWASP MASVS-STORAGE", "OWASP MASVS-CRYPTO"]
+    refs: ["OWASP MASVS-STORAGE", "OWASP MASVS-CRYPTO", "ISO/IEC 27001:2022 A.8.1", "GDPR Art. 32(1)(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
     tests: [MOB-T11]
     en:
       title: Data on the device protected and removed at sign-out
@@ -674,7 +674,7 @@ tests:
     priority: critical
     execution: manual
     tags: [local-storage, encryption]
-    refs: ["OWASP MASVS-STORAGE"]
+    refs: ["OWASP MASVS-STORAGE", "ISO/IEC 27001:2022 A.8.1", "GDPR Art. 32(1)(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
     en:
       title: Device storage inspected before and after sign-out
       description: A security tester inspects the app's storage on a test device while signed in and after sign-out.

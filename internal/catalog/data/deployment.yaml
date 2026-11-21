@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [automation, pipeline]
-    refs: ["The Twelve-Factor App, V Build, release, run", "Google SRE book ch. 8 (Release Engineering)", "ITIL 4 Deployment management"]
+    refs: ["The Twelve-Factor App, V Build, release, run", "Google SRE book ch. 8 (Release Engineering)", "ITIL 4 Deployment management", "ISO/IEC 27001:2022 A.8.32", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(e)"]
     tests: [DEP-T01]
     en:
       title: Automated deployment pipeline
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [rollback]
-    refs: ["Google SRE book ch. 8 (Release Engineering)", "ITIL 4 Release management"]
+    refs: ["Google SRE book ch. 8 (Release Engineering)", "ITIL 4 Release management", "ISO/IEC 27001:2022 A.8.32"]
     tests: [DEP-T03]
     en:
       title: Rollback to the previous version
@@ -126,7 +126,7 @@ requirements:
     obligation: must
     priority: high
     tags: [database-migration, automation]
-    refs: ["The Twelve-Factor App, XII Admin processes", "ISO/IEC 27001:2022 Annex A 8.32 (change management)"]
+    refs: ["The Twelve-Factor App, XII Admin processes", "ISO/IEC 27001:2022 A.8.32 (change management)", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(e)"]
     tests: [DEP-T05]
     en:
       title: Versioned and automated database migrations
@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration, environment]
-    refs: ["The Twelve-Factor App, III Config"]
+    refs: ["The Twelve-Factor App, III Config", "ISO/IEC 27001:2022 A.8.9"]
     tests: [DEP-T07]
     en:
       title: Configuration outside the code
@@ -196,7 +196,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [secrets, repository]
-    refs: ["OWASP ASVS 4.0 V2.10.4 (no secrets in source code)", "ISO/IEC 27001:2022 Annex A 8.4 (access to source code)"]
+    refs: ["OWASP ASVS 4.0 V2.10.4 (no secrets in source code)", "ISO/IEC 27001:2022 A.8.4 (access to source code)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-4-1 SM-7"]
     tests: [DEP-T08]
     en:
       title: No secrets in the source repository
@@ -218,7 +218,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [environment-parity, staging]
-    refs: ["The Twelve-Factor App, X Dev/prod parity", "ISO/IEC 27001:2022 Annex A 8.31 (separation of environments)"]
+    refs: ["The Twelve-Factor App, X Dev/prod parity", "ISO/IEC 27001:2022 A.8.31 (separation of environments)"]
     tests: [DEP-T09]
     en:
       title: Staging matches production
@@ -240,7 +240,7 @@ requirements:
     obligation: must
     priority: high
     tags: [infrastructure-as-code, drift]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.9 (configuration management)", "Google SRE book ch. 8 (Release Engineering)"]
+    refs: ["ISO/IEC 27001:2022 A.8.9 (configuration management)", "Google SRE book ch. 8 (Release Engineering)", "IEC 62443-3-3 SR 7.6"]
     tests: [DEP-T10]
     en:
       title: Infrastructure as code
@@ -286,7 +286,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [audit, deployment-log]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.32 (change management)", "ITIL 4 Change enablement"]
+    refs: ["ISO/IEC 27001:2022 A.8.32 (change management)", "ITIL 4 Change enablement", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(e)"]
     tests: [DEP-T01]
     en:
       title: Record of every deployment
@@ -366,7 +366,7 @@ tests:
     priority: critical
     execution: manual
     tags: [rollback, smoke-test]
-    refs: ["Google SRE book ch. 8"]
+    refs: ["Google SRE book ch. 8", "ISO/IEC 27001:2022 A.8.32"]
     en:
       title: Automatic and manual rollback
       description: Deploys a deliberately broken version to a production-like environment and checks both the automatic and the manual way back.
@@ -482,7 +482,7 @@ tests:
     priority: medium
     execution: manual
     tags: [configuration, environment]
-    refs: ["The Twelve-Factor App, III Config"]
+    refs: ["The Twelve-Factor App, III Config", "ISO/IEC 27001:2022 A.8.9"]
     en:
       title: One artifact, two configurations
       description: Starts the same artifact with two sets of environment variables and searches the code for environment-specific values.
@@ -512,7 +512,7 @@ tests:
     priority: critical
     execution: automated
     tags: [secrets, ci, scanning]
-    refs: ["OWASP ASVS 4.0 V2.10.4"]
+    refs: ["OWASP ASVS 4.0 V2.10.4", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-4-1 SM-7"]
     en:
       title: Secret scanning of the repository
       description: A secret scanner (for example gitleaks) runs over the full history and as a pipeline check on new commits.

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [spf, dns, spoofing]
-    refs: ["RFC 7208 (SPF)", "M3AAWG Email Authentication Recommended Best Practices"]
+    refs: ["RFC 7208 (SPF)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14"]
     tests: [MAILS-T01]
     en:
       title: SPF record for each sending domain
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [dkim, signing]
-    refs: ["RFC 6376 (DKIM)", "RFC 8301 (cryptographic algorithm and key usage update to DKIM)"]
+    refs: ["RFC 6376 (DKIM)", "RFC 8301 (cryptographic algorithm and key usage update to DKIM)", "ISO/IEC 27001:2022 A.5.14"]
     tests: [MAILS-T01]
     en:
       title: DKIM signature with a key of at least 2048 bits
@@ -58,7 +58,7 @@ requirements:
     obligation: should
     priority: high
     tags: [dmarc, reporting]
-    refs: ["RFC 7489 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices"]
+    refs: ["RFC 7489 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14"]
     tests: [MAILS-T01, MAILS-T09]
     en:
       title: DMARC policy that rejects or quarantines
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: high
     tags: [tls, smtp, mta-sts]
-    refs: ["RFC 3207 (SMTP STARTTLS)", "RFC 8461 (MTA-STS)", "RFC 8460 (SMTP TLS reporting)"]
+    refs: ["RFC 3207 (SMTP STARTTLS)", "RFC 8461 (MTA-STS)", "RFC 8460 (SMTP TLS reporting)", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.24"]
     tests: [MAILS-T02]
     en:
       title: Encrypted transport of email
@@ -106,7 +106,7 @@ requirements:
     obligation: must
     priority: high
     tags: [header-injection, input-validation]
-    refs: ["CWE-93 (CRLF injection)", "OWASP ASVS 4.0.3 §5.2.3 (mail injection)"]
+    refs: ["CWE-93 (CRLF injection)", "OWASP ASVS 4.0.3 §5.2.3 (mail injection)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [MAILS-T03]
     en:
       title: No header injection in outgoing email
@@ -128,7 +128,7 @@ requirements:
     obligation: must
     priority: high
     tags: [html-email, xss, output-encoding]
-    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79"]
+    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79", "ISO/IEC 27001:2022 A.8.28"]
     tests: [MAILS-T03]
     en:
       title: User content is encoded in HTML email
@@ -150,7 +150,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [content, confidentiality]
-    refs: ["OWASP ASVS 4.0.3 §8.3.1", "GDPR Art. 32 (security of processing)"]
+    refs: ["OWASP ASVS 4.0.3 §8.3.1", "GDPR Art. 32 (security of processing)", "ISO/IEC 27001:2022 A.5.14"]
     tests: [MAILS-T04]
     en:
       title: No passwords or confidential content in email
@@ -172,7 +172,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [invitation, links, expiry]
-    refs: ["OWASP ASVS 4.0.3 §2.5.1", "NIST SP 800-63B §6.1.2 (enrollment codes)"]
+    refs: ["OWASP ASVS 4.0.3 §2.5.1", "NIST SP 800-63B §6.1.2 (enrollment codes)", "ISO/IEC 27001:2022 A.5.17"]
     tests: [MAILS-T05]
     en:
       title: Invitation links work once and expire after 7 days
@@ -268,7 +268,7 @@ tests:
     priority: high
     execution: automated
     tags: [spf, dkim, dmarc, dns]
-    refs: ["RFC 7208", "RFC 6376", "RFC 7489"]
+    refs: ["RFC 7208", "RFC 6376", "RFC 7489", "ISO/IEC 27001:2022 A.5.14"]
     en:
       title: SPF, DKIM and DMARC of the sending domains
       description: Looks up the DNS records of each sending domain and checks the authentication results of a received test message.
@@ -302,7 +302,7 @@ tests:
     priority: high
     execution: manual
     tags: [tls, smtp, mta-sts]
-    refs: ["RFC 8461"]
+    refs: ["RFC 8461", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.8.24"]
     en:
       title: Outgoing email is sent over TLS
       description: Sends test messages and inspects the transport of each hop and the MTA-STS policy of the receiving domains.
@@ -332,7 +332,7 @@ tests:
     priority: high
     execution: automated
     tags: [header-injection, html-email]
-    refs: ["OWASP Web Security Testing Guide v4.2 §4.7.10 (testing for IMAP/SMTP injection)"]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.7.10 (testing for IMAP/SMTP injection)", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: Header injection and markup in notification email
       description: Uses a display name with a line break and a comment with HTML tags, and inspects the resulting email.
@@ -520,7 +520,7 @@ tests:
     priority: medium
     execution: manual
     tags: [dmarc, reporting]
-    refs: ["RFC 7489 §7 (DMARC reporting)"]
+    refs: ["RFC 7489 §7 (DMARC reporting)", "ISO/IEC 27001:2022 A.5.14"]
     en:
       title: DMARC aggregate reports are received and read
       description: Checks that aggregate reports reach the report address and that unknown senders in them are followed up.
