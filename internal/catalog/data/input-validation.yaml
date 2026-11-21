@@ -273,6 +273,122 @@ requirements:
         - method: test
           text: Ett uppladdat XML-dokument med en extern entitet som pekar på en lokal fil avvisas och filens innehåll syns inte i något svar.
 
+  - id: INP-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [open-redirect, url-validation]
+    refs: ["CWE-601", "OWASP Unvalidated Redirects and Forwards Cheat Sheet", "OWASP Web Security Testing Guide WSTG-CLNT-04", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [INP-T12]
+    en:
+      title: Redirect targets limited to own paths and listed hosts
+      description: The system MUST redirect after sign-in, sign-out or any other action only to a relative path on its own host or to a host on a configured allow-list.
+      rationale: An open redirect lends the system's trusted domain to phishing links and can leak authorisation codes to an attacker's site.
+      criteria:
+        - method: test
+          text: Redirect parameters with an external host, a protocol-relative URL, a backslash trick or a javascript URL all end on the system's start page.
+    sv:
+      title: Omdirigeringsmål begränsas till egna sökvägar och listade värdar
+      description: Systemet SKA efter inloggning, utloggning eller annan åtgärd omdirigera enbart till en relativ sökväg på den egna värden eller till en värd på en konfigurerad tillåtelselista.
+      rationale: En öppen omdirigering lånar ut systemets betrodda domän till nätfiskelänkar och kan läcka auktoriseringskoder till en angripares webbplats.
+      criteria:
+        - method: test
+          text: Omdirigeringsparametrar med en extern värd, en protokollrelativ adress, ett knep med omvänt snedstreck eller en javascript-adress hamnar alla på systemets startsida.
+
+  - id: INP-13
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [template-injection, ssti]
+    refs: ["CWE-1336", "OWASP Web Security Testing Guide WSTG-INPV-18", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [INP-T13]
+    en:
+      title: User input is never compiled as a template
+      description: The system MUST NOT compile text entered by users, including email and document templates edited by administrators, with a template engine that can call code or read objects outside a sandbox.
+      rationale: Server-side template injection usually gives the attacker remote code execution on the server.
+      criteria:
+        - method: test
+          text: Template expressions such as {{7*7}} and ${7*7} in user fields and editable templates are shown literally or rendered by a logic-less engine, and never evaluate to 49 through a code-capable engine.
+        - method: review
+          text: The code passes user text to the template engine only as data, never as template source, outside the sandboxed engine.
+    sv:
+      title: Användarinmatning kompileras aldrig som mall
+      description: Systemet SKA INTE kompilera text som användare har skrivit in, inklusive e-post- och dokumentmallar som administratörer redigerar, med en mallmotor som kan anropa kod eller läsa objekt utanför en sandlåda.
+      rationale: Mallinjektion på servern ger oftast angriparen möjlighet att köra kod på servern.
+      criteria:
+        - method: test
+          text: Malluttryck som {{7*7}} och ${7*7} i användarfält och redigerbara mallar visas bokstavligt eller tolkas av en logikfri motor, och beräknas aldrig till 49 av en motor som kan köra kod.
+        - method: review
+          text: Koden skickar användartext till mallmotorn enbart som data och aldrig som mallkälla, utanför den sandlådade motorn.
+
+  - id: INP-14
+    type: security
+    obligation: must
+    priority: medium
+    tags: [redos, regular-expressions, denial-of-service]
+    refs: ["CWE-1333", "OWASP Input Validation Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [INP-T14]
+    en:
+      title: Regular expressions on input cannot stall a request
+      description: The system MUST evaluate regular expressions on user input with a linear-time engine or a time limit of 100 milliseconds per evaluation.
+      rationale: A crafted string can make a backtracking regular expression run for minutes and block a worker thread, which a few requests turn into an outage.
+      criteria:
+        - method: test
+          text: A 50 000-character string designed to cause catastrophic backtracking in each validation pattern is rejected or matched within 100 ms.
+          threshold: "≤ 100 ms per evaluation"
+    sv:
+      title: Reguljära uttryck på indata kan inte låsa ett anrop
+      description: Systemet SKA utvärdera reguljära uttryck på användarindata med en motor med linjär tid eller med en tidsgräns på 100 millisekunder per utvärdering.
+      rationale: En konstruerad sträng kan få ett reguljärt uttryck med bakåtspårning att köra i minuter och blockera en arbetstråd, vilket ett fåtal anrop gör till ett avbrott.
+      criteria:
+        - method: test
+          text: En sträng på 50 000 tecken som är utformad för att orsaka katastrofal bakåtspårning i varje valideringsmönster avvisas eller matchas inom 100 ms.
+          threshold: "≤ 100 ms per utvärdering"
+
+  - id: INP-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [header-injection, response-splitting]
+    refs: ["CWE-113", "OWASP Web Security Testing Guide WSTG-INPV-15", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [INP-T15]
+    en:
+      title: No line breaks from input in response headers
+      description: The system MUST reject or remove carriage return and line feed characters in any user-supplied value before it writes the value into an HTTP response header.
+      rationale: Line breaks in a header value let an attacker add headers, set cookies or split the response, which leads to cache poisoning and cross-site scripting.
+      criteria:
+        - method: test
+          text: A file name or redirect value containing %0d%0aSet-Cookie gives a response with no added header and no extra cookie.
+    sv:
+      title: Inga radbrytningar från indata i svarshuvuden
+      description: Systemet SKA avvisa eller ta bort tecknen vagnretur och radmatning i varje värde från användaren innan värdet skrivs in i ett huvud i ett HTTP-svar.
+      rationale: Radbrytningar i ett huvudvärde låter en angripare lägga till huvuden, sätta kakor eller dela svaret, vilket leder till förgiftad cache och skript mellan webbplatser.
+      criteria:
+        - method: test
+          text: Ett filnamn eller omdirigeringsvärde som innehåller %0d%0aSet-Cookie ger ett svar utan tillagt huvud och utan extra kaka.
+
+  - id: INP-16
+    type: security
+    obligation: should
+    priority: medium
+    tags: [unicode, normalisation, identifiers, spoofing]
+    refs: ["Unicode Standard Annex #15", "Unicode Technical Standard #39", "OWASP Input Validation Cheat Sheet", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [INP-T16]
+    en:
+      title: Identifiers normalised and checked for look-alikes
+      description: The system SHOULD normalise user names and organisation names to Unicode NFKC before it validates and stores them, and refuse a new name whose skeleton matches an existing one.
+      rationale: Names that look identical but use other code points let an attacker pose as an administrator or another organisation.
+      criteria:
+        - method: test
+          text: Registering "аdmin" with a Cyrillic а, or "ａｄｍｉｎ" in full-width letters, is refused while "admin" exists.
+    sv:
+      title: Identifierare normaliseras och kontrolleras mot förväxlingsbara tecken
+      description: Systemet BÖR normalisera användarnamn och organisationsnamn till Unicode NFKC innan de valideras och lagras, och avvisa ett nytt namn vars teckenskelett matchar ett befintligt.
+      rationale: Namn som ser likadana ut men använder andra kodpunkter låter en angripare utge sig för att vara en administratör eller en annan organisation.
+      criteria:
+        - method: test
+          text: Registrering av "аdmin" med kyrilliskt а, eller "ａｄｍｉｎ" med breda tecken, avvisas när "admin" finns.
+
 tests:
   - id: INP-T01
     priority: critical
@@ -609,3 +725,155 @@ tests:
           data: "<!DOCTYPE x [<!ENTITY e SYSTEM \"file:///etc/hostname\">]><x>&e;</x>"
         - action: Skicka ett XML-dokument med nästlade entiteter som expanderar till 1 GB.
           expected: Varje anrop avvisas inom 2 sekunder och minnesanvändningen förblir oförändrad.
+
+  - id: INP-T12
+    priority: high
+    execution: automated
+    tags: [open-redirect]
+    refs: ["OWASP Web Security Testing Guide WSTG-CLNT-04", "CWE-601"]
+    en:
+      title: Redirect parameters cannot send users to other sites
+      description: A script signs in with manipulated return URLs and checks where the browser ends up.
+      preconditions: A test account, the name of the redirect parameter and the configured allow-list of hosts.
+      expected: Only own paths and listed hosts are followed.
+      steps:
+        - action: Sign in with the return parameter set to a relative path on the system.
+          expected: The browser ends on that path.
+          data: "/projects/42"
+        - action: Sign in with each of the malicious values.
+          expected: Each ends on the system's start page and no request goes to the external host.
+          data: "https://evil.example/, //evil.example/, /\\evil.example/, javascript:alert(1)"
+        - action: Sign in with a URL on a host on the allow-list.
+          expected: The browser ends on that URL.
+    sv:
+      title: Omdirigeringsparametrar kan inte skicka användare till andra webbplatser
+      description: Ett skript loggar in med manipulerade returadresser och kontrollerar var webbläsaren hamnar.
+      preconditions: Ett testkonto, namnet på omdirigeringsparametern och den konfigurerade tillåtelselistan med värdar.
+      expected: Endast egna sökvägar och listade värdar följs.
+      steps:
+        - action: Logga in med returparametern satt till en relativ sökväg i systemet.
+          expected: Webbläsaren hamnar på den sökvägen.
+          data: "/projects/42"
+        - action: Logga in med vart och ett av de skadliga värdena.
+          expected: Vart och ett hamnar på systemets startsida och inget anrop går till den externa värden.
+          data: "https://evil.example/, //evil.example/, /\\evil.example/, javascript:alert(1)"
+        - action: Logga in med en adress på en värd i tillåtelselistan.
+          expected: Webbläsaren hamnar på den adressen.
+
+  - id: INP-T13
+    priority: critical
+    execution: manual
+    tags: [template-injection]
+    refs: ["OWASP Web Security Testing Guide WSTG-INPV-18"]
+    en:
+      title: Template expressions in input are not evaluated
+      description: Enters template expressions of common engines in user fields and editable templates and looks at the rendered output.
+      preconditions: A test account, an administrator account with access to the email template editor, and a way to read sent test emails.
+      expected: No expression is evaluated by a code-capable engine.
+      steps:
+        - action: Put the probes into the display name and a record title and view the pages and generated documents that show them.
+          expected: The probes appear literally.
+          data: "{{7*7}}, ${7*7}, <%= 7*7 %>, #{7*7}, {{config}}"
+        - action: As administrator, put the same probes into an email template and send a test email.
+          expected: The email shows the probes literally or as empty placeholders, never 49 or configuration values.
+    sv:
+      title: Malluttryck i indata utvärderas inte
+      description: Skriver in malluttryck för vanliga mallmotorer i användarfält och redigerbara mallar och granskar det tolkade resultatet.
+      preconditions: Ett testkonto, ett administratörskonto med åtkomst till redigeraren för e-postmallar och ett sätt att läsa skickade testmejl.
+      expected: Inget uttryck utvärderas av en motor som kan köra kod.
+      steps:
+        - action: Skriv in sonderna i visningsnamnet och i en posts rubrik och visa sidorna och de genererade dokumenten där de syns.
+          expected: Sonderna visas bokstavligt.
+          data: "{{7*7}}, ${7*7}, <%= 7*7 %>, #{7*7}, {{config}}"
+        - action: Skriv som administratör in samma sonder i en e-postmall och skicka ett testmejl.
+          expected: Mejlet visar sonderna bokstavligt eller som tomma platshållare, aldrig 49 eller konfigurationsvärden.
+
+  - id: INP-T14
+    priority: medium
+    execution: automated
+    tags: [redos]
+    refs: ["CWE-1333"]
+    en:
+      title: Catastrophic backtracking input is handled in time
+      description: A script sends crafted strings to each field that is validated with a regular expression and measures the response time.
+      preconditions: The list of input fields validated by regular expressions and a test account.
+      expected: Each request is answered and each evaluation finishes within 100 ms.
+      steps:
+        - action: For each field, send a 50 000-character string that repeats a matching prefix and ends with a character that fails the pattern.
+          expected: Each request is answered with a validation result.
+          data: "'a' × 50 000 followed by '!' for an email or name field"
+        - action: Read the evaluation times from the server metrics or logs.
+          expected: No evaluation took more than 100 ms.
+    sv:
+      title: Indata som ger katastrofal bakåtspårning hanteras i tid
+      description: Ett skript skickar konstruerade strängar till varje fält som valideras med ett reguljärt uttryck och mäter svarstiden.
+      preconditions: Listan över indatafält som valideras med reguljära uttryck och ett testkonto.
+      expected: Varje anrop besvaras och varje utvärdering är klar inom 100 ms.
+      steps:
+        - action: Skicka för varje fält en sträng på 50 000 tecken som upprepar ett matchande prefix och slutar med ett tecken som inte passar mönstret.
+          expected: Varje anrop besvaras med ett valideringsresultat.
+          data: "'a' × 50 000 följt av '!' för ett fält för e-post eller namn"
+        - action: Läs utvärderingstiderna i serverns mätvärden eller loggar.
+          expected: Ingen utvärdering tog mer än 100 ms.
+
+  - id: INP-T15
+    priority: high
+    execution: automated
+    tags: [header-injection]
+    refs: ["CWE-113"]
+    en:
+      title: Encoded line breaks do not add response headers
+      description: A script sends values with encoded line breaks to endpoints that reflect input into headers.
+      preconditions: The list of endpoints that put user values in headers, such as downloads with a file name and redirects.
+      expected: No response contains an added header or cookie.
+      steps:
+        - action: Upload a file whose name contains an encoded line break and a header, then download it.
+          expected: The Content-Disposition header contains no line break and no Set-Cookie header is added.
+          data: "report%0d%0aSet-Cookie:%20injected=1.pdf"
+        - action: Call a redirect endpoint with the same payload in the target.
+          expected: The response has no injected header and no cookie named injected.
+    sv:
+      title: Kodade radbrytningar lägger inte till svarshuvuden
+      description: Ett skript skickar värden med kodade radbrytningar till ändpunkter som återger indata i huvuden.
+      preconditions: Listan över ändpunkter som lägger användarvärden i huvuden, till exempel nedladdningar med filnamn och omdirigeringar.
+      expected: Inget svar innehåller ett tillagt huvud eller en tillagd kaka.
+      steps:
+        - action: Ladda upp en fil vars namn innehåller en kodad radbrytning och ett huvud, och ladda sedan ned den.
+          expected: Content-Disposition-huvudet innehåller ingen radbrytning och inget Set-Cookie-huvud läggs till.
+          data: "report%0d%0aSet-Cookie:%20injected=1.pdf"
+        - action: Anropa en omdirigeringsändpunkt med samma innehåll i målet.
+          expected: Svaret har inget injicerat huvud och ingen kaka som heter injected.
+
+  - id: INP-T16
+    priority: medium
+    execution: manual
+    tags: [unicode, spoofing]
+    refs: ["Unicode Technical Standard #39"]
+    en:
+      title: Look-alike user names are refused
+      description: Tries to register user names that look like an existing administrator name.
+      preconditions: An existing user named "admin" and a registration form.
+      expected: Each look-alike name is refused.
+      steps:
+        - action: Register a user name with a Cyrillic а in place of the Latin a.
+          expected: The name is refused as already taken or too similar.
+          data: "аdmin (U+0430)"
+        - action: Register the name in full-width letters.
+          expected: The name is refused.
+          data: "ａｄｍｉｎ"
+        - action: Register the name "admin2".
+          expected: The name is accepted.
+    sv:
+      title: Förväxlingsbara användarnamn avvisas
+      description: Försöker registrera användarnamn som liknar namnet på en befintlig administratör.
+      preconditions: En befintlig användare med namnet "admin" och ett registreringsformulär.
+      expected: Varje förväxlingsbart namn avvisas.
+      steps:
+        - action: Registrera ett användarnamn med kyrilliskt а i stället för latinskt a.
+          expected: Namnet avvisas som upptaget eller för likt ett befintligt.
+          data: "аdmin (U+0430)"
+        - action: Registrera namnet med breda tecken.
+          expected: Namnet avvisas.
+          data: "ａｄｍｉｎ"
+        - action: Registrera namnet "admin2".
+          expected: Namnet godtas.

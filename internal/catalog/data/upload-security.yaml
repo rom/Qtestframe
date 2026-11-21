@@ -287,6 +287,98 @@ requirements:
         - method: test
           text: En fil vars namn innehåller en skripttagg, ett tecken för höger-till-vänster-skrift och ett snedstreck listas med tecknen visade som text eller borttagna.
 
+  - id: UPLS-13
+    type: security
+    obligation: should
+    priority: high
+    tags: [active-content, macros, content-disarm]
+    refs: ["OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.7 (protection against malware)", "NIST SP 800-53 SI-3"]
+    tests: [UPLS-T10]
+    en:
+      title: Office files with macros and PDFs with scripts are flagged
+      description: The system SHOULD mark an uploaded office document that contains macros, or a PDF that contains JavaScript or launch actions, as active content and show a warning before anyone other than the uploader downloads it.
+      rationale: Macros and PDF scripts are a common way to deliver malware that a signature scan does not yet detect.
+      criteria:
+        - method: test
+          text: A document with a test macro and a PDF with a JavaScript action are both marked, and a second user sees the warning before download.
+    sv:
+      title: Office-filer med makron och PDF-filer med skript flaggas
+      description: Systemet BÖR markera ett uppladdat Office-dokument som innehåller makron, eller en PDF som innehåller JavaScript eller startåtgärder, som aktivt innehåll och visa en varning innan någon annan än den som laddade upp filen laddar ned den.
+      rationale: Makron och skript i PDF-filer är ett vanligt sätt att sprida skadlig kod som en signaturskanning ännu inte känner igen.
+      criteria:
+        - method: test
+          text: Ett dokument med ett testmakro och en PDF med en JavaScript-åtgärd markeras båda, och en annan användare ser varningen före nedladdning.
+
+  - id: UPLS-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [images, re-encoding, polyglot]
+    refs: ["OWASP File Upload Cheat Sheet", "CWE-434", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [UPLS-T11]
+    en:
+      title: Uploaded images are re-encoded
+      description: The system SHOULD decode each uploaded image and store a newly encoded copy in the same format, and discard the original bytes.
+      rationale: Re-encoding removes data hidden after the image data and breaks polyglot files that are both a valid image and a script or archive.
+      criteria:
+        - method: test
+          text: A JPEG with an appended ZIP archive is stored without the archive, and the stored file no longer opens as an archive.
+    sv:
+      title: Uppladdade bilder kodas om
+      description: Systemet BÖR avkoda varje uppladdad bild och spara en nykodad kopia i samma format, och kasta originalets byte.
+      rationale: Omkodning tar bort data som gömts efter bilddata och förstör polyglottfiler som både är en giltig bild och ett skript eller ett arkiv.
+      criteria:
+        - method: test
+          text: En JPEG med ett påhängt ZIP-arkiv sparas utan arkivet, och den sparade filen går inte längre att öppna som arkiv.
+
+  - id: UPLS-15
+    type: security
+    obligation: must
+    priority: medium
+    tags: [resumable-upload, cleanup, storage]
+    refs: ["OWASP File Upload Cheat Sheet", "CWE-400", "ISO/IEC 27001:2022 A.8.6"]
+    tests: [UPLS-T12]
+    en:
+      title: Incomplete uploads are removed after 24 hours
+      description: The system MUST delete the stored parts of an upload that has not been completed within 24 hours after its last part arrived.
+      rationale: Abandoned partial uploads fill the storage and can be used on purpose to exhaust it, and they escape the malware scan that runs on complete files.
+      criteria:
+        - method: test
+          text: An upload stopped halfway leaves no stored parts 25 hours later, while a completed upload is kept.
+          threshold: "≤ 24 h"
+    sv:
+      title: Ofullständiga uppladdningar tas bort efter 24 timmar
+      description: Systemet SKA ta bort de lagrade delarna av en uppladdning som inte har slutförts inom 24 timmar efter att den senaste delen kom in.
+      rationale: Övergivna delvisa uppladdningar fyller lagringen och kan användas avsiktligt för att tömma den, och de undgår skanningen efter skadlig kod som körs på kompletta filer.
+      criteria:
+        - method: test
+          text: En uppladdning som stoppas halvvägs lämnar inga lagrade delar 25 timmar senare, medan en slutförd uppladdning behålls.
+          threshold: "≤ 24 h"
+
+  - id: UPLS-16
+    type: security
+    obligation: should
+    priority: medium
+    tags: [malware-scan, rescan, signatures]
+    refs: ["ISO/IEC 27001:2022 A.8.7 (protection against malware)", "NIST SP 800-53 SI-3", "OWASP File Upload Cheat Sheet"]
+    tests: [UPLS-T13]
+    en:
+      title: Recent files are scanned again with new signatures
+      description: The system SHOULD scan files uploaded in the last 30 days again within 24 hours after the malware signatures are updated, and quarantine a file that is now detected.
+      rationale: New malware is often not detected on the day it is uploaded, and a file shared before detection keeps spreading unless it is checked again.
+      criteria:
+        - method: test
+          text: A file uploaded before a test signature for it is added is quarantined within 24 hours of the signature update, and its owner is told.
+          threshold: "≤ 24 h after the update"
+    sv:
+      title: Nya filer skannas igen med nya signaturer
+      description: Systemet BÖR skanna filer som laddats upp de senaste 30 dagarna igen inom 24 timmar efter att signaturerna för skadlig kod har uppdaterats, och sätta en fil som nu upptäcks i karantän.
+      rationale: Ny skadlig kod upptäcks ofta inte samma dag som den laddas upp, och en fil som delats innan den upptäckts fortsätter att spridas om den inte kontrolleras igen.
+      criteria:
+        - method: test
+          text: En fil som laddades upp innan en testsignatur för den lades till sätts i karantän inom 24 timmar efter signaturuppdateringen, och dess ägare meddelas.
+          threshold: "≤ 24 h efter uppdateringen"
+
 tests:
   - id: UPLS-T01
     priority: critical
@@ -577,3 +669,115 @@ tests:
           data: "/etc/passwd, C:\\temp\\x.txt, ..\\x.txt"
         - action: Packa upp ett testarkiv med en symbolisk länk som pekar på /etc.
           expected: Rutinen returnerar ett fel och skapar ingen länk.
+
+  - id: UPLS-T10
+    priority: high
+    execution: manual
+    tags: [active-content, macros]
+    refs: ["OWASP File Upload Cheat Sheet"]
+    en:
+      title: Documents with macros or PDF scripts carry a warning
+      description: Uploads documents with active content and downloads them as another user.
+      preconditions: Two users in the same project, a word processing document with a harmless test macro and a PDF with a JavaScript open action.
+      expected: Both files are marked and the other user is warned before download.
+      steps:
+        - action: As user A, upload both files and a plain PDF.
+          expected: The two active files are marked as active content and the plain PDF is not.
+        - action: As user B, start a download of each file.
+          expected: A warning about active content appears for the two marked files before the download starts, and not for the plain PDF.
+    sv:
+      title: Dokument med makron eller PDF-skript får en varning
+      description: Laddar upp dokument med aktivt innehåll och laddar ned dem som en annan användare.
+      preconditions: Två användare i samma projekt, ett ordbehandlingsdokument med ett ofarligt testmakro och en PDF med en JavaScript-åtgärd vid öppning.
+      expected: Båda filerna markeras och den andra användaren varnas före nedladdning.
+      steps:
+        - action: Ladda upp båda filerna och en vanlig PDF som användare A.
+          expected: De två aktiva filerna markeras som aktivt innehåll och den vanliga PDF:en gör det inte.
+        - action: Starta en nedladdning av varje fil som användare B.
+          expected: En varning om aktivt innehåll visas för de två markerade filerna innan nedladdningen startar, och inte för den vanliga PDF:en.
+
+  - id: UPLS-T11
+    priority: medium
+    execution: automated
+    tags: [images, polyglot]
+    refs: ["OWASP File Upload Cheat Sheet"]
+    en:
+      title: Data appended to an image is removed
+      description: Uploads a JPEG with a ZIP archive appended and inspects the stored file.
+      preconditions: A JPEG test image with a ZIP archive appended after the end-of-image marker, and access to the stored file.
+      expected: The stored image has no trailing archive.
+      steps:
+        - action: Upload the test image.
+          expected: The upload succeeds and the image is shown.
+        - action: Download the stored file and try to open it as a ZIP archive.
+          expected: The archive cannot be opened and the file ends at the end-of-image marker.
+    sv:
+      title: Data som hängts på en bild tas bort
+      description: Laddar upp en JPEG med ett påhängt ZIP-arkiv och granskar den sparade filen.
+      preconditions: En JPEG-testbild med ett ZIP-arkiv efter slutmarkören för bilden, och åtkomst till den sparade filen.
+      expected: Den sparade bilden har inget efterföljande arkiv.
+      steps:
+        - action: Ladda upp testbilden.
+          expected: Uppladdningen lyckas och bilden visas.
+        - action: Ladda ned den sparade filen och försök öppna den som ZIP-arkiv.
+          expected: Arkivet går inte att öppna och filen slutar vid bildens slutmarkör.
+
+  - id: UPLS-T12
+    priority: medium
+    execution: automated
+    tags: [resumable-upload, cleanup]
+    refs: ["CWE-400"]
+    en:
+      title: Abandoned partial uploads are deleted
+      description: A script starts a chunked upload, stops it halfway and checks the storage after the time limit.
+      preconditions: A test account, a 100 MB test file and a test environment clock the script can advance.
+      expected: The parts of the abandoned upload are gone after 24 hours.
+      steps:
+        - action: Upload half of the parts of the test file and stop.
+          expected: The stored parts are visible in the upload storage.
+        - action: Complete a second upload of the same file.
+          expected: The file appears in the user's list.
+        - action: Advance the clock by 25 hours and run the cleanup job.
+          expected: The parts of the first upload are gone and the completed file is still there.
+    sv:
+      title: Övergivna delvisa uppladdningar tas bort
+      description: Ett skript startar en uppladdning i delar, stoppar den halvvägs och kontrollerar lagringen efter tidsgränsen.
+      preconditions: Ett testkonto, en testfil på 100 MB och en klocka i testmiljön som skriptet kan ställa fram.
+      expected: Delarna i den övergivna uppladdningen är borta efter 24 timmar.
+      steps:
+        - action: Ladda upp hälften av delarna i testfilen och stoppa.
+          expected: De lagrade delarna syns i uppladdningslagringen.
+        - action: Slutför en andra uppladdning av samma fil.
+          expected: Filen visas i användarens lista.
+        - action: Ställ fram klockan 25 timmar och kör rensningsjobbet.
+          expected: Delarna från den första uppladdningen är borta och den slutförda filen finns kvar.
+
+  - id: UPLS-T13
+    priority: medium
+    execution: manual
+    tags: [rescan, malware-scan]
+    refs: ["NIST SP 800-53 SI-3"]
+    en:
+      title: A file is quarantined after a signature update
+      description: Uploads a harmless test file, then adds a custom signature that detects it.
+      preconditions: A test environment where the scanner accepts custom signatures, and a harmless file with a unique byte pattern.
+      expected: The file is quarantined within 24 hours of the signature update and the owner is told.
+      steps:
+        - action: Upload the test file and share it with another user.
+          expected: The scan passes and the file is shared.
+        - action: Add a custom signature that matches the file's byte pattern and note the time.
+          expected: The scanner loads the new signature.
+        - action: Check the file's status and the owner's notifications during the next 24 hours.
+          expected: The file is quarantined, can no longer be downloaded, and the owner has a notice.
+    sv:
+      title: En fil sätts i karantän efter en signaturuppdatering
+      description: Laddar upp en ofarlig testfil och lägger sedan till en egen signatur som upptäcker den.
+      preconditions: En testmiljö där skannern godtar egna signaturer, och en ofarlig fil med ett unikt bytemönster.
+      expected: Filen sätts i karantän inom 24 timmar efter signaturuppdateringen och ägaren meddelas.
+      steps:
+        - action: Ladda upp testfilen och dela den med en annan användare.
+          expected: Skanningen går igenom och filen delas.
+        - action: Lägg till en egen signatur som matchar filens bytemönster och anteckna tiden.
+          expected: Skannern läser in den nya signaturen.
+        - action: Kontrollera filens status och ägarens aviseringar under de följande 24 timmarna.
+          expected: Filen är i karantän, kan inte längre laddas ned och ägaren har fått ett meddelande.
