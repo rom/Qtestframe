@@ -42,6 +42,17 @@ type Group struct {
 	Name Names  `yaml:"name" json:"name"`
 }
 
+// Kind is a type of requirement catalogue (software, hardware, building …):
+// every area belongs to one, so a hardware team can browse only what fits.
+type Kind struct {
+	ID          string `yaml:"id" json:"id"`
+	Name        Names  `yaml:"name" json:"name"`
+	Description Names  `yaml:"description" json:"description"`
+}
+
+// DefaultKind is the catalogue of an area that names none.
+const DefaultKind = "software"
+
 // Criterion is an evaluation criterion of a requirement.
 type Criterion struct {
 	Method    string `yaml:"method" json:"method"`
@@ -105,6 +116,7 @@ type Area struct {
 	ID           string        `yaml:"area" json:"id"`
 	Prefix       string        `yaml:"prefix" json:"prefix"`
 	Group        string        `yaml:"group" json:"group"`
+	Catalogue    string        `yaml:"catalogue" json:"catalogue"` // a Kind id; "" = DefaultKind
 	Name         Names         `yaml:"name" json:"name"`
 	Description  Names         `yaml:"description" json:"description"`
 	Requirements []Requirement `yaml:"requirements" json:"-"`
@@ -113,6 +125,7 @@ type Area struct {
 
 // Catalog is the loaded library.
 type Catalog struct {
+	Kinds        []Kind
 	Groups       []Group
 	Areas        []Area
 	Requirements map[string]*Requirement
@@ -145,7 +158,7 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 		return nil, err
 	}
 	sort.Strings(names)
-	groups := map[string]bool{}
+	groups, kinds := map[string]bool{}, map[string]bool{}
 	for _, n := range names {
 		b, err := fs.ReadFile(fsys, n)
 		if err != nil {
@@ -164,6 +177,19 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 			}
 			continue
 		}
+		if strings.HasSuffix(n, "/catalogues.yaml") {
+			var k struct {
+				Catalogues []Kind `yaml:"catalogues"`
+			}
+			if err := strictYAML(b, &k); err != nil {
+				return nil, fmt.Errorf("%s: %w", n, err)
+			}
+			c.Kinds = k.Catalogues
+			for _, x := range k.Catalogues {
+				kinds[x.ID] = true
+			}
+			continue
+		}
 		var a Area
 		if err := strictYAML(b, &a); err != nil {
 			return nil, fmt.Errorf("%s: %w", n, err)
@@ -172,6 +198,20 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 	}
 	var errs []string
 	bad := func(format string, args ...any) { errs = append(errs, fmt.Sprintf(format, args...)) }
+	if len(c.Kinds) == 0 {
+		c.Kinds = []Kind{{ID: DefaultKind, Name: Names{"en": "Software", "sv": "Programvara"}}}
+		kinds[DefaultKind] = true
+	}
+	for _, k := range c.Kinds {
+		if !areaRe.MatchString(k.ID) {
+			bad("catalogue %q: invalid id", k.ID)
+		}
+		for _, l := range Languages {
+			if strings.TrimSpace(k.Name[l]) == "" {
+				bad("catalogue %s: name is needed in %s", k.ID, l)
+			}
+		}
+	}
 	areaIDs, prefixes := map[string]bool{}, map[string]bool{}
 	for i := range c.Areas {
 		a := &c.Areas[i]
@@ -185,6 +225,12 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 		prefixes[a.Prefix] = true
 		if !groups[a.Group] {
 			bad("area %s: unknown group %q", a.ID, a.Group)
+		}
+		if a.Catalogue == "" {
+			a.Catalogue = DefaultKind
+		}
+		if !kinds[a.Catalogue] {
+			bad("area %s: unknown catalogue %q", a.ID, a.Catalogue)
 		}
 		for _, l := range Languages {
 			if strings.TrimSpace(a.Name[l]) == "" || strings.TrimSpace(a.Description[l]) == "" {

@@ -63,7 +63,7 @@ func (s *Server) handleCatalogOverview(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"languages": catalog.Languages, "lang": lang, "groups": c.Overview(lang),
+		"languages": catalog.Languages, "lang": lang, "groups": c.Overview(lang), "catalogues": c.KindsOverview(lang),
 		"requirements": len(c.Requirements), "tests": len(c.Tests),
 		"requirement_tags": c.Tags(model.KindRequirement), "test_tags": c.Tags(model.KindTest),
 	})
@@ -72,7 +72,8 @@ func (s *Server) handleCatalogOverview(w http.ResponseWriter, r *http.Request, p
 func catalogFilter(r *http.Request) catalog.Filter {
 	q := r.URL.Query()
 	return catalog.Filter{Area: q.Get("area"), Group: q.Get("group"), Type: q.Get("type"), Obligation: q.Get("obligation"),
-		Priority: q.Get("priority"), Tag: q.Get("tag"), Execution: q.Get("execution"), Q: q.Get("q")}
+		Priority: q.Get("priority"), Tag: q.Get("tag"), Execution: q.Get("execution"),
+		Catalogue: q.Get("catalogue"), Q: q.Get("q")}
 }
 
 // catalogProject returns the items of ?project_id= by catalogue id (nil
