@@ -1,0 +1,703 @@
+area: protective-security
+prefix: SAKS
+group: privacy
+name: {en: Protective security (Sweden), sv: Säkerhetsskydd}
+description:
+  en: Systems that handle classified information or support security-sensitive activity under the Swedish Protective Security Act, covering the security protection analysis, classification marking, security clearance and need-to-know, logging, separated networks, approval before use, approved encryption, removable media, incident reporting and protective security agreements with suppliers.
+  sv: System som behandlar säkerhetsskyddsklassificerade uppgifter eller stöder säkerhetskänslig verksamhet enligt säkerhetsskyddslagen, med säkerhetsskyddsanalys, märkning med säkerhetsskyddsklass, säkerhetsprövning och behov av att känna till, loggning, åtskilda nät, godkännande före drift, godkänd kryptering, flyttbara medier, rapportering av incidenter och säkerhetsskyddsavtal med leverantörer.
+
+requirements:
+  - id: SAKS-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [security-protection-analysis, risk-analysis]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    tests: [SAKS-T01]
+    en:
+      title: Protective security requirements based on the security protection analysis
+      description: Each protective security requirement of a system that handles classified information MUST trace to a finding of the organisation's documented security protection analysis (Swedish term säkerhetsskyddsanalys), in a version of the analysis that is at most 12 months old when the system is approved for use.
+      rationale: The analysis says what in the activity needs protection and against which threats, so requirements written without it protect the wrong things or miss the classified ones.
+      criteria:
+        - method: review
+          text: Each protective security requirement of the system names the finding of the analysis it comes from, and the analysis was reviewed at most 12 months before the approval date.
+          threshold: "analysis ≤ 12 months old at approval"
+    sv:
+      title: Säkerhetsskyddskrav som bygger på säkerhetsskyddsanalysen
+      description: Varje säkerhetsskyddskrav på ett system som behandlar säkerhetsskyddsklassificerade uppgifter SKA gå att spåra till en slutsats i verksamhetens dokumenterade säkerhetsskyddsanalys, i en version av analysen som är högst 12 månader gammal när systemet godkänns för drift.
+      rationale: Analysen visar vad i verksamheten som behöver skyddas och mot vilka hot, så krav som skrivs utan den skyddar fel saker eller missar de skyddsvärda uppgifterna.
+      criteria:
+        - method: review
+          text: Varje säkerhetsskyddskrav på systemet anger vilken slutsats i analysen det kommer från, och analysen granskades högst 12 månader före datumet för godkännandet.
+          threshold: "analys ≤ 12 månader gammal vid godkännandet"
+
+  - id: SAKS-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [classification, marking]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. (säkerhetsskyddsklassificering)", "PMFS 2022:1"]
+    tests: [SAKS-T02]
+    en:
+      title: Classification level shown on screen, in exports and on printouts
+      description: The system MUST show the security classification level of each record that holds classified information (Swedish term säkerhetsskyddsklassificerade uppgifter) at the top of each screen, export file and printed page that contains the record.
+      rationale: People handle information by the marking they see, and an export or printout without a marking is easily stored or sent as if it were open information.
+      criteria:
+        - method: test
+          text: For a record of each of the four classification levels, the screen, a PDF export, a CSV export and a printout show the correct level at the top.
+    sv:
+      title: Säkerhetsskyddsklass visas på skärmen, i exporter och på utskrifter
+      description: Systemet SKA visa säkerhetsskyddsklassen för varje post som innehåller säkerhetsskyddsklassificerade uppgifter överst på varje skärmbild, exportfil och utskriven sida som innehåller posten.
+      rationale: Människor hanterar information efter den märkning de ser, och en export eller utskrift utan märkning sparas eller skickas lätt som om den vore öppen information.
+      criteria:
+        - method: test
+          text: För en post i var och en av de fyra säkerhetsskyddsklasserna visar skärmbilden, en PDF-export, en CSV-export och en utskrift rätt klass överst.
+
+  - id: SAKS-03
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [classification, declassification, audit]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    tests: [SAKS-T03]
+    en:
+      title: Only an authorised role lowers a classification level
+      description: The system MUST NOT let a user without the declassification permission lower the classification level of a record, and it logs each change of level with the old level, the new level, the user and the time.
+      rationale: Lowering the level removes the protection of the information, so the decision belongs to the people who are authorised to make it and has to be traceable.
+      criteria:
+        - method: test
+          text: A user without the permission is refused when lowering the level, a user with it succeeds, and both attempts appear in the log with old and new level.
+    sv:
+      title: Bara en behörig roll sänker en säkerhetsskyddsklass
+      description: Systemet SKA INTE låta en användare utan behörighet för nedklassificering sänka säkerhetsskyddsklassen för en post, och det loggar varje ändring av klass med gammal klass, ny klass, användare och tidpunkt.
+      rationale: En sänkt klass tar bort skyddet för informationen, så beslutet hör till de personer som har rätt att fatta det och måste gå att spåra.
+      criteria:
+        - method: test
+          text: En användare utan behörigheten nekas att sänka klassen, en användare med den lyckas, och båda försöken syns i loggen med gammal och ny klass.
+
+  - id: SAKS-04
+    type: security
+    obligation: must
+    priority: critical
+    tags: [security-clearance, access-control]
+    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)", "Säkerhetsskyddsförordning (2021:955)"]
+    tests: [SAKS-T04]
+    en:
+      title: Access to classified records only with a matching security clearance
+      description: The system MUST grant access to a classified record only to a user whose account is marked by an administrator as having a completed security vetting (Swedish term säkerhetsprövning) with a clearance level at least as high as the record's classification level.
+      rationale: Access to classified information is limited to people who have been vetted for that level, and the system is the place where this is enforced for each record.
+      criteria:
+        - method: test
+          text: A user without a recorded vetting and a user with a lower clearance level are both refused the record, and a user with the matching level is let in.
+    sv:
+      title: Åtkomst till säkerhetsskyddsklassificerade poster bara med motsvarande säkerhetsprövning
+      description: Systemet SKA ge åtkomst till en säkerhetsskyddsklassificerad post endast till en användare vars konto en administratör har markerat med en genomförd säkerhetsprövning för en nivå som är minst lika hög som postens säkerhetsskyddsklass.
+      rationale: Åtkomst till säkerhetsskyddsklassificerade uppgifter är begränsad till personer som har prövats för den nivån, och systemet är där detta upprätthålls för varje post.
+      criteria:
+        - method: test
+          text: En användare utan registrerad säkerhetsprövning och en användare med lägre nivå nekas båda posten, och en användare med motsvarande nivå släpps in.
+
+  - id: SAKS-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [need-to-know, access-control]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    tests: [SAKS-T04]
+    en:
+      title: Need-to-know is checked in addition to the clearance
+      description: The system MUST refuse a user access to a classified record when the user is not a member of a need-to-know group that an authorised person has assigned to the record, whatever the user's clearance level.
+      rationale: A security clearance shows that a person can be trusted, not that the person needs the information, and spreading it further than needed raises the damage of a leak.
+      criteria:
+        - method: test
+          text: A user with a high enough clearance who is not in the record's need-to-know group is refused, and after being added to the group the same user is let in.
+    sv:
+      title: Behov av att känna till kontrolleras utöver säkerhetsprövningen
+      description: Systemet SKA neka en användare åtkomst till en säkerhetsskyddsklassificerad post när användaren inte är medlem i en grupp med behov av att känna till som en behörig person har tilldelat posten, oavsett användarens nivå.
+      rationale: En säkerhetsprövning visar att en person är pålitlig, inte att personen behöver uppgifterna, och att sprida dem längre än nödvändigt ökar skadan vid ett röjande.
+      criteria:
+        - method: test
+          text: En användare med tillräckligt hög nivå som inte finns i postens grupp nekas, och efter att ha lagts till i gruppen släpps samma användare in.
+
+  - id: SAKS-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-clearance, revocation]
+    refs: ["Säkerhetsskyddslag (2018:585) 3 kap. (säkerhetsprövning)"]
+    tests: [SAKS-T05]
+    en:
+      title: Access ends within 1 hour when a clearance ends
+      description: The system MUST block a user's access to each classified record within 1 hour after an administrator records that the user's security clearance has ended or has been withdrawn.
+      rationale: A person who has left the role or failed a renewed vetting is no longer allowed to see the information, and open sessions and cached rights keep the access alive.
+      criteria:
+        - method: test
+          text: A signed-in user whose clearance is ended by an administrator is refused the next request for a classified record within 1 hour, also in an already open session.
+          threshold: "≤ 1 hour"
+    sv:
+      title: Åtkomsten upphör inom 1 timme när en säkerhetsprövning upphör
+      description: Systemet SKA spärra en användares åtkomst till varje säkerhetsskyddsklassificerad post inom 1 timme efter att en administratör har registrerat att användarens placering i säkerhetsklass har upphört eller återkallats.
+      rationale: En person som har lämnat sin roll eller inte godkänts vid en förnyad prövning har inte längre rätt att ta del av uppgifterna, och öppna sessioner och sparade behörigheter håller kvar åtkomsten.
+      criteria:
+        - method: test
+          text: En inloggad användare vars placering avslutas av en administratör nekas nästa begäran om en säkerhetsskyddsklassificerad post inom 1 timme, även i en redan öppen session.
+          threshold: "≤ 1 timme"
+
+  - id: SAKS-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [logging, audit]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    tests: [SAKS-T06]
+    en:
+      title: Logging of each access to classified records
+      description: The system MUST log each read, change, export, printout and deletion of a classified record with the user, the time, the record, its classification level and the outcome, and keep the log entries for at least 5 years.
+      rationale: Without a record of who saw what, a suspected leak cannot be investigated and the people involved cannot be cleared of suspicion.
+      criteria:
+        - method: test
+          text: Each of the five actions on a test record creates a log entry with all five fields.
+        - method: inspection
+          text: The retention setting of the log is at least 5 years and the oldest entry is kept according to it.
+          threshold: "retention ≥ 5 years"
+    sv:
+      title: Loggning av varje åtkomst till säkerhetsskyddsklassificerade poster
+      description: Systemet SKA logga varje läsning, ändring, export, utskrift och radering av en säkerhetsskyddsklassificerad post med användare, tidpunkt, post, säkerhetsskyddsklass och utfall, och behålla loggposterna i minst 5 år.
+      rationale: Utan uppgift om vem som har sett vad går ett misstänkt röjande inte att utreda, och de inblandade går inte att fria från misstanke.
+      criteria:
+        - method: test
+          text: Var och en av de fem åtgärderna på en testpost skapar en loggpost med alla fem fälten.
+        - method: inspection
+          text: Inställningen för loggens lagringstid är minst 5 år och den äldsta posten finns kvar enligt den.
+          threshold: "lagringstid ≥ 5 år"
+
+  - id: SAKS-08
+    type: constraint
+    obligation: should
+    priority: high
+    tags: [logging, log-review]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (kontroll av säkerhetsskyddet)", "PMFS 2022:1"]
+    tests: [SAKS-T06]
+    en:
+      title: Weekly review of the access log
+      description: A person appointed by the protective security officer SHOULD review the access log of classified records at least once a week and record each deviation found and the action taken.
+      rationale: A log that nobody reads finds nothing, and a weekly rhythm discovers misuse while it can still be stopped.
+      criteria:
+        - method: review
+          text: The review records of the last 8 weeks show one review per week, and each recorded deviation has an action.
+          threshold: "1 review per week"
+    sv:
+      title: Veckovis granskning av åtkomstloggen
+      description: En person som säkerhetsskyddschefen har utsett BÖR granska åtkomstloggen för säkerhetsskyddsklassificerade poster minst en gång i veckan och dokumentera varje avvikelse som hittas och den åtgärd som vidtas.
+      rationale: En logg som ingen läser hittar ingenting, och en veckovis rytm upptäcker missbruk medan det fortfarande går att stoppa.
+      criteria:
+        - method: review
+          text: Granskningsanteckningarna för de senaste 8 veckorna visar en granskning per vecka, och varje dokumenterad avvikelse har en åtgärd.
+          threshold: "1 granskning per vecka"
+
+  - id: SAKS-09
+    type: constraint
+    obligation: must_not
+    priority: critical
+    tags: [network-separation, isolation]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    tests: [SAKS-T07]
+    en:
+      title: Classified systems separated from other networks
+      description: A system that handles information classified CONFIDENTIAL (konfidentiell) or higher MUST NOT have a network connection to the internet or to a network that is not approved for the same or a higher classification level.
+      rationale: Each connection to a less protected network is a path for attacks and leaks, and separation removes the path instead of trying to filter it.
+      criteria:
+        - method: inspection
+          text: The network diagram and the firewall rules show no connection from the system to a network outside the approved ones.
+        - method: test
+          text: Connection attempts from a server and a client of the system to three internet addresses and one address in the office network all fail.
+    sv:
+      title: Säkerhetsskyddsklassificerade system åtskilda från andra nät
+      description: Ett system som behandlar uppgifter i säkerhetsskyddsklassen konfidentiell eller högre SKA INTE ha en nätverksanslutning till internet eller till ett nät som inte är godkänt för samma eller en högre säkerhetsskyddsklass.
+      rationale: Varje anslutning till ett nät med lägre skydd är en väg för angrepp och röjande, och åtskillnad tar bort vägen i stället för att försöka filtrera den.
+      criteria:
+        - method: inspection
+          text: Nätverksskissen och brandväggsreglerna visar ingen anslutning från systemet till ett nät utanför de godkända.
+        - method: test
+          text: Anslutningsförsök från en server och en klient i systemet till tre adresser på internet och en adress i kontorsnätet misslyckas alla.
+
+  - id: SAKS-10
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [approval, accreditation, security-testing]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    tests: [SAKS-T08]
+    en:
+      title: Written approval before a classified system is used
+      description: The organisation MUST NOT take a system that handles classified information into use, or into use again after a change of its security functions, before the protective security officer has approved it in writing on the basis of a security assessment and a security test of that version.
+      rationale: The approval is the point where someone accountable confirms that the protection works, and for CONFIDENTIAL or higher the regulations also call for informing the supervisory authority before the system is used.
+      criteria:
+        - method: review
+          text: Each production version of the last 24 months that changed a security function has a signed approval dated before it was put into use, with the assessment and the test report attached.
+    sv:
+      title: Skriftligt godkännande innan ett säkerhetsskyddsklassificerat system används
+      description: Organisationen SKA INTE ta ett system som behandlar säkerhetsskyddsklassificerade uppgifter i drift, eller i drift igen efter en ändring av dess säkerhetsfunktioner, innan säkerhetsskyddschefen har godkänt det skriftligt med stöd av en säkerhetsskyddsbedömning och en säkerhetstestning av den versionen.
+      rationale: Godkännandet är det tillfälle då en ansvarig person bekräftar att skyddet fungerar, och för konfidentiell eller högre kräver föreskrifterna dessutom att tillsynsmyndigheten underrättas innan systemet används.
+      criteria:
+        - method: review
+          text: Varje produktionsversion de senaste 24 månaderna som ändrade en säkerhetsfunktion har ett undertecknat godkännande daterat före driftsättningen, med bedömningen och testrapporten bifogade.
+
+  - id: SAKS-11
+    type: security
+    obligation: must
+    priority: critical
+    tags: [encryption, approved-products]
+    refs: ["Säkerhetsskyddsförordning (2021:955)", "Försvarsmaktens föreskrifter om säkerhetsskydd (FFS)"]
+    tests: [SAKS-T09]
+    en:
+      title: Encryption with products approved by the Swedish Armed Forces
+      description: Classified information that leaves the protected area over a network or on a removable medium MUST be encrypted with a cryptographic product that the Swedish Armed Forces (Försvarsmakten) has approved for the information's classification level.
+      rationale: General commercial encryption is not evaluated against the threats to national security information, so only approved products give the protection the classification calls for.
+      criteria:
+        - method: inspection
+          text: Each network link and media type in the system's documentation names an encryption product, and each product is on the list of approved products for the highest level it carries.
+        - method: test
+          text: Traffic captured on the link between two sites contains no readable content of a test record.
+    sv:
+      title: Kryptering med produkter som Försvarsmakten har godkänt
+      description: Säkerhetsskyddsklassificerade uppgifter som lämnar det skyddade området över ett nät eller på ett flyttbart medium SKA krypteras med en kryptografisk produkt som Försvarsmakten har godkänt för uppgifternas säkerhetsskyddsklass.
+      rationale: Vanlig kommersiell kryptering är inte utvärderad mot hoten mot uppgifter som rör Sveriges säkerhet, så bara godkända produkter ger det skydd som klassen kräver.
+      criteria:
+        - method: inspection
+          text: Varje nätförbindelse och medietyp i systemets dokumentation anger en krypteringsprodukt, och varje produkt finns i förteckningen över godkända produkter för den högsta klass den överför.
+        - method: test
+          text: Trafik som fångas på förbindelsen mellan två platser innehåller inget läsbart innehåll från en testpost.
+
+  - id: SAKS-12
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [removable-media, data-loss-prevention]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 6 § (informationssäkerhet)", "PMFS 2022:1"]
+    tests: [SAKS-T09]
+    en:
+      title: Only registered removable media can be written
+      description: Clients of a classified system MUST NOT allow data to be written to a removable medium that is not registered as approved for classified information, and each blocked attempt is logged with the user, the device and the time.
+      rationale: USB sticks and memory cards are the shortest way out of a separated network, so writing is limited to media that are registered, marked and accounted for.
+      criteria:
+        - method: test
+          text: Copying a file to an unregistered USB stick is blocked and logged, and copying to a registered medium succeeds.
+    sv:
+      title: Bara registrerade flyttbara medier går att skriva till
+      description: Klienter i ett säkerhetsskyddsklassificerat system SKA INTE tillåta att data skrivs till ett flyttbart medium som inte är registrerat som godkänt för säkerhetsskyddsklassificerade uppgifter, och varje stoppat försök loggas med användare, enhet och tidpunkt.
+      rationale: USB-minnen och minneskort är den kortaste vägen ut ur ett åtskilt nät, så skrivning begränsas till medier som är registrerade, märkta och redovisade.
+      criteria:
+        - method: test
+          text: Kopiering av en fil till ett oregistrerat USB-minne stoppas och loggas, och kopiering till ett registrerat medium lyckas.
+
+  - id: SAKS-13
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [incident-reporting, supervisory-authority]
+    refs: ["Säkerhetsskyddslag (2018:585)", "Säkerhetsskyddsförordning (2021:955)", "PMFS 2022:1"]
+    tests: [SAKS-T10]
+    en:
+      title: Protective security incidents reported to the supervisory authority within 24 hours
+      description: The organisation MUST send a report to its supervisory authority for protective security within 24 hours of detecting an event in which classified information is suspected to have been disclosed, altered or destroyed without authorisation.
+      rationale: The supervisory authority needs early notice to limit the damage and to see whether the event is part of a wider threat, and the 24 hours turn the legal demand for prompt reporting into a measurable target.
+      criteria:
+        - method: demonstration
+          text: In an exercise with a simulated leak, the report to the supervisory authority is ready for sending within 24 hours and contains what happened, which information and classification level, and the actions taken.
+          threshold: "≤ 24 hours from detection"
+    sv:
+      title: Säkerhetsskyddsincidenter rapporteras till tillsynsmyndigheten inom 24 timmar
+      description: Organisationen SKA skicka en rapport till sin tillsynsmyndighet för säkerhetsskydd inom 24 timmar från att den har upptäckt en händelse där säkerhetsskyddsklassificerade uppgifter kan ha röjts, ändrats eller förstörts obehörigt.
+      rationale: Tillsynsmyndigheten behöver tidigt besked för att begränsa skadan och se om händelsen ingår i ett bredare hot, och de 24 timmarna gör lagens krav på skyndsam rapportering till ett mätbart mål.
+      criteria:
+        - method: demonstration
+          text: I en övning med ett simulerat röjande är rapporten till tillsynsmyndigheten klar att skicka inom 24 timmar och anger vad som hände, vilka uppgifter och vilken säkerhetsskyddsklass samt vidtagna åtgärder.
+          threshold: "≤ 24 timmar från upptäckt"
+
+  - id: SAKS-14
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [outsourcing, procurement, security-agreement]
+    refs: ["Säkerhetsskyddslag (2018:585) 4 kap. (säkerhetsskyddad upphandling)", "Säkerhetsskyddsförordning (2021:955)"]
+    tests: [SAKS-T11]
+    en:
+      title: Suppliers work on classified systems only under a protective security agreement
+      description: The organisation MUST NOT let a supplier develop, operate, host or maintain a system that handles classified information before a protective security agreement (Swedish term säkerhetsskyddsavtal) with the supplier is signed and each of the supplier's staff with access has passed the security vetting for the level.
+      rationale: A supplier with access to the system has the same access to the information as the organisation's own staff, and the agreement and the vetting are what bind the supplier to the same protection.
+      criteria:
+        - method: review
+          text: Each supplier with access to the system has a signed agreement dated before its first access, and each named person of the supplier with access has a recorded vetting at the level of the system.
+    sv:
+      title: Leverantörer arbetar med säkerhetsskyddsklassificerade system bara under säkerhetsskyddsavtal
+      description: Organisationen SKA INTE låta en leverantör utveckla, driva, vara värd för eller underhålla ett system som behandlar säkerhetsskyddsklassificerade uppgifter innan ett säkerhetsskyddsavtal med leverantören är undertecknat och var och en av leverantörens personal med åtkomst har godkänts vid säkerhetsprövning för nivån.
+      rationale: En leverantör med åtkomst till systemet har samma tillgång till uppgifterna som organisationens egen personal, och avtalet och prövningen är det som binder leverantören till samma skydd.
+      criteria:
+        - method: review
+          text: Varje leverantör med åtkomst till systemet har ett undertecknat avtal daterat före den första åtkomsten, och varje namngiven person hos leverantören med åtkomst har en registrerad säkerhetsprövning för systemets nivå.
+
+tests:
+  - id: SAKS-T01
+    priority: high
+    execution: manual
+    tags: [security-protection-analysis, review]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 §"]
+    en:
+      title: Protective security requirements trace to the analysis
+      description: Compares the system's protective security requirements with the security protection analysis and its date.
+      preconditions: Access, as a person cleared for the analysis, to the current security protection analysis, the system's list of protective security requirements and the approval record of the system.
+      expected: Each requirement traces to a finding of the analysis, and the analysis was at most 12 months old at approval.
+      steps:
+        - action: Note the review date of the analysis and the date of the system's latest approval.
+          expected: The analysis was reviewed at most 12 months before the approval.
+        - action: For each protective security requirement of the system, find the finding of the analysis it names.
+          expected: Each requirement names a finding, and the finding exists in the analysis.
+        - action: For each finding of the analysis that concerns the system, find a requirement that addresses it.
+          expected: No finding about the system is left without a requirement or a recorded decision.
+    sv:
+      title: Säkerhetsskyddskraven går att spåra till analysen
+      description: Jämför systemets säkerhetsskyddskrav med säkerhetsskyddsanalysen och dess datum.
+      preconditions: Åtkomst, som en person med behörighet till analysen, till den gällande säkerhetsskyddsanalysen, systemets lista över säkerhetsskyddskrav och beslutet om systemets godkännande.
+      expected: Varje krav går att spåra till en slutsats i analysen, och analysen var högst 12 månader gammal vid godkännandet.
+      steps:
+        - action: Notera datumet då analysen granskades och datumet för systemets senaste godkännande.
+          expected: Analysen granskades högst 12 månader före godkännandet.
+        - action: Leta för varje säkerhetsskyddskrav på systemet upp den slutsats i analysen som kravet anger.
+          expected: Varje krav anger en slutsats, och slutsatsen finns i analysen.
+        - action: Leta för varje slutsats i analysen som rör systemet upp ett krav som hanterar den.
+          expected: Ingen slutsats om systemet saknar ett krav eller ett dokumenterat beslut.
+
+  - id: SAKS-T02
+    priority: critical
+    execution: manual
+    tags: [classification, marking]
+    refs: []
+    en:
+      title: Classification marking on screen, exports and printouts
+      description: Opens, exports and prints test records of each classification level and checks the marking.
+      preconditions: A test environment approved for the highest level used; four test records with invented content, one at each classification level; a user cleared for all four levels.
+      expected: Every view, export and printout of a classified record shows its level at the top.
+      steps:
+        - action: Open each of the four test records on screen.
+          expected: The level is shown at the top of the screen in the record's own wording.
+          data: "Levels: RESTRICTED (begränsat hemlig), CONFIDENTIAL (konfidentiell), SECRET (hemlig), TOP SECRET (kvalificerat hemlig)"
+        - action: Export each record as PDF and as CSV and open the files.
+          expected: The PDF shows the level at the top of each page and the CSV has the level in its first line.
+        - action: Print each record on the approved printer.
+          expected: Each printed page shows the level at the top.
+        - action: Open an unclassified record and export it.
+          expected: The record and the export are marked as unclassified and carry no classification level.
+    sv:
+      title: Märkning med säkerhetsskyddsklass på skärmen, i exporter och på utskrifter
+      description: Öppnar, exporterar och skriver ut testposter i varje säkerhetsskyddsklass och kontrollerar märkningen.
+      preconditions: En testmiljö som är godkänd för den högsta klass som används; fyra testposter med påhittat innehåll, en i varje säkerhetsskyddsklass; en användare som är prövad för alla fyra klasserna.
+      expected: Varje visning, export och utskrift av en säkerhetsskyddsklassificerad post visar dess klass överst.
+      steps:
+        - action: Öppna var och en av de fyra testposterna på skärmen.
+          expected: Klassen visas överst på skärmen med postens egen beteckning.
+          data: "Klasser: begränsat hemlig, konfidentiell, hemlig, kvalificerat hemlig"
+        - action: Exportera varje post som PDF och som CSV och öppna filerna.
+          expected: PDF-filen visar klassen överst på varje sida och CSV-filen har klassen på sin första rad.
+        - action: Skriv ut varje post på den godkända skrivaren.
+          expected: Varje utskriven sida visar klassen överst.
+        - action: Öppna en post utan säkerhetsskyddsklass och exportera den.
+          expected: Posten och exporten är märkta som oklassificerade och saknar säkerhetsskyddsklass.
+
+  - id: SAKS-T03
+    priority: high
+    execution: manual
+    tags: [classification, declassification, audit]
+    refs: []
+    en:
+      title: Lowering a classification level needs the permission and is logged
+      description: Tries to lower the level of a test record as users with and without the declassification permission.
+      preconditions: A test record classified SECRET; user A cleared for SECRET without the declassification permission; user B cleared for SECRET with it.
+      expected: Only user B lowers the level, and both attempts are in the log.
+      steps:
+        - action: Sign in as user A and change the record's level from SECRET to RESTRICTED.
+          expected: The change is refused and the level stays SECRET.
+        - action: Sign in as user B and make the same change.
+          expected: The change is saved and the record shows RESTRICTED.
+        - action: Open the log of the record.
+          expected: The log lists user A's refused attempt and user B's change, each with old level, new level, user and time.
+    sv:
+      title: Att sänka en säkerhetsskyddsklass kräver behörighet och loggas
+      description: Försöker sänka klassen för en testpost som användare med och utan behörighet för nedklassificering.
+      preconditions: En testpost i klassen hemlig; användare A prövad för hemlig utan behörighet för nedklassificering; användare B prövad för hemlig med behörigheten.
+      expected: Bara användare B sänker klassen, och båda försöken finns i loggen.
+      steps:
+        - action: Logga in som användare A och ändra postens klass från hemlig till begränsat hemlig.
+          expected: Ändringen nekas och klassen är fortfarande hemlig.
+        - action: Logga in som användare B och gör samma ändring.
+          expected: Ändringen sparas och posten visar begränsat hemlig.
+        - action: Öppna postens logg.
+          expected: Loggen visar användare A:s nekade försök och användare B:s ändring, var och en med gammal klass, ny klass, användare och tidpunkt.
+
+  - id: SAKS-T04
+    priority: critical
+    execution: manual
+    tags: [security-clearance, need-to-know, access-control]
+    refs: []
+    en:
+      title: Access needs both clearance and need-to-know
+      description: Tries to open a classified test record as users with different clearances and group memberships.
+      preconditions: A test record classified SECRET and assigned to need-to-know group P; user C without a recorded vetting; user D cleared for CONFIDENTIAL in group P; user E cleared for SECRET outside group P; user F cleared for SECRET in group P.
+      expected: Only user F is let in, and each refusal is logged.
+      steps:
+        - action: Open the record as user C.
+          expected: Access is refused.
+        - action: Open the record as user D.
+          expected: Access is refused because the clearance level is lower than the record's level.
+        - action: Open the record as user E, then search for words from its title as user E.
+          expected: Access is refused and the record does not appear in the search results.
+        - action: Open the record as user F.
+          expected: The record is shown.
+        - action: Add user E to group P and open the record again as user E.
+          expected: The record is shown.
+    sv:
+      title: Åtkomst kräver både säkerhetsprövning och behov av att känna till
+      description: Försöker öppna en säkerhetsskyddsklassificerad testpost som användare med olika nivåer och gruppmedlemskap.
+      preconditions: En testpost i klassen hemlig som är tilldelad gruppen P med behov av att känna till; användare C utan registrerad säkerhetsprövning; användare D prövad för konfidentiell i grupp P; användare E prövad för hemlig utanför grupp P; användare F prövad för hemlig i grupp P.
+      expected: Bara användare F släpps in, och varje nekad åtkomst loggas.
+      steps:
+        - action: Öppna posten som användare C.
+          expected: Åtkomsten nekas.
+        - action: Öppna posten som användare D.
+          expected: Åtkomsten nekas eftersom nivån är lägre än postens klass.
+        - action: Öppna posten som användare E och sök sedan på ord ur dess rubrik som användare E.
+          expected: Åtkomsten nekas och posten syns inte i sökresultatet.
+        - action: Öppna posten som användare F.
+          expected: Posten visas.
+        - action: Lägg till användare E i grupp P och öppna posten igen som användare E.
+          expected: Posten visas.
+
+  - id: SAKS-T05
+    priority: high
+    execution: manual
+    tags: [security-clearance, revocation]
+    refs: []
+    en:
+      title: An ended clearance blocks an open session
+      description: Ends the clearance of a signed-in user and measures when access to classified records stops.
+      preconditions: User G cleared for SECRET, signed in with a classified test record open; an administrator account.
+      expected: User G's next request for a classified record within 1 hour after the change is refused.
+      steps:
+        - action: As the administrator, record that user G's clearance has ended and note the time.
+          expected: The change is saved with the time.
+        - action: As user G, reload the open record and open a second classified record, repeating every 5 minutes.
+          expected: Within 1 hour of the noted time both requests are refused.
+          data: "Interval 5 minutes, limit 60 minutes"
+        - action: As user G, sign out and sign in again.
+          expected: No classified record is listed or can be opened.
+    sv:
+      title: En avslutad säkerhetsprövning spärrar en öppen session
+      description: Avslutar placeringen för en inloggad användare och mäter när åtkomsten till säkerhetsskyddsklassificerade poster upphör.
+      preconditions: Användare G prövad för hemlig, inloggad med en säkerhetsskyddsklassificerad testpost öppen; ett administratörskonto.
+      expected: Användare G:s nästa begäran om en säkerhetsskyddsklassificerad post inom 1 timme efter ändringen nekas.
+      steps:
+        - action: Registrera som administratör att användare G:s placering har upphört och notera tiden.
+          expected: Ändringen sparas med tidpunkt.
+        - action: Ladda om den öppna posten som användare G och öppna en andra säkerhetsskyddsklassificerad post, och upprepa var 5:e minut.
+          expected: Inom 1 timme från den noterade tiden nekas båda begärandena.
+          data: "Intervall 5 minuter, gräns 60 minuter"
+        - action: Logga ut och logga in igen som användare G.
+          expected: Ingen säkerhetsskyddsklassificerad post listas eller går att öppna.
+
+  - id: SAKS-T06
+    priority: high
+    execution: manual
+    tags: [logging, log-review]
+    refs: []
+    en:
+      title: Access log entries and weekly reviews
+      description: Performs each logged action on a test record, checks the log entries and reviews the records of the weekly log reviews.
+      preconditions: A classified test record; a cleared test user allowed to read, change, export, print and delete it; read access to the access log and to the review records of the last 8 weeks.
+      expected: Each action is logged with all fields, retention is at least 5 years and the log was reviewed every week.
+      steps:
+        - action: As the test user, read, change, export, print and delete the test record, noting the time of each action.
+          expected: Each action succeeds.
+        - action: Open the access log and find the five entries.
+          expected: Each entry has user, time, record, classification level and outcome, and the times match the noted ones.
+        - action: Read the retention setting of the log and the date of its oldest entry.
+          expected: Retention is at least 5 years and no entry younger than that has been removed.
+        - action: Open the review records of the last 8 weeks.
+          expected: There is one review per week, and each recorded deviation has an action.
+    sv:
+      title: Poster i åtkomstloggen och veckovisa granskningar
+      description: Utför varje loggad åtgärd på en testpost, kontrollerar loggposterna och går igenom anteckningarna från de veckovisa logggranskningarna.
+      preconditions: En säkerhetsskyddsklassificerad testpost; en prövad testanvändare som har rätt att läsa, ändra, exportera, skriva ut och radera den; läsbehörighet till åtkomstloggen och till granskningsanteckningarna för de senaste 8 veckorna.
+      expected: Varje åtgärd loggas med alla fält, lagringstiden är minst 5 år och loggen granskades varje vecka.
+      steps:
+        - action: Läs, ändra, exportera, skriv ut och radera testposten som testanvändaren och notera tiden för varje åtgärd.
+          expected: Varje åtgärd lyckas.
+        - action: Öppna åtkomstloggen och leta upp de fem posterna.
+          expected: Varje loggpost har användare, tidpunkt, post, säkerhetsskyddsklass och utfall, och tiderna stämmer med de noterade.
+        - action: Läs loggens inställning för lagringstid och datumet för dess äldsta post.
+          expected: Lagringstiden är minst 5 år och ingen post som är yngre än så har tagits bort.
+        - action: Öppna granskningsanteckningarna för de senaste 8 veckorna.
+          expected: Det finns en granskning per vecka, och varje dokumenterad avvikelse har en åtgärd.
+
+  - id: SAKS-T07
+    priority: critical
+    execution: manual
+    tags: [network-separation, isolation]
+    refs: []
+    en:
+      title: No connection from the classified system to other networks
+      description: Inspects the network documentation and tries outbound connections from a server and a client of the system.
+      preconditions: The approved network diagram and firewall rules of the system; a test account on one server and one client; a list of the networks approved for the system's level.
+      expected: The documentation and the attempts show no path to the internet or to an unapproved network.
+      steps:
+        - action: Compare each interface and route in the network diagram and firewall rules with the list of approved networks.
+          expected: Each connection leads only to an approved network.
+        - action: From the server and from the client, try to connect to three public internet addresses on ports 80 and 443, and resolve a public domain name.
+          expected: Each connection attempt and the name lookup fail.
+        - action: From the server and from the client, try to connect to an address in the organisation's office network.
+          expected: The connection attempt fails.
+        - action: Look for wireless interfaces on the client and the server.
+          expected: No wireless interface is active.
+    sv:
+      title: Ingen anslutning från det säkerhetsskyddsklassificerade systemet till andra nät
+      description: Granskar nätverksdokumentationen och försöker göra utgående anslutningar från en server och en klient i systemet.
+      preconditions: Systemets godkända nätverksskiss och brandväggsregler; ett testkonto på en server och en klient; en förteckning över de nät som är godkända för systemets klass.
+      expected: Dokumentationen och försöken visar ingen väg till internet eller till ett icke godkänt nät.
+      steps:
+        - action: Jämför varje gränssnitt och väg i nätverksskissen och brandväggsreglerna med förteckningen över godkända nät.
+          expected: Varje anslutning leder bara till ett godkänt nät.
+        - action: Försök från servern och klienten ansluta till tre publika adresser på internet på portarna 80 och 443, och slå upp ett publikt domännamn.
+          expected: Varje anslutningsförsök och namnuppslagningen misslyckas.
+        - action: Försök från servern och klienten ansluta till en adress i organisationens kontorsnät.
+          expected: Anslutningsförsöket misslyckas.
+        - action: Leta efter trådlösa gränssnitt på klienten och servern.
+          expected: Inget trådlöst gränssnitt är aktivt.
+
+  - id: SAKS-T08
+    priority: high
+    execution: manual
+    tags: [approval, accreditation]
+    refs: []
+    en:
+      title: Approvals exist before each security-relevant release
+      description: Compares the production releases of the last 24 months with the approval records.
+      preconditions: The release history of the system for the last 24 months with the changes of each release; the approval records signed by the protective security officer.
+      expected: Each release that changed a security function was approved in writing before it was put into use.
+      steps:
+        - action: List the releases of the last 24 months that changed authentication, access control, logging, encryption or network configuration.
+          expected: The list is complete when compared with the change history.
+        - action: For each listed release, find the signed approval and compare its date with the date the release was put into use.
+          expected: Each release has an approval dated before it was put into use.
+        - action: Check that each approval has the security assessment and the test report of that version attached.
+          expected: Both documents are attached and refer to the approved version number.
+    sv:
+      title: Godkännanden finns före varje säkerhetspåverkande release
+      description: Jämför produktionsreleaserna de senaste 24 månaderna med besluten om godkännande.
+      preconditions: Systemets releasehistorik för de senaste 24 månaderna med ändringarna i varje release; besluten om godkännande undertecknade av säkerhetsskyddschefen.
+      expected: Varje release som ändrade en säkerhetsfunktion godkändes skriftligt innan den togs i drift.
+      steps:
+        - action: Lista releaserna de senaste 24 månaderna som ändrade autentisering, behörighetsstyrning, loggning, kryptering eller nätverkskonfiguration.
+          expected: Listan är fullständig jämfört med ändringshistoriken.
+        - action: Leta för varje listad release upp det undertecknade godkännandet och jämför dess datum med datumet då releasen togs i drift.
+          expected: Varje release har ett godkännande daterat före driftsättningen.
+        - action: Kontrollera att varje godkännande har säkerhetsskyddsbedömningen och testrapporten för den versionen bifogade.
+          expected: Båda dokumenten är bifogade och anger det godkända versionsnumret.
+
+  - id: SAKS-T09
+    priority: critical
+    execution: manual
+    tags: [encryption, removable-media]
+    refs: []
+    en:
+      title: Approved encryption on links and media, and blocked unregistered media
+      description: Checks the encryption products in use, captures traffic between two sites and tries to write to removable media.
+      preconditions: The system's list of network links and media types with their encryption products; the current list of products approved by the Swedish Armed Forces; a test record with an invented marker text; one registered and one unregistered USB stick.
+      expected: All products are approved for the level, captured traffic is unreadable and only the registered medium can be written.
+      steps:
+        - action: Compare each encryption product in the system's list with the approved list and its approved level.
+          expected: Each product is approved for the highest level its link or medium carries.
+        - action: Capture traffic on the link between two sites while the test record is opened at the remote site, and search the capture for the marker text.
+          expected: The marker text is not found in the capture.
+        - action: On a client, copy a file to the unregistered USB stick.
+          expected: The copy is blocked and the attempt is logged with user, device and time.
+        - action: Copy the same file to the registered USB stick.
+          expected: The copy succeeds and the file on the medium is encrypted.
+    sv:
+      title: Godkänd kryptering på förbindelser och medier, och stoppade oregistrerade medier
+      description: Kontrollerar krypteringsprodukterna som används, fångar trafik mellan två platser och försöker skriva till flyttbara medier.
+      preconditions: Systemets lista över nätförbindelser och medietyper med deras krypteringsprodukter; den aktuella förteckningen över produkter som Försvarsmakten har godkänt; en testpost med en påhittad markeringstext; ett registrerat och ett oregistrerat USB-minne.
+      expected: Alla produkter är godkända för klassen, fångad trafik är oläsbar och bara det registrerade mediet går att skriva till.
+      steps:
+        - action: Jämför varje krypteringsprodukt i systemets lista med förteckningen över godkända produkter och deras godkända klass.
+          expected: Varje produkt är godkänd för den högsta klass som dess förbindelse eller medium överför.
+        - action: Fånga trafik på förbindelsen mellan två platser medan testposten öppnas på den andra platsen, och sök efter markeringstexten i det fångade.
+          expected: Markeringstexten finns inte i den fångade trafiken.
+        - action: Kopiera en fil till det oregistrerade USB-minnet från en klient.
+          expected: Kopieringen stoppas och försöket loggas med användare, enhet och tidpunkt.
+        - action: Kopiera samma fil till det registrerade USB-minnet.
+          expected: Kopieringen lyckas och filen på mediet är krypterad.
+
+  - id: SAKS-T10
+    priority: high
+    execution: manual
+    tags: [incident-reporting, exercise]
+    refs: []
+    en:
+      title: Exercise with a suspected leak of classified information
+      description: A tabletop exercise in which a suspected leak is detected and reported to the supervisory authority.
+      preconditions: The protective security officer and the incident team are available; an invented scenario in which a log review shows that a cleared user exported classified records to an unregistered medium; the reporting template of the supervisory authority.
+      expected: A complete report is ready for sending within 24 hours of the simulated detection.
+      steps:
+        - action: Present the scenario and note the time as the time of detection.
+          expected: The team starts the protective security incident procedure and informs the protective security officer.
+        - action: Let the team find out which records, classification levels and people are involved, using the access log.
+          expected: The team lists the exported records with their levels from the log.
+        - action: Let the team fill in the report to the supervisory authority.
+          expected: The report states what happened, which information and levels, when it was detected and the actions taken.
+        - action: Note the time the report is ready for sending.
+          expected: The report is ready within 24 hours of the time of detection.
+          data: "Limit 24 hours"
+    sv:
+      title: Övning med ett misstänkt röjande av säkerhetsskyddsklassificerade uppgifter
+      description: En skrivbordsövning där ett misstänkt röjande upptäcks och rapporteras till tillsynsmyndigheten.
+      preconditions: Säkerhetsskyddschefen och incidentteamet är tillgängliga; ett påhittat scenario där en logggranskning visar att en prövad användare har exporterat säkerhetsskyddsklassificerade poster till ett oregistrerat medium; tillsynsmyndighetens mall för rapportering.
+      expected: En fullständig rapport är klar att skicka inom 24 timmar från den simulerade upptäckten.
+      steps:
+        - action: Presentera scenariot och notera tiden som tidpunkt för upptäckten.
+          expected: Teamet startar rutinen för säkerhetsskyddsincidenter och informerar säkerhetsskyddschefen.
+        - action: Låt teamet ta reda på vilka poster, säkerhetsskyddsklasser och personer som berörs med hjälp av åtkomstloggen.
+          expected: Teamet listar de exporterade posterna med deras klass utifrån loggen.
+        - action: Låt teamet fylla i rapporten till tillsynsmyndigheten.
+          expected: Rapporten anger vad som hände, vilka uppgifter och klasser, när det upptäcktes och vidtagna åtgärder.
+        - action: Notera tiden då rapporten är klar att skicka.
+          expected: Rapporten är klar inom 24 timmar från tidpunkten för upptäckten.
+          data: "Gräns 24 timmar"
+
+  - id: SAKS-T11
+    priority: high
+    execution: manual
+    tags: [outsourcing, security-agreement]
+    refs: []
+    en:
+      title: Protective security agreements and vetting of supplier staff
+      description: Compares the suppliers and supplier staff with access to the system with the signed agreements and vetting records.
+      preconditions: The list of accounts on the system with their organisation; the register of protective security agreements; the vetting records of the supplier staff.
+      expected: Each supplier has an agreement from before its first access and each of its staff with access is vetted at the system's level.
+      steps:
+        - action: List the accounts on the system that belong to supplier staff, grouped by supplier, with the date of each account's first sign-in.
+          expected: The list is complete when compared with the account register.
+        - action: For each supplier, find the signed agreement and compare its date with the first sign-in of the supplier's staff.
+          expected: Each supplier has an agreement dated before the first sign-in.
+        - action: For each supplier account, find the person's vetting record.
+          expected: Each person has a recorded vetting at the system's level that has not ended.
+    sv:
+      title: Säkerhetsskyddsavtal och säkerhetsprövning av leverantörens personal
+      description: Jämför leverantörerna och deras personal med åtkomst till systemet med de undertecknade avtalen och prövningsuppgifterna.
+      preconditions: Listan över konton i systemet med kontoinnehavarens organisation; förteckningen över säkerhetsskyddsavtal; uppgifterna om säkerhetsprövning för leverantörernas personal.
+      expected: Varje leverantör har ett avtal från före den första åtkomsten och var och en av dess personal med åtkomst är prövad för systemets nivå.
+      steps:
+        - action: Lista kontona i systemet som tillhör leverantörspersonal, grupperade per leverantör, med datum för varje kontos första inloggning.
+          expected: Listan är fullständig jämfört med kontoförteckningen.
+        - action: Leta för varje leverantör upp det undertecknade avtalet och jämför dess datum med den första inloggningen för leverantörens personal.
+          expected: Varje leverantör har ett avtal daterat före den första inloggningen.
+        - action: Leta för varje leverantörskonto upp personens uppgifter om säkerhetsprövning.
+          expected: Varje person har en registrerad säkerhetsprövning för systemets nivå som inte har upphört.
