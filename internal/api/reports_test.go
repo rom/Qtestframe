@@ -86,7 +86,7 @@ func TestReportTemplatesAndFields(t *testing.T) {
 	pid := a.project("FLD")
 	var tmpls []map[string]any
 	a.call("GET", "/api/v1/reports/templates", nil, 200, &tmpls)
-	if len(tmpls) != 7 {
+	if len(tmpls) != 8 {
 		t.Fatal(tmpls)
 	}
 	ids := map[string]bool{}
@@ -96,7 +96,7 @@ func TestReportTemplatesAndFields(t *testing.T) {
 			t.Fatal(x)
 		}
 	}
-	for _, id := range []string{"project_status", "requirements_coverage", "traceability", "run_summary", "defects", "test_inventory", "risks"} {
+	for _, id := range []string{"project_status", "requirements_coverage", "traceability", "run_summary", "defects", "test_inventory", "risks", "compliance"} {
 		if !ids[id] {
 			t.Fatal("missing", id)
 		}

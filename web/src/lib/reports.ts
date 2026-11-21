@@ -16,7 +16,7 @@ export const FORMAT_INFO: Record<ReportFormat, { label: string; icon: string }> 
 }
 
 /** The standard templates the client knows (labels are translated by id). */
-export const KNOWN_TEMPLATES = ['project_status', 'requirements_coverage', 'traceability', 'run_summary', 'defects', 'test_inventory', 'risks'] as const
+export const KNOWN_TEMPLATES = ['project_status', 'requirements_coverage', 'traceability', 'run_summary', 'defects', 'test_inventory', 'risks', 'compliance'] as const
 
 export interface TemplateParam {
   name: string
@@ -54,6 +54,7 @@ const DEFAULT_PARAMS: Record<string, TemplateParam[]> = {
   traceability: [{ name: 'query', required: false }],
   run_summary: [{ name: 'run_id', required: true }],
   test_inventory: [{ name: 'query', required: false }],
+  compliance: [{ name: 'sources', required: false }],
 }
 
 function isFormat(v: unknown): v is ReportFormat {

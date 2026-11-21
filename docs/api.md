@@ -825,14 +825,24 @@ Authentication). Requirement ids are `<PREFIX>-NN` (`AUTH-01`), test ids
 `<PREFIX>-TNN` (`AUTH-T01`); a requirement lists the catalogue tests that
 verify it (`tests`), a test the requirements it verifies (`requirements`).
 `lang` is `en` (default) or `sv`; a text missing in Swedish falls back to
-English. List filters take comma-separated values.
+English. List filters take comma-separated values. Every area belongs to a
+**catalogue type** (`catalogue`: software, hardware, equipment, system,
+communications, project, services, facilities, governance, documentation,
+education); `catalogue=` filters by it. Every entry of `refs` resolves to
+one **reference source** of the registry (`internal/catalog/data/sources.yaml`:
+the laws, regulations, directives, standards, best practices and guidelines
+cited, such as `gdpr`, `cra`, `nis2`, `cer`, `dora`, `red`,
+`se-cybersakerhetslag`, `se-sakerhetsskydd`, `iso-27001`, `iec-62443-3-3`,
+`owasp-asvs`, `wcag`); items list the ids in `sources`, and `source=`
+selects the items that comply with them.
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[…]}` – groups in display order with item counts |
-| GET | `/catalog/requirements?lang=&area=&group=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, type, obligation, priority, tags, refs, tests, title, description, in_project?}]}`. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
+| GET | `/catalog?lang=` | project.read | `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[…], catalogues:[{id, name, description, areas, requirements, tests}]}` – groups in display order with item counts; `catalogues` are the catalogue types that have areas |
+| GET | `/catalog/sources?lang=&catalogue=&all=` | project.read | `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, catalogues:[id]}]}` – the reference sources grouped by kind (law, directive, standard, practice, guideline). `requirements` cite the source, `tests` cite it or verify such a requirement (what adding them brings), counted in the catalogue types of `catalogue`; sources nothing cites are left out unless `all=true` |
+| GET | `/catalog/requirements?lang=&area=&group=&catalogue=&source=&q=&type=&obligation=&priority=&tag=&project_id=&not_in_project=` | requirement.read | `{"items":[{id, area, group, catalogue, type, obligation, priority, tags, refs, sources, tests, title, description, in_project?}]}`. `source`: requirements whose refs cite one of the sources. `q`: all words must occur (title, id, tags, refs, description, rationale); ranked by relevance (exact id, whole phrase in the title, title, tags, refs, text), else catalogue order. With `project_id`, `in_project:[{id, key, title}]` lists the project's requirements with that `catalog_ref`; `not_in_project=true` leaves those out |
 | GET | `/catalog/requirements/{id}?lang=&project_id=` | requirement.read | the summary plus `area_name, rationale, criteria:[{method, text, threshold?}], linked_tests:[{id, area, title, in_project?}]` |
-| GET | `/catalog/tests?lang=&area=&group=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, priority, execution, tags, refs, requirements, steps (count), title, description, in_project?}]}`; `q` also searches the steps and the ids of the verified requirements |
+| GET | `/catalog/tests?lang=&area=&group=&catalogue=&source=&q=&priority=&tag=&execution=&project_id=&not_in_project=` | test.read | `{"items":[{id, area, group, catalogue, priority, execution, tags, refs, sources, requirements, steps (count), title, description, in_project?}]}`; `source` matches tests that cite a source or verify a requirement citing it; `q` also searches the steps and the ids of the verified requirements |
 | GET | `/catalog/tests/{id}?lang=&project_id=` | test.read | the summary plus `area_name, preconditions, expected, step_list:[{action, expected, data?}], linked_requirements:[{id, area, title, in_project?}]` |
 | GET | `/projects/{pid}/catalog` | project.read | `{"requirements": {"AUTH-01": [{id, key, title}]}, "tests": {…}}` – the project's items by `catalog_ref` (a kind the caller may not read stays empty) |
 | POST | `/projects/{pid}/catalog/import` | project.read + see below | copies catalogue items into the project, see below |
@@ -938,6 +948,50 @@ another of the same meaning has ≥ 75 %), `mixed_keywords`,
 `duplicate_titles`, `conflicts`, `low_quality`, `many_drafts`, `no_owner` and
 `language_rule` (with `params.rule`, a language analysis rule). At most 200
 items per finding (`total` gives the full count).
+
+### Compliance
+
+`GET /projects/{pid}/analytics/compliance?source=&lang=` (requirement.read)
+measures how far the project complies with reference sources of the
+catalogue (`source`: ids from `GET /catalog/sources`, comma-separated;
+without it every source the project has adopted requirements of or cites
+itself). Per source:
+
+- **Catalogue requirements** are the catalogue requirements that cite it.
+  One is **adopted** when a project requirement was imported from it
+  (`catalog_ref`) and is not rejected or obsolete, else **missing** (a gap).
+  `obligations` splits them into must (MUST, MUST NOT), should and may.
+- **Own requirements** are project requirements not imported from those
+  items whose `source` field names the source (each part separated by `;`
+  or a line break is matched like a ref, also without regard to case, e.g.
+  `GDPR Art. 32; ISO/IEC 27001:2022 A.8.5`).
+- **Fulfilment** of each counted requirement from the latest results of its
+  linked tests: `passed` (it has tests and all passed), `failing` (one
+  failed), `blocked` (one blocked, none failed) or `untested`. Several
+  project copies of one catalogue item count as one, with the worst state.
+- `percent` = fulfilled / (catalogue + own requirements);
+  `adoption_percent` = adopted / catalogue; `mandatory_percent` the
+  compliance of the must group (-1 without one); `clauses` give the same
+  per clause or article group, derived from the refs (`Art. 32`, `A.8`,
+  `Annex I Part I`, `SR 1`; `""` for refs without a clause).
+
+```json
+{"summary": {"sources": 1, "catalogue": 34, "adopted": 12, "missing": 22, "own": 1,
+             "fulfilment": {"passed": 8, "failing": 1, "blocked": 0, "untested": 4}, "percent": 23},
+ "sources": [{"id": "cra", "kind": "law", "jurisdiction": "EU", "short": "CRA", "name": "Cyber Resilience Act, Regulation (EU) 2024/2847",
+              "catalogue": 34, "adopted": 12, "missing": 22, "own": 1, "fulfilment": {…}, "adoption_percent": 35, "percent": 23, "mandatory_percent": 25,
+              "obligations": [{"obligation": "must", "catalogue": 30, "adopted": 11, "missing": 19, "own": 1, "fulfilled": 8, "percent": 26}],
+              "clauses": [{"clause": "Annex I Part I", "catalogue": 11, "adopted": 5, "missing": 6, "own": 0, "fulfilment": {…}, "percent": 36}],
+              "gaps": [{"catalog_id": "VULN-03", "area": "vulnerability-handling", "title": "…", "obligation": "must", "priority": "high",
+                        "clauses": ["Annex I Part II"], "refs": ["…"], "tests": 1, "inactive": [{"kind": "requirement", "id": "…", "key": "…", "title": "…", "note": "rejected"}]}],
+              "items": [{"id": "…", "key": "WEB-REQ-4", "title": "…", "obligation": "must", "state": "failing", "catalog_ref": "SUP-02", "own": false, "clauses": ["Annex I Part I"]}],
+              "gaps_total": 22, "items_total": 13}],
+ "unknown": ["no-such-source"]}
+```
+
+Gaps come MUST first, then by priority; items not fulfilled first; at most
+200 of each (`gaps_total`, `items_total`). The standard report `compliance`
+presents the same.
 
 ## Traceability
 
@@ -1799,6 +1853,7 @@ params, formats}]`; `formats` is `pdf`, `docx`, `xlsx`, `csv`, `md`):
 | `defects` | defects recorded on executions, grouped by defect | – |
 | `test_inventory` | tests by folder, type, status and category | `query` |
 | `risks` | risk report: key figures (open, mitigated, accepted, closed, open per level, untested and verified mitigations, open risks not updated for 90 days), risks by level × status, open risks by mitigation state, the likelihood × impact heat map (risks not closed; every cell gives its count and level), the top 10 open risks, the risk register, risk → requirement → test traceability with coverage and latest results, open risks with untested mitigation, and open risks due for review | – |
+| `compliance` | compliance with reference sources: by source, by clause, missing catalogue requirements, requirements not fulfilled (see *Compliance*) | `sources` (comma-separated source ids; default: the sources the project uses) |
 
 The risk report's *mitigation state* of a risk is derived from the
 requirements that address it: `no_requirements`, `untested` (none has

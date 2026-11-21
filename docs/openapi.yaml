@@ -1922,6 +1922,44 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/analytics/compliance:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Requirements
+      summary: Compliance with laws, standards and best practices
+      operationId: getProjectsByPidAnalyticsCompliance
+      description: |-
+        The project's compliance with reference sources of the catalogue (`GET /catalog/sources`): per source the catalogue requirements that cite it, how many the project has adopted (imported, `catalog_ref`, not rejected or obsolete) and which are missing, split by obligation (must, should, may); the project's own requirements that name the source in their `source` field; fulfilment by the latest results of the linked tests (passed: every linked test passed; failing, blocked, untested); the compliance percentage in total and per clause or article group; the gaps and the counted requirements → `{summary:{sources, catalogue, adopted, missing, own, fulfilment:{passed, failing, blocked, untested}, percent}, sources:[{id, kind, jurisdiction, short, name, url, catalogue, adopted, missing, own, fulfilment, adoption_percent, percent, mandatory_percent, obligations:[{obligation, catalogue, adopted, missing, own, fulfilled, percent}], clauses:[{clause, catalogue, adopted, missing, own, fulfilment, percent}], gaps:[{catalog_id, area, title, obligation, priority, clauses, refs, tests, inactive?}], items:[{id, key, title, obligation, state, catalog_ref?, own, clauses}], gaps_total, items_total}], unknown?:[id]}`
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      parameters:
+      - name: source
+        in: query
+        required: false
+        description: reference source ids, comma-separated (default every source the project has adopted requirements of or cites)
+        schema:
+          type: string
+      - $ref: '#/components/parameters/catalogLang'
+      responses:
+        '200':
+          description: The compliance per source
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/prompts:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -8794,7 +8832,7 @@ paths:
       summary: Catalogue overview
       operationId: getCatalog
       description: |-
-        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[{tag, count}]}`
+        The groups of the catalogue in display order, each with its areas and item counts, in `lang` → `{languages, lang, groups:[{id, name, requirements, tests, areas:[{id, prefix, group, name, description, requirements, tests}]}], requirements, tests, requirement_tags:[{tag, count}], test_tags:[{tag, count}], catalogues:[{id, name, description, areas, requirements, tests}]}`. Every area has `catalogue`, the catalogue type it belongs to.
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -8845,6 +8883,8 @@ paths:
           type: string
       - $ref: '#/components/parameters/catalogPriority'
       - $ref: '#/components/parameters/catalogTag'
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - $ref: '#/components/parameters/catalogSource'
       - $ref: '#/components/parameters/catalogProject'
       - $ref: '#/components/parameters/catalogNotInProject'
       responses:
@@ -8905,6 +8945,41 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/catalog/sources:
+    get:
+      tags:
+      - Catalogue
+      summary: List the reference sources
+      operationId: getCatalogSources
+      description: |-
+        The laws, regulations, directives, standards, best practices and guidelines the catalogue cites (`internal/catalog/data/sources.yaml`), grouped by kind, in `lang` → `{lang, kinds:[{id, name}], sources:[{id, kind, jurisdiction?, short?, name, url?, requirements, tests, catalogues:[id]}]}`. `requirements` cite the source; `tests` cite it or verify such a requirement (what adding the requirements brings). Counts are over the catalogue types of `catalogue`; sources no item cites are left out unless `all=true`
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      parameters:
+      - $ref: '#/components/parameters/catalogLang'
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - name: all
+        in: query
+        required: false
+        description: also list sources no item cites
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: The source kinds and sources
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/catalog/tests:
     get:
       tags:
@@ -8912,7 +8987,7 @@ paths:
       summary: List catalogue tests
       operationId: getCatalogTests
       description: |-
-        `{"items":[CatalogTest]}` in `lang`; filters as for the requirements, plus `execution` (manual, automated). `q` also searches the steps and the ids of the verified requirements
+        `{"items":[CatalogTest]}` in `lang`; filters as for the requirements, plus `execution` (manual, automated); `source` matches tests that cite a source or verify a requirement that cites it. `q` also searches the steps and the ids of the verified requirements
 
         **Permission:** `test.read`.
       x-permission: test.read
@@ -8929,6 +9004,8 @@ paths:
         description: execution types (manual, automated), comma-separated
         schema:
           type: string
+      - $ref: '#/components/parameters/catalogCatalogue'
+      - $ref: '#/components/parameters/catalogSource'
       - $ref: '#/components/parameters/catalogProject'
       - $ref: '#/components/parameters/catalogNotInProject'
       responses:
@@ -11517,6 +11594,20 @@ components:
       description: tags, comma-separated (any of them)
       schema:
         type: string
+    catalogCatalogue:
+      name: catalogue
+      in: query
+      required: false
+      description: catalogue types (software, hardware, …), comma-separated
+      schema:
+        type: string
+    catalogSource:
+      name: source
+      in: query
+      required: false
+      description: reference source ids (GET /catalog/sources), comma-separated (any of them)
+      schema:
+        type: string
     catalogProject:
       name: project_id
       in: query
@@ -11619,9 +11710,17 @@ components:
           type: array
           items:
             type: string
+        catalogue:
+          type: string
+          description: the catalogue type of its area
         refs:
           type: array
           description: the standards it is based on (cited, not copied)
+          items:
+            type: string
+        sources:
+          type: array
+          description: ids of the reference sources its refs cite
           items:
             type: string
         tests:
@@ -11654,8 +11753,16 @@ components:
           type: array
           items:
             type: string
+        catalogue:
+          type: string
+          description: the catalogue type of its area
         refs:
           type: array
+          items:
+            type: string
+        sources:
+          type: array
+          description: ids of the reference sources its refs cite
           items:
             type: string
         requirements:

@@ -69,6 +69,7 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Defects** | all defects recorded on executions, grouped by defect | – |
 | **Test inventory** | tests by folder, type, status and category | optional filter |
 | **Risk report** | the [risks](releases-and-risks.md) with key figures, a heat map, the risk register, traceability to requirements and tests, untested mitigations and the top risks | – |
+| **Compliance** | compliance with laws, standards and best practices: per source, per clause, the missing catalogue requirements and the requirements not fulfilled (see [Compliance with laws and standards](traceability-and-coverage.md#compliance-with-laws-and-standards)) | optional laws, standards and best practices (default: those the project uses) |
 
 **The risk report** contains:
 
