@@ -2,7 +2,7 @@ area: ed-training-material
 prefix: EDTM
 group: usability
 catalogue: education
-name: {en: Training material, e-learning and evaluation, sv: Utbildningsmaterial, e-lärande och utvärdering}
+name: {en: "Training material, e-learning and evaluation", sv: "Utbildningsmaterial, e-lärande och utvärdering"}
 description:
   en: Training material and its maintenance, languages, accessible e-learning per WCAG 2.2, packaging for the learning platform, and evaluation of training effect at four levels following the Kirkpatrick model.
   sv: Utbildningsmaterial och förvaltningen av det, språk, tillgängligt e-lärande enligt WCAG 2.2, paketering för lärplattformen och utvärdering av utbildningens effekt på fyra nivåer enligt Kirkpatricks modell.

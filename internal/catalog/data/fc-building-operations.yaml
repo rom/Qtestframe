@@ -2,7 +2,7 @@ area: fc-building-operations
 prefix: FCOPS
 group: operations
 catalogue: facilities
-name: {en: Accessibility, energy and maintenance of buildings, sv: Tillgänglighet, energi och underhåll av byggnader}
+name: {en: "Accessibility, energy and maintenance of buildings", sv: "Tillgänglighet, energi och underhåll av byggnader"}
 description:
   en: Accessible entrances, toilets, lifts, contrast marking and hearing loops, the energy performance certificate, energy metering and follow-up, building automation for energy, waste sorting, the preventive maintenance plan, the mandatory ventilation inspection, lift inspections and fault reports from occupants.
   sv: Tillgängliga entréer, toaletter, hissar, kontrastmarkering och hörslingor, energideklarationen, energimätning och uppföljning, fastighetsautomation för energi, källsortering, planen för förebyggande underhåll, den obligatoriska ventilationskontrollen, besiktning av hissar och felanmälningar från hyresgäster.

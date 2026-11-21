@@ -2,7 +2,7 @@ area: gv-maintenance
 prefix: GVMT
 group: operations
 catalogue: governance
-name: {en: Asset, configuration and maintenance management, sv: Tillgångs-, konfigurations- och underhållsstyrning}
+name: {en: "Asset, configuration and maintenance management", sv: "Tillgångs-, konfigurations- och underhållsstyrning"}
 description:
   en: Asset register and criticality, configuration baselines and audits, maintenance plans with preventive, condition-based and corrective maintenance (EN 13306 terms), work orders, failure records, spare parts and maintenance indicators.
   sv: Tillgångsregister och kritikalitet, konfigurationsbaslinjer och konfigurationsrevisioner, underhållsplaner med förebyggande, tillståndsbaserat och avhjälpande underhåll (begrepp enligt EN 13306), arbetsorder, felrapporter, reservdelar och nyckeltal för underhåll.

@@ -1678,3 +1678,156 @@ sources:
     short: RACI
     name: {en: "RACI responsibility assignment matrix", sv: "RACI-matris för ansvarsfördelning"}
     match: ["RACI "]
+  # ---------------------------------------------------------------- AI, hardware, equipment and systems engineering
+  - id: lvd
+    kind: directive
+    jurisdiction: EU
+    short: LVD
+    name: {en: "Low Voltage Directive 2014/35/EU", sv: "Lågspänningsdirektivet 2014/35/EU"}
+    match: ["Directive 2014/35/EU"]
+  - id: emc-directive
+    kind: directive
+    jurisdiction: EU
+    short: EMC
+    name: {en: "Electromagnetic Compatibility Directive 2014/30/EU", sv: "EMC-direktivet 2014/30/EU"}
+    match: ["Directive 2014/30/EU"]
+  - id: rohs
+    kind: directive
+    jurisdiction: EU
+    short: RoHS
+    name: {en: "RoHS Directive 2011/65/EU on hazardous substances in electrical and electronic equipment", sv: "RoHS-direktivet 2011/65/EU om farliga ämnen i elektrisk och elektronisk utrustning"}
+    match: ["Directive 2011/65/EU"]
+  - id: work-equipment-directive
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Work Equipment Directive 2009/104/EC", sv: "Arbetsutrustningsdirektivet 2009/104/EG"}
+    match: ["Directive 2009/104/EC"]
+  - id: waste-framework-directive
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Waste Framework Directive 2008/98/EC", sv: "Avfallsdirektivet 2008/98/EG"}
+    match: ["Directive 2008/98/EC"]
+  - id: reg-765-2008
+    kind: law
+    jurisdiction: EU
+    name: {en: "Regulation (EC) No 765/2008 on accreditation and CE marking", sv: "Förordning (EG) nr 765/2008 om ackreditering och CE-märkning"}
+    match: ["Regulation (EC) No 765/2008"]
+  - id: batteries-regulation
+    kind: law
+    jurisdiction: EU
+    name: {en: "Batteries Regulation (EU) 2023/1542", sv: "Batteriförordningen (EU) 2023/1542"}
+    match: ["Regulation (EU) 2023/1542"]
+  - id: blue-guide
+    kind: guideline
+    jurisdiction: EU
+    short: Blue Guide
+    name: {en: "The Blue Guide on the implementation of EU product rules (2022/C 247/01)", sv: "Blå guiden om genomförandet av EU:s produktregler (2022/C 247/01)"}
+    match: ["Commission Notice 2022/C 247/01"]
+  - id: iso-ai-standards
+    kind: standard
+    jurisdiction: international
+    name: {en: "ISO/IEC AI standards (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)", sv: "ISO/IEC-standarder för AI (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)"}
+    match: ["ISO/IEC 22989", "ISO/IEC 23894", "ISO/IEC 25059", "ISO/IEC 5259", "ISO/IEC 8183", "ISO/IEC TR 24027", "ISO/IEC TS 4213"]
+  - id: mitre-atlas
+    kind: practice
+    jurisdiction: international
+    short: MITRE ATLAS
+    name: {en: "MITRE ATLAS adversarial threat landscape for AI systems", sv: "MITRE ATLAS, hotlandskap för AI-system"}
+    match: ["MITRE ATLAS"]
+  - id: iso-15288
+    kind: standard
+    jurisdiction: international
+    short: ISO/IEC/IEEE 15288
+    name: {en: "ISO/IEC/IEEE 15288 System life cycle processes", sv: "ISO/IEC/IEEE 15288 Livscykelprocesser för system"}
+    match: ["ISO/IEC/IEEE 15288"]
+  - id: iso-systems-lifecycle
+    kind: standard
+    jurisdiction: international
+    name: {en: "Systems and software life-cycle standards (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)", sv: "Standarder för livscykel för system och programvara (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)"}
+    match: ["ISO/IEC/IEEE 15939", "ISO/IEC/IEEE 24748", "IEEE 1012"]
+  - id: sae-eia-649
+    kind: standard
+    jurisdiction: international
+    short: EIA-649
+    name: {en: "SAE EIA-649 Configuration management standard", sv: "SAE EIA-649 Standard för konfigurationsledning"}
+    match: ["SAE EIA-649"]
+  - id: en-50126
+    kind: standard
+    jurisdiction: EU
+    short: EN 50126
+    name: {en: "EN 50126 and EN 50129 Railway RAMS and safety-related electronic systems", sv: "EN 50126 och EN 50129 RAMS för järnväg och säkerhetsrelaterade elektroniska system"}
+    match: ["EN 50126", "EN 50129"]
+  - id: iec-dependability
+    kind: standard
+    jurisdiction: international
+    name: {en: "IEC dependability standards (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)", sv: "IEC-standarder för driftsäkerhet (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)"}
+    match: ["IEC 60300", "IEC 60812", "IEC 61025", "IEC 61078", "IEC 61124", "IEC 61163", "IEC 61703", "IEC 61709", "IEC 62506", "IEC TR 63069"]
+  - id: iec-product-safety
+    kind: standard
+    jurisdiction: international
+    name: {en: "IEC electrical product safety standards (IEC 62368-1, 60664-1, 60204-1, 60364-6)", sv: "IEC-standarder för elsäkerhet hos produkter (IEC 62368-1, 60664-1, 60204-1, 60364-6)"}
+    match: ["IEC 62368", "IEC 60664", "IEC 60204", "IEC 60364"]
+  - id: emc-standards
+    kind: standard
+    jurisdiction: international
+    name: {en: "EMC standards (EN 55032, EN 55035, IEC 61000-4)", sv: "EMC-standarder (EN 55032, EN 55035, IEC 61000-4)"}
+    match: ["EN 55032", "EN 55035", "IEC 61000"]
+  - id: iec-environmental-testing
+    kind: standard
+    jurisdiction: international
+    name: {en: "Environmental testing and protection classes (IEC 60068, 60721-3, 60529, 62262)", sv: "Miljöprovning och skyddsklasser (IEC 60068, 60721-3, 60529, 62262)"}
+    match: ["IEC 60068", "IEC 60721", "IEC 60529", "IEC 62262"]
+  - id: hw-materials-standards
+    kind: standard
+    jurisdiction: international
+    name: {en: "Material declaration and marking standards (EN IEC 63000, IEC 62474, EN 50419)", sv: "Standarder för materialdeklaration och märkning (EN IEC 63000, IEC 62474, EN 50419)"}
+    match: ["EN IEC 63000", "IEC 62474", "EN 50419"]
+  - id: ipc
+    kind: standard
+    jurisdiction: international
+    short: IPC
+    name: {en: "IPC electronics assembly and board standards (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)", sv: "IPC-standarder för kretskort och elektronikmontering (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)"}
+    match: ["IPC-", "IPC J-STD"]
+  - id: ecss
+    kind: standard
+    jurisdiction: international
+    short: ECSS
+    name: {en: "ECSS space product assurance standards", sv: "ECSS-standarder för produktsäkring inom rymd"}
+    match: ["ECSS-"]
+  - id: ieee-1149
+    kind: standard
+    jurisdiction: international
+    short: IEEE 1149.1
+    name: {en: "IEEE 1149.1 Boundary scan (JTAG)", sv: "IEEE 1149.1 Boundary scan (JTAG)"}
+    match: ["IEEE 1149.1"]
+  - id: machine-safety-standards
+    kind: standard
+    jurisdiction: international
+    name: {en: "Machine safety standards (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)", sv: "Standarder för maskinsäkerhet (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)"}
+    match: ["ISO 12100", "ISO 13850", "ISO 13855", "ISO 13857", "ISO 14118", "ISO 14119", "ISO 14120"]
+  - id: hmi-standards
+    kind: standard
+    jurisdiction: international
+    name: {en: "Operator interface standards (IEC 60073, 60447, 61310-1, EN 894-3, ISO 7010)", sv: "Standarder för operatörsgränssnitt (IEC 60073, 60447, 61310-1, EN 894-3, ISO 7010)"}
+    match: ["IEC 60073", "IEC 60447", "IEC 61310", "EN 894", "ISO 7010"]
+  - id: iec-acceptance
+    kind: standard
+    jurisdiction: international
+    name: {en: "IEC acceptance and commissioning of process equipment (IEC 62381, IEC 62337)", sv: "IEC-standarder för acceptans och idrifttagning av processutrustning (IEC 62381, IEC 62337)"}
+    match: ["IEC 62381", "IEC 62337"]
+  - id: metrology
+    kind: standard
+    jurisdiction: international
+    name: {en: "Metrology standards and guides (ISO 10012, JCGM 100 GUM, ILAC-G24)", sv: "Standarder och vägledningar för mätteknik (ISO 10012, JCGM 100 GUM, ILAC-G24)"}
+    match: ["ISO 10012", "JCGM 100", "ILAC-G24"]
+  - id: iso-20816
+    kind: standard
+    jurisdiction: international
+    short: ISO 20816
+    name: {en: "ISO 20816 Mechanical vibration measurement", sv: "ISO 20816 Mätning av mekaniska vibrationer"}
+    match: ["ISO 20816"]
+  - id: nist-system-security
+    kind: guideline
+    jurisdiction: US
+    name: {en: "NIST system and platform security guidance (SP 800-160, 800-193, 800-90B)", sv: "NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)"}
+    match: ["NIST SP 800-160", "NIST SP 800-193", "NIST SP 800-90B"]

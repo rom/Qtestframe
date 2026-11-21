@@ -2,7 +2,7 @@ area: gv-continuity-lifecycle
 prefix: GVLC
 group: operations
 catalogue: governance
-name: {en: Suppliers, continuity and end of life, sv: Leverantörer, kontinuitet och livscykelns slut}
+name: {en: "Suppliers, continuity and end of life", sv: "Leverantörer, kontinuitet och livscykelns slut"}
 description:
   en: Supplier register and contract follow-up, exit plans, business continuity management per ISO 22301 (impact analysis, crisis organisation, exercises), obsolescence management, life-cycle planning and decommissioning with data sanitisation and disposal.
   sv: Leverantörsregister och avtalsuppföljning, exitplaner, kontinuitetshantering enligt ISO 22301 (konsekvensanalys, krisorganisation, övningar), hantering av komponenter som utgår, livscykelplanering och avveckling med radering av data och omhändertagande av utrustning.

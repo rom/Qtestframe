@@ -2,7 +2,7 @@ area: pj-delivery
 prefix: PJDEL
 group: operations
 catalogue: project
-name: {en: Procurement, acceptance and closure, sv: Upphandling, godkännande och avslut}
+name: {en: "Procurement, acceptance and closure", sv: "Upphandling, godkännande och avslut"}
 description:
   en: Verifiable requirements and published award criteria in tender documents, supplier assessment, contract contents, supplier follow-up, the acceptance test plan, formal acceptance, handover to operations, warranty, the closure report, lessons learned and the benefits review.
   sv: Verifierbara krav och publicerade utvärderingskriterier i förfrågningsunderlaget, bedömning av leverantörer, avtalets innehåll, uppföljning av leverantörer, plan för acceptanstest, formellt godkännande, överlämning till förvaltning och drift, garanti, slutrapport, erfarenhetsåterföring och uppföljning av nyttor.

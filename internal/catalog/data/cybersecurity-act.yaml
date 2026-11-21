@@ -1,7 +1,7 @@
 area: cybersecurity-act
 prefix: CSL
 group: privacy
-name: {en: Cybersecurity Act (Sweden, NIS2), sv: Cybersäkerhetslagen (NIS2)}
+name: {en: "Cybersecurity Act (Sweden, NIS2)", sv: "Cybersäkerhetslagen (NIS2)"}
 description:
   en: Obligations of essential and important entities under the Swedish Cybersecurity Act, which implements the NIS2 directive, covering scope and registration, management accountability and training, risk analysis, incident reporting deadlines, supply chain security, vulnerability handling, cryptography, asset management, multi-factor authentication, business continuity and assessment of the measures.
   sv: Skyldigheter för väsentliga och viktiga verksamhetsutövare enligt cybersäkerhetslagen, som genomför NIS2-direktivet, med omfattning och anmälan, ledningens ansvar och utbildning, riskanalys, tidsfrister för incidentrapportering, säkerhet i leverantörskedjan, sårbarhetshantering, kryptering, hantering av tillgångar, flerfaktorsautentisering, kontinuitet och utvärdering av åtgärderna.

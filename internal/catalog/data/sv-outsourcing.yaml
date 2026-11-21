@@ -2,7 +2,7 @@ area: sv-outsourcing
 prefix: SVOUT
 group: security
 catalogue: services
-name: {en: Outsourcing, service security and exit, sv: Utkontraktering, tjänstesäkerhet och utträde}
+name: {en: "Outsourcing, service security and exit", sv: "Utkontraktering, tjänstesäkerhet och utträde"}
 description:
   en: Security clauses and assurance from service providers, the data processing agreement, subcontractors, data location, incident notification, supplier access, yearly security follow-up, the exit plan, return and deletion of data and assistance during the transition to a new provider.
   sv: Säkerhetsklausuler och försäkran från tjänsteleverantörer, personuppgiftsbiträdesavtalet, underleverantörer, var data finns, rapportering av incidenter, leverantörens åtkomst, årlig säkerhetsuppföljning, utträdesplanen, återlämnande och radering av data och stöd under övergången till en ny leverantör.

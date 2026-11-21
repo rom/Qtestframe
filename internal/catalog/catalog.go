@@ -254,6 +254,14 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 		if !kinds[a.Catalogue] {
 			bad("area %s: unknown catalogue %q", a.ID, a.Catalogue)
 		}
+		for _, n := range []Names{a.Name, a.Description} {
+			for l := range n {
+				if !slices.Contains(Languages, l) {
+					// "{en: A, B}" in YAML makes "B" a key: quote texts with commas
+					bad("area %s: unexpected key %q in a name or description (quote texts that contain a comma)", a.ID, l)
+				}
+			}
+		}
 		for _, l := range Languages {
 			if strings.TrimSpace(a.Name[l]) == "" || strings.TrimSpace(a.Description[l]) == "" {
 				bad("area %s: name and description are needed in %s", a.ID, l)
