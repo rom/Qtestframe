@@ -311,6 +311,126 @@ requirements:
           text: Testloggen visar ett felinjektionstest för varje kritiskt beroende under de senaste 3 månaderna, med registrerade fynd.
           threshold: "var 3:e månad per kritiskt beroende"
 
+  - id: RES-14
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [overload, load-shedding, retry-after]
+    refs: ["Google SRE book ch. 21 (Handling Overload)", "RFC 9110 §10.2.3 (Retry-After)", "RFC 9110 §15.6.4 (503 Service Unavailable)"]
+    tests: [RES-T11]
+    en:
+      title: Excess load rejected instead of queued
+      description: When an instance has more requests in progress than its configured limit, the system MUST answer the excess requests at once with status 503 and a Retry-After header.
+      rationale: Queueing work beyond capacity makes every request slow and can take the whole service down, while early rejection keeps the accepted requests within their response times.
+      criteria:
+        - method: test
+          text: Under load above the limit, the excess requests get 503 with Retry-After within 100 ms while accepted requests keep their normal response time.
+          threshold: "rejection ≤ 100 ms"
+    sv:
+      title: Överlast avvisas i stället för att köas
+      description: När en instans har fler pågående anrop än sin inställda gräns SKA systemet direkt besvara de överskjutande anropen med status 503 och huvudet Retry-After.
+      rationale: Att köa arbete utöver kapaciteten gör varje anrop långsamt och kan fälla hela tjänsten, medan tidig avvisning håller de godtagna anropen inom sina svarstider.
+      criteria:
+        - method: test
+          text: Vid last över gränsen får de överskjutande anropen 503 med Retry-After inom 100 ms medan godtagna anrop behåller sin vanliga svarstid.
+          threshold: "avvisning ≤ 100 ms"
+
+  - id: RES-15
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [shutdown, graceful, in-flight]
+    refs: ["The Twelve-Factor App, IX Disposability", "ISO/IEC 25010:2023 fault tolerance"]
+    tests: [RES-T12]
+    en:
+      title: In-flight work finished on shutdown
+      description: On a stop signal, an instance MUST stop accepting new requests and finish the requests in progress for up to 30 seconds before it exits.
+      rationale: Restarts and scale-in happen many times a day, and an abrupt exit fails every request that was being served at that moment.
+      criteria:
+        - method: test
+          text: Stopping an instance during load produces 0 failed requests that had already been accepted.
+          threshold: "0 failed accepted requests; drain ≤ 30 s"
+    sv:
+      title: Pågående arbete slutförs vid avstängning
+      description: Vid en stoppsignal SKA en instans sluta ta emot nya anrop och slutföra pågående anrop i upp till 30 sekunder innan den avslutas.
+      rationale: Omstarter och nedskalning sker många gånger per dag, och ett tvärt avslut får varje anrop som betjänas just då att misslyckas.
+      criteria:
+        - method: test
+          text: Att stoppa en instans under last ger 0 misslyckade anrop bland dem som redan hade tagits emot.
+          threshold: "0 misslyckade mottagna anrop; avveckling ≤ 30 s"
+
+  - id: RES-16
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [queues, bounds, memory]
+    refs: ["Google SRE book ch. 22 (Addressing Cascading Failures)", "ISO/IEC 25010:2023 fault tolerance"]
+    tests: [RES-T13]
+    en:
+      title: Bounded queues and pools
+      description: Each in-memory queue, worker pool and connection pool of the system MUST have a configured maximum size.
+      rationale: An unbounded queue grows until the process runs out of memory, turning a slow dependency into a crash.
+      criteria:
+        - method: inspection
+          text: The configuration lists a maximum for each queue and pool found in a code review of the service.
+          threshold: "100 % of queues and pools bounded"
+    sv:
+      title: Begränsade köer och pooler
+      description: Varje kö i minnet, arbetarpool och anslutningspool i systemet SKA ha en inställd största storlek.
+      rationale: En obegränsad kö växer tills processen får slut på minne, och ett långsamt beroende blir då en krasch.
+      criteria:
+        - method: inspection
+          text: Konfigurationen anger ett maxvärde för varje kö och pool som hittas vid en kodgranskning av tjänsten.
+          threshold: "100 % av köer och pooler begränsade"
+
+  - id: RES-17
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [startup, dependencies, readiness]
+    refs: ["The Twelve-Factor App, IX Disposability", "ISO/IEC 25010:2023 recoverability"]
+    tests: [RES-T14]
+    en:
+      title: Start without the database available
+      description: An instance that starts while the database is unreachable MUST keep running, report not ready and connect when the database returns.
+      rationale: A crash loop at start delays recovery after a shared outage and floods logs and orchestrators at the worst moment.
+      criteria:
+        - method: test
+          text: An instance started with the database down reports not ready, does not restart, and becomes ready within 30 seconds after the database returns.
+          threshold: "ready ≤ 30 s after the database returns"
+    sv:
+      title: Start utan att databasen är nåbar
+      description: En instans som startar medan databasen inte går att nå SKA fortsätta köra, rapportera att den inte är redo och ansluta när databasen är tillbaka.
+      rationale: En kraschloop vid start fördröjer återhämtningen efter ett gemensamt avbrott och översvämmar loggar och orkestrering i värsta tänkbara läge.
+      criteria:
+        - method: test
+          text: En instans som startas med databasen nere rapporterar att den inte är redo, startar inte om och blir redo inom 30 sekunder efter att databasen är tillbaka.
+          threshold: "redo ≤ 30 s efter att databasen är tillbaka"
+
+  - id: RES-18
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [messaging, consumers, reconnect]
+    refs: ["ISO/IEC 25010:2023 recoverability", "Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    tests: [RES-T15]
+    en:
+      title: Message consumers resume after a broker outage
+      description: After the message broker becomes available again, the consumers MUST resume processing without manual action within 5 minutes.
+      rationale: Consumers that stay disconnected after a broker restart let messages pile up silently until someone notices the missing results.
+      criteria:
+        - method: test
+          text: After a broker restart, every consumer is connected again and the queue backlog starts to fall within 5 minutes.
+          threshold: "≤ 5 min to resumed processing"
+    sv:
+      title: Meddelandekonsumenter återupptar arbetet efter ett avbrott i meddelandeförmedlingen
+      description: När meddelandeförmedlingen är tillgänglig igen SKA konsumenterna återuppta behandlingen utan manuell åtgärd inom 5 minuter.
+      rationale: Konsumenter som förblir frånkopplade efter en omstart av förmedlingen låter meddelanden samlas på hög i det tysta tills någon märker att resultaten uteblir.
+      criteria:
+        - method: test
+          text: Efter en omstart av förmedlingen är varje konsument ansluten igen och kön börjar minska inom 5 minuter.
+          threshold: "≤ 5 min till återupptagen behandling"
+
 tests:
   - id: RES-T01
     priority: high
@@ -605,3 +725,157 @@ tests:
           expected: Varje beroende har en post daterad inom de senaste 3 månaderna.
         - action: Kontrollera fynden i varje post.
           expected: Varje fynd har ett ärende i backloggen med en ansvarig.
+
+  - id: RES-T11
+    priority: high
+    execution: automated
+    tags: [overload, load-shedding]
+    refs: ["Google SRE book ch. 21 (Handling Overload)", "RFC 9110 §10.2.3 (Retry-After)"]
+    en:
+      title: Load shedding above the concurrency limit
+      description: Sends more concurrent requests than the configured limit to one instance and checks the answers.
+      preconditions: One instance with a known limit of requests in progress, for example 50, and a load tool.
+      expected: Excess requests are rejected at once with 503 and Retry-After; accepted requests keep normal response times.
+      steps:
+        - action: Send 40 concurrent requests.
+          expected: Every request succeeds within the normal response time.
+          data: "limit 50"
+        - action: Send 80 concurrent requests.
+          expected: The 30 requests above the limit receive 503 with a Retry-After header within 100 ms.
+          data: "80 concurrent requests"
+        - action: Compare the response times of the accepted requests with the first step.
+          expected: Their 95th percentile is within 20 % of the first step.
+    sv:
+      title: Lastavlastning över gränsen för samtidiga anrop
+      description: Skickar fler samtidiga anrop än den inställda gränsen till en instans och kontrollerar svaren.
+      preconditions: En instans med en känd gräns för pågående anrop, till exempel 50, och ett lastverktyg.
+      expected: Överskjutande anrop avvisas direkt med 503 och Retry-After; godtagna anrop behåller vanliga svarstider.
+      steps:
+        - action: Skicka 40 samtidiga anrop.
+          expected: Varje anrop lyckas inom den vanliga svarstiden.
+          data: "gräns 50"
+        - action: Skicka 80 samtidiga anrop.
+          expected: De 30 anropen över gränsen får 503 med huvudet Retry-After inom 100 ms.
+          data: "80 samtidiga anrop"
+        - action: Jämför svarstiderna för de godtagna anropen med första steget.
+          expected: Deras 95:e percentil ligger inom 20 % från första steget.
+
+  - id: RES-T12
+    priority: high
+    execution: automated
+    tags: [shutdown, graceful]
+    refs: ["The Twelve-Factor App, IX Disposability"]
+    en:
+      title: Graceful shutdown under load
+      description: Sends a stop signal to an instance while it serves slow requests.
+      preconditions: A test environment with 2 instances, a load script and an endpoint that takes 5 seconds to answer.
+      expected: No accepted request fails and the instance exits within 30 seconds.
+      steps:
+        - action: Start a load with requests to the 5-second endpoint across both instances.
+          expected: Requests are being served by both instances.
+        - action: Send the stop signal to one instance.
+          expected: The instance stops receiving new requests and the load balancer sends them to the other instance.
+          data: "SIGTERM"
+        - action: Count the failed requests and measure the time to exit.
+          expected: 0 accepted requests fail and the instance exits within 30 seconds.
+    sv:
+      title: Kontrollerad avstängning under last
+      description: Skickar en stoppsignal till en instans medan den betjänar långsamma anrop.
+      preconditions: En testmiljö med 2 instanser, ett lastskript och en ändpunkt som tar 5 sekunder att svara.
+      expected: Inget mottaget anrop misslyckas och instansen avslutas inom 30 sekunder.
+      steps:
+        - action: Starta en last med anrop till ändpunkten på 5 sekunder över båda instanserna.
+          expected: Anrop betjänas av båda instanserna.
+        - action: Skicka stoppsignalen till en av instanserna.
+          expected: Instansen slutar ta emot nya anrop och lastbalanseraren skickar dem till den andra instansen.
+          data: "SIGTERM"
+        - action: Räkna de misslyckade anropen och mät tiden till avslut.
+          expected: 0 mottagna anrop misslyckas och instansen avslutas inom 30 sekunder.
+
+  - id: RES-T13
+    priority: medium
+    execution: manual
+    tags: [queues, bounds]
+    refs: ["Google SRE book ch. 22 (Addressing Cascading Failures)"]
+    en:
+      title: Every queue and pool has a maximum
+      description: Reviews the code and configuration for in-memory queues, worker pools and connection pools.
+      preconditions: Access to the source code and the configuration of the service.
+      expected: Each queue and pool has a configured maximum size.
+      steps:
+        - action: Search the code for queue, channel, pool and executor constructs.
+          expected: A list of every queue and pool is produced.
+          data: "search terms: queue, pool, executor, channel"
+        - action: Look up the configured maximum for each entry.
+          expected: Each entry has a maximum; entries without one are reported as findings.
+    sv:
+      title: Varje kö och pool har ett maxvärde
+      description: Granskar koden och konfigurationen efter köer i minnet, arbetarpooler och anslutningspooler.
+      preconditions: Åtkomst till tjänstens källkod och konfiguration.
+      expected: Varje kö och pool har en inställd största storlek.
+      steps:
+        - action: Sök i koden efter köer, kanaler, pooler och exekverare.
+          expected: En lista över varje kö och pool tas fram.
+          data: "söktermer: queue, pool, executor, channel"
+        - action: Slå upp det inställda maxvärdet för varje post.
+          expected: Varje post har ett maxvärde; poster utan maxvärde rapporteras som avvikelser.
+
+  - id: RES-T14
+    priority: medium
+    execution: manual
+    tags: [startup, readiness]
+    refs: ["The Twelve-Factor App, IX Disposability"]
+    en:
+      title: Start with the database down
+      description: Starts an instance while the database is stopped and then starts the database.
+      preconditions: A test environment where the database can be stopped and started on its own.
+      expected: The instance waits as not ready without crashing and becomes ready within 30 seconds after the database is back.
+      steps:
+        - action: Stop the database and start a new application instance.
+          expected: The instance keeps running and its readiness endpoint reports not ready.
+        - action: Watch the instance for 5 minutes.
+          expected: The process is not restarted by the orchestrator.
+        - action: Start the database and poll the readiness endpoint.
+          expected: The instance reports ready within 30 seconds and serves requests.
+    sv:
+      title: Start med databasen nere
+      description: Startar en instans medan databasen är stoppad och startar sedan databasen.
+      preconditions: En testmiljö där databasen kan stoppas och startas för sig.
+      expected: Instansen väntar som inte redo utan att krascha och blir redo inom 30 sekunder efter att databasen är tillbaka.
+      steps:
+        - action: Stoppa databasen och starta en ny applikationsinstans.
+          expected: Instansen fortsätter köra och dess beredskapsändpunkt rapporterar att den inte är redo.
+        - action: Följ instansen i 5 minuter.
+          expected: Processen startas inte om av orkestreringen.
+        - action: Starta databasen och fråga beredskapsändpunkten med jämna mellanrum.
+          expected: Instansen rapporterar redo inom 30 sekunder och besvarar anrop.
+
+  - id: RES-T15
+    priority: medium
+    execution: manual
+    tags: [messaging, reconnect]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
+    en:
+      title: Consumers reconnect after a broker restart
+      description: Restarts the message broker while messages are being produced and watches the consumers.
+      preconditions: A test environment with the broker, a producer sending messages and the normal consumers.
+      expected: Every consumer is connected again and processing resumes within 5 minutes.
+      steps:
+        - action: Stop the broker for 3 minutes while the producer keeps trying to send.
+          expected: The producer reports send failures or buffers messages.
+        - action: Start the broker and note the time.
+          expected: The broker accepts connections.
+        - action: Watch the consumer connections and the queue length.
+          expected: Every consumer is connected and the queue length falls within 5 minutes without anyone restarting a consumer.
+    sv:
+      title: Konsumenter ansluter igen efter omstart av förmedlingen
+      description: Startar om meddelandeförmedlingen medan meddelanden produceras och följer konsumenterna.
+      preconditions: En testmiljö med förmedlingen, en producent som skickar meddelanden och de vanliga konsumenterna.
+      expected: Varje konsument är ansluten igen och behandlingen återupptas inom 5 minuter.
+      steps:
+        - action: Stoppa förmedlingen i 3 minuter medan producenten fortsätter försöka skicka.
+          expected: Producenten rapporterar misslyckade sändningar eller buffrar meddelanden.
+        - action: Starta förmedlingen och notera tiden.
+          expected: Förmedlingen tar emot anslutningar.
+        - action: Följ konsumenternas anslutningar och köns längd.
+          expected: Varje konsument är ansluten och kön minskar inom 5 minuter utan att någon startar om en konsument.

@@ -297,6 +297,126 @@ requirements:
           text: Ett projekt som raderades för 29 dagar sedan återställs av en administratör med alla sina poster, medan övriga data inte påverkas.
           threshold: "30 dagar"
 
+  - id: BCK-13
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [consistency, files, database]
+    refs: ["Google SRE book ch. 26 (Data Integrity)", "ISO/IEC 27001:2022 A.8.13 (information backup)"]
+    tests: [BCK-T11]
+    en:
+      title: Database and file storage restored to the same point
+      description: The backup MUST let the database and the stored files be restored to the same point in time so that no record points to a missing file.
+      rationale: Restoring the database and the file store from different times leaves attachments that are missing or that no record knows about.
+      criteria:
+        - method: test
+          text: After a restore, a check of every file reference in the database finds 0 missing files.
+          threshold: "0 dangling file references"
+    sv:
+      title: Databas och fillagring återställs till samma tidpunkt
+      description: Säkerhetskopieringen SKA göra det möjligt att återställa databasen och de lagrade filerna till samma tidpunkt så att ingen post pekar på en fil som saknas.
+      rationale: Om databasen och fillagringen återställs från olika tidpunkter blir det kvar bilagor som saknas eller som ingen post känner till.
+      criteria:
+        - method: test
+          text: Efter en återställning hittar en kontroll av varje filreferens i databasen 0 saknade filer.
+          threshold: "0 hängande filreferenser"
+
+  - id: BCK-14
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [migration, backup, deployment]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "ISO/IEC 27001:2022 A.8.32 (change management)"]
+    tests: [BCK-T12]
+    en:
+      title: Backup before each database migration
+      description: The deployment MUST take a backup of the production database and confirm that it completed before a schema migration starts.
+      rationale: A failed or faulty migration can damage data, and a backup taken minutes before is the shortest way back.
+      criteria:
+        - method: inspection
+          text: The deployment log of the last 5 migrations shows a completed backup before each migration step.
+          threshold: "5 of 5 migrations"
+    sv:
+      title: Säkerhetskopia före varje databasmigrering
+      description: Driftsättningen SKA ta en säkerhetskopia av produktionsdatabasen och bekräfta att den är klar innan en schemamigrering startar.
+      rationale: En misslyckad eller felaktig migrering kan skada data, och en säkerhetskopia från några minuter innan är den kortaste vägen tillbaka.
+      criteria:
+        - method: inspection
+          text: Driftsättningsloggen för de 5 senaste migreringarna visar en klar säkerhetskopia före varje migreringssteg.
+          threshold: "5 av 5 migreringar"
+
+  - id: BCK-15
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [runbook, restore, operator]
+    refs: ["ISO 22301:2019 §8.5 (exercise programme)", "NIST SP 800-34 Rev. 1 §3.6 (plan testing, training and exercises)"]
+    tests: [BCK-T13]
+    en:
+      title: Restore carried out from the runbook alone
+      description: A restore SHOULD be carried out successfully by an operator who did not write the restore runbook, using only that runbook.
+      rationale: During a real disaster the author of the runbook can be absent, and gaps in the steps only show when someone else follows them.
+      criteria:
+        - method: demonstration
+          text: In the yearly drill an operator who is not the author restores the service within the recovery time objective without other help.
+          threshold: "1 drill per year"
+    sv:
+      title: Återställning enbart utifrån körinstruktionen
+      description: En återställning BÖR kunna genomföras av en tekniker som inte har skrivit körinstruktionen för återställning, med enbart den instruktionen som stöd.
+      rationale: Vid en verklig katastrof kan den som skrev instruktionen vara borta, och luckor i stegen syns först när någon annan följer dem.
+      criteria:
+        - method: demonstration
+          text: Vid den årliga övningen återställer en tekniker som inte är författaren tjänsten inom återställningstiden utan annan hjälp.
+          threshold: "1 övning per år"
+
+  - id: BCK-16
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [monitoring, anomaly, ransomware]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [BCK-T14]
+    en:
+      title: Alert on an unusual backup size
+      description: The backup monitoring SHOULD alert the operations team when a backup is more than 30 % smaller or larger than the average of the previous 7 backups.
+      rationale: A sudden change in size can mean that data was deleted, encrypted by ransomware or left out of the backup.
+      criteria:
+        - method: test
+          text: A backup made 40 % smaller than the average triggers an alert, and one within 10 % does not.
+          threshold: "deviation > 30 % from the 7-backup average"
+    sv:
+      title: Larm vid avvikande storlek på säkerhetskopian
+      description: Övervakningen av säkerhetskopiorna BÖR larma driften när en säkerhetskopia är mer än 30 % mindre eller större än medelvärdet av de 7 föregående.
+      rationale: En plötslig storleksändring kan betyda att data har raderats, krypterats av utpressningsprogram eller fallit bort ur kopian.
+      criteria:
+        - method: test
+          text: En säkerhetskopia som görs 40 % mindre än medelvärdet ger ett larm, och en som avviker högst 10 % ger inget.
+          threshold: "avvikelse > 30 % från medelvärdet av 7 kopior"
+
+  - id: BCK-17
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [inventory, retention, backup]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)"]
+    tests: [BCK-T15]
+    en:
+      title: Inventory of existing backups
+      description: The supplier MUST keep a current list of backups with time, size, storage location, end of retention and result of the latest verification.
+      rationale: Without an inventory nobody can say quickly which backup to use in a disaster or show that retention rules are followed.
+      criteria:
+        - method: inspection
+          text: The inventory matches the backups present in storage, with no backup missing from the list and none listed that no longer exists.
+          threshold: "100 % match with storage"
+    sv:
+      title: Förteckning över befintliga säkerhetskopior
+      description: Leverantören SKA hålla en aktuell förteckning över säkerhetskopior med tidpunkt, storlek, lagringsplats, slut på lagringstiden och resultat av senaste verifiering.
+      rationale: Utan en förteckning kan ingen snabbt säga vilken kopia som ska användas vid en katastrof eller visa att reglerna för lagringstid följs.
+      criteria:
+        - method: inspection
+          text: Förteckningen stämmer med de kopior som finns i lagringen, utan att någon kopia saknas i listan eller att någon listad kopia inte längre finns.
+          threshold: "100 % överensstämmelse med lagringen"
+
 tests:
   - id: BCK-T01
     priority: high
@@ -585,3 +705,155 @@ tests:
           expected: Projektet syns i projektlistan igen.
         - action: Jämför antalet krav, testfall och körningar med de noterade värdena.
           expected: Antalen är desamma och övriga projekt är oförändrade.
+
+  - id: BCK-T11
+    priority: high
+    execution: manual
+    tags: [consistency, restore]
+    refs: ["Google SRE book ch. 26 (Data Integrity)"]
+    en:
+      title: Consistent restore of records and attachments
+      description: Restores a backup to a test environment and checks every file reference against the restored file store.
+      preconditions: A recent backup of production and an isolated environment to restore it into; a script that lists file references in the database.
+      expected: Every file referenced in the restored database exists in the restored file store.
+      steps:
+        - action: Restore the database and file storage from the backup of a chosen point in time.
+          expected: Both restores complete without errors.
+          data: "restore point: yesterday 12:00"
+        - action: Run the script that checks each file reference against the file store.
+          expected: The script reports 0 missing files.
+        - action: Open 10 records with attachments created shortly before the restore point.
+          expected: Each attachment opens.
+    sv:
+      title: Konsekvent återställning av poster och bilagor
+      description: Återställer en säkerhetskopia till en testmiljö och kontrollerar varje filreferens mot den återställda fillagringen.
+      preconditions: En färsk säkerhetskopia av produktion och en isolerad miljö att återställa den i; ett skript som listar filreferenser i databasen.
+      expected: Varje fil som den återställda databasen hänvisar till finns i den återställda fillagringen.
+      steps:
+        - action: Återställ databasen och fillagringen från säkerhetskopian för en vald tidpunkt.
+          expected: Båda återställningarna slutförs utan fel.
+          data: "återställningspunkt: i går 12.00"
+        - action: Kör skriptet som kontrollerar varje filreferens mot fillagringen.
+          expected: Skriptet rapporterar 0 saknade filer.
+        - action: Öppna 10 poster med bilagor som skapades strax före återställningspunkten.
+          expected: Varje bilaga går att öppna.
+
+  - id: BCK-T12
+    priority: high
+    execution: manual
+    tags: [migration, backup]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)"]
+    en:
+      title: Backup precedes the schema migration
+      description: Runs a deployment with a migration in staging and inspects the order of the steps.
+      preconditions: A staging environment with the production pipeline and a release that contains a schema migration.
+      expected: The pipeline takes and confirms a backup before the migration and stops if the backup fails.
+      steps:
+        - action: Deploy the release with the migration and read the deployment log.
+          expected: The log shows a completed backup with its identifier before the first migration step.
+        - action: Make the backup step fail, for example by revoking write access to the backup store, and deploy again.
+          expected: The pipeline stops before the migration and reports the failed backup.
+    sv:
+      title: Säkerhetskopia före schemamigreringen
+      description: Kör en driftsättning med en migrering i stagingmiljön och granskar stegens ordning.
+      preconditions: En stagingmiljö med produktionens pipeline och en version som innehåller en schemamigrering.
+      expected: Pipelinen tar och bekräftar en säkerhetskopia före migreringen och stannar om kopieringen misslyckas.
+      steps:
+        - action: Driftsätt versionen med migreringen och läs driftsättningsloggen.
+          expected: Loggen visar en klar säkerhetskopia med sin identitet före det första migreringssteget.
+        - action: Få kopieringssteget att misslyckas, till exempel genom att ta bort skrivrätten till lagringen för kopior, och driftsätt igen.
+          expected: Pipelinen stannar före migreringen och rapporterar den misslyckade kopieringen.
+
+  - id: BCK-T13
+    priority: medium
+    execution: manual
+    tags: [runbook, restore]
+    refs: ["ISO 22301:2019 §8.5 (exercise programme)"]
+    en:
+      title: Restore by an operator who did not write the runbook
+      description: An operator follows the restore runbook alone in a drill and the gaps found are recorded.
+      preconditions: An isolated recovery environment, the current runbook and an operator who has not written or edited it.
+      expected: The service is restored within the recovery time objective using only the runbook.
+      steps:
+        - action: Give the operator the runbook and the drill scenario; start the clock.
+          expected: The operator works from the runbook without asking its author.
+          data: "scenario: loss of the primary database"
+        - action: Record each place where the operator had to guess or look elsewhere.
+          expected: The list of gaps is recorded in the drill report.
+        - action: Stop the clock when the service passes its smoke test.
+          expected: The elapsed time is within the recovery time objective.
+    sv:
+      title: Återställning av en tekniker som inte skrev körinstruktionen
+      description: En tekniker följer körinstruktionen för återställning på egen hand vid en övning och de luckor som hittas noteras.
+      preconditions: En isolerad återställningsmiljö, den aktuella körinstruktionen och en tekniker som inte har skrivit eller redigerat den.
+      expected: Tjänsten återställs inom återställningstiden med enbart körinstruktionen.
+      steps:
+        - action: Ge teknikern körinstruktionen och övningsscenariot; starta klockan.
+          expected: Teknikern arbetar utifrån instruktionen utan att fråga författaren.
+          data: "scenario: förlust av den primära databasen"
+        - action: Notera varje ställe där teknikern behövde gissa eller leta på annat håll.
+          expected: Listan över luckor förs in i övningsrapporten.
+        - action: Stoppa klockan när tjänsten klarar sitt röktest.
+          expected: Den förflutna tiden ligger inom återställningstiden.
+
+  - id: BCK-T14
+    priority: medium
+    execution: automated
+    tags: [monitoring, anomaly]
+    refs: ["ISO/IEC 27001:2022 A.8.16"]
+    en:
+      title: Unusual backup size raises an alert
+      description: Feeds backup size records into the monitoring rule and checks when it alerts.
+      preconditions: A test instance of the backup monitoring with a history of 7 backups of similar size.
+      expected: Only a deviation above 30 % from the average raises an alert.
+      steps:
+        - action: Add a backup record 10 % smaller than the 7-backup average.
+          expected: No alert is raised.
+          data: "average 50 GB, new backup 45 GB"
+        - action: Add a backup record 40 % smaller than the average.
+          expected: An alert reaches the operations channel within 15 minutes and names the backup.
+          data: "new backup 30 GB"
+    sv:
+      title: Avvikande storlek på säkerhetskopian ger larm
+      description: Matar in poster om kopiornas storlek i övervakningsregeln och kontrollerar när den larmar.
+      preconditions: En testinstans av övervakningen av säkerhetskopior med en historik på 7 kopior av liknande storlek.
+      expected: Bara en avvikelse över 30 % från medelvärdet ger larm.
+      steps:
+        - action: Lägg till en kopia som är 10 % mindre än medelvärdet av de 7 senaste.
+          expected: Inget larm ges.
+          data: "medelvärde 50 GB, ny kopia 45 GB"
+        - action: Lägg till en kopia som är 40 % mindre än medelvärdet.
+          expected: Ett larm når driftens kanal inom 15 minuter och anger vilken kopia det gäller.
+          data: "ny kopia 30 GB"
+
+  - id: BCK-T15
+    priority: medium
+    execution: manual
+    tags: [inventory, backup]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)"]
+    en:
+      title: Backup inventory matches storage
+      description: Compares the backup inventory with a listing of the backup storage.
+      preconditions: Read access to the backup storage and to the inventory.
+      expected: The inventory and the storage contain the same backups with correct details.
+      steps:
+        - action: Export the inventory and list the objects in the backup storage.
+          expected: Both lists are available with time and size.
+          data: "inventory export and storage listing of the same day"
+        - action: Compare the two lists backup by backup.
+          expected: No backup is missing from either list and the sizes match.
+        - action: Check the retention end and the latest verification result of 5 entries.
+          expected: Each entry has a retention end and a verification date not older than the verification interval.
+    sv:
+      title: Förteckningen över säkerhetskopior stämmer med lagringen
+      description: Jämför förteckningen över säkerhetskopior med en listning av lagringen.
+      preconditions: Läsbehörighet till lagringen för säkerhetskopior och till förteckningen.
+      expected: Förteckningen och lagringen innehåller samma kopior med korrekta uppgifter.
+      steps:
+        - action: Exportera förteckningen och lista objekten i lagringen för säkerhetskopior.
+          expected: Båda listorna finns med tidpunkt och storlek.
+          data: "export av förteckningen och listning av lagringen från samma dag"
+        - action: Jämför de två listorna kopia för kopia.
+          expected: Ingen kopia saknas i någon av listorna och storlekarna stämmer.
+        - action: Kontrollera slutet på lagringstiden och senaste verifieringsresultatet för 5 poster.
+          expected: Varje post har ett slutdatum och ett verifieringsdatum som inte är äldre än verifieringsintervallet.

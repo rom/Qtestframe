@@ -271,6 +271,126 @@ requirements:
           text: Beslutsunderlaget för den nuvarande driftregionen anger kandidaterna med koldioxidintensitet, fördröjning och datalokalisering, och den valda regionen ligger under 100 g CO2e per kWh eller så anges skälet.
           threshold: "< 100 g CO2e/kWh"
 
+  - id: GRN-12
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [lazy-loading, images, transfer]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §4 (web development)", "HTML Living Standard (lazy loading attributes)"]
+    tests: [GRN-T09]
+    en:
+      title: Off-screen images loaded on demand
+      description: The web pages MUST defer loading of images and embedded frames that are outside the first viewport until the user scrolls near them.
+      rationale: Many visitors never scroll to the end of a page, and loading what they never see wastes transfer and energy.
+      criteria:
+        - method: test
+          text: On a long page, the network log of the first load shows no request for images below the first viewport.
+          threshold: "0 off-screen image requests on first load"
+    sv:
+      title: Bilder utanför skärmen laddas när de behövs
+      description: Webbsidorna SKA skjuta upp laddningen av bilder och inbäddade ramar som ligger utanför den första vyn tills användaren rullar nära dem.
+      rationale: Många besökare rullar aldrig till slutet av en sida, och att ladda det de aldrig ser slösar överföring och energi.
+      criteria:
+        - method: test
+          text: På en lång sida visar nätverksloggen för första laddningen inga anrop efter bilder nedanför den första vyn.
+          threshold: "0 anrop efter bilder utanför vyn vid första laddning"
+
+  - id: GRN-13
+    type: non_functional
+    obligation: must_not
+    priority: medium
+    tags: [video, autoplay, transfer]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §2.7 (optimise media)", "WCAG 2.2 SC 2.2.2"]
+    tests: [GRN-T10]
+    en:
+      title: No video that plays by itself
+      description: The user interface MUST NOT start playing or preloading video content before the user asks for it.
+      rationale: Video is the heaviest content on the web, and playing it unasked costs data and energy for users who did not want it.
+      criteria:
+        - method: test
+          text: On each page with video, the network log shows no video segments until the user presses play.
+          threshold: "0 video bytes before play"
+    sv:
+      title: Ingen video som spelas upp av sig själv
+      description: Användargränssnittet SKA INTE starta uppspelning eller förladdning av video innan användaren ber om det.
+      rationale: Video är det tyngsta innehållet på webben, och att spela upp den oombett kostar data och energi för användare som inte ville se den.
+      criteria:
+        - method: test
+          text: På varje sida med video visar nätverksloggen inga videosegment förrän användaren trycker på uppspelning.
+          threshold: "0 videobyte före uppspelning"
+
+  - id: GRN-14
+    type: non_functional
+    obligation: should
+    priority: low
+    tags: [storage, deduplication, files]
+    refs: ["Green Software Foundation: Principles of Green Software Engineering (energy efficiency)", "ISO/IEC 25010:2023 resource utilization"]
+    tests: [GRN-T11]
+    en:
+      title: Identical files stored once
+      description: The system SHOULD store a file whose content is identical to an already stored file of the same organisation only once.
+      rationale: The same attachment is often uploaded to many items, and each copy takes storage, backup space and energy for its whole life.
+      criteria:
+        - method: test
+          text: Uploading the same 10 MB file to 5 items raises the used storage by at most 10 MB plus metadata.
+          threshold: "≤ 1 stored copy per identical content"
+    sv:
+      title: Identiska filer lagras en gång
+      description: Systemet BÖR lagra en fil vars innehåll är identiskt med en redan lagrad fil i samma organisation bara en gång.
+      rationale: Samma bilaga laddas ofta upp till många objekt, och varje kopia tar lagring, utrymme i säkerhetskopior och energi under hela sin livstid.
+      criteria:
+        - method: test
+          text: Att ladda upp samma fil på 10 MB till 5 objekt ökar den använda lagringen med högst 10 MB plus metadata.
+          threshold: "≤ 1 lagrad kopia per identiskt innehåll"
+
+  - id: GRN-15
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [autoscaling, idle, energy]
+    refs: ["AWS Well-Architected Framework, Sustainability Pillar SUS02 (align resources to demand)", "Green Software Foundation: Principles of Green Software Engineering (energy proportionality)"]
+    tests: [GRN-T12]
+    en:
+      title: Production scaled in at low load
+      description: The production platform SHOULD scale in to its minimum instance count when the average utilisation stays below 20 % for 30 minutes.
+      rationale: Servers that idle at night still draw a large share of their peak power, so capacity has to follow the load in both directions.
+      criteria:
+        - method: test
+          text: With load below 20 % for 30 minutes the platform reduces the instance count to the configured minimum.
+          threshold: "scale-in after 30 min below 20 %"
+    sv:
+      title: Produktionen skalas ned vid låg last
+      description: Produktionsplattformen BÖR skala ned till sitt minsta antal instanser när den genomsnittliga utnyttjandegraden ligger under 20 % i 30 minuter.
+      rationale: Servrar som går på tomgång på natten drar ändå en stor del av sin toppeffekt, så kapaciteten behöver följa lasten åt båda hållen.
+      criteria:
+        - method: test
+          text: Med last under 20 % i 30 minuter minskar plattformen antalet instanser till det inställda minimivärdet.
+          threshold: "nedskalning efter 30 min under 20 %"
+
+  - id: GRN-16
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [devices, lifetime, compatibility]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §4 (web development)", "ISO/IEC 25010:2023 adaptability"]
+    tests: [GRN-T13]
+    en:
+      title: Usable on devices up to 6 years old
+      description: The web client SHOULD support the core tasks on devices and browser versions released up to 6 years earlier.
+      rationale: Most of the carbon footprint of a phone or laptop comes from making it, and software that forces new devices shortens their useful life.
+      criteria:
+        - method: test
+          text: The core tasks complete on a reference device and browser from 6 years ago within twice the response times measured on a current device.
+          threshold: "device age 6 years; ≤ 2 × current response time"
+    sv:
+      title: Användbar på enheter som är upp till 6 år gamla
+      description: Webbklienten BÖR stödja kärnuppgifterna på enheter och webbläsarversioner som släpptes upp till 6 år tidigare.
+      rationale: Det mesta av klimatavtrycket för en telefon eller dator kommer från tillverkningen, och programvara som tvingar fram nya enheter förkortar deras livslängd.
+      criteria:
+        - method: test
+          text: Kärnuppgifterna går att slutföra på en referensenhet och webbläsare från 6 år sedan inom dubbla svarstiden mot en aktuell enhet.
+          threshold: "enhetens ålder 6 år; ≤ 2 × aktuell svarstid"
+
 tests:
   - id: GRN-T01
     priority: medium
@@ -519,3 +639,149 @@ tests:
         - action: Jämför de två paren av summor.
           expected: De skiljer sig med högst 5 %, eller så anger rapporten orsaken till skillnaden.
           data: "tolerans 5 %"
+
+  - id: GRN-T09
+    priority: medium
+    execution: automated
+    tags: [lazy-loading, images]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §4 (web development)"]
+    en:
+      title: Images below the first viewport are not loaded at once
+      description: Loads a long page in a scripted browser and inspects the requests before and after scrolling.
+      preconditions: A page with at least 10 images below the first viewport and a browser automation tool with network logging.
+      expected: Off-screen images are requested only when the page is scrolled near them.
+      steps:
+        - action: Open the page at a viewport of 1366 × 768 pixels and wait for the load to finish.
+          expected: The network log contains only the images in the first viewport.
+          data: "viewport 1366 × 768"
+        - action: Scroll to the end of the page.
+          expected: The remaining images are requested as they come near the viewport.
+    sv:
+      title: Bilder nedanför den första vyn laddas inte direkt
+      description: Laddar en lång sida i en skriptstyrd webbläsare och granskar anropen före och efter rullning.
+      preconditions: En sida med minst 10 bilder nedanför den första vyn och ett verktyg för webbläsarautomatisering med nätverksloggning.
+      expected: Bilder utanför vyn hämtas först när sidan rullas nära dem.
+      steps:
+        - action: Öppna sidan med vyn 1366 × 768 bildpunkter och vänta tills laddningen är klar.
+          expected: Nätverksloggen innehåller bara bilderna i den första vyn.
+          data: "vy 1366 × 768"
+        - action: Rulla till slutet av sidan.
+          expected: De övriga bilderna hämtas när de närmar sig vyn.
+
+  - id: GRN-T10
+    priority: medium
+    execution: automated
+    tags: [video, autoplay]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §2.7 (optimise media)"]
+    en:
+      title: Video is loaded only after play
+      description: Opens pages that contain video and inspects the network log before and after play.
+      preconditions: The list of pages with video and a browser automation tool with network logging.
+      expected: No video data is transferred before the user presses play.
+      steps:
+        - action: Open each page with video and wait 10 seconds without interacting.
+          expected: No video plays and the network log has no video segment requests.
+        - action: Press play on one video.
+          expected: The video starts and its segments are requested.
+    sv:
+      title: Video laddas först efter uppspelning
+      description: Öppnar sidor som innehåller video och granskar nätverksloggen före och efter uppspelning.
+      preconditions: Listan över sidor med video och ett verktyg för webbläsarautomatisering med nätverksloggning.
+      expected: Inga videodata överförs innan användaren trycker på uppspelning.
+      steps:
+        - action: Öppna varje sida med video och vänta 10 sekunder utan att göra något.
+          expected: Ingen video spelas upp och nätverksloggen har inga anrop efter videosegment.
+        - action: Tryck på uppspelning för en video.
+          expected: Videon startar och dess segment hämtas.
+
+  - id: GRN-T11
+    priority: low
+    execution: manual
+    tags: [storage, deduplication]
+    refs: ["ISO/IEC 25010:2023 resource utilization"]
+    en:
+      title: Duplicate uploads share storage
+      description: Uploads the same file to several items and measures the change in stored bytes.
+      preconditions: A test organisation with known storage use and a 10 MB test file.
+      expected: Storage grows by one copy of the file plus metadata.
+      steps:
+        - action: Note the organisation's used storage.
+          expected: The figure is recorded.
+        - action: Upload the same file to 5 different items.
+          expected: Each item shows the attachment.
+          data: "10 MB PDF file"
+        - action: Note the used storage again.
+          expected: The increase is at most 10 MB plus metadata, and deleting one item keeps the file for the other 4.
+    sv:
+      title: Dubbla uppladdningar delar lagring
+      description: Laddar upp samma fil till flera objekt och mäter förändringen i lagrade byte.
+      preconditions: En testorganisation med känd lagringsanvändning och en testfil på 10 MB.
+      expected: Lagringen växer med en kopia av filen plus metadata.
+      steps:
+        - action: Notera organisationens använda lagring.
+          expected: Siffran noteras.
+        - action: Ladda upp samma fil till 5 olika objekt.
+          expected: Varje objekt visar bilagan.
+          data: "PDF-fil på 10 MB"
+        - action: Notera den använda lagringen igen.
+          expected: Ökningen är högst 10 MB plus metadata, och om ett objekt raderas finns filen kvar för de övriga 4.
+
+  - id: GRN-T12
+    priority: medium
+    execution: manual
+    tags: [autoscaling, idle]
+    refs: ["AWS Well-Architected Framework, Sustainability Pillar SUS02 (align resources to demand)"]
+    en:
+      title: Scale-in at night load
+      description: Reads the instance count and utilisation during a low-load period.
+      preconditions: Access to the platform metrics for a night with low traffic.
+      expected: The instance count falls to the minimum after 30 minutes below 20 % utilisation.
+      steps:
+        - action: Find a period of at least 1 hour with utilisation below 20 %.
+          expected: The period is identified in the metrics.
+          data: "night between 01:00 and 05:00"
+        - action: Read the instance count over the period.
+          expected: The count reaches the configured minimum no later than 30 minutes after utilisation fell below 20 %.
+    sv:
+      title: Nedskalning vid nattlast
+      description: Läser av antalet instanser och utnyttjandegraden under en period med låg last.
+      preconditions: Åtkomst till plattformens mätvärden för en natt med lite trafik.
+      expected: Antalet instanser sjunker till minimivärdet efter 30 minuter under 20 % utnyttjande.
+      steps:
+        - action: Leta upp en period på minst 1 timme med utnyttjandegrad under 20 %.
+          expected: Perioden är identifierad i mätvärdena.
+          data: "natt mellan 01.00 och 05.00"
+        - action: Läs av antalet instanser under perioden.
+          expected: Antalet når det inställda minimivärdet senast 30 minuter efter att utnyttjandegraden föll under 20 %.
+
+  - id: GRN-T13
+    priority: medium
+    execution: manual
+    tags: [devices, lifetime]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §4 (web development)"]
+    en:
+      title: Core tasks on a 6-year-old device
+      description: Runs the core tasks on an older reference device and a current one.
+      preconditions: A reference device and browser released 6 years ago, a current device and the list of core tasks.
+      expected: Each core task completes on the old device within twice the time on the current device.
+      steps:
+        - action: Run each core task on the current device and record the time.
+          expected: Each task completes and the times are recorded.
+          data: "core tasks: sign in, search, edit and save a record"
+        - action: Run the same tasks on the old device.
+          expected: Each task completes without errors or missing functions.
+        - action: Compare the times.
+          expected: No task takes more than twice the time measured on the current device.
+    sv:
+      title: Kärnuppgifter på en 6 år gammal enhet
+      description: Kör kärnuppgifterna på en äldre referensenhet och en aktuell enhet.
+      preconditions: En referensenhet och webbläsare som släpptes för 6 år sedan, en aktuell enhet och listan över kärnuppgifter.
+      expected: Varje kärnuppgift slutförs på den gamla enheten inom dubbla tiden mot den aktuella enheten.
+      steps:
+        - action: Kör varje kärnuppgift på den aktuella enheten och notera tiden.
+          expected: Varje uppgift slutförs och tiderna noteras.
+          data: "kärnuppgifter: logga in, söka, redigera och spara en post"
+        - action: Kör samma uppgifter på den gamla enheten.
+          expected: Varje uppgift slutförs utan fel eller saknade funktioner.
+        - action: Jämför tiderna.
+          expected: Ingen uppgift tar mer än dubbla tiden mot den aktuella enheten.
