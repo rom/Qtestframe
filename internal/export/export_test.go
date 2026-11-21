@@ -323,7 +323,8 @@ func TestHelpers(t *testing.T) {
 	if truncateRunes("äöü", 2) != "äö" || truncateRunes("ab", 5) != "ab" {
 		t.Fatal("truncateRunes")
 	}
-	if sectionTitle(Section{Name: "n"}, 0) != "n" || sectionTitle(Section{}, 2) != "Section 3" {
+	if (Dataset{}).sectionTitle(Section{Name: "n"}, 0) != "n" || (Dataset{}).sectionTitle(Section{}, 2) != "Section 3" ||
+		(Dataset{Lang: "sv"}).sectionTitle(Section{}, 0) != "Avsnitt 1" || (Dataset{Lang: "xx"}).sectionTitle(Section{}, 0) != "Section 1" {
 		t.Fatal("sectionTitle")
 	}
 	if generatedAt(Dataset{}).IsZero() {

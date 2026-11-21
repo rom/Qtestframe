@@ -68,8 +68,8 @@ export function reportMailProblems(f: ReportMailForm, addressesAllowed: boolean)
   return out
 }
 
-/** Request body of POST /projects/{pid}/reports/email. */
-export function reportMailBody(source: ReportSource, f: ReportMailForm, addressesAllowed: boolean) {
+/** Request body of POST /projects/{pid}/reports/email (`lang`: the UI language of the report and e-mail). */
+export function reportMailBody(source: ReportSource, f: ReportMailForm, addressesAllowed: boolean, lang?: string) {
   const message = f.message.trim()
   const addresses = addressesAllowed ? parseAddresses(f.addresses).valid : []
   return {
@@ -78,6 +78,7 @@ export function reportMailBody(source: ReportSource, f: ReportMailForm, addresse
     recipients: [...new Set(f.recipients)],
     ...(addresses.length ? { addresses } : {}),
     ...(message ? { message } : {}),
+    ...(lang ? { lang } : {}),
   }
 }
 
@@ -140,8 +141,11 @@ export function subscriptionProblems(f: SubscriptionForm, addressesAllowed: bool
   return out
 }
 
-/** Request body to create (with definition_id) or update a subscription. */
-export function subscriptionBody(f: SubscriptionForm, create: boolean) {
+/**
+ * Request body to create (with definition_id) or update a subscription;
+ * `lang` (the UI language) is stored as the language the report is sent in.
+ */
+export function subscriptionBody(f: SubscriptionForm, create: boolean, lang?: string) {
   return {
     ...(create ? { definition_id: f.definition_id } : {}),
     frequency: f.frequency,
@@ -154,6 +158,7 @@ export function subscriptionBody(f: SubscriptionForm, create: boolean) {
     addresses: parseAddresses(f.addresses).valid,
     message: f.message.trim(),
     enabled: f.enabled,
+    ...(lang ? { lang } : {}),
   }
 }
 

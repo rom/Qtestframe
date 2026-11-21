@@ -34,6 +34,18 @@ func (s *Server) routesReports(h routeFunc) {
 	h("POST /api/v1/reports/definitions/{id}/generate", s.handleGenerateReportDefinition, "export")
 }
 
+// reportLang is the language a report requested by r is produced in: the
+// explicit language of the request (the body's "lang", else the "lang"
+// query parameter) when it is supported, else the user's preferred
+// language, else the browser's (Accept-Language), else English.
+func reportLang(r *http.Request, p *Principal, explicit string) string {
+	pref := ""
+	if p != nil && p.User != nil {
+		pref = p.User.Preferences.Language
+	}
+	return report.ResolveLang(explicit, r.URL.Query().Get("lang"), pref, report.LangFromAcceptLanguage(r.Header.Get("Accept-Language")))
+}
+
 // reportError turns report.ErrInvalid into a 400.
 func reportError(err error) error {
 	if errors.Is(err, report.ErrInvalid) {
@@ -171,8 +183,8 @@ func (s *Server) reportData(r *http.Request, p *Principal, pr *model.Project, id
 }
 
 // customRecords returns the records of a custom report, filtered by its
-// query, with report-friendly values for multi-part fields.
-func (s *Server) customRecords(r *http.Request, p *Principal, pr *model.Project, c *report.CustomConfig) ([]query.MapRecord, error) {
+// query, with report-friendly values for multi-part fields (in lang).
+func (s *Server) customRecords(r *http.Request, p *Principal, pr *model.Project, c *report.CustomConfig, lang string) ([]query.MapRecord, error) {
 	ctx := r.Context()
 	var out []query.MapRecord
 	switch c.Entity {
@@ -190,7 +202,11 @@ func (s *Server) customRecords(r *http.Request, p *Principal, pr *model.Project,
 				rec := pc.requirementRecord(&reqs[i])
 				var crit []string
 				for j, cr := range reqs[i].Criteria {
-					line := fmt.Sprintf("%d. %s (%s", j+1, cr.Description, cr.Method)
+					method := cr.Method
+					if lang != report.English {
+						method = report.EnumLabel(lang, report.EnumEvalMethod, cr.Method)
+					}
+					line := fmt.Sprintf("%d. %s (%s", j+1, cr.Description, method)
 					if cr.Threshold != "" {
 						line += "; " + cr.Threshold
 					}
@@ -211,7 +227,7 @@ func (s *Server) customRecords(r *http.Request, p *Principal, pr *model.Project,
 			for j, st := range tests[i].Steps {
 				line := fmt.Sprintf("%d. %s", j+1, st.Action)
 				if st.CallTestKey != "" {
-					line = fmt.Sprintf("%d. [call %s]", j+1, st.CallTestKey)
+					line = fmt.Sprintf("%d. [%s %s]", j+1, report.T(lang, "call"), st.CallTestKey)
 				}
 				if st.Expected != "" {
 					line += " => " + st.Expected
@@ -298,12 +314,13 @@ type reportJob struct {
 	archive  bool
 	name     string
 	stem     string // default file name stem
+	lang     string // language of the report's texts (report.Languages)
 }
 
 // renderedReport is a rendered report file.
 type renderedReport struct {
-	name, contentType, title, details string
-	data                              []byte
+	name, contentType, title, details, lang string
+	data                                    []byte
 }
 
 // render builds a report into memory.
@@ -317,16 +334,17 @@ func (s *Server) render(r *http.Request, p *Principal, pr *model.Project, job re
 		if err := s.validateCustom(r, p, pr, job.custom); err != nil {
 			return nil, err
 		}
-		recs, err := s.customRecords(r, p, pr, job.custom)
+		recs, err := s.customRecords(r, p, pr, job.custom, job.lang)
 		if err != nil {
 			return nil, err
 		}
-		ds = report.BuildCustom(*job.custom, recs, pr.Key+" – "+pr.Name, time.Now().UTC())
+		ds = report.BuildCustom(*job.custom, recs, pr.Key+" – "+pr.Name, time.Now().UTC(), job.lang)
 	} else {
 		d, err := s.reportData(r, p, pr, job.template, job.params)
 		if err != nil {
 			return nil, err
 		}
+		d.Lang = job.lang
 		if ds, err = report.Build(job.template, d, job.params); err != nil {
 			return nil, reportError(err)
 		}
@@ -343,7 +361,7 @@ func (s *Server) render(r *http.Request, p *Principal, pr *model.Project, job re
 	if err := export.Write(&buf, f, *ds); err != nil {
 		return nil, err
 	}
-	return &renderedReport{name: store.CleanFileName(name), contentType: f.ContentTypeFor(multi), title: ds.Title, details: job.stem + " " + string(f), data: buf.Bytes()}, nil
+	return &renderedReport{name: store.CleanFileName(name), contentType: f.ContentTypeFor(multi), title: ds.Title, details: job.stem + " " + string(f), lang: ds.Lang, data: buf.Bytes()}, nil
 }
 
 // archiveReport saves a rendered report in the project's document archive.
@@ -403,6 +421,7 @@ type generateReq struct {
 	Format   string            `json:"format"`
 	Archive  bool              `json:"archive"`
 	Name     string            `json:"name"`
+	Lang     string            `json:"lang"`
 }
 
 func (s *Server) handleGenerateReport(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -421,7 +440,8 @@ func (s *Server) handleGenerateReport(w http.ResponseWriter, r *http.Request, p 
 		s.fail(w, r, badRequest("exactly one of template or custom is required"))
 		return
 	}
-	job := reportJob{template: req.Template, params: req.Params, format: req.Format, archive: req.Archive, name: req.Name, stem: req.Template}
+	job := reportJob{template: req.Template, params: req.Params, format: req.Format, archive: req.Archive, name: req.Name, stem: req.Template,
+		lang: reportLang(r, p, req.Lang)}
 	if hasCustom {
 		c, err := report.ParseCustomConfig(req.Custom)
 		if err != nil {
@@ -583,6 +603,7 @@ func (s *Server) handleGenerateReportDefinition(w http.ResponseWriter, r *http.R
 		Format  string `json:"format"`
 		Archive bool   `json:"archive"`
 		Name    string `json:"name"`
+		Lang    string `json:"lang"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -596,5 +617,5 @@ func (s *Server) handleGenerateReportDefinition(w http.ResponseWriter, r *http.R
 	if c.Title == "" {
 		c.Title = d.Name
 	}
-	s.generate(w, r, p, pr, reportJob{custom: c, format: req.Format, archive: req.Archive, name: req.Name, stem: d.Name})
+	s.generate(w, r, p, pr, reportJob{custom: c, format: req.Format, archive: req.Archive, name: req.Name, stem: d.Name, lang: reportLang(r, p, req.Lang)})
 }

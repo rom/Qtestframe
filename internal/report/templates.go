@@ -12,11 +12,20 @@ import (
 )
 
 var (
-	coverageOrder  = []string{"passed", "partial", "failed", "not_run", "none"}
-	coverageLabels = map[string]string{"passed": "Passed", "partial": "Partially passed", "failed": "Failed",
-		"not_run": "Not run", "none": "No linked tests"}
-	obligationOrder = append(append([]string{}, model.Obligations...), "unspecified")
+	coverageOrder   = []string{"passed", "partial", "failed", "not_run", "none"}
+	coverageLabels  = enums[English][EnumCoverage]
+	obligationOrder = append(append([]string{}, model.Obligations...), obligationUnset)
+	execTypes       = []string{model.ExecManual, model.ExecAutomated}
 )
+
+// cols translates column headers.
+func (l loc) cols(names ...string) []string {
+	out := make([]string, len(names))
+	for i, n := range names {
+		out[i] = l.t(n)
+	}
+	return out
+}
 
 // testIndex maps test ids to tests.
 func (d *Data) testIndex() map[string]*model.TestCase {
@@ -54,13 +63,14 @@ func lastResult(t *model.TestCase) string {
 // ---------------------------------------------------------------- project status
 
 func buildProjectStatus(d *Data, _ map[string]string) (*export.Dataset, error) {
+	l := d.loc()
 	status, obl, cov := map[string]int{}, map[string]int{}, map[string]int{}
 	linked := 0
 	for _, r := range d.Requirements {
 		status[r.Status]++
 		o := r.Obligation
 		if o == "" {
-			o = "unspecified"
+			o = obligationUnset
 		}
 		obl[o]++
 		cov[r.Coverage]++
@@ -92,40 +102,31 @@ func buildProjectStatus(d *Data, _ map[string]string) (*export.Dataset, error) {
 	}
 	nr := len(d.Requirements)
 	ds := &export.Dataset{Sections: []export.Section{
-		kpiSection("kpis", "Key figures",
+		l.kpiSection("kpis", "Key figures",
 			kv{"Requirements", itoa(nr)},
 			kv{"Requirements with linked tests", itoa(linked)},
 			kv{"Requirements without tests", itoa(nr - linked)},
-			kv{"Test coverage (requirements with tests)", pct(linked, nr)},
+			kv{"Test coverage (requirements with tests)", l.pct(linked, nr)},
 			kv{"Requirements verified (all linked tests passed)", itoa(cov["passed"])},
 			kv{"Test cases", itoa(len(d.Tests))},
 			kv{"Automated test cases", itoa(automated)},
 			kv{"Manual test cases", itoa(len(d.Tests) - automated)},
-			kv{"Pass rate (last results)", pct(passed, withResult)},
+			kv{"Pass rate (last results)", l.pct(passed, withResult)},
 			kv{"Test runs", itoa(len(d.Runs))},
 			kv{"Runs in progress", itoa(active)},
 		),
-		countSection("requirements_by_status", "Requirements by status", "Status", status, model.RequirementStatuses, humanLabels(model.RequirementStatuses)),
-		countSection("requirements_by_obligation", "Requirements by obligation", "Obligation", obl, obligationOrder, oblLabels()),
-		countSection("coverage", "Requirement coverage", "Coverage", cov, coverageOrder, coverageLabels),
-		countSection("test_results", "Last test results", "Result", results, model.ResultStatuses, humanLabels(model.ResultStatuses)),
-		recentRuns(d.Runs, 10),
+		l.countSection("requirements_by_status", "Requirements by status", "Status", status, model.RequirementStatuses, l.enumLabels(EnumStatus, model.RequirementStatuses)),
+		l.countSection("requirements_by_obligation", "Requirements by obligation", "Obligation", obl, obligationOrder, l.enumLabels(EnumObligation, obligationOrder)),
+		l.countSection("coverage", "Requirement coverage", "Coverage", cov, coverageOrder, l.enumLabels(EnumCoverage, coverageOrder)),
+		l.countSection("test_results", "Last test results", "Result", results, model.ResultStatuses, l.enumLabels(EnumResult, model.ResultStatuses)),
+		l.recentRuns(d.Runs, 10),
 	}}
 	return ds, nil
 }
 
-func oblLabels() map[string]string {
-	m := map[string]string{}
-	for _, o := range obligationOrder {
-		m[o] = strings.ToUpper(strings.ReplaceAll(o, "_", " "))
-	}
-	m["unspecified"] = "Unspecified"
-	return m
-}
-
-func recentRuns(runs []model.TestRun, n int) export.Section {
-	s := export.Section{Name: "recent_runs", Title: "Recent test runs",
-		Columns: []string{"Run", "Status", "Environment", "Build", "Created", "Total", "Passed", "Failed", "Blocked", "Skipped", "Not run"}}
+func (l loc) recentRuns(runs []model.TestRun, n int) export.Section {
+	s := export.Section{Name: "recent_runs", Title: l.t("Recent test runs"),
+		Columns: l.cols("Run", "Status", "Environment", "Build", "Created", "Total", "Passed", "Failed", "Blocked", "Skipped", "Not run")}
 	rs := append([]model.TestRun{}, runs...)
 	sort.SliceStable(rs, func(i, j int) bool { return rs[i].CreatedAt.After(rs[j].CreatedAt) })
 	if len(rs) > n {
@@ -133,7 +134,7 @@ func recentRuns(runs []model.TestRun, n int) export.Section {
 	}
 	for _, r := range rs {
 		sum := r.Summary
-		s.Rows = append(s.Rows, []string{r.Name, humanize(r.Status), r.Environment, r.Build, ts(r.CreatedAt), itoa(sum["total"]),
+		s.Rows = append(s.Rows, []string{r.Name, l.enum(EnumStatus, r.Status), r.Environment, r.Build, ts(r.CreatedAt), itoa(sum["total"]),
 			itoa(sum[model.ResultPassed]), itoa(sum[model.ResultFailed]), itoa(sum[model.ResultBlocked]), itoa(sum[model.ResultSkipped]),
 			itoa(sum[model.ResultNotRun])})
 	}
@@ -143,11 +144,12 @@ func recentRuns(runs []model.TestRun, n int) export.Section {
 // ---------------------------------------------------------------- requirements coverage
 
 func buildRequirementsCoverage(d *Data, _ map[string]string) (*export.Dataset, error) {
+	l := d.loc()
 	tests := d.testIndex()
 	r2t := d.linksByRequirement()
 	cov := map[string]int{}
-	detail := export.Section{Name: "requirements", Title: "Requirements and their tests",
-		Columns: []string{"Key", "Title", "Status", "Obligation", "Priority", "Linked tests", "Last results", "Coverage"}}
+	detail := export.Section{Name: "requirements", Title: l.t("Requirements and their tests"),
+		Columns: l.cols("Key", "Title", "Status", "Obligation", "Priority", "Linked tests", "Last results", "Coverage")}
 	for _, r := range d.Requirements {
 		cov[r.Coverage]++
 		var keys, results []string
@@ -157,14 +159,14 @@ func buildRequirementsCoverage(d *Data, _ map[string]string) (*export.Dataset, e
 				continue
 			}
 			keys = append(keys, t.Key)
-			results = append(results, t.Key+": "+humanize(lastResult(t)))
+			results = append(results, t.Key+": "+l.enum(EnumResult, lastResult(t)))
 		}
-		detail.Rows = append(detail.Rows, []string{r.Key, r.Title, humanize(r.Status), strings.ToUpper(strings.ReplaceAll(r.Obligation, "_", " ")),
-			humanize(r.Priority), strings.Join(keys, ", "), strings.Join(results, "\n"), coverageLabel(r.Coverage)})
+		detail.Rows = append(detail.Rows, []string{r.Key, r.Title, l.enum(EnumStatus, r.Status), l.enum(EnumObligation, r.Obligation),
+			l.enum(EnumPriority, r.Priority), strings.Join(keys, ", "), strings.Join(results, "\n"), l.enum(EnumCoverage, r.Coverage)})
 	}
 	n := len(d.Requirements)
 	return &export.Dataset{Sections: []export.Section{
-		kpiSection("summary", "Summary",
+		l.kpiSection("summary", "Summary",
 			kv{"Requirements", itoa(n)},
 			kv{"With linked tests", itoa(n - cov["none"])},
 			kv{"Without linked tests", itoa(cov["none"])},
@@ -172,26 +174,22 @@ func buildRequirementsCoverage(d *Data, _ map[string]string) (*export.Dataset, e
 			kv{"Partially passed", itoa(cov["partial"])},
 			kv{"Failed", itoa(cov["failed"])},
 			kv{"Not run", itoa(cov["not_run"])},
-			kv{"Verified share", pct(cov["passed"], n)},
+			kv{"Verified share", l.pct(cov["passed"], n)},
 		),
 		detail,
 	}}, nil
 }
 
-func coverageLabel(c string) string {
-	if l, ok := coverageLabels[c]; ok {
-		return l
-	}
-	return humanize(c)
-}
+func coverageLabel(c string) string { return newLoc(English).enum(EnumCoverage, c) }
 
 // ---------------------------------------------------------------- traceability
 
 func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
+	l := d.loc()
 	tests := d.testIndex()
 	r2t := d.linksByRequirement()
-	matrix := export.Section{Name: "matrix", Title: "Traceability matrix",
-		Columns: []string{"Requirement", "Requirement title", "Coverage", "Test", "Test title", "Last result"}}
+	matrix := export.Section{Name: "matrix", Title: l.t("Traceability matrix"),
+		Columns: l.cols("Requirement", "Requirement title", "Coverage", "Test", "Test title", "Last result")}
 	links, uncovered := 0, 0
 	for _, r := range d.Requirements {
 		n := 0
@@ -201,25 +199,25 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 				continue
 			}
 			n++
-			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, coverageLabel(r.Coverage), t.Key, t.Title, humanize(lastResult(t))})
+			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), t.Key, t.Title, l.enum(EnumResult, lastResult(t))})
 		}
 		if n == 0 {
 			uncovered++
-			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, coverageLabel(r.Coverage), "", "", ""})
+			matrix.Rows = append(matrix.Rows, []string{r.Key, r.Title, l.enum(EnumCoverage, r.Coverage), "", "", ""})
 		}
 		links += n
 	}
 	linked := d.linkedRequirementIDs()
-	orphans := export.Section{Name: "tests_without_requirements", Title: "Tests without requirements",
-		Columns: []string{"Key", "Title", "Status", "Last result"}}
+	orphans := export.Section{Name: "tests_without_requirements", Title: l.t("Tests without requirements"),
+		Columns: l.cols("Key", "Title", "Status", "Last result")}
 	for i := range d.Tests {
 		t := &d.Tests[i]
 		if !linked[t.ID] {
-			orphans.Rows = append(orphans.Rows, []string{t.Key, t.Title, humanize(t.Status), humanize(lastResult(t))})
+			orphans.Rows = append(orphans.Rows, []string{t.Key, t.Title, l.enum(EnumStatus, t.Status), l.enum(EnumResult, lastResult(t))})
 		}
 	}
 	sections := []export.Section{
-		kpiSection("summary", "Summary",
+		l.kpiSection("summary", "Summary",
 			kv{"Requirements", itoa(len(d.Requirements))},
 			kv{"Tests", itoa(len(d.Tests))},
 			kv{"Links", itoa(links)},
@@ -229,30 +227,30 @@ func buildTraceability(d *Data, _ map[string]string) (*export.Dataset, error) {
 		matrix, orphans,
 	}
 	if len(d.TraceRules) > 0 {
-		sections = append(sections, traceRuleSections(d.TraceRules)...)
+		sections = append(sections, l.traceRuleSections(d.TraceRules)...)
 	}
 	return &export.Dataset{Sections: sections}, nil
 }
 
 // traceRuleSections lists the traceability rules with their results and
 // the items that break them.
-func traceRuleSections(results []tracerules.Result) []export.Section {
-	rules := export.Section{Name: "trace_rules", Title: "Traceability rules",
-		Columns: []string{"Rule", "Severity", "Applies to", "Selector", "Matching items", "Violations", "Result"}}
-	viol := export.Section{Name: "trace_rule_violations", Title: "Traceability rule violations",
-		Columns: []string{"Rule", "Severity", "Item", "Title", "Found", "Required"}}
+func (l loc) traceRuleSections(results []tracerules.Result) []export.Section {
+	rules := export.Section{Name: "trace_rules", Title: l.t("Traceability rules"),
+		Columns: l.cols("Rule", "Severity", "Applies to", "Selector", "Matching items", "Violations", "Result")}
+	viol := export.Section{Name: "trace_rule_violations", Title: l.t("Traceability rule violations"),
+		Columns: l.cols("Rule", "Severity", "Item", "Title", "Found", "Required")}
 	for _, res := range results {
-		result := "Passed"
+		result := l.tc("rule", "Passed")
 		switch {
 		case res.Error != "":
-			result = "Invalid: " + res.Error
+			result = l.tc("rule", "Invalid: ") + res.Error
 		case !res.Passed:
-			result = "Failed"
+			result = l.tc("rule", "Failed")
 		}
-		rules.Rows = append(rules.Rows, []string{res.Rule.Name, humanize(res.Rule.Severity), humanize(res.Rule.Scope) + "s", res.Rule.Selector,
+		rules.Rows = append(rules.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), l.enum(EnumScope, res.Rule.Scope), res.Rule.Selector,
 			itoa(res.Matched), itoa(res.ViolationCount), result})
 		for _, v := range res.Violations {
-			viol.Rows = append(viol.Rows, []string{res.Rule.Name, humanize(res.Rule.Severity), v.Key, v.Title, itoa(v.Found), itoa(v.Required)})
+			viol.Rows = append(viol.Rows, []string{res.Rule.Name, l.enum(EnumSeverity, res.Rule.Severity), v.Key, v.Title, itoa(v.Found), itoa(v.Required)})
 		}
 	}
 	return []export.Section{rules, viol}
@@ -261,6 +259,7 @@ func traceRuleSections(results []tracerules.Result) []export.Section {
 // ---------------------------------------------------------------- run summary
 
 func buildRunSummary(d *Data, params map[string]string) (*export.Dataset, error) {
+	l := d.loc()
 	id := strings.TrimSpace(params["run_id"])
 	var run *model.TestRun
 	for i := range d.Runs {
@@ -277,8 +276,8 @@ func buildRunSummary(d *Data, params map[string]string) (*export.Dataset, error)
 	done, passed := 0, 0
 	defects := map[string][]string{}
 	var defectOrder []string
-	execs := export.Section{Name: "executions", Title: "Executions",
-		Columns: []string{"#", "Test", "Title", "Result", "Assignee", "Executed by", "Started", "Finished", "Duration (ms)", "Defects", "Notes"}}
+	execs := export.Section{Name: "executions", Title: l.t("Executions"),
+		Columns: l.cols("#", "Test", "Title", "Result", "Assignee", "Executed by", "Started", "Finished", "Duration (ms)", "Defects", "Notes")}
 	for i, e := range es {
 		counts[e.Status]++
 		if executed(e.Status) {
@@ -300,7 +299,7 @@ func buildRunSummary(d *Data, params map[string]string) (*export.Dataset, error)
 			}
 			defects[df] = append(defects[df], e.TestKey)
 		}
-		execs.Rows = append(execs.Rows, []string{itoa(i + 1), e.TestKey, e.TestTitle, humanize(e.Status), e.Assignee, e.ExecutedBy,
+		execs.Rows = append(execs.Rows, []string{itoa(i + 1), e.TestKey, e.TestTitle, l.enum(EnumResult, e.Status), e.Assignee, e.ExecutedBy,
 			tsPtr(e.StartedAt), tsPtr(e.FinishedAt), strconv.FormatInt(e.DurationMS, 10), strings.Join(e.Defects, ", "), e.Notes})
 	}
 	avg := "–"
@@ -308,35 +307,36 @@ func buildRunSummary(d *Data, params map[string]string) (*export.Dataset, error)
 		avg = durationText(total / timed)
 	}
 	kpis := []kv{
-		{"Run", run.Name}, {"Description", run.Description}, {"Status", humanize(run.Status)},
+		{"Run", run.Name}, {"Description", run.Description}, {"Status", l.enum(EnumStatus, run.Status)},
 		{"Environment", run.Environment}, {"Build", run.Build}, {"Created by", run.CreatedBy},
 		{"Created", ts(run.CreatedAt)}, {"Started", tsPtr(run.StartedAt)}, {"Completed", tsPtr(run.CompletedAt)},
 		{"Executions", itoa(len(es))},
 	}
 	for _, st := range model.ResultStatuses {
-		kpis = append(kpis, kv{humanize(st), itoa(counts[st])})
+		kpis = append(kpis, kv{humanize(st), itoa(counts[st])}) // translated as counts ("Passed" → "Godkända")
 	}
 	kpis = append(kpis,
-		kv{"Progress (executions with a result)", pct(done, len(es))},
-		kv{"Pass rate (of executions with a result)", pct(passed, done)},
+		kv{"Progress (executions with a result)", l.pct(done, len(es))},
+		kv{"Pass rate (of executions with a result)", l.pct(passed, done)},
 		kv{"Total duration", durationText(total)},
 		kv{"Average duration", avg},
 		kv{"Defects", itoa(len(defectOrder))},
 	)
 	sort.SliceStable(defectOrder, func(i, j int) bool { return naturalLess(defectOrder[i], defectOrder[j]) })
-	ds := export.Section{Name: "defects", Title: "Defects", Columns: []string{"Defect", "Link", "Tests"}}
+	ds := export.Section{Name: "defects", Title: l.t("Defects"), Columns: l.cols("Defect", "Link", "Tests")}
 	for _, df := range defectOrder {
 		ds.Rows = append(ds.Rows, []string{df, defectLink(d.Project.DefectURLTemplate, df), strings.Join(uniqSorted(defects[df]), ", ")})
 	}
 	return &export.Dataset{
-		Subtitle: d.Project.Key + " – " + d.Project.Name + " · Run: " + run.Name,
-		Sections: []export.Section{kpiSection("summary", "Summary", kpis...), execs, ds},
+		Subtitle: d.Project.Key + " – " + d.Project.Name + l.t(" · Run: ") + run.Name,
+		Sections: []export.Section{l.kpiSection("summary", "Summary", kpis...), execs, ds},
 	}, nil
 }
 
 // ---------------------------------------------------------------- defects
 
 func buildDefects(d *Data, _ map[string]string) (*export.Dataset, error) {
+	l := d.loc()
 	type agg struct {
 		id          string
 		occurrences int
@@ -345,8 +345,8 @@ func buildDefects(d *Data, _ map[string]string) (*export.Dataset, error) {
 		lastSeen    time.Time
 	}
 	byID := map[string]*agg{}
-	occ := export.Section{Name: "occurrences", Title: "Occurrences",
-		Columns: []string{"Defect", "Run", "Build", "Test", "Title", "Result", "Executed by", "Finished"}}
+	occ := export.Section{Name: "occurrences", Title: l.t("Occurrences"),
+		Columns: l.cols("Defect", "Run", "Build", "Test", "Title", "Result", "Executed by", "Finished")}
 	runs := append([]model.TestRun{}, d.Runs...)
 	sort.SliceStable(runs, func(i, j int) bool { return runs[i].CreatedAt.Before(runs[j].CreatedAt) })
 	tests, allRuns := map[string]bool{}, map[string]bool{}
@@ -378,7 +378,7 @@ func buildDefects(d *Data, _ map[string]string) (*export.Dataset, error) {
 				if !at.Before(a.lastSeen) {
 					a.lastSeen, a.latest = at, e.Status
 				}
-				occ.Rows = append(occ.Rows, []string{df, run.Name, run.Build, e.TestKey, e.TestTitle, humanize(e.Status), e.ExecutedBy, tsPtr(e.FinishedAt)})
+				occ.Rows = append(occ.Rows, []string{df, run.Name, run.Build, e.TestKey, e.TestTitle, l.enum(EnumResult, e.Status), e.ExecutedBy, tsPtr(e.FinishedAt)})
 			}
 		}
 	}
@@ -387,15 +387,15 @@ func buildDefects(d *Data, _ map[string]string) (*export.Dataset, error) {
 		ids = append(ids, id)
 	}
 	sort.Slice(ids, func(i, j int) bool { return naturalLess(ids[i], ids[j]) })
-	list := export.Section{Name: "defects", Title: "Defects",
-		Columns: []string{"Defect", "Link", "Occurrences", "Tests", "Runs", "Latest result", "Last seen"}}
+	list := export.Section{Name: "defects", Title: l.t("Defects"),
+		Columns: l.cols("Defect", "Link", "Occurrences", "Tests", "Runs", "Latest result", "Last seen")}
 	for _, id := range ids {
 		a := byID[id]
 		list.Rows = append(list.Rows, []string{a.id, defectLink(d.Project.DefectURLTemplate, a.id), itoa(a.occurrences),
-			strings.Join(uniqSorted(a.tests), ", "), strings.Join(uniqSorted(a.runs), ", "), humanize(a.latest), ts(a.lastSeen)})
+			strings.Join(uniqSorted(a.tests), ", "), strings.Join(uniqSorted(a.runs), ", "), l.enum(EnumResult, a.latest), ts(a.lastSeen)})
 	}
 	return &export.Dataset{Sections: []export.Section{
-		kpiSection("summary", "Summary",
+		l.kpiSection("summary", "Summary",
 			kv{"Distinct defects", itoa(len(ids))},
 			kv{"Occurrences", itoa(occurrences)},
 			kv{"Affected tests", itoa(len(tests))},
@@ -408,17 +408,18 @@ func buildDefects(d *Data, _ map[string]string) (*export.Dataset, error) {
 // ---------------------------------------------------------------- test inventory
 
 func buildTestInventory(d *Data, _ map[string]string) (*export.Dataset, error) {
+	l := d.loc()
 	folders, types, status, prio := map[string]int{}, map[string]int{}, map[string]int{}, map[string]int{}
 	type dimCat struct{ dim, name string }
 	cats := map[dimCat]int{}
 	withScript, linked, estimate := 0, 0, 0
-	list := export.Section{Name: "tests", Title: "Test cases",
-		Columns: []string{"Key", "Title", "Folder", "Execution", "Status", "Priority", "Categories", "Linked requirements", "Last result"}}
+	list := export.Section{Name: "tests", Title: l.t("Test cases"),
+		Columns: l.cols("Key", "Title", "Folder", "Execution", "Status", "Priority", "Categories", "Linked requirements", "Last result")}
 	for i := range d.Tests {
 		t := &d.Tests[i]
 		f := t.FolderPath
 		if f == "" {
-			f = "(no folder)"
+			f = l.t("(no folder)")
 		}
 		folders[f]++
 		types[t.ExecutionType]++
@@ -436,15 +437,15 @@ func buildTestInventory(d *Data, _ map[string]string) (*export.Dataset, error) {
 			linked++
 		}
 		estimate += t.EstimatedMin
-		list.Rows = append(list.Rows, []string{t.Key, t.Title, t.FolderPath, humanize(t.ExecutionType), humanize(t.Status), humanize(t.Priority),
-			d.categoryNames(t.CategoryIDs), itoa(t.LinkedReqs), humanize(lastResult(t))})
+		list.Rows = append(list.Rows, []string{t.Key, t.Title, t.FolderPath, l.enum(EnumExecution, t.ExecutionType), l.enum(EnumStatus, t.Status), l.enum(EnumPriority, t.Priority),
+			d.categoryNames(t.CategoryIDs), itoa(t.LinkedReqs), l.enum(EnumResult, lastResult(t))})
 	}
 	folderNames := make([]string, 0, len(folders))
 	for f := range folders {
 		folderNames = append(folderNames, f)
 	}
 	sort.Slice(folderNames, func(i, j int) bool { return naturalLess(folderNames[i], folderNames[j]) })
-	byCat := export.Section{Name: "by_category", Title: "Tests by category", Columns: []string{"Dimension", "Category", "Count"}}
+	byCat := export.Section{Name: "by_category", Title: l.t("Tests by category"), Columns: l.cols("Dimension", "Category", "Count")}
 	keys := make([]dimCat, 0, len(cats))
 	for k := range cats {
 		keys = append(keys, k)
@@ -460,7 +461,7 @@ func buildTestInventory(d *Data, _ map[string]string) (*export.Dataset, error) {
 	}
 	n := len(d.Tests)
 	return &export.Dataset{Sections: []export.Section{
-		kpiSection("summary", "Summary",
+		l.kpiSection("summary", "Summary",
 			kv{"Test cases", itoa(n)},
 			kv{"Manual", itoa(types[model.ExecManual])},
 			kv{"Automated", itoa(types[model.ExecAutomated])},
@@ -469,10 +470,10 @@ func buildTestInventory(d *Data, _ map[string]string) (*export.Dataset, error) {
 			kv{"Not linked to requirements", itoa(n - linked)},
 			kv{"Total estimate (minutes)", itoa(estimate)},
 		),
-		countSection("by_folder", "Tests by folder", "Folder", folders, folderNames, nil),
-		countSection("by_execution_type", "Tests by execution type", "Execution", types, []string{model.ExecManual, model.ExecAutomated}, humanLabels([]string{model.ExecManual, model.ExecAutomated})),
-		countSection("by_status", "Tests by status", "Status", status, model.TestStatuses, humanLabels(model.TestStatuses)),
-		countSection("by_priority", "Tests by priority", "Priority", prio, model.Priorities, humanLabels(model.Priorities)),
+		l.countSection("by_folder", "Tests by folder", "Folder", folders, folderNames, nil),
+		l.countSection("by_execution_type", "Tests by execution type", "Execution", types, execTypes, l.enumLabels(EnumExecution, execTypes)),
+		l.countSection("by_status", "Tests by status", "Status", status, model.TestStatuses, l.enumLabels(EnumStatus, model.TestStatuses)),
+		l.countSection("by_priority", "Tests by priority", "Priority", prio, model.Priorities, l.enumLabels(EnumPriority, model.Priorities)),
 		byCat,
 		list,
 	}}, nil

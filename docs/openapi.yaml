@@ -5957,8 +5957,10 @@ paths:
       - Reports and export
       summary: Generate report
       operationId: postProjectsByPidReportsGenerate
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{template?, params?, custom?, format: pdf|docx|xlsx|csv, archive?: bool, name?}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
+        `{template?, params?, custom?, format: pdf|docx|xlsx|csv, archive?: bool, name?, lang?: en|sv}` (`lang`: the language of the report's texts, see "Report language" in docs/api.md); without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
 
         **Permission:** `export`.
       x-permission: export
@@ -5988,6 +5990,9 @@ paths:
                   type: boolean
                 name:
                   type: string
+                lang:
+                  type: string
+                  description: language of the report's texts (en, sv); default the lang query parameter, the user's preferred language, Accept-Language, en
       responses:
         '200':
           description: The report file (201 with a File when archived)
@@ -6154,8 +6159,10 @@ paths:
       - Reports and export
       summary: Report batch
       operationId: postProjectsByPidReportsBatch
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}`
+        `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive", "lang"?}` (at most 50; every report in `lang`). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}`
 
         **Permission:** `export` checked by the router; export (archive also needs requirement.write or test.write).
       x-permission: export
@@ -6217,8 +6224,10 @@ paths:
       - Reports and export
       summary: Generate report definition
       operationId: postReportsDefinitionsByIdGenerate
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{format, archive?}`
+        `{format, archive?, name?, lang?}`
 
         **Permission:** `export`.
       x-permission: export
@@ -9669,8 +9678,10 @@ paths:
       - Reports and export
       summary: Send a report by e-mail
       operationId: postProjectsByPidReportsEmail
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{template | config | definition_id, format, recipients:[user ids], addresses?, message?}` → 202 `{queued, skipped}`; other addresses need `project.update`; at most 50 recipients
+        `{template | config | definition_id, format, recipients:[user ids], addresses?, message?, lang?}` (report and e-mail in `lang`) → 202 `{queued, skipped}`; other addresses need `project.update`; at most 50 recipients
 
         **Permission:** `export`.
       x-permission: export
@@ -9725,8 +9736,10 @@ paths:
       - Reports and export
       summary: Schedule a report
       operationId: postProjectsByPidReportsSubscriptions
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{definition_id, frequency: daily|weekly|monthly, weekday?, day_of_month?, time, timezone, format, recipients, addresses?, message?, enabled?}` → ReportSubscription; also needs requirement.write or test.write
+        `{definition_id, frequency: daily|weekly|monthly, weekday?, day_of_month?, time, timezone, format, recipients, addresses?, message?, enabled?, lang?}` → ReportSubscription (`lang`, else the query parameter, is stored: the language the report is sent in); also needs requirement.write or test.write
 
         **Permission:** `export`.
       x-permission: export
@@ -9759,8 +9772,10 @@ paths:
       - Reports and export
       summary: Update scheduled report
       operationId: patchReportsSubscriptionsById
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        the owner or `project.update`
+        the owner or `project.update`; the same fields as on create; a supported `lang` (body, else query parameter) replaces the stored language
 
         **Permission:** `export`.
       x-permission: export
@@ -10196,6 +10211,14 @@ components:
       bearerFormat: qtf_<token>
       description: 'API token (`Authorization: Bearer qtf_…`) from `POST /api/v1/tokens`; bound to one tenant, no CSRF header needed.'
   parameters:
+    reportLang:
+      name: lang
+      in: query
+      required: false
+      description: language of the report's own texts (en, sv; also e.g. sv-SE). Used when the body has no supported `lang`; then the user's preferred language, the Accept-Language header and English follow.
+      schema:
+        type: string
+        example: sv
     catalogLang:
       name: lang
       in: query

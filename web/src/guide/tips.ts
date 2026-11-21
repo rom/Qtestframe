@@ -63,6 +63,7 @@ export const TIPS = {
   'token.expires': { page: 'administration', anchor: { en: 'api-tokens', sv: 'api-nycklar' } },
   'member.role': { page: 'administration', anchor: { en: 'roles-and-permissions', sv: 'roller-och-behörigheter' } },
   'member.initialPassword': { page: 'administration', anchor: { en: 'members', sv: 'medlemmar' } },
+  'report.format': { page: 'reports-and-export', anchor: { en: 'standard-reports', sv: 'standardrapporter' } },
   'report.groupBy': CUSTOM_REPORTS,
   'report.columns': CUSTOM_REPORTS,
   'export.aspects': { page: 'reports-and-export', anchor: { en: 'export', sv: 'export' } },

@@ -75,6 +75,7 @@ Användargränssnittet finns på **engelska** (*English*) och **svenska**.
 - På inloggningssidan gäller språkknapparna innan du loggar in; efter inloggningen gäller din inställning.
 - Datum och tal följer det valda språket om du inte anger ett annat **Datumformat** i dina inställningar.
 - Den här handboken finns på båda språken. Om en sida ännu inte är översatt visas den engelska sidan med ett meddelande.
+- [Rapporter](reports-and-export.md#standardrapporter) tas fram på det språk du använder när du skapar dem; schemalagda rapporter på språket hos den som schemalade dem.
 - Dina data översätts inte: krav, testfall och kommentarer står kvar på det språk de skrevs på. Kravnivåerna enligt RFC 2119 (MUST, SHOULD …) visas alltid på engelska, även i det svenska gränssnittet, där de förklaras på svenska (till exempel *MUST (SKA)*). [Språkanalysen](requirements.md#språkanalysen) granskar kravtexter skrivna på engelska eller svenska, med svenska kravord som *SKA* och *BÖR*. Fältnamn och värden i frågespråket är också engelska.
 
 ## Mobiler och surfplattor

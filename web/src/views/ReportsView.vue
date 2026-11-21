@@ -50,6 +50,7 @@ import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
+import { currentLang } from '@/i18n'
 import { uid } from '@/lib/a11y'
 import HelpLink from '@/guide/HelpLink.vue'
 import ReportEmailDialog from '@/components/ReportEmailDialog.vue'
@@ -140,7 +141,7 @@ function generateTemplate(tpl: ReportTemplate, archive: boolean) {
     return
   }
   const name = tplName(tpl)
-  runReport(generateBody({ template: tpl.id, params: templateParams(tpl, c.params) }, c.format, archive, archive ? `${name}` : undefined), tpl.id, c)
+  runReport(generateBody({ template: tpl.id, params: templateParams(tpl, c.params) }, c.format, archive, archive ? `${name}` : undefined, currentLang()), tpl.id, c)
 }
 
 function mailTemplate(tpl: ReportTemplate) {
@@ -203,7 +204,7 @@ function generateCustom(archive: boolean) {
   if (problems.value.length) return
   const cfg = buildCustomConfig(form.value)
   const name = cfg.title || current.value?.name || t('reports.customName')
-  runReport(generateBody({ custom: cfg }, customFormat.value, archive, archive ? name : undefined), name, custom)
+  runReport(generateBody({ custom: cfg }, customFormat.value, archive, archive ? name : undefined, currentLang()), name, custom)
 }
 const scope = computed(() => form.value.entity || 'requirement')
 function mailCustom() {
@@ -309,7 +310,7 @@ watch(runOptions, (opts) => {
 async function runBatch(archive: boolean) {
   batchFailed.value = []
   batchBusy.value = archive ? 'archive' : 'zip'
-  const body = batchBody(batchSel.value, batchFormat.value, archive, batchParams)
+  const body = batchBody(batchSel.value, batchFormat.value, archive, batchParams, currentLang())
   try {
     if (archive) {
       const res = await api.post<{ files: FileInfo[]; failed: { name: string; error: string }[] }>(`${base.value}/batch`, body)
@@ -407,7 +408,7 @@ onMounted(() => {
               </template>
             </div>
             <div v-field class="field">
-              <label>{{ t('reports.format') }}</label>
+              <label>{{ t('reports.format') }}</label><HelpTip id="report.format" :label="t('reports.format')" />
               <Select v-model="cards[tpl.id].format" :options="formatOptions(tpl.formats)" option-label="label" option-value="value" />
             </div>
           </div>

@@ -166,6 +166,41 @@ func (c *CustomConfig) Validate() error {
 
 var entityTitles = map[string]string{EntityRequirement: "Requirements", EntityTest: "Test cases", EntityRun: "Test runs", EntityExecution: "Executions"}
 
+// enumFields are the fields whose values are enumerations, per entity:
+// translated reports show their labels instead of the stored values.
+var enumFields = map[string]map[string]string{
+	EntityRequirement: {"obligation": EnumObligation, "type": EnumReqType, "priority": EnumPriority, "status": EnumStatus, "coverage": EnumCoverage},
+	EntityTest:        {"execution_type": EnumExecution, "priority": EnumPriority, "status": EnumStatus, "last_result": EnumResult},
+	EntityRun:         {"status": EnumStatus},
+	EntityExecution:   {"status": EnumResult},
+}
+
+// localize returns the records with enumeration values replaced by their
+// labels (English reports keep the stored values).
+func (l loc) localize(entity string, recs []query.MapRecord) []query.MapRecord {
+	if l.lang == English {
+		return append([]query.MapRecord{}, recs...)
+	}
+	out := make([]query.MapRecord, len(recs))
+	for i, rec := range recs {
+		cp := make(query.MapRecord, len(rec))
+		for k, vs := range rec {
+			kind, ok := enumFields[entity][k]
+			if !ok {
+				cp[k] = vs
+				continue
+			}
+			lv := make([]string, len(vs))
+			for j, v := range vs {
+				lv[j] = l.enum(kind, v)
+			}
+			cp[k] = lv
+		}
+		out[i] = cp
+	}
+	return out
+}
+
 // noGroup labels records without a value in the group_by field.
 const noGroup = "(none)"
 
@@ -178,26 +213,29 @@ func value(rec query.MapRecord, fl Field) string {
 }
 
 // BuildCustom renders records (already filtered by the configuration's
-// query) as a dataset. subtitle is typically the project name.
-func BuildCustom(c CustomConfig, recs []query.MapRecord, subtitle string, now time.Time) *export.Dataset {
+// query) as a dataset in language lang (see Languages; "" = English).
+// subtitle is typically the project name.
+func BuildCustom(c CustomConfig, recs []query.MapRecord, subtitle string, now time.Time, lang string) *export.Dataset {
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
+	l := newLoc(lang)
+	entity := l.t(entityTitles[c.Entity])
 	title := c.Title
 	if title == "" {
-		title = "Custom report – " + entityTitles[c.Entity]
+		title = l.t("Custom report – ") + entity
 	}
 	if c.Query != "" {
-		subtitle += " · Filter: " + c.Query
+		subtitle += l.t(" · Filter: ") + c.Query
 	}
-	ds := &export.Dataset{Title: title, Subtitle: subtitle, GeneratedAt: now.UTC()}
+	ds := &export.Dataset{Title: title, Subtitle: subtitle, GeneratedAt: now.UTC(), Lang: l.lang}
 	cols := make([]Field, len(c.Columns))
 	header := make([]string, len(c.Columns))
 	for i, id := range c.Columns {
 		cols[i], _ = field(c.Entity, id)
-		header[i] = cols[i].Label
+		header[i] = l.t(cols[i].Label)
 	}
-	recs = append([]query.MapRecord{}, recs...)
+	recs = l.localize(c.Entity, recs)
 	if c.SortBy != "" {
 		sf, _ := field(c.Entity, c.SortBy)
 		sort.SliceStable(recs, func(i, j int) bool {
@@ -216,13 +254,13 @@ func BuildCustom(c CustomConfig, recs []query.MapRecord, subtitle string, now ti
 		return out
 	}
 	if c.GroupBy == "" {
-		sec := export.Section{Name: c.Entity, Title: entityTitles[c.Entity], Columns: header}
+		sec := export.Section{Name: c.Entity, Title: entity, Columns: header}
 		for _, rec := range recs {
 			sec.Rows = append(sec.Rows, row(rec))
 		}
 		if c.IncludeSummary {
-			ds.Sections = append(ds.Sections, kpiSection("summary", "Summary",
-				kv{"Entity", entityTitles[c.Entity]}, kv{"Filter", c.Query}, kv{entityTitles[c.Entity], itoa(len(recs))}))
+			ds.Sections = append(ds.Sections, l.kpiSection("summary", "Summary",
+				kv{"Entity", entity}, kv{"Filter", c.Query}, kv{entityTitles[c.Entity], itoa(len(recs))}))
 		}
 		ds.Sections = append(ds.Sections, sec)
 		return ds
@@ -248,23 +286,30 @@ func BuildCustom(c CustomConfig, recs []query.MapRecord, subtitle string, now ti
 		}
 		return naturalLess(keys[i], keys[j])
 	})
-	if c.IncludeSummary {
-		sum := export.Section{Name: "summary", Title: "Summary by " + strings.ToLower(gf.Label), Columns: []string{gf.Label, "Count", "Share"}}
-		for _, k := range keys {
-			sum.Rows = append(sum.Rows, []string{k, itoa(len(groups[k])), pct(len(groups[k]), len(recs))})
+	groupLabel := l.t(gf.Label)
+	shown := func(k string) string {
+		if k == noGroup {
+			return l.t(noGroup)
 		}
-		sum.Rows = append(sum.Rows, []string{"Total " + strings.ToLower(entityTitles[c.Entity]), itoa(len(recs)), pct(len(recs), len(recs))})
+		return k
+	}
+	if c.IncludeSummary {
+		sum := export.Section{Name: "summary", Title: l.t("Summary by ") + strings.ToLower(groupLabel), Columns: []string{groupLabel, l.t("Count"), l.t("Share")}}
+		for _, k := range keys {
+			sum.Rows = append(sum.Rows, []string{shown(k), itoa(len(groups[k])), l.pct(len(groups[k]), len(recs))})
+		}
+		sum.Rows = append(sum.Rows, []string{l.t("Total ") + strings.ToLower(entity), itoa(len(recs)), l.pct(len(recs), len(recs))})
 		ds.Sections = append(ds.Sections, sum)
 	}
 	for _, k := range keys {
-		sec := export.Section{Name: k, Title: gf.Label + ": " + k, Columns: header}
+		sec := export.Section{Name: shown(k), Title: groupLabel + ": " + shown(k), Columns: header}
 		for _, rec := range groups[k] {
 			sec.Rows = append(sec.Rows, row(rec))
 		}
 		ds.Sections = append(ds.Sections, sec)
 	}
 	if len(keys) == 0 {
-		ds.Sections = append(ds.Sections, export.Section{Name: c.Entity, Title: entityTitles[c.Entity], Columns: header})
+		ds.Sections = append(ds.Sections, export.Section{Name: c.Entity, Title: entity, Columns: header})
 	}
 	return ds
 }

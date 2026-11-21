@@ -15,6 +15,7 @@ import type { ReportRecipient } from '@/lib/types'
 import { useProjectStore } from '@/stores/project'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
+import { currentLang } from '@/i18n'
 
 const props = defineProps<{ source: ReportSource | null; name: string; formats: readonly ReportFormat[]; format: ReportFormat }>()
 const visible = defineModel<boolean>('visible', { required: true })
@@ -58,7 +59,7 @@ async function send() {
   busy.value = true
   error.value = ''
   try {
-    const res = await api.post<{ queued: number; skipped: { user_id: string; reason: string }[] }>(`/projects/${proj.pid}/reports/email`, reportMailBody(props.source, form.value, addressesAllowed.value))
+    const res = await api.post<{ queued: number; skipped: { user_id: string; reason: string }[] }>(`/projects/${proj.pid}/reports/email`, reportMailBody(props.source, form.value, addressesAllowed.value, currentLang()))
     const skipped = res?.skipped ?? []
     const detail = skipped.length ? t('email.send.skipped', { list: skipped.map((s) => `${names.value.get(s.user_id) ?? s.user_id} (${t(`email.send.skippedReason.${s.reason}`)})`).join(', ') }) : t('email.send.later')
     notify.ok(t('email.send.queued', { n: res?.queued ?? 0 }, res?.queued ?? 0), detail)

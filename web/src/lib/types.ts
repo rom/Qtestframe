@@ -99,6 +99,8 @@ export interface ReportSubscription {
   recipients: string[]
   addresses: string[]
   message: string
+  /** language the report is sent in (en, sv); empty = the owner's preference */
+  lang?: string
   enabled: boolean
   next_run_at: string | null
   last_run_at: string | null

@@ -89,6 +89,11 @@ describe('generate', () => {
     expect(generateBody({ template: 'run_summary', params: { run_id: 'r' } }, 'docx', true, ' Name ')).toEqual({ format: 'docx', template: 'run_summary', params: { run_id: 'r' }, archive: true, name: 'Name' })
     expect(generateBody({ custom: { entity: 'test', columns: ['key'] } }, 'csv', true)).toEqual({ format: 'csv', custom: { entity: 'test', columns: ['key'] }, archive: true })
   })
+  it('sends the UI language', () => {
+    expect(generateBody({ template: 'project_status' }, 'pdf', false, undefined, 'sv')).toEqual({ format: 'pdf', template: 'project_status', lang: 'sv' })
+    expect(generateBody({ custom: { entity: 'test', columns: ['key'] } }, 'xlsx', true, 'N', 'en')).toMatchObject({ lang: 'en', archive: true, name: 'N' })
+    expect('lang' in generateBody({ template: 'defects' }, 'csv', false, undefined, '')).toBe(false)
+  })
   it('names downloads', () => {
     expect(reportFileName('DEMO-run summary', 'pdf', new Date(2026, 10, 9))).toBe('DEMO-run-summary-20261109.pdf')
     expect(reportFileName('', 'csv', new Date(2026, 0, 1))).toBe('report-20260101.csv')
@@ -119,5 +124,7 @@ describe('report batch', () => {
       format: 'pdf',
       archive: true,
     })
+    expect(batchBody(rows, 'csv', false, {}, 'sv')).toMatchObject({ format: 'csv', archive: false, lang: 'sv' })
+    expect('lang' in batchBody(rows, 'csv', false, {})).toBe(false)
   })
 })

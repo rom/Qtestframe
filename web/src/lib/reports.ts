@@ -188,11 +188,23 @@ export interface GenerateRequest {
   format: ReportFormat
   archive?: boolean
   name?: string
+  /** language of the report's texts: the current UI language */
+  lang?: string
 }
 
-/** Body of POST /projects/{pid}/reports/generate. */
-export function generateBody(source: { template: string; params?: Record<string, string> } | { custom: CustomConfig }, format: ReportFormat, archive = false, name?: string): GenerateRequest {
+/**
+ * Body of POST /projects/{pid}/reports/generate. `lang` (the current UI
+ * language) makes the server produce the report in that language.
+ */
+export function generateBody(
+  source: { template: string; params?: Record<string, string> } | { custom: CustomConfig },
+  format: ReportFormat,
+  archive = false,
+  name?: string,
+  lang?: string,
+): GenerateRequest {
   const body: GenerateRequest = { format }
+  if (lang) body.lang = lang
   if ('template' in source) {
     body.template = source.template
     if (source.params && Object.keys(source.params).length) body.params = source.params
@@ -245,14 +257,15 @@ export function batchFormats(rows: Pick<BatchRow, 'formats'>[]): ReportFormat[] 
   return REPORT_FORMATS.filter((f) => rows.every((r) => r.formats.includes(f)))
 }
 
-/** The body of POST /projects/{pid}/reports/batch. */
-export function batchBody(rows: BatchRow[], format: ReportFormat, archive: boolean, params: Record<string, string>) {
+/** The body of POST /projects/{pid}/reports/batch (`lang`: the UI language of the reports). */
+export function batchBody(rows: BatchRow[], format: ReportFormat, archive: boolean, params: Record<string, string>, lang?: string) {
   const pick = (r: BatchRow) => Object.fromEntries(r.required.filter((n) => params[n]).map((n) => [n, params[n]]))
   return {
     templates: rows.filter((r) => r.kind === 'template').map((r) => ({ template: r.id, params: pick(r) })),
     definitions: rows.filter((r) => r.kind === 'definition').map((r) => r.id),
     format,
     archive,
+    ...(lang ? { lang } : {}),
   }
 }
 

@@ -1440,28 +1440,46 @@ Custom report config (`CustomConfig`):
  "title": "Approved requirements", "run_id": "(execution only)"}
 ```
 
+**Report language.** Every text a report adds – its title, section
+names, column headers, metric names, enumeration values (statuses,
+results, coverage, obligation, priority, types, severities), the
+"Generated" line, page numbers and "no data" notes – is produced in English
+(`en`, the default) or Swedish (`sv`); the project's own content (titles,
+names, notes, tags, …) is never translated. The language is chosen by,
+in this order: the request's `lang` field (body), the `lang` query
+parameter, the user's preferred language (`preferences.language`), the
+browser's `Accept-Language` header, English. Tags like `sv-SE` are
+accepted; unsupported languages are ignored at each step. The web client
+sends its current UI language as `lang` with every report request. In
+English, custom reports keep the stored enumeration values (`approved`);
+in Swedish they show the labels of the UI (`Godkänt`). The e-mail of an
+e-mailed report is in the report's language.
+
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/projects/{pid}/reports/fields?entity=` | export | available columns `[{id, label}]` |
-| POST | `/projects/{pid}/reports/generate` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv, archive?: bool, name?}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
+| POST | `/projects/{pid}/reports/generate?lang=` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv, archive?: bool, name?, lang?: en\|sv}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
 | GET | `/projects/{pid}/reports/definitions` | export | saved custom reports |
 | POST | `/projects/{pid}/reports/definitions` | requirement.write or test.write | `{name, description, config}` |
 | GET / PATCH / DELETE | `/reports/definitions/{id}` | export / write | |
-| POST | `/reports/definitions/{id}/generate` | export | `{format, archive?}` |
-| POST | `/projects/{pid}/reports/batch` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
+| POST | `/reports/definitions/{id}/generate?lang=` | export | `{format, archive?, name?, lang?}` |
+| POST | `/projects/{pid}/reports/batch?lang=` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive", "lang"?}` (at most 50; every report in `lang`). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
 | DELETE | `/projects/{pid}/reports/definitions/bulk` | requirement.write or test.write | `{"ids":[...]}` → `{"deleted": n}` |
 | GET | `/projects/{pid}/reports/recipients` | export | members who may read the project `{"items":[{user_id, email, display_name, role}], "addresses_allowed": bool, "email_enabled": bool}` |
-| POST | `/projects/{pid}/reports/email` | export | `{template + params? \| custom \| definition_id, format, recipients: [user ids], addresses?: [...], message?}` → 202 `{"queued": n, "skipped": [{user_id, reason}]}`. The report is rendered now and e-mailed in the background as an attachment. Members who may not read what the report shows are skipped (`no_access`, `disabled`); `addresses` (other e-mail addresses) need project.update (403). At most 50 recipients; 30 report e-mails per user in 10 minutes (429). A failed delivery becomes an in-app notification (`report.email_failed`) of the sender |
+| POST | `/projects/{pid}/reports/email?lang=` | export | `{template + params? \| custom \| definition_id, format, recipients: [user ids], addresses?: [...], message?, lang?}` → 202 `{"queued": n, "skipped": [{user_id, reason}]}`. The report is rendered now and e-mailed in the background as an attachment. Members who may not read what the report shows are skipped (`no_access`, `disabled`); `addresses` (other e-mail addresses) need project.update (403). At most 50 recipients; 30 report e-mails per user in 10 minutes (429). A failed delivery becomes an in-app notification (`report.email_failed`) of the sender |
 | GET | `/projects/{pid}/reports/subscriptions` | export | `{"items":[ReportSubscription], "email_enabled"}` |
-| POST | `/projects/{pid}/reports/subscriptions` | export + (requirement.write or test.write) | `{definition_id, frequency: daily\|weekly\|monthly, weekday?: 0–6 (0 = Sunday), day_of_month?: 1–28, time: "HH:MM", timezone: IANA name, format, recipients: [user ids], addresses?, message?, enabled?}` → 201; the caller is the owner. Not with an API token |
-| PATCH | `/reports/subscriptions/{id}` | owner or project.update (and requirement.write or test.write) | the same fields except `definition_id`; the next run is computed again |
+| POST | `/projects/{pid}/reports/subscriptions?lang=` | export + (requirement.write or test.write) | `{definition_id, frequency: daily\|weekly\|monthly, weekday?: 0–6 (0 = Sunday), day_of_month?: 1–28, time: "HH:MM", timezone: IANA name, format, recipients: [user ids], addresses?, message?, enabled?, lang?}` → 201; the caller is the owner. Not with an API token. `lang` (body, else query parameter) is stored with the subscription |
+| PATCH | `/reports/subscriptions/{id}?lang=` | owner or project.update (and requirement.write or test.write) | the same fields except `definition_id`; the next run is computed again; a supported `lang` replaces the stored language, otherwise it is kept |
 | DELETE | `/reports/subscriptions/{id}` | owner or project.update | |
 | POST | `/reports/subscriptions/{id}/send` | owner or project.update | sends the report now and waits for the mail server → the subscription with `last_sent_at` / `last_error` (the schedule is unchanged) |
 
 `ReportSubscription` = `{id, project_id, definition_id, definition_name,
 owner_id, owner_email, frequency, weekday, day_of_month, time, timezone,
-format, recipients, addresses, message, enabled, next_run_at, last_run_at,
-last_sent_at, last_error, created_at, updated_at}`. A scheduled report is
+format, recipients, addresses, message, lang, enabled, next_run_at, last_run_at,
+last_sent_at, last_error, created_at, updated_at}`. `lang` is the language
+the report and its e-mail are sent in: the UI language of whoever created
+or last changed the subscription; `""` (subscriptions without one) uses
+the owner's preferred language, else English. A scheduled report is
 generated with the owner's permissions at the time it is sent (the owner
 must still be an enabled member with `export`; outside addresses are only
 used while the owner holds project.update) and goes to the recipients who

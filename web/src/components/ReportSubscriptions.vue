@@ -36,6 +36,7 @@ import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
+import { currentLang } from '@/i18n'
 
 const props = defineProps<{ definitions: ReportDefinition[]; canSave: boolean }>()
 const proj = useProjectStore()
@@ -129,8 +130,8 @@ async function save() {
   saving.value = true
   formError.value = ''
   try {
-    if (editing.value) await api.patch(`/reports/subscriptions/${editing.value.id}`, subscriptionBody(form.value, false))
-    else await api.post(`${base.value}/subscriptions`, subscriptionBody(form.value, true))
+    if (editing.value) await api.patch(`/reports/subscriptions/${editing.value.id}`, subscriptionBody(form.value, false, currentLang()))
+    else await api.post(`${base.value}/subscriptions`, subscriptionBody(form.value, true, currentLang()))
     open.value = false
     notify.ok(t('email.subs.saved'))
     await load()

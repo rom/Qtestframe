@@ -62,7 +62,7 @@ func WritePDF(w io.Writer, ds Dataset) error {
 		pdf.SetY(-pdfFooterH + 2)
 		pdf.SetFont("Helvetica", "I", 8)
 		pdf.SetTextColor(110, 110, 110)
-		pdf.CellFormat(0, 5, fmt.Sprintf("Page %d/{nb}", pdf.PageNo()), "", 0, "C", false, 0, "")
+		pdf.CellFormat(0, 5, fmt.Sprintf(ds.label("page"), pdf.PageNo(), "{nb}"), "", 0, "C", false, 0, "")
 		pdf.SetTextColor(0, 0, 0)
 	})
 
@@ -75,12 +75,12 @@ func WritePDF(w io.Writer, ds Dataset) error {
 	}
 	pdf.SetFont("Helvetica", "", 9)
 	pdf.SetTextColor(90, 90, 90)
-	pdf.MultiCell(0, 5, p.text("Generated "+generatedAt(ds).Format("2006-01-02 15:04:05 MST")), "", "L", false)
+	pdf.MultiCell(0, 5, p.text(ds.label("generated")+" "+generatedAt(ds).Format("2006-01-02 15:04:05 MST")), "", "L", false)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(4)
 
 	for i, s := range ds.Sections {
-		p.section(s, i)
+		p.section(ds, s, i)
 	}
 	if err := pdf.Error(); err != nil {
 		return err
@@ -90,20 +90,20 @@ func WritePDF(w io.Writer, ds Dataset) error {
 
 func (p *pdfWriter) bottom() float64 { return p.pageH - pdfMargin - pdfFooterH }
 
-func (p *pdfWriter) section(s Section, idx int) {
+func (p *pdfWriter) section(ds Dataset, s Section, idx int) {
 	pdf := p.pdf
 	// keep heading together with at least the header and a couple of rows
 	if pdf.GetY()+30 > p.bottom() {
 		pdf.AddPage()
 	}
 	pdf.SetFont("Helvetica", "B", 13)
-	pdf.MultiCell(0, 7, p.text(sectionTitle(s, idx)), "", "L", false)
+	pdf.MultiCell(0, 7, p.text(ds.sectionTitle(s, idx)), "", "L", false)
 	pdf.Ln(1)
 
 	n := width(s)
 	if n == 0 {
 		pdf.SetFont("Helvetica", "I", 9)
-		pdf.MultiCell(0, 5, "(no data)", "", "L", false)
+		pdf.MultiCell(0, 5, p.text(ds.label("noData")), "", "L", false)
 		pdf.Ln(3)
 		return
 	}
@@ -122,7 +122,7 @@ func (p *pdfWriter) section(s Section, idx int) {
 	}
 	if len(s.Rows) == 0 {
 		pdf.SetFont("Helvetica", "I", 9)
-		pdf.MultiCell(0, 5, "(no rows)", "", "L", false)
+		pdf.MultiCell(0, 5, p.text(ds.label("noRows")), "", "L", false)
 	}
 	pdf.Ln(5)
 }
