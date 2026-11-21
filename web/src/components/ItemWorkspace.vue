@@ -53,6 +53,8 @@ import ColumnsMenu from './ColumnsMenu.vue'
 import { useColumnLayout } from '@/composables/columns'
 import MentionText from './MentionText.vue'
 import HelpLink from '@/guide/HelpLink.vue'
+import ItemSheet from './ItemSheet.vue'
+import type { SheetRow } from '@/lib/sheetFields'
 const prefs = usePrefsStore()
 /** below 1200 px the folder tree lives in a drawer opened by a "Folders" button */
 const treeInDrawer = useBreakpoint('wide')
@@ -151,6 +153,43 @@ watch(
     if (id && id !== editorId.value) openEditor(String(id))
   },
 )
+
+// ---------- layout: the list or the spreadsheet (?view=sheet, remembered per browser) ----------
+type Layout = 'list' | 'sheet'
+const isLayout = (v: unknown): v is Layout => v === 'list' || v === 'sheet'
+const layoutKey = () => `qtf.layout.${props.kind}`
+const storedLayout = readPref(layoutKey())
+const layoutMode = ref<Layout>(isLayout(route.query.view) ? route.query.view : isLayout(storedLayout) ? storedLayout : 'list')
+watch(layoutMode, (v) => {
+  writePref(layoutKey(), v)
+  if ((route.query.view ?? 'list') !== v) void router.replace({ query: { ...route.query, view: v === 'sheet' ? 'sheet' : undefined } })
+})
+watch(
+  () => route.query.view,
+  (v) => {
+    if (isLayout(v)) layoutMode.value = v
+  },
+)
+const layoutOptions = computed(() => [
+  { value: 'list', label: t('sheet.layoutList'), icon: 'pi pi-list' },
+  { value: 'sheet', label: t('sheet.layoutSheet'), icon: 'pi pi-th-large' },
+])
+const canExport = computed(() => auth.can(P.export))
+const sheetItems = computed(() => items.value as unknown as SheetRow[])
+const selectionIds = computed(() => selection.value.map((s) => s.id))
+function onSheetReplace(rows: SheetRow[]) {
+  if (!rows.length) return
+  const by = new Map(rows.map((r) => [r.id, r as unknown as Item]))
+  items.value = items.value.map((i) => by.get(i.id) ?? i)
+  selection.value = selection.value.map((s) => by.get(s.id) ?? s)
+}
+function onSheetCreated(row: SheetRow) {
+  items.value = [...items.value, row as unknown as Item]
+}
+function onSheetSelect(ids: string[]) {
+  const want = new Set(ids)
+  selection.value = items.value.filter((i) => want.has(i.id))
+}
 
 function clearFilters() {
   quick.value = {}
@@ -453,7 +492,19 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           <span v-if="selectedFolder" class="row small nowrap">
             <ToggleSwitch v-model="recursive" input-id="rec" /><label for="rec">{{ t('workspace.includeSubfolders') }}</label>
           </span>
+          <SelectButton
+            v-model="layoutMode"
+            :options="layoutOptions"
+            option-label="label"
+            option-value="value"
+            :allow-empty="false"
+            :aria-label="t('sheet.layout')"
+            class="layout-toggle"
+          >
+            <template #option="{ option }"><i :class="option.icon" aria-hidden="true" /><span>{{ option.label }}</span></template>
+          </SelectButton>
           <ColumnsMenu
+            v-if="layoutMode === 'list'"
             :columns="allColumns"
             :order="layout.order.value"
             @toggle="(id, on) => layout.toggle(id, on)"
@@ -586,7 +637,26 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Button icon="pi pi-times" size="small" text rounded severity="secondary" :aria-label="t('workspace.clearSelection')" v-tooltip.bottom="t('workspace.clearSelection')" @click="selection = []" />
       </div>
 
+      <ItemSheet
+        v-if="layoutMode === 'sheet'"
+        :kind="kind"
+        :project-id="pid"
+        :items="sheetItems"
+        :selected-ids="selectionIds"
+        :folders="folders"
+        :categories="categories"
+        :folder-id="selectedFolder"
+        :can-write="canWrite"
+        :can-review="canReview"
+        :can-export="canExport"
+        :filter="composed"
+        @replace="onSheetReplace"
+        @created="onSheetCreated"
+        @select="onSheetSelect"
+        @open="openEditor"
+      />
       <DataTable
+        v-else
         :ref="layout.bind"
         v-model:selection="selection"
         :row-class="folderRowClass"
