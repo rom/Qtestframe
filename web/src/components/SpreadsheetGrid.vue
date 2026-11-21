@@ -180,7 +180,7 @@ function focusCell(r: number, c: number) {
   setActive(clampCell({ r, c }, Math.max(1, total.value), Math.max(1, props.fields.length)), false)
   void nextTick(() => gridEl.value?.focus({ preventScroll: true }))
 }
-defineExpose({ focusCell, newRowIndex: () => props.rows.length })
+defineExpose({ focusCell })
 
 // ---------------------------------------------------------------- cell content
 const stateOf = (r: number, c: number): CellState | undefined => {
