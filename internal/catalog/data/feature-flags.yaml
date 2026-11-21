@@ -1,0 +1,495 @@
+area: feature-flags
+prefix: FLAG
+group: operations
+name: {en: Configuration management and feature flags, sv: Konfigurationshantering och funktionsflaggor}
+description:
+  en: Validation, versioning and visibility of configuration, and feature flags for gradual rollout, kill switches, targeting, auditing, safe defaults and removal of old flags.
+  sv: Validering, versionshantering och insyn i konfiguration, samt funktionsflaggor för stegvis utrullning, nödstopp, målgrupper, spårbarhet, säkra standardvärden och borttagning av gamla flaggor.
+
+requirements:
+  - id: FLAG-01
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [configuration, validation, startup]
+    refs: ["The Twelve-Factor App, III (config)", "ISO/IEC 27001:2022 Annex A 8.9 (configuration management)"]
+    tests: [FLAG-T01]
+    en:
+      title: Invalid configuration stops the start
+      description: A service MUST refuse to start when a mandatory setting is missing or has an invalid value, and name the setting and the expected format in its error message.
+      rationale: A service that starts with a wrong setting fails later and far from the cause, often only under production traffic.
+      criteria:
+        - method: test
+          text: Starting the service with a missing database address and with a port value of "abc" each stops the start with an error that names the setting.
+    sv:
+      title: Ogiltig konfiguration stoppar starten
+      description: En tjänst SKA vägra att starta när en nödvändig inställning saknas eller har ett ogiltigt värde, och namnge inställningen och det förväntade formatet i felmeddelandet.
+      rationale: En tjänst som startar med en felaktig inställning fallerar senare och långt från orsaken, ofta först under produktionstrafik.
+      criteria:
+        - method: test
+          text: Att starta tjänsten med en saknad databasadress och med portvärdet "abc" stoppar i båda fallen starten med ett fel som namnger inställningen.
+
+  - id: FLAG-02
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [configuration, version-control, review]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.9 (configuration management)", "ISO/IEC 27001:2022 Annex A 8.32 (change management)"]
+    tests: [FLAG-T02]
+    en:
+      title: Configuration changes are versioned and reviewed
+      description: Changes to production configuration MUST be made through version control with a review by a second person before they are applied.
+      rationale: Configuration errors cause a large share of outages, and a history shows what changed when something breaks.
+      criteria:
+        - method: inspection
+          text: Each production configuration change of the last 3 months has a commit with an approval by someone other than the author.
+        - method: test
+          text: A direct change of a production setting outside the pipeline is refused or reverted within 15 minutes and raises an alert.
+          threshold: "≤ 15 min"
+    sv:
+      title: Konfigurationsändringar versionshanteras och granskas
+      description: Ändringar av produktionskonfigurationen SKA göras via versionshantering med granskning av en andra person innan de tillämpas.
+      rationale: Konfigurationsfel orsakar en stor andel av driftavbrotten, och historiken visar vad som ändrades när något går sönder.
+      criteria:
+        - method: inspection
+          text: Varje ändring av produktionskonfigurationen de senaste 3 månaderna har en incheckning med ett godkännande av någon annan än författaren.
+        - method: test
+          text: En direkt ändring av en produktionsinställning utanför pipelinen nekas eller återställs inom 15 minuter och ger ett larm.
+          threshold: "≤ 15 min"
+
+  - id: FLAG-03
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [configuration, visibility, masking]
+    refs: ["OWASP ASVS 4.0.3 §14.3 (unintended security disclosure)"]
+    tests: [FLAG-T01]
+    en:
+      title: Effective configuration is visible with secrets masked
+      description: Each service SHOULD show its effective configuration and the source of each value to operators, with secret values replaced by a fixed mask.
+      rationale: Operators troubleshooting an incident need to know which value a running service uses, without seeing passwords.
+      criteria:
+        - method: test
+          text: The operator view lists each setting with its value and source, and every secret setting shows the mask instead of its value.
+    sv:
+      title: Gällande konfiguration visas med maskerade hemligheter
+      description: Varje tjänst BÖR visa sin gällande konfiguration och källan till varje värde för driftpersonalen, med hemliga värden ersatta av en fast mask.
+      rationale: Driftpersonal som felsöker en incident behöver veta vilket värde en körande tjänst använder, utan att se lösenord.
+      criteria:
+        - method: test
+          text: Driftvyn listar varje inställning med värde och källa, och varje hemlig inställning visar masken i stället för sitt värde.
+
+  - id: FLAG-04
+    type: non_functional
+    obligation: should
+    priority: high
+    tags: [feature-flag, propagation]
+    refs: ["Martin Fowler: Feature Toggles (Pete Hodgson, 2017)"]
+    tests: [FLAG-T03]
+    en:
+      title: Flag changes take effect within 60 seconds without a deployment
+      description: A change to a feature flag SHOULD take effect in all instances of the system within 60 seconds, without a deployment or restart.
+      rationale: Flags are used to stop a broken feature, and a stop that needs a deployment comes too late.
+      criteria:
+        - method: test
+          text: After a flag is switched, every instance serves the new behaviour within 60 seconds.
+          threshold: "≤ 60 s"
+    sv:
+      title: Flaggändringar gäller inom 60 sekunder utan driftsättning
+      description: En ändring av en funktionsflagga BÖR börja gälla i alla instanser av systemet inom 60 sekunder, utan driftsättning eller omstart.
+      rationale: Flaggor används för att stoppa en trasig funktion, och ett stopp som kräver driftsättning kommer för sent.
+      criteria:
+        - method: test
+          text: När en flagga har ändrats levererar varje instans det nya beteendet inom 60 sekunder.
+          threshold: "≤ 60 s"
+
+  - id: FLAG-05
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [feature-flag, fallback, availability]
+    refs: ["OpenFeature specification §1.4 (evaluation details and defaults)"]
+    tests: [FLAG-T04]
+    en:
+      title: Safe default when the flag service is unavailable
+      description: When the flag service cannot be reached, the system MUST use the last known flag values, or the coded default value for flags it has never fetched.
+      rationale: A failure of the flag service must not turn on unfinished features or turn off working ones.
+      criteria:
+        - method: test
+          text: With the flag service blocked, a running instance keeps its current flag values and a newly started instance uses the coded defaults, and both serve requests.
+    sv:
+      title: Säkert standardvärde när flaggtjänsten inte svarar
+      description: När flaggtjänsten inte går att nå SKA systemet använda de senast kända flaggvärdena, eller det kodade standardvärdet för flaggor som det aldrig har hämtat.
+      rationale: Ett fel i flaggtjänsten ska inte slå på ofärdiga funktioner eller stänga av fungerande.
+      criteria:
+        - method: test
+          text: Med flaggtjänsten blockerad behåller en körande instans sina aktuella flaggvärden och en nystartad instans använder de kodade standardvärdena, och båda besvarar anrop.
+
+  - id: FLAG-06
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [feature-flag, rollout, percentage]
+    refs: ["Martin Fowler: Feature Toggles (release toggles)", "Google SRE Workbook ch. 16 (canarying releases)"]
+    tests: [FLAG-T05]
+    en:
+      title: Gradual rollout by percentage of users
+      description: The flag service SHOULD support enabling a flag for a set percentage of users, with each user consistently getting the same result for the same percentage.
+      rationale: Releasing to 1 %, 10 % and then 100 % limits the number of users who meet a defect, and consistency stops the interface from changing on every page.
+      criteria:
+        - method: test
+          text: With the flag at 10 %, between 9 % and 11 % of 10 000 simulated users get it, and each user gets the same result on 5 repeated evaluations.
+          threshold: "10 % ± 1 percentage point"
+    sv:
+      title: Stegvis utrullning till en andel av användarna
+      description: Flaggtjänsten BÖR stödja att en flagga slås på för en angiven andel av användarna, där varje användare ges samma resultat varje gång vid samma andel.
+      rationale: Att släppa till 1 %, 10 % och sedan 100 % begränsar hur många användare som drabbas av ett fel, och konsekvensen hindrar gränssnittet från att ändras på varje sida.
+      criteria:
+        - method: test
+          text: Med flaggan på 10 % får mellan 9 % och 11 % av 10 000 simulerade användare den, och varje användare får samma resultat vid 5 upprepade utvärderingar.
+          threshold: "10 % ± 1 procentenhet"
+
+  - id: FLAG-07
+    type: non_functional
+    obligation: should
+    priority: high
+    tags: [kill-switch, risk]
+    refs: ["Martin Fowler: Feature Toggles (ops toggles)"]
+    tests: [FLAG-T03]
+    en:
+      title: Kill switch for features that call external services
+      description: Each feature that depends on an external service or a costly background process SHOULD have a flag that turns it off without affecting the rest of the system.
+      rationale: When a dependency fails or costs run away, turning off one feature keeps the rest of the service available.
+      criteria:
+        - method: test
+          text: Turning off the kill switch of one feature hides it and stops its calls to the external service within 60 seconds, while the other functions keep working.
+          threshold: "≤ 60 s"
+    sv:
+      title: Nödstopp för funktioner som anropar externa tjänster
+      description: Varje funktion som är beroende av en extern tjänst eller en kostsam bakgrundsprocess BÖR ha en flagga som stänger av den utan att påverka resten av systemet.
+      rationale: När ett beroende fallerar eller kostnaderna skenar håller avstängningen av en funktion resten av tjänsten tillgänglig.
+      criteria:
+        - method: test
+          text: Att slå av nödstoppet för en funktion döljer den och stoppar dess anrop till den externa tjänsten inom 60 sekunder, medan övriga funktioner fortsätter att fungera.
+          threshold: "≤ 60 s"
+
+  - id: FLAG-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [feature-flag, audit]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.15 (logging)", "ISO/IEC 27001:2022 Annex A 8.32 (change management)"]
+    tests: [FLAG-T03]
+    en:
+      title: Flag changes are recorded
+      description: The flag service MUST record each change of a flag with the time, the person, the environment and the old and new value.
+      rationale: When behaviour changes suddenly, the flag history is the first place to look, and changes in production need an accountable person.
+      criteria:
+        - method: test
+          text: A flag change appears in the history within 1 minute with time, person, environment, old value and new value.
+    sv:
+      title: Flaggändringar registreras
+      description: Flaggtjänsten SKA registrera varje ändring av en flagga med tid, person, miljö samt gammalt och nytt värde.
+      rationale: När beteendet ändras plötsligt är flagghistoriken det första stället att titta på, och ändringar i produktion behöver en ansvarig person.
+      criteria:
+        - method: test
+          text: En flaggändring syns i historiken inom 1 minut med tid, person, miljö, gammalt värde och nytt värde.
+
+  - id: FLAG-09
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [feature-flag, technical-debt, expiry]
+    refs: ["Martin Fowler: Feature Toggles (managing toggle debt)", "ISO/IEC 25010:2011 §4.2.7.5 (modifiability)"]
+    tests: [FLAG-T06]
+    en:
+      title: Release flags are removed within 90 days of full rollout
+      description: The code and configuration of a release flag SHOULD be removed within 90 days after the flag has been on for all users.
+      rationale: Old flags multiply the combinations that have to be tested and hide dead code paths.
+      criteria:
+        - method: inspection
+          text: The flag list shows no release flag that has been at 100 % for more than 90 days, and each flag has an owner and a planned removal date.
+          threshold: "≤ 90 days at 100 %"
+    sv:
+      title: Releaseflaggor tas bort inom 90 dagar efter full utrullning
+      description: Koden och konfigurationen för en releaseflagga BÖR tas bort inom 90 dagar efter att flaggan har varit påslagen för alla användare.
+      rationale: Gamla flaggor ökar antalet kombinationer som behöver testas och döljer död kod.
+      criteria:
+        - method: inspection
+          text: Flagglistan visar ingen releaseflagga som har legat på 100 % i mer än 90 dagar, och varje flagga har en ägare och ett planerat datum för borttagning.
+          threshold: "≤ 90 dagar på 100 %"
+
+  - id: FLAG-10
+    type: functional
+    obligation: may
+    priority: low
+    tags: [feature-flag, targeting, organisation]
+    refs: ["OpenFeature specification §3 (evaluation context)"]
+    tests: [FLAG-T05]
+    en:
+      title: Flags targeted at named organisations
+      description: The flag service MAY enable a flag for a list of named organisations, independent of the percentage rollout.
+      rationale: Pilot customers and internal users can then try a feature before everyone else.
+      criteria:
+        - method: test
+          text: With the flag at 0 % and organisation A on the target list, every user of A gets the feature and no user of organisation B does.
+    sv:
+      title: Flaggor riktade till namngivna organisationer
+      description: Flaggtjänsten FÅR slå på en flagga för en lista med namngivna organisationer, oberoende av den procentuella utrullningen.
+      rationale: Pilotkunder och interna användare kan då prova en funktion före alla andra.
+      criteria:
+        - method: test
+          text: Med flaggan på 0 % och organisation A på mållistan får varje användare i A funktionen och ingen användare i organisation B.
+
+  - id: FLAG-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [feature-flag, authorisation, server-side]
+    refs: ["OWASP ASVS 4.0.3 §4.1.1 (access control enforced on a trusted service layer)"]
+    tests: [FLAG-T07]
+    en:
+      title: Flags that hide functions are also checked on the server
+      description: When a flag hides a function in the user interface, the server MUST also refuse calls to that function while the flag is off for the caller.
+      rationale: Hidden buttons do not stop direct API calls, and unreleased functions are often not ready for real data.
+      criteria:
+        - method: test
+          text: With the flag off for a user, a direct API call to the hidden function returns 403 or 404 and changes nothing.
+    sv:
+      title: Flaggor som döljer funktioner kontrolleras också på servern
+      description: När en flagga döljer en funktion i användargränssnittet SKA servern också neka anrop till funktionen så länge flaggan är avslagen för anroparen.
+      rationale: Dolda knappar stoppar inte direkta API-anrop, och funktioner som inte är släppta är ofta inte redo för riktiga data.
+      criteria:
+        - method: test
+          text: Med flaggan avslagen för en användare ger ett direkt API-anrop till den dolda funktionen 403 eller 404 och ändrar ingenting.
+
+tests:
+  - id: FLAG-T01
+    priority: high
+    execution: automated
+    tags: [configuration, validation]
+    refs: []
+    en:
+      title: Start with invalid configuration and the configuration view
+      description: Starts a service with a missing and an invalid setting and checks the operator view of the effective configuration.
+      preconditions: A test environment where the service can be started with chosen settings; an operator account.
+      expected: The service refuses to start with clear errors, and the operator view shows values and sources with secrets masked.
+      steps:
+        - action: Start the service without the database address.
+          expected: The start stops with an error that names the database address setting.
+        - action: Start the service with the port set to abc.
+          expected: The start stops with an error that names the port setting and says that a number is expected.
+          data: "PORT=abc"
+        - action: Start the service with valid settings and open the operator view of its configuration.
+          expected: Each setting is listed with its value and source, and the database password shows the mask.
+    sv:
+      title: Start med ogiltig konfiguration och konfigurationsvyn
+      description: Startar en tjänst med en saknad och en ogiltig inställning och kontrollerar driftvyn för den gällande konfigurationen.
+      preconditions: En testmiljö där tjänsten kan startas med valda inställningar; ett konto för driftpersonal.
+      expected: Tjänsten vägrar att starta med tydliga fel, och driftvyn visar värden och källor med maskerade hemligheter.
+      steps:
+        - action: Starta tjänsten utan databasadress.
+          expected: Starten avbryts med ett fel som namnger inställningen för databasadressen.
+        - action: Starta tjänsten med porten satt till abc.
+          expected: Starten avbryts med ett fel som namnger portinställningen och säger att ett tal förväntas.
+          data: "PORT=abc"
+        - action: Starta tjänsten med giltiga inställningar och öppna driftvyn för dess konfiguration.
+          expected: Varje inställning listas med värde och källa, och databaslösenordet visar masken.
+
+  - id: FLAG-T02
+    priority: high
+    execution: manual
+    tags: [configuration, change-management]
+    refs: []
+    en:
+      title: Configuration change history and drift detection
+      description: Checks the history of production configuration changes and makes a direct change outside the pipeline.
+      preconditions: Read access to the configuration repository; an operator who may change a harmless setting in production directly, by agreement.
+      expected: Every change has an approval by another person, and the direct change is refused or reverted with an alert within 15 minutes.
+      steps:
+        - action: List the production configuration commits of the last 3 months with author and approver.
+          expected: Each commit has an approver who is not the author.
+        - action: Change the log format setting directly on a production instance.
+          expected: The change is refused, or it is reverted within 15 minutes.
+          data: "harmless setting: log format"
+        - action: Check the alert channel.
+          expected: An alert reports the configuration drift and names the instance.
+    sv:
+      title: Historik för konfigurationsändringar och upptäckt av avvikelser
+      description: Kontrollerar historiken för ändringar av produktionskonfigurationen och gör en direkt ändring utanför pipelinen.
+      preconditions: Läsåtkomst till konfigurationsförrådet; en driftansvarig som enligt överenskommelse får ändra en ofarlig inställning direkt i produktion.
+      expected: Varje ändring har ett godkännande av en annan person, och den direkta ändringen nekas eller återställs med larm inom 15 minuter.
+      steps:
+        - action: Lista incheckningarna i produktionskonfigurationen de senaste 3 månaderna med författare och godkännare.
+          expected: Varje incheckning har en godkännare som inte är författaren.
+        - action: Ändra inställningen för loggformat direkt på en produktionsinstans.
+          expected: Ändringen nekas, eller så återställs den inom 15 minuter.
+          data: "ofarlig inställning: loggformat"
+        - action: Kontrollera larmkanalen.
+          expected: Ett larm rapporterar avvikelsen i konfigurationen och namnger instansen.
+
+  - id: FLAG-T03
+    priority: high
+    execution: automated
+    tags: [feature-flag, propagation, kill-switch, audit]
+    refs: []
+    en:
+      title: Flag propagation, kill switch and change history
+      description: Switches a kill switch flag in staging, measures when every instance follows and checks the external calls and the flag history.
+      preconditions: Staging with at least 3 instances; a feature that calls an external service and has a kill switch; a script that polls each instance's behaviour.
+      expected: Every instance follows within 60 seconds, the external calls stop, other functions work, and the change is in the history.
+      steps:
+        - action: Turn the kill switch off and note the time.
+          expected: The flag service shows the new value.
+        - action: Poll each instance every 5 seconds until the feature is gone.
+          expected: Every instance has stopped serving the feature within 60 seconds.
+          data: "poll interval 5 s"
+        - action: Read the outbound call metrics for the external service and use two other functions.
+          expected: Calls to the external service drop to zero and the other functions respond normally.
+        - action: Open the flag's history.
+          expected: The change is listed with time, person, environment, old value and new value.
+    sv:
+      title: Spridning av flaggor, nödstopp och ändringshistorik
+      description: Slår om en nödstoppsflagga i staging, mäter när varje instans följer och kontrollerar de externa anropen och flagghistoriken.
+      preconditions: Staging med minst 3 instanser; en funktion som anropar en extern tjänst och har ett nödstopp; ett skript som avfrågar varje instans beteende.
+      expected: Varje instans följer inom 60 sekunder, de externa anropen upphör, övriga funktioner fungerar och ändringen finns i historiken.
+      steps:
+        - action: Slå av nödstoppet och notera tiden.
+          expected: Flaggtjänsten visar det nya värdet.
+        - action: Avfråga varje instans var 5:e sekund tills funktionen är borta.
+          expected: Varje instans har slutat leverera funktionen inom 60 sekunder.
+          data: "avfrågningsintervall 5 s"
+        - action: Läs mätvärdena för utgående anrop till den externa tjänsten och använd två andra funktioner.
+          expected: Anropen till den externa tjänsten sjunker till noll och de andra funktionerna svarar som vanligt.
+        - action: Öppna flaggans historik.
+          expected: Ändringen visas med tid, person, miljö, gammalt värde och nytt värde.
+
+  - id: FLAG-T04
+    priority: high
+    execution: automated
+    tags: [feature-flag, fallback]
+    refs: []
+    en:
+      title: Behaviour when the flag service is unreachable
+      description: Blocks the network path to the flag service and checks a running and a newly started instance.
+      preconditions: Staging with one running instance that has fetched its flags; a flag that is on in the flag service and off in the coded default; the network path can be blocked.
+      expected: The running instance keeps its fetched values, the new instance uses the defaults, and both serve requests.
+      steps:
+        - action: Block the network path from staging to the flag service.
+          expected: The instances log that the flag service is unreachable.
+        - action: Call the running instance.
+          expected: It serves requests with the flag on, as last fetched.
+        - action: Start a new instance and call it.
+          expected: It starts and serves requests with the flag off, as the coded default says.
+        - action: Unblock the network path.
+          expected: Within 60 seconds the new instance also has the flag on.
+    sv:
+      title: Beteende när flaggtjänsten inte går att nå
+      description: Blockerar nätverksvägen till flaggtjänsten och kontrollerar en körande och en nystartad instans.
+      preconditions: Staging med en körande instans som har hämtat sina flaggor; en flagga som är påslagen i flaggtjänsten och avslagen i det kodade standardvärdet; nätverksvägen kan blockeras.
+      expected: Den körande instansen behåller sina hämtade värden, den nya instansen använder standardvärdena och båda besvarar anrop.
+      steps:
+        - action: Blockera nätverksvägen från staging till flaggtjänsten.
+          expected: Instanserna loggar att flaggtjänsten inte går att nå.
+        - action: Anropa den körande instansen.
+          expected: Den besvarar anrop med flaggan påslagen, som senast hämtat.
+        - action: Starta en ny instans och anropa den.
+          expected: Den startar och besvarar anrop med flaggan avslagen, enligt det kodade standardvärdet.
+        - action: Häv blockeringen av nätverksvägen.
+          expected: Inom 60 sekunder har även den nya instansen flaggan påslagen.
+
+  - id: FLAG-T05
+    priority: medium
+    execution: automated
+    tags: [feature-flag, rollout, targeting]
+    refs: []
+    en:
+      title: Percentage rollout and organisation targeting
+      description: Evaluates a flag for 10 000 simulated users at 10 % and checks targeting of a named organisation.
+      preconditions: The flag service's evaluation API in a test environment; generated user ids in two organisations A and B.
+      expected: About one tenth of users get the flag consistently, and targeting reaches exactly the listed organisation.
+      steps:
+        - action: Set the flag to 10 % and evaluate it for 10 000 user ids.
+          expected: Between 900 and 1 100 users get the flag.
+          data: "10 000 user ids"
+        - action: Evaluate the flag 5 more times for the same user ids.
+          expected: Each user gets the same result each time.
+        - action: Set the flag to 0 %, add organisation A to the target list and evaluate it for users of A and B.
+          expected: Every user of A gets the flag and no user of B does.
+    sv:
+      title: Procentuell utrullning och riktning till organisationer
+      description: Utvärderar en flagga för 10 000 simulerade användare vid 10 % och kontrollerar riktning till en namngiven organisation.
+      preconditions: Flaggtjänstens API för utvärdering i en testmiljö; genererade användar-id i två organisationer A och B.
+      expected: En tiondel av användarna får flaggan på ett konsekvent sätt, och riktningen når exakt den angivna organisationen.
+      steps:
+        - action: Sätt flaggan till 10 % och utvärdera den för 10 000 användar-id.
+          expected: Mellan 900 och 1 100 användare får flaggan.
+          data: "10 000 användar-id"
+        - action: Utvärdera flaggan 5 gånger till för samma användar-id.
+          expected: Varje användare får samma resultat varje gång.
+        - action: Sätt flaggan till 0 %, lägg till organisation A i mållistan och utvärdera den för användare i A och B.
+          expected: Varje användare i A får flaggan och ingen användare i B.
+
+  - id: FLAG-T06
+    priority: medium
+    execution: manual
+    tags: [feature-flag, technical-debt]
+    refs: []
+    en:
+      title: Review of old release flags
+      description: Lists the release flags with their rollout state and dates, and checks owners and removal dates.
+      preconditions: Read access to the flag service and the code repository.
+      expected: No release flag has been at 100 % for more than 90 days, and every flag has an owner and a planned removal date.
+      steps:
+        - action: Export the list of release flags with rollout percentage and the date they reached 100 %.
+          expected: The export lists each flag.
+        - action: Find the flags that reached 100 % more than 90 days ago.
+          expected: There are none, or each is removed from the code on the main branch.
+        - action: Check each flag for an owner and a planned removal date.
+          expected: Every flag has both.
+    sv:
+      title: Granskning av gamla releaseflaggor
+      description: Listar releaseflaggorna med utrullningsläge och datum och kontrollerar ägare och datum för borttagning.
+      preconditions: Läsåtkomst till flaggtjänsten och kodförrådet.
+      expected: Ingen releaseflagga har legat på 100 % i mer än 90 dagar, och varje flagga har en ägare och ett planerat datum för borttagning.
+      steps:
+        - action: Exportera listan över releaseflaggor med utrullningsandel och datumet då de nådde 100 %.
+          expected: Exporten anger varje flagga.
+        - action: Leta upp flaggorna som nådde 100 % för mer än 90 dagar sedan.
+          expected: Det finns inga, eller så är var och en borttagen ur koden på huvudgrenen.
+        - action: Kontrollera att varje flagga har en ägare och ett planerat datum för borttagning.
+          expected: Varje flagga har båda.
+
+  - id: FLAG-T07
+    priority: high
+    execution: automated
+    tags: [feature-flag, authorisation, api]
+    refs: []
+    en:
+      title: A function hidden by a flag cannot be called through the API
+      description: Turns a flag off for a user and calls the hidden function directly.
+      preconditions: A function behind a flag that is off for the test user; the API endpoint of the function is known.
+      expected: The direct call is refused and changes nothing.
+      steps:
+        - action: Sign in as the test user and check the user interface.
+          expected: The function's controls are not shown.
+        - action: Call the function's API endpoint directly with the test user's token.
+          expected: The response is 403 or 404.
+        - action: Check the data that the function would change.
+          expected: Nothing has changed.
+        - action: Turn the flag on for the user and repeat the call.
+          expected: The call succeeds.
+    sv:
+      title: En funktion som döljs av en flagga kan inte anropas via API:et
+      description: Slår av en flagga för en användare och anropar den dolda funktionen direkt.
+      preconditions: En funktion bakom en flagga som är avslagen för testanvändaren; funktionens API-ändpunkt är känd.
+      expected: Det direkta anropet nekas och ändrar ingenting.
+      steps:
+        - action: Logga in som testanvändaren och kontrollera användargränssnittet.
+          expected: Funktionens kontroller visas inte.
+        - action: Anropa funktionens API-ändpunkt direkt med testanvändarens token.
+          expected: Svaret är 403 eller 404.
+        - action: Kontrollera de data som funktionen skulle ändra.
+          expected: Ingenting har ändrats.
+        - action: Slå på flaggan för användaren och upprepa anropet.
+          expected: Anropet lyckas.
