@@ -1842,3 +1842,12 @@ sources:
     jurisdiction: US
     name: {en: "NIST system and platform security guidance (SP 800-160, 800-193, 800-90B)", sv: "NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)"}
     match: ["NIST SP 800-160", "NIST SP 800-193", "NIST SP 800-90B"]
+
+  # Software catalogue: quality, operations, usability, functional and domain areas
+  - id: eaa
+    kind: directive
+    jurisdiction: EU
+    short: EAA
+    name: {en: "European Accessibility Act, Directive (EU) 2019/882", sv: "Tillgänglighetsdirektivet (EU) 2019/882"}
+    match: ["Directive (EU) 2019/882"]
+    url: https://eur-lex.europa.eu/eli/dir/2019/882/oj

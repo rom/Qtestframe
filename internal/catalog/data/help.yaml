@@ -299,6 +299,126 @@ requirements:
         - method: demonstration
           text: Om användaren trycker på "?" utanför ett textfält öppnas översikten, varje kortkommando i den fungerar och Esc stänger den.
 
+  - id: HELP-14
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [error-messages, help-links, context]
+    refs: ["ISO 9241-110:2020 self-descriptiveness", "Nielsen heuristic 10"]
+    tests: [HELP-T09]
+    en:
+      title: Error messages link to help
+      description: Validation and permission error messages SHOULD link to the help topic that explains the rule behind them.
+      rationale: An error that names a rule without explaining it leaves the user to guess or to contact support.
+      criteria:
+        - method: inspection
+          text: A sample of 10 different error messages each contains a link that opens the help topic about that rule.
+          threshold: "10 of 10 messages linked"
+    sv:
+      title: Felmeddelanden länkar till hjälpen
+      description: Felmeddelanden om validering och behörighet BÖR länka till det hjälpavsnitt som förklarar regeln bakom dem.
+      rationale: Ett fel som nämner en regel utan att förklara den lämnar användaren att gissa eller kontakta supporten.
+      criteria:
+        - method: inspection
+          text: Ett urval av 10 olika felmeddelanden innehåller var och ett en länk som öppnar hjälpavsnittet om den regeln.
+          threshold: "10 av 10 meddelanden länkade"
+
+  - id: HELP-15
+    type: usability
+    obligation: should
+    priority: low
+    tags: [offline, pdf, documentation]
+    refs: ["ISO/IEC/IEEE 26514:2022 (information for users)", "IEC/IEEE 82079-1:2019"]
+    tests: [HELP-T10]
+    en:
+      title: User documentation as one downloadable file
+      description: The user documentation SHOULD be downloadable as one PDF file for each released version and interface language.
+      rationale: Users read documentation on paper, offline or in review meetings, and auditors want the version that applied at a given date.
+      criteria:
+        - method: inspection
+          text: The documentation page offers a PDF per supported version and language, and the PDF matches the online content of that version.
+          threshold: "1 PDF per version and language"
+    sv:
+      title: Användardokumentation som en nedladdningsbar fil
+      description: Användardokumentationen BÖR gå att ladda ned som en PDF-fil för varje släppt version och varje gränssnittsspråk.
+      rationale: Användare läser dokumentation på papper, offline eller vid granskningsmöten, och revisorer vill ha den version som gällde ett visst datum.
+      criteria:
+        - method: inspection
+          text: Dokumentationssidan erbjuder en PDF per version och språk som stöds, och PDF-filen stämmer med webbinnehållet för den versionen.
+          threshold: "1 PDF per version och språk"
+
+  - id: HELP-16
+    type: usability
+    obligation: should
+    priority: low
+    tags: [feedback, help-articles, improvement]
+    refs: ["ISO/IEC/IEEE 26514:2022 (information for users)", "ISO 10004:2018"]
+    tests: [HELP-T11]
+    en:
+      title: Feedback on each help article
+      description: Each help article SHOULD let the reader mark whether it helped and add a comment that reaches the documentation team.
+      rationale: Feedback at the point of reading shows which articles fail their readers, which support tickets alone do not reveal.
+      criteria:
+        - method: test
+          text: A rating and comment given on an article appear in the documentation team's feedback list within one working day.
+          threshold: "≤ 1 working day"
+    sv:
+      title: Synpunkter på varje hjälpartikel
+      description: Varje hjälpartikel BÖR låta läsaren markera om den hjälpte och lägga till en kommentar som når dokumentationsgruppen.
+      rationale: Synpunkter just där läsningen sker visar vilka artiklar som sviker sina läsare, vilket supportärenden ensamma inte avslöjar.
+      criteria:
+        - method: test
+          text: Ett omdöme och en kommentar på en artikel syns i dokumentationsgruppens lista över synpunkter inom en arbetsdag.
+          threshold: "≤ 1 arbetsdag"
+
+  - id: HELP-17
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [plain-language, readability, writing]
+    refs: ["ISO 24495-1:2023"]
+    tests: [HELP-T12]
+    en:
+      title: Help texts in plain language
+      description: Help texts SHOULD follow the plain language principles of ISO 24495-1, with an average sentence length of at most 20 words and terms explained at first use.
+      rationale: Users open help when they are already stuck, and dense text then costs them the time they wanted to save.
+      criteria:
+        - method: analysis
+          text: A readability analysis of 10 help articles shows an average sentence length of at most 20 words, and a review finds each special term explained.
+          threshold: "≤ 20 words per sentence on average"
+    sv:
+      title: Hjälptexter på klarspråk
+      description: Hjälptexterna BÖR följa klarspråksprinciperna i ISO 24495-1, med en genomsnittlig meningslängd på högst 20 ord och facktermer förklarade första gången de används.
+      rationale: Användare öppnar hjälpen när de redan har kört fast, och kompakt text kostar dem då den tid de ville spara.
+      criteria:
+        - method: analysis
+          text: En läsbarhetsanalys av 10 hjälpartiklar visar en genomsnittlig meningslängd på högst 20 ord, och en granskning visar att varje fackterm förklaras.
+          threshold: "≤ 20 ord per mening i genomsnitt"
+
+  - id: HELP-18
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [administrators, settings, documentation]
+    refs: ["ISO/IEC/IEEE 26514:2022 (information for users)", "ISO/IEC 25010:2023 interaction capability"]
+    tests: [HELP-T13]
+    en:
+      title: Administrator guide covers each setting
+      description: The administrator documentation MUST describe each organisation setting with its effect, its default value and the permission needed to change it.
+      rationale: Administrators change settings that affect every user, and an undocumented setting is either left alone or changed by trial and error.
+      criteria:
+        - method: inspection
+          text: A comparison of the settings pages with the administrator guide finds each setting documented with effect, default and permission.
+          threshold: "100 % of settings documented"
+    sv:
+      title: Administratörshandboken täcker varje inställning
+      description: Administratörsdokumentationen SKA redogöra för varje organisationsinställning med dess effekt, standardvärde och den behörighet som krävs för att ändra den.
+      rationale: Administratörer ändrar inställningar som påverkar varje användare, och en odokumenterad inställning lämnas antingen orörd eller ändras på måfå.
+      criteria:
+        - method: inspection
+          text: En jämförelse mellan inställningssidorna och administratörshandboken visar att varje inställning är dokumenterad med effekt, standardvärde och behörighet.
+          threshold: "100 % av inställningarna dokumenterade"
+
 tests:
   - id: HELP-T01
     priority: medium
@@ -535,3 +655,147 @@ tests:
         - action: Ange ett värde som följer tipset i varje fält och spara.
           expected: Varje värde godtas.
           data: "2026-11-20, +46 8 123 456 78"
+
+  - id: HELP-T09
+    priority: medium
+    execution: manual
+    tags: [error-messages, help-links]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    en:
+      title: Help links in error messages
+      description: Provokes different validation and permission errors and follows their links.
+      preconditions: A test user without administrator rights and the list of validation rules.
+      expected: Each provoked error message links to the help topic of its rule.
+      steps:
+        - action: Provoke 7 different validation errors in forms.
+          expected: Each message contains a help link.
+          data: "for example a duplicate identifier and a date in the past"
+        - action: Provoke 3 permission errors.
+          expected: Each message contains a help link.
+        - action: Follow each link.
+          expected: The link opens the help topic that explains the rule behind the message.
+    sv:
+      title: Hjälplänkar i felmeddelanden
+      description: Framkallar olika fel om validering och behörighet och följer deras länkar.
+      preconditions: En testanvändare utan administratörsbehörighet och listan över valideringsregler.
+      expected: Varje framkallat felmeddelande länkar till hjälpavsnittet för sin regel.
+      steps:
+        - action: Framkalla 7 olika valideringsfel i formulär.
+          expected: Varje meddelande innehåller en hjälplänk.
+          data: "till exempel en dubblerad identitet och ett datum i det förflutna"
+        - action: Framkalla 3 behörighetsfel.
+          expected: Varje meddelande innehåller en hjälplänk.
+        - action: Följ varje länk.
+          expected: Länken öppnar det hjälpavsnitt som förklarar regeln bakom meddelandet.
+
+  - id: HELP-T10
+    priority: low
+    execution: manual
+    tags: [offline, pdf]
+    refs: ["ISO/IEC/IEEE 26514:2022 (information for users)"]
+    en:
+      title: Downloadable documentation per version and language
+      description: Downloads the documentation PDFs and compares one with the online pages.
+      preconditions: The documentation site with at least 2 supported versions and 2 languages.
+      expected: A PDF exists for each version and language and matches the online content.
+      steps:
+        - action: Open the download list.
+          expected: One PDF per supported version and language is offered.
+        - action: Download the PDF of the current version in Swedish and compare 3 chapters with the online pages.
+          expected: The chapters have the same content.
+    sv:
+      title: Nedladdningsbar dokumentation per version och språk
+      description: Laddar ned dokumentationens PDF-filer och jämför en av dem med webbsidorna.
+      preconditions: Dokumentationswebben med minst 2 versioner och 2 språk som stöds.
+      expected: Det finns en PDF för varje version och språk och den stämmer med webbinnehållet.
+      steps:
+        - action: Öppna listan över nedladdningar.
+          expected: En PDF per version och språk som stöds erbjuds.
+        - action: Ladda ned PDF-filen för den aktuella versionen på svenska och jämför 3 kapitel med webbsidorna.
+          expected: Kapitlen har samma innehåll.
+
+  - id: HELP-T11
+    priority: low
+    execution: manual
+    tags: [feedback, help-articles]
+    refs: ["ISO/IEC/IEEE 26514:2022 (information for users)"]
+    en:
+      title: Article feedback reaches the documentation team
+      description: Gives feedback on an article and looks for it in the team's list.
+      preconditions: A test user and access to the documentation team's feedback list.
+      expected: The rating and comment appear in the list within one working day with the article named.
+      steps:
+        - action: Open a help article, mark it as not helpful and write a comment.
+          expected: The article confirms that the feedback was sent.
+          data: "comment: \"Step 3 does not match the screen\""
+        - action: Open the feedback list the next working day.
+          expected: The rating and comment are listed with the article title and the date.
+    sv:
+      title: Synpunkter på en artikel når dokumentationsgruppen
+      description: Lämnar synpunkter på en artikel och letar efter dem i gruppens lista.
+      preconditions: En testanvändare och åtkomst till dokumentationsgruppens lista över synpunkter.
+      expected: Omdömet och kommentaren syns i listan inom en arbetsdag med artikeln angiven.
+      steps:
+        - action: Öppna en hjälpartikel, markera att den inte hjälpte och skriv en kommentar.
+          expected: Artikeln bekräftar att synpunkten skickades.
+          data: "kommentar: \"Steg 3 stämmer inte med skärmen\""
+        - action: Öppna listan över synpunkter nästa arbetsdag.
+          expected: Omdömet och kommentaren listas med artikelns titel och datum.
+
+  - id: HELP-T12
+    priority: medium
+    execution: manual
+    tags: [plain-language, readability]
+    refs: ["ISO 24495-1:2023"]
+    en:
+      title: Readability of help articles
+      description: Measures sentence length and reviews the explanation of terms in a sample of articles.
+      preconditions: 10 help articles chosen at random and a tool that counts words per sentence.
+      expected: The average sentence length is at most 20 words and each special term is explained.
+      steps:
+        - action: Run the word count on each article.
+          expected: The tool reports the average sentence length per article.
+        - action: Compute the average over the 10 articles.
+          expected: The average is at most 20 words.
+        - action: Mark each special term and check that it is explained at first use.
+          expected: Each term is explained or linked to the glossary.
+    sv:
+      title: Läsbarhet i hjälpartiklar
+      description: Mäter meningslängd och granskar förklaringen av termer i ett urval av artiklar.
+      preconditions: 10 slumpvis valda hjälpartiklar och ett verktyg som räknar ord per mening.
+      expected: Den genomsnittliga meningslängden är högst 20 ord och varje fackterm förklaras.
+      steps:
+        - action: Kör ordräkningen på varje artikel.
+          expected: Verktyget rapporterar den genomsnittliga meningslängden per artikel.
+        - action: Beräkna genomsnittet för de 10 artiklarna.
+          expected: Genomsnittet är högst 20 ord.
+        - action: Markera varje fackterm och kontrollera att den förklaras första gången den används.
+          expected: Varje term förklaras eller länkas till ordlistan.
+
+  - id: HELP-T13
+    priority: medium
+    execution: manual
+    tags: [administrators, settings]
+    refs: ["ISO/IEC/IEEE 26514:2022 (information for users)"]
+    en:
+      title: Every setting in the administrator guide
+      description: Compares the settings pages with the administrator guide.
+      preconditions: An administrator account and the administrator guide of the current version.
+      expected: Each setting is documented with effect, default value and permission.
+      steps:
+        - action: List every setting on the organisation settings pages.
+          expected: The list is produced.
+          data: "for example 35 settings"
+        - action: Look up each setting in the guide.
+          expected: Each setting is described with its effect, default value and the permission needed to change it.
+    sv:
+      title: Varje inställning i administratörshandboken
+      description: Jämför inställningssidorna med administratörshandboken.
+      preconditions: Ett administratörskonto och administratörshandboken för den aktuella versionen.
+      expected: Varje inställning är dokumenterad med effekt, standardvärde och behörighet.
+      steps:
+        - action: Lista varje inställning på organisationens inställningssidor.
+          expected: Listan tas fram.
+          data: "till exempel 35 inställningar"
+        - action: Slå upp varje inställning i handboken.
+          expected: Varje inställning beskrivs med sin effekt, sitt standardvärde och den behörighet som krävs för att ändra den.
