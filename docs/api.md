@@ -223,6 +223,7 @@ default):
 | GET | `/projects/{pid}/dashboard` | project.read – see [Dashboard and metrics](#dashboard-and-metrics) |
 | GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
 | GET | `/projects/{pid}/flaky-tests` | project.read – `?limit=n` |
+| GET | `/projects/{pid}/dashboard/insights` | project.read – further key figures of the dashboard, see [Dashboard and metrics](#dashboard-and-metrics) |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
 | GET | `/projects/{pid}/archive` | project.update + export – save the project as a [project archive](#project-archives-save-load-duplicate) (`application/zip`) |
 | POST | `/projects/import` | project.create – multipart `archive` + optional `key`, `name`, `dry_run=true`: load an archive as a new project → 201 `ProjectLoadResult` |
@@ -460,6 +461,43 @@ first; `window` is how many there are); a test with at least 2 flips is
 flaky. Tests carry `flakiness` (the score, when above 0) and `flaky`, and
 the test query fields `flaky` (`true`/`false`) and `flakiness` (alias
 `flips`), e.g. `flaky:true` or `flakiness>=3`.
+
+**Dashboard insights.** `GET /projects/{pid}/dashboard/insights` returns
+the further key figures and breakdowns of the dashboard, all counted on the
+server:
+```json
+{
+  "requirements": {"total": 10, "with_tests": 7, "passing": 5, "by_status": {"approved": 6},
+                   "review": {"none": 6, "pending": 2, "changes_requested": 1, "approved": 1}},
+  "tests": {"total": 20, "by_type": {"manual": {"passed": 8, "not_run": 4}, "automated": {"passed": 6, "failed": 2}}},
+  "risks": {"total": 6, "open": 4, "by_level": {"low": 0, "medium": 1, "high": 2, "critical": 1},
+            "by_status": {"identified": 3, "mitigating": 1, "mitigated": 1, "accepted": 0, "closed": 1},
+            "heat": [[0,0,0,0,0], [0,1,0,0,0], [0,0,0,1,0], [0,0,1,1,0], [0,0,0,0,1]],
+            "mitigation": {"no_requirements": 1, "untested": 0, "partly_tested": 1, "tested": 1, "verified": 1}},
+  "defects": {"open": 3, "buckets": {"lt7": 1, "7to30": 1, "30to90": 0, "gt90": 1},
+              "by_severity": {"critical": {"lt7": 1, "7to30": 0, "30to90": 0, "gt90": 0}},
+              "average_days": 41.3, "oldest_days": 112},
+  "suspect": {"links": 2, "requirements": 1},
+  "trace_rules": {"rules": 3, "failed": 1, "errors": 1, "warnings": 0, "violations": 4, "passed": false},
+  "release": {"id": "…", "name": "1.0", "version": "1.0.0", "status": "active", "target_date": "2026-04-01",
+              "runs": 2, "executions": {"passed": 12, "failed": 1, "not_run": 7}, "total": 20, "executed": 13, "passed": 12},
+  "activity": {"from": "2026-02-09", "to": "2026-03-10", "days": [{"day": "2026-03-10", "changes": 4, "executions": 9, "defects": 1}],
+               "total": {"day": "", "changes": 40, "executions": 120, "defects": 6}}
+}
+```
+`passing` counts the requirements whose linked tests all passed
+(coverage `passed`). `review` is the state of each requirement's latest
+review request that was not cancelled (`none` without one). `heat[l-1][i-1]`
+counts the risks that are not closed with likelihood `l` and impact `i`;
+`by_level` and `mitigation` count the open risks (identified, mitigating;
+the mitigation states are those of the risk report). Defect ages are whole
+days since the defect was reported, for open and in-progress defects.
+`trace_rules` evaluates the enabled [traceability rules](#traceability-rules).
+`release` is the newest active release, else the planned release with the
+earliest target date, else `null`; its executions are those of the runs
+assigned to it. `activity` covers the last 30 days (UTC, today included):
+`changes` are new revisions of requirements and tests, `executions` the
+executions finished, `defects` the defects reported.
 
 ## Folders (groups) and categories
 

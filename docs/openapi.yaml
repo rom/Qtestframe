@@ -1343,6 +1343,34 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/dashboard/insights:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Dashboard insights
+      operationId: getProjectsByPidDashboardInsights
+      description: |-
+        Further key figures of the dashboard, counted on the server: `requirements` `{total, with_tests, passing, review: {none, pending, changes_requested, approved}, by_status}`, `tests` `{total, by_type: {manual|automated: {result: n}}}`, `risks` `{total, open, by_level (open), by_status, heat: [likelihood-1][impact-1] (not closed), mitigation: {state: n} (open)}`, `defects` `{open, buckets: {lt7, 7to30, 30to90, gt90}, by_severity: {severity: {bucket: n}}, average_days, oldest_days}`, `suspect` `{links, requirements}`, `trace_rules` `{rules, failed, errors, warnings, violations, passed}`, `release` (the current release's execution progress, or null) and `activity` `{from, to, days: [{day, changes, executions, defects}], total}` (the last 30 days). See "Dashboard and metrics" in docs/api.md.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/folders:
     parameters:
     - $ref: '#/components/parameters/pid'
