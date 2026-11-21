@@ -1,0 +1,596 @@
+area: pj-governance
+prefix: PJGOV
+group: operations
+catalogue: project
+name: {en: Project governance and planning, sv: Projektstyrning och planering}
+description:
+  en: Business case, project initiation, roles, stage gates and tolerances, schedule, cost and resource baselines, earned value, scope and requirements baselines, change control, stakeholders and status reporting.
+  sv: Affärsnytta och projektmotiv, projektstart, roller, beslutspunkter och toleranser, baslinjer för tidplan, kostnad och resurser, upparbetat värde, baslinjer för omfattning och krav, ändringshantering, intressenter och lägesrapportering.
+
+requirements:
+  - id: PJGOV-01
+    type: business
+    obligation: must
+    priority: critical
+    tags: [business-case, justification, initiation]
+    refs: ["ISO 21502:2020 (business case)", "PRINCE2 Continued business justification"]
+    tests: [PJGOV-T01]
+    en:
+      title: Approved business case before the project starts
+      description: The project MUST have a business case approved by the sponsor before initiation, stating the expected benefits with measures, the estimated cost, the main risks and the options considered.
+      rationale: Without an agreed reason for the project, nobody can judge later whether it is still worth continuing.
+      criteria:
+        - method: review
+          text: The approved business case is dated before the start of initiation, is signed by the sponsor and contains benefits with measures, cost, main risks and at least 2 options.
+    sv:
+      title: Godkänt projektmotiv innan projektet startar
+      description: Projektet SKA ha ett projektmotiv som godkänts av projektägaren före projektstarten, med förväntade nyttor och hur de mäts, beräknad kostnad, de främsta riskerna och de alternativ som övervägts.
+      rationale: Utan ett överenskommet skäl för projektet kan ingen senare bedöma om det fortfarande är värt att fortsätta.
+      criteria:
+        - method: review
+          text: Det godkända projektmotivet är daterat före projektstarten, undertecknat av projektägaren och innehåller nyttor med mått, kostnad, de främsta riskerna och minst 2 alternativ.
+
+  - id: PJGOV-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [business-case, stage-gate, review]
+    refs: ["PRINCE2 Continued business justification", "PRINCE2 Managing a stage boundary"]
+    tests: [PJGOV-T01]
+    en:
+      title: Business case updated at each stage gate
+      description: The project manager MUST update the business case with the current cost forecast and the expected benefits before each stage gate decision.
+      rationale: A project whose costs have doubled or whose benefits have gone should be stopped, and that is only visible in an updated business case.
+      criteria:
+        - method: review
+          text: For each stage gate held, a business case version dated in the 30 days before the gate shows the current forecast and benefits.
+          threshold: ≤ 30 days before the gate
+    sv:
+      title: Projektmotivet uppdateras vid varje beslutspunkt
+      description: Projektledaren SKA uppdatera projektmotivet med den aktuella kostnadsprognosen och de förväntade nyttorna före varje beslut vid en beslutspunkt.
+      rationale: Ett projekt vars kostnader fördubblats eller vars nyttor försvunnit bör avbrytas, och det syns bara i ett uppdaterat projektmotiv.
+      criteria:
+        - method: review
+          text: För varje genomförd beslutspunkt visar en version av projektmotivet, daterad inom 30 dagar före beslutspunkten, den aktuella prognosen och nyttorna.
+          threshold: ≤ 30 dagar före beslutspunkten
+
+  - id: PJGOV-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [roles, governance, steering-group]
+    refs: ["ISO 21502:2020 (governance and roles)", "PMBOK Guide 7th ed. Team performance domain"]
+    tests: [PJGOV-T02]
+    en:
+      title: Named project roles with documented responsibilities
+      description: The project plan MUST name the sponsor, the project manager, the members of the steering group and the owner of each work package, with the decisions each role makes.
+      rationale: Unclear roles lead to decisions that nobody takes and work that nobody owns.
+      criteria:
+        - method: review
+          text: The project plan names a person for each listed role and each work package, and states the decisions of the sponsor, the steering group and the project manager.
+    sv:
+      title: Namngivna projektroller med dokumenterat ansvar
+      description: Projektplanen SKA namnge projektägaren, projektledaren, ledamöterna i styrgruppen och ägaren till varje arbetspaket, med de beslut som varje roll fattar.
+      rationale: Oklara roller leder till beslut som ingen fattar och arbete som ingen äger.
+      criteria:
+        - method: review
+          text: Projektplanen namnger en person för varje uppräknad roll och varje arbetspaket, och anger vilka beslut projektägaren, styrgruppen och projektledaren fattar.
+
+  - id: PJGOV-04
+    type: business
+    obligation: must
+    priority: high
+    tags: [stage-gate, decision, steering-group]
+    refs: ["ISO 21502:2020 (governance and roles)", "PRINCE2 Manage by stages"]
+    tests: [PJGOV-T02]
+    en:
+      title: Recorded steering group decision at each stage gate
+      description: The steering group MUST record at each stage gate a decision to continue, change or stop the project, with the date and the basis for the decision.
+      rationale: A stage gate without a recorded decision lets the project drift into the next stage without anyone having accepted its risks.
+      criteria:
+        - method: review
+          text: The minutes of each held stage gate contain one of the three decisions, its date and the documents it was based on.
+    sv:
+      title: Dokumenterat styrgruppsbeslut vid varje beslutspunkt
+      description: Styrgruppen SKA vid varje beslutspunkt dokumentera ett beslut om att fortsätta, ändra eller avbryta projektet, med datum och underlaget för beslutet.
+      rationale: En beslutspunkt utan dokumenterat beslut låter projektet glida in i nästa fas utan att någon har godtagit dess risker.
+      criteria:
+        - method: review
+          text: Protokollet från varje genomförd beslutspunkt innehåller ett av de tre besluten, dess datum och de dokument det grundades på.
+
+  - id: PJGOV-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [tolerances, escalation, exception]
+    refs: ["PRINCE2 Manage by exception"]
+    tests: [PJGOV-T03]
+    en:
+      title: Forecast beyond tolerance escalated within 5 working days
+      description: The project manager MUST report to the steering group within 5 working days when the forecast exceeds the approved tolerance of 10 % on cost or 2 weeks on the end date.
+      rationale: Tolerances let the project manager run the project day to day, but only if deviations beyond them reach the people who can decide.
+      criteria:
+        - method: review
+          text: For each forecast in the status reports that exceeded a tolerance, an exception report to the steering group is dated at most 5 working days after the forecast.
+          threshold: ≤ 5 working days, tolerance 10 % cost or 2 weeks
+    sv:
+      title: Prognos utanför toleransen eskaleras inom 5 arbetsdagar
+      description: Projektledaren SKA rapportera till styrgruppen inom 5 arbetsdagar när prognosen överskrider den godkända toleransen på 10 % för kostnaden eller 2 veckor för slutdatumet.
+      rationale: Toleranser låter projektledaren leda projektet i vardagen, men bara om avvikelser utöver dem når dem som kan besluta.
+      criteria:
+        - method: review
+          text: För varje prognos i lägesrapporterna som överskred en tolerans finns en avvikelserapport till styrgruppen daterad högst 5 arbetsdagar efter prognosen.
+          threshold: ≤ 5 arbetsdagar, tolerans 10 % kostnad eller 2 veckor
+
+  - id: PJGOV-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [schedule, baseline, wbs, critical-path]
+    refs: ["ISO 21511:2018", "PMBOK Guide 7th ed. Planning performance domain"]
+    tests: [PJGOV-T04]
+    en:
+      title: Baselined schedule built from the work breakdown structure
+      description: The project MUST have a schedule baseline in which each work package of the work breakdown structure has a start date, an end date and its dependencies, and the critical path is marked.
+      rationale: A schedule derived from the work breakdown shows what drives the end date, and a baseline makes slippage measurable.
+      criteria:
+        - method: inspection
+          text: Each work package in the work breakdown structure appears in the baselined schedule with dates and dependencies, and the critical path is shown.
+    sv:
+      title: Tidplan med baslinje som bygger på arbetsnedbrytningen
+      description: Projektet SKA ha en baslinje för tidplanen där varje arbetspaket i arbetsnedbrytningsstrukturen har startdatum, slutdatum och beroenden, och den kritiska linjen är markerad.
+      rationale: En tidplan som härleds från arbetsnedbrytningen visar vad som styr slutdatumet, och en baslinje gör förseningar mätbara.
+      criteria:
+        - method: inspection
+          text: Varje arbetspaket i arbetsnedbrytningsstrukturen finns i tidplanens baslinje med datum och beroenden, och den kritiska linjen visas.
+
+  - id: PJGOV-07
+    type: business
+    obligation: must
+    priority: high
+    tags: [cost, budget, baseline]
+    refs: ["ISO 21502:2020 (cost management)"]
+    tests: [PJGOV-T05]
+    en:
+      title: Actual cost compared with the budget each month
+      description: The project manager MUST compare the actual cost of each work package with its budget each month and report the deviation and the forecast at completion.
+      rationale: Overspending found each month can be corrected, while overspending found at the end can only be explained.
+      criteria:
+        - method: review
+          text: Each monthly report of the last 6 months shows actual cost, budget, deviation and forecast at completion for each work package.
+    sv:
+      title: Utfall jämförs med budget varje månad
+      description: Projektledaren SKA varje månad jämföra utfallet för varje arbetspaket med dess budget och rapportera avvikelsen och prognosen vid projektets slut.
+      rationale: Överskridanden som upptäcks varje månad går att rätta, medan överskridanden som upptäcks vid slutet bara går att förklara.
+      criteria:
+        - method: review
+          text: Varje månadsrapport för de senaste 6 månaderna visar utfall, budget, avvikelse och slutprognos för varje arbetspaket.
+
+  - id: PJGOV-08
+    type: business
+    obligation: should
+    priority: medium
+    tags: [earned-value, cpi, spi]
+    refs: ["ISO 21508:2018", "PMBOK Guide 7th ed. Measurement performance domain"]
+    tests: [PJGOV-T05]
+    en:
+      title: Earned value indices reported each month
+      description: The project manager SHOULD report the cost performance index and the schedule performance index of the project each month, calculated from earned value against the baseline.
+      rationale: Earned value combines cost and progress, so a project that spends on plan but delivers less is seen early.
+      criteria:
+        - method: analysis
+          text: The indices in the last 3 monthly reports can be recalculated from the planned value, earned value and actual cost in the project records.
+    sv:
+      title: Index för upparbetat värde rapporteras varje månad
+      description: Projektledaren BÖR varje månad rapportera projektets kostnadsindex och tidplansindex, beräknade från upparbetat värde mot baslinjen.
+      rationale: Upparbetat värde kombinerar kostnad och framdrift, så ett projekt som förbrukar enligt plan men levererar mindre syns tidigt.
+      criteria:
+        - method: analysis
+          text: Indexen i de 3 senaste månadsrapporterna går att räkna om från planerat värde, upparbetat värde och verklig kostnad i projektets underlag.
+
+  - id: PJGOV-09
+    type: business
+    obligation: should
+    priority: medium
+    tags: [resources, allocation, capacity]
+    refs: ["ISO 21502:2020 (resource management)"]
+    tests: [PJGOV-T06]
+    en:
+      title: Named resources for the next 3 months without overallocation
+      description: The resource plan SHOULD assign a named person to each activity in the next 3 months, with no person allocated more than 100 % of their agreed time to the project in any week.
+      rationale: Unnamed or overallocated resources are the most common hidden reason why a schedule cannot be met.
+      criteria:
+        - method: analysis
+          text: The resource plan for the next 13 weeks has a name on each activity and no week with a person above 100 % of agreed time.
+          threshold: ≤ 100 % per person and week
+    sv:
+      title: Namngivna resurser för de kommande 3 månaderna utan överbeläggning
+      description: Resursplanen BÖR tilldela en namngiven person till varje aktivitet under de kommande 3 månaderna, utan att någon person är planerad för mer än 100 % av sin överenskomna tid i projektet någon vecka.
+      rationale: Resurser utan namn eller med överbeläggning är den vanligaste dolda orsaken till att en tidplan inte går att hålla.
+      criteria:
+        - method: analysis
+          text: Resursplanen för de kommande 13 veckorna har ett namn på varje aktivitet och ingen vecka där en person ligger över 100 % av sin överenskomna tid.
+          threshold: ≤ 100 % per person och vecka
+
+  - id: PJGOV-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [scope, requirements, baseline]
+    refs: ["ISO/IEC/IEEE 29148:2018", "ISO 21502:2020 (scope management)"]
+    tests: [PJGOV-T07]
+    en:
+      title: Baselined requirements with source and acceptance criteria
+      description: The project MUST baseline its requirements before design starts, with each requirement having a unique identifier, a source, a priority and at least one acceptance criterion.
+      rationale: A baseline makes it clear what was agreed, and each acceptance criterion makes a requirement testable.
+      criteria:
+        - method: inspection
+          text: The requirements baseline is approved and dated before the design start, and a sample of 20 requirements each has an identifier, source, priority and acceptance criterion.
+    sv:
+      title: Kravbaslinje med källa och acceptanskriterier
+      description: Projektet SKA fastställa en baslinje för sina krav innan designen börjar, där varje krav har en unik identitet, en källa, en prioritet och minst ett acceptanskriterium.
+      rationale: En baslinje gör det tydligt vad som överenskommits, och varje acceptanskriterium gör ett krav testbart.
+      criteria:
+        - method: inspection
+          text: Kravbaslinjen är godkänd och daterad före designstarten, och ett urval av 20 krav har var och ett identitet, källa, prioritet och acceptanskriterium.
+
+  - id: PJGOV-11
+    type: business
+    obligation: must
+    priority: critical
+    tags: [change-control, change-request, scope]
+    refs: ["ISO 21502:2020 (change control)", "PRINCE2 Issues"]
+    tests: [PJGOV-T08]
+    en:
+      title: Changes to the baseline approved before work starts
+      description: Each change to the scope, schedule or cost baseline MUST be raised as a change request with an impact assessment and approved by the change authority before work on it starts.
+      rationale: Unapproved changes are the main cause of scope creep, and the impact assessment shows the real cost of a change before anyone commits to it.
+      criteria:
+        - method: review
+          text: For a sample of 10 changes made to the baselines, each has a change request with impact on scope, time and cost, and an approval dated before the work started.
+    sv:
+      title: Ändringar av baslinjen godkänns innan arbetet börjar
+      description: Varje ändring av baslinjen för omfattning, tidplan eller kostnad SKA lämnas som en ändringsbegäran med konsekvensbedömning och godkännas av den som har mandat att besluta om ändringar innan arbetet med den börjar.
+      rationale: Ej godkända ändringar är den främsta orsaken till att omfattningen växer, och konsekvensbedömningen visar vad en ändring verkligen kostar innan någon binder sig.
+      criteria:
+        - method: review
+          text: För ett urval av 10 ändringar i baslinjerna har var och en en ändringsbegäran med konsekvenser för omfattning, tid och kostnad, och ett godkännande daterat innan arbetet började.
+
+  - id: PJGOV-12
+    type: business
+    obligation: must
+    priority: high
+    tags: [traceability, requirements, verification]
+    refs: ["ISO/IEC/IEEE 29148:2018"]
+    tests: [PJGOV-T07]
+    en:
+      title: Each requirement traced to a verification before acceptance testing
+      description: Before acceptance testing starts, the project MUST trace each baselined requirement to at least one test case, inspection or other planned verification.
+      rationale: Requirements without a planned verification are the ones found missing after delivery.
+      criteria:
+        - method: analysis
+          text: The traceability report shows no baselined requirement without a linked verification on the day acceptance testing starts.
+    sv:
+      title: Varje krav spåras till en verifiering före acceptanstestet
+      description: Innan acceptanstestet börjar SKA projektet spåra varje krav i baslinjen till minst ett testfall, en granskning eller en annan planerad verifiering.
+      rationale: Krav utan planerad verifiering är de som visar sig saknas efter leveransen.
+      criteria:
+        - method: analysis
+          text: Spårbarhetsrapporten visar inget krav i baslinjen utan kopplad verifiering den dag acceptanstestet börjar.
+
+  - id: PJGOV-13
+    type: business
+    obligation: must
+    priority: medium
+    tags: [stakeholders, communication-plan]
+    refs: ["ISO 21502:2020 (stakeholder engagement)", "PMBOK Guide 7th ed. Stakeholder performance domain"]
+    tests: [PJGOV-T09]
+    en:
+      title: Stakeholder register with a communication plan
+      description: The project MUST keep a stakeholder register that states for each stakeholder group its interest, its influence, the information it gets, how often and from whom.
+      rationale: Stakeholders who are forgotten or informed too late are a frequent source of late requirements and resistance.
+      criteria:
+        - method: review
+          text: The register lists each stakeholder group named in the business case, each with interest, influence, information, frequency and sender, and has been updated in the last 3 months.
+    sv:
+      title: Intressentregister med kommunikationsplan
+      description: Projektet SKA föra ett intressentregister som för varje intressentgrupp anger dess intresse, dess inflytande, vilken information den tar emot, hur ofta och från vem.
+      rationale: Intressenter som glöms bort eller informeras för sent är en vanlig källa till sena krav och motstånd.
+      criteria:
+        - method: review
+          text: Registret listar varje intressentgrupp som nämns i projektmotivet, var och en med intresse, inflytande, information, frekvens och avsändare, och har uppdaterats under de senaste 3 månaderna.
+
+  - id: PJGOV-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [status-report, reporting, steering-group]
+    refs: ["PRINCE2 Progress", "ISO 21502:2020 (reporting)"]
+    tests: [PJGOV-T09]
+    en:
+      title: Monthly status report to the steering group
+      description: The project manager MUST send a status report to the steering group within 5 working days after each month end, with progress against milestones, cost against budget, the top 5 risks, open issues and the decisions needed.
+      rationale: A regular report with fixed contents lets the steering group see trends and act before problems grow.
+      criteria:
+        - method: review
+          text: Each report of the last 6 months was sent within 5 working days of the month end and contains the 5 listed parts.
+          threshold: ≤ 5 working days after month end
+    sv:
+      title: Lägesrapport till styrgruppen varje månad
+      description: Projektledaren SKA skicka en lägesrapport till styrgruppen inom 5 arbetsdagar efter varje månadsskifte, med framdrift mot milstolpar, kostnad mot budget, de 5 främsta riskerna, öppna ärenden och de beslut som behövs.
+      rationale: En regelbunden rapport med fast innehåll låter styrgruppen se trender och agera innan problemen växer.
+      criteria:
+        - method: review
+          text: Varje rapport under de senaste 6 månaderna skickades inom 5 arbetsdagar efter månadsskiftet och innehåller de 5 uppräknade delarna.
+          threshold: ≤ 5 arbetsdagar efter månadsskiftet
+
+tests:
+  - id: PJGOV-T01
+    priority: critical
+    execution: manual
+    tags: [business-case, review]
+    refs: ["PRINCE2 Continued business justification"]
+    en:
+      title: Review of the business case and its updates
+      description: Reviews the approved business case and the versions prepared for each stage gate.
+      preconditions: The business case with its version history, the project start date and the dates of the stage gates held.
+      expected: The business case was approved before initiation with the listed contents and updated before each gate.
+      steps:
+        - action: Compare the approval date of the first business case with the start of initiation.
+          expected: The approval is earlier and signed by the sponsor.
+        - action: Check the contents of the approved version.
+          expected: Benefits with measures, cost, main risks and at least 2 options are present.
+        - action: For each stage gate, find the business case version used.
+          expected: A version dated at most 30 days before the gate shows the current forecast and benefits.
+    sv:
+      title: Granskning av projektmotivet och dess uppdateringar
+      description: Granskar det godkända projektmotivet och de versioner som tagits fram inför varje beslutspunkt.
+      preconditions: Projektmotivet med versionshistorik, datum för projektstarten och datumen för de genomförda beslutspunkterna.
+      expected: Projektmotivet godkändes före projektstarten med det uppräknade innehållet och uppdaterades före varje beslutspunkt.
+      steps:
+        - action: Jämför godkännandedatumet för det första projektmotivet med projektstarten.
+          expected: Godkännandet är tidigare och undertecknat av projektägaren.
+        - action: Kontrollera innehållet i den godkända versionen.
+          expected: Nyttor med mått, kostnad, de främsta riskerna och minst 2 alternativ finns med.
+        - action: Hitta den version av projektmotivet som användes vid varje beslutspunkt.
+          expected: En version daterad högst 30 dagar före beslutspunkten visar den aktuella prognosen och nyttorna.
+
+  - id: PJGOV-T02
+    priority: high
+    execution: manual
+    tags: [roles, stage-gate]
+    refs: ["PRINCE2 Manage by stages"]
+    en:
+      title: Review of roles and stage gate minutes
+      description: Checks the roles in the project plan and the decisions recorded at each stage gate.
+      preconditions: The approved project plan and the minutes of each stage gate held.
+      expected: Each role and work package has a named person and stated decisions, and each gate has a recorded decision with date and basis.
+      steps:
+        - action: List the roles and work packages in the project plan and the person named for each.
+          expected: Each has a named person.
+        - action: Read the decisions stated for the sponsor, the steering group and the project manager.
+          expected: Each of the three has its decisions listed.
+        - action: Read the minutes of each stage gate.
+          expected: Each contains a decision to continue, change or stop, a date and the documents it was based on.
+    sv:
+      title: Granskning av roller och protokoll från beslutspunkter
+      description: Kontrollerar rollerna i projektplanen och de beslut som dokumenterats vid varje beslutspunkt.
+      preconditions: Den godkända projektplanen och protokollen från varje genomförd beslutspunkt.
+      expected: Varje roll och arbetspaket har en namngiven person och angivna beslut, och varje beslutspunkt har ett dokumenterat beslut med datum och underlag.
+      steps:
+        - action: Lista rollerna och arbetspaketen i projektplanen och den person som namnges för var och en.
+          expected: Var och en har en namngiven person.
+        - action: Läs vilka beslut som anges för projektägaren, styrgruppen och projektledaren.
+          expected: Alla tre har sina beslut listade.
+        - action: Läs protokollet från varje beslutspunkt.
+          expected: Vart och ett innehåller ett beslut om att fortsätta, ändra eller avbryta, ett datum och de dokument beslutet grundades på.
+
+  - id: PJGOV-T03
+    priority: high
+    execution: manual
+    tags: [tolerances, exception]
+    refs: ["PRINCE2 Manage by exception"]
+    en:
+      title: Exception reports for forecasts beyond tolerance
+      description: Finds each forecast beyond tolerance in the status reports and looks for the exception report.
+      preconditions: The approved tolerances, the status reports and the exception reports of the project.
+      expected: Each forecast beyond tolerance has an exception report within 5 working days.
+      steps:
+        - action: List each status report whose cost or end date forecast exceeds the tolerance.
+          expected: A list with the date of each forecast is produced.
+          data: Tolerance 10 % cost, 2 weeks end date
+        - action: Find the exception report for each listed forecast.
+          expected: Each has an exception report sent to the steering group at most 5 working days later.
+    sv:
+      title: Avvikelserapporter för prognoser utanför toleransen
+      description: Letar upp varje prognos utanför toleransen i lägesrapporterna och söker efter avvikelserapporten.
+      preconditions: De godkända toleranserna, lägesrapporterna och projektets avvikelserapporter.
+      expected: Varje prognos utanför toleransen har en avvikelserapport inom 5 arbetsdagar.
+      steps:
+        - action: Lista varje lägesrapport där prognosen för kostnad eller slutdatum överskrider toleransen.
+          expected: En lista med datum för varje prognos tas fram.
+          data: Tolerans 10 % kostnad, 2 veckor slutdatum
+        - action: Hitta avvikelserapporten för varje listad prognos.
+          expected: Var och en har en avvikelserapport till styrgruppen som skickades högst 5 arbetsdagar senare.
+
+  - id: PJGOV-T04
+    priority: high
+    execution: manual
+    tags: [schedule, wbs]
+    refs: ["ISO 21511:2018"]
+    en:
+      title: Work breakdown structure compared with the schedule baseline
+      description: Compares the work packages of the work breakdown structure with the baselined schedule.
+      preconditions: The approved work breakdown structure and the baselined schedule.
+      expected: Each work package is in the schedule with dates and dependencies, and the critical path is shown.
+      steps:
+        - action: Match each work package with the activities of the baselined schedule.
+          expected: Each work package has activities with start and end dates.
+        - action: Check that each activity except the first has a predecessor.
+          expected: Dependencies are present.
+        - action: Look for the critical path in the schedule.
+          expected: The critical path is marked and ends at the project end date.
+    sv:
+      title: Arbetsnedbrytningen jämförs med tidplanens baslinje
+      description: Jämför arbetspaketen i arbetsnedbrytningsstrukturen med tidplanens baslinje.
+      preconditions: Den godkända arbetsnedbrytningsstrukturen och tidplanens baslinje.
+      expected: Varje arbetspaket finns i tidplanen med datum och beroenden, och den kritiska linjen visas.
+      steps:
+        - action: Para ihop varje arbetspaket med aktiviteterna i tidplanens baslinje.
+          expected: Varje arbetspaket har aktiviteter med start- och slutdatum.
+        - action: Kontrollera att varje aktivitet efter den första har en föregångare.
+          expected: Beroenden finns.
+        - action: Leta efter den kritiska linjen i tidplanen.
+          expected: Den kritiska linjen är markerad och slutar vid projektets slutdatum.
+
+  - id: PJGOV-T05
+    priority: high
+    execution: manual
+    tags: [cost, earned-value]
+    refs: ["ISO 21508:2018"]
+    en:
+      title: Monthly cost reports and earned value indices
+      description: Reviews the cost part of the monthly reports and recalculates the earned value indices.
+      preconditions: The monthly reports of the last 6 months and the planned value, earned value and actual cost records.
+      expected: Each report has the cost figures per work package, and the indices match the recalculation.
+      steps:
+        - action: Check each of the last 6 reports for actual cost, budget, deviation and forecast at completion per work package.
+          expected: Each report has the 4 figures for each work package.
+        - action: Recalculate the cost index as earned value divided by actual cost for the last 3 months.
+          expected: The result matches the reported index to 2 decimals.
+        - action: Recalculate the schedule index as earned value divided by planned value for the last 3 months.
+          expected: The result matches the reported index to 2 decimals.
+    sv:
+      title: Månatliga kostnadsrapporter och index för upparbetat värde
+      description: Granskar kostnadsdelen i månadsrapporterna och räknar om indexen för upparbetat värde.
+      preconditions: Månadsrapporterna för de senaste 6 månaderna och underlaget för planerat värde, upparbetat värde och verklig kostnad.
+      expected: Varje rapport har kostnadsuppgifterna per arbetspaket, och indexen stämmer med omräkningen.
+      steps:
+        - action: Kontrollera att var och en av de 6 senaste rapporterna har utfall, budget, avvikelse och slutprognos per arbetspaket.
+          expected: Varje rapport har de 4 uppgifterna för varje arbetspaket.
+        - action: Räkna om kostnadsindex som upparbetat värde delat med verklig kostnad för de senaste 3 månaderna.
+          expected: Resultatet stämmer med det rapporterade indexet på 2 decimaler.
+        - action: Räkna om tidplansindex som upparbetat värde delat med planerat värde för de senaste 3 månaderna.
+          expected: Resultatet stämmer med det rapporterade indexet på 2 decimaler.
+
+  - id: PJGOV-T06
+    priority: medium
+    execution: manual
+    tags: [resources, allocation]
+    refs: []
+    en:
+      title: Resource plan for the next 13 weeks
+      description: Analyses the resource plan for unnamed activities and overallocated people.
+      preconditions: The current resource plan and the agreed project time of each person.
+      expected: Each activity has a name, and no person exceeds 100 % in any week.
+      steps:
+        - action: Filter the activities of the next 13 weeks without an assigned person.
+          expected: The list is empty.
+        - action: Sum each person's planned hours per week and compare with their agreed time.
+          expected: No week is above 100 % for any person.
+          data: 13 weeks
+    sv:
+      title: Resursplan för de kommande 13 veckorna
+      description: Analyserar resursplanen med avseende på aktiviteter utan namn och överbelagda personer.
+      preconditions: Den aktuella resursplanen och varje persons överenskomna tid i projektet.
+      expected: Varje aktivitet har ett namn, och ingen person överskrider 100 % någon vecka.
+      steps:
+        - action: Filtrera fram aktiviteterna under de kommande 13 veckorna som saknar tilldelad person.
+          expected: Listan är tom.
+        - action: Summera varje persons planerade timmar per vecka och jämför med den överenskomna tiden.
+          expected: Ingen vecka ligger över 100 % för någon person.
+          data: 13 veckor
+
+  - id: PJGOV-T07
+    priority: high
+    execution: manual
+    tags: [requirements, traceability]
+    refs: ["ISO/IEC/IEEE 29148:2018"]
+    en:
+      title: Requirements baseline and traceability report
+      description: Inspects a sample of baselined requirements and the traceability report at the start of acceptance testing.
+      preconditions: The approved requirements baseline, the design start date and the traceability report from the first day of acceptance testing.
+      expected: The baseline predates design, the sampled requirements are complete, and each requirement has a verification.
+      steps:
+        - action: Compare the approval date of the requirements baseline with the design start.
+          expected: The baseline was approved first.
+        - action: Pick 20 requirements at random and check their fields.
+          expected: Each has an identifier, source, priority and acceptance criterion.
+          data: 20 requirements
+        - action: Filter the traceability report for requirements without a linked verification.
+          expected: The list is empty.
+    sv:
+      title: Kravbaslinje och spårbarhetsrapport
+      description: Granskar ett urval av krav i baslinjen och spårbarhetsrapporten vid acceptanstestets start.
+      preconditions: Den godkända kravbaslinjen, datum för designstarten och spårbarhetsrapporten från acceptanstestets första dag.
+      expected: Baslinjen är äldre än designen, de valda kraven är kompletta, och varje krav har en verifiering.
+      steps:
+        - action: Jämför godkännandedatumet för kravbaslinjen med designstarten.
+          expected: Baslinjen godkändes först.
+        - action: Välj 20 krav slumpmässigt och kontrollera deras fält.
+          expected: Vart och ett har identitet, källa, prioritet och acceptanskriterium.
+          data: 20 krav
+        - action: Filtrera spårbarhetsrapporten på krav utan kopplad verifiering.
+          expected: Listan är tom.
+
+  - id: PJGOV-T08
+    priority: critical
+    execution: manual
+    tags: [change-control, change-request]
+    refs: ["ISO 21502:2020 (change control)"]
+    en:
+      title: Sample of changes to the baselines
+      description: Traces a sample of baseline changes back to their change requests and approvals.
+      preconditions: The baseline history, the change log and the work records of the project.
+      expected: Each sampled change has a change request with impact assessment, approved before the work started.
+      steps:
+        - action: Pick 10 changes from the baseline history.
+          expected: Each change has a date and a description.
+          data: 10 changes
+        - action: Find the change request of each change.
+          expected: Each request states the impact on scope, time and cost.
+        - action: Compare the approval date with the first work record of each change.
+          expected: Each approval is earlier than the first work record.
+    sv:
+      title: Urval av ändringar i baslinjerna
+      description: Spårar ett urval av ändringar i baslinjerna tillbaka till deras ändringsbegäran och godkännande.
+      preconditions: Baslinjernas historik, ändringsloggen och projektets tidrapporter.
+      expected: Varje vald ändring har en ändringsbegäran med konsekvensbedömning, godkänd innan arbetet började.
+      steps:
+        - action: Välj 10 ändringar ur baslinjernas historik.
+          expected: Varje ändring har ett datum och en beskrivning.
+          data: 10 ändringar
+        - action: Hitta ändringsbegäran för varje ändring.
+          expected: Varje begäran anger konsekvenserna för omfattning, tid och kostnad.
+        - action: Jämför godkännandedatumet med den första tidrapporten för varje ändring.
+          expected: Varje godkännande är tidigare än den första tidrapporten.
+
+  - id: PJGOV-T09
+    priority: high
+    execution: manual
+    tags: [stakeholders, status-report]
+    refs: ["PRINCE2 Progress"]
+    en:
+      title: Stakeholder register and monthly status reports
+      description: Reviews the stakeholder register against the business case and the status reports of the last 6 months.
+      preconditions: The business case, the stakeholder register and the status reports with their send dates.
+      expected: The register covers each stakeholder group with the listed fields, and each report was sent on time with the 5 parts.
+      steps:
+        - action: List the stakeholder groups named in the business case and find each in the register.
+          expected: Each group is in the register with interest, influence, information, frequency and sender.
+        - action: Check the date of the last update of the register.
+          expected: It is within the last 3 months.
+        - action: For each status report, compare the send date with the month end and check its contents.
+          expected: Each was sent within 5 working days and contains milestones, cost, top 5 risks, open issues and decisions needed.
+    sv:
+      title: Intressentregister och månatliga lägesrapporter
+      description: Granskar intressentregistret mot projektmotivet och lägesrapporterna för de senaste 6 månaderna.
+      preconditions: Projektmotivet, intressentregistret och lägesrapporterna med datum för utskick.
+      expected: Registret täcker varje intressentgrupp med de uppräknade fälten, och varje rapport skickades i tid med de 5 delarna.
+      steps:
+        - action: Lista de intressentgrupper som nämns i projektmotivet och hitta var och en i registret.
+          expected: Varje grupp finns i registret med intresse, inflytande, information, frekvens och avsändare.
+        - action: Kontrollera datumet för registrets senaste uppdatering.
+          expected: Det ligger inom de senaste 3 månaderna.
+        - action: Jämför utskicksdatumet för varje lägesrapport med månadsskiftet och kontrollera innehållet.
+          expected: Varje rapport skickades inom 5 arbetsdagar och innehåller milstolpar, kostnad, de 5 främsta riskerna, öppna ärenden och beslut som behövs.
