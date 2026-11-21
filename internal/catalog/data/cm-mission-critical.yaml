@@ -306,6 +306,144 @@ requirements:
           text: Övningsprotokollen för de senaste 12 månaderna visar 2 övningar, var och en med uppmätt tid för övertagandet och en lista över problem med åtgärder.
           threshold: 2 per år
 
+  - id: CMMC-13
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [public-warning, cell-broadcast]
+    refs: ["Directive (EU) 2018/1972 Art. 110", "ETSI TS 102 900 (European public warning system)"]
+    tests: [CMMC-T11]
+    en:
+      title: Public warning reaches handsets in the target area within 3 minutes
+      description: The public warning system MUST deliver a warning message to at least 95 % of the switched-on mobile handsets in the target area within 3 minutes of its release by the authority.
+      rationale: In a fire, flood or chemical release, minutes decide how many people can act before the danger reaches them.
+      criteria:
+        - method: test
+          text: In a test warning to a test area, at least 95 % of the test handsets display the message within 3 minutes.
+          threshold: ≥ 95 % within 3 min
+    sv:
+      title: Allmänhetens varningsmeddelande når mobiler i målområdet inom 3 minuter
+      description: Systemet för varning till allmänheten SKA leverera ett varningsmeddelande till minst 95 % av de påslagna mobiltelefonerna i målområdet inom 3 minuter från att myndigheten skickat det.
+      rationale: Vid en brand, översvämning eller ett kemikalieutsläpp avgör minuterna hur många som hinner agera innan faran når dem.
+      criteria:
+        - method: test
+          text: Vid ett testmeddelande till ett testområde visar minst 95 % av testtelefonerna meddelandet inom 3 minuter.
+          threshold: ≥ 95 % inom 3 min
+
+  - id: CMMC-14
+    type: functional
+    obligation: must
+    priority: high
+    tags: [public-warning, languages, geotargeting]
+    refs: ["ETSI TS 102 900 (European public warning system)"]
+    tests: [CMMC-T11]
+    en:
+      title: Warning messages in the national and a second language
+      description: The warning originator's interface MUST let the authority publish each warning in the national language and in English in the same release, with handsets set to either language displaying the matching text.
+      rationale: Visitors and residents who do not read the national language also have to understand what to do.
+      criteria:
+        - method: test
+          text: A bilingual test warning shows the national text on a handset set to the national language and the English text on one set to English.
+    sv:
+      title: Varningsmeddelanden på det nationella språket och ett andra språk
+      description: Avsändarens gränssnitt för varningar SKA låta myndigheten publicera varje varning på det nationella språket och på engelska i samma utskick, där telefoner inställda på respektive språk visar motsvarande text.
+      rationale: Besökare och invånare som inte läser det nationella språket behöver också förstå vad de ska göra.
+      criteria:
+        - method: test
+          text: En tvåspråkig testvarning visar den nationella texten på en telefon inställd på det nationella språket och den engelska texten på en telefon inställd på engelska.
+
+  - id: CMMC-15
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [satellite, backup-link, resilience]
+    refs: ["ISO 22301:2019 §8.4"]
+    tests: [CMMC-T12]
+    en:
+      title: Satellite backup link for each command centre
+      description: Each command and dispatch centre MUST have a satellite backup link, independent of terrestrial networks, that carries at least 2 voice channels and 1 Mbit/s of data, and is tested every month.
+      rationale: Earthquakes, storms and cable cuts can take down all terrestrial links at once, while a satellite path does not depend on them.
+      criteria:
+        - method: test
+          text: With the terrestrial links disconnected, two voice calls and a 1 Mbit/s data transfer run over the satellite link, and the monthly test log is complete for 12 months.
+          threshold: 2 voice channels, 1 Mbit/s
+    sv:
+      title: Reservförbindelse via satellit för varje ledningscentral
+      description: Varje lednings- och larmcentral SKA ha en reservförbindelse via satellit, oberoende av markbundna nät, som bär minst 2 talkanaler och 1 Mbit/s data och som provas varje månad.
+      rationale: Jordbävningar, stormar och kabelbrott kan slå ut alla markbundna förbindelser samtidigt, medan en satellitväg inte är beroende av dem.
+      criteria:
+        - method: test
+          text: Med de markbundna förbindelserna bortkopplade går två samtal och en dataöverföring på 1 Mbit/s över satellitförbindelsen, och loggen över månadsproven är fullständig för 12 månader.
+          threshold: 2 talkanaler, 1 Mbit/s
+
+  - id: CMMC-16
+    type: performance
+    obligation: must
+    priority: high
+    tags: [priority, public-network, qos]
+    refs: ["3GPP TS 23.501 (allocation and retention priority)", "3GPP TS 22.280 (priority and pre-emption)"]
+    tests: [CMMC-T13]
+    en:
+      title: Priority for mission-critical users in a congested public network
+      description: When mission-critical services run over a public mobile network, the network MUST give their bearers a higher allocation and retention priority than commercial traffic, so that a mission-critical call is set up in a cell loaded to 100 % with commercial traffic.
+      rationale: Public networks are most congested during the incidents in which responders need them most.
+      criteria:
+        - method: test
+          text: In a cell loaded to 100 % with commercial test traffic, a mission-critical group call is set up and keeps its quality.
+    sv:
+      title: Prioritet för samhällsviktiga användare i ett överbelastat publikt nät
+      description: När samhällsviktiga tjänster körs över ett publikt mobilnät SKA nätet ge deras bärare högre prioritet för tilldelning och kvarhållning än kommersiell trafik, så att ett samhällsviktigt samtal kopplas upp i en cell som är belastad till 100 % med kommersiell trafik.
+      rationale: Publika nät är som mest överbelastade under just de händelser då insatspersonalen behöver dem mest.
+      criteria:
+        - method: test
+          text: I en cell som är belastad till 100 % med kommersiell testtrafik kopplas ett samhällsviktigt gruppsamtal upp och behåller sin kvalitet.
+
+  - id: CMMC-17
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [location, terminals, dispatch]
+    refs: ["3GPP TS 22.280 (location)"]
+    tests: [CMMC-T13]
+    en:
+      title: Terminal location reported to the dispatcher every 30 seconds
+      description: Each mission-critical terminal in service SHOULD report its position to the dispatch system at least every 30 seconds while moving, with an accuracy of 50 metres or better outdoors.
+      rationale: Dispatchers send the nearest unit and protect responders in danger only when they know where each unit is.
+      criteria:
+        - method: test
+          text: A terminal driven along a test route shows position updates at most 30 seconds apart within 50 metres of the reference track.
+          threshold: ≤ 30 s, ≤ 50 m
+    sv:
+      title: Terminalens position rapporteras till operatören var 30:e sekund
+      description: Varje samhällsviktig terminal i drift BÖR rapportera sin position till ledningssystemet minst var 30:e sekund när den är i rörelse, med en noggrannhet på 50 meter eller bättre utomhus.
+      rationale: Operatörerna kan skicka den närmaste enheten och skydda insatspersonal i fara bara när de vet var varje enhet är.
+      criteria:
+        - method: test
+          text: En terminal som körs längs en testrutt visar positionsuppdateringar med högst 30 sekunders mellanrum inom 50 meter från referensspåret.
+          threshold: ≤ 30 s, ≤ 50 m
+
+  - id: CMMC-18
+    type: business
+    obligation: must
+    priority: medium
+    tags: [public-warning, testing, exercise]
+    refs: ["Directive (EU) 2018/1972 Art. 110"]
+    tests: [CMMC-T11]
+    en:
+      title: Monthly test of the public warning chain
+      description: The authority and the operators MUST test the public warning chain from originator to handset every month with a test message that is shown only on handsets configured for tests.
+      rationale: A warning system that is used only in a real emergency fails in ways nobody has seen.
+      criteria:
+        - method: inspection
+          text: The test log shows a monthly end-to-end test for the last 12 months, each with the delivery result and any fault raised.
+    sv:
+      title: Månatligt prov av kedjan för varning till allmänheten
+      description: Myndigheten och operatörerna SKA varje månad prova hela kedjan för varning till allmänheten från avsändare till telefon med ett testmeddelande som bara visas på telefoner som är konfigurerade för test.
+      rationale: Ett varningssystem som bara används vid en verklig nödsituation fallerar på sätt som ingen har sett.
+      criteria:
+        - method: inspection
+          text: Provloggen visar ett månatligt prov av hela kedjan för de senaste 12 månaderna, vart och ett med leveransresultat och eventuellt rapporterade fel.
+
 tests:
   - id: CMMC-T01
     priority: critical
@@ -600,3 +738,107 @@ tests:
           expected: Båda talarna hörs, var och en visad med terminalens identitet.
         - action: Läs den inställda lagringstiden och datumet för den äldsta inspelningen.
           expected: Inställningen är 1 år, och den äldsta inspelningen är runt 1 år gammal.
+
+  - id: CMMC-T11
+    priority: critical
+    execution: manual
+    tags: [public-warning]
+    refs: ["Directive (EU) 2018/1972 Art. 110", "ETSI TS 102 900 (European public warning system)"]
+    en:
+      title: Bilingual test warning to a test area
+      description: Sends a bilingual test warning to a test area and measures delivery to test handsets.
+      preconditions: Test handsets of the main operating systems, at least 20, configured to show test messages and placed in the test area, half set to the national language and half to English, and an authority test account in the warning originator's interface.
+      expected: At least 95 % of the handsets show the warning within 3 minutes in their own language, and monthly tests are logged.
+      steps:
+        - action: Release a test warning in the national language and English to the test area and note the time.
+          expected: The originator's interface confirms the release.
+        - action: Record the time the message appears on each handset.
+          expected: At least 95 % show it within 3 minutes.
+          data: 20 handsets, at least 19 within 3 min
+        - action: Compare the language shown with each handset's setting.
+          expected: Each handset shows the text in its own language.
+        - action: Read the monthly test log for the last 12 months.
+          expected: Each month has an end-to-end test with its delivery result.
+    sv:
+      title: Tvåspråkig testvarning till ett testområde
+      description: Skickar en tvåspråkig testvarning till ett testområde och mäter leveransen till testtelefoner.
+      preconditions: Minst 20 testtelefoner med de vanligaste operativsystemen, konfigurerade för att visa testmeddelanden och placerade i testområdet, hälften inställda på det nationella språket och hälften på engelska, och ett testkonto för myndigheten i avsändarens gränssnitt.
+      expected: Minst 95 % av telefonerna visar varningen inom 3 minuter på sitt eget språk, och månadsproven är loggade.
+      steps:
+        - action: Skicka en testvarning på det nationella språket och engelska till testområdet och anteckna tiden.
+          expected: Avsändarens gränssnitt bekräftar utskicket.
+        - action: Registrera tiden då meddelandet visas på varje telefon.
+          expected: Minst 95 % visar det inom 3 minuter.
+          data: 20 telefoner, minst 19 inom 3 min
+        - action: Jämför det visade språket med inställningen på varje telefon.
+          expected: Varje telefon visar texten på sitt eget språk.
+        - action: Läs loggen över månadsproven för de senaste 12 månaderna.
+          expected: Varje månad har ett prov av hela kedjan med leveransresultat.
+
+  - id: CMMC-T12
+    priority: high
+    execution: manual
+    tags: [satellite, backup-link]
+    refs: ["ISO 22301:2019 §8.4"]
+    en:
+      title: Command centre operation over the satellite link only
+      description: Disconnects the terrestrial links of a command centre and runs voice and data over the satellite link.
+      preconditions: A command centre in a planned test window, a satellite terminal in service, two test phones and a test server reachable over the satellite link.
+      expected: Two voice calls and 1 Mbit/s of data work over the satellite link alone.
+      steps:
+        - action: Disconnect the terrestrial links of the centre.
+          expected: The traffic moves to the satellite link.
+        - action: Set up two simultaneous voice calls to the test phones.
+          expected: Both calls connect and the speech is understandable.
+        - action: Transfer a test file to the test server during the calls.
+          expected: The transfer rate is at least 1 Mbit/s.
+          data: 50 MB test file
+        - action: Read the monthly test log.
+          expected: Each of the last 12 months has a satellite link test.
+    sv:
+      title: Ledningscentralen i drift enbart via satellitförbindelsen
+      description: Kopplar bort ledningscentralens markbundna förbindelser och kör tal och data över satellitförbindelsen.
+      preconditions: En ledningscentral i ett planerat testfönster, en satellitterminal i drift, två testtelefoner och en testserver som nås via satellitförbindelsen.
+      expected: Två samtal och 1 Mbit/s data fungerar enbart via satellitförbindelsen.
+      steps:
+        - action: Koppla bort centralens markbundna förbindelser.
+          expected: Trafiken flyttas till satellitförbindelsen.
+        - action: Koppla upp två samtidiga samtal till testtelefonerna.
+          expected: Båda samtalen kopplas upp och talet är begripligt.
+        - action: Överför en testfil till testservern under samtalen.
+          expected: Överföringshastigheten är minst 1 Mbit/s.
+          data: testfil på 50 MB
+        - action: Läs loggen över månadsproven.
+          expected: Var och en av de senaste 12 månaderna har ett prov av satellitförbindelsen.
+
+  - id: CMMC-T13
+    priority: high
+    execution: manual
+    tags: [priority, location]
+    refs: ["3GPP TS 23.501 (allocation and retention priority)", "3GPP TS 22.280 (priority and pre-emption)", "3GPP TS 22.280 (location)"]
+    en:
+      title: Mission-critical call in a full cell and location updates
+      description: Loads a cell with commercial traffic, sets up a mission-critical call and checks terminal location updates on a drive.
+      preconditions: A test cell of the public network that can be loaded with generated traffic, two mission-critical test terminals, the dispatch system and a reference GNSS logger in the test vehicle.
+      expected: The mission-critical call is set up in the full cell and location updates arrive at most 30 seconds apart within 50 metres.
+      steps:
+        - action: Load the test cell to 100 % with commercial test traffic.
+          expected: Commercial test devices report congestion.
+        - action: Start a mission-critical group call between the test terminals.
+          expected: The call is set up and speech is clear for 2 minutes.
+        - action: Drive one terminal along the test route and record the positions in the dispatch system.
+          expected: Updates are at most 30 seconds apart and within 50 metres of the reference track.
+          data: 10 km route, 50 km/h
+    sv:
+      title: Samhällsviktigt samtal i en full cell och positionsuppdateringar
+      description: Belastar en cell med kommersiell trafik, kopplar upp ett samhällsviktigt samtal och kontrollerar terminalernas positionsuppdateringar under en körning.
+      preconditions: En testcell i det publika nätet som kan belastas med genererad trafik, två samhällsviktiga testterminaler, ledningssystemet och en referenslogger för GNSS i testfordonet.
+      expected: Det samhällsviktiga samtalet kopplas upp i den fulla cellen och positionsuppdateringar kommer med högst 30 sekunders mellanrum inom 50 meter.
+      steps:
+        - action: Belasta testcellen till 100 % med kommersiell testtrafik.
+          expected: Kommersiella testenheter rapporterar överbelastning.
+        - action: Starta ett samhällsviktigt gruppsamtal mellan testterminalerna.
+          expected: Samtalet kopplas upp och talet är tydligt i 2 minuter.
+        - action: Kör en terminal längs testrutten och registrera positionerna i ledningssystemet.
+          expected: Uppdateringarna har högst 30 sekunders mellanrum och ligger inom 50 meter från referensspåret.
+          data: rutt på 10 km, 50 km/h

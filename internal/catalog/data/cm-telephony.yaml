@@ -288,6 +288,144 @@ requirements:
           text: En sökning efter ett testsamtal som är äldre än 90 dagar ger ingen post, medan månadsstatistiken fortfarande räknar samtalet utan nummer och användare.
           threshold: ≤ 90 dagar
 
+  - id: CMTEL-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [call-recording, notice, privacy]
+    refs: ["GDPR Art. 13", "Directive 2002/58/EC Art. 5(1) (confidentiality of communications)"]
+    tests: [CMTEL-T09]
+    en:
+      title: Callers told before a call is recorded
+      description: The telephony system MUST play a recorded notice that the call is recorded, with the purpose and where to find more information, before recording of a call to a recorded number starts.
+      rationale: Callers have the right to know that their call is recorded and why, before anything they say is stored.
+      criteria:
+        - method: test
+          text: A call to each recorded number plays the notice before the recording starts, as shown by the recording's start time.
+    sv:
+      title: Uppringare informeras innan ett samtal spelas in
+      description: Telefonisystemet SKA spela upp ett inspelat meddelande om att samtalet spelas in, med syftet och var mer information finns, innan inspelningen av ett samtal till ett nummer med inspelning börjar.
+      rationale: Uppringare har rätt att få veta att deras samtal spelas in och varför, innan något de säger lagras.
+      criteria:
+        - method: test
+          text: Ett samtal till varje nummer med inspelning spelar upp meddelandet innan inspelningen börjar, enligt inspelningens starttid.
+
+  - id: CMTEL-14
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [call-queue, service-level, contact-centre]
+    refs: ["ITIL 4 Service level management"]
+    tests: [CMTEL-T09]
+    en:
+      title: 80 % of queued calls answered within 20 seconds
+      description: The service desk queues SHOULD answer at least 80 % of the calls offered in each hour of opening time within 20 seconds.
+      rationale: Long waiting times make callers hang up and call again, which adds load and hides the real demand.
+      criteria:
+        - method: analysis
+          text: The queue statistics of the last month show at least 80 % answered within 20 seconds in at least 90 % of the opening hours.
+          threshold: 80 % within 20 s
+    sv:
+      title: 80 % av samtalen i kö besvaras inom 20 sekunder
+      description: Servicedeskens köer BÖR besvara minst 80 % av de inkommande samtalen under varje timme av öppettiden inom 20 sekunder.
+      rationale: Långa väntetider får uppringare att lägga på och ringa igen, vilket ökar belastningen och döljer den verkliga efterfrågan.
+      criteria:
+        - method: analysis
+          text: Köstatistiken för den senaste månaden visar minst 80 % besvarade inom 20 sekunder under minst 90 % av öppettidens timmar.
+          threshold: 80 % inom 20 s
+
+  - id: CMTEL-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [alarm-lines, analogue, pstn-shutdown]
+    refs: []
+    tests: [CMTEL-T10]
+    en:
+      title: Inventory and migration plan for analogue alarm and lift lines
+      description: The organisation MUST keep an inventory of each analogue or copper line used by lift emergency phones, alarm transmitters, door entry phones and other devices on a phone line, with a tested replacement in service before the carrier's announced shutdown date for each line.
+      rationale: When copper networks are switched off, lift phones and alarm transmitters go silent without anyone noticing until they are needed.
+      criteria:
+        - method: inspection
+          text: Each line in the inventory has a device, a location and a replacement tested with a call through to the receiving centre before the shutdown date.
+    sv:
+      title: Inventering och flyttplan för analoga larm- och hisslinjer
+      description: Organisationen SKA föra en inventering av varje analog linje eller kopparlinje som används av nödtelefoner i hissar, larmsändare, porttelefoner och annan utrustning på en telefonlinje, med en provad ersättning i drift före operatörens aviserade avvecklingsdatum för varje linje.
+      rationale: När kopparnäten stängs av tystnar hisstelefoner och larmsändare utan att någon märker det förrän de behövs.
+      criteria:
+        - method: inspection
+          text: Varje linje i inventeringen har en utrustning, en plats och en ersättning som provats med ett samtal fram till mottagande central före avvecklingsdatumet.
+
+  - id: CMTEL-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [voicemail, pin, toll-fraud]
+    refs: ["NIST SP 800-63B §5.1.1.2"]
+    tests: [CMTEL-T11]
+    en:
+      title: Voicemail PINs of at least 6 digits and no default PIN
+      description: The voicemail system MUST require a PIN of at least 6 digits that is not the extension number, a repeated or sequential digit series or the initial PIN, and lock the mailbox after 5 wrong attempts.
+      rationale: Weak voicemail PINs are guessed to listen to messages and to reach call-forwarding features used for toll fraud.
+      criteria:
+        - method: test
+          text: PINs 123456, 111111 and the extension number are refused, a compliant PIN is accepted, and the sixth wrong attempt locks the mailbox.
+          threshold: ≥ 6 digits, lock after 5
+    sv:
+      title: PIN-koder för röstbrevlådan med minst 6 siffror och ingen standardkod
+      description: Röstbrevlådesystemet SKA kräva en PIN-kod på minst 6 siffror som inte är anknytningsnumret, en upprepad eller löpande sifferserie eller den ursprungliga koden, och låsa brevlådan efter 5 felaktiga försök.
+      rationale: Svaga PIN-koder till röstbrevlådan gissas för att lyssna på meddelanden och nå vidarekopplingsfunktioner som används för samtalsbedrägerier.
+      criteria:
+        - method: test
+          text: PIN-koderna 123456, 111111 och anknytningsnumret avvisas, en giltig kod godtas och det sjätte felaktiga försöket låser brevlådan.
+          threshold: ≥ 6 siffror, låsning efter 5
+
+  - id: CMTEL-17
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [codec, wideband, voice-quality]
+    refs: ["ITU-T G.722", "RFC 6716"]
+    tests: [CMTEL-T11]
+    en:
+      title: Wideband codec preferred on internal calls
+      description: Internal calls between endpoints that support it SHOULD use a wideband codec with an audio bandwidth of at least 7 kHz.
+      rationale: Wideband speech is markedly easier to understand, especially for names, numbers and non-native speakers.
+      criteria:
+        - method: test
+          text: Call records of 20 internal calls between wideband-capable phones show a wideband codec in each.
+    sv:
+      title: Bredbandscodec föredras vid interna samtal
+      description: Interna samtal mellan ändpunkter som stöder det BÖR använda en bredbandscodec med en ljudbandbredd på minst 7 kHz.
+      rationale: Tal i bredband är tydligt lättare att förstå, särskilt för namn, siffror och personer som inte har språket som modersmål.
+      criteria:
+        - method: test
+          text: Samtalsposterna för 20 interna samtal mellan telefoner med stöd för bredband visar en bredbandscodec i vart och ett.
+
+  - id: CMTEL-18
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [accessibility, real-time-text]
+    refs: ["EN 301 549 V3.2.1 §6.2 (real-time text)"]
+    tests: [CMTEL-T12]
+    en:
+      title: Real-time text in calls for users who cannot use voice
+      description: The telephony and calling clients MUST support real-time text during a call, sent character by character, between users of the organisation's clients.
+      rationale: Deaf and hard-of-hearing users and people with speech impairments need text in the same call to communicate on equal terms.
+      criteria:
+        - method: test
+          text: During a call between two clients, characters typed on one appear on the other within 1 second of typing.
+          threshold: ≤ 1 s
+    sv:
+      title: Realtidstext i samtal för användare som inte kan använda tal
+      description: Telefoni- och samtalsklienterna SKA stödja realtidstext under ett samtal, som skickas tecken för tecken, mellan användare av organisationens klienter.
+      rationale: Döva och hörselskadade användare och personer med talsvårigheter behöver text i samma samtal för att kunna kommunicera på lika villkor.
+      criteria:
+        - method: test
+          text: Under ett samtal mellan två klienter visas tecken som skrivs på den ena på den andra inom 1 sekund.
+          threshold: ≤ 1 s
+
 tests:
   - id: CMTEL-T01
     priority: critical
@@ -518,3 +656,131 @@ tests:
           expected: Ingen post hittas.
         - action: Öppna månadsstatistiken för den månaden.
           expected: Samtalet räknas, och statistiken visar inget nummer och inget användarnamn.
+
+  - id: CMTEL-T09
+    priority: high
+    execution: manual
+    tags: [call-recording, call-queue]
+    refs: ["GDPR Art. 13", "Directive 2002/58/EC Art. 5(1) (confidentiality of communications)", "ITIL 4 Service level management"]
+    en:
+      title: Recording notice and queue service level
+      description: Calls each recorded number to check the notice and analyses last month's queue statistics.
+      preconditions: The list of recorded numbers, an external test phone, access to the recording system and the queue statistics of the last month.
+      expected: The notice plays before recording starts and the queues meet the service level in at least 90 % of hours.
+      steps:
+        - action: Call each recorded number from the test phone and note when the notice ends.
+          expected: The notice states the recording, its purpose and where to find more information.
+        - action: Compare the end of the notice with the start time of the recording.
+          expected: The recording starts after the notice.
+        - action: Calculate the share of calls answered within 20 seconds for each opening hour of the last month.
+          expected: At least 80 % in at least 90 % of the hours.
+    sv:
+      title: Meddelande om inspelning och kötjänstnivå
+      description: Ringer varje nummer med inspelning för att kontrollera meddelandet och analyserar den senaste månadens köstatistik.
+      preconditions: Listan över nummer med inspelning, en extern testtelefon, åtkomst till inspelningssystemet och köstatistiken för den senaste månaden.
+      expected: Meddelandet spelas upp innan inspelningen börjar och köerna når tjänstenivån under minst 90 % av timmarna.
+      steps:
+        - action: Ring varje nummer med inspelning från testtelefonen och anteckna när meddelandet slutar.
+          expected: Meddelandet anger inspelningen, dess syfte och var mer information finns.
+        - action: Jämför slutet på meddelandet med inspelningens starttid.
+          expected: Inspelningen börjar efter meddelandet.
+        - action: Beräkna andelen samtal som besvarats inom 20 sekunder för varje timme av öppettiden under den senaste månaden.
+          expected: Minst 80 % under minst 90 % av timmarna.
+
+  - id: CMTEL-T10
+    priority: high
+    execution: manual
+    tags: [alarm-lines]
+    refs: []
+    en:
+      title: Analogue line inventory and tested replacements
+      description: Compares the line inventory with the carrier's line list and checks the replacements.
+      preconditions: The analogue line inventory, the carrier's list of the organisation's copper lines with shutdown dates and the test records of the replacements.
+      expected: Each line is in the inventory and has a tested replacement before its shutdown date.
+      steps:
+        - action: Compare the carrier's line list with the inventory.
+          expected: Each line is in the inventory with a device and a location.
+        - action: Read the replacement and test record of each line.
+          expected: Each has a replacement tested with a call to the receiving centre.
+        - action: Compare each test date with the line's shutdown date.
+          expected: Each test is before the shutdown date.
+    sv:
+      title: Inventering av analoga linjer och provade ersättningar
+      description: Jämför inventeringen av linjer med operatörens linjelista och kontrollerar ersättningarna.
+      preconditions: Inventeringen av analoga linjer, operatörens lista över organisationens kopparlinjer med avvecklingsdatum och provningsprotokollen för ersättningarna.
+      expected: Varje linje finns i inventeringen och har en provad ersättning före sitt avvecklingsdatum.
+      steps:
+        - action: Jämför operatörens linjelista med inventeringen.
+          expected: Varje linje finns i inventeringen med utrustning och plats.
+        - action: Läs ersättningen och provningsprotokollet för varje linje.
+          expected: Var och en har en ersättning som provats med ett samtal till mottagande central.
+        - action: Jämför varje provdatum med linjens avvecklingsdatum.
+          expected: Varje prov ligger före avvecklingsdatumet.
+
+  - id: CMTEL-T11
+    priority: high
+    execution: manual
+    tags: [voicemail, codec]
+    refs: ["NIST SP 800-63B §5.1.1.2", "ITU-T G.722", "RFC 6716"]
+    en:
+      title: Voicemail PIN rules and lockout, and codec of internal calls
+      description: Tries weak and valid voicemail PINs, triggers the lockout and checks the codec of internal calls.
+      preconditions: A test extension with a mailbox, access to the call records and two wideband-capable test phones.
+      expected: Weak PINs are refused, the mailbox locks after 5 wrong attempts and internal calls use a wideband codec.
+      steps:
+        - action: Try to set the PINs 123456, 111111 and the extension number.
+          expected: Each is refused.
+          data: extension 4711
+        - action: Set a compliant 6-digit PIN.
+          expected: The PIN is accepted.
+        - action: Enter a wrong PIN 6 times.
+          expected: The mailbox is locked after the fifth wrong attempt.
+        - action: Make 20 internal calls between the wideband-capable phones and read the call records.
+          expected: Each call used a wideband codec.
+    sv:
+      title: Regler och låsning för röstbrevlådans PIN-kod och codec för interna samtal
+      description: Provar svaga och giltiga PIN-koder för röstbrevlådan, utlöser låsningen och kontrollerar codec för interna samtal.
+      preconditions: En testanknytning med brevlåda, åtkomst till samtalsposterna och två testtelefoner med stöd för bredband.
+      expected: Svaga koder avvisas, brevlådan låses efter 5 felaktiga försök och interna samtal använder en bredbandscodec.
+      steps:
+        - action: Försök ange PIN-koderna 123456, 111111 och anknytningsnumret.
+          expected: Var och en avvisas.
+          data: anknytning 4711
+        - action: Ange en giltig PIN-kod med 6 siffror.
+          expected: Koden godtas.
+        - action: Ange fel PIN-kod 6 gånger.
+          expected: Brevlådan låses efter det femte felaktiga försöket.
+        - action: Ring 20 interna samtal mellan telefonerna med stöd för bredband och läs samtalsposterna.
+          expected: Varje samtal använde en bredbandscodec.
+
+  - id: CMTEL-T12
+    priority: medium
+    execution: manual
+    tags: [accessibility, real-time-text]
+    refs: ["EN 301 549 V3.2.1 §6.2 (real-time text)"]
+    en:
+      title: Real-time text during a call
+      description: Sends real-time text in both directions during a call between two clients.
+      preconditions: Two signed-in users of the organisation's calling client on different devices and a screen recording with time stamps.
+      expected: Text appears character by character on the other side within 1 second.
+      steps:
+        - action: Start a call between the two clients and open real-time text.
+          expected: The real-time text field opens on both sides without ending the call.
+        - action: Type a test sentence on the first client.
+          expected: Each character appears on the second client within 1 second of typing.
+          data: Meet at gate 12 at 14.30
+        - action: Type a reply on the second client.
+          expected: Each character appears on the first client within 1 second.
+    sv:
+      title: Realtidstext under ett samtal
+      description: Skickar realtidstext i båda riktningarna under ett samtal mellan två klienter.
+      preconditions: Två inloggade användare av organisationens samtalsklient på olika enheter och en skärminspelning med tidsstämplar.
+      expected: Texten visas tecken för tecken på den andra sidan inom 1 sekund.
+      steps:
+        - action: Starta ett samtal mellan de två klienterna och öppna realtidstext.
+          expected: Fältet för realtidstext öppnas på båda sidor utan att samtalet avslutas.
+        - action: Skriv en testmening på den första klienten.
+          expected: Varje tecken visas på den andra klienten inom 1 sekund.
+          data: Vi ses vid gate 12 kl. 14.30
+        - action: Skriv ett svar på den andra klienten.
+          expected: Varje tecken visas på den första klienten inom 1 sekund.

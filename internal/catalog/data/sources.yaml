@@ -1936,3 +1936,24 @@ sources:
     name: {en: "Goal Structuring Notation (GSN) Community Standard, Safety-Critical Systems Club", sv: "Goal Structuring Notation (GSN) Community Standard, Safety-Critical Systems Club"}
     match: ["GSN Community Standard"]
     url: https://scsc.uk/gsn
+  - id: lorawan
+    kind: standard
+    jurisdiction: international
+    short: LoRaWAN
+    name: {en: "LoRa Alliance LoRaWAN specifications (link layer, regional parameters, application layer)", sv: "LoRa Alliance LoRaWAN-specifikationer (länklager, regionala parametrar, applikationslager)"}
+    match: ["LoRaWAN"]
+    url: https://resources.lora-alliance.org/technical-specifications
+  - id: etsi-en-300-220
+    kind: standard
+    jurisdiction: EU
+    short: ETSI EN 300 220
+    name: {en: "ETSI EN 300 220 Short Range Devices operating in the frequency range 25 MHz to 1 000 MHz", sv: "ETSI EN 300 220 Kortdistansutrustning i frekvensområdet 25 MHz till 1 000 MHz"}
+    match: ["ETSI EN 300 220"]
+    url: https://www.etsi.org/deliver/etsi_en/300200_300299/30022002/
+  - id: ieee-802-11
+    kind: standard
+    jurisdiction: international
+    short: IEEE 802.11
+    name: {en: "IEEE 802.11 Wireless LAN medium access control and physical layer specifications", sv: "IEEE 802.11 Specifikationer för åtkomstkontroll och fysiskt lager i trådlösa lokala nät"}
+    match: ["IEEE 802.11"]
+    url: https://standards.ieee.org/ieee/802.11/10548/
