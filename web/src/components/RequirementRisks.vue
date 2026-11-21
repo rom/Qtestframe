@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // The risks a requirement addresses (shown in the requirement editor).
+import ItemRef from './ItemRef.vue'
 import { ref, watch } from 'vue'
 import Tag from 'primevue/tag'
 import { api, asItems } from '@/lib/api'
@@ -36,8 +37,7 @@ watch(
     </div>
     <div v-if="!risks.length" class="muted small">{{ t('risksView.noRisksForRequirement') }}</div>
     <div v-for="r in risks" :key="r.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
-      <RouterLink :to="{ name: 'risks', params: { projectId }, query: { risk: r.id } }" class="key">{{ r.key }}</RouterLink>
-      <span class="grow ellipsis">{{ r.title }}</span>
+      <ItemRef :to="{ name: 'risks', params: { projectId }, query: { risk: r.id } }" :item-key="r.key" :title="r.title" title-class="ellipsis" grow />
       <span class="small muted" :title="t('risksView.score')">{{ r.score }}</span>
       <Tag :value="t(`risksView.level.${r.level}`)" :severity="riskLevelSeverity(r.level)" />
       <Tag :value="t(`risksView.status.${r.status}`)" :severity="riskStatusSeverity(r.status)" />

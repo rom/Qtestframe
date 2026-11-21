@@ -612,7 +612,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           </template>
         </Column>
         <Column field="key" :header="t('workspace.colKey')" :reorderable-column="false" sortable style="width: 130px">
-          <template #body="{ data }"><span class="key">{{ data.key }}</span></template>
+          <template #body="{ data }"><button type="button" class="link-button key-link" tabindex="-1" @click.stop="openEditor((data as Item).id)"><span class="key">{{ data.key }}</span></button></template>
         </Column>
         <Column field="title" :header="t('workspace.colTitle')" :reorderable-column="false" sortable style="min-width: 240px" body-class="stack-main">
           <template #body="{ data }">

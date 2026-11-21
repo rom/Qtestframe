@@ -186,7 +186,7 @@ function open(p: Project) {
   </ul>
   <div v-else class="card" style="padding: 0">
     <DataTable v-stack :value="filtered" data-key="id" sort-field="key" :sort-order="1" row-hover @row-click="open($event.data)" class="clickable">
-      <Column field="key" :header="t('common.key')" sortable><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
+      <Column field="key" :header="t('common.key')" sortable><template #body="{ data }"><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="key-link" tabindex="-1" @click.stop><span class="key">{{ data.key }}</span></RouterLink></template></Column>
       <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
         <template #body="{ data }"><span class="row nowrap" style="min-width: 0"><ProjectIcon :icon="data.icon" :project-key="data.key" :color="data.color" :size="24" /><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink></span></template>
       </Column>

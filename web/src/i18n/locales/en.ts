@@ -1564,7 +1564,6 @@ const en = {
     expected: 'Expected result',
     stepList: 'Steps',
     stepData: 'Data: {data}',
-    showItem: 'Show {id}',
     selected: 'Nothing selected | 1 selected | {n} selected',
     selectedSummary: '{requirements} and {tests} selected',
     nRequirements: 'no requirements | 1 requirement | {n} requirements',

@@ -3,6 +3,7 @@
 // a requirement also sees the defects of its tests and their executions,
 // a test those of its executions ("via"). Testers report a new defect with
 // the item already linked, or link an existing one.
+import ItemRef from './ItemRef.vue'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
@@ -126,8 +127,7 @@ defineExpose({ report, reload: load })
     <ul v-else-if="items.length" class="plain-list defect-panel-list">
       <li v-for="d in items" :key="d.id" class="defect-panel-row">
         <div class="row nowrap" style="min-width: 0">
-          <RouterLink :to="{ name: 'defects', params: { projectId }, query: { item: d.id } }" class="key">{{ d.key }}</RouterLink>
-          <span class="grow ellipsis" :title="d.title">{{ d.title }}</span>
+          <ItemRef :to="{ name: 'defects', params: { projectId }, query: { item: d.id } }" :item-key="d.key" :title="d.title" :hint="d.title" title-class="ellipsis" grow />
         </div>
         <div class="row small" style="gap: 6px">
           <DefectTag :value="d.status" />

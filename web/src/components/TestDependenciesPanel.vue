@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from './ItemRef.vue'
 import { useUndoStore } from '@/stores/undo'
 import { recordUndo, toggleEntry } from '@/lib/undoActions'
 // Prerequisites of a test (GET/POST /tests/{id}/dependencies): tests that
@@ -87,8 +88,7 @@ const route = (id: string) => ({ name: 'tests', params: { projectId: props.proje
     </div>
     <div v-if="!prerequisites.length" class="muted small">{{ t('dependencies.none') }}</div>
     <div v-for="d in prerequisites" :key="d.id" class="row nowrap dep-row">
-      <RouterLink :to="route(d.depends_on_id)" class="key">{{ d.depends_on_key }}</RouterLink>
-      <span class="grow ellipsis">{{ d.depends_on_title }}</span>
+      <ItemRef :to="route(d.depends_on_id)" :item-key="d.depends_on_key" :title="d.depends_on_title" title-class="ellipsis" grow />
       <StatusTag :value="d.other_last_result" kind="result" />
       <Button
         v-if="canWrite"

@@ -41,7 +41,7 @@ body { background: var(--qtf-bg); color: var(--qtf-text); -webkit-font-smoothing
 a { color: var(--p-primary-color); text-decoration: none; }
 a:hover { text-decoration: underline; }
 /* links inside running text are underlined, not told apart by colour alone */
-:where(p, li, dd, .small, .sub, .muted, .p-message-text) a:where(:not(.key, .p-button, .nav-item, .project-link, .recent-run, .search-hit, .trace-chip)) { text-decoration: underline; text-underline-offset: 2px; }
+:where(p, li, dd, .small, .sub, .muted, .p-message-text) a:where(:not(.key, .item-ref, .p-button, .nav-item, .project-link, .recent-run, .search-hit, .trace-chip)) { text-decoration: underline; text-underline-offset: 2px; }
 mark.hit { background: rgba(250, 204, 21, 0.45); color: var(--qtf-text); border-radius: 3px; }
 .app-dark mark.hit { background: rgba(250, 204, 21, 0.28); }
 code, pre, .mono { font-family: var(--qtf-mono); font-size: 12.5px; }
@@ -217,6 +217,9 @@ label.required::after { content: ' *'; color: var(--p-red-600, #dc2626); }
 .link-button { all: unset; cursor: pointer; color: inherit; overflow-wrap: anywhere; border-radius: 4px; }
 .link-button:hover { color: var(--p-primary-color); text-decoration: underline; }
 .item-title { font-weight: 500; }
+/* a key cell that opens the same item as its row's title (mouse only: the title is the focus stop) */
+.key-link { cursor: pointer; text-decoration: none; }
+.key-link:hover .key, a.key-link:hover { text-decoration: underline; }
 .ws-title { font-size: 17px !important; }
 .p-drawer.folders-drawer { width: min(360px, 92vw) !important; }
 .tree-root:hover { background: var(--qtf-hover); }

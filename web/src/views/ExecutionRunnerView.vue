@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from '../components/ItemRef.vue'
 import { useUndoStore } from '@/stores/undo'
 import { patchEntry, recordUndo } from '@/lib/undoActions'
 import MentionInput from '@/components/MentionInput.vue'
@@ -428,8 +429,7 @@ const statusOptions = computed(() => [
         <i class="pi pi-angle-right muted" />
       </div>
       <h1 class="row">
-        <span class="key" style="font-size: 16px">{{ ex?.test_key }}</span>
-        {{ ex?.test_title }}
+        <ItemRef v-if="ex" :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: ex.test_case_id } }" :item-key="ex.test_key" :title="ex.test_title" class="runner-test-link" />
       </h1>
       <div class="sub row">
         <Tag v-if="test" :value="enumLabel('executionType', isAutomated ? 'automated' : 'manual')" :icon="isAutomated ? 'pi pi-bolt' : 'pi pi-user'" severity="secondary" />
@@ -715,6 +715,8 @@ const statusOptions = computed(() => [
 </template>
 
 <style>
+.runner-test-link { flex-wrap: wrap; }
+.runner-test-link .key { font-size: 16px; }
 .iter-list {
   display: flex;
   flex-wrap: wrap;

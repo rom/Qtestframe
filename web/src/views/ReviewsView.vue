@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Review requests across projects: the ones sent to the signed-in user, and
 // the ones they asked for, with bulk actions for each.
+import ItemRef from '../components/ItemRef.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
@@ -155,8 +156,7 @@ async function apply() {
         <Column selection-mode="multiple" style="width: 2.6rem" />
         <Column :header="t('reviews.item')">
           <template #body="{ data }">
-            <RouterLink :to="itemRoute(data)" class="key">{{ data.entity_key }}</RouterLink>
-            <span class="title">{{ data.entity_title }}</span>
+            <ItemRef :to="itemRoute(data)" :item-key="data.entity_key" :title="data.entity_title" title-class="title" />
             <span v-if="data.outdated" class="small muted"> · {{ t('reviews.outdatedShort') }}</span>
           </template>
         </Column>

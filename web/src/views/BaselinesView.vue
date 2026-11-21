@@ -400,7 +400,9 @@ function remove(b: Baseline) {
           <Column field="key" :header="t('common.key')" style="width: 150px">
             <template #body="{ data }"><RouterLink :to="itemRoute(data.entity_type, data.entity_id)" class="key">{{ data.key }}</RouterLink></template>
           </Column>
-          <Column field="title" :header="t('common.title')" />
+          <Column field="title" :header="t('common.title')">
+            <template #body="{ data }"><RouterLink :to="itemRoute(data.entity_type, data.entity_id)" class="item-ref" tabindex="-1"><span class="item-ref-title">{{ data.title }}</span></RouterLink></template>
+          </Column>
           <Column field="version" :header="t('common.version')" style="width: 90px"><template #body="{ data }">{{ t('common.versionShort', { version: data.version }) }}</template></Column>
           <template #empty><div class="empty">{{ t('baselines.noItems') }}</div></template>
         </DataTable>

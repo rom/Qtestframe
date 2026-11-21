@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
@@ -560,8 +561,7 @@ const scriptPlaceholder = computed(() => {
               <i class="pi pi-directions" style="color: var(--p-primary-color)" />
               <span>
                 {{ t('tests.calls') }}
-                <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" class="key">{{ data.call_test_key || t('tests.callTestFallback') }}</RouterLink>
-                <template v-if="data.call_test_title"> – {{ data.call_test_title }}</template>
+                <ItemRef :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" :item-key="data.call_test_key || t('tests.callTestFallback')" :title="data.call_test_title" />
               </span>
             </div>
             <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.actionPlaceholder')" :aria-label="t('tests.stepActionN', { n: index + 1 })" />
@@ -591,8 +591,7 @@ const scriptPlaceholder = computed(() => {
       <div v-if="calledBy.length" class="row small" style="margin-top: 8px; gap: 6px">
         <i class="pi pi-share-alt muted" /><span class="muted">{{ t('tests.usedBy') }}</span>
         <span v-for="(c, i) in calledBy" :key="c.id">
-          <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: c.id } }" class="key" :title="c.title">{{ c.key }}</RouterLink>
-          <span class="muted">&nbsp;{{ c.title }}</span>{{ i < calledBy.length - 1 ? ',' : '' }}
+          <ItemRef :to="{ name: 'tests', params: { projectId }, query: { item: c.id } }" :item-key="c.key" :title="c.title" title-class="muted" />{{ i < calledBy.length - 1 ? ',' : '' }}
         </span>
       </div>
     </div>
@@ -619,8 +618,7 @@ const scriptPlaceholder = computed(() => {
       </div>
       <div v-if="!links.length" class="muted small">{{ t('tests.verifiesNothing') }}</div>
       <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
-        <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" class="key">{{ l.requirement_key || reqById.get(l.requirement_id)?.key }}</RouterLink>
-        <span class="grow ellipsis">{{ reqById.get(l.requirement_id)?.title }}</span>
+        <ItemRef :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" :item-key="l.requirement_key || reqById.get(l.requirement_id)?.key" :title="reqById.get(l.requirement_id)?.title" title-class="ellipsis" grow />
         <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="reqById.get(l.requirement_id)?.obligation" kind="obligation" empty="" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.requirement_key || reqById.get(l.requirement_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />

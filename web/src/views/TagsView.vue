@@ -2,6 +2,7 @@
 // Tag cloud of a project (GET /projects/{pid}/tags): every tag sized by how
 // often it is used. Select one or more tags to list the requirements, tests
 // and documents that carry all (or any) of them.
+import ItemRef from '../components/ItemRef.vue'
 import { tagClass } from '@/lib/tagColors'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -208,8 +209,7 @@ const countText = (x: TagCount) =>
         <RouterLink v-if="reqs.length" :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { q } }" class="small">{{ t('tagCloud.openList') }}</RouterLink>
         <ul class="plain-list">
           <li v-for="r in reqs" :key="r.id" class="row nowrap result-row">
-            <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" class="key">{{ r.key }}</RouterLink>
-            <span class="grow ellipsis">{{ r.title }}</span>
+            <ItemRef :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" :item-key="r.key" :title="r.title" title-class="ellipsis" grow />
             <StatusTag :value="r.status" />
           </li>
           <li v-if="!reqs.length && !itemsLoading" class="muted small">{{ t('tagCloud.noItems') }}</li>
@@ -222,8 +222,7 @@ const countText = (x: TagCount) =>
         <RouterLink v-if="tests.length" :to="{ name: 'tests', params: { projectId: proj.pid }, query: { q } }" class="small">{{ t('tagCloud.openList') }}</RouterLink>
         <ul class="plain-list">
           <li v-for="x in tests" :key="x.id" class="row nowrap result-row">
-            <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: x.id } }" class="key">{{ x.key }}</RouterLink>
-            <span class="grow ellipsis">{{ x.title }}</span>
+            <ItemRef :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: x.id } }" :item-key="x.key" :title="x.title" title-class="ellipsis" grow />
             <StatusTag :value="x.last_result" kind="result" />
           </li>
           <li v-if="!tests.length && !itemsLoading" class="muted small">{{ t('tagCloud.noItems') }}</li>

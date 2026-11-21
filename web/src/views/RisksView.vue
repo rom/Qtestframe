@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Risk register: likelihood × impact, a 5×5 heat map that filters the
 // table, mitigation and the requirements that address each risk.
+import ItemRef from '../components/ItemRef.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -384,7 +385,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         @row-click="(e) => openEdit(e.data as Risk)"
       >
         <Column v-if="canWrite" selection-mode="multiple" style="width: 2.6rem" />
-        <Column field="key" :header="t('common.key')" sortable style="width: 130px"><template #body="{ data }"><span class="key">{{ data.key }}</span></template></Column>
+        <Column field="key" :header="t('common.key')" sortable style="width: 130px"><template #body="{ data }"><button type="button" class="link-button key-link" tabindex="-1" @click.stop="openEdit(data as Risk)"><span class="key">{{ data.key }}</span></button></template></Column>
         <Column field="title" :header="t('common.title')" sortable body-class="stack-main" style="min-width: 200px">
           <template #body="{ data }">
             <button type="button" class="link-button" style="font-weight: 600" :aria-label="t('risksView.openRisk', { key: data.key, title: data.title })" @click.stop="openEdit(data as Risk)">{{ data.title }}</button>
@@ -461,8 +462,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
         </div>
         <div v-if="!linked.length" class="muted small">{{ t('risksView.noLinked') }}</div>
         <div v-for="q in linked" :key="q.id" class="row nowrap" style="padding: 4px 0; border-bottom: 1px solid var(--qtf-border)">
-          <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: q.id } }" class="key">{{ q.key }}</RouterLink>
-          <span class="grow ellipsis">{{ q.title }}</span>
+          <ItemRef :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: q.id } }" :item-key="q.key" :title="q.title" title-class="ellipsis" grow />
           <StatusTag :value="q.coverage" kind="coverage" empty="" />
           <Button v-if="canWrite" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: q.key })" v-tooltip="t('common.unlink')" @click="unlink(q.id)" />
         </div>

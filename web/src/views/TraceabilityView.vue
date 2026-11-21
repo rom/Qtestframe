@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from '../components/ItemRef.vue'
 import { useUndoStore } from '@/stores/undo'
 import { entry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import { chunks, linkPlan, type LinkPair } from '@/lib/bulkLinks'
@@ -342,8 +343,7 @@ async function toggle(reqId: string, testId: string) {
     <li v-for="r in rows" :key="r.id" class="card trace-item" :style="{ borderLeft: '4px solid ' + (COVERAGE_COLORS[r.coverage || 'none'] ?? '#94a3b8') }">
       <div class="row trace-item-head">
         <Checkbox v-if="canBulk" v-model="selReqs" :value="r.id" :input-id="'trl-' + r.id" :aria-label="t('traceability.bulk.selectOne', { key: r.key })" />
-        <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" class="key">{{ r.key }}</RouterLink>
-        <span class="grow trace-title">{{ r.title }}</span>
+        <ItemRef :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" :item-key="r.key" :title="r.title" title-class="trace-title" grow />
         <StatusTag :value="r.obligation" kind="obligation" empty="" />
         <StatusTag :value="r.coverage || 'none'" kind="coverage" />
       </div>
@@ -405,8 +405,7 @@ async function toggle(reqId: string, testId: string) {
           <th scope="row" class="sticky-col req-cell" :style="{ borderLeft: '4px solid ' + (COVERAGE_COLORS[r.coverage || 'none'] ?? '#94a3b8') }">
             <div class="row nowrap">
               <Checkbox v-if="canBulk" v-model="selReqs" :value="r.id" :input-id="'trm-' + r.id" :aria-label="t('traceability.bulk.selectOne', { key: r.key })" />
-              <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" class="key">{{ r.key }}</RouterLink>
-              <span class="ellipsis grow" :title="r.title">{{ r.title }}</span>
+              <ItemRef :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" :item-key="r.key" :title="r.title" :hint="r.title" title-class="ellipsis" grow />
               <StatusTag :value="r.obligation" kind="obligation" empty="" />
             </div>
           </th>

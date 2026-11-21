@@ -2,6 +2,7 @@
 // Create or edit a defect with its links to requirements, tests and
 // executions. New defects can start from a draft (e.g. from a failed
 // execution); links of an existing defect are saved one by one.
+import ItemRef from './ItemRef.vue'
 import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
@@ -147,9 +148,8 @@ async function save() {
           <ul class="plain-list">
             <li v-for="l in g.links" :key="l.entity_type + l.entity_id" class="row nowrap" style="padding: 2px 0">
               <i :class="g.type === 'requirement' ? 'pi pi-list-check' : g.type === 'test' ? 'pi pi-check-square' : 'pi pi-play-circle'" aria-hidden="true" />
-              <RouterLink v-if="linkRoute(l, projectId)" :to="linkRoute(l, projectId)!" class="key">{{ l.key || l.entity_id }}</RouterLink>
-              <span v-else class="key">{{ l.key || l.entity_id }}</span>
-              <span class="grow ellipsis">{{ l.title }}</span>
+              <ItemRef v-if="linkRoute(l, projectId)" :to="linkRoute(l, projectId)!" :item-key="l.key || l.entity_id" :title="l.title" title-class="ellipsis" grow />
+              <template v-else><span class="key">{{ l.key || l.entity_id }}</span><span class="grow ellipsis">{{ l.title }}</span></template>
               <Button v-if="canEdit" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.removeItem', { key: l.key || l.entity_id })" @click="removeLink(l)" />
             </li>
           </ul>

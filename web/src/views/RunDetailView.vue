@@ -510,7 +510,11 @@ async function copySnippet(text: string = ciSnippet.value) {
             <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: data.test_case_id } }" class="key">{{ data.test_key }}</RouterLink>
           </template>
         </Column>
-        <Column field="test_title" :header="t('common.title')" sortable :reorderable-column="false" style="min-width: 200px" body-class="stack-main" />
+        <Column field="test_title" :header="t('common.title')" sortable :reorderable-column="false" style="min-width: 200px" body-class="stack-main">
+          <template #body="{ data }">
+            <RouterLink :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: data.test_case_id } }" class="item-ref" tabindex="-1"><span class="item-ref-title">{{ data.test_title }}</span></RouterLink>
+          </template>
+        </Column>
         <template v-for="c in execLayout.visible.value" :key="c.field">
         <Column v-if="c.field === 'configuration' && hasConfigs" field="configuration_name" column-key="configuration" :header="c.header" sortable style="width: 150px">
           <template #body="{ data }"><Tag v-if="data.configuration_name" :value="data.configuration_name" icon="pi pi-sliders-h" severity="secondary" /><span v-else class="muted">—</span></template>

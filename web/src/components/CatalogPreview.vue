@@ -117,10 +117,9 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
         <h3>{{ req ? t('catalog.verifyingTests') : t('catalog.verifiedRequirements') }}</h3>
         <ul class="cp-list">
           <li v-for="l in linked" :key="l.id">
-            <button type="button" class="linklike" :aria-label="t('catalog.showItem', { id: l.id })" @click="emit('open', otherKind, l.id)">
-              <span class="key">{{ l.id }}</span>
+            <button type="button" class="linklike" @click="emit('open', otherKind, l.id)">
+              <span class="key">{{ l.id }}</span> <span class="cp-link-title">{{ l.title }}</span>
             </button>
-            {{ l.title }}
             <Tag v-if="l.in_project?.length" :value="t('catalog.inProject')" severity="success" class="small" />
           </li>
         </ul>
@@ -138,6 +137,7 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; color: 
 .cp-steps { margin: 0; padding-left: 20px; }
 .cp-steps li { margin: 6px 0; overflow-wrap: anywhere; }
 .linklike { background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; }
-.linklike:hover .key, .linklike:focus-visible .key { text-decoration: underline; }
+.linklike { text-align: left; }
+.linklike:hover .key, .linklike:focus-visible .key, .linklike:hover .cp-link-title, .linklike:focus-visible .cp-link-title { text-decoration: underline; }
 .cp-tag { font-weight: 500; }
 </style>

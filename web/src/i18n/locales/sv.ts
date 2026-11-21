@@ -1566,7 +1566,6 @@ const sv: Messages = {
     expected: 'Förväntat resultat',
     stepList: 'Steg',
     stepData: 'Data: {data}',
-    showItem: 'Visa {id}',
     selected: 'Inget markerat | 1 markerad | {n} markerade',
     selectedSummary: '{requirements} och {tests} markerade',
     nRequirements: 'inga krav | 1 krav | {n} krav',

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ConfigurationCoverage from './ConfigurationCoverage.vue'
 import ObligationHelp from './ObligationHelp.vue'
@@ -723,8 +724,7 @@ function criterionLabel(id: string | null) {
       </div>
       <div v-if="!links.length" class="muted small">{{ t('requirements.notCovered') }}</div>
       <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
-        <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: l.test_case_id } }" class="key">{{ l.test_case_key || testById.get(l.test_case_id)?.key }}</RouterLink>
-        <span class="grow ellipsis">{{ testById.get(l.test_case_id)?.title }}</span>
+        <ItemRef :to="{ name: 'tests', params: { projectId }, query: { item: l.test_case_id } }" :item-key="l.test_case_key || testById.get(l.test_case_id)?.key" :title="testById.get(l.test_case_id)?.title" title-class="ellipsis" grow />
         <span v-if="l.criterion_id" class="small muted">{{ criterionLabel(l.criterion_id) }}</span>
         <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="testById.get(l.test_case_id)?.last_result" kind="result" empty="" />

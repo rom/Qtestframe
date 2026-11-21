@@ -3,6 +3,7 @@
 // relations, or test dependencies and shared-step calls. Layered layout
 // (lib/graphLayout.ts), filters by relation type, search, zoom, and a list
 // view that shows the same relations as text.
+import ItemRef from '../components/ItemRef.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
@@ -318,8 +319,7 @@ const listNodes = computed(() => [...shownNodes.value].sort((a, b) => a.key.loca
           <tbody>
             <tr v-for="n in listNodes" :key="n.id" :class="{ dim: dimmed(n.id) }">
               <th scope="row">
-                <RouterLink :to="itemRoute(n.id)" class="key">{{ n.key }}</RouterLink>
-                <span class="small"> {{ n.title }}</span>
+                <ItemRef :to="itemRoute(n.id)" :item-key="n.key" :title="n.title" title-class="small" />
               </th>
               <td><StatusTag :value="n.result" :kind="kind === 'requirement' ? 'coverage' : 'result'" /></td>
               <td class="small">
