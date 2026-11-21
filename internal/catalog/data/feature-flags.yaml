@@ -63,7 +63,7 @@ requirements:
     priority: medium
     tags: [configuration, visibility, masking]
     refs: ["OWASP ASVS 4.0.3 §14.3 (unintended security disclosure)"]
-    tests: [FLAG-T01]
+    tests: [FLAG-T01, FLAG-T08]
     en:
       title: Effective configuration is visible with secrets masked
       description: Each service SHOULD show its effective configuration and the source of each value to operators, with secret values replaced by a fixed mask.
@@ -493,3 +493,35 @@ tests:
           expected: Ingenting har ändrats.
         - action: Slå på flaggan för användaren och upprepa anropet.
           expected: Anropet lyckas.
+
+  - id: FLAG-T08
+    priority: medium
+    execution: automated
+    tags: [configuration, masking]
+    refs: []
+    en:
+      title: Secret settings are masked in every configuration output
+      description: Sets known test values for the secret settings and searches every place where the configuration is shown or logged.
+      preconditions: A test environment where secret settings can be given known test values; access to the operator view, the configuration endpoint and the startup log.
+      expected: No test value appears anywhere; each secret setting shows the mask and its source.
+      steps:
+        - action: Start the service with known test values for the database password and the signing key.
+          expected: The service starts.
+          data: "test values described in the test environment's secret store"
+        - action: Open the operator view and the configuration endpoint.
+          expected: Both settings show the mask and their source, not the value.
+        - action: Search the startup log and the configuration endpoint's response for the test values.
+          expected: Neither value is found.
+    sv:
+      title: Hemliga inställningar maskeras i varje utdata för konfiguration
+      description: Ger de hemliga inställningarna kända testvärden och söker igenom varje ställe där konfigurationen visas eller loggas.
+      preconditions: En testmiljö där hemliga inställningar kan ges kända testvärden; åtkomst till driftvyn, konfigurationsändpunkten och startloggen.
+      expected: Inget testvärde syns någonstans; varje hemlig inställning visar masken och sin källa.
+      steps:
+        - action: Starta tjänsten med kända testvärden för databaslösenordet och signeringsnyckeln.
+          expected: Tjänsten startar.
+          data: "testvärden som beskrivs i testmiljöns hemlighetslager"
+        - action: Öppna driftvyn och konfigurationsändpunkten.
+          expected: Båda inställningarna visar masken och sin källa, inte värdet.
+        - action: Sök i startloggen och i svaret från konfigurationsändpunkten efter testvärdena.
+          expected: Inget av värdena hittas.

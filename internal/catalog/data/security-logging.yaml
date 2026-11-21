@@ -227,6 +227,54 @@ requirements:
         - method: inspection
           text: Varje rad i säkerhetsloggen är ett giltigt JSON-objekt med namngivna fält för tid, aktör, källa, händelse och utfall.
 
+  - id: SLOG-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [log-source, monitoring, alert]
+    refs: ["NIST SP 800-53 Rev. 5 AU-5 (response to audit logging process failures)", "PCI DSS v4.0 Requirement 10.7.2 (failures of critical security control systems)"]
+    tests: [SLOG-T10]
+    en:
+      title: Alert when a log source stops sending
+      description: The central log system MUST alert the security team within 15 minutes when a production log source that has sent at least one record per 5 minutes during the previous 24 hours stops sending.
+      rationale: Attackers turn off logging first, and a broken log shipper looks the same as a quiet system until someone needs the records.
+      criteria:
+        - method: test
+          text: Stopping the log shipper on one production-like server raises an alert that names the server within 15 minutes.
+          threshold: "≤ 15 min"
+    sv:
+      title: Larm när en loggkälla slutar skicka
+      description: Det centrala loggsystemet SKA larma säkerhetsteamet inom 15 minuter när en loggkälla i produktion som har skickat minst en post per 5 minuter under de senaste 24 timmarna slutar skicka.
+      rationale: Angripare stänger av loggningen först, och en trasig logginsamlare ser likadan ut som ett tyst system tills någon behöver posterna.
+      criteria:
+        - method: test
+          text: Att stoppa logginsamlaren på en produktionslik server ger ett larm som namnger servern inom 15 minuter.
+          threshold: "≤ 15 min"
+
+  - id: SLOG-12
+    type: security
+    obligation: should
+    priority: medium
+    tags: [anomaly, administrator, alert]
+    refs: ["MITRE ATT&CK T1078 (valid accounts)", "NIST SP 800-53 Rev. 5 SI-4 (system monitoring)"]
+    tests: [SLOG-T11]
+    en:
+      title: Alert on administrator sign-in from a new country
+      description: The system SHOULD alert the security team within 10 minutes when an administrator account signs in from a country it has not signed in from during the last 90 days.
+      rationale: Stolen administrator credentials are among the most damaging, and a sign-in from an unexpected place is one of the few early signs.
+      criteria:
+        - method: test
+          text: A sign-in to an administrator account from an address located in a new country raises an alert with account, country and time within 10 minutes, and a sign-in from a known country does not.
+          threshold: "≤ 10 min"
+    sv:
+      title: Larm vid inloggning som administratör från ett nytt land
+      description: Systemet BÖR larma säkerhetsteamet inom 10 minuter när ett administratörskonto loggar in från ett land som kontot inte har loggat in från under de senaste 90 dagarna.
+      rationale: Stulna inloggningsuppgifter för administratörer hör till de mest skadliga, och en inloggning från en oväntad plats är ett av få tidiga tecken.
+      criteria:
+        - method: test
+          text: En inloggning på ett administratörskonto från en adress i ett nytt land ger ett larm med konto, land och tid inom 10 minuter, och en inloggning från ett känt land ger inget larm.
+          threshold: "≤ 10 min"
+
 tests:
   - id: SLOG-T01
     priority: high
@@ -481,3 +529,63 @@ tests:
           expected: Ingen rad misslyckas.
         - action: Kontrollera att varje objekt har fälten time, actor, source, event och outcome.
           expected: Alla fem fälten finns i varje objekt.
+
+  - id: SLOG-T10
+    priority: high
+    execution: manual
+    tags: [log-source, alert]
+    refs: ["NIST SP 800-53 Rev. 5 AU-5"]
+    en:
+      title: A stopped log shipper raises an alert
+      description: Stops the log shipper on one server and measures the time until the security team is alerted.
+      preconditions: A production-like server that sends logs to the central log system; agreement with the security team about the test.
+      expected: An alert naming the server reaches the security team within 15 minutes, and it clears when logging resumes.
+      steps:
+        - action: Stop the log shipper on the server and note the time.
+          expected: No more records from the server arrive in the central log system.
+        - action: Wait for the alert.
+          expected: The security team receives an alert naming the server within 15 minutes.
+          data: "limit 15 min"
+        - action: Start the log shipper again.
+          expected: Records arrive again and the alert is marked as resolved.
+    sv:
+      title: En stoppad logginsamlare ger larm
+      description: Stoppar logginsamlaren på en server och mäter tiden tills säkerhetsteamet larmas.
+      preconditions: En produktionslik server som skickar loggar till det centrala loggsystemet; överenskommelse med säkerhetsteamet om testet.
+      expected: Ett larm som namnger servern når säkerhetsteamet inom 15 minuter, och det försvinner när loggningen återupptas.
+      steps:
+        - action: Stoppa logginsamlaren på servern och notera tiden.
+          expected: Inga fler poster från servern kommer in i det centrala loggsystemet.
+        - action: Vänta på larmet.
+          expected: Säkerhetsteamet får ett larm som namnger servern inom 15 minuter.
+          data: "gräns 15 min"
+        - action: Starta logginsamlaren igen.
+          expected: Poster kommer in igen och larmet markeras som åtgärdat.
+
+  - id: SLOG-T11
+    priority: medium
+    execution: manual
+    tags: [anomaly, administrator]
+    refs: []
+    en:
+      title: Administrator sign-in from a new country
+      description: Signs in to a test administrator account through addresses in a known and in a new country.
+      preconditions: A test administrator account that has signed in only from one country during the last 90 days; a VPN or proxy with exit points in two other countries.
+      expected: The sign-in from the new country raises an alert within 10 minutes; the one from the known country does not.
+      steps:
+        - action: Sign in to the account from the usual country.
+          expected: No alert is raised.
+        - action: Sign in to the account through an exit point in a country not used during the last 90 days and note the time.
+          expected: Within 10 minutes the security team receives an alert with account, country and time.
+          data: "exit point in a new country"
+    sv:
+      title: Inloggning som administratör från ett nytt land
+      description: Loggar in på ett testkonto för administratör via adresser i ett känt och i ett nytt land.
+      preconditions: Ett testkonto för administratör som bara har loggat in från ett land de senaste 90 dagarna; en VPN eller proxy med utgångar i två andra länder.
+      expected: Inloggningen från det nya landet ger ett larm inom 10 minuter; inloggningen från det kända landet gör det inte.
+      steps:
+        - action: Logga in på kontot från det vanliga landet.
+          expected: Inget larm utlöses.
+        - action: Logga in på kontot via en utgång i ett land som inte använts de senaste 90 dagarna och notera tiden.
+          expected: Inom 10 minuter får säkerhetsteamet ett larm med konto, land och tid.
+          data: "utgång i ett nytt land"

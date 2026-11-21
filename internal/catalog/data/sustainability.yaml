@@ -13,7 +13,7 @@ requirements:
     priority: medium
     tags: [measurement, energy, emissions]
     refs: ["ISO/IEC 21031:2024 (Software Carbon Intensity specification)", "GHG Protocol Scope 3 Standard, category 1 (purchased goods and services)"]
-    tests: [GRN-T01]
+    tests: [GRN-T01, GRN-T08]
     en:
       title: Monthly report of energy use and emissions
       description: The operations team SHOULD report the energy use in kWh and the emissions in kg CO2e of each environment every month, based on the hosting provider's data or a documented estimation method.
@@ -487,3 +487,35 @@ tests:
           expected: Jobbet schemaläggs och startas inte direkt.
         - action: Läs jobbets start- och sluttid när det har körts.
           expected: Det startade mellan 01.00 och 03.00 och blev klart före 08.00.
+
+  - id: GRN-T08
+    priority: low
+    execution: manual
+    tags: [measurement, reconciliation]
+    refs: ["GHG Protocol Scope 3 Standard"]
+    en:
+      title: Energy report matches the provider's data
+      description: Compares one month's energy and emissions report with the hosting provider's own data for the same period.
+      preconditions: The energy and emissions report of last month; the hosting provider's emissions export or invoice data for the same month.
+      expected: The report's totals agree with the provider's data within 5 %, or the difference is explained.
+      steps:
+        - action: Sum the kWh and kg CO2e of all environments in the report.
+          expected: Totals are obtained.
+        - action: Read the same totals from the provider's export for the same month and accounts.
+          expected: Totals are obtained.
+        - action: Compare the two pairs of totals.
+          expected: They differ by at most 5 %, or the report states the cause of the difference.
+          data: "tolerance 5 %"
+    sv:
+      title: Energirapporten stämmer med leverantörens data
+      description: Jämför en månads rapport över energi och utsläpp med driftleverantörens egna data för samma period.
+      preconditions: Rapporten över energi och utsläpp för förra månaden; driftleverantörens export av utsläppsdata eller fakturaunderlag för samma månad.
+      expected: Rapportens summor stämmer med leverantörens data inom 5 %, eller så förklaras skillnaden.
+      steps:
+        - action: Summera kWh och kg CO2e för alla miljöer i rapporten.
+          expected: Summor tas fram.
+        - action: Läs samma summor ur leverantörens export för samma månad och konton.
+          expected: Summor tas fram.
+        - action: Jämför de två paren av summor.
+          expected: De skiljer sig med högst 5 %, eller så anger rapporten orsaken till skillnaden.
+          data: "tolerans 5 %"

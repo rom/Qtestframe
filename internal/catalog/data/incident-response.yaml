@@ -65,7 +65,7 @@ requirements:
     priority: high
     tags: [on-call, escalation]
     refs: ["Google SRE Book ch. 11 (being on-call)", "ISO/IEC 27001:2022 Annex A 5.26 (response to information security incidents)"]
-    tests: [INC-T02]
+    tests: [INC-T02, INC-T07]
     en:
       title: On-call rotation around the clock
       description: The organisation MUST staff an on-call rotation that covers all hours of the year, with automatic escalation to a second person when an alert is not acknowledged within 15 minutes.
@@ -285,7 +285,7 @@ requirements:
     priority: medium
     tags: [exercise, tabletop]
     refs: ["NIST SP 800-84 (guide to test, training and exercise programs)", "ISO/IEC 27001:2022 Annex A 5.24"]
-    tests: [INC-T03]
+    tests: [INC-T03, INC-T08]
     en:
       title: Incident exercises twice a year
       description: The organisation SHOULD run an incident response exercise at least every 6 months, alternating between a service outage and a security breach scenario.
@@ -505,3 +505,61 @@ tests:
         - action: Räkna ut andelen åtgärder som stängdes inom 30 dagar.
           expected: Minst 90 % stängdes inom 30 dagar, och varje övrig åtgärd har ett dokumenterat skäl och ett nytt datum.
           data: "gränsvärde 90 %"
+
+  - id: INC-T07
+    priority: high
+    execution: automated
+    tags: [on-call, schedule]
+    refs: []
+    en:
+      title: On-call schedule has no gaps
+      description: A script reads the on-call schedule of the next 4 weeks and checks that every hour has a primary and a secondary.
+      preconditions: Read access to the on-call tool's API; the time zone of the schedule is known.
+      expected: Each of the 672 hours has a primary and a secondary who are different people.
+      steps:
+        - action: Fetch the schedule for the next 4 weeks in 1-hour slots.
+          expected: 672 slots are returned.
+          data: "4 weeks × 168 hours"
+        - action: Check each slot for a primary and a secondary.
+          expected: Every slot has both, and they are different people.
+        - action: Check the slots around the next daylight saving time change, if it falls in the period.
+          expected: No slot is missing or doubled at the change.
+    sv:
+      title: Jourschemat har inga luckor
+      description: Ett skript läser jourschemat för de kommande 4 veckorna och kontrollerar att varje timme har en primär och en sekundär person.
+      preconditions: Läsåtkomst till jourverktygets API; schemats tidszon är känd.
+      expected: Var och en av de 672 timmarna har en primär och en sekundär person som är olika personer.
+      steps:
+        - action: Hämta schemat för de kommande 4 veckorna i intervall om 1 timme.
+          expected: 672 intervall returneras.
+          data: "4 veckor × 168 timmar"
+        - action: Kontrollera att varje intervall har en primär och en sekundär person.
+          expected: Varje intervall har båda, och de är olika personer.
+        - action: Kontrollera intervallen kring nästa övergång till eller från sommartid, om den infaller under perioden.
+          expected: Inget intervall saknas eller är dubblerat vid övergången.
+
+  - id: INC-T08
+    priority: medium
+    execution: manual
+    tags: [exercise, review]
+    refs: ["NIST SP 800-84"]
+    en:
+      title: Exercise history and follow-up
+      description: Reads the exercise reports of the last 12 months and checks their scenarios, findings and actions.
+      preconditions: The exercise reports of the last 12 months; the action tracker.
+      expected: There is an exercise in each 6-month period, both scenario types are covered, and each finding has an action.
+      steps:
+        - action: List the exercises of the last 12 months with date and scenario type.
+          expected: Each 6-month period has at least one exercise, and both an outage and a security breach scenario appear.
+        - action: For each exercise, compare the findings in the report with the action tracker.
+          expected: Each finding has an action with an owner.
+    sv:
+      title: Övningshistorik och uppföljning
+      description: Läser övningsrapporterna de senaste 12 månaderna och kontrollerar deras scenarier, iakttagelser och åtgärder.
+      preconditions: Övningsrapporterna de senaste 12 månaderna; åtgärdslistan.
+      expected: Det finns en övning under varje halvårsperiod, båda typerna av scenario täcks och varje iakttagelse har en åtgärd.
+      steps:
+        - action: Lista övningarna de senaste 12 månaderna med datum och typ av scenario.
+          expected: Varje halvårsperiod har minst en övning, och både ett scenario för driftavbrott och ett för säkerhetsintrång förekommer.
+        - action: Jämför iakttagelserna i rapporten med åtgärdslistan för varje övning.
+          expected: Varje iakttagelse har en åtgärd med en ansvarig.

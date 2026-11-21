@@ -193,7 +193,7 @@ requirements:
     priority: high
     tags: [refund, validation]
     refs: ["PCI DSS v4.0 Requirement 6.2.4 (business logic abuse)"]
-    tests: [PAY-T05]
+    tests: [PAY-T05, PAY-T09]
     en:
       title: Refunds cannot exceed the captured amount
       description: The system MUST reject a refund when the sum of all refunds of a payment would exceed the captured amount.
@@ -517,3 +517,35 @@ tests:
           data: "https://unlisted.example/collect.js"
         - action: Vänta på ändringsdetekteringen.
           expected: Ett larm som namnger den ändrade sidan och skriptet kommer inom 24 timmar.
+
+  - id: PAY-T09
+    priority: high
+    execution: automated
+    tags: [refund, concurrency]
+    refs: []
+    en:
+      title: Parallel refund requests under load
+      description: Sends 100 parallel refund requests for one payment and checks that the refunded total never exceeds the captured amount.
+      preconditions: A captured test payment of 100.00 SEK in the provider's test environment; a script that can send 100 requests at the same time.
+      expected: The accepted refunds add up to at most 100.00 SEK, and the system's and the provider's totals match.
+      steps:
+        - action: Send 100 refund requests of 5.00 SEK each at the same time.
+          expected: At most 20 requests are accepted and the rest are rejected with a message that the remaining amount is too low.
+          data: "100 × 5.00 SEK, in parallel"
+        - action: Read the refunded total of the payment in the system.
+          expected: The total is at most 100.00 SEK.
+        - action: Read the refunded total in the provider's dashboard.
+          expected: It equals the total in the system.
+    sv:
+      title: Parallella begäranden om återbetalning under last
+      description: Skickar 100 parallella begäranden om återbetalning för en betalning och kontrollerar att den återbetalda summan aldrig överstiger det dragna beloppet.
+      preconditions: En dragen testbetalning på 100,00 SEK i leverantörens testmiljö; ett skript som kan skicka 100 anrop samtidigt.
+      expected: De godkända återbetalningarna blir sammanlagt högst 100,00 SEK, och summorna i systemet och hos leverantören stämmer överens.
+      steps:
+        - action: Skicka 100 begäranden om återbetalning på 5,00 SEK vardera samtidigt.
+          expected: Högst 20 begäranden godtas och resten avvisas med ett meddelande om att återstående belopp är för lågt.
+          data: "100 × 5,00 SEK, parallellt"
+        - action: Läs den återbetalda summan för betalningen i systemet.
+          expected: Summan är högst 100,00 SEK.
+        - action: Läs den återbetalda summan i leverantörens kontrollpanel.
+          expected: Den är lika med summan i systemet.

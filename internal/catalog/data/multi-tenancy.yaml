@@ -197,7 +197,7 @@ requirements:
     priority: high
     tags: [deletion, offboarding]
     refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 Annex A 8.10 (information deletion)"]
-    tests: [TEN-T07]
+    tests: [TEN-T07, TEN-T09]
     en:
       title: Deletion of a tenant after the contract ends
       description: The system MUST delete a tenant's data from primary storage, search indexes and caches within 30 days after the contract has ended.
@@ -529,3 +529,35 @@ tests:
           data: "godkännande + 24 h"
         - action: Öppna kundens granskningslogg.
           expected: Åtkomsten visas med tekniker, godkännare, starttid och sluttid.
+
+  - id: TEN-T09
+    priority: medium
+    execution: automated
+    tags: [deletion, orphaned-data]
+    refs: []
+    en:
+      title: Scheduled check for data of closed tenants
+      description: A scheduled job counts rows, files, index entries and cache entries per tenant id and compares them with the list of active and closing tenants.
+      preconditions: The check job runs in a test environment with one active tenant, one tenant closed 10 days ago and one closed 31 days ago.
+      expected: The job reports data only for the tenant closed more than 30 days ago that was left in place on purpose.
+      steps:
+        - action: Leave one record of the tenant closed 31 days ago in a table and run the check job.
+          expected: The job reports that tenant with the table and the number of rows.
+          data: "1 row left in the items table"
+        - action: Read the job's result for the tenant closed 10 days ago.
+          expected: It is not reported, because its deletion period has not passed.
+        - action: Delete the leftover record and run the job again.
+          expected: The job reports no data for closed tenants.
+    sv:
+      title: Schemalagd kontroll av data från avslutade kunder
+      description: Ett schemalagt jobb räknar rader, filer, indexposter och cacheposter per kund-id och jämför dem med listan över aktiva och avslutade kunder.
+      preconditions: Kontrolljobbet körs i en testmiljö med en aktiv kund, en kund som avslutades för 10 dagar sedan och en som avslutades för 31 dagar sedan.
+      expected: Jobbet rapporterar data bara för den kund som avslutades för mer än 30 dagar sedan och där data avsiktligt lämnats kvar.
+      steps:
+        - action: Lämna kvar en post från kunden som avslutades för 31 dagar sedan i en tabell och kör kontrolljobbet.
+          expected: Jobbet rapporterar kunden med tabellen och antalet rader.
+          data: "1 rad kvar i tabellen items"
+        - action: Läs jobbets resultat för kunden som avslutades för 10 dagar sedan.
+          expected: Den rapporteras inte, eftersom dess raderingsperiod inte har gått ut.
+        - action: Radera den kvarlämnade posten och kör jobbet igen.
+          expected: Jobbet rapporterar inga data för avslutade kunder.

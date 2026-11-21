@@ -203,7 +203,7 @@ requirements:
     priority: high
     tags: [archive, path-traversal, zip-slip]
     refs: ["CWE-22 (path traversal)", "OWASP File Upload Cheat Sheet"]
-    tests: [UPLS-T05]
+    tests: [UPLS-T05, UPLS-T09]
     en:
       title: Archive entries stay in the target directory
       description: The system MUST reject an uploaded archive that contains an entry with an absolute path, a ".." segment or a symbolic link.
@@ -545,3 +545,35 @@ tests:
           expected: Namnet visas som text, ingen varningsruta visas och tecknet för höger-till-vänster-skrift finns inte kvar.
         - action: Ladda ner filen och läs det föreslagna filnamnet.
           expected: Namnet innehåller inget snedstreck eller omvänt snedstreck.
+
+  - id: UPLS-T09
+    priority: high
+    execution: automated
+    tags: [archive, zip-slip, unit-test]
+    refs: ["CWE-22"]
+    en:
+      title: Archive extraction rejects unsafe entries
+      description: A unit test feeds the archive extraction routine with entries that point outside the target directory.
+      preconditions: The extraction routine can be called from a unit test with a temporary target directory.
+      expected: Each unsafe entry makes the extraction fail before any file is written.
+      steps:
+        - action: Extract a test archive with the entry ../outside.txt.
+          expected: The routine returns an error and the target's parent directory contains no outside.txt.
+        - action: Extract test archives with an absolute path entry, a Windows path with a drive letter and a backslash traversal.
+          expected: Each extraction returns an error and writes no file.
+          data: "/etc/passwd, C:\\temp\\x.txt, ..\\x.txt"
+        - action: Extract a test archive with a symbolic link that points to /etc.
+          expected: The routine returns an error and creates no link.
+    sv:
+      title: Uppackning av arkiv avvisar osäkra poster
+      description: Ett enhetstest matar rutinen för uppackning av arkiv med poster som pekar utanför målkatalogen.
+      preconditions: Uppackningsrutinen kan anropas från ett enhetstest med en tillfällig målkatalog.
+      expected: Varje osäker post gör att uppackningen misslyckas innan någon fil skrivs.
+      steps:
+        - action: Packa upp ett testarkiv med posten ../outside.txt.
+          expected: Rutinen returnerar ett fel och målkatalogens överordnade katalog innehåller ingen outside.txt.
+        - action: Packa upp testarkiv med en post med absolut sökväg, en Windows-sökväg med enhetsbokstav och en traversering med omvända snedstreck.
+          expected: Varje uppackning returnerar ett fel och skriver ingen fil.
+          data: "/etc/passwd, C:\\temp\\x.txt, ..\\x.txt"
+        - action: Packa upp ett testarkiv med en symbolisk länk som pekar på /etc.
+          expected: Rutinen returnerar ett fel och skapar ingen länk.

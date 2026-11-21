@@ -59,7 +59,7 @@ requirements:
     priority: high
     tags: [dmarc, reporting]
     refs: ["RFC 7489 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices"]
-    tests: [MAILS-T01]
+    tests: [MAILS-T01, MAILS-T09]
     en:
       title: DMARC policy that rejects or quarantines
       description: Each sending domain SHOULD publish a DMARC record with the policy reject or quarantine and an address for aggregate reports.
@@ -515,3 +515,35 @@ tests:
           expected: Exakt 50 skickades.
         - action: Öppna administratörens brevlåda.
           expected: En avisering namnger användaren och gränsen som nåddes.
+
+  - id: MAILS-T09
+    priority: medium
+    execution: manual
+    tags: [dmarc, reporting]
+    refs: ["RFC 7489 §7 (DMARC reporting)"]
+    en:
+      title: DMARC aggregate reports are received and read
+      description: Checks that aggregate reports reach the report address and that unknown senders in them are followed up.
+      preconditions: Access to the DMARC report mailbox or the report analysis tool; the list of services allowed to send for the domain.
+      expected: Reports arrive daily from at least two receivers, and each unknown sending source has been investigated.
+      steps:
+        - action: List the aggregate reports received in the last 7 days.
+          expected: Reports from at least two different receivers arrive for each day.
+        - action: Compare the sending IP addresses in the reports with the allowed services.
+          expected: Each source is an allowed service, or it is marked as investigated with a conclusion.
+        - action: Read the share of messages that passed DMARC.
+          expected: At least 99 % of the messages from allowed services pass.
+          data: "threshold 99 %"
+    sv:
+      title: Sammanställda DMARC-rapporter tas emot och läses
+      description: Kontrollerar att sammanställda rapporter når rapportadressen och att okända avsändare i dem följs upp.
+      preconditions: Åtkomst till brevlådan för DMARC-rapporter eller verktyget för analys av rapporter; listan över tjänster som får skicka för domänen.
+      expected: Rapporter kommer dagligen från minst två mottagare, och varje okänd avsändarkälla har utretts.
+      steps:
+        - action: Lista de sammanställda rapporter som tagits emot de senaste 7 dagarna.
+          expected: Rapporter från minst två olika mottagare kommer för varje dag.
+        - action: Jämför de avsändande IP-adresserna i rapporterna med de tillåtna tjänsterna.
+          expected: Varje källa är en tillåten tjänst, eller så är den markerad som utredd med en slutsats.
+        - action: Läs andelen meddelanden som klarade DMARC.
+          expected: Minst 99 % av meddelandena från tillåtna tjänster klarar kontrollen.
+          data: "gränsvärde 99 %"

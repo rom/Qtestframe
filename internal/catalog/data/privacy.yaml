@@ -253,6 +253,72 @@ requirements:
         - method: inspection
           text: Ett urval på 100 personposter från varje testmiljö innehåller inget namn, ingen e-postadress och inget personnummer som finns i produktion.
 
+  - id: PRIV-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [dpia, risk-assessment]
+    refs: ["GDPR Art. 35 (data protection impact assessment)", "EDPB/WP29 Guidelines on DPIA (WP248 rev.01)"]
+    tests: [PRIV-T12]
+    en:
+      title: Impact assessment before high-risk processing
+      description: The organisation MUST complete a data protection impact assessment before it starts processing that meets two or more of the high-risk criteria in the supervisory authority's list.
+      rationale: An assessment done before launch finds the risks while the design can still change, and the law requires it for these kinds of processing.
+      criteria:
+        - method: review
+          text: Each processing activity in the record that meets two or more criteria has an assessment dated before the start of processing, with risks, measures and the data protection officer's opinion.
+    sv:
+      title: Konsekvensbedömning före behandling med hög risk
+      description: Organisationen SKA genomföra en konsekvensbedömning avseende dataskydd innan den påbörjar en behandling som uppfyller två eller fler av kriterierna för hög risk i tillsynsmyndighetens förteckning.
+      rationale: En bedömning före lansering hittar riskerna medan utformningen fortfarande kan ändras, och lagen kräver den för den här typen av behandlingar.
+      criteria:
+        - method: review
+          text: Varje behandling i registret som uppfyller två eller fler kriterier har en bedömning daterad före behandlingens start, med risker, åtgärder och dataskyddsombudets yttrande.
+
+  - id: PRIV-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [third-country-transfer, sub-processors]
+    refs: ["GDPR Art. 44–46 (transfers to third countries)", "GDPR Art. 28(2) (engaging sub-processors)", "EDPB Recommendations 01/2020 on supplementary measures"]
+    tests: [PRIV-T13]
+    en:
+      title: Transfers outside the EEA have a documented safeguard
+      description: Each transfer of personal data to a recipient outside the EEA MUST rest on an adequacy decision or on standard contractual clauses with a recorded transfer impact assessment.
+      rationale: Data in a third country can be reached by authorities there, and the exporter answers for the protection level.
+      criteria:
+        - method: review
+          text: The list of sub-processors shows the country of each, and each one outside the EEA has an adequacy decision or signed clauses and an assessment.
+    sv:
+      title: Överföringar utanför EES har en dokumenterad skyddsåtgärd
+      description: Varje överföring av personuppgifter till en mottagare utanför EES SKA vila på ett beslut om adekvat skyddsnivå eller på standardavtalsklausuler med en dokumenterad bedömning av överföringen.
+      rationale: Uppgifter i ett tredjeland kan nås av myndigheter där, och den som överför ansvarar för skyddsnivån.
+      criteria:
+        - method: review
+          text: Förteckningen över underbiträden visar landet för var och ett, och vart och ett utanför EES har ett beslut om adekvat skyddsnivå eller undertecknade klausuler och en bedömning.
+
+  - id: PRIV-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [pseudonymisation, analytics]
+    refs: ["GDPR Art. 4(5) and Art. 25(1) (pseudonymisation, data protection by design)", "ENISA: Pseudonymisation techniques and best practices (2019)"]
+    tests: [PRIV-T14]
+    en:
+      title: Analytics data is pseudonymised
+      description: Data copied to analytics and reporting stores SHOULD replace names, email addresses and identity numbers with keyed pseudonyms, with the key held outside the analytics environment.
+      rationale: Analysts rarely need to know who a person is, and pseudonyms reduce the harm if the analytics store leaks.
+      criteria:
+        - method: inspection
+          text: A sample of 1 000 rows in the analytics store contains no clear-text names, email addresses or identity numbers, and the pseudonymisation key is not readable from the analytics environment.
+    sv:
+      title: Analysdata pseudonymiseras
+      description: Data som kopieras till lager för analys och rapportering BÖR ersätta namn, e-postadresser och personnummer med nyckelbaserade pseudonymer, där nyckeln förvaras utanför analysmiljön.
+      rationale: Analytiker behöver sällan veta vem en person är, och pseudonymer minskar skadan om analyslagret läcker.
+      criteria:
+        - method: inspection
+          text: Ett urval av 1 000 rader i analyslagret innehåller inga namn, e-postadresser eller personnummer i klartext, och pseudonymiseringsnyckeln går inte att läsa från analysmiljön.
+
 tests:
   - id: PRIV-T01
     priority: high
@@ -569,3 +635,97 @@ tests:
           expected: 100 poster per miljö dras.
         - action: Hasha namn, e-postadress och personnummer för varje post och jämför med listan från produktion.
           expected: Ingen träff hittas.
+
+  - id: PRIV-T12
+    priority: high
+    execution: manual
+    tags: [dpia, review]
+    refs: ["GDPR Art. 35"]
+    en:
+      title: Impact assessments exist for high-risk processing
+      description: Screens the record of processing activities against the high-risk criteria and checks the assessments.
+      preconditions: The record of processing activities; the supervisory authority's list of high-risk criteria; the assessment documents.
+      expected: Each activity meeting two or more criteria has a complete assessment dated before processing started.
+      steps:
+        - action: Score each processing activity against the high-risk criteria.
+          expected: The activities meeting two or more criteria are listed.
+          data: "criteria such as large scale, sensitive data, systematic monitoring, new technology"
+        - action: For each listed activity, open its assessment and compare its date with the start of processing.
+          expected: The assessment exists and is dated before the start.
+        - action: Check each assessment for risks, measures and the data protection officer's opinion.
+          expected: All three are present.
+    sv:
+      title: Konsekvensbedömningar finns för behandlingar med hög risk
+      description: Går igenom registret över behandlingar mot kriterierna för hög risk och kontrollerar bedömningarna.
+      preconditions: Registret över behandlingar; tillsynsmyndighetens förteckning över kriterier för hög risk; bedömningsdokumenten.
+      expected: Varje behandling som uppfyller två eller fler kriterier har en fullständig bedömning daterad före behandlingens start.
+      steps:
+        - action: Bedöm varje behandling mot kriterierna för hög risk.
+          expected: Behandlingarna som uppfyller två eller fler kriterier listas.
+          data: "kriterier som stor omfattning, känsliga uppgifter, systematisk övervakning, ny teknik"
+        - action: Öppna bedömningen för varje listad behandling och jämför dess datum med behandlingens start.
+          expected: Bedömningen finns och är daterad före starten.
+        - action: Kontrollera att varje bedömning har risker, åtgärder och dataskyddsombudets yttrande.
+          expected: Alla tre finns.
+
+  - id: PRIV-T13
+    priority: high
+    execution: manual
+    tags: [third-country-transfer, sub-processors]
+    refs: []
+    en:
+      title: Safeguards for each transfer outside the EEA
+      description: Compares the list of sub-processors and their locations with the transfer documentation.
+      preconditions: The list of sub-processors with countries; the signed clauses and transfer assessments; the current list of adequacy decisions.
+      expected: Each recipient outside the EEA has an adequacy decision or signed clauses with an assessment.
+      steps:
+        - action: Mark each sub-processor whose processing or support access takes place outside the EEA.
+          expected: A list of third-country recipients is obtained.
+        - action: For each, check whether its country has an adequacy decision.
+          expected: The decision is found, or the recipient is passed to the next step.
+        - action: For each recipient without an adequacy decision, find the signed clauses and the transfer assessment.
+          expected: Both documents exist and name the recipient.
+    sv:
+      title: Skyddsåtgärder för varje överföring utanför EES
+      description: Jämför förteckningen över underbiträden och deras placering med dokumentationen av överföringar.
+      preconditions: Förteckningen över underbiträden med länder; undertecknade klausuler och bedömningar av överföringar; den aktuella listan över beslut om adekvat skyddsnivå.
+      expected: Varje mottagare utanför EES har ett beslut om adekvat skyddsnivå eller undertecknade klausuler med en bedömning.
+      steps:
+        - action: Markera varje underbiträde vars behandling eller supportåtkomst sker utanför EES.
+          expected: En lista över mottagare i tredjeland tas fram.
+        - action: Kontrollera för var och en om landet har ett beslut om adekvat skyddsnivå.
+          expected: Beslutet hittas, eller så går mottagaren vidare till nästa steg.
+        - action: Leta upp de undertecknade klausulerna och bedömningen av överföringen för varje mottagare utan beslut om adekvat skyddsnivå.
+          expected: Båda dokumenten finns och namnger mottagaren.
+
+  - id: PRIV-T14
+    priority: medium
+    execution: automated
+    tags: [pseudonymisation, analytics]
+    refs: []
+    en:
+      title: No clear-text identities in the analytics store
+      description: Samples rows from the analytics store, searches them for identifying values and checks where the pseudonymisation key can be read.
+      preconditions: Read access to the analytics store with an analyst account; a list of 100 known synthetic names, email addresses and identity numbers loaded into the source system.
+      expected: No known value is found in clear text, and the analyst account cannot read the key.
+      steps:
+        - action: Draw 1 000 random rows from each table in the analytics store.
+          expected: The rows are retrieved.
+        - action: Search the rows for the known values and for patterns of email addresses and identity numbers.
+          expected: No clear-text match is found.
+          data: "100 known values; e-mail and identity number patterns"
+        - action: With the analyst account, try to read the pseudonymisation key from the secrets manager.
+          expected: Access is denied.
+    sv:
+      title: Inga identiteter i klartext i analyslagret
+      description: Tar ett urval av rader i analyslagret, söker efter identifierande värden och kontrollerar varifrån pseudonymiseringsnyckeln kan läsas.
+      preconditions: Läsåtkomst till analyslagret med ett analytikerkonto; en lista med 100 kända syntetiska namn, e-postadresser och personnummer som lagts in i källsystemet.
+      expected: Inget känt värde hittas i klartext, och analytikerkontot kan inte läsa nyckeln.
+      steps:
+        - action: Dra 1 000 slumpvisa rader ur varje tabell i analyslagret.
+          expected: Raderna hämtas.
+        - action: Sök i raderna efter de kända värdena och efter mönster för e-postadresser och personnummer.
+          expected: Ingen träff i klartext hittas.
+          data: "100 kända värden; mönster för e-post och personnummer"
+        - action: Försök läsa pseudonymiseringsnyckeln från hemlighetshanteraren med analytikerkontot.
+          expected: Åtkomsten nekas.

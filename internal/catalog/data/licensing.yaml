@@ -79,7 +79,7 @@ requirements:
     priority: high
     tags: [copyleft, source-offer, gpl]
     refs: ["GNU GPL v3 §6 (conveying non-source forms)", "GNU LGPL v2.1 §6", "Mozilla Public License 2.0 §3.2"]
-    tests: [LIC-T04]
+    tests: [LIC-T04, LIC-T08]
     en:
       title: Source code is offered for distributed copyleft components
       description: For each copyleft component the product distributes in binary form, the organisation MUST provide the corresponding source code or a written offer of it valid for at least 3 years.
@@ -451,3 +451,31 @@ tests:
           expected: Varje fil har en källa, en licens och en tillåten användning.
         - action: Läs licensen hos källan för fem slumpvis valda filer.
           expected: Licensen tillåter användningen i produkten, även kommersiell användning där det är aktuellt.
+
+  - id: LIC-T08
+    priority: high
+    execution: automated
+    tags: [copyleft, release-gate]
+    refs: []
+    en:
+      title: Release is blocked when a copyleft source is missing
+      description: The release pipeline compares the copyleft components in the SBOM with the source archives and offers attached to the release.
+      preconditions: A test release candidate with one LGPL component; permission to run the release pipeline in a test project.
+      expected: The release is blocked while the source archive or offer is missing and allowed once it is attached.
+      steps:
+        - action: Run the release pipeline without the source archive for the LGPL component.
+          expected: The pipeline stops and names the component that lacks source or an offer.
+          data: "SPDX: LGPL-2.1-or-later"
+        - action: Attach the source archive of the exact version and run the pipeline again.
+          expected: The check passes and the release is published with the archive.
+    sv:
+      title: Release stoppas när källkod för copyleft saknas
+      description: Releasepipelinen jämför copyleft-komponenterna i SBOM med källkodsarkiven och erbjudandena som bifogats releasen.
+      preconditions: En testkandidat för release med en LGPL-komponent; behörighet att köra releasepipelinen i ett testprojekt.
+      expected: Releasen stoppas så länge källkodsarkivet eller erbjudandet saknas och tillåts när det har bifogats.
+      steps:
+        - action: Kör releasepipelinen utan källkodsarkivet för LGPL-komponenten.
+          expected: Pipelinen stoppar och namnger komponenten som saknar källkod eller erbjudande.
+          data: "SPDX: LGPL-2.1-or-later"
+        - action: Bifoga källkodsarkivet för exakt den versionen och kör pipelinen igen.
+          expected: Kontrollen går igenom och releasen publiceras med arkivet.
