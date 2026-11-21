@@ -1,0 +1,634 @@
+area: eq-maintenance
+prefix: EQMNT
+group: operations
+catalogue: equipment
+name: {en: Calibration, maintenance and spare parts, sv: Kalibrering, underhåll och reservdelar}
+description:
+  en: Keeping equipment accurate and available over its life, covering the register of measuring equipment, metrological traceability and measurement uncertainty after ISO/IEC 17025, calibration status and out-of-tolerance handling, intermediate checks and intervals, preventive maintenance and its records, critical spare parts and their long-term availability, maintainability and repair time, condition monitoring and maintenance key figures.
+  sv: Att hålla utrustningen noggrann och tillgänglig under hela dess liv, med register över mätutrustning, metrologisk spårbarhet och mätosäkerhet enligt ISO/IEC 17025, kalibreringsstatus och hantering av mätvärden utanför tolerans, mellanliggande kontroller och intervall, förebyggande underhåll och dess dokumentation, kritiska reservdelar och deras långsiktiga tillgång, underhållsmässighet och reparationstid, tillståndsövervakning och nyckeltal för underhåll.
+
+requirements:
+  - id: EQMNT-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [measuring-equipment, register, calibration]
+    refs: ["ISO 10012:2003 §7.1 (metrological confirmation)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    tests: [EQMNT-T01]
+    en:
+      title: Register of measuring equipment
+      description: The organisation MUST keep a register of each measuring instrument used for product acceptance or process control, with its unique identifier, location, measuring range, tolerance, calibration interval, last and next calibration date and status.
+      rationale: An instrument that is not in the register is not calibrated on time, and its readings cannot be trusted.
+      criteria:
+        - method: inspection
+          text: A walk through 2 production areas finds no measuring instrument in use that is missing from the register, and each register entry has the eight listed fields.
+          threshold: 0 instruments outside the register
+    sv:
+      title: Register över mätutrustning
+      description: Organisationen SKA föra ett register över varje mätinstrument som används för godkännande av produkter eller styrning av processer, med dess unika identitet, placering, mätområde, tolerans, kalibreringsintervall, datum för senaste och nästa kalibrering och status.
+      rationale: Ett instrument som saknas i registret kalibreras inte i tid, och dess avläsningar går inte att lita på.
+      criteria:
+        - method: inspection
+          text: En rundvandring i 2 produktionsområden hittar inget mätinstrument i bruk som saknas i registret, och varje post i registret har de åtta angivna fälten.
+          threshold: 0 instrument utanför registret
+
+  - id: EQMNT-02
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [traceability, accredited-laboratory, calibration]
+    refs: ["ISO/IEC 17025:2017 §6.5 (metrological traceability)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    tests: [EQMNT-T01]
+    en:
+      title: Calibration traceable to SI units
+      description: Each instrument in the register MUST be calibrated by a laboratory accredited to ISO/IEC 17025 for the quantity and range concerned, or against reference standards that are themselves calibrated by such a laboratory, so that each result is traceable to the SI units.
+      rationale: Without an unbroken chain to national standards, measurements in different places and times cannot be compared or defended.
+      criteria:
+        - method: inspection
+          text: The certificates of 10 sampled instruments carry the accreditation mark of the laboratory with a scope that covers the quantity and range, or refer to reference standards with such certificates.
+    sv:
+      title: Kalibrering spårbar till SI-enheter
+      description: Varje instrument i registret SKA kalibreras av ett laboratorium som är ackrediterat enligt ISO/IEC 17025 för den aktuella storheten och det aktuella mätområdet, eller mot referensnormaler som själva kalibrerats av ett sådant laboratorium, så att varje resultat är spårbart till SI-enheterna.
+      rationale: Utan en obruten kedja till nationella normaler går mätningar på olika platser och vid olika tidpunkter inte att jämföra eller försvara.
+      criteria:
+        - method: inspection
+          text: Intygen för 10 instrument i ett stickprov bär laboratoriets ackrediteringsmärke med en omfattning som täcker storheten och området, eller hänvisar till referensnormaler med sådana intyg.
+
+  - id: EQMNT-03
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [measurement-uncertainty, test-uncertainty-ratio]
+    refs: ["ISO/IEC 17025:2017 §7.6 (evaluation of measurement uncertainty)", "JCGM 100:2008 (GUM)"]
+    tests: [EQMNT-T02]
+    en:
+      title: Measurement uncertainty small against the tolerance
+      description: Each calibration certificate MUST state the expanded measurement uncertainty with its coverage factor, and for each instrument used for product acceptance the uncertainty MUST be no more than one quarter of the product tolerance it checks.
+      rationale: A measurement whose uncertainty is close to the tolerance cannot tell good parts from bad ones.
+      criteria:
+        - method: analysis
+          text: For 10 sampled instruments the certificate states uncertainty and coverage factor, and the ratio of product tolerance to uncertainty is at least 4.
+          threshold: ratio ≥ 4:1
+    sv:
+      title: Mätosäkerhet som är liten i förhållande till toleransen
+      description: Varje kalibreringsintyg SKA ange den utvidgade mätosäkerheten med täckningsfaktor, och för varje instrument som används för godkännande av produkter SKA osäkerheten vara högst en fjärdedel av den produkttolerans som instrumentet kontrollerar.
+      rationale: En mätning vars osäkerhet ligger nära toleransen kan inte skilja bra detaljer från dåliga.
+      criteria:
+        - method: analysis
+          text: För 10 instrument i ett stickprov anger intyget osäkerhet och täckningsfaktor, och kvoten mellan produkttolerans och osäkerhet är minst 4.
+          threshold: kvot ≥ 4:1
+
+  - id: EQMNT-04
+    type: functional
+    obligation: must_not
+    priority: critical
+    tags: [calibration-status, overdue, blocking]
+    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    tests: [EQMNT-T03]
+    en:
+      title: No use of an instrument with overdue calibration
+      description: An instrument whose calibration is overdue MUST NOT be usable for measurements that are recorded, so that the data collection system rejects its readings and its label shows the status.
+      rationale: Readings from an overdue instrument may be wrong, and blocking them is more effective than relying on people to check labels.
+      criteria:
+        - method: test
+          text: An instrument whose next calibration date is set to yesterday in the register is rejected by the data collection system with a message, and its label shows the overdue status.
+    sv:
+      title: Ingen användning av instrument med försenad kalibrering
+      description: Ett instrument vars kalibrering är försenad SKA INTE gå att använda för mätningar som registreras, så att datainsamlingssystemet avvisar dess avläsningar och dess etikett visar statusen.
+      rationale: Avläsningar från ett försenat instrument kan vara felaktiga, och att spärra dem är verksammare än att förlita sig på att personalen kontrollerar etiketter.
+      criteria:
+        - method: test
+          text: Ett instrument vars datum för nästa kalibrering sätts till i går i registret avvisas av datainsamlingssystemet med ett meddelande, och dess etikett visar att kalibreringen är försenad.
+
+  - id: EQMNT-05
+    type: business
+    obligation: must
+    priority: critical
+    tags: [out-of-tolerance, impact-assessment, product-recall]
+    refs: ["ISO 9001:2015 §7.1.5 (monitoring and measuring resources)", "ISO 10012:2003 §8.3 (control of nonconforming measurement management systems)"]
+    tests: [EQMNT-T04]
+    en:
+      title: Impact assessed when an instrument is found out of tolerance
+      description: When a calibration finds an instrument outside its tolerance, the organisation MUST identify the products and process decisions that relied on it since its last valid calibration, assess the effect within 5 working days, and record the decision on each affected lot.
+      rationale: Products accepted with a faulty instrument may be nonconforming, and the decision has to be made before they cause harm.
+      criteria:
+        - method: inspection
+          text: Each out-of-tolerance finding of the last 12 months has a list of affected lots, an assessment dated within 5 working days and a decision per lot.
+          threshold: assessment ≤ 5 working days
+    sv:
+      title: Påverkan bedöms när ett instrument visar sig ligga utanför toleransen
+      description: När en kalibrering visar att ett instrument ligger utanför sin tolerans SKA organisationen identifiera de produkter och processbeslut som har förlitat sig på det sedan senaste giltiga kalibreringen, bedöma påverkan inom 5 arbetsdagar och registrera beslutet för varje berört parti.
+      rationale: Produkter som godkänts med ett felaktigt instrument kan vara avvikande, och beslutet behöver fattas innan de orsakar skada.
+      criteria:
+        - method: inspection
+          text: Varje fynd utanför tolerans de senaste 12 månaderna har en lista över berörda partier, en bedömning daterad inom 5 arbetsdagar och ett beslut per parti.
+          threshold: bedömning ≤ 5 arbetsdagar
+
+  - id: EQMNT-06
+    type: business
+    obligation: should
+    priority: medium
+    tags: [intermediate-checks, calibration]
+    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO/IEC 17025:2017 §7.7 (ensuring the validity of results)"]
+    tests: [EQMNT-T05]
+    en:
+      title: Intermediate checks between calibrations
+      description: Each instrument used for product acceptance SHOULD have an intermediate check against a check standard at least monthly, with the result recorded and a deviation above half the tolerance triggering a recalibration.
+      rationale: Intermediate checks find drift and damage long before the next calibration and limit how many products are affected.
+      criteria:
+        - method: inspection
+          text: The check records of 5 sampled instruments show a check each month, and each deviation above half the tolerance is followed by a recalibration.
+          threshold: at least monthly
+    sv:
+      title: Mellanliggande kontroller mellan kalibreringar
+      description: Varje instrument som används för godkännande av produkter BÖR kontrolleras mot en kontrollnormal minst en gång i månaden, med resultatet registrerat och med ny kalibrering när avvikelsen överstiger halva toleransen.
+      rationale: Mellanliggande kontroller upptäcker drift och skador långt före nästa kalibrering och begränsar hur många produkter som berörs.
+      criteria:
+        - method: inspection
+          text: Kontrollprotokollen för 5 instrument i ett stickprov visar en kontroll varje månad, och varje avvikelse över halva toleransen följs av en ny kalibrering.
+          threshold: minst varje månad
+
+  - id: EQMNT-07
+    type: business
+    obligation: should
+    priority: low
+    tags: [calibration-interval, history]
+    refs: ["ILAC-G24:2022 (guidelines for the determination of recalibration intervals)"]
+    tests: [EQMNT-T05]
+    en:
+      title: Calibration intervals adjusted from history
+      description: The calibration interval of each instrument SHOULD be reviewed at least every 24 months against its calibration history, shortened after an out-of-tolerance finding and lengthened only after at least 3 consecutive in-tolerance results.
+      rationale: Fixed intervals either waste calibration cost or let instruments drift too long, and history shows which.
+      criteria:
+        - method: inspection
+          text: The interval review record of the last 24 months covers each instrument, and each change of interval follows the stated rule.
+          threshold: review ≤ 24 months
+    sv:
+      title: Kalibreringsintervall justeras utifrån historiken
+      description: Kalibreringsintervallet för varje instrument BÖR ses över minst var 24:e månad mot dess kalibreringshistorik, förkortas efter ett fynd utanför tolerans och förlängas först efter minst 3 resultat i följd inom tolerans.
+      rationale: Fasta intervall slösar antingen kalibreringskostnad eller låter instrumenten driva för länge, och historiken visar vilket.
+      criteria:
+        - method: inspection
+          text: Protokollet från översynen av intervall för de senaste 24 månaderna omfattar varje instrument, och varje ändring av intervall följer den angivna regeln.
+          threshold: översyn ≤ 24 månader
+
+  - id: EQMNT-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [preventive-maintenance, cmms, maintenance-plan]
+    refs: ["EN 13306:2017 (maintenance terminology)", "IEC 60300-3-14:2004 (maintenance and maintenance support)"]
+    tests: [EQMNT-T06]
+    en:
+      title: Preventive maintenance plan in the maintenance system
+      description: Each piece of equipment MUST have a preventive maintenance plan in the maintenance management system, based on the supplier's recommendations, with tasks, intervals in time or operating hours, the skills and parts each task needs, and an owner.
+      rationale: Planned maintenance prevents most breakdowns, and a plan that lives only in a manual is not carried out.
+      criteria:
+        - method: inspection
+          text: Each piece of equipment in the asset register has a plan in the system, and the tasks and intervals of 3 sampled plans match the supplier's recommendations or a recorded reason for the deviation.
+    sv:
+      title: Plan för förebyggande underhåll i underhållssystemet
+      description: Varje utrustning SKA ha en plan för förebyggande underhåll i underhållssystemet, grundad på leverantörens rekommendationer, med uppgifter, intervall i tid eller drifttimmar, den kompetens och de delar som varje uppgift behöver och en ansvarig.
+      rationale: Planerat underhåll förhindrar de flesta haverier, och en plan som bara finns i en manual blir inte utförd.
+      criteria:
+        - method: inspection
+          text: Varje utrustning i tillgångsregistret har en plan i systemet, och uppgifterna och intervallen i 3 planer i ett stickprov stämmer med leverantörens rekommendationer eller en registrerad orsak till avvikelsen.
+
+  - id: EQMNT-09
+    type: business
+    obligation: must
+    priority: medium
+    tags: [maintenance-records, work-orders]
+    refs: ["EN 13460:2009 (documentation for maintenance)"]
+    tests: [EQMNT-T06]
+    en:
+      title: Work order record for each maintenance task
+      description: Each preventive and corrective maintenance task MUST be recorded as a work order with the equipment, the start and end time, the person, the parts used, the findings and, for a failure, its cause code.
+      rationale: Maintenance history is the basis for reliability analysis, spare parts planning and interval changes.
+      criteria:
+        - method: inspection
+          text: 20 sampled work orders of the last 3 months each have the six fields, and each corrective work order has a cause code.
+    sv:
+      title: Arbetsorder för varje underhållsuppgift
+      description: Varje förebyggande och avhjälpande underhållsuppgift SKA registreras som en arbetsorder med utrustning, start- och sluttid, person, använda delar, iakttagelser och, vid fel, dess orsakskod.
+      rationale: Underhållshistoriken är grunden för tillförlitlighetsanalys, planering av reservdelar och ändring av intervall.
+      criteria:
+        - method: inspection
+          text: 20 arbetsorder i ett stickprov från de senaste 3 månaderna har var och en de sex fälten, och varje avhjälpande arbetsorder har en orsakskod.
+
+  - id: EQMNT-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [spare-parts, criticality, stock]
+    refs: ["IEC 60300-3-14:2004 (maintenance and maintenance support)", "IEC 60300-3-11:2009 (reliability centred maintenance)"]
+    tests: [EQMNT-T07]
+    en:
+      title: Critical spare parts in stock
+      description: The owner MUST identify the critical spare parts of each piece of equipment through a criticality analysis based on the effect of a failure and the supplier's lead time, and MUST keep each critical part in stock at or above its minimum level.
+      rationale: When a critical part fails without a spare, the equipment stands still for the whole lead time.
+      criteria:
+        - method: inspection
+          text: The criticality analysis lists critical parts with minimum levels, and a stock count of 10 critical parts finds each at or above its minimum.
+    sv:
+      title: Kritiska reservdelar i lager
+      description: Ägaren SKA identifiera de kritiska reservdelarna för varje utrustning genom en kritikalitetsanalys grundad på följden av ett fel och leverantörens ledtid, och hålla varje kritisk del i lager på minst sin miniminivå.
+      rationale: När en kritisk del går sönder utan reserv står utrustningen still under hela ledtiden.
+      criteria:
+        - method: inspection
+          text: Kritikalitetsanalysen anger kritiska delar med miniminivåer, och en inventering av 10 kritiska delar hittar var och en på minst sin miniminivå.
+
+  - id: EQMNT-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [spare-parts, availability, obsolescence, contract]
+    refs: ["IEC 62402:2019 (obsolescence management)"]
+    tests: [EQMNT-T07]
+    en:
+      title: Spare parts available for ten years after delivery
+      description: The supply contract MUST oblige the supplier to keep spare parts available for at least 10 years after delivery and to announce the discontinuation of a part at least 12 months ahead with a last-time-buy offer or a compatible replacement.
+      rationale: Industrial equipment runs for decades, and without a commitment the owner may lose access to parts while the equipment is still needed.
+      criteria:
+        - method: inspection
+          text: The supply contract contains the 10-year availability and the 12-month notice with last-time-buy or replacement.
+          threshold: ≥ 10 years, notice ≥ 12 months
+    sv:
+      title: Reservdelar tillgängliga i tio år efter leverans
+      description: Leveransavtalet SKA förplikta leverantören att hålla reservdelar tillgängliga i minst 10 år efter leverans och att meddela att en del utgår minst 12 månader i förväg med ett erbjudande om sista köp eller en kompatibel ersättning.
+      rationale: Industriell utrustning körs i årtionden, och utan ett åtagande kan ägaren förlora tillgången till delar medan utrustningen fortfarande behövs.
+      criteria:
+        - method: inspection
+          text: Leveransavtalet innehåller tillgången i 10 år och meddelandet 12 månader i förväg med sista köp eller ersättning.
+          threshold: ≥ 10 år, meddelande ≥ 12 månader
+
+  - id: EQMNT-12
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [maintainability, mttr, repair-time]
+    refs: ["IEC 60300-3-10 (maintainability)", "IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
+    tests: [EQMNT-T08]
+    en:
+      title: Replaceable units changed within two hours
+      description: Each line replaceable unit of the equipment MUST be replaceable by a trained technician with the standard tools in at most 2 hours from isolation to restart, as demonstrated during commissioning.
+      rationale: Repair time directly drives availability, and it is decided by the design long before the first failure.
+      criteria:
+        - method: demonstration
+          text: For 5 replaceable units chosen by the buyer, a trained technician completes each replacement and restart within 2 hours.
+          threshold: MTTR ≤ 2 h
+    sv:
+      title: Utbytbara enheter byts inom två timmar
+      description: Varje utbytbar enhet i utrustningen SKA kunna bytas av en utbildad tekniker med standardverktygen på högst 2 timmar från frånskiljning till återstart, vilket visas under idrifttagningen.
+      rationale: Reparationstiden styr direkt tillgängligheten, och den avgörs av konstruktionen långt före det första felet.
+      criteria:
+        - method: demonstration
+          text: För 5 utbytbara enheter som köparen väljer slutför en utbildad tekniker varje byte och återstart inom 2 timmar.
+          threshold: MTTR ≤ 2 h
+
+  - id: EQMNT-13
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [maintenance-access, safety, design]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.6.1 (machinery maintenance)", "Regulation (EU) 2023/1230 Annex III §1.6.2 (access to operating positions and servicing points)"]
+    tests: [EQMNT-T08]
+    en:
+      title: Maintenance points reachable outside the danger zones
+      description: Adjustment, lubrication and routine maintenance points SHOULD be placed outside the danger zones, and each replaceable unit SHOULD be reachable without removing another unit.
+      rationale: Maintenance that needs access to danger zones or removal of other parts takes longer and leads people to work on running machines.
+      criteria:
+        - method: inspection
+          text: A walk-through with the maintenance plan finds each routine point reachable from outside the danger zones, and each replaceable unit reachable without removing another one.
+    sv:
+      title: Underhållspunkter nås utanför riskområdena
+      description: Punkter för justering, smörjning och förebyggande underhåll BÖR placeras utanför riskområdena, och varje utbytbar enhet BÖR gå att nå utan att en annan enhet tas bort.
+      rationale: Underhåll som kräver åtkomst till riskområden eller borttagning av andra delar tar längre tid och leder till att personal arbetar på maskiner som går.
+      criteria:
+        - method: inspection
+          text: En genomgång med underhållsplanen hittar varje rutinpunkt nåbar utanför riskområdena, och varje utbytbar enhet nåbar utan att en annan tas bort.
+
+  - id: EQMNT-14
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [condition-monitoring, vibration, predictive-maintenance]
+    refs: ["ISO 17359:2018 (condition monitoring and diagnostics of machines)", "ISO 20816-1:2016 (measurement and evaluation of machine vibration)"]
+    tests: [EQMNT-T09]
+    en:
+      title: Condition monitoring of critical rotating components
+      description: The vibration and bearing temperature of each critical rotating component SHOULD be monitored at least daily, with an alert to maintenance when a value passes its alert threshold and an alarm when it passes its trip threshold.
+      rationale: Condition monitoring warns of bearing and alignment faults weeks before failure, so repairs can be planned.
+      criteria:
+        - method: test
+          text: A simulated vibration value above the alert threshold creates a maintenance alert, and one above the trip threshold creates an alarm, each within 24 hours.
+          threshold: measurement at least daily
+    sv:
+      title: Tillståndsövervakning av kritiska roterande komponenter
+      description: Vibration och lagertemperatur för varje kritisk roterande komponent BÖR övervakas minst en gång per dygn, med en varning till underhållet när ett värde passerar sin varningsgräns och ett larm när det passerar sin utlösningsgräns.
+      rationale: Tillståndsövervakning varnar för lager- och uppriktningsfel veckor före haveri, så att reparationen kan planeras.
+      criteria:
+        - method: test
+          text: Ett simulerat vibrationsvärde över varningsgränsen ger en varning till underhållet, och ett över utlösningsgränsen ger ett larm, vart och ett inom 24 timmar.
+          threshold: mätning minst varje dygn
+
+  - id: EQMNT-15
+    type: business
+    obligation: should
+    priority: low
+    tags: [maintenance-kpi, availability, mtbf, mttr]
+    refs: ["EN 15341:2019 (maintenance key performance indicators)", "IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
+    tests: [EQMNT-T10]
+    en:
+      title: Monthly maintenance key figures
+      description: The maintenance organisation SHOULD report each month, for each critical piece of equipment, its availability, mean time between failures, mean time to repair and the share of planned maintenance hours, computed from the work order records.
+      rationale: Key figures show whether maintenance is improving and which equipment needs attention.
+      criteria:
+        - method: inspection
+          text: The reports of the last 3 months contain the four figures per critical piece of equipment, and a recalculation of one figure from the work orders gives the same value within 1 %.
+    sv:
+      title: Nyckeltal för underhåll varje månad
+      description: Underhållsorganisationen BÖR varje månad för varje kritisk utrustning rapportera dess tillgänglighet, medeltid mellan fel, medeltid för reparation och andelen planerade underhållstimmar, beräknade ur arbetsordrarna.
+      rationale: Nyckeltal visar om underhållet blir bättre och vilken utrustning som behöver uppmärksamhet.
+      criteria:
+        - method: inspection
+          text: Rapporterna för de senaste 3 månaderna innehåller de fyra nyckeltalen per kritisk utrustning, och en omräkning av ett nyckeltal ur arbetsordrarna ger samma värde inom 1 %.
+
+tests:
+  - id: EQMNT-T01
+    priority: high
+    execution: manual
+    tags: [measuring-equipment, traceability]
+    refs: ["ISO 10012:2003 §7.1 (metrological confirmation)", "ISO/IEC 17025:2017 §6.5 (metrological traceability)"]
+    en:
+      title: Instruments in use are registered and traceably calibrated
+      description: Walks through production areas to find instruments in use and checks their register entries and certificates.
+      preconditions: Access to 2 production areas, the register of measuring equipment and the calibration certificates.
+      expected: Each instrument in use is registered and its certificate shows traceability.
+      steps:
+        - action: Note the identifier of each measuring instrument in use in the 2 areas.
+          expected: Each instrument has an identifier label.
+        - action: Look up each identifier in the register.
+          expected: Each is found with identifier, location, range, tolerance, interval, last and next date and status.
+        - action: Open the certificates of 10 of the instruments.
+          expected: Each carries an accreditation mark with a scope that covers the quantity and range, or refers to accredited reference standards.
+    sv:
+      title: Instrument i bruk är registrerade och spårbart kalibrerade
+      description: Går igenom produktionsområden för att hitta instrument i bruk och kontrollerar deras poster i registret och deras intyg.
+      preconditions: Åtkomst till 2 produktionsområden, registret över mätutrustning och kalibreringsintygen.
+      expected: Varje instrument i bruk är registrerat och dess intyg visar spårbarhet.
+      steps:
+        - action: Anteckna identiteten för varje mätinstrument i bruk i de 2 områdena.
+          expected: Varje instrument har en etikett med identitet.
+        - action: Slå upp varje identitet i registret.
+          expected: Var och en hittas med identitet, placering, område, tolerans, intervall, senaste och nästa datum samt status.
+        - action: Öppna intygen för 10 av instrumenten.
+          expected: Vart och ett bär ett ackrediteringsmärke med en omfattning som täcker storheten och området, eller hänvisar till ackrediterade referensnormaler.
+
+  - id: EQMNT-T02
+    priority: high
+    execution: manual
+    tags: [measurement-uncertainty]
+    refs: ["ISO/IEC 17025:2017 §7.6 (evaluation of measurement uncertainty)"]
+    en:
+      title: Uncertainty against product tolerance
+      description: Compares the stated uncertainty of sampled instruments with the product tolerances they check.
+      preconditions: The certificates of 10 instruments used for product acceptance and the drawings or specifications with the tolerances they check.
+      expected: Each certificate states uncertainty and each ratio is at least 4.
+      steps:
+        - action: Read the expanded uncertainty and coverage factor on each certificate.
+          expected: Both are stated.
+          data: "example: U = 0.002 mm, k = 2"
+        - action: Divide the product tolerance by the uncertainty for each instrument.
+          expected: Each ratio is at least 4.
+    sv:
+      title: Osäkerhet i förhållande till produkttolerans
+      description: Jämför den angivna osäkerheten för instrument i ett stickprov med de produkttoleranser som de kontrollerar.
+      preconditions: Intygen för 10 instrument som används för godkännande av produkter och ritningarna eller specifikationerna med de toleranser de kontrollerar.
+      expected: Varje intyg anger osäkerhet och varje kvot är minst 4.
+      steps:
+        - action: Läs den utvidgade osäkerheten och täckningsfaktorn på varje intyg.
+          expected: Båda anges.
+          data: "exempel: U = 0,002 mm, k = 2"
+        - action: Dividera produkttoleransen med osäkerheten för varje instrument.
+          expected: Varje kvot är minst 4.
+
+  - id: EQMNT-T03
+    priority: critical
+    execution: manual
+    tags: [calibration-status]
+    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)"]
+    en:
+      title: Overdue instrument is rejected by the data collection system
+      description: Sets an instrument's next calibration date to yesterday and tries to record a measurement with it.
+      preconditions: A test instrument in the register, access to change its next calibration date, and a data collection station.
+      expected: The reading is rejected and the label shows the overdue status.
+      steps:
+        - action: Set the instrument's next calibration date to yesterday and print its label.
+          expected: The label shows the overdue status.
+        - action: Record a measurement with the instrument at the station.
+          expected: The reading is rejected with a message naming the overdue calibration.
+    sv:
+      title: Ett försenat instrument avvisas av datainsamlingssystemet
+      description: Sätter ett instruments datum för nästa kalibrering till i går och försöker registrera en mätning med det.
+      preconditions: Ett testinstrument i registret, behörighet att ändra dess datum för nästa kalibrering och en station för datainsamling.
+      expected: Avläsningen avvisas och etiketten visar att kalibreringen är försenad.
+      steps:
+        - action: Sätt instrumentets datum för nästa kalibrering till i går och skriv ut dess etikett.
+          expected: Etiketten visar att kalibreringen är försenad.
+        - action: Registrera en mätning med instrumentet vid stationen.
+          expected: Avläsningen avvisas med ett meddelande om den försenade kalibreringen.
+
+  - id: EQMNT-T04
+    priority: critical
+    execution: manual
+    tags: [out-of-tolerance]
+    refs: ["ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    en:
+      title: Out-of-tolerance findings and their assessments
+      description: Reviews each out-of-tolerance finding of the last 12 months and its follow-up.
+      preconditions: The calibration records with out-of-tolerance findings of the last 12 months, the impact assessments and the lot decisions.
+      expected: Each finding has affected lots, a timely assessment and a decision per lot.
+      steps:
+        - action: List the out-of-tolerance findings from the calibration records.
+          expected: The list is produced.
+        - action: For each finding, read the affected lots, the assessment date and the decisions.
+          expected: Each has a list of lots, an assessment within 5 working days and a decision per lot.
+    sv:
+      title: Fynd utanför tolerans och deras bedömningar
+      description: Granskar varje fynd utanför tolerans de senaste 12 månaderna och hur det följts upp.
+      preconditions: Kalibreringsprotokollen med fynd utanför tolerans för de senaste 12 månaderna, bedömningarna av påverkan och besluten om partier.
+      expected: Varje fynd har berörda partier, en bedömning i tid och ett beslut per parti.
+      steps:
+        - action: Lista fynden utanför tolerans ur kalibreringsprotokollen.
+          expected: Listan tas fram.
+        - action: Läs berörda partier, bedömningsdatum och beslut för varje fynd.
+          expected: Varje fynd har en lista över partier, en bedömning inom 5 arbetsdagar och ett beslut per parti.
+
+  - id: EQMNT-T05
+    priority: medium
+    execution: manual
+    tags: [intermediate-checks, calibration-interval]
+    refs: ["ISO/IEC 17025:2017 §7.7 (ensuring the validity of results)", "ILAC-G24:2022 (guidelines for the determination of recalibration intervals)"]
+    en:
+      title: Intermediate checks and interval review
+      description: Reviews the intermediate check records of sampled instruments and the interval review.
+      preconditions: The check records of 5 instruments for the last 6 months, the calibration history and the latest interval review.
+      expected: Checks are monthly, deviations lead to recalibration, and interval changes follow the rule.
+      steps:
+        - action: Count the checks per month for each instrument and read the deviations.
+          expected: Each month has a check, and each deviation above half the tolerance is followed by a recalibration.
+        - action: Compare each interval change in the review with the calibration history.
+          expected: Shortenings follow an out-of-tolerance finding and lengthenings follow at least 3 in-tolerance results in a row.
+    sv:
+      title: Mellanliggande kontroller och översyn av intervall
+      description: Granskar protokollen från mellanliggande kontroller för instrument i ett stickprov och översynen av intervall.
+      preconditions: Kontrollprotokollen för 5 instrument för de senaste 6 månaderna, kalibreringshistoriken och den senaste översynen av intervall.
+      expected: Kontrollerna görs varje månad, avvikelser leder till ny kalibrering och ändringar av intervall följer regeln.
+      steps:
+        - action: Räkna kontrollerna per månad för varje instrument och läs avvikelserna.
+          expected: Varje månad har en kontroll, och varje avvikelse över halva toleransen följs av en ny kalibrering.
+        - action: Jämför varje ändring av intervall i översynen med kalibreringshistoriken.
+          expected: Förkortningar följer på ett fynd utanför tolerans och förlängningar på minst 3 resultat i följd inom tolerans.
+
+  - id: EQMNT-T06
+    priority: high
+    execution: manual
+    tags: [preventive-maintenance, work-orders]
+    refs: ["EN 13460:2009 (documentation for maintenance)", "IEC 60300-3-14:2004 (maintenance and maintenance support)"]
+    en:
+      title: Maintenance plans and work order records
+      description: Checks that each piece of equipment has a plan and that work orders are complete.
+      preconditions: The asset register, the maintenance management system, the supplier manuals of 3 pieces of equipment and the work orders of the last 3 months.
+      expected: Each piece of equipment has a plan matching the supplier, and work orders are complete.
+      steps:
+        - action: Compare the asset register with the plans in the system.
+          expected: Each piece of equipment has a plan with tasks, intervals, skills, parts and an owner.
+        - action: Compare 3 plans with the supplier's recommendations.
+          expected: Tasks and intervals match or have a recorded reason for deviation.
+        - action: Read 20 work orders of the last 3 months.
+          expected: Each has equipment, times, person, parts and findings, and each corrective one has a cause code.
+    sv:
+      title: Underhållsplaner och arbetsorder
+      description: Kontrollerar att varje utrustning har en plan och att arbetsordrarna är fullständiga.
+      preconditions: Tillgångsregistret, underhållssystemet, leverantörens manualer för 3 utrustningar och arbetsordrarna för de senaste 3 månaderna.
+      expected: Varje utrustning har en plan som stämmer med leverantören, och arbetsordrarna är fullständiga.
+      steps:
+        - action: Jämför tillgångsregistret med planerna i systemet.
+          expected: Varje utrustning har en plan med uppgifter, intervall, kompetens, delar och en ansvarig.
+        - action: Jämför 3 planer med leverantörens rekommendationer.
+          expected: Uppgifter och intervall stämmer eller har en registrerad orsak till avvikelsen.
+        - action: Läs 20 arbetsorder från de senaste 3 månaderna.
+          expected: Var och en har utrustning, tider, person, delar och iakttagelser, och varje avhjälpande order har en orsakskod.
+
+  - id: EQMNT-T07
+    priority: high
+    execution: manual
+    tags: [spare-parts]
+    refs: ["IEC 60300-3-14:2004 (maintenance and maintenance support)", "IEC 62402:2019 (obsolescence management)"]
+    en:
+      title: Critical spare parts stock and supplier commitment
+      description: Counts critical spare parts against their minimum levels and reads the supply contract.
+      preconditions: The criticality analysis, access to the spare parts store and the supply contract.
+      expected: Critical parts are in stock and the contract contains the availability commitment.
+      steps:
+        - action: Count 10 critical parts in the store.
+          expected: Each is at or above its minimum level.
+        - action: Read the spare parts clauses of the supply contract.
+          expected: Availability for at least 10 years and 12 months' notice with last-time-buy or replacement are stated.
+    sv:
+      title: Lager av kritiska reservdelar och leverantörens åtagande
+      description: Räknar kritiska reservdelar mot deras miniminivåer och läser leveransavtalet.
+      preconditions: Kritikalitetsanalysen, åtkomst till reservdelsförrådet och leveransavtalet.
+      expected: Kritiska delar finns i lager och avtalet innehåller åtagandet om tillgång.
+      steps:
+        - action: Räkna 10 kritiska delar i förrådet.
+          expected: Var och en ligger på minst sin miniminivå.
+        - action: Läs avtalets villkor om reservdelar.
+          expected: Tillgång i minst 10 år och meddelande 12 månader i förväg med sista köp eller ersättning anges.
+
+  - id: EQMNT-T08
+    priority: high
+    execution: manual
+    tags: [maintainability]
+    refs: ["IEC 60300-3-10 (maintainability)", "Regulation (EU) 2023/1230 Annex III §1.6.1 (machinery maintenance)"]
+    en:
+      title: Timed replacement of five replaceable units
+      description: A trained technician replaces 5 units chosen by the buyer while the time and the access route are recorded.
+      preconditions: The equipment during commissioning, a trained technician, the standard tools, 5 spare units and the maintenance plan.
+      expected: Each replacement takes at most 2 hours and needs no access to danger zones or removal of other units.
+      steps:
+        - action: Isolate the equipment, replace the first unit and restart, measuring the time.
+          expected: The time from isolation to restart is at most 2 hours.
+        - action: Repeat for the other 4 units and note the access route of each.
+          expected: Each is within 2 hours, and no unit needs another unit removed.
+        - action: Walk through the routine points of the maintenance plan.
+          expected: Each is reachable from outside the danger zones.
+    sv:
+      title: Tidtaget byte av fem utbytbara enheter
+      description: En utbildad tekniker byter 5 enheter som köparen valt medan tiden och åtkomstvägen registreras.
+      preconditions: Utrustningen under idrifttagningen, en utbildad tekniker, standardverktygen, 5 reservenheter och underhållsplanen.
+      expected: Varje byte tar högst 2 timmar och kräver ingen åtkomst till riskområden eller borttagning av andra enheter.
+      steps:
+        - action: Frånskilj utrustningen, byt den första enheten och starta om medan tiden mäts.
+          expected: Tiden från frånskiljning till återstart är högst 2 timmar.
+        - action: Upprepa för de andra 4 enheterna och anteckna åtkomstvägen för var och en.
+          expected: Varje byte tar högst 2 timmar, och ingen enhet kräver att en annan tas bort.
+        - action: Gå igenom rutinpunkterna i underhållsplanen.
+          expected: Var och en går att nå utanför riskområdena.
+
+  - id: EQMNT-T09
+    priority: medium
+    execution: manual
+    tags: [condition-monitoring]
+    refs: ["ISO 17359:2018 (condition monitoring and diagnostics of machines)"]
+    en:
+      title: Condition monitoring alert and alarm
+      description: Injects simulated vibration values into the condition monitoring system.
+      preconditions: The condition monitoring system in test mode with the thresholds of one critical component.
+      expected: The alert and the alarm are raised within 24 hours.
+      steps:
+        - action: Inject a vibration value above the alert threshold.
+          expected: A maintenance alert is created within 24 hours.
+          data: "alert 4.5 mm/s, trip 7.1 mm/s; injected 5.0 mm/s"
+        - action: Inject a value above the trip threshold.
+          expected: An alarm is created within 24 hours.
+          data: "injected 7.5 mm/s"
+    sv:
+      title: Varning och larm från tillståndsövervakningen
+      description: Matar in simulerade vibrationsvärden i systemet för tillståndsövervakning.
+      preconditions: Systemet för tillståndsövervakning i testläge med gränserna för en kritisk komponent.
+      expected: Varningen och larmet ges inom 24 timmar.
+      steps:
+        - action: Mata in ett vibrationsvärde över varningsgränsen.
+          expected: En varning till underhållet skapas inom 24 timmar.
+          data: "varning 4,5 mm/s, utlösning 7,1 mm/s; inmatat 5,0 mm/s"
+        - action: Mata in ett värde över utlösningsgränsen.
+          expected: Ett larm skapas inom 24 timmar.
+          data: "inmatat 7,5 mm/s"
+
+  - id: EQMNT-T10
+    priority: low
+    execution: manual
+    tags: [maintenance-kpi]
+    refs: ["EN 15341:2019 (maintenance key performance indicators)"]
+    en:
+      title: Maintenance key figures recalculated from work orders
+      description: Reviews the monthly key figure reports and recalculates one figure.
+      preconditions: The monthly reports of the last 3 months and the work orders of one critical piece of equipment for the last month.
+      expected: Each report has the four figures and the recalculation agrees.
+      steps:
+        - action: Read the figures for each critical piece of equipment in the 3 reports.
+          expected: Availability, MTBF, MTTR and the share of planned hours are given.
+        - action: Recalculate the MTTR of one piece of equipment for the last month from its work orders.
+          expected: The result is within 1 % of the reported value.
+    sv:
+      title: Nyckeltal för underhåll räknas om ur arbetsordrarna
+      description: Granskar de månatliga rapporterna med nyckeltal och räknar om ett nyckeltal.
+      preconditions: Månadsrapporterna för de senaste 3 månaderna och arbetsordrarna för en kritisk utrustning för den senaste månaden.
+      expected: Varje rapport har de fyra nyckeltalen och omräkningen stämmer.
+      steps:
+        - action: Läs nyckeltalen för varje kritisk utrustning i de 3 rapporterna.
+          expected: Tillgänglighet, MTBF, MTTR och andelen planerade timmar anges.
+        - action: Räkna om MTTR för en utrustning för den senaste månaden ur dess arbetsorder.
+          expected: Resultatet ligger inom 1 % av det rapporterade värdet.
