@@ -253,6 +253,122 @@ requirements:
         - method: test
           text: En inloggning från en fjärde webbläsare avslutar sessionen i den webbläsare som loggade in först.
 
+  - id: SESS-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [re-authentication, sensitive-actions]
+    refs: ["OWASP ASVS 5.0 V7 session management", "NIST SP 800-63B-4 (reauthentication)", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [SESS-T12]
+    en:
+      title: Recent sign-in before high-impact actions
+      description: The system MUST ask the user to authenticate again before deleting an organisation, exporting all its data or granting the administrator role when the last authentication is more than 15 minutes old.
+      rationale: A session left open or taken over should not be enough to cause damage that cannot be undone.
+      criteria:
+        - method: test
+          text: Each of the three actions asks for authentication 16 minutes after sign-in and runs without a prompt 5 minutes after sign-in.
+          threshold: "15 min since the last authentication"
+    sv:
+      title: Färsk inloggning före åtgärder med stor påverkan
+      description: Systemet SKA be användaren att autentisera sig igen innan en organisation tas bort, alla dess data exporteras eller administratörsrollen tilldelas, när den senaste autentiseringen ligger mer än 15 minuter tillbaka.
+      rationale: En session som lämnats öppen eller tagits över ska inte räcka för att orsaka skada som inte går att återställa.
+      criteria:
+        - method: test
+          text: Var och en av de tre åtgärderna ber om autentisering 16 minuter efter inloggningen och körs utan fråga 5 minuter efter inloggningen.
+          threshold: "15 min sedan senaste autentiseringen"
+
+  - id: SESS-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [revocation, administration, account-lock]
+    refs: ["OWASP ASVS 5.0 V7 session management", "NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3"]
+    tests: [SESS-T13]
+    en:
+      title: Disabling an account ends its sessions
+      description: The system MUST end every active session of a user account within 60 seconds after an administrator disables the account.
+      rationale: An employee who has left, or an account known to be compromised, must lose access at once and not when the session times out.
+      criteria:
+        - method: test
+          text: A request with a session token of the disabled account is refused 60 seconds after the account is disabled.
+          threshold: "≤ 60 s"
+    sv:
+      title: Spärrat konto avslutar sina sessioner
+      description: Systemet SKA avsluta varje aktiv session för ett användarkonto inom 60 sekunder efter att en administratör har spärrat kontot.
+      rationale: En medarbetare som har slutat, eller ett konto som man vet är komprometterat, ska förlora åtkomsten direkt och inte först när sessionen löper ut.
+      criteria:
+        - method: test
+          text: Ett anrop med en sessionstoken för det spärrade kontot avvisas 60 sekunder efter att kontot spärrades.
+          threshold: "≤ 60 s"
+
+  - id: SESS-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [cookies, cookie-prefix]
+    refs: ["RFC 6265bis", "OWASP Session Management Cheat Sheet", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [SESS-T14]
+    en:
+      title: Session cookie with the __Host- prefix
+      description: The system SHOULD name the session cookie with the __Host- prefix, set Path=/ on it and leave out the Domain attribute.
+      rationale: The prefix makes the browser refuse a cookie set by a sibling subdomain, which blocks cookie tossing and some session fixation attacks.
+      criteria:
+        - method: test
+          text: The Set-Cookie header of the session cookie has a name starting with __Host-, Path=/, Secure and no Domain attribute.
+    sv:
+      title: Sessionskaka med prefixet __Host-
+      description: Systemet BÖR ge sessionskakan ett namn med prefixet __Host-, sätta Path=/ och utelämna attributet Domain.
+      rationale: Prefixet gör att webbläsaren vägrar en kaka som satts av en annan underdomän, vilket stoppar så kallad cookie tossing och vissa angrepp med sessionsfixering.
+      criteria:
+        - method: test
+          text: Set-Cookie-huvudet för sessionskakan har ett namn som börjar med __Host-, Path=/, Secure och inget Domain-attribut.
+
+  - id: SESS-15
+    type: security
+    obligation: should
+    priority: medium
+    tags: [logout, browser-storage]
+    refs: ["W3C Clear Site Data", "OWASP ASVS 5.0 V7 session management", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [SESS-T15]
+    en:
+      title: Browser data cleared at sign-out
+      description: The system SHOULD send the Clear-Site-Data header with the directives "cache", "cookies" and "storage" in the response to a sign-out request.
+      rationale: Cached pages and local storage can show the previous user's data to the next person on a shared computer.
+      criteria:
+        - method: test
+          text: The sign-out response carries the header with the three directives, and after sign-out the browser's local storage and cache for the site are empty.
+    sv:
+      title: Webbläsarens data rensas vid utloggning
+      description: Systemet BÖR skicka huvudet Clear-Site-Data med direktiven "cache", "cookies" och "storage" i svaret på en begäran om utloggning.
+      rationale: Cachade sidor och lokal lagring kan visa föregående användares data för nästa person vid en delad dator.
+      criteria:
+        - method: test
+          text: Svaret på utloggningen har huvudet med de tre direktiven, och efter utloggningen är webbläsarens lokala lagring och cache för webbplatsen tomma.
+
+  - id: SESS-16
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [timeout, warning, accessibility]
+    refs: ["WCAG 2.2 SC 2.2.1", "OWASP Session Management Cheat Sheet"]
+    tests: [SESS-T16]
+    en:
+      title: Warning before the idle timeout
+      description: The system SHOULD warn the user 2 minutes before the idle timeout and keep the session when the user confirms within those 2 minutes.
+      rationale: Users who read slowly or use assistive technology otherwise lose unsaved work when the session ends without notice.
+      criteria:
+        - method: test
+          text: A warning with an extend button appears 2 minutes before the timeout, and pressing it keeps the session for another full idle period.
+          threshold: "warning ≥ 2 min before timeout"
+    sv:
+      title: Varning före tidsgränsen för inaktivitet
+      description: Systemet BÖR varna användaren 2 minuter före tidsgränsen för inaktivitet och behålla sessionen när användaren bekräftar inom dessa 2 minuter.
+      rationale: Användare som läser långsamt eller använder hjälpmedel förlorar annars osparat arbete när sessionen avslutas utan förvarning.
+      criteria:
+        - method: test
+          text: En varning med en knapp för att förlänga visas 2 minuter före tidsgränsen, och ett tryck på knappen behåller sessionen under ytterligare en hel inaktivitetsperiod.
+          threshold: "varning ≥ 2 min före tidsgränsen"
+
 tests:
   - id: SESS-T01
     priority: critical
@@ -565,3 +681,149 @@ tests:
           expected: Fyra inloggningar lyckas.
         - action: Skicka ett anrop med var och en av de fyra token.
           expected: Den första token avvisas med 401 och de andra tre lyckas.
+
+  - id: SESS-T12
+    priority: high
+    execution: manual
+    tags: [re-authentication]
+    refs: ["OWASP ASVS 5.0 V7 session management", "NIST SP 800-63B-4 (reauthentication)"]
+    en:
+      title: High-impact actions ask for a recent sign-in
+      description: Checks that deleting an organisation, exporting all data and granting the administrator role need a recent authentication.
+      preconditions: An administrator account in a test organisation and a test environment clock that can be advanced.
+      expected: The actions run without a prompt shortly after sign-in and ask for authentication when the last sign-in is older than 15 minutes.
+      steps:
+        - action: Sign in, wait 5 minutes and start an export of all organisation data.
+          expected: The export starts without asking for authentication.
+        - action: Advance the clock to 16 minutes after sign-in and start the export again.
+          expected: The system asks for the password or second factor before the export starts.
+        - action: Without authenticating, try to grant the administrator role to another user and to delete the organisation.
+          expected: Both actions ask for authentication and nothing changes until it succeeds.
+    sv:
+      title: Åtgärder med stor påverkan kräver färsk inloggning
+      description: Kontrollerar att borttagning av en organisation, export av alla data och tilldelning av administratörsrollen kräver en färsk autentisering.
+      preconditions: Ett administratörskonto i en testorganisation och en klocka i testmiljön som kan ställas fram.
+      expected: Åtgärderna körs utan fråga kort efter inloggningen och ber om autentisering när den senaste inloggningen är äldre än 15 minuter.
+      steps:
+        - action: Logga in, vänta 5 minuter och starta en export av alla data i organisationen.
+          expected: Exporten startar utan att be om autentisering.
+        - action: Ställ fram klockan till 16 minuter efter inloggningen och starta exporten igen.
+          expected: Systemet ber om lösenord eller andra faktor innan exporten startar.
+        - action: Försök utan att autentisera dig att tilldela administratörsrollen till en annan användare och att ta bort organisationen.
+          expected: Båda åtgärderna ber om autentisering och inget ändras förrän den lyckats.
+
+  - id: SESS-T13
+    priority: high
+    execution: automated
+    tags: [revocation, account-lock]
+    refs: ["NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18"]
+    en:
+      title: Sessions of a disabled account stop working
+      description: A script keeps two sessions of an account open while an administrator disables the account.
+      preconditions: A test user signed in from two browsers or clients, and an administrator account.
+      expected: Both sessions are refused within 60 seconds of disabling the account.
+      steps:
+        - action: Send a request with each of the two session tokens.
+          expected: Both requests succeed.
+        - action: Disable the user account as administrator and note the time.
+          expected: The account is shown as disabled.
+        - action: Repeat the requests every 5 seconds for 90 seconds.
+          expected: Both tokens are refused with 401 no later than 60 seconds after the noted time.
+    sv:
+      title: Sessioner för ett spärrat konto slutar fungera
+      description: Ett skript håller två sessioner för ett konto öppna medan en administratör spärrar kontot.
+      preconditions: En testanvändare inloggad från två webbläsare eller klienter samt ett administratörskonto.
+      expected: Båda sessionerna avvisas inom 60 sekunder efter att kontot spärrats.
+      steps:
+        - action: Skicka ett anrop med var och en av de två sessionstoken.
+          expected: Båda anropen lyckas.
+        - action: Spärra användarkontot som administratör och anteckna tiden.
+          expected: Kontot visas som spärrat.
+        - action: Upprepa anropen var femte sekund i 90 sekunder.
+          expected: Båda token avvisas med 401 senast 60 sekunder efter den antecknade tiden.
+
+  - id: SESS-T14
+    priority: medium
+    execution: automated
+    tags: [cookies, cookie-prefix]
+    refs: ["RFC 6265bis"]
+    en:
+      title: Session cookie uses the __Host- prefix
+      description: Inspects the Set-Cookie header of the session cookie after sign-in.
+      preconditions: A test account and an HTTP client that shows response headers.
+      expected: The session cookie has the __Host- prefix, Path=/, Secure and no Domain attribute.
+      steps:
+        - action: Sign in and read the Set-Cookie header that holds the session token.
+          expected: The cookie name starts with __Host-.
+        - action: Check the attributes of the cookie.
+          expected: Path=/ and Secure are present and Domain is absent.
+    sv:
+      title: Sessionskakan har prefixet __Host-
+      description: Granskar Set-Cookie-huvudet för sessionskakan efter inloggning.
+      preconditions: Ett testkonto och en HTTP-klient som visar svarshuvuden.
+      expected: Sessionskakan har prefixet __Host-, Path=/, Secure och inget Domain-attribut.
+      steps:
+        - action: Logga in och läs Set-Cookie-huvudet som innehåller sessionstoken.
+          expected: Kakans namn börjar med __Host-.
+        - action: Kontrollera kakans attribut.
+          expected: Path=/ och Secure finns och Domain saknas.
+
+  - id: SESS-T15
+    priority: medium
+    execution: manual
+    tags: [logout, browser-storage]
+    refs: ["W3C Clear Site Data"]
+    en:
+      title: Sign-out clears the browser's site data
+      description: Checks the sign-out response header and the browser storage after sign-out.
+      preconditions: A browser with developer tools and a test account whose pages store data in local storage.
+      expected: The sign-out response clears cache, cookies and storage for the site.
+      steps:
+        - action: Sign in, open several pages and note the entries in local storage and the cache.
+          expected: Entries for the site exist.
+        - action: Sign out and read the headers of the sign-out response.
+          expected: Clear-Site-Data contains "cache", "cookies" and "storage".
+        - action: Inspect local storage and the cache again, then use the back button.
+          expected: The storage is empty and the back button shows no signed-in content.
+    sv:
+      title: Utloggning rensar webbläsarens data för webbplatsen
+      description: Kontrollerar svarshuvudet vid utloggning och webbläsarens lagring efter utloggningen.
+      preconditions: En webbläsare med utvecklarverktyg och ett testkonto vars sidor sparar data i lokal lagring.
+      expected: Svaret på utloggningen rensar cache, kakor och lagring för webbplatsen.
+      steps:
+        - action: Logga in, öppna flera sidor och anteckna posterna i lokal lagring och i cachen.
+          expected: Det finns poster för webbplatsen.
+        - action: Logga ut och läs huvudena i svaret på utloggningen.
+          expected: Clear-Site-Data innehåller "cache", "cookies" och "storage".
+        - action: Granska lokal lagring och cachen igen och använd sedan bakåtknappen.
+          expected: Lagringen är tom och bakåtknappen visar inget inloggat innehåll.
+
+  - id: SESS-T16
+    priority: medium
+    execution: manual
+    tags: [timeout, warning]
+    refs: ["WCAG 2.2 SC 2.2.1"]
+    en:
+      title: Warning shown before the session times out
+      description: Waits for the idle timeout warning and extends the session.
+      preconditions: A test account and an idle timeout set to 30 minutes in the test environment.
+      expected: The warning appears 2 minutes before the timeout and extending it keeps the session.
+      steps:
+        - action: Sign in, open a form, type some text and leave the browser idle for 28 minutes.
+          expected: A warning with an extend button appears and is announced by a screen reader.
+        - action: Press the extend button and leave the browser idle for another 29 minutes.
+          expected: The session is still active and the typed text is still in the form.
+        - action: Leave the browser idle until the next warning and do not respond.
+          expected: The session ends 2 minutes after the warning.
+    sv:
+      title: Varning visas innan sessionen löper ut
+      description: Väntar in varningen för inaktivitet och förlänger sessionen.
+      preconditions: Ett testkonto och en tidsgräns för inaktivitet på 30 minuter i testmiljön.
+      expected: Varningen visas 2 minuter före tidsgränsen och förlängning behåller sessionen.
+      steps:
+        - action: Logga in, öppna ett formulär, skriv lite text och låt webbläsaren vara inaktiv i 28 minuter.
+          expected: En varning med en knapp för att förlänga visas och läses upp av en skärmläsare.
+        - action: Tryck på knappen för att förlänga och låt webbläsaren vara inaktiv i ytterligare 29 minuter.
+          expected: Sessionen är fortfarande aktiv och den skrivna texten finns kvar i formuläret.
+        - action: Låt webbläsaren vara inaktiv tills nästa varning och svara inte.
+          expected: Sessionen avslutas 2 minuter efter varningen.

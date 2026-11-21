@@ -277,6 +277,102 @@ requirements:
         - method: test
           text: En användare vars sparade tema är "neon" och vars sidstorlek är "-5" loggar in, får standardtema och standardsidstorlek, och de ogiltiga värdena loggas en gång.
 
+  - id: PREF-13
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [regional-formats, dates, time-zone]
+    refs: ["ISO 9241-110:2020 suitability for individualisation", "Unicode CLDR date and time patterns"]
+    tests: [PREF-T10]
+    en:
+      title: Regional formats separate from the interface language
+      description: The system MUST let users choose date format, time format, first day of the week and time zone independently of the interface language.
+      rationale: Many users work in English but expect their own country's date order and 24-hour clock, and tying formats to language forces a wrong reading of dates.
+      criteria:
+        - method: test
+          text: A user with English interface and Swedish formats sees dates as 2026-03-05 and times in 24-hour form.
+          threshold: "4 settings independent of language"
+    sv:
+      title: Regionala format skilda från gränssnittsspråket
+      description: Systemet SKA låta användare välja datumformat, tidsformat, veckans första dag och tidszon oberoende av gränssnittsspråket.
+      rationale: Många användare arbetar på engelska men förväntar sig sitt eget lands datumordning och 24-timmarsklocka, och att knyta formaten till språket tvingar fram feltolkningar av datum.
+      criteria:
+        - method: test
+          text: En användare med engelskt gränssnitt och svenska format ser datum som 2026-03-05 och tider i 24-timmarsform.
+          threshold: "4 inställningar oberoende av språket"
+
+  - id: PREF-14
+    type: usability
+    obligation: should
+    priority: low
+    tags: [density, layout, lists]
+    refs: ["ISO 9241-110:2020 suitability for individualisation", "Material Design (density)"]
+    tests: [PREF-T11]
+    en:
+      title: Display density
+      description: The system SHOULD offer a compact and a comfortable display density that changes row height and spacing in lists and tables.
+      rationale: Power users want more rows on screen, while others need more space for touch input or easier reading.
+      criteria:
+        - method: test
+          text: Switching from comfortable to compact shows at least 30 % more rows in a list at the same window size.
+          threshold: "≥ 30 % more rows in compact"
+    sv:
+      title: Visningstäthet
+      description: Systemet BÖR erbjuda en kompakt och en luftig visningstäthet som ändrar radhöjd och avstånd i listor och tabeller.
+      rationale: Vana användare vill ha fler rader på skärmen, medan andra behöver mer utrymme för pekinmatning eller lättare läsning.
+      criteria:
+        - method: test
+          text: Att byta från luftig till kompakt visar minst 30 % fler rader i en lista vid samma fönsterstorlek.
+          threshold: "≥ 30 % fler rader i kompakt läge"
+
+  - id: PREF-15
+    type: usability
+    obligation: may
+    priority: low
+    tags: [keyboard-shortcuts, customisation, accessibility]
+    refs: ["WCAG 2.2 SC 2.1.4", "ISO 9241-110:2020 suitability for individualisation"]
+    tests: [PREF-T12]
+    en:
+      title: Remappable keyboard shortcuts
+      description: The system MAY let users assign other keys to the keyboard shortcuts of the application.
+      rationale: Shortcuts collide with assistive technology, browser extensions and keyboard layouts, and remapping lets users keep both.
+      criteria:
+        - method: test
+          text: When the function exists, a user reassigns the search shortcut, and the new key opens search while the old key no longer does.
+          threshold: "1 remapped shortcut works"
+    sv:
+      title: Kortkommandon som kan ändras
+      description: Systemet FÅR låta användare tilldela andra tangenter till applikationens kortkommandon.
+      rationale: Kortkommandon krockar med hjälpmedel, webbläsartillägg och tangentbordslayouter, och möjligheten att ändra dem låter användarna behålla båda.
+      criteria:
+        - method: test
+          text: När funktionen finns tilldelar en användare kortkommandot för sökning en ny tangent, och den nya tangenten öppnar sökningen medan den gamla inte längre gör det.
+          threshold: "1 ändrat kortkommando fungerar"
+
+  - id: PREF-16
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [high-contrast, theme, accessibility]
+    refs: ["WCAG 2.2 SC 1.4.6", "ISO 9241-110:2020 suitability for individualisation"]
+    tests: [PREF-T13]
+    en:
+      title: High-contrast theme
+      description: The system SHOULD offer a high-contrast theme in which body text has a contrast ratio of at least 7:1 and controls at least 4.5:1.
+      rationale: Users with low vision need more contrast than the standard theme gives, and a built-in theme works on every device they use.
+      criteria:
+        - method: test
+          text: Measurements in the high-contrast theme show at least 7:1 for body text and 4.5:1 for control borders on the 5 main pages.
+          threshold: "text ≥ 7:1; controls ≥ 4.5:1"
+    sv:
+      title: Tema med hög kontrast
+      description: Systemet BÖR erbjuda ett tema med hög kontrast där brödtext har ett kontrastförhållande på minst 7:1 och kontroller minst 4,5:1.
+      rationale: Användare med nedsatt syn behöver mer kontrast än standardtemat ger, och ett inbyggt tema fungerar på varje enhet de använder.
+      criteria:
+        - method: test
+          text: Mätningar i temat med hög kontrast visar minst 7:1 för brödtext och 4,5:1 för kontrollers kanter på de 5 viktigaste sidorna.
+          threshold: "text ≥ 7:1; kontroller ≥ 4,5:1"
+
 tests:
   - id: PREF-T01
     priority: medium
@@ -561,3 +657,121 @@ tests:
           expected: Inloggningen lyckas, standardtemat används och listan har standardsidstorleken.
         - action: Läs programloggen.
           expected: En rad per ogiltig inställning anger inställningen utan att begäran stoppas.
+
+  - id: PREF-T10
+    priority: medium
+    execution: manual
+    tags: [regional-formats, dates]
+    refs: ["ISO 9241-110:2020 suitability for individualisation"]
+    en:
+      title: English interface with Swedish formats
+      description: Sets the interface language and the regional formats separately and checks dates, times and calendars.
+      preconditions: A test user and items with dates and times.
+      expected: Dates, times, week start and time zone follow the chosen formats while texts stay in English.
+      steps:
+        - action: Set the interface language to English and the regional formats to Swedish.
+          expected: The settings are saved.
+          data: "language en; formats sv-SE; zone Europe/Stockholm"
+        - action: Open an item with a due date and a time stamp.
+          expected: Texts are in English, the date reads 2026-03-05 and the time uses the 24-hour clock.
+        - action: Open the date picker.
+          expected: The week starts on Monday.
+    sv:
+      title: Engelskt gränssnitt med svenska format
+      description: Ställer in gränssnittsspråk och regionala format var för sig och kontrollerar datum, tider och kalendrar.
+      preconditions: En testanvändare och objekt med datum och tider.
+      expected: Datum, tider, veckostart och tidszon följer de valda formaten medan texterna förblir på engelska.
+      steps:
+        - action: Ställ in gränssnittsspråket på engelska och de regionala formaten på svenska.
+          expected: Inställningarna sparas.
+          data: "språk en; format sv-SE; zon Europe/Stockholm"
+        - action: Öppna ett objekt med förfallodatum och tidsstämpel.
+          expected: Texterna är på engelska, datumet visas som 2026-03-05 och tiden med 24-timmarsklocka.
+        - action: Öppna datumväljaren.
+          expected: Veckan börjar på måndag.
+
+  - id: PREF-T11
+    priority: low
+    execution: manual
+    tags: [density, lists]
+    refs: ["ISO 9241-110:2020 suitability for individualisation"]
+    en:
+      title: Compact and comfortable density
+      description: Counts the visible rows of a list in both densities.
+      preconditions: A list with at least 100 items and a window of 1366 × 768 pixels.
+      expected: Compact shows at least 30 % more rows than comfortable.
+      steps:
+        - action: Set density to comfortable and count the visible rows.
+          expected: The count is recorded.
+          data: "window 1366 × 768"
+        - action: Set density to compact and count again.
+          expected: The count is at least 30 % higher and text remains readable.
+    sv:
+      title: Kompakt och luftig visningstäthet
+      description: Räknar de synliga raderna i en lista i båda tätheterna.
+      preconditions: En lista med minst 100 objekt och ett fönster på 1366 × 768 bildpunkter.
+      expected: Kompakt läge visar minst 30 % fler rader än luftigt.
+      steps:
+        - action: Ställ in luftig täthet och räkna de synliga raderna.
+          expected: Antalet noteras.
+          data: "fönster 1366 × 768"
+        - action: Ställ in kompakt täthet och räkna igen.
+          expected: Antalet är minst 30 % högre och texten går fortfarande att läsa.
+
+  - id: PREF-T12
+    priority: low
+    execution: manual
+    tags: [keyboard-shortcuts, customisation]
+    refs: ["WCAG 2.2 SC 2.1.4"]
+    en:
+      title: Reassigning a keyboard shortcut
+      description: Changes the key of one shortcut and tries both keys.
+      preconditions: A test user and the shortcut settings, where the function exists.
+      expected: Only the new key triggers the function.
+      steps:
+        - action: Assign a new key to the search shortcut.
+          expected: The setting is saved and shown in the shortcut overview.
+          data: "from \"/\" to \"Alt+S\""
+        - action: Press the new key and then the old key.
+          expected: The new key opens search; the old key types its character or does nothing.
+    sv:
+      title: Tilldela ett kortkommando en ny tangent
+      description: Ändrar tangenten för ett kortkommando och provar båda tangenterna.
+      preconditions: En testanvändare och inställningarna för kortkommandon, där funktionen finns.
+      expected: Bara den nya tangenten utlöser funktionen.
+      steps:
+        - action: Tilldela kortkommandot för sökning en ny tangent.
+          expected: Inställningen sparas och visas i översikten över kortkommandon.
+          data: "från \"/\" till \"Alt+S\""
+        - action: Tryck på den nya tangenten och sedan på den gamla.
+          expected: Den nya tangenten öppnar sökningen; den gamla skriver sitt tecken eller gör ingenting.
+
+  - id: PREF-T13
+    priority: medium
+    execution: manual
+    tags: [high-contrast, theme]
+    refs: ["WCAG 2.2 SC 1.4.6"]
+    en:
+      title: Contrast measured in the high-contrast theme
+      description: Selects the high-contrast theme and measures text and controls.
+      preconditions: A test user and a contrast measuring tool.
+      expected: Body text reaches 7:1 and control borders 4.5:1 on the main pages.
+      steps:
+        - action: Select the high-contrast theme in the preferences.
+          expected: The theme applies without reloading.
+        - action: Measure body text on the 5 main pages.
+          expected: Each ratio is at least 7:1.
+        - action: Measure the borders of buttons and input fields.
+          expected: Each ratio is at least 4.5:1.
+    sv:
+      title: Kontrast uppmätt i temat med hög kontrast
+      description: Väljer temat med hög kontrast och mäter text och kontroller.
+      preconditions: En testanvändare och ett verktyg för kontrastmätning.
+      expected: Brödtexten når 7:1 och kontrollernas kanter 4,5:1 på huvudsidorna.
+      steps:
+        - action: Välj temat med hög kontrast i inställningarna.
+          expected: Temat används utan omladdning.
+        - action: Mät brödtexten på de 5 viktigaste sidorna.
+          expected: Varje förhållande är minst 7:1.
+        - action: Mät kanterna på knappar och inmatningsfält.
+          expected: Varje förhållande är minst 4,5:1.

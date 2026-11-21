@@ -414,6 +414,102 @@ requirements:
         - method: review
           text: Planen anger mottagare, avsändare och tidsfrist per AI-system, och varje incident de senaste 12 månaderna har protokoll som visar att de angivna mottagarna informerades inom tidsfristen.
 
+  - id: AIMS-19
+    type: business
+    obligation: must
+    priority: medium
+    tags: [objectives, measurement, planning]
+    refs: ["ISO/IEC 42001:2023 §6.2 (AI objectives and planning to achieve them)"]
+    tests: [AIMS-T14]
+    en:
+      title: Measurable AI objectives
+      description: The organisation MUST set AI objectives that each have a measure, a target value, an owner and a due date, and review their progress at least every 6 months.
+      rationale: Objectives without a measure and an owner cannot be followed up, so the management system has nothing to steer by.
+      criteria:
+        - method: inspection
+          text: The objective register shows measure, target, owner and due date for each objective and a progress review within the last 6 months.
+          threshold: "review interval ≤ 6 months"
+    sv:
+      title: Mätbara mål för AI
+      description: Organisationen SKA sätta mål för AI som vart och ett har ett mått, ett målvärde, en ägare och ett slutdatum, och följa upp hur de går minst var 6:e månad.
+      rationale: Mål utan mått och ägare går inte att följa upp, och ledningssystemet har då inget att styra efter.
+      criteria:
+        - method: inspection
+          text: Målregistret visar mått, målvärde, ägare och slutdatum för varje mål och en uppföljning inom de senaste 6 månaderna.
+          threshold: "uppföljningsintervall ≤ 6 månader"
+
+  - id: AIMS-20
+    type: business
+    obligation: must
+    priority: medium
+    tags: [competence, roles, records]
+    refs: ["ISO/IEC 42001:2023 §7.2 (competence)", "ISO/IEC 42001:2023 Annex A.4.6 (human resources)"]
+    tests: [AIMS-T15]
+    en:
+      title: Competence records for AI roles
+      description: The organisation MUST define the competence needed for each role that develops, operates or oversees AI systems and keep a record showing that each person in the role has it.
+      rationale: Oversight by people who do not understand the system's limits gives only the appearance of control.
+      criteria:
+        - method: inspection
+          text: For each AI role a competence profile exists, and the records of 5 sampled people show the required training or experience.
+          threshold: "5 of 5 sampled people qualified"
+    sv:
+      title: Kompetensposter för AI-roller
+      description: Organisationen SKA fastställa vilken kompetens som behövs för varje roll som utvecklar, driver eller övervakar AI-system och föra en post som visar att varje person i rollen har den.
+      rationale: Tillsyn av personer som inte förstår systemets begränsningar ger bara ett sken av kontroll.
+      criteria:
+        - method: inspection
+          text: För varje AI-roll finns en kompetensprofil, och posterna för 5 utvalda personer visar den utbildning eller erfarenhet som krävs.
+          threshold: "5 av 5 utvalda personer behöriga"
+
+  - id: AIMS-21
+    type: business
+    obligation: must
+    priority: medium
+    tags: [resources, inventory, documentation]
+    refs: ["ISO/IEC 42001:2023 Annex A.4.2 (resource documentation)", "ISO/IEC 42001:2023 Annex A.4.3 (data resources)", "ISO/IEC 42001:2023 Annex A.4.5 (system and computing resources)"]
+    tests: [AIMS-T16]
+    en:
+      title: Resources documented per AI system
+      description: For each AI system the organisation MUST document the data sets, tools, computing resources and people it depends on, with a named owner per resource.
+      rationale: When a data set, a tool or a key person disappears, nobody can tell which AI systems are affected without such a list.
+      criteria:
+        - method: inspection
+          text: The record of each AI system lists data, tooling, computing and human resources with an owner for each.
+          threshold: "4 resource kinds per system"
+    sv:
+      title: Resurser dokumenterade per AI-system
+      description: För varje AI-system SKA organisationen dokumentera de datamängder, verktyg, beräkningsresurser och personer som systemet är beroende av, med en namngiven ägare per resurs.
+      rationale: När en datamängd, ett verktyg eller en nyckelperson försvinner kan ingen säga vilka AI-system som påverkas utan en sådan förteckning.
+      criteria:
+        - method: inspection
+          text: Posten för varje AI-system listar data, verktyg, beräkningsresurser och personal med en ägare för var och en.
+          threshold: "4 slags resurser per system"
+
+  - id: AIMS-22
+    type: business
+    obligation: must
+    priority: high
+    tags: [responsible-use, intended-use, deployer]
+    refs: ["ISO/IEC 42001:2023 Annex A.9.2 (processes for responsible use of AI systems)", "ISO/IEC 42001:2023 Annex A.9.4 (intended use of the AI system)"]
+    tests: [AIMS-T17]
+    en:
+      title: Use outside the intended purpose stopped
+      description: The organisation MUST have a procedure that detects use of an AI system outside its documented intended use and stops that use until a new risk and impact assessment has been approved.
+      rationale: Systems are often reused for tasks they were never assessed for, and the original assessment then says nothing about the new risks.
+      criteria:
+        - method: inspection
+          text: The procedure exists, and the last detected out-of-scope use in the log was stopped and followed by an approved assessment before it resumed.
+          threshold: "0 out-of-scope uses continued without assessment"
+    sv:
+      title: Användning utanför avsett ändamål stoppas
+      description: Organisationen SKA ha en rutin som upptäcker användning av ett AI-system utanför dess dokumenterade avsedda användning och stoppar den användningen tills en ny risk- och konsekvensbedömning har godkänts.
+      rationale: System återanvänds ofta för uppgifter de aldrig bedömdes för, och den ursprungliga bedömningen säger då ingenting om de nya riskerna.
+      criteria:
+        - method: inspection
+          text: Rutinen finns, och den senast upptäckta användningen utanför ändamålet i loggen stoppades och följdes av en godkänd bedömning innan den återupptogs.
+          threshold: "0 användningar utanför ändamålet fortsatte utan bedömning"
+
 tests:
   - id: AIMS-T01
     priority: high
@@ -762,3 +858,111 @@ tests:
           expected: Varje system har mottagare, avsändare och tidsfrist.
         - action: Jämför kommunikationsprotokollen för varje incident med planen.
           expected: Varje angiven mottagare informerades av den angivna avsändaren inom tidsfristen.
+
+  - id: AIMS-T14
+    priority: medium
+    execution: manual
+    tags: [objectives, measurement]
+    refs: ["ISO/IEC 42001:2023 §6.2 (AI objectives and planning to achieve them)"]
+    en:
+      title: AI objective register
+      description: Reviews the AI objectives and their follow-up.
+      preconditions: The objective register and the latest progress review.
+      expected: Each objective is measurable with owner and due date and was reviewed within 6 months.
+      steps:
+        - action: Open the objective register.
+          expected: Each objective has a measure, target value, owner and due date.
+          data: "for example \"share of AI systems with impact assessment ≥ 100 % by Q2\""
+        - action: Find the latest progress review.
+          expected: It is dated within the last 6 months and records the status of each objective.
+    sv:
+      title: Register över mål för AI
+      description: Granskar målen för AI och uppföljningen av dem.
+      preconditions: Målregistret och den senaste uppföljningen.
+      expected: Varje mål är mätbart med ägare och slutdatum och har följts upp inom 6 månader.
+      steps:
+        - action: Öppna målregistret.
+          expected: Varje mål har mått, målvärde, ägare och slutdatum.
+          data: "till exempel \"andel AI-system med konsekvensbedömning ≥ 100 % till kvartal 2\""
+        - action: Leta upp den senaste uppföljningen.
+          expected: Den är daterad inom de senaste 6 månaderna och anger status för varje mål.
+
+  - id: AIMS-T15
+    priority: medium
+    execution: manual
+    tags: [competence, roles]
+    refs: ["ISO/IEC 42001:2023 §7.2 (competence)"]
+    en:
+      title: Competence of people in AI roles
+      description: Samples people in AI roles and checks their competence records.
+      preconditions: The competence profiles of the AI roles and the training records.
+      expected: Each sampled person meets the profile of the role.
+      steps:
+        - action: List the AI roles and their competence profiles.
+          expected: Each role has a profile.
+          data: "roles: developer, operator, overseer"
+        - action: Pick 5 people across the roles and compare their records with the profile.
+          expected: Each person's training or experience meets the profile.
+    sv:
+      title: Kompetens hos personer i AI-roller
+      description: Gör ett urval av personer i AI-roller och kontrollerar deras kompetensposter.
+      preconditions: Kompetensprofilerna för AI-rollerna och utbildningsposterna.
+      expected: Varje utvald person uppfyller rollens profil.
+      steps:
+        - action: Lista AI-rollerna och deras kompetensprofiler.
+          expected: Varje roll har en profil.
+          data: "roller: utvecklare, driftansvarig, tillsynsansvarig"
+        - action: Välj 5 personer från olika roller och jämför deras poster med profilen.
+          expected: Varje persons utbildning eller erfarenhet uppfyller profilen.
+
+  - id: AIMS-T16
+    priority: medium
+    execution: manual
+    tags: [resources, inventory]
+    refs: ["ISO/IEC 42001:2023 Annex A.4.2 (resource documentation)"]
+    en:
+      title: Resource documentation of an AI system
+      description: Reads the resource record of AI systems in the inventory.
+      preconditions: The AI system inventory with resource records.
+      expected: Each record lists data, tooling, computing and human resources with owners.
+      steps:
+        - action: Open the resource record of 3 AI systems.
+          expected: Each lists the four kinds of resources.
+        - action: Check that each listed resource has an owner.
+          expected: Every resource names an owner.
+    sv:
+      title: Resursdokumentation för ett AI-system
+      description: Läser resursposten för AI-system i förteckningen.
+      preconditions: Förteckningen över AI-system med resursposter.
+      expected: Varje post listar data, verktyg, beräkningsresurser och personal med ägare.
+      steps:
+        - action: Öppna resursposten för 3 AI-system.
+          expected: Var och en listar de fyra slagen av resurser.
+        - action: Kontrollera att varje listad resurs har en ägare.
+          expected: Varje resurs anger en ägare.
+
+  - id: AIMS-T17
+    priority: high
+    execution: manual
+    tags: [responsible-use, intended-use]
+    refs: ["ISO/IEC 42001:2023 Annex A.9.4 (intended use of the AI system)"]
+    en:
+      title: Out-of-scope use handled by the procedure
+      description: Reviews the procedure and the log of detected out-of-scope use.
+      preconditions: The responsible-use procedure and its log.
+      expected: Each detected case was stopped and resumed only after an approved assessment.
+      steps:
+        - action: Read the procedure for detecting use outside the intended purpose.
+          expected: It names how use is monitored, who stops it and who approves a new assessment.
+        - action: Open the latest logged case.
+          expected: The case was stopped and a new risk and impact assessment was approved before the use resumed.
+    sv:
+      title: Användning utanför ändamålet hanteras enligt rutinen
+      description: Granskar rutinen och loggen över upptäckt användning utanför ändamålet.
+      preconditions: Rutinen för ansvarsfull användning och dess logg.
+      expected: Varje upptäckt fall stoppades och återupptogs först efter en godkänd bedömning.
+      steps:
+        - action: Läs rutinen för att upptäcka användning utanför avsett ändamål.
+          expected: Den anger hur användningen övervakas, vem som stoppar den och vem som godkänner en ny bedömning.
+        - action: Öppna det senast loggade fallet.
+          expected: Fallet stoppades och en ny risk- och konsekvensbedömning godkändes innan användningen återupptogs.

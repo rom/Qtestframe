@@ -14,6 +14,7 @@ import { useI18n } from 'vue-i18n'
 import FileDropZone from './FileDropZone.vue'
 import FolderPickerDialog from './FolderPickerDialog.vue'
 import StatusTag from './StatusTag.vue'
+import ObligationText from './ObligationText.vue'
 import HelpLink from '@/guide/HelpLink.vue'
 import { upload } from '@/lib/upload'
 import { errorMessage } from '@/lib/api'
@@ -314,7 +315,7 @@ function dupLabel(d: string | undefined) {
             <Column field="title" :header="t('reqImport.field.title')" style="min-width: 220px" body-class="stack-main">
               <template #body="{ data }">
                 <div>{{ data.title }}</div>
-                <div v-if="data.description && data.description !== data.title" class="small muted clamp">{{ data.description }}</div>
+                <div v-if="data.description && data.description !== data.title" class="small muted clamp"><ObligationText :text="data.description" /></div>
               </template>
             </Column>
             <Column :header="t('reqImport.field.obligation')" style="width: 120px">

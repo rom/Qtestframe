@@ -321,6 +321,102 @@ requirements:
         - method: test
           text: Av 100 par samtidiga begäranden om godkännande och avslag på en post ger varje par exakt ett registrerat beslut och en avvisad begäran.
 
+  - id: WFL-15
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [time-in-state, sla, overdue]
+    refs: ["ITIL 4 Service level management", "ISO 9241-110:2020 self-descriptiveness"]
+    tests: [WFL-T10]
+    en:
+      title: Time in the current state shown
+      description: The system SHOULD show how long each item has been in its current state and mark items that exceed the limit configured for that state.
+      rationale: Items that wait too long in review or approval delay the work after them, and nobody notices without a visible timer.
+      criteria:
+        - method: test
+          text: With a limit of 3 days on the review state, an item that has been in review for 4 days is marked in lists, and one for 2 days is not.
+          threshold: "limit per state"
+    sv:
+      title: Tid i aktuellt tillstånd visas
+      description: Systemet BÖR visa hur länge varje objekt har legat i sitt aktuella tillstånd och markera objekt som överskrider den gräns som är inställd för tillståndet.
+      rationale: Objekt som väntar för länge på granskning eller godkännande fördröjer arbetet efter dem, och ingen märker det utan en synlig tidmätare.
+      criteria:
+        - method: test
+          text: Med en gräns på 3 dagar för tillståndet granskning markeras ett objekt som har legat i granskning i 4 dagar i listorna, och ett som har legat där i 2 dagar markeras inte.
+          threshold: "gräns per tillstånd"
+
+  - id: WFL-16
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [approvals, parallel, sequential]
+    refs: ["ISO/IEC 25010:2023 functional completeness", "ISO 9001:2026 (review and approval of documented information)"]
+    tests: [WFL-T11]
+    en:
+      title: Sequential and parallel approval steps
+      description: The workflow configuration MUST support approval steps that run in sequence and steps in which two or more approvers decide in parallel.
+      rationale: Some reviews depend on an earlier one, while independent reviewers waiting for each other add days to every approval.
+      criteria:
+        - method: test
+          text: A workflow with a parallel step of 2 approvers followed by a sequential step requests both parallel approvals at once and the final one only after both.
+          threshold: "2 step types"
+    sv:
+      title: Godkännandesteg i följd och parallellt
+      description: Arbetsflödets konfiguration SKA stödja godkännandesteg som går i följd och steg där två eller fler godkännare beslutar parallellt.
+      rationale: Vissa granskningar bygger på en tidigare, medan oberoende granskare som väntar på varandra lägger dagar till varje godkännande.
+      criteria:
+        - method: test
+          text: Ett arbetsflöde med ett parallellt steg med 2 godkännare följt av ett steg i följd begär båda de parallella godkännandena samtidigt och det sista först efter dem båda.
+          threshold: "2 stegtyper"
+
+  - id: WFL-17
+    type: functional
+    obligation: must
+    priority: high
+    tags: [configuration-change, migration, states]
+    refs: ["ISO/IEC 25010:2023 integrity", "ISO/IEC 27001:2022 A.8.32 (change management)"]
+    tests: [WFL-T12]
+    en:
+      title: Workflow changes keep existing items valid
+      description: When a state is removed from a workflow that items use, the system MUST require the administrator to choose a target state and move those items there with a history entry.
+      rationale: Items left in a state that no longer exists cannot move forward and drop out of every report.
+      criteria:
+        - method: test
+          text: Removing a state that holds 5 items asks for a target state and moves the 5 items there with a history entry on each.
+          threshold: "0 items in removed states"
+    sv:
+      title: Ändrade arbetsflöden håller befintliga objekt giltiga
+      description: När ett tillstånd som objekt använder tas bort ur ett arbetsflöde SKA systemet kräva att administratören väljer ett måltillstånd och flytta objekten dit med en post i historiken.
+      rationale: Objekt som lämnas i ett tillstånd som inte längre finns kan inte gå vidare och faller bort ur varje rapport.
+      criteria:
+        - method: test
+          text: Att ta bort ett tillstånd som innehåller 5 objekt kräver ett måltillstånd och flyttar de 5 objekten dit med en historikpost på vart och ett.
+          threshold: "0 objekt i borttagna tillstånd"
+
+  - id: WFL-18
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [routing, conditions, approvers]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness", "ISO/IEC 27001:2022 A.5.3"]
+    tests: [WFL-T13]
+    en:
+      title: Approver chosen by field values
+      description: The workflow SHOULD route an item to an approver group based on its field values, such as sending changes above a cost of 100 000 to the steering group.
+      rationale: Fixed approvers either overload senior people with small decisions or let large decisions pass with too little authority.
+      criteria:
+        - method: test
+          text: An item with cost 150 000 goes to the steering group and one with cost 50 000 goes to the team lead group.
+          threshold: "threshold 100 000"
+    sv:
+      title: Godkännare väljs utifrån fältvärden
+      description: Arbetsflödet BÖR skicka ett objekt till en grupp godkännare utifrån dess fältvärden, till exempel ändringar med en kostnad över 100 000 till styrgruppen.
+      rationale: Fasta godkännare överlastar antingen chefer med små beslut eller släpper igenom stora beslut med för lite mandat.
+      criteria:
+        - method: test
+          text: Ett objekt med kostnaden 150 000 går till styrgruppen och ett med kostnaden 50 000 går till gruppen teamledare.
+          threshold: "gräns 100 000"
+
 tests:
   - id: WFL-T01
     priority: high
@@ -599,3 +695,121 @@ tests:
           data: 100 par
         - action: Räkna de registrerade besluten per post.
           expected: Varje post har exakt 1 beslut och en status som stämmer med det.
+
+  - id: WFL-T10
+    priority: medium
+    execution: manual
+    tags: [time-in-state, overdue]
+    refs: ["ITIL 4 Service level management"]
+    en:
+      title: Overdue marker in the review state
+      description: Checks the time in state and the overdue marker for items of different ages.
+      preconditions: A workflow with a 3-day limit on review and two items that entered review 2 and 4 days ago.
+      expected: Only the item in review for 4 days is marked.
+      steps:
+        - action: Open the list of items in review.
+          expected: Each item shows its time in the current state.
+          data: "2 days and 4 days"
+        - action: Look for the overdue marker.
+          expected: The item in review for 4 days is marked and the one for 2 days is not.
+    sv:
+      title: Markering för försenade objekt i tillståndet granskning
+      description: Kontrollerar tiden i tillstånd och förseningsmarkeringen för objekt med olika ålder.
+      preconditions: Ett arbetsflöde med en gräns på 3 dagar för granskning och två objekt som gick in i granskning för 2 och 4 dagar sedan.
+      expected: Bara objektet som har legat i granskning i 4 dagar markeras.
+      steps:
+        - action: Öppna listan över objekt i granskning.
+          expected: Varje objekt visar sin tid i aktuellt tillstånd.
+          data: "2 dagar och 4 dagar"
+        - action: Leta efter förseningsmarkeringen.
+          expected: Objektet som har legat i granskning i 4 dagar är markerat och det som har legat där i 2 dagar är det inte.
+
+  - id: WFL-T11
+    priority: medium
+    execution: manual
+    tags: [approvals, parallel]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    en:
+      title: Parallel step followed by a sequential step
+      description: Submits an item to a workflow with a parallel and a sequential approval step.
+      preconditions: A workflow with a parallel step for approvers A and B and a final step for approver C.
+      expected: A and B are asked at once; C is asked only after both have approved.
+      steps:
+        - action: Submit an item for approval.
+          expected: A and B both receive a request at the same time; C receives none.
+        - action: Let A approve.
+          expected: C still has no request.
+        - action: Let B approve.
+          expected: C receives the request.
+    sv:
+      title: Parallellt steg följt av ett steg i följd
+      description: Skickar ett objekt till ett arbetsflöde med ett parallellt och ett efterföljande godkännandesteg.
+      preconditions: Ett arbetsflöde med ett parallellt steg för godkännarna A och B och ett sista steg för godkännaren C.
+      expected: A och B tillfrågas samtidigt; C tillfrågas först när båda har godkänt.
+      steps:
+        - action: Skicka ett objekt för godkännande.
+          expected: A och B får båda en begäran samtidigt; C får ingen.
+        - action: Låt A godkänna.
+          expected: C har fortfarande ingen begäran.
+        - action: Låt B godkänna.
+          expected: C får begäran.
+
+  - id: WFL-T12
+    priority: high
+    execution: manual
+    tags: [configuration-change, states]
+    refs: ["ISO/IEC 25010:2023 integrity"]
+    en:
+      title: Removing a state that holds items
+      description: Removes a workflow state that 5 items are in.
+      preconditions: A workflow with a state "On hold" holding 5 items and an administrator account.
+      expected: The administrator must choose a target state and the items move there with history.
+      steps:
+        - action: Remove the state "On hold" from the workflow.
+          expected: A dialog says that 5 items are in the state and asks for a target state.
+        - action: Choose "Draft" and confirm.
+          expected: The state is removed.
+        - action: Open the 5 items.
+          expected: Each is in "Draft" and its history records the move and the reason.
+    sv:
+      title: Ta bort ett tillstånd som innehåller objekt
+      description: Tar bort ett tillstånd i arbetsflödet som 5 objekt ligger i.
+      preconditions: Ett arbetsflöde med tillståndet "Vilande" som innehåller 5 objekt och ett administratörskonto.
+      expected: Administratören måste välja ett måltillstånd och objekten flyttas dit med historik.
+      steps:
+        - action: Ta bort tillståndet "Vilande" ur arbetsflödet.
+          expected: En dialog anger att 5 objekt ligger i tillståndet och frågar efter ett måltillstånd.
+        - action: Välj "Utkast" och bekräfta.
+          expected: Tillståndet tas bort.
+        - action: Öppna de 5 objekten.
+          expected: Vart och ett ligger i "Utkast" och dess historik visar flytten och skälet.
+
+  - id: WFL-T13
+    priority: medium
+    execution: manual
+    tags: [routing, conditions]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    en:
+      title: Routing by cost
+      description: Submits two items with costs on each side of the routing threshold.
+      preconditions: A workflow that routes items with cost above 100 000 to the steering group and others to the team lead group.
+      expected: Each item reaches the group that its cost selects.
+      steps:
+        - action: Submit an item with cost 150 000.
+          expected: The approval request goes to the steering group.
+          data: "cost 150 000"
+        - action: Submit an item with cost 50 000.
+          expected: The approval request goes to the team lead group.
+          data: "cost 50 000"
+    sv:
+      title: Styrning efter kostnad
+      description: Skickar in två objekt med kostnader på var sin sida om gränsen för styrning.
+      preconditions: Ett arbetsflöde som skickar objekt med kostnad över 100 000 till styrgruppen och övriga till gruppen teamledare.
+      expected: Varje objekt når den grupp som dess kostnad väljer.
+      steps:
+        - action: Skicka in ett objekt med kostnaden 150 000.
+          expected: Begäran om godkännande går till styrgruppen.
+          data: "kostnad 150 000"
+        - action: Skicka in ett objekt med kostnaden 50 000.
+          expected: Begäran om godkännande går till gruppen teamledare.
+          data: "kostnad 50 000"

@@ -491,6 +491,102 @@ requirements:
         - method: inspection
           text: Utrustningens tekniska dokumentation innehåller en bedömning enligt EN 18031-1, 2 enheter som tas som stickprov har olika initiala lösenord, och en osignerad firmwareavbild vägras.
 
+  - id: TEL-21
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [public-warning, cell-broadcast, emergency]
+    refs: ["Directive (EU) 2018/1972 Art. 110 (public warning system)", "ETSI TS 102 900 (EU-Alert)"]
+    tests: [TEL-T21]
+    en:
+      title: Public warning messages delivered
+      description: The network MUST deliver a public warning message from the authority to the handsets in the target area by cell broadcast and start broadcasting within 3 minutes of receiving it.
+      rationale: People in danger have to be reached at once, whether or not they have installed an app or subscribed to a service.
+      criteria:
+        - method: test
+          text: A test warning sent by the authority interface is broadcast in the target cells within 3 minutes and received by test handsets there.
+          threshold: "≤ 3 min to broadcast"
+    sv:
+      title: Meddelanden från det allmänna varningssystemet levereras
+      description: Nätet SKA leverera ett allmänt varningsmeddelande från myndigheten till telefonerna i målområdet via cellsändning och börja sända inom 3 minuter från att det tagits emot.
+      rationale: Människor i fara måste nås direkt, oavsett om de har installerat en app eller anmält sig till en tjänst.
+      criteria:
+        - method: test
+          text: Ett testvarningsmeddelande som skickas via myndighetens gränssnitt sänds i målcellerna inom 3 minuter och tas emot av testtelefoner där.
+          threshold: "≤ 3 min till sändning"
+
+  - id: TEL-22
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [net-neutrality, traffic-management, transparency]
+    refs: ["Regulation (EU) 2015/2120 Art. 3(3) (reasonable traffic management)", "Regulation (EU) 2015/2120 Art. 4(1) (transparency)"]
+    tests: [TEL-T22]
+    en:
+      title: No blocking or throttling of named services
+      description: The traffic management of an internet access service MUST NOT block, slow down or prioritise specific applications or content providers by commercial agreement.
+      rationale: The Open Internet Regulation forbids it, and customers judge the service on equal treatment of the traffic they choose.
+      criteria:
+        - method: test
+          text: A measurement of three video services and two cloud storage services from a test subscription shows equal throughput within 10 % under the same conditions.
+          threshold: "≤ 10 % throughput difference"
+    sv:
+      title: Ingen blockering eller strypning av namngivna tjänster
+      description: Trafikstyrningen i en internetanslutningstjänst SKA INTE blockera, bromsa eller prioritera vissa applikationer eller innehållsleverantörer genom kommersiella överenskommelser.
+      rationale: Förordningen om öppen internetanslutning förbjuder det, och kunderna bedömer tjänsten efter att den trafik de själva väljer behandlas lika.
+      criteria:
+        - method: test
+          text: En mätning av tre videotjänster och två tjänster för molnlagring från ett testabonnemang visar lika genomströmning inom 10 % under samma förhållanden.
+          threshold: "≤ 10 % skillnad i genomströmning"
+
+  - id: TEL-23
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [contract-summary, consumers, pre-contract]
+    refs: ["Directive (EU) 2018/1972 Art. 102(3) (contract summary)"]
+    tests: [TEL-T23]
+    en:
+      title: Contract summary before the contract
+      description: Before a consumer concludes a contract for an electronic communications service, the system MUST give the consumer the contract summary in the standard template with price, duration, speeds and termination conditions.
+      rationale: The summary lets consumers compare offers on the same terms, and the contract does not take effect until it has been provided.
+      criteria:
+        - method: test
+          text: The online sign-up shows and offers for download the contract summary in the standard template before the final confirmation.
+          threshold: "1 summary before confirmation"
+    sv:
+      title: Avtalssammanfattning före avtalet
+      description: Innan en konsument ingår ett avtal om en elektronisk kommunikationstjänst SKA systemet ge konsumenten avtalssammanfattningen i standardmallen med pris, bindningstid, hastigheter och villkor för uppsägning.
+      rationale: Sammanfattningen låter konsumenterna jämföra erbjudanden på samma villkor, och avtalet får verkan först när den har lämnats.
+      criteria:
+        - method: test
+          text: Beställningen på webben visar avtalssammanfattningen i standardmallen och erbjuder den för nedladdning före den slutliga bekräftelsen.
+          threshold: "1 sammanfattning före bekräftelse"
+
+  - id: TEL-24
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [emergency, real-time-text, accessibility]
+    refs: ["Directive (EU) 2018/1972 Art. 109(5) (equivalent access for end-users with disabilities)", "Directive (EU) 2019/882 (EAA) Annex I Section IV"]
+    tests: [TEL-T24]
+    en:
+      title: Emergency calls with real-time text
+      description: The service MUST let users make an emergency communication to 112 with real-time text alongside voice, routed to the emergency centre with the caller's location.
+      rationale: Deaf and speech-impaired people need text to call for help, and a text service without location delays the response.
+      criteria:
+        - method: test
+          text: A test emergency session with voice and real-time text reaches the test emergency centre, where both the text and the caller location are received.
+          threshold: "text and location delivered"
+    sv:
+      title: Nödsamtal med realtidstext
+      description: Tjänsten SKA låta användare kontakta 112 med realtidstext tillsammans med tal, dirigerat till larmcentralen med uppringarens position.
+      rationale: Döva och personer med talnedsättning behöver text för att kunna larma, och en texttjänst utan position fördröjer insatsen.
+      criteria:
+        - method: test
+          text: En testsession till nödnumret med tal och realtidstext når testlarmcentralen, där både texten och uppringarens position tas emot.
+          threshold: "text och position levereras"
+
 tests:
   - id: TEL-T01
     priority: critical
@@ -1119,3 +1215,123 @@ tests:
           expected: Lösenorden skiljer sig och inget av dem är ett känt standardlösenord.
         - action: Försök installera den osignerade firmwareavbilden i en router.
           expected: Routern vägrar avbilden och behåller den nuvarande firmwaren.
+
+  - id: TEL-T21
+    priority: high
+    execution: manual
+    tags: [public-warning, cell-broadcast]
+    refs: ["Directive (EU) 2018/1972 Art. 110 (public warning system)"]
+    en:
+      title: Test warning through the authority interface
+      description: Sends a test warning for a target area and checks handsets inside and outside it.
+      preconditions: The authority test interface, a target area of 3 cells and test handsets inside and outside the area.
+      expected: The warning is broadcast within 3 minutes and received only in the target area.
+      steps:
+        - action: Send a test warning for the target area and note the time.
+          expected: The interface acknowledges the message.
+          data: "test channel, area of 3 cells"
+        - action: Watch the broadcast logs and the handsets inside the area.
+          expected: Broadcasting starts within 3 minutes and each handset inside shows the warning.
+        - action: Check a handset outside the area.
+          expected: The handset does not show the warning.
+    sv:
+      title: Testvarning via myndighetens gränssnitt
+      description: Skickar en testvarning för ett målområde och kontrollerar telefoner innanför och utanför det.
+      preconditions: Myndighetens testgränssnitt, ett målområde med 3 celler och testtelefoner innanför och utanför området.
+      expected: Varningen sänds inom 3 minuter och tas emot bara i målområdet.
+      steps:
+        - action: Skicka en testvarning för målområdet och notera tiden.
+          expected: Gränssnittet kvitterar meddelandet.
+          data: "testkanal, område med 3 celler"
+        - action: Följ sändningsloggarna och telefonerna i området.
+          expected: Sändningen startar inom 3 minuter och varje telefon i området visar varningen.
+        - action: Kontrollera en telefon utanför området.
+          expected: Telefonen visar inte varningen.
+
+  - id: TEL-T22
+    priority: high
+    execution: manual
+    tags: [net-neutrality, traffic-management]
+    refs: ["Regulation (EU) 2015/2120 Art. 3(3) (reasonable traffic management)"]
+    en:
+      title: Equal treatment of named services
+      description: Measures throughput to several services from one subscription under the same conditions.
+      preconditions: A test subscription, a test host with stable conditions and accounts for three video and two cloud storage services.
+      expected: Throughput to each service is within 10 % of the others.
+      steps:
+        - action: Measure the download throughput from each service three times at the same hour.
+          expected: Five sets of measurements are recorded.
+          data: "3 video services, 2 cloud storage services"
+        - action: Compare the median throughput per service.
+          expected: No service differs by more than 10 % from the others.
+    sv:
+      title: Lika behandling av namngivna tjänster
+      description: Mäter genomströmningen till flera tjänster från ett abonnemang under samma förhållanden.
+      preconditions: Ett testabonnemang, en testvärd med stabila förhållanden och konton för tre videotjänster och två tjänster för molnlagring.
+      expected: Genomströmningen till varje tjänst ligger inom 10 % från de andra.
+      steps:
+        - action: Mät nedladdningshastigheten från varje tjänst tre gånger vid samma timme.
+          expected: Fem mätserier noteras.
+          data: "3 videotjänster, 2 tjänster för molnlagring"
+        - action: Jämför mediangenomströmningen per tjänst.
+          expected: Ingen tjänst avviker med mer än 10 % från de andra.
+
+  - id: TEL-T23
+    priority: high
+    execution: manual
+    tags: [contract-summary, consumers]
+    refs: ["Directive (EU) 2018/1972 Art. 102(3) (contract summary)"]
+    en:
+      title: Contract summary in the sign-up flow
+      description: Goes through the online sign-up as a consumer and checks the summary.
+      preconditions: The online sign-up for a broadband offer and the standard template of the contract summary.
+      expected: The summary in the template is shown and downloadable before confirmation.
+      steps:
+        - action: Choose an offer and go to the confirmation step.
+          expected: A contract summary is shown before the confirm button.
+          data: "broadband 250/250 Mbit/s, 12 months"
+        - action: Download the summary and compare it with the template.
+          expected: It follows the template and states price, duration, speeds and termination conditions.
+    sv:
+      title: Avtalssammanfattning i beställningsflödet
+      description: Går igenom beställningen på webben som konsument och kontrollerar sammanfattningen.
+      preconditions: Beställningen på webben för ett bredbandserbjudande och standardmallen för avtalssammanfattning.
+      expected: Sammanfattningen enligt mallen visas och kan laddas ned före bekräftelsen.
+      steps:
+        - action: Välj ett erbjudande och gå till bekräftelsesteget.
+          expected: En avtalssammanfattning visas före bekräftelseknappen.
+          data: "bredband 250/250 Mbit/s, 12 månader"
+        - action: Ladda ned sammanfattningen och jämför den med mallen.
+          expected: Den följer mallen och anger pris, bindningstid, hastigheter och villkor för uppsägning.
+
+  - id: TEL-T24
+    priority: high
+    execution: manual
+    tags: [emergency, real-time-text]
+    refs: ["Directive (EU) 2018/1972 Art. 109(5) (equivalent access for end-users with disabilities)"]
+    en:
+      title: Emergency session with real-time text
+      description: Starts a test emergency session with voice and real-time text.
+      preconditions: A test emergency centre connection, a test terminal that supports real-time text and a known location.
+      expected: The centre receives voice, text and location.
+      steps:
+        - action: Start an emergency session to the test number with voice and real-time text.
+          expected: The session reaches the test emergency centre.
+          data: "test emergency number agreed with the centre"
+        - action: Type a message in real-time text.
+          expected: The centre sees the characters as they are typed.
+        - action: Check the location received by the centre.
+          expected: The location matches the test terminal's location.
+    sv:
+      title: Nödsession med realtidstext
+      description: Startar en testsession till nödnumret med tal och realtidstext.
+      preconditions: En anslutning till en testlarmcentral, en testterminal som stöder realtidstext och en känd position.
+      expected: Larmcentralen tar emot tal, text och position.
+      steps:
+        - action: Starta en nödsession till testnumret med tal och realtidstext.
+          expected: Sessionen når testlarmcentralen.
+          data: "testnummer överenskommet med centralen"
+        - action: Skriv ett meddelande med realtidstext.
+          expected: Centralen ser tecknen medan de skrivs.
+        - action: Kontrollera den position som centralen tar emot.
+          expected: Positionen stämmer med testterminalens position.

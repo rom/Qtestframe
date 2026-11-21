@@ -427,6 +427,126 @@ requirements:
         - method: test
           text: Belopp i SEK, EUR och JPY sparas med sina koder och visas med valutan vid varje belopp, med 2 decimaler för SEK och EUR och utan decimaler för JPY.
 
+  - id: I18N-20
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [calendar, week-start, locale]
+    refs: ["Unicode CLDR date and time patterns", "ISO 8601-1:2019"]
+    tests: [I18N-T14]
+    en:
+      title: First day of the week by locale
+      description: Calendars and date pickers MUST start the week on the first day of the week of the user's locale, such as Monday for Sweden and Sunday for the United States.
+      rationale: A week that starts on the wrong day makes users pick the wrong date, especially in a month view.
+      criteria:
+        - method: test
+          text: The date picker starts on Monday for a Swedish user and on Sunday for a US English user.
+          threshold: "first weekday per CLDR"
+    sv:
+      title: Veckans första dag efter språkinställning
+      description: Kalendrar och datumväljare SKA börja veckan på den första veckodagen för användarens språkinställning, till exempel måndag för Sverige och söndag för USA.
+      rationale: En vecka som börjar på fel dag får användarna att välja fel datum, särskilt i en månadsvy.
+      criteria:
+        - method: test
+          text: Datumväljaren börjar på måndag för en svensk användare och på söndag för en amerikansk engelsk användare.
+          threshold: "första veckodag enligt CLDR"
+
+  - id: I18N-21
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [bidi, isolation, user-content]
+    refs: ["Unicode UAX #9 Bidirectional Algorithm", "W3C Structural markup and right-to-left text in HTML"]
+    tests: [I18N-T15]
+    en:
+      title: Bidirectional isolation of user text
+      description: The system MUST isolate user-entered text, such as names and titles, from the surrounding interface text so that right-to-left content does not change the order of the text around it.
+      rationale: An Arabic or Hebrew name inserted in a sentence without isolation reorders the numbers and punctuation next to it and produces a misleading message.
+      criteria:
+        - method: test
+          text: A message that contains a Hebrew item title followed by a number shows the number in its correct place in both a left-to-right and a right-to-left interface.
+          threshold: "0 reordered characters outside the inserted text"
+    sv:
+      title: Dubbelriktad isolering av användartext
+      description: Systemet SKA isolera text som användare har matat in, till exempel namn och titlar, från den omgivande gränssnittstexten så att innehåll från höger till vänster inte ändrar ordningen på texten runt omkring.
+      rationale: Ett arabiskt eller hebreiskt namn som infogas i en mening utan isolering kastar om siffror och skiljetecken bredvid och ger ett missvisande meddelande.
+      criteria:
+        - method: test
+          text: Ett meddelande som innehåller en hebreisk objekttitel följd av ett tal visar talet på rätt plats både i ett gränssnitt från vänster till höger och från höger till vänster.
+          threshold: "0 omkastade tecken utanför den infogade texten"
+
+  - id: I18N-22
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [search, diacritics, case]
+    refs: ["W3C Character Model: String Matching", "Unicode UTS #10 Collation Algorithm"]
+    tests: [I18N-T16]
+    en:
+      title: Search without regard to case and accents
+      description: Free-text search SHOULD match words without regard to letter case and to accents that the user's language treats as variants, so that "resume" finds "résumé".
+      rationale: Users often type without accents on mobile keyboards, and a search that requires the exact accent misses records they know exist.
+      criteria:
+        - method: test
+          text: A search for "resume" finds a record titled "Résumé", while a Swedish search for "ar" does not match "år".
+          threshold: "language-specific folding"
+    sv:
+      title: Sökning utan hänsyn till skiftläge och accenter
+      description: Fritextsökning BÖR matcha ord utan hänsyn till skiftläge och till accenter som användarens språk behandlar som varianter, så att "resume" hittar "résumé".
+      rationale: Användare skriver ofta utan accenter på mobilens tangentbord, och en sökning som kräver exakt accent missar poster som de vet finns.
+      criteria:
+        - method: test
+          text: En sökning efter "resume" hittar en post med titeln "Résumé", medan en svensk sökning efter "ar" inte matchar "år".
+          threshold: "språkberoende utjämning"
+
+  - id: I18N-23
+    type: usability
+    obligation: should
+    priority: low
+    tags: [translation, context, resources]
+    refs: ["W3C Internationalization Best Practices", "ICU MessageFormat"]
+    tests: [I18N-T17]
+    en:
+      title: Context for translators
+      description: Each interface text in the resource files SHOULD have a note that states where the text appears and what each placeholder holds.
+      rationale: A word like "Open" can be a verb or a status, and translators without context guess, which produces wrong or inconsistent translations.
+      criteria:
+        - method: inspection
+          text: A sample of 50 resource entries each has a context note, and every entry with a placeholder explains it.
+          threshold: "50 of 50 entries with context"
+    sv:
+      title: Sammanhang för översättare
+      description: Varje gränssnittstext i resursfilerna BÖR ha en anteckning som anger var texten visas och vad varje platshållare innehåller.
+      rationale: Ett ord som "Öppen" kan vara ett verb eller en status, och översättare utan sammanhang gissar, vilket ger felaktiga eller ojämna översättningar.
+      criteria:
+        - method: inspection
+          text: Ett urval av 50 resursposter har var och en en anteckning om sammanhang, och varje post med en platshållare förklarar den.
+          threshold: "50 av 50 poster med sammanhang"
+
+  - id: I18N-24
+    type: usability
+    obligation: must
+    priority: high
+    tags: [numbers, input, decimal-separator]
+    refs: ["Unicode CLDR number formats", "W3C Internationalization Best Practices"]
+    tests: [I18N-T18]
+    en:
+      title: Numbers entered in the locale format
+      description: Number fields MUST accept the decimal and grouping separators of the user's locale, so that a Swedish user can enter "1 234,5" and get 1234.5 stored.
+      rationale: Users type numbers the way they write them, and a field that reads the Swedish decimal comma as a thousands separator stores a value a thousand times too large.
+      criteria:
+        - method: test
+          text: "\"1 234,5\" with Swedish locale and \"1,234.5\" with US English locale both store 1234.5, and an ambiguous entry is rejected with a message."
+          threshold: "0 misread values"
+    sv:
+      title: Tal matas in i språkinställningens format
+      description: Sifferfält SKA ta emot decimal- och tusentalsavgränsare enligt användarens språkinställning, så att en svensk användare kan skriva "1 234,5" och få 1234,5 sparat.
+      rationale: Användare skriver tal som de brukar skriva dem, och ett fält som läser det svenska decimalkommat som tusentalsavgränsare sparar ett tusen gånger för stort värde.
+      criteria:
+        - method: test
+          text: "\"1 234,5\" med svensk språkinställning och \"1,234.5\" med amerikansk engelska sparar båda 1234,5, och en tvetydig inmatning avvisas med ett meddelande."
+          threshold: "0 feltolkade värden"
+
 tests:
   - id: I18N-T01
     priority: high
@@ -829,3 +949,165 @@ tests:
           expected: Resultaten är "1 234,50 kr", "1 234,50 €" och "1 235 JPY".
         - action: Formatera beloppen med en-GB.
           expected: Resultaten är "SEK 1,234.50", "€1,234.50" och "JP¥1,235".
+
+  - id: I18N-T14
+    priority: medium
+    execution: manual
+    tags: [calendar, week-start]
+    refs: ["Unicode CLDR date and time patterns"]
+    en:
+      title: Week start in date pickers
+      description: Opens the date picker and the month calendar as users with different locales.
+      preconditions: Test users with Swedish and US English locale and a page with a date picker and a month calendar.
+      expected: The week starts on Monday for the Swedish user and on Sunday for the US user.
+      steps:
+        - action: As the Swedish user, open the date picker and the month view.
+          expected: The first column is Monday in both.
+          data: "locale sv-SE"
+        - action: As the US English user, open the same.
+          expected: The first column is Sunday in both.
+          data: "locale en-US"
+    sv:
+      title: Veckostart i datumväljare
+      description: Öppnar datumväljaren och månadskalendern som användare med olika språkinställningar.
+      preconditions: Testanvändare med svensk och amerikansk engelsk språkinställning och en sida med datumväljare och månadskalender.
+      expected: Veckan börjar på måndag för den svenska användaren och på söndag för den amerikanska.
+      steps:
+        - action: Öppna datumväljaren och månadsvyn som den svenska användaren.
+          expected: Första kolumnen är måndag i båda.
+          data: "språkinställning sv-SE"
+        - action: Öppna samma sak som den amerikanska engelska användaren.
+          expected: Första kolumnen är söndag i båda.
+          data: "språkinställning en-US"
+
+  - id: I18N-T15
+    priority: medium
+    execution: manual
+    tags: [bidi, isolation]
+    refs: ["Unicode UAX #9 Bidirectional Algorithm"]
+    en:
+      title: Right-to-left title inside a message
+      description: Creates an item with a Hebrew title and triggers a message that contains the title and a number.
+      preconditions: A test item and a notification or confirmation that shows the item title followed by a count.
+      expected: The number and punctuation around the inserted title stay in their correct order.
+      steps:
+        - action: Create an item with a Hebrew title.
+          expected: The item is saved.
+          data: "title \"בדיקה\""
+        - action: Trigger a message that inserts the title followed by a number, in the English interface.
+          expected: The message reads with the title isolated and the number after it, as in the template.
+          data: "\"Item בדיקה has 3 comments\""
+        - action: Switch to a right-to-left interface language and trigger the message again.
+          expected: The surrounding text is ordered correctly and the title shows as one unit.
+    sv:
+      title: Titel från höger till vänster i ett meddelande
+      description: Skapar ett objekt med hebreisk titel och utlöser ett meddelande som innehåller titeln och ett tal.
+      preconditions: Ett testobjekt och en avisering eller bekräftelse som visar objektets titel följd av ett antal.
+      expected: Talet och skiljetecknen runt den infogade titeln behåller rätt ordning.
+      steps:
+        - action: Skapa ett objekt med hebreisk titel.
+          expected: Objektet sparas.
+          data: "titel \"בדיקה\""
+        - action: Utlös ett meddelande som infogar titeln följd av ett tal, i det engelska gränssnittet.
+          expected: Meddelandet visar titeln isolerad och talet efter den, som i mallen.
+          data: "\"Item בדיקה has 3 comments\""
+        - action: Byt till ett gränssnittsspråk från höger till vänster och utlös meddelandet igen.
+          expected: Den omgivande texten har rätt ordning och titeln visas som en enhet.
+
+  - id: I18N-T16
+    priority: medium
+    execution: manual
+    tags: [search, diacritics]
+    refs: ["W3C Character Model: String Matching"]
+    en:
+      title: Accent and case folding in search
+      description: Searches without accents and in another case for records whose titles have them.
+      preconditions: Records titled "Résumé" and "År 2026" and test users with English and Swedish language.
+      expected: Folding applies where the language treats the accent as a variant only.
+      steps:
+        - action: As the English user, search for "resume".
+          expected: The record "Résumé" is found.
+          data: "resume"
+        - action: Search for "RÉSUMÉ".
+          expected: The same record is found.
+        - action: As the Swedish user, search for "ar 2026".
+          expected: The record "År 2026" is not matched, since å is a separate letter in Swedish.
+          data: "ar 2026"
+    sv:
+      title: Utjämning av accenter och skiftläge i sökning
+      description: Söker utan accenter och med annat skiftläge efter poster vars titlar har dem.
+      preconditions: Poster med titlarna "Résumé" och "År 2026" och testanvändare med engelska och svenska som språk.
+      expected: Utjämning sker bara där språket behandlar accenten som en variant.
+      steps:
+        - action: Sök efter "resume" som den engelska användaren.
+          expected: Posten "Résumé" hittas.
+          data: "resume"
+        - action: Sök efter "RÉSUMÉ".
+          expected: Samma post hittas.
+        - action: Sök efter "ar 2026" som den svenska användaren.
+          expected: Posten "År 2026" matchas inte, eftersom å är en egen bokstav på svenska.
+          data: "ar 2026"
+
+  - id: I18N-T17
+    priority: low
+    execution: automated
+    tags: [translation, context]
+    refs: ["W3C Internationalization Best Practices"]
+    en:
+      title: Context notes in the resource files
+      description: A script checks that resource entries have context notes and placeholder explanations.
+      preconditions: The resource files of the interface and a script that parses them.
+      expected: Every entry has a context note and every placeholder is explained.
+      steps:
+        - action: Run the script on the resource files.
+          expected: The script lists entries without a context note; the list is empty.
+          data: "resource files en.json, sv.json"
+        - action: Run the script's placeholder check.
+          expected: Every entry with a placeholder names what the placeholder holds.
+    sv:
+      title: Anteckningar om sammanhang i resursfilerna
+      description: Ett skript kontrollerar att resursposterna har anteckningar om sammanhang och förklaringar av platshållare.
+      preconditions: Gränssnittets resursfiler och ett skript som tolkar dem.
+      expected: Varje post har en anteckning om sammanhang och varje platshållare är förklarad.
+      steps:
+        - action: Kör skriptet på resursfilerna.
+          expected: Skriptet listar poster utan anteckning om sammanhang; listan är tom.
+          data: "resursfiler en.json, sv.json"
+        - action: Kör skriptets kontroll av platshållare.
+          expected: Varje post med en platshållare anger vad platshållaren innehåller.
+
+  - id: I18N-T18
+    priority: high
+    execution: manual
+    tags: [numbers, input]
+    refs: ["Unicode CLDR number formats"]
+    en:
+      title: Locale-specific number input
+      description: Enters numbers with the separators of two locales and an ambiguous entry.
+      preconditions: A form with a decimal number field and test users with Swedish and US English locale.
+      expected: Each entry stores the intended value and the ambiguous one is rejected.
+      steps:
+        - action: As the Swedish user, enter the number and save.
+          expected: 1234.5 is stored and shown as "1 234,5".
+          data: "1 234,5"
+        - action: As the US English user, enter the number and save.
+          expected: 1234.5 is stored and shown as "1,234.5".
+          data: "1,234.5"
+        - action: As the Swedish user, enter a value with a full stop as decimal separator.
+          expected: The entry is rejected with a message that shows the expected format.
+          data: "1.234,5"
+    sv:
+      title: Inmatning av tal enligt språkinställning
+      description: Matar in tal med avgränsarna för två språkinställningar och en tvetydig inmatning.
+      preconditions: Ett formulär med ett decimalfält och testanvändare med svensk och amerikansk engelsk språkinställning.
+      expected: Varje inmatning sparar det avsedda värdet och den tvetydiga avvisas.
+      steps:
+        - action: Mata in talet som den svenska användaren och spara.
+          expected: 1234,5 sparas och visas som "1 234,5".
+          data: "1 234,5"
+        - action: Mata in talet som den amerikanska engelska användaren och spara.
+          expected: 1234,5 sparas och visas som "1,234.5".
+          data: "1,234.5"
+        - action: Mata in ett värde med punkt som decimaltecken som den svenska användaren.
+          expected: Inmatningen avvisas med ett meddelande som visar det förväntade formatet.
+          data: "1.234,5"

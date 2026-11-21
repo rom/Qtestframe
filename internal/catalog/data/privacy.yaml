@@ -319,6 +319,144 @@ requirements:
         - method: inspection
           text: Ett urval av 1 000 rader i analyslagret innehåller inga namn, e-postadresser eller personnummer i klartext, och pseudonymiseringsnyckeln går inte att läsa från analysmiljön.
 
+  - id: PRIV-15
+    type: functional
+    obligation: must
+    priority: high
+    tags: [privacy-by-default, visibility, defaults]
+    refs: ["GDPR Art. 25(2)", "EDPB Guidelines 4/2019 on Article 25 Data Protection by Design and by Default", "ISO/IEC 27701:2025 (privacy by design and by default)"]
+    tests: [PRIV-T15]
+    en:
+      title: Smallest audience by default
+      description: The system MUST set the visibility of a new profile, shared item and activity status to the smallest audience offered, so that only the user and the people the user picks can see it until the user widens it.
+      rationale: Most users keep the defaults, so defaults that expose data to the whole organisation or the public decide the privacy of nearly everyone.
+      criteria:
+        - method: test
+          text: A new account's profile, its first shared item and its activity status are visible only to the user and invited people, and become visible to others only after a change by the user.
+    sv:
+      title: Minsta möjliga publik som standard
+      description: Systemet SKA ställa in synligheten för en ny profil, ett nytt delat objekt och aktivitetsstatus på den minsta publik som erbjuds, så att bara användaren och de personer som användaren väljer kan se dem tills användaren vidgar den.
+      rationale: De flesta användare behåller standardinställningarna, så standardvärden som visar data för hela organisationen eller allmänheten avgör integriteten för nästan alla.
+      criteria:
+        - method: test
+          text: Ett nytt kontos profil, dess första delade objekt och dess aktivitetsstatus syns bara för användaren och inbjudna personer, och blir synliga för andra först efter en ändring av användaren.
+
+  - id: PRIV-16
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [restriction, data-subject-rights]
+    refs: ["GDPR Art. 18", "GDPR Art. 19", "ISO/IEC 27701:2025 (access, correction or erasure)"]
+    tests: [PRIV-T16]
+    en:
+      title: Restriction of processing for a person
+      description: The system MUST let a privacy officer mark a person's data as restricted, after which the system keeps the data but excludes it from searches, exports, mailings and automated processing until the mark is lifted.
+      rationale: While an accuracy dispute or an objection is examined, the person can demand that the data is only stored and not used.
+      criteria:
+        - method: test
+          text: With the mark set, the person does not appear in search results, exports, mailing lists or scheduled jobs, and reappears in each once the mark is lifted.
+    sv:
+      title: Begränsning av behandling för en person
+      description: Systemet SKA låta ett dataskyddsombud markera en persons uppgifter som begränsade, varefter systemet behåller uppgifterna men utesluter dem från sökningar, exporter, utskick och automatisk behandling tills markeringen tas bort.
+      rationale: Medan en tvist om riktighet eller en invändning utreds kan personen kräva att uppgifterna bara lagras och inte används.
+      criteria:
+        - method: test
+          text: Med markeringen satt syns personen inte i sökresultat, exporter, utskickslistor eller schemalagda jobb, och kommer tillbaka i vart och ett när markeringen tas bort.
+
+  - id: PRIV-17
+    type: functional
+    obligation: must
+    priority: high
+    tags: [objection, direct-marketing]
+    refs: ["GDPR Art. 21(2)", "GDPR Art. 21(3)", "ePrivacy Directive 2002/58/EC Art. 13"]
+    tests: [PRIV-T17]
+    en:
+      title: Objection to direct marketing stops it within 24 hours
+      description: The system MUST stop every direct marketing message to a person and every profiling for marketing within 24 hours after the person objects through any channel the system offers.
+      rationale: The right to object to direct marketing is absolute, and messages that keep coming after an objection are a common cause of complaints and fines.
+      criteria:
+        - method: test
+          text: After an objection by link, by settings and by support ticket, no marketing message reaches the person 24 hours later and the person is out of each marketing segment.
+          threshold: "≤ 24 h"
+    sv:
+      title: Invändning mot direktmarknadsföring stoppar den inom 24 timmar
+      description: Systemet SKA stoppa varje direktmarknadsföring till en person och varje profilering för marknadsföring inom 24 timmar efter att personen har invänt via någon kanal som systemet erbjuder.
+      rationale: Rätten att invända mot direktmarknadsföring är ovillkorlig, och meddelanden som fortsätter komma efter en invändning är en vanlig orsak till klagomål och sanktionsavgifter.
+      criteria:
+        - method: test
+          text: Efter en invändning via länk, via inställningar och via supportärende når inget marknadsföringsmeddelande personen 24 timmar senare och personen finns inte i något marknadsföringssegment.
+          threshold: "≤ 24 h"
+
+  - id: PRIV-18
+    type: security
+    obligation: must
+    priority: high
+    tags: [data-subject-requests, identity-verification]
+    refs: ["GDPR Art. 12(6)", "GDPR Art. 5(1)(c)", "EDPB Guidelines 01/2022 on data subject rights - Right of access"]
+    tests: [PRIV-T18]
+    en:
+      title: Identity confirmed before data is released on request
+      description: The system MUST confirm the identity of a person who requests access to, export of or erasure of personal data through the signed-in account or a verified contact channel before it acts on the request.
+      rationale: An access request is an easy way to steal someone's data, while asking for more identity documents than needed creates new personal data to protect.
+      criteria:
+        - method: test
+          text: A request from an unknown email address that names an existing user releases no data and asks for confirmation through the user's account, while a request from the signed-in user proceeds.
+    sv:
+      title: Identiteten bekräftas innan uppgifter lämnas ut på begäran
+      description: Systemet SKA bekräfta identiteten hos en person som begär tillgång till, export av eller radering av personuppgifter via det inloggade kontot eller en verifierad kontaktväg innan det agerar på begäran.
+      rationale: En begäran om tillgång är ett enkelt sätt att stjäla någons uppgifter, medan krav på fler identitetshandlingar än nödvändigt skapar nya personuppgifter att skydda.
+      criteria:
+        - method: test
+          text: En begäran från en okänd e-postadress som anger en befintlig användare lämnar inte ut några uppgifter och ber om bekräftelse via användarens konto, medan en begäran från den inloggade användaren går vidare.
+
+  - id: PRIV-19
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [breach-register, incident]
+    refs: ["GDPR Art. 33(5)", "GDPR Art. 33(1)", "ISO/IEC 27701:2025 (records of PII breaches)"]
+    tests: [PRIV-T19]
+    en:
+      title: Register of personal data breaches
+      description: The organisation MUST record each personal data breach in a register within 72 hours of becoming aware of it, with the facts, the data and persons affected, the effects, the actions taken and whether the authority and the persons were notified.
+      rationale: The register is the evidence that breaches are assessed and handled, including those that did not need to be notified, and the authority can ask for it.
+      criteria:
+        - method: inspection
+          text: Each security incident involving personal data in the last 12 months has a register entry with the six items, created within 72 hours of detection.
+          threshold: "≤ 72 h"
+    sv:
+      title: Register över personuppgiftsincidenter
+      description: Organisationen SKA föra in varje personuppgiftsincident i ett register inom 72 timmar efter att ha fått kännedom om den, med omständigheterna, berörda uppgifter och personer, följderna, vidtagna åtgärder och om myndigheten och personerna har underrättats.
+      rationale: Registret är beviset på att incidenter bedöms och hanteras, även de som inte behövde anmälas, och tillsynsmyndigheten kan begära att få se det.
+      criteria:
+        - method: inspection
+          text: Varje säkerhetsincident med personuppgifter de senaste 12 månaderna har en registerpost med de sex uppgifterna, skapad inom 72 timmar efter upptäckten.
+          threshold: "≤ 72 h"
+
+  - id: PRIV-20
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [processor, sub-processors, notification]
+    refs: ["GDPR Art. 28(2)", "GDPR Art. 28(4)", "ISO/IEC 27701:2025 (disclosure of subcontracted PII processing)"]
+    tests: [PRIV-T20]
+    en:
+      title: Customers told of new sub-processors 30 days ahead
+      description: As processor, the supplier MUST inform each customer organisation of a new or replaced sub-processor at least 30 days before the sub-processor receives personal data, and give the customer a way to object.
+      rationale: The customer, as controller, must be able to assess and refuse a new recipient of its data before the data is moved.
+      criteria:
+        - method: review
+          text: For each sub-processor added in the last 12 months, the notice to customers is dated at least 30 days before the start date and names the service, the data and the location.
+          threshold: "≥ 30 days before"
+    sv:
+      title: Kunder informeras om nya underbiträden 30 dagar i förväg
+      description: Som personuppgiftsbiträde SKA leverantören informera varje kundorganisation om ett nytt eller utbytt underbiträde minst 30 dagar innan underbiträdet tar emot personuppgifter, och ge kunden en möjlighet att invända.
+      rationale: Kunden är personuppgiftsansvarig och behöver kunna bedöma och säga nej till en ny mottagare av sina uppgifter innan uppgifterna flyttas.
+      criteria:
+        - method: review
+          text: För varje underbiträde som lagts till de senaste 12 månaderna är meddelandet till kunderna daterat minst 30 dagar före startdatumet och anger tjänsten, uppgifterna och platsen.
+          threshold: "≥ 30 dagar före"
+
 tests:
   - id: PRIV-T01
     priority: high
@@ -729,3 +867,175 @@ tests:
           data: "100 kända värden; mönster för e-post och personnummer"
         - action: Försök läsa pseudonymiseringsnyckeln från hemlighetshanteraren med analytikerkontot.
           expected: Åtkomsten nekas.
+
+  - id: PRIV-T15
+    priority: high
+    execution: manual
+    tags: [privacy-by-default]
+    refs: ["GDPR Art. 25(2)"]
+    en:
+      title: New accounts start with the narrowest visibility
+      description: Creates a new account and checks what other users can see before and after the user changes the settings.
+      preconditions: A new test account, a second account in the same organisation and an anonymous browser.
+      expected: Nothing of the new account is visible to others until the user widens it.
+      steps:
+        - action: Create the account, fill in the profile and share a first item without changing any visibility setting.
+          expected: The settings show the narrowest audience for profile, item and activity status.
+        - action: As the second account and anonymously, look for the profile, the item and the activity status.
+          expected: None of them is visible.
+        - action: As the new user, widen the profile visibility to the organisation and check again as the second account.
+          expected: The profile is now visible to the second account and still not anonymously.
+    sv:
+      title: Nya konton börjar med den snävaste synligheten
+      description: Skapar ett nytt konto och kontrollerar vad andra användare ser före och efter att användaren ändrar inställningarna.
+      preconditions: Ett nytt testkonto, ett andra konto i samma organisation och en anonym webbläsare.
+      expected: Inget av det nya kontot syns för andra förrän användaren vidgar synligheten.
+      steps:
+        - action: Skapa kontot, fyll i profilen och dela ett första objekt utan att ändra någon synlighetsinställning.
+          expected: Inställningarna visar den snävaste publiken för profil, objekt och aktivitetsstatus.
+        - action: Leta efter profilen, objektet och aktivitetsstatusen som det andra kontot och anonymt.
+          expected: Inget av dem syns.
+        - action: Vidga som den nya användaren profilens synlighet till organisationen och kontrollera igen som det andra kontot.
+          expected: Profilen syns nu för det andra kontot men fortfarande inte anonymt.
+
+  - id: PRIV-T16
+    priority: medium
+    execution: manual
+    tags: [restriction]
+    refs: ["GDPR Art. 18"]
+    en:
+      title: Restricted person is left out of processing
+      description: Marks a test person as restricted and checks searches, exports, mailing lists and jobs.
+      preconditions: A privacy officer account and a test person who appears in search, in an export, on a mailing list and in a nightly job.
+      expected: The person is excluded while the mark is set and included again after it is lifted.
+      steps:
+        - action: Set the restriction mark on the test person.
+          expected: The mark is saved with the officer's name and time.
+        - action: Search for the person, run the export, check the next mailing list and run the nightly job.
+          expected: The person is absent from each, and the record still exists for the privacy officer.
+        - action: Lift the mark and repeat the checks.
+          expected: The person appears in each again.
+    sv:
+      title: En person med begränsning utesluts från behandling
+      description: Markerar en testperson som begränsad och kontrollerar sökningar, exporter, utskickslistor och jobb.
+      preconditions: Ett konto för dataskyddsombud och en testperson som finns i sökningen, i en export, på en utskickslista och i ett nattligt jobb.
+      expected: Personen utesluts medan markeringen finns och tas med igen när den tas bort.
+      steps:
+        - action: Sätt begränsningsmarkeringen på testpersonen.
+          expected: Markeringen sparas med ombudets namn och tid.
+        - action: Sök efter personen, kör exporten, kontrollera nästa utskickslista och kör det nattliga jobbet.
+          expected: Personen saknas i vart och ett, och posten finns fortfarande kvar för dataskyddsombudet.
+        - action: Ta bort markeringen och upprepa kontrollerna.
+          expected: Personen finns med i vart och ett igen.
+
+  - id: PRIV-T17
+    priority: high
+    execution: manual
+    tags: [objection, direct-marketing]
+    refs: ["GDPR Art. 21(3)"]
+    en:
+      title: Objections stop marketing through every channel
+      description: Lodges objections to direct marketing in three ways and checks mailings and segments a day later.
+      preconditions: Three test persons on the marketing list and in a marketing segment, and a marketing mailing scheduled for the next day.
+      expected: None of the three gets marketing or remains in a segment 24 hours after the objection.
+      steps:
+        - action: Person 1 uses the unsubscribe link, person 2 turns off marketing in the settings and person 3 objects through a support ticket.
+          expected: Each objection is recorded with its time.
+        - action: After 24 hours, check the recipients of the scheduled mailing and the members of the marketing segments.
+          expected: None of the three persons is a recipient or a member.
+    sv:
+      title: Invändningar stoppar marknadsföring i varje kanal
+      description: Gör invändningar mot direktmarknadsföring på tre sätt och kontrollerar utskick och segment ett dygn senare.
+      preconditions: Tre testpersoner på marknadsföringslistan och i ett marknadsföringssegment, och ett marknadsföringsutskick schemalagt till nästa dag.
+      expected: Ingen av de tre får marknadsföring eller finns kvar i ett segment 24 timmar efter invändningen.
+      steps:
+        - action: Person 1 använder avregistreringslänken, person 2 stänger av marknadsföring i inställningarna och person 3 invänder via ett supportärende.
+          expected: Varje invändning registreras med sin tid.
+        - action: Kontrollera efter 24 timmar mottagarna av det schemalagda utskicket och medlemmarna i marknadsföringssegmenten.
+          expected: Ingen av de tre personerna är mottagare eller medlem.
+
+  - id: PRIV-T18
+    priority: high
+    execution: manual
+    tags: [data-subject-requests, identity-verification]
+    refs: ["GDPR Art. 12(6)"]
+    en:
+      title: Requests from unverified senders release no data
+      description: Sends a data access request from an unknown address and from the signed-in user.
+      preconditions: An existing test user with a registered email address, and a second email address not linked to any account.
+      expected: Only the verified request leads to data being released.
+      steps:
+        - action: From the unlinked address, request a copy of the test user's personal data.
+          expected: No data is sent; a confirmation request goes to the user's registered address or account.
+        - action: Sign in as the test user and request the copy from the privacy settings.
+          expected: The request is accepted and the copy is produced for the signed-in user.
+    sv:
+      title: Begäranden från overifierade avsändare lämnar inte ut några uppgifter
+      description: Skickar en begäran om tillgång från en okänd adress och från den inloggade användaren.
+      preconditions: En befintlig testanvändare med registrerad e-postadress, och en andra e-postadress som inte är kopplad till något konto.
+      expected: Endast den verifierade begäran leder till att uppgifter lämnas ut.
+      steps:
+        - action: Begär från den okopplade adressen en kopia av testanvändarens personuppgifter.
+          expected: Inga uppgifter skickas; en begäran om bekräftelse går till användarens registrerade adress eller konto.
+        - action: Logga in som testanvändaren och begär kopian från integritetsinställningarna.
+          expected: Begäran godtas och kopian tas fram för den inloggade användaren.
+
+  - id: PRIV-T19
+    priority: high
+    execution: manual
+    tags: [breach-register]
+    refs: ["GDPR Art. 33(5)"]
+    en:
+      title: Breach register is complete and on time
+      description: Compares the security incidents involving personal data with the breach register.
+      preconditions: The incident list of the last 12 months with detection times, and the breach register.
+      expected: Each incident with personal data has a complete entry made within 72 hours.
+      steps:
+        - action: Select the incidents of the last 12 months that involved personal data.
+          expected: A list of incidents with detection times is produced.
+        - action: Find each incident in the register and compare the entry time with the detection time.
+          expected: Each has an entry created within 72 hours.
+        - action: Check each entry's content.
+          expected: Each has the facts, affected data and persons, effects, actions and notification decisions.
+    sv:
+      title: Incidentregistret är fullständigt och i tid
+      description: Jämför säkerhetsincidenterna med personuppgifter med registret över personuppgiftsincidenter.
+      preconditions: Incidentlistan för de senaste 12 månaderna med upptäcktstider, och incidentregistret.
+      expected: Varje incident med personuppgifter har en fullständig post som skapats inom 72 timmar.
+      steps:
+        - action: Välj ut de incidenter de senaste 12 månaderna som berörde personuppgifter.
+          expected: En lista med incidenter och upptäcktstider tas fram.
+        - action: Leta upp varje incident i registret och jämför postens tid med upptäcktstiden.
+          expected: Var och en har en post skapad inom 72 timmar.
+        - action: Kontrollera innehållet i varje post.
+          expected: Var och en har omständigheter, berörda uppgifter och personer, följder, åtgärder och beslut om underrättelser.
+
+  - id: PRIV-T20
+    priority: medium
+    execution: manual
+    tags: [sub-processors]
+    refs: ["GDPR Art. 28(2)"]
+    en:
+      title: Sub-processor changes were announced in time
+      description: Compares the start dates of new sub-processors with the dates of the notices to customers.
+      preconditions: The sub-processor list with start dates and the sent customer notices of the last 12 months.
+      expected: Each new sub-processor was announced at least 30 days before its start.
+      steps:
+        - action: List the sub-processors added or replaced in the last 12 months with their start dates.
+          expected: A list is produced.
+        - action: Find the customer notice for each and compare the dates.
+          expected: Each notice is at least 30 days before the start date and names the service, data and location.
+        - action: Check that the notice explains how to object.
+          expected: Each notice gives a way to object and a deadline.
+    sv:
+      title: Byten av underbiträden meddelades i tid
+      description: Jämför startdatum för nya underbiträden med datumen för meddelandena till kunderna.
+      preconditions: Listan över underbiträden med startdatum och de meddelanden till kunder som skickats de senaste 12 månaderna.
+      expected: Varje nytt underbiträde meddelades minst 30 dagar före start.
+      steps:
+        - action: Lista de underbiträden som lagts till eller bytts ut de senaste 12 månaderna med sina startdatum.
+          expected: En lista tas fram.
+        - action: Leta upp kundmeddelandet för vart och ett och jämför datumen.
+          expected: Varje meddelande ligger minst 30 dagar före startdatumet och anger tjänst, uppgifter och plats.
+        - action: Kontrollera att meddelandet förklarar hur man invänder.
+          expected: Varje meddelande anger ett sätt att invända och en sista dag.

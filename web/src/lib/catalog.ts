@@ -4,7 +4,6 @@
 // once per language and filters here, so typing in the search field stays
 // instant with several hundred items.
 import { anyOf } from './query'
-import type { Segment } from './highlight'
 
 export type CatalogKind = 'requirement' | 'test'
 export type CatalogLang = 'en' | 'sv'
@@ -63,6 +62,7 @@ export interface CatalogSource {
   jurisdiction?: string
   short?: string
   name: string
+  /** the official or publisher page */
   url?: string
   /** requirements citing it */
   requirements: number
@@ -141,10 +141,31 @@ export interface CatalogStep {
   data?: string
 }
 
+/** A ref with its source and the link to the cited text (catalogue item details). */
+export interface CatalogRefTarget {
+  ref: string
+  source?: string
+  /** the source's name */
+  name?: string
+  /** the cited document, else the source */
+  url?: string
+}
+
+/** The refs of an item with their sources, linked where the registry knows the text (https links only). */
+export function refLinks(refs: readonly string[], targets: readonly CatalogRefTarget[] | null | undefined): CatalogRefTarget[] {
+  const byRef = new Map((targets ?? []).map((x) => [x.ref, x]))
+  return refs.map((ref) => {
+    const x = byRef.get(ref)
+    const url = x?.url && /^https:\/\/\S+$/.test(x.url) ? x.url : undefined
+    return { ref, source: x?.source, name: x?.name, url }
+  })
+}
+
 export interface CatalogRequirementDetail extends CatalogRequirement {
   area_name: string
   rationale: string
   criteria: CatalogCriterion[]
+  ref_targets?: CatalogRefTarget[]
   linked_tests: CatalogLinked[]
 }
 
@@ -153,6 +174,7 @@ export interface CatalogTestDetail extends CatalogTest {
   preconditions: string
   expected: string
   step_list: CatalogStep[]
+  ref_targets?: CatalogRefTarget[]
   linked_requirements: CatalogLinked[]
 }
 
@@ -480,28 +502,7 @@ export function importPlan(
 
 // ---------------------------------------------------------------- display
 
-const KEYWORDS: [RegExp, string][] = [
-  [/MUST NOT|SHALL NOT|SKA INTE/u, 'kw-strong'],
-  [/MUST|SHALL|SKA/u, 'kw-strong'],
-  [/SHOULD NOT|BÖR INTE/u, 'kw-medium'],
-  [/SHOULD|BÖR/u, 'kw-medium'],
-  [/MAY|FÅR/u, 'kw-weak'],
-]
-const KEYWORD_RE = /(?<![\p{L}\p{N}])(MUST NOT|SHALL NOT|SKA INTE|SHOULD NOT|BÖR INTE|MUST|SHALL|SKA|SHOULD|BÖR|MAY|FÅR)(?![\p{L}\p{N}])/gu
-
-/** The text split at its upper-case obligation keywords (as the requirement editor marks them). */
-export function keywordSegments(text: string): Segment[] {
-  const out: Segment[] = []
-  let last = 0
-  for (const m of text.matchAll(KEYWORD_RE)) {
-    const i = m.index ?? 0
-    if (i > last) out.push({ text: text.slice(last, i), mark: false })
-    out.push({ text: m[0], mark: true, kind: KEYWORDS.find(([re]) => re.test(m[0]))?.[1] })
-    last = i + m[0].length
-  }
-  if (last < text.length) out.push({ text: text.slice(last), mark: false })
-  return out
-}
+// Obligation keywords in catalogue texts: see obligationKeywords.ts.
 
 /** A list filter for the created items: their keys, or every catalogue item when too long. */
 export function createdQuery(keys: readonly string[], max = 3500): string {

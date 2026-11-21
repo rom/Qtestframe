@@ -290,6 +290,124 @@ requirements:
           text: Varje hett arbete i arbetsloggen för de senaste 6 månaderna har ett undertecknat tillstånd, och varje tillstånd anger en brandvakt i minst 1 timme.
           threshold: brandvakt ≥ 1 h
 
+  - id: FCFIRE-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [fire-extinguisher, first-aid-firefighting]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §", "EN 3-7:2004+A1:2007 (portable fire extinguishers)"]
+    tests: [FCFIRE-T09]
+    en:
+      title: Fire extinguisher within 25 m walking distance, inspected each year
+      description: The building owner MUST place portable fire extinguishers so that one is within 25 m walking distance of each point of the occupied floor area, and have each extinguisher inspected at least every 12 months.
+      rationale: First-aid firefighting in the first minutes stops most fires before they spread, but only when equipment is near and works.
+      criteria:
+        - method: inspection
+          text: A walk of each floor finds no point more than 25 m from an extinguisher, and each extinguisher's tag shows an inspection less than 12 months old.
+          threshold: "≤ 25 m; inspection ≤ 12 months"
+    sv:
+      title: Brandsläckare inom 25 m gångavstånd och kontrollerad varje år
+      description: Fastighetsägaren SKA placera handbrandsläckare så att en finns inom 25 m gångavstånd från varje punkt på den använda golvytan, och låta kontrollera varje brandsläckare minst var 12:e månad.
+      rationale: Släckning de första minuterna stoppar de flesta bränder innan de sprider sig, men bara när utrustningen finns nära och fungerar.
+      criteria:
+        - method: inspection
+          text: En genomgång av varje våning hittar ingen punkt längre än 25 m från en brandsläckare, och varje släckares märkning visar en kontroll som är mindre än 12 månader gammal.
+          threshold: "≤ 25 m; kontroll ≤ 12 månader"
+
+  - id: FCFIRE-14
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [sprinkler, testing, maintenance]
+    refs: ["EN 12845:2015+A1:2019 (inspection and maintenance)"]
+    tests: [FCFIRE-T10]
+    en:
+      title: Sprinkler system tested each week and serviced each year
+      description: The owner of a sprinkler system MUST have the alarm valves, the water supply and the pumps tested each week, and the whole system serviced by a certified contractor at least every 12 months.
+      rationale: A sprinkler system that is closed off or has a failed pump gives a false sense of safety, and regular tests reveal it.
+      criteria:
+        - method: review
+          text: The sprinkler log has a weekly test entry for each week of the last 3 months, and the latest service report by a certified contractor is less than 12 months old.
+          threshold: "weekly tests; service ≤ 12 months"
+    sv:
+      title: Sprinklersystemet provas varje vecka och servas varje år
+      description: Ägaren till ett sprinklersystem SKA låta prova larmventiler, vattenförsörjning och pumpar varje vecka och låta en certifierad entreprenör serva hela systemet minst var 12:e månad.
+      rationale: Ett sprinklersystem som är avstängt eller har en trasig pump ger en falsk känsla av säkerhet, och regelbundna prov avslöjar det.
+      criteria:
+        - method: review
+          text: Sprinklerjournalen har en post om veckoprov för varje vecka under de senaste 3 månaderna, och den senaste servicerapporten från en certifierad entreprenör är mindre än 12 månader gammal.
+          threshold: "veckoprov; service ≤ 12 månader"
+
+  - id: FCFIRE-15
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [fire-alarm, alarm-transmission, rescue-service]
+    refs: ["EN 54 (fire detection and fire alarm systems)", "EN 50518:2019 (monitoring and alarm receiving centre)"]
+    tests: [FCFIRE-T10]
+    en:
+      title: Alarm transmission to the rescue service tested each quarter
+      description: The fire alarm system MUST transmit a fire alarm to the alarm receiving centre within 100 seconds of the alarm, with an end-to-end test of the transmission at least once each quarter.
+      rationale: A fire alarm that does not reach the rescue service delays the response at night and at weekends when nobody is on site.
+      criteria:
+        - method: test
+          text: A test alarm reaches the alarm receiving centre within 100 seconds, and the log shows an end-to-end test in each of the last 4 quarters.
+          threshold: "≤ 100 s; test each quarter"
+    sv:
+      title: Larmöverföringen till räddningstjänsten provas varje kvartal
+      description: Brandlarmet SKA överföra ett brandlarm till larmmottagningen inom 100 sekunder från larmet, med ett prov av överföringen hela vägen minst en gång per kvartal.
+      rationale: Ett brandlarm som inte når räddningstjänsten försenar insatsen på nätter och helger när ingen finns på plats.
+      criteria:
+        - method: test
+          text: Ett provlarm når larmmottagningen inom 100 sekunder, och loggen visar ett prov hela vägen under vart och ett av de 4 senaste kvartalen.
+          threshold: "≤ 100 s; prov varje kvartal"
+
+  - id: FCFIRE-16
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [fire-training, staff, extinguisher]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    tests: [FCFIRE-T11]
+    en:
+      title: Fire safety training with practical extinguisher use every 3 years
+      description: The employer MUST give each employee fire safety training that includes alarm, evacuation and practical use of a fire extinguisher within 3 months of starting and at least every 3 years after that.
+      rationale: People who have used an extinguisher once and know the escape routes act faster and more safely when a fire starts.
+      criteria:
+        - method: review
+          text: The training records show for each employee a course with a practical part within 3 months of the start date and at most 3 years ago.
+          threshold: "≤ 3 months after start; refresher ≤ 3 years"
+    sv:
+      title: Brandskyddsutbildning med praktisk släckövning vart 3:e år
+      description: Arbetsgivaren SKA ge varje anställd en brandskyddsutbildning som omfattar larm, utrymning och praktisk användning av brandsläckare inom 3 månader från anställningens start och därefter minst vart 3:e år.
+      rationale: Den som har använt en brandsläckare en gång och känner utrymningsvägarna agerar snabbare och säkrare när det börjar brinna.
+      criteria:
+        - method: review
+          text: Utbildningsregistret visar för varje anställd en utbildning med praktisk del inom 3 månader från anställningens start och för högst 3 år sedan.
+          threshold: "≤ 3 månader efter start; repetition ≤ 3 år"
+
+  - id: FCFIRE-17
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [flammable-goods, permit, storage]
+    refs: ["Lag (2010:1011) om brandfarliga och explosiva varor"]
+    tests: [FCFIRE-T11]
+    en:
+      title: Permit and register for flammable goods above the permit limits
+      description: The operator MUST hold a valid permit before storing flammable gases or liquids in quantities above the limits that require a permit, and keep a register of the stored quantities per storage place.
+      rationale: Unknown or excess quantities of flammable goods turn a small fire into an explosion and endanger the rescue service.
+      criteria:
+        - method: inspection
+          text: A count at each storage place matches the register, and where the quantity exceeds the permit limit a valid permit covers it.
+    sv:
+      title: Tillstånd och förteckning för brandfarliga varor över tillståndsgränserna
+      description: Verksamhetsutövaren SKA ha ett giltigt tillstånd innan brandfarliga gaser eller vätskor lagras i mängder över de gränser som kräver tillstånd, och föra en förteckning över de lagrade mängderna per förvaringsplats.
+      rationale: Okända eller för stora mängder brandfarliga varor gör en liten brand till en explosion och utsätter räddningstjänsten för fara.
+      criteria:
+        - method: inspection
+          text: En inventering vid varje förvaringsplats stämmer med förteckningen, och där mängden överstiger tillståndsgränsen täcks den av ett giltigt tillstånd.
+
 tests:
   - id: FCFIRE-T01
     priority: critical
@@ -540,3 +658,99 @@ tests:
           expected: Vart och ett har ett tillstånd som undertecknats av den utsedda tillståndsansvarige innan arbetet började.
         - action: Läs uppgiften om brandvakt i varje tillstånd.
           expected: Varje tillstånd anger brandvakt i minst 1 timme efter att arbetet avslutats.
+
+  - id: FCFIRE-T09
+    priority: high
+    execution: manual
+    tags: [fire-extinguisher]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §"]
+    en:
+      title: Walking distances to fire extinguishers and their inspection tags
+      description: Checks the placement and inspection of portable fire extinguishers on each floor.
+      preconditions: Floor plans with the extinguisher positions and a measuring wheel.
+      expected: Each point of the occupied area is within 25 m of an extinguisher, and each extinguisher was inspected within 12 months.
+      steps:
+        - action: On each floor, measure the walking distance from the farthest corners of each room to the nearest extinguisher.
+          expected: Each distance is at most 25 m.
+        - action: Read the inspection tag of each extinguisher.
+          expected: Each tag shows an inspection less than 12 months old.
+        - action: Compare the extinguishers found with the floor plans.
+          expected: Each extinguisher on the plans is in place.
+    sv:
+      title: Gångavstånd till brandsläckare och deras kontrollmärkning
+      description: Kontrollerar placering och kontroll av handbrandsläckare på varje våning.
+      preconditions: Planritningar med brandsläckarnas placering och ett mäthjul.
+      expected: Varje punkt på den använda ytan ligger inom 25 m från en brandsläckare, och varje släckare har kontrollerats inom 12 månader.
+      steps:
+        - action: Mät på varje våning gångavståndet från de mest avlägsna hörnen i varje rum till närmaste brandsläckare.
+          expected: Varje avstånd är högst 25 m.
+        - action: Läs kontrollmärkningen på varje brandsläckare.
+          expected: Varje märkning visar en kontroll som är mindre än 12 månader gammal.
+        - action: Jämför de brandsläckare som hittas med planritningarna.
+          expected: Varje släckare på ritningarna finns på plats.
+
+  - id: FCFIRE-T10
+    priority: high
+    execution: manual
+    tags: [sprinkler, alarm-transmission]
+    refs: ["EN 12845:2015+A1:2019 (inspection and maintenance)", "EN 50518:2019 (monitoring and alarm receiving centre)"]
+    en:
+      title: Sprinkler log and an end-to-end alarm transmission test
+      description: Reviews the sprinkler log and service reports, and tests the transmission of a fire alarm to the alarm receiving centre.
+      preconditions: The sprinkler log, the latest service report, the alarm receiving centre informed of the test, and the transmission test log.
+      expected: Weekly tests and yearly service are recorded, and a test alarm reaches the centre within 100 seconds.
+      steps:
+        - action: Read the sprinkler log for the last 3 months.
+          expected: Each week has a test entry for alarm valves, water supply and pumps.
+        - action: Read the latest service report.
+          expected: It is by a certified contractor and less than 12 months old.
+        - action: Trigger a test alarm from a detector and note the time.
+          expected: The alarm receiving centre confirms receipt within 100 seconds.
+        - action: Read the transmission test log.
+          expected: Each of the last 4 quarters has an end-to-end test.
+    sv:
+      title: Sprinklerjournalen och ett prov av larmöverföringen hela vägen
+      description: Granskar sprinklerjournalen och servicerapporterna och provar överföringen av ett brandlarm till larmmottagningen.
+      preconditions: Sprinklerjournalen, den senaste servicerapporten, larmmottagningen informerad om provet och loggen över prov av överföringen.
+      expected: Veckoprov och årlig service är dokumenterade, och ett provlarm når larmmottagningen inom 100 sekunder.
+      steps:
+        - action: Läs sprinklerjournalen för de senaste 3 månaderna.
+          expected: Varje vecka har en post om prov av larmventiler, vattenförsörjning och pumpar.
+        - action: Läs den senaste servicerapporten.
+          expected: Den är från en certifierad entreprenör och mindre än 12 månader gammal.
+        - action: Utlös ett provlarm från en detektor och notera tiden.
+          expected: Larmmottagningen bekräftar mottagandet inom 100 sekunder.
+        - action: Läs loggen över prov av överföringen.
+          expected: Vart och ett av de 4 senaste kvartalen har ett prov hela vägen.
+
+  - id: FCFIRE-T11
+    priority: medium
+    execution: manual
+    tags: [fire-training, flammable-goods]
+    refs: ["Lag (2003:778) om skydd mot olyckor 2 kap. 2 §", "Lag (2010:1011) om brandfarliga och explosiva varor"]
+    en:
+      title: Fire safety training records and flammable goods register
+      description: Compares the training records with the staff list, and counts the flammable goods at each storage place.
+      preconditions: The staff list with start dates, the training records, the register of flammable goods and the permits.
+      expected: Each employee is trained in time, and stored quantities match the register and the permits.
+      steps:
+        - action: Look up each employee's latest fire safety training.
+          expected: It includes a practical part, was within 3 months of the start date and is at most 3 years old.
+        - action: Count the flammable gases and liquids at each storage place.
+          expected: The counts match the register.
+          data: "e.g. 12 × 11 kg LPG cylinders, 400 l of class 2a liquids"
+        - action: Compare each quantity above the permit limit with the permit.
+          expected: A valid permit covers it.
+    sv:
+      title: Utbildningsregister för brandskydd och förteckning över brandfarliga varor
+      description: Jämför utbildningsregistret med personallistan och inventerar de brandfarliga varorna på varje förvaringsplats.
+      preconditions: Personallistan med startdatum, utbildningsregistret, förteckningen över brandfarliga varor och tillstånden.
+      expected: Varje anställd är utbildad i tid, och lagrade mängder stämmer med förteckningen och tillstånden.
+      steps:
+        - action: Slå upp varje anställds senaste brandskyddsutbildning.
+          expected: Den har en praktisk del, gjordes inom 3 månader från anställningens start och är högst 3 år gammal.
+        - action: Räkna brandfarliga gaser och vätskor på varje förvaringsplats.
+          expected: Antalen stämmer med förteckningen.
+          data: "t.ex. 12 gasolflaskor à 11 kg, 400 l brandfarlig vätska klass 2a"
+        - action: Jämför varje mängd över tillståndsgränsen med tillståndet.
+          expected: Ett giltigt tillstånd täcker den.

@@ -6,8 +6,9 @@ import ProgressSpinner from 'primevue/progressspinner'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import StatusTag from './StatusTag.vue'
+import ObligationText from './ObligationText.vue'
 import { api, errorMessage } from '@/lib/api'
-import { keywordSegments, type CatalogKind, type CatalogLinked, type CatalogRequirementDetail, type CatalogTestDetail } from '@/lib/catalog'
+import { refLinks, type CatalogKind, type CatalogLinked, type CatalogRequirementDetail, type CatalogTestDetail } from '@/lib/catalog'
 import { enumLabel } from '@/i18n/labels'
 import { useI18n } from 'vue-i18n'
 
@@ -45,7 +46,8 @@ watch(() => [props.kind, props.id, props.lang, props.projectId], load, { immedia
 const item = computed(() => req.value ?? test.value)
 const linked = computed<CatalogLinked[]>(() => req.value?.linked_tests ?? test.value?.linked_requirements ?? [])
 const otherKind = computed<CatalogKind>(() => (props.kind === 'requirement' ? 'test' : 'requirement'))
-const segments = computed(() => keywordSegments(item.value?.description ?? ''))
+// the cited standards, linked to their text where the source registry knows it
+const refs = computed(() => refLinks(item.value?.refs ?? [], item.value?.ref_targets))
 const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key).join(', ')
 </script>
 
@@ -69,12 +71,7 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
       <Message v-if="item.in_project?.length" severity="info" :closable="false" class="small">{{ t('catalog.inProjectAs', { keys: keys(item.in_project) }) }}</Message>
 
       <h3>{{ t('catalog.description') }}</h3>
-      <p class="text">
-        <template v-for="(s, i) in segments" :key="i">
-          <span v-if="s.mark" :class="['kw', s.kind]">{{ s.text }}</span>
-          <template v-else>{{ s.text }}</template>
-        </template>
-      </p>
+      <p class="text"><ObligationText :text="item.description" :lang="lang" /></p>
 
       <template v-if="req">
         <h3>{{ t('catalog.rationale') }}</h3>
@@ -108,7 +105,12 @@ const keys = (xs: { key: string }[] | undefined) => (xs ?? []).map((x) => x.key)
       <template v-if="item.refs.length">
         <h3>{{ t('catalog.refs') }}</h3>
         <ul class="cp-list">
-          <li v-for="r in item.refs" :key="r">{{ r }}</li>
+          <li v-for="r in refs" :key="r.ref">
+            <a v-if="r.url" :href="r.url" target="_blank" rel="noopener noreferrer"
+              >{{ r.ref }} <i class="pi pi-external-link cp-ext" aria-hidden="true" /><span class="sr-only"> ({{ t('links.newTab') }})</span></a
+            >
+            <template v-else>{{ r.ref }}</template>
+          </li>
         </ul>
         <p class="small muted">{{ t('catalog.refsHint') }}</p>
       </template>
@@ -140,4 +142,5 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; color: 
 .linklike { text-align: left; }
 .linklike:hover .key, .linklike:focus-visible .key, .linklike:hover .cp-link-title, .linklike:focus-visible .cp-link-title { text-decoration: underline; }
 .cp-tag { font-weight: 500; }
+.cp-ext { font-size: 0.75em; }
 </style>

@@ -278,6 +278,118 @@ requirements:
         - method: inspection
           text: Projektplanen, kravbaslinjen och kvalitetsplanen finns i arkivet, var och en med versionsnummer, godkännande och ändringshistorik, och gruppen använder ingen annan version.
 
+  - id: PJRQ-13
+    type: business
+    obligation: should
+    priority: medium
+    tags: [risk, opportunity, risk-register]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)"]
+    tests: [PJRQ-T11]
+    en:
+      title: Opportunities recorded together with threats
+      description: The risk register SHOULD record opportunities, with the expected gain, an owner and a planned action to exploit them, in the same way as threats.
+      rationale: A register of threats only leaves gains in cost or time unexploited, though they are found by the same analysis.
+      criteria:
+        - method: inspection
+          text: The register has an entry type for opportunities, and each open opportunity has an expected gain, an owner and an action.
+    sv:
+      title: Möjligheter registreras tillsammans med hot
+      description: Riskregistret BÖR innehålla möjligheter, med förväntad vinst, ägare och en planerad åtgärd för att ta vara på dem, på samma sätt som hot.
+      rationale: Ett register med bara hot lämnar vinster i kostnad eller tid outnyttjade, fast de hittas med samma analys.
+      criteria:
+        - method: inspection
+          text: Registret har en posttyp för möjligheter, och varje öppen möjlighet har förväntad vinst, ägare och åtgärd.
+
+  - id: PJRQ-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk, reporting, steering-group]
+    refs: ["ISO 31000:2018 §6.6", "ISO 21502:2020 §7.15 (reporting)"]
+    tests: [PJRQ-T12]
+    en:
+      title: Top 10 risks with trend in each status report
+      description: Each monthly status report to the steering group MUST list the 10 highest-rated open risks with their current rating, the rating in the previous report and the status of the treatment.
+      rationale: The steering group can only weigh in on risks it sees, and the trend shows whether the treatment is working.
+      criteria:
+        - method: review
+          text: Each status report of the last 6 months has a list of 10 risks with current rating, previous rating and treatment status.
+    sv:
+      title: De 10 största riskerna med trend i varje statusrapport
+      description: Varje månatlig statusrapport till styrgruppen SKA lista de 10 högst värderade öppna riskerna med aktuell värdering, värderingen i föregående rapport och status för åtgärderna.
+      rationale: Styrgruppen kan bara ta ställning till risker som den ser, och trenden visar om åtgärderna fungerar.
+      criteria:
+        - method: review
+          text: Varje statusrapport under de senaste 6 månaderna har en lista med 10 risker med aktuell värdering, föregående värdering och status för åtgärderna.
+
+  - id: PJRQ-15
+    type: business
+    obligation: must
+    priority: medium
+    tags: [risk, risk-register, closure]
+    refs: ["ISO 31000:2018 §6.7"]
+    tests: [PJRQ-T11]
+    en:
+      title: Closed risks kept with the reason for closing
+      description: The project MUST close a risk by recording the date and the reason for closing it, and keep closed risks in the register for the life of the project.
+      rationale: Deleted risks leave no history for audits or lessons learned, and a risk closed without a reason is often closed too early.
+      criteria:
+        - method: inspection
+          text: Each closed risk in the register has a closing date and a reason, and the number of risks never decreases between register versions.
+    sv:
+      title: Stängda risker sparas med skälet för stängningen
+      description: Projektet SKA stänga en risk genom att registrera datum och skäl för stängningen, och spara stängda risker i registret under hela projektets livstid.
+      rationale: Raderade risker lämnar ingen historik för revisioner eller erfarenhetsåterföring, och en risk som stängs utan skäl stängs ofta för tidigt.
+      criteria:
+        - method: inspection
+          text: Varje stängd risk i registret har stängningsdatum och skäl, och antalet risker minskar aldrig mellan två versioner av registret.
+
+  - id: PJRQ-16
+    type: business
+    obligation: must
+    priority: medium
+    tags: [quality-assurance, stage-gate, independence]
+    refs: ["ISO 10006:2017 (quality assurance)", "ISO 21502:2020 §4.3 (project governance)"]
+    tests: [PJRQ-T13]
+    en:
+      title: Quality assurance review before each stage gate
+      description: A person who does not report to the project manager MUST carry out a quality assurance review of the project's compliance with its quality plan before each stage gate and present the findings at the gate.
+      rationale: The steering group needs a view of the project's quality that does not depend on the project manager's own report.
+      criteria:
+        - method: review
+          text: Each stage gate of the project has a review report by a named reviewer outside the project manager's line, and the gate minutes refer to it.
+    sv:
+      title: Kvalitetssäkringsgranskning före varje beslutspunkt
+      description: En person som inte rapporterar till projektledaren SKA göra en kvalitetssäkringsgranskning av hur projektet följer sin kvalitetsplan före varje beslutspunkt och redovisa iakttagelserna vid beslutspunkten.
+      rationale: Styrgruppen behöver en bild av projektets kvalitet som inte bygger på projektledarens egen rapport.
+      criteria:
+        - method: review
+          text: Varje beslutspunkt i projektet har en granskningsrapport av en namngiven granskare utanför projektledarens linje, och protokollet från beslutspunkten hänvisar till den.
+
+  - id: PJRQ-17
+    type: business
+    obligation: must
+    priority: high
+    tags: [supplier, incoming-inspection, deliverable]
+    refs: ["ISO 9001:2026 §8.4.2 (type and extent of control)", "ISO 9001:2026 §8.6"]
+    tests: [PJRQ-T14]
+    en:
+      title: Supplier deliverables checked on receipt
+      description: The project MUST check each deliverable received from a supplier against its quality criteria within 10 working days of receipt, and record the result before the deliverable is used or paid for.
+      rationale: Defects found at receipt are the supplier's to correct, while defects found later are harder to attribute and delay the project.
+      criteria:
+        - method: inspection
+          text: Each received deliverable has an inspection record within 10 working days, dated before its first use and before the invoice was approved.
+          threshold: "≤ 10 working days"
+    sv:
+      title: Leverantörers leveranser kontrolleras vid mottagandet
+      description: Projektet SKA kontrollera varje leverans från en leverantör mot dess kvalitetskriterier inom 10 arbetsdagar från mottagandet och dokumentera resultatet innan leveransen används eller betalas.
+      rationale: Fel som hittas vid mottagandet är leverantörens att rätta, medan fel som hittas senare är svårare att härleda och försenar projektet.
+      criteria:
+        - method: inspection
+          text: Varje mottagen leverans har en kontrollrapport inom 10 arbetsdagar, daterad före första användningen och innan fakturan attesterades.
+          threshold: "≤ 10 arbetsdagar"
+
 tests:
   - id: PJRQ-T01
     priority: high
@@ -568,3 +680,123 @@ tests:
           expected: Var och en har versionsnummer, godkännande och ändringshistorik.
         - action: Fråga 3 gruppmedlemmar vilken version av varje dokument de arbetar efter.
           expected: Var och en anger den aktuella versionen i arkivet.
+
+  - id: PJRQ-T11
+    priority: medium
+    execution: manual
+    tags: [risk-register, opportunity, closure]
+    refs: ["ISO 31000:2018 §6.4.2 (risk identification)", "ISO 31000:2018 §6.7"]
+    en:
+      title: Opportunities and closed risks in the risk register
+      description: Checks how the register records opportunities and closed risks, and compares two versions of it.
+      preconditions: The current risk register and a version at least 3 months older.
+      expected: Opportunities are recorded with gain, owner and action, and closed risks are kept with date and reason.
+      steps:
+        - action: Filter the register on entries of the opportunity type.
+          expected: Each open opportunity has an expected gain, an owner and an action.
+        - action: Filter the register on closed risks.
+          expected: Each has a closing date and a reason.
+        - action: Compare the identifiers in the older version with the current one.
+          expected: Each identifier of the older version is still in the current register.
+    sv:
+      title: Möjligheter och stängda risker i riskregistret
+      description: Kontrollerar hur registret hanterar möjligheter och stängda risker och jämför två versioner av det.
+      preconditions: Det aktuella riskregistret och en version som är minst 3 månader äldre.
+      expected: Möjligheter är registrerade med vinst, ägare och åtgärd, och stängda risker är sparade med datum och skäl.
+      steps:
+        - action: Filtrera registret på poster av typen möjlighet.
+          expected: Varje öppen möjlighet har förväntad vinst, ägare och åtgärd.
+        - action: Filtrera registret på stängda risker.
+          expected: Varje stängd risk har stängningsdatum och skäl.
+        - action: Jämför identiteterna i den äldre versionen med den aktuella.
+          expected: Varje identitet i den äldre versionen finns kvar i det aktuella registret.
+
+  - id: PJRQ-T12
+    priority: medium
+    execution: manual
+    tags: [risk, reporting]
+    refs: ["ISO 31000:2018 §6.6"]
+    en:
+      title: Risk section of the monthly status reports
+      description: Checks the risk list in the status reports against the risk register.
+      preconditions: The status reports of the last 6 months and the risk register versions of the same dates.
+      expected: Each report lists the 10 highest open risks with current and previous rating and treatment status.
+      steps:
+        - action: Count the risks listed in each status report.
+          expected: Each report lists 10 risks.
+        - action: Compare the list of the latest report with the 10 highest-rated open risks in the register of the same date.
+          expected: The lists are the same.
+        - action: Compare the previous rating in each report with the current rating in the report before it.
+          expected: The values match.
+    sv:
+      title: Riskavsnittet i de månatliga statusrapporterna
+      description: Kontrollerar risklistan i statusrapporterna mot riskregistret.
+      preconditions: Statusrapporterna för de senaste 6 månaderna och versionerna av riskregistret från samma datum.
+      expected: Varje rapport listar de 10 högsta öppna riskerna med aktuell och föregående värdering och status för åtgärderna.
+      steps:
+        - action: Räkna riskerna som listas i varje statusrapport.
+          expected: Varje rapport listar 10 risker.
+        - action: Jämför listan i den senaste rapporten med de 10 högst värderade öppna riskerna i registret från samma datum.
+          expected: Listorna är desamma.
+        - action: Jämför den föregående värderingen i varje rapport med den aktuella värderingen i rapporten före.
+          expected: Värdena stämmer.
+
+  - id: PJRQ-T13
+    priority: medium
+    execution: manual
+    tags: [quality-assurance, stage-gate]
+    refs: ["ISO 10006:2017 (quality assurance)"]
+    en:
+      title: Quality assurance reports at the stage gates
+      description: Checks that an independent review report exists for each stage gate held.
+      preconditions: The list of stage gates held, their minutes and the organisation chart of the project.
+      expected: Each gate has a review report by a reviewer outside the project manager's line, referred to in the minutes.
+      steps:
+        - action: For each stage gate, find the quality assurance report.
+          expected: A report exists, dated before the gate.
+        - action: Look up the reviewer in the organisation chart.
+          expected: The reviewer does not report to the project manager.
+        - action: Read the gate minutes.
+          expected: The minutes refer to the report and its findings.
+    sv:
+      title: Kvalitetssäkringsrapporter vid beslutspunkterna
+      description: Kontrollerar att en oberoende granskningsrapport finns för varje genomförd beslutspunkt.
+      preconditions: Listan över genomförda beslutspunkter, deras protokoll och projektets organisationsschema.
+      expected: Varje beslutspunkt har en granskningsrapport av en granskare utanför projektledarens linje, som protokollet hänvisar till.
+      steps:
+        - action: Hitta kvalitetssäkringsrapporten för varje beslutspunkt.
+          expected: En rapport finns, daterad före beslutspunkten.
+        - action: Slå upp granskaren i organisationsschemat.
+          expected: Granskaren rapporterar inte till projektledaren.
+        - action: Läs protokollet från beslutspunkten.
+          expected: Protokollet hänvisar till rapporten och dess iakttagelser.
+
+  - id: PJRQ-T14
+    priority: high
+    execution: manual
+    tags: [supplier, incoming-inspection]
+    refs: ["ISO 9001:2026 §8.4.2 (type and extent of control)"]
+    en:
+      title: Inspection records of received supplier deliverables
+      description: Samples supplier deliverables and checks the timing of their inspection against receipt, use and payment.
+      preconditions: The delivery log, the inspection records and the invoice approvals of the last 6 months.
+      expected: Each sampled deliverable was inspected within 10 working days and before use and payment.
+      steps:
+        - action: Pick 5 deliverables from the delivery log.
+          expected: Each has an inspection record.
+        - action: Count the working days from receipt to the inspection record.
+          expected: The count is at most 10.
+        - action: Compare the inspection date with the first use and the invoice approval.
+          expected: The inspection is earlier than both.
+    sv:
+      title: Kontrollrapporter för mottagna leveranser från leverantörer
+      description: Gör ett urval av leveranser och kontrollerar när de kontrollerades i förhållande till mottagande, användning och betalning.
+      preconditions: Leveransloggen, kontrollrapporterna och attesterna av fakturor för de senaste 6 månaderna.
+      expected: Varje leverans i urvalet kontrollerades inom 10 arbetsdagar och före användning och betalning.
+      steps:
+        - action: Välj 5 leveranser ur leveransloggen.
+          expected: Varje leverans har en kontrollrapport.
+        - action: Räkna arbetsdagarna från mottagandet till kontrollrapporten.
+          expected: Antalet är högst 10.
+        - action: Jämför kontrolldatumet med första användningen och attesten av fakturan.
+          expected: Kontrollen är tidigare än båda.

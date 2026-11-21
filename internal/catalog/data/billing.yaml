@@ -301,6 +301,102 @@ requirements:
         - method: test
           text: En användare med testarroll nekas på faktureringssidorna och i fakturerings-API:et; en användare med faktureringsroll ser fakturor men inget projektinnehåll.
 
+  - id: BILL-14
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [vat, reverse-charge, b2b]
+    refs: ["Directive 2006/112/EC Art. 196", "Directive 2006/112/EC Art. 226(11a)"]
+    tests: [BILL-T11]
+    en:
+      title: Reverse charge for business customers in other EU countries
+      description: For a business customer in another EU member state with a valid VAT number, the invoice MUST charge no VAT and state the text "Reverse charge" together with both parties' VAT numbers.
+      rationale: Charging VAT on these supplies makes the invoice wrong for both parties, and the missing statement gets the customer's deduction refused.
+      criteria:
+        - method: test
+          text: An invoice to a business with a valid VAT number in Germany shows 0 VAT, the reverse charge text and both VAT numbers.
+          threshold: "0 % VAT and both VAT numbers shown"
+    sv:
+      title: Omvänd skattskyldighet för företagskunder i andra EU-länder
+      description: För en företagskund i en annan EU-medlemsstat med giltigt momsregistreringsnummer SKA fakturan inte debitera moms och ange texten "Omvänd skattskyldighet" tillsammans med båda parternas momsregistreringsnummer.
+      rationale: Att debitera moms på sådana leveranser gör fakturan fel för båda parter, och utan uppgiften nekas kunden avdrag.
+      criteria:
+        - method: test
+          text: En faktura till ett företag med giltigt momsregistreringsnummer i Tyskland visar 0 i moms, texten om omvänd skattskyldighet och båda momsregistreringsnumren.
+          threshold: "0 % moms och båda momsregistreringsnumren visas"
+
+  - id: BILL-15
+    type: functional
+    obligation: must
+    priority: high
+    tags: [vat-number, validation, vies]
+    refs: ["Directive 2006/112/EC Art. 214", "Directive 2006/112/EC Art. 196"]
+    tests: [BILL-T12]
+    en:
+      title: VAT numbers checked against VIES
+      description: The system MUST check a customer's VAT number against the EU VIES service when it is entered and before each invoice, and record the date and result of the check.
+      rationale: Reverse charge only applies to a valid VAT number, and a recorded check is the supplier's evidence if the tax authority questions it.
+      criteria:
+        - method: test
+          text: An invalid VAT number is rejected when entered, and each invoice to a reverse-charge customer has a recorded VIES check from the same day.
+          threshold: "1 check per invoice"
+    sv:
+      title: Momsregistreringsnummer kontrolleras mot VIES
+      description: Systemet SKA kontrollera en kunds momsregistreringsnummer mot EU:s tjänst VIES när det matas in och före varje faktura, och registrera datum och resultat för kontrollen.
+      rationale: Omvänd skattskyldighet gäller bara för ett giltigt nummer, och en registrerad kontroll är leverantörens bevis om Skatteverket ifrågasätter den.
+      criteria:
+        - method: test
+          text: Ett ogiltigt momsregistreringsnummer avvisas när det matas in, och varje faktura till en kund med omvänd skattskyldighet har en registrerad VIES-kontroll från samma dag.
+          threshold: "1 kontroll per faktura"
+
+  - id: BILL-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [vat, consumers, place-of-supply]
+    refs: ["Directive 2006/112/EC Art. 58 (electronically supplied services)", "Directive 2006/112/EC Art. 369b (one-stop shop)"]
+    tests: [BILL-T13]
+    en:
+      title: VAT rate of the consumer's member state
+      description: For a consumer in an EU member state, the invoice for an electronically supplied service MUST apply the VAT rate of that member state, determined from at least two consistent pieces of location evidence.
+      rationale: Digital services to consumers are taxed where the consumer lives, and the wrong rate leads to back taxes and corrections of every affected invoice.
+      criteria:
+        - method: test
+          text: A consumer whose billing address and payment card country are Finland is charged the Finnish standard rate, and both evidence items are recorded.
+          threshold: "2 consistent evidence items"
+    sv:
+      title: Momssats i konsumentens medlemsstat
+      description: För en konsument i en EU-medlemsstat SKA fakturan för en elektroniskt tillhandahållen tjänst tillämpa den medlemsstatens momssats, bestämd utifrån minst två samstämmiga uppgifter om var konsumenten finns.
+      rationale: Digitala tjänster till konsumenter beskattas där konsumenten bor, och fel momssats leder till efterbeskattning och rättelse av varje berörd faktura.
+      criteria:
+        - method: test
+          text: En konsument vars faktureringsadress och kortets land är Finland debiteras den finska normalsatsen, och båda uppgifterna registreras.
+          threshold: "2 samstämmiga uppgifter"
+
+  - id: BILL-17
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [retention, invoices, bookkeeping]
+    refs: ["Swedish Bookkeeping Act (1999:1078) ch. 7 §2", "Directive 2006/112/EC Art. 247"]
+    tests: [BILL-T14]
+    en:
+      title: Invoices kept for seven years
+      description: The system MUST keep each issued invoice and credit note unchanged and retrievable until 7 years after the end of the calendar year in which it was issued.
+      rationale: Bookkeeping law requires the records to be kept, and an invoice that can no longer be produced makes the accounts impossible to verify.
+      criteria:
+        - method: inspection
+          text: The retention rule for invoices is set to 7 years after the calendar year, and an invoice from 6 years ago is retrievable unchanged.
+          threshold: "7 years after the end of the calendar year"
+    sv:
+      title: Fakturor sparas i sju år
+      description: Systemet SKA bevara varje utfärdad faktura och kreditnota oförändrad och sökbar till och med 7 år efter utgången av det kalenderår då den utfärdades.
+      rationale: Bokföringslagen kräver att räkenskapsinformationen sparas, och en faktura som inte längre kan tas fram gör räkenskaperna omöjliga att kontrollera.
+      criteria:
+        - method: inspection
+          text: Regeln för lagringstid för fakturor är inställd på 7 år efter kalenderårets slut, och en faktura från för 6 år sedan går att ta fram oförändrad.
+          threshold: "7 år efter kalenderårets utgång"
+
 tests:
   - id: BILL-T01
     priority: medium
@@ -599,3 +695,119 @@ tests:
           expected: Fakturorna visas; projektlistan är tom eller nekas.
         - action: Öppna fakturalistan och byt betalningsmetod som administratören.
           expected: Båda är tillåtna.
+
+  - id: BILL-T11
+    priority: high
+    execution: manual
+    tags: [vat, reverse-charge]
+    refs: ["Directive 2006/112/EC Art. 226(11a)"]
+    en:
+      title: Invoice to a business in another member state
+      description: Issues an invoice to a business customer with a valid VAT number in another member state and inspects it.
+      preconditions: A test customer that is a business in Germany with a VAT number that VIES reports as valid, and a seller registered for VAT in Sweden.
+      expected: The invoice has no VAT, the reverse charge text and both VAT numbers.
+      steps:
+        - action: Create a subscription for the customer and issue the first invoice.
+          expected: The invoice is created.
+          data: "customer VAT number from the VIES test service"
+        - action: Read the VAT lines and the texts on the invoice.
+          expected: VAT is 0, the text "Reverse charge" is present and both VAT numbers are printed.
+    sv:
+      title: Faktura till ett företag i en annan medlemsstat
+      description: Utfärdar en faktura till en företagskund med giltigt momsregistreringsnummer i en annan medlemsstat och granskar den.
+      preconditions: En testkund som är ett företag i Tyskland med ett momsregistreringsnummer som VIES anger som giltigt, och en säljare momsregistrerad i Sverige.
+      expected: Fakturan saknar moms, har texten om omvänd skattskyldighet och båda momsregistreringsnumren.
+      steps:
+        - action: Skapa ett abonnemang för kunden och utfärda den första fakturan.
+          expected: Fakturan skapas.
+          data: "kundens momsregistreringsnummer från VIES testtjänst"
+        - action: Läs momsraderna och texterna på fakturan.
+          expected: Momsen är 0, texten "Omvänd skattskyldighet" finns och båda momsregistreringsnumren är utskrivna.
+
+  - id: BILL-T12
+    priority: high
+    execution: manual
+    tags: [vat-number, validation]
+    refs: ["Directive 2006/112/EC Art. 214"]
+    en:
+      title: VIES check at entry and invoicing
+      description: Enters valid and invalid VAT numbers and issues an invoice.
+      preconditions: Access to the VIES test service and a test customer account.
+      expected: Invalid numbers are rejected and each reverse-charge invoice has a recorded check.
+      steps:
+        - action: Enter a VAT number that VIES reports as invalid.
+          expected: The number is rejected with a message.
+          data: "an invalid test number of the VIES test service"
+        - action: Enter a valid number and save.
+          expected: The number is accepted and the check date and result are recorded.
+        - action: Issue an invoice and read the customer's check history.
+          expected: A check from the invoice date is recorded.
+    sv:
+      title: VIES-kontroll vid inmatning och fakturering
+      description: Matar in giltiga och ogiltiga momsregistreringsnummer och utfärdar en faktura.
+      preconditions: Åtkomst till VIES testtjänst och ett testkundkonto.
+      expected: Ogiltiga nummer avvisas och varje faktura med omvänd skattskyldighet har en registrerad kontroll.
+      steps:
+        - action: Mata in ett momsregistreringsnummer som VIES anger som ogiltigt.
+          expected: Numret avvisas med ett meddelande.
+          data: "ett ogiltigt testnummer från VIES testtjänst"
+        - action: Mata in ett giltigt nummer och spara.
+          expected: Numret godtas och kontrollens datum och resultat registreras.
+        - action: Utfärda en faktura och läs kundens kontrollhistorik.
+          expected: En kontroll från fakturadatumet är registrerad.
+
+  - id: BILL-T13
+    priority: high
+    execution: manual
+    tags: [vat, consumers]
+    refs: ["Directive 2006/112/EC Art. 58 (electronically supplied services)"]
+    en:
+      title: Consumer VAT by member state
+      description: Signs up consumers with location evidence from two member states and checks the VAT rate.
+      preconditions: Test consumers with billing address and card country in Finland, and one with conflicting evidence.
+      expected: The Finnish rate is applied with consistent evidence; conflicting evidence is flagged for review.
+      steps:
+        - action: Sign up a consumer with billing address and payment card from Finland and issue the invoice.
+          expected: The Finnish standard VAT rate is applied and both evidence items are recorded.
+          data: "billing address Helsinki, card issued in Finland"
+        - action: Sign up a consumer with billing address in Sweden and card from Finland, with no third evidence.
+          expected: The case is flagged for review and no invoice is issued with an unproven rate.
+    sv:
+      title: Konsumentmoms per medlemsstat
+      description: Registrerar konsumenter med uppgifter om var de finns från två medlemsstater och kontrollerar momssatsen.
+      preconditions: Testkonsumenter med faktureringsadress och kortland i Finland, och en med motstridiga uppgifter.
+      expected: Den finska satsen tillämpas vid samstämmiga uppgifter; motstridiga uppgifter flaggas för granskning.
+      steps:
+        - action: Registrera en konsument med faktureringsadress och betalkort från Finland och utfärda fakturan.
+          expected: Den finska normalsatsen tillämpas och båda uppgifterna registreras.
+          data: "faktureringsadress Helsingfors, kort utfärdat i Finland"
+        - action: Registrera en konsument med faktureringsadress i Sverige och kort från Finland, utan en tredje uppgift.
+          expected: Fallet flaggas för granskning och ingen faktura utfärdas med en obestyrkt sats.
+
+  - id: BILL-T14
+    priority: medium
+    execution: manual
+    tags: [retention, invoices]
+    refs: ["Swedish Bookkeeping Act (1999:1078) ch. 7 §2"]
+    en:
+      title: Old invoice retrievable unchanged
+      description: Checks the retention setting and retrieves an old invoice.
+      preconditions: Access to the retention settings and an invoice issued about 6 years ago with its original checksum.
+      expected: The setting is 7 years after the calendar year and the old invoice is unchanged.
+      steps:
+        - action: Read the retention rule for invoices and credit notes.
+          expected: The rule keeps them until 7 years after the end of the issuing calendar year.
+        - action: Retrieve the 6-year-old invoice and compute its checksum.
+          expected: The invoice opens and its checksum matches the original.
+          data: "SHA-256 recorded at issue"
+    sv:
+      title: Gammal faktura kan tas fram oförändrad
+      description: Kontrollerar inställningen för lagringstid och hämtar en gammal faktura.
+      preconditions: Åtkomst till inställningarna för lagringstid och en faktura som utfärdades för runt 6 år sedan med sin ursprungliga kontrollsumma.
+      expected: Inställningen är 7 år efter kalenderåret och den gamla fakturan är oförändrad.
+      steps:
+        - action: Läs regeln för lagringstid för fakturor och kreditnotor.
+          expected: Regeln behåller dem till 7 år efter utgången av det kalenderår då de utfärdades.
+        - action: Hämta fakturan som är 6 år gammal och beräkna dess kontrollsumma.
+          expected: Fakturan öppnas och kontrollsumman stämmer med originalet.
+          data: "SHA-256 registrerad vid utfärdandet"

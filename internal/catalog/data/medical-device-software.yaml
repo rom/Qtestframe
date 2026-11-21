@@ -1,0 +1,694 @@
+area: medical-device-software
+prefix: MDSW
+group: domain
+catalogue: software
+name: {en: "Medical device software", sv: "Programvara för medicintekniska produkter"}
+description:
+  en: "Software that is or is part of a medical device: safety classification, SOUP, risk control traceability, release, problem resolution, usability, cybersecurity, identification and post-market duties under the EU MDR."
+  sv: "Programvara som är eller ingår i en medicinteknisk produkt: säkerhetsklassning, SOUP, spårbarhet för riskåtgärder, release, problemlösning, användbarhet, cybersäkerhet, identifiering och skyldigheter efter utsläppande på marknaden enligt MDR."
+
+requirements:
+  - id: MDSW-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [safety-class, classification, iec-62304]
+    refs: ["IEC 62304:2006+A1:2015 §4.3 (software safety classification)"]
+    tests: [MDSW-T01]
+    en:
+      title: Software safety class assigned
+      description: The manufacturer MUST assign a software safety class A, B or C to each software system and each software item that is classed differently, with a documented rationale based on the hazardous situations the software can contribute to.
+      rationale: The class decides which life cycle activities are needed, and an undocumented class cannot be defended in an audit.
+      criteria:
+        - method: inspection
+          text: The safety classification record lists each software system and differently classed item with its class and a rationale that refers to the risk analysis.
+          threshold: "1 class with rationale per system or item"
+    sv:
+      title: Säkerhetsklass för programvaran fastställd
+      description: Tillverkaren SKA tilldela varje programvarusystem och varje programvaruenhet med avvikande klass en säkerhetsklass A, B eller C, med en dokumenterad motivering utifrån de riskfyllda situationer som programvaran kan bidra till.
+      rationale: Klassen avgör vilka aktiviteter i livscykeln som behövs, och en odokumenterad klass går inte att försvara vid en revision.
+      criteria:
+        - method: inspection
+          text: Posten för säkerhetsklassning listar varje programvarusystem och enhet med avvikande klass, med klass och en motivering som hänvisar till riskanalysen.
+          threshold: "1 klass med motivering per system eller enhet"
+
+  - id: MDSW-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [soup, third-party, inventory]
+    refs: ["IEC 62304:2006+A1:2015 §8.1.2 (identify SOUP)", "IEC 62304:2006+A1:2015 §7.1 (analysis of software contributing to hazardous situations)"]
+    tests: [MDSW-T02]
+    en:
+      title: List of SOUP items with known anomalies
+      description: The manufacturer MUST keep a list of each software of unknown provenance with name, version, supplier and the function it performs, and review its published anomaly lists for effects on safety before each release.
+      rationale: Third-party components can fail in ways that harm patients, and their failures can only be assessed if the exact versions and known faults are on record.
+      criteria:
+        - method: inspection
+          text: The SOUP list matches the components in the build, and each entry has a dated review of known anomalies for the current release.
+          threshold: "100 % of components listed"
+    sv:
+      title: Förteckning över SOUP med kända avvikelser
+      description: Tillverkaren SKA föra en förteckning över varje programvara av okänt ursprung med namn, version, leverantör och den funktion den utför, och före varje release granska dess publicerade listor över avvikelser med avseende på säkerhet.
+      rationale: Komponenter från tredje part kan fallera på sätt som skadar patienter, och deras fel kan bara bedömas om exakta versioner och kända fel finns dokumenterade.
+      criteria:
+        - method: inspection
+          text: SOUP-förteckningen stämmer med komponenterna i bygget, och varje post har en daterad granskning av kända avvikelser för den aktuella releasen.
+          threshold: "100 % av komponenterna listade"
+
+  - id: MDSW-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [traceability, risk-control, verification]
+    refs: ["ISO 14971:2019 §7.2 (implementation of risk control measures)", "IEC 62304:2006+A1:2015 §7 (software risk management process)"]
+    tests: [MDSW-T03]
+    en:
+      title: Traceability from hazard to verification
+      description: Each risk control measure implemented in software MUST be traceable from the hazardous situation through the software requirement to the test that verifies it.
+      rationale: Without the chain, nobody can show that each risk the analysis relies on software to reduce is really implemented and tested.
+      criteria:
+        - method: inspection
+          text: A trace report shows for each software risk control measure a linked requirement and a passed verification test, with no gaps.
+          threshold: "0 measures without a verified requirement"
+    sv:
+      title: Spårbarhet från risk till verifiering
+      description: Varje riskåtgärd som genomförs i programvaran SKA vara spårbar från den riskfyllda situationen via programvarukravet till det test som verifierar den.
+      rationale: Utan kedjan kan ingen visa att varje risk som analysen räknar med att programvaran minskar verkligen är genomförd och testad.
+      criteria:
+        - method: inspection
+          text: En spårbarhetsrapport visar för varje riskåtgärd i programvaran ett kopplat krav och ett godkänt verifieringstest, utan luckor.
+          threshold: "0 åtgärder utan verifierat krav"
+
+  - id: MDSW-04
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [release, residual-anomalies, evaluation]
+    refs: ["IEC 62304:2006+A1:2015 §5.8 (software release)"]
+    tests: [MDSW-T04]
+    en:
+      title: Residual anomalies evaluated before release
+      description: Before a software release, the manufacturer MUST list the known residual anomalies and record for each that it does not contribute to an unacceptable risk.
+      rationale: Shipping with known faults can be acceptable, but only after each one has been judged against patient safety and the judgement is on record.
+      criteria:
+        - method: inspection
+          text: The release record lists each open defect of the release with a signed evaluation of its risk contribution.
+          threshold: "100 % of open defects evaluated"
+    sv:
+      title: Kvarvarande avvikelser bedöms före release
+      description: Före en release av programvaran SKA tillverkaren lista de kända kvarvarande avvikelserna och för var och en registrera att den inte bidrar till en oacceptabel risk.
+      rationale: Att leverera med kända fel kan vara godtagbart, men bara efter att varje fel har bedömts mot patientsäkerheten och bedömningen finns dokumenterad.
+      criteria:
+        - method: inspection
+          text: Releaseposten listar varje öppet fel i releasen med en signerad bedömning av dess bidrag till risken.
+          threshold: "100 % av öppna fel bedömda"
+
+  - id: MDSW-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [problem-resolution, safety-impact, reports]
+    refs: ["IEC 62304:2006+A1:2015 §9 (software problem resolution process)"]
+    tests: [MDSW-T05]
+    en:
+      title: Problem reports assessed for safety
+      description: Each software problem report MUST be investigated and classified for its effect on safety within 5 working days, with the outcome recorded in the report.
+      rationale: A field problem that affects safety can need a recall or a field safety notice, and that decision cannot wait in an unsorted defect queue.
+      criteria:
+        - method: inspection
+          text: The last 20 problem reports each have a safety assessment dated within 5 working days of receipt.
+          threshold: "≤ 5 working days"
+    sv:
+      title: Problemrapporter bedöms för säkerhet
+      description: Varje problemrapport om programvaran SKA utredas och klassas med avseende på påverkan på säkerheten inom 5 arbetsdagar, med resultatet registrerat i rapporten.
+      rationale: Ett problem i fält som påverkar säkerheten kan kräva återkallelse eller ett säkerhetsmeddelande, och det beslutet kan inte vänta i en osorterad felkö.
+      criteria:
+        - method: inspection
+          text: De 20 senaste problemrapporterna har var och en en säkerhetsbedömning daterad inom 5 arbetsdagar från mottagandet.
+          threshold: "≤ 5 arbetsdagar"
+
+  - id: MDSW-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [maintenance, change, regression]
+    refs: ["IEC 62304:2006+A1:2015 §6 (software maintenance process)", "ISO 13485:2016 §7.3.9 (control of design and development changes)"]
+    tests: [MDSW-T06]
+    en:
+      title: Risk analysis and regression for each change
+      description: Each change to released software MUST be analysed for its effect on existing risk control measures and pass the regression tests chosen from that analysis before release.
+      rationale: Small fixes often break safety functions they were not meant to touch, and only an analysis tied to the risk file shows what to retest.
+      criteria:
+        - method: inspection
+          text: For the last 5 changes, the change record holds a risk impact analysis and the results of the regression tests it named.
+          threshold: "5 of 5 changes analysed"
+    sv:
+      title: Riskanalys och regressionstest för varje ändring
+      description: Varje ändring av släppt programvara SKA analyseras med avseende på påverkan på befintliga riskåtgärder och klara de regressionstester som valts utifrån analysen före release.
+      rationale: Små rättningar förstör ofta säkerhetsfunktioner som de inte var tänkta att röra, och bara en analys knuten till riskdokumentationen visar vad som behöver testas om.
+      criteria:
+        - method: inspection
+          text: För de 5 senaste ändringarna innehåller ändringsposten en analys av påverkan på risker och resultaten av de regressionstester som den angav.
+          threshold: "5 av 5 ändringar analyserade"
+
+  - id: MDSW-07
+    type: usability
+    obligation: must
+    priority: high
+    tags: [usability-engineering, summative-evaluation, use-errors]
+    refs: ["IEC 62366-1:2015+A1:2020 (summative evaluation)", "Regulation (EU) 2017/745 (MDR) Annex I §5 (use error)"]
+    tests: [MDSW-T07]
+    en:
+      title: Summative usability evaluation
+      description: The manufacturer MUST carry out a summative usability evaluation of the hazard-related use scenarios with at least 15 representative users per distinct user group before release.
+      rationale: Use errors cause a large share of medical device incidents, and only testing with real users shows whether the design prevents them.
+      criteria:
+        - method: inspection
+          text: The usability file has a summative report covering each hazard-related use scenario with at least 15 participants per user group and an analysis of every use error.
+          threshold: "≥ 15 participants per user group"
+    sv:
+      title: Summativ användbarhetsutvärdering
+      description: Tillverkaren SKA före release genomföra en summativ användbarhetsutvärdering av de riskrelaterade användningsscenarierna med minst 15 representativa användare per distinkt användargrupp.
+      rationale: Användarfel orsakar en stor del av incidenterna med medicintekniska produkter, och bara tester med verkliga användare visar om utformningen förhindrar dem.
+      criteria:
+        - method: inspection
+          text: Användbarhetsdokumentationen har en summativ rapport som täcker varje riskrelaterat scenario med minst 15 deltagare per användargrupp och en analys av varje användarfel.
+          threshold: "≥ 15 deltagare per användargrupp"
+
+  - id: MDSW-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [cybersecurity, threat-model, testing]
+    refs: ["Regulation (EU) 2017/745 (MDR) Annex I §17.2", "IEC 81001-5-1:2021 (security risk management and testing)", "MDCG 2019-16 (cybersecurity for medical devices)"]
+    tests: [MDSW-T08]
+    en:
+      title: Threat model and security testing before release
+      description: The manufacturer MUST keep a threat model of the software and carry out security testing, including penetration testing of external interfaces, before each major release.
+      rationale: Attacks on connected devices can harm patients or expose health data, and the MDR requires security as part of the state of the art.
+      criteria:
+        - method: inspection
+          text: The release file of the last major release has a threat model updated for that release and a security test report with each finding closed or risk-assessed.
+          threshold: "1 threat model and test report per major release"
+    sv:
+      title: Hotmodell och säkerhetstester före release
+      description: Tillverkaren SKA förvalta en hotmodell för programvaran och genomföra säkerhetstester, däribland penetrationstester av externa gränssnitt, före varje större release.
+      rationale: Angrepp mot uppkopplade produkter kan skada patienter eller röja hälsodata, och MDR kräver säkerhet som en del av vedertagen teknik.
+      criteria:
+        - method: inspection
+          text: Releasedokumentationen för den senaste större releasen har en hotmodell uppdaterad för releasen och en rapport från säkerhetstester där varje fynd är stängt eller riskbedömt.
+          threshold: "1 hotmodell och testrapport per större release"
+
+  - id: MDSW-09
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [it-requirements, instructions, environment]
+    refs: ["Regulation (EU) 2017/745 (MDR) Annex I §17.4"]
+    tests: [MDSW-T09]
+    en:
+      title: Minimum IT requirements stated
+      description: The instructions for use MUST state the minimum requirements for hardware, operating system, IT network and IT security measures that the software needs to run as intended.
+      rationale: Hospitals install software on their own infrastructure, and without the stated minimums they cannot know whether their environment keeps the device safe.
+      criteria:
+        - method: inspection
+          text: The instructions for use list the minimum hardware, operating system, network and security measures, and the test environment of the release meets exactly those minimums.
+          threshold: "4 kinds of requirement stated"
+    sv:
+      title: Lägsta IT-krav angivna
+      description: Bruksanvisningen SKA ange de lägsta kraven på maskinvara, operativsystem, IT-nätverk och IT-säkerhetsåtgärder som programvaran behöver för att fungera som avsett.
+      rationale: Sjukhus installerar programvara i sin egen infrastruktur, och utan angivna minimikrav kan de inte veta om deras miljö håller produkten säker.
+      criteria:
+        - method: inspection
+          text: Bruksanvisningen listar lägsta krav på maskinvara, operativsystem, nätverk och säkerhetsåtgärder, och testmiljön för releasen uppfyller just dessa minimikrav.
+          threshold: "4 slags krav angivna"
+
+  - id: MDSW-10
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [udi, identification, version]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 27 (unique device identification)", "Regulation (EU) 2017/745 (MDR) Annex VI Part C §6.5 (device software)"]
+    tests: [MDSW-T10]
+    en:
+      title: UDI and version shown in the software
+      description: The software MUST show its unique device identifier and its version on a screen reached in at most two steps from the start screen, such as a product information page.
+      rationale: Users, service staff and authorities need to identify the exact device and version in a recall or an incident report.
+      criteria:
+        - method: test
+          text: The about screen shows the UDI in plain text and the version, and both match the release record.
+          threshold: "UDI and version on 1 screen"
+    sv:
+      title: UDI och version visas i programvaran
+      description: Programvaran SKA visa sin unika produktidentifiering och sin version på en skärm som nås på högst två steg från startskärmen, till exempel en sida med produktinformation.
+      rationale: Användare, servicepersonal och myndigheter behöver kunna identifiera exakt produkt och version vid en återkallelse eller en incidentrapport.
+      criteria:
+        - method: test
+          text: Om-skärmen visar UDI i klartext och versionen, och båda stämmer med releaseposten.
+          threshold: "UDI och version på 1 skärm"
+
+  - id: MDSW-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [vigilance, serious-incidents, reporting]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 87 (reporting of serious incidents)"]
+    tests: [MDSW-T11]
+    en:
+      title: Serious incidents reported on time
+      description: The manufacturer MUST report a serious incident to the competent authority within 15 days of becoming aware of it, and within the shorter periods the regulation sets for deaths and serious public health threats.
+      rationale: Late reports delay warnings to other users of the same device and are a breach of the vigilance duties.
+      criteria:
+        - method: inspection
+          text: The vigilance log shows for each serious incident of the last 12 months the awareness date and a report date within the applicable deadline.
+          threshold: "≤ 15 days; ≤ 10 days for death; ≤ 2 days for a serious public health threat"
+    sv:
+      title: Allvarliga tillbud rapporteras i tid
+      description: Tillverkaren SKA rapportera ett allvarligt tillbud till den behöriga myndigheten inom 15 dagar från att ha fått kännedom om det, och inom de kortare tider som förordningen anger för dödsfall och allvarliga hot mot folkhälsan.
+      rationale: Sena rapporter fördröjer varningar till andra användare av samma produkt och bryter mot skyldigheterna om säkerhetsövervakning.
+      criteria:
+        - method: inspection
+          text: Loggen för säkerhetsövervakning visar för varje allvarligt tillbud de senaste 12 månaderna datum för kännedom och ett rapportdatum inom gällande tidsfrist.
+          threshold: "≤ 15 dagar; ≤ 10 dagar vid dödsfall; ≤ 2 dagar vid allvarligt hot mot folkhälsan"
+
+  - id: MDSW-12
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [post-market, surveillance, complaints]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 83 (post-market surveillance system)", "ISO 14971:2019 §10 (production and post-production activities)"]
+    tests: [MDSW-T12]
+    en:
+      title: Field data fed back into the risk file
+      description: The manufacturer MUST analyse complaints, problem reports and usage data at least every 6 months and update the risk management file when they show a new hazard or a higher probability of harm.
+      rationale: The risk analysis made before release is an estimate, and field data is the only way to find out whether it was right.
+      criteria:
+        - method: inspection
+          text: The post-market reports of the last 12 months show two analyses and, for each new hazard found, a dated update of the risk file.
+          threshold: "analysis interval ≤ 6 months"
+    sv:
+      title: Data från fält förs tillbaka till riskdokumentationen
+      description: Tillverkaren SKA analysera klagomål, problemrapporter och användningsdata minst var 6:e månad och uppdatera riskhanteringsdokumentationen när de visar en ny fara eller en högre sannolikhet för skada.
+      rationale: Riskanalysen före release är en uppskattning, och data från fält är det enda sättet att ta reda på om den stämde.
+      criteria:
+        - method: inspection
+          text: Rapporterna från övervakningen efter utsläppande på marknaden de senaste 12 månaderna visar två analyser och, för varje ny fara som hittats, en daterad uppdatering av riskdokumentationen.
+          threshold: "analysintervall ≤ 6 månader"
+
+  - id: MDSW-13
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [tool-validation, qms-software, iso-13485]
+    refs: ["ISO 13485:2016 §4.1.6 (validation of software used in the quality management system)", "ISO 13485:2016 §7.5.6 (validation of processes)"]
+    tests: [MDSW-T13]
+    en:
+      title: Validation of software tools in the quality system
+      description: Software used in the quality management system or in development, such as requirements, test and build tools, MUST be validated for its intended use before first use and after each change that can affect it.
+      rationale: Wrong results from a test or trace tool can hide a defect in the device, so the tool has to be shown to do what the process relies on.
+      criteria:
+        - method: inspection
+          text: Each tool in the tool list has a validation record for its current version that states the intended use, the risk-based approach and the result.
+          threshold: "1 validation per tool version"
+    sv:
+      title: Validering av programvaruverktyg i kvalitetssystemet
+      description: Programvara som används i kvalitetsledningssystemet eller i utvecklingen, till exempel verktyg för krav, test och byggen, SKA valideras för sin avsedda användning före första användning och efter varje ändring som kan påverka den.
+      rationale: Felaktiga resultat från ett test- eller spårbarhetsverktyg kan dölja ett fel i produkten, så verktyget måste visas göra det som processen förlitar sig på.
+      criteria:
+        - method: inspection
+          text: Varje verktyg i verktygsförteckningen har en valideringspost för sin aktuella version som anger avsedd användning, det riskbaserade angreppssättet och resultatet.
+          threshold: "1 validering per verktygsversion"
+
+tests:
+  - id: MDSW-T01
+    priority: high
+    execution: manual
+    tags: [safety-class, classification]
+    refs: ["IEC 62304:2006+A1:2015 §4.3 (software safety classification)"]
+    en:
+      title: Safety classification record
+      description: Reviews the safety classes against the architecture and the risk analysis.
+      preconditions: The software architecture, the risk management file and the safety classification record.
+      expected: Each software system and differently classed item has a class with a rationale tied to the risk analysis.
+      steps:
+        - action: List the software system and the software items of the architecture.
+          expected: The list is produced.
+          data: "architecture document of the current release"
+        - action: Look up the class and rationale of each in the classification record.
+          expected: Each has class A, B or C with a rationale.
+        - action: Follow the rationale of one class C item to the risk analysis.
+          expected: The referred hazardous situation exists in the risk file.
+    sv:
+      title: Post för säkerhetsklassning
+      description: Granskar säkerhetsklasserna mot arkitekturen och riskanalysen.
+      preconditions: Programvarans arkitektur, riskhanteringsdokumentationen och posten för säkerhetsklassning.
+      expected: Varje programvarusystem och enhet med avvikande klass har en klass med en motivering knuten till riskanalysen.
+      steps:
+        - action: Lista programvarusystemet och programvaruenheterna i arkitekturen.
+          expected: Listan tas fram.
+          data: "arkitekturdokumentet för den aktuella releasen"
+        - action: Slå upp klass och motivering för var och en i klassningsposten.
+          expected: Var och en har klass A, B eller C med en motivering.
+        - action: Följ motiveringen för en enhet i klass C till riskanalysen.
+          expected: Den riskfyllda situation som det hänvisas till finns i riskdokumentationen.
+
+  - id: MDSW-T02
+    priority: high
+    execution: manual
+    tags: [soup, inventory]
+    refs: ["IEC 62304:2006+A1:2015 §8.1.2 (identify SOUP)"]
+    en:
+      title: SOUP list against the build
+      description: Compares the SOUP list with the components in the release build and checks the anomaly reviews.
+      preconditions: The SOUP list, a software bill of materials of the release build and the release date.
+      expected: Each component is listed with the required data and a dated anomaly review.
+      steps:
+        - action: Compare the SBOM of the build with the SOUP list.
+          expected: Each component in the build is in the list with the same version.
+          data: "SBOM in CycloneDX format"
+        - action: Check name, version, supplier and function of each entry.
+          expected: Each entry has the four data.
+        - action: Check the date of the anomaly review of each entry.
+          expected: Each review is dated for the current release.
+    sv:
+      title: SOUP-förteckningen mot bygget
+      description: Jämför SOUP-förteckningen med komponenterna i releasebygget och kontrollerar granskningarna av avvikelser.
+      preconditions: SOUP-förteckningen, en programvaruförteckning för releasebygget och releasedatumet.
+      expected: Varje komponent är listad med de uppgifter som krävs och en daterad granskning av avvikelser.
+      steps:
+        - action: Jämför byggets SBOM med SOUP-förteckningen.
+          expected: Varje komponent i bygget finns i förteckningen med samma version.
+          data: "SBOM i CycloneDX-format"
+        - action: Kontrollera namn, version, leverantör och funktion för varje post.
+          expected: Varje post har de fyra uppgifterna.
+        - action: Kontrollera datumet för granskningen av avvikelser för varje post.
+          expected: Varje granskning är daterad för den aktuella releasen.
+
+  - id: MDSW-T03
+    priority: high
+    execution: manual
+    tags: [traceability, risk-control]
+    refs: ["ISO 14971:2019 §7.2 (implementation of risk control measures)"]
+    en:
+      title: Trace report of software risk controls
+      description: Produces the trace from hazardous situations to verification and looks for gaps.
+      preconditions: The risk management file and the requirements and test records of the release.
+      expected: Each software risk control measure has a requirement and a passed test.
+      steps:
+        - action: List the risk control measures that are implemented in software.
+          expected: The list is produced from the risk file.
+        - action: Follow each measure to its software requirement and its verification test.
+          expected: Each measure links to at least one requirement and one test.
+        - action: Check the latest result of each linked test.
+          expected: Each test passed on the release build.
+    sv:
+      title: Spårbarhetsrapport för riskåtgärder i programvaran
+      description: Tar fram spårningen från riskfyllda situationer till verifiering och letar efter luckor.
+      preconditions: Riskhanteringsdokumentationen och posterna för krav och test för releasen.
+      expected: Varje riskåtgärd i programvaran har ett krav och ett godkänt test.
+      steps:
+        - action: Lista de riskåtgärder som genomförs i programvaran.
+          expected: Listan tas fram ur riskdokumentationen.
+        - action: Följ varje åtgärd till dess programvarukrav och dess verifieringstest.
+          expected: Varje åtgärd är kopplad till minst ett krav och ett test.
+        - action: Kontrollera det senaste resultatet för varje kopplat test.
+          expected: Varje test godkändes på releasebygget.
+
+  - id: MDSW-T04
+    priority: high
+    execution: manual
+    tags: [release, residual-anomalies]
+    refs: ["IEC 62304:2006+A1:2015 §5.8 (software release)"]
+    en:
+      title: Residual anomalies in the release record
+      description: Compares the open defects with the evaluated list in the release record.
+      preconditions: The defect tracker and the release record of the latest release.
+      expected: Each open defect is listed with a signed risk evaluation.
+      steps:
+        - action: List the defects open at the release date that affect the released version.
+          expected: The list is produced.
+          data: "defect tracker filter on the release version"
+        - action: Find each defect in the release record.
+          expected: Each has an evaluation that it does not contribute to an unacceptable risk, signed and dated before release.
+    sv:
+      title: Kvarvarande avvikelser i releaseposten
+      description: Jämför de öppna felen med den bedömda listan i releaseposten.
+      preconditions: Felregistret och releaseposten för den senaste releasen.
+      expected: Varje öppet fel är listat med en signerad riskbedömning.
+      steps:
+        - action: Lista de fel som var öppna vid releasedatumet och berör den släppta versionen.
+          expected: Listan tas fram.
+          data: "filter i felregistret på releaseversionen"
+        - action: Leta upp varje fel i releaseposten.
+          expected: Vart och ett har en bedömning av att det inte bidrar till en oacceptabel risk, signerad och daterad före releasen.
+
+  - id: MDSW-T05
+    priority: high
+    execution: manual
+    tags: [problem-resolution, safety-impact]
+    refs: ["IEC 62304:2006+A1:2015 §9 (software problem resolution process)"]
+    en:
+      title: Safety assessment of recent problem reports
+      description: Reads the latest problem reports and the dates of their safety assessment.
+      preconditions: The problem reports of the last months.
+      expected: Each report was assessed for safety within 5 working days.
+      steps:
+        - action: Take the 20 most recent problem reports.
+          expected: The reports are listed with their receipt dates.
+        - action: Read the safety assessment and its date in each report.
+          expected: Each report has an assessment dated within 5 working days of receipt.
+    sv:
+      title: Säkerhetsbedömning av färska problemrapporter
+      description: Läser de senaste problemrapporterna och datumen för deras säkerhetsbedömning.
+      preconditions: Problemrapporterna från de senaste månaderna.
+      expected: Varje rapport har säkerhetsbedömts inom 5 arbetsdagar.
+      steps:
+        - action: Ta de 20 senaste problemrapporterna.
+          expected: Rapporterna listas med sina mottagningsdatum.
+        - action: Läs säkerhetsbedömningen och dess datum i varje rapport.
+          expected: Varje rapport har en bedömning daterad inom 5 arbetsdagar från mottagandet.
+
+  - id: MDSW-T06
+    priority: high
+    execution: manual
+    tags: [maintenance, regression]
+    refs: ["IEC 62304:2006+A1:2015 §6 (software maintenance process)"]
+    en:
+      title: Change records with risk impact and regression results
+      description: Reviews the change records of recent releases.
+      preconditions: The change records of the last 5 changes to released software.
+      expected: Each has a risk impact analysis and passed regression tests chosen from it.
+      steps:
+        - action: Open each change record.
+          expected: Each holds an analysis of the effect on existing risk control measures.
+        - action: Compare the regression tests named in the analysis with the test results.
+          expected: Each named test was run on the release build and passed.
+    sv:
+      title: Ändringsposter med påverkan på risker och resultat från regressionstester
+      description: Granskar ändringsposterna för färska releaser.
+      preconditions: Ändringsposterna för de 5 senaste ändringarna av släppt programvara.
+      expected: Var och en har en analys av påverkan på risker och godkända regressionstester valda utifrån den.
+      steps:
+        - action: Öppna varje ändringspost.
+          expected: Var och en innehåller en analys av påverkan på befintliga riskåtgärder.
+        - action: Jämför de regressionstester som analysen anger med testresultaten.
+          expected: Varje angivet test kördes på releasebygget och godkändes.
+
+  - id: MDSW-T07
+    priority: high
+    execution: manual
+    tags: [usability-engineering, summative-evaluation]
+    refs: ["IEC 62366-1:2015+A1:2020 (summative evaluation)"]
+    en:
+      title: Summative evaluation report
+      description: Checks the summative usability report against the hazard-related use scenarios.
+      preconditions: The usability engineering file with the list of hazard-related use scenarios and user groups.
+      expected: Each scenario is covered with at least 15 participants per user group and each use error is analysed.
+      steps:
+        - action: List the hazard-related use scenarios and the user groups.
+          expected: The lists are produced.
+          data: "user groups: nurses, physicians"
+        - action: Check the participants and scenarios in the summative report.
+          expected: Each scenario was tested with at least 15 participants of each user group.
+        - action: Read the analysis of the observed use errors.
+          expected: Each use error has a root cause and a decision on whether the design changes.
+    sv:
+      title: Rapport från summativ utvärdering
+      description: Kontrollerar den summativa användbarhetsrapporten mot de riskrelaterade användningsscenarierna.
+      preconditions: Användbarhetsdokumentationen med listan över riskrelaterade användningsscenarier och användargrupper.
+      expected: Varje scenario täcks med minst 15 deltagare per användargrupp och varje användarfel är analyserat.
+      steps:
+        - action: Lista de riskrelaterade användningsscenarierna och användargrupperna.
+          expected: Listorna tas fram.
+          data: "användargrupper: sjuksköterskor, läkare"
+        - action: Kontrollera deltagare och scenarier i den summativa rapporten.
+          expected: Varje scenario testades med minst 15 deltagare ur varje användargrupp.
+        - action: Läs analysen av de observerade användarfelen.
+          expected: Varje användarfel har en grundorsak och ett beslut om utformningen ska ändras.
+
+  - id: MDSW-T08
+    priority: high
+    execution: manual
+    tags: [cybersecurity, threat-model]
+    refs: ["IEC 81001-5-1:2021 (security risk management and testing)"]
+    en:
+      title: Security evidence of the last major release
+      description: Reviews the threat model and security test report of the last major release.
+      preconditions: The release file of the last major release.
+      expected: The threat model is updated for the release and each security finding is closed or risk-assessed.
+      steps:
+        - action: Open the threat model and check its date and version.
+          expected: It was updated for the release and covers the external interfaces.
+          data: "interfaces: HL7 FHIR API, web UI, update service"
+        - action: Open the security test report.
+          expected: It includes penetration tests of the external interfaces.
+        - action: Check the status of each finding.
+          expected: Each finding is closed or has a documented risk assessment.
+    sv:
+      title: Säkerhetsunderlag för den senaste större releasen
+      description: Granskar hotmodellen och rapporten från säkerhetstester för den senaste större releasen.
+      preconditions: Releasedokumentationen för den senaste större releasen.
+      expected: Hotmodellen är uppdaterad för releasen och varje säkerhetsfynd är stängt eller riskbedömt.
+      steps:
+        - action: Öppna hotmodellen och kontrollera datum och version.
+          expected: Den uppdaterades för releasen och täcker de externa gränssnitten.
+          data: "gränssnitt: HL7 FHIR-API, webbgränssnitt, uppdateringstjänst"
+        - action: Öppna rapporten från säkerhetstesterna.
+          expected: Den omfattar penetrationstester av de externa gränssnitten.
+        - action: Kontrollera status för varje fynd.
+          expected: Varje fynd är stängt eller har en dokumenterad riskbedömning.
+
+  - id: MDSW-T09
+    priority: medium
+    execution: manual
+    tags: [it-requirements, instructions]
+    refs: ["Regulation (EU) 2017/745 (MDR) Annex I §17.4"]
+    en:
+      title: Stated IT minimums against the test environment
+      description: Compares the minimum IT requirements in the instructions with the environment used for release testing.
+      preconditions: The instructions for use and the description of the release test environment.
+      expected: The four kinds of requirement are stated and the test environment matches them.
+      steps:
+        - action: Read the minimum IT requirements in the instructions.
+          expected: Hardware, operating system, network and security measures are each stated.
+          data: "for example 8 GB RAM, Windows 11, TLS 1.2 or later"
+        - action: Compare them with the test environment.
+          expected: The test environment meets exactly the stated minimums.
+    sv:
+      title: Angivna IT-minimikrav mot testmiljön
+      description: Jämför de lägsta IT-kraven i bruksanvisningen med miljön som användes för releasetesterna.
+      preconditions: Bruksanvisningen och beskrivningen av testmiljön för releasen.
+      expected: De fyra slagen av krav är angivna och testmiljön stämmer med dem.
+      steps:
+        - action: Läs de lägsta IT-kraven i bruksanvisningen.
+          expected: Maskinvara, operativsystem, nätverk och säkerhetsåtgärder anges var för sig.
+          data: "till exempel 8 GB RAM, Windows 11, TLS 1.2 eller senare"
+        - action: Jämför dem med testmiljön.
+          expected: Testmiljön uppfyller just de angivna minimikraven.
+
+  - id: MDSW-T10
+    priority: medium
+    execution: manual
+    tags: [udi, identification]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 27 (unique device identification)"]
+    en:
+      title: UDI and version on the about screen
+      description: Opens the about screen and compares the values with the release record.
+      preconditions: An installed release of the software and its release record.
+      expected: The about screen shows the UDI in plain text and the version, both matching the record.
+      steps:
+        - action: Open the about screen from the main menu.
+          expected: The screen opens in at most two steps from the start screen.
+        - action: Compare the UDI and version with the release record.
+          expected: Both values are shown and match.
+    sv:
+      title: UDI och version på om-skärmen
+      description: Öppnar om-skärmen och jämför värdena med releaseposten.
+      preconditions: En installerad release av programvaran och dess releasepost.
+      expected: Om-skärmen visar UDI i klartext och versionen, och båda stämmer med posten.
+      steps:
+        - action: Öppna om-skärmen från huvudmenyn.
+          expected: Skärmen öppnas på högst två steg från startskärmen.
+        - action: Jämför UDI och version med releaseposten.
+          expected: Båda värdena visas och stämmer.
+
+  - id: MDSW-T11
+    priority: high
+    execution: manual
+    tags: [vigilance, serious-incidents]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 87 (reporting of serious incidents)"]
+    en:
+      title: Reporting times of serious incidents
+      description: Checks awareness and report dates in the vigilance log.
+      preconditions: The vigilance log of the last 12 months.
+      expected: Each serious incident was reported within its deadline.
+      steps:
+        - action: List the serious incidents with awareness date, category and report date.
+          expected: The list is produced.
+        - action: Compute the days from awareness to report for each.
+          expected: Each is within 15 days, or 10 days for a death, or 2 days for a serious public health threat.
+    sv:
+      title: Rapporteringstider för allvarliga tillbud
+      description: Kontrollerar datum för kännedom och rapport i loggen för säkerhetsövervakning.
+      preconditions: Loggen för säkerhetsövervakning för de senaste 12 månaderna.
+      expected: Varje allvarligt tillbud rapporterades inom sin tidsfrist.
+      steps:
+        - action: Lista de allvarliga tillbuden med datum för kännedom, kategori och rapportdatum.
+          expected: Listan tas fram.
+        - action: Beräkna antalet dagar från kännedom till rapport för vart och ett.
+          expected: Var och en ligger inom 15 dagar, eller 10 dagar vid dödsfall, eller 2 dagar vid ett allvarligt hot mot folkhälsan.
+
+  - id: MDSW-T12
+    priority: medium
+    execution: manual
+    tags: [post-market, surveillance]
+    refs: ["Regulation (EU) 2017/745 (MDR) Art. 83 (post-market surveillance system)"]
+    en:
+      title: Post-market analyses and risk file updates
+      description: Reviews the post-market analyses of the last year and the risk file history.
+      preconditions: The post-market surveillance reports and the change history of the risk management file.
+      expected: Two analyses were made and each new hazard led to a risk file update.
+      steps:
+        - action: List the post-market analyses of the last 12 months.
+          expected: At least 2 analyses are found, at most 6 months apart.
+        - action: For each new hazard reported in them, find the risk file update.
+          expected: Each new hazard has a dated update of the risk file.
+    sv:
+      title: Analyser efter utsläppande på marknaden och uppdateringar av riskdokumentationen
+      description: Granskar analyserna från övervakningen efter utsläppande på marknaden det senaste året och riskdokumentationens historik.
+      preconditions: Rapporterna från övervakningen efter utsläppande på marknaden och ändringshistoriken för riskhanteringsdokumentationen.
+      expected: Två analyser gjordes och varje ny fara ledde till en uppdatering av riskdokumentationen.
+      steps:
+        - action: Lista analyserna från de senaste 12 månaderna.
+          expected: Minst 2 analyser hittas, med högst 6 månader emellan.
+        - action: Leta upp uppdateringen av riskdokumentationen för varje ny fara som rapporteras i dem.
+          expected: Varje ny fara har en daterad uppdatering av riskdokumentationen.
+
+  - id: MDSW-T13
+    priority: medium
+    execution: manual
+    tags: [tool-validation, qms-software]
+    refs: ["ISO 13485:2016 §4.1.6 (validation of software used in the quality management system)"]
+    en:
+      title: Validation records of development tools
+      description: Compares the tool list with the validation records.
+      preconditions: The list of software tools used in development and the quality system, with their current versions.
+      expected: Each tool version in use has a validation record.
+      steps:
+        - action: List the tools with their versions.
+          expected: The list includes requirements, test and build tools.
+          data: "for example the requirements and test management tool"
+        - action: Find the validation record of each tool's current version.
+          expected: Each record states intended use, the risk-based approach and the result.
+    sv:
+      title: Valideringsposter för utvecklingsverktyg
+      description: Jämför verktygsförteckningen med valideringsposterna.
+      preconditions: Förteckningen över programvaruverktyg som används i utvecklingen och kvalitetssystemet, med sina aktuella versioner.
+      expected: Varje verktygsversion som används har en valideringspost.
+      steps:
+        - action: Lista verktygen med deras versioner.
+          expected: Listan omfattar verktyg för krav, test och byggen.
+          data: "till exempel verktyget för krav- och testhantering"
+        - action: Leta upp valideringsposten för varje verktygs aktuella version.
+          expected: Varje post anger avsedd användning, det riskbaserade angreppssättet och resultatet.

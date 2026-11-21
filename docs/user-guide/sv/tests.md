@@ -128,6 +128,10 @@ Den som har `test.review` kan markera många tester som *Klart* i ett steg: krys
 
 Utöver kontrollerna för krav (den senaste granskningen begärde ändringar, öppna granskningsförfrågningar, misstänkta länkar) hoppas ett test över när det inte kan köras som det är skrivet: ett **manuellt test utan steg** eller ett **automatiserat test utan skript**. Välj kontrollen under **Ta med ändå, trots** för att markera dem som klara ändå.
 
+## Kalkylbladsvy
+
+Välj **Kalkylblad** för att redigera testfall som i ett kalkylblad; det fungerar som för [krav](requirements.md#kalkylbladsvy) (tangentbord, kopiera och klistra in från Excel, fyll nedåt, nya rader, sparande, konflikter, ångra och **Exportera vyn**). Kolumnerna är **Nyckel**, **Titel**, **Beskrivning**, **Prioritet**, **Status**, **Exekvering**, **Förutsättningar**, **Förväntat resultat**, **Uppskattning (min)**, **Kategorier**, **Taggar**, **Mapp** och de skrivskyddade **Steg** (antalet steg), **Senaste utfall**, **Krav**, **Skapad av** och **Version**. Steg, skript och testdata redigeras i redigeraren (dubbelklicka på nyckeln eller tryck **Ctrl+Enter**). Att sätta ett testfall till *Klart* är ett granskningsbeslut och kräver `test.review`, i bladet som i redigeraren.
+
 ## Kopiera ett testfall
 
 **Kopiera** i redigeraren skapar en kopia med titeln *Copy of …* och en ny nyckel i samma mapp, med steg, kategorier och taggar. Kopian börjar som **Utkast** och granskas alltså på nytt. Länkar till krav kopieras inte.

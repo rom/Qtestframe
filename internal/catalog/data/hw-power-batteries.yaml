@@ -1,0 +1,738 @@
+area: hw-power-batteries
+prefix: HWPWR
+group: quality
+catalogue: hardware
+name: {en: Power supplies and batteries, sv: Strömförsörjning och batterier}
+description:
+  en: Design and compliance of power supplies and batteries in electronic products, covering power budget, input range, inrush, power-fail handling, output protection, external power supply efficiency, the common charger, lithium cell safety and transport testing, charge control, battery labelling and state of health, thermal propagation and cycle life.
+  sv: Konstruktion och regelefterlevnad för strömförsörjning och batterier i elektronikprodukter, med effektbudget, ingångsområde, startström, hantering av strömavbrott, skydd av utgångar, verkningsgrad för externa nätaggregat, gemensam laddare, säkerhet och transportprovning för litiumceller, laddningsstyrning, märkning och hälsotillstånd för batterier, termisk spridning och cykellivslängd.
+
+requirements:
+  - id: HWPWR-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [power-budget, margin]
+    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)"]
+    tests: [HWPWR-T01]
+    en:
+      title: Power budget with 20 % margin at worst-case load
+      description: The design MUST have a power budget showing that each supply rail delivers at least 20 % more than the worst-case load of the circuits it feeds, including start-up peaks and the end-of-life tolerance of the supply.
+      rationale: Supplies that run at their limit overheat, trip on load peaks and leave no room for later features.
+      criteria:
+        - method: analysis
+          text: The power budget covers each rail and shows at least 20 % margin, and a measurement at worst-case load agrees with the budget within 10 %.
+          threshold: margin ≥ 20 %
+    sv:
+      title: Effektbudget med 20 % marginal vid värsta tänkbara last
+      description: Konstruktionen SKA ha en effektbudget som visar att varje matningsskena levererar minst 20 % mer än den värsta tänkbara lasten från de kretsar den matar, inklusive startspikar och matningens tolerans vid livslängdens slut.
+      rationale: Matningar som körs vid sin gräns blir överhettade, löser ut vid lasttoppar och lämnar inget utrymme för senare funktioner.
+      criteria:
+        - method: analysis
+          text: Effektbudgeten omfattar varje skena och visar minst 20 % marginal, och en mätning vid värsta tänkbara last stämmer med budgeten inom 10 %.
+          threshold: marginal ≥ 20 %
+
+  - id: HWPWR-02
+    type: performance
+    obligation: must
+    priority: high
+    tags: [input-range, mains]
+    refs: ["IEC 62368-1:2023"]
+    tests: [HWPWR-T01]
+    en:
+      title: Operation over the full rated input range
+      description: The product MUST operate to its specification at full load over an input of 90 V to 264 V AC and 47 Hz to 63 Hz.
+      rationale: Mains voltage varies between countries and within a network, and a product that only works at nominal voltage fails at the edges of its market.
+      criteria:
+        - method: test
+          text: The product passes its functional test at full load at 90 V, 47 Hz and at 264 V, 63 Hz.
+          threshold: 90–264 V AC, 47–63 Hz
+    sv:
+      title: Drift över hela det angivna ingångsområdet
+      description: Produkten SKA fungera enligt sin specifikation vid full last med en ingångsspänning från 90 V till 264 V AC och en frekvens från 47 Hz till 63 Hz.
+      rationale: Nätspänningen varierar mellan länder och inom ett nät, och en produkt som bara fungerar vid nominell spänning slutar fungera i kanten av sin marknad.
+      criteria:
+        - method: test
+          text: Produkten klarar sitt funktionsprov vid full last vid 90 V, 47 Hz och vid 264 V, 63 Hz.
+          threshold: 90–264 V AC, 47–63 Hz
+
+  - id: HWPWR-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [power-fail, hold-up, data-integrity]
+    refs: ["IEC 61000-4-11:2020 (voltage dips, short interruptions and voltage variations immunity)"]
+    tests: [HWPWR-T02]
+    en:
+      title: Power-fail warning before the supply rails drop
+      description: The power supply MUST signal a power-fail warning to the processor at least 5 ms before any regulated rail leaves its tolerance after a loss of input power at full load.
+      rationale: The warning gives the firmware time to finish writes to non-volatile memory, so a power cut does not corrupt stored data.
+      criteria:
+        - method: test
+          text: An oscilloscope shows at least 5 ms between the warning signal and the first rail leaving its tolerance after input power is cut at full load.
+          threshold: ≥ 5 ms
+    sv:
+      title: Varning för strömavbrott innan matningsskenorna faller
+      description: Nätaggregatet SKA ge processorn en varning för strömavbrott minst 5 ms innan någon reglerad skena lämnar sin tolerans efter att ingångseffekten försvunnit vid full last.
+      rationale: Varningen ger firmware tid att avsluta skrivningar till icke-flyktigt minne, så att ett strömavbrott inte förstör lagrade data.
+      criteria:
+        - method: test
+          text: Ett oscilloskop visar minst 5 ms mellan varningssignalen och den första skenan som lämnar sin tolerans efter att ingångseffekten brutits vid full last.
+          threshold: ≥ 5 ms
+
+  - id: HWPWR-04
+    type: constraint
+    obligation: must_not
+    priority: medium
+    tags: [inrush, mains]
+    refs: ["IEC 62368-1:2023"]
+    tests: [HWPWR-T02]
+    en:
+      title: Inrush current limited at cold start
+      description: The peak input current at switch-on MUST NOT exceed 30 A at 264 V AC with the product at room temperature and the switch-on at the voltage peak.
+      rationale: A high inrush current trips circuit breakers when several units are switched on together and wears switch contacts.
+      criteria:
+        - method: test
+          text: Ten cold starts at the voltage peak each show a peak current of at most 30 A.
+          threshold: ≤ 30 A peak
+    sv:
+      title: Begränsad startström vid kallstart
+      description: Den högsta ingångsströmmen vid tillslag SKA INTE överstiga 30 A vid 264 V AC med produkten i rumstemperatur och tillslag vid spänningstoppen.
+      rationale: En hög startström löser ut dvärgbrytare när fler enheter slås på samtidigt och sliter på brytarkontakter.
+      criteria:
+        - method: test
+          text: Tio kallstarter vid spänningstoppen visar var och en en toppström på högst 30 A.
+          threshold: ≤ 30 A topp
+
+  - id: HWPWR-05
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [short-circuit, protection, outputs]
+    refs: ["IEC 62368-1:2023"]
+    tests: [HWPWR-T03]
+    en:
+      title: Outputs protected against short circuit with automatic recovery
+      description: Each power output that leaves the enclosure MUST withstand a short circuit of 1 hour without damage or fire and return to its rated voltage within 2 seconds after the short circuit is removed.
+      rationale: Cables and connected devices get damaged or wrongly wired in the field, and a supply that fails or needs service after a short leaves the system down.
+      criteria:
+        - method: test
+          text: After a 1-hour short on each external output, the output returns to its rated voltage within 2 seconds and the unit passes its functional test.
+          threshold: recovery ≤ 2 s
+    sv:
+      title: Utgångar skyddade mot kortslutning med automatisk återgång
+      description: Varje kraftutgång som går ut ur höljet SKA tåla en kortslutning i 1 timme utan skada eller brand och återgå till sin märkspänning inom 2 sekunder efter att kortslutningen tagits bort.
+      rationale: Kablar och anslutna enheter skadas eller kopplas fel i fält, och en matning som går sönder eller behöver service efter en kortslutning gör att systemet står still.
+      criteria:
+        - method: test
+          text: Efter en kortslutning på 1 timme på varje extern utgång återgår utgången till sin märkspänning inom 2 sekunder och enheten klarar sitt funktionsprov.
+          threshold: återgång ≤ 2 s
+
+  - id: HWPWR-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [external-power-supply, efficiency, ecodesign]
+    refs: ["Commission Regulation (EU) 2019/1782 Annex I (ecodesign requirements for external power supplies)"]
+    tests: [HWPWR-T04]
+    en:
+      title: External power supply within the ecodesign efficiency limits
+      description: An external power supply delivered with the product MUST meet the average active efficiency for its rated output power and draw no more than 0.10 W at no load, as set for its type in the ecodesign rules for external power supplies.
+      rationale: External power supplies stay plugged in for years, so their no-load and conversion losses add up across the installed base.
+      criteria:
+        - method: test
+          text: Measurements at 25 %, 50 %, 75 % and 100 % load give an average efficiency at or above the limit, and the no-load input is at most 0.10 W.
+          threshold: no load ≤ 0.10 W
+    sv:
+      title: Externt nätaggregat inom ekodesigngränserna för verkningsgrad
+      description: Ett externt nätaggregat som levereras med produkten SKA uppfylla den genomsnittliga verkningsgraden i aktivt läge för sin märkeffekt och ta högst 0,10 W utan last, enligt vad ekodesignreglerna för externa nätaggregat anger för dess typ.
+      rationale: Externa nätaggregat sitter i vägguttaget i flera år, så deras förluster utan last och vid omvandling summeras över hela den installerade basen.
+      criteria:
+        - method: test
+          text: Mätningar vid 25 %, 50 %, 75 % och 100 % last ger en genomsnittlig verkningsgrad på eller över gränsen, och effekten utan last är högst 0,10 W.
+          threshold: utan last ≤ 0,10 W
+
+  - id: HWPWR-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [common-charger, usb-c, charging]
+    refs: ["Directive (EU) 2022/2380 (common charger)"]
+    tests: [HWPWR-T05]
+    en:
+      title: USB Type-C charging receptacle with USB Power Delivery above 15 W
+      description: A rechargeable radio device in a category covered by the common charger rules MUST charge through a USB Type-C receptacle and support USB Power Delivery when it accepts more than 15 W.
+      rationale: A common charging interface lets users reuse chargers, which reduces electronic waste and cost for consumers.
+      criteria:
+        - method: test
+          text: The device charges from a standard USB Type-C charger, and when it accepts more than 15 W it negotiates a USB Power Delivery contract above 15 W.
+    sv:
+      title: Laddningsuttag av typen USB-C med USB Power Delivery över 15 W
+      description: En uppladdningsbar radioutrustning i en kategori som omfattas av reglerna om gemensam laddare SKA laddas via ett uttag av typen USB-C och stödja USB Power Delivery när den tar emot mer än 15 W.
+      rationale: Ett gemensamt laddningsgränssnitt gör att användare kan återanvända laddare, vilket minskar elektronikavfall och kostnader för konsumenter.
+      criteria:
+        - method: test
+          text: Utrustningen laddas från en standardladdare med USB-C, och när den tar emot mer än 15 W förhandlar den fram ett avtal enligt USB Power Delivery över 15 W.
+
+  - id: HWPWR-08
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [lithium, cell-safety, certification]
+    refs: ["IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)"]
+    tests: [HWPWR-T06]
+    en:
+      title: Lithium cells and battery packs certified to IEC 62133-2
+      description: Each portable lithium-ion cell and battery pack in the product MUST have a test report or certificate showing conformity with IEC 62133-2, issued for the cell and pack models actually used.
+      rationale: Lithium cells can vent, burn or explode under abuse, and the standard's tests show that the cell and pack withstand foreseeable misuse.
+      criteria:
+        - method: inspection
+          text: The bill of materials lists each cell and pack model, and each has a report or certificate that names the same model and covers the full test sequence.
+    sv:
+      title: Litiumceller och batteripaket certifierade enligt IEC 62133-2
+      description: Varje bärbar litiumjoncell och varje batteripaket i produkten SKA ha en testrapport eller ett certifikat som visar överensstämmelse med IEC 62133-2, utfärdat för de cell- och paketmodeller som faktiskt används.
+      rationale: Litiumceller kan avge gas, brinna eller explodera vid felaktig användning, och standardens prov visar att cell och paket tål förutsebar felanvändning.
+      criteria:
+        - method: inspection
+          text: Materialförteckningen anger varje cell- och paketmodell, och var och en har en rapport eller ett certifikat som anger samma modell och omfattar hela provserien.
+
+  - id: HWPWR-09
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [transport, lithium, un-38-3]
+    refs: ["UN Manual of Tests and Criteria §38.3.5 (test summary)"]
+    tests: [HWPWR-T06]
+    en:
+      title: UN 38.3 test summary for each shipped lithium battery
+      description: The manufacturer MUST hold a UN 38.3 test summary for each lithium cell and battery model shipped alone, packed with or contained in the product, and give it to carriers and customers on request.
+      rationale: Carriers refuse lithium batteries without proof of the transport tests, because untested batteries have caused fires in aircraft and vehicles.
+      criteria:
+        - method: inspection
+          text: Each lithium cell and battery model in the bill of materials has a test summary that names the model, the test laboratory and the passed tests.
+    sv:
+      title: Testsammanfattning enligt UN 38.3 för varje levererat litiumbatteri
+      description: Tillverkaren SKA ha en testsammanfattning enligt UN 38.3 för varje modell av litiumcell och litiumbatteri som levereras separat, packad med eller inbyggd i produkten, och lämna den till transportörer och kunder på begäran.
+      rationale: Transportörer vägrar ta litiumbatterier utan bevis på transportproven, eftersom oprovade batterier har orsakat bränder i flygplan och fordon.
+      criteria:
+        - method: inspection
+          text: Varje modell av litiumcell och litiumbatteri i materialförteckningen har en testsammanfattning som anger modellen, provningslaboratoriet och de godkända proven.
+
+  - id: HWPWR-10
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [charging, temperature, battery-management]
+    refs: ["IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)"]
+    tests: [HWPWR-T07]
+    en:
+      title: Charging only within the cell temperature range
+      description: The charger MUST stop charging when the cell temperature is below 0 °C or above 45 °C, or outside the narrower range given by the cell maker, and resume only when the temperature is back inside the range.
+      rationale: Charging a lithium cell below freezing plates metallic lithium, and charging when hot speeds ageing, and both raise the risk of internal short circuits.
+      criteria:
+        - method: test
+          text: With the cell held at −2 °C and at +47 °C the charge current is zero, and at +20 °C charging resumes.
+          threshold: 0 °C to 45 °C
+    sv:
+      title: Laddning endast inom cellens temperaturområde
+      description: Laddaren SKA avbryta laddningen när celltemperaturen är under 0 °C eller över 45 °C, eller utanför det snävare område som celltillverkaren anger, och återuppta den först när temperaturen åter ligger inom området.
+      rationale: Laddning av en litiumcell under fryspunkten ger utfällning av metalliskt litium, och laddning när cellen är varm påskyndar åldringen, och båda ökar risken för inre kortslutning.
+      criteria:
+        - method: test
+          text: Med cellen hållen vid −2 °C och vid +47 °C är laddströmmen noll, och vid +20 °C återupptas laddningen.
+          threshold: 0 °C till 45 °C
+
+  - id: HWPWR-11
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [overcharge, protection, battery-management]
+    refs: ["IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)", "IEC 61508-2:2010 §7.4.4 (hardware safety integrity architectural constraints)"]
+    tests: [HWPWR-T08]
+    en:
+      title: Independent second level of overcharge protection
+      description: Each lithium battery pack MUST have a second, independent protection that disconnects charging when any cell exceeds its maximum charge voltage by more than 100 mV, working without the charger firmware.
+      rationale: A single fault in the charger or its firmware can otherwise overcharge a cell into thermal runaway.
+      criteria:
+        - method: test
+          text: With the primary charge control disabled and a forced charge, the second protection disconnects within 100 mV above the cell maximum voltage.
+          threshold: ≤ max cell voltage + 100 mV
+    sv:
+      title: Oberoende andra nivå av överladdningsskydd
+      description: Varje litiumbatteripaket SKA ha ett andra, oberoende skydd som bryter laddningen när någon cell överskrider sin högsta laddspänning med mer än 100 mV, och som fungerar utan laddarens firmware.
+      rationale: Ett enda fel i laddaren eller dess firmware kan annars överladda en cell till termisk rusning.
+      criteria:
+        - method: test
+          text: Med den primära laddningsstyrningen avstängd och en påtvingad laddning bryter det andra skyddet inom 100 mV över cellens högsta spänning.
+          threshold: ≤ högsta cellspänning + 100 mV
+
+  - id: HWPWR-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [battery-labelling, batteries-regulation]
+    refs: ["Regulation (EU) 2023/1542 (Batteries Regulation) Art. 13 (labelling, marking and information requirements)"]
+    tests: [HWPWR-T09]
+    en:
+      title: Battery label with the information of the Batteries Regulation
+      description: Each battery placed on the EU market, alone or in the product, MUST carry a label with the manufacturer, battery category, chemistry, capacity, date of manufacture and the separate collection symbol, as the Batteries Regulation sets for its category.
+      rationale: The label lets users, collectors and recyclers identify and sort the battery, and is checked by market surveillance.
+      criteria:
+        - method: inspection
+          text: Each battery model in the product has a label with each listed item, and the symbol is legible and indelible after a rub test.
+    sv:
+      title: Batterimärkning med uppgifterna i batteriförordningen
+      description: Varje batteri som släpps ut på EU-marknaden, separat eller i produkten, SKA ha en märkning med tillverkare, batterikategori, kemi, kapacitet, tillverkningsdatum och symbolen för separat insamling, enligt vad batteriförordningen anger för dess kategori.
+      rationale: Märkningen gör att användare, insamlare och återvinnare kan identifiera och sortera batteriet, och den kontrolleras av marknadskontrollen.
+      criteria:
+        - method: inspection
+          text: Varje batterimodell i produkten har en märkning med varje angiven uppgift, och symbolen är läsbar och beständig efter ett gnidprov.
+
+  - id: HWPWR-13
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [state-of-health, battery-management, batteries-regulation]
+    refs: ["Regulation (EU) 2023/1542 (Batteries Regulation) Art. 14 (information on state of health and expected lifetime)"]
+    tests: [HWPWR-T10]
+    en:
+      title: State of health readable from the battery management system
+      description: The battery management system of a stationary battery energy storage system, light means of transport battery or electric vehicle battery MUST make the state of health and the expected lifetime readable to the owner and to persons acting on the owner's behalf.
+      rationale: Second-life use, repair and resale all depend on knowing how much capacity a battery has left.
+      criteria:
+        - method: test
+          text: A read-only access to the battery management system returns the state of health and expected lifetime, and the value agrees with a capacity measurement within 5 percentage points.
+          threshold: ≤ 5 percentage points
+    sv:
+      title: Hälsotillstånd läsbart från batteriets styrsystem
+      description: Batteriets styrsystem i ett stationärt energilager, ett batteri för lätta transportmedel eller ett batteri för elfordon SKA göra hälsotillståndet och den förväntade livslängden läsbara för ägaren och för personer som agerar på ägarens uppdrag.
+      rationale: Andrahandsanvändning, reparation och vidareförsäljning beror alla på att man vet hur mycket kapacitet ett batteri har kvar.
+      criteria:
+        - method: test
+          text: En läsåtkomst till batteriets styrsystem ger hälsotillstånd och förväntad livslängd, och värdet stämmer med en kapacitetsmätning inom 5 procentenheter.
+          threshold: ≤ 5 procentenheter
+
+  - id: HWPWR-14
+    type: non_functional
+    obligation: must_not
+    priority: critical
+    tags: [thermal-runaway, propagation, industrial-battery]
+    refs: ["IEC 62619:2022 (propagation test)"]
+    tests: [HWPWR-T11]
+    en:
+      title: No fire spread after thermal runaway of one cell
+      description: The internal thermal runaway of one cell in a multi-cell industrial battery MUST NOT cause fire outside the battery enclosure or explosion of the battery.
+      rationale: A defect in one cell is never fully excluded, and the pack design decides whether it ends as one failed cell or as a building fire.
+      criteria:
+        - method: test
+          text: A propagation test report for the pack design shows no fire outside the enclosure and no explosion after forced runaway of one cell.
+    sv:
+      title: Ingen brandspridning efter termisk rusning i en cell
+      description: Inre termisk rusning i en cell i ett industribatteri med mer än en cell SKA INTE orsaka brand utanför batteriets hölje eller explosion av batteriet.
+      rationale: Ett fel i en cell kan aldrig helt uteslutas, och paketets konstruktion avgör om det slutar som en trasig cell eller som en byggnadsbrand.
+      criteria:
+        - method: test
+          text: En provningsrapport för spridningsprov av paketets konstruktion visar ingen brand utanför höljet och ingen explosion efter påtvingad rusning i en cell.
+
+  - id: HWPWR-15
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [cycle-life, capacity, durability]
+    refs: ["IEC 61960-3:2017 (endurance in cycles)", "Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    tests: [HWPWR-T12]
+    en:
+      title: At least 80 % capacity after 500 charge cycles
+      description: The battery of the product SHOULD keep at least 80 % of its rated capacity after 500 full charge and discharge cycles at 25 °C with the product's own charge profile.
+      rationale: Battery wear is the most common reason that portable products are replaced, and a stated cycle life makes the product's durability verifiable.
+      criteria:
+        - method: test
+          text: A cycle test of 3 batteries shows each at 80 % or more of rated capacity after 500 cycles.
+          threshold: ≥ 80 % after 500 cycles
+    sv:
+      title: Minst 80 % kapacitet efter 500 laddcykler
+      description: Produktens batteri BÖR behålla minst 80 % av sin märkkapacitet efter 500 fulla laddnings- och urladdningscykler vid 25 °C med produktens egen laddprofil.
+      rationale: Batteriförslitning är det vanligaste skälet till att bärbara produkter byts ut, och en angiven cykellivslängd gör produktens hållbarhet verifierbar.
+      criteria:
+        - method: test
+          text: Ett cykelprov med 3 batterier visar att vart och ett har 80 % eller mer av märkkapaciteten efter 500 cykler.
+          threshold: ≥ 80 % efter 500 cykler
+
+tests:
+  - id: HWPWR-T01
+    priority: high
+    execution: manual
+    tags: [power-budget, input-range]
+    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)", "IEC 62368-1:2023"]
+    en:
+      title: Power budget review and operation at the input limits
+      description: Reviews the power budget of each rail and runs the product at full load at the ends of the input range.
+      preconditions: The power budget, a product sample with its worst-case load, a programmable AC source and a power analyser.
+      expected: Each rail has 20 % margin and the product works at both input limits.
+      steps:
+        - action: Read the budget for each rail and compare the rated output with the worst-case load.
+          expected: Each rail has at least 20 % margin.
+        - action: Measure the input and rail currents at worst-case load.
+          expected: The measured loads agree with the budget within 10 %.
+        - action: Run the functional test at full load from the AC source at the low limit.
+          expected: The product passes.
+          data: 90 V AC, 47 Hz
+        - action: Run the functional test at full load at the high limit.
+          expected: The product passes.
+          data: 264 V AC, 63 Hz
+    sv:
+      title: Granskning av effektbudget och drift vid ingångsgränserna
+      description: Granskar effektbudgeten för varje skena och kör produkten med full last i ändarna av ingångsområdet.
+      preconditions: Effektbudgeten, ett produktexemplar med dess värsta tänkbara last, en programmerbar växelspänningskälla och en effektanalysator.
+      expected: Varje skena har 20 % marginal och produkten fungerar vid båda ingångsgränserna.
+      steps:
+        - action: Läs budgeten för varje skena och jämför den angivna utgångseffekten med den värsta tänkbara lasten.
+          expected: Varje skena har minst 20 % marginal.
+        - action: Mät ingångs- och skenströmmar vid värsta tänkbara last.
+          expected: De uppmätta lasterna stämmer med budgeten inom 10 %.
+        - action: Kör funktionsprovet med full last från växelspänningskällan vid den nedre gränsen.
+          expected: Produkten klarar provet.
+          data: 90 V AC, 47 Hz
+        - action: Kör funktionsprovet med full last vid den övre gränsen.
+          expected: Produkten klarar provet.
+          data: 264 V AC, 63 Hz
+
+  - id: HWPWR-T02
+    priority: high
+    execution: manual
+    tags: [power-fail, inrush]
+    refs: ["IEC 61000-4-11:2020 (voltage dips, short interruptions and voltage variations immunity)", "IEC 62368-1:2023"]
+    en:
+      title: Power-fail warning time and inrush current
+      description: Measures the time from the power-fail warning to rail drop-out and the peak current at cold switch-on.
+      preconditions: A product sample at full load, an oscilloscope with a current probe, a programmable AC source with phase-angle switching and the unit cooled to room temperature before each start.
+      expected: The warning comes at least 5 ms before rail drop-out and inrush peaks are at most 30 A.
+      steps:
+        - action: Cut the input at full load and record the warning signal and each regulated rail.
+          expected: The first rail leaves its tolerance at least 5 ms after the warning.
+        - action: Repeat the cut 10 times at random phase angles.
+          expected: Each repetition gives at least 5 ms.
+        - action: Switch on the cold unit at the voltage peak 10 times and record the input current.
+          expected: Each peak is at most 30 A.
+          data: 264 V AC, switch-on at 90°
+    sv:
+      title: Varningstid vid strömavbrott och startström
+      description: Mäter tiden från varningen för strömavbrott till att skenorna faller och toppströmmen vid kallt tillslag.
+      preconditions: Ett produktexemplar med full last, ett oscilloskop med strömprob, en programmerbar växelspänningskälla med tillslag på vald fasvinkel och enheten avsvalnad till rumstemperatur före varje start.
+      expected: Varningen kommer minst 5 ms innan skenorna faller och startströmmens toppar är högst 30 A.
+      steps:
+        - action: Bryt ingången vid full last och registrera varningssignalen och varje reglerad skena.
+          expected: Den första skenan lämnar sin tolerans minst 5 ms efter varningen.
+        - action: Upprepa brytningen 10 gånger vid slumpvisa fasvinklar.
+          expected: Varje upprepning ger minst 5 ms.
+        - action: Slå på den kalla enheten vid spänningstoppen 10 gånger och registrera ingångsströmmen.
+          expected: Varje topp är högst 30 A.
+          data: 264 V AC, tillslag vid 90°
+
+  - id: HWPWR-T03
+    priority: high
+    execution: manual
+    tags: [short-circuit]
+    refs: ["IEC 62368-1:2023"]
+    en:
+      title: One-hour short circuit on each external output
+      description: Shorts each external power output for one hour and checks recovery and function.
+      preconditions: A product sample on a fire-proof surface, a shorting link with a current meter, thermocouples on the output stage and a fire extinguisher at hand.
+      expected: No damage or fire, and each output recovers within 2 seconds.
+      steps:
+        - action: Short the first external output at full input voltage for 1 hour.
+          expected: No smoke, flame or melting, and the output stage temperature stays below its rating.
+        - action: Remove the short and record the output voltage.
+          expected: The output is back at its rated voltage within 2 seconds.
+        - action: Repeat for each external output and then run the functional test.
+          expected: Each output recovers and the unit passes the functional test.
+    sv:
+      title: Kortslutning i en timme på varje extern utgång
+      description: Kortsluter varje extern kraftutgång i en timme och kontrollerar återgång och funktion.
+      preconditions: Ett produktexemplar på ett brandsäkert underlag, en kortslutningsbygel med strömmätare, termoelement på utgångssteget och en brandsläckare till hands.
+      expected: Ingen skada eller brand, och varje utgång återgår inom 2 sekunder.
+      steps:
+        - action: Kortslut den första externa utgången vid full ingångsspänning i 1 timme.
+          expected: Ingen rök, låga eller smältning, och utgångsstegets temperatur ligger under sitt märkvärde.
+        - action: Ta bort kortslutningen och registrera utgångsspänningen.
+          expected: Utgången är tillbaka på sin märkspänning inom 2 sekunder.
+        - action: Upprepa för varje extern utgång och kör sedan funktionsprovet.
+          expected: Varje utgång återgår och enheten klarar funktionsprovet.
+
+  - id: HWPWR-T04
+    priority: medium
+    execution: manual
+    tags: [external-power-supply, efficiency]
+    refs: ["Commission Regulation (EU) 2019/1782 Annex I (ecodesign requirements for external power supplies)"]
+    en:
+      title: Efficiency and no-load power of the external power supply
+      description: Measures the active efficiency at four load points and the no-load power of the external power supply.
+      preconditions: The external power supply, an electronic load, a power analyser with a resolution of 0.01 W or better and a 230 V, 50 Hz source.
+      expected: The average efficiency meets the limit for the rated output and the no-load power is at most 0.10 W.
+      steps:
+        - action: Measure the efficiency at 25 %, 50 %, 75 % and 100 % of rated output after 30 minutes of warm-up.
+          expected: Four values are recorded.
+          data: 230 V, 50 Hz
+        - action: Calculate the average of the four values and compare it with the limit for the rated output.
+          expected: The average is at or above the limit.
+        - action: Disconnect the load and measure the input power over 10 minutes.
+          expected: The no-load input is at most 0.10 W.
+    sv:
+      title: Verkningsgrad och effekt utan last för det externa nätaggregatet
+      description: Mäter verkningsgraden i aktivt läge vid fyra lastpunkter och effekten utan last för det externa nätaggregatet.
+      preconditions: Det externa nätaggregatet, en elektronisk last, en effektanalysator med en upplösning på 0,01 W eller bättre och en källa med 230 V, 50 Hz.
+      expected: Den genomsnittliga verkningsgraden uppfyller gränsen för märkeffekten och effekten utan last är högst 0,10 W.
+      steps:
+        - action: Mät verkningsgraden vid 25 %, 50 %, 75 % och 100 % av märkeffekten efter 30 minuters uppvärmning.
+          expected: Fyra värden registreras.
+          data: 230 V, 50 Hz
+        - action: Beräkna medelvärdet av de fyra värdena och jämför med gränsen för märkeffekten.
+          expected: Medelvärdet ligger på eller över gränsen.
+        - action: Koppla bort lasten och mät ingångseffekten under 10 minuter.
+          expected: Effekten utan last är högst 0,10 W.
+
+  - id: HWPWR-T05
+    priority: medium
+    execution: manual
+    tags: [common-charger, usb-c]
+    refs: ["Directive (EU) 2022/2380 (common charger)"]
+    en:
+      title: Charging from standard USB Type-C chargers
+      description: Charges the device from standard USB Type-C chargers and checks the USB Power Delivery contract.
+      preconditions: The device with a discharged battery, a 5 V USB Type-C charger without Power Delivery, a USB Power Delivery charger rated above the device's maximum and a USB Power Delivery analyser.
+      expected: The device charges from both chargers and negotiates a Power Delivery contract when it accepts more than 15 W.
+      steps:
+        - action: Connect the device to the 5 V USB Type-C charger.
+          expected: The device shows charging and the battery level rises.
+        - action: Connect the device through the analyser to the Power Delivery charger.
+          expected: The analyser shows a negotiated contract.
+        - action: Read the negotiated power.
+          expected: When the device accepts more than 15 W, the contract is above 15 W.
+    sv:
+      title: Laddning från standardladdare med USB-C
+      description: Laddar utrustningen från standardladdare med USB-C och kontrollerar avtalet enligt USB Power Delivery.
+      preconditions: Utrustningen med urladdat batteri, en laddare med USB-C på 5 V utan Power Delivery, en laddare med USB Power Delivery för mer än utrustningens högsta effekt och en analysator för USB Power Delivery.
+      expected: Utrustningen laddas från båda laddarna och förhandlar fram ett avtal enligt Power Delivery när den tar emot mer än 15 W.
+      steps:
+        - action: Anslut utrustningen till laddaren med USB-C på 5 V.
+          expected: Utrustningen visar laddning och batterinivån stiger.
+        - action: Anslut utrustningen via analysatorn till laddaren med Power Delivery.
+          expected: Analysatorn visar ett förhandlat avtal.
+        - action: Läs den förhandlade effekten.
+          expected: När utrustningen tar emot mer än 15 W är avtalet över 15 W.
+
+  - id: HWPWR-T06
+    priority: critical
+    execution: manual
+    tags: [lithium, certification, transport]
+    refs: ["IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)", "UN Manual of Tests and Criteria §38.3.5 (test summary)"]
+    en:
+      title: Cell safety reports and transport test summaries
+      description: Checks that each lithium cell and pack model in the bill of materials has a safety report and a transport test summary.
+      preconditions: The current bill of materials, the IEC 62133-2 reports or certificates and the UN 38.3 test summaries.
+      expected: Each model has both documents for the exact model used.
+      steps:
+        - action: List each lithium cell and pack model in the bill of materials.
+          expected: The list includes the cell, the pack and any coin cells.
+        - action: Find the IEC 62133-2 report or certificate of each model.
+          expected: Each report names the same model and covers the full test sequence.
+        - action: Find the UN 38.3 test summary of each model.
+          expected: Each summary names the same model, the laboratory and the passed tests.
+    sv:
+      title: Säkerhetsrapporter för celler och testsammanfattningar för transport
+      description: Kontrollerar att varje modell av litiumcell och batteripaket i materialförteckningen har en säkerhetsrapport och en testsammanfattning för transport.
+      preconditions: Den aktuella materialförteckningen, rapporterna eller certifikaten enligt IEC 62133-2 och testsammanfattningarna enligt UN 38.3.
+      expected: Varje modell har båda dokumenten för exakt den modell som används.
+      steps:
+        - action: Lista varje modell av litiumcell och batteripaket i materialförteckningen.
+          expected: Listan omfattar cellen, paketet och eventuella knappceller.
+        - action: Hitta rapporten eller certifikatet enligt IEC 62133-2 för varje modell.
+          expected: Varje rapport anger samma modell och omfattar hela provserien.
+        - action: Hitta testsammanfattningen enligt UN 38.3 för varje modell.
+          expected: Varje sammanfattning anger samma modell, laboratoriet och de godkända proven.
+
+  - id: HWPWR-T07
+    priority: critical
+    execution: manual
+    tags: [charging, temperature]
+    refs: ["IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)"]
+    en:
+      title: Charging stopped outside the cell temperature range
+      description: Holds the battery below and above the charging temperature range and checks the charge current.
+      preconditions: A product with a partly discharged battery in a climatic chamber, a current meter in the battery lead and a thermocouple on the cell.
+      expected: No charge current outside 0 °C to 45 °C, and charging resumes inside the range.
+      steps:
+        - action: Hold the cell at the low test temperature and connect the charger.
+          expected: The charge current is zero.
+          data: −2 °C
+        - action: Hold the cell at the high test temperature with the charger connected.
+          expected: The charge current is zero.
+          data: +47 °C
+        - action: Bring the cell to room temperature with the charger connected.
+          expected: Charging resumes.
+          data: +20 °C
+    sv:
+      title: Laddningen avbryts utanför cellens temperaturområde
+      description: Håller batteriet under och över temperaturområdet för laddning och kontrollerar laddströmmen.
+      preconditions: En produkt med delvis urladdat batteri i en klimatkammare, en strömmätare i batteriledningen och ett termoelement på cellen.
+      expected: Ingen laddström utanför 0 °C till 45 °C, och laddningen återupptas inom området.
+      steps:
+        - action: Håll cellen vid den låga provtemperaturen och anslut laddaren.
+          expected: Laddströmmen är noll.
+          data: −2 °C
+        - action: Håll cellen vid den höga provtemperaturen med laddaren ansluten.
+          expected: Laddströmmen är noll.
+          data: +47 °C
+        - action: Låt cellen nå rumstemperatur med laddaren ansluten.
+          expected: Laddningen återupptas.
+          data: +20 °C
+
+  - id: HWPWR-T08
+    priority: critical
+    execution: manual
+    tags: [overcharge, protection]
+    refs: ["IEC 62133-2:2017 (safety of portable sealed secondary lithium cells and batteries)", "IEC 61508-2:2010 §7.4.4 (hardware safety integrity architectural constraints)"]
+    en:
+      title: Second-level protection with the primary charge control disabled
+      description: Disables the primary charge control and forces a charge to check the independent protection.
+      preconditions: A battery pack on a test bench in a fire-safe enclosure, a laboratory supply with current limit, cell voltage taps and a test firmware or jumper that disables the primary charge control.
+      expected: The second protection disconnects charging within 100 mV above the cell maximum.
+      steps:
+        - action: Disable the primary charge control and charge the pack from the laboratory supply.
+          expected: The cell voltages rise above the normal end-of-charge voltage.
+        - action: Record the highest cell voltage when the second protection disconnects.
+          expected: The disconnection happens at no more than 100 mV above the cell maximum.
+          data: cell maximum 4.20 V, limit 4.30 V
+        - action: Check the pack after the test.
+          expected: No venting, swelling or heating above 60 °C.
+    sv:
+      title: Andra nivåns skydd med den primära laddningsstyrningen avstängd
+      description: Stänger av den primära laddningsstyrningen och tvingar fram en laddning för att kontrollera det oberoende skyddet.
+      preconditions: Ett batteripaket på en provbänk i ett brandsäkert skåp, ett laboratorieaggregat med strömbegränsning, uttag för cellspänningar och en testfirmware eller bygel som stänger av den primära laddningsstyrningen.
+      expected: Det andra skyddet bryter laddningen inom 100 mV över cellens högsta spänning.
+      steps:
+        - action: Stäng av den primära laddningsstyrningen och ladda paketet från laboratorieaggregatet.
+          expected: Cellspänningarna stiger över den normala slutladdningsspänningen.
+        - action: Registrera den högsta cellspänningen när det andra skyddet bryter.
+          expected: Brytningen sker högst 100 mV över cellens högsta spänning.
+          data: cellens högsta 4,20 V, gräns 4,30 V
+        - action: Kontrollera paketet efter provet.
+          expected: Ingen gasavgång, svullnad eller uppvärmning över 60 °C.
+
+  - id: HWPWR-T09
+    priority: high
+    execution: manual
+    tags: [battery-labelling]
+    refs: ["Regulation (EU) 2023/1542 (Batteries Regulation) Art. 13 (labelling, marking and information requirements)"]
+    en:
+      title: Battery label content and durability
+      description: Inspects the label of each battery model and rubs it to check that it is indelible.
+      preconditions: One battery of each model used in the product, the label requirements for its category and a cloth soaked in water.
+      expected: Each label has the listed information and stays legible.
+      steps:
+        - action: Compare each label with the list of required items for the battery category.
+          expected: Manufacturer, category, chemistry, capacity, date of manufacture and the collection symbol are present.
+        - action: Rub the label with the wet cloth for 15 seconds.
+          expected: The label is still legible and the symbol has not come off.
+    sv:
+      title: Innehåll och beständighet i batterimärkningen
+      description: Granskar märkningen på varje batterimodell och gnider på den för att kontrollera att den är beständig.
+      preconditions: Ett batteri av varje modell som används i produkten, märkningskraven för dess kategori och en trasa fuktad med vatten.
+      expected: Varje märkning har de angivna uppgifterna och förblir läsbar.
+      steps:
+        - action: Jämför varje märkning med listan över uppgifter som krävs för batterikategorin.
+          expected: Tillverkare, kategori, kemi, kapacitet, tillverkningsdatum och insamlingssymbolen finns.
+        - action: Gnid märkningen med den fuktiga trasan i 15 sekunder.
+          expected: Märkningen är fortfarande läsbar och symbolen har inte lossnat.
+
+  - id: HWPWR-T10
+    priority: medium
+    execution: manual
+    tags: [state-of-health]
+    refs: ["Regulation (EU) 2023/1542 (Batteries Regulation) Art. 14 (information on state of health and expected lifetime)"]
+    en:
+      title: State of health read-out compared with a capacity measurement
+      description: Reads the state of health from the battery management system and compares it with a measured capacity.
+      preconditions: A used battery system with known history, the read-only interface of its battery management system and a test set for a full discharge.
+      expected: The state of health and expected lifetime are readable and the state of health agrees with the measurement.
+      steps:
+        - action: Read the state of health and expected lifetime through the read-only interface.
+          expected: Both values are returned without manufacturer tools or passwords held only by the manufacturer.
+        - action: Measure the capacity with a full charge and discharge at the rated current.
+          expected: The measured capacity is recorded as a share of the rated capacity.
+        - action: Compare the state of health with the measured share.
+          expected: They differ by at most 5 percentage points.
+    sv:
+      title: Avläst hälsotillstånd jämfört med en kapacitetsmätning
+      description: Läser hälsotillståndet från batteriets styrsystem och jämför det med en uppmätt kapacitet.
+      preconditions: Ett använt batterisystem med känd historik, läsgränssnittet för dess styrsystem och en provutrustning för fullständig urladdning.
+      expected: Hälsotillstånd och förväntad livslängd går att läsa och hälsotillståndet stämmer med mätningen.
+      steps:
+        - action: Läs hälsotillstånd och förväntad livslängd via läsgränssnittet.
+          expected: Båda värdena returneras utan tillverkarens verktyg eller lösenord som bara tillverkaren har.
+        - action: Mät kapaciteten med en full laddning och urladdning vid märkströmmen.
+          expected: Den uppmätta kapaciteten registreras som andel av märkkapaciteten.
+        - action: Jämför hälsotillståndet med den uppmätta andelen.
+          expected: De skiljer sig med högst 5 procentenheter.
+
+  - id: HWPWR-T11
+    priority: critical
+    execution: manual
+    tags: [thermal-runaway, propagation]
+    refs: ["IEC 62619:2022 (propagation test)"]
+    en:
+      title: Propagation test report of the battery pack design
+      description: Reviews the propagation test report of the industrial battery pack design.
+      preconditions: The propagation test report from the test laboratory and the pack drawings of the current design revision.
+      expected: The tested design matches the current design and the test shows no fire outside the enclosure and no explosion.
+      steps:
+        - action: Compare the pack revision in the report with the current drawings.
+          expected: The cell model, spacing, barriers and enclosure match.
+        - action: Read the method used to force runaway of one cell.
+          expected: One cell was forced into runaway by heating, nail or overcharge as the standard allows.
+        - action: Read the observations after the trigger.
+          expected: No flame left the enclosure and the battery did not explode.
+    sv:
+      title: Rapport från spridningsprov av batteripaketets konstruktion
+      description: Granskar rapporten från spridningsprovet av industribatteripaketets konstruktion.
+      preconditions: Rapporten från provningslaboratoriets spridningsprov och paketritningarna för den aktuella konstruktionsrevisionen.
+      expected: Den provade konstruktionen stämmer med den aktuella och provet visar ingen brand utanför höljet och ingen explosion.
+      steps:
+        - action: Jämför paketrevisionen i rapporten med de aktuella ritningarna.
+          expected: Cellmodell, avstånd, barriärer och hölje stämmer.
+        - action: Läs vilken metod som användes för att tvinga en cell till rusning.
+          expected: En cell tvingades till rusning genom uppvärmning, spik eller överladdning på ett sätt som standarden tillåter.
+        - action: Läs observationerna efter utlösningen.
+          expected: Ingen låga lämnade höljet och batteriet exploderade inte.
+
+  - id: HWPWR-T12
+    priority: medium
+    execution: automated
+    tags: [cycle-life]
+    refs: ["IEC 61960-3:2017 (endurance in cycles)", "Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    en:
+      title: Cycle life test of the product battery
+      description: A battery cycler charges and discharges three batteries 500 times and the script reports the remaining capacity.
+      preconditions: 3 new batteries, a battery cycler programmed with the product's charge profile and a temperature chamber at 25 °C.
+      expected: Each battery keeps at least 80 % of rated capacity after 500 cycles.
+      steps:
+        - action: Measure the initial capacity of each battery.
+          expected: Each battery is at or above its rated capacity.
+        - action: Run 500 full charge and discharge cycles at 25 °C.
+          expected: The cycler completes 500 cycles for each battery.
+          data: charge with the product profile, discharge at 0.5 C
+        - action: Measure the capacity after the last cycle.
+          expected: Each battery is at 80 % or more of rated capacity.
+    sv:
+      title: Prov av cykellivslängd för produktens batteri
+      description: En batteritestare laddar och laddar ur tre batterier 500 gånger och skriptet rapporterar den återstående kapaciteten.
+      preconditions: 3 nya batterier, en batteritestare programmerad med produktens laddprofil och en temperaturkammare på 25 °C.
+      expected: Varje batteri behåller minst 80 % av märkkapaciteten efter 500 cykler.
+      steps:
+        - action: Mät startkapaciteten för varje batteri.
+          expected: Varje batteri ligger på eller över sin märkkapacitet.
+        - action: Kör 500 fulla laddnings- och urladdningscykler vid 25 °C.
+          expected: Testaren slutför 500 cykler för varje batteri.
+          data: laddning med produktens profil, urladdning med 0,5 C
+        - action: Mät kapaciteten efter den sista cykeln.
+          expected: Varje batteri har 80 % eller mer av märkkapaciteten.

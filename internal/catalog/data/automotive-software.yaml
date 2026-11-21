@@ -1,0 +1,662 @@
+area: automotive-software
+prefix: AUTOSW
+group: domain
+catalogue: software
+name: {en: "Automotive software", sv: "Programvara för fordon"}
+description:
+  en: "Safety and cybersecurity of vehicle software: ASIL classification, software safety requirements, verification, freedom from interference, tool confidence, threat analysis, field monitoring and software updates under UN R155 and R156."
+  sv: "Säkerhet och cybersäkerhet i programvara för fordon: ASIL-klassning, säkerhetskrav på programvaran, verifiering, frihet från påverkan, förtroende för verktyg, hotanalys, övervakning i fält och programuppdateringar enligt UN R155 och R156."
+
+requirements:
+  - id: AUTOSW-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [hara, asil, safety-goals]
+    refs: ["ISO 26262-3:2018 §6 (hazard analysis and risk assessment)"]
+    tests: [AUTOSW-T01]
+    en:
+      title: ASIL from a hazard analysis
+      description: Each safety goal of an item MUST have an ASIL determined from a documented hazard analysis and risk assessment that rates severity, exposure and controllability of each hazardous event.
+      rationale: The ASIL sets the rigour of every later activity, and a level not derived from a recorded analysis cannot be defended in a safety assessment.
+      criteria:
+        - method: inspection
+          text: The hazard analysis lists each hazardous event with severity, exposure and controllability, and each safety goal carries the ASIL that follows from them.
+          threshold: "1 ASIL per safety goal"
+    sv:
+      title: ASIL utifrån en riskanalys
+      description: Varje säkerhetsmål för en enhet SKA ha en ASIL som bestämts utifrån en dokumenterad fare- och riskanalys som bedömer allvarlighet, exponering och kontrollerbarhet för varje farlig händelse.
+      rationale: ASIL avgör hur noggrant varje senare aktivitet görs, och en nivå som inte härleds ur en dokumenterad analys går inte att försvara vid en säkerhetsbedömning.
+      criteria:
+        - method: inspection
+          text: Riskanalysen listar varje farlig händelse med allvarlighet, exponering och kontrollerbarhet, och varje säkerhetsmål bär den ASIL som följer av dem.
+          threshold: "1 ASIL per säkerhetsmål"
+
+  - id: AUTOSW-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [safety-requirements, traceability, software]
+    refs: ["ISO 26262-6:2018 §6 (specification of software safety requirements)", "ISO 26262-8:2018 §6 (specification and management of safety requirements)"]
+    tests: [AUTOSW-T02]
+    en:
+      title: Traceable software safety requirements
+      description: Each software safety requirement MUST be derived from a technical safety requirement, carry its ASIL and be traceable to the software units that implement it and the tests that verify it.
+      rationale: Gaps in the chain mean that some safety goal is not fully implemented or not tested, which no review of single documents will show.
+      criteria:
+        - method: inspection
+          text: A trace report shows for each software safety requirement its parent, ASIL, implementing units and passed tests, with no gaps.
+          threshold: "0 requirements without parent or test"
+    sv:
+      title: Spårbara säkerhetskrav på programvaran
+      description: Varje säkerhetskrav på programvaran SKA härledas ur ett tekniskt säkerhetskrav, bära sin ASIL och vara spårbart till de programvaruenheter som genomför det och de tester som verifierar det.
+      rationale: Luckor i kedjan betyder att något säkerhetsmål inte är helt genomfört eller testat, vilket ingen granskning av enskilda dokument visar.
+      criteria:
+        - method: inspection
+          text: En spårbarhetsrapport visar för varje säkerhetskrav på programvaran dess överordnade krav, ASIL, genomförande enheter och godkända tester, utan luckor.
+          threshold: "0 krav utan överordnat krav eller test"
+
+  - id: AUTOSW-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [structural-coverage, mc-dc, unit-verification]
+    refs: ["ISO 26262-6:2018 §9 (software unit verification)"]
+    tests: [AUTOSW-T03]
+    en:
+      title: Structural coverage at ASIL D
+      description: Software units rated ASIL D MUST reach 100 % MC/DC coverage in unit verification, with each uncovered condition justified in the verification report.
+      rationale: Requirement-based tests alone miss untested decision logic, and the highest integrity level calls for the most demanding coverage measure.
+      criteria:
+        - method: test
+          text: The coverage report of each ASIL D unit shows 100 % MC/DC or a justification for each uncovered condition.
+          threshold: "100 % MC/DC or justified"
+    sv:
+      title: Strukturell täckning vid ASIL D
+      description: Programvaruenheter med ASIL D SKA nå 100 % MC/DC-täckning vid enhetsverifieringen, med varje otäckt villkor motiverat i verifieringsrapporten.
+      rationale: Kravbaserade tester ensamma missar otestad beslutslogik, och den högsta integritetsnivån kräver det mest krävande täckningsmåttet.
+      criteria:
+        - method: test
+          text: Täckningsrapporten för varje enhet med ASIL D visar 100 % MC/DC eller en motivering för varje otäckt villkor.
+          threshold: "100 % MC/DC eller motiverat"
+
+  - id: AUTOSW-04
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [freedom-from-interference, partitioning, mixed-asil]
+    refs: ["ISO 26262-6:2018 §7 (software architectural design)", "ISO 26262-6:2018 Annex D (freedom from interference between software elements)"]
+    tests: [AUTOSW-T04]
+    en:
+      title: Freedom from interference between ASIL levels
+      description: Software of a lower ASIL or QM that runs on the same processor as higher ASIL software MUST be prevented from corrupting its memory, delaying its execution beyond its deadline or blocking its communication.
+      rationale: Mixing integrity levels on one controller is common, and without partitioning a fault in convenience software can disable a safety function.
+      criteria:
+        - method: test
+          text: Fault injection in the QM partition, writing to the ASIL partition's memory and running an endless loop, is detected and contained while the ASIL task meets its deadlines.
+          threshold: "0 missed deadlines of the ASIL task"
+    sv:
+      title: Frihet från påverkan mellan ASIL-nivåer
+      description: Programvara med lägre ASIL eller QM som körs på samma processor som programvara med högre ASIL SKA hindras från att förstöra dess minne, fördröja dess körning bortom tidsgränsen eller blockera dess kommunikation.
+      rationale: Att blanda integritetsnivåer i en styrenhet är vanligt, och utan avgränsning kan ett fel i bekvämlighetsprogramvara slå ut en säkerhetsfunktion.
+      criteria:
+        - method: test
+          text: Felinjicering i QM-partitionen, med skrivning till ASIL-partitionens minne och en oändlig slinga, upptäcks och begränsas medan ASIL-uppgiften håller sina tidsgränser.
+          threshold: "0 missade tidsgränser för ASIL-uppgiften"
+
+  - id: AUTOSW-05
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [tool-qualification, tool-confidence, toolchain]
+    refs: ["ISO 26262-8:2018 §11 (confidence in the use of software tools)"]
+    tests: [AUTOSW-T05]
+    en:
+      title: Tool confidence level for each software tool
+      description: Each software tool used in the development of safety-related software MUST have a documented tool confidence level from its tool impact and error detection, and a qualification where the level requires one.
+      rationale: A compiler, code generator or test tool that silently produces wrong results can put a defect in the vehicle that no review catches.
+      criteria:
+        - method: inspection
+          text: The tool list gives each tool its impact, detection, confidence level and, for TCL2 and TCL3, a qualification report.
+          threshold: "1 TCL per tool"
+    sv:
+      title: Förtroendenivå för varje programvaruverktyg
+      description: Varje programvaruverktyg som används vid utveckling av säkerhetsrelaterad programvara SKA ha en dokumenterad förtroendenivå utifrån verktygets påverkan och felupptäckt, och en kvalificering där nivån kräver det.
+      rationale: En kompilator, kodgenerator eller ett testverktyg som i det tysta ger felaktiga resultat kan föra in ett fel i fordonet som ingen granskning fångar.
+      criteria:
+        - method: inspection
+          text: Verktygsförteckningen anger för varje verktyg påverkan, felupptäckt, förtroendenivå och, för TCL2 och TCL3, en kvalificeringsrapport.
+          threshold: "1 TCL per verktyg"
+
+  - id: AUTOSW-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [tara, threats, cybersecurity-goals]
+    refs: ["ISO/SAE 21434:2021 §15 (threat analysis and risk assessment methods)", "UN Regulation No. 155 §7.3 (vehicle type requirements: risk assessment)"]
+    tests: [AUTOSW-T06]
+    en:
+      title: Threat analysis before development
+      description: Each item MUST have a threat analysis and risk assessment that identifies assets, threat scenarios, attack paths, feasibility and impact before its cybersecurity requirements are set.
+      rationale: Cybersecurity measures are only as good as the threats they were chosen against, and type approval requires the risk assessment of the vehicle type.
+      criteria:
+        - method: inspection
+          text: The TARA of the item lists assets, threat scenarios with attack paths, feasibility and impact ratings, and each high risk is traced to a cybersecurity goal.
+          threshold: "0 high risks without a goal"
+    sv:
+      title: Hotanalys före utveckling
+      description: Varje enhet SKA ha en hot- och riskanalys som identifierar tillgångar, hotscenarier, angreppsvägar, genomförbarhet och påverkan innan dess cybersäkerhetskrav fastställs.
+      rationale: Cybersäkerhetsåtgärder är bara så bra som de hot de valdes mot, och typgodkännandet kräver riskbedömningen av fordonstypen.
+      criteria:
+        - method: inspection
+          text: Enhetens TARA listar tillgångar, hotscenarier med angreppsvägar, bedömningar av genomförbarhet och påverkan, och varje hög risk är spårad till ett cybersäkerhetsmål.
+          threshold: "0 höga risker utan mål"
+
+  - id: AUTOSW-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [monitoring, vulnerabilities, fleet]
+    refs: ["ISO/SAE 21434:2021 §8 (continual cybersecurity activities)", "UN Regulation No. 155 §7.2 (cyber security management system: monitoring and response)"]
+    tests: [AUTOSW-T07]
+    en:
+      title: Monitoring of vehicles in the field
+      description: The manufacturer MUST monitor new vulnerabilities and cyber-attacks that affect vehicle types in the field, analyse each relevant event within 10 working days and record the decision on a response.
+      rationale: Vehicles stay on the road for many years after their software was frozen, and attacks found later have to be detected and answered for the whole fleet.
+      criteria:
+        - method: inspection
+          text: The monitoring log shows sources checked at least weekly and, for each relevant event of the last 6 months, an analysis within 10 working days with a recorded decision.
+          threshold: "analysis ≤ 10 working days"
+    sv:
+      title: Övervakning av fordon i fält
+      description: Tillverkaren SKA övervaka nya sårbarheter och cyberangrepp som berör fordonstyper i fält, analysera varje relevant händelse inom 10 arbetsdagar och registrera beslutet om åtgärd.
+      rationale: Fordon är i trafik många år efter att deras programvara frystes, och angrepp som upptäcks senare måste upptäckas och besvaras för hela fordonsparken.
+      criteria:
+        - method: inspection
+          text: Övervakningsloggen visar källor som kontrollerats minst varje vecka och, för varje relevant händelse de senaste 6 månaderna, en analys inom 10 arbetsdagar med ett registrerat beslut.
+          threshold: "analys ≤ 10 arbetsdagar"
+
+  - id: AUTOSW-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [software-update, authenticity, integrity]
+    refs: ["UN Regulation No. 156 §7.2 (vehicle type requirements)", "ISO 24089:2023 (software update engineering)"]
+    tests: [AUTOSW-T08]
+    en:
+      title: Authenticated software updates
+      description: The vehicle MUST verify the authenticity and integrity of each software update package before it installs any part of it and reject a package that fails the check.
+      rationale: A forged or damaged update can take control of safety-relevant functions across a whole fleet in one step.
+      criteria:
+        - method: test
+          text: An update package with a broken signature and one with a changed byte are both rejected before installation, and the rejection is logged; the genuine package installs.
+          threshold: "0 unverified packages installed"
+    sv:
+      title: Autentiserade programuppdateringar
+      description: Fordonet SKA verifiera äkthet och integritet för varje paket med programuppdateringar innan någon del av det installeras och avvisa ett paket som inte klarar kontrollen.
+      rationale: En förfalskad eller skadad uppdatering kan ta kontroll över säkerhetsrelevanta funktioner i en hel fordonspark i ett enda steg.
+      criteria:
+        - method: test
+          text: Ett uppdateringspaket med trasig signatur och ett med en ändrad byte avvisas båda före installation och avvisningen loggas; det äkta paketet installeras.
+          threshold: "0 overifierade paket installerade"
+
+  - id: AUTOSW-09
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [rxswin, software-identification, diagnostics]
+    refs: ["UN Regulation No. 156 §7.2 (software identification number)", "ISO 24089:2023 (software update engineering)"]
+    tests: [AUTOSW-T09]
+    en:
+      title: Software identification readable
+      description: The vehicle MUST make the regulatory software identification number and the version of each updatable electronic control unit readable through the diagnostic interface.
+      rationale: Authorities and workshops need to know which approved software a vehicle runs, also after updates over the air.
+      criteria:
+        - method: test
+          text: A diagnostic read-out returns the software identification number and the version of each updatable control unit, and both change after an update.
+          threshold: "1 value per updatable unit"
+    sv:
+      title: Programvarans identifiering kan läsas
+      description: Fordonet SKA göra det regulatoriska identifieringsnumret för programvaran och versionen för varje uppdateringsbar elektronisk styrenhet läsbara via diagnosgränssnittet.
+      rationale: Myndigheter och verkstäder behöver veta vilken godkänd programvara ett fordon kör, även efter uppdateringar via luften.
+      criteria:
+        - method: test
+          text: En diagnosavläsning returnerar identifieringsnumret för programvaran och versionen för varje uppdateringsbar styrenhet, och båda ändras efter en uppdatering.
+          threshold: "1 värde per uppdateringsbar enhet"
+
+  - id: AUTOSW-10
+    type: functional
+    obligation: must
+    priority: high
+    tags: [update-preconditions, vehicle-state, safety]
+    refs: ["UN Regulation No. 156 §7.2 (safe execution of updates)", "ISO 24089:2023 (software update engineering)"]
+    tests: [AUTOSW-T10]
+    en:
+      title: Update only in a safe vehicle state
+      description: An update that can affect driving functions MUST start only when the vehicle meets the stated preconditions, such as standing still with the parking brake on and the battery charge above the stated limit, and after the user has been told the expected duration.
+      rationale: An update that starts while driving or runs out of power half-way can leave the vehicle unable to move or unsafe.
+      criteria:
+        - method: test
+          text: Starting the update while the vehicle moves or with low battery is refused with a message, and with the preconditions met it starts after the duration is shown.
+          threshold: "0 updates started outside the preconditions"
+    sv:
+      title: Uppdatering bara i ett säkert fordonsläge
+      description: En uppdatering som kan påverka körfunktioner SKA starta först när fordonet uppfyller de angivna förutsättningarna, till exempel står stilla med parkeringsbromsen ansatt och har en batteriladdning över den angivna gränsen, och efter att användaren har fått veta den förväntade tiden.
+      rationale: En uppdatering som startar under körning eller får slut på ström halvvägs kan lämna fordonet orörligt eller osäkert.
+      criteria:
+        - method: test
+          text: Att starta uppdateringen medan fordonet rör sig eller med låg batteriladdning avvisas med ett meddelande, och när förutsättningarna är uppfyllda startar den efter att tiden har visats.
+          threshold: "0 uppdateringar startade utanför förutsättningarna"
+
+  - id: AUTOSW-11
+    type: functional
+    obligation: must
+    priority: high
+    tags: [rollback, failed-update, recovery]
+    refs: ["ISO 24089:2023 (software update engineering)", "UN Regulation No. 156 §7.2 (failed updates)"]
+    tests: [AUTOSW-T11]
+    en:
+      title: Return to the previous version after a failed update
+      description: When an update fails or is interrupted, the affected control unit MUST return to its previous working software version and report the failure to the user and the back end.
+      rationale: A half-installed update must never leave a vehicle without working software, wherever it is parked.
+      criteria:
+        - method: test
+          text: Cutting power during installation leaves the control unit on its previous version after restart, with the failure reported.
+          threshold: "0 units without working software"
+    sv:
+      title: Återgång till föregående version efter en misslyckad uppdatering
+      description: När en uppdatering misslyckas eller avbryts SKA den berörda styrenheten återgå till sin föregående fungerande programversion och rapportera felet till användaren och bakomliggande system.
+      rationale: En halvinstallerad uppdatering får aldrig lämna ett fordon utan fungerande programvara, var det än står parkerat.
+      criteria:
+        - method: test
+          text: Att bryta strömmen under installationen lämnar styrenheten på sin föregående version efter omstart, med felet rapporterat.
+          threshold: "0 enheter utan fungerande programvara"
+
+  - id: AUTOSW-12
+    type: security
+    obligation: must
+    priority: medium
+    tags: [end-of-support, communication, lifecycle]
+    refs: ["ISO/SAE 21434:2021 §14 (end of cybersecurity support and decommissioning)"]
+    tests: [AUTOSW-T12]
+    en:
+      title: End of cybersecurity support announced
+      description: The manufacturer MUST publish for each vehicle type and software version the date until which it provides cybersecurity updates, at least 12 months before that date.
+      rationale: Owners and fleet operators need to plan for vehicles that will no longer get security fixes.
+      criteria:
+        - method: inspection
+          text: The support page lists each vehicle type with an end-of-support date, and each date that has passed was published at least 12 months in advance.
+          threshold: "announcement ≥ 12 months ahead"
+    sv:
+      title: Slut på stöd för cybersäkerhet tillkännages
+      description: Tillverkaren SKA för varje fordonstyp och programversion publicera datumet till vilket den tillhandahåller säkerhetsuppdateringar, minst 12 månader före det datumet.
+      rationale: Ägare och flottoperatörer behöver planera för fordon som inte längre får säkerhetsrättningar.
+      criteria:
+        - method: inspection
+          text: Supportsidan listar varje fordonstyp med ett slutdatum för stöd, och varje datum som har passerat publicerades minst 12 månader i förväg.
+          threshold: "tillkännagivande ≥ 12 månader i förväg"
+
+tests:
+  - id: AUTOSW-T01
+    priority: high
+    execution: manual
+    tags: [hara, asil]
+    refs: ["ISO 26262-3:2018 §6 (hazard analysis and risk assessment)"]
+    en:
+      title: ASIL derived in the hazard analysis
+      description: Reviews the hazard analysis and the safety goals of an item.
+      preconditions: The hazard analysis and risk assessment and the safety goals of the item.
+      expected: Each safety goal has the ASIL that follows from the rated hazardous events.
+      steps:
+        - action: List the hazardous events with their severity, exposure and controllability ratings.
+          expected: Each event has the three ratings.
+          data: "item: electric parking brake"
+        - action: Determine the ASIL of each event from the ratings and compare with the safety goals.
+          expected: Each safety goal carries the highest ASIL of the events it covers.
+    sv:
+      title: ASIL härledd i riskanalysen
+      description: Granskar fare- och riskanalysen och säkerhetsmålen för en enhet.
+      preconditions: Fare- och riskanalysen och enhetens säkerhetsmål.
+      expected: Varje säkerhetsmål har den ASIL som följer av de bedömda farliga händelserna.
+      steps:
+        - action: Lista de farliga händelserna med deras bedömningar av allvarlighet, exponering och kontrollerbarhet.
+          expected: Varje händelse har de tre bedömningarna.
+          data: "enhet: elektrisk parkeringsbroms"
+        - action: Bestäm varje händelses ASIL utifrån bedömningarna och jämför med säkerhetsmålen.
+          expected: Varje säkerhetsmål bär den högsta ASIL bland de händelser det täcker.
+
+  - id: AUTOSW-T02
+    priority: high
+    execution: manual
+    tags: [safety-requirements, traceability]
+    refs: ["ISO 26262-6:2018 §6 (specification of software safety requirements)"]
+    en:
+      title: Trace of software safety requirements
+      description: Follows each software safety requirement up to its parent and down to units and tests.
+      preconditions: The requirements database and test results of the release.
+      expected: Each software safety requirement has a parent, an ASIL, implementing units and passed tests.
+      steps:
+        - action: Export the software safety requirements with their links.
+          expected: Each requirement is exported with parent, ASIL, units and tests.
+        - action: Look for requirements without parent, unit or test.
+          expected: None is found.
+        - action: Check the latest result of each linked test.
+          expected: Each passed on the release build.
+    sv:
+      title: Spårning av säkerhetskrav på programvaran
+      description: Följer varje säkerhetskrav på programvaran upp till dess överordnade krav och ned till enheter och tester.
+      preconditions: Kravdatabasen och testresultaten för releasen.
+      expected: Varje säkerhetskrav på programvaran har överordnat krav, ASIL, genomförande enheter och godkända tester.
+      steps:
+        - action: Exportera säkerhetskraven på programvaran med deras kopplingar.
+          expected: Varje krav exporteras med överordnat krav, ASIL, enheter och tester.
+        - action: Leta efter krav utan överordnat krav, enhet eller test.
+          expected: Inga hittas.
+        - action: Kontrollera det senaste resultatet för varje kopplat test.
+          expected: Vart och ett godkändes på releasebygget.
+
+  - id: AUTOSW-T03
+    priority: high
+    execution: automated
+    tags: [structural-coverage, mc-dc]
+    refs: ["ISO 26262-6:2018 §9 (software unit verification)"]
+    en:
+      title: MC/DC report of ASIL D units
+      description: Runs unit verification with coverage measurement on the ASIL D units.
+      preconditions: The unit test suite, a qualified coverage tool and the list of ASIL D units.
+      expected: Each ASIL D unit has 100 % MC/DC or a justification per uncovered condition.
+      steps:
+        - action: Run the unit tests of the ASIL D units with MC/DC measurement.
+          expected: A coverage report per unit is produced.
+          data: "coverage tool with TCL qualification"
+        - action: Read the MC/DC figure of each unit.
+          expected: Each is 100 %, or each uncovered condition has a justification in the verification report.
+    sv:
+      title: MC/DC-rapport för enheter med ASIL D
+      description: Kör enhetsverifieringen med täckningsmätning på enheterna med ASIL D.
+      preconditions: Enhetstestsviten, ett kvalificerat verktyg för täckningsmätning och listan över enheter med ASIL D.
+      expected: Varje enhet med ASIL D har 100 % MC/DC eller en motivering per otäckt villkor.
+      steps:
+        - action: Kör enhetstesterna för enheterna med ASIL D med MC/DC-mätning.
+          expected: En täckningsrapport per enhet tas fram.
+          data: "täckningsverktyg med TCL-kvalificering"
+        - action: Läs MC/DC-värdet för varje enhet.
+          expected: Vart och ett är 100 %, eller så har varje otäckt villkor en motivering i verifieringsrapporten.
+
+  - id: AUTOSW-T04
+    priority: high
+    execution: manual
+    tags: [freedom-from-interference, partitioning]
+    refs: ["ISO 26262-6:2018 Annex D (freedom from interference between software elements)"]
+    en:
+      title: Fault injection in the QM partition
+      description: Injects memory and timing faults in QM software on a mixed-ASIL controller.
+      preconditions: A test controller with an ASIL C task and QM software in separate partitions and a fault injection build.
+      expected: The faults are contained and the ASIL task keeps its deadlines.
+      steps:
+        - action: Make the QM software write into the ASIL partition's memory.
+          expected: The memory protection unit stops the write and the fault is logged.
+          data: "write to the ASIL data region"
+        - action: Make the QM software enter an endless loop.
+          expected: The scheduler limits its time budget and the ASIL task meets each deadline.
+          data: "10 ms ASIL task period"
+        - action: Flood the shared communication buffer from the QM side.
+          expected: The ASIL task's messages are still delivered within their deadline.
+    sv:
+      title: Felinjicering i QM-partitionen
+      description: Lägger in minnes- och tidsfel i QM-programvara i en styrenhet med blandade ASIL.
+      preconditions: En teststyrenhet med en uppgift med ASIL C och QM-programvara i separata partitioner och ett bygge för felinjicering.
+      expected: Felen begränsas och ASIL-uppgiften håller sina tidsgränser.
+      steps:
+        - action: Låt QM-programvaran skriva i ASIL-partitionens minne.
+          expected: Minnesskyddet stoppar skrivningen och felet loggas.
+          data: "skrivning till ASIL-dataområdet"
+        - action: Låt QM-programvaran gå in i en oändlig slinga.
+          expected: Schemaläggaren begränsar dess tidsbudget och ASIL-uppgiften håller varje tidsgräns.
+          data: "ASIL-uppgiftens period 10 ms"
+        - action: Översvämma den delade kommunikationsbufferten från QM-sidan.
+          expected: ASIL-uppgiftens meddelanden levereras fortfarande inom sin tidsgräns.
+
+  - id: AUTOSW-T05
+    priority: medium
+    execution: manual
+    tags: [tool-qualification, tool-confidence]
+    refs: ["ISO 26262-8:2018 §11 (confidence in the use of software tools)"]
+    en:
+      title: Tool confidence of the toolchain
+      description: Reviews the tool list of the project for confidence levels and qualifications.
+      preconditions: The project's tool list with tool impact, error detection and qualification reports.
+      expected: Each tool has a confidence level and each TCL2 or TCL3 tool has a qualification.
+      steps:
+        - action: List the tools used for safety-related software.
+          expected: Compilers, code generators, static analysers and test tools are included.
+          data: "for example compiler, coverage tool, model code generator"
+        - action: Check impact, detection and confidence level of each tool.
+          expected: Each tool has all three.
+        - action: Open the qualification report of each TCL2 and TCL3 tool.
+          expected: A qualification report exists for the version in use.
+    sv:
+      title: Förtroende för verktygskedjan
+      description: Granskar projektets verktygsförteckning med avseende på förtroendenivåer och kvalificeringar.
+      preconditions: Projektets verktygsförteckning med verktygens påverkan, felupptäckt och kvalificeringsrapporter.
+      expected: Varje verktyg har en förtroendenivå och varje verktyg med TCL2 eller TCL3 har en kvalificering.
+      steps:
+        - action: Lista de verktyg som används för säkerhetsrelaterad programvara.
+          expected: Kompilatorer, kodgeneratorer, statiska analysverktyg och testverktyg ingår.
+          data: "till exempel kompilator, täckningsverktyg, kodgenerator för modeller"
+        - action: Kontrollera påverkan, felupptäckt och förtroendenivå för varje verktyg.
+          expected: Varje verktyg har alla tre.
+        - action: Öppna kvalificeringsrapporten för varje verktyg med TCL2 och TCL3.
+          expected: Det finns en kvalificeringsrapport för versionen som används.
+
+  - id: AUTOSW-T06
+    priority: high
+    execution: manual
+    tags: [tara, threats]
+    refs: ["ISO/SAE 21434:2021 §15 (threat analysis and risk assessment methods)"]
+    en:
+      title: TARA of an item
+      description: Reviews the threat analysis and risk assessment and its links to cybersecurity goals.
+      preconditions: The TARA and the cybersecurity goals of the item.
+      expected: Assets, threats, attack paths and ratings are recorded and each high risk has a goal.
+      steps:
+        - action: Read the assets and threat scenarios.
+          expected: Each threat scenario names an asset and at least one attack path.
+          data: "item: telematics control unit"
+        - action: Check the feasibility and impact ratings.
+          expected: Each scenario has both ratings and a resulting risk value.
+        - action: Follow each high risk to the cybersecurity goals.
+          expected: Each high risk is traced to a goal.
+    sv:
+      title: TARA för en enhet
+      description: Granskar hot- och riskanalysen och dess kopplingar till cybersäkerhetsmål.
+      preconditions: Enhetens TARA och cybersäkerhetsmål.
+      expected: Tillgångar, hot, angreppsvägar och bedömningar är dokumenterade och varje hög risk har ett mål.
+      steps:
+        - action: Läs tillgångarna och hotscenarierna.
+          expected: Varje hotscenario anger en tillgång och minst en angreppsväg.
+          data: "enhet: telematikenhet"
+        - action: Kontrollera bedömningarna av genomförbarhet och påverkan.
+          expected: Varje scenario har båda bedömningarna och ett resulterande riskvärde.
+        - action: Följ varje hög risk till cybersäkerhetsmålen.
+          expected: Varje hög risk är spårad till ett mål.
+
+  - id: AUTOSW-T07
+    priority: high
+    execution: manual
+    tags: [monitoring, vulnerabilities]
+    refs: ["UN Regulation No. 155 §7.2 (cyber security management system: monitoring and response)"]
+    en:
+      title: Field monitoring log
+      description: Reviews the cybersecurity monitoring log of the last 6 months.
+      preconditions: The monitoring log and the list of monitored sources.
+      expected: Sources were checked weekly and each relevant event was analysed within 10 working days.
+      steps:
+        - action: Check the dates of the source checks.
+          expected: Each source was checked at least once a week.
+          data: "sources: vulnerability databases, supplier advisories, security operations centre"
+        - action: For each relevant event, compare the receipt date with the analysis date.
+          expected: Each analysis was within 10 working days and ends with a recorded decision.
+    sv:
+      title: Logg för övervakning i fält
+      description: Granskar loggen för cybersäkerhetsövervakning för de senaste 6 månaderna.
+      preconditions: Övervakningsloggen och listan över övervakade källor.
+      expected: Källorna kontrollerades varje vecka och varje relevant händelse analyserades inom 10 arbetsdagar.
+      steps:
+        - action: Kontrollera datumen för kontrollerna av källorna.
+          expected: Varje källa kontrollerades minst en gång i veckan.
+          data: "källor: sårbarhetsdatabaser, leverantörsmeddelanden, säkerhetscentral"
+        - action: Jämför mottagningsdatum med analysdatum för varje relevant händelse.
+          expected: Varje analys gjordes inom 10 arbetsdagar och avslutas med ett registrerat beslut.
+
+  - id: AUTOSW-T08
+    priority: high
+    execution: manual
+    tags: [software-update, authenticity]
+    refs: ["UN Regulation No. 156 §7.2 (vehicle type requirements)"]
+    en:
+      title: Forged and damaged update packages
+      description: Offers a test vehicle a package with a broken signature, a damaged package and the genuine one.
+      preconditions: A test vehicle or bench with the update client and three update packages.
+      expected: Only the genuine package is installed; the other two are rejected and logged.
+      steps:
+        - action: Offer the package with a broken signature.
+          expected: It is rejected before installation and the rejection is logged.
+          data: "package signed with an unknown key"
+        - action: Offer the package with one changed byte.
+          expected: It is rejected before installation and logged.
+        - action: Offer the genuine package.
+          expected: It installs and the new version is reported.
+    sv:
+      title: Förfalskade och skadade uppdateringspaket
+      description: Erbjuder ett testfordon ett paket med trasig signatur, ett skadat paket och det äkta paketet.
+      preconditions: Ett testfordon eller en testbänk med uppdateringsklienten och tre uppdateringspaket.
+      expected: Bara det äkta paketet installeras; de andra två avvisas och loggas.
+      steps:
+        - action: Erbjud paketet med trasig signatur.
+          expected: Det avvisas före installation och avvisningen loggas.
+          data: "paket signerat med en okänd nyckel"
+        - action: Erbjud paketet med en ändrad byte.
+          expected: Det avvisas före installation och loggas.
+        - action: Erbjud det äkta paketet.
+          expected: Det installeras och den nya versionen rapporteras.
+
+  - id: AUTOSW-T09
+    priority: medium
+    execution: manual
+    tags: [rxswin, diagnostics]
+    refs: ["UN Regulation No. 156 §7.2 (software identification number)"]
+    en:
+      title: Software identification by diagnostics
+      description: Reads the software identification before and after an update.
+      preconditions: A test vehicle, a diagnostic tester and an approved update package.
+      expected: The identification number and versions are readable and change after the update.
+      steps:
+        - action: Read the software identification number and the versions of the updatable units.
+          expected: Each updatable unit returns a version and the vehicle returns its identification number.
+          data: "standard diagnostic read-out"
+        - action: Install the update and read again.
+          expected: The changed units report new versions and the identification number matches the updated approval.
+    sv:
+      title: Programvarans identifiering via diagnos
+      description: Läser programvarans identifiering före och efter en uppdatering.
+      preconditions: Ett testfordon, ett diagnosverktyg och ett godkänt uppdateringspaket.
+      expected: Identifieringsnumret och versionerna kan läsas och ändras efter uppdateringen.
+      steps:
+        - action: Läs identifieringsnumret för programvaran och versionerna för de uppdateringsbara enheterna.
+          expected: Varje uppdateringsbar enhet returnerar en version och fordonet returnerar sitt identifieringsnummer.
+          data: "standardiserad diagnosavläsning"
+        - action: Installera uppdateringen och läs igen.
+          expected: De ändrade enheterna rapporterar nya versioner och identifieringsnumret stämmer med det uppdaterade godkännandet.
+
+  - id: AUTOSW-T10
+    priority: high
+    execution: manual
+    tags: [update-preconditions, vehicle-state]
+    refs: ["UN Regulation No. 156 §7.2 (safe execution of updates)"]
+    en:
+      title: Update refused outside the preconditions
+      description: Tries to start an update while moving, with low battery and with the preconditions met.
+      preconditions: A test vehicle on a roller bench, a battery simulator and an update that affects driving functions.
+      expected: The update starts only when the preconditions are met and the duration has been shown.
+      steps:
+        - action: Start the update at 5 km/h.
+          expected: The update is refused with a message naming the unmet precondition.
+          data: "vehicle speed 5 km/h"
+        - action: Stop, apply the parking brake and lower the battery charge below the limit; start the update.
+          expected: The update is refused with a message about the battery.
+          data: "battery 30 % with a 50 % limit"
+        - action: Restore the battery charge and start the update.
+          expected: The expected duration is shown and the update starts after the user confirms.
+    sv:
+      title: Uppdatering avvisas utanför förutsättningarna
+      description: Försöker starta en uppdatering under rörelse, med låg batteriladdning och med uppfyllda förutsättningar.
+      preconditions: Ett testfordon på en rullbänk, en batterisimulator och en uppdatering som påverkar körfunktioner.
+      expected: Uppdateringen startar först när förutsättningarna är uppfyllda och tiden har visats.
+      steps:
+        - action: Starta uppdateringen i 5 km/h.
+          expected: Uppdateringen avvisas med ett meddelande som anger den förutsättning som inte är uppfylld.
+          data: "fordonshastighet 5 km/h"
+        - action: Stanna, ansätt parkeringsbromsen och sänk batteriladdningen under gränsen; starta uppdateringen.
+          expected: Uppdateringen avvisas med ett meddelande om batteriet.
+          data: "batteri 30 % med gränsen 50 %"
+        - action: Återställ batteriladdningen och starta uppdateringen.
+          expected: Den förväntade tiden visas och uppdateringen startar efter att användaren har bekräftat.
+
+  - id: AUTOSW-T11
+    priority: high
+    execution: manual
+    tags: [rollback, failed-update]
+    refs: ["ISO 24089:2023 (software update engineering)"]
+    en:
+      title: Power loss during installation
+      description: Cuts the power of a control unit during an update and restarts it.
+      preconditions: A test bench with a control unit, a controllable power supply and an update package.
+      expected: The unit runs its previous version after restart and the failure is reported.
+      steps:
+        - action: Start the update and cut power at 50 % of installation.
+          expected: The unit stops.
+          data: "power cut at 50 %"
+        - action: Restore power.
+          expected: The unit starts on its previous working version.
+        - action: Check the user display and the back end.
+          expected: Both show that the update failed and the unit kept its previous version.
+    sv:
+      title: Strömavbrott under installation
+      description: Bryter strömmen till en styrenhet under en uppdatering och startar om den.
+      preconditions: En testbänk med en styrenhet, ett styrbart strömaggregat och ett uppdateringspaket.
+      expected: Enheten kör sin föregående version efter omstart och felet rapporteras.
+      steps:
+        - action: Starta uppdateringen och bryt strömmen vid 50 % av installationen.
+          expected: Enheten stannar.
+          data: "strömavbrott vid 50 %"
+        - action: Återställ strömmen.
+          expected: Enheten startar på sin föregående fungerande version.
+        - action: Kontrollera användarens display och bakomliggande system.
+          expected: Båda visar att uppdateringen misslyckades och att enheten behöll sin föregående version.
+
+  - id: AUTOSW-T12
+    priority: medium
+    execution: manual
+    tags: [end-of-support, communication]
+    refs: ["ISO/SAE 21434:2021 §14 (end of cybersecurity support and decommissioning)"]
+    en:
+      title: Published end-of-support dates
+      description: Checks the support page and the publication history of the dates.
+      preconditions: The manufacturer's support page and its change history.
+      expected: Each vehicle type has a date and each passed date was published 12 months ahead.
+      steps:
+        - action: Read the support page.
+          expected: Each vehicle type and software version has an end-of-support date.
+        - action: For each date already passed, find when it was first published.
+          expected: Each was published at least 12 months before the date.
+    sv:
+      title: Publicerade slutdatum för stöd
+      description: Kontrollerar supportsidan och publiceringshistoriken för datumen.
+      preconditions: Tillverkarens supportsida och dess ändringshistorik.
+      expected: Varje fordonstyp har ett datum och varje datum som har passerat publicerades 12 månader i förväg.
+      steps:
+        - action: Läs supportsidan.
+          expected: Varje fordonstyp och programversion har ett slutdatum för stöd.
+        - action: Leta upp när varje redan passerat datum först publicerades.
+          expected: Vart och ett publicerades minst 12 månader före datumet.

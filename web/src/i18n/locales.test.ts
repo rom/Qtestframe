@@ -66,7 +66,8 @@ const sections = Object.keys(en).join('|')
 // single-quoted literals ('nav.projects', also in ternaries) and i18n-t keypath="…"
 const KEY_RE = new RegExp(`(?:'|keypath=")((?:${sections})\\.[\\w-]+(?:\\.[\\w-]+)*)['"]`, 'g')
 // permission names look like keys ('run.read') but are not messages
-const SKIP = /(lib\/permissions|guide\/tips)\.ts$/ // ids, not message keys
+// field keys of the autocomplete (lib/suggest) look like keys too ('run.name')
+const SKIP = /(lib\/permissions|lib\/suggest|guide\/tips)\.ts$/ // ids, not message keys
 
 describe('keys used in the code', () => {
   const used = new Map<string, string>()

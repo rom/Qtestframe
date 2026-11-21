@@ -3,7 +3,10 @@ import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ConfigurationCoverage from './ConfigurationCoverage.vue'
 import ObligationHelp from './ObligationHelp.vue'
+import ObligationKeywordLine from './ObligationKeywordLine.vue'
+import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
@@ -18,7 +21,7 @@ import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
@@ -41,6 +44,7 @@ import Tab from 'primevue/tab'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { debounce, moveItem } from '@/lib/collections'
 import { segments } from '@/lib/highlight'
+import { displayLevel } from '@/lib/obligationKeywords'
 import { formatDateTime } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
 import { uid } from '@/lib/a11y'
@@ -54,6 +58,8 @@ import { usePrefsStore } from '@/stores/prefs'
 import { useUndoStore } from '@/stores/undo'
 import { changedKeys, clone, pickBefore } from '@/lib/undo'
 import ConflictDialog from './ConflictDialog.vue'
+import SuggestInput from './SuggestInput.vue'
+import { autocompleteEnabled, fetchSuggestions, rememberValues, savedEntries } from '@/lib/suggest'
 import CatalogOrigin from './CatalogOrigin.vue'
 import { fieldConflicts, REQUIREMENT_FIELDS, staleOf, type FieldConflict, type Stale } from '@/lib/conflicts'
 import { createdEntry, deletedEntry, patchEntry, recordUndo, toggleEntry } from '@/lib/undoActions'
@@ -73,7 +79,23 @@ const notify = useNotify()
 const prefs = usePrefsStore()
 const { t, te } = useI18n()
 const tabsId = uid('req-tabs')
+// ---------- obligation keywords (read-only text, line under the editor) ----------
+const descLabelId = uid('req-desc')
+const obligationHelpId = uid('req-obl-help')
+const obligationHelpOpen = ref(false)
+/** open the obligation help (again, if the author closed it) and move there */
+async function openObligationHelp() {
+  obligationHelpOpen.value = false
+  await nextTick()
+  obligationHelpOpen.value = true
+  await nextTick()
+  const el = document.getElementById(obligationHelpId)
+  el?.scrollIntoView?.({ block: 'nearest' })
+  el?.querySelector<HTMLElement>('summary')?.focus()
+}
 const linkCount = ref<number | null>(null)
+/** bumped when an issue link changed (reloads the links panel) */
+const linksVersion = ref(0)
 watch(
   () => props.itemId,
   () => (linkCount.value = null),
@@ -169,8 +191,19 @@ async function loadSources() {
   }
 }
 const sourceSuggestions = ref<string[]>([])
-function completeSource(e: { query: string }) {
-  sourceSuggestions.value = filterSources(sources.value, e.query)
+async function completeSource(e: { query: string }) {
+  const local = filterSources(sources.value, e.query)
+  sourceSuggestions.value = local
+  // plus the sources this user typed before (autocomplete history)
+  const q = e.query.trim()
+  if (!q || !autocompleteEnabled(prefs.prefs)) return
+  try {
+    const known = new Set(local.map((x) => x.toLowerCase()))
+    const mine = (await fetchSuggestions('requirement.source', q, props.projectId)).map((x) => x.value).filter((v) => !known.has(v.toLowerCase()))
+    if (mine.length) sourceSuggestions.value = [...local, ...mine]
+  } catch {
+    /* the project's sources are enough */
+  }
 }
 watch(() => props.projectId, loadSources, { immediate: true })
 
@@ -316,10 +349,10 @@ watch(
 onBeforeUnmount(() => runAnalysis.cancel())
 watch(() => props.itemId, load, { immediate: true })
 
+/** keyword style in the analysis text: the obligation highlight of its level */
 function strength(level: string): string {
-  if (/^(must|shall)/.test(level)) return 'kw-strong'
-  if (/^should/.test(level)) return 'kw-medium'
-  return 'kw-weak'
+  const d = displayLevel(level)
+  return d ? `obligation-kw obligation-${d}` : 'kw-weak'
 }
 const highlighted = computed(() => {
   const a = analysis.value
@@ -385,6 +418,16 @@ watch(
     if (props.itemId && JSON.stringify(bodyOf(form.value)) === JSON.stringify(loaded.value)) void load()
   },
 )
+/** the free-text values to remember for autocomplete (those that changed) */
+function suggestValues(after: Record<string, unknown>, before: Record<string, unknown> | null) {
+  const pick = (b: Record<string, unknown> | null) => ({
+    'requirement.title': b?.title as string,
+    'requirement.source': b?.source as string,
+    'requirement.owner': b?.owner as string,
+    'requirement.rationale': b?.rationale as string,
+  })
+  return savedEntries(pick(after), before ? pick(before) : {})
+}
 function delRequirement(id: string) {
   return () => api.delTrash(`/requirements/${id}`)
 }
@@ -447,6 +490,7 @@ async function save() {
       }
     }
     emit('saved', saved)
+    void rememberValues(prefs.prefs, props.projectId, suggestValues(body, before))
     if (!isNew.value) await load() // refresh version and counts
   } catch (e) {
     const st = staleOf<Requirement>(e)
@@ -537,7 +581,10 @@ function criterionLabel(id: string | null) {
   </Tabs>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
-  <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
+  <div v-if="item && tab === 'links'" v-bind="panel('links')">
+    <RequirementIssuePanel :requirement-id="item.id" :can-write="canWrite" @changed="linksVersion++" />
+    <ItemLinksPanel :key="linksVersion" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" />
+  </div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="requirement" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">
@@ -567,12 +614,27 @@ function criterionLabel(id: string | null) {
 
     <div v-field class="field">
       <label>{{ t('common.title') }}</label>
-      <InputText v-model="form.title" :disabled="!canWrite" required autofocus />
+      <SuggestInput v-model="form.title" field="requirement.title" :project-id="projectId" :disabled="!canWrite" required autofocus />
     </div>
     <div v-field class="field">
-      <label>{{ t('common.description') }}</label>
-      <MentionInput v-model="form.description" multiline rows="5" auto-resize :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.descriptionPlaceholder')" />
-      <ObligationHelp v-if="canWrite" :open="isNew" />
+      <label v-if="canWrite">{{ t('common.description') }}</label>
+      <span v-else :id="descLabelId" class="field-label">{{ t('common.description') }}</span>
+      <MentionInput v-if="canWrite" v-model="form.description" multiline rows="5" auto-resize :project-id="projectId" :placeholder="t('requirements.descriptionPlaceholder')" />
+      <!-- read-only: the text with its obligation keywords highlighted -->
+      <div v-else class="description-readonly" role="group" :aria-labelledby="descLabelId">
+        <MentionText v-if="form.description" :text="form.description" :project-id="projectId" obligations :lang="analysisLanguage" />
+        <span v-else class="muted">{{ t('common.noDescription') }}</span>
+      </div>
+      <ObligationKeywordLine
+        v-if="canWrite && prefs.highlightObligations && form.description.trim()"
+        :text="form.description"
+        :chosen="form.obligation"
+        :lang="analysisLanguage"
+        can-write
+        @apply="(l) => (form.obligation = l)"
+        @help="openObligationHelp"
+      />
+      <ObligationHelp v-if="canWrite" :id="obligationHelpId" :open="isNew || obligationHelpOpen" />
     </div>
 
     <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis" role="region" :aria-label="t('analysis.title')" :aria-busy="analyzing">
@@ -647,7 +709,7 @@ function criterionLabel(id: string | null) {
       <div v-field class="field">
         <label>{{ t('common.owner') }}</label>
         <HelpTip id="req.owner" :label="t('common.owner')" />
-        <MentionInput v-model="form.owner" :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" />
+        <MentionInput v-model="form.owner" suggest="requirement.owner" :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.ownerPlaceholder', { at: '@' })" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.source') }}</label>
@@ -669,7 +731,7 @@ function criterionLabel(id: string | null) {
       <div v-field class="field full">
         <label>{{ t('requirements.rationale') }}</label>
         <HelpTip id="req.rationale" :label="t('requirements.rationale')" />
-        <MentionInput v-model="form.rationale" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
+        <MentionInput v-model="form.rationale" suggest="requirement.rationale" multiline rows="2" auto-resize :project-id="projectId" :disabled="!canWrite" />
       </div>
       <div v-field class="field">
         <label>{{ t('common.folder') }}</label>

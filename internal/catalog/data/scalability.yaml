@@ -297,6 +297,102 @@ requirements:
           text: Ett anrop som begär 5 000 poster returnerar högst 1 000 poster och en länk eller markör till nästa sida.
           threshold: "≤ 1 000 poster per svar"
 
+  - id: SCAL-13
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [database, connections, scale-out]
+    refs: ["ISO/IEC 25010:2023 capacity", "ITIL 4 Capacity and performance management"]
+    tests: [SCAL-T11]
+    en:
+      title: Database connections at maximum scale-out
+      description: The connections opened by all application instances together MUST stay below 80 % of the database connection limit when the service runs at its maximum instance count.
+      rationale: Adding instances also adds connection pools, and past the database limit new instances make the service fail instead of faster.
+      criteria:
+        - method: analysis
+          text: Pool size times maximum instance count, plus the connections of jobs and tools, is below 80 % of the database limit.
+          threshold: "≤ 80 % of the connection limit"
+    sv:
+      title: Databasanslutningar vid maximal utskalning
+      description: De anslutningar som alla applikationsinstanser öppnar tillsammans SKA ligga under 80 % av databasens gräns för anslutningar när tjänsten körs med sitt största antal instanser.
+      rationale: Fler instanser ger också fler anslutningspooler, och över databasens gräns får nya instanser tjänsten att fallera i stället för att gå fortare.
+      criteria:
+        - method: analysis
+          text: Poolstorleken gånger största antal instanser, plus anslutningarna för jobb och verktyg, ligger under 80 % av databasens gräns.
+          threshold: "≤ 80 % av anslutningsgränsen"
+
+  - id: SCAL-14
+    type: non_functional
+    obligation: must_not
+    priority: high
+    tags: [scale-in, autoscaling, requests]
+    refs: ["ISO/IEC 25010:2023 capacity", "The Twelve-Factor App, IX Disposability"]
+    tests: [SCAL-T12]
+    en:
+      title: Scale-in without failed requests
+      description: Automatic scale-in MUST NOT cause failed user requests.
+      rationale: Scale-in runs after every busy period, so failures it causes recur daily and are hard to trace.
+      criteria:
+        - method: test
+          text: A load test that triggers scale-in from 6 to 2 instances shows 0 failed requests caused by the removal.
+          threshold: "0 failed requests"
+    sv:
+      title: Nedskalning utan misslyckade anrop
+      description: Automatisk nedskalning SKA INTE orsaka misslyckade anrop från användare.
+      rationale: Nedskalning sker efter varje period med hög last, så fel som den orsakar återkommer dagligen och är svåra att spåra.
+      criteria:
+        - method: test
+          text: Ett lasttest som utlöser nedskalning från 6 till 2 instanser visar 0 misslyckade anrop orsakade av borttagningen.
+          threshold: "0 misslyckade anrop"
+
+  - id: SCAL-15
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [workers, queue, autoscaling]
+    refs: ["The Twelve-Factor App, VIII Concurrency", "ITIL 4 Capacity and performance management"]
+    tests: [SCAL-T13]
+    en:
+      title: Background workers scale on queue length
+      description: Background job workers SHOULD scale out separately from the web instances when the job queue waits longer than 60 seconds.
+      rationale: Jobs and interactive requests have different load patterns, and scaling them together wastes capacity or starves one of them.
+      criteria:
+        - method: test
+          text: Filling the job queue so that waiting time passes 60 seconds adds workers while the number of web instances stays the same.
+          threshold: "scale-out at queue wait > 60 s"
+    sv:
+      title: Bakgrundsarbetare skalas efter kölängd
+      description: Arbetarna för bakgrundsjobb BÖR skalas ut för sig, skilt från webbinstanserna, när jobbkön väntar längre än 60 sekunder.
+      rationale: Jobb och interaktiva anrop har olika lastmönster, och att skala dem tillsammans slösar kapacitet eller svälter någon av dem.
+      criteria:
+        - method: test
+          text: Om jobbkön fylls så att väntetiden passerar 60 sekunder läggs arbetare till medan antalet webbinstanser är oförändrat.
+          threshold: "utskalning vid köväntan > 60 s"
+
+  - id: SCAL-16
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [limits, documentation, capacity]
+    refs: ["ISO/IEC 25010:2023 capacity", "ISTQB CT-PT Performance Testing syllabus §1.2 (scalability testing)"]
+    tests: [SCAL-T14]
+    en:
+      title: Tested scaling limit documented
+      description: The supplier MUST document the largest number of instances and the highest load at which the service has been tested, with the component that limits further growth.
+      rationale: Every design has a ceiling, and knowing where it is and what sets it turns a future outage into a planned piece of work.
+      criteria:
+        - method: inspection
+          text: The capacity documentation states the tested maximum, the date of the test and the limiting component, and the test report backs it.
+          threshold: "test not older than 12 months"
+    sv:
+      title: Testad skalningsgräns dokumenterad
+      description: Leverantören SKA dokumentera det största antal instanser och den högsta last som tjänsten har testats vid, och vilken komponent som begränsar fortsatt tillväxt.
+      rationale: Varje lösning har ett tak, och att veta var det går och vad som sätter det gör ett framtida avbrott till ett planerat arbete.
+      criteria:
+        - method: inspection
+          text: Kapacitetsdokumentationen anger testat maxvärde, datum för testet och den begränsande komponenten, och testrapporten styrker det.
+          threshold: "test högst 12 månader gammalt"
+
 tests:
   - id: SCAL-T01
     priority: high
@@ -597,3 +693,123 @@ tests:
           expected: Varje svar innehåller högst 1 000 poster.
         - action: Följ länkarna till nästa sida till slutet av en lista.
           expected: Alla poster returneras exakt en gång.
+
+  - id: SCAL-T11
+    priority: high
+    execution: manual
+    tags: [database, connections]
+    refs: ["ISO/IEC 25010:2023 capacity"]
+    en:
+      title: Connection budget at maximum scale-out
+      description: Calculates and checks the database connections at the maximum number of instances.
+      preconditions: The autoscaling configuration, the pool settings and the database connection limit.
+      expected: The total stays below 80 % of the database limit.
+      steps:
+        - action: Read the maximum instance count and the pool size per instance.
+          expected: Both values are found in the configuration.
+          data: "for example 20 instances × 10 connections"
+        - action: Add the connections of background workers, migrations and administration tools.
+          expected: The total is calculated.
+        - action: Scale the test environment to the maximum and read the database's connection count.
+          expected: The measured count matches the calculation and is below 80 % of the limit.
+    sv:
+      title: Anslutningsbudget vid maximal utskalning
+      description: Beräknar och kontrollerar databasanslutningarna vid största antal instanser.
+      preconditions: Konfigurationen för automatisk skalning, poolinställningarna och databasens gräns för anslutningar.
+      expected: Summan ligger under 80 % av databasens gräns.
+      steps:
+        - action: Läs av största antal instanser och poolstorleken per instans.
+          expected: Båda värdena finns i konfigurationen.
+          data: "till exempel 20 instanser × 10 anslutningar"
+        - action: Lägg till anslutningarna för bakgrundsarbetare, migreringar och administrationsverktyg.
+          expected: Summan är beräknad.
+        - action: Skala testmiljön till maximum och läs av antalet anslutningar i databasen.
+          expected: Det uppmätta antalet stämmer med beräkningen och ligger under 80 % av gränsen.
+
+  - id: SCAL-T12
+    priority: high
+    execution: automated
+    tags: [scale-in, autoscaling]
+    refs: ["The Twelve-Factor App, IX Disposability"]
+    en:
+      title: Scale-in during a load test
+      description: Lowers the load so that autoscaling removes instances while requests continue.
+      preconditions: An environment with autoscaling between 2 and 6 instances and a load script.
+      expected: Removing instances causes no failed requests.
+      steps:
+        - action: Run a load that scales the service out to 6 instances.
+          expected: 6 instances serve traffic.
+          data: "300 virtual users"
+        - action: Lower the load gradually over 15 minutes while keeping some traffic.
+          expected: Autoscaling removes instances down to 2.
+          data: "30 virtual users at the end"
+        - action: Count failed requests during the scale-in.
+          expected: 0 requests fail.
+    sv:
+      title: Nedskalning under ett lasttest
+      description: Sänker lasten så att den automatiska skalningen tar bort instanser medan anropen fortsätter.
+      preconditions: En miljö med automatisk skalning mellan 2 och 6 instanser och ett lastskript.
+      expected: Borttagningen av instanser ger inga misslyckade anrop.
+      steps:
+        - action: Kör en last som skalar ut tjänsten till 6 instanser.
+          expected: 6 instanser tar emot trafik.
+          data: "300 virtuella användare"
+        - action: Sänk lasten stegvis under 15 minuter med kvarvarande trafik.
+          expected: Den automatiska skalningen tar bort instanser ned till 2.
+          data: "30 virtuella användare i slutet"
+        - action: Räkna misslyckade anrop under nedskalningen.
+          expected: 0 anrop misslyckas.
+
+  - id: SCAL-T13
+    priority: medium
+    execution: manual
+    tags: [workers, queue]
+    refs: ["The Twelve-Factor App, VIII Concurrency"]
+    en:
+      title: Workers scale on job queue waiting time
+      description: Fills the job queue and watches which components scale.
+      preconditions: A test environment with separate autoscaling for workers and web instances.
+      expected: Workers are added when queue waiting time passes 60 seconds; web instances stay unchanged.
+      steps:
+        - action: Enqueue enough jobs to keep the workers busy for 10 minutes.
+          expected: The queue waiting time rises above 60 seconds.
+          data: "5 000 export jobs"
+        - action: Watch the instance counts for 10 minutes.
+          expected: The worker count rises and the web instance count does not change.
+    sv:
+      title: Arbetare skalas efter jobbköns väntetid
+      description: Fyller jobbkön och följer vilka komponenter som skalas.
+      preconditions: En testmiljö med separat automatisk skalning för arbetare och webbinstanser.
+      expected: Arbetare läggs till när köns väntetid passerar 60 sekunder; webbinstanserna är oförändrade.
+      steps:
+        - action: Lägg in så många jobb att arbetarna har att göra i 10 minuter.
+          expected: Köns väntetid stiger över 60 sekunder.
+          data: "5 000 exportjobb"
+        - action: Följ antalet instanser i 10 minuter.
+          expected: Antalet arbetare ökar och antalet webbinstanser ändras inte.
+
+  - id: SCAL-T14
+    priority: medium
+    execution: manual
+    tags: [limits, documentation]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2 (scalability testing)"]
+    en:
+      title: Documented scaling limit backed by a test
+      description: Compares the documented scaling limit with the latest scalability test report.
+      preconditions: The capacity documentation and the report of the latest scalability test.
+      expected: The document states the tested maximum, date and limiting component, and the report confirms them.
+      steps:
+        - action: Read the tested maximum and the limiting component in the documentation.
+          expected: Both are stated with the date of the test.
+        - action: Open the referenced test report.
+          expected: The report shows the same maximum and the measurement that identified the limiting component, and it is not older than 12 months.
+    sv:
+      title: Dokumenterad skalningsgräns styrkt av ett test
+      description: Jämför den dokumenterade skalningsgränsen med rapporten från senaste skalningstestet.
+      preconditions: Kapacitetsdokumentationen och rapporten från senaste skalningstestet.
+      expected: Dokumentet anger testat maxvärde, datum och begränsande komponent, och rapporten bekräftar dem.
+      steps:
+        - action: Läs testat maxvärde och begränsande komponent i dokumentationen.
+          expected: Båda anges tillsammans med datum för testet.
+        - action: Öppna den testrapport som det hänvisas till.
+          expected: Rapporten visar samma maxvärde och den mätning som pekade ut den begränsande komponenten, och den är högst 12 månader gammal.

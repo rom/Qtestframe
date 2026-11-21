@@ -13,11 +13,11 @@ import {
   inProjectSet,
   isRequirement,
   itemSources,
-  keywordSegments,
   matchesNode,
   nodeCounts,
   nodeLabel,
   originText,
+  refLinks,
   searchScore,
   selectionState,
   sourceLabel,
@@ -189,26 +189,6 @@ describe('selection', () => {
 })
 
 describe('display', () => {
-  it('marks obligation keywords', () => {
-    expect(keywordSegments('The system MUST NOT log it; it SHOULD warn and MAY retry.')).toEqual([
-      { text: 'The system ', mark: false },
-      { text: 'MUST NOT', mark: true, kind: 'kw-strong' },
-      { text: ' log it; it ', mark: false },
-      { text: 'SHOULD', mark: true, kind: 'kw-medium' },
-      { text: ' warn and ', mark: false },
-      { text: 'MAY', mark: true, kind: 'kw-weak' },
-      { text: ' retry.', mark: false },
-    ])
-    expect(keywordSegments('Systemet SKA INTE spara det och BÖR INTE visa det. FÅRA')).toEqual([
-      { text: 'Systemet ', mark: false },
-      { text: 'SKA INTE', mark: true, kind: 'kw-strong' },
-      { text: ' spara det och ', mark: false },
-      { text: 'BÖR INTE', mark: true, kind: 'kw-medium' },
-      { text: ' visa det. FÅRA', mark: false },
-    ])
-    expect(keywordSegments('SKA')).toEqual([{ text: 'SKA', mark: true, kind: 'kw-strong' }])
-    expect(keywordSegments('')).toEqual([])
-  })
   it('builds the list query of created items', () => {
     expect(createdQuery(['P-REQ-1'])).toBe('key=P-REQ-1')
     expect(createdQuery(['P-REQ-1', 'P-REQ-2'])).toBe('(key=P-REQ-1 OR key=P-REQ-2)')
@@ -218,6 +198,20 @@ describe('display', () => {
   it('describes the origin', () => {
     expect(originText('AUTH-01', ['NIST', 'OWASP'])).toBe('AUTH-01 · NIST · OWASP')
     expect(originText('AUTH-01', null)).toBe('AUTH-01')
+  })
+  it('links the refs to their texts, https only', () => {
+    const targets = [
+      { ref: 'RFC 2119', source: 'ietf-rfc', name: 'IETF RFCs', url: 'https://www.rfc-editor.org/rfc/rfc2119' },
+      { ref: 'Bad', source: 'x', url: 'javascript:alert(1)' },
+      { ref: 'Plain', source: 'p' },
+    ]
+    expect(refLinks(['RFC 2119', 'Bad', 'Plain', 'Unknown'], targets)).toEqual([
+      { ref: 'RFC 2119', source: 'ietf-rfc', name: 'IETF RFCs', url: 'https://www.rfc-editor.org/rfc/rfc2119' },
+      { ref: 'Bad', source: 'x', name: undefined, url: undefined },
+      { ref: 'Plain', source: 'p', name: undefined, url: undefined },
+      { ref: 'Unknown', source: undefined, name: undefined, url: undefined },
+    ])
+    expect(refLinks(['A'], undefined)).toEqual([{ ref: 'A', source: undefined, name: undefined, url: undefined }])
   })
 })
 

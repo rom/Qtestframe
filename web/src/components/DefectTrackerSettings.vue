@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// The project's connection to Jira or GitHub Issues (GET/PUT
+// The project's connection to Jira, GitHub Issues or GitLab (GET/PUT
 // /projects/{pid}/defect-tracker). The token is write-only: the server only
 // says whether one is saved.
 import { computed, onMounted, ref } from 'vue'
@@ -10,8 +10,10 @@ import Select from 'primevue/select'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
 import { api, errorMessage } from '@/lib/api'
-import { GITHUB_API_URL, trackerDirty, trackerError, trackerForm, trackerPayload, validateTracker, type TrackerField } from '@/lib/defectTracker'
+import Checkbox from 'primevue/checkbox'
+import { DEFAULT_REQUIREMENT_LABELS, GITHUB_API_URL, GITLAB_URL, trackerDirty, trackerError, trackerForm, trackerPayload, validateTracker, type TrackerField } from '@/lib/defectTracker'
 import type { DefectTracker } from '@/lib/types'
+import { previewLabels } from '@/lib/requirementIssues'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 
@@ -42,7 +44,11 @@ const typeOptions = computed(() => [
   { value: '', label: t('tracker.typeNone') },
   { value: 'jira', label: 'Jira' },
   { value: 'github', label: 'GitHub Issues' },
+  { value: 'gitlab', label: 'GitLab' },
 ])
+const tokenHint = computed(() => t(form.value.type === 'jira' ? 'tracker.tokenHintJira' : form.value.type === 'gitlab' ? 'tracker.tokenHintGitlab' : 'tracker.tokenHintGithub'))
+const reqLabelsExample = computed(() => previewLabels(form.value.requirement_labels, { type: 'functional', priority: 'high', obligation: 'must', status: 'approved', tags: ['login'] }, DEFAULT_REQUIREMENT_LABELS).join(', ') || t('reqIssue.noLabels'))
+const reqLabelsHint = computed(() => t('tracker.reqLabelsHint', { fields: '{type}, {priority}, {obligation}, {status}, {tags}', default: DEFAULT_REQUIREMENT_LABELS }))
 const problems = computed(() => validateTracker(form.value))
 const problem = (f: TrackerField) => (touched.value && problems.value[f] ? t(`tracker.invalid.${problems.value[f]}`) : '')
 const dirty = computed(() => trackerDirty(form.value, saved.value))
@@ -139,6 +145,54 @@ async function checkConnection() {
           </div>
         </div>
       </template>
+      <template v-else-if="form.type === 'gitlab'">
+        <div class="form-grid">
+          <div v-field class="field">
+            <label>{{ t('tracker.gitlabUrl') }}</label>
+            <InputText v-model="form.url" type="url" class="mono" :placeholder="GITLAB_URL" :invalid="!!problem('url')" aria-describedby="tr-glurl-hint" />
+            <span id="tr-glurl-hint" class="small" :class="problem('url') ? 'warn-text' : 'muted'">{{ problem('url') || t('tracker.gitlabUrlHint') }}</span>
+          </div>
+          <div v-field class="field">
+            <label>{{ t('tracker.gitlabProject') }}</label>
+            <InputText v-model="form.project" class="mono" placeholder="group/subgroup/project" :invalid="!!problem('project')" aria-describedby="tr-glproj-hint" />
+            <span id="tr-glproj-hint" class="small" :class="problem('project') ? 'warn-text' : 'muted'">{{ problem('project') || t('tracker.gitlabProjectHint') }}</span>
+          </div>
+        </div>
+      </template>
+      <template v-if="form.type === 'github' || form.type === 'gitlab'">
+        <div v-if="form.type === 'gitlab'" v-field class="field">
+          <label>{{ t('tracker.labels') }}</label>
+          <InputText v-model="form.labels" placeholder="qtestframe" aria-describedby="tr-gllabels-hint" />
+          <span id="tr-gllabels-hint" class="small muted">{{ t('tracker.labelsHint') }}</span>
+        </div>
+        <div class="form-grid">
+          <div v-field class="field">
+            <label>{{ t('tracker.milestone') }} {{ t('prompts.optional') }}</label>
+            <InputText v-model="form.milestone" aria-describedby="tr-ms-hint" />
+            <span id="tr-ms-hint" class="small muted">{{ t('tracker.milestoneHint') }}</span>
+          </div>
+          <div v-field class="field">
+            <label>{{ t('tracker.assignee') }} {{ t('prompts.optional') }}</label>
+            <InputText v-model="form.assignee" autocomplete="off" aria-describedby="tr-as-hint" />
+            <span id="tr-as-hint" class="small muted">{{ t('tracker.assigneeHint') }}</span>
+          </div>
+        </div>
+      </template>
+      <fieldset v-if="form.type" class="plain-fieldset grid" style="gap: 12px">
+        <legend class="field-label">{{ t('tracker.reqSection') }}</legend>
+        <div v-field class="field">
+          <label>{{ t('tracker.reqLabels') }}</label>
+          <InputText v-model="form.requirement_labels" class="mono" :placeholder="DEFAULT_REQUIREMENT_LABELS" aria-describedby="tr-rl-hint" />
+          <span id="tr-rl-hint" class="small muted">{{ reqLabelsHint }} {{ t('tracker.reqLabelsExample', { labels: reqLabelsExample }) }}</span>
+        </div>
+        <div v-if="form.type === 'jira'" v-field class="field">
+          <label>{{ t('tracker.reqIssueType') }}</label>
+          <InputText v-model="form.requirement_issue_type" placeholder="Task" />
+        </div>
+        <span class="row nowrap"
+          ><Checkbox v-model="form.comment_on_pass" binary input-id="tr-cop" /><label for="tr-cop">{{ t('tracker.commentOnPass') }}</label></span
+        >
+      </fieldset>
       <div v-if="form.type" class="field">
         <label for="tr-token">{{ t('tracker.token') }}</label>
         <Password
@@ -151,7 +205,7 @@ async function checkConnection() {
           :placeholder="saved?.has_token ? t('tracker.tokenKeep') : ''"
           :input-props="{ 'aria-describedby': 'tr-token-hint' }"
         />
-        <span id="tr-token-hint" class="small muted">{{ form.type === 'jira' ? t('tracker.tokenHintJira') : t('tracker.tokenHintGithub') }}</span>
+        <span id="tr-token-hint" class="small muted">{{ tokenHint }}</span>
         <span v-if="saved?.has_token && saved.type === form.type" class="row small">
           <Tag :value="t('tracker.tokenSaved')" severity="success" icon="pi pi-lock" />
           <Button :label="t('tracker.removeToken')" text size="small" severity="danger" :loading="saving" @click="removeToken" />

@@ -1,0 +1,726 @@
+area: mobile-app-security
+prefix: MOBSEC
+group: security
+catalogue: software
+name: {en: Mobile app security, sv: Säkerhet i mobilappar}
+description:
+  en: Security of native mobile apps on the device, in transit and against tampering, including backups, logs, certificate pinning, biometrics, deep links, web views, embedded secrets, platform attestation and permissions.
+  sv: Säkerhet i inbyggda mobilappar på enheten, under överföring och mot manipulation, inklusive säkerhetskopior, loggar, certifikatlåsning, biometri, djuplänkar, webbvyer, inbyggda hemligheter, plattformsintyg och behörigheter.
+
+requirements:
+  - id: MOBSEC-01
+    type: security
+    obligation: must
+    priority: high
+    tags: [backups, storage, device]
+    refs: ["OWASP MASVS-STORAGE-2", "ISO/IEC 27001:2022 A.8.1", "GDPR Art. 32(1)(a)"]
+    tests: [MOBSEC-T01]
+    en:
+      title: Sensitive app data excluded from device backups
+      description: The app MUST exclude tokens, cached records and other sensitive files from operating system and cloud backups of the device.
+      rationale: Device backups are restored to other devices and stored by third parties, which carries a signed-in session or confidential records out of the app's control.
+      criteria:
+        - method: test
+          text: A backup of a test device with the app signed in, restored to a second device, gives an app that asks for sign-in and holds no cached records.
+    sv:
+      title: Känsliga appdata utesluts från enhetens säkerhetskopior
+      description: Appen SKA utesluta token, cachade poster och andra känsliga filer från operativsystemets och molnets säkerhetskopior av enheten.
+      rationale: Säkerhetskopior av enheter återställs till andra enheter och lagras hos tredje part, vilket för en inloggad session eller konfidentiella poster utom appens kontroll.
+      criteria:
+        - method: test
+          text: En säkerhetskopia av en testenhet med appen inloggad, återställd till en andra enhet, ger en app som ber om inloggning och saknar cachade poster.
+
+  - id: MOBSEC-02
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [logging, storage, sensitive-data]
+    refs: ["OWASP MASVS-STORAGE-2", "CWE-532", "ISO/IEC 27001:2022 A.8.12"]
+    tests: [MOBSEC-T02]
+    en:
+      title: No sensitive data in the device's system log
+      description: The release build of the app MUST NOT write tokens, passwords, personal identity numbers or record contents to the platform's system log.
+      rationale: Other apps, crash reporters and connected computers can read the system log, and it survives after the app is closed.
+      criteria:
+        - method: test
+          text: The system log captured while signing in, opening records and signing out with the release build contains none of the test token, password, identity number or record text.
+    sv:
+      title: Inga känsliga data i enhetens systemlogg
+      description: Appens leveransversion SKA INTE skriva token, lösenord, personnummer eller postinnehåll till plattformens systemlogg.
+      rationale: Andra appar, kraschrapporterare och anslutna datorer kan läsa systemloggen, och den finns kvar efter att appen stängts.
+      criteria:
+        - method: test
+          text: Systemloggen som fångas vid inloggning, öppning av poster och utloggning med leveransversionen innehåller inte testtoken, lösenordet, personnumret eller posttexten.
+
+  - id: MOBSEC-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [tls, cleartext, network]
+    refs: ["OWASP MASVS-NETWORK-1", "ISO/IEC 27001:2022 A.8.24", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    tests: [MOBSEC-T03]
+    en:
+      title: Cleartext traffic disabled and certificates validated
+      description: The app MUST turn off cleartext HTTP in its platform network configuration and connect to servers only over TLS 1.2 or later with the platform's full certificate validation.
+      rationale: Mobile devices join public Wi-Fi networks where any unencrypted or unvalidated connection can be read and changed.
+      criteria:
+        - method: test
+          text: Behind an intercepting proxy with an untrusted certificate the app makes no successful request, and the network configuration forbids cleartext for every domain.
+    sv:
+      title: Klartexttrafik avstängd och certifikat validerade
+      description: Appen SKA stänga av HTTP i klartext i plattformens nätverkskonfiguration och ansluta till servrar enbart över TLS 1.2 eller senare med plattformens fullständiga certifikatvalidering.
+      rationale: Mobila enheter ansluter till öppna wifinät där varje okrypterad eller ovaliderad förbindelse kan läsas och ändras.
+      criteria:
+        - method: test
+          text: Bakom en avlyssnande proxy med ett certifikat som inte är betrott lyckas appen inte med något anrop, och nätverkskonfigurationen förbjuder klartext för varje domän.
+
+  - id: MOBSEC-04
+    type: security
+    obligation: should
+    priority: medium
+    tags: [certificate-pinning, network]
+    refs: ["OWASP MASVS-NETWORK-2", "OWASP Pinning Cheat Sheet", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [MOBSEC-T04]
+    en:
+      title: Pinned public keys for the system's own API
+      description: The app SHOULD pin the public keys of the system's own API endpoints, with at least one backup key that is not yet in use, and refuse a connection whose chain contains none of the pinned keys.
+      rationale: Pinning protects against certificates issued wrongly or through a device that has a rogue root certificate installed, and a backup key keeps the app working when the key is rotated.
+      criteria:
+        - method: test
+          text: With a proxy whose root certificate is trusted by the device, API requests fail, while requests to the real server succeed; the configuration lists a primary and a backup key.
+    sv:
+      title: Låsta publika nycklar för systemets eget API
+      description: Appen BÖR låsa de publika nycklarna för systemets egna API-ändpunkter, med minst en reservnyckel som ännu inte används, och avvisa en förbindelse vars kedja inte innehåller någon av de låsta nycklarna.
+      rationale: Låsning skyddar mot felaktigt utfärdade certifikat eller en enhet där ett falskt rotcertifikat installerats, och en reservnyckel håller appen fungerande när nyckeln byts.
+      criteria:
+        - method: test
+          text: Med en proxy vars rotcertifikat enheten litar på misslyckas API-anropen, medan anrop till den riktiga servern lyckas; konfigurationen listar en huvudnyckel och en reservnyckel.
+
+  - id: MOBSEC-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [biometrics, keystore, local-authentication]
+    refs: ["OWASP MASVS-AUTH-2", "ISO/IEC 27001:2022 A.8.5", "NIST SP 800-63B-4 (biometrics)"]
+    tests: [MOBSEC-T05]
+    en:
+      title: Biometric unlock bound to a key in the key store
+      description: When the app offers biometric unlock it MUST release the stored credential only through a key store key that requires biometric user authentication, and not on the result of a biometric check alone.
+      rationale: A plain yes from the biometric prompt can be forced by hooking the app on a rooted device, while a key that the hardware releases only after biometric success cannot.
+      criteria:
+        - method: test
+          text: On a rooted test device, forcing the biometric callback to succeed does not unlock the app, and a real biometric match does.
+        - method: review
+          text: The code creates the key with user authentication required and uses it in the biometric prompt's crypto object.
+    sv:
+      title: Biometrisk upplåsning bunden till en nyckel i nyckellagret
+      description: När appen erbjuder biometrisk upplåsning SKA den lämna ut den lagrade inloggningsuppgiften enbart via en nyckel i nyckellagret som kräver biometrisk autentisering av användaren, och inte enbart på resultatet av en biometrisk kontroll.
+      rationale: Ett enkelt ja från den biometriska dialogen kan tvingas fram genom att haka i appen på en rotad enhet, medan en nyckel som hårdvaran bara lämnar ut efter lyckad biometri inte kan det.
+      criteria:
+        - method: test
+          text: På en rotad testenhet låser inte en påtvingad lyckad biometrisk återkoppling upp appen, medan en verklig biometrisk matchning gör det.
+        - method: review
+          text: Koden skapar nyckeln med krav på användarautentisering och använder den i den biometriska dialogens kryptoobjekt.
+
+  - id: MOBSEC-06
+    type: security
+    obligation: should
+    priority: medium
+    tags: [screenshots, app-switcher, privacy]
+    refs: ["OWASP MASVS-PLATFORM-3", "ISO/IEC 27001:2022 A.8.12"]
+    tests: [MOBSEC-T06]
+    en:
+      title: Sensitive screens hidden in screenshots and the app switcher
+      description: The app SHOULD block screenshots of screens that show records classified as confidential and replace the app's preview in the app switcher with a neutral image.
+      rationale: Screenshots end up in photo libraries and cloud albums, and the app switcher shows the last screen to anyone holding the device.
+      criteria:
+        - method: test
+          text: A screenshot of a confidential record gives a blank image or is refused, and the app switcher shows the neutral image while the record is open.
+    sv:
+      title: Känsliga skärmar döljs i skärmbilder och appväxlaren
+      description: Appen BÖR blockera skärmbilder av skärmar som visar poster klassade som konfidentiella och ersätta appens förhandsvisning i appväxlaren med en neutral bild.
+      rationale: Skärmbilder hamnar i bildbibliotek och molnalbum, och appväxlaren visar den senaste skärmen för den som håller i enheten.
+      criteria:
+        - method: test
+          text: En skärmbild av en konfidentiell post ger en tom bild eller nekas, och appväxlaren visar den neutrala bilden medan posten är öppen.
+
+  - id: MOBSEC-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [deep-links, intents, ipc]
+    refs: ["OWASP MASVS-PLATFORM-1", "CWE-926", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [MOBSEC-T07]
+    en:
+      title: Deep links and exported components validate their input
+      description: The app MUST verify its deep link domains with the platform's app link mechanism, treat every parameter of an incoming link or intent as untrusted input, and export no component that other apps do not need.
+      rationale: Other apps on the device can send crafted links and intents that trigger actions, open internal screens or leak data through components left exported by accident.
+      criteria:
+        - method: test
+          text: A link with a crafted parameter that names an internal screen or an external URL is refused, and a scan of the manifest finds only exported components on the approved list.
+        - method: inspection
+          text: The app link verification file is published on each deep link domain and the platform reports the links as verified.
+    sv:
+      title: Djuplänkar och exporterade komponenter validerar sin indata
+      description: Appen SKA verifiera sina domäner för djuplänkar med plattformens mekanism för applänkar, behandla varje parameter i en inkommande länk eller intent som opålitlig indata och inte exportera någon komponent som andra appar inte behöver.
+      rationale: Andra appar på enheten kan skicka konstruerade länkar och intents som startar åtgärder, öppnar interna skärmar eller läcker data via komponenter som av misstag lämnats exporterade.
+      criteria:
+        - method: test
+          text: En länk med en konstruerad parameter som anger en intern skärm eller en extern adress avvisas, och en genomgång av manifestet hittar bara exporterade komponenter som finns på den godkända listan.
+        - method: inspection
+          text: Verifieringsfilen för applänkar är publicerad på varje domän för djuplänkar och plattformen rapporterar länkarna som verifierade.
+
+  - id: MOBSEC-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [webview, javascript-bridge]
+    refs: ["OWASP MASVS-PLATFORM-2", "CWE-749", "ISO/IEC 27001:2022 A.8.28"]
+    tests: [MOBSEC-T08]
+    en:
+      title: Web views load only own content and expose no native bridge to other origins
+      description: The app MUST restrict each web view to the system's own HTTPS origins and make a native JavaScript bridge available only to pages from those origins.
+      rationale: A web view that loads any URL with a native bridge lets a malicious page call the app's native functions with the user's rights.
+      criteria:
+        - method: test
+          text: Navigating a web view to an external test page opens it in the system browser instead, and a page from another origin has no access to the bridge object.
+    sv:
+      title: Webbvyer laddar bara eget innehåll och exponerar ingen inbyggd brygga för andra ursprung
+      description: Appen SKA begränsa varje webbvy till systemets egna HTTPS-ursprung och göra en inbyggd JavaScript-brygga tillgänglig bara för sidor från dessa ursprung.
+      rationale: En webbvy som laddar vilken adress som helst med en inbyggd brygga låter en skadlig sida anropa appens inbyggda funktioner med användarens rättigheter.
+      criteria:
+        - method: test
+          text: När en webbvy navigeras till en extern testsida öppnas den i stället i systemets webbläsare, och en sida från ett annat ursprung har ingen åtkomst till bryggobjektet.
+
+  - id: MOBSEC-09
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [embedded-secrets, binary-analysis]
+    refs: ["OWASP MASVS-CRYPTO-2", "CWE-798", "OWASP Mobile Application Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [MOBSEC-T09]
+    en:
+      title: No secret keys in the app package
+      description: The app package MUST NOT contain private keys, client secrets or API keys that give access beyond what any anonymous user of the public API already has.
+      rationale: An app package can be downloaded and unpacked by anyone, so a secret inside it is public the day the app is released.
+      criteria:
+        - method: test
+          text: A secret scan of the unpacked release package and its native libraries finds no private key and no credential with more than anonymous rights.
+    sv:
+      title: Inga hemliga nycklar i apppaketet
+      description: Apppaketet SKA INTE innehålla privata nycklar, klienthemligheter eller API-nycklar som ger åtkomst utöver vad en anonym användare av det publika API:et redan har.
+      rationale: Ett apppaket kan laddas ned och packas upp av vem som helst, så en hemlighet i det är offentlig samma dag som appen släpps.
+      criteria:
+        - method: test
+          text: En sökning efter hemligheter i det uppackade leveranspaketet och dess inbyggda bibliotek hittar ingen privat nyckel och inga inloggningsuppgifter med mer än anonyma rättigheter.
+
+  - id: MOBSEC-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [forced-update, minimum-version]
+    refs: ["OWASP MASVS-CODE-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §7", "ISO/IEC 27001:2022 A.8.8"]
+    tests: [MOBSEC-T10]
+    en:
+      title: Vulnerable app versions are made to update
+      description: The system MUST refuse API requests from app versions below a server-side minimum version with a status that makes the app show an update prompt in place of the sign-in screen.
+      rationale: Users keep old app versions for years, and a fixed vulnerability stays exploitable until the old version can no longer reach the server.
+      criteria:
+        - method: test
+          text: After the minimum is raised above the installed version, the app shows the update prompt and its API requests are refused with a defined status; the current version works.
+    sv:
+      title: Sårbara appversioner tvingas uppdateras
+      description: Systemet SKA avvisa API-anrop från appversioner under en minsta version som anges på servern med en status som gör att appen visar en uppmaning att uppdatera i stället för inloggningsskärmen.
+      rationale: Användare behåller gamla appversioner i åratal, och en rättad sårbarhet går att utnyttja tills den gamla versionen inte längre når servern.
+      criteria:
+        - method: test
+          text: När lägsta version höjs över den installerade versionen visar appen uppmaningen att uppdatera och dess API-anrop avvisas med en definierad status; den aktuella versionen fungerar.
+
+  - id: MOBSEC-11
+    type: security
+    obligation: should
+    priority: medium
+    tags: [attestation, integrity, root-detection]
+    refs: ["OWASP MASVS-RESILIENCE-1", "OWASP MASVS-RESILIENCE-2", "ISO/IEC 27001:2022 A.8.7 (protection against malware)"]
+    tests: [MOBSEC-T11]
+    en:
+      title: Platform attestation for high-risk operations
+      description: The system SHOULD require a valid platform attestation of the app and device, checked on the server, before it carries out a payment, a change of contact details or an enrolment of a new authenticator from the app.
+      rationale: Modified apps and rooted or emulated devices are the usual tools for automated fraud, and a server-side check of the platform's attestation stops most of them.
+      criteria:
+        - method: test
+          text: The three operations succeed from the store version on a genuine device and are refused from a re-signed app or an emulator.
+    sv:
+      title: Plattformsintyg för åtgärder med hög risk
+      description: Systemet BÖR kräva ett giltigt plattformsintyg för appen och enheten, kontrollerat på servern, innan det genomför en betalning, en ändring av kontaktuppgifter eller en registrering av en ny autentiseringsfaktor från appen.
+      rationale: Modifierade appar och rotade eller emulerade enheter är de vanliga verktygen för automatiserade bedrägerier, och en kontroll på servern av plattformens intyg stoppar de flesta av dem.
+      criteria:
+        - method: test
+          text: De tre åtgärderna lyckas från butiksversionen på en äkta enhet och avvisas från en omsignerad app eller en emulator.
+
+  - id: MOBSEC-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [release-build, debuggable, hardening]
+    refs: ["OWASP MASVS-RESILIENCE-4", "OWASP MASVS-CODE-4", "ISO/IEC 27001:2022 A.8.31"]
+    tests: [MOBSEC-T12]
+    en:
+      title: Release builds are not debuggable
+      description: The release build MUST have debugging turned off, contain no debug or test endpoints and ship without unstripped native debug symbols.
+      rationale: A debuggable release lets anyone attach a debugger to read memory and change behaviour, and leftover test endpoints often skip authentication.
+      criteria:
+        - method: inspection
+          text: The release manifest or entitlements show debugging disabled, the binary has no debug symbols, and a string search finds no test or staging hosts.
+    sv:
+      title: Leveransversioner går inte att felsöka
+      description: Leveransversionen SKA ha felsökning avstängd, sakna ändpunkter för felsökning och test och levereras utan ej borttagna felsökningssymboler i inbyggda bibliotek.
+      rationale: En leverans som går att felsöka låter vem som helst ansluta en felsökare för att läsa minnet och ändra beteendet, och kvarlämnade teständpunkter hoppar ofta över autentiseringen.
+      criteria:
+        - method: inspection
+          text: Leveransens manifest eller rättigheter visar felsökning avstängd, binären saknar felsökningssymboler och en strängsökning hittar inga värdar för test eller förproduktion.
+
+  - id: MOBSEC-13
+    type: security
+    obligation: must_not
+    priority: medium
+    tags: [permissions, privacy]
+    refs: ["OWASP MASVS-PRIVACY-1", "GDPR Art. 5(1)(c)", "GDPR Art. 25(2)"]
+    tests: [MOBSEC-T13]
+    en:
+      title: No device permission without a documented need
+      description: The app MUST NOT declare or request a device permission, such as location, contacts, camera or microphone, that is missing from the documented list of permissions with the feature that needs each one.
+      rationale: Unneeded permissions collect personal data with no purpose and widen what an attacker or an embedded SDK can reach.
+      criteria:
+        - method: inspection
+          text: Each permission in the release manifest or entitlements is on the documented list with a feature, and the app requests it only when that feature is opened.
+    sv:
+      title: Ingen enhetsbehörighet utan dokumenterat behov
+      description: Appen SKA INTE deklarera eller begära en enhetsbehörighet, till exempel plats, kontakter, kamera eller mikrofon, som saknas i den dokumenterade listan över behörigheter med den funktion som behöver var och en.
+      rationale: Onödiga behörigheter samlar in personuppgifter utan syfte och vidgar det som en angripare eller ett inbyggt SDK kan nå.
+      criteria:
+        - method: inspection
+          text: Varje behörighet i leveransens manifest eller rättigheter finns på den dokumenterade listan med en funktion, och appen begär den först när den funktionen öppnas.
+
+  - id: MOBSEC-14
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [third-party-sdk, privacy-labels, data-collection]
+    refs: ["OWASP MASVS-PRIVACY-3", "GDPR Art. 13", "GDPR Art. 28(1)", "ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    tests: [MOBSEC-T14]
+    en:
+      title: Inventory of SDKs and the data they collect
+      description: The supplier MUST keep a list of each third-party SDK in the app with the data it collects and where it sends it, and keep the app store privacy declarations consistent with that list.
+      rationale: Analytics, advertising and crash SDKs often collect more than the app's own code, and a store declaration that leaves them out misleads users and breaks store rules.
+      criteria:
+        - method: test
+          text: Traffic captured during a session goes only to the app's own hosts and to the SDK hosts on the list, and each data type sent is in the store declaration.
+    sv:
+      title: Förteckning över SDK:er och de data de samlar in
+      description: Leverantören SKA föra en lista över varje tredjeparts-SDK i appen med de data den samlar in och vart den skickar dem, och hålla appbutikernas integritetsdeklarationer förenliga med listan.
+      rationale: SDK:er för analys, annonser och kraschrapporter samlar ofta in mer än appens egen kod, och en deklaration i butiken som utelämnar dem vilseleder användarna och bryter mot butikens regler.
+      criteria:
+        - method: test
+          text: Trafik som fångas under en session går bara till appens egna värdar och till SDK-värdarna i listan, och varje datatyp som skickas finns i butiksdeklarationen.
+
+tests:
+  - id: MOBSEC-T01
+    priority: high
+    execution: manual
+    tags: [backups]
+    refs: ["OWASP MASTG (MASVS-STORAGE tests)"]
+    en:
+      title: Restored backup does not bring the session along
+      description: Backs up a device with the app signed in and restores it to another device.
+      preconditions: Two test devices on the same platform, a test account and the release build installed.
+      expected: The restored app has no session and no cached records.
+      steps:
+        - action: Sign in on device 1, open several records and make a full device backup.
+          expected: The backup completes.
+        - action: Restore the backup to device 2 and open the app.
+          expected: The app asks for sign-in.
+        - action: Inspect the app's data directory on device 2 with the platform's developer tools.
+          expected: No token or cached record files are present.
+    sv:
+      title: En återställd säkerhetskopia tar inte med sessionen
+      description: Säkerhetskopierar en enhet med appen inloggad och återställer den till en annan enhet.
+      preconditions: Två testenheter på samma plattform, ett testkonto och leveransversionen installerad.
+      expected: Den återställda appen har ingen session och inga cachade poster.
+      steps:
+        - action: Logga in på enhet 1, öppna flera poster och gör en fullständig säkerhetskopia av enheten.
+          expected: Säkerhetskopieringen slutförs.
+        - action: Återställ säkerhetskopian till enhet 2 och öppna appen.
+          expected: Appen ber om inloggning.
+        - action: Granska appens datakatalog på enhet 2 med plattformens utvecklarverktyg.
+          expected: Inga filer med token eller cachade poster finns.
+
+  - id: MOBSEC-T02
+    priority: high
+    execution: manual
+    tags: [logging]
+    refs: ["CWE-532"]
+    en:
+      title: System log holds no secrets or record data
+      description: Captures the system log while using the release build and searches it for known test values.
+      preconditions: A test device connected to a computer with the platform's log viewer, the release build and a test account with known values.
+      expected: None of the test values appears in the log.
+      steps:
+        - action: Start log capture, then sign in, open a record with a test identity number and sign out.
+          expected: The log is captured.
+        - action: Search the log for the password, the token, the identity number and a phrase from the record.
+          expected: There are no hits.
+    sv:
+      title: Systemloggen innehåller inga hemligheter eller postdata
+      description: Fångar systemloggen medan leveransversionen används och söker i den efter kända testvärden.
+      preconditions: En testenhet ansluten till en dator med plattformens loggvisare, leveransversionen och ett testkonto med kända värden.
+      expected: Inget av testvärdena förekommer i loggen.
+      steps:
+        - action: Starta loggfångsten, logga sedan in, öppna en post med ett testpersonnummer och logga ut.
+          expected: Loggen fångas.
+        - action: Sök i loggen efter lösenordet, token, personnumret och en fras ur posten.
+          expected: Det finns inga träffar.
+
+  - id: MOBSEC-T03
+    priority: critical
+    execution: manual
+    tags: [tls, cleartext]
+    refs: ["OWASP MASVS-NETWORK-1"]
+    en:
+      title: App refuses intercepted and cleartext connections
+      description: Routes the app through an intercepting proxy with an untrusted certificate and inspects the network configuration.
+      preconditions: A test device, an intercepting proxy whose certificate is not installed on the device and the unpacked release build.
+      expected: No request succeeds through the proxy and cleartext is forbidden.
+      steps:
+        - action: Set the device to use the proxy and use the app.
+          expected: Each request fails with a certificate error and no response content reaches the app.
+        - action: Read the network security configuration or the transport security settings in the package.
+          expected: Cleartext traffic is disabled for every domain.
+    sv:
+      title: Appen avvisar avlyssnade förbindelser och klartext
+      description: Leder appens trafik genom en avlyssnande proxy med ett certifikat som inte är betrott och granskar nätverkskonfigurationen.
+      preconditions: En testenhet, en avlyssnande proxy vars certifikat inte är installerat på enheten och den uppackade leveransversionen.
+      expected: Inget anrop lyckas genom proxyn och klartext är förbjuden.
+      steps:
+        - action: Ställ in enheten att använda proxyn och använd appen.
+          expected: Varje anrop misslyckas med ett certifikatfel och inget svarsinnehåll når appen.
+        - action: Läs nätverkssäkerhetskonfigurationen eller inställningarna för transportsäkerhet i paketet.
+          expected: Klartexttrafik är avstängd för varje domän.
+
+  - id: MOBSEC-T04
+    priority: medium
+    execution: manual
+    tags: [certificate-pinning]
+    refs: ["OWASP MASVS-NETWORK-2"]
+    en:
+      title: Pinning blocks a proxy with a trusted root
+      description: Installs the proxy's root certificate on the device and checks that pinned API calls still fail.
+      preconditions: A test device with the intercepting proxy's root certificate installed and trusted, and the release build.
+      expected: API calls fail through the proxy and work without it.
+      steps:
+        - action: Use the app through the proxy.
+          expected: Requests to the system's API fail and the proxy sees no request content.
+        - action: Turn the proxy off and use the app again.
+          expected: The requests succeed.
+        - action: Read the pinning configuration.
+          expected: It lists a primary and a backup public key hash for the API domain.
+    sv:
+      title: Låsningen stoppar en proxy med betrott rotcertifikat
+      description: Installerar proxyns rotcertifikat på enheten och kontrollerar att låsta API-anrop ändå misslyckas.
+      preconditions: En testenhet med den avlyssnande proxyns rotcertifikat installerat och betrott, och leveransversionen.
+      expected: API-anrop misslyckas via proxyn och fungerar utan den.
+      steps:
+        - action: Använd appen via proxyn.
+          expected: Anrop till systemets API misslyckas och proxyn ser inget innehåll i anropen.
+        - action: Stäng av proxyn och använd appen igen.
+          expected: Anropen lyckas.
+        - action: Läs konfigurationen för låsning.
+          expected: Den listar en hash för en huvudnyckel och en för en reservnyckel för API-domänen.
+
+  - id: MOBSEC-T05
+    priority: high
+    execution: manual
+    tags: [biometrics, keystore]
+    refs: ["OWASP MASVS-AUTH-2"]
+    en:
+      title: Forced biometric success does not unlock the app
+      description: Uses an instrumentation tool on a rooted device to force the biometric callback, then unlocks with a real biometric.
+      preconditions: A rooted test device with an instrumentation framework, the release build with biometric unlock enabled, and an enrolled fingerprint or face.
+      expected: Only a real biometric match unlocks the app.
+      steps:
+        - action: Lock the app, open the biometric prompt and use the instrumentation tool to call the success callback without a crypto object.
+          expected: The app stays locked.
+        - action: Unlock with the enrolled biometric.
+          expected: The app unlocks.
+    sv:
+      title: En påtvingad biometrisk framgång låser inte upp appen
+      description: Använder ett instrumenteringsverktyg på en rotad enhet för att tvinga fram den biometriska återkopplingen, och låser sedan upp med verklig biometri.
+      preconditions: En rotad testenhet med ett ramverk för instrumentering, leveransversionen med biometrisk upplåsning påslagen och ett registrerat fingeravtryck eller ansikte.
+      expected: Endast en verklig biometrisk matchning låser upp appen.
+      steps:
+        - action: Lås appen, öppna den biometriska dialogen och anropa med instrumenteringsverktyget återkopplingen för lyckat utfall utan kryptoobjekt.
+          expected: Appen förblir låst.
+        - action: Lås upp med den registrerade biometrin.
+          expected: Appen låses upp.
+
+  - id: MOBSEC-T06
+    priority: medium
+    execution: manual
+    tags: [screenshots, app-switcher]
+    refs: ["OWASP MASVS-PLATFORM-3"]
+    en:
+      title: Confidential screens are masked
+      description: Opens a confidential record, takes a screenshot and opens the app switcher.
+      preconditions: A test device and a test account with access to a record classified as confidential.
+      expected: The screenshot and the app switcher show no record content.
+      steps:
+        - action: Open the confidential record and take a screenshot.
+          expected: The screenshot is refused or the saved image is blank.
+        - action: Open the app switcher while the record is shown.
+          expected: The app's preview shows the neutral image.
+    sv:
+      title: Konfidentiella skärmar maskeras
+      description: Öppnar en konfidentiell post, tar en skärmbild och öppnar appväxlaren.
+      preconditions: En testenhet och ett testkonto med åtkomst till en post klassad som konfidentiell.
+      expected: Skärmbilden och appväxlaren visar inget postinnehåll.
+      steps:
+        - action: Öppna den konfidentiella posten och ta en skärmbild.
+          expected: Skärmbilden nekas eller den sparade bilden är tom.
+        - action: Öppna appväxlaren medan posten visas.
+          expected: Appens förhandsvisning visar den neutrala bilden.
+
+  - id: MOBSEC-T07
+    priority: high
+    execution: manual
+    tags: [deep-links, intents]
+    refs: ["OWASP MASVS-PLATFORM-1"]
+    en:
+      title: Crafted links and intents are refused
+      description: Sends crafted deep links and intents to the app and reviews its exported components.
+      preconditions: A test device with platform debugging tools, the release build and the approved list of exported components.
+      expected: Crafted input has no effect and only approved components are exported.
+      steps:
+        - action: Open a deep link whose parameter names an internal settings screen.
+          expected: The app opens its start screen or shows an error, not the internal screen.
+          data: "app link with screen=internal/debug"
+        - action: Open a deep link whose redirect parameter is an external URL.
+          expected: The app does not load the external URL.
+          data: "app link with next=https://evil.example/"
+        - action: List the exported components in the release manifest.
+          expected: Each is on the approved list.
+    sv:
+      title: Konstruerade länkar och intents avvisas
+      description: Skickar konstruerade djuplänkar och intents till appen och granskar dess exporterade komponenter.
+      preconditions: En testenhet med plattformens felsökningsverktyg, leveransversionen och den godkända listan över exporterade komponenter.
+      expected: Konstruerad indata har ingen effekt och bara godkända komponenter är exporterade.
+      steps:
+        - action: Öppna en djuplänk vars parameter anger en intern inställningsskärm.
+          expected: Appen öppnar sin startskärm eller visar ett fel, inte den interna skärmen.
+          data: "applänk med screen=internal/debug"
+        - action: Öppna en djuplänk vars omdirigeringsparameter är en extern adress.
+          expected: Appen laddar inte den externa adressen.
+          data: "applänk med next=https://evil.example/"
+        - action: Lista de exporterade komponenterna i leveransens manifest.
+          expected: Var och en finns på den godkända listan.
+
+  - id: MOBSEC-T08
+    priority: high
+    execution: manual
+    tags: [webview]
+    refs: ["OWASP MASVS-PLATFORM-2"]
+    en:
+      title: External pages cannot use the native bridge
+      description: Makes a web view navigate to an external test page that probes for the bridge object.
+      preconditions: The release build, a link in app content to an external test page whose script looks for the bridge object, and a test device.
+      expected: The external page opens outside the app or finds no bridge.
+      steps:
+        - action: Follow the link to the external test page from inside a web view.
+          expected: The page opens in the system browser, not in the web view.
+        - action: Load the test page into the web view through a redirect from the system's own domain.
+          expected: The page's probe reports that the bridge object is undefined.
+    sv:
+      title: Externa sidor kan inte använda den inbyggda bryggan
+      description: Får en webbvy att navigera till en extern testsida som letar efter bryggobjektet.
+      preconditions: Leveransversionen, en länk i appens innehåll till en extern testsida vars skript letar efter bryggobjektet, och en testenhet.
+      expected: Den externa sidan öppnas utanför appen eller hittar ingen brygga.
+      steps:
+        - action: Följ länken till den externa testsidan inifrån en webbvy.
+          expected: Sidan öppnas i systemets webbläsare, inte i webbvyn.
+        - action: Ladda testsidan i webbvyn via en omdirigering från systemets egen domän.
+          expected: Sidans sond rapporterar att bryggobjektet är odefinierat.
+
+  - id: MOBSEC-T09
+    priority: critical
+    execution: automated
+    tags: [embedded-secrets]
+    refs: ["CWE-798"]
+    en:
+      title: Release package contains no usable secrets
+      description: A script unpacks the release package and scans it and its native libraries for secrets.
+      preconditions: The release package of each platform and a secret scanner with rules for private keys, client secrets and API keys.
+      expected: No private key and no credential with more than anonymous rights is found.
+      steps:
+        - action: Unpack the package, including resources and native libraries, and run the secret scanner over it.
+          expected: The scan completes and lists its findings.
+        - action: For each finding, test the value against the API.
+          expected: No finding is a private key, and no value gives more access than an anonymous request.
+    sv:
+      title: Leveranspaketet innehåller inga användbara hemligheter
+      description: Ett skript packar upp leveranspaketet och söker efter hemligheter i det och i dess inbyggda bibliotek.
+      preconditions: Leveranspaketet för varje plattform och en sökare efter hemligheter med regler för privata nycklar, klienthemligheter och API-nycklar.
+      expected: Ingen privat nyckel och inga inloggningsuppgifter med mer än anonyma rättigheter hittas.
+      steps:
+        - action: Packa upp paketet, inklusive resurser och inbyggda bibliotek, och kör sökningen efter hemligheter över det.
+          expected: Sökningen slutförs och listar sina fynd.
+        - action: Prova varje fynd mot API:et.
+          expected: Inget fynd är en privat nyckel och inget värde ger mer åtkomst än ett anonymt anrop.
+
+  - id: MOBSEC-T10
+    priority: high
+    execution: manual
+    tags: [forced-update]
+    refs: ["OWASP MASVS-CODE-2"]
+    en:
+      title: An app below the minimum version is blocked
+      description: Raises the server-side minimum version above an installed test build.
+      preconditions: Two builds installed on test devices, an older one and the current one, and access to the minimum version setting in the test environment.
+      expected: The older build is blocked with an update prompt and the current build works.
+      steps:
+        - action: Set the minimum version above the older build and open it.
+          expected: The app shows the update prompt and offers no sign-in.
+        - action: Send an API request with the older build's version header.
+          expected: The request is refused with the defined status for an outdated app.
+        - action: Open the current build.
+          expected: The app works normally.
+    sv:
+      title: En app under lägsta version spärras
+      description: Höjer den lägsta version som anges på servern över ett installerat testbygge.
+      preconditions: Två byggen installerade på testenheter, ett äldre och det aktuella, och åtkomst till inställningen för lägsta version i testmiljön.
+      expected: Det äldre bygget spärras med en uppmaning att uppdatera och det aktuella fungerar.
+      steps:
+        - action: Sätt lägsta version över det äldre bygget och öppna det.
+          expected: Appen visar uppmaningen att uppdatera och erbjuder ingen inloggning.
+        - action: Skicka ett API-anrop med det äldre byggets versionshuvud.
+          expected: Anropet avvisas med den definierade statusen för en föråldrad app.
+        - action: Öppna det aktuella bygget.
+          expected: Appen fungerar som vanligt.
+
+  - id: MOBSEC-T11
+    priority: medium
+    execution: manual
+    tags: [attestation]
+    refs: ["OWASP MASVS-RESILIENCE-1"]
+    en:
+      title: High-risk operations need a valid attestation
+      description: Runs the three high-risk operations from a genuine device, a re-signed app and an emulator.
+      preconditions: The store build on a genuine device, a re-signed copy of the app on a test device, an emulator with the app, and a test account.
+      expected: Only the store build on the genuine device can run the operations.
+      steps:
+        - action: From the genuine device, make a test payment, change the email address and enrol a new authenticator.
+          expected: All three succeed.
+        - action: Repeat the three operations from the re-signed app.
+          expected: Each is refused with a message about the app's integrity.
+        - action: Repeat them from the emulator.
+          expected: Each is refused.
+    sv:
+      title: Åtgärder med hög risk kräver ett giltigt intyg
+      description: Kör de tre åtgärderna med hög risk från en äkta enhet, en omsignerad app och en emulator.
+      preconditions: Butiksversionen på en äkta enhet, en omsignerad kopia av appen på en testenhet, en emulator med appen och ett testkonto.
+      expected: Endast butiksversionen på den äkta enheten kan utföra åtgärderna.
+      steps:
+        - action: Gör från den äkta enheten en testbetalning, ändra e-postadressen och registrera en ny autentiseringsfaktor.
+          expected: Alla tre lyckas.
+        - action: Upprepa de tre åtgärderna från den omsignerade appen.
+          expected: Var och en avvisas med ett meddelande om appens integritet.
+        - action: Upprepa dem från emulatorn.
+          expected: Var och en avvisas.
+
+  - id: MOBSEC-T12
+    priority: high
+    execution: automated
+    tags: [release-build, debuggable]
+    refs: ["OWASP MASVS-RESILIENCE-4"]
+    en:
+      title: Release package is not debuggable
+      description: A script inspects the release package for debug flags, symbols and test hosts.
+      preconditions: The release package of each platform and the list of test and staging host names.
+      expected: Debugging is off, symbols are stripped and no test host is referenced.
+      steps:
+        - action: Read the debuggable flag or the get-task-allow entitlement.
+          expected: Debugging is disabled.
+        - action: Check the native binaries for debug symbols.
+          expected: No debug symbols are present.
+        - action: Search the strings of the package for the test and staging host names.
+          expected: There are no hits.
+    sv:
+      title: Leveranspaketet går inte att felsöka
+      description: Ett skript granskar leveranspaketet efter flaggor för felsökning, symboler och testvärdar.
+      preconditions: Leveranspaketet för varje plattform och listan över värdnamn för test och förproduktion.
+      expected: Felsökning är avstängd, symboler är borttagna och ingen testvärd refereras.
+      steps:
+        - action: Läs flaggan debuggable eller rättigheten get-task-allow.
+          expected: Felsökning är avstängd.
+        - action: Kontrollera de inbyggda binärerna efter felsökningssymboler.
+          expected: Inga felsökningssymboler finns.
+        - action: Sök i paketets strängar efter värdnamnen för test och förproduktion.
+          expected: Det finns inga träffar.
+
+  - id: MOBSEC-T13
+    priority: medium
+    execution: manual
+    tags: [permissions]
+    refs: ["OWASP MASVS-PRIVACY-1"]
+    en:
+      title: Declared permissions match the documented list
+      description: Compares the permissions in the release package with the documented list and checks when they are requested.
+      preconditions: The release package, the documented permission list and a test device with a fresh install.
+      expected: Each permission is documented and requested only when its feature opens.
+      steps:
+        - action: List the permissions in the release manifest or entitlements and compare with the documented list.
+          expected: Each permission is on the list with a feature.
+        - action: Install the app fresh, go through onboarding and use features that need no permission.
+          expected: No permission prompt appears.
+        - action: Open a feature that needs a listed permission.
+          expected: The prompt for that permission appears at that moment.
+    sv:
+      title: Deklarerade behörigheter stämmer med den dokumenterade listan
+      description: Jämför behörigheterna i leveranspaketet med den dokumenterade listan och kontrollerar när de begärs.
+      preconditions: Leveranspaketet, den dokumenterade listan över behörigheter och en testenhet med nyinstallerad app.
+      expected: Varje behörighet är dokumenterad och begärs först när dess funktion öppnas.
+      steps:
+        - action: Lista behörigheterna i leveransens manifest eller rättigheter och jämför med den dokumenterade listan.
+          expected: Varje behörighet finns på listan med en funktion.
+        - action: Installera appen på nytt, gå igenom introduktionen och använd funktioner som inte behöver någon behörighet.
+          expected: Ingen fråga om behörighet visas.
+        - action: Öppna en funktion som behöver en listad behörighet.
+          expected: Frågan om den behörigheten visas i det ögonblicket.
+
+  - id: MOBSEC-T14
+    priority: medium
+    execution: manual
+    tags: [third-party-sdk, privacy-labels]
+    refs: ["OWASP MASVS-PRIVACY-3"]
+    en:
+      title: App traffic matches the SDK list and store declaration
+      description: Captures the app's network traffic during a session and compares it with the SDK list and the store privacy declaration.
+      preconditions: A test device with the proxy's root certificate trusted, a build without pinning for the test, the SDK list and the store privacy declarations.
+      expected: All traffic goes to known hosts and every data type sent is declared.
+      steps:
+        - action: Use the app for 10 minutes covering sign-in, browsing and a crash test, while capturing traffic.
+          expected: Traffic is captured.
+        - action: List the hosts contacted.
+          expected: Each host belongs to the app or to an SDK on the list.
+        - action: List the data types sent to each SDK host and compare with the store declaration.
+          expected: Each data type is declared.
+    sv:
+      title: Appens trafik stämmer med SDK-listan och butiksdeklarationen
+      description: Fångar appens nätverkstrafik under en session och jämför den med SDK-listan och integritetsdeklarationen i butiken.
+      preconditions: En testenhet där proxyns rotcertifikat är betrott, ett bygge utan låsning för testet, SDK-listan och butikernas integritetsdeklarationer.
+      expected: All trafik går till kända värdar och varje datatyp som skickas är deklarerad.
+      steps:
+        - action: Använd appen i 10 minuter med inloggning, bläddring och ett krasch-test medan trafiken fångas.
+          expected: Trafiken fångas.
+        - action: Lista de värdar som kontaktades.
+          expected: Varje värd tillhör appen eller en SDK i listan.
+        - action: Lista de datatyper som skickas till varje SDK-värd och jämför med butiksdeklarationen.
+          expected: Varje datatyp är deklarerad.

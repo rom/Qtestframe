@@ -233,6 +233,15 @@ async function discover(request) {
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },
+    // the spreadsheet view: grid, an open cell editor, a refused value, row selection, keyboard help
+    { name: 'requirements-sheet', path: `${p}/requirements?view=sheet`, wait: '[role="grid"] [role="gridcell"]' },
+    { name: 'tests-sheet', path: `${p}/tests?view=sheet`, wait: '[role="grid"] [role="gridcell"]' },
+    { name: 'requirements-sheet-edit', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="5"]', keys: ['F2'], wait: '.cell-editor' },
+    { name: 'tests-sheet-edit-text', path: `${p}/tests?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="4"]', keys: ['F2'], wait: 'textarea.cell-editor' },
+    { name: 'requirements-sheet-error', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['F2', 'Control+a', 'Backspace', 'Enter'], wait: '.cell-error' },
+    // a row ticked with Space (the pointer then moves away, so nothing is hovered when the toolbar pushes the grid down)
+    { name: 'requirements-sheet-bulk', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: [' '], wait: '.bulkbar' },
+    { name: 'tests-sheet-keys', path: `${p}/tests?view=sheet`, open: '.sheet-keys summary', wait: '.sheet-keys[open] dl' },
     { name: 'runs', path: `${p}/runs` },
     { name: 'runs-bulk', path: `${p}/runs`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     // open states: dialogs and the off-canvas navigation
@@ -327,11 +336,15 @@ async function discover(request) {
     { name: 'requirement-attachments', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     run && { name: 'run-attachments', path: `${p}/runs/${run.id}`, open: '[role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     { name: 'search', path: '/search?q=login' },
+    // the autocomplete list of a text field (recent searches, seeded below): ArrowDown in the empty field
+    { name: 'search-suggestions', path: '/search', press: ['.query-input input', 'ArrowDown'], wait: '.suggest-list' },
     { name: 'help', path: '/help' },
     { name: 'profile', path: '/profile' },
     { name: 'relations-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-sitemap)'], wait: '.p-dialog [role="status"]' },
     relReq && { name: 'requirement-relations', path: `${p}/requirements?item=${relReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-sitemap)', '.p-drawer [role="tabpanel"] .p-checkbox'], wait: '.p-drawer [role="tabpanel"] .p-button-danger' },
     { name: 'item-links-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-link)'], wait: '.p-dialog [role="status"]' },
+    // the issues of the selected requirements in the project's tracker (create, update, refresh)
+    { name: 'requirement-issues-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-ticket)'], wait: '.p-dialog .p-message, .p-dialog input#bulk-issue-update' },
     { name: 'run-links-bulk', path: `${p}/runs`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-link)'], wait: '.p-dialog [role="status"]' },
     linkReq && { name: 'requirement-links', path: `${p}/requirements?item=${linkReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links .p-checkbox'], wait: '.item-links .p-button-danger' },
     { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },
@@ -428,6 +441,28 @@ async function keyboardChecks(browser, state, routes) {
       await page.waitForTimeout(500)
       const back = await active(page)
       check('closing the editor drawer returns focus to its opener', back?.cls.includes('item-title'), JSON.stringify(back))
+    }
+    // spreadsheet: the grid keeps focus, arrows move the active cell, F2 edits, Escape returns to the grid
+    if (route('requirements-sheet')) {
+      await page.goto(BASE + route('requirements-sheet').path)
+      await settle(page, route('requirements-sheet').wait)
+      const grid = page.locator('[role="grid"]').first()
+      await grid.focus()
+      const first = await grid.getAttribute('aria-activedescendant')
+      await page.keyboard.press('ArrowDown')
+      await page.keyboard.press('ArrowRight')
+      const moved = await grid.getAttribute('aria-activedescendant')
+      check('spreadsheet arrows move the active cell', first && moved && first !== moved && /-r1-c1$/.test(moved), `${first} → ${moved}`)
+      await page.keyboard.press('F2')
+      const editor = await active(page)
+      check('spreadsheet F2 opens the cell editor', editor?.cls.includes('cell-editor'), JSON.stringify(editor))
+      await page.keyboard.press('Escape')
+      const back = await page.evaluate(() => document.activeElement?.getAttribute('role'))
+      check('spreadsheet Escape returns focus to the grid', back === 'grid', String(back))
+      await page.keyboard.press('Control+End')
+      const end = await grid.getAttribute('aria-activedescendant')
+      const rows = Number(await grid.getAttribute('aria-rowcount'))
+      check('spreadsheet Ctrl+End goes to the last cell', end && new RegExp(`-r${rows - 2}-c\\d+$`).test(end), `${end} of ${rows}`)
     }
     // runner: shortcuts do not fire while typing
     if (route('execute')) {
@@ -541,11 +576,13 @@ async function main() {
     const state = await authCtx.storageState()
     const routes = await discover(authCtx.request)
     const original = me.user?.preferences ?? {}
+    // recent searches for the search-suggestions route
+    await api(authCtx.request, 'POST', '/suggest/history', { entries: [{ field: 'search', value: 'status:approved' }, { field: 'search', value: 'login' }] }, csrf).catch(() => undefined)
     if (routes.some((r) => r.mfa)) await setupMfaUser(browser, authCtx.request, csrf)
 
     for (const cfg of CONFIGS) {
       // the user's preferences decide theme and language once signed in
-      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: cfg.theme, language: cfg.lang, intro_done: true } }, csrf)
+      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: cfg.theme, language: cfg.lang, intro_done: true, autocomplete: null } }, csrf)
       for (const vp of VIEWPORTS) {
         const opts = { viewport: { width: vp.width, height: vp.height }, isMobile: vp.mobile, hasTouch: vp.mobile, reducedMotion: 'reduce', locale: cfg.lang === 'sv' ? 'sv-SE' : 'en-GB' }
         const local = ({ lang, theme }) => {
@@ -554,6 +591,9 @@ async function main() {
           localStorage.setItem('qtf.theme', dark ? 'dark' : 'light')
           if (theme !== 'light' && theme !== 'dark') localStorage.setItem('qtf.decor', theme)
           else localStorage.removeItem('qtf.decor')
+          // every route starts in the list layout unless its address asks for the spreadsheet
+          localStorage.removeItem('qtf.layout.requirement')
+          localStorage.removeItem('qtf.layout.test')
         }
         const pages = [{ name: 'login', path: '/login', anon: true }, ...routes].filter((r) => !ONLY.length || ONLY.includes(r.name))
         const ctx = await browser.newContext({ ...opts, storageState: state })
@@ -578,6 +618,14 @@ async function main() {
               await settle(page)
               await page.locator(sel).first().click()
             }
+            // press: [selector, key] — a key pressed in a field (opens an autocomplete list)
+            if (r.press) {
+              await settle(page)
+              await page.locator(r.press[0]).first().press(r.press[1])
+            }
+            // keys: keys pressed after that (e.g. F2 to edit a spreadsheet cell)
+            for (const key of r.keys ?? []) await page.keyboard.press(key)
+            if (r.keys) await page.mouse.move(1, 1)
             await settle(page, r.wait)
             if (!r.anon && page.url().includes('/login')) throw new Error('redirected to login')
             checks++
@@ -614,7 +662,7 @@ async function main() {
     // drop the authenticator set-up the profile-mfa-setup route started
     await api(authCtx.request, 'POST', '/auth/mfa/disable', { code: '' }, csrf).catch(() => undefined)
     // restore the admin's own preferences
-    await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: original.theme ?? null, language: original.language ?? null, intro_done: original.intro_done ?? null } }, csrf).catch(() => undefined)
+    await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: original.theme ?? null, language: original.language ?? null, intro_done: original.intro_done ?? null, autocomplete: original.autocomplete ?? null } }, csrf).catch(() => undefined)
     await authCtx.close()
   } finally {
     await browser.close()

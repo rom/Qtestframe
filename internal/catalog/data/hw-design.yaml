@@ -382,6 +382,140 @@ requirements:
           text: Efter provningsstandardens dippar och avbrott och en långsam ramp från nominell spänning till noll och tillbaka under 60 s, upprepad 20 gånger, fungerar enheten normalt och dess lagrade data och inställningar är oförändrade.
           threshold: 20 av 20 cykler utan förstörda data
 
+  - id: HWDES-17
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [dfm, manufacturability, layout]
+    refs: ["IPC-7351 (land pattern design)", "IPC-2221B (generic standard on printed board design)"]
+    tests: [HWDES-T13]
+    en:
+      title: Design for manufacture review with the assembler
+      description: The hardware team MUST obtain a design for manufacture report from the board fabricator and the assembler for each new layout revision before the first production order, and close or accept each finding marked as an error.
+      rationale: Land patterns, spacing and panel layout that do not suit the production process give soldering defects and low yield that a layout change could have prevented.
+      criteria:
+        - method: inspection
+          text: Each layout revision released to production has a fabricator and an assembler report, and no finding marked as an error is open without a signed acceptance.
+    sv:
+      title: Granskning av tillverkningsbarhet tillsammans med monteringsleverantören
+      description: Hårdvaruteamet SKA få en rapport om tillverkningsbarhet från kortleverantören och monteringsleverantören för varje ny layoutrevision före den första produktionsordern, och stänga eller godta varje fynd som är markerat som fel.
+      rationale: Lödytor, avstånd och panelutformning som inte passar tillverkningsprocessen ger lödfel och lågt utbyte som en ändring av layouten hade kunnat förhindra.
+      criteria:
+        - method: inspection
+          text: Varje layoutrevision som släppts till produktion har en rapport från kortleverantören och en från monteringsleverantören, och inget fynd markerat som fel är öppet utan ett undertecknat godtagande.
+
+  - id: HWDES-18
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [controlled-impedance, signal-integrity, pcb]
+    refs: ["IPC-2141A (controlled impedance circuit boards)", "IPC-6012E (qualification and performance of rigid printed boards)"]
+    tests: [HWDES-T14]
+    en:
+      title: Controlled impedance of high-speed traces verified on test coupons
+      description: The impedance of each trace class marked as controlled on the fabrication drawing MUST be within ±10 % of its nominal value, as measured by time-domain reflectometry on a test coupon from each production panel.
+      rationale: High-speed interfaces such as Ethernet, USB and memory buses lose margin or fail when the board stack-up drifts from the design values.
+      criteria:
+        - method: test
+          text: The coupon measurements of three production lots are within ±10 % of the nominal impedance for each controlled class.
+          threshold: deviation ≤ ±10 %
+    sv:
+      title: Styrd impedans för höghastighetsledare verifierad på testkuponger
+      description: Impedansen för varje ledarklass som är markerad som styrd på tillverkningsritningen SKA ligga inom ±10 % av sitt nominella värde, mätt med tidsdomänreflektometri på en testkupong från varje produktionspanel.
+      rationale: Höghastighetsgränssnitt som Ethernet, USB och minnesbussar förlorar marginal eller slutar fungera när kortets uppbyggnad avviker från konstruktionsvärdena.
+      criteria:
+        - method: test
+          text: Kupongmätningarna från tre produktionsserier ligger inom ±10 % av den nominella impedansen för varje styrd klass.
+          threshold: avvikelse ≤ ±10 %
+
+  - id: HWDES-19
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [moisture-sensitivity, msl, assembly]
+    refs: ["IPC J-STD-033 (handling of moisture sensitive devices)"]
+    tests: [HWDES-T15]
+    en:
+      title: Floor life of moisture-sensitive components tracked in assembly
+      description: The assembler MUST record the time each opened package of moisture-sensitive components spends outside dry storage and bake or scrap the components before reflow once the floor life of their moisture sensitivity level is exceeded.
+      rationale: Moisture absorbed by plastic packages expands during reflow and cracks the package or lifts the die, giving latent field failures.
+      criteria:
+        - method: inspection
+          text: The floor-life log of a sampled production week shows the exposure time of each opened package and a bake or scrap record for each package past its limit.
+    sv:
+      title: Golvlivslängd för fuktkänsliga komponenter följs upp i monteringen
+      description: Monteringsleverantören SKA registrera hur länge varje öppnad förpackning med fuktkänsliga komponenter är utanför torrförvaring och baka eller kassera komponenterna före omsmältningslödning när golvlivslängden för deras fuktkänslighetsnivå har överskridits.
+      rationale: Fukt som tagits upp av plastkapslar expanderar vid omsmältningslödningen och spräcker kapseln eller lyfter chipet, vilket ger dolda fel i fält.
+      criteria:
+        - method: inspection
+          text: Loggen över golvlivslängd för en utvald produktionsvecka visar exponeringstiden för varje öppnad förpackning och en anteckning om bakning eller kassering för varje förpackning som passerat sin gräns.
+
+  - id: HWDES-20
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [esd, production, handling]
+    refs: ["IEC 61340-5-1:2024 (ESD control programme)"]
+    tests: [HWDES-T15]
+    en:
+      title: ESD control programme in each area that handles assemblies
+      description: Each area where unprotected electronic assemblies are handled MUST be an ESD protected area with grounded work surfaces, personnel grounding checked at each shift start and an ESD control programme audited at least once a year.
+      rationale: Electrostatic discharge damages semiconductors without visible signs, and the weakened parts fail later in the field.
+      criteria:
+        - method: inspection
+          text: The latest yearly audit report covers each handling area, and the wrist strap and footwear check logs of a sampled week have a passed check for each shift.
+    sv:
+      title: Program för ESD-skydd i varje område där kortmonteringar hanteras
+      description: Varje område där oskyddade elektronikmonteringar hanteras SKA vara ett ESD-skyddat område med jordade arbetsytor, jordning av personal som kontrolleras vid varje skiftstart och ett program för ESD-skydd som revideras minst en gång per år.
+      rationale: Elektrostatiska urladdningar skadar halvledare utan synliga tecken, och de försvagade delarna går sönder senare i fält.
+      criteria:
+        - method: inspection
+          text: Den senaste årliga revisionsrapporten omfattar varje hanteringsområde, och loggarna över kontroll av handledsband och skor för en utvald vecka har en godkänd kontroll för varje skift.
+
+  - id: HWDES-21
+    type: business
+    obligation: must
+    priority: high
+    tags: [first-article, production-release]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
+    tests: [HWDES-T16]
+    en:
+      title: First article inspection of the first production lot
+      description: The manufacturer MUST perform a first article inspection on at least 3 units of the first production lot of each new hardware revision, comparing each dimension, marking, component placement and electrical test result with the released documentation.
+      rationale: The first production lot shows whether the documentation and the production process together give the product that was designed and qualified.
+      criteria:
+        - method: inspection
+          text: Each hardware revision in production has a first article report covering 3 units with each characteristic marked as conforming, or with a recorded disposition.
+    sv:
+      title: Förstaexemplarskontroll av den första produktionsserien
+      description: Tillverkaren SKA göra en förstaexemplarskontroll av minst 3 enheter ur den första produktionsserien av varje ny hårdvarurevision, där varje mått, märkning, komponentplacering och elektriskt testresultat jämförs med den släppta dokumentationen.
+      rationale: Den första produktionsserien visar om dokumentationen och tillverkningsprocessen tillsammans ger den produkt som konstruerades och kvalificerades.
+      criteria:
+        - method: inspection
+          text: Varje hårdvarurevision i produktion har en rapport från förstaexemplarskontrollen som omfattar 3 enheter där varje egenskap är markerad som överensstämmande eller har ett registrerat beslut.
+
+  - id: HWDES-22
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [counterfeit, procurement, components]
+    refs: ["ISO 9001:2026 §8.4.1 (control of externally provided processes, products and services)"]
+    tests: [HWDES-T17]
+    en:
+      title: Components bought only from authorised sources
+      description: The manufacturer MUST buy active components from the component maker or its authorised distributors, and test and approve any part from another source in a documented counterfeit inspection before it enters production stock.
+      rationale: Counterfeit and recycled parts enter the supply chain through brokers, especially during shortages, and cause early and intermittent failures.
+      criteria:
+        - method: inspection
+          text: A sample of 20 purchase orders for active components shows authorised sources, and each broker purchase has an inspection report with a release decision.
+    sv:
+      title: Komponenter köps endast från auktoriserade källor
+      description: Tillverkaren SKA köpa aktiva komponenter från komponenttillverkaren eller dess auktoriserade distributörer, och testa och godkänna varje del från en annan källa i en dokumenterad kontroll mot förfalskning innan den förs in i produktionslagret.
+      rationale: Förfalskade och återvunna delar kommer in i leveranskedjan via mäklare, särskilt vid brist, och orsakar tidiga och intermittenta fel.
+      criteria:
+        - method: inspection
+          text: Ett urval av 20 inköpsorder för aktiva komponenter visar auktoriserade källor, och varje köp från en mäklare har en kontrollrapport med ett beslut om frisläppning.
+
 tests:
   - id: HWDES-T01
     priority: high
@@ -726,3 +860,161 @@ tests:
           expected: Enheten startar om av sig själv efter varje ramp.
         - action: Jämför data och inställningar med kopian från före provningen.
           expected: De är oförändrade så när som på de data som provningen själv skrivit.
+
+  - id: HWDES-T13
+    priority: high
+    execution: manual
+    tags: [dfm, layout]
+    refs: ["IPC-7351 (land pattern design)", "IPC-2221B (generic standard on printed board design)"]
+    en:
+      title: Design for manufacture reports of a layout revision
+      description: Checks that the fabricator and the assembler reviewed the layout before the first production order and that their error findings are closed.
+      preconditions: The most recent layout revision released to production, its production order date and the change log of the layout.
+      expected: Both reports exist, predate the first order and have no open error findings.
+      steps:
+        - action: Open the fabricator and assembler design for manufacture reports for the revision.
+          expected: Both reports exist and are dated before the first production order.
+        - action: List the findings marked as errors in each report.
+          expected: Each error finding is closed by a layout change in the change log or by a signed acceptance.
+        - action: Compare the layout revision in the reports with the released revision.
+          expected: The reports refer to the released layout revision.
+    sv:
+      title: Rapporter om tillverkningsbarhet för en layoutrevision
+      description: Kontrollerar att kortleverantören och monteringsleverantören har granskat layouten före den första produktionsordern och att deras fynd av typen fel är stängda.
+      preconditions: Den senaste layoutrevisionen som släppts till produktion, datumet för dess produktionsorder och ändringsloggen för layouten.
+      expected: Båda rapporterna finns, är daterade före den första ordern och har inga öppna fynd av typen fel.
+      steps:
+        - action: Öppna kortleverantörens och monteringsleverantörens rapporter om tillverkningsbarhet för revisionen.
+          expected: Båda rapporterna finns och är daterade före den första produktionsordern.
+        - action: Lista fynden som är markerade som fel i varje rapport.
+          expected: Varje fynd av typen fel är stängt genom en layoutändring i ändringsloggen eller genom ett undertecknat godtagande.
+        - action: Jämför layoutrevisionen i rapporterna med den släppta revisionen.
+          expected: Rapporterna avser den släppta layoutrevisionen.
+
+  - id: HWDES-T14
+    priority: medium
+    execution: manual
+    tags: [controlled-impedance]
+    refs: ["IPC-2141A (controlled impedance circuit boards)", "IPC-6012E (qualification and performance of rigid printed boards)"]
+    en:
+      title: Impedance coupon measurement of a production panel
+      description: Measures the impedance coupon of a production panel and checks the coupon records of recent lots.
+      preconditions: A test coupon from a current production panel, a calibrated time-domain reflectometer, the fabrication drawing and the coupon records of the last three lots.
+      expected: Each controlled trace class is within ±10 % of its nominal impedance.
+      steps:
+        - action: Read the controlled trace classes and nominal impedances from the fabrication drawing.
+          expected: Each controlled class has a nominal value and a tolerance.
+          data: 90 Ω differential USB, 100 Ω differential Ethernet, 50 Ω single-ended
+        - action: Measure each coupon structure with the reflectometer.
+          expected: Each measured value is within ±10 % of the nominal value.
+        - action: Read the coupon records of the last three lots.
+          expected: Each lot has a record within ±10 % for each class.
+    sv:
+      title: Impedansmätning på kupong från en produktionspanel
+      description: Mäter impedanskupongen från en produktionspanel och kontrollerar kupongprotokollen för de senaste serierna.
+      preconditions: En testkupong från en aktuell produktionspanel, en kalibrerad tidsdomänreflektometer, tillverkningsritningen och kupongprotokollen för de tre senaste serierna.
+      expected: Varje styrd ledarklass ligger inom ±10 % av sin nominella impedans.
+      steps:
+        - action: Läs de styrda ledarklasserna och de nominella impedanserna på tillverkningsritningen.
+          expected: Varje styrd klass har ett nominellt värde och en tolerans.
+          data: 90 Ω differentiellt USB, 100 Ω differentiellt Ethernet, 50 Ω enkelledare
+        - action: Mät varje kupongstruktur med reflektometern.
+          expected: Varje uppmätt värde ligger inom ±10 % av det nominella värdet.
+        - action: Läs kupongprotokollen för de tre senaste serierna.
+          expected: Varje serie har ett protokoll inom ±10 % för varje klass.
+
+  - id: HWDES-T15
+    priority: high
+    execution: manual
+    tags: [esd, moisture-sensitivity, audit]
+    refs: ["IPC J-STD-033 (handling of moisture sensitive devices)", "IEC 61340-5-1:2024 (ESD control programme)"]
+    en:
+      title: Walk-through of ESD protection and moisture-sensitive handling
+      description: Inspects an assembly area for ESD protection and checks the handling of moisture-sensitive components.
+      preconditions: Access to the assembly area during production, a surface resistance meter, the ESD audit report and the floor-life log.
+      expected: The area is ESD protected, the checks are recorded and no moisture-sensitive package is used past its floor life.
+      steps:
+        - action: Measure the resistance to ground of three work surfaces.
+          expected: Each surface is within the range set by the ESD control programme.
+        - action: Read the personnel grounding log for the last week.
+          expected: Each shift has a passed check for each person at work.
+        - action: Pick an opened reel of moisture-sensitive components on a feeder and look it up in the floor-life log.
+          expected: The log shows the opening time and the remaining floor life is positive.
+        - action: Open the latest yearly ESD audit report.
+          expected: The report is less than 12 months old and covers the area.
+    sv:
+      title: Genomgång av ESD-skydd och hantering av fuktkänsliga komponenter
+      description: Inspekterar ett monteringsområde med avseende på ESD-skydd och kontrollerar hanteringen av fuktkänsliga komponenter.
+      preconditions: Tillträde till monteringsområdet under produktion, en mätare för ytresistans, revisionsrapporten för ESD och loggen över golvlivslängd.
+      expected: Området är ESD-skyddat, kontrollerna är registrerade och ingen fuktkänslig förpackning används efter sin golvlivslängd.
+      steps:
+        - action: Mät resistansen mot jord för tre arbetsytor.
+          expected: Varje yta ligger inom det intervall som programmet för ESD-skydd anger.
+        - action: Läs loggen över jordning av personal för den senaste veckan.
+          expected: Varje skift har en godkänd kontroll för varje person i arbete.
+        - action: Välj en öppnad rulle med fuktkänsliga komponenter i en matare och sök upp den i loggen över golvlivslängd.
+          expected: Loggen visar tidpunkten för öppnandet och den återstående golvlivslängden är positiv.
+        - action: Öppna den senaste årliga revisionsrapporten för ESD.
+          expected: Rapporten är mindre än 12 månader gammal och omfattar området.
+
+  - id: HWDES-T16
+    priority: high
+    execution: manual
+    tags: [first-article]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
+    en:
+      title: First article report of a new hardware revision
+      description: Checks the first article inspection of the most recent hardware revision.
+      preconditions: The first article report, the released drawings, bill of materials and test specification of the revision.
+      expected: Three units are inspected against each characteristic with each deviation dispositioned.
+      steps:
+        - action: Count the units listed in the first article report.
+          expected: At least 3 units of the first production lot are listed.
+        - action: Compare the characteristics in the report with the drawings, bill of materials and test specification.
+          expected: Each dimension, marking, placement and test is in the report.
+        - action: Read the result of each characteristic.
+          expected: Each is conforming or has a recorded disposition signed by quality.
+    sv:
+      title: Rapport från förstaexemplarskontroll av en ny hårdvarurevision
+      description: Kontrollerar förstaexemplarskontrollen av den senaste hårdvarurevisionen.
+      preconditions: Rapporten från förstaexemplarskontrollen samt revisionens släppta ritningar, materialförteckning och testspecifikation.
+      expected: Tre enheter är kontrollerade mot varje egenskap och varje avvikelse har ett beslut.
+      steps:
+        - action: Räkna enheterna i rapporten från förstaexemplarskontrollen.
+          expected: Minst 3 enheter ur den första produktionsserien finns med.
+        - action: Jämför egenskaperna i rapporten med ritningarna, materialförteckningen och testspecifikationen.
+          expected: Varje mått, märkning, placering och test finns i rapporten.
+        - action: Läs resultatet för varje egenskap.
+          expected: Varje egenskap är överensstämmande eller har ett registrerat beslut undertecknat av kvalitetsfunktionen.
+
+  - id: HWDES-T17
+    priority: high
+    execution: manual
+    tags: [counterfeit, procurement]
+    refs: ["ISO 9001:2026 §8.4.1 (control of externally provided processes, products and services)"]
+    en:
+      title: Sources of purchased active components
+      description: Samples purchase orders for active components and checks the source and any counterfeit inspection.
+      preconditions: The purchase order register for the last 12 months and the list of authorised distributors from each component maker.
+      expected: Each sampled order is from an authorised source or has an approved counterfeit inspection.
+      steps:
+        - action: Select 20 purchase orders for active components at random.
+          expected: 20 orders are selected.
+          data: 20 orders from the last 12 months
+        - action: Compare each supplier with the authorised distributor lists.
+          expected: Each supplier is the maker or an authorised distributor, or the order is marked as a broker purchase.
+        - action: Open the inspection report of each broker purchase.
+          expected: Each report has test results and a release decision dated before the parts entered stock.
+    sv:
+      title: Källor för inköpta aktiva komponenter
+      description: Tar stickprov på inköpsorder för aktiva komponenter och kontrollerar källan och eventuell kontroll mot förfalskning.
+      preconditions: Registret över inköpsorder för de senaste 12 månaderna och listan över auktoriserade distributörer från varje komponenttillverkare.
+      expected: Varje utvald order kommer från en auktoriserad källa eller har en godkänd kontroll mot förfalskning.
+      steps:
+        - action: Välj 20 inköpsorder för aktiva komponenter slumpvis.
+          expected: 20 order är valda.
+          data: 20 order från de senaste 12 månaderna
+        - action: Jämför varje leverantör med listorna över auktoriserade distributörer.
+          expected: Varje leverantör är tillverkaren eller en auktoriserad distributör, eller så är ordern markerad som köp från mäklare.
+        - action: Öppna kontrollrapporten för varje köp från mäklare.
+          expected: Varje rapport har testresultat och ett beslut om frisläppning daterat innan delarna fördes in i lagret.

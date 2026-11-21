@@ -357,6 +357,126 @@ requirements:
           text: På en ny dator med bara de dokumenterade förutsättningarna bygger det dokumenterade kommandot systemet och testerna går igenom inom 30 minuter.
           threshold: "≤ 30 min"
 
+  - id: MNT-16
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [duplication, static-analysis, code-quality]
+    refs: ["ISO/IEC 25010:2023 modifiability", "ISO/IEC 25010:2023 maintainability"]
+    tests: [MNT-T12]
+    en:
+      title: Limit on duplicated code
+      description: Duplicated code SHOULD stay below 3 % of the source lines as measured by the static analysis in the pipeline.
+      rationale: Copied code has to be fixed in every copy, and the copies that are missed keep the defect alive.
+      criteria:
+        - method: test
+          text: The static analysis report of the main branch shows duplicated lines below 3 %.
+          threshold: "< 3 % duplicated lines"
+    sv:
+      title: Gräns för duplicerad kod
+      description: Duplicerad kod BÖR hållas under 3 % av källkodsraderna mätt med den statiska analysen i pipelinen.
+      rationale: Kopierad kod måste rättas i varje kopia, och de kopior som missas håller felet vid liv.
+      criteria:
+        - method: test
+          text: Rapporten från den statiska analysen av huvudgrenen visar duplicerade rader under 3 %.
+          threshold: "< 3 % duplicerade rader"
+
+  - id: MNT-17
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [architecture, decisions, records]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture decisions and rationale)", "ISO/IEC 25010:2023 analysability"]
+    tests: [MNT-T13]
+    en:
+      title: Architecture decision records
+      description: Each decision that introduces a technology, changes a module boundary or changes an external interface MUST be recorded as a dated decision record with context, options and reason.
+      rationale: Without the reason behind a decision, later developers either repeat old debates or undo choices whose constraints they cannot see.
+      criteria:
+        - method: inspection
+          text: For the last 5 changes of technology or interface found in the history, a decision record exists.
+          threshold: "5 of 5 decisions recorded"
+    sv:
+      title: Arkitekturbeslut dokumenteras
+      description: Varje beslut som inför en teknik, ändrar en modulgräns eller ändrar ett externt gränssnitt SKA dokumenteras som en daterad beslutspost med sammanhang, alternativ och skäl.
+      rationale: Utan skälen bakom ett beslut upprepar senare utvecklare gamla diskussioner eller river upp val vars förutsättningar de inte ser.
+      criteria:
+        - method: inspection
+          text: För de 5 senaste ändringarna av teknik eller gränssnitt som hittas i historiken finns en beslutspost.
+          threshold: "5 av 5 beslut dokumenterade"
+
+  - id: MNT-18
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [runtime, end-of-life, frameworks]
+    refs: ["ISO/IEC 27001:2022 A.8.8 (management of technical vulnerabilities)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)"]
+    tests: [MNT-T14]
+    en:
+      title: Supported runtime and framework versions
+      description: The system MUST run on versions of its language runtime, framework and operating system base image that still receive security updates from their maintainers.
+      rationale: A component past its end of life gets no more fixes, so every new vulnerability in it stays open for good.
+      criteria:
+        - method: inspection
+          text: Each runtime, framework and base image in the build has an end-of-support date later than today according to its maintainer.
+          threshold: "0 components past end of support"
+    sv:
+      title: Versioner av körmiljö och ramverk som stöds
+      description: Systemet SKA köras på versioner av sin körmiljö för programspråket, sitt ramverk och sin basavbild för operativsystemet som fortfarande förses med säkerhetsuppdateringar av sina förvaltare.
+      rationale: En komponent som har passerat slutet på sin livslängd får inga fler rättningar, så varje ny sårbarhet i den förblir öppen för gott.
+      criteria:
+        - method: inspection
+          text: Varje körmiljö, ramverk och basavbild i bygget har ett slutdatum för stöd som ligger efter dagens datum enligt sin förvaltare.
+          threshold: "0 komponenter efter slut på stöd"
+
+  - id: MNT-19
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [onboarding, developer, documentation]
+    refs: ["ISO/IEC 25010:2023 analysability", "The Twelve-Factor App, II Dependencies"]
+    tests: [MNT-T15]
+    en:
+      title: New developer productive within one day
+      description: A new developer SHOULD build, run and test the system on a workstation within 1 working day using only the developer documentation.
+      rationale: Tribal knowledge in the setup makes every new team member depend on the few who know it and hides steps that break silently.
+      criteria:
+        - method: demonstration
+          text: A developer new to the code base follows the documentation on a fresh workstation and runs the test suite within 1 working day.
+          threshold: "≤ 1 working day"
+    sv:
+      title: Ny utvecklare kommer igång inom en dag
+      description: En ny utvecklare BÖR bygga, köra och testa systemet på en arbetsstation inom 1 arbetsdag med enbart utvecklardokumentationen som stöd.
+      rationale: Kunskap som bara finns i huvudet på några få gör varje ny teammedlem beroende av dem och döljer steg som går sönder i det tysta.
+      criteria:
+        - method: demonstration
+          text: En utvecklare som är ny i kodbasen följer dokumentationen på en ny arbetsstation och kör testsviten inom 1 arbetsdag.
+          threshold: "≤ 1 arbetsdag"
+
+  - id: MNT-20
+    type: non_functional
+    obligation: may
+    priority: low
+    tags: [mutation-testing, test-quality, coverage]
+    refs: ["ISO/IEC/IEEE 29119-4:2021 (test design techniques)", "ISO/IEC 25010:2023 testability"]
+    tests: [MNT-T16]
+    en:
+      title: Mutation testing of core modules
+      description: The supplier MAY run mutation testing on the core modules each week and track a mutation score target of at least 60 %.
+      rationale: Coverage shows which lines run during tests, while mutation testing shows whether the tests would notice if those lines were wrong.
+      criteria:
+        - method: inspection
+          text: When mutation testing is used, the weekly report shows the mutation score per core module and the trend.
+          threshold: "mutation score ≥ 60 %"
+    sv:
+      title: Mutationstestning av kärnmoduler
+      description: Leverantören FÅR köra mutationstestning av kärnmodulerna varje vecka och följa ett mål för mutationspoängen på minst 60 %.
+      rationale: Täckning visar vilka rader som körs under testerna, medan mutationstestning visar om testerna skulle märka att raderna var fel.
+      criteria:
+        - method: inspection
+          text: När mutationstestning används visar veckorapporten mutationspoängen per kärnmodul och utvecklingen över tid.
+          threshold: "mutationspoäng ≥ 60 %"
+
 tests:
   - id: MNT-T01
     priority: high
@@ -671,3 +791,143 @@ tests:
           expected: Förutsättningarna installeras utan odokumenterade steg.
         - action: Kör det dokumenterade kommandot för bygge och test och mät tiden.
           expected: Bygget och alla tester lyckas inom 30 minuter.
+
+  - id: MNT-T12
+    priority: medium
+    execution: automated
+    tags: [duplication, static-analysis]
+    refs: ["ISO/IEC 25010:2023 modifiability"]
+    en:
+      title: Duplication measured on the main branch
+      description: Reads the duplication figure from the static analysis of the main branch.
+      preconditions: Static analysis with duplication detection runs in the pipeline.
+      expected: Duplicated lines are below 3 % of the source lines.
+      steps:
+        - action: Open the latest analysis report of the main branch.
+          expected: The report shows the share of duplicated lines.
+        - action: Compare the share with the limit.
+          expected: The share is below 3 %.
+          data: "limit 3 %"
+    sv:
+      title: Duplicering mätt på huvudgrenen
+      description: Läser av dupliceringen i den statiska analysen av huvudgrenen.
+      preconditions: Statisk analys med upptäckt av duplicering körs i pipelinen.
+      expected: Duplicerade rader utgör under 3 % av källkodsraderna.
+      steps:
+        - action: Öppna den senaste analysrapporten för huvudgrenen.
+          expected: Rapporten visar andelen duplicerade rader.
+        - action: Jämför andelen med gränsen.
+          expected: Andelen är under 3 %.
+          data: "gräns 3 %"
+
+  - id: MNT-T13
+    priority: medium
+    execution: manual
+    tags: [architecture, decisions]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture decisions and rationale)"]
+    en:
+      title: Decision records for recent architecture changes
+      description: Finds recent technology and interface changes in the history and looks for their decision records.
+      preconditions: Access to the repository history and the decision records.
+      expected: Each found change has a dated decision record with context, options and reason.
+      steps:
+        - action: Search the change history for the last 5 changes that added a dependency framework, split a module or changed an external interface.
+          expected: 5 changes are identified.
+        - action: Find the decision record of each change.
+          expected: Each record exists, is dated and states context, options considered and the reason.
+    sv:
+      title: Beslutsposter för färska arkitekturändringar
+      description: Letar upp färska ändringar av teknik och gränssnitt i historiken och söker deras beslutsposter.
+      preconditions: Åtkomst till kodförrådets historik och beslutsposterna.
+      expected: Varje ändring som hittas har en daterad beslutspost med sammanhang, alternativ och skäl.
+      steps:
+        - action: Sök i ändringshistoriken efter de 5 senaste ändringarna som lade till ett ramverk, delade en modul eller ändrade ett externt gränssnitt.
+          expected: 5 ändringar identifieras.
+        - action: Leta upp beslutsposten för varje ändring.
+          expected: Varje post finns, är daterad och anger sammanhang, prövade alternativ och skäl.
+
+  - id: MNT-T14
+    priority: high
+    execution: automated
+    tags: [runtime, end-of-life]
+    refs: ["ISO/IEC 27001:2022 A.8.8 (management of technical vulnerabilities)"]
+    en:
+      title: End-of-support check of runtime and base image
+      description: A pipeline step compares the versions in the build with published end-of-support dates.
+      preconditions: The pipeline with a step that reads the runtime, framework and base image versions and a source of end-of-support dates.
+      expected: No component is past its end of support; one that is fails the step.
+      steps:
+        - action: Run the step on the current build.
+          expected: Each component is listed with its version and end-of-support date, all later than today.
+          data: "end-of-support data from the maintainers' release pages"
+        - action: Pin a runtime version whose support has ended and run the step.
+          expected: The step fails and names the component and the date support ended.
+    sv:
+      title: Kontroll av stödets slut för körmiljö och basavbild
+      description: Ett steg i pipelinen jämför versionerna i bygget med publicerade slutdatum för stöd.
+      preconditions: Pipelinen med ett steg som läser versionerna av körmiljö, ramverk och basavbild och en källa för slutdatum för stöd.
+      expected: Ingen komponent har passerat slutet på sitt stöd; en som har det underkänns.
+      steps:
+        - action: Kör steget på det aktuella bygget.
+          expected: Varje komponent listas med version och slutdatum för stöd, och alla ligger efter dagens datum.
+          data: "slutdatum från förvaltarnas releasesidor"
+        - action: Lås en version av körmiljön vars stöd har upphört och kör steget.
+          expected: Steget underkänns och anger komponenten och datumet då stödet upphörde.
+
+  - id: MNT-T15
+    priority: medium
+    execution: manual
+    tags: [onboarding, developer]
+    refs: ["ISO/IEC 25010:2023 analysability"]
+    en:
+      title: Fresh workstation set-up by a new developer
+      description: A developer who has not worked on the code sets up a new workstation from the documentation.
+      preconditions: A clean workstation with only the operating system, the developer documentation and repository access.
+      expected: The system builds, runs and passes its tests within 1 working day.
+      steps:
+        - action: Follow the documentation from the first step without outside help; note each problem.
+          expected: Each problem and its workaround are recorded.
+        - action: Build the system and run the test suite.
+          expected: The build succeeds and the suite passes.
+        - action: Start the system and open it in a browser.
+          expected: The start page loads and a test user can sign in; total time is within 1 working day.
+    sv:
+      title: Ny arbetsstation installerad av en ny utvecklare
+      description: En utvecklare som inte har arbetat med koden sätter upp en ny arbetsstation utifrån dokumentationen.
+      preconditions: En ren arbetsstation med bara operativsystemet, utvecklardokumentationen och åtkomst till kodförrådet.
+      expected: Systemet byggs, körs och klarar sina tester inom 1 arbetsdag.
+      steps:
+        - action: Följ dokumentationen från första steget utan hjälp utifrån; notera varje problem.
+          expected: Varje problem och hur det löstes noteras.
+        - action: Bygg systemet och kör testsviten.
+          expected: Bygget lyckas och testsviten går igenom.
+        - action: Starta systemet och öppna det i en webbläsare.
+          expected: Startsidan laddas och en testanvändare kan logga in; den totala tiden ligger inom 1 arbetsdag.
+
+  - id: MNT-T16
+    priority: low
+    execution: automated
+    tags: [mutation-testing, test-quality]
+    refs: ["ISO/IEC/IEEE 29119-4:2021 (test design techniques)"]
+    en:
+      title: Weekly mutation testing report
+      description: Runs the mutation testing tool on the core modules and checks the report.
+      preconditions: A mutation testing tool configured for the core modules in a scheduled job.
+      expected: The report shows the score per core module and its trend.
+      steps:
+        - action: Run the scheduled mutation testing job.
+          expected: The job completes and produces a report.
+          data: "core modules: requirements, tests, runs"
+        - action: Read the score per module and compare with the target.
+          expected: Each module has a score; modules below 60 % are listed with surviving mutants.
+    sv:
+      title: Veckorapport från mutationstestning
+      description: Kör verktyget för mutationstestning på kärnmodulerna och kontrollerar rapporten.
+      preconditions: Ett verktyg för mutationstestning inställt för kärnmodulerna i ett schemalagt jobb.
+      expected: Rapporten visar poängen per kärnmodul och utvecklingen.
+      steps:
+        - action: Kör det schemalagda jobbet för mutationstestning.
+          expected: Jobbet slutförs och ger en rapport.
+          data: "kärnmoduler: krav, testfall, körningar"
+        - action: Läs poängen per modul och jämför med målet.
+          expected: Varje modul har en poäng; moduler under 60 % listas med överlevande mutanter.

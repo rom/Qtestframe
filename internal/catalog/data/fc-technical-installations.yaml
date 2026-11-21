@@ -1,0 +1,590 @@
+area: fc-technical-installations
+prefix: FCTI
+group: operations
+catalogue: facilities
+name: {en: Technical building installations, sv: Tekniska installationer i byggnader}
+description:
+  en: Electrical installations (SS 436 40 00, the Electrical Safety Act and EN 50110-1), ventilation and indoor climate (EN 16798-1), hot and cold water with Legionella prevention and backflow protection, lifts and escalators, and charging points for electric vehicles in buildings and parking areas.
+  sv: Elinstallationer (SS 436 40 00, elsäkerhetslagen och EN 50110-1), ventilation och inomhusklimat (EN 16798-1), varmt och kallt vatten med skydd mot legionella och återströmning, hissar och rulltrappor samt laddpunkter för elfordon i byggnader och på parkeringar.
+
+requirements:
+  - id: FCTI-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [electrical, installation, verification]
+    refs: ["Elsäkerhetslag (2016:732) (elinstallationsföretag och egenkontrollprogram)", "SS 436 40 00 (initial verification)"]
+    tests: [FCTI-T01]
+    en:
+      title: Electrical installation work by a registered contractor with initial verification
+      description: The building owner MUST have electrical installation work done by a registered electrical installation contractor that hands over a signed record of its initial verification before the installation is energised for use.
+      rationale: Faulty installation work causes fires and electric shocks, and the verification record is the evidence that the installation was tested before use.
+      criteria:
+        - method: review
+          text: For each installation job of the last 12 months, the contractor is in the public register and a signed verification record is dated before the energising date.
+    sv:
+      title: Elinstallationsarbete av ett registrerat företag med verifiering före idrifttagning
+      description: Fastighetsägaren SKA låta ett registrerat elinstallationsföretag utföra elinstallationsarbetet och lämna över ett signerat protokoll från sin verifiering innan anläggningen spänningssätts för användning.
+      rationale: Felaktigt installationsarbete orsakar bränder och elolyckor, och protokollet är beviset för att anläggningen provades före användning.
+      criteria:
+        - method: review
+          text: För varje installationsarbete under de senaste 12 månaderna finns företaget i det offentliga registret, och ett signerat verifieringsprotokoll är daterat före datumet för spänningssättning.
+
+  - id: FCTI-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [electrical, operation, responsibility]
+    refs: ["EN 50110-1:2023", "Elsäkerhetslag (2016:732) (elinstallationsföretag och egenkontrollprogram)"]
+    tests: [FCTI-T01]
+    en:
+      title: Named person responsible for the operation of the electrical installation
+      description: The building owner MUST appoint in writing a person responsible for the operation of each electrical installation, who authorises each work on or near live parts before it starts.
+      rationale: A single named responsible person stops uncoordinated work on the installation and makes sure that isolation and earthing are done before work begins.
+      criteria:
+        - method: review
+          text: A signed appointment exists for each installation, and the work permits of the last 3 months each carry the responsible person's authorisation before the start time.
+    sv:
+      title: Namngiven elanläggningsansvarig för driften av elanläggningen
+      description: Fastighetsägaren SKA skriftligen utse en elanläggningsansvarig för varje elanläggning, som godkänner varje arbete på eller nära spänningsförande delar innan det börjar.
+      rationale: En enda namngiven ansvarig stoppar okoordinerat arbete i anläggningen och ser till att frånkoppling och jordning görs innan arbetet börjar.
+      criteria:
+        - method: review
+          text: Ett undertecknat förordnande finns för varje anläggning, och arbetstillstånden under de senaste 3 månaderna har vart och ett den ansvariges godkännande före starttiden.
+
+  - id: FCTI-03
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [electrical, periodic-inspection, thermography]
+    refs: ["SS 436 40 00 (periodic verification)", "IEC 60364-6:2016 (periodic verification)"]
+    tests: [FCTI-T02]
+    en:
+      title: Periodic verification of the electrical installation every 5 years
+      description: The building owner MUST have each electrical installation periodically verified at least every 5 years, with a thermographic scan of main and sub-distribution boards at least every 12 months.
+      rationale: Loose connections and ageing insulation develop over time and are found by inspection and thermography before they start a fire.
+      criteria:
+        - method: review
+          text: The latest periodic verification report is less than 5 years old, and the latest thermography report covers each distribution board and is less than 12 months old.
+          threshold: "verification ≤ 5 years; thermography ≤ 12 months"
+    sv:
+      title: Återkommande kontroll av elanläggningen vart 5:e år
+      description: Fastighetsägaren SKA låta göra en återkommande kontroll av varje elanläggning minst vart 5:e år och en termografering av huvud- och undercentraler minst var 12:e månad.
+      rationale: Glappkontakter och åldrad isolering utvecklas med tiden och hittas vid kontroll och termografering innan de orsakar en brand.
+      criteria:
+        - method: review
+          text: Den senaste kontrollrapporten är mindre än 5 år gammal, och den senaste termograferingsrapporten omfattar varje central och är mindre än 12 månader gammal.
+          threshold: "kontroll ≤ 5 år; termografering ≤ 12 månader"
+
+  - id: FCTI-04
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [electrical, documentation, distribution-board]
+    refs: ["SS 436 40 00 (documentation)", "IEC 61082-1:2014"]
+    tests: [FCTI-T02]
+    en:
+      title: Current single-line diagram and circuit schedule at each distribution board
+      description: Each distribution board MUST have a single-line diagram and a circuit schedule that match the installed circuits, updated within 10 working days of each change.
+      rationale: Wrong or missing circuit information leads to the wrong circuit being isolated, which puts the electrician at risk.
+      criteria:
+        - method: inspection
+          text: At 3 sampled boards, each circuit found on site appears in the schedule with the right protective device, and the schedule's revision date is after the latest change.
+          threshold: "≤ 10 working days after a change"
+    sv:
+      title: Aktuellt enlinjeschema och gruppförteckning vid varje elcentral
+      description: Varje elcentral SKA ha ett enlinjeschema och en gruppförteckning som stämmer med de installerade grupperna och uppdateras inom 10 arbetsdagar efter varje ändring.
+      rationale: Felaktig eller saknad information om grupperna gör att fel grupp kopplas från, vilket utsätter elektrikern för fara.
+      criteria:
+        - method: inspection
+          text: Vid 3 utvalda centraler finns varje grupp på plats i förteckningen med rätt skyddsanordning, och förteckningens revisionsdatum ligger efter den senaste ändringen.
+          threshold: "≤ 10 arbetsdagar efter en ändring"
+
+  - id: FCTI-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [electrical, rcd, shock-protection]
+    refs: ["IEC 60364-4-41:2005 §411.3.3 (additional protection by RCD)", "SS 436 40 00 (protection against electric shock)"]
+    tests: [FCTI-T03]
+    en:
+      title: Residual current devices of 30 mA on socket outlets up to 32 A
+      description: Each socket outlet circuit with a rated current up to 32 A MUST be protected by a residual current device with a rated residual operating current of at most 30 mA.
+      rationale: A 30 mA device disconnects before a fault current through the body becomes lethal.
+      criteria:
+        - method: test
+          text: An RCD tester at 3 sampled outlets on each board trips the device at or below 30 mA within 300 ms.
+          threshold: "IΔn ≤ 30 mA; trip ≤ 300 ms"
+    sv:
+      title: Jordfelsbrytare på 30 mA för uttag upp till 32 A
+      description: Varje grupp med uttag med en märkström upp till 32 A SKA skyddas av en jordfelsbrytare med en märkutlösningsström på högst 30 mA.
+      rationale: En jordfelsbrytare på 30 mA bryter innan en felström genom kroppen blir livsfarlig.
+      criteria:
+        - method: test
+          text: En jordfelsbrytarprovare vid 3 utvalda uttag per central löser ut brytaren vid högst 30 mA inom 300 ms.
+          threshold: "IΔn ≤ 30 mA; utlösning ≤ 300 ms"
+
+  - id: FCTI-06
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [ventilation, indoor-climate, air-flow]
+    refs: ["EN 16798-1:2019 (category II)", "Plan- och byggförordning (2011:338) 5 kap. 1–7 §§ (funktionskontroll av ventilationssystem)"]
+    tests: [FCTI-T04]
+    en:
+      title: Outdoor air flow of at least 7 l/s per person plus 0.35 l/s per m²
+      description: The ventilation system MUST supply each occupied room with an outdoor air flow of at least 7 l/s per person at design occupancy plus 0.35 l/s per m² of floor area.
+      rationale: Too little outdoor air raises contaminants and carbon dioxide, which causes headaches, tiredness and complaints.
+      criteria:
+        - method: test
+          text: Measured supply air flows in 5 sampled rooms meet the calculated minimum for the room's design occupancy and floor area.
+          threshold: "≥ 7 l/s per person + 0.35 l/s·m²"
+    sv:
+      title: Uteluftsflöde på minst 7 l/s per person plus 0,35 l/s per m²
+      description: Ventilationssystemet SKA tillföra varje vistelserum ett uteluftsflöde på minst 7 l/s per person vid dimensionerande personantal plus 0,35 l/s per m² golvyta.
+      rationale: För lite uteluft höjer halten av föroreningar och koldioxid, vilket ger huvudvärk, trötthet och klagomål.
+      criteria:
+        - method: test
+          text: Uppmätta tilluftsflöden i 5 utvalda rum uppfyller det beräknade minimiflödet för rummets dimensionerande personantal och golvyta.
+          threshold: "≥ 7 l/s per person + 0,35 l/s·m²"
+
+  - id: FCTI-07
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [indoor-climate, carbon-dioxide, monitoring]
+    refs: ["EN 16798-1:2019 (category II)"]
+    tests: [FCTI-T04]
+    en:
+      title: Carbon dioxide below 1 000 ppm in meeting rooms
+      description: The building automation SHOULD keep the carbon dioxide level in each meeting room below 1 000 ppm during occupancy by increasing the air flow on demand, and log the level every 10 minutes.
+      rationale: The carbon dioxide level is a practical indicator of whether the air flow matches the actual number of people in the room.
+      criteria:
+        - method: analysis
+          text: The logs of 3 meeting rooms for 4 working weeks show the level above 1 000 ppm in at most 5 % of occupied 10-minute intervals.
+          threshold: "< 1 000 ppm in ≥ 95 % of occupied intervals"
+    sv:
+      title: Koldioxidhalt under 1 000 ppm i mötesrum
+      description: Fastighetsautomationen BÖR hålla koldioxidhalten i varje mötesrum under 1 000 ppm när rummet används, genom att öka luftflödet efter behovet, och logga halten var 10:e minut.
+      rationale: Koldioxidhalten är en praktisk indikator på om luftflödet motsvarar det faktiska antalet personer i rummet.
+      criteria:
+        - method: analysis
+          text: Loggarna för 3 mötesrum under 4 arbetsveckor visar en halt över 1 000 ppm i högst 5 % av de 10-minutersintervall då rummet används.
+          threshold: "< 1 000 ppm i ≥ 95 % av intervallen med personer"
+
+  - id: FCTI-08
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [indoor-climate, temperature, comfort]
+    refs: ["EN 16798-1:2019 (category II)"]
+    tests: [FCTI-T05]
+    en:
+      title: Operative temperature of 20 to 24 °C in offices in the heating season
+      description: The heating and ventilation systems MUST keep the operative temperature in occupied office rooms between 20 and 24 °C during the heating season.
+      rationale: Temperatures outside this range give more complaints and lower work performance.
+      criteria:
+        - method: test
+          text: Measurements at 1.1 m height in 5 sampled rooms on 3 days in the heating season are each between 20 and 24 °C.
+          threshold: "20–24 °C"
+    sv:
+      title: Operativ temperatur på 20 till 24 °C i kontor under uppvärmningssäsongen
+      description: Värme- och ventilationssystemen SKA hålla den operativa temperaturen i kontorsrum som används mellan 20 och 24 °C under uppvärmningssäsongen.
+      rationale: Temperaturer utanför intervallet ger fler klagomål och sämre arbetsprestation.
+      criteria:
+        - method: test
+          text: Mätningar på 1,1 m höjd i 5 utvalda rum under 3 dagar i uppvärmningssäsongen ligger var och en mellan 20 och 24 °C.
+          threshold: "20–24 °C"
+
+  - id: FCTI-09
+    type: security
+    obligation: must
+    priority: critical
+    tags: [water, legionella, hot-water]
+    refs: ["CEN/TR 16355:2012 (prevention of Legionella growth)"]
+    tests: [FCTI-T06]
+    en:
+      title: Hot water at least 60 °C in storage and 50 °C in circulation
+      description: The hot water system MUST keep stored hot water at 60 °C or higher and the water in the circulation loop at 50 °C or higher at the return to the heater.
+      rationale: Legionella bacteria multiply in water between 25 and 45 °C and cause a severe pneumonia when inhaled with spray.
+      criteria:
+        - method: test
+          text: Readings at the storage outlet and at the circulation return, logged each hour for 7 days, never fall below 60 °C and 50 °C.
+          threshold: "storage ≥ 60 °C; circulation return ≥ 50 °C"
+    sv:
+      title: Varmvatten minst 60 °C i beredaren och 50 °C i cirkulationen
+      description: Varmvattensystemet SKA hålla lagrat varmvatten vid 60 °C eller mer och vattnet i varmvattencirkulationen vid 50 °C eller mer vid returen till beredaren.
+      rationale: Legionellabakterier förökar sig i vatten mellan 25 och 45 °C och orsakar en svår lunginflammation när de andas in med vattendimma.
+      criteria:
+        - method: test
+          text: Avläsningar vid beredarens utlopp och vid cirkulationsreturen, loggade varje timme under 7 dagar, understiger aldrig 60 °C respektive 50 °C.
+          threshold: "beredare ≥ 60 °C; cirkulationsretur ≥ 50 °C"
+
+  - id: FCTI-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [water, backflow, drinking-water]
+    refs: ["EN 1717:2000"]
+    tests: [FCTI-T06]
+    en:
+      title: Backflow preventers tested every 12 months
+      description: Each backflow prevention device that protects the drinking water supply from a connected process or fire water system MUST be tested at least every 12 months, with the result recorded per device.
+      rationale: A failed backflow preventer can let contaminated water into the drinking water of the whole building.
+      criteria:
+        - method: review
+          text: Each device in the register has a test record with a pass result less than 12 months old.
+          threshold: "≤ 12 months"
+    sv:
+      title: Återströmningsskydd provas var 12:e månad
+      description: Varje återströmningsskydd som skyddar dricksvattnet mot ett anslutet process- eller brandvattensystem SKA provas minst var 12:e månad och resultatet dokumenteras per skydd.
+      rationale: Ett återströmningsskydd som inte fungerar kan släppa in förorenat vatten i dricksvattnet i hela byggnaden.
+      criteria:
+        - method: review
+          text: Varje skydd i registret har ett provningsprotokoll med godkänt resultat som är mindre än 12 månader gammalt.
+          threshold: "≤ 12 månader"
+
+  - id: FCTI-11
+    type: security
+    obligation: must
+    priority: critical
+    tags: [lifts, emergency-alarm, two-way-communication]
+    refs: ["EN 81-28:2022 (remote alarm on passenger and goods passenger lifts)", "EN 81-20:2020"]
+    tests: [FCTI-T07]
+    en:
+      title: Lift alarm with two-way speech to a centre staffed around the clock
+      description: Each passenger lift MUST have an alarm device in the car that gives two-way speech with a centre staffed 24 hours a day, with an automatic test of the connection at least every 72 hours.
+      rationale: Trapped passengers need to reach someone who can send help at any hour, and a dead line is only found by regular automatic tests.
+      criteria:
+        - method: test
+          text: Pressing the alarm button in each car connects to the centre within 60 seconds with speech in both directions, and the centre's log shows automatic test calls at most 72 hours apart.
+          threshold: "test calls ≤ 72 h apart"
+    sv:
+      title: Hisslarm med tvåvägskommunikation till en central som är bemannad dygnet runt
+      description: Varje personhiss SKA ha en larmanordning i korgen med tvåvägstal till en central som är bemannad dygnet runt och vars förbindelse provas automatiskt minst var 72:a timme.
+      rationale: Instängda passagerare behöver nå någon som kan skicka hjälp när som helst, och en bruten förbindelse upptäcks bara genom regelbundna automatiska prov.
+      criteria:
+        - method: test
+          text: Ett tryck på larmknappen i varje korg ger kontakt med centralen inom 60 sekunder med tal i båda riktningarna, och centralens logg visar automatiska provsamtal med högst 72 timmars mellanrum.
+          threshold: "provsamtal ≤ 72 h mellanrum"
+
+  - id: FCTI-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [escalators, maintenance, safety-devices]
+    refs: ["EN 115-1:2017"]
+    tests: [FCTI-T07]
+    en:
+      title: Monthly check of escalator stop switches and safety devices
+      description: The maintenance contractor MUST check the emergency stop switches, the comb plate and skirt contacts and the handrail speed of each escalator and moving walk at least once a month and record the result.
+      rationale: Entrapment at the comb plate or the skirt is the most common serious escalator accident, and the safety contacts are what stops the drive in time.
+      criteria:
+        - method: review
+          text: The maintenance log for each unit has a monthly record of the 3 checks for the last 6 months.
+          threshold: "≤ 1 month between checks"
+    sv:
+      title: Månatlig kontroll av nödstopp och säkerhetsanordningar i rulltrappor
+      description: Underhållsentreprenören SKA kontrollera nödstoppen, kontakterna vid kamplåtar och sockelplåtar samt ledstångens hastighet i varje rulltrappa och rullramp minst en gång i månaden och dokumentera resultatet.
+      rationale: Klämning vid kamplåten eller sockelplåten är den vanligaste allvarliga olyckan i rulltrappor, och säkerhetskontakterna är det som stoppar drivningen i tid.
+      criteria:
+        - method: review
+          text: Underhållsloggen för varje enhet har en månatlig post om de 3 kontrollerna för de senaste 6 månaderna.
+          threshold: "≤ 1 månad mellan kontrollerna"
+
+  - id: FCTI-13
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [ev-charging, parking, epbd]
+    refs: ["Directive (EU) 2024/1275 Art. 14 (infrastructure for sustainable mobility)"]
+    tests: [FCTI-T08]
+    en:
+      title: At least 1 charging point for every 5 parking spaces at new non-residential buildings
+      description: A new non-residential building with more than 5 parking spaces MUST have at least 1 recharging point for electric vehicles for every 5 parking spaces.
+      rationale: Charging at the workplace is a precondition for the switch to electric vehicles, and installing it during construction costs far less than retrofitting.
+      criteria:
+        - method: inspection
+          text: The number of installed recharging points is at least the number of parking spaces divided by 5, rounded up.
+          threshold: "≥ 1 per 5 spaces"
+    sv:
+      title: Minst 1 laddpunkt per 5 parkeringsplatser vid nya lokalbyggnader
+      description: En ny byggnad som inte är bostadshus och har fler än 5 parkeringsplatser SKA ha minst 1 laddpunkt för elfordon per 5 parkeringsplatser.
+      rationale: Laddning på arbetsplatsen är en förutsättning för övergången till elfordon, och att installera den vid byggandet kostar mycket mindre än att komplettera i efterhand.
+      criteria:
+        - method: inspection
+          text: Antalet installerade laddpunkter är minst antalet parkeringsplatser delat med 5, avrundat uppåt.
+          threshold: "≥ 1 per 5 platser"
+
+  - id: FCTI-14
+    type: security
+    obligation: must
+    priority: high
+    tags: [ev-charging, rcd, dc-fault]
+    refs: ["IEC 60364-7-722:2018 §722.531.3 (residual current devices)"]
+    tests: [FCTI-T08]
+    en:
+      title: Protection against DC fault currents at each charging point
+      description: Each charging point for electric vehicles MUST be protected by a type B residual current device or by a type A device combined with a means that disconnects at a smooth DC fault current of 6 mA.
+      rationale: DC leakage from the vehicle can blind an ordinary type A device, which then fails to trip on a dangerous fault.
+      criteria:
+        - method: inspection
+          text: The circuit schedule and the devices on site show type B, or type A with 6 mA DC detection, for each charging point.
+    sv:
+      title: Skydd mot likströmsfelströmmar vid varje laddpunkt
+      description: Varje laddpunkt för elfordon SKA skyddas av en jordfelsbrytare av typ B eller av en brytare av typ A kombinerad med en anordning som bryter vid en jämn likströmsfelström på 6 mA.
+      rationale: Läckström av likström från fordonet kan blockera en vanlig brytare av typ A, som då inte löser ut vid ett farligt fel.
+      criteria:
+        - method: inspection
+          text: Gruppförteckningen och anordningarna på plats visar typ B, eller typ A med detektering av 6 mA likström, för varje laddpunkt.
+
+tests:
+  - id: FCTI-T01
+    priority: critical
+    execution: manual
+    tags: [electrical, verification, responsibility]
+    refs: ["Elsäkerhetslag (2016:732) (elinstallationsföretag och egenkontrollprogram)", "EN 50110-1:2023"]
+    en:
+      title: Installation contractors, verification records and work permits
+      description: Reviews the installation jobs, the responsible person's appointment and the work permits for electrical work.
+      preconditions: The list of electrical installation jobs of the last 12 months, the verification records, the appointment and the work permits of the last 3 months.
+      expected: Each job was done by a registered contractor and verified before energising, and each work permit was authorised in advance.
+      steps:
+        - action: Look up the contractor of each job in the public register of electrical installation contractors.
+          expected: Each contractor is registered.
+        - action: Compare the date of each verification record with the energising date.
+          expected: The record is signed and dated earlier.
+        - action: Read the appointment of the person responsible for operation.
+          expected: It is signed and names the installation.
+        - action: Compare the authorisation time on each work permit with the start time of the work.
+          expected: The authorisation is earlier.
+    sv:
+      title: Elinstallationsföretag, verifieringsprotokoll och arbetstillstånd
+      description: Granskar installationsarbetena, förordnandet av elanläggningsansvarig och arbetstillstånden för elarbete.
+      preconditions: Listan över elinstallationsarbeten under de senaste 12 månaderna, verifieringsprotokollen, förordnandet och arbetstillstånden för de senaste 3 månaderna.
+      expected: Varje arbete utfördes av ett registrerat företag och verifierades före spänningssättning, och varje arbetstillstånd godkändes i förväg.
+      steps:
+        - action: Slå upp företaget för varje arbete i det offentliga registret över elinstallationsföretag.
+          expected: Varje företag är registrerat.
+        - action: Jämför datumet på varje verifieringsprotokoll med datumet för spänningssättning.
+          expected: Protokollet är signerat och daterat tidigare.
+        - action: Läs förordnandet av elanläggningsansvarig.
+          expected: Det är undertecknat och anger anläggningen.
+        - action: Jämför tiden för godkännandet på varje arbetstillstånd med arbetets starttid.
+          expected: Godkännandet är tidigare.
+
+  - id: FCTI-T02
+    priority: high
+    execution: manual
+    tags: [electrical, periodic-inspection, documentation]
+    refs: ["SS 436 40 00 (periodic verification)", "SS 436 40 00 (documentation)"]
+    en:
+      title: Periodic verification, thermography and circuit schedules
+      description: Checks the inspection reports and compares the circuit schedules with the boards on site.
+      preconditions: The latest periodic verification report, the latest thermography report and access to 3 distribution boards with an authorised electrician.
+      expected: The reports are within their intervals, and the schedules match the boards.
+      steps:
+        - action: Read the date of the latest periodic verification report.
+          expected: It is less than 5 years old.
+        - action: Read the latest thermography report.
+          expected: It covers each distribution board and is less than 12 months old.
+        - action: With the electrician, compare each circuit of 3 boards with the circuit schedule.
+          expected: Each circuit and its protective device are in the schedule.
+        - action: Compare the schedule's revision date with the latest change in the work order system.
+          expected: The revision is later than the change.
+    sv:
+      title: Återkommande kontroll, termografering och gruppförteckningar
+      description: Kontrollerar kontrollrapporterna och jämför gruppförteckningarna med centralerna på plats.
+      preconditions: Den senaste rapporten från återkommande kontroll, den senaste termograferingsrapporten och tillgång till 3 elcentraler tillsammans med en behörig elektriker.
+      expected: Rapporterna ligger inom sina intervall, och förteckningarna stämmer med centralerna.
+      steps:
+        - action: Läs datumet för den senaste kontrollrapporten.
+          expected: Den är mindre än 5 år gammal.
+        - action: Läs den senaste termograferingsrapporten.
+          expected: Den omfattar varje central och är mindre än 12 månader gammal.
+        - action: Jämför tillsammans med elektrikern varje grupp i 3 centraler med gruppförteckningen.
+          expected: Varje grupp och dess skyddsanordning finns i förteckningen.
+        - action: Jämför förteckningens revisionsdatum med den senaste ändringen i arbetsordersystemet.
+          expected: Revisionen är senare än ändringen.
+
+  - id: FCTI-T03
+    priority: critical
+    execution: manual
+    tags: [electrical, rcd]
+    refs: ["IEC 60364-4-41:2005 §411.3.3 (additional protection by RCD)"]
+    en:
+      title: Trip test of residual current devices on socket outlets
+      description: An authorised electrician tests the residual current devices of socket outlet circuits with an RCD tester.
+      preconditions: An authorised electrician with a calibrated RCD tester, and the users of the circuits informed of a short interruption.
+      expected: Each tested device trips at 30 mA or less within 300 ms.
+      steps:
+        - action: Pick 3 socket outlets on each distribution board and identify their circuits in the schedule.
+          expected: Each circuit is up to 32 A and shows an RCD.
+        - action: Run a ramp test at each outlet.
+          expected: The device trips at or below 30 mA.
+          data: "Ramp test from 0 to 30 mA"
+        - action: Run a trip time test at the rated residual current.
+          expected: The device trips within 300 ms.
+    sv:
+      title: Utlösningsprov av jordfelsbrytare för uttag
+      description: En behörig elektriker provar jordfelsbrytarna för uttagsgrupper med en jordfelsbrytarprovare.
+      preconditions: En behörig elektriker med en kalibrerad jordfelsbrytarprovare, och användarna av grupperna informerade om ett kort avbrott.
+      expected: Varje provad brytare löser ut vid 30 mA eller mindre inom 300 ms.
+      steps:
+        - action: Välj 3 uttag per elcentral och identifiera deras grupper i förteckningen.
+          expected: Varje grupp är på högst 32 A och visar en jordfelsbrytare.
+        - action: Gör ett rampprov vid varje uttag.
+          expected: Brytaren löser ut vid högst 30 mA.
+          data: "Rampprov från 0 till 30 mA"
+        - action: Gör ett prov av utlösningstiden vid märkutlösningsströmmen.
+          expected: Brytaren löser ut inom 300 ms.
+
+  - id: FCTI-T04
+    priority: high
+    execution: manual
+    tags: [ventilation, carbon-dioxide]
+    refs: ["EN 16798-1:2019 (category II)"]
+    en:
+      title: Air flow measurement and carbon dioxide logs
+      description: Measures supply air flows in sampled rooms and analyses the carbon dioxide logs of meeting rooms.
+      preconditions: A calibrated air flow meter, the design occupancy and floor area per room, and 4 weeks of logs from 3 meeting rooms.
+      expected: The air flows meet the minimum, and the carbon dioxide level is below 1 000 ppm in at least 95 % of occupied intervals.
+      steps:
+        - action: Calculate the minimum outdoor air flow of 5 sampled rooms from design occupancy and floor area.
+          expected: A minimum value per room.
+          data: "8 persons and 25 m²: 8 × 7 + 25 × 0.35 = 64.75 l/s"
+        - action: Measure the supply air flow at each terminal of the 5 rooms.
+          expected: The total per room is at least the minimum.
+        - action: Count the occupied 10-minute intervals above 1 000 ppm in the logs.
+          expected: At most 5 % of the occupied intervals are above 1 000 ppm.
+    sv:
+      title: Mätning av luftflöden och loggar för koldioxid
+      description: Mäter tilluftsflöden i utvalda rum och analyserar koldioxidloggarna för mötesrum.
+      preconditions: En kalibrerad flödesmätare, dimensionerande personantal och golvyta per rum, och 4 veckors loggar från 3 mötesrum.
+      expected: Luftflödena uppfyller minimivärdet, och koldioxidhalten är under 1 000 ppm i minst 95 % av intervallen med personer.
+      steps:
+        - action: Beräkna minsta uteluftsflöde för 5 utvalda rum utifrån dimensionerande personantal och golvyta.
+          expected: Ett minimivärde per rum.
+          data: "8 personer och 25 m²: 8 × 7 + 25 × 0,35 = 64,75 l/s"
+        - action: Mät tilluftsflödet vid varje don i de 5 rummen.
+          expected: Summan per rum är minst minimivärdet.
+        - action: Räkna de 10-minutersintervall med personer som ligger över 1 000 ppm i loggarna.
+          expected: Högst 5 % av intervallen med personer ligger över 1 000 ppm.
+
+  - id: FCTI-T05
+    priority: medium
+    execution: manual
+    tags: [indoor-climate, temperature]
+    refs: ["EN 16798-1:2019 (category II)"]
+    en:
+      title: Operative temperature in office rooms in the heating season
+      description: Measures the operative temperature in sampled office rooms on 3 days of the heating season.
+      preconditions: A calibrated globe thermometer and 5 occupied office rooms chosen on different facades.
+      expected: Each reading is between 20 and 24 °C.
+      steps:
+        - action: Place the globe thermometer at 1.1 m height in the middle of each room and let it settle for 20 minutes.
+          expected: A stable reading.
+        - action: Record the reading in each room at 10.00 and 15.00 on 3 days.
+          expected: Each reading is between 20 and 24 °C.
+    sv:
+      title: Operativ temperatur i kontorsrum under uppvärmningssäsongen
+      description: Mäter den operativa temperaturen i utvalda kontorsrum under 3 dagar i uppvärmningssäsongen.
+      preconditions: En kalibrerad globtermometer och 5 kontorsrum som används, valda mot olika fasader.
+      expected: Varje avläsning ligger mellan 20 och 24 °C.
+      steps:
+        - action: Placera globtermometern på 1,1 m höjd mitt i varje rum och låt den stabilisera sig i 20 minuter.
+          expected: En stabil avläsning.
+        - action: Notera avläsningen i varje rum klockan 10.00 och 15.00 under 3 dagar.
+          expected: Varje avläsning ligger mellan 20 och 24 °C.
+
+  - id: FCTI-T06
+    priority: critical
+    execution: manual
+    tags: [water, legionella, backflow]
+    refs: ["CEN/TR 16355:2012 (prevention of Legionella growth)", "EN 1717:2000"]
+    en:
+      title: Hot water temperatures and backflow preventer tests
+      description: Analyses the logged hot water temperatures and checks the test records of the backflow preventers.
+      preconditions: 7 days of hourly temperature logs from the storage outlet and the circulation return, and the register of backflow preventers with test records.
+      expected: Temperatures never fall below the limits, and each preventer has a recent pass result.
+      steps:
+        - action: Find the lowest logged value at the storage outlet.
+          expected: It is at least 60 °C.
+        - action: Find the lowest logged value at the circulation return.
+          expected: It is at least 50 °C.
+        - action: Read the latest test record of each backflow preventer in the register.
+          expected: Each has a pass result less than 12 months old.
+    sv:
+      title: Varmvattentemperaturer och prov av återströmningsskydd
+      description: Analyserar de loggade varmvattentemperaturerna och kontrollerar provningsprotokollen för återströmningsskydden.
+      preconditions: Timloggar för 7 dagar från beredarens utlopp och cirkulationsreturen, och registret över återströmningsskydd med provningsprotokoll.
+      expected: Temperaturerna understiger aldrig gränserna, och varje skydd har ett aktuellt godkänt resultat.
+      steps:
+        - action: Hitta det lägsta loggade värdet vid beredarens utlopp.
+          expected: Det är minst 60 °C.
+        - action: Hitta det lägsta loggade värdet vid cirkulationsreturen.
+          expected: Det är minst 50 °C.
+        - action: Läs det senaste provningsprotokollet för varje återströmningsskydd i registret.
+          expected: Varje skydd har ett godkänt resultat som är mindre än 12 månader gammalt.
+
+  - id: FCTI-T07
+    priority: critical
+    execution: manual
+    tags: [lifts, escalators]
+    refs: ["EN 81-28:2022 (remote alarm on passenger and goods passenger lifts)", "EN 115-1:2017"]
+    en:
+      title: Lift alarm call and escalator maintenance records
+      description: Tests the alarm in each lift car and reviews the monthly checks of escalators and moving walks.
+      preconditions: The alarm centre informed of the test, the centre's call log, and the maintenance logs of the escalators.
+      expected: Each lift alarm reaches the centre with two-way speech within 60 seconds, test calls are at most 72 hours apart and escalator checks are monthly.
+      steps:
+        - action: In each lift car, press and hold the alarm button.
+          expected: The centre answers within 60 seconds and the operator and tester hear each other.
+        - action: Read the automatic test calls of each lift in the centre's log for the last 2 weeks.
+          expected: The gaps between test calls are at most 72 hours.
+        - action: Read the maintenance log of each escalator for the last 6 months.
+          expected: Each month has a record of the stop switches, the comb plate and skirt contacts and the handrail speed.
+    sv:
+      title: Larmsamtal från hissar och underhållsloggar för rulltrappor
+      description: Provar larmet i varje hisskorg och granskar de månatliga kontrollerna av rulltrappor och rullramper.
+      preconditions: Larmcentralen informerad om provet, centralens samtalslogg och underhållsloggarna för rulltrapporna.
+      expected: Varje hisslarm når centralen med tvåvägstal inom 60 sekunder, provsamtalen har högst 72 timmars mellanrum och rulltrapporna kontrolleras varje månad.
+      steps:
+        - action: Tryck på och håll inne larmknappen i varje hisskorg.
+          expected: Centralen svarar inom 60 sekunder och operatören och provaren hör varandra.
+        - action: Läs de automatiska provsamtalen för varje hiss i centralens logg för de senaste 2 veckorna.
+          expected: Mellanrummen mellan provsamtalen är högst 72 timmar.
+        - action: Läs underhållsloggen för varje rulltrappa för de senaste 6 månaderna.
+          expected: Varje månad har en post om nödstopp, kontakter vid kam- och sockelplåtar och ledstångens hastighet.
+
+  - id: FCTI-T08
+    priority: high
+    execution: manual
+    tags: [ev-charging]
+    refs: ["Directive (EU) 2024/1275 Art. 14 (infrastructure for sustainable mobility)", "IEC 60364-7-722:2018 §722.531.3 (residual current devices)"]
+    en:
+      title: Number of charging points and their fault protection
+      description: Counts the charging points and parking spaces and inspects the protective devices of the charging circuits.
+      preconditions: The site plan with parking spaces, access to the charging points and the circuit schedules of their boards.
+      expected: There is at least 1 charging point per 5 spaces, each protected against DC fault currents.
+      steps:
+        - action: Count the parking spaces and the installed charging points.
+          expected: The charging points are at least the spaces divided by 5, rounded up.
+          data: "42 spaces: at least 9 charging points"
+        - action: Look up the protective device of each charging point in the circuit schedule.
+          expected: Each is type B, or type A with 6 mA DC detection.
+        - action: Compare the schedule with the devices installed in the board.
+          expected: The installed devices match the schedule.
+    sv:
+      title: Antal laddpunkter och deras felskydd
+      description: Räknar laddpunkter och parkeringsplatser och inspekterar skyddsanordningarna för laddgrupperna.
+      preconditions: Situationsplanen med parkeringsplatser, tillgång till laddpunkterna och gruppförteckningarna för deras centraler.
+      expected: Det finns minst 1 laddpunkt per 5 platser, och var och en är skyddad mot likströmsfelströmmar.
+      steps:
+        - action: Räkna parkeringsplatserna och de installerade laddpunkterna.
+          expected: Laddpunkterna är minst antalet platser delat med 5, avrundat uppåt.
+          data: "42 platser: minst 9 laddpunkter"
+        - action: Slå upp skyddsanordningen för varje laddpunkt i gruppförteckningen.
+          expected: Varje anordning är av typ B, eller typ A med detektering av 6 mA likström.
+        - action: Jämför förteckningen med de anordningar som är installerade i centralen.
+          expected: De installerade anordningarna stämmer med förteckningen.

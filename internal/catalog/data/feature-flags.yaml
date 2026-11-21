@@ -263,6 +263,102 @@ requirements:
         - method: test
           text: Med flaggan avslagen för en användare ger ett direkt API-anrop till den dolda funktionen 403 eller 404 och ändrar ingenting.
 
+  - id: FLAG-12
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [inventory, owner, metadata]
+    refs: ["Martin Fowler: Feature Toggles (managing toggles)", "OpenFeature specification"]
+    tests: [FLAG-T09]
+    en:
+      title: Owner, purpose and removal date per flag
+      description: Each feature flag MUST have a named owner, a stated purpose and a planned removal date recorded where the flag is defined.
+      rationale: Flags without an owner are never cleaned up, and their accumulated combinations become untested paths.
+      criteria:
+        - method: inspection
+          text: A listing of every defined flag shows owner, purpose and removal date for each, with none empty.
+          threshold: "100 % of flags with owner and date"
+    sv:
+      title: Ägare, syfte och borttagningsdatum per flagga
+      description: Varje funktionsflagga SKA ha en namngiven ägare, ett angivet syfte och ett planerat borttagningsdatum där flaggan definieras.
+      rationale: Flaggor utan ägare städas aldrig bort, och deras samlade kombinationer blir otestade vägar.
+      criteria:
+        - method: inspection
+          text: En listning av varje definierad flagga visar ägare, syfte och borttagningsdatum för var och en, utan tomma fält.
+          threshold: "100 % av flaggorna med ägare och datum"
+
+  - id: FLAG-13
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [rollout, bucketing, consistency]
+    refs: ["OpenFeature specification §3 (evaluation context)", "Martin Fowler: Feature Toggles (release toggles)"]
+    tests: [FLAG-T10]
+    en:
+      title: Same variant for a user across requests and devices
+      description: During a percentage rollout the system MUST give a user the same flag variant on every request and every device while the rollout percentage is unchanged.
+      rationale: A feature that appears and disappears between page loads confuses users and makes faults impossible to reproduce.
+      criteria:
+        - method: test
+          text: 100 evaluations of the same flag for the same user from two devices return the same variant.
+          threshold: "100 % identical variants"
+    sv:
+      title: Samma variant för en användare mellan anrop och enheter
+      description: Under en procentuell utrullning SKA systemet ge en användare samma flaggvariant vid varje anrop och på varje enhet så länge procentsatsen är oförändrad.
+      rationale: En funktion som dyker upp och försvinner mellan sidladdningar förvirrar användarna och gör fel omöjliga att återskapa.
+      criteria:
+        - method: test
+          text: 100 utvärderingar av samma flagga för samma användare från två enheter ger samma variant.
+          threshold: "100 % identiska varianter"
+
+  - id: FLAG-14
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [evaluation, latency, cache]
+    refs: ["OpenFeature specification §1.4 (evaluation details and defaults)", "ISO/IEC 25010:2023 time behaviour"]
+    tests: [FLAG-T11]
+    en:
+      title: Flag evaluation time
+      description: A flag evaluation in the application MUST complete within 1 millisecond at the 99th percentile without a network call per evaluation.
+      rationale: Flags are checked many times per request, and a remote lookup each time adds latency and makes every request depend on the flag service.
+      criteria:
+        - method: test
+          text: A benchmark of 100 000 evaluations shows a 99th percentile of at most 1 ms and no network traffic during the run.
+          threshold: "p99 ≤ 1 ms"
+    sv:
+      title: Tid för utvärdering av flaggor
+      description: En flaggutvärdering i applikationen SKA slutföras inom 1 millisekund vid 99:e percentilen utan ett nätverksanrop per utvärdering.
+      rationale: Flaggor kontrolleras många gånger per anrop, och en fjärrslagning varje gång lägger till svarstid och gör varje anrop beroende av flaggtjänsten.
+      criteria:
+        - method: test
+          text: Ett prestandatest med 100 000 utvärderingar visar en 99:e percentil på högst 1 ms och ingen nätverkstrafik under körningen.
+          threshold: "p99 ≤ 1 ms"
+
+  - id: FLAG-15
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [testing, combinations, pipeline]
+    refs: ["Martin Fowler: Feature Toggles (testing toggled features)", "ISO/IEC 25010:2023 testability"]
+    tests: [FLAG-T12]
+    en:
+      title: Tests run with flags on and off
+      description: The automated test suite MUST run with each active release flag both on and off before a change is merged.
+      rationale: Code behind a flag reaches production in both states, and a path that only one state exercises will break when the flag is flipped.
+      criteria:
+        - method: inspection
+          text: The pipeline configuration runs the suite once per state of each active release flag, and the latest run shows both passed.
+          threshold: "2 states per active release flag"
+    sv:
+      title: Tester körs med flaggor på och av
+      description: Den automatiska testsviten SKA köras med varje aktiv releaseflagga både på och av innan en ändring slås ihop.
+      rationale: Kod bakom en flagga når produktion i båda lägena, och en väg som bara det ena läget prövar går sönder när flaggan slås om.
+      criteria:
+        - method: inspection
+          text: Pipelinens konfiguration kör sviten en gång per läge för varje aktiv releaseflagga, och senaste körningen visar att båda gick igenom.
+          threshold: "2 lägen per aktiv releaseflagga"
+
 tests:
   - id: FLAG-T01
     priority: high
@@ -525,3 +621,119 @@ tests:
           expected: Båda inställningarna visar masken och sin källa, inte värdet.
         - action: Sök i startloggen och i svaret från konfigurationsändpunkten efter testvärdena.
           expected: Inget av värdena hittas.
+
+  - id: FLAG-T09
+    priority: medium
+    execution: automated
+    tags: [inventory, owner]
+    refs: ["Martin Fowler: Feature Toggles (managing toggles)"]
+    en:
+      title: Flag metadata check
+      description: A pipeline check lists every flag definition and fails on missing metadata.
+      preconditions: The flag definitions in the repository and the metadata check in the pipeline.
+      expected: Every flag has owner, purpose and removal date; a flag without them fails the check.
+      steps:
+        - action: Run the check on the current definitions.
+          expected: The check passes and lists each flag with owner, purpose and removal date.
+        - action: Add a flag without an owner and run the check again.
+          expected: The check fails and names the flag and the missing field.
+          data: "flag \"new-editor\" without owner"
+    sv:
+      title: Kontroll av flaggornas metadata
+      description: En kontroll i pipelinen listar varje flaggdefinition och underkänner saknad metadata.
+      preconditions: Flaggdefinitionerna i kodförrådet och metadatakontrollen i pipelinen.
+      expected: Varje flagga har ägare, syfte och borttagningsdatum; en flagga utan dem underkänns.
+      steps:
+        - action: Kör kontrollen på de aktuella definitionerna.
+          expected: Kontrollen godkänns och listar varje flagga med ägare, syfte och borttagningsdatum.
+        - action: Lägg till en flagga utan ägare och kör kontrollen igen.
+          expected: Kontrollen underkänns och anger flaggan och det saknade fältet.
+          data: "flaggan \"new-editor\" utan ägare"
+
+  - id: FLAG-T10
+    priority: medium
+    execution: automated
+    tags: [rollout, bucketing]
+    refs: ["OpenFeature specification §3 (evaluation context)"]
+    en:
+      title: Stable variant during a percentage rollout
+      description: Evaluates a flag at 50 % rollout repeatedly for the same users from two clients.
+      preconditions: A flag set to a 50 % rollout and a script that evaluates it as a given user from two client sessions.
+      expected: Each user gets the same variant every time from both sessions.
+      steps:
+        - action: Evaluate the flag 100 times for user A from session 1 and 100 times from session 2.
+          expected: All 200 results are the same variant.
+          data: "user A, rollout 50 %"
+        - action: Repeat for 100 different users once each.
+          expected: Between 40 and 60 users get the new variant, showing that the split follows the percentage.
+    sv:
+      title: Stabil variant under en procentuell utrullning
+      description: Utvärderar en flagga med 50 % utrullning upprepade gånger för samma användare från två klienter.
+      preconditions: En flagga inställd på 50 % utrullning och ett skript som utvärderar den som en viss användare från två klientsessioner.
+      expected: Varje användare får samma variant varje gång från båda sessionerna.
+      steps:
+        - action: Utvärdera flaggan 100 gånger för användare A från session 1 och 100 gånger från session 2.
+          expected: Alla 200 resultat är samma variant.
+          data: "användare A, utrullning 50 %"
+        - action: Upprepa för 100 olika användare en gång var.
+          expected: Mellan 40 och 60 användare får den nya varianten, vilket visar att fördelningen följer procentsatsen.
+
+  - id: FLAG-T11
+    priority: medium
+    execution: automated
+    tags: [evaluation, latency]
+    refs: ["OpenFeature specification §1.4 (evaluation details and defaults)"]
+    en:
+      title: Benchmark of flag evaluation
+      description: Measures the time of local flag evaluations and checks for network calls.
+      preconditions: The application's flag client with a loaded configuration and network monitoring on the test host.
+      expected: The 99th percentile is at most 1 ms and no request goes to the flag service during evaluations.
+      steps:
+        - action: Run 100 000 evaluations of a flag with a targeting rule.
+          expected: The benchmark records the time of each evaluation.
+          data: "rule: organisation in a list of 50"
+        - action: Compute the 99th percentile and read the network log.
+          expected: The 99th percentile is at most 1 ms and the log shows no calls to the flag service during the run.
+    sv:
+      title: Prestandatest av flaggutvärdering
+      description: Mäter tiden för lokala flaggutvärderingar och kontrollerar nätverksanrop.
+      preconditions: Applikationens flaggklient med en laddad konfiguration och nätverksövervakning på testvärden.
+      expected: 99:e percentilen är högst 1 ms och inget anrop går till flaggtjänsten under utvärderingarna.
+      steps:
+        - action: Kör 100 000 utvärderingar av en flagga med en målgruppsregel.
+          expected: Prestandatestet noterar tiden för varje utvärdering.
+          data: "regel: organisation i en lista med 50"
+        - action: Beräkna 99:e percentilen och läs nätverksloggen.
+          expected: 99:e percentilen är högst 1 ms och loggen visar inga anrop till flaggtjänsten under körningen.
+
+  - id: FLAG-T12
+    priority: medium
+    execution: manual
+    tags: [testing, combinations]
+    refs: ["ISO/IEC 25010:2023 testability"]
+    en:
+      title: Pipeline runs both flag states
+      description: Inspects the pipeline definition and a recent run for each active release flag.
+      preconditions: The list of active release flags and access to the pipeline configuration and history.
+      expected: Each active release flag is tested in both states on the latest merged change.
+      steps:
+        - action: List the active release flags.
+          expected: The list is produced from the flag definitions.
+          data: "4 active release flags"
+        - action: Read the pipeline configuration for the test matrix.
+          expected: The matrix has an on and an off job for each listed flag.
+        - action: Open the run of the latest merged change.
+          expected: Both jobs passed for each flag.
+    sv:
+      title: Pipelinen kör båda flagglägena
+      description: Granskar pipelinens definition och en färsk körning för varje aktiv releaseflagga.
+      preconditions: Listan över aktiva releaseflaggor och åtkomst till pipelinens konfiguration och historik.
+      expected: Varje aktiv releaseflagga testas i båda lägena för den senast sammanslagna ändringen.
+      steps:
+        - action: Lista de aktiva releaseflaggorna.
+          expected: Listan tas fram ur flaggdefinitionerna.
+          data: "4 aktiva releaseflaggor"
+        - action: Läs pipelinens konfiguration för testmatrisen.
+          expected: Matrisen har ett jobb för på och ett för av för varje listad flagga.
+        - action: Öppna körningen för den senast sammanslagna ändringen.
+          expected: Båda jobben gick igenom för varje flagga.

@@ -12,6 +12,7 @@ Reading requirements needs the role **Viewer**; creating and changing them needs
 - **Filter bar**: a [query](search-and-filters.md) field plus quick filters for **Status**, **Obligation**, **Priority**, **Coverage** and **Category**. The quick filters are combined into a query that is shown under the bar (`q = …`). **Clear** resets all filters.
 - **Columns**: choose which columns the table shows: obligation, status, priority, type, coverage, linked tests, categories, folder, owner, source, tags, **relations**, relation count, criteria, version, comments, created by, created and updated date. The **Relations** column lists the related items grouped by relation, in both directions, for example *depends on SHOP-REQ-2*, *provided by SHOP-REQ-3* and *verified by SHOP-TC-1*; select a key to open the item. Move columns by dragging their header, or with the arrow buttons in **Columns**; **Reset** restores the default columns. Your choice is remembered in this browser, also for the run, executions and document tables.
 - **Table**: sort by clicking a column header; select a row (or its title) to open the editor. The ID (for example `SHOP-REQ-12`) is assigned automatically.
+- **List** / **Spreadsheet**: switch between the table and the [spreadsheet view](#spreadsheet-view), where you edit many requirements in place like in Excel.
 
 The current folder, filter and open requirement are part of the page address, so you can bookmark or share a filtered view.
 
@@ -34,6 +35,24 @@ When you create a requirement with **Obligation** set to **Auto-detect from text
 Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`. Requirements written in Swedish use the Swedish keywords described under [The language analysis](#the-language-analysis). The [References](references.md) page lists these and other standards for requirements and testing.
 
 While you write, **Help: obligation levels** below the description (open for new requirements) shows the keywords of each level in the language of the interface, what they mean and an example, with tips on writing them. [Analytics](traceability-and-coverage.md#requirement-analytics) shows how the levels and keywords are spread over the project.
+
+### Highlighted obligation keywords
+
+Wherever a requirement's description is shown read-only, its obligation keywords are highlighted: in the requirement editor when you may only read the requirement, in the [catalogue](catalogue.md) preview and in the preview of [Import requirements](#import-requirements). Each level has its own style, and the levels differ not only in colour but also in weight and underline, so they are clear in every theme, high contrast included:
+
+| Level | Keywords | Underline |
+|---|---|---|
+| Must | MUST, SHALL, REQUIRED, SKA, SKALL, MÅSTE | solid, extra bold |
+| Must not | MUST NOT, SHALL NOT, SKA INTE, FÅR INTE | double, extra bold |
+| Should | SHOULD, RECOMMENDED, BÖR | dashed, bold |
+| Should not | SHOULD NOT, NOT RECOMMENDED, BÖR INTE | double, bold |
+| May | MAY, OPTIONAL, FÅR, VALFRI | dotted |
+
+Negations such as `MUST NOT` and `SKA INTE` are one keyword. Only keywords written in capitals are highlighted, only whole words (`MAYBE` is not `MAY`), and never inside links or code between backticks (`` `MUST` ``). Point at a keyword to see its meaning; screen readers read the level after the keyword, for example "MUST NOT (obligation: Must not)". The keywords are the same ones the [language analysis](#the-language-analysis) knows.
+
+While you edit the description, the line **Obligation keyword** under it shows the keywords found as you type, with their level. It tells you when the keyword does not match the **Obligation** field (with a button to set the field to the detected level), when the text has more than one keyword and when a keyword is written in lower case. **What do the keywords mean?** opens **Help: obligation levels**.
+
+To turn the highlighting and the line off, clear **Highlight obligation keywords** in your [preferences](getting-started.md#preferences).
 
 ## The language analysis
 
@@ -202,6 +221,26 @@ Tick the checkboxes of several requirements (or the header checkbox for the whol
 
 Every bulk change is recorded in each requirement's history.
 
+## Spreadsheet view
+
+Choose **Spreadsheet** next to the refresh button to see the requirements as a spreadsheet: one row per requirement and one column per field (**Key**, **Title**, **Description**, **Type**, **Priority**, **Status**, **Obligation**, **Categories**, **Tags**, **Owner**, **Source**, **Folder**, and the read-only **Coverage**, **Tests** and **Version**). The choice is remembered in this browser and is part of the page address (`?view=sheet`), so a shared link opens the spreadsheet. The folder tree, the filters and the bulk toolbar work as in the list.
+
+- **Columns**: show, hide and order the columns with **Columns**; drag the edge of a column header to make it wider or narrower (or press **Alt+Shift+←/→**). Widths and columns are remembered in this browser. The key column and the header row stay in place while you scroll.
+- **Sort**: click a column header, or choose the column under **Sort** and the direction next to it.
+- **Move around**: arrow keys, **Tab** and **Shift+Tab**, **Home** and **End** (first and last column), **Ctrl+Home** and **Ctrl+End** (first and last cell), **Page Up** and **Page Down**. The active cell has an outline.
+- **Select**: **Shift** with the arrows or a click selects a range, **Ctrl+A** (**Cmd+A** on a Mac) selects every cell. **Space** ticks the row of the active cell and **Shift+Space** the rows of the range; ticked rows use the bulk toolbar above the sheet.
+- **Edit**: press **F2** or **Enter**, or just start typing, to edit the active cell. **Enter** saves and moves down, **Tab** saves and moves right, **Escape** cancels. Lists such as **Status** and **Priority** open a list of their values; **Tags** and **Categories** take several values separated by commas (categories as *Dimension/Name*); multi-line fields such as **Description** take a line break with **Alt+Enter** or **Shift+Enter**. Grey cells with a lock in the header (key, computed values) cannot be edited, and neither can cells you lack the permission for: without write permission only a reviewer's status decisions can be made.
+- **Copy and paste**: **Ctrl+C** copies the selected cells as tab-separated text that pastes into Excel or LibreOffice; tick **Copy with header row** to include the column names. **Ctrl+V** pastes a block copied from a spreadsheet at the active cell (a single value fills the whole selection; a first row that repeats the column names is left out). Every pasted value is checked first: when one is not valid, for example a priority that does not exist, nothing is saved and a message names the cell and the allowed values. **Ctrl+X** cuts.
+- **Fill down and clear**: **Ctrl+D** copies the top value of the selection to the cells below it; **Delete** or **Backspace** empties the selected cells that can be empty.
+- **New requirements**: type a title into the last row (**Type a title to add a requirement**) and press **Enter**; the requirement is created in the selected folder and the next empty row is ready for the next one. Values you type into the other cells of that row first are used too.
+- **Open a requirement**: double-click its key or press **Ctrl+Enter** to open it in the editor.
+
+Each change is saved at once, all cells of a paste or fill-down in one step: a cell shows a spinner while it is saved, a check mark when it is saved and a red frame with the reason when it was not. If someone else changed a requirement since you loaded the sheet, nothing is saved, the row is marked, and **Reload the row** shows their version so you can enter your change again. One edit, paste, fill-down or clear is one step for **Undo** (**Ctrl+Z**). Screen readers announce saved changes and errors.
+
+**Export view** saves exactly what the sheet shows, with its columns in their order, sorted and filtered, as **Excel (XLSX)**, **CSV** or **Markdown** (needs the export permission).
+
+On a phone the sheet scrolls sideways inside its frame; the list is easier to read there.
+
 ## Move requirements and folders
 
 - **Within the project:** drag rows by their handle (☰) onto a folder in the tree, or select them and use **Move**. Keys, links, categories and history stay as they are.
@@ -246,6 +285,36 @@ Select requirements or tests in their list, or runs on the **Operations** page, 
 The dialog says how many links will be added or removed before you confirm; items you may not change are skipped and counted in the message. On an item's **Links** tab, tick several links (or **Select all**) and choose **Remove** to remove them together. Both can be undone.
 
 **Keys and addresses in texts.** In comments, an item key such as `SHOP-REQ-12` or `SHOP-TC-3` becomes a link to that item, and a web address becomes a link that opens in a new tab. The address `/go/SHOP-TC-3` in the tool always opens that item, which is handy in e-mails and chats.
+
+## Issues in GitLab, GitHub or Jira
+
+When the project is connected to an issue tracker (see [Connect Jira, GitHub or GitLab](defects.md#connect-jira-github-or-gitlab)), a requirement can be handed to the developers as an issue. The **Links** tab of the requirement then starts with **Issue in GitLab** (or GitHub, Jira):
+
+- **Create GitLab issue** shows a preview of the issue and creates it. The issue gets:
+  - the title `[SHOP-REQ-12] <title>`;
+  - a description with the requirement text, the rationale, the acceptance criteria, the type, priority, obligation, status, owner, source, tags and version, the linked tests with their latest results, and links back to the requirement and its tests in Qtestframe (when the server's address, `server.base_url`, is set);
+  - labels: the tracker's default labels plus labels mapped from the requirement (see below);
+  - the milestone and assignee of the tracker settings, if set.
+
+  The issue is added to the requirement's links as a web link, with its key and its state (**Open** or **Closed**).
+- A requirement has at most one issue in the tracker. If it already has one, Qtestframe offers **Open issue** and **Update issue** instead of creating another one.
+- **Update issue** puts the current title and text of the requirement into the issue, for example after the requirement was changed or its tests were run. In GitLab and GitHub only the part written by Qtestframe is replaced (it is marked with hidden comments); notes the developers added below or above it are kept. In Jira the whole description is replaced.
+- **Refresh state** reads the issue's state back. The state is not refreshed automatically: refresh it here or with **Issues** in the list.
+
+With **Comment on the issue when all linked tests passed** in the tracker settings, refreshing the state of an open issue whose linked tests all passed adds one comment saying so, with a link to the requirement. If the tests stop passing and pass again later, the next refresh comments again.
+
+**Labels from requirement fields** in the tracker settings maps fields to labels: templates separated by commas, where `{type}`, `{priority}`, `{obligation}`, `{status}` and `{tags}` (one label per tag) are replaced by the requirement's values. The default is `requirement, type::{type}, priority::{priority}, {tags}`, which gives for example `requirement`, `type::functional`, `priority::high` and `login`; GitLab shows `type::functional` as a scoped label. Enter `none` for no mapped labels. In Jira, spaces in labels become `_`, and the issue type of requirement issues is set by **Issue type for requirements** (default *Task*).
+
+### Issues of many requirements at once
+
+Select requirements in the list and choose **Issues** in the toolbar:
+
+- **Create issues** creates an issue for each selected requirement that has none. Requirements that have one are skipped, so none gets two; tick **Update the issues that exist** to update them instead.
+- **Refresh states** reads the state of the selected requirements' issues.
+
+The result lists each requirement with its issue, and the requirements the tracker refused with its reason. Up to 100 requirements can be handled at a time.
+
+Creating, updating and refreshing issues needs the permission to edit requirements (`requirement.write`, by default Manager); everyone who can read requirements sees the issue and its state. Every create, update and refresh is recorded in the [audit log](administration.md#audit-log). The tracker's token is never shown.
 
 ## Attachments
 

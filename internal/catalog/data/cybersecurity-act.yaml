@@ -365,6 +365,124 @@ requirements:
           text: En revisionsrapport från de senaste 12 månaderna finns, varje iakttagelse har en ägare och en tidsgräns, och ingen iakttagelse är öppen efter sin tidsgräns utan ett beslut av ledningsorganet.
           threshold: "revision ≤ 12 månader sedan"
 
+  - id: CSL-15
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cyber-hygiene, training, staff]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)", "Implementing Regulation (EU) 2024/2690 Annex §8 (basic cyber hygiene practices and security training)", "Cybersäkerhetslag (2025:1506) 2 kap. 3 § (säkerhetsåtgärder)"]
+    tests: [CSL-T13]
+    en:
+      title: Yearly cyber hygiene training for all staff
+      description: The entity MUST give every employee and contractor with access to its network and information systems cyber hygiene training within 30 days of starting and then every 12 months, and record each completion.
+      rationale: Phishing, weak passwords and careless handling of devices remain the most common ways in, and the Act expects the whole workforce, not only management, to be trained.
+      criteria:
+        - method: inspection
+          text: The training record shows a completion within the last 12 months for every active account holder, and within 30 days of start for each person who joined in the period.
+          threshold: "≥ 100 % of active account holders"
+    sv:
+      title: Årlig utbildning i grundläggande cyberhygien för all personal
+      description: Verksamhetsutövaren SKA ge varje anställd och konsult med åtkomst till dess nätverks- och informationssystem utbildning i cyberhygien inom 30 dagar från start och därefter var 12:e månad, och registrera varje genomförd utbildning.
+      rationale: Nätfiske, svaga lösenord och slarvig hantering av enheter är fortfarande de vanligaste vägarna in, och lagen förväntar sig att hela personalen utbildas, inte bara ledningen.
+      criteria:
+        - method: inspection
+          text: Utbildningsregistret visar en genomförd utbildning de senaste 12 månaderna för varje aktiv kontoinnehavare, och inom 30 dagar från start för varje person som börjat under perioden.
+          threshold: "≥ 100 % av aktiva kontoinnehavare"
+
+  - id: CSL-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [incident-handling, procedure]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(b)", "Implementing Regulation (EU) 2024/2690 Annex §3 (incident handling)", "ISO/IEC 27035-1:2023", "NIST SP 800-61 Rev. 3"]
+    tests: [CSL-T14]
+    en:
+      title: Documented incident handling procedure that is exercised
+      description: The entity MUST keep an incident handling procedure with roles, classification criteria, escalation paths and contact lists, and exercise it at least once every 12 months.
+      rationale: The 24-hour early warning is only met when people already know who decides, who reports and how incidents are classified.
+      criteria:
+        - method: review
+          text: The procedure contains the four elements, and the record of the last exercise is less than 12 months old with lessons learned and actions.
+          threshold: "exercise ≤ 12 months ago"
+    sv:
+      title: Dokumenterad rutin för incidenthantering som övas
+      description: Verksamhetsutövaren SKA ha en rutin för incidenthantering med roller, klassningskriterier, eskaleringsvägar och kontaktlistor, och öva den minst en gång var 12:e månad.
+      rationale: Den tidiga varningen inom 24 timmar klaras bara när personalen redan vet vem som beslutar, vem som rapporterar och hur incidenter klassas.
+      criteria:
+        - method: review
+          text: Rutinen innehåller de fyra delarna, och protokollet från den senaste övningen är yngre än 12 månader med lärdomar och åtgärder.
+          threshold: "övning ≤ 12 månader sedan"
+
+  - id: CSL-17
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [emergency-communication, crisis]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "Implementing Regulation (EU) 2024/2690 Annex §4 (business continuity and crisis management)"]
+    tests: [CSL-T15]
+    en:
+      title: Emergency communication that works without the normal systems
+      description: The entity SHOULD keep a secured means of communication for its crisis team that works when its email, chat and directory services are down, and test it every 6 months.
+      rationale: During a ransomware attack the normal email and chat are often unavailable or watched by the attacker.
+      criteria:
+        - method: test
+          text: With the normal email and identity services blocked for the crisis team, each member is reached through the emergency channel within 30 minutes.
+          threshold: "≤ 30 min to reach the crisis team"
+    sv:
+      title: Nödkommunikation som fungerar utan de vanliga systemen
+      description: Verksamhetsutövaren BÖR ha ett skyddat kommunikationssätt för sin krisledning som fungerar när e-post, chatt och katalogtjänster ligger nere, och prova det var 6:e månad.
+      rationale: Under en attack med utpressningsprogram är vanlig e-post och chatt ofta otillgängliga eller avlyssnade av angriparen.
+      criteria:
+        - method: test
+          text: När vanlig e-post och identitetstjänster är blockerade för krisledningen nås varje medlem via nödkanalen inom 30 minuter.
+          threshold: "≤ 30 min för att nå krisledningen"
+
+  - id: CSL-18
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [human-resources-security, offboarding, screening]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(i)", "Implementing Regulation (EU) 2024/2690 Annex §10 (human resources security)", "ISO/IEC 27001:2022 A.6.1", "ISO/IEC 27001:2022 A.6.5"]
+    tests: [CSL-T16]
+    en:
+      title: Access removed on the last working day
+      description: The entity MUST remove the access of an employee or contractor to its network and information systems no later than the end of their last working day, and record the removal.
+      rationale: Former staff with working accounts are a known source of sabotage and data theft, and the Act asks for human resources security as part of the risk measures.
+      criteria:
+        - method: inspection
+          text: For each person who left in the last 3 months, the account records show access removed on or before the last working day.
+    sv:
+      title: Åtkomst tas bort sista arbetsdagen
+      description: Verksamhetsutövaren SKA ta bort en anställds eller konsults åtkomst till sina nätverks- och informationssystem senast vid slutet av personens sista arbetsdag, och registrera borttagningen.
+      rationale: Tidigare personal med fungerande konton är en känd källa till sabotage och datastöld, och lagen kräver personalsäkerhet som en del av riskåtgärderna.
+      criteria:
+        - method: inspection
+          text: För varje person som slutat de senaste 3 månaderna visar kontoposterna att åtkomsten togs bort senast sista arbetsdagen.
+
+  - id: CSL-19
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [threat-communication, customers]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23(2)", "Cybersäkerhetslag (2025:1506)"]
+    tests: [CSL-T17]
+    en:
+      title: Customers told of significant cyber threats and what they can do
+      description: The entity SHOULD inform the recipients of its services within 24 hours after its threat register rates a cyber threat as high or critical for them, and describe the measures they can take themselves.
+      rationale: Customers can often protect themselves, for example by changing credentials or blocking a feature, if they are told in time.
+      criteria:
+        - method: review
+          text: For each significant cyber threat recorded in the last 12 months, a notice reached the affected customers within 24 hours and named at least one measure they could take.
+          threshold: "≤ 24 h"
+    sv:
+      title: Kunder informeras om betydande cyberhot och vad de kan göra
+      description: Verksamhetsutövaren BÖR informera mottagarna av sina tjänster inom 24 timmar efter att dess hotregister har bedömt ett cyberhot som högt eller kritiskt för dem, och beskriva de åtgärder de själva kan vidta.
+      rationale: Kunder kan ofta skydda sig själva, till exempel genom att byta inloggningsuppgifter eller spärra en funktion, om de får veta i tid.
+      criteria:
+        - method: review
+          text: För varje betydande cyberhot som registrerats de senaste 12 månaderna nådde ett meddelande de berörda kunderna inom 24 timmar och angav minst en åtgärd de kunde vidta.
+          threshold: "≤ 24 h"
+
 tests:
   - id: CSL-T01
     priority: high
@@ -741,3 +859,133 @@ tests:
           expected: Varje sådan iakttagelse har ett beslut av ledningsorganet med en ny tidsgräns.
         - action: Jämför iakttagelserna med dem från den föregående revisionen.
           expected: Ingen iakttagelse från den föregående revisionen upprepas utan en dokumenterad orsak.
+
+  - id: CSL-T13
+    priority: high
+    execution: manual
+    tags: [cyber-hygiene, training]
+    refs: ["Implementing Regulation (EU) 2024/2690 Annex §8 (basic cyber hygiene practices and security training)"]
+    en:
+      title: Every account holder has current hygiene training
+      description: Compares the list of active account holders with the training record.
+      preconditions: An export of active accounts with start dates from the identity system and the training record.
+      expected: Each account holder has a completion within 12 months, and new starters within 30 days.
+      steps:
+        - action: Match each active account holder against the training record.
+          expected: Each has a completion dated within the last 12 months.
+        - action: For people who started in the last 12 months, compare the completion date with the start date.
+          expected: Each completed the training within 30 days of starting.
+    sv:
+      title: Varje kontoinnehavare har aktuell utbildning i cyberhygien
+      description: Jämför listan över aktiva kontoinnehavare med utbildningsregistret.
+      preconditions: En export av aktiva konton med startdatum från identitetssystemet och utbildningsregistret.
+      expected: Varje kontoinnehavare har en genomförd utbildning inom 12 månader, och nyanställda inom 30 dagar.
+      steps:
+        - action: Matcha varje aktiv kontoinnehavare mot utbildningsregistret.
+          expected: Var och en har en genomförd utbildning daterad inom de senaste 12 månaderna.
+        - action: Jämför utbildningsdatum med startdatum för de personer som började de senaste 12 månaderna.
+          expected: Var och en genomförde utbildningen inom 30 dagar från start.
+
+  - id: CSL-T14
+    priority: high
+    execution: manual
+    tags: [incident-handling]
+    refs: ["Implementing Regulation (EU) 2024/2690 Annex §3 (incident handling)"]
+    en:
+      title: Incident procedure is complete and was exercised
+      description: Reviews the incident handling procedure and the last exercise record.
+      preconditions: The current incident handling procedure and the records of exercises in the last 12 months.
+      expected: The procedure has all four elements and was exercised in the last 12 months.
+      steps:
+        - action: Check the procedure for roles, classification criteria, escalation paths and contact lists.
+          expected: All four are present and the contact list was updated in the last 6 months.
+        - action: Open the record of the latest exercise.
+          expected: It is less than 12 months old and lists participants, lessons learned and actions with owners.
+    sv:
+      title: Rutinen för incidenthantering är fullständig och har övats
+      description: Granskar rutinen för incidenthantering och protokollet från den senaste övningen.
+      preconditions: Den gällande rutinen för incidenthantering och protokollen från övningar de senaste 12 månaderna.
+      expected: Rutinen har alla fyra delar och har övats de senaste 12 månaderna.
+      steps:
+        - action: Kontrollera att rutinen innehåller roller, klassningskriterier, eskaleringsvägar och kontaktlistor.
+          expected: Alla fyra finns och kontaktlistan har uppdaterats de senaste 6 månaderna.
+        - action: Öppna protokollet från den senaste övningen.
+          expected: Det är yngre än 12 månader och listar deltagare, lärdomar och åtgärder med ansvariga.
+
+  - id: CSL-T15
+    priority: medium
+    execution: manual
+    tags: [emergency-communication]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)"]
+    en:
+      title: Crisis team is reached through the emergency channel
+      description: Runs a call-out of the crisis team with the normal email and identity services unavailable to them.
+      preconditions: The crisis team list, the emergency communication channel, and agreement to block the members' normal email and sign-in for the exercise.
+      expected: Each member is reached within 30 minutes.
+      steps:
+        - action: Block the crisis team's access to email, chat and single sign-on, and note the time.
+          expected: The normal services are unavailable to them.
+        - action: Send the call-out message through the emergency channel and wait for replies.
+          expected: Each member confirms within 30 minutes of the noted time.
+    sv:
+      title: Krisledningen nås via nödkanalen
+      description: Genomför ett larm till krisledningen när vanlig e-post och identitetstjänster är otillgängliga för dem.
+      preconditions: Listan över krisledningen, nödkommunikationskanalen och en överenskommelse om att spärra medlemmarnas vanliga e-post och inloggning under övningen.
+      expected: Varje medlem nås inom 30 minuter.
+      steps:
+        - action: Spärra krisledningens åtkomst till e-post, chatt och single sign-on och anteckna tiden.
+          expected: De vanliga tjänsterna är otillgängliga för dem.
+        - action: Skicka larmmeddelandet via nödkanalen och invänta svar.
+          expected: Varje medlem bekräftar inom 30 minuter från den antecknade tiden.
+
+  - id: CSL-T16
+    priority: high
+    execution: manual
+    tags: [offboarding]
+    refs: ["Implementing Regulation (EU) 2024/2690 Annex §10 (human resources security)"]
+    en:
+      title: Leavers lost access by their last working day
+      description: Compares the HR list of leavers with the account deactivation times.
+      preconditions: The HR list of people who left in the last 3 months with their last working days, and the account logs of the identity system and other systems with separate accounts.
+      expected: Every leaver's access was removed by the end of the last working day.
+      steps:
+        - action: For each leaver, find the deactivation time of the main account.
+          expected: Each is on or before the last working day.
+        - action: For each leaver, check the systems with separate accounts, such as the network equipment and cloud consoles.
+          expected: No active account remains after the last working day.
+    sv:
+      title: De som slutat förlorade åtkomsten senast sista arbetsdagen
+      description: Jämför personalavdelningens lista över avgångar med tiderna för avaktivering av konton.
+      preconditions: Personalavdelningens lista över personer som slutat de senaste 3 månaderna med sista arbetsdag, och kontologgar från identitetssystemet och andra system med egna konton.
+      expected: Varje persons åtkomst togs bort senast vid slutet av sista arbetsdagen.
+      steps:
+        - action: Leta upp avaktiveringstiden för huvudkontot för varje person som slutat.
+          expected: Var och en ligger senast på sista arbetsdagen.
+        - action: Kontrollera för varje person som slutat de system som har egna konton, till exempel nätverksutrustning och molnkonsoler.
+          expected: Inget aktivt konto finns kvar efter sista arbetsdagen.
+
+  - id: CSL-T17
+    priority: medium
+    execution: manual
+    tags: [threat-communication]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23(2)"]
+    en:
+      title: Threat notices reached customers in time
+      description: Compares the recorded significant cyber threats with the notices sent to customers.
+      preconditions: The threat register of the last 12 months and the archive of customer notices.
+      expected: Each threat led to a timely notice with a measure for the customers.
+      steps:
+        - action: List the significant cyber threats with the time each was identified.
+          expected: A list is produced.
+        - action: Find the customer notice for each threat and compare the times.
+          expected: Each notice was sent within 24 hours and names at least one measure customers can take.
+    sv:
+      title: Hotmeddelanden nådde kunderna i tid
+      description: Jämför de registrerade betydande cyberhoten med meddelandena som skickats till kunder.
+      preconditions: Hotregistret för de senaste 12 månaderna och arkivet med kundmeddelanden.
+      expected: Varje hot ledde till ett meddelande i tid med en åtgärd för kunderna.
+      steps:
+        - action: Lista de betydande cyberhoten med tiden då vart och ett identifierades.
+          expected: En lista tas fram.
+        - action: Leta upp kundmeddelandet för varje hot och jämför tiderna.
+          expected: Varje meddelande skickades inom 24 timmar och anger minst en åtgärd som kunderna kan vidta.

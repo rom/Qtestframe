@@ -3,7 +3,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
-import InputText from 'primevue/inputtext'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Menu from 'primevue/menu'
@@ -22,6 +21,8 @@ import { useProjectStore } from '@/stores/project'
 import { isSoftware } from '@/lib/projectTypes'
 import { useMetaStore } from '@/stores/meta'
 import { usePrefsStore } from '@/stores/prefs'
+import SuggestInput from '@/components/SuggestInput.vue'
+import { rememberValues } from '@/lib/suggest'
 import { useNotify } from '@/composables/notify'
 import { api, asItems } from '@/lib/api'
 import { P } from '@/lib/permissions'
@@ -215,7 +216,11 @@ async function logout() {
 
 function doSearch() {
   const q = searchText.value.trim()
-  if (q) router.push({ name: 'search', query: { q } })
+  if (q) {
+    // recent searches for the autocomplete of the search fields
+    void rememberValues(usePrefsStore().prefs, '', [{ field: 'search', value: q }])
+    router.push({ name: 'search', query: { q } })
+  }
   searchOpen.value = false
 }
 const userName = computed(() => auth.user?.display_name || auth.user?.email || '')
@@ -346,7 +351,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
         <form v-if="!compactSearch" class="search" role="search" @submit.prevent="doSearch">
           <IconField>
             <InputIcon class="pi pi-search" aria-hidden="true" />
-            <InputText v-model="searchText" type="search" :placeholder="t('nav.searchPlaceholder')" class="w-full" :aria-label="t('nav.globalSearch')" />
+            <SuggestInput v-model="searchText" field="search" type="search" :placeholder="t('nav.searchPlaceholder')" class="w-full" :aria-label="t('nav.globalSearch')" />
           </IconField>
         </form>
         <div class="spacer" />
@@ -414,7 +419,7 @@ const userRole = computed(() => (auth.isSuperAdmin ? t('nav.superAdmin') : enumL
         <div class="row nowrap">
           <IconField class="grow">
             <InputIcon class="pi pi-search" aria-hidden="true" />
-            <InputText v-model="searchText" type="search" :placeholder="t('nav.searchPlaceholderShort')" class="w-full" :aria-label="t('nav.globalSearch')" autofocus />
+            <SuggestInput v-model="searchText" field="search" type="search" :placeholder="t('nav.searchPlaceholderShort')" class="w-full" :aria-label="t('nav.globalSearch')" autofocus />
           </IconField>
           <Button type="submit" icon="pi pi-arrow-right" :aria-label="t('common.search')" />
         </div>

@@ -76,6 +76,8 @@ type Server struct {
 	// mails tracks e-mails in flight (see WaitMail).
 	mails       sync.WaitGroup
 	mailLimiter *rateLimiter
+	// suggestLimiter bounds the autocomplete queries of one user (suggest.go).
+	suggestLimiter *rateLimiter
 
 	// jobs runs automated tests in the background (scriptjobs.go);
 	// JobHeartbeat is its heartbeat interval (tests; 0 = 15s).
@@ -107,7 +109,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
 		// report e-mails per user (no open relay)
 		mailLimiter: newRateLimiter(30, 10*time.Minute),
-		jobs:        newJobManager(),
+		// autocomplete queries per user (typing is debounced in the client)
+		suggestLimiter: newRateLimiter(300, time.Minute),
+		jobs:           newJobManager(),
 	}
 	// e-mail, OIDC providers and login limits follow the system settings
 	s.initSettings(context.Background())
@@ -221,6 +225,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/move", s.handleMoveItems(model.KindRequirement), "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/bulk", s.atomic(s.handleBulk(model.KindRequirement)), "requirement.read")
+	h("POST /api/v1/projects/{pid}/requirements/batch", s.atomic(s.handleBatchUpdate(model.KindRequirement)), "requirement.read") // write or review per item: see batch.go
 	h("POST /api/v1/projects/{pid}/requirements/review", s.atomic(s.handleBulkReview(model.KindRequirement)), "requirement.read")
 	h("DELETE /api/v1/projects/{pid}/requirements/bulk", s.atomic(s.handleBulkDelete(model.KindRequirement)), "requirement.write")
 	h("GET /api/v1/requirements/{id}", s.handleGetRequirement, "requirement.read")
@@ -255,6 +260,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/tests", s.handleCreateTest, "test.write")
 	h("POST /api/v1/projects/{pid}/tests/move", s.handleMoveItems(model.KindTest), "test.write")
 	h("POST /api/v1/projects/{pid}/tests/bulk", s.atomic(s.handleBulk(model.KindTest)), "test.read")
+	h("POST /api/v1/projects/{pid}/tests/batch", s.atomic(s.handleBatchUpdate(model.KindTest)), "test.read")
 	h("POST /api/v1/projects/{pid}/tests/review", s.atomic(s.handleBulkReview(model.KindTest)), "test.read")
 	h("DELETE /api/v1/projects/{pid}/tests/bulk", s.atomic(s.handleBulkDelete(model.KindTest)), "test.write")
 	h("GET /api/v1/tests/{id}", s.handleGetTest, "test.read")
@@ -313,6 +319,7 @@ func (s *Server) routes() {
 	// search & export
 	h("GET /api/v1/search", s.handleSearch) // in the projects the caller may read: see access.go
 	h("GET /api/v1/projects/{pid}/export", s.handleExport, "export")
+	h("POST /api/v1/projects/{pid}/export/view", s.handleExportView, "export")
 
 	// files, attachments, archive, avatars (files.go)
 	s.routesFiles(h)
@@ -324,6 +331,7 @@ func (s *Server) routes() {
 	s.routesReleases(h)
 	s.routesMetrics(h)
 	s.routesDefects(h)
+	s.routesRequirementIssues(h)
 	s.routesRisks(h)
 	s.routesNotifications(h)
 	s.routesReviews(h)
@@ -340,6 +348,8 @@ func (s *Server) routes() {
 	s.routesProjectArchive(h)
 	s.routesMFA(h)
 	s.routesSharing(h)
+	// autocomplete suggestions and history (suggest.go)
+	s.routesSuggest(h)
 	// Administration → System settings (systemsettings.go)
 	s.routesSystemSettings(h)
 

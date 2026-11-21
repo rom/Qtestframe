@@ -141,8 +141,14 @@ func (s *Store) CreateItemLink(ctx context.Context, tenantID string, l *model.It
 	}
 	l.ID = newID()
 	l.CreatedAt = s.now()
-	_, err = c.exec(ctx, `INSERT INTO item_links (id, tenant_id, project_id, source_type, source_id, target_type, target_id, url, label, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		l.ID, tenantID, l.ProjectID, l.SourceType, l.SourceID, l.TargetType, nullStr(l.TargetID), l.URL, l.Label, l.CreatedBy, l.CreatedAt)
+	is := l.Issue
+	if is == nil || l.TargetType != "url" {
+		is, l.Issue = &model.LinkedIssue{}, nil
+	}
+	_, err = c.exec(ctx, `INSERT INTO item_links (id, tenant_id, project_id, source_type, source_id, target_type, target_id, url, label, created_by, created_at,
+		issue_tracker, issue_key, issue_status, issue_state, issue_synced_at, issue_passed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		l.ID, tenantID, l.ProjectID, l.SourceType, l.SourceID, l.TargetType, nullStr(l.TargetID), l.URL, l.Label, l.CreatedBy, l.CreatedAt,
+		is.Tracker, is.Key, is.Status, is.State, nullTime(is.SyncedAt), nullTime(is.PassedAt))
 	if err != nil {
 		return err
 	}
@@ -156,16 +162,83 @@ func deref(p *string) string {
 	return *p
 }
 
-const itemLinkCols = `id, project_id, source_type, source_id, target_type, target_id, url, label, created_by, created_at`
+const itemLinkCols = `id, project_id, source_type, source_id, target_type, target_id, url, label, created_by, created_at,
+	issue_tracker, issue_key, issue_status, issue_state, issue_synced_at, issue_passed_at`
 
 func scanItemLink(r interface{ Scan(...any) error }) (*model.ItemLink, error) {
 	var l model.ItemLink
 	var target sql.NullString
-	if err := r.Scan(&l.ID, &l.ProjectID, &l.SourceType, &l.SourceID, &l.TargetType, &target, &l.URL, &l.Label, &l.CreatedBy, &l.CreatedAt); err != nil {
+	var is model.LinkedIssue
+	var synced, passed sql.NullTime
+	if err := r.Scan(&l.ID, &l.ProjectID, &l.SourceType, &l.SourceID, &l.TargetType, &target, &l.URL, &l.Label, &l.CreatedBy, &l.CreatedAt,
+		&is.Tracker, &is.Key, &is.Status, &is.State, &synced, &passed); err != nil {
 		return nil, err
 	}
 	l.TargetID = strPtr(target)
+	if is.Key != "" {
+		is.SyncedAt, is.PassedAt = timePtr(synced), timePtr(passed)
+		l.Issue = &is
+	}
 	return &l, nil
+}
+
+// SetItemLinkIssue records what was read of a link's issue (and the URL
+// and label, which follow the issue).
+func (s *Store) SetItemLinkIssue(ctx context.Context, tenantID string, l *model.ItemLink) error {
+	is := l.Issue
+	if is == nil {
+		is = &model.LinkedIssue{}
+	}
+	res, err := s.c(ctx).exec(ctx, `UPDATE item_links SET url = ?, label = ?, issue_tracker = ?, issue_key = ?, issue_status = ?, issue_state = ?, issue_synced_at = ?, issue_passed_at = ?
+		WHERE tenant_id = ? AND id = ? AND target_type = 'url'`,
+		l.URL, l.Label, is.Tracker, is.Key, is.Status, is.State, nullTime(is.SyncedAt), nullTime(is.PassedAt), tenantID, l.ID)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return mapErr(sql.ErrNoRows, "link")
+	}
+	return nil
+}
+
+// IssueLinks returns the links to tracker issues carried by requirements
+// of a project (all of them when requirementIDs is nil), oldest first.
+func (s *Store) IssueLinks(ctx context.Context, tenantID, projectID string, requirementIDs []string) ([]model.ItemLink, error) {
+	q := `SELECT ` + itemLinkCols + ` FROM item_links WHERE tenant_id = ? AND project_id = ? AND source_type = ? AND target_type = 'url' AND issue_key <> ''`
+	args := []any{tenantID, projectID, model.KindRequirement}
+	if requirementIDs != nil {
+		if len(requirementIDs) == 0 {
+			return []model.ItemLink{}, nil
+		}
+		q += ` AND source_id IN (` + placeholders(len(requirementIDs)) + `)`
+		args = append(args, anySlice(requirementIDs)...)
+	}
+	rows, err := s.c(ctx).query(ctx, q+` ORDER BY created_at, id`, args...)
+	if err != nil {
+		return nil, err
+	}
+	var ptrs []*model.ItemLink
+	for rows.Next() {
+		l, err := scanItemLink(rows)
+		if err != nil {
+			rows.Close()
+			return nil, err
+		}
+		l.Direction = "outgoing"
+		ptrs = append(ptrs, l)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if err := s.decorateItemLinks(ctx, tenantID, ptrs); err != nil {
+		return nil, err
+	}
+	out := make([]model.ItemLink, 0, len(ptrs))
+	for _, l := range ptrs {
+		out = append(out, *l)
+	}
+	return out, nil
 }
 
 // GetItemLink returns a link.

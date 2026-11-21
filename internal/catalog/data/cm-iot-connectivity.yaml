@@ -1,0 +1,646 @@
+area: cm-iot-connectivity
+prefix: CMIOT
+group: domain
+catalogue: communications
+name: {en: IoT connectivity, sv: Uppkoppling för sakernas internet}
+description:
+  en: Connectivity for fleets of sensors and other IoT devices over LoRaWAN and cellular IoT (NB-IoT and LTE-M), covering technology selection, coverage surveys, device activation and keys, duty cycle, gateway redundancy, delivery ratio, power saving and battery life, private APNs, eSIM provisioning, secure messaging, time stamps, silent device detection, data budgets and firmware updates over the air.
+  sv: Uppkoppling för bestånd av sensorer och andra enheter för sakernas internet via LoRaWAN och mobilt IoT (NB-IoT och LTE-M), med val av teknik, täckningsmätningar, aktivering och nycklar för enheter, sändningscykel, redundanta gateways, leveransgrad, energisparlägen och batteritid, privata APN, fjärrprovisionering av eSIM, säker meddelandehantering, tidsstämplar, upptäckt av tysta enheter, databudgetar och firmwareuppdatering via radio.
+
+requirements:
+  - id: CMIOT-01
+    type: business
+    obligation: must
+    priority: medium
+    tags: [technology-selection, range, battery-life]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.3 (decision management process)"]
+    tests: [CMIOT-T01]
+    en:
+      title: Connectivity technology chosen per use case against stated criteria
+      description: For each IoT use case, the project MUST record the chosen connectivity technology and the assessment of the candidates against range, indoor penetration, message size and rate, latency, battery life target, mobility and cost per device.
+      rationale: LoRaWAN, NB-IoT, LTE-M and Wi-Fi suit different needs, and a choice made without criteria shows its limits only after thousands of devices are installed.
+      criteria:
+        - method: inspection
+          text: Each use case in the solution design has a recorded assessment covering each listed criterion and a stated choice.
+    sv:
+      title: Uppkopplingsteknik vald per användningsfall mot angivna kriterier
+      description: För varje användningsfall för sakernas internet SKA projektet registrera den valda uppkopplingstekniken och bedömningen av kandidaterna mot räckvidd, inomhustäckning, meddelandestorlek och meddelandefrekvens, fördröjning, mål för batteritid, rörlighet och kostnad per enhet.
+      rationale: LoRaWAN, NB-IoT, LTE-M och Wi-Fi passar olika behov, och ett val som görs utan kriterier visar sina begränsningar först när tusentals enheter har installerats.
+      criteria:
+        - method: inspection
+          text: Varje användningsfall i lösningsbeskrivningen har en registrerad bedömning som omfattar varje angivet kriterium och ett angivet val.
+
+  - id: CMIOT-02
+    type: performance
+    obligation: must
+    priority: high
+    tags: [coverage, survey, installation]
+    refs: []
+    tests: [CMIOT-T01]
+    en:
+      title: Coverage measured at each installation point before mounting
+      description: The installer MUST measure the signal at each installation point before mounting a device and mount it only where the margin above the receiver's minimum is at least 10 dB, or record an alternative position or antenna.
+      rationale: Devices in basements, meter cabinets and shafts often lack coverage, and moving them after installation costs far more than measuring first.
+      criteria:
+        - method: inspection
+          text: The installation records of 20 sampled devices each show a measured signal with at least 10 dB margin or a recorded alternative.
+          threshold: margin ≥ 10 dB
+    sv:
+      title: Täckning mäts vid varje installationspunkt före montering
+      description: Installatören SKA mäta signalen vid varje installationspunkt innan en enhet monteras och montera den endast där marginalen över mottagarens lägsta nivå är minst 10 dB, eller registrera en annan placering eller antenn.
+      rationale: Enheter i källare, mätarskåp och schakt saknar ofta täckning, och att flytta dem efter installationen kostar mycket mer än att mäta först.
+      criteria:
+        - method: inspection
+          text: Installationsprotokollen för 20 utvalda enheter visar var och en en uppmätt signal med minst 10 dB marginal eller en registrerad alternativ lösning.
+          threshold: marginal ≥ 10 dB
+
+  - id: CMIOT-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [lorawan, activation, otaa]
+    refs: ["LoRaWAN L2 1.0.4 Specification (over-the-air activation)"]
+    tests: [CMIOT-T02]
+    en:
+      title: LoRaWAN devices activated over the air
+      description: Each LoRaWAN device MUST join the network by over-the-air activation, so that new session keys are derived at each join.
+      rationale: Activation by personalisation fixes the session keys for the device's life and makes frame counter resets and key reuse likely.
+      criteria:
+        - method: test
+          text: The network server's device list shows over-the-air activation for each device, and a rejoin of a test device produces a new device address and session keys.
+    sv:
+      title: LoRaWAN-enheter aktiveras via radio
+      description: Varje LoRaWAN-enhet SKA ansluta till nätet genom aktivering via radio, så att nya sessionsnycklar härleds vid varje anslutning.
+      rationale: Aktivering genom personalisering låser sessionsnycklarna under enhetens hela livstid och gör återställda ramräknare och återanvända nycklar sannolika.
+      criteria:
+        - method: test
+          text: Nätverksserverns enhetslista visar aktivering via radio för varje enhet, och en ny anslutning av en testenhet ger en ny enhetsadress och nya sessionsnycklar.
+
+  - id: CMIOT-04
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [lorawan, root-keys, key-management]
+    refs: ["LoRaWAN L2 1.0.4 Specification (security)", "ETSI EN 303 645 provision 5.1-1"]
+    tests: [CMIOT-T02]
+    en:
+      title: No root key shared between LoRaWAN devices
+      description: Two LoRaWAN devices MUST NOT share the same root key, and the root keys are stored only in the join server and the device.
+      rationale: A root key shared across a batch lets one extracted device impersonate or decrypt each of the others.
+      criteria:
+        - method: test
+          text: A query of the join server for the 1 000 most recent devices finds no duplicate root key fingerprint, and the network and application servers hold no root keys.
+    sv:
+      title: Ingen rotnyckel delas mellan LoRaWAN-enheter
+      description: Två LoRaWAN-enheter SKA INTE dela samma rotnyckel, och rotnycklarna lagras endast i anslutningsservern och i enheten.
+      rationale: En rotnyckel som delas inom en serie gör att en enda utläst enhet kan utge sig för att vara eller dekryptera var och en av de andra.
+      criteria:
+        - method: test
+          text: En sökning i anslutningsservern för de 1 000 senaste enheterna hittar inget dubblerat fingeravtryck av rotnyckeln, och nätverks- och applikationsservrarna innehåller inga rotnycklar.
+
+  - id: CMIOT-05
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [duty-cycle, sub-ghz, srd]
+    refs: ["ETSI EN 300 220-2 (short range devices, 25 MHz to 1 000 MHz)", "LoRaWAN Regional Parameters RP002 (EU863-870)"]
+    tests: [CMIOT-T03]
+    en:
+      title: Transmissions within the duty cycle limit of each sub-band
+      description: A device and a gateway transmitting in the 863–870 MHz band MUST NOT exceed the duty cycle limit of each sub-band, 1 % in the main uplink sub-band, measured over any hour.
+      rationale: The duty cycle limit is a condition of licence-exempt use, and exceeding it blocks the channel for other users.
+      criteria:
+        - method: test
+          text: A spectrum log over 1 hour of the busiest device and gateway shows each sub-band at or below its limit.
+          threshold: ≤ 1 % per hour
+    sv:
+      title: Sändning inom gränsen för sändningscykel i varje delband
+      description: En enhet och en gateway som sänder i bandet 863–870 MHz SKA INTE överskrida gränsen för sändningscykeln i varje delband, 1 % i det huvudsakliga delbandet för upplänk, mätt över vilken timme som helst.
+      rationale: Gränsen för sändningscykeln är ett villkor för licensfri användning, och när den överskrids blockeras kanalen för andra användare.
+      criteria:
+        - method: test
+          text: En spektrumlogg under 1 timme för den mest aktiva enheten och gatewayen visar varje delband på eller under sin gräns.
+          threshold: ≤ 1 % per timme
+
+  - id: CMIOT-06
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [gateways, redundancy, lorawan]
+    refs: ["LoRaWAN L2 1.0.4 Specification (network architecture)"]
+    tests: [CMIOT-T04]
+    en:
+      title: Each device heard by at least two gateways
+      description: The LoRaWAN gateway network MUST be planned so that each installed device is received by at least 2 gateways, as shown in the network server's reception data over 7 days.
+      rationale: With a single gateway, its failure takes down each device in its area, and two receivers also lower packet loss.
+      criteria:
+        - method: test
+          text: The reception data of the last 7 days shows at least 2 receiving gateways for each active device.
+          threshold: ≥ 2 gateways
+    sv:
+      title: Varje enhet hörs av minst två gateways
+      description: Nätet av LoRaWAN-gateways SKA planeras så att varje installerad enhet tas emot av minst 2 gateways, enligt nätverksserverns mottagningsdata under 7 dagar.
+      rationale: Med en enda gateway gör ett fel i den att varje enhet i området tystnar, och två mottagare minskar även paketförlusterna.
+      criteria:
+        - method: test
+          text: Mottagningsdata för de senaste 7 dagarna visar minst 2 mottagande gateways för varje aktiv enhet.
+          threshold: ≥ 2 gateways
+
+  - id: CMIOT-07
+    type: performance
+    obligation: must
+    priority: high
+    tags: [delivery-ratio, reliability]
+    refs: ["LoRaWAN L2 1.0.4 Specification (network architecture)"]
+    tests: [CMIOT-T04]
+    en:
+      title: Message delivery ratio of at least 99 % per device
+      description: At least 99 % of the scheduled uplink messages of each device MUST reach the application platform, measured by frame counter gaps over 30 days.
+      rationale: Lost readings leave gaps in billing, monitoring and alarm data that the application cannot fill afterwards.
+      criteria:
+        - method: analysis
+          text: Frame counter analysis over 30 days shows a delivery ratio of at least 99 % for at least 98 % of the devices, and each device below has a recorded action.
+          threshold: ≥ 99 %
+    sv:
+      title: Leveransgrad för meddelanden på minst 99 % per enhet
+      description: Minst 99 % av de schemalagda upplänksmeddelandena från varje enhet SKA nå applikationsplattformen, mätt med luckor i ramräknaren under 30 dagar.
+      rationale: Förlorade mätvärden ger luckor i debiterings-, övervaknings- och larmdata som applikationen inte kan fylla i efteråt.
+      criteria:
+        - method: analysis
+          text: En analys av ramräknare under 30 dagar visar en leveransgrad på minst 99 % för minst 98 % av enheterna, och varje enhet under gränsen har en registrerad åtgärd.
+          threshold: ≥ 99 %
+
+  - id: CMIOT-08
+    type: performance
+    obligation: must
+    priority: high
+    tags: [nb-iot, lte-m, power-saving, battery-life]
+    refs: ["3GPP TS 23.682 (power saving mode and extended DRX)"]
+    tests: [CMIOT-T05]
+    en:
+      title: Power saving mode configured for a battery life of 10 years
+      description: Battery-powered cellular IoT devices MUST use power saving mode or extended discontinuous reception with timers accepted by the network that give a modelled battery life of at least 10 years at the planned reporting rate.
+      rationale: Without power saving the radio stays reachable and drains the battery in months, which turns each device into a maintenance visit.
+      criteria:
+        - method: test
+          text: A current measurement over 24 hours on a test device in the live network, extrapolated with the battery capacity, gives at least 10 years, and the network accepted the requested timers.
+          threshold: ≥ 10 years
+    sv:
+      title: Energisparläge konfigurerat för en batteritid på 10 år
+      description: Batteridrivna enheter för mobilt IoT SKA använda energisparläge eller förlängd diskontinuerlig mottagning med timrar som nätet godtar och som ger en beräknad batteritid på minst 10 år vid den planerade rapporteringsfrekvensen.
+      rationale: Utan energisparläge är radion hela tiden nåbar och tömmer batteriet på några månader, vilket gör varje enhet till ett servicebesök.
+      criteria:
+        - method: test
+          text: En strömmätning under 24 timmar på en testenhet i det verkliga nätet, extrapolerad med batteriets kapacitet, ger minst 10 år, och nätet godtog de begärda timrarna.
+          threshold: ≥ 10 år
+
+  - id: CMIOT-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [private-apn, cellular-iot, network-isolation]
+    refs: ["ETSI EN 303 645 provision 5.6-1", "GSMA IoT Security Guidelines"]
+    tests: [CMIOT-T06]
+    en:
+      title: Cellular IoT devices on a private APN without internet access
+      description: Cellular IoT devices MUST connect through a private APN or data network that reaches only the organisation's IoT platform, with no route to or from the public internet.
+      rationale: Devices on an open internet APN can be scanned and attacked directly, and a compromised device can be used to attack others.
+      criteria:
+        - method: test
+          text: From a test device, connections to a public internet address fail and the platform is reachable, and a scan from the internet finds no device address.
+    sv:
+      title: Enheter för mobilt IoT i ett privat APN utan internetåtkomst
+      description: Enheter för mobilt IoT SKA ansluta via ett privat APN eller datanät som endast når organisationens IoT-plattform, utan väg till eller från det publika internet.
+      rationale: Enheter i ett öppet internet-APN kan skannas och angripas direkt, och en komprometterad enhet kan användas för att angripa andra.
+      criteria:
+        - method: test
+          text: Från en testenhet misslyckas anslutningar till en publik internetadress medan plattformen nås, och en skanning från internet hittar ingen enhetsadress.
+
+  - id: CMIOT-10
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [esim, remote-provisioning, operator-switch]
+    refs: ["GSMA SGP.32 (eSIM IoT technical specification)"]
+    tests: [CMIOT-T06]
+    en:
+      title: Remote change of operator profile on IoT eSIMs
+      description: Cellular IoT devices SHOULD use eSIMs whose operator profile can be downloaded and switched remotely, so that the fleet can change operator without a site visit.
+      rationale: IoT devices often stay in place for 10 years or more, and being tied to one operator's SIM makes a change of contract a field operation.
+      criteria:
+        - method: test
+          text: A new operator profile is downloaded to a test device and enabled remotely, and the device reports over the new operator's network.
+    sv:
+      title: Fjärrbyte av operatörsprofil i eSIM för IoT
+      description: Enheter för mobilt IoT BÖR använda eSIM vars operatörsprofil kan laddas ned och bytas på distans, så att beståndet kan byta operatör utan platsbesök.
+      rationale: Enheter för sakernas internet sitter ofta kvar i 10 år eller mer, och bindning till en operatörs SIM gör ett avtalsbyte till ett fältarbete.
+      criteria:
+        - method: test
+          text: En ny operatörsprofil laddas ned till en testenhet och aktiveras på distans, och enheten rapporterar via den nya operatörens nät.
+
+  - id: CMIOT-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [mqtt, tls, device-certificates]
+    refs: ["OASIS MQTT Version 5.0", "ETSI EN 303 645 provision 5.5-1"]
+    tests: [CMIOT-T07]
+    en:
+      title: Device messages over TLS with a certificate per device
+      description: Devices that send data over IP MUST connect to the platform over TLS 1.2 or later with a client certificate unique to each device, and be refused without one.
+      rationale: Per-device certificates authenticate each device and let a single compromised device be cut off.
+      criteria:
+        - method: test
+          text: A connection with a valid device certificate is accepted, one without a client certificate or with a revoked one is refused.
+    sv:
+      title: Enhetsmeddelanden via TLS med ett certifikat per enhet
+      description: Enheter som skickar data över IP SKA ansluta till plattformen via TLS 1.2 eller senare med ett klientcertifikat som är unikt för varje enhet, och nekas anslutning utan ett sådant.
+      rationale: Certifikat per enhet autentiserar varje enhet och gör att en enda komprometterad enhet kan stängas ute.
+      criteria:
+        - method: test
+          text: En anslutning med ett giltigt enhetscertifikat godtas, och en utan klientcertifikat eller med ett spärrat certifikat nekas.
+
+  - id: CMIOT-12
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [timestamps, time-synchronisation, measurements]
+    refs: ["ISO 8601-1:2019"]
+    tests: [CMIOT-T07]
+    en:
+      title: Measurements carry a UTC time stamp from the device
+      description: Each measurement MUST carry the UTC time at which the device took it, accurate to within 1 second of the network time, so that delayed or buffered messages are placed correctly in time.
+      rationale: Messages over low-power networks are buffered and retried, and the arrival time does not show when a value was measured.
+      criteria:
+        - method: test
+          text: Measurements buffered during a 1-hour coverage gap arrive with time stamps within 1 second of the reference clock at the time of measurement.
+          threshold: ≤ 1 s
+    sv:
+      title: Mätvärden har en UTC-tidsstämpel från enheten
+      description: Varje mätvärde SKA ha den UTC-tid då enheten tog det, med en noggrannhet på 1 sekund mot nättiden, så att fördröjda eller buffrade meddelanden placeras rätt i tiden.
+      rationale: Meddelanden över nät med låg effekt buffras och skickas om, och ankomsttiden visar inte när ett värde mättes.
+      criteria:
+        - method: test
+          text: Mätvärden som buffrats under ett täckningsavbrott på 1 timme kommer fram med tidsstämplar inom 1 sekund från referensklockan vid mättillfället.
+          threshold: ≤ 1 s
+
+  - id: CMIOT-13
+    type: functional
+    obligation: must
+    priority: high
+    tags: [fleet-monitoring, silent-devices, alarms]
+    refs: ["ISO/IEC 27001:2022 A.8.16"]
+    tests: [CMIOT-T08]
+    en:
+      title: Alarm when a device misses 3 reporting intervals
+      description: The IoT platform MUST raise an alarm for each device that has not reported for 3 of its scheduled reporting intervals, with the device's last known signal and battery values.
+      rationale: A silent device looks the same as a device with nothing to report unless the platform knows when it should have spoken.
+      criteria:
+        - method: test
+          text: A test device switched off raises an alarm after 3 missed intervals with its last signal and battery values.
+          threshold: 3 intervals
+    sv:
+      title: Larm när en enhet missar 3 rapporteringsintervall
+      description: IoT-plattformen SKA ge ett larm för varje enhet som inte har rapporterat under 3 av sina schemalagda rapporteringsintervall, med enhetens senast kända signal- och batterivärden.
+      rationale: En tyst enhet ser likadan ut som en enhet som inte har något att rapportera om inte plattformen vet när den borde ha hörts.
+      criteria:
+        - method: test
+          text: En avstängd testenhet ger ett larm efter 3 missade intervall med sina senaste signal- och batterivärden.
+          threshold: 3 intervall
+
+  - id: CMIOT-14
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [data-budget, cellular-iot, cost]
+    refs: ["GSMA IoT Security Guidelines"]
+    tests: [CMIOT-T08]
+    en:
+      title: Alert at 80 % of a device's monthly data budget
+      description: The connectivity management platform SHOULD alert when a device has used 80 % of its monthly data budget, and block its data at 150 % until an operator reviews it.
+      rationale: A device stuck in a retry loop or taken over by malware can use the data of a whole fleet in days.
+      criteria:
+        - method: test
+          text: A test device that sends data above its budget triggers the alert at 80 % and is blocked at 150 %.
+          threshold: alert 80 %, block 150 %
+    sv:
+      title: Varning vid 80 % av en enhets månatliga databudget
+      description: Plattformen för hantering av uppkoppling BÖR varna när en enhet har använt 80 % av sin månatliga databudget, och blockera dess data vid 150 % tills en operatör har granskat den.
+      rationale: En enhet som fastnat i en loop av omsändningar eller tagits över av skadlig kod kan förbruka ett helt bestånds data på några dagar.
+      criteria:
+        - method: test
+          text: En testenhet som skickar mer data än sin budget utlöser varningen vid 80 % och blockeras vid 150 %.
+          threshold: varning 80 %, blockering 150 %
+
+  - id: CMIOT-15
+    type: functional
+    obligation: must
+    priority: high
+    tags: [fuota, firmware-update, lorawan]
+    refs: ["LoRaWAN Fragmented Data Block Transport Specification TS004", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)"]
+    tests: [CMIOT-T09]
+    en:
+      title: Firmware updates delivered over the air within the duty cycle
+      description: The IoT solution MUST deliver signed firmware updates to the devices over the air, using multicast and fragmentation for LoRaWAN devices, while keeping each device and gateway within its duty cycle limit.
+      rationale: Devices installed in thousands of places cannot be visited to fix a vulnerability, and an update that breaks the duty cycle rules disturbs the band.
+      criteria:
+        - method: test
+          text: A signed update reaches a test group of 50 devices over the air, each reports the new version, and the gateway transmissions stay within the duty cycle limit.
+          threshold: 50 devices
+    sv:
+      title: Firmwareuppdateringar levereras via radio inom sändningscykeln
+      description: IoT-lösningen SKA leverera signerade firmwareuppdateringar till enheterna via radio, med multicast och fragmentering för LoRaWAN-enheter, och samtidigt hålla varje enhet och gateway inom sin gräns för sändningscykeln.
+      rationale: Enheter som installerats på tusentals platser kan inte besökas för att rätta en sårbarhet, och en uppdatering som bryter mot reglerna för sändningscykeln stör bandet.
+      criteria:
+        - method: test
+          text: En signerad uppdatering når en testgrupp på 50 enheter via radio, varje enhet rapporterar den nya versionen och gatewayens sändningar håller sig inom gränsen för sändningscykeln.
+          threshold: 50 enheter
+
+tests:
+  - id: CMIOT-T01
+    priority: medium
+    execution: manual
+    tags: [technology-selection, coverage]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.3 (decision management process)"]
+    en:
+      title: Technology assessment and installation coverage records
+      description: Checks the technology assessment of each use case and the coverage measurements in installation records.
+      preconditions: The solution design with its use cases, the installation records of the fleet and the minimum receiver levels of the device models.
+      expected: Each use case has a full assessment and each sampled installation has a measured margin of at least 10 dB or an alternative.
+      steps:
+        - action: Read the assessment of each use case.
+          expected: Each covers range, indoor penetration, message size and rate, latency, battery life, mobility and cost.
+        - action: Select 20 installation records at random.
+          expected: 20 records are selected.
+        - action: Compare the measured signal of each with the device's minimum level.
+          expected: Each margin is at least 10 dB or an alternative position or antenna is recorded.
+          data: NB-IoT minimum −130 dBm, measured −115 dBm, margin 15 dB
+    sv:
+      title: Teknikbedömning och täckning i installationsprotokollen
+      description: Kontrollerar teknikbedömningen för varje användningsfall och täckningsmätningarna i installationsprotokollen.
+      preconditions: Lösningsbeskrivningen med dess användningsfall, installationsprotokollen för beståndet och de lägsta mottagarnivåerna för enhetsmodellerna.
+      expected: Varje användningsfall har en fullständig bedömning och varje utvald installation har en uppmätt marginal på minst 10 dB eller en alternativ lösning.
+      steps:
+        - action: Läs bedömningen för varje användningsfall.
+          expected: Varje bedömning omfattar räckvidd, inomhustäckning, meddelandestorlek och meddelandefrekvens, fördröjning, batteritid, rörlighet och kostnad.
+        - action: Välj 20 installationsprotokoll slumpvis.
+          expected: 20 protokoll är valda.
+        - action: Jämför den uppmätta signalen i varje protokoll med enhetens lägsta nivå.
+          expected: Varje marginal är minst 10 dB eller så finns en annan placering eller antenn registrerad.
+          data: NB-IoT lägsta −130 dBm, uppmätt −115 dBm, marginal 15 dB
+
+  - id: CMIOT-T02
+    priority: critical
+    execution: manual
+    tags: [lorawan, key-management]
+    refs: ["LoRaWAN L2 1.0.4 Specification (over-the-air activation)", "LoRaWAN L2 1.0.4 Specification (security)", "ETSI EN 303 645 provision 5.1-1"]
+    en:
+      title: LoRaWAN activation mode and root key uniqueness
+      description: Checks the activation mode of the devices, rejoins a test device and looks for shared root keys.
+      preconditions: Administrator access to the network server and the join server, a LoRaWAN test device and a key fingerprint report from the join server.
+      expected: Each device uses over-the-air activation, a rejoin gives new keys and no root key is shared or stored outside the join server.
+      steps:
+        - action: Export the device list from the network server with the activation mode.
+          expected: Each device uses over-the-air activation.
+        - action: Rejoin the test device and compare its device address and session key identifiers before and after.
+          expected: Both have changed.
+        - action: Run the root key fingerprint report for the 1 000 most recent devices.
+          expected: No fingerprint appears twice.
+        - action: Search the network and application server configuration for root key fields.
+          expected: No root key is stored there.
+    sv:
+      title: Aktiveringssätt och unika rotnycklar för LoRaWAN
+      description: Kontrollerar enheternas aktiveringssätt, ansluter en testenhet på nytt och letar efter delade rotnycklar.
+      preconditions: Administratörsåtkomst till nätverksservern och anslutningsservern, en LoRaWAN-enhet för test och en rapport över nyckelfingeravtryck från anslutningsservern.
+      expected: Varje enhet använder aktivering via radio, en ny anslutning ger nya nycklar och ingen rotnyckel delas eller lagras utanför anslutningsservern.
+      steps:
+        - action: Exportera enhetslistan från nätverksservern med aktiveringssätt.
+          expected: Varje enhet använder aktivering via radio.
+        - action: Anslut testenheten på nytt och jämför dess enhetsadress och identifierare för sessionsnycklar före och efter.
+          expected: Båda har ändrats.
+        - action: Kör rapporten över fingeravtryck av rotnycklar för de 1 000 senaste enheterna.
+          expected: Inget fingeravtryck förekommer två gånger.
+        - action: Sök efter fält för rotnycklar i nätverks- och applikationsserverns konfiguration.
+          expected: Ingen rotnyckel lagras där.
+
+  - id: CMIOT-T03
+    priority: high
+    execution: manual
+    tags: [duty-cycle]
+    refs: ["ETSI EN 300 220-2 (short range devices, 25 MHz to 1 000 MHz)", "LoRaWAN Regional Parameters RP002 (EU863-870)"]
+    en:
+      title: Duty cycle of the busiest device and gateway
+      description: Logs the transmissions of the busiest device and gateway for an hour and calculates the duty cycle per sub-band.
+      preconditions: A spectrum analyser or SDR receiver with logging near the busiest device and gateway, and the sub-band limits of the band plan.
+      expected: Each sub-band is at or below its duty cycle limit.
+      steps:
+        - action: Identify the device and gateway with the most transmissions in the network server statistics.
+          expected: One device and one gateway are chosen.
+        - action: Log their transmissions for 1 hour.
+          expected: Each transmission is logged with frequency and duration.
+        - action: Sum the airtime per sub-band and divide by 3 600 seconds.
+          expected: Each sub-band is at or below its limit, 1 % in the main uplink sub-band.
+          data: 30 s airtime in 3 600 s = 0.83 %
+    sv:
+      title: Sändningscykel för den mest aktiva enheten och gatewayen
+      description: Loggar sändningarna från den mest aktiva enheten och gatewayen under en timme och beräknar sändningscykeln per delband.
+      preconditions: En spektrumanalysator eller SDR-mottagare med loggning nära den mest aktiva enheten och gatewayen, och delbandsgränserna i bandplanen.
+      expected: Varje delband ligger på eller under sin gräns för sändningscykeln.
+      steps:
+        - action: Identifiera enheten och gatewayen med flest sändningar i nätverksserverns statistik.
+          expected: En enhet och en gateway väljs.
+        - action: Logga deras sändningar under 1 timme.
+          expected: Varje sändning loggas med frekvens och längd.
+        - action: Summera sändningstiden per delband och dela med 3 600 sekunder.
+          expected: Varje delband ligger på eller under sin gräns, 1 % i det huvudsakliga delbandet för upplänk.
+          data: 30 s sändningstid på 3 600 s = 0,83 %
+
+  - id: CMIOT-T04
+    priority: high
+    execution: automated
+    tags: [gateways, delivery-ratio]
+    refs: ["LoRaWAN L2 1.0.4 Specification (network architecture)"]
+    en:
+      title: Gateway diversity and delivery ratio from network data
+      description: A script analyses 7 days of reception data and 30 days of frame counters for each device.
+      preconditions: API access to the network server's reception data and the platform's message store.
+      expected: Each active device is heard by 2 gateways and at least 98 % of devices have a delivery ratio of 99 % or more.
+      steps:
+        - action: Count the distinct receiving gateways of each active device over 7 days.
+          expected: Each device has at least 2.
+        - action: Calculate each device's delivery ratio from frame counter gaps over 30 days.
+          expected: At least 98 % of devices have 99 % or more.
+          data: 2 976 of 3 000 expected frames = 99.2 %
+        - action: List the devices below 99 % with their recorded actions.
+          expected: Each has an action.
+    sv:
+      title: Gatewaymångfald och leveransgrad från nätdata
+      description: Ett skript analyserar 7 dagars mottagningsdata och 30 dagars ramräknare för varje enhet.
+      preconditions: API-åtkomst till nätverksserverns mottagningsdata och plattformens meddelandelager.
+      expected: Varje aktiv enhet hörs av 2 gateways och minst 98 % av enheterna har en leveransgrad på 99 % eller mer.
+      steps:
+        - action: Räkna antalet olika mottagande gateways för varje aktiv enhet under 7 dagar.
+          expected: Varje enhet har minst 2.
+        - action: Beräkna varje enhets leveransgrad från luckor i ramräknaren under 30 dagar.
+          expected: Minst 98 % av enheterna har 99 % eller mer.
+          data: 2 976 av 3 000 väntade ramar = 99,2 %
+        - action: Lista enheterna under 99 % med deras registrerade åtgärder.
+          expected: Var och en har en åtgärd.
+
+  - id: CMIOT-T05
+    priority: high
+    execution: manual
+    tags: [power-saving, battery-life]
+    refs: ["3GPP TS 23.682 (power saving mode and extended DRX)"]
+    en:
+      title: Current measurement and accepted power saving timers
+      description: Measures the current of a cellular test device in the live network for 24 hours and checks the timers the network accepted.
+      preconditions: A test device with its production firmware and configuration in the live network, a current logger with a resolution of 1 µA and the battery capacity data.
+      expected: The modelled battery life is at least 10 years and the network accepted the requested timers.
+      steps:
+        - action: Read the power saving timers requested by the device and those accepted by the network in the attach log.
+          expected: The accepted timers match the requested ones.
+        - action: Log the device current for 24 hours at the planned reporting rate.
+          expected: The average current is recorded.
+          data: reporting every 4 hours
+        - action: Divide the usable battery capacity by the average current.
+          expected: The result is at least 10 years.
+    sv:
+      title: Strömmätning och godtagna timrar för energisparläge
+      description: Mäter strömmen för en testenhet för mobilt IoT i det verkliga nätet under 24 timmar och kontrollerar vilka timrar nätet godtog.
+      preconditions: En testenhet med produktionsfirmware och produktionskonfiguration i det verkliga nätet, en strömlogger med upplösningen 1 µA och data för batteriets kapacitet.
+      expected: Den beräknade batteritiden är minst 10 år och nätet godtog de begärda timrarna.
+      steps:
+        - action: Läs timrarna för energisparläge som enheten begärde och de som nätet godtog i anslutningsloggen.
+          expected: De godtagna timrarna stämmer med de begärda.
+        - action: Logga enhetens ström under 24 timmar vid den planerade rapporteringsfrekvensen.
+          expected: Medelströmmen registreras.
+          data: rapportering var 4:e timme
+        - action: Dela den användbara batterikapaciteten med medelströmmen.
+          expected: Resultatet är minst 10 år.
+
+  - id: CMIOT-T06
+    priority: high
+    execution: manual
+    tags: [private-apn, esim]
+    refs: ["ETSI EN 303 645 provision 5.6-1", "GSMA IoT Security Guidelines", "GSMA SGP.32 (eSIM IoT technical specification)"]
+    en:
+      title: Private APN isolation and remote eSIM profile switch
+      description: Checks that a cellular test device reaches only the platform and switches its eSIM profile remotely.
+      preconditions: A cellular test device with a diagnostic shell, a public internet test server, a scanner on the internet, and access to the eSIM management platform with a second operator profile.
+      expected: The device reaches only the platform, is not reachable from the internet, and runs on the new profile after the switch.
+      steps:
+        - action: From the device, connect to the public test server and to the platform.
+          expected: The public connection fails and the platform connection succeeds.
+        - action: Scan the device's address range from the internet.
+          expected: No device address answers.
+        - action: Download and enable the second operator profile remotely.
+          expected: The device attaches to the new operator's network and reports to the platform.
+    sv:
+      title: Isolering i privat APN och fjärrbyte av eSIM-profil
+      description: Kontrollerar att en testenhet för mobilt IoT bara når plattformen och byter sin eSIM-profil på distans.
+      preconditions: En testenhet för mobilt IoT med ett diagnosskal, en testserver på det publika internet, en skanner på internet och åtkomst till plattformen för hantering av eSIM med en andra operatörsprofil.
+      expected: Enheten når bara plattformen, kan inte nås från internet och kör på den nya profilen efter bytet.
+      steps:
+        - action: Anslut från enheten till den publika testservern och till plattformen.
+          expected: Den publika anslutningen misslyckas och anslutningen till plattformen lyckas.
+        - action: Skanna enheternas adressområde från internet.
+          expected: Ingen enhetsadress svarar.
+        - action: Ladda ned och aktivera den andra operatörsprofilen på distans.
+          expected: Enheten ansluter till den nya operatörens nät och rapporterar till plattformen.
+
+  - id: CMIOT-T07
+    priority: high
+    execution: manual
+    tags: [mqtt, timestamps]
+    refs: ["OASIS MQTT Version 5.0", "ETSI EN 303 645 provision 5.5-1", "ISO 8601-1:2019"]
+    en:
+      title: Device certificates on the platform connection and buffered time stamps
+      description: Connects with valid, missing and revoked client certificates, and checks the time stamps of buffered measurements.
+      preconditions: A test device with a valid certificate, a test client without a certificate, a revoked test certificate, a reference clock and a shielded box to cut coverage.
+      expected: Only the valid certificate is accepted, and buffered values carry correct time stamps.
+      steps:
+        - action: Connect to the platform with the valid device certificate.
+          expected: The connection is accepted.
+        - action: Connect without a client certificate and with the revoked certificate.
+          expected: Both connections are refused.
+        - action: Put the device in the shielded box for 1 hour while it takes readings, then take it out.
+          expected: The buffered readings arrive.
+        - action: Compare the time stamps of the buffered readings with the reference clock log.
+          expected: Each is within 1 second of the time of measurement.
+    sv:
+      title: Enhetscertifikat vid anslutning till plattformen och tidsstämplar för buffrade värden
+      description: Ansluter med giltigt, saknat och spärrat klientcertifikat och kontrollerar tidsstämplarna för buffrade mätvärden.
+      preconditions: En testenhet med ett giltigt certifikat, en testklient utan certifikat, ett spärrat testcertifikat, en referensklocka och en skärmad låda för att bryta täckningen.
+      expected: Bara det giltiga certifikatet godtas, och buffrade värden har korrekta tidsstämplar.
+      steps:
+        - action: Anslut till plattformen med det giltiga enhetscertifikatet.
+          expected: Anslutningen godtas.
+        - action: Anslut utan klientcertifikat och med det spärrade certifikatet.
+          expected: Båda anslutningarna nekas.
+        - action: Lägg enheten i den skärmade lådan i 1 timme medan den tar mätvärden och ta sedan ut den.
+          expected: De buffrade mätvärdena kommer fram.
+        - action: Jämför tidsstämplarna för de buffrade mätvärdena med referensklockans logg.
+          expected: Var och en ligger inom 1 sekund från mättillfället.
+
+  - id: CMIOT-T08
+    priority: medium
+    execution: manual
+    tags: [silent-devices, data-budget]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "GSMA IoT Security Guidelines"]
+    en:
+      title: Silent device alarm and data budget limits
+      description: Switches off a test device to trigger the silent device alarm and makes another exceed its data budget.
+      preconditions: Two test devices on the platform, one with a short reporting interval and one with a small monthly data budget, and operator access to the platform.
+      expected: The silent device alarm comes after 3 intervals and the data alerts come at 80 % and 150 %.
+      steps:
+        - action: Switch off the first test device and wait 3 reporting intervals.
+          expected: An alarm is raised with the last signal and battery values.
+          data: reporting interval 15 min, alarm after 45 min
+        - action: Make the second device send data until it reaches 80 % of its budget.
+          expected: An alert is raised.
+        - action: Continue until it reaches 150 %.
+          expected: Its data is blocked until an operator reviews it.
+    sv:
+      title: Larm för tyst enhet och gränser för databudget
+      description: Stänger av en testenhet för att utlösa larmet för tyst enhet och låter en annan överskrida sin databudget.
+      preconditions: Två testenheter på plattformen, en med kort rapporteringsintervall och en med liten månatlig databudget, och operatörsåtkomst till plattformen.
+      expected: Larmet för tyst enhet kommer efter 3 intervall och datavarningarna kommer vid 80 % och 150 %.
+      steps:
+        - action: Stäng av den första testenheten och vänta 3 rapporteringsintervall.
+          expected: Ett larm ges med de senaste signal- och batterivärdena.
+          data: rapporteringsintervall 15 min, larm efter 45 min
+        - action: Låt den andra enheten skicka data tills den når 80 % av sin budget.
+          expected: En varning ges.
+        - action: Fortsätt tills den når 150 %.
+          expected: Dess data blockeras tills en operatör har granskat den.
+
+  - id: CMIOT-T09
+    priority: high
+    execution: manual
+    tags: [fuota, firmware-update]
+    refs: ["LoRaWAN Fragmented Data Block Transport Specification TS004", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)"]
+    en:
+      title: Over-the-air update of a LoRaWAN test group
+      description: Sends a signed firmware update over the air to a test group and logs the gateway transmissions.
+      preconditions: A test group of 50 LoRaWAN devices on the current release, a signed new release, the update service and a spectrum logger near the serving gateway.
+      expected: Each device runs the new release and the gateway stays within its duty cycle limit.
+      steps:
+        - action: Start a multicast update session for the test group.
+          expected: The update service reports the session as started.
+        - action: Wait for the session to complete and read the reported versions.
+          expected: Each of the 50 devices reports the new release.
+        - action: Calculate the gateway's airtime per sub-band from the spectrum log over the busiest hour of the session.
+          expected: Each sub-band stays within its limit.
+    sv:
+      title: Uppdatering via radio av en testgrupp med LoRaWAN-enheter
+      description: Skickar en signerad firmwareuppdatering via radio till en testgrupp och loggar gatewayens sändningar.
+      preconditions: En testgrupp med 50 LoRaWAN-enheter på den aktuella versionen, en signerad ny version, uppdateringstjänsten och en spektrumlogger nära den betjänande gatewayen.
+      expected: Varje enhet kör den nya versionen och gatewayen håller sig inom sin gräns för sändningscykeln.
+      steps:
+        - action: Starta en multicastsession för uppdatering av testgruppen.
+          expected: Uppdateringstjänsten rapporterar att sessionen har startat.
+        - action: Vänta tills sessionen är klar och läs de rapporterade versionerna.
+          expected: Var och en av de 50 enheterna rapporterar den nya versionen.
+        - action: Beräkna gatewayens sändningstid per delband från spektrumloggen för sessionens mest belastade timme.
+          expected: Varje delband håller sig inom sin gräns.

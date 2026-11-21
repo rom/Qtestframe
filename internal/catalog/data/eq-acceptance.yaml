@@ -394,6 +394,144 @@ requirements:
           text: Akten för en avvecklad utrustning innehåller de tre slagen av dokument, daterade och sparade i minst 3 år.
           threshold: sparas ≥ 3 år
 
+  - id: EQACC-18
+    type: security
+    obligation: must
+    priority: high
+    tags: [cybersecurity, purchase-specification, connected-equipment]
+    refs: ["IEC 62443-2-4:2023", "IEC 62443-4-2 CR 7.7 (least functionality)"]
+    tests: [EQACC-T11]
+    en:
+      title: Cybersecurity requirements in the purchase specification
+      description: The purchase specification of each item of equipment with a network or remote access interface MUST state the security requirements the supplier is to meet, including account management, patching for the support period, hardening and remote access rules.
+      rationale: Security that is not in the contract is hard to obtain after delivery, and connected equipment often arrives with open services and default accounts.
+      criteria:
+        - method: inspection
+          text: Each purchase specification for connected equipment issued in the last 12 months has a security section that covers the four listed topics.
+    sv:
+      title: Krav på cybersäkerhet i inköpsspecifikationen
+      description: Inköpsspecifikationen för varje utrustning med ett nätverksgränssnitt eller gränssnitt för fjärråtkomst SKA ange de säkerhetskrav som leverantören åtar sig att uppfylla, bland annat kontohantering, säkerhetsuppdateringar under supportperioden, härdning och regler för fjärråtkomst.
+      rationale: Säkerhet som inte står i avtalet är svår att få efter leveransen, och uppkopplad utrustning levereras ofta med öppna tjänster och standardkonton.
+      criteria:
+        - method: inspection
+          text: Varje inköpsspecifikation för uppkopplad utrustning som utfärdats under de senaste 12 månaderna har ett säkerhetsavsnitt som omfattar de fyra angivna områdena.
+
+  - id: EQACC-19
+    type: security
+    obligation: must
+    priority: high
+    tags: [hardening, firmware, it-equipment]
+    refs: ["ISO/IEC 27001:2022 A.8.9", "ISO/IEC 27001:2022 A.8.8"]
+    tests: [EQACC-T11]
+    en:
+      title: Equipment hardened and on supported firmware before connection
+      description: Before delivered equipment is connected to a production network, the contractor MUST show that it runs firmware within the maker's support, has default passwords changed and has services not listed in the hardening baseline disabled.
+      rationale: Equipment that goes live with old firmware or factory settings brings known vulnerabilities into the network on the first day.
+      criteria:
+        - method: test
+          text: A scan and a configuration check of each delivered item before connection show supported firmware, no default password and no service outside the baseline.
+    sv:
+      title: Utrustning härdad och med firmware som stöds före anslutning
+      description: Innan levererad utrustning ansluts till ett produktionsnät SKA entreprenören visa att den kör firmware som tillverkaren fortfarande stöder, att standardlösenord är bytta och att tjänster som inte finns i härdningsbaslinjen är avstängda.
+      rationale: Utrustning som tas i drift med gammal firmware eller fabriksinställningar för in kända sårbarheter i nätet från första dagen.
+      criteria:
+        - method: test
+          text: En skanning och en konfigurationskontroll av varje levererad enhet före anslutning visar firmware som stöds, inget standardlösenord och ingen tjänst utanför baslinjen.
+
+  - id: EQACC-20
+    type: performance
+    obligation: must_not
+    priority: medium
+    tags: [energy, performance-run, procurement]
+    refs: ["ISO 50001:2018"]
+    tests: [EQACC-T12]
+    en:
+      title: Energy consumption measured against the offered value
+      description: The energy consumption of the equipment measured during the performance run at rated capacity MUST NOT exceed the value stated in the supplier's offer by more than 5 %.
+      rationale: Energy use often costs more over the equipment's life than the purchase price, so the offered figure has to be verified before acceptance.
+      criteria:
+        - method: test
+          text: The energy meter reading over the performance run, divided by the produced quantity, is at most 5 % above the offered specific consumption.
+          threshold: ≤ offered value + 5 %
+    sv:
+      title: Energiförbrukning mätt mot det offererade värdet
+      description: Utrustningens energiförbrukning mätt under prestandakörningen vid märkkapacitet SKA INTE överstiga värdet i leverantörens offert med mer än 5 %.
+      rationale: Energianvändningen kostar ofta mer under utrustningens livstid än inköpspriset, så det offererade värdet behöver verifieras före godkännandet.
+      criteria:
+        - method: test
+          text: Energimätarens värde över prestandakörningen, delat med den producerade mängden, ligger högst 5 % över den offererade specifika förbrukningen.
+          threshold: ≤ offererat värde + 5 %
+
+  - id: EQACC-21
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [noise, occupational-health, site-acceptance]
+    refs: ["Directive 2003/10/EC Art. 3 (exposure limit values and exposure action values)"]
+    tests: [EQACC-T12]
+    en:
+      title: Noise at the operator positions below the lower action value
+      description: The daily noise exposure at each operator position of the installed equipment, measured during the site acceptance test at rated capacity, MUST be below 80 dB(A).
+      rationale: Exposure above the lower action value triggers hearing protection and health surveillance duties, and it is far cheaper to fix noise before acceptance.
+      criteria:
+        - method: test
+          text: Measurements at each operator position, normalised to an 8-hour day, are below 80 dB(A).
+          threshold: LEX,8h < 80 dB(A)
+    sv:
+      title: Buller vid operatörsplatserna under det undre insatsvärdet
+      description: Den dagliga bullerexponeringen vid varje operatörsplats för den installerade utrustningen, mätt under platsacceptanstestet vid märkkapacitet, SKA ligga under 80 dB(A).
+      rationale: Exponering över det undre insatsvärdet utlöser krav på hörselskydd och hälsokontroller, och det är mycket billigare att åtgärda buller före godkännandet.
+      criteria:
+        - method: test
+          text: Mätningar vid varje operatörsplats, normaliserade till en arbetsdag på 8 timmar, ligger under 80 dB(A).
+          threshold: LEX,8h < 80 dB(A)
+
+  - id: EQACC-22
+    type: business
+    obligation: must
+    priority: high
+    tags: [software, licences, handover]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
+    tests: [EQACC-T13]
+    en:
+      title: Software, licences and configuration backups handed over
+      description: The supplier MUST hand over, before final acceptance, the installed software versions, licence keys or certificates in the owner's name, and a tested backup of each controller and operator station configuration.
+      rationale: Without its own copy of the software and configuration, the owner depends on the supplier to restore the equipment after a failure.
+      criteria:
+        - method: inspection
+          text: The handover package lists each software item with version and licence owner, and a restore of one backup onto a spare unit succeeds.
+    sv:
+      title: Programvara, licenser och säkerhetskopior av konfigurationen överlämnas
+      description: Leverantören SKA före slutgodkännandet överlämna de installerade programversionerna, licensnycklar eller certifikat i ägarens namn och en provad säkerhetskopia av konfigurationen för varje styrsystem och operatörsstation.
+      rationale: Utan en egen kopia av programvara och konfiguration är ägaren beroende av leverantören för att återställa utrustningen efter ett fel.
+      criteria:
+        - method: inspection
+          text: Överlämningspaketet anger varje programvara med version och licensägare, och en återställning av en säkerhetskopia till en reservenhet lyckas.
+
+  - id: EQACC-23
+    type: business
+    obligation: must
+    priority: medium
+    tags: [warranty, contract]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)"]
+    tests: [EQACC-T13]
+    en:
+      title: Warranty period starting at final acceptance
+      description: The contract MUST state that the warranty period of at least 24 months starts on the date of the signed final acceptance certificate.
+      rationale: A warranty that starts at shipment can be partly used up before the equipment has run in production.
+      criteria:
+        - method: inspection
+          text: The contract states a warranty of at least 24 months from the final acceptance date.
+          threshold: ≥ 24 months
+    sv:
+      title: Garantitid som börjar vid slutgodkännandet
+      description: Avtalet SKA ange att garantitiden på minst 24 månader börjar den dag då intyget om slutgodkännande undertecknas.
+      rationale: En garanti som börjar vid leveransen kan delvis vara förbrukad innan utrustningen har körts i produktion.
+      criteria:
+        - method: inspection
+          text: Avtalet anger en garanti på minst 24 månader från datumet för slutgodkännandet.
+          threshold: ≥ 24 månader
+
 tests:
   - id: EQACC-T01
     priority: high
@@ -676,3 +814,99 @@ tests:
           expected: Vart och ett har ett intyg med medium, metod, person och datum.
         - action: Läs mediet i stickprovet med den forensiska läsaren.
           expected: Inget filsystem och inga läsbara data hittas.
+
+  - id: EQACC-T11
+    priority: high
+    execution: manual
+    tags: [cybersecurity, hardening]
+    refs: ["IEC 62443-2-4:2023", "IEC 62443-4-2 CR 7.7 (least functionality)", "ISO/IEC 27001:2022 A.8.9", "ISO/IEC 27001:2022 A.8.8"]
+    en:
+      title: Security clauses and pre-connection check of delivered equipment
+      description: Checks the security section of purchase specifications and the state of delivered equipment before it is connected.
+      preconditions: The purchase specifications for connected equipment from the last 12 months, a delivered item not yet connected, the hardening baseline and a network scanner on an isolated test network.
+      expected: The specifications cover the security topics and the item is hardened and on supported firmware.
+      steps:
+        - action: Read the security section of each specification.
+          expected: Each covers account management, patching for the support period, hardening and remote access.
+        - action: Compare the firmware version of the delivered item with the maker's support list.
+          expected: The version is within support.
+        - action: Try to sign in with the maker's documented default credentials.
+          expected: The sign-in is refused.
+        - action: Scan the item on the isolated network and compare open services with the baseline.
+          expected: No service outside the baseline is open.
+    sv:
+      title: Säkerhetsklausuler och kontroll av levererad utrustning före anslutning
+      description: Kontrollerar säkerhetsavsnittet i inköpsspecifikationer och tillståndet hos levererad utrustning innan den ansluts.
+      preconditions: Inköpsspecifikationerna för uppkopplad utrustning från de senaste 12 månaderna, en levererad enhet som ännu inte anslutits, härdningsbaslinjen och en nätverksskanner i ett isolerat testnät.
+      expected: Specifikationerna omfattar säkerhetsområdena och enheten är härdad och har firmware som stöds.
+      steps:
+        - action: Läs säkerhetsavsnittet i varje specifikation.
+          expected: Vart och ett omfattar kontohantering, säkerhetsuppdateringar under supportperioden, härdning och fjärråtkomst.
+        - action: Jämför firmwareversionen i den levererade enheten med tillverkarens lista över versioner som stöds.
+          expected: Versionen stöds.
+        - action: Försök logga in med tillverkarens dokumenterade standarduppgifter.
+          expected: Inloggningen nekas.
+        - action: Skanna enheten i det isolerade nätet och jämför öppna tjänster med baslinjen.
+          expected: Ingen tjänst utanför baslinjen är öppen.
+
+  - id: EQACC-T12
+    priority: medium
+    execution: manual
+    tags: [energy, noise, site-acceptance]
+    refs: ["ISO 50001:2018", "Directive 2003/10/EC Art. 3 (exposure limit values and exposure action values)"]
+    en:
+      title: Energy and noise measurements during the performance run
+      description: Measures the specific energy consumption and the noise exposure at the operator positions during the performance run.
+      preconditions: The equipment in its performance run at rated capacity, a calibrated energy meter on its supply, a calibrated class 1 sound level meter and the supplier's offer.
+      expected: The energy use is within 5 % of the offer and the noise is below 80 dB(A) at each operator position.
+      steps:
+        - action: Read the energy meter at the start and end of the run and the produced quantity.
+          expected: The specific consumption is calculated.
+        - action: Compare the specific consumption with the offered value.
+          expected: It is at most 5 % above the offered value.
+        - action: Measure the equivalent sound level at each operator position over a full cycle and normalise to 8 hours with the planned shift pattern.
+          expected: Each normalised value is below 80 dB(A).
+          data: LAeq over 30 min, 8-hour shift
+    sv:
+      title: Mätning av energi och buller under prestandakörningen
+      description: Mäter den specifika energiförbrukningen och bullerexponeringen vid operatörsplatserna under prestandakörningen.
+      preconditions: Utrustningen i sin prestandakörning vid märkkapacitet, en kalibrerad energimätare på dess matning, en kalibrerad ljudnivåmätare av klass 1 och leverantörens offert.
+      expected: Energianvändningen ligger inom 5 % av offerten och bullret ligger under 80 dB(A) vid varje operatörsplats.
+      steps:
+        - action: Läs energimätaren vid körningens början och slut samt den producerade mängden.
+          expected: Den specifika förbrukningen beräknas.
+        - action: Jämför den specifika förbrukningen med det offererade värdet.
+          expected: Den ligger högst 5 % över det offererade värdet.
+        - action: Mät den ekvivalenta ljudnivån vid varje operatörsplats under en hel cykel och normalisera till 8 timmar med det planerade skiftschemat.
+          expected: Varje normaliserat värde ligger under 80 dB(A).
+          data: LAeq under 30 min, skift på 8 timmar
+
+  - id: EQACC-T13
+    priority: high
+    execution: manual
+    tags: [software, warranty, handover]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)", "ISO 9001:2026 §8.4.3 (information for external providers)"]
+    en:
+      title: Software handover, backup restore and warranty start
+      description: Checks the software and licence list, restores one configuration backup and reads the warranty clause.
+      preconditions: The handover package, a spare controller or a virtual operator station, and the signed contract.
+      expected: The software list is complete, a backup restores and the warranty starts at final acceptance.
+      steps:
+        - action: Compare the software list with the versions shown on the installed controllers and stations.
+          expected: Each installed item is listed with the same version and the owner as licence holder.
+        - action: Restore one controller backup onto the spare unit and start it.
+          expected: The spare unit starts with the same configuration and program checksum.
+        - action: Read the warranty clause of the contract.
+          expected: The warranty is at least 24 months from the final acceptance date.
+    sv:
+      title: Överlämning av programvara, återställning av säkerhetskopia och garantins start
+      description: Kontrollerar listan över programvara och licenser, återställer en säkerhetskopia av konfigurationen och läser garantiklausulen.
+      preconditions: Överlämningspaketet, ett reservstyrsystem eller en virtuell operatörsstation och det undertecknade avtalet.
+      expected: Listan över programvara är fullständig, en säkerhetskopia går att återställa och garantin börjar vid slutgodkännandet.
+      steps:
+        - action: Jämför listan över programvara med versionerna som visas på de installerade styrsystemen och stationerna.
+          expected: Varje installerad programvara finns med samma version och med ägaren som licensinnehavare.
+        - action: Återställ en säkerhetskopia av ett styrsystem till reservenheten och starta den.
+          expected: Reservenheten startar med samma konfiguration och programkontrollsumma.
+        - action: Läs avtalets garantiklausul.
+          expected: Garantin gäller i minst 24 månader från datumet för slutgodkännandet.

@@ -190,6 +190,8 @@ type catalogReqDetail struct {
 	AreaName  string              `json:"area_name"`
 	Rationale string              `json:"rationale"`
 	Criteria  []catalog.Criterion `json:"criteria"`
+	// RefTargets are the refs with their sources and links.
+	RefTargets []catalog.RefTarget `json:"ref_targets"`
 	// LinkedTests are the catalogue tests that verify it.
 	LinkedTests []catalogLinked     `json:"linked_tests"`
 	InProject   []store.CatalogItem `json:"in_project,omitempty"`
@@ -201,6 +203,8 @@ type catalogTestDetail struct {
 	Preconditions string         `json:"preconditions"`
 	Expected      string         `json:"expected"`
 	StepList      []catalog.Step `json:"step_list"`
+	// RefTargets are the refs with their sources and links.
+	RefTargets []catalog.RefTarget `json:"ref_targets"`
 	// LinkedRequirements are the catalogue requirements it verifies.
 	LinkedRequirements []catalogLinked     `json:"linked_requirements"`
 	InProject          []store.CatalogItem `json:"in_project,omitempty"`
@@ -237,7 +241,7 @@ func (s *Server) handleCatalogRequirement(w http.ResponseWriter, r *http.Request
 	}
 	x := rq.Localized(lang)
 	out := catalogReqDetail{ReqSummary: c.SummarizeRequirement(rq, lang), AreaName: areaName(c, rq.Area, lang), Rationale: x.Rationale,
-		Criteria: x.Criteria, LinkedTests: []catalogLinked{}, InProject: reqs[rq.ID]}
+		Criteria: x.Criteria, RefTargets: c.RefTargets(rq.Refs, lang), LinkedTests: []catalogLinked{}, InProject: reqs[rq.ID]}
 	for _, id := range rq.Tests {
 		if t := c.Tests[id]; t != nil {
 			out.LinkedTests = append(out.LinkedTests, catalogLinked{ID: id, Area: t.Area, Title: t.Localized(lang).Title, InProject: tests[id]})
@@ -270,7 +274,7 @@ func (s *Server) handleCatalogTest(w http.ResponseWriter, r *http.Request, p *Pr
 	}
 	x := t.Localized(lang)
 	out := catalogTestDetail{TestSummary: c.SummarizeTest(t, lang), AreaName: areaName(c, t.Area, lang), Preconditions: x.Preconditions,
-		Expected: x.Expected, StepList: x.Steps, LinkedRequirements: []catalogLinked{}, InProject: tests[t.ID]}
+		Expected: x.Expected, StepList: x.Steps, RefTargets: c.RefTargets(t.Refs, lang), LinkedRequirements: []catalogLinked{}, InProject: tests[t.ID]}
 	for _, id := range t.Requirements {
 		if rq := c.Requirements[id]; rq != nil {
 			out.LinkedRequirements = append(out.LinkedRequirements, catalogLinked{ID: id, Area: rq.Area, Title: rq.Localized(lang).Title, InProject: reqs[id]})

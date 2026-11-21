@@ -123,6 +123,17 @@ De flesta ändringar kan ångras: att redigera, skapa, kopiera och ta bort krav 
 
 Kortkommandona fungerar utanför textfält; i ett textfält ångrar de som vanligt det du skrivit. Historiken hör till dig och din webbläsarflik: den rensas när du byter organisation, loggar ut eller laddar om sidan. Ett borttaget krav eller testfall kommer tillbaka med sin nyckel, sina länkar, relationer, kommentarer, versionshistorik, bilagor och utfall; borttagningar kan ångras i 30 dagar via API:t (se `GET /projects/{pid}/trash` i API-referensen). Ett ångra misslyckas om läget har ändrats under tiden, till exempel om någon annan har redigerat objektet eller om du inte längre har behörigheten; objektet lämnas då som det är och ett meddelande förklarar varför.
 
+### Autokomplettering
+
+Textfält där du ofta skriver samma sak föreslår det du har sparat i dem förut: rubriker på krav, testfall, defekter och risker, ett kravs källa, ägare och motivering, ett testfalls förutsättningar och förväntade resultat, åtgärd, förväntat resultat och data i teststeg, anteckningar och faktiska resultat vid utförande, kommentarer, granskningskommentarer, namn på körningar och releaser samt senaste sökningar. För ett kravs **Källa** och **Ägare** och en risks **Ägare** föreslås också värden som redan används i projektet.
+
+- Börja skriva: efter en kort paus öppnas en lista med högst åtta förslag under fältet. Värden som börjar med det du skrivit kommer först, sedan värden med ett ord som börjar med det och sist värden som innehåller det; de du använder oftast och senast vinner vid lika.
+- Inget väljs förrän du trycker på <kbd>↓</kbd> eller <kbd>↑</kbd>, så <kbd>Enter</kbd> och <kbd>Tab</kbd> fungerar som vanligt medan listan bara är öppen. På ett markerat förslag lägger <kbd>Enter</kbd> eller <kbd>Tab</kbd> in det i fältet (det ersätter texten); <kbd>Esc</kbd> stänger listan utan att stänga dialogen. Du kan också klicka eller trycka på ett förslag.
+- I ett tomt enradigt fält visar <kbd>↓</kbd> dina mest använda senaste värden; i ett fält med flera rader använder du <kbd>Alt</kbd>+<kbd>↓</kbd>, eftersom piltangenterna flyttar markören där.
+- Skärmläsare får höra hur många förslag det finns och vad som infogades. En klockikon visar din egen historik, en mappikon ett värde som används i projektet.
+
+Din historik sparas med ditt konto när du sparar ett formulär (inte medan du skriver), så den följer med till alla webbläsare. Du ser bara din egen historik, och bara från projekt som du fortfarande kan öppna. Stäng av förslagen, eller begränsa dem till en källa, med **Autokompletteringsförslag** i dina [inställningar](#inställningar); **Rensa min autokompletteringshistorik** i profilen raderar allt som har sparats. Lösenord, nycklar och e-postadresser sparas aldrig.
+
 ### Hjälp där du behöver den
 
 - Många fält och avsnitt har ett litet **i** bredvid namnet. Peka på det med musen, eller flytta tangentbordsfokus dit, så visas vad fältet betyder. Välj det (eller tryck på det på en mobil) för att låta förklaringen vara kvar, och välj **Läs mer i användarhandboken** för att öppna avsnittet som beskriver det. <kbd>Esc</kbd> stänger förklaringen.
@@ -173,6 +184,10 @@ Inställningarna sparas med ditt konto och gäller på alla enheter. Ändra dem 
 | **Skapa även länkat testfall (nya krav)** | Ditt personliga standardval för kryssrutan i kravredigeraren. |
 | **Kompakta tabeller** | Tätare tabellrader, så att du ser mer på en gång. |
 | **Dölj den löpande språkanalysen av kraven** | Stänger av analysrutan i kravredigeraren. |
+| **Markera nyckelord för kravnivå** | På från början: markerar SKA, BÖR, FÅR, MUST, SHOULD, MAY … i kravens beskrivningar och visar raden med nyckelord under beskrivningen i redigeraren. Se [Markerade nyckelord för kravnivå](#markerade-nyckelord-för-kravnivå). |
+| **Autokompletteringsförslag** | Vad textfälten föreslår (se [Autokomplettering](#autokomplettering)): *På: min historik och värden som används i projektet* (standard), *Bara min egen historik*, *Bara värden som används i projektet* eller *Av*. Med *Av* visas inga förslag; med *Av* och *Bara värden som används i projektet* läggs inget som du sparar till i din historik. |
+
+Under inställningen raderar **Rensa min autokompletteringshistorik** alla värden som dina textfält kommer ihåg åt dig, i alla organisationer, och visar hur många som är sparade.
 
 ### Säkerhet
 
@@ -451,6 +466,7 @@ Att läsa krav kräver rollen **Läsare**; att skapa och ändra dem kräver **An
 - **Filterfältet**: ett fält för [frågor](#sökning-och-filter) och snabbfilter för **Status**, **Kravnivå**, **Prioritet**, **Täckning** och **Kategori**. Snabbfiltren sätts ihop till en fråga som visas under fältet (`q = …`). **Rensa** återställer alla filter.
 - **Kolumner**: välj vilka kolumner tabellen visar: kravnivå, status, prioritet, typ, täckning, länkade testfall, kategorier, mapp, ägare, källa, taggar, **relationer**, antal relationer, kriterier, version, kommentarer, skapad av, skapad och uppdaterad. Kolumnen **Relationer** listar relaterade objekt grupperade per relation, åt båda hållen, till exempel *beror på SHOP-REQ-2*, *tillhandahålls av SHOP-REQ-3* och *verifieras av SHOP-TC-1*; välj en nyckel för att öppna objektet. Flytta kolumner genom att dra i rubriken, eller med pilknapparna under **Kolumner**; **Återställ** ger standardkolumnerna tillbaka. Valet sparas i webbläsaren, även för tabellerna över körningar, exekveringar och dokument.
 - **Tabellen**: sortera genom att klicka på en kolumnrubrik; välj en rad (eller dess titel) för att öppna redigeraren. Id:t (till exempel `SHOP-REQ-12`) tilldelas automatiskt.
+- **Lista** / **Kalkylblad**: växla mellan tabellen och [kalkylbladsvyn](#kalkylbladsvy), där du redigerar många krav direkt som i Excel.
 
 Den valda mappen, filtret och det öppna kravet ingår i sidans adress, så du kan bokmärka eller dela en filtrerad vy.
 
@@ -473,6 +489,24 @@ När du skapar ett krav med **Kravnivå** satt till **Identifiera automatiskt fr
 Bara kravord med VERSALER har normativ betydelse (RFC 8174). Skriv `MUST`, inte `must`. I krav som är skrivna på svenska används i stället de svenska kravorden (SKA, BÖR, FÅR …) som beskrivs under [Språkanalysen](#språkanalysen). Sidan [Referenser](#referenser) listar dessa och andra standarder för krav och test.
 
 Medan du skriver visar **Hjälp: kravnivåer** under beskrivningen (öppen för nya krav) nyckelorden för varje nivå på gränssnittets språk, vad de betyder och ett exempel, med tips om hur de skrivs. [Analys](#kravanalys) visar hur nivåerna och nyckelorden fördelar sig i projektet.
+
+### Markerade nyckelord för kravnivå
+
+Där ett kravs beskrivning visas skrivskyddad markeras nyckelorden för kravnivå: i kravredigeraren när du bara får läsa kravet, i förhandsvisningen i [katalogen](#katalog) och i förhandsvisningen i [Importera krav](#importera-krav). Varje nivå har en egen stil, och nivåerna skiljer sig inte bara i färg utan också i tjocklek och understrykning, så att de syns i alla teman, även hög kontrast:
+
+| Nivå | Nyckelord | Understrykning |
+|---|---|---|
+| Ska | SKA, SKALL, MÅSTE, MUST, SHALL, REQUIRED | heldragen, extra fet |
+| Ska inte | SKA INTE, FÅR INTE, MUST NOT, SHALL NOT | dubbel, extra fet |
+| Bör | BÖR, REKOMMENDERAS, SHOULD | streckad, fet |
+| Bör inte | BÖR INTE, SHOULD NOT, NOT RECOMMENDED | dubbel, fet |
+| Får | FÅR, VALFRI, MAY, OPTIONAL | prickad |
+
+Negationer som `SKA INTE` och `MUST NOT` är ett nyckelord. Bara nyckelord skrivna med versaler markeras, bara hela ord (`FÅRA` är inte `FÅR`), och aldrig i länkar eller i kod mellan bakåtapostrofer (`` `SKA` ``). Peka på ett nyckelord för att se vad det betyder; skärmläsare läser nivån efter nyckelordet, till exempel "SKA INTE – kravnivå: SHALL NOT (SKA INTE)". Nyckelorden är desamma som [språkanalysen](#språkanalysen) känner till.
+
+När du redigerar beskrivningen visar raden **Nyckelord för kravnivå** under den nyckelorden som hittas medan du skriver, med deras nivå. Den säger till när nyckelordet inte stämmer med fältet **Kravnivå** (med en knapp som sätter fältet till den hittade nivån), när texten har mer än ett nyckelord och när ett nyckelord är skrivet med gemener. **Vad betyder nyckelorden?** öppnar **Hjälp: kravnivåer**.
+
+Vill du stänga av markeringen och raden, avmarkera **Markera nyckelord för kravnivå** i dina [inställningar](#inställningar).
 
 ## Språkanalysen
 
@@ -658,6 +692,26 @@ Kryssa i rutorna för flera krav (eller rubrikens kryssruta för hela sidan). Et
 
 Varje massändring registreras i varje kravs versionshistorik.
 
+## Kalkylbladsvy
+
+Välj **Kalkylblad** bredvid knappen för att läsa in igen för att se kraven som ett kalkylblad: en rad per krav och en kolumn per fält (**Nyckel**, **Titel**, **Beskrivning**, **Typ**, **Prioritet**, **Status**, **Kravnivå**, **Kategorier**, **Taggar**, **Ägare**, **Källa**, **Mapp** och de skrivskyddade **Täckning**, **Testfall** och **Version**). Valet sparas i webbläsaren och ingår i sidans adress (`?view=sheet`), så en delad länk öppnar kalkylbladet. Mappträdet, filtren och verktygsfältet för massändring fungerar som i listan.
+
+- **Kolumner**: visa, dölj och ordna kolumnerna med **Kolumner**; dra i kanten på en kolumnrubrik för att göra den bredare eller smalare (eller tryck **Alt+Skift+←/→**). Bredder och kolumner sparas i webbläsaren. Nyckelkolumnen och rubrikraden står kvar när du rullar.
+- **Sortera**: klicka på en kolumnrubrik, eller välj kolumnen under **Sortera** och riktningen bredvid.
+- **Förflytta dig**: piltangenterna, **Tab** och **Skift+Tab**, **Home** och **End** (första och sista kolumnen), **Ctrl+Home** och **Ctrl+End** (första och sista cellen), **Page Up** och **Page Down**. Den aktiva cellen har en ram.
+- **Markera**: **Skift** med pilarna eller ett klick markerar ett område, **Ctrl+A** (**Cmd+A** på Mac) markerar alla celler. **Mellanslag** kryssar i den aktiva cellens rad och **Skift+Mellanslag** områdets rader; ikryssade rader använder verktygsfältet för massändring ovanför bladet.
+- **Redigera**: tryck **F2** eller **Enter**, eller börja bara skriva, för att redigera den aktiva cellen. **Enter** sparar och flyttar nedåt, **Tab** sparar och flyttar åt höger, **Escape** avbryter. Fält som **Status** och **Prioritet** öppnar en lista med sina värden; **Taggar** och **Kategorier** tar flera värden åtskilda med kommatecken (kategorier som *Dimension/Namn*); fält med flera rader som **Beskrivning** får en radbrytning med **Alt+Enter** eller **Skift+Enter**. Grå celler med ett lås i rubriken (nyckeln, beräknade värden) kan inte redigeras, och inte heller celler du saknar behörighet för: utan skrivbehörighet kan bara en granskares statusbeslut göras.
+- **Kopiera och klistra in**: **Ctrl+C** kopierar de markerade cellerna som tabbseparerad text som går att klistra in i Excel eller LibreOffice; kryssa i **Kopiera med rubrikrad** för att ta med kolumnnamnen. **Ctrl+V** klistrar in ett block som kopierats från ett kalkylblad vid den aktiva cellen (ett enda värde fyller hela markeringen; en första rad som upprepar kolumnnamnen hoppas över). Varje inklistrat värde kontrolleras först: om något inte är giltigt, till exempel en prioritet som inte finns, sparas ingenting och ett meddelande anger cellen och de tillåtna värdena. **Ctrl+X** klipper ut.
+- **Fyll nedåt och töm**: **Ctrl+D** kopierar markeringens översta värde till cellerna under det; **Delete** eller **Backsteg** tömmer de markerade celler som får vara tomma.
+- **Nya krav**: skriv en titel i sista raden (**Skriv en titel för att lägga till ett krav**) och tryck **Enter**; kravet skapas i den valda mappen och nästa tomma rad är redo för nästa. Värden du först skriver i radens andra celler används också.
+- **Öppna ett krav**: dubbelklicka på nyckeln eller tryck **Ctrl+Enter** för att öppna det i redigeraren.
+
+Varje ändring sparas direkt, alla celler i en inklistring eller fyllning i ett steg: en cell visar en snurra medan den sparas, en bock när den är sparad och en röd ram med orsaken när den inte sparades. Om någon annan har ändrat ett krav sedan du läste in bladet sparas ingenting, raden markeras och **Läs in raden igen** visar den andras version så att du kan göra din ändring på nytt. En redigering, inklistring, fyllning eller tömning är ett steg för **Ångra** (**Ctrl+Z**). Skärmläsare läser upp sparade ändringar och fel.
+
+**Exportera vyn** sparar exakt det bladet visar, med kolumnerna i sin ordning, sorterat och filtrerat, som **Excel (XLSX)**, **CSV** eller **Markdown** (kräver exportbehörighet).
+
+På en mobil rullar bladet i sidled inom sin ram; där är listan lättare att läsa.
+
 ## Flytta krav och mappar
 
 - **Inom projektet:** dra rader i deras handtag (☰) till en mapp i trädet, eller markera dem och använd **Flytta**. Nycklar, länkar, kategorier och historik förblir oförändrade.
@@ -702,6 +756,36 @@ Markera krav eller testfall i deras lista, eller körningar på sidan **Testkör
 Dialogen visar hur många länkar som läggs till eller tas bort innan du bekräftar; objekt du inte får ändra hoppas över och räknas i meddelandet. På ett objekts flik **Länkar** kan du kryssa i flera länkar (eller **Markera alla**) och välja **Ta bort** för att ta bort dem tillsammans. Båda kan ångras.
 
 **Nycklar och adresser i texter.** I kommentarer blir en objektnyckel som `SHOP-REQ-12` eller `SHOP-TC-3` en länk till objektet, och en webbadress blir en länk som öppnas i en ny flik. Adressen `/go/SHOP-TC-3` i verktyget öppnar alltid det objektet, vilket är praktiskt i e-post och chattar.
+
+## Ärenden i GitLab, GitHub eller Jira
+
+När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende. Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
+
+- **Skapa GitLab-ärende** visar en förhandsvisning av ärendet och skapar det. Ärendet får:
+  - titeln `[SHOP-REQ-12] <titel>`;
+  - en beskrivning med kravtexten, motiveringen, acceptanskriterierna, typ, prioritet, kravnivå, status, ägare, källa, taggar och version, de länkade testfallen med deras senaste resultat och länkar tillbaka till kravet och testfallen i Qtestframe (när serverns adress, `server.base_url`, är inställd);
+  - etiketter: ärendehanterarens standardetiketter plus etiketter från kravets fält (se nedan);
+  - milstolpen och den tilldelade från inställningarna, om de är angivna.
+
+  Ärendet läggs till bland kravets länkar som en webblänk, med sin nyckel och sitt läge (**Öppet** eller **Stängt**).
+- Ett krav har högst ett ärende i ärendehanteraren. Om det redan har ett erbjuder Qtestframe **Öppna ärendet** och **Uppdatera ärendet** i stället för att skapa ett till.
+- **Uppdatera ärendet** för in kravets aktuella titel och text i ärendet, till exempel efter att kravet ändrats eller testfallen körts. I GitLab och GitHub ersätts bara den del som Qtestframe skrivit (den är markerad med dolda kommentarer); anteckningar som utvecklarna lagt till ovanför eller nedanför behålls. I Jira ersätts hela beskrivningen.
+- **Läs om status** läser tillbaka ärendets läge. Läget läses inte om automatiskt: läs om det här eller med **Ärenden** i listan.
+
+Med **Kommentera ärendet när alla länkade tester har godkänts** i inställningarna lägger en omläsning av ett öppet ärende, vars länkade testfall alla har godkänts, till en kommentar om det med en länk till kravet. Om testerna slutar godkännas och sedan godkänns igen kommenterar nästa omläsning på nytt.
+
+**Etiketter från kravets fält** i inställningarna översätter fält till etiketter: mallar separerade med komma, där `{type}`, `{priority}`, `{obligation}`, `{status}` och `{tags}` (en etikett per tagg) ersätts med kravets värden. Standard är `requirement, type::{type}, priority::{priority}, {tags}`, vilket ger till exempel `requirement`, `type::functional`, `priority::high` och `login`; GitLab visar `type::functional` som en etikett med omfång (scoped label). Ange `none` för inga sådana etiketter. I Jira blir mellanslag i etiketter `_`, och ärendetypen för krav anges med **Ärendetyp för krav** (standard *Task*).
+
+### Ärenden för många krav på en gång
+
+Markera krav i listan och välj **Ärenden** i verktygsfältet:
+
+- **Skapa ärenden** skapar ett ärende för varje markerat krav som saknar ett. Krav som har ett hoppas över, så inget får två; kryssa i **Uppdatera de ärenden som finns** för att uppdatera dem i stället.
+- **Läs om status** läser läget för de markerade kravens ärenden.
+
+Resultatet listar varje krav med sitt ärende, och de krav som ärendehanteraren avvisade med orsaken. Upp till 100 krav kan hanteras åt gången.
+
+Att skapa, uppdatera och läsa om ärenden kräver behörigheten att redigera krav (`requirement.write`, som standard Ansvarig); alla som kan läsa krav ser ärendet och dess läge. Varje skapande, uppdatering och omläsning registreras i [händelseloggen](#händelselogg). Ärendehanterarens token visas aldrig.
 
 ## Bilagor
 
@@ -916,6 +1000,10 @@ På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felha
 Den som har `test.review` kan markera många tester som *Klart* i ett steg: kryssa i testerna och välj **Markera som klara…**, eller välj **Massgranskning** ovanför listan när inget är markerat. Precis som för krav (se [Godkänn många krav på en gång](#godkänn-många-krav-på-en-gång)) väljer du tester (markerade, de som visas i listan eller alla), vilka statusar de får komma från (som standard *Granskning*; lägg till *Utkast* för att ta med utkast) och en valfri kommentar, och en förhandsgranskning visar vad som ändras.
 
 Utöver kontrollerna för krav (den senaste granskningen begärde ändringar, öppna granskningsförfrågningar, misstänkta länkar) hoppas ett test över när det inte kan köras som det är skrivet: ett **manuellt test utan steg** eller ett **automatiserat test utan skript**. Välj kontrollen under **Ta med ändå, trots** för att markera dem som klara ändå.
+
+## Kalkylbladsvy
+
+Välj **Kalkylblad** för att redigera testfall som i ett kalkylblad; det fungerar som för [krav](#kalkylbladsvy) (tangentbord, kopiera och klistra in från Excel, fyll nedåt, nya rader, sparande, konflikter, ångra och **Exportera vyn**). Kolumnerna är **Nyckel**, **Titel**, **Beskrivning**, **Prioritet**, **Status**, **Exekvering**, **Förutsättningar**, **Förväntat resultat**, **Uppskattning (min)**, **Kategorier**, **Taggar**, **Mapp** och de skrivskyddade **Steg** (antalet steg), **Senaste utfall**, **Krav**, **Skapad av** och **Version**. Steg, skript och testdata redigeras i redigeraren (dubbelklicka på nyckeln eller tryck **Ctrl+Enter**). Att sätta ett testfall till *Klart* är ett granskningsbeslut och kräver `test.review`, i bladet som i redigeraren.
 
 ## Kopiera ett testfall
 
@@ -1496,7 +1584,7 @@ Utgångskriteriet **Risker hanterade** med nivån *Hög* blockerar en release s�
 
 En **defekt** (bugg) är ett problem som hittats vid testning. Varje defekt har en nyckel som `SHOP-BUG-3`, en titel, en beskrivning, en status, en allvarlighetsgrad, en prioritet och en tilldelad person, och den kopplas till de krav, testfall och exekveringar den gäller. Defekterna finns under **Defekter** i projektets sidomeny.
 
-Defekter kan speglas i **Jira** eller **GitHub Issues**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
+Defekter kan speglas i **Jira**, **GitHub Issues** eller **GitLab**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
 
 | Åtgärd | Roll som krävs |
 |---|---|
@@ -1517,7 +1605,7 @@ Välj en defekt för att öppna och redigera den. Välj **Ny defekt** för att r
 Kryssa i defekter i listan (rubrikens kryssruta markerar hela sidan). Verktygsfältet ändrar alla på en gång:
 
 - **Ange status** och **Ange allvarlighetsgrad**, samt **Tilldela…** för att ge dem till någon (tomt tar bort tilldelningen). Den nya ansvariga får en notis. Kräver behörighet att spara utfall (`run.execute`).
-- **Skicka till Jira/GitHub** skapar ett ärende för varje markerad defekt som saknar ett; defekter som redan har ett ärende lämnas orörda. **Synkronisera** läser status för de markerade defekternas ärenden. Båda visas när en ärendehanterare är ansluten.
+- **Skicka till Jira/GitHub/GitLab** skapar ett ärende för varje markerad defekt som saknar ett; defekter som redan har ett ärende lämnas orörda. **Synkronisera** läser status för de markerade defekternas ärenden. Båda visas när en ärendehanterare är ansluten.
 - **Ta bort** (behörighet att ändra projektet), efter bekräftelse.
 
 Alla defekter kontrolleras innan någon ändras, så ett felaktigt värde ändrar ingenting. Ändringar av status, allvarlighetsgrad och tilldelning kan ångras med ångra-knappen i övre fältet.
@@ -1568,9 +1656,9 @@ När ett testfall misslyckas i [exekveringsvyn](#exekveringsvyn) visas en notis 
 
 Justera texten, ange allvarlighetsgrad och välj **Rapportera defekt**. Den nya defekten visas på fliken **Defekter** i exekveringsvyn, och testfallet och dess krav visar den också. Fliken har även **Koppla befintlig** för en defekt som redan är känd.
 
-## Anslut Jira eller GitHub
+## Anslut Jira, GitHub eller GitLab
 
-En användare med rollen **Ansvarig** ansluter projektet till en ärendehanterare under **Kategorier & inställningar**, fliken **Projekt**, kortet **Ärendehanterare för defekter**. Välj **Ärendehanterare** och fyll i fälten; **Testa anslutningen** sparar inställningarna och kontrollerar adressen, projektet eller repot och token.
+En användare med rollen **Ansvarig** ansluter projektet till en ärendehanterare under **Kategorier & inställningar**, fliken **Projekt**, kortet **Ärendehanterare**. Samma anslutning används för defekter och för [ärenden som skapas från krav](#ärenden-i-gitlab-github-eller-jira). Välj **Ärendehanterare** och fyll i fälten; **Testa anslutningen** sparar inställningarna och kontrollerar adressen, projektet eller repot och token.
 
 ### Jira
 
@@ -1586,6 +1674,23 @@ Kontot behöver behörighet att bläddra i projektet och skapa ärenden i det.
 - **API-adress**: tom för github.com; för GitHub Enterprise Server t.ex. `https://github.example.com/api/v3`.
 - **Etiketter** som läggs till på nya ärenden, separerade med komma, t.ex. `bug, qtestframe`.
 - **Token**: en **finkornig personlig åtkomsttoken** (fine-grained) med åtkomst till repot och repobehörigheten **Issues: Read and write** (*Metadata: Read* ingår automatiskt).
+- **Milstolpe** och **Tilldelad** (valfria): sätts på nya ärenden; milstolpen med nummer eller titel, den tilldelade med sitt användarnamn.
+
+### GitLab
+
+- **GitLab-adress**: tom för gitlab.com; för en egen installation (self-managed) dess adress, t.ex. `https://gitlab.example.com`. Bara `https`-adresser godtas.
+- **Projekt**: projektets numeriska id (visas på projektets översiktssida) eller dess sökväg, t.ex. `grupp/undergrupp/projekt`. Du kan också klistra in projektets adress; den kortas till sökvägen.
+- **Etiketter** som läggs till på nya ärenden, separerade med komma. GitLab skapar etiketter som inte finns än.
+- **Milstolpe** (valfri): numret som GitLab visar som `%3`, eller titeln. Milstolpar i projektets grupper fungerar också.
+- **Tilldelad** (valfri): GitLab-användarnamnet för den som ska få nya ärenden.
+- **Token**: en åtkomsttoken med behörigheten (scope) **`api`**, den minsta som kan skapa och ändra ärenden. Skapa en av dessa:
+  - en **projekttoken** (project access token, rekommenderas eftersom den bara når det här projektet): i GitLab-projektet **Settings → Access tokens → Add new token**, ge den ett namn och ett utgångsdatum, rollen **Reporter** (eller högre) och behörigheten **api**;
+  - en **grupptoken** (group access token), på samma sätt under gruppens **Settings → Access tokens**, när flera projekt i gruppen delar den;
+  - en **personlig token** (personal access token): **Edit profile → Access tokens → Add new token** med behörigheten **api**; den agerar som du i alla projekt du når, så välj hellre en av de andra.
+
+  Kopiera token när GitLab visar den (den visas bara en gång) och klistra in den i **Token**. Med Reporter kan ärenden skapas med etiketter, milstolpe och tilldelad; med Guest behålls bara titel och beskrivning. Qtestframe skickar token i huvudet `PRIVATE-TOKEN`.
+
+Ett GitLab-ärendes status är *opened* eller *closed*; se tabellen under [Skicka, synkronisera och importera](#skicka-synkronisera-och-importera).
 
 ### Token
 
@@ -1598,18 +1703,20 @@ När en ärendehanterare är ansluten har listan över defekter tre åtgärder t
 - **Skicka till ärendehanteraren** (uppladdningsknappen för en defekt) skapar ett ärende från defekten: titeln med defektens nyckel, beskrivningen, allvarlighetsgraden och prioriteten samt nycklarna för de kopplade objekten. Defekten visar sedan ärendets nyckel, en länk till det och dess status i ärendehanteraren. En defekt som redan har ett ärende kan inte skickas igen.
 - **Synkronisera** (synkknappen för en defekt) läser ärendets status och uppdaterar defektens status; **Synkronisera alla** gör det för varje defekt med ett ärende i den anslutna ärendehanteraren och visar hur många som ändrades. Statusarna översätts så här:
 
-  | Jira | GitHub | Defektens status |
-  |---|---|---|
-  | statuskategori *To Do* | open | Öppen |
-  | statuskategori *In Progress* | | Pågår |
-  | *Done* | closed (completed) | Stängd |
-  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | Avvisad |
+  | Jira | GitHub | GitLab | Defektens status |
+  |---|---|---|---|
+  | statuskategori *To Do* | open | opened | Öppen |
+  | statuskategori *In Progress* | | | Pågår |
+  | *Done* | closed (completed) | closed | Stängd |
+  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | Avvisad |
 
-- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub) och allvarlighetsgraden. Titel och status hämtas från ärendet.
+- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab) och allvarlighetsgraden. Titel och status hämtas från ärendet.
 
 Synkronisering läser bara; den ändrar aldrig ärendet. Ändringar du gör i en defekt i Qtestframe skrivs inte till ärendehanteraren.
 
-Om ärendehanteraren inte kan nås eller avvisar en begäran, till exempel för att token har gått ut eller saknar en behörighet, visar en röd notis överst i listan ärendehanterarens eget svar. Kontrollera inställningarna med **Testa anslutningen**.
+Om ärendehanteraren inte kan nås eller avvisar en begäran, till exempel för att token har gått ut eller saknar en behörighet, visar en röd notis överst i listan ärendehanterarens eget svar. Kontrollera inställningarna med **Testa anslutningen**. Notisen förklarar de vanliga svaren: **401** token avvisades (fel, utgången eller återkallad), **403** token saknar en behörighet eller roll, **404** projektet, repot eller ärendet finns inte eller syns inte för token, **422** ärendehanteraren avvisade innehållet (till exempel en okänd etikett eller milstolpe). När ärendehanteraren begränsar antalet anrop väntar Qtestframe och försöker igen om den ber om en kort väntan, och säger annars hur länge du ska vänta.
+
+Qtestframe når ärendehanteraren från servern, via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) om en sådan är inställd, och litar på de certifikat som serverns system litar på. För en egen GitLab- eller Jira-installation med ett certifikat från er egen CA installerar du den CA:n på servern.
 
 ## Öppna defekter och releaser
 
@@ -2461,6 +2568,8 @@ Standardmatrisen med behörigheter:
 
 **Granskningsbeslut.** Att sätta ett krav till *Godkänt* eller *Avvisat* kräver `requirement.review`; att sätta ett testfall till *Klart* kräver `test.review`. Detsamma gäller massändringar, att skapa ett objekt med den statusen och att återställa en version som har den. En granskare utan skrivbehörighet får bara ändra statusen; att redigera något annat kräver fortfarande `requirement.write` eller `test.write`. Varje beslut registreras i händelseloggen som `requirement.review` eller `test.review`. Ett kopierat krav eller testfall börjar som *Utkast* och granskas alltså på nytt.
 
+**Ärendehanterare.** Att ansluta ett projekt till Jira, GitHub eller GitLab kräver `project.update`; token anges där en gång och visas aldrig igen (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab), som också beskriver hur du skapar en GitLab-token med den minsta behörigheten, `api`). Att skicka och synkronisera defekter kräver `run.execute`; att skapa, uppdatera och läsa om [ärenden från krav](#ärenden-i-gitlab-github-eller-jira) kräver `requirement.write`. De registreras i händelseloggen (`defect.push`, `defect.sync` när en status ändras, `requirement.issue.create`, `requirement.issue.update`, `requirement.issue.sync`).
+
 ### Ändra roller och skapa egna
 
 *(Administratör, eller en roll med `role.manage`)* **Administration → Rollmatris** visar organisationens matris. Kryssa i eller ur en behörighet för alla roller utom **Administratör**; ändrade celler markeras och en rad visar hur många roller som har osparade ändringar. Välj **Spara** för att tillämpa dem; medlemmar med rollen får de nya behörigheterna direkt. Du kan bara ge behörigheter som du själv har.
@@ -3154,3 +3263,505 @@ Amerikanska National Institute of Standards and Technology ger ut fritt tillgän
 ## Branschspecifika standarder
 
 Reglerade branscher har egna regler för krav och verifiering. Qtestframes kravnivåer, utvärderingskriterier, baslinjer, versionshistorik och händelselogg är användbara där, men kontrollera standarden för din bransch, till exempel *DO-178C* (programvara i luftfartyg), *IEC 62304* (programvara i medicintekniska produkter), *ISO 26262* (vägfordon), *IEC 61508* (funktionell säkerhet) eller *EN 50128* (programvara för järnväg).
+
+<!-- BEGIN generated sources: make refs-docs -->
+
+## Källor som katalogen hänvisar till
+
+[Kravkatalogen](#katalog) hänvisar till 369 lagar, standarder, bästa praxis och vägledningar. Vid varje källa står hur många krav i katalogen som hänvisar till den och hur många testfall i katalogen som hänvisar till den eller verifierar ett sådant krav, samma antal som när du väljer källor att uppfylla i katalogen. När en källa samlar flera dokument listas de under den. Avsnittet genereras från katalogen.
+
+### Lagar och förordningar
+
+#### Lagar och förordningar: Internationella
+
+- [FN-föreskrift nr 155 – Cybersäkerhet och ledningssystem för cybersäkerhet](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-155-cyber-security-and-cyber-security) (UN R155): 2 krav, 2 testfall
+- [FN-föreskrift nr 156 – Programuppdateringar och ledningssystem för programuppdateringar](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-156-software-update-and-software-update) (UN R156): 4 krav, 4 testfall
+
+#### Lagar och förordningar: Europeiska unionen
+
+- [AI-förordningen (EU) 2024/1689](https://eur-lex.europa.eu/eli/reg/2024/1689/oj) (AI Act): 40 krav, 29 testfall
+- [Batteriförordningen (EU) 2023/1542](https://eur-lex.europa.eu/eli/reg/2023/1542/oj): 3 krav, 3 testfall
+- [Beslut nr 768/2008/EG om en gemensam ram för saluföring av produkter](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32008D0768) (Decision 768/2008/EC): 4 krav, 3 testfall
+- [CLP-förordningen (EG) nr 1272/2008 om klassificering, märkning och förpackning](https://eur-lex.europa.eu/eli/reg/2008/1272/oj): 2 krav, 2 testfall
+- [Cyberresiliensförordningen (EU) 2024/2847](https://eur-lex.europa.eu/eli/reg/2024/2847/oj) (CRA): 100 krav, 95 testfall
+- [Dataförordningen (EU) 2023/2854](https://eur-lex.europa.eu/eli/reg/2023/2854/oj) (Data Act): 9 krav, 6 testfall
+- [Dataskyddsförordningen (EU) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj) (GDPR): 97 krav, 95 testfall
+- [Digital omnibusförordning om AI, förordning (EU) 2026/1744 om ändring av AI-förordningen](https://eur-lex.europa.eu/eli/reg/2026/1744/oj) (Digital Omnibus on AI): 5 krav, 4 testfall
+- [E-PRTR-förordningen (EG) nr 166/2006](https://eur-lex.europa.eu/eli/reg/2006/166/oj): 1 krav, 1 testfall
+- [eIDAS-förordningen (EU) nr 910/2014](https://eur-lex.europa.eu/eli/reg/2014/910/oj): 7 krav, 7 testfall
+- [EU:s nätföreskrifter och riktlinjer för el (SO GL, EB GL, NC ER)](https://eur-lex.europa.eu/eli/reg/2017/1485/oj): 4 krav, 4 testfall
+  - [Commission Regulation (EU) 2017/1485](https://eur-lex.europa.eu/eli/reg/2017/1485/oj) · [Commission Regulation (EU) 2017/2195](https://eur-lex.europa.eu/eli/reg/2017/2195/oj) · [Commission Regulation (EU) 2017/2196](https://eur-lex.europa.eu/eli/reg/2017/2196/oj)
+- [Förordning (EG) nr 765/2008 om ackreditering och CE-märkning](https://eur-lex.europa.eu/eli/reg/2008/765/oj): 1 krav, 1 testfall
+- [Förordningen om digital operativ motståndskraft (DORA), (EU) 2022/2554](https://eur-lex.europa.eu/eli/reg/2022/2554/oj): 50 krav, 42 testfall
+- [Förordningen om digitala tjänster (EU) 2022/2065](https://eur-lex.europa.eu/eli/reg/2022/2065/oj) (DSA): 1 krav, 1 testfall
+- [Förordningen om ekodesign för hållbara produkter (EU) 2024/1781](https://eur-lex.europa.eu/eli/reg/2024/1781/oj) (ESPR): 5 krav, 4 testfall
+- [Förordningen om en gemensam digital ingång (EU) 2018/1724](https://eur-lex.europa.eu/eli/reg/2018/1724/oj) (SDG): 5 krav, 5 testfall
+- [Förordningen om ett kompatibelt Europa (EU) 2024/903](https://eur-lex.europa.eu/eli/reg/2024/903/oj): 1 krav, 1 testfall
+- [Förordningen om medicintekniska produkter (EU) 2017/745](https://eur-lex.europa.eu/eli/reg/2017/745/oj) (MDR): 6 krav, 6 testfall
+- [Förordningen om metanutsläpp i energisektorn (EU) 2024/1787](https://eur-lex.europa.eu/eli/reg/2024/1787/oj): 3 krav, 3 testfall
+- [Förordningen om öppen internetanslutning (EU) 2015/2120](https://eur-lex.europa.eu/eli/reg/2015/2120/oj): 1 krav, 1 testfall
+- [Förordningen om övervakning och rapportering inom EU ETS, (EU) 2018/2066](https://eur-lex.europa.eu/eli/reg_impl/2018/2066/oj): 1 krav, 1 testfall
+- [Genomförandeförordningen till NIS2, (EU) 2024/2690](https://eur-lex.europa.eu/eli/reg_impl/2024/2690/oj) (NIS2 IR): 13 krav, 15 testfall
+- [Kommissionens förordning (EU) 2019/1782 om ekodesignkrav för externa nätaggregat](https://eur-lex.europa.eu/eli/reg/2019/1782/oj): 1 krav, 1 testfall
+- [Kommissionens förordning (EU) 2023/826 om ekodesignkrav för frånläge, standbyläge och nätverksanslutet standbyläge](https://eur-lex.europa.eu/eli/reg/2023/826/oj): 1 krav, 1 testfall
+- [Maskinförordningen (EU) 2023/1230](https://eur-lex.europa.eu/eli/reg/2023/1230/oj): 25 krav, 21 testfall
+- [Nätföreskrifter för cybersäkerhet, delegerad förordning (EU) 2024/1366](https://eur-lex.europa.eu/eli/reg_del/2024/1366/oj) (NCCS): 2 krav, 2 testfall
+- [Reach-förordningen (EG) nr 1907/2006](https://eur-lex.europa.eu/eli/reg/2006/1907/oj) (REACH): 3 krav, 3 testfall
+- [REMIT, förordning (EU) nr 1227/2011 om integritet och öppenhet på grossistmarknaderna för energi](https://eur-lex.europa.eu/eli/reg/2011/1227/oj): 2 krav, 2 testfall
+
+#### Lagar och förordningar: Sverige
+
+- [Arbetsmiljöverkets föreskrifter (AFS 2023:1–2023:15)](https://www.av.se/arbetsmiljoarbete-och-inspektioner/publikationer/foreskrifter/): 4 krav, 3 testfall
+- [Arkivlag (1990:782)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arkivlag-1990782_sfs-1990-782/): 2 krav, 1 testfall
+- [Bokföringslagen (1999:1078)](https://lagen.nu/1999:1078): 3 krav, 3 testfall
+- [Boverkets byggregler (BFS 2024:4–2024:13, BFS 2026:4 och 2026:9), som har ersatt BBR (BFS 2011:6) och EKS](https://www.boverket.se/sv/byggande/regler-for-byggande/om-boverkets-nya-byggregler/): 9 krav, 6 testfall
+- [Cybersäkerhetslag (2025:1506), som genomför NIS2](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/cybersakerhetslag-20251506_sfs-2025-1506/): 9 krav, 7 testfall
+- [Elberedskapslag (1997:288)](https://lagen.nu/1997:288): 1 krav, 1 testfall
+- [Elsäkerhetslag (2016:732)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/elsakerhetslag-2016732_sfs-2016-732/): 2 krav, 1 testfall
+- [Funktionskontroll av ventilationssystem: plan- och byggförordningen (2011:338) 5 kap. 1–7 §§ och Boverkets BFS 2011:16 (OVK)](https://www.boverket.se/sv/PBL-kunskapsbanken/regler-om-byggande/ovk/): 2 krav, 2 testfall
+- [Förvaltningslag (2017:900)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/forvaltningslag-2017900_sfs-2017-900/): 1 krav, 1 testfall
+- [Kamerabevakningslag (2018:1200)](https://lagen.nu/2018:1200): 1 krav, 1 testfall
+- [Kontroll av hissar och andra motordrivna anordningar: plan- och byggförordningen (2011:338) 5 kap. 8–11 §§ och Boverkets BFS 2025:11 och 2025:12](https://www.boverket.se/sv/PBL-kunskapsbanken/regler-om-byggande/motordrivna-anordningar/hissar/): 1 krav, 1 testfall
+- [Lag (2003:778) om skydd mot olyckor](https://lagen.nu/2003:778) (LSO): 5 krav, 5 testfall
+- [Lag (2006:985) om energideklaration för byggnader](https://lagen.nu/2006:985): 1 krav, 1 testfall
+- [Lag (2010:1011) om brandfarliga och explosiva varor](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-20101011-om-brandfarliga-och-explosiva_sfs-2010-1011/): 1 krav, 1 testfall
+- [Lag (2016:1145) om offentlig upphandling (LOU)](https://lagen.nu/2016:1145): 4 krav, 3 testfall
+- [Lag (2018:218) med kompletterande bestämmelser till EU:s dataskyddsförordning](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018218-med-kompletterande-bestammelser_sfs-2018-218/): 1 krav, 1 testfall
+- [Lag (2021:890) om skydd för personer som rapporterar om missförhållanden](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2021890-om-skydd-for-personer-som_sfs-2021-890/): 1 krav, 1 testfall
+- [Lagen (2018:1937) om tillgänglighet till digital offentlig service och DIGG:s föreskrifter](https://lagen.nu/2018:1937) (DOS-lagen): 4 krav, 4 testfall
+  - [Lag (2018:1937)](https://lagen.nu/2018:1937) · [DIGG MDFFS 2019:2](https://www.digg.se/om-oss/forfattningssamling/foreskrifter-om-tillganglighet-till-digital-offentlig-service-mdffs-20192/grundforfattning-mdffs-20192)
+- [Lagen (2022:482) om elektronisk kommunikation](https://lagen.nu/2022:482) (LEK): 2 krav, 2 testfall
+- [Marknadsföringslagen (2008:486)](https://lagen.nu/2008:486): 2 krav, 2 testfall
+- [Offentlighets- och sekretesslag (2009:400)](https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/) (OSL): 2 krav, 2 testfall
+- [Patientdatalagen (2008:355)](https://lagen.nu/2008:355): 1 krav, 1 testfall
+- [Språklag (2009:600)](https://lagen.nu/2009:600): 3 krav, 3 testfall
+- [Säkerhetsskyddslagen (2018:585), säkerhetsskyddsförordningen (2021:955) och föreskrifter](https://lagen.nu/2018:585): 20 krav, 17 testfall
+  - [Säkerhetsskyddslag (2018:585)](https://lagen.nu/2018:585) · [Säkerhetsskyddsförordning (2021:955)](https://lagen.nu/2021:955)
+
+#### Lagar och förordningar: USA
+
+- [Amerikanska FDA 21 CFR Part 11 (elektroniska register och underskrifter)](https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11): 15 krav, 14 testfall
+- [HIPAA Security Rule (45 CFR del 164)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C): 1 krav, 1 testfall
+- [OSHA processäkerhet, 29 CFR 1910.119](https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.119): 1 krav, 1 testfall
+- [USA:s Code of Federal Regulations avdelning 47 (FCC), del 2 och 15](https://www.ecfr.gov/current/title-47) (FCC 47 CFR): 1 krav, 1 testfall
+
+### Direktiv
+
+#### Direktiv: Europeiska unionen
+
+- [Arbetsutrustningsdirektivet 2009/104/EG](https://eur-lex.europa.eu/eli/dir/2009/104/oj): 5 krav, 4 testfall
+- [ATEX-direktivet om arbetsplatser 1999/92/EG](https://eur-lex.europa.eu/eli/dir/1999/92/oj) (ATEX 153): 1 krav, 1 testfall
+- [Avfallsdirektivet 2008/98/EG](https://eur-lex.europa.eu/eli/dir/2008/98/oj): 1 krav, 1 testfall
+- [Betaltjänstdirektivet (EU) 2015/2366 (PSD2) med tekniska standarder för stark kundautentisering](https://eur-lex.europa.eu/eli/dir/2015/2366/oj): 2 krav, 2 testfall
+  - [Directive (EU) 2015/2366](https://eur-lex.europa.eu/eli/dir/2015/2366/oj) · [Commission Delegated Regulation (EU) 2018/389](https://eur-lex.europa.eu/eli/reg_del/2018/389/oj)
+- [Buller i arbetet, direktiv 2003/10/EG om arbetstagares exponering för risker som har samband med buller](https://eur-lex.europa.eu/eli/dir/2003/10/oj): 1 krav, 1 testfall
+- [Direktivet om avfall som utgörs av eller innehåller elektriska eller elektroniska produkter (WEEE) 2012/19/EU](https://eur-lex.europa.eu/eli/dir/2012/19/oj): 6 krav, 5 testfall
+- [Direktivet om byggnaders energiprestanda (EU) 2024/1275](https://eur-lex.europa.eu/eli/dir/2024/1275/oj) (EPBD): 3 krav, 3 testfall
+- [Direktivet om integritet och elektronisk kommunikation 2002/58/EG](https://eur-lex.europa.eu/eli/dir/2002/58/oj) (ePrivacy): 15 krav, 15 testfall
+- [Direktivet om kritiska entiteters motståndskraft (CER), (EU) 2022/2557](https://eur-lex.europa.eu/eli/dir/2022/2557/oj): 15 krav, 13 testfall
+- [Direktivet om offentlig upphandling 2014/24/EU](https://eur-lex.europa.eu/eli/dir/2014/24/oj): 5 krav, 4 testfall
+- [Direktivet om oskäliga avtalsvillkor 93/13/EEG](https://eur-lex.europa.eu/eli/dir/1993/13/oj): 1 krav, 1 testfall
+- [Direktivet om otillbörliga affärsmetoder 2005/29/EG](https://eur-lex.europa.eu/eli/dir/2005/29/oj) (UCPD): 4 krav, 4 testfall
+- [Direktivet om tryckbärande anordningar 2014/68/EU](https://eur-lex.europa.eu/eli/dir/2014/68/oj) (PED): 14 krav, 9 testfall
+- [Elmarknadsdirektivet (EU) 2019/944](https://eur-lex.europa.eu/eli/dir/2019/944/oj): 5 krav, 5 testfall
+- [EMC-direktivet 2014/30/EU](https://eur-lex.europa.eu/eli/dir/2014/30/oj): 12 krav, 9 testfall
+- [Energieffektivitetsdirektivet (EU) 2023/1791](https://eur-lex.europa.eu/eli/dir/2023/1791/oj): 2 krav, 2 testfall
+- [Europeiska kodexen för elektronisk kommunikation, direktiv (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) (EECC): 11 krav, 9 testfall
+  - [Directive (EU) 2018/1972](https://eur-lex.europa.eu/eli/dir/2018/1972/oj) · [Commission Delegated Regulation (EU) 2023/444](https://eur-lex.europa.eu/eli/reg_del/2023/444/oj)
+- [Gemensam laddare, direktiv (EU) 2022/2380 om ändring av radioutrustningsdirektivet](https://eur-lex.europa.eu/eli/dir/2022/2380/oj): 1 krav, 1 testfall
+- [Industriutsläppsdirektivet 2010/75/EU](https://eur-lex.europa.eu/eli/dir/2010/75/oj) (IED): 2 krav, 1 testfall
+- [Konsumenträttighetsdirektivet 2011/83/EU (ändrat genom direktiv (EU) 2023/2673)](https://eur-lex.europa.eu/eli/dir/2011/83/oj): 11 krav, 9 testfall
+  - [Directive 2011/83/EU](https://eur-lex.europa.eu/eli/dir/2011/83/oj) · [Directive (EU) 2023/2673](https://eur-lex.europa.eu/eli/dir/2023/2673/oj)
+- [Lågspänningsdirektivet 2014/35/EU](https://eur-lex.europa.eu/eli/dir/2014/35/oj) (LVD): 11 krav, 8 testfall
+- [Mervärdesskattedirektivet 2006/112/EG](https://eur-lex.europa.eu/eli/dir/2006/112/oj): 9 krav, 8 testfall
+- [Mätinstrumentdirektivet 2014/32/EU](https://eur-lex.europa.eu/eli/dir/2014/32/oj) (MID): 2 krav, 2 testfall
+- [NIS2-direktivet (EU) 2022/2555](https://eur-lex.europa.eu/eli/dir/2022/2555/oj): 30 krav, 29 testfall
+- [Prisinformationsdirektivet 98/6/EG (ändrat genom direktiv (EU) 2019/2161)](https://eur-lex.europa.eu/eli/dir/1998/6/oj): 1 krav, 1 testfall
+- [Radioutrustningsdirektivet 2014/53/EU med delegerad förordning (EU) 2022/30 och EN 18031](https://eur-lex.europa.eu/eli/dir/2014/53/oj) (RED): 23 krav, 23 testfall
+  - [Directive 2014/53/EU](https://eur-lex.europa.eu/eli/dir/2014/53/oj) · [Commission Delegated Regulation (EU) 2022/30](https://eur-lex.europa.eu/eli/reg_del/2022/30/oj) · [EN 18031](https://single-market-economy.ec.europa.eu/single-market/goods/european-standards/harmonised-standards/radio-equipment_en)
+- [RoHS-direktivet 2011/65/EU om farliga ämnen i elektrisk och elektronisk utrustning](https://eur-lex.europa.eu/eli/dir/2011/65/oj): 3 krav, 2 testfall
+- [Seveso III-direktivet 2012/18/EU](https://eur-lex.europa.eu/eli/dir/2012/18/oj): 3 krav, 2 testfall
+- [Tillgänglighetsdirektivet (EU) 2019/882](https://eur-lex.europa.eu/eli/dir/2019/882/oj) (EAA): 2 krav, 2 testfall
+- [Visselblåsardirektivet (EU) 2019/1937](https://eur-lex.europa.eu/eli/dir/2019/1937/oj) (Whistleblower Directive): 1 krav, 1 testfall
+- [Webbtillgänglighetsdirektivet (EU) 2016/2102](https://eur-lex.europa.eu/eli/dir/2016/2102/oj): 4 krav, 4 testfall
+  - [Directive (EU) 2016/2102](https://eur-lex.europa.eu/eli/dir/2016/2102/oj) · [Commission Implementing Decision (EU) 2018/1523](https://eur-lex.europa.eu/eli/dec_impl/2018/1523/oj)
+
+### Standarder och specifikationer
+
+#### Standarder och specifikationer: Internationella
+
+- [3GPP tekniska specifikationer](https://www.3gpp.org/specifications-technologies): 19 krav, 16 testfall
+  - [3GPP TS 22.179](https://www.3gpp.org/DynaReport/22179.htm) · [3GPP TS 22.280](https://www.3gpp.org/DynaReport/22280.htm) · [3GPP TS 23.167](https://www.3gpp.org/DynaReport/23167.htm) · [3GPP TS 23.283](https://www.3gpp.org/DynaReport/23283.htm) · [3GPP TS 23.501](https://www.3gpp.org/DynaReport/23501.htm) · [3GPP TS 23.682](https://www.3gpp.org/DynaReport/23682.htm) · [3GPP TS 28.552](https://www.3gpp.org/DynaReport/28552.htm) · [3GPP TS 32.240](https://www.3gpp.org/DynaReport/32240.htm) · [3GPP TS 32.298](https://www.3gpp.org/DynaReport/32298.htm) · [3GPP TS 32.401](https://www.3gpp.org/DynaReport/32401.htm) · [3GPP TS 33.126](https://www.3gpp.org/DynaReport/33126.htm) · [3GPP TS 33.127](https://www.3gpp.org/DynaReport/33127.htm) · [3GPP TS 33.180](https://www.3gpp.org/DynaReport/33180.htm) · [3GPP TS 33.501](https://www.3gpp.org/DynaReport/33501.htm)
+- [ANSI/ISA-101.01 Operatörsgränssnitt för processautomation](https://www.isa.org/standards-and-publications/isa-standards/isa-101-standards): 3 krav, 3 testfall
+- [C2PA-specifikationen för innehållsursprung](https://c2pa.org/specifications/specifications/2.1/specs/C2PA_Specification.html): 2 krav, 2 testfall
+- [CycloneDX-standarden för materialförteckningar](https://cyclonedx.org/specification/overview/): 4 krav, 5 testfall
+- [ECMA-376 Office Open XML-filformat](https://ecma-international.org/publications-and-standards/standards/ecma-376/): 2 krav, 2 testfall
+- [ECSS-standarder för produktsäkring inom rymd](https://ecss.nl/standards/): 2 krav, 2 testfall
+  - [ECSS-Q-ST-30-11C](https://ecss.nl/standard/ecss-q-st-30-11c-rev-2-derating-eee-components-23-june-2021/)
+- [EMC-standarder (EN 55032, EN 55035, IEC 61000-4)](https://webstore.iec.ch/en/publication/22046): 7 krav, 7 testfall
+  - [CISPR 32 (EN 55032)](https://webstore.iec.ch/en/publication/22046) · [CISPR 35 (EN 55035)](https://webstore.iec.ch/en/publication/25667) · [IEC 61000-4-2](https://webstore.iec.ch/en/publication/68954) · [IEC 61000-4-11](https://webstore.iec.ch/en/publication/63503)
+- [ETSI NFV-specifikationer (virtualisering av nätfunktioner)](https://www.etsi.org/technologies/nfv): 1 krav, 1 testfall
+  - [ETSI GS NFV-SEC 001](https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/001/) · [ETSI GS NFV-SEC 021](https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/021/) · [ETSI GS NFV-SOL 004](https://www.etsi.org/deliver/etsi_gs/NFV-SOL/001_099/004/)
+- [ETSI tekniska specifikationer (laglig avlyssning, lagrade data, nödpositionering)](https://www.etsi.org/standards) (ETSI TS): 7 krav, 6 testfall
+  - [ETSI TS 102 232-1](https://www.etsi.org/deliver/etsi_ts/102200_102299/10223201/) · [ETSI TS 102 657](https://www.etsi.org/deliver/etsi_ts/102600_102699/102657/) · [ETSI TS 103 221-1](https://www.etsi.org/deliver/etsi_ts/103200_103299/10322101/) · [ETSI TS 103 221-2](https://www.etsi.org/deliver/etsi_ts/103200_103299/10322102/) · [ETSI TS 103 625](https://www.etsi.org/deliver/etsi_ts/103600_103699/103625/)
+- [FIRST:s standarder och riktlinjer (CVSS, EPSS, samordnat offentliggörande)](https://www.first.org/standards/): 4 krav, 5 testfall
+  - [FIRST CVSS v4.0](https://www.first.org/cvss/v4.0/specification-document) · [FIRST EPSS](https://www.first.org/epss/) · [FIRST Guidelines and Practices for Multi-Party Vulnerability Coordination](https://www.first.org/global/sigs/vulnerability-coordination/multiparty/guidelines-v1.1)
+- [Greenhouse Gas Protocol](https://ghgprotocol.org/) (GHG Protocol): 1 krav, 2 testfall
+  - [GHG Protocol Scope 3 Standard](https://ghgprotocol.org/corporate-value-chain-scope-3-standard)
+- [GS1 General Specifications](https://www.gs1.org/standards/barcodes-epcrfid-id-keys/gs1-general-specifications): 1 krav, 1 testfall
+- [IANA:s tidszonsdatabas](https://www.iana.org/time-zones) (tz): 6 krav, 4 testfall
+- [IEC 60079 Explosiv atmosfär](https://webstore.iec.ch/en/publication/63327): 1 krav, 1 testfall
+- [IEC 60118-4 Hörselslingor](https://webstore.iec.ch/en/publication/798): 1 krav, 1 testfall
+- [IEC 60870 Fjärrkontrollutrustning och system](https://webstore.iec.ch/en/publication/3755): 1 krav, 1 testfall
+  - [IEC 60870-5-104](https://webstore.iec.ch/en/publication/3746)
+- [IEC 61082 Dokument inom elektrotekniken](https://webstore.iec.ch/en/publication/4469): 2 krav, 2 testfall
+- [IEC 61131-3 Programspråk för programmerbara styrsystem](https://webstore.iec.ch/en/publication/4552): 1 krav, 1 testfall
+- [IEC 61340 Elektrostatik, skydd av elektroniska komponenter mot elektrostatiska fenomen](https://www.iec.ch/): 1 krav, 1 testfall
+- [IEC 61508 Funktionssäkerhet för elektriska, elektroniska och programmerbara säkerhetssystem](https://webstore.iec.ch/en/publication/5515): 16 krav, 13 testfall
+  - [IEC 61508-1](https://webstore.iec.ch/en/publication/5515) · [IEC 61508-2](https://webstore.iec.ch/en/publication/5516) · [IEC 61508-3](https://webstore.iec.ch/en/publication/5517) · [IEC 61508-5](https://webstore.iec.ch/en/publication/5519) · [IEC 61508-6](https://webstore.iec.ch/en/publication/5520)
+- [IEC 61511 Funktionssäkerhet inom processindustrin](https://webstore.iec.ch/en/publication/24241): 15 krav, 13 testfall
+- [IEC 61850 Kommunikation för automation i elnät](https://webstore.iec.ch/en/publication/6028): 5 krav, 5 testfall
+  - [IEC 61850-5](https://webstore.iec.ch/en/publication/6012) · [IEC 61850-7-1](https://webstore.iec.ch/en/publication/6014) · [IEC 61850-10](https://webstore.iec.ch/en/publication/6008)
+- [IEC 62056 Datautbyte för elmätning (DLMS/COSEM)](https://webstore.iec.ch/en/publication/67915): 1 krav, 1 testfall
+- [IEC 62061 Funktionssäkerhet för maskiners styrsystem](https://webstore.iec.ch/en/publication/59927): 3 krav, 3 testfall
+- [IEC 62304 Programvara för medicintekniska produkter – Livscykelprocesser](https://webstore.iec.ch/en/publication/22794): 6 krav, 6 testfall
+- [IEC 62351 Säkerhet för data och kommunikation i elkraftsystem](https://webstore.iec.ch/en/publication/6912): 4 krav, 3 testfall
+  - [IEC 62351-5](https://webstore.iec.ch/en/publication/65511) · [IEC 62351-7](https://webstore.iec.ch/en/publication/30593)
+- [IEC 62366-1 Medicintekniska produkter – Användbarhetsteknik för medicintekniska produkter](https://webstore.iec.ch/en/publication/67220): 1 krav, 1 testfall
+- [IEC 62402 Hantering av inkurans](https://webstore.iec.ch/en/publication/59531): 8 krav, 6 testfall
+- [IEC 62443-2-1 Krav på säkerhetsprogram för anläggningsägare](https://webstore.iec.ch/en/publication/62883): 4 krav, 4 testfall
+- [IEC 62443-2-4 Krav på säkerhetsprogram för tjänsteleverantörer](https://webstore.iec.ch/en/publication/67631): 13 krav, 12 testfall
+- [IEC 62443-3-2 Säkerhetsriskbedömning för systemdesign](https://webstore.iec.ch/en/publication/30727): 6 krav, 6 testfall
+- [IEC 62443-3-3 Säkerhetskrav och säkerhetsnivåer för system](https://webstore.iec.ch/en/publication/7033): 170 krav, 159 testfall
+- [IEC 62443-4-1 Krav på säker produktutvecklingsprocess](https://webstore.iec.ch/en/publication/33615): 45 krav, 39 testfall
+- [IEC 62443-4-2 Tekniska säkerhetskrav för komponenter i industriella styrsystem](https://webstore.iec.ch/en/publication/34421): 56 krav, 56 testfall
+- [IEC 62541 OPC Unified Architecture](https://reference.opcfoundation.org/) (OPC UA): 3 krav, 3 testfall
+- [IEC 62740 Grundorsaksanalys (RCA)](https://webstore.iec.ch/): 1 krav, 1 testfall
+- [IEC 81001-5-1 Hälsoprogramvara och hälso-IT-system – Säkerhetsaktiviteter i produktens livscykel](https://webstore.iec.ch/en/publication/33615): 1 krav, 1 testfall
+- [IEC 81346 Strukturering och referensbeteckningar](https://www.iso.org/standard/82229.html): 2 krav, 2 testfall
+- [IEC TR 62443-2-3 Patchhantering i industriella styrsystem](https://webstore.iec.ch/en/publication/22811) (IEC 62443-2-3): 1 krav, 1 testfall
+- [IEC-standarder för acceptans och idrifttagning av processutrustning (IEC 62381, IEC 62337)](https://webstore.iec.ch/en/publication/6871): 6 krav, 4 testfall
+  - [IEC 62337](https://webstore.iec.ch/en/publication/6871)
+- [IEC-standarder för driftsäkerhet (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)](https://webstore.iec.ch/en/publication/1293): 22 krav, 18 testfall
+  - [IEC 60300-1](https://webstore.iec.ch/en/publication/1293) · [IEC 60812](https://webstore.iec.ch/en/publication/26359) · [IEC 61025](https://webstore.iec.ch/en/publication/4311) · [IEC 61703](https://webstore.iec.ch/en/publication/25646) · [IEC 61709](https://webstore.iec.ch/en/publication/28554)
+- [IEC-standarder för elsäkerhet hos produkter (IEC 62368-1, 60664-1, 60204-1, 60364-6)](https://webstore.iec.ch/en/publication/69308): 17 krav, 15 testfall
+  - [IEC 62368-1](https://webstore.iec.ch/en/publication/69308) · [IEC 60664-1](https://webstore.iec.ch/en/publication/59671) · [IEC 60204-1](https://webstore.iec.ch/en/publication/26037) · [IEC 60364-6](https://webstore.iec.ch/en/publication/24656)
+- [IEC-standarder för sekundära litiumceller och litiumbatterier (IEC 62133, 61960, 62619)](https://webstore.iec.ch/en/publication/32662): 5 krav, 5 testfall
+- [IEC/IEEE 60255-118-1 Synkrofasmätning](https://webstore.iec.ch/en/publication/28722): 1 krav, 1 testfall
+- [IEC/IEEE 82079-1 Framtagning av information för användning (bruksanvisningar)](https://www.iso.org/standard/71620.html): 10 krav, 8 testfall
+- [IEC:s gemensamma informationsmodell (IEC 61968, 61970, 62325)](https://webstore.iec.ch/en/publication/62698) (IEC CIM): 3 krav, 3 testfall
+  - [IEC 61970-301](https://webstore.iec.ch/en/publication/62698)
+- [IEEE 1149.1 Boundary scan (JTAG)](https://standards.ieee.org/ieee/1149.1/4484/): 1 krav, 1 testfall
+- [IEEE 1588 Precision Time Protocol](https://standards.ieee.org/ieee/1588/6825/): 2 krav, 2 testfall
+- [IEEE 1815 Distributed Network Protocol (DNP3)](https://standards.ieee.org/ieee/1815/5414/): 1 krav, 1 testfall
+- [IEEE 802.11 Specifikationer för åtkomstkontroll och fysiskt lager i trådlösa lokala nät](https://standards.ieee.org/ieee/802.11/10548/): 3 krav, 1 testfall
+- [IEEE 802.1X Portbaserad nätverksåtkomstkontroll](https://standards.ieee.org/ieee/802.1X/7345/): 2 krav, 2 testfall
+- [IEEE 9274.1.1 Experience API (xAPI)](https://standards.ieee.org/ieee/9274.1.1/7321/): 1 krav, 1 testfall
+- [IETF:s RFC:er och Internet-Drafts](https://www.rfc-editor.org/) (IETF RFC): 103 krav, 93 testfall
+  - [RFC 2104](https://www.rfc-editor.org/rfc/rfc2104) · [RFC 2369](https://www.rfc-editor.org/rfc/rfc2369) · [RFC 2474](https://www.rfc-editor.org/rfc/rfc2474) · [RFC 3161](https://www.rfc-editor.org/rfc/rfc3161) · [RFC 3207](https://www.rfc-editor.org/rfc/rfc3207) · [RFC 3246](https://www.rfc-editor.org/rfc/rfc3246) · [RFC 3261](https://www.rfc-editor.org/rfc/rfc3261) · [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339) · [RFC 3414](https://www.rfc-editor.org/rfc/rfc3414) · [RFC 3464](https://www.rfc-editor.org/rfc/rfc3464) · [RFC 3629](https://www.rfc-editor.org/rfc/rfc3629) · [RFC 3711](https://www.rfc-editor.org/rfc/rfc3711) · [RFC 3986](https://www.rfc-editor.org/rfc/rfc3986) · [RFC 4035](https://www.rfc-editor.org/rfc/rfc4035) · [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180) · [RFC 4594](https://www.rfc-editor.org/rfc/rfc4594) · [RFC 4647](https://www.rfc-editor.org/rfc/rfc4647) · [RFC 5321](https://www.rfc-editor.org/rfc/rfc5321) · [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322) · [RFC 5424](https://www.rfc-editor.org/rfc/rfc5424) · [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545) · [RFC 5546](https://www.rfc-editor.org/rfc/rfc5546) · [RFC 5853](https://www.rfc-editor.org/rfc/rfc5853) · [RFC 5880](https://www.rfc-editor.org/rfc/rfc5880) · [RFC 5905](https://www.rfc-editor.org/rfc/rfc5905) · [RFC 6047](https://www.rfc-editor.org/rfc/rfc6047) · [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238) · [RFC 6241](https://www.rfc-editor.org/rfc/rfc6241) · [RFC 6266](https://www.rfc-editor.org/rfc/rfc6266) · [RFC 6376](https://www.rfc-editor.org/rfc/rfc6376) · [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455) · [RFC 6585](https://www.rfc-editor.org/rfc/rfc6585) · [RFC 6716](https://www.rfc-editor.org/rfc/rfc6716) · [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) · [RFC 6797](https://www.rfc-editor.org/rfc/rfc6797) · [RFC 7208](https://www.rfc-editor.org/rfc/rfc7208) · [RFC 7489](https://www.rfc-editor.org/rfc/rfc7489) · [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519) · [RFC 7643](https://www.rfc-editor.org/rfc/rfc7643) · [RFC 7644](https://www.rfc-editor.org/rfc/rfc7644) · [RFC 7932](https://www.rfc-editor.org/rfc/rfc7932) · [RFC 7986](https://www.rfc-editor.org/rfc/rfc7986) · [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058) · [RFC 8246](https://www.rfc-editor.org/rfc/rfc8246) · [RFC 8259](https://www.rfc-editor.org/rfc/rfc8259) · [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288) · [RFC 8301](https://www.rfc-editor.org/rfc/rfc8301) · [RFC 8460](https://www.rfc-editor.org/rfc/rfc8460) · [RFC 8461](https://www.rfc-editor.org/rfc/rfc8461) · [RFC 8594](https://www.rfc-editor.org/rfc/rfc8594) · [RFC 8641](https://www.rfc-editor.org/rfc/rfc8641) · [RFC 8705](https://www.rfc-editor.org/rfc/rfc8705) · [RFC 8725](https://www.rfc-editor.org/rfc/rfc8725) · [RFC 9068](https://www.rfc-editor.org/rfc/rfc9068) · [RFC 9106](https://www.rfc-editor.org/rfc/rfc9106) · [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110) · [RFC 9111](https://www.rfc-editor.org/rfc/rfc9111) · [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) · [RFC 9413](https://www.rfc-editor.org/rfc/rfc9413) · [RFC 9449](https://www.rfc-editor.org/rfc/rfc9449) · [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) · [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700) · [RFC 9745](https://www.rfc-editor.org/rfc/rfc9745) · [draft-ietf-httpapi-idempotency-key-header](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) · [draft-ietf-httpapi-ratelimit-headers](https://datatracker.ietf.org/doc/draft-ietf-httpapi-ratelimit-headers/) · [draft-ietf-tls-ecdhe-mlkem](https://datatracker.ietf.org/doc/draft-ietf-tls-ecdhe-mlkem/)
+- [IPC-standarder för kretskort och elektronikmontering (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)](https://www.electronics.org/ipc-standards): 5 krav, 4 testfall
+- [ISA-18.2 / IEC 62682 Larmhantering](https://webstore.iec.ch/en/publication/65543): 10 krav, 9 testfall
+  - [IEC 62682](https://webstore.iec.ch/en/publication/65543)
+- [ISA-88 / IEC 61512 Satsvis processtyrning](https://www.isa.org/standards-and-publications/isa-standards/isa-88-standards): 5 krav, 5 testfall
+  - [IEC 61512-1](https://webstore.iec.ch/en/publication/75287)
+- [ISA-95 / IEC 62264 Integration mellan affärs- och styrsystem](https://www.isa.org/standards-and-publications/isa-standards/isa-95-standard): 6 krav, 5 testfall
+  - [IEC 62264-1](https://www.iso.org/standard/57308.html) · [IEC 62264-2](https://webstore.iec.ch/en/publication/75127) · [IEC 62264-3](https://webstore.iec.ch/en/publication/33511)
+- [ISAE 3402 Bestyrkanderapporter om kontroller hos en serviceorganisation](https://www.iaasb.org/consultations-projects/assurance-reports-service-organizations-controls): 1 krav, 1 testfall
+- [ISO 10002 Kundtillfredsställelse: klagomålshantering](https://www.iso.org/standard/71580.html): 3 krav, 2 testfall
+- [ISO 10004 Kundtillfredsställelse: övervakning och mätning](https://www.iso.org/standard/71582.html): 3 krav, 3 testfall
+- [ISO 10006 Kvalitetsledning i projekt](https://www.iso.org/standard/70376.html): 2 krav, 2 testfall
+- [ISO 10007 Riktlinjer för konfigurationsledning](https://www.iso.org/standard/70400.html): 11 krav, 8 testfall
+- [ISO 10015 Riktlinjer för kompetensförsörjning och personalutveckling](https://www.iso.org/standard/69459.html): 11 krav, 9 testfall
+- [ISO 10075 Ergonomiska principer för mental belastning](https://www.iso.org/standard/76686.html): 1 krav, 1 testfall
+- [ISO 11064 Ergonomisk utformning av kontrollcentraler](https://www.iso.org/standard/19042.html): 5 krav, 3 testfall
+- [ISO 13485 Medicintekniska produkter – Ledningssystem för kvalitet](https://www.iso.org/standard/59752.html): 2 krav, 2 testfall
+- [ISO 13702 Kontroll och begränsning av brand och explosion på offshoreanläggningar](https://www.iso.org/standard/57416.html): 2 krav, 2 testfall
+- [ISO 13849 Säkerhetsrelaterade delar av maskiners styrsystem](https://www.iso.org/standard/73481.html): 3 krav, 3 testfall
+  - [ISO 13849-1](https://www.iso.org/standard/73481.html) · [ISO 13849-2](https://www.iso.org/standard/53640.html)
+- [ISO 14001 Miljöledningssystem](https://www.iso.org/standard/92300.html): 1 krav, 1 testfall
+- [ISO 14064 Kvantifiering och rapportering av växthusgaser](https://www.iso.org/standard/66453.html): 1 krav, 1 testfall
+- [ISO 14224 Tillförlitlighets- och underhållsdata för utrustning inom olja och gas](https://www.iso.org/standard/64076.html): 3 krav, 3 testfall
+- [ISO 14289 PDF/UA tillgänglig PDF](https://www.iso.org/standard/64599.html): 3 krav, 3 testfall
+- [ISO 14721 Referensmodell för öppna arkivinformationssystem (OAIS)](https://www.iso.org/search.html?q=ISO%2014721): 1 krav, 1 testfall
+- [ISO 14971 Medicintekniska produkter – Riskhantering för medicintekniska produkter](https://www.iso.org/standard/72704.html): 2 krav, 2 testfall
+- [ISO 15489 Informationshantering: dokumenthantering](https://www.iso.org/standard/62542.html): 7 krav, 6 testfall
+- [ISO 17100 Översättningstjänster](https://www.iso.org/standard/59149.html): 1 krav, 1 testfall
+- [ISO 17359 och ISO 13374 Tillståndsövervakning av maskiner](https://www.iso.org/standard/71194.html): 3 krav, 3 testfall
+  - [ISO 17359](https://www.iso.org/standard/71194.html) · [ISO 13374-1](https://www.iso.org/standard/21832.html)
+- [ISO 19011 Vägledning för revision av ledningssystem](https://www.iso.org/standard/88984.html): 4 krav, 3 testfall
+- [ISO 20816 Mätning av mekaniska vibrationer](https://www.iso.org/standard/63180.html): 1 krav, 1 testfall
+- [ISO 21502, 21508 och 21511 Projekt-, program- och portföljstyrning](https://www.iso.org/standard/74947.html): 30 krav, 23 testfall
+  - [ISO 21502](https://www.iso.org/standard/74947.html) · [ISO 21508](https://www.iso.org/standard/63582.html) · [ISO 21511](https://www.iso.org/standard/69702.html)
+- [ISO 21504 Projekt-, program- och portföljstyrning: vägledning för portföljstyrning](https://www.iso.org/search.html?q=ISO%2021504): 9 krav, 6 testfall
+- [ISO 21542 Tillgänglighet och användbarhet i den byggda miljön](https://www.iso.org/standard/71860.html): 2 krav, 1 testfall
+- [ISO 22301 Ledningssystem för kontinuitet](https://www.iso.org/standard/75106.html): 24 krav, 19 testfall
+- [ISO 22400 Nyckeltal för tillverkning](https://www.iso.org/standard/54497.html): 3 krav, 3 testfall
+- [ISO 22514 Statistiska metoder för processtyrning (duglighet)](https://www.iso.org/standard/88883.html): 1 krav, 1 testfall
+- [ISO 24089 Vägfordon – Teknik för programuppdateringar](https://www.iso.org/standard/77796.html): 4 krav, 4 testfall
+- [ISO 24495 Klarspråk](https://www.iso.org/standard/78907.html): 3 krav, 3 testfall
+- [ISO 26262 Vägfordon – Funktionssäkerhet](https://www.iso.org/standard/68383.html): 5 krav, 5 testfall
+- [ISO 29993 Utbildningstjänster utanför det formella utbildningssystemet](https://www.iso.org/standard/70357.html): 6 krav, 4 testfall
+- [ISO 31000 Riskhantering: vägledning](https://www.iso.org/standard/65694.html): 14 krav, 10 testfall
+- [ISO 32000 Portable Document Format (PDF)](https://www.iso.org/standard/75839.html): 1 krav, 1 testfall
+- [ISO 3382-3 Akustik: mätning av rumsakustiska parametrar i kontorslandskap](https://www.iso.org/search.html?q=ISO%203382-3): 1 krav, 1 testfall
+- [ISO 37301 Ledningssystem för regelefterlevnad: krav med vägledning](https://www.iso.org/standard/75080.html): 4 krav, 2 testfall
+- [ISO 3864 Säkerhetsfärger och säkerhetsskyltar](https://www.iso.org/standard/66836.html): 1 krav, 1 testfall
+- [ISO 41001 Ledningssystem för fastighetsförvaltning (facility management)](https://www.iso.org/standard/68021.html): 2 krav, 2 testfall
+- [ISO 4126 Säkerhetsanordningar för skydd mot för högt tryck](https://www.iso.org/standard/50826.html): 1 krav, 1 testfall
+- [ISO 4217 Valutakoder](https://www.iso.org/standard/64758.html): 4 krav, 4 testfall
+- [ISO 45001 Ledningssystem för arbetsmiljö](https://www.iso.org/standard/63787.html): 2 krav, 2 testfall
+- [ISO 50001 Ledningssystem för energi](https://www.iso.org/standard/69426.html): 2 krav, 2 testfall
+- [ISO 55001 Ledningssystem för tillgångsförvaltning](https://www.iso.org/standard/83054.html): 11 krav, 10 testfall
+- [ISO 639 Språkkoder](https://www.iso.org/standard/74575.html): 1 krav, 1 testfall
+- [ISO 7870 Styrdiagram](https://www.iso.org/standard/78859.html): 1 krav, 1 testfall
+- [ISO 8000 Datakvalitet](https://www.iso.org/standard/60805.html): 4 krav, 4 testfall
+- [ISO 8601 Representation av datum och tid](https://www.iso.org/standard/70907.html): 7 krav, 7 testfall
+- [ISO 9001 Ledningssystem för kvalitet](https://www.iso.org/standard/88464.html): 96 krav, 77 testfall
+- [ISO 9241 Ergonomi för människa–system-interaktion](https://www.iso.org/standard/63500.html): 114 krav, 100 testfall
+  - [ISO 9241-11](https://www.iso.org/standard/63500.html) · [ISO 9241-110](https://www.iso.org/standard/75258.html) · [ISO 9241-143](https://www.iso.org/standard/53590.html) · [ISO 9241-303](https://www.iso.org/standard/57992.html)
+- [ISO/IEC 15415 och 15416 Utskriftskvalitet för streckkoder](https://www.iso.org/standard/76876.html): 1 krav, 1 testfall
+  - [ISO/IEC 15415](https://www.iso.org/standard/76876.html) · [ISO/IEC 15416](https://www.iso.org/standard/83390.html)
+- [ISO/IEC 17025 Kompetens hos provnings- och kalibreringslaboratorier](https://www.iso.org/standard/66912.html): 6 krav, 6 testfall
+- [ISO/IEC 19941 Interoperabilitet och portabilitet för molntjänster](https://www.iso.org/standard/66639.html): 2 krav, 2 testfall
+- [ISO/IEC 20000-1 Ledningssystem för tjänster](https://www.iso.org/standard/70636.html): 32 krav, 30 testfall
+- [ISO/IEC 20889 Tekniker för avidentifiering av data](https://www.iso.org/standard/69373.html): 1 krav, 1 testfall
+- [ISO/IEC 21031 Specifikation för programvarans koldioxidintensitet (SCI)](https://www.iso.org/standard/86612.html): 3 krav, 3 testfall
+- [ISO/IEC 25000-serien, kvalitetsmätning och rapportering (25022, 25023, 25062)](https://www.iso.org/standard/35746.html): 8 krav, 8 testfall
+  - [ISO/IEC 25022](https://www.iso.org/standard/35746.html) · [ISO/IEC 25023](https://www.iso.org/standard/35747.html) · [ISO/IEC 25062](https://www.iso.org/standard/43046.html)
+- [ISO/IEC 25010 Kvalitetsmodell för produkter](https://www.iso.org/standard/78176.html): 179 krav, 173 testfall
+- [ISO/IEC 25012 Kvalitetsmodell för data](https://www.iso.org/standard/35736.html): 16 krav, 15 testfall
+- [ISO/IEC 27001 Ledningssystem för informationssäkerhet](https://www.iso.org/standard/27001): 550 krav, 499 testfall
+- [ISO/IEC 27002 Säkerhetsåtgärder för informationssäkerhet](https://www.iso.org/standard/75652.html): 4 krav, 4 testfall
+- [ISO/IEC 27005 Riskhantering för informationssäkerhet](https://www.iso.org/standard/80585.html): 3 krav, 2 testfall
+- [ISO/IEC 27017 Säkerhetsåtgärder för molntjänster](https://www.iso.org/standard/82878.html): 8 krav, 8 testfall
+- [ISO/IEC 27018 Skydd av personuppgifter i publika moln](https://www.iso.org/standard/88150.html): 5 krav, 6 testfall
+- [ISO/IEC 27019 Informationssäkerhet för energibranschen](https://www.iso.org/standard/85056.html): 7 krav, 7 testfall
+- [ISO/IEC 27031 IT-beredskap för kontinuitet](https://www.iso.org/standard/80975.html): 6 krav, 5 testfall
+- [ISO/IEC 27033 Nätverkssäkerhet](https://www.iso.org/standard/63461.html): 15 krav, 14 testfall
+  - [ISO/IEC 27033-1](https://www.iso.org/standard/63461.html) · [ISO/IEC 27033-2](https://www.iso.org/standard/51581.html) · [ISO/IEC 27033-4](https://www.iso.org/standard/51583.html) · [ISO/IEC 27033-5](https://www.iso.org/standard/51584.html) · [ISO/IEC 27033-6](https://www.iso.org/standard/51585.html)
+- [ISO/IEC 27034 Applikationssäkerhet](https://www.iso.org/standard/44378.html): 1 krav, 1 testfall
+- [ISO/IEC 27035 Hantering av informationssäkerhetsincidenter](https://www.iso.org/standard/78973.html): 10 krav, 10 testfall
+  - [ISO/IEC 27035-1](https://www.iso.org/standard/78973.html) · [ISO/IEC 27035-2](https://www.iso.org/standard/78974.html)
+- [ISO/IEC 27036 Informationssäkerhet i leverantörsrelationer](https://www.iso.org/standard/82060.html): 11 krav, 10 testfall
+  - [ISO/IEC 27036-2](https://www.iso.org/standard/82060.html) · [ISO/IEC 27036-3](https://www.iso.org/standard/82890.html)
+- [ISO/IEC 27037 Hantering av digitala bevis](https://www.iso.org/standard/44381.html): 1 krav, 1 testfall
+- [ISO/IEC 27040 Lagringssäkerhet](https://www.iso.org/standard/80194.html): 4 krav, 4 testfall
+- [ISO/IEC 27701 Ledningssystem för integritetsskydd](https://www.iso.org/standard/85819.html): 23 krav, 23 testfall
+- [ISO/IEC 29147 Offentliggörande av sårbarheter](https://www.iso.org/standard/72311.html): 18 krav, 16 testfall
+- [ISO/IEC 30111 Processer för sårbarhetshantering](https://www.iso.org/standard/69725.html): 15 krav, 14 testfall
+- [ISO/IEC 42001 Ledningssystem för AI](https://www.iso.org/standard/81230.html): 42 krav, 35 testfall
+- [ISO/IEC-standarder för AI (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)](https://www.iso.org/standard/74296.html): 14 krav, 11 testfall
+  - [ISO/IEC 22989](https://www.iso.org/standard/74296.html) · [ISO/IEC 23894](https://www.iso.org/standard/77304.html) · [ISO/IEC 25059](https://www.iso.org/standard/80655.html) · [ISO/IEC 5259-2](https://www.iso.org/standard/81860.html) · [ISO/IEC 8183](https://www.iso.org/standard/83002.html) · [ISO/IEC TR 24027](https://www.iso.org/standard/77607.html) · [ISO/IEC TS 4213](https://www.iso.org/standard/79799.html)
+- [ISO/IEC/IEEE 12207 Livscykelprocesser för programvara](https://www.iso.org/standard/63712.html): 1 krav, 1 testfall
+- [ISO/IEC/IEEE 15288 Livscykelprocesser för system](https://www.iso.org/standard/81702.html): 39 krav, 30 testfall
+- [ISO/IEC/IEEE 15289 Innehåll i informationsobjekt för livscykeln](https://www.iso.org/standard/74909.html): 11 krav, 8 testfall
+- [ISO/IEC/IEEE 26514 Utformning av användarinformation](https://www.iso.org/standard/77451.html): 13 krav, 10 testfall
+- [ISO/IEC/IEEE 29119 Programvarutestning](https://www.iso.org/standard/79429.html): 11 krav, 9 testfall
+  - [ISO/IEC/IEEE 29119-3](https://www.iso.org/standard/79429.html)
+- [ISO/IEC/IEEE 29148 Kravhantering](https://www.iso.org/standard/72089.html): 10 krav, 7 testfall
+- [ISO/IEC/IEEE 42010 Arkitekturbeskrivning](https://www.iso.org/standard/74393.html): 5 krav, 5 testfall
+- [ISO/SAE 21434 Vägfordon – Cybersäkerhetsteknik](https://www.iso.org/standard/70918.html): 3 krav, 3 testfall
+- [ITU-R-rekommendationer (radioutbredning)](https://www.itu.int/pub/R-REC): 1 krav, 1 testfall
+  - [ITU-R P.530](https://www.itu.int/rec/R-REC-P.530) · [ITU-R P.837](https://www.itu.int/rec/R-REC-P.837)
+- [ITU-T-rekommendationer](https://www.itu.int/en/ITU-T/publications/Pages/recs.aspx): 11 krav, 10 testfall
+  - [ITU-T E.800](https://www.itu.int/rec/T-REC-E.800) · [ITU-T G.107](https://www.itu.int/rec/T-REC-G.107) · [ITU-T G.114](https://www.itu.int/rec/T-REC-G.114) · [ITU-T G.722](https://www.itu.int/rec/T-REC-G.722) · [ITU-T G.8271](https://www.itu.int/rec/T-REC-G.8271) · [ITU-T G.8275.1](https://www.itu.int/rec/T-REC-G.8275.1) · [ITU-T M.3400](https://www.itu.int/rec/T-REC-M.3400) · [ITU-T X.733](https://www.itu.int/rec/T-REC-X.733) · [ITU-T Y.1541](https://www.itu.int/rec/T-REC-Y.1541)
+- [LoRa Alliance LoRaWAN-specifikationer (länklager, regionala parametrar, applikationslager)](https://resources.lora-alliance.org/technical-specifications): 6 krav, 4 testfall
+- [Miljöprovning och skyddsklasser (IEC 60068, 60721-3, 60529, 62262)](https://webstore.iec.ch/en/publication/501): 11 krav, 9 testfall
+  - [IEC 60068-1](https://webstore.iec.ch/en/publication/501) · [IEC 60529](https://webstore.iec.ch/en/publication/2452)
+- [MITRE Common Weakness Enumeration (CWE)](https://cwe.mitre.org/): 27 krav, 25 testfall
+  - [CWE-22](https://cwe.mitre.org/data/definitions/22.html) · [CWE-79](https://cwe.mitre.org/data/definitions/79.html) · [CWE-93](https://cwe.mitre.org/data/definitions/93.html) · [CWE-113](https://cwe.mitre.org/data/definitions/113.html) · [CWE-214](https://cwe.mitre.org/data/definitions/214.html) · [CWE-400](https://cwe.mitre.org/data/definitions/400.html) · [CWE-409](https://cwe.mitre.org/data/definitions/409.html) · [CWE-427](https://cwe.mitre.org/data/definitions/427.html) · [CWE-434](https://cwe.mitre.org/data/definitions/434.html) · [CWE-524](https://cwe.mitre.org/data/definitions/524.html) · [CWE-526](https://cwe.mitre.org/data/definitions/526.html) · [CWE-532](https://cwe.mitre.org/data/definitions/532.html) · [CWE-598](https://cwe.mitre.org/data/definitions/598.html) · [CWE-601](https://cwe.mitre.org/data/definitions/601.html) · [CWE-749](https://cwe.mitre.org/data/definitions/749.html) · [CWE-798](https://cwe.mitre.org/data/definitions/798.html) · [CWE-799](https://cwe.mitre.org/data/definitions/799.html) · [CWE-926](https://cwe.mitre.org/data/definitions/926.html) · [CWE-1236](https://cwe.mitre.org/data/definitions/1236.html) · [CWE-1333](https://cwe.mitre.org/data/definitions/1333.html) · [CWE-1336](https://cwe.mitre.org/data/definitions/1336.html)
+- [OASIS Common Security Advisory Framework (CSAF)](https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html): 2 krav, 2 testfall
+- [OASIS MQTT](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html): 2 krav, 2 testfall
+- [Open Container Initiatives specifikationer](https://opencontainers.org/) (OCI): 1 krav, 1 testfall
+  - [Open Container Initiative Image Format Specification](https://github.com/opencontainers/image-spec)
+- [OpenAPI Specification](https://spec.openapis.org/oas/v3.1.0): 5 krav, 4 testfall
+- [OpenChain ISO/IEC 5230 Efterlevnad av licenser för öppen källkod](https://www.iso.org/standard/81039.html): 8 krav, 7 testfall
+- [OpenFeature-specifikationen](https://openfeature.dev/specification/): 5 krav, 5 testfall
+- [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html) (OIDC): 2 krav, 2 testfall
+- [OpenTelemetry-specifikationen](https://opentelemetry.io/docs/specs/otel/): 5 krav, 5 testfall
+- [OWASP Application Security Verification Standard (ASVS)](https://owasp.org/www-project-application-security-verification-standard/) (OWASP ASVS): 129 krav, 123 testfall
+- [OWASP Mobile Application Security Verification Standard (MASVS)](https://mas.owasp.org/MASVS/) (OWASP MASVS): 18 krav, 18 testfall
+- [PCI Data Security Standard och vägledning från PCI SSC](https://www.pcisecuritystandards.org/) (PCI DSS): 27 krav, 26 testfall
+- [Peppol BIS Billing](https://docs.peppol.eu/poacc/billing/3.0/): 1 krav, 1 testfall
+- [Riktlinjer för tillgängligt webbinnehåll (WCAG) 2.2](https://www.w3.org/TR/WCAG22/) (WCAG 2.2): 71 krav, 57 testfall
+- [SAE EIA-649 Standard för konfigurationsledning](https://www.sae.org/standards/content/eia649c/): 4 krav, 3 testfall
+- [SCORM, paketering av e-lärandeinnehåll](https://www.adlnet.gov/research/scorm): 1 krav, 1 testfall
+- [Semantisk versionshantering](https://semver.org/spec/v2.0.0.html) (SemVer): 7 krav, 7 testfall
+- [SPDX-specifikationen och licenslistan](https://spdx.dev/): 6 krav, 7 testfall
+  - [SPDX Specification 2.3](https://spdx.github.io/spdx-spec/v2.3/) · [SPDX License List](https://spdx.org/licenses/)
+- [Specifikationer för webbapplikationer offline (W3C Service Workers, W3C Indexed Database API, WHATWG Storage)](https://www.w3.org/TR/service-workers/): 2 krav, 2 testfall
+- [Standard Webhooks-specifikationen](https://www.standardwebhooks.com/): 3 krav, 3 testfall
+- [Standarder för livscykel för system och programvara (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)](https://www.iso.org/standard/71197.html): 10 krav, 10 testfall
+  - [ISO/IEC/IEEE 15939](https://www.iso.org/standard/71197.html) · [ISO/IEC/IEEE 24748-1](https://www.iso.org/standard/84709.html) · [IEEE 1012](https://standards.ieee.org/ieee/1012/5609/)
+- [Standarder för maskinsäkerhet (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)](https://www.iso.org/standard/51528.html): 8 krav, 7 testfall
+  - [ISO 12100](https://www.iso.org/standard/51528.html) · [ISO 13850](https://www.iso.org/standard/59970.html) · [ISO 13855](https://www.iso.org/standard/80590.html) · [ISO 13857](https://www.iso.org/standard/69569.html) · [ISO 14118](https://www.iso.org/standard/66460.html) · [ISO 14119](https://www.iso.org/standard/75942.html) · [ISO 14120](https://www.iso.org/standard/59545.html)
+- [Standarder för materialdeklaration och märkning (EN IEC 63000, IEC 62474, EN 50419)](https://webstore.iec.ch/en/publication/29857): 2 krav, 2 testfall
+  - [IEC 62474](https://webstore.iec.ch/en/publication/29857)
+- [Standarder för operatörsgränssnitt (IEC 60073, 60447, 61310-1, EN 894-3, ISO 7010)](https://webstore.iec.ch/en/publication/5263): 4 krav, 3 testfall
+  - [IEC 61310-1](https://webstore.iec.ch/en/publication/5263) · [ISO 7010](https://www.iso.org/standard/72424.html)
+- [Standarder och vägledningar för mätteknik (ISO 10012, JCGM 100 GUM, ILAC-G24)](https://www.iso.org/standard/26033.html): 5 krav, 5 testfall
+  - [ISO 10012](https://www.iso.org/standard/26033.html) · [JCGM 100](https://www.bipm.org/en/doi/10.59161/JCGM100-2008E) · [ILAC-G24](https://ilac.org/publications-and-resources/ilac-guidance-series/)
+- [Teknisk produktdokumentation: namnrutor och ritningsprinciper (ISO 7200, ISO 128)](https://www.iso.org/search.html?q=ISO%207200): 2 krav, 1 testfall
+- [TM Forum Open API:er](https://www.tmforum.org/oda/open-apis): 4 krav, 4 testfall
+- [Unicode-standarden, CLDR, ICU och ISO/IEC 10646](https://www.unicode.org/standard/standard.html): 20 krav, 19 testfall
+  - [Unicode CLDR](https://cldr.unicode.org/) · [Unicode UAX #9](https://www.unicode.org/reports/tr9/) · [Unicode UAX #15](https://www.unicode.org/reports/tr15/) · [Unicode UTS #10](https://www.unicode.org/reports/tr10/) · [Unicode UTS #35](https://www.unicode.org/reports/tr35/) · [ICU MessageFormat](https://unicode-org.github.io/icu/userguide/format_parse/messages/) · [ISO/IEC 10646](https://www.iso.org/standard/76835.html)
+- [Världspostföreningens standarder (S42 adressering)](https://www.upu.int/en/postal-solutions/programmes-services/addressing-solutions) (UPU): 1 krav, 1 testfall
+- [W3C Clear Site Data (rensning av webbplatsdata)](https://www.w3.org/TR/clear-site-data/): 1 krav, 1 testfall
+- [W3C:s webbstandarder (internationalisering, Trace Context, WebAuthn, CSP, Media Queries)](https://www.w3.org/TR/): 24 krav, 21 testfall
+  - [W3C Character Model for the World Wide Web](https://www.w3.org/TR/charmod/) · [W3C Character Model: String Matching](https://www.w3.org/TR/charmod-norm/) · [W3C Content Security Policy Level 3](https://www.w3.org/TR/CSP3/) · [W3C Internationalization Best Practices](https://www.w3.org/International/techniques/authoring-html) · [W3C Internationalization: language negotiation](https://www.w3.org/International/questions/qa-accept-lang-locales) · [W3C Internationalization: text size in translation](https://www.w3.org/International/articles/article-text-size) · [W3C Personal names around the world](https://www.w3.org/International/questions/qa-personal-names) · [W3C Structural markup and right-to-left text in HTML](https://www.w3.org/International/questions/qa-html-dir) · [W3C Trace Context](https://www.w3.org/TR/trace-context/) · [W3C Web Authentication Level 2](https://www.w3.org/TR/webauthn-2/) · [Media Queries Level 5](https://www.w3.org/TR/mediaqueries-5/)
+- [WHATWG Living Standards (HTML, Fetch)](https://spec.whatwg.org/): 5 krav, 5 testfall
+  - [HTML Living Standard](https://html.spec.whatwg.org/multipage/) · [Fetch Living Standard](https://fetch.spec.whatwg.org/)
+
+#### Standarder och specifikationer: Europeiska unionen
+
+- [EN 12464-1 Ljus och belysning: belysning av arbetsplatser inomhus](https://standards.cencenelec.eu/): 1 krav, 1 testfall
+- [EN 12845 Fasta släcksystem: automatiska sprinklersystem](https://standards.cencenelec.eu/): 1 krav, 1 testfall
+- [EN 13306 Underhållsterminologi](https://www.sis.se/en/produkter/standardization/vocabularies/services/ss-en-133062017/): 11 krav, 8 testfall
+- EN 14181 och EN 17255 Automatisk utsläppsmätning: 1 krav, 1 testfall
+- [EN 16798-1 Byggnaders energiprestanda: indata för inomhusmiljön](https://standards.cencenelec.eu/): 3 krav, 2 testfall
+- [EN 16931 Elektronisk fakturering](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Obtaining+a+copy+of+the+European+standard+on+eInvoicing): 1 krav, 1 testfall
+- [EN 1717 Skydd mot förorening av dricksvatten i vatteninstallationer (återströmning)](https://standards.cencenelec.eu/): 1 krav, 1 testfall
+- [EN 3 Handbrandsläckare](https://standards.cencenelec.eu/): 1 krav, 1 testfall
+- [EN 301 549 Tillgänglighetskrav för IKT-produkter och tjänster](https://www.etsi.org/deliver/etsi_en/301500_301599/301549/): 23 krav, 19 testfall
+- EN 50110-1 Skötsel av elektriska anläggningar: 3 krav, 3 testfall
+- [EN 50126 och EN 50129 RAMS för järnväg och säkerhetsrelaterade elektroniska system](https://www.sis.se/en/produkter/electrical-engineering/electric-traction-equipment/ss-en-50126-1/): 12 krav, 8 testfall
+- [EN 50518 Larmcentraler för övervakning och larmmottagning](https://standards.cencenelec.eu/): 2 krav, 2 testfall
+- EN 50600 Datacenteranläggningar och infrastruktur: 16 krav, 13 testfall
+- [ETSI EN 300 220 Kortdistansutrustning i frekvensområdet 25 MHz till 1 000 MHz](https://www.etsi.org/deliver/etsi_en/300200_300299/30022002/): 1 krav, 1 testfall
+- [ETSI EN 303 645 Cybersäkerhet för konsumentprodukter för sakernas internet](https://www.etsi.org/deliver/etsi_en/303600_303699/303645/): 7 krav, 7 testfall
+- [ETSI harmoniserade radiostandarder (EN 300 328, EN 300 396, EN 301 893)](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/): 3 krav, 2 testfall
+  - [ETSI EN 300 328](https://www.etsi.org/deliver/etsi_en/300300_300399/300328/) · [ETSI EN 301 893](https://www.etsi.org/deliver/etsi_en/301800_301899/301893/)
+- Europeiska standarder för brand och nödbelysning (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172): 8 krav, 7 testfall
+- Europeiska standarder för skydd av byggnader (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4): 6 krav, 6 testfall
+- [Europeiska tillgänglighetsstandarder för byggd miljö (EN 17210, EN 81-70)](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/): 3 krav, 2 testfall
+  - [EN 17210](https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/)
+- Europeiska underhållsstandarder (EN 13269, EN 13460, EN 15341, EN 17007): 15 krav, 13 testfall
+- [Säkerhetsregler för hissar och rulltrappor (EN 81-20, EN 81-28, EN 115-1)](https://standards.cencenelec.eu/): 2 krav, 1 testfall
+
+#### Standarder och specifikationer: Norge
+
+- [NORSOK-standarder (norsk petroleumindustri)](https://standard.no/en/sectors/petroleum/): 2 krav, 2 testfall
+
+#### Standarder och specifikationer: Sverige
+
+- [SS 436 40 00 Elinstallationer för lågspänning: utförande av elinstallationer](https://www.elstandard.se/): 4 krav, 3 testfall
+
+#### Standarder och specifikationer: USA
+
+- [American Petroleum Institutes standarder och rekommenderade praxis](https://www.api.org/products-and-services/standards) (API): 7 krav, 7 testfall
+- [NERC:s standarder för skydd av kritisk infrastruktur (CIP)](https://www.nerc.com/standards/reliability-standards) (NERC CIP): 2 krav, 2 testfall
+- [NIST SP 800-53 Säkerhets- och integritetsåtgärder](https://doi.org/10.6028/NIST.SP.800-53r5): 59 krav, 57 testfall
+- [NIST:s kryptografiska standarder och riktlinjer (FIPS 180-4, SP 800-52, 800-57, 800-90A, 800-107, 800-131A)](https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines): 15 krav, 16 testfall
+  - [NIST FIPS 180-4](https://doi.org/10.6028/NIST.FIPS.180-4) · [NIST SP 800-52 Rev. 2](https://doi.org/10.6028/NIST.SP.800-52r2) · [NIST SP 800-57 Part 1 Rev. 5](https://doi.org/10.6028/NIST.SP.800-57pt1r5) · [NIST SP 800-90A Rev. 1](https://doi.org/10.6028/NIST.SP.800-90Ar1) · [NIST SP 800-107 Rev. 1](https://doi.org/10.6028/NIST.SP.800-107r1) · [NIST SP 800-131A Rev. 2](https://doi.org/10.6028/NIST.SP.800-131Ar2)
+
+### Bästa praxis och ramverk
+
+#### Bästa praxis och ramverk: Internationella
+
+- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/): 4 krav, 4 testfall
+  - [AWS Well-Architected Framework, Sustainability Pillar](https://docs.aws.amazon.com/wellarchitected/latest/sustainability-pillar/sustainability-pillar.html) · [AWS Well-Architected SaaS Lens](https://docs.aws.amazon.com/wellarchitected/latest/saas-lens/saas-lens.html)
+- [CIS-riktmärken för containrar (CIS Kubernetes Benchmark, CIS Docker Benchmark)](https://www.cisecurity.org/benchmark/kubernetes): 11 krav, 11 testfall
+- [Continuous Delivery (Humble och Farley)](https://continuousdelivery.com/): 3 krav, 3 testfall
+- [CSA Cloud Controls Matrix](https://cloudsecurityalliance.org/research/cloud-controls-matrix) (CSA CCM): 9 krav, 8 testfall
+- [CVE-programmet](https://www.cve.org/): 1 krav, 1 testfall
+- [DORA:s forskning State of DevOps](https://dora.dev/research/): 5 krav, 4 testfall
+- [Feature Toggles (Martin Fowlers webbplats)](https://martinfowler.com/articles/feature-toggles.html): 7 krav, 6 testfall
+- [Goal Structuring Notation (GSN) Community Standard, Safety-Critical Systems Club](https://scsc.uk/gsn): 1 krav, 1 testfall
+- [Googles böcker om Site Reliability Engineering](https://sre.google/books/) (Google SRE): 51 krav, 49 testfall
+- [ISTQB:s kursplaner](https://www.istqb.org/): 20 krav, 21 testfall
+  - [ISTQB CTFL 4.0](https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/)
+- [ITIL 4, praxis för tjänstehantering](https://www.axelos.com/certifications/itil-service-management): 96 krav, 83 testfall
+- [Keep a Changelog](https://keepachangelog.com/en/1.1.0/): 4 krav, 4 testfall
+- [Kubernetes säkerhetsdokumentation (Pod Security Standards, god praxis för RBAC, granskning, kryptering vid lagring)](https://kubernetes.io/docs/concepts/security/): 7 krav, 7 testfall
+- [M3AAWG:s bästa praxis för e-post](https://www.m3aawg.org/published-documents): 8 krav, 8 testfall
+- [MITRE ATLAS, hotlandskap för AI-system](https://atlas.mitre.org/): 1 krav, 1 testfall
+- [MITRE ATT&CK](https://attack.mitre.org/): 4 krav, 4 testfall
+  - [MITRE ATT&CK T1078](https://attack.mitre.org/techniques/T1078/)
+- Modeller för utformning och utvärdering av utbildning (ADDIE, Kirkpatrick): 9 krav, 5 testfall
+  - [Kirkpatrick four-level training evaluation model](https://www.kirkpatrickpartners.com/the-kirkpatrick-model/)
+- [Nielsens användbarhetsheuristiker](https://www.nngroup.com/articles/ten-usability-heuristics/): 28 krav, 25 testfall
+- [Oil and Gas Methane Partnership 2.0, rapporteringsramverk](https://ogmpartnership.org/) (OGMP 2.0): 1 krav, 1 testfall
+- [OpenSSF Scorecard](https://scorecard.dev/): 3 krav, 3 testfall
+- [OWASP API Security Top 10](https://owasp.org/API-Security/editions/2023/en/0x11-t10/) (OWASP API Top 10): 13 krav, 13 testfall
+- [OWASP Mobile Application Security Testing Guide (MASTG, testguide för mobilappar)](https://mas.owasp.org/MASTG/) (OWASP MASTG): 0 krav, 1 testfall
+- [OWASP Software Assurance Maturity Model (SAMM)](https://owaspsamm.org/) (OWASP SAMM): 3 krav, 3 testfall
+- [OWASP Top 10 CI/CD Security Risks (säkerhetsrisker i CI/CD)](https://owasp.org/www-project-top-10-ci-cd-security-risks/): 4 krav, 4 testfall
+- [OWASP Top 10 för LLM-applikationer](https://genai.owasp.org/llm-top-10/) (OWASP LLM Top 10): 14 krav, 12 testfall
+- [OWASP Top 10, de största säkerhetsriskerna för webbapplikationer](https://owasp.org/Top10/): 36 krav, 37 testfall
+- [PMBOK Guide (Project Management Institute)](https://www.pmi.org/standards/pmbok): 6 krav, 6 testfall
+- [PRINCE2, projektstyrningsmetod](https://www.axelos.com/certifications/propath/prince2-project-management): 14 krav, 12 testfall
+- RACI-matris för ansvarsfördelning: 1 krav, 1 testfall
+- [REUSE-specifikationen (licens- och upphovsrättsinformation)](https://reuse.software/spec-3.2/): 1 krav, 1 testfall
+- [Scaled Agile Framework (SAFe), ramverk för skalad agilitet](https://framework.scaledagile.com/): 2 krav, 1 testfall
+- [Scrumguiden (Schwaber och Sutherland)](https://scrumguides.org/scrum-guide.html) (Scrum Guide): 6 krav, 4 testfall
+- [SLSA, nivåer för säkerhet i programvarans leveranskedja](https://slsa.dev/spec/v1.0/): 7 krav, 7 testfall
+- System Usability Scale (SUS): 1 krav, 1 testfall
+- [The Twelve-Factor App](https://12factor.net/): 20 krav, 20 testfall
+- [Villkor i licenser för öppen källkod och innehåll](https://opensource.org/licenses): 6 krav, 7 testfall
+  - [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) · [BSD 3-Clause License](https://opensource.org/license/bsd-3-clause) · [MIT License](https://opensource.org/license/mit) · [GNU AGPL v3](https://www.gnu.org/licenses/agpl-3.0.html) · [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html) · [GNU LGPL v2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) · [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/) · [Server Side Public License v1](https://www.mongodb.com/legal/licensing/server-side-public-license) · [Creative Commons Attribution-ShareAlike 4.0](https://creativecommons.org/licenses/by-sa/4.0/) · [Creative Commons licences 4.0](https://creativecommons.org/licenses/) · [SIL Open Font License 1.1](https://openfontlicense.org/)
+- [Vägledningar från Green Software Foundation](https://greensoftware.foundation/) (GSF): 6 krav, 6 testfall
+  - [Green Software Foundation: Carbon Aware SDK](https://github.com/Green-Software-Foundation/carbon-aware-sdk) · [Green Software Foundation: SCI guidance](https://sci-guide.greensoftware.foundation/)
+
+#### Bästa praxis och ramverk: USA
+
+- [FEMA Incident Command System](https://training.fema.gov/emiweb/is/icsresource/) (ICS): 1 krav, 1 testfall
+- [NIST SP 800-218 Ramverk för säker programvaruutveckling (SSDF)](https://doi.org/10.6028/NIST.SP.800-218) (NIST SSDF): 24 krav, 21 testfall
+- [NIST:s ramverk för AI-riskhantering och profilen för generativ AI](https://www.nist.gov/itl/ai-risk-management-framework) (NIST AI RMF): 26 krav, 22 testfall
+  - [NIST AI RMF 1.0](https://doi.org/10.6028/NIST.AI.100-1) · [NIST AI 600-1](https://doi.org/10.6028/NIST.AI.600-1) · [NIST AI 100-2](https://doi.org/10.6028/NIST.AI.100-2e2025)
+
+### Riktlinjer och vägledningar
+
+#### Riktlinjer och vägledningar: Internationella
+
+- [ASHRAE TC 9.9 Termiska riktlinjer för datormiljöer](https://tc0909.ashraetcs.org/): 2 krav, 2 testfall
+- [CERT/CC:s vägledning om samordnat offentliggörande av sårbarheter](https://certcc.github.io/CERT-Guide-to-CVD/): 3 krav, 3 testfall
+- DNV-RP-G108 Cybersäkerhet inom olje- och gasindustrin: 1 krav, 1 testfall
+- [EEMUA 191 Vägledning för larmsystem](https://www.eemua.org/products/publications/digital/eemua-publication-191): 2 krav, 2 testfall
+- [FN:s rekommendationer om transport av farligt gods, handbok för provning och kriterier](https://unece.org/transport/dangerous-goods/un-manual-tests-and-criteria): 1 krav, 1 testfall
+- GSMA:s riktlinjer (FS- och NG-serien): 5 krav, 4 testfall
+- [IOGP-rapporter](https://idms.iogp.org/): 1 krav, 1 testfall
+- [OWASP Cheat Sheet Series och vägledningar](https://cheatsheetseries.owasp.org/) (OWASP Cheat Sheets): 71 krav, 67 testfall
+- [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) (OWASP WSTG): 13 krav, 31 testfall
+- [PIC/S vägledning om datahantering och dataintegritet](https://picscheme.org/en/publications): 2 krav, 2 testfall
+- Plattformarnas designriktlinjer (Material Design, Apples Human Interface Guidelines): 11 krav, 11 testfall
+  - [Material Design](https://m3.material.io/) · [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
+- [Vägledning om webbprestanda (web.dev, HTTP Archive, Google Web Fundamentals)](https://web.dev/): 7 krav, 4 testfall
+  - [web.dev Core Web Vitals](https://web.dev/articles/vitals) · [web.dev Performance budgets](https://web.dev/articles/performance-budgets-101) · [HTTP Archive Web Almanac 2024, Page Weight chapter](https://almanac.httparchive.org/en/2024/page-weight)
+- [W3C:s riktlinjer för hållbar webb (WSG)](https://www.w3.org/TR/web-sustainability-guidelines/): 6 krav, 5 testfall
+
+#### Riktlinjer och vägledningar: Europeiska unionen
+
+- [Blå guiden om genomförandet av EU:s produktregler (2022/C 247/01)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52022XC0629%2804%29) (Blue Guide): 2 krav, 2 testfall
+- [CEN/TR 16355 Rekommendationer för att förhindra tillväxt av legionella i dricksvatteninstallationer i byggnader](https://standards.cencenelec.eu/): 1 krav, 1 testfall
+- [EU:s riktlinjer för god tillverkningssed (EudraLex volym 4)](https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en) (EU GMP): 18 krav, 18 testfall
+- [NIS-samarbetsgruppen: samordnad färdplan för övergången till postkvantkryptografi](https://digital-strategy.ec.europa.eu/en/library/coordinated-implementation-roadmap-transition-post-quantum-cryptography): 3 krav, 2 testfall
+- [Riktlinjer från EDPB och artikel 29-gruppen](https://www.edpb.europa.eu/documents_en): 16 krav, 16 testfall
+  - [EDPB Guidelines 9/2022](https://www.edpb.europa.eu/documents/guideline/guidelines-92022-on-personal-data-breach-notification-under-gdpr_en)
+- [Vägledningar från ENISA](https://www.enisa.europa.eu/publications): 3 krav, 3 testfall
+- [Vägledningar från samordningsgruppen för medicintekniska produkter (MDCG)](https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en): 1 krav, 1 testfall
+
+#### Riktlinjer och vägledningar: Storbritannien
+
+- [Brittiska HSE HSG250, vägledning om arbetstillståndssystem](https://www.hse.gov.uk/pubns/books/hsg250.htm): 3 krav, 3 testfall
+
+#### Riktlinjer och vägledningar: USA
+
+- [CISA:s vägledningar och kataloger (KEV, VEX)](https://www.cisa.gov/known-exploited-vulnerabilities-catalog): 9 krav, 9 testfall
+  - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) · [CISA Minimum Requirements for VEX](https://www.cisa.gov/resources-tools/resources/minimum-requirements-vulnerability-exploitability-exchange-vex)
+- [NIST IR 8547 Övergång till standarder för postkvantkryptografi](https://csrc.nist.gov/pubs/ir/8547/ipd): 5 krav, 4 testfall
+- [NIST SP 800-190 Säkerhet för applikationscontainrar](https://doi.org/10.6028/NIST.SP.800-190): 15 krav, 15 testfall
+- [NIST SP 800-204D Säkerhet i leveranskedjan för programvara i CI/CD-pipelines för DevSecOps](https://csrc.nist.gov/pubs/sp/800/204/d/final): 3 krav, 3 testfall
+- [NIST SP 800-207 Nollförtroendearkitektur](https://doi.org/10.6028/NIST.SP.800-207): 17 krav, 17 testfall
+- [NIST SP 800-209 Säkerhetsriktlinjer för lagringsinfrastruktur](https://doi.org/10.6028/NIST.SP.800-209): 1 krav, 1 testfall
+- [NIST SP 800-34 Vägledning för kontinuitetsplanering](https://doi.org/10.6028/NIST.SP.800-34r1): 2 krav, 2 testfall
+- [NIST SP 800-61 Vägledning för hantering av säkerhetsincidenter](https://doi.org/10.6028/NIST.SP.800-61r2): 9 krav, 9 testfall
+- [NIST SP 800-63 Riktlinjer för digital identitet (63A, 63B)](https://pages.nist.gov/800-63-3/): 27 krav, 27 testfall
+- [NIST SP 800-63C Riktlinjer för digital identitet: federation och intyg](https://pages.nist.gov/800-63-4/sp800-63c.html): 1 krav, 1 testfall
+- [NIST SP 800-82 Vägledning för säkerhet i driftteknik (OT)](https://doi.org/10.6028/NIST.SP.800-82r3): 7 krav, 6 testfall
+- [NIST SP 800-84 Program för test, utbildning och övning](https://doi.org/10.6028/NIST.SP.800-84): 1 krav, 3 testfall
+- [NIST SP 800-88 Riktlinjer för sanering av lagringsmedia](https://doi.org/10.6028/NIST.SP.800-88r2): 5 krav, 5 testfall
+- [NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)](https://doi.org/10.6028/NIST.SP.800-160v1r1): 7 krav, 6 testfall
+  - [NIST SP 800-160 Vol. 1 Rev. 1](https://doi.org/10.6028/NIST.SP.800-160v1r1) · [NIST SP 800-193](https://doi.org/10.6028/NIST.SP.800-193) · [NIST SP 800-90B](https://doi.org/10.6028/NIST.SP.800-90B)
+- [NTIA:s minimikrav för en programvaruförteckning (SBOM)](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom) (NTIA SBOM): 1 krav, 1 testfall
+
+<!-- END generated sources -->

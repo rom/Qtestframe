@@ -160,6 +160,11 @@ const sourceName = (id: string) => {
   const x = sourceById.value.get(id)
   return x ? sourceLabel(x) : id
 }
+/** The source's official page (https only), for the link on its chip. */
+const sourceUrl = (id: string) => {
+  const u = sourceById.value.get(id)?.url
+  return u && u.startsWith('https://') ? u : undefined
+}
 function removeSource(id: string) {
   sourceIds.value = sourceIds.value.filter((x) => x !== id)
 }
@@ -394,6 +399,16 @@ const keysOf = (id: string) => (inMap.value[id] ?? []).map((x) => x.key).join(',
           <li v-for="id in sourceIds" :key="id">
             <span class="comply-chip">
               <span>{{ sourceName(id) }}</span>
+              <a
+                v-if="sourceUrl(id)"
+                :href="sourceUrl(id)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="link-button"
+                :aria-label="t('catalog.sources.openSource', { name: sourceName(id) })"
+                v-tooltip.top="t('catalog.sources.openSource', { name: sourceName(id) })"
+                ><i class="pi pi-external-link" aria-hidden="true"
+              /></a>
               <button type="button" class="link-button" :aria-label="t('catalog.sources.remove', { name: sourceName(id) })" @click="removeSource(id)"><i class="pi pi-times" aria-hidden="true" /></button>
             </span>
           </li>

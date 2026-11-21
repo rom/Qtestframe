@@ -48,6 +48,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useMetaStore } from '@/stores/meta'
 import { useNotify } from '@/composables/notify'
 import { usePrefsStore } from '@/stores/prefs'
+import SuggestInput from '@/components/SuggestInput.vue'
+import { RUN_NAME, rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, enumOptions } from '@/i18n/labels'
 import Checkbox from 'primevue/checkbox'
@@ -160,8 +162,10 @@ async function saveEdit() {
   const { configuration_ids, ...fields } = editForm.value
   const before = (run.value?.configurations ?? []).map((c) => c.id)
   const changed = before.join(',') !== configuration_ids.join(',')
+  const oldName = run.value?.name
   try {
     run.value = await api.patch<TestRun>(`/runs/${props.runId}`, changed ? editForm.value : fields)
+    void rememberValues(prefs.prefs, proj.pid, savedEntries({ [RUN_NAME]: fields.name }, { [RUN_NAME]: oldName }))
     editDialog.value = false
     notify.ok(t('run.updated'))
     if (changed) {
@@ -630,7 +634,7 @@ async function copySnippet(text: string = ciSnippet.value) {
     <Dialog v-model:visible="editDialog" :header="t('run.edit')" modal style="width: min(560px, 95vw)">
       <Message v-if="editError" severity="error" :closable="false" style="margin-bottom: 10px">{{ editError }}</Message>
       <div class="form-grid">
-        <div v-field class="field full"><label>{{ t('common.name') }}</label><InputText v-model="editForm.name" /></div>
+        <div v-field class="field full"><label>{{ t('common.name') }}</label><SuggestInput v-model="editForm.name" field="run.name" :project-id="proj.pid" /></div>
         <div v-field class="field"><label>{{ t('common.environment') }}</label><InputText v-model="editForm.environment" /></div>
         <div v-field class="field"><label>{{ t('common.build') }}</label><InputText v-model="editForm.build" /></div>
         <div v-if="rel.releases.value.length" v-field class="field full">

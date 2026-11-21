@@ -136,6 +136,8 @@ actually check.
 | IEC 62443-2-1 security programme, IEC 62443-2-4 service providers | `IEC 62443-2-1:2024 (topic)`, `IEC 62443-2-4:2023 SP.07 (remote access)` |
 | GDPR (Regulation (EU) 2016/679) | `GDPR Art. 32(1)(a)` |
 | Cyber Resilience Act | `Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)`, `… Annex I Part II §2`, `… Art. 14` |
+| AI Act (consolidated text; mark amended provisions) | `EU AI Act (Regulation (EU) 2024/1689) Art. 4(1) (AI literacy, as amended by Regulation (EU) 2026/1744)` |
+| Digital Omnibus on AI (amends the AI Act) | `Regulation (EU) 2026/1744 (Digital Omnibus on AI) Art. 1(5) (new AI Act Art. 4)` |
 | DORA (digital operational resilience, financial sector) | `Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)` |
 | CER (resilience of critical entities) | `Directive (EU) 2022/2557 (CER) Art. 13(1)(d)` |
 | NIS2 | `Directive (EU) 2022/2555 (NIS2) Art. 23` |
@@ -171,7 +173,12 @@ sources:
     regex: []                   # optional Go regular expressions, e.g. '^OWASP .*Cheat Sheet'
     clause: ''                  # optional, see below
     clause_format: ''           # optional, see below
-    url: https://eur-lex.europa.eu/eli/reg/2024/2847/oj   # optional, https only
+    url: https://eur-lex.europa.eu/eli/reg/2024/2847/oj   # the official page, https only
+    links:                      # optional: the documents of a family, each with its page
+      - {label: "IEC 60300-1", url: "https://webstore.iec.ch/en/publication/1293"}
+      - {label: "CISPR 32 (EN 55032)", url: "https://webstore.iec.ch/en/publication/22046", match: ["EN 55032"]}
+    ref_links:                  # optional: a link per cited document, derived from the ref
+      - {regex: '^RFC (\d{1,5})\b', label: 'RFC $1', url: 'https://www.rfc-editor.org/rfc/rfc$1'}
 ```
 
 - **Adding a source** is one entry: when a new item cites a law or
@@ -203,3 +210,25 @@ sources:
   requirements whose `source` field names a source: each part separated by
   `;` or a line break is matched like a ref, and failing that without
   regard to case (`gdpr art. 32`).
+- **Links.** Give every source a `url`: the official or publisher page
+  (EUR-Lex ELI links for EU acts, lagen.nu or riksdagen.se for Swedish
+  SFS, the agency for its regulations, `iso.org/standard/<number>.html`,
+  `webstore.iec.ch/en/publication/<number>`, `standards.ieee.org`, the
+  `etsi.org/deliver/` folder of a deliverable, `doi.org/10.6028/…` for
+  NIST and so on). Check that the page is the right document; leave the
+  `url` out rather than guess. A source that groups several documents
+  lists them in `links` (`label` is the designation, the same in every
+  language; a ref links to the document whose `match` prefix, by default
+  the label, it starts with), and a large family derives a link per cited
+  document from the ref with `ref_links` (`$1` … are the capture groups of
+  `regex`). Every url must start with `https://`; the loader checks it.
+  The catalogue browser links each ref to the most specific of these: the
+  `ref_links` document, else the `links` document, else the `url`.
+- **The guide.** The section *Sources cited in the catalogue* of
+  `docs/user-guide/<lang>/references.md` is generated from the registry
+  and the catalogue's refs, between the markers
+  `<!-- BEGIN generated sources: make refs-docs -->` and
+  `<!-- END generated sources -->`. After changing the registry or the
+  refs, run `make refs-docs` (or `go generate ./internal/catalog`) and
+  then `make guide-docs`; `go test ./internal/catalog`
+  (`TestReferencesDocIsCurrent`) fails until the pages are current.

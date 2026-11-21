@@ -1,0 +1,259 @@
+[
+  {
+    "text": "The system MUST log every login.",
+    "language": "en",
+    "obligation": "must",
+    "keywords": [
+      {
+        "text": "MUST",
+        "keyword": "MUST",
+        "level": "must"
+      }
+    ]
+  },
+  {
+    "text": "The system MUST NOT store passwords in clear text.",
+    "language": "en",
+    "obligation": "must_not",
+    "keywords": [
+      {
+        "text": "MUST NOT",
+        "keyword": "MUST NOT",
+        "level": "must_not"
+      }
+    ]
+  },
+  {
+    "text": "The service SHALL NOT  restart; it SHOULD NOT\nwarn and MAY retry.",
+    "language": "en",
+    "obligation": "shall_not",
+    "keywords": [
+      {
+        "text": "SHALL NOT",
+        "keyword": "SHALL NOT",
+        "level": "shall_not"
+      },
+      {
+        "text": "SHOULD NOT",
+        "keyword": "SHOULD NOT",
+        "level": "should_not"
+      },
+      {
+        "text": "MAY",
+        "keyword": "MAY",
+        "level": "may"
+      }
+    ]
+  },
+  {
+    "text": "Logging is OPTIONAL. Encryption is REQUIRED and RECOMMENDED, but NOT RECOMMENDED for tests.",
+    "language": "en",
+    "obligation": "must",
+    "keywords": [
+      {
+        "text": "OPTIONAL",
+        "keyword": "OPTIONAL",
+        "level": "optional"
+      },
+      {
+        "text": "REQUIRED",
+        "keyword": "REQUIRED",
+        "level": "must"
+      },
+      {
+        "text": "RECOMMENDED",
+        "keyword": "RECOMMENDED",
+        "level": "should"
+      },
+      {
+        "text": "NOT RECOMMENDED",
+        "keyword": "NOT RECOMMENDED",
+        "level": "should_not"
+      }
+    ]
+  },
+  {
+    "text": "MAYBE the system MUSTER the users; SHALLOW copies.",
+    "language": "en",
+    "obligation": "",
+    "keywords": []
+  },
+  {
+    "text": "The system may retry and must log.",
+    "language": "en",
+    "obligation": "must",
+    "keywords": [
+      {
+        "text": "may",
+        "keyword": "MAY",
+        "level": "may"
+      },
+      {
+        "text": "must",
+        "keyword": "MUST",
+        "level": "must"
+      }
+    ]
+  },
+  {
+    "text": "The client WILL show a NOTE: describing it.",
+    "language": "en",
+    "obligation": "will",
+    "keywords": [
+      {
+        "text": "WILL",
+        "keyword": "WILL",
+        "level": "will"
+      },
+      {
+        "text": "NOTE:",
+        "keyword": "NOTE:",
+        "level": "describe"
+      }
+    ]
+  },
+  {
+    "text": "Systemet ska logga alla inloggningar.",
+    "language": "sv",
+    "obligation": "shall",
+    "keywords": [
+      {
+        "text": "ska",
+        "keyword": "SKA",
+        "level": "shall"
+      }
+    ]
+  },
+  {
+    "text": "Systemet SKA INTE spara lösenord i klartext.",
+    "language": "sv",
+    "obligation": "shall_not",
+    "keywords": [
+      {
+        "text": "SKA INTE",
+        "keyword": "SKA INTE",
+        "level": "shall_not"
+      }
+    ]
+  },
+  {
+    "text": "Användaren får inte radera loggen och bör inte se den.",
+    "language": "sv",
+    "obligation": "must_not",
+    "keywords": [
+      {
+        "text": "får inte",
+        "keyword": "FÅR INTE",
+        "level": "must_not"
+      },
+      {
+        "text": "bör inte",
+        "keyword": "BÖR INTE",
+        "level": "should_not"
+      }
+    ]
+  },
+  {
+    "text": "Användaren FÅR exportera data. FÅRA och SKALA är inga nyckelord.",
+    "language": "sv",
+    "obligation": "may",
+    "keywords": [
+      {
+        "text": "FÅR",
+        "keyword": "FÅR",
+        "level": "may"
+      }
+    ]
+  },
+  {
+    "text": "Systemet skall stödja export och bör ej kräva inloggning; det måste inte vara snabbt.",
+    "language": "sv",
+    "obligation": "shall",
+    "keywords": [
+      {
+        "text": "skall",
+        "keyword": "SKALL",
+        "level": "shall"
+      },
+      {
+        "text": "bör ej",
+        "keyword": "BÖR EJ",
+        "level": "should_not"
+      },
+      {
+        "text": "måste inte",
+        "keyword": "MÅSTE INTE",
+        "level": "optional"
+      }
+    ]
+  },
+  {
+    "text": "Systemet MUST support SSO och ska logga det.",
+    "language": "sv",
+    "obligation": "must",
+    "keywords": [
+      {
+        "text": "MUST",
+        "keyword": "MUST",
+        "level": "must"
+      },
+      {
+        "text": "ska",
+        "keyword": "SKA",
+        "level": "shall"
+      }
+    ]
+  },
+  {
+    "text": "Systemet must support SSO och ska logga det.",
+    "language": "sv",
+    "obligation": "shall",
+    "keywords": [
+      {
+        "text": "ska",
+        "keyword": "SKA",
+        "level": "shall"
+      }
+    ]
+  },
+  {
+    "text": "Underscored MUST_NOT and digits MUST2 are not keywords, but (MUST) is.",
+    "language": "en",
+    "obligation": "must",
+    "keywords": [
+      {
+        "text": "MUST",
+        "keyword": "MUST",
+        "level": "must"
+      }
+    ]
+  },
+  {
+    "text": "Ändringen BÖR göras; det är valfritt och obligatoriskt att granska.",
+    "language": "sv",
+    "obligation": "must",
+    "keywords": [
+      {
+        "text": "BÖR",
+        "keyword": "BÖR",
+        "level": "should"
+      },
+      {
+        "text": "valfritt",
+        "keyword": "VALFRITT",
+        "level": "optional"
+      },
+      {
+        "text": "obligatoriskt",
+        "keyword": "OBLIGATORISKT",
+        "level": "must"
+      }
+    ]
+  },
+  {
+    "text": "",
+    "language": "",
+    "obligation": "",
+    "keywords": []
+  }
+]

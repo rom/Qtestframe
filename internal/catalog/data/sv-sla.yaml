@@ -290,6 +290,142 @@ requirements:
           text: Registret har inget förslag som är äldre än 3 månader utan beslut, och varje beslut har en motivering.
           threshold: ≤ 3 månader till beslut
 
+  - id: SVSLA-13
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [maintenance-window, availability, notice]
+    refs: ["ITIL 4 Service level management", "ISO/IEC 20000-1:2018 §8.3.3"]
+    tests: [SVSLA-T10]
+    en:
+      title: Planned maintenance limited to 4 hours a month and announced 10 days ahead
+      description: The provider MUST schedule planned maintenance that interrupts the service outside the service hours, for at most 4 hours a month in total and with at least 10 working days' notice to the customer.
+      rationale: Unlimited planned maintenance lets a provider meet the availability target on paper while users lose the service.
+      criteria:
+        - method: analysis
+          text: The maintenance log of the last 6 months shows at most 4 hours a month, each outside the service hours and announced at least 10 working days ahead.
+          threshold: "≤ 4 h/month; notice ≥ 10 working days"
+    sv:
+      title: Planerat underhåll högst 4 timmar per månad och aviserat 10 dagar i förväg
+      description: Leverantören SKA förlägga planerat underhåll som avbryter tjänsten utanför servicetiden, högst 4 timmar per månad, aviserat till kunden minst 10 arbetsdagar i förväg.
+      rationale: Obegränsat planerat underhåll gör att en leverantör kan nå tillgänglighetsmålet på papperet medan användarna står utan tjänst.
+      criteria:
+        - method: analysis
+          text: Underhållsloggen för de senaste 6 månaderna visar högst 4 timmar per månad, varje tillfälle utanför servicetiden och aviserat minst 10 arbetsdagar i förväg.
+          threshold: "≤ 4 h/månad; avisering ≥ 10 arbetsdagar"
+
+  - id: SVSLA-14
+    type: business
+    obligation: must
+    priority: medium
+    tags: [escalation, contacts, sla]
+    refs: ["ITIL 4 Service level management"]
+    tests: [SVSLA-T11]
+    en:
+      title: Escalation matrix with 3 levels on each side
+      description: The service level agreement MUST contain an escalation matrix with named roles and contact details at 3 levels for both the provider and the customer, and the time after which each level is reached.
+      rationale: When a priority 1 incident drags on, both parties need to know at once who to call next and when.
+      criteria:
+        - method: review
+          text: The matrix lists 3 levels per party with role, contact details and escalation time, and a test call to each provider contact is answered.
+    sv:
+      title: Eskaleringsmatris med 3 nivåer på varje sida
+      description: Servicenivåavtalet SKA innehålla en eskaleringsmatris med namngivna roller och kontaktuppgifter på 3 nivåer för både leverantören och kunden, och den tid efter vilken varje nivå nås.
+      rationale: När en prioritet 1-incident drar ut på tiden behöver båda parter direkt veta vem de ska ringa härnäst och när.
+      criteria:
+        - method: review
+          text: Matrisen listar 3 nivåer per part med roll, kontaktuppgifter och eskaleringstid, och ett provsamtal till varje kontakt hos leverantören besvaras.
+
+  - id: SVSLA-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [chronic-breach, termination, sla]
+    refs: ["ITIL 4 Service level management"]
+    tests: [SVSLA-T12]
+    en:
+      title: Right to terminate after repeated breaches of a target
+      description: The service level agreement MUST give the customer the right to terminate the service without penalty when the same service level target is missed in 3 months out of any 6 consecutive months.
+      rationale: Service credits alone do not protect the customer from a service that is constantly below target, since the provider can price them in.
+      criteria:
+        - method: review
+          text: The agreement has a clause with the 3-in-6 rule and no termination fee for this ground.
+          threshold: "3 breaches in 6 months"
+    sv:
+      title: Rätt att säga upp avtalet efter upprepade avvikelser från ett mål
+      description: Servicenivåavtalet SKA ge kunden rätt att säga upp tjänsten utan avgift när samma servicenivåmål inte nås under 3 av 6 månader i följd.
+      rationale: Vite ensamt skyddar inte kunden mot en tjänst som ständigt ligger under målet, eftersom leverantören kan räkna in vitet i priset.
+      criteria:
+        - method: review
+          text: Avtalet har en klausul med regeln 3 av 6 och ingen uppsägningsavgift för denna grund.
+          threshold: "3 avvikelser på 6 månader"
+
+  - id: SVSLA-16
+    type: business
+    obligation: should
+    priority: medium
+    tags: [sla-review, business-needs]
+    refs: ["ISO/IEC 20000-1:2018 §8.3.3", "ITIL 4 Service level management"]
+    tests: [SVSLA-T11]
+    en:
+      title: Service level agreement reviewed against business needs each year
+      description: The customer and the provider SHOULD review the targets of the service level agreement against the customer's current business needs at least once every 12 months and record agreed changes as a new version.
+      rationale: Business needs change while the agreement stays the same, so targets drift away from what the users depend on.
+      criteria:
+        - method: review
+          text: The minutes of a review less than 12 months old exist, and agreed changes appear in a dated new version of the agreement.
+    sv:
+      title: Servicenivåavtalet ses över mot verksamhetens behov varje år
+      description: Kunden och leverantören BÖR se över målen i servicenivåavtalet mot kundens aktuella verksamhetsbehov minst en gång var 12:e månad och dokumentera avtalade ändringar som en ny version.
+      rationale: Verksamhetens behov förändras medan avtalet står still, så målen glider ifrån det som användarna är beroende av.
+      criteria:
+        - method: review
+          text: Protokoll från en översyn som är mindre än 12 månader gammal finns, och avtalade ändringar finns i en daterad ny version av avtalet.
+
+  - id: SVSLA-17
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [rpo, rto, recovery, sla]
+    refs: ["ISO/IEC 27031:2025", "ISO 22301:2019 §8.3"]
+    tests: [SVSLA-T13]
+    en:
+      title: Recovery time and recovery point objectives per service
+      description: The service level agreement MUST state a recovery time objective and a recovery point objective for each service, with a recovery test against them whose result the provider reports at least once every 12 months.
+      rationale: Availability targets say nothing about how much data is lost or how long a full recovery takes after a disaster.
+      criteria:
+        - method: review
+          text: Each service in the agreement has both objectives, and a test report less than 12 months old shows the measured recovery time and data loss against them.
+    sv:
+      title: Mål för återställningstid och återställningspunkt per tjänst
+      description: Servicenivåavtalet SKA ange ett mål för återställningstid och ett mål för återställningspunkt för varje tjänst, med en återställningsprovning mot dem som leverantören rapporterar minst en gång var 12:e månad.
+      rationale: Tillgänglighetsmål säger inget om hur mycket data som går förlorad eller hur lång tid en fullständig återställning tar efter en katastrof.
+      criteria:
+        - method: review
+          text: Varje tjänst i avtalet har båda målen, och en provningsrapport som är mindre än 12 månader gammal visar uppmätt återställningstid och dataförlust mot dem.
+
+  - id: SVSLA-18
+    type: business
+    obligation: must
+    priority: medium
+    tags: [customer-obligations, dependencies, sla]
+    refs: ["ITIL 4 Service level management"]
+    tests: [SVSLA-T12]
+    en:
+      title: Customer obligations that the targets depend on
+      description: The service level agreement MUST list each obligation of the customer that a service level target depends on, such as access, contacts or third-party services, and state how a failure on the customer's side affects the measurement.
+      rationale: Unstated dependencies lead to disputes about whether a missed target was the provider's fault.
+      criteria:
+        - method: review
+          text: The agreement has a list of customer obligations, each linked to the targets it affects and to an adjustment rule for the measurement.
+    sv:
+      title: Kundens åtaganden som målen är beroende av
+      description: Servicenivåavtalet SKA lista varje åtagande från kunden som ett servicenivåmål är beroende av, till exempel åtkomst, kontaktpersoner eller tredjepartstjänster, och ange hur en brist hos kunden påverkar mätningen.
+      rationale: Outtalade beroenden leder till tvister om huruvida ett missat mål var leverantörens fel.
+      criteria:
+        - method: review
+          text: Avtalet har en lista över kundens åtaganden, var och en kopplad till de mål den påverkar och till en regel för justering av mätningen.
+
 tests:
   - id: SVSLA-T01
     priority: critical
@@ -550,3 +686,125 @@ tests:
           expected: Listan är tom.
         - action: Läs besluten för 10 förslag.
           expected: Varje beslut har en motivering.
+
+  - id: SVSLA-T10
+    priority: high
+    execution: manual
+    tags: [maintenance-window]
+    refs: ["ITIL 4 Service level management"]
+    en:
+      title: Planned maintenance compared with the limits
+      description: Analyses the maintenance log and the notices of the last 6 months.
+      preconditions: The provider's maintenance log, the notices sent to the customer and the service hours in the agreement.
+      expected: Planned interruptions stayed within 4 hours a month, outside the service hours and with 10 working days' notice.
+      steps:
+        - action: Sum the planned interruption time per month from the maintenance log.
+          expected: Each month has at most 4 hours.
+        - action: Compare the time of each interruption with the service hours.
+          expected: Each lies outside the service hours.
+        - action: Count the working days from each notice to its maintenance.
+          expected: Each count is at least 10.
+    sv:
+      title: Planerat underhåll jämförs med gränserna
+      description: Analyserar underhållsloggen och aviseringarna under de senaste 6 månaderna.
+      preconditions: Leverantörens underhållslogg, de aviseringar som skickats till kunden och servicetiderna i avtalet.
+      expected: Planerade avbrott höll sig inom 4 timmar per månad, utanför servicetiden och med 10 arbetsdagars varsel.
+      steps:
+        - action: Summera den planerade avbrottstiden per månad ur underhållsloggen.
+          expected: Varje månad har högst 4 timmar.
+        - action: Jämför tidpunkten för varje avbrott med servicetiderna.
+          expected: Varje avbrott ligger utanför servicetiden.
+        - action: Räkna arbetsdagarna från varje avisering till underhållet.
+          expected: Varje antal är minst 10.
+
+  - id: SVSLA-T11
+    priority: medium
+    execution: manual
+    tags: [escalation, sla-review]
+    refs: ["ITIL 4 Service level management", "ISO/IEC 20000-1:2018 §8.3.3"]
+    en:
+      title: Escalation matrix and yearly review of the agreement
+      description: Checks the escalation matrix with test calls and the record of the latest yearly review.
+      preconditions: The current service level agreement, its version history and the minutes of the latest review.
+      expected: Each escalation level is complete and reachable, and a review took place within 12 months.
+      steps:
+        - action: Read the escalation matrix.
+          expected: There are 3 levels per party with role, contact details and escalation time.
+        - action: Call each provider contact in the matrix during the service hours.
+          expected: Each call is answered by the named role.
+        - action: Compare the date of the latest review with today and the changes agreed with the version history.
+          expected: The review is less than 12 months old, and each agreed change is in a newer version.
+    sv:
+      title: Eskaleringsmatrisen och den årliga översynen av avtalet
+      description: Kontrollerar eskaleringsmatrisen med provsamtal och dokumentationen från den senaste årliga översynen.
+      preconditions: Det gällande servicenivåavtalet, dess versionshistorik och protokollet från den senaste översynen.
+      expected: Varje eskaleringsnivå är komplett och nåbar, och en översyn har gjorts inom 12 månader.
+      steps:
+        - action: Läs eskaleringsmatrisen.
+          expected: Det finns 3 nivåer per part med roll, kontaktuppgifter och eskaleringstid.
+        - action: Ring varje kontakt hos leverantören i matrisen under servicetiden.
+          expected: Varje samtal besvaras av den namngivna rollen.
+        - action: Jämför datumet för den senaste översynen med dagens datum och de avtalade ändringarna med versionshistoriken.
+          expected: Översynen är mindre än 12 månader gammal, och varje avtalad ändring finns i en senare version.
+
+  - id: SVSLA-T12
+    priority: high
+    execution: manual
+    tags: [chronic-breach, customer-obligations]
+    refs: ["ITIL 4 Service level management"]
+    en:
+      title: Termination clause and customer obligations in the agreement
+      description: Reviews the termination right for repeated breaches and the list of customer obligations.
+      preconditions: The current service level agreement and the main contract.
+      expected: The 3-in-6 termination right is in place without a fee, and each customer obligation is linked to targets and an adjustment rule.
+      steps:
+        - action: Read the termination clauses.
+          expected: A clause gives the right to terminate after 3 missed months in any 6 consecutive months, without a fee.
+        - action: Read the list of customer obligations.
+          expected: Each obligation names the targets it affects.
+        - action: Look up the adjustment rule for each obligation.
+          expected: Each has a rule for how a customer failure changes the measurement.
+    sv:
+      title: Uppsägningsklausulen och kundens åtaganden i avtalet
+      description: Granskar rätten att säga upp avtalet vid upprepade avvikelser och listan över kundens åtaganden.
+      preconditions: Det gällande servicenivåavtalet och huvudavtalet.
+      expected: Rätten att säga upp efter 3 av 6 månader finns utan avgift, och varje åtagande från kunden är kopplat till mål och en justeringsregel.
+      steps:
+        - action: Läs uppsägningsklausulerna.
+          expected: En klausul ger rätt att säga upp avtalet efter 3 missade månader under 6 månader i följd, utan avgift.
+        - action: Läs listan över kundens åtaganden.
+          expected: Varje åtagande namnger de mål det påverkar.
+        - action: Slå upp justeringsregeln för varje åtagande.
+          expected: Varje åtagande har en regel för hur en brist hos kunden ändrar mätningen.
+
+  - id: SVSLA-T13
+    priority: high
+    execution: manual
+    tags: [rpo, rto, recovery-test]
+    refs: ["ISO/IEC 27031:2025"]
+    en:
+      title: Recovery objectives and the latest recovery test
+      description: Checks the recovery objectives in the agreement against the provider's latest recovery test report.
+      preconditions: The service level agreement and the provider's recovery test report.
+      expected: Each service has both objectives, and the test report less than 12 months old shows results within them.
+      steps:
+        - action: Read the recovery objectives for each service in the agreement.
+          expected: Each service has a recovery time objective and a recovery point objective.
+          data: "e.g. RTO 4 hours, RPO 15 minutes"
+        - action: Read the date and scope of the latest recovery test report.
+          expected: It is less than 12 months old and covers each service.
+        - action: Compare the measured recovery time and data loss with the objectives.
+          expected: Each measured value is within its objective, or the deviation has an action plan.
+    sv:
+      title: Återställningsmålen och den senaste återställningsprovningen
+      description: Kontrollerar återställningsmålen i avtalet mot leverantörens senaste rapport från en återställningsprovning.
+      preconditions: Servicenivåavtalet och leverantörens rapport från återställningsprovningen.
+      expected: Varje tjänst har båda målen, och provningsrapporten som är mindre än 12 månader gammal visar resultat inom dem.
+      steps:
+        - action: Läs återställningsmålen för varje tjänst i avtalet.
+          expected: Varje tjänst har ett mål för återställningstid och ett för återställningspunkt.
+          data: "t.ex. RTO 4 timmar, RPO 15 minuter"
+        - action: Läs datum och omfattning för den senaste provningsrapporten.
+          expected: Den är mindre än 12 månader gammal och omfattar varje tjänst.
+        - action: Jämför uppmätt återställningstid och dataförlust med målen.
+          expected: Varje uppmätt värde ligger inom sitt mål, eller så har avvikelsen en åtgärdsplan.

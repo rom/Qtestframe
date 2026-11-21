@@ -67,7 +67,9 @@ tags:
 - name: Releases
   description: Releases and exit criteria
 - name: Defects
-  description: Defects and the defect tracker
+  description: Defects and the issue tracker (Jira, GitHub or GitLab)
+- name: Requirement issues
+  description: Issues created from requirements in GitLab, GitHub or Jira
 - name: Risks
   description: Risks
 - name: Reviews
@@ -2169,6 +2171,52 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/batch:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirements
+      summary: Batch update (requirement)
+      operationId: postProjectsByPidRequirementsBatch
+      description: |-
+        Saves different fields per item in one transaction (the spreadsheet view). Each item goes through the same checks as a `PATCH` (validation, write or review permission, history, audit); when one fails nothing is saved and the answer names it (`index`, `id`). Versions are checked first: when an item was saved by someone else since `version`, nothing is saved and the answer is 409 `stale` with every outdated item. See docs/api.md, *Batch update*.
+
+        **Permission:** `requirement.read` (write or review per item).
+      x-permission: requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchUpdateResult'
+        '400':
+          description: Invalid batch or value (the failing item has `index` and `id`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchFailure'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Some items were changed by someone else (code `stale`); nothing was saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchConflict'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/requirements/review:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -3235,6 +3283,52 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/tests/batch:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Tests
+      summary: Batch update (test)
+      operationId: postProjectsByPidTestsBatch
+      description: |-
+        Saves different fields per item in one transaction (the spreadsheet view). Each item goes through the same checks as a `PATCH` (validation, write or review permission, history, audit); when one fails nothing is saved and the answer names it (`index`, `id`). Versions are checked first: when an item was saved by someone else since `version`, nothing is saved and the answer is 409 `stale` with every outdated item. See docs/api.md, *Batch update*.
+
+        **Permission:** `test.read` (write or review per item).
+      x-permission: test.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchUpdate'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchUpdateResult'
+        '400':
+          description: Invalid batch or value (the failing item has `index` and `id`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchFailure'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Some items were changed by someone else (code `stale`); nothing was saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchConflict'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/tests/review:
@@ -4884,6 +4978,249 @@ paths:
                       $ref: '#/components/schemas/SearchHit'
                   total:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/suggest:
+    get:
+      tags:
+      - Projects
+      summary: Autocomplete suggestions
+      operationId: getSuggest
+      description: |-
+        Suggestions for a free-text field: the caller's own history of the field (in the projects they may read) and, for `requirement.source`, `requirement.owner` and `risk.owner`, the values used in the project. Prefix matches first, then word-start matches, then contains; ties by frequency and recency. At most 8. See docs/api.md#autocomplete.
+
+        **Permission:** signed in; read of the field (e.g. `test.read` for `test.step.expected`) in `project_id`.
+      x-permission: authenticated
+      parameters:
+      - name: field
+        in: query
+        required: true
+        description: field key, e.g. `test.step.expected`, `requirement.source`, `search`
+        schema:
+          type: string
+      - name: q
+        in: query
+        required: false
+        description: the text typed so far
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        required: false
+        description: the project of the field (required except for `search`)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: 1-8 (default 8)
+        schema:
+          type: integer
+      - name: sources
+        in: query
+        required: false
+        description: 'comma-separated: history, project (default both, as the preference allows)'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - items
+                - total
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Suggestion'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/suggest/history:
+    get:
+      tags:
+      - Auth
+      summary: Count my autocomplete history
+      operationId: getSuggestHistory
+      description: |-
+        `{"count": n}`: how many values the caller has stored (all organisations).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Auth
+      summary: Record autocomplete history
+      operationId: postSuggestHistory
+      description: |-
+        `{"project_id"?, "entries": [{"field", "value", "project_id"?}]}` → `{"recorded": n}`. Records the values the caller saved (at most 200 entries; values are trimmed and at most 1000 characters). Nothing is recorded when the preference `autocomplete` is `off` or `project`.
+
+        **Permission:** signed in; read of each field in its project.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: string
+                entries:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - field
+                    - value
+                    properties:
+                      field:
+                        type: string
+                      value:
+                        type: string
+                      project_id:
+                        type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recorded:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Auth
+      summary: Clear my autocomplete history
+      operationId: deleteSuggestHistory
+      description: |-
+        Deletes the caller's autocomplete history in every organisation → `{"deleted": n}`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/export/view:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Reports and export
+      summary: Export a view
+      operationId: postProjectsByPidExportView
+      description: |-
+        Renders a table the client shows (e.g. the spreadsheet view with its visible columns, order, sort and filters) as `xlsx`, `csv`, `md`, `pdf` or `docx`. At most 200 columns and 2,000,000 cells. The response has `Content-Disposition: attachment; filename="<KEY>-<name>-<YYYYMMDD-HHMMSS>.<ext>"`.
+
+        **Permission:** `export`.
+      x-permission: export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - format
+              - columns
+              - rows
+              properties:
+                format:
+                  type: string
+                  enum:
+                  - xlsx
+                  - csv
+                  - md
+                  - pdf
+                  - docx
+                  - excel
+                  - word
+                  - markdown
+                name:
+                  type: string
+                  description: file and sheet name (reduced to a-z, 0-9 and -)
+                title:
+                  type: string
+                lang:
+                  type: string
+                  enum:
+                  - en
+                  - sv
+                filter:
+                  type: string
+                  description: shown under the title (Markdown)
+                columns:
+                  type: array
+                  items:
+                    type: string
+                rows:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+      responses:
+        '200':
+          description: The export file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+            text/markdown:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -7568,7 +7905,7 @@ paths:
       summary: Get tracker
       operationId: getProjectsByPidDefectTracker
       description: |-
-        `{type: ""|jira|github, url, project_key, repo, issue_type, labels, user, has_token}`; the token is never returned
+        `{type: ""|jira|github|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned
 
         **Permission:** `project.read`.
       x-permission: project.read
@@ -7632,6 +7969,213 @@ paths:
 
         **Permission:** `project.update`.
       x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/issue:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Requirement issues
+      summary: Requirement issue
+      operationId: getRequirementsByIdIssue
+      description: |-
+        `{tracker, link, preview}`: the tracker type (`""` when none), the requirement's link to its issue in that tracker (an `ItemLink` with `issue`, or null) and `preview` `{title, description, labels}` of the issue as it would be created or updated now
+
+        **Permission:** `requirement.read`.
+      x-permission: requirement.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Requirement issues
+      summary: Create requirement issue
+      operationId: postRequirementsByIdIssue
+      description: |-
+        Creates the issue in the project's tracker (GitLab, GitHub or Jira) and links it: 201 `{link}`. Title `[KEY] title`; description with the text, rationale, criteria, details, linked tests with their latest results and a `/go/{key}` link; labels mapped with `requirement_labels`. 409 `issue_exists` with `link` when the requirement already has one
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '201':
+          description: Created (`{link}`)
+        '409':
+          description: The requirement already has an issue in the tracker (`issue_exists`, with `link`)
+        '502':
+          description: The tracker failed (`tracker_error`; 401, 403, 404, 422 and rate limits are explained in `error`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Requirement issues
+      summary: Update requirement issue
+      operationId: putRequirementsByIdIssue
+      description: |-
+        Pushes the requirement's current title and description into its issue (Markdown: only the part between the Qtestframe markers is replaced) → `{link}`; 404 when it has none
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '502':
+          description: The tracker failed (`tracker_error`; 401, 403, 404, 422 and rate limits are explained in `error`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/requirements/{id}/issue/sync:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Requirement issues
+      summary: Sync requirement issue
+      operationId: postRequirementsByIdIssueSync
+      description: |-
+        Reads the issue's state back → `{link, changed, commented}`; with `comment_on_pass` it comments once on the open issue when all linked tests passed
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '502':
+          description: The tracker failed (`tracker_error`; 401, 403, 404, 422 and rate limits are explained in `error`)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/issues:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirement issues
+      summary: Bulk create requirement issues
+      operationId: postProjectsByPidRequirementsIssues
+      description: |-
+        `{"ids":[...], "update": false}` (at most 100): creates the issues of the requirements without one; those with one are skipped, or updated with `update` → `{"created":[{key,issue_key,url,state}],"updated":[...],"skipped":[...],"failed":[{key,error}]}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/requirements/issues/sync:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Requirement issues
+      summary: Sync requirement issues
+      operationId: postProjectsByPidRequirementsIssuesSync
+      description: |-
+        Optional `{"ids":[...]}`: reads back the state of the issues of the project's requirements (or of those) → `{"synced","changed","commented","failed":[{key,error}]}`
+
+        **Permission:** `requirement.write`.
+      x-permission: requirement.write
       requestBody:
         required: false
         content:
@@ -11691,6 +12235,81 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    BatchUpdate:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 5000
+          items:
+            type: object
+            required:
+            - id
+            - set
+            properties:
+              id:
+                type: string
+              version:
+                type: integer
+                description: the version the change is based on (optional; checked before anything is saved)
+              set:
+                type: object
+                description: the fields to change, as in a PATCH of the item
+    BatchUpdateResult:
+      type: object
+      properties:
+        updated:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              version:
+                type: integer
+              updated_at:
+                type: string
+                format: date-time
+    BatchFailure:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        index:
+          type: integer
+          description: position of the failing item in `items`
+        id:
+          type: string
+    BatchConflict:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          enum:
+          - stale
+        conflicts:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              key:
+                type: string
+              version:
+                type: integer
+              current:
+                type: object
+                description: the item as it is saved now
     CatalogRequirement:
       type: object
       properties:
@@ -12506,6 +13125,38 @@ components:
           - 'null'
         intro_done:
           type: boolean
+        hide_obligation_highlight:
+          type: boolean
+          description: Do not highlight obligation keywords in requirement descriptions (highlighting is on by default).
+        autocomplete:
+          type: string
+          enum:
+          - ''
+          - history
+          - project
+          - 'off'
+          description: autocomplete suggestions in free-text fields; empty = on (history and project values)
+    Suggestion:
+      type: object
+      required:
+      - value
+      - source
+      - uses
+      properties:
+        value:
+          type: string
+        source:
+          type: string
+          enum:
+          - history
+          - project
+        uses:
+          type: integer
+          description: times saved (history) or items using the value (project)
+        last_used:
+          type: string
+          format: date-time
+          description: history only
     SessionInfo:
       type: object
       properties:
@@ -13242,12 +13893,27 @@ components:
           type: string
         issue_type:
           type: string
+        project:
+          type: string
+          description: GitLab project ID or path (group/subgroup/project)
         labels:
           type: string
+        milestone:
+          type: string
+        assignee:
+          type: string
+        requirement_labels:
+          type: string
+          description: Label templates for issues from requirements ({type}, {priority}, {obligation}, {status}, {tags}); empty for the default, none for no labels
+        requirement_issue_type:
+          type: string
+        comment_on_pass:
+          type: boolean
         user:
           type: string
         token:
           type: string
+          writeOnly: true
         has_token:
           type: boolean
     Risk:
@@ -13543,6 +14209,30 @@ components:
           type: string
         direction:
           type: string
+        issue:
+          $ref: '#/components/schemas/LinkedIssue'
+    LinkedIssue:
+      type: object
+      description: The tracker issue of a link created from a requirement
+      properties:
+        tracker:
+          type: string
+          enum: [gitlab, github, jira]
+        key:
+          type: string
+        status:
+          type: string
+        state:
+          type: string
+          enum: [open, closed]
+        synced_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        passed_at:
+          type: string
+          format: date-time
     TestDependency:
       type: object
       properties:

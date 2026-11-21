@@ -12,6 +12,7 @@ Att läsa krav kräver rollen **Läsare**; att skapa och ändra dem kräver **An
 - **Filterfältet**: ett fält för [frågor](search-and-filters.md) och snabbfilter för **Status**, **Kravnivå**, **Prioritet**, **Täckning** och **Kategori**. Snabbfiltren sätts ihop till en fråga som visas under fältet (`q = …`). **Rensa** återställer alla filter.
 - **Kolumner**: välj vilka kolumner tabellen visar: kravnivå, status, prioritet, typ, täckning, länkade testfall, kategorier, mapp, ägare, källa, taggar, **relationer**, antal relationer, kriterier, version, kommentarer, skapad av, skapad och uppdaterad. Kolumnen **Relationer** listar relaterade objekt grupperade per relation, åt båda hållen, till exempel *beror på SHOP-REQ-2*, *tillhandahålls av SHOP-REQ-3* och *verifieras av SHOP-TC-1*; välj en nyckel för att öppna objektet. Flytta kolumner genom att dra i rubriken, eller med pilknapparna under **Kolumner**; **Återställ** ger standardkolumnerna tillbaka. Valet sparas i webbläsaren, även för tabellerna över körningar, exekveringar och dokument.
 - **Tabellen**: sortera genom att klicka på en kolumnrubrik; välj en rad (eller dess titel) för att öppna redigeraren. Id:t (till exempel `SHOP-REQ-12`) tilldelas automatiskt.
+- **Lista** / **Kalkylblad**: växla mellan tabellen och [kalkylbladsvyn](#kalkylbladsvy), där du redigerar många krav direkt som i Excel.
 
 Den valda mappen, filtret och det öppna kravet ingår i sidans adress, så du kan bokmärka eller dela en filtrerad vy.
 
@@ -34,6 +35,24 @@ När du skapar ett krav med **Kravnivå** satt till **Identifiera automatiskt fr
 Bara kravord med VERSALER har normativ betydelse (RFC 8174). Skriv `MUST`, inte `must`. I krav som är skrivna på svenska används i stället de svenska kravorden (SKA, BÖR, FÅR …) som beskrivs under [Språkanalysen](#språkanalysen). Sidan [Referenser](references.md) listar dessa och andra standarder för krav och test.
 
 Medan du skriver visar **Hjälp: kravnivåer** under beskrivningen (öppen för nya krav) nyckelorden för varje nivå på gränssnittets språk, vad de betyder och ett exempel, med tips om hur de skrivs. [Analys](traceability-and-coverage.md#kravanalys) visar hur nivåerna och nyckelorden fördelar sig i projektet.
+
+### Markerade nyckelord för kravnivå
+
+Där ett kravs beskrivning visas skrivskyddad markeras nyckelorden för kravnivå: i kravredigeraren när du bara får läsa kravet, i förhandsvisningen i [katalogen](catalogue.md) och i förhandsvisningen i [Importera krav](#importera-krav). Varje nivå har en egen stil, och nivåerna skiljer sig inte bara i färg utan också i tjocklek och understrykning, så att de syns i alla teman, även hög kontrast:
+
+| Nivå | Nyckelord | Understrykning |
+|---|---|---|
+| Ska | SKA, SKALL, MÅSTE, MUST, SHALL, REQUIRED | heldragen, extra fet |
+| Ska inte | SKA INTE, FÅR INTE, MUST NOT, SHALL NOT | dubbel, extra fet |
+| Bör | BÖR, REKOMMENDERAS, SHOULD | streckad, fet |
+| Bör inte | BÖR INTE, SHOULD NOT, NOT RECOMMENDED | dubbel, fet |
+| Får | FÅR, VALFRI, MAY, OPTIONAL | prickad |
+
+Negationer som `SKA INTE` och `MUST NOT` är ett nyckelord. Bara nyckelord skrivna med versaler markeras, bara hela ord (`FÅRA` är inte `FÅR`), och aldrig i länkar eller i kod mellan bakåtapostrofer (`` `SKA` ``). Peka på ett nyckelord för att se vad det betyder; skärmläsare läser nivån efter nyckelordet, till exempel "SKA INTE – kravnivå: SHALL NOT (SKA INTE)". Nyckelorden är desamma som [språkanalysen](#språkanalysen) känner till.
+
+När du redigerar beskrivningen visar raden **Nyckelord för kravnivå** under den nyckelorden som hittas medan du skriver, med deras nivå. Den säger till när nyckelordet inte stämmer med fältet **Kravnivå** (med en knapp som sätter fältet till den hittade nivån), när texten har mer än ett nyckelord och när ett nyckelord är skrivet med gemener. **Vad betyder nyckelorden?** öppnar **Hjälp: kravnivåer**.
+
+Vill du stänga av markeringen och raden, avmarkera **Markera nyckelord för kravnivå** i dina [inställningar](getting-started.md#inställningar).
 
 ## Språkanalysen
 
@@ -219,6 +238,26 @@ Kryssa i rutorna för flera krav (eller rubrikens kryssruta för hela sidan). Et
 
 Varje massändring registreras i varje kravs versionshistorik.
 
+## Kalkylbladsvy
+
+Välj **Kalkylblad** bredvid knappen för att läsa in igen för att se kraven som ett kalkylblad: en rad per krav och en kolumn per fält (**Nyckel**, **Titel**, **Beskrivning**, **Typ**, **Prioritet**, **Status**, **Kravnivå**, **Kategorier**, **Taggar**, **Ägare**, **Källa**, **Mapp** och de skrivskyddade **Täckning**, **Testfall** och **Version**). Valet sparas i webbläsaren och ingår i sidans adress (`?view=sheet`), så en delad länk öppnar kalkylbladet. Mappträdet, filtren och verktygsfältet för massändring fungerar som i listan.
+
+- **Kolumner**: visa, dölj och ordna kolumnerna med **Kolumner**; dra i kanten på en kolumnrubrik för att göra den bredare eller smalare (eller tryck **Alt+Skift+←/→**). Bredder och kolumner sparas i webbläsaren. Nyckelkolumnen och rubrikraden står kvar när du rullar.
+- **Sortera**: klicka på en kolumnrubrik, eller välj kolumnen under **Sortera** och riktningen bredvid.
+- **Förflytta dig**: piltangenterna, **Tab** och **Skift+Tab**, **Home** och **End** (första och sista kolumnen), **Ctrl+Home** och **Ctrl+End** (första och sista cellen), **Page Up** och **Page Down**. Den aktiva cellen har en ram.
+- **Markera**: **Skift** med pilarna eller ett klick markerar ett område, **Ctrl+A** (**Cmd+A** på Mac) markerar alla celler. **Mellanslag** kryssar i den aktiva cellens rad och **Skift+Mellanslag** områdets rader; ikryssade rader använder verktygsfältet för massändring ovanför bladet.
+- **Redigera**: tryck **F2** eller **Enter**, eller börja bara skriva, för att redigera den aktiva cellen. **Enter** sparar och flyttar nedåt, **Tab** sparar och flyttar åt höger, **Escape** avbryter. Fält som **Status** och **Prioritet** öppnar en lista med sina värden; **Taggar** och **Kategorier** tar flera värden åtskilda med kommatecken (kategorier som *Dimension/Namn*); fält med flera rader som **Beskrivning** får en radbrytning med **Alt+Enter** eller **Skift+Enter**. Grå celler med ett lås i rubriken (nyckeln, beräknade värden) kan inte redigeras, och inte heller celler du saknar behörighet för: utan skrivbehörighet kan bara en granskares statusbeslut göras.
+- **Kopiera och klistra in**: **Ctrl+C** kopierar de markerade cellerna som tabbseparerad text som går att klistra in i Excel eller LibreOffice; kryssa i **Kopiera med rubrikrad** för att ta med kolumnnamnen. **Ctrl+V** klistrar in ett block som kopierats från ett kalkylblad vid den aktiva cellen (ett enda värde fyller hela markeringen; en första rad som upprepar kolumnnamnen hoppas över). Varje inklistrat värde kontrolleras först: om något inte är giltigt, till exempel en prioritet som inte finns, sparas ingenting och ett meddelande anger cellen och de tillåtna värdena. **Ctrl+X** klipper ut.
+- **Fyll nedåt och töm**: **Ctrl+D** kopierar markeringens översta värde till cellerna under det; **Delete** eller **Backsteg** tömmer de markerade celler som får vara tomma.
+- **Nya krav**: skriv en titel i sista raden (**Skriv en titel för att lägga till ett krav**) och tryck **Enter**; kravet skapas i den valda mappen och nästa tomma rad är redo för nästa. Värden du först skriver i radens andra celler används också.
+- **Öppna ett krav**: dubbelklicka på nyckeln eller tryck **Ctrl+Enter** för att öppna det i redigeraren.
+
+Varje ändring sparas direkt, alla celler i en inklistring eller fyllning i ett steg: en cell visar en snurra medan den sparas, en bock när den är sparad och en röd ram med orsaken när den inte sparades. Om någon annan har ändrat ett krav sedan du läste in bladet sparas ingenting, raden markeras och **Läs in raden igen** visar den andras version så att du kan göra din ändring på nytt. En redigering, inklistring, fyllning eller tömning är ett steg för **Ångra** (**Ctrl+Z**). Skärmläsare läser upp sparade ändringar och fel.
+
+**Exportera vyn** sparar exakt det bladet visar, med kolumnerna i sin ordning, sorterat och filtrerat, som **Excel (XLSX)**, **CSV** eller **Markdown** (kräver exportbehörighet).
+
+På en mobil rullar bladet i sidled inom sin ram; där är listan lättare att läsa.
+
 ## Flytta krav och mappar
 
 - **Inom projektet:** dra rader i deras handtag (☰) till en mapp i trädet, eller markera dem och använd **Flytta**. Nycklar, länkar, kategorier och historik förblir oförändrade.
@@ -263,6 +302,36 @@ Markera krav eller testfall i deras lista, eller körningar på sidan **Testkör
 Dialogen visar hur många länkar som läggs till eller tas bort innan du bekräftar; objekt du inte får ändra hoppas över och räknas i meddelandet. På ett objekts flik **Länkar** kan du kryssa i flera länkar (eller **Markera alla**) och välja **Ta bort** för att ta bort dem tillsammans. Båda kan ångras.
 
 **Nycklar och adresser i texter.** I kommentarer blir en objektnyckel som `SHOP-REQ-12` eller `SHOP-TC-3` en länk till objektet, och en webbadress blir en länk som öppnas i en ny flik. Adressen `/go/SHOP-TC-3` i verktyget öppnar alltid det objektet, vilket är praktiskt i e-post och chattar.
+
+## Ärenden i GitLab, GitHub eller Jira
+
+När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](defects.md#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende. Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
+
+- **Skapa GitLab-ärende** visar en förhandsvisning av ärendet och skapar det. Ärendet får:
+  - titeln `[SHOP-REQ-12] <titel>`;
+  - en beskrivning med kravtexten, motiveringen, acceptanskriterierna, typ, prioritet, kravnivå, status, ägare, källa, taggar och version, de länkade testfallen med deras senaste resultat och länkar tillbaka till kravet och testfallen i Qtestframe (när serverns adress, `server.base_url`, är inställd);
+  - etiketter: ärendehanterarens standardetiketter plus etiketter från kravets fält (se nedan);
+  - milstolpen och den tilldelade från inställningarna, om de är angivna.
+
+  Ärendet läggs till bland kravets länkar som en webblänk, med sin nyckel och sitt läge (**Öppet** eller **Stängt**).
+- Ett krav har högst ett ärende i ärendehanteraren. Om det redan har ett erbjuder Qtestframe **Öppna ärendet** och **Uppdatera ärendet** i stället för att skapa ett till.
+- **Uppdatera ärendet** för in kravets aktuella titel och text i ärendet, till exempel efter att kravet ändrats eller testfallen körts. I GitLab och GitHub ersätts bara den del som Qtestframe skrivit (den är markerad med dolda kommentarer); anteckningar som utvecklarna lagt till ovanför eller nedanför behålls. I Jira ersätts hela beskrivningen.
+- **Läs om status** läser tillbaka ärendets läge. Läget läses inte om automatiskt: läs om det här eller med **Ärenden** i listan.
+
+Med **Kommentera ärendet när alla länkade tester har godkänts** i inställningarna lägger en omläsning av ett öppet ärende, vars länkade testfall alla har godkänts, till en kommentar om det med en länk till kravet. Om testerna slutar godkännas och sedan godkänns igen kommenterar nästa omläsning på nytt.
+
+**Etiketter från kravets fält** i inställningarna översätter fält till etiketter: mallar separerade med komma, där `{type}`, `{priority}`, `{obligation}`, `{status}` och `{tags}` (en etikett per tagg) ersätts med kravets värden. Standard är `requirement, type::{type}, priority::{priority}, {tags}`, vilket ger till exempel `requirement`, `type::functional`, `priority::high` och `login`; GitLab visar `type::functional` som en etikett med omfång (scoped label). Ange `none` för inga sådana etiketter. I Jira blir mellanslag i etiketter `_`, och ärendetypen för krav anges med **Ärendetyp för krav** (standard *Task*).
+
+### Ärenden för många krav på en gång
+
+Markera krav i listan och välj **Ärenden** i verktygsfältet:
+
+- **Skapa ärenden** skapar ett ärende för varje markerat krav som saknar ett. Krav som har ett hoppas över, så inget får två; kryssa i **Uppdatera de ärenden som finns** för att uppdatera dem i stället.
+- **Läs om status** läser läget för de markerade kravens ärenden.
+
+Resultatet listar varje krav med sitt ärende, och de krav som ärendehanteraren avvisade med orsaken. Upp till 100 krav kan hanteras åt gången.
+
+Att skapa, uppdatera och läsa om ärenden kräver behörigheten att redigera krav (`requirement.write`, som standard Ansvarig); alla som kan läsa krav ser ärendet och dess läge. Varje skapande, uppdatering och omläsning registreras i [händelseloggen](administration.md#händelselogg). Ärendehanterarens token visas aldrig.
 
 ## Bilagor
 

@@ -33,6 +33,21 @@ func TestCatalogBuiltIn(t *testing.T) {
 	if r["title"] != "Minsta lösenordslängd" || len(anyList(r["linked_tests"])) == 0 || r["area_name"] != "Autentisering" {
 		t.Fatalf("AUTH-01: %v", r)
 	}
+	// each ref with its source and the link to the cited text
+	targets := anyList(r["ref_targets"])
+	if len(targets) != len(anyList(r["refs"])) {
+		t.Fatalf("ref_targets: %v", r["ref_targets"])
+	}
+	for _, x := range targets {
+		tg := x.(map[string]any)
+		if tg["source"] == "" || tg["name"] == "" || !strings.HasPrefix(tg["url"].(string), "https://") {
+			t.Errorf("ref target %v", tg)
+		}
+	}
+	tt := a.m("GET", "/api/v1/catalog/tests/AUTH-T01?lang=en", nil, 200)
+	if len(anyList(tt["ref_targets"])) != len(anyList(tt["refs"])) {
+		t.Errorf("test ref_targets: %v", tt["ref_targets"])
+	}
 	a.m("GET", "/api/v1/catalog?lang=de", nil, 400)
 }
 

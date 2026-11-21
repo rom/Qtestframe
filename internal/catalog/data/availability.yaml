@@ -289,6 +289,126 @@ requirements:
         - method: demonstration
           text: I skrivskyddat läge kan användarna öppna och söka poster, och varje försök att spara avvisas med ett meddelande om underhåll.
 
+  - id: AVL-13
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [maintenance, planned-downtime, window]
+    refs: ["ITIL 4 Change enablement", "ITIL 4 Availability management"]
+    tests: [AVL-T10]
+    en:
+      title: Maintenance window outside business hours
+      description: The supplier MUST place planned maintenance that interrupts users between 22:00 and 06:00 in the time zone of the main user base.
+      rationale: Work that interrupts users during office hours stops the tasks the service exists for, while a fixed night window lets customers plan around it.
+      criteria:
+        - method: inspection
+          text: The maintenance calendar for the last 6 months shows that every planned interruption started and ended inside the agreed window.
+          threshold: "100 % of planned interruptions within 22:00–06:00"
+    sv:
+      title: Underhållsfönster utanför kontorstid
+      description: Leverantören SKA lägga planerat underhåll som avbryter användarna mellan 22.00 och 06.00 i den tidszon där de flesta användarna finns.
+      rationale: Arbete som avbryter användarna under kontorstid stoppar just de uppgifter som tjänsten finns till för, medan ett fast nattfönster gör att kunderna kan planera runt det.
+      criteria:
+        - method: inspection
+          text: Underhållskalendern för de senaste 6 månaderna visar att varje planerat avbrott började och slutade inom det överenskomna fönstret.
+          threshold: "100 % av planerade avbrott inom 22.00–06.00"
+
+  - id: AVL-14
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [availability, reporting, user-journey]
+    refs: ["ISO/IEC 25010:2023 availability", "Google SRE book ch. 4 (Service Level Objectives)"]
+    tests: [AVL-T11]
+    en:
+      title: Availability reported per core function
+      description: The supplier MUST report the monthly availability separately for sign-in, search and saving of records.
+      rationale: A service can be reachable while a core function is broken, and one overall figure hides which function failed the users.
+      criteria:
+        - method: inspection
+          text: The monthly availability report contains one measured figure for each of the three functions with the measurement method.
+          threshold: "3 functions reported each month"
+    sv:
+      title: Tillgänglighet redovisad per kärnfunktion
+      description: Leverantören SKA redovisa tillgängligheten per månad separat för inloggning, sökning och sparande av poster.
+      rationale: En tjänst kan svara medan en kärnfunktion är trasig, och en enda samlad siffra döljer vilken funktion som svek användarna.
+      criteria:
+        - method: inspection
+          text: Månadsrapporten om tillgänglighet innehåller en uppmätt siffra för var och en av de tre funktionerna och mätmetoden.
+          threshold: "3 funktioner redovisade varje månad"
+
+  - id: AVL-15
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [self-healing, instance, replacement]
+    refs: ["ISO/IEC 25010:2023 recoverability", "The Twelve-Factor App, IX Disposability"]
+    tests: [AVL-T12]
+    en:
+      title: Failed instance replaced automatically
+      description: The platform MUST start a replacement for a failed application instance within 5 minutes without manual action.
+      rationale: Taking an unhealthy instance out of rotation lowers capacity, and waiting for a person to restore it leaves the service exposed to the next failure.
+      criteria:
+        - method: test
+          text: After an instance is terminated, a new healthy instance serves traffic within 5 minutes.
+          threshold: "≤ 5 min to a healthy replacement"
+    sv:
+      title: Felande instans ersätts automatiskt
+      description: Plattformen SKA starta en ersättare för en felande applikationsinstans inom 5 minuter utan manuell åtgärd.
+      rationale: När en instans tas ur drift minskar kapaciteten, och om en person måste återställa den står tjänsten oskyddad mot nästa fel.
+      criteria:
+        - method: test
+          text: När en instans har avslutats tar en ny frisk instans emot trafik inom 5 minuter.
+          threshold: "≤ 5 min till en frisk ersättare"
+
+  - id: AVL-16
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [sessions, failover, stateless]
+    refs: ["ISO/IEC 25010:2023 fault tolerance", "The Twelve-Factor App, VI Processes"]
+    tests: [AVL-T13]
+    en:
+      title: Users stay signed in when an instance fails
+      description: The system MUST keep a signed-in user's session valid when the application instance that served the user stops.
+      rationale: Sessions held in the memory of one instance are lost when it stops, and users then lose unsaved work and have to sign in again.
+      criteria:
+        - method: test
+          text: A user keeps working without a new sign-in after the instance that served the user is stopped.
+          threshold: "0 forced sign-ins"
+    sv:
+      title: Användare förblir inloggade när en instans faller bort
+      description: Systemet SKA behålla en inloggad användares session giltig när den applikationsinstans som betjänade användaren stannar.
+      rationale: Sessioner som bara finns i minnet hos en instans försvinner när den stannar, och användarna förlorar då osparat arbete och tvingas logga in igen.
+      criteria:
+        - method: test
+          text: En användare fortsätter arbeta utan ny inloggning efter att den instans som betjänade användaren har stoppats.
+          threshold: "0 tvingade inloggningar"
+
+  - id: AVL-17
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [dependencies, availability, budget]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)", "ITIL 4 Availability management"]
+    tests: [AVL-T14]
+    en:
+      title: Availability of critical dependencies documented
+      description: The supplier SHOULD keep a list of the external services the core functions depend on, with the availability each one commits to and the combined effect on the service target.
+      rationale: A service cannot be more available than the dependencies it calls in series, so the target has to be checked against what the providers commit to.
+      criteria:
+        - method: inspection
+          text: The list names each external dependency of the core functions, its committed availability and a calculation that shows the target is reachable.
+          threshold: "1 calculation per core function"
+    sv:
+      title: Kritiska beroendens tillgänglighet dokumenterad
+      description: Leverantören BÖR hålla en förteckning över de externa tjänster som kärnfunktionerna är beroende av, med den tillgänglighet var och en åtar sig och den samlade effekten på tjänstens mål.
+      rationale: En tjänst kan inte vara mer tillgänglig än de beroenden den anropar i serie, så målet behöver stämmas av mot vad leverantörerna åtar sig.
+      criteria:
+        - method: inspection
+          text: Förteckningen anger varje externt beroende för kärnfunktionerna, dess utlovade tillgänglighet och en beräkning som visar att målet går att nå.
+          threshold: "1 beräkning per kärnfunktion"
+
 tests:
   - id: AVL-T01
     priority: high
@@ -553,3 +673,151 @@ tests:
           expected: Sparandet avvisas med ett meddelande om underhåll och posten är oförändrad.
         - action: Slå av skrivskyddat läge och spara samma ändring.
           expected: Ändringen sparas.
+
+  - id: AVL-T10
+    priority: medium
+    execution: manual
+    tags: [maintenance, planned-downtime]
+    refs: ["ITIL 4 Change enablement"]
+    en:
+      title: Planned interruptions fall inside the maintenance window
+      description: Checks the change records of the last 6 months against the agreed maintenance window.
+      preconditions: Access to the change calendar and to the status page history for the last 6 months.
+      expected: Every planned interruption started and ended between 22:00 and 06:00.
+      steps:
+        - action: List every planned change that caused an interruption for users in the last 6 months.
+          expected: The list contains the start and end time of each interruption.
+          data: "change calendar export, 6 months"
+        - action: Compare each start and end time with the window 22:00–06:00 in the main user base's time zone.
+          expected: No interruption starts before 22:00 or ends after 06:00.
+    sv:
+      title: Planerade avbrott ligger inom underhållsfönstret
+      description: Kontrollerar ändringsposterna för de senaste 6 månaderna mot det överenskomna underhållsfönstret.
+      preconditions: Åtkomst till ändringskalendern och statussidans historik för de senaste 6 månaderna.
+      expected: Varje planerat avbrott började och slutade mellan 22.00 och 06.00.
+      steps:
+        - action: Lista varje planerad ändring som orsakade ett avbrott för användarna de senaste 6 månaderna.
+          expected: Listan innehåller start- och sluttid för varje avbrott.
+          data: "export av ändringskalendern, 6 månader"
+        - action: Jämför varje start- och sluttid med fönstret 22.00–06.00 i den tidszon där de flesta användarna finns.
+          expected: Inget avbrott börjar före 22.00 eller slutar efter 06.00.
+
+  - id: AVL-T11
+    priority: medium
+    execution: manual
+    tags: [availability, reporting]
+    refs: ["ISO/IEC 25010:2023 availability"]
+    en:
+      title: Monthly availability per core function
+      description: Checks that the availability report separates sign-in, search and saving and that each figure is measured.
+      preconditions: The availability report for the last full month and access to the probe results it is based on.
+      expected: The report has a measured figure for each core function that matches the probe data.
+      steps:
+        - action: Open the monthly availability report.
+          expected: It shows separate figures for sign-in, search and saving of records.
+        - action: Recalculate the figure for search from the raw probe results of the month.
+          expected: The recalculated figure matches the report to within 0.01 percentage points.
+        - action: Look up an incident during the month that affected only one function.
+          expected: Only the figure of the affected function is lowered by the incident.
+    sv:
+      title: Tillgänglighet per kärnfunktion och månad
+      description: Kontrollerar att tillgänglighetsrapporten skiljer på inloggning, sökning och sparande och att varje siffra är uppmätt.
+      preconditions: Tillgänglighetsrapporten för den senaste hela månaden och åtkomst till de mätresultat den bygger på.
+      expected: Rapporten har en uppmätt siffra för varje kärnfunktion som stämmer med mätdata.
+      steps:
+        - action: Öppna månadsrapporten om tillgänglighet.
+          expected: Den visar separata siffror för inloggning, sökning och sparande av poster.
+        - action: Räkna om siffran för sökning utifrån månadens råa mätresultat.
+          expected: Den omräknade siffran stämmer med rapporten inom 0,01 procentenheter.
+        - action: Leta upp en incident under månaden som bara påverkade en funktion.
+          expected: Bara den berörda funktionens siffra sänks av incidenten.
+
+  - id: AVL-T12
+    priority: high
+    execution: manual
+    tags: [self-healing, instance]
+    refs: ["ISO/IEC 25010:2023 recoverability"]
+    en:
+      title: Terminated instance is replaced
+      description: Terminates an application instance in a production-like environment and times the automatic replacement.
+      preconditions: A test environment with at least 2 instances behind the load balancer and access to the orchestration console.
+      expected: A healthy replacement serves traffic within 5 minutes without anyone acting.
+      steps:
+        - action: Note the number of healthy instances and terminate one of them from the console.
+          expected: The load balancer takes the instance out of rotation and requests are served by the others.
+        - action: Wait without acting and record when a new instance reports ready and receives traffic.
+          expected: A replacement serves traffic within 5 minutes and the number of healthy instances is back to its earlier value.
+          data: "timer started at termination"
+    sv:
+      title: Avslutad instans ersätts
+      description: Avslutar en applikationsinstans i en produktionslik miljö och tar tid på den automatiska ersättningen.
+      preconditions: En testmiljö med minst 2 instanser bakom lastbalanseraren och åtkomst till orkestreringskonsolen.
+      expected: En frisk ersättare tar emot trafik inom 5 minuter utan att någon gör något.
+      steps:
+        - action: Notera antalet friska instanser och avsluta en av dem från konsolen.
+          expected: Lastbalanseraren tar bort instansen ur rotationen och anropen besvaras av de andra.
+        - action: Vänta utan att göra något och notera när en ny instans rapporterar klar och tar emot trafik.
+          expected: En ersättare tar emot trafik inom 5 minuter och antalet friska instanser är tillbaka på sitt tidigare värde.
+          data: "tidtagning från avslutet"
+
+  - id: AVL-T13
+    priority: high
+    execution: manual
+    tags: [sessions, failover]
+    refs: ["ISO/IEC 25010:2023 fault tolerance"]
+    en:
+      title: Session survives the loss of an instance
+      description: Stops the instance serving a signed-in user and checks that the user can keep working.
+      preconditions: A test environment with at least 2 instances and a way to see which instance served a request, for example a response header.
+      expected: The user keeps working with the same session and no unsaved input is lost.
+      steps:
+        - action: Sign in and open a record for editing; note which instance served the request.
+          expected: The record opens in edit mode.
+        - action: Stop the noted instance.
+          expected: The instance leaves the load balancer.
+        - action: Save the change and open another page.
+          expected: The save succeeds on another instance and no sign-in page is shown.
+    sv:
+      title: Sessionen överlever att en instans försvinner
+      description: Stoppar den instans som betjänar en inloggad användare och kontrollerar att användaren kan fortsätta arbeta.
+      preconditions: En testmiljö med minst 2 instanser och ett sätt att se vilken instans som besvarade ett anrop, till exempel ett svarshuvud.
+      expected: Användaren fortsätter arbeta med samma session och ingen osparad inmatning går förlorad.
+      steps:
+        - action: Logga in och öppna en post för redigering; notera vilken instans som besvarade anropet.
+          expected: Posten öppnas i redigeringsläge.
+        - action: Stoppa den noterade instansen.
+          expected: Instansen lämnar lastbalanseraren.
+        - action: Spara ändringen och öppna en annan sida.
+          expected: Sparandet lyckas på en annan instans och ingen inloggningssida visas.
+
+  - id: AVL-T14
+    priority: medium
+    execution: manual
+    tags: [dependencies, availability]
+    refs: ["Google SRE book ch. 4 (Service Level Objectives)"]
+    en:
+      title: Dependency availability supports the target
+      description: Reviews the list of external dependencies and the calculation of their combined effect.
+      preconditions: The dependency list and the availability commitments of the providers.
+      expected: Every dependency of a core function is listed and the calculation shows the target can be met.
+      steps:
+        - action: Compare the dependency list with the architecture description of sign-in, search and saving.
+          expected: Every external service called by these functions is in the list.
+        - action: Check the committed availability of each dependency against the provider's published terms.
+          expected: Each figure matches the provider's terms.
+        - action: Recalculate the combined availability of dependencies called in series.
+          expected: The result is at least the service target, or the list records the mitigation that closes the gap.
+          data: "example: 99.95 % × 99.9 % = 99.85 %"
+    sv:
+      title: Beroendenas tillgänglighet räcker för målet
+      description: Granskar förteckningen över externa beroenden och beräkningen av deras samlade effekt.
+      preconditions: Beroendeförteckningen och leverantörernas åtaganden om tillgänglighet.
+      expected: Varje beroende för en kärnfunktion finns med och beräkningen visar att målet kan nås.
+      steps:
+        - action: Jämför beroendeförteckningen med arkitekturbeskrivningen för inloggning, sökning och sparande.
+          expected: Varje extern tjänst som dessa funktioner anropar finns i förteckningen.
+        - action: Kontrollera varje beroendes utlovade tillgänglighet mot leverantörens publicerade villkor.
+          expected: Varje siffra stämmer med leverantörens villkor.
+        - action: Räkna om den samlade tillgängligheten för beroenden som anropas i serie.
+          expected: Resultatet är minst tjänstens mål, eller så anger förteckningen den åtgärd som täpper till gapet.
+          data: "exempel: 99,95 % × 99,9 % = 99,85 %"

@@ -28,6 +28,8 @@ import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import { usePrefsStore } from '@/stores/prefs'
 import { useNotify } from '@/composables/notify'
+import SuggestInput from '@/components/SuggestInput.vue'
+import { rememberValues, savedEntries } from '@/lib/suggest'
 import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
@@ -265,6 +267,12 @@ async function save() {
       const r = await api.post<Risk>(`/projects/${proj.pid}/risks`, { ...body, requirement_ids })
       notify.ok(t('risksView.created'), r?.key)
     }
+    const old = editing.value
+    void rememberValues(
+      prefs.prefs,
+      proj.pid,
+      savedEntries({ 'risk.title': body.title, 'risk.mitigation': body.mitigation, 'risk.owner': body.owner }, { 'risk.title': old?.title, 'risk.mitigation': old?.mitigation, 'risk.owner': old?.owner }),
+    )
     dialog.value = false
     await load()
   } catch (e) {
@@ -429,7 +437,7 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
     <form class="grid" style="gap: 12px" @submit.prevent="save">
       <Message v-if="formError" severity="error" :closable="false">{{ formError }}</Message>
       <div class="form-grid">
-        <div v-field class="field full"><label for="risk-title">{{ t('common.title') }}</label><InputText id="risk-title" v-model="form.title" :disabled="!canWrite" autofocus /></div>
+        <div v-field class="field full"><label for="risk-title">{{ t('common.title') }}</label><SuggestInput id="risk-title" v-model="form.title" field="risk.title" :project-id="proj.pid" :disabled="!canWrite" autofocus /></div>
         <div v-field class="field">
           <label for="risk-likelihood">{{ t('risksView.likelihood') }}</label>
           <Select v-model="form.likelihood" input-id="risk-likelihood" :options="scaleOptions(likelihoodLabel)" option-label="label" option-value="value" :disabled="!canWrite" />
@@ -449,10 +457,10 @@ const reqKeys = (r: Risk) => (r.requirement_ids ?? []).map((id) => reqById.value
           <label for="risk-status">{{ t('common.status') }}</label>
           <Select v-model="form.status" input-id="risk-status" :options="statusOptions" option-label="label" option-value="value" :disabled="!canWrite" />
         </div>
-        <div v-field class="field"><label for="risk-owner">{{ t('common.owner') }}</label><InputText id="risk-owner" v-model="form.owner" :disabled="!canWrite" /></div>
+        <div v-field class="field"><label for="risk-owner">{{ t('common.owner') }}</label><SuggestInput id="risk-owner" v-model="form.owner" field="risk.owner" :project-id="proj.pid" :disabled="!canWrite" /></div>
         <div v-field class="field"><label for="risk-category">{{ t('common.category') }}</label><InputText id="risk-category" v-model="form.category" :placeholder="t('risksView.categoryPlaceholder')" :disabled="!canWrite" /></div>
         <div v-field class="field full"><label for="risk-desc">{{ t('common.description') }}</label><Textarea id="risk-desc" v-model="form.description" rows="2" auto-resize :disabled="!canWrite" /></div>
-        <div v-field class="field full"><label for="risk-mitigation">{{ t('risksView.mitigation') }}</label><Textarea id="risk-mitigation" v-model="form.mitigation" rows="3" auto-resize :placeholder="t('risksView.mitigationPlaceholder')" :disabled="!canWrite" /></div>
+        <div v-field class="field full"><label for="risk-mitigation">{{ t('risksView.mitigation') }}</label><SuggestInput id="risk-mitigation" v-model="form.mitigation" field="risk.mitigation" :project-id="proj.pid" multiline rows="3" auto-resize :placeholder="t('risksView.mitigationPlaceholder')" :disabled="!canWrite" /></div>
       </div>
       <div>
         <div class="section-title" style="margin-top: 4px">

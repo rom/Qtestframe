@@ -214,6 +214,7 @@ func (s *Store) RemoveTenantAccess(ctx context.Context, tenantID, userID string)
 			`DELETE FROM memberships WHERE tenant_id = ? AND user_id = ?`,
 			`DELETE FROM sessions WHERE tenant_id = ? AND user_id = ?`,
 			`DELETE FROM api_tokens WHERE tenant_id = ? AND user_id = ?`,
+			`DELETE FROM suggest_history WHERE tenant_id = ? AND user_id = ?`,
 		} {
 			if _, err := c.exec(ctx, q, tenantID, userID); err != nil {
 				return err

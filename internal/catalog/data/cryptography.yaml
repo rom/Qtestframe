@@ -269,6 +269,146 @@ requirements:
         - method: inspection
           text: Nyckelkrypteringsnyckeln är markerad som icke exporterbar i nyckelhanteringstjänsten, och applikationen anropar den bara för att kapsla in och packa upp datanycklar.
 
+  - id: CRY-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [crypto-inventory, cbom, post-quantum]
+    refs: ["NIST IR 8547 (quantum-vulnerable algorithms)", "CycloneDX 1.6 (cryptography bill of materials)", "NIS Cooperation Group PQC Roadmap (cryptographic inventory)", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CRY-T11]
+    en:
+      title: Inventory of cryptographic use
+      description: The supplier MUST keep an inventory that lists, for each use of cryptography in the system, the algorithm, key length, purpose, component and library version, and update it within 30 days of each change.
+      rationale: Moving away from algorithms broken by quantum computers, or by new attacks, is impossible to plan without knowing where each algorithm is used.
+      criteria:
+        - method: inspection
+          text: The inventory has the five fields for every TLS endpoint, data store encryption, signature and hash use found in a code search.
+        - method: review
+          text: The last change to the inventory is no more than 30 days after the last change to a cryptographic setting.
+          threshold: "≤ 30 days"
+    sv:
+      title: Förteckning över kryptografisk användning
+      description: Leverantören SKA föra en förteckning som för varje användning av kryptografi i systemet anger algoritm, nyckellängd, syfte, komponent och biblioteksversion, och uppdatera den inom 30 dagar efter varje ändring.
+      rationale: Det går inte att planera bytet från algoritmer som knäcks av kvantdatorer, eller av nya angrepp, utan att veta var varje algoritm används.
+      criteria:
+        - method: inspection
+          text: Förteckningen har de fem fälten för varje TLS-ändpunkt, kryptering av datalager, signatur och hashanvändning som en kodsökning hittar.
+        - method: review
+          text: Den senaste ändringen av förteckningen ligger högst 30 dagar efter den senaste ändringen av en kryptografisk inställning.
+          threshold: "≤ 30 dagar"
+
+  - id: CRY-13
+    type: security
+    obligation: should
+    priority: medium
+    tags: [post-quantum, tls, key-exchange, ml-kem]
+    refs: ["NIST FIPS 203", "IETF draft-ietf-tls-ecdhe-mlkem", "NIST IR 8547 (hybrid key establishment)", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CRY-T12]
+    en:
+      title: Hybrid post-quantum key exchange on external TLS
+      description: The system SHOULD offer the hybrid key exchange X25519MLKEM768 on its external TLS 1.3 endpoints and prefer it when the client supports it.
+      rationale: Traffic recorded today can be decrypted later by a quantum computer; a hybrid exchange protects it while keeping the classical security if the new algorithm turns out weak.
+      criteria:
+        - method: test
+          text: A TLS 1.3 client that offers X25519MLKEM768 and X25519 gets X25519MLKEM768, and a client that offers only X25519 still connects.
+    sv:
+      title: Hybrid postkvant-nyckelutväxling i extern TLS
+      description: Systemet BÖR erbjuda den hybrida nyckelutväxlingen X25519MLKEM768 på sina externa ändpunkter för TLS 1.3 och föredra den när klienten stöder den.
+      rationale: Trafik som spelas in i dag kan dekrypteras senare av en kvantdator; en hybrid utväxling skyddar den och behåller det klassiska skyddet om den nya algoritmen visar sig svag.
+      criteria:
+        - method: test
+          text: En klient för TLS 1.3 som erbjuder X25519MLKEM768 och X25519 får X25519MLKEM768, och en klient som bara erbjuder X25519 kan fortfarande ansluta.
+
+  - id: CRY-14
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [crypto-agility, configuration]
+    refs: ["NIST IR 8547 (crypto agility)", "NIS Cooperation Group PQC Roadmap (crypto agility)", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CRY-T13]
+    en:
+      title: Algorithms changed by configuration
+      description: The system SHOULD read the algorithms for TLS, data encryption and signatures from configuration, so that replacing one algorithm needs no code change and no more than one release.
+      rationale: When an algorithm is broken the replacement is urgent, and hard-coded algorithms turn it into a development project.
+      criteria:
+        - method: demonstration
+          text: In a test environment the signature algorithm is switched from ECDSA P-256 to ML-DSA-65 by a configuration change, and new signatures verify while old ones are still accepted during the transition.
+    sv:
+      title: Algoritmer byts via konfiguration
+      description: Systemet BÖR läsa algoritmerna för TLS, datakryptering och signaturer från konfigurationen, så att ett byte av en algoritm inte kräver någon kodändring och högst en leverans.
+      rationale: När en algoritm knäcks är bytet brådskande, och hårdkodade algoritmer gör det till ett utvecklingsprojekt.
+      criteria:
+        - method: demonstration
+          text: I en testmiljö byts signaturalgoritmen från ECDSA P-256 till ML-DSA-65 genom en konfigurationsändring, och nya signaturer kan verifieras medan gamla fortfarande godtas under övergången.
+
+  - id: CRY-15
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [key-management, key-separation]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.2", "ISO/IEC 27002:2022 §8.24", "IEC 62443-3-3 SR 4.3"]
+    tests: [CRY-T14]
+    en:
+      title: One key for one purpose
+      description: The system MUST NOT use the same cryptographic key for more than one purpose, such as encryption and signing, or for more than one environment.
+      rationale: A key used for two purposes can let an attack on one use break the other, and a key shared with the test environment is only as safe as that environment.
+      criteria:
+        - method: inspection
+          text: The key inventory shows one purpose and one environment for each key, and no key identifier appears twice in the configuration of different services or environments.
+    sv:
+      title: En nyckel för ett syfte
+      description: Systemet SKA INTE använda samma kryptografiska nyckel för mer än ett syfte, till exempel kryptering och signering, eller i mer än en miljö.
+      rationale: En nyckel som används för två syften kan göra att ett angrepp mot den ena användningen knäcker den andra, och en nyckel som delas med testmiljön är bara så säker som den miljön.
+      criteria:
+        - method: inspection
+          text: Nyckelförteckningen visar ett syfte och en miljö per nyckel, och ingen nyckelidentifierare förekommer två gånger i konfigurationen för olika tjänster eller miljöer.
+
+  - id: CRY-16
+    type: security
+    obligation: should
+    priority: medium
+    tags: [post-quantum, data-at-rest, long-term-confidentiality]
+    refs: ["NIST IR 8547 (symmetric algorithms)", "NIST FIPS 197", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CRY-T15]
+    en:
+      title: 256-bit keys for data with long confidentiality needs
+      description: The system SHOULD encrypt data classified as confidential for more than 10 years with AES using 256-bit keys.
+      rationale: Quantum search attacks halve the effective strength of symmetric keys, and 256-bit keys keep a wide margin for data that must stay secret for decades.
+      criteria:
+        - method: inspection
+          text: The storage configuration and the crypto inventory show AES-256 for each data store that holds data classified as confidential for more than 10 years.
+    sv:
+      title: 256-bitarsnycklar för data med långvarigt sekretessbehov
+      description: Systemet BÖR kryptera data som är klassade som konfidentiella i mer än 10 år med AES med 256-bitarsnycklar.
+      rationale: Kvantsökning halverar den effektiva styrkan hos symmetriska nycklar, och 256-bitarsnycklar ger god marginal för data som ska vara hemliga i årtionden.
+      criteria:
+        - method: inspection
+          text: Lagringskonfigurationen och kryptoförteckningen visar AES-256 för varje datalager som innehåller data klassade som konfidentiella i mer än 10 år.
+
+  - id: CRY-17
+    type: security
+    obligation: must
+    priority: medium
+    tags: [post-quantum, migration-plan]
+    refs: ["NIST IR 8547 (transition timeline)", "NIS Cooperation Group PQC Roadmap (transition timeline)", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [CRY-T11]
+    en:
+      title: Migration plan for quantum-vulnerable algorithms
+      description: The supplier MUST keep a plan that gives a target date no later than 2030 for replacing RSA and elliptic-curve algorithms in each high-risk use listed in the cryptographic inventory.
+      rationale: Replacing public-key algorithms touches protocols, certificates, hardware and partners, and takes years when it is not planned.
+      criteria:
+        - method: review
+          text: Each RSA or elliptic-curve entry marked high-risk in the inventory has a replacement algorithm, an owner and a target date in 2030 or earlier.
+          threshold: "target date ≤ 2030"
+    sv:
+      title: Plan för att ersätta algoritmer som är sårbara för kvantdatorer
+      description: Leverantören SKA ha en plan som anger ett måldatum senast 2030 för att ersätta RSA och algoritmer baserade på elliptiska kurvor i varje högriskanvändning i den kryptografiska förteckningen.
+      rationale: Byte av algoritmer för publika nycklar berör protokoll, certifikat, hårdvara och partner och tar flera år om det inte planeras.
+      criteria:
+        - method: review
+          text: Varje post med RSA eller elliptiska kurvor som är markerad som högrisk i förteckningen har en ersättningsalgoritm, en ägare och ett måldatum 2030 eller tidigare.
+          threshold: "måldatum ≤ 2030"
+
 tests:
   - id: CRY-T01
     priority: critical
@@ -559,3 +699,143 @@ tests:
           expected: Exporten avvisas.
         - action: Granska nyckeltjänstens åtkomstlogg för ett dygn.
           expected: Applikationen anropar bara operationer för att kapsla in och packa upp.
+
+  - id: CRY-T11
+    priority: high
+    execution: manual
+    tags: [crypto-inventory, post-quantum]
+    refs: ["NIST IR 8547 (quantum-vulnerable algorithms)", "CycloneDX 1.6 (cryptography bill of materials)"]
+    en:
+      title: Cryptographic inventory is complete and has a migration plan
+      description: Compares the inventory with a code and configuration search and checks the migration plan for high-risk entries.
+      preconditions: The cryptographic inventory, the migration plan, read access to the source code and the deployment configuration.
+      expected: Every use found is in the inventory with all fields, and each high-risk RSA or elliptic-curve use has a planned replacement.
+      steps:
+        - action: Search the code and configuration for cryptographic libraries, cipher names, key lengths and TLS settings.
+          expected: A list of uses is produced.
+          data: "RSA, ECDSA, ECDH, X25519, AES, ChaCha20, SHA-, HMAC, ssl_protocols, cipher"
+        - action: Match each use against the inventory.
+          expected: Each use has an entry with algorithm, key length, purpose, component and library version.
+        - action: For each high-risk entry with RSA or elliptic curves, look it up in the migration plan.
+          expected: Each has a replacement algorithm, an owner and a target date in 2030 or earlier.
+    sv:
+      title: Den kryptografiska förteckningen är fullständig och har en övergångsplan
+      description: Jämför förteckningen med en sökning i kod och konfiguration och kontrollerar övergångsplanen för högriskposter.
+      preconditions: Den kryptografiska förteckningen, övergångsplanen, läsbehörighet till källkoden och driftsättningens konfiguration.
+      expected: Varje användning som hittas finns i förteckningen med alla fält, och varje högriskanvändning av RSA eller elliptiska kurvor har en planerad ersättning.
+      steps:
+        - action: Sök i kod och konfiguration efter kryptobibliotek, namn på chiffer, nyckellängder och TLS-inställningar.
+          expected: En lista med användningar tas fram.
+          data: "RSA, ECDSA, ECDH, X25519, AES, ChaCha20, SHA-, HMAC, ssl_protocols, cipher"
+        - action: Matcha varje användning mot förteckningen.
+          expected: Varje användning har en post med algoritm, nyckellängd, syfte, komponent och biblioteksversion.
+        - action: Slå upp varje högriskpost med RSA eller elliptiska kurvor i övergångsplanen.
+          expected: Var och en har en ersättningsalgoritm, en ägare och ett måldatum 2030 eller tidigare.
+
+  - id: CRY-T12
+    priority: medium
+    execution: automated
+    tags: [post-quantum, tls]
+    refs: ["NIST FIPS 203", "IETF draft-ietf-tls-ecdhe-mlkem"]
+    en:
+      title: TLS endpoint negotiates the hybrid key exchange
+      description: A TLS client that supports ML-KEM connects to each external endpoint with different group lists.
+      preconditions: A TLS 1.3 client that supports X25519MLKEM768 and can set the offered groups, such as a recent OpenSSL.
+      expected: The hybrid group is chosen when offered, and classical clients still connect.
+      steps:
+        - action: Connect offering the groups X25519MLKEM768 and X25519.
+          expected: The handshake completes with X25519MLKEM768.
+        - action: Connect offering only X25519.
+          expected: The handshake completes with X25519.
+    sv:
+      title: TLS-ändpunkten förhandlar fram den hybrida nyckelutväxlingen
+      description: En TLS-klient med stöd för ML-KEM ansluter till varje extern ändpunkt med olika listor över grupper.
+      preconditions: En klient för TLS 1.3 som stöder X25519MLKEM768 och där de erbjudna grupperna kan anges, till exempel en aktuell OpenSSL.
+      expected: Den hybrida gruppen väljs när den erbjuds, och klassiska klienter kan fortfarande ansluta.
+      steps:
+        - action: Anslut och erbjud grupperna X25519MLKEM768 och X25519.
+          expected: Handskakningen slutförs med X25519MLKEM768.
+        - action: Anslut och erbjud bara X25519.
+          expected: Handskakningen slutförs med X25519.
+
+  - id: CRY-T13
+    priority: medium
+    execution: manual
+    tags: [crypto-agility]
+    refs: ["NIST IR 8547 (crypto agility)"]
+    en:
+      title: Signature algorithm switched by configuration
+      description: Changes the configured signature algorithm in a test environment and checks old and new signatures.
+      preconditions: A test environment, a document signed with the current algorithm and a configuration that offers ML-DSA-65.
+      expected: The switch needs only a configuration change and both signatures verify during the transition.
+      steps:
+        - action: Set the signature algorithm to ML-DSA-65 in the configuration and restart the service.
+          expected: The service starts without a code change or a new build.
+        - action: Sign a new document and verify it.
+          expected: The signature uses ML-DSA-65 and verifies.
+        - action: Verify the document signed before the switch.
+          expected: The old signature still verifies.
+    sv:
+      title: Signaturalgoritmen byts via konfiguration
+      description: Byter den konfigurerade signaturalgoritmen i en testmiljö och kontrollerar gamla och nya signaturer.
+      preconditions: En testmiljö, ett dokument signerat med den nuvarande algoritmen och en konfiguration som erbjuder ML-DSA-65.
+      expected: Bytet kräver bara en konfigurationsändring och båda signaturerna kan verifieras under övergången.
+      steps:
+        - action: Sätt signaturalgoritmen till ML-DSA-65 i konfigurationen och starta om tjänsten.
+          expected: Tjänsten startar utan kodändring eller nytt bygge.
+        - action: Signera ett nytt dokument och verifiera det.
+          expected: Signaturen använder ML-DSA-65 och kan verifieras.
+        - action: Verifiera dokumentet som signerades före bytet.
+          expected: Den gamla signaturen kan fortfarande verifieras.
+
+  - id: CRY-T14
+    priority: high
+    execution: manual
+    tags: [key-separation]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §5.2"]
+    en:
+      title: Keys are not shared between purposes or environments
+      description: Compares the key identifiers used by each service and environment.
+      preconditions: The key inventory and read access to the key configuration of the test and production environments.
+      expected: Each key has one purpose and appears in one environment only.
+      steps:
+        - action: List the key identifiers and their use for each service in production.
+          expected: No identifier is used both for encryption and for signing.
+        - action: List the key identifiers in the test environment and compare with production.
+          expected: No identifier appears in both.
+    sv:
+      title: Nycklar delas inte mellan syften eller miljöer
+      description: Jämför nyckelidentifierarna som används av varje tjänst och miljö.
+      preconditions: Nyckelförteckningen och läsbehörighet till nyckelkonfigurationen i test- och produktionsmiljön.
+      expected: Varje nyckel har ett syfte och förekommer i endast en miljö.
+      steps:
+        - action: Lista nyckelidentifierarna och deras användning för varje tjänst i produktion.
+          expected: Ingen identifierare används både för kryptering och för signering.
+        - action: Lista nyckelidentifierarna i testmiljön och jämför med produktion.
+          expected: Ingen identifierare förekommer i båda.
+
+  - id: CRY-T15
+    priority: medium
+    execution: manual
+    tags: [long-term-confidentiality]
+    refs: ["NIST FIPS 197"]
+    en:
+      title: Long-term confidential data uses AES-256
+      description: Checks the encryption settings of data stores that hold long-term confidential data.
+      preconditions: The data classification with retention of confidentiality, and access to the storage encryption settings.
+      expected: Each such data store uses AES with 256-bit keys.
+      steps:
+        - action: List the data stores that hold data classified as confidential for more than 10 years.
+          expected: At least one data store is listed, or the classification states that there are none.
+        - action: Read the encryption algorithm and key length of each listed data store.
+          expected: Each shows AES with a 256-bit key.
+    sv:
+      title: Långvarigt konfidentiella data använder AES-256
+      description: Kontrollerar krypteringsinställningarna för datalager som innehåller långvarigt konfidentiella data.
+      preconditions: Dataklassningen med sekretesstid och åtkomst till lagringens krypteringsinställningar.
+      expected: Varje sådant datalager använder AES med 256-bitarsnycklar.
+      steps:
+        - action: Lista de datalager som innehåller data klassade som konfidentiella i mer än 10 år.
+          expected: Minst ett datalager listas, eller så anger klassningen att det inte finns något.
+        - action: Läs krypteringsalgoritm och nyckellängd för varje listat datalager.
+          expected: Vart och ett visar AES med en 256-bitarsnyckel.

@@ -410,6 +410,122 @@ requirements:
           text: En person som följer instruktionerna tar ut och sätter tillbaka batteriet med verktyg som finns i handeln på högst 5 minuter, och ingen värme eller inget lösningsmedel används.
           threshold: ≤ 5 min
 
+  - id: HWENV-18
+    type: business
+    obligation: must
+    priority: high
+    tags: [repairability, spare-parts, ecodesign]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    tests: [HWENV-T13]
+    en:
+      title: Spare parts available for 7 years after the last unit is sold
+      description: The manufacturer MUST keep the parts listed as replaceable in the service documentation, including displays, batteries, power supplies and connectors, available to professional repairers for at least 7 years after the last unit of the model is placed on the market.
+      rationale: Products are scrapped when a cheap part cannot be bought, and spare part availability is a central aspect of ecodesign rules for repairability.
+      criteria:
+        - method: inspection
+          text: The spare parts plan names each replaceable part, its supplier commitment and an end date at least 7 years after the planned end of sales.
+          threshold: ≥ 7 years
+    sv:
+      title: Reservdelar tillgängliga i 7 år efter att den sista enheten sålts
+      description: Tillverkaren SKA hålla de delar som anges som utbytbara i servicedokumentationen, bland annat skärmar, batterier, nätaggregat och kontakter, tillgängliga för professionella reparatörer i minst 7 år efter att den sista enheten av modellen släppts ut på marknaden.
+      rationale: Produkter skrotas när en billig del inte går att köpa, och tillgång till reservdelar är en central aspekt i ekodesignregler för reparerbarhet.
+      criteria:
+        - method: inspection
+          text: Reservdelsplanen anger varje utbytbar del, leverantörens åtagande och ett slutdatum minst 7 år efter det planerade slutet på försäljningen.
+          threshold: ≥ 7 år
+
+  - id: HWENV-19
+    type: business
+    obligation: must
+    priority: medium
+    tags: [repairability, repair-information]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    tests: [HWENV-T13]
+    en:
+      title: Repair information available to professional repairers
+      description: The manufacturer MUST give professional repairers access to the disassembly instructions, exploded views, fault codes and spare part list of each model within 2 years of its market launch, on non-discriminatory terms.
+      rationale: Independent repair is only possible when repairers can identify the faulty part and know how to replace it without damage.
+      criteria:
+        - method: inspection
+          text: A repairer account opened as a test gets the repair information package of a sampled model, and the package contains each listed document.
+    sv:
+      title: Reparationsinformation tillgänglig för professionella reparatörer
+      description: Tillverkaren SKA ge professionella reparatörer tillgång till demonteringsanvisningar, sprängskisser, felkoder och reservdelslista för varje modell senast 2 år efter marknadslanseringen, på icke-diskriminerande villkor.
+      rationale: Oberoende reparation är bara möjlig när reparatörer kan identifiera den felande delen och vet hur den byts utan skador.
+      criteria:
+        - method: inspection
+          text: Ett reparatörskonto som öppnats för test får tillgång till paketet med reparationsinformation för en utvald modell, och paketet innehåller varje angivet dokument.
+
+  - id: HWENV-20
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [repairability, disassembly, fasteners]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)", "Directive 2012/19/EU (WEEE) Art. 4 (product design)"]
+    tests: [HWENV-T14]
+    en:
+      title: Replaceable parts removed with reusable fasteners and common tools
+      description: Each part listed as replaceable SHOULD be removable and refitted with commercially available tools and reusable fasteners, without glue or heat, within 15 minutes by a trained repairer.
+      rationale: Glued and welded constructions turn a part swap into a scrapped product, while screws and clips let the same part be changed several times.
+      criteria:
+        - method: demonstration
+          text: A trained repairer removes and refits each replaceable part using only commercially available tools, and each swap takes at most 15 minutes.
+          threshold: ≤ 15 min per part
+    sv:
+      title: Utbytbara delar demonteras med återanvändbara fästelement och vanliga verktyg
+      description: Varje del som anges som utbytbar BÖR gå att ta bort och sätta tillbaka med verktyg som finns i handeln och återanvändbara fästelement, utan lim eller värme, inom 15 minuter av en utbildad reparatör.
+      rationale: Limmade och svetsade konstruktioner gör ett delbyte till en skrotad produkt, medan skruvar och clips gör att samma del kan bytas mer än en gång.
+      criteria:
+        - method: demonstration
+          text: En utbildad reparatör tar bort och sätter tillbaka varje utbytbar del med endast verktyg som finns i handeln, och varje byte tar högst 15 minuter.
+          threshold: ≤ 15 min per del
+
+  - id: HWENV-21
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [digital-product-passport, data-carrier, ecodesign]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 9 (general requirements for the digital product passport)"]
+    tests: [HWENV-T15]
+    en:
+      title: Data carrier linking each unit to its digital product passport
+      description: Where a delegated act for the product group sets a digital product passport, each unit MUST carry a data carrier on the product or its packaging that resolves to the passport of that model, batch or unit.
+      rationale: The passport gives repairers, recyclers and authorities the product's material, repair and compliance data without depending on the manufacturer's current website.
+      criteria:
+        - method: test
+          text: Scanning the data carrier on 5 sampled units opens the passport of the matching model, batch or unit with the data the delegated act lists.
+    sv:
+      title: Databärare som kopplar varje enhet till dess digitala produktpass
+      description: När en delegerad akt för produktgruppen fastställer ett digitalt produktpass SKA varje enhet ha en databärare på produkten eller förpackningen som leder till passet för den modellen, satsen eller enheten.
+      rationale: Passet ger reparatörer, återvinnare och myndigheter produktens uppgifter om material, reparation och regelefterlevnad utan att bero på tillverkarens aktuella webbplats.
+      criteria:
+        - method: test
+          text: När databäraren på 5 utvalda enheter skannas öppnas passet för motsvarande modell, sats eller enhet med de uppgifter som den delegerade akten anger.
+
+  - id: HWENV-22
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [standby, energy, ecodesign]
+    refs: ["Commission Regulation (EU) 2023/826 Annex II (power demand in off mode and standby mode)"]
+    tests: [HWENV-T16]
+    en:
+      title: Standby and off mode power within the ecodesign limits
+      description: The product MUST NOT draw more than 0.30 W in off mode or 0.50 W in a standby mode that offers only a reactivation function, measured at 230 V and 50 Hz.
+      rationale: Products spend most of their life switched off or waiting, and small standby loads across millions of units add up to the output of power plants.
+      criteria:
+        - method: test
+          text: Measurements on 3 units show off mode at most 0.30 W and standby at most 0.50 W.
+          threshold: off ≤ 0.30 W, standby ≤ 0.50 W
+    sv:
+      title: Effekt i frånläge och viloläge inom ekodesigngränserna
+      description: Produkten SKA INTE ta mer än 0,30 W i frånläge eller 0,50 W i ett viloläge som endast erbjuder en återaktiveringsfunktion, mätt vid 230 V och 50 Hz.
+      rationale: Produkter tillbringar större delen av sin livstid avstängda eller väntande, och den lilla vilolasten över miljontals enheter blir lika mycket som produktionen från kraftverk.
+      criteria:
+        - method: test
+          text: Mätningar på 3 enheter visar högst 0,30 W i frånläge och högst 0,50 W i viloläge.
+          threshold: från ≤ 0,30 W, vila ≤ 0,50 W
+
 tests:
   - id: HWENV-T01
     priority: high
@@ -752,3 +868,131 @@ tests:
           data: "verktyg: stjärnskruvmejsel storlek 1, öppningsverktyg i plast"
         - action: Be personen sätta tillbaka batteriet och stoppa tidtagningen när produkten startar.
           expected: Produkten startar och den totala tiden är högst 5 minuter.
+
+  - id: HWENV-T13
+    priority: medium
+    execution: manual
+    tags: [repairability, spare-parts]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    en:
+      title: Spare parts plan and repairer access to repair information
+      description: Checks the spare parts plan of a model and requests its repair information as a professional repairer.
+      preconditions: The spare parts plan and the planned end of sales of a model launched more than 2 years ago, and a repairer account created for the test.
+      expected: Each replaceable part is covered for 7 years after the end of sales and the repair information package is complete.
+      steps:
+        - action: Compare the parts marked as replaceable in the service documentation with the spare parts plan.
+          expected: Each part is in the plan with a supplier commitment.
+        - action: Compare the end date of each part with the planned end of sales.
+          expected: Each end date is at least 7 years after the planned end of sales.
+        - action: Request the repair information for the model with the repairer account.
+          expected: Access is granted on the published terms.
+        - action: Check the contents of the package.
+          expected: It contains disassembly instructions, exploded views, fault codes and the spare part list.
+    sv:
+      title: Reservdelsplan och reparatörers tillgång till reparationsinformation
+      description: Kontrollerar reservdelsplanen för en modell och begär dess reparationsinformation som professionell reparatör.
+      preconditions: Reservdelsplanen och det planerade slutet på försäljningen för en modell som lanserades för mer än 2 år sedan, och ett reparatörskonto som skapats för testet.
+      expected: Varje utbytbar del täcks i 7 år efter försäljningens slut och paketet med reparationsinformation är fullständigt.
+      steps:
+        - action: Jämför delarna som markerats som utbytbara i servicedokumentationen med reservdelsplanen.
+          expected: Varje del finns i planen med ett åtagande från leverantören.
+        - action: Jämför slutdatumet för varje del med det planerade slutet på försäljningen.
+          expected: Varje slutdatum ligger minst 7 år efter det planerade slutet på försäljningen.
+        - action: Begär reparationsinformationen för modellen med reparatörskontot.
+          expected: Tillgång ges på de publicerade villkoren.
+        - action: Kontrollera innehållet i paketet.
+          expected: Det innehåller demonteringsanvisningar, sprängskisser, felkoder och reservdelslistan.
+
+  - id: HWENV-T14
+    priority: medium
+    execution: manual
+    tags: [disassembly]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)", "Directive 2012/19/EU (WEEE) Art. 4 (product design)"]
+    en:
+      title: Timed replacement of each replaceable part
+      description: A trained repairer removes and refits each replaceable part with commercially available tools while the time is measured.
+      preconditions: A production unit, the disassembly instructions, a set of commercially available hand tools and a stopwatch.
+      expected: Each part is changed within 15 minutes without glue, heat or damage.
+      steps:
+        - action: Remove and refit the battery, the display and the power supply in turn following the instructions.
+          expected: Each swap is done with the listed tools without heat or solvents.
+        - action: Record the time of each swap.
+          expected: Each swap takes at most 15 minutes.
+          data: battery, display, power supply, main connector
+        - action: Start the unit and run its self-test.
+          expected: The unit passes the self-test and no fastener or clip is broken.
+    sv:
+      title: Tidmätt byte av varje utbytbar del
+      description: En utbildad reparatör tar bort och sätter tillbaka varje utbytbar del med verktyg som finns i handeln medan tiden mäts.
+      preconditions: En produktionsenhet, demonteringsanvisningarna, en uppsättning handverktyg som finns i handeln och ett stoppur.
+      expected: Varje del byts inom 15 minuter utan lim, värme eller skador.
+      steps:
+        - action: Ta bort och sätt tillbaka batteriet, skärmen och nätaggregatet i tur och ordning enligt anvisningarna.
+          expected: Varje byte görs med de angivna verktygen utan värme eller lösningsmedel.
+        - action: Registrera tiden för varje byte.
+          expected: Varje byte tar högst 15 minuter.
+          data: batteri, skärm, nätaggregat, huvudkontakt
+        - action: Starta enheten och kör dess självtest.
+          expected: Enheten klarar självtestet och inget fästelement eller clips är trasigt.
+
+  - id: HWENV-T15
+    priority: medium
+    execution: manual
+    tags: [digital-product-passport]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 9 (general requirements for the digital product passport)"]
+    en:
+      title: Scan of the product passport data carrier
+      description: Scans the data carrier on sampled units and checks the passport that opens.
+      preconditions: 5 units from different batches of a product group with a digital product passport, a smartphone with a camera and the list of passport data from the delegated act.
+      expected: Each data carrier opens the correct passport with the listed data.
+      steps:
+        - action: Scan the data carrier on each unit.
+          expected: Each scan opens a passport page without a sign-in.
+        - action: Compare the model, batch or serial number in the passport with the unit's label.
+          expected: They match.
+        - action: Compare the passport fields with the list from the delegated act.
+          expected: Each listed field is present.
+    sv:
+      title: Skanning av databäraren för produktpasset
+      description: Skannar databäraren på utvalda enheter och kontrollerar passet som öppnas.
+      preconditions: 5 enheter från olika satser av en produktgrupp med digitalt produktpass, en smarttelefon med kamera och listan över passuppgifter från den delegerade akten.
+      expected: Varje databärare öppnar rätt pass med de angivna uppgifterna.
+      steps:
+        - action: Skanna databäraren på varje enhet.
+          expected: Varje skanning öppnar en passida utan inloggning.
+        - action: Jämför modell, sats eller serienummer i passet med enhetens märkning.
+          expected: De stämmer överens.
+        - action: Jämför fälten i passet med listan från den delegerade akten.
+          expected: Varje angivet fält finns.
+
+  - id: HWENV-T16
+    priority: high
+    execution: manual
+    tags: [standby, energy]
+    refs: ["Commission Regulation (EU) 2023/826 Annex II (power demand in off mode and standby mode)"]
+    en:
+      title: Off mode and standby power measurement
+      description: Measures the power drawn by sampled units in off mode and in standby mode.
+      preconditions: 3 production units, a power meter with a resolution of 0.01 W or better and a stable 230 V, 50 Hz supply.
+      expected: Each unit is within the off mode and standby limits.
+      steps:
+        - action: Put each unit in off mode and measure the average power over 10 minutes after it has stabilised.
+          expected: Each unit draws at most 0.30 W.
+          data: 230 V, 50 Hz
+        - action: Put each unit in standby with only the reactivation function and measure the average power over 10 minutes.
+          expected: Each unit draws at most 0.50 W.
+        - action: Reactivate each unit from standby with the stated function.
+          expected: Each unit returns to on mode.
+    sv:
+      title: Mätning av effekt i frånläge och viloläge
+      description: Mäter effekten som utvalda enheter tar i frånläge och i viloläge.
+      preconditions: 3 produktionsenheter, en effektmätare med en upplösning på 0,01 W eller bättre och en stabil matning på 230 V, 50 Hz.
+      expected: Varje enhet ligger inom gränserna för frånläge och viloläge.
+      steps:
+        - action: Sätt varje enhet i frånläge och mät medeleffekten under 10 minuter efter att den stabiliserats.
+          expected: Varje enhet tar högst 0,30 W.
+          data: 230 V, 50 Hz
+        - action: Sätt varje enhet i viloläge med endast återaktiveringsfunktionen och mät medeleffekten under 10 minuter.
+          expected: Varje enhet tar högst 0,50 W.
+        - action: Återaktivera varje enhet från viloläget med den angivna funktionen.
+          expected: Varje enhet återgår till påläge.

@@ -527,6 +527,150 @@ requirements:
         - method: inspection
           text: På 10 utvalda sidor finns hjälp- och supportlänkarna i samma område och i samma ordning.
 
+  - id: A11Y-24
+    type: usability
+    obligation: must
+    priority: high
+    tags: [contrast, controls, graphics]
+    refs: ["WCAG 2.2 SC 1.4.11", "EN 301 549 V3.2.1 clause 9"]
+    tests: [A11Y-T18]
+    en:
+      title: Contrast of controls and graphics
+      description: Borders of input fields, focus indicators, icons that carry meaning and chart lines MUST have a contrast ratio of at least 3:1 against the adjacent colours.
+      rationale: People with low vision cannot find a text field or read a chart whose edges fade into the background.
+      criteria:
+        - method: test
+          text: A contrast check of the input borders, meaningful icons and chart lines on the 5 main pages finds no value below 3:1.
+          threshold: "≥ 3:1"
+    sv:
+      title: Kontrast för kontroller och grafik
+      description: Kanter på inmatningsfält, fokusmarkeringar, ikoner som bär betydelse och linjer i diagram SKA ha ett kontrastförhållande på minst 3:1 mot angränsande färger.
+      rationale: Personer med nedsatt syn hittar inte ett textfält och kan inte läsa ett diagram vars kanter smälter in i bakgrunden.
+      criteria:
+        - method: test
+          text: En kontrastkontroll av fältkanter, betydelsebärande ikoner och diagramlinjer på de 5 viktigaste sidorna hittar inget värde under 3:1.
+          threshold: "≥ 3:1"
+
+  - id: A11Y-25
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [text-spacing, css, overrides]
+    refs: ["WCAG 2.2 SC 1.4.12", "EN 301 549 V3.2.1 clause 9"]
+    tests: [A11Y-T19]
+    en:
+      title: Content survives increased text spacing
+      description: The pages MUST show all text and functions without overlap or clipping when line height is set to 1.5, paragraph spacing to 2, letter spacing to 0.12 and word spacing to 0.16 times the font size.
+      rationale: Readers with dyslexia or low vision often override spacing, and fixed-height boxes then hide text or buttons.
+      criteria:
+        - method: test
+          text: With a text spacing style sheet applied, the 5 main pages show no clipped or overlapping text or controls.
+          threshold: "0 clipped elements"
+    sv:
+      title: Innehållet tål ökat textavstånd
+      description: Sidorna SKA visa all text och alla funktioner utan överlappning eller avklippning när radhöjden sätts till 1,5, styckeavståndet till 2, teckenavståndet till 0,12 och ordavståndet till 0,16 gånger teckenstorleken.
+      rationale: Läsare med dyslexi eller nedsatt syn ändrar ofta avstånden, och rutor med fast höjd döljer då text eller knappar.
+      criteria:
+        - method: test
+          text: Med en stilmall för textavstånd påslagen visar de 5 viktigaste sidorna ingen avklippt eller överlappande text eller kontroll.
+          threshold: "0 avklippta element"
+
+  - id: A11Y-26
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [consistency, labels, icons]
+    refs: ["WCAG 2.2 SC 3.2.4", "ISO 9241-110:2020 conformity with user expectations"]
+    tests: [A11Y-T20]
+    en:
+      title: Same function, same name and icon
+      description: Components that have the same function on different pages MUST have the same visible label, accessible name and icon.
+      rationale: Users of screen readers and people with cognitive disabilities recognise functions by their name, and different names for the same action make them doubt what will happen.
+      criteria:
+        - method: inspection
+          text: A review of the save, delete, search and close controls on 10 pages finds the same label, accessible name and icon for each function.
+          threshold: "0 inconsistencies"
+    sv:
+      title: Samma funktion, samma namn och ikon
+      description: Komponenter som har samma funktion på olika sidor SKA ha samma synliga etikett, tillgängliga namn och ikon.
+      rationale: Skärmläsaranvändare och personer med kognitiva funktionsnedsättningar känner igen funktioner på namnet, och olika namn för samma åtgärd gör dem osäkra på vad som händer.
+      criteria:
+        - method: inspection
+          text: En granskning av kontrollerna för spara, radera, sök och stäng på 10 sidor visar samma etikett, tillgängliga namn och ikon för varje funktion.
+          threshold: "0 avvikelser"
+
+  - id: A11Y-27
+    type: usability
+    obligation: must
+    priority: high
+    tags: [aria, custom-controls, screen-reader]
+    refs: ["WCAG 2.2 SC 4.1.2", "EN 301 549 V3.2.1 clause 9"]
+    tests: [A11Y-T21]
+    en:
+      title: Name, role and state of custom controls
+      description: Each custom control such as a menu button, tab, combo box or tree MUST expose its name, role and current state to assistive technology and update the state when it changes.
+      rationale: A control that looks like a tab but is announced as plain text cannot be found or operated with a screen reader.
+      criteria:
+        - method: test
+          text: A screen reader announces name, role and state of each custom control on the main pages, and the state change after activation.
+          threshold: "100 % of custom controls"
+    sv:
+      title: Namn, roll och tillstånd för egna kontroller
+      description: Varje egenbyggd kontroll som en menyknapp, flik, kombinationsruta eller trädvy SKA exponera sitt namn, sin roll och sitt aktuella tillstånd för hjälpmedel och uppdatera tillståndet när det ändras.
+      rationale: En kontroll som ser ut som en flik men läses upp som vanlig text går inte att hitta eller använda med skärmläsare.
+      criteria:
+        - method: test
+          text: En skärmläsare läser upp namn, roll och tillstånd för varje egenbyggd kontroll på huvudsidorna, och tillståndsändringen efter aktivering.
+          threshold: "100 % av de egna kontrollerna"
+
+  - id: A11Y-28
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [pdf, documents, export]
+    refs: ["ISO 14289-1:2014 (PDF/UA)", "EN 301 549 V3.2.1 clause 10"]
+    tests: [A11Y-T22]
+    en:
+      title: Accessible PDF exports
+      description: PDF files generated by the system SHOULD be tagged according to PDF/UA, with headings, reading order, table headers and the document language set.
+      rationale: Reports and exports are shared outside the system, and an untagged PDF is a picture of text for a screen reader user.
+      criteria:
+        - method: test
+          text: A generated report passes a PDF/UA checker without errors and reads in the right order with a screen reader.
+          threshold: "0 PDF/UA errors"
+    sv:
+      title: Tillgängliga PDF-exporter
+      description: PDF-filer som systemet skapar BÖR vara taggade enligt PDF/UA, med rubriker, läsordning, tabellrubriker och dokumentets språk angivet.
+      rationale: Rapporter och exporter delas utanför systemet, och en otaggad PDF är en bild av text för den som använder skärmläsare.
+      criteria:
+        - method: test
+          text: En skapad rapport klarar en PDF/UA-kontroll utan fel och läses i rätt ordning med skärmläsare.
+          threshold: "0 PDF/UA-fel"
+
+  - id: A11Y-29
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [european-accessibility-act, terms, information]
+    refs: ["Directive (EU) 2019/882 (EAA) Art. 13(2)", "Directive (EU) 2019/882 (EAA) Annex V"]
+    tests: [A11Y-T23]
+    en:
+      title: Accessibility information for consumer services
+      description: For a service offered to consumers, the supplier MUST publish in its general terms, or in another clearly linked place, how the service meets the accessibility requirements that apply to it.
+      rationale: The European Accessibility Act makes this information a condition for consumer services, and users need it before they choose a service.
+      criteria:
+        - method: inspection
+          text: The terms or a page linked from them describe the accessibility features of the service and name the requirements it meets.
+          threshold: "1 published statement per consumer service"
+    sv:
+      title: Information om tillgänglighet för konsumenttjänster
+      description: För en tjänst som erbjuds konsumenter SKA leverantören i sina allmänna villkor, eller på ett annat tydligt länkat ställe, publicera hur tjänsten uppfyller de tillgänglighetskrav som gäller för den.
+      rationale: Tillgänglighetsdirektivet gör denna information till ett villkor för konsumenttjänster, och användarna behöver den innan de väljer tjänst.
+      criteria:
+        - method: inspection
+          text: Villkoren eller en sida som länkas från dem redogör för tjänstens tillgänglighetsfunktioner och anger vilka krav den uppfyller.
+          threshold: "1 publicerad redogörelse per konsumenttjänst"
+
 tests:
   - id: A11Y-T01
     priority: critical
@@ -1043,3 +1187,181 @@ tests:
           expected: Varje sida visar dem i samma område, till exempel sidhuvudet.
         - action: Jämför länkarnas ordning mellan sidorna.
           expected: Ordningen är densamma på alla 10 sidorna.
+
+  - id: A11Y-T18
+    priority: high
+    execution: manual
+    tags: [contrast, controls]
+    refs: ["WCAG 2.2 SC 1.4.11"]
+    en:
+      title: Non-text contrast on the main pages
+      description: Measures the contrast of control borders, meaningful icons and chart lines.
+      preconditions: The 5 main pages in light and dark theme and a contrast measuring tool.
+      expected: Each measured element reaches at least 3:1 against its neighbour colours.
+      steps:
+        - action: Measure the border of an empty input field against the page background in both themes.
+          expected: The ratio is at least 3:1.
+          data: "text field on the item form"
+        - action: Measure the icons that carry meaning without text, such as status icons.
+          expected: Each ratio is at least 3:1.
+        - action: Measure the lines of a chart against the chart background.
+          expected: Each line has a ratio of at least 3:1.
+    sv:
+      title: Kontrast för icke-text på huvudsidorna
+      description: Mäter kontrasten för kontrollers kanter, betydelsebärande ikoner och diagramlinjer.
+      preconditions: De 5 viktigaste sidorna i ljust och mörkt tema och ett verktyg för kontrastmätning.
+      expected: Varje uppmätt element når minst 3:1 mot sina angränsande färger.
+      steps:
+        - action: Mät kanten på ett tomt inmatningsfält mot sidans bakgrund i båda temana.
+          expected: Förhållandet är minst 3:1.
+          data: "textfält i objektformuläret"
+        - action: Mät ikoner som bär betydelse utan text, till exempel statusikoner.
+          expected: Varje förhållande är minst 3:1.
+        - action: Mät linjerna i ett diagram mot diagrammets bakgrund.
+          expected: Varje linje har ett förhållande på minst 3:1.
+
+  - id: A11Y-T19
+    priority: medium
+    execution: manual
+    tags: [text-spacing]
+    refs: ["WCAG 2.2 SC 1.4.12"]
+    en:
+      title: Text spacing override
+      description: Applies a user style sheet with increased text spacing and inspects the main pages.
+      preconditions: A browser with a bookmarklet or extension that sets the WCAG text spacing values.
+      expected: No text or control is clipped, hidden or overlapping.
+      steps:
+        - action: Apply the spacing overrides.
+          expected: Line height, paragraph, letter and word spacing change on the page.
+          data: "line-height 1.5; paragraph 2 em; letter 0.12 em; word 0.16 em"
+        - action: Go through the 5 main pages including a form, a list and a dialog.
+          expected: All text is readable and every button and field is visible and usable.
+    sv:
+      title: Ändrat textavstånd
+      description: Lägger på en användarstilmall med ökade textavstånd och granskar huvudsidorna.
+      preconditions: En webbläsare med ett bokmärkesskript eller tillägg som sätter WCAG:s värden för textavstånd.
+      expected: Ingen text eller kontroll klipps av, döljs eller överlappar.
+      steps:
+        - action: Lägg på de ändrade avstånden.
+          expected: Radhöjd, stycke-, tecken- och ordavstånd ändras på sidan.
+          data: "radhöjd 1,5; stycke 2 em; tecken 0,12 em; ord 0,16 em"
+        - action: Gå igenom de 5 viktigaste sidorna, däribland ett formulär, en lista och en dialog.
+          expected: All text går att läsa och varje knapp och fält är synligt och går att använda.
+
+  - id: A11Y-T20
+    priority: medium
+    execution: manual
+    tags: [consistency, labels]
+    refs: ["WCAG 2.2 SC 3.2.4"]
+    en:
+      title: Consistent identification of common functions
+      description: Compares label, accessible name and icon of recurring controls across pages.
+      preconditions: 10 pages that contain save, delete, search and close controls, and the browser's accessibility inspector.
+      expected: Each function has the same label, accessible name and icon on every page.
+      steps:
+        - action: Record label, accessible name and icon of the save control on each page.
+          expected: The values are the same on each page.
+          data: "for example \"Save\" with a disk icon"
+        - action: Repeat for delete, search and close.
+          expected: No page uses a different name or icon for these functions.
+    sv:
+      title: Enhetlig identifiering av vanliga funktioner
+      description: Jämför etikett, tillgängligt namn och ikon för återkommande kontroller mellan sidor.
+      preconditions: 10 sidor med kontroller för spara, radera, sök och stäng, och webbläsarens verktyg för tillgänglighetsinspektion.
+      expected: Varje funktion har samma etikett, tillgängliga namn och ikon på varje sida.
+      steps:
+        - action: Notera etikett, tillgängligt namn och ikon för kontrollen spara på varje sida.
+          expected: Värdena är desamma på varje sida.
+          data: "till exempel \"Spara\" med en diskettikon"
+        - action: Upprepa för radera, sök och stäng.
+          expected: Ingen sida använder ett annat namn eller en annan ikon för dessa funktioner.
+
+  - id: A11Y-T21
+    priority: high
+    execution: manual
+    tags: [aria, screen-reader]
+    refs: ["WCAG 2.2 SC 4.1.2"]
+    en:
+      title: Custom controls with a screen reader
+      description: Operates each custom control with a screen reader and listens to what is announced.
+      preconditions: NVDA with Firefox or VoiceOver with Safari, and the list of custom controls in the user interface.
+      expected: Each control is announced with name, role and state, and state changes are announced.
+      steps:
+        - action: Move to a tab list and listen.
+          expected: The screen reader announces the tab name, the role tab and selected or not selected.
+          data: "NVDA 2025 with Firefox"
+        - action: Open a menu button.
+          expected: The button is announced as a menu button with its expanded state, which changes to expanded.
+        - action: Expand a node in a tree view.
+          expected: The node's expanded state is announced after the change.
+    sv:
+      title: Egna kontroller med skärmläsare
+      description: Använder varje egenbyggd kontroll med en skärmläsare och lyssnar på vad som läses upp.
+      preconditions: NVDA med Firefox eller VoiceOver med Safari, och listan över egna kontroller i användargränssnittet.
+      expected: Varje kontroll läses upp med namn, roll och tillstånd, och tillståndsändringar läses upp.
+      steps:
+        - action: Flytta till en flikrad och lyssna.
+          expected: Skärmläsaren läser upp flikens namn, rollen flik och vald eller inte vald.
+          data: "NVDA 2025 med Firefox"
+        - action: Öppna en menyknapp.
+          expected: Knappen läses upp som menyknapp med sitt expanderade tillstånd, som ändras till expanderad.
+        - action: Fäll ut en nod i en trädvy.
+          expected: Nodens utfällda tillstånd läses upp efter ändringen.
+
+  - id: A11Y-T22
+    priority: medium
+    execution: manual
+    tags: [pdf, documents]
+    refs: ["ISO 14289-1:2014 (PDF/UA)"]
+    en:
+      title: PDF/UA check of a generated report
+      description: Generates a report as PDF and checks its tags and reading order.
+      preconditions: A report with headings and a table, a PDF/UA checker such as PAC and a screen reader.
+      expected: The PDF passes the checker and reads in the logical order.
+      steps:
+        - action: Export the report as PDF.
+          expected: The PDF is created.
+          data: "report with 2 headings and a 10-row table"
+        - action: Run the PDF/UA checker.
+          expected: The checker reports no errors; language, title and tags are present.
+        - action: Read the PDF with a screen reader.
+          expected: Headings are announced as headings and table cells with their column headers.
+    sv:
+      title: PDF/UA-kontroll av en skapad rapport
+      description: Skapar en rapport som PDF och kontrollerar dess taggar och läsordning.
+      preconditions: En rapport med rubriker och en tabell, ett kontrollverktyg för PDF/UA som PAC och en skärmläsare.
+      expected: PDF-filen klarar kontrollen och läses i logisk ordning.
+      steps:
+        - action: Exportera rapporten som PDF.
+          expected: PDF-filen skapas.
+          data: "rapport med 2 rubriker och en tabell med 10 rader"
+        - action: Kör kontrollverktyget för PDF/UA.
+          expected: Verktyget rapporterar inga fel; språk, titel och taggar finns.
+        - action: Läs PDF-filen med en skärmläsare.
+          expected: Rubriker läses upp som rubriker och tabellceller med sina kolumnrubriker.
+
+  - id: A11Y-T23
+    priority: medium
+    execution: manual
+    tags: [european-accessibility-act, terms]
+    refs: ["Directive (EU) 2019/882 (EAA) Annex V"]
+    en:
+      title: Published accessibility information of a consumer service
+      description: Looks for the accessibility information from the service's terms.
+      preconditions: The public website and general terms of a consumer service.
+      expected: The information is reachable from the terms and describes how the requirements are met.
+      steps:
+        - action: Open the general terms and look for accessibility information or a link to it.
+          expected: The terms contain the information or link to it.
+        - action: Read the information.
+          expected: It describes the accessibility features of the service, names the requirements it meets and gives a contact for feedback.
+    sv:
+      title: Publicerad tillgänglighetsinformation för en konsumenttjänst
+      description: Letar efter tillgänglighetsinformationen utifrån tjänstens villkor.
+      preconditions: Den publika webbplatsen och de allmänna villkoren för en konsumenttjänst.
+      expected: Informationen nås från villkoren och redogör för hur kraven uppfylls.
+      steps:
+        - action: Öppna de allmänna villkoren och leta efter tillgänglighetsinformation eller en länk till den.
+          expected: Villkoren innehåller informationen eller länkar till den.
+        - action: Läs informationen.
+          expected: Den redogör för tjänstens tillgänglighetsfunktioner, anger vilka krav den uppfyller och ger en kontakt för synpunkter.

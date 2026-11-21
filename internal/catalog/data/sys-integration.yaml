@@ -346,6 +346,118 @@ requirements:
           text: Sammanställningen omfattar varje krav i produktbaslinjen med ett godkänt resultat eller ett undantag undertecknat av kunden, och anger 0 öppna avvikelser av högsta allvarlighetsgrad.
           threshold: 0 overifierade krav utan undantag
 
+  - id: SYINT-16
+    type: business
+    obligation: must
+    priority: high
+    tags: [verification-plan, integrity-level]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    tests: [SYINT-T12]
+    en:
+      title: Integrity level assigned to each element in the V&V plan
+      description: The verification and validation plan MUST assign an integrity level to each system element from the consequence and likelihood of its failure, and set the verification and validation tasks and independence of each element from that level.
+      rationale: Scaling the verification effort to the consequence of failure puts the effort where errors would hurt most.
+      criteria:
+        - method: inspection
+          text: Each element in the plan has an integrity level with its basis, and the tasks and independence listed for each level match the plan's scheme.
+    sv:
+      title: Integritetsnivå för varje element i planen för verifiering och validering
+      description: Planen för verifiering och validering SKA ge varje systemelement en integritetsnivå utifrån konsekvensen och sannolikheten av ett fel i elementet, och bestämma verifierings- och valideringsuppgifterna och oberoendet för varje element utifrån den nivån.
+      rationale: När verifieringsinsatsen anpassas efter konsekvensen av fel hamnar insatsen där fel skulle göra mest skada.
+      criteria:
+        - method: inspection
+          text: Varje element i planen har en integritetsnivå med motivering, och uppgifterna och oberoendet för varje nivå stämmer med planens indelning.
+
+  - id: SYINT-17
+    type: business
+    obligation: must
+    priority: medium
+    tags: [test-readiness, entry-criteria]
+    refs: ["ISO/IEC/IEEE 29119-2:2021"]
+    tests: [SYINT-T12]
+    en:
+      title: Test readiness review before formal verification
+      description: The project MUST hold a test readiness review before each formal verification campaign, confirming that the test object configuration, test procedures, test environment and calibrated equipment are in place.
+      rationale: Starting formal verification with an incomplete setup wastes witness time and produces results that have to be repeated.
+      criteria:
+        - method: inspection
+          text: Each formal campaign has a readiness record dated before its first test, with each of the four items confirmed.
+    sv:
+      title: Granskning av testberedskap före formell verifiering
+      description: Projektet SKA hålla en granskning av testberedskapen före varje formell verifieringskampanj, där det bekräftas att testobjektets konfiguration, testprocedurer, testmiljö och kalibrerad utrustning finns på plats.
+      rationale: Att starta formell verifiering med en ofullständig uppställning slösar bort vittnenas tid och ger resultat som måste göras om.
+      criteria:
+        - method: inspection
+          text: Varje formell kampanj har ett beredskapsprotokoll daterat före det första testet, med var och en av de fyra punkterna bekräftad.
+
+  - id: SYINT-18
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [test-environment, representativeness]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    tests: [SYINT-T13]
+    en:
+      title: Differences between the test and operational environment assessed
+      description: The verification plan MUST list each difference between the test environment and the operational environment, such as simulated interfaces, scaled data volumes or other hardware, with an assessment of its effect on each affected requirement.
+      rationale: A requirement verified in an environment that differs from operation in a relevant way may not hold in the field.
+      criteria:
+        - method: inspection
+          text: The difference list covers each simulator and substitute named in the test environment description, and each difference has an assessment against the affected requirements.
+    sv:
+      title: Skillnader mellan test- och driftmiljö bedöms
+      description: Verifieringsplanen SKA ange varje skillnad mellan testmiljön och driftmiljön, till exempel simulerade gränssnitt, nedskalade datamängder eller annan hårdvara, med en bedömning av dess inverkan på varje berört krav.
+      rationale: Ett krav som verifierats i en miljö som skiljer sig från driften på ett relevant sätt behöver inte gälla i fält.
+      criteria:
+        - method: inspection
+          text: Listan över skillnader omfattar varje simulator och ersättning som nämns i beskrivningen av testmiljön, och varje skillnad har en bedömning mot de berörda kraven.
+
+  - id: SYINT-19
+    type: interface
+    obligation: must
+    priority: high
+    tags: [interoperability, backward-compatibility, versioning]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)"]
+    tests: [SYINT-T14]
+    en:
+      title: Previous interface version accepted for 12 months
+      description: When the system introduces a new major version of an external interface, it MUST keep accepting the previous major version for at least 12 months after the new version is released.
+      rationale: Partner systems upgrade on their own schedules, and an interface that drops the old version at once breaks each partner that has not yet moved.
+      criteria:
+        - method: test
+          text: A partner simulator using the previous major version exchanges each message type with the system after the new version is deployed.
+          threshold: ≥ 12 months
+    sv:
+      title: Föregående gränssnittsversion godtas i 12 månader
+      description: När systemet inför en ny huvudversion av ett externt gränssnitt SKA det fortsätta att godta den föregående huvudversionen i minst 12 månader efter att den nya versionen släppts.
+      rationale: Partnersystem uppgraderar enligt sina egna tidplaner, och ett gränssnitt som slutar stödja den gamla versionen direkt slutar fungera för varje partner som ännu inte har gått över.
+      criteria:
+        - method: test
+          text: En partnersimulator som använder den föregående huvudversionen utbyter varje meddelandetyp med systemet efter att den nya versionen driftsatts.
+          threshold: ≥ 12 månader
+
+  - id: SYINT-20
+    type: interface
+    obligation: must
+    priority: high
+    tags: [interoperability, conformance-testing, partners]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    tests: [SYINT-T14]
+    en:
+      title: Conformance and joint interoperability tests before go-live
+      description: Each standards-based external interface MUST pass the conformance test suite published for its standard, where one exists, and a joint interoperability test with each partner system, with the results signed by both parties before go-live.
+      rationale: Conformance tests find deviations from the standard, while joint tests find the differences in interpretation that only show between real implementations.
+      criteria:
+        - method: inspection
+          text: Each external interface has a conformance report or a note that no suite exists, and a joint test report signed by both parties dated before go-live.
+    sv:
+      title: Konformitetstest och gemensamma interoperabilitetstest före driftstart
+      description: Varje standardbaserat externt gränssnitt SKA klara den konformitetstestsvit som publicerats för dess standard, när en sådan finns, och ett gemensamt interoperabilitetstest med varje partnersystem, med resultaten undertecknade av båda parter före driftstart.
+      rationale: Konformitetstest hittar avvikelser från standarden, medan gemensamma test hittar de skillnader i tolkning som bara syns mellan verkliga implementationer.
+      criteria:
+        - method: inspection
+          text: Varje externt gränssnitt har en konformitetsrapport eller en anteckning om att ingen testsvit finns, och en gemensam testrapport undertecknad av båda parter och daterad före driftstart.
+
 tests:
   - id: SYINT-T01
     priority: high
@@ -646,3 +758,95 @@ tests:
           expected: Varje krav har ett godkänt resultat eller ett undantag undertecknat av kunden.
         - action: Jämför de öppna avvikelserna i sammanställningen med avvikelsehanteringen.
           expected: Listorna stämmer och ingen avvikelse av högsta allvarlighetsgrad är öppen.
+
+  - id: SYINT-T12
+    priority: high
+    execution: manual
+    tags: [verification-plan, test-readiness]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)", "ISO/IEC/IEEE 29119-2:2021"]
+    en:
+      title: Integrity levels in the V&V plan and test readiness records
+      description: Checks the integrity levels of the elements in the V&V plan and the readiness records of formal campaigns.
+      preconditions: The verification and validation plan, the system element list and the records of the formal verification campaigns.
+      expected: Each element has a justified integrity level and each campaign started after a complete readiness review.
+      steps:
+        - action: Compare the elements in the plan with the system element list.
+          expected: Each element has an integrity level with its basis.
+        - action: Pick the element with the highest level and read its tasks and independence.
+          expected: They match the plan's scheme for that level.
+        - action: Open the readiness record of each formal campaign.
+          expected: Each is dated before the first test and confirms configuration, procedures, environment and calibrated equipment.
+    sv:
+      title: Integritetsnivåer i planen för verifiering och validering och protokoll för testberedskap
+      description: Kontrollerar integritetsnivåerna för elementen i planen för verifiering och validering och beredskapsprotokollen för formella kampanjer.
+      preconditions: Planen för verifiering och validering, listan över systemelement och protokollen från de formella verifieringskampanjerna.
+      expected: Varje element har en motiverad integritetsnivå och varje kampanj startade efter en fullständig beredskapsgranskning.
+      steps:
+        - action: Jämför elementen i planen med listan över systemelement.
+          expected: Varje element har en integritetsnivå med motivering.
+        - action: Välj elementet med högst nivå och läs dess uppgifter och oberoende.
+          expected: De stämmer med planens indelning för den nivån.
+        - action: Öppna beredskapsprotokollet för varje formell kampanj.
+          expected: Vart och ett är daterat före det första testet och bekräftar konfiguration, procedurer, miljö och kalibrerad utrustning.
+
+  - id: SYINT-T13
+    priority: medium
+    execution: manual
+    tags: [test-environment]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    en:
+      title: Test environment differences against the environment description
+      description: Compares the list of differences in the verification plan with the actual test environment.
+      preconditions: The verification plan, the test environment description and a walk-through of the test environment.
+      expected: Each difference is listed and assessed.
+      steps:
+        - action: List the simulators, stubs and substitute hardware found in the test environment.
+          expected: A list is made.
+          data: simulated radar feed, half-size database, other server model
+        - action: Compare the list with the differences in the plan.
+          expected: Each item is in the plan.
+        - action: Read the assessment of each difference.
+          expected: Each names the affected requirements and states the effect on their verification.
+    sv:
+      title: Skillnader i testmiljön jämfört med beskrivningen av miljön
+      description: Jämför listan över skillnader i verifieringsplanen med den faktiska testmiljön.
+      preconditions: Verifieringsplanen, beskrivningen av testmiljön och en genomgång av testmiljön.
+      expected: Varje skillnad är angiven och bedömd.
+      steps:
+        - action: Lista simulatorer, stubbar och ersättningshårdvara som finns i testmiljön.
+          expected: En lista tas fram.
+          data: simulerad radarström, databas i halv storlek, annan servermodell
+        - action: Jämför listan med skillnaderna i planen.
+          expected: Varje post finns i planen.
+        - action: Läs bedömningen av varje skillnad.
+          expected: Var och en anger de berörda kraven och inverkan på deras verifiering.
+
+  - id: SYINT-T14
+    priority: high
+    execution: manual
+    tags: [interoperability]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)", "ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    en:
+      title: Old interface version, conformance and joint test reports
+      description: Runs a partner simulator with the previous interface version and checks the conformance and joint test reports.
+      preconditions: The system with a new major interface version deployed, a partner simulator configured for the previous major version, the conformance reports and the joint test reports.
+      expected: The previous version still works and each interface has its conformance and joint test evidence.
+      steps:
+        - action: Send each message type from the simulator with the previous major version.
+          expected: Each message is accepted and answered in the previous version's format.
+        - action: Read the release date of the new version and the planned end of the old one.
+          expected: The planned end is at least 12 months after the release.
+        - action: Open the conformance and joint test reports of each external interface.
+          expected: Each has a conformance report or a no-suite note, and a joint report signed by both parties before go-live.
+    sv:
+      title: Gammal gränssnittsversion, konformitetsrapporter och gemensamma testrapporter
+      description: Kör en partnersimulator med den föregående gränssnittsversionen och kontrollerar konformitetsrapporterna och de gemensamma testrapporterna.
+      preconditions: Systemet med en ny huvudversion av gränssnittet driftsatt, en partnersimulator konfigurerad för den föregående huvudversionen, konformitetsrapporterna och de gemensamma testrapporterna.
+      expected: Den föregående versionen fungerar fortfarande och varje gränssnitt har sina underlag från konformitetstest och gemensamt test.
+      steps:
+        - action: Skicka varje meddelandetyp från simulatorn med den föregående huvudversionen.
+          expected: Varje meddelande godtas och besvaras i den föregående versionens format.
+        - action: Läs releasedatumet för den nya versionen och det planerade slutet för den gamla.
+          expected: Det planerade slutet ligger minst 12 månader efter releasen.
+        - action: Öppna konformitetsrapporterna och de gemensamma testrapporterna för varje externt gränssnitt.
+          expected: Varje gränssnitt har en konformitetsrapport eller en anteckning om att ingen testsvit finns, och en gemensam rapport undertecknad av båda parter före driftstart.

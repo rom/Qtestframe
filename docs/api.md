@@ -28,7 +28,7 @@ is unreachable); all other paths serve the web client.
   `{"error": "<message>", "code": "<machine_code>"}`. Codes: `bad_request`
   (400), `unauthorized` (401), `forbidden` (403), `not_found` (404),
   `conflict` (409, also for duplicates and a disabled runner), `stale`
-  (412, see *Concurrent edits*),
+  (412, see *Concurrent edits*; 409 for a [batch update](#batch-update-spreadsheet-view)),
   `invalid_query` (400), `rate_limited` (429, login), `unavailable` (503,
   `/readyz`), `internal` (500).
 * **Bulk requests are all or nothing** – every bulk endpoint (the `…/bulk`
@@ -38,7 +38,8 @@ is unreachable); all other paths serve the web client.
   `skipped` with a reason are part of a successful answer, so the others
   were saved. Webhooks for the changes are sent only after they are saved.
   Exceptions, because they call outside services: pushing and syncing
-  defects with the tracker (`/defects/push`, `/defects/sync`), webhook
+  defects and requirement issues with the tracker (`/defects/push`,
+  `/defects/sync`, `/requirements/{id}/issue`, `…/requirements/issues`), webhook
   tests and report batches, which save item by item.
 * **Concurrent edits** – `GET` and `PATCH` of a requirement or test answer
   with `ETag: "<version>"`. Send `If-Match: "<version>"` with a `PATCH` to
@@ -550,6 +551,7 @@ missing permission). Decisions are audited as `requirement.review` /
 | POST | `/projects/{pid}/requirements/move` | `{"ids":[...],"folder_id": id\|null, "position"?: n, "project_id"?: id}`; another `project_id` re-keys the items, remaps categories by dimension/name and drops their links ([design.md §5](design.md#5-move-semantics)) |
 | POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?, "add_tags"?, "remove_tags"?}}` (tag removal ignores case) |
 | DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/requirements/batch` | [batch update](#batch-update-spreadsheet-view): different fields per item, all or nothing |
 | POST | `/projects/{pid}/requirements/review` | bulk review, see below |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
 | POST | `/reqlang/analyze` | `{"text", "language"?}` → `Analysis` (below). `language` is a pack code from `/meta` `analysis_languages` (`en`, `sv`); empty or `auto` detects it from the text; anything else → 400 |
@@ -736,6 +738,7 @@ Reading needs `test.read`, writing `test.write`.
 | POST | `/projects/{pid}/tests/move` | like requirements |
 | POST | `/projects/{pid}/tests/bulk` | like requirements (`status`, `priority`, `execution_type`, categories) |
 | DELETE | `/projects/{pid}/tests/bulk` | → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/tests/batch` | [batch update](#batch-update-spreadsheet-view), like requirements |
 | POST | `/projects/{pid}/tests/review` | bulk review: mark tests ready (see [Bulk review](#bulk-review)) |
 | GET | `/tests/{id}/links` | `[TraceLink]` |
 | GET | `/tests/{id}/dependencies` | `[TestDependency]` both directions: `direction` = `outgoing` (this test depends on the other) or `incoming`; `other_last_result` is the latest result of the other test |
@@ -802,10 +805,13 @@ the read permission of an internal target's kind).
 
 `ItemLink`: `{id, project_id, source_type, source_id, target_type, target_id,
 url, label, created_by, created_at, source_key, source_title, target_key,
-target_title, target_kind?, direction}` (keys of runs, files and reports are
-their names). Deleting an item removes its links (the trash restores them);
-moving requirements or tests to another project drops their internal links
-and keeps web links.
+target_title, target_kind?, direction, issue?}` (keys of runs, files and
+reports are their names). Deleting an item removes its links (the trash
+restores them); moving requirements or tests to another project drops their
+internal links and keeps web links. A web link to an issue created from a
+requirement (see [Issues from requirements](#issues-from-requirements))
+carries `issue: {tracker, key, status, state: open|closed, synced_at,
+passed_at?}`.
 
 ## Catalogue
 
@@ -1268,6 +1274,8 @@ dimensions and values up to 100 characters, names up to 200.
 | `compact_tables` | bool | denser tables |
 | `hide_analysis` | bool | hide the live requirement-language analysis in the editor |
 | `create_linked_test` | bool | personal default for "Also create linked test" (overrides the server default) |
+| `hide_obligation_highlight` | bool | do not highlight obligation keywords (MUST, SKA INTE …) in requirement descriptions; highlighting is on by default |
+| `autocomplete` | `history`, `project`, `off`; empty = on | autocomplete suggestions in free-text fields (see [Autocomplete](#autocomplete)): `history` = only my own history, `project` = only the values used in the project, `off` = no suggestions. Only empty and `history` record what you save |
 
 ## Revision history
 
@@ -1359,6 +1367,57 @@ spelling is kept), `acronym` (an upper-case abbreviation such as GDPR) or
 Swedish stop words, requirement keywords (MUST, SKA …) and placeholders are
 never suggested. Existing tags rank first.
 
+## Autocomplete
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/suggest?field=&q=&project_id=&limit=&sources=` | read of the field in `project_id` | → `{items: [{value, source, uses, last_used?}], total}` |
+| POST | `/suggest/history` | read of the field in each project | `{"project_id"?, "entries": [{"field", "value", "project_id"?}]}` → `{"recorded": n}` |
+| GET | `/suggest/history` | signed in | → `{"count": n}`: how many values you have stored (all organisations) |
+| DELETE | `/suggest/history` | signed in | clears your own history in every organisation → `{"deleted": n}` |
+
+Free-text fields of the web client suggest what was typed in them before.
+A suggestion comes from two sources (`source`):
+
+- `history`: your own values of the field, recorded by `POST
+  /suggest/history` when you save a form (not while you type). Values are
+  trimmed, at most 1000 characters, and de-duplicated per field and
+  project with a use count and the time of the last use; each user keeps
+  at most 200 values per field and organisation (the least recently used
+  go). History saved in one project is suggested in the others, but only
+  from projects you may still read with the field's read permission.
+- `project`: the distinct values already used in the project, ranked by
+  how often they are used, for the short fields `requirement.source`,
+  `requirement.owner` and `risk.owner`.
+
+`field` is one of `requirement.title`, `requirement.source`,
+`requirement.owner`, `requirement.rationale` (permission
+`requirement.read`), `test.title`, `test.preconditions`, `test.expected`,
+`test.step.action`, `test.step.expected`, `test.step.data` (`test.read`),
+`execution.notes`, `execution.step.actual`, `run.name` (`run.read`),
+`defect.title`, `defect.description`, `comment`, `review.comment`,
+`release.name` (`project.read`), `risk.title`, `risk.mitigation`,
+`risk.owner` (`requirement.read`) and `search` (the search box; it belongs
+to no project, so `project_id` must be empty). Every other field needs
+`project_id`; a project the caller may not read answers 404 and a missing
+permission 403, as for any project resource. Unknown fields answer 400.
+
+Ranking: values that start with `q` first, then values where a word
+starts with `q`, then values that contain it (ignoring case); values that
+do not contain `q`, and `q` itself, are left out. Ties go to the value used
+more often and more recently (uses weighted down by age: half after a
+month), then to the alphabetical order. An empty `q` gives the most used
+and recent values. `limit` is 1–8 (default 8). `sources=history` or
+`sources=project` narrows the sources.
+
+The personal preference `autocomplete` applies on the server too: `off`
+answers an empty list and records nothing, `project` records nothing,
+`history` suggests no project values. The queries of one user are limited
+to 300 a minute (429 `rate_limited`; the web client waits 200 ms after the
+last keystroke). The history is personal: it is deleted with your
+membership of an organisation (in that organisation) and with your
+account, and it is not part of a backup.
+
 ## Baselines
 
 A baseline freezes the current version of all (or filtered) requirements
@@ -1445,11 +1504,13 @@ Statuses: `open`, `in_progress` (open), `resolved`, `closed`, `rejected`.
 Severities: `critical`, `major`, `minor`, `trivial`. Requirements carry
 `open_defects` (query field `defects`).
 
-**Jira and GitHub.** Each project can be connected to one tracker.
+**Jira, GitHub and GitLab.** Each project can be connected to one tracker.
+The same connection is used for defects and for
+[issues created from requirements](#issues-from-requirements).
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github, url, project_key, repo, issue_type, labels, user, has_token}`; the token is never returned |
+| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github\|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned |
 | PUT | `/projects/{pid}/defect-tracker` | project.update | same fields plus `token` (write-only; empty keeps the saved one) and `clear_token` |
 | POST | `/projects/{pid}/defect-tracker/check` | project.update | 200 or 502 `tracker_error` |
 | POST | `/defects/{id}/push` | run.execute | creates the issue → Defect with `external_key`, `external_url`; 409 when already linked |
@@ -1465,7 +1526,75 @@ auth), or a personal access token when `user` is empty. GitHub uses
 mapping: Jira status categories To Do → `open`, In Progress →
 `in_progress`, Done → `closed` (a resolution such as Won't Do or Duplicate
 → `rejected`); GitHub open → `open`, closed → `closed`, closed as not
-planned → `rejected`.
+planned → `rejected`; GitLab `opened` → `open`, `closed` → `closed`.
+
+GitLab uses REST API v4 at `url` (default `https://gitlab.com`, or a
+self-managed instance; `https` only, a trailing `/api/v4` is removed) and
+`project`, the numeric project ID or its path `group/subgroup/project` (a
+pasted project URL is reduced to the path). The token, a personal, project
+or group access token with the `api` scope, is sent in the `PRIVATE-TOKEN`
+header. `labels` (comma-separated) are added to every new GitHub and GitLab
+issue; `milestone` (GitLab: the number shown as `%3` or the title, also of
+a group milestone; GitHub: number or title) and `assignee` (username or
+numeric ID; GitHub login) are given to new issues. Jira ignores labels,
+milestone and assignee of the settings.
+
+The token is encrypted at rest like the other stored secrets and is write
+only: no answer, error message or audit entry contains it. Requests to the
+tracker use the server's outbound proxy settings (`HTTPS_PROXY`,
+`NO_PROXY`) and the system's trusted CAs, time out after 30 seconds, and
+are retried after the tracker's `Retry-After` when it limits the rate (429,
+or 403 with no requests remaining) and asks for at most 10 seconds;
+otherwise the error says how long to wait. Errors of the tracker answer 502
+`tracker_error` with an explanation of 401 (the token was rejected), 403
+(missing scope or role), 404 (unknown project, repository or issue) and
+422 (the tracker rejected the request) and the tracker's own message.
+
+## Issues from requirements
+
+A requirement can be turned into an issue of the project's tracker
+(GitLab, GitHub or Jira, as configured above). The issue is linked as a
+web [item link](#item-links) of the requirement with `issue` (key and
+state). Reading needs `requirement.read`; creating, updating and syncing
+change the requirement's links and need `requirement.write`. An issue
+link counts for the configured tracker only (same type and, for GitHub and
+GitLab, the same repository or project), so after switching the tracker a
+requirement can get an issue in the new one. Every create,
+update and sync is written to the audit log (`requirement.issue.create`,
+`requirement.issue.update`, `requirement.issue.sync`).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/requirements/{id}/issue` | `{tracker, link, preview}`: the tracker type (`""` when none), the requirement's issue link in that tracker (or null) and `preview` `{title, description, labels}` of the issue as it would be sent now |
+| POST | `/requirements/{id}/issue` | creates the issue and links it → 201 `{link}`; 409 `issue_exists` with `link` when the requirement already has an issue in the tracker (open or update it instead) |
+| PUT | `/requirements/{id}/issue` | pushes the current title and description into the issue → `{link}`; 404 when it has none |
+| POST | `/requirements/{id}/issue/sync` | reads the issue's state back → `{link, changed, commented}` |
+| POST | `/projects/{pid}/requirements/issues` | `{"ids":[...], "update": false}` (at most 100): creates the issues of those without one; those with one are `skipped`, or `updated` with `"update": true` → `{"created":[{key,issue_key,url,state}],"updated":[...],"skipped":[...],"failed":[{key,error}]}` |
+| POST | `/projects/{pid}/requirements/issues/sync` | the issues of all requirements, or only `{"ids":[...]}` → `{"synced","changed","commented","failed":[{key,error}]}` |
+
+The issue's title is `[KEY] title`. Its description (GitLab and GitHub
+Markdown, Jira wiki markup) holds the requirement's text, rationale,
+acceptance criteria, type, priority, obligation, status, owner, source,
+tags and version, the linked tests with their latest results, and links to
+`/go/{key}` of the requirement and its tests (when `server.base_url` is
+set). In Markdown the generated part is enclosed in
+`<!-- qtestframe:begin -->` and `<!-- qtestframe:end -->`: an update
+replaces only that part and keeps text written in GitLab or GitHub around
+it. A Jira update replaces the whole description.
+
+Labels: the tracker's `labels`, plus `requirement_labels`, comma-separated
+templates with `{type}`, `{priority}`, `{obligation}`, `{status}` and
+`{tags}` (one label per tag); a template whose value is empty is left
+out. Empty uses `requirement, type::{type}, priority::{priority}, {tags}`;
+`none` adds no mapped labels. An update adds the mapped labels and removes
+none. Jira issues get the type `requirement_issue_type` (default Task) and
+the labels with spaces replaced by `_`.
+
+Syncing maps the issue state to `open` or `closed`. With
+`comment_on_pass`, a sync that finds all linked tests passed comments once
+on the open issue; when the tests stop passing, the next pass comments
+again. Syncing runs on demand (there is no schedule). Like the defect push
+and sync, these calls save item by item rather than in one transaction.
 
 ## Risks
 
@@ -1960,6 +2089,37 @@ queried. Response:
 {"items":[{"type":"requirement","id","project_id","project_key","key","title","snippet","matched_fields":["description"]}],"total":n}
 ```
 
+## Batch update (spreadsheet view)
+
+`POST /projects/{pid}/requirements/batch` and `POST /projects/{pid}/tests/batch`
+save different field values for several items in one transaction (the
+spreadsheet view saves an edit, a paste or a fill-down with one call):
+
+```json
+{"items": [
+  {"id": "…", "version": 3, "set": {"title": "Login", "priority": "high"}},
+  {"id": "…", "version": 1, "set": {"tags": ["auth"], "status": "review"}}
+]}
+```
+
+* 1–5000 items, each id once; `set` holds the fields to change, exactly as a
+  `PATCH` of the item, and each item goes through the same checks:
+  validation, the write permission (a review decision also needs the review
+  permission; a reviewer may change `status` alone), history (action
+  `update`), audit, suspect links, notifications and webhooks.
+* All or nothing: when an item fails, nothing is saved and the answer is that
+  item's error with its position: `{"error", "code", "index", "id"}` (e.g.
+  400 for an invalid value, 403, 404 for an item that is not in the
+  project).
+* `version` (optional) is the version the change is based on. Versions are
+  checked before anything is written: when any item was saved by someone
+  else since, nothing is saved and the answer is **409** with code `stale`
+  and every outdated item: `{"error", "code": "stale", "conflicts": [{"id",
+  "key", "version", "current": <the saved item>}]}`. Without `version` the
+  change is saved as it is (undo and redo do this).
+* → `{"updated": n, "items": [{"id", "version", "updated_at"}]}` with the new
+  versions.
+
 ## Export
 
 `GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|md|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
@@ -1982,6 +2142,27 @@ queried. Response:
 * Response has `Content-Disposition: attachment;
   filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
   neutralised in CSV; see [design.md §11](design.md#11-export-formats).
+
+### Export a view
+
+`POST /projects/{pid}/export/view` (permission `export`) renders a table the
+client shows, such as the spreadsheet view of requirements or tests with its
+visible columns, their order, the sort and the filters, with the same
+writers as the project export:
+
+```json
+{"format": "xlsx", "name": "requirements", "title": "Requirements", "lang": "en",
+ "filter": "status = draft", "columns": ["Key", "Title", "Status"],
+ "rows": [["DEMO-1", "Login", "Draft"]]}
+```
+
+* `format` is `xlsx`, `csv`, `md`, `pdf` or `docx` (aliases as above);
+  `columns` 1–200 headers; each row at most as many cells as there are
+  columns; at most 2,000,000 cells. `lang` (`en`, `sv`) is the language of
+  the texts the writers add; `filter` is shown under the title in Markdown.
+* The file is `<KEY>-<name>-<YYYYMMDD-HHMMSS>.<ext>` (`name` reduced to
+  `a-z`, `0-9` and `-`). Formula injection is neutralised in CSV as in the
+  project export. Audited as `project.export`.
 
 ### Markdown documents
 

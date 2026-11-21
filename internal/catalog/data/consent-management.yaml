@@ -1,0 +1,722 @@
+area: consent-management
+prefix: CONS
+group: privacy
+catalogue: software
+name: {en: Consent and children's data, sv: Samtycke och barns personuppgifter}
+description:
+  en: Cookie and tracking consent under the ePrivacy rules, freely given and granular consent under the GDPR, honouring refusals and opt-out signals, and the extra protection of children's data, including parental consent and child-safe defaults.
+  sv: Samtycke till kakor och spårning enligt ePrivacyreglerna, frivilligt och detaljerat samtycke enligt dataskyddsförordningen, respekt för nej och signaler om avböjande samt det extra skyddet för barns personuppgifter, inklusive vårdnadshavares samtycke och säkra standardinställningar för barn.
+
+requirements:
+  - id: CONS-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cookie-banner, reject-all, dark-patterns]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 7(3)", "EDPB Cookie Banner Taskforce Report 2023", "EDPB Guidelines 03/2022 on deceptive design patterns in social media platform interfaces"]
+    tests: [CONS-T01]
+    en:
+      title: Refusing is as easy as accepting
+      description: The consent banner MUST offer a "Reject all" button on its first layer, with the same size, colour weight and number of clicks as the "Accept all" button.
+      rationale: A refusal hidden behind extra clicks or styled as a faint link is not a free choice, and supervisory authorities treat such banners as invalid consent.
+      criteria:
+        - method: test
+          text: On first visit, the reject button is on the first layer, needs one click like the accept button, and has the same size and contrast within 10 %.
+          threshold: "1 click; size and contrast within 10 %"
+    sv:
+      title: Att neka är lika lätt som att godta
+      description: Samtyckesrutan SKA erbjuda knappen "Neka alla" i sitt första lager, med samma storlek, färgtyngd och antal klick som knappen "Godta alla".
+      rationale: Ett nej som gömts bakom extra klick eller formgetts som en blek länk är inget fritt val, och tillsynsmyndigheter behandlar sådana rutor som ogiltigt samtycke.
+      criteria:
+        - method: test
+          text: Vid första besöket finns nekaknappen i första lagret, kräver ett klick som godtaknappen och har samma storlek och kontrast inom 10 %.
+          threshold: "1 klick; storlek och kontrast inom 10 %"
+
+  - id: CONS-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [granular-consent, pre-ticked]
+    refs: ["GDPR Art. 4(11)", "GDPR Art. 7(2)", "EDPB Guidelines 05/2020 on consent", "ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    tests: [CONS-T02]
+    en:
+      title: Separate choice per purpose with nothing pre-selected
+      description: The system MUST ask for consent separately for each purpose, such as analytics, personalisation and advertising, with every choice unselected until the person selects it.
+      rationale: Bundled or pre-selected consent is not specific or unambiguous, so processing based on it has no legal basis.
+      criteria:
+        - method: test
+          text: The settings layer lists each purpose with its own control, all controls start off, and choosing one purpose sets only that purpose in the stored consent record.
+    sv:
+      title: Separat val per ändamål och inget förvalt
+      description: Systemet SKA be om samtycke separat för varje ändamål, till exempel analys, anpassning och annonsering, med varje val omarkerat tills personen själv markerar det.
+      rationale: Hopbuntat eller förvalt samtycke är inte specifikt eller otvetydigt, så behandling som bygger på det saknar rättslig grund.
+      criteria:
+        - method: test
+          text: Inställningslagret visar varje ändamål med ett eget reglage, alla reglage är avslagna från början, och ett val av ett ändamål sätter bara det ändamålet i den lagrade samtyckesposten.
+
+  - id: CONS-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cookie-inventory, local-storage, trackers]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "EDPB Guidelines 2/2023 on technical scope of Art. 5(3) of ePrivacy Directive", "Lag (2022:482) 9 kap. 28 § (kakor)", "GDPR Art. 13"]
+    tests: [CONS-T03]
+    en:
+      title: Inventory of every cookie and tracking technology
+      description: The system MUST list each cookie, local storage key, pixel and SDK identifier it sets or reads, with its purpose, provider, lifetime and whether it is strictly necessary, and set or read nothing that is not on the list.
+      rationale: Consent is only informed when people can see what is stored, and an unlisted tracker set by a third-party script is a breach of the ePrivacy rules even with a banner.
+      criteria:
+        - method: test
+          text: A scan of the site after accepting all, and after rejecting all, finds only items that are on the list, and after rejecting all only strictly necessary ones.
+    sv:
+      title: Förteckning över varje kaka och spårningsteknik
+      description: Systemet SKA lista varje kaka, nyckel i lokal lagring, pixel och SDK-identifierare som det sätter eller läser, med ändamål, leverantör, livslängd och om den är strikt nödvändig, och inte sätta eller läsa något som saknas i listan.
+      rationale: Samtycket är bara informerat när man kan se vad som lagras, och en spårare som inte är listad och sätts av ett tredjepartsskript bryter mot ePrivacyreglerna även med en samtyckesruta.
+      criteria:
+        - method: test
+          text: En skanning av webbplatsen efter "godta alla" och efter "neka alla" hittar bara poster som finns i listan, och efter "neka alla" endast strikt nödvändiga.
+
+  - id: CONS-04
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [informed-consent, third-parties]
+    refs: ["GDPR Art. 13(1)(e)", "EDPB Guidelines 05/2020 on consent", "GDPR Art. 7(2)"]
+    tests: [CONS-T04]
+    en:
+      title: Recipients named before consent is given
+      description: The consent dialogue MUST name each third party that receives data for a purpose, with a link to its privacy notice, before the person gives consent to that purpose.
+      rationale: Consent to share data with unnamed partners is not informed, and the person cannot later object to a recipient they never heard of.
+      criteria:
+        - method: inspection
+          text: For each purpose the settings layer lists the recipients by name with a working link, and the list matches the providers in the cookie inventory.
+    sv:
+      title: Mottagare anges innan samtycke lämnas
+      description: Samtyckesdialogen SKA ange varje tredje part som tar emot data för ett ändamål, med en länk till dess integritetsmeddelande, innan personen samtycker till ändamålet.
+      rationale: Samtycke till att dela data med partner som inte namnges är inte informerat, och personen kan inte senare invända mot en mottagare som hon eller han aldrig hört talas om.
+      criteria:
+        - method: inspection
+          text: För varje ändamål listar inställningslagret mottagarna med namn och en fungerande länk, och listan stämmer med leverantörerna i förteckningen över kakor.
+
+  - id: CONS-05
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [consent-expiry, re-consent]
+    refs: ["EDPB Guidelines 05/2020 on consent", "GDPR Art. 7(1)", "ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    tests: [CONS-T05]
+    en:
+      title: Consent asked again after 12 months or a change of purposes
+      description: The system SHOULD ask for consent again 12 months after it was given, and at once when a purpose or a recipient is added.
+      rationale: A person's choice from years ago, or one made before a new partner was added, no longer covers the processing.
+      criteria:
+        - method: test
+          text: A consent record 13 months old makes the banner appear again, and adding a recipient makes it appear for every person whose consent predates the change.
+          threshold: "12 months"
+    sv:
+      title: Samtycke begärs igen efter 12 månader eller ändrade ändamål
+      description: Systemet BÖR be om samtycke igen 12 månader efter att det lämnades, och direkt när ett ändamål eller en mottagare läggs till.
+      rationale: En persons val från flera år sedan, eller ett val som gjordes innan en ny partner lades till, täcker inte längre behandlingen.
+      criteria:
+        - method: test
+          text: En samtyckespost som är 13 månader gammal gör att rutan visas igen, och en tillagd mottagare gör att den visas för varje person vars samtycke är äldre än ändringen.
+          threshold: "12 månader"
+
+  - id: CONS-06
+    type: usability
+    obligation: should_not
+    priority: medium
+    tags: [refusal, nagging]
+    refs: ["EDPB Guidelines 03/2022 on deceptive design patterns in social media platform interfaces", "EDPB Cookie Banner Taskforce Report 2023"]
+    tests: [CONS-T06]
+    en:
+      title: A refusal is remembered for 6 months
+      description: The system SHOULD NOT show the consent banner again on its own initiative to a person who rejected all non-essential purposes until 6 months after the refusal.
+      rationale: Asking again on every visit wears people down until they accept, which is a pressure tactic and not free consent.
+      criteria:
+        - method: test
+          text: After rejecting all, the banner does not appear on 10 visits over 5 months, and appears again after 6 months.
+          threshold: "6 months"
+    sv:
+      title: Ett nej kommer ihåg i 6 månader
+      description: Systemet BÖR INTE självmant visa samtyckesrutan igen för en person som nekat alla icke nödvändiga ändamål förrän 6 månader efter nejet.
+      rationale: Att fråga igen vid varje besök nöter ned människor tills de godtar, vilket är en påtryckning och inte ett fritt samtycke.
+      criteria:
+        - method: test
+          text: Efter "neka alla" visas inte rutan vid 10 besök under 5 månader, och visas igen efter 6 månader.
+          threshold: "6 månader"
+
+  - id: CONS-07
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [cookie-wall, freely-given]
+    refs: ["GDPR Art. 7(4)", "EDPB Guidelines 05/2020 on consent", "ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    tests: [CONS-T07]
+    en:
+      title: No access blocked for refusing tracking
+      description: The system MUST NOT make access to its content or functions depend on consent to tracking or advertising that the service does not need.
+      rationale: Consent is not freely given when refusing it means losing the service, so a cookie wall makes the consent invalid.
+      criteria:
+        - method: test
+          text: After rejecting all, every page and function that an accepting visitor can use is available, apart from embedded third-party content shown with its own consent placeholder.
+    sv:
+      title: Ingen åtkomst spärras för den som nekar spårning
+      description: Systemet SKA INTE göra åtkomsten till sitt innehåll eller sina funktioner beroende av samtycke till spårning eller annonsering som tjänsten inte behöver.
+      rationale: Samtycket är inte frivilligt när ett nej innebär att man förlorar tjänsten, så en kakvägg gör samtycket ogiltigt.
+      criteria:
+        - method: test
+          text: Efter "neka alla" är varje sida och funktion som en besökare som godtagit kan använda tillgänglig, med inbäddat tredjepartsinnehåll som visas med en egen platshållare för samtycke som enda skillnad.
+
+  - id: CONS-08
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [opt-out-signal, global-privacy-control]
+    refs: ["GDPR Art. 21(5)", "GDPR Art. 25(1)"]
+    tests: [CONS-T08]
+    en:
+      title: Browser opt-out signal treated as a refusal
+      description: The system SHOULD treat a request carrying the header Sec-GPC with the value 1 as a refusal of every non-essential purpose and an objection to the sale or sharing of data, without showing the banner.
+      rationale: People who have set a general opt-out in their browser have already made their choice, and the GDPR lets them object by automated means.
+      criteria:
+        - method: test
+          text: A first visit with the header sets no non-essential cookie, shows no banner and stores a refusal record marked as coming from the signal.
+    sv:
+      title: Webbläsarens signal om avböjande behandlas som ett nej
+      description: Systemet BÖR behandla ett anrop med huvudet Sec-GPC med värdet 1 som ett nej till varje icke nödvändigt ändamål och en invändning mot försäljning eller delning av data, utan att visa samtyckesrutan.
+      rationale: Personer som har ställt in ett allmänt avböjande i sin webbläsare har redan gjort sitt val, och dataskyddsförordningen låter dem invända på automatiserad väg.
+      criteria:
+        - method: test
+          text: Ett första besök med huvudet sätter ingen icke nödvändig kaka, visar ingen ruta och lagrar en nejpost markerad som kommande från signalen.
+
+  - id: CONS-09
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [server-side-tracking, circumvention]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "EDPB Guidelines 2/2023 on technical scope of Art. 5(3) of ePrivacy Directive", "GDPR Art. 6(1)(a)"]
+    tests: [CONS-T09]
+    en:
+      title: No server-side forwarding of tracking data without consent
+      description: The system MUST NOT forward visitor events, identifiers or IP addresses from its own servers to analytics or advertising providers for a purpose that the visitor has not consented to.
+      rationale: Moving tracking from the browser to the server hides it from the visitor and from blockers, but it is the same processing and needs the same consent.
+      criteria:
+        - method: test
+          text: With all purposes rejected, the outbound traffic of the server-side tag gateway during a test session contains no request to an analytics or advertising provider.
+    sv:
+      title: Ingen vidarebefordran av spårningsdata från servern utan samtycke
+      description: Systemet SKA INTE vidarebefordra besökarhändelser, identifierare eller IP-adresser från sina egna servrar till leverantörer av analys eller annonsering för ett ändamål som besökaren inte har samtyckt till.
+      rationale: Att flytta spårningen från webbläsaren till servern döljer den för besökaren och för blockerare, men det är samma behandling och kräver samma samtycke.
+      criteria:
+        - method: test
+          text: Med alla ändamål nekade innehåller den utgående trafiken från taggservern under en testsession inget anrop till en leverantör av analys eller annonsering.
+
+  - id: CONS-10
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [double-opt-in, email-marketing]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 13", "GDPR Art. 7(1)", "Swedish Marketing Act"]
+    tests: [CONS-T10]
+    en:
+      title: Confirmed subscription to marketing email
+      description: The system SHOULD start sending marketing email to an address only after the owner of the address has confirmed the subscription through a link sent to it, and keep the confirmation time as proof.
+      rationale: Without confirmation anyone can sign up someone else's address, and the sender cannot prove that consent was given by the person who receives the mail.
+      criteria:
+        - method: test
+          text: A new sign-up gets no marketing until the confirmation link is followed, and the stored record shows the time of the sign-up and of the confirmation.
+    sv:
+      title: Bekräftad prenumeration på marknadsföring via e-post
+      description: Systemet BÖR börja skicka marknadsföring via e-post till en adress först när adressens innehavare har bekräftat prenumerationen via en länk som skickats till adressen, och spara tiden för bekräftelsen som bevis.
+      rationale: Utan bekräftelse kan vem som helst anmäla någon annans adress, och avsändaren kan inte visa att samtycket lämnades av den som tar emot e-posten.
+      criteria:
+        - method: test
+          text: En ny anmälan får ingen marknadsföring förrän bekräftelselänken har följts, och den sparade posten visar tiden för anmälan och för bekräftelsen.
+
+  - id: CONS-11
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [children, age-check, parental-consent]
+    refs: ["GDPR Art. 8(1)", "Lag (2018:218) 2 kap. 4 § (barns samtycke)", "EDPB Guidelines 05/2020 on consent"]
+    tests: [CONS-T11]
+    en:
+      title: Parental consent for children under 13
+      description: When the service is offered directly to children and relies on consent, the system MUST ask for the user's birth date at sign-up and require the consent of a holder of parental responsibility before it processes data of a user under 13 on the basis of consent.
+      rationale: Children below the national age limit cannot give valid consent to information society services themselves; 13 years applies in Sweden.
+      criteria:
+        - method: test
+          text: A sign-up with a birth date 12 years ago stops at a request for parental consent and processes no consent-based data until it is given, while one 13 years ago proceeds.
+          threshold: "age limit 13 years"
+    sv:
+      title: Vårdnadshavares samtycke för barn under 13 år
+      description: När tjänsten erbjuds direkt till barn och bygger på samtycke SKA systemet fråga efter användarens födelsedatum vid registreringen och kräva samtycke från en vårdnadshavare innan det behandlar uppgifter om en användare under 13 år med samtycke som grund.
+      rationale: Barn under den nationella åldersgränsen kan inte själva lämna ett giltigt samtycke till informationssamhällets tjänster; i Sverige gäller 13 år.
+      criteria:
+        - method: test
+          text: En registrering med ett födelsedatum för 12 år sedan stannar vid en begäran om vårdnadshavares samtycke och behandlar inga samtyckesbaserade uppgifter förrän det lämnats, medan en med födelsedatum för 13 år sedan går vidare.
+          threshold: "åldersgräns 13 år"
+
+  - id: CONS-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [children, parental-consent, verification]
+    refs: ["GDPR Art. 8(2)", "EDPB Guidelines 05/2020 on consent"]
+    tests: [CONS-T12]
+    en:
+      title: Parental consent confirmed through a separate channel
+      description: The system MUST confirm parental consent through a channel separate from the child's account, such as a link to the parent's own email address together with a confirmation of the child's name and birth date, and record who confirmed and when.
+      rationale: A box the child can tick alone is no evidence of parental consent, and the controller must make reasonable efforts to verify it.
+      criteria:
+        - method: test
+          text: The child's account cannot confirm the consent itself, the parent's link confirms it, and the record shows the parent's address and the time.
+    sv:
+      title: Vårdnadshavares samtycke bekräftas via en separat kanal
+      description: Systemet SKA bekräfta vårdnadshavarens samtycke via en kanal som är skild från barnets konto, till exempel en länk till vårdnadshavarens egen e-postadress tillsammans med en bekräftelse av barnets namn och födelsedatum, och registrera vem som bekräftade och när.
+      rationale: En ruta som barnet kan kryssa i själv är inget bevis på vårdnadshavarens samtycke, och den personuppgiftsansvarige ska göra rimliga ansträngningar för att kontrollera det.
+      criteria:
+        - method: test
+          text: Barnets konto kan inte själv bekräfta samtycket, vårdnadshavarens länk bekräftar det och posten visar vårdnadshavarens adress och tiden.
+
+  - id: CONS-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [children, profiling, defaults, advertising]
+    refs: ["Regulation (EU) 2022/2065 (DSA) Art. 28", "GDPR Art. 25(2)", "GDPR Recital 38"]
+    tests: [CONS-T13]
+    en:
+      title: Child accounts without profiling, public profile or location
+      description: For a user known to be under 18, the system MUST turn off advertising based on profiling, keep the profile visible only to approved contacts and keep precise location sharing off.
+      rationale: Children are less aware of the risks of profiling and exposure, and online platforms may not show them ads based on profiling at all.
+      criteria:
+        - method: test
+          text: A 15-year-old test account gets no profiled ads, its profile is hidden from non-contacts, and location sharing is off and cannot be set to public.
+    sv:
+      title: Barnkonton utan profilering, publik profil eller platsdelning
+      description: För en användare som man vet är under 18 år SKA systemet stänga av annonsering som bygger på profilering, hålla profilen synlig endast för godkända kontakter och hålla exakt platsdelning avstängd.
+      rationale: Barn är mindre medvetna om riskerna med profilering och exponering, och onlineplattformar ska inte visa dem annonser som bygger på profilering över huvud taget.
+      criteria:
+        - method: test
+          text: Ett testkonto för en 15-åring får inga profilerade annonser, dess profil är dold för den som inte är kontakt, och platsdelning är avstängd och kan inte sättas till publik.
+
+  - id: CONS-14
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [children, plain-language, privacy-notice]
+    refs: ["GDPR Art. 12(1)", "GDPR Recital 58", "ISO 24495-1:2023"]
+    tests: [CONS-T14]
+    en:
+      title: Privacy notice that children understand
+      description: A service offered to children SHOULD have a privacy notice for children that 4 of 5 test readers aged 10 to 13 answer correctly on what data is collected, why, and how to say no.
+      rationale: Information that children cannot understand does not make their processing transparent or their consent informed.
+      criteria:
+        - method: test
+          text: In a comprehension test with 5 children aged 10 to 13, at least 4 answer the three questions correctly after reading the notice.
+          threshold: "≥ 4 of 5 readers"
+    sv:
+      title: Integritetsmeddelande som barn förstår
+      description: En tjänst som erbjuds barn BÖR ha ett integritetsmeddelande för barn där 4 av 5 testläsare i åldern 10–13 år svarar rätt på vilka uppgifter som samlas in, varför och hur man säger nej.
+      rationale: Information som barn inte kan förstå gör inte behandlingen av deras uppgifter öppen eller deras samtycke informerat.
+      criteria:
+        - method: test
+          text: I ett förståelsetest med 5 barn i åldern 10–13 år svarar minst 4 rätt på de tre frågorna efter att ha läst meddelandet.
+          threshold: "≥ 4 av 5 läsare"
+
+tests:
+  - id: CONS-T01
+    priority: high
+    execution: manual
+    tags: [cookie-banner, reject-all]
+    refs: ["EDPB Cookie Banner Taskforce Report 2023"]
+    en:
+      title: Reject button equals the accept button
+      description: Opens the site in a fresh browser profile and compares the two buttons on the first layer.
+      preconditions: A fresh browser profile with no stored consent and a tool that measures element size and colour contrast.
+      expected: Reject and accept are both on the first layer, one click each and visually equal.
+      steps:
+        - action: Open the start page and look at the banner's first layer.
+          expected: Both "Accept all" and "Reject all" buttons are visible without opening settings.
+        - action: Measure the size and contrast ratio of both buttons.
+          expected: They differ by no more than 10 %.
+        - action: Click "Reject all".
+          expected: The banner closes after that single click.
+    sv:
+      title: Nekaknappen är likvärdig med godtaknappen
+      description: Öppnar webbplatsen i en ny webbläsarprofil och jämför de två knapparna i första lagret.
+      preconditions: En ny webbläsarprofil utan sparat samtycke och ett verktyg som mäter elementens storlek och färgkontrast.
+      expected: Neka och godta finns båda i första lagret, ett klick vardera och visuellt likvärdiga.
+      steps:
+        - action: Öppna startsidan och titta på rutans första lager.
+          expected: Både knappen "Godta alla" och knappen "Neka alla" syns utan att inställningarna öppnas.
+        - action: Mät storlek och kontrastförhållande för båda knapparna.
+          expected: De skiljer sig med högst 10 %.
+        - action: Klicka på "Neka alla".
+          expected: Rutan stängs efter det enda klicket.
+
+  - id: CONS-T02
+    priority: high
+    execution: manual
+    tags: [granular-consent]
+    refs: ["GDPR Art. 4(11)"]
+    en:
+      title: Purposes are separate and start unselected
+      description: Opens the consent settings and selects one purpose.
+      preconditions: A fresh browser profile and read access to the stored consent records in the test environment.
+      expected: Each purpose has its own control, all start off and only the chosen one is stored.
+      steps:
+        - action: Open the banner's settings layer.
+          expected: Analytics, personalisation and advertising each have their own control, all switched off.
+        - action: Switch on analytics only and save.
+          expected: The banner closes.
+        - action: Read the stored consent record.
+          expected: Analytics is granted and the other purposes are refused.
+    sv:
+      title: Ändamålen är separata och omarkerade från början
+      description: Öppnar samtyckesinställningarna och väljer ett ändamål.
+      preconditions: En ny webbläsarprofil och läsbehörighet till de lagrade samtyckesposterna i testmiljön.
+      expected: Varje ändamål har ett eget reglage, alla börjar avslagna och bara det valda lagras.
+      steps:
+        - action: Öppna rutans inställningslager.
+          expected: Analys, anpassning och annonsering har var sitt reglage, alla avslagna.
+        - action: Slå bara på analys och spara.
+          expected: Rutan stängs.
+        - action: Läs den lagrade samtyckesposten.
+          expected: Analys är godtagen och de andra ändamålen nekade.
+
+  - id: CONS-T03
+    priority: high
+    execution: automated
+    tags: [cookie-inventory]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    en:
+      title: Only listed items are stored, and only necessary ones after refusal
+      description: A script crawls the site twice, once after accepting all and once after rejecting all, and records every stored item.
+      preconditions: The published cookie inventory and a headless browser that records cookies, local storage keys and third-party requests.
+      expected: Nothing outside the inventory is set, and refusal leaves only strictly necessary items.
+      steps:
+        - action: Crawl 20 pages after clicking "Accept all" and record cookies, storage keys and tracking pixels.
+          expected: Each recorded item is in the inventory.
+        - action: Clear the profile, crawl the same pages after clicking "Reject all" and record again.
+          expected: Each recorded item is in the inventory and marked strictly necessary.
+    sv:
+      title: Bara listade poster lagras, och bara nödvändiga efter ett nej
+      description: Ett skript går igenom webbplatsen två gånger, en gång efter "godta alla" och en gång efter "neka alla", och registrerar varje lagrad post.
+      preconditions: Den publicerade förteckningen över kakor och en webbläsare utan gränssnitt som registrerar kakor, nycklar i lokal lagring och tredjepartsanrop.
+      expected: Inget utanför förteckningen sätts, och ett nej lämnar bara strikt nödvändiga poster.
+      steps:
+        - action: Gå igenom 20 sidor efter ett klick på "Godta alla" och registrera kakor, lagringsnycklar och spårningspixlar.
+          expected: Varje registrerad post finns i förteckningen.
+        - action: Rensa profilen, gå igenom samma sidor efter ett klick på "Neka alla" och registrera igen.
+          expected: Varje registrerad post finns i förteckningen och är markerad som strikt nödvändig.
+
+  - id: CONS-T04
+    priority: medium
+    execution: manual
+    tags: [informed-consent, third-parties]
+    refs: ["GDPR Art. 13(1)(e)"]
+    en:
+      title: Recipients are named for each purpose
+      description: Compares the recipients named in the consent settings with the providers in the cookie inventory.
+      preconditions: A fresh browser profile and the cookie inventory.
+      expected: Each purpose names its recipients with working links that match the inventory.
+      steps:
+        - action: Open the settings layer and expand each purpose.
+          expected: Each lists its recipients by name.
+        - action: Follow each recipient's link.
+          expected: Each opens that recipient's privacy notice.
+        - action: Compare the names with the providers in the cookie inventory.
+          expected: No provider in the inventory is missing from the dialogue.
+    sv:
+      title: Mottagare anges för varje ändamål
+      description: Jämför mottagarna i samtyckesinställningarna med leverantörerna i förteckningen över kakor.
+      preconditions: En ny webbläsarprofil och förteckningen över kakor.
+      expected: Varje ändamål anger sina mottagare med fungerande länkar som stämmer med förteckningen.
+      steps:
+        - action: Öppna inställningslagret och fäll ut varje ändamål.
+          expected: Vart och ett listar sina mottagare med namn.
+        - action: Följ länken för varje mottagare.
+          expected: Var och en öppnar mottagarens integritetsmeddelande.
+        - action: Jämför namnen med leverantörerna i förteckningen över kakor.
+          expected: Ingen leverantör i förteckningen saknas i dialogen.
+
+  - id: CONS-T05
+    priority: medium
+    execution: automated
+    tags: [consent-expiry]
+    refs: ["EDPB Guidelines 05/2020 on consent"]
+    en:
+      title: Old consent and new recipients trigger a new request
+      description: A script sets consent records of different ages and adds a recipient.
+      preconditions: Two test visitors with stored consent and a test environment where consent dates and the recipient list can be changed.
+      expected: The banner returns after 12 months and after a new recipient is added.
+      steps:
+        - action: Set visitor A's consent date to 13 months ago and visitor B's to 2 months ago, and open the site as each.
+          expected: The banner appears for A and not for B.
+        - action: Add a recipient to the analytics purpose and open the site as B.
+          expected: The banner appears for B and shows the new recipient.
+    sv:
+      title: Gammalt samtycke och nya mottagare ger en ny fråga
+      description: Ett skript sätter samtyckesposter med olika ålder och lägger till en mottagare.
+      preconditions: Två testbesökare med lagrat samtycke och en testmiljö där samtyckesdatum och mottagarlistan kan ändras.
+      expected: Rutan kommer tillbaka efter 12 månader och efter att en ny mottagare lagts till.
+      steps:
+        - action: Sätt besökare A:s samtyckesdatum till 13 månader sedan och besökare B:s till 2 månader sedan, och öppna webbplatsen som var och en.
+          expected: Rutan visas för A men inte för B.
+        - action: Lägg till en mottagare för ändamålet analys och öppna webbplatsen som B.
+          expected: Rutan visas för B och anger den nya mottagaren.
+
+  - id: CONS-T06
+    priority: medium
+    execution: automated
+    tags: [refusal, nagging]
+    refs: ["EDPB Guidelines 03/2022 on deceptive design patterns in social media platform interfaces"]
+    en:
+      title: Banner stays away after a refusal
+      description: A script rejects all and returns repeatedly while advancing the clock.
+      preconditions: A fresh browser profile and a test environment clock the script can advance.
+      expected: No banner for 6 months after the refusal, then the banner again.
+      steps:
+        - action: Click "Reject all" and visit the site 10 times spread over 5 months.
+          expected: The banner does not appear on any visit.
+        - action: Advance the clock to 6 months after the refusal and visit again.
+          expected: The banner appears.
+    sv:
+      title: Rutan håller sig borta efter ett nej
+      description: Ett skript nekar alla och återvänder flera gånger medan klockan ställs fram.
+      preconditions: En ny webbläsarprofil och en klocka i testmiljön som skriptet kan ställa fram.
+      expected: Ingen ruta i 6 månader efter nejet, därefter visas rutan igen.
+      steps:
+        - action: Klicka på "Neka alla" och besök webbplatsen 10 gånger utspritt över 5 månader.
+          expected: Rutan visas inte vid något besök.
+        - action: Ställ fram klockan till 6 månader efter nejet och besök webbplatsen igen.
+          expected: Rutan visas.
+
+  - id: CONS-T07
+    priority: high
+    execution: manual
+    tags: [cookie-wall]
+    refs: ["GDPR Art. 7(4)"]
+    en:
+      title: Rejecting visitor can use the whole service
+      description: Compares what a rejecting and an accepting visitor can use.
+      preconditions: Two fresh browser profiles and the list of the service's main pages and functions.
+      expected: The rejecting visitor has the same access, apart from consent placeholders for embedded third-party content.
+      steps:
+        - action: In profile 1 click "Accept all" and in profile 2 click "Reject all".
+          expected: Both banners close.
+        - action: Open each main page and function in both profiles.
+          expected: Each works in profile 2 as in profile 1; embedded videos or maps show a placeholder asking for consent.
+    sv:
+      title: En besökare som nekat kan använda hela tjänsten
+      description: Jämför vad en besökare som nekat och en som godtagit kan använda.
+      preconditions: Två nya webbläsarprofiler och listan över tjänstens huvudsidor och funktioner.
+      expected: Besökaren som nekat har samma åtkomst, med platshållare för samtycke till inbäddat tredjepartsinnehåll som enda skillnad.
+      steps:
+        - action: Klicka på "Godta alla" i profil 1 och på "Neka alla" i profil 2.
+          expected: Båda rutorna stängs.
+        - action: Öppna varje huvudsida och funktion i båda profilerna.
+          expected: Var och en fungerar i profil 2 som i profil 1; inbäddade videor eller kartor visar en platshållare som ber om samtycke.
+
+  - id: CONS-T08
+    priority: medium
+    execution: automated
+    tags: [opt-out-signal]
+    refs: ["GDPR Art. 21(5)"]
+    en:
+      title: Sec-GPC header suppresses tracking and the banner
+      description: A script visits the site with the Sec-GPC header and records what is stored.
+      preconditions: A headless browser that can send the header, and read access to the stored consent records.
+      expected: No banner, no non-essential cookies and a refusal record from the signal.
+      steps:
+        - action: Open the start page with the header on a fresh profile.
+          expected: No consent banner is shown.
+          data: "Sec-GPC: 1"
+        - action: Record cookies and storage keys after visiting 5 pages.
+          expected: Only strictly necessary items are present.
+        - action: Read the stored consent record for the visit.
+          expected: All non-essential purposes are refused and the source is the opt-out signal.
+    sv:
+      title: Huvudet Sec-GPC stoppar spårning och samtyckesrutan
+      description: Ett skript besöker webbplatsen med huvudet Sec-GPC och registrerar vad som lagras.
+      preconditions: En webbläsare utan gränssnitt som kan skicka huvudet, och läsbehörighet till de lagrade samtyckesposterna.
+      expected: Ingen ruta, inga icke nödvändiga kakor och en nejpost från signalen.
+      steps:
+        - action: Öppna startsidan med huvudet i en ny profil.
+          expected: Ingen samtyckesruta visas.
+          data: "Sec-GPC: 1"
+        - action: Registrera kakor och lagringsnycklar efter besök på 5 sidor.
+          expected: Endast strikt nödvändiga poster finns.
+        - action: Läs den lagrade samtyckesposten för besöket.
+          expected: Alla icke nödvändiga ändamål är nekade och källan är signalen om avböjande.
+
+  - id: CONS-T09
+    priority: high
+    execution: manual
+    tags: [server-side-tracking]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)"]
+    en:
+      title: Server-side gateway sends nothing after a refusal
+      description: Rejects all purposes and captures the outbound traffic of the server-side tag gateway during a session.
+      preconditions: A test environment with the server-side tag gateway as in production and a capture of its outbound traffic.
+      expected: No request goes to analytics or advertising providers.
+      steps:
+        - action: In a fresh profile click "Reject all", then browse 10 pages and complete a test purchase.
+          expected: The session completes.
+        - action: Review the gateway's outbound requests during the session.
+          expected: None is sent to an analytics or advertising provider.
+    sv:
+      title: Taggservern skickar inget efter ett nej
+      description: Nekar alla ändamål och fångar den utgående trafiken från taggservern under en session.
+      preconditions: En testmiljö med taggservern som i produktion och en fångst av dess utgående trafik.
+      expected: Inget anrop går till leverantörer av analys eller annonsering.
+      steps:
+        - action: Klicka på "Neka alla" i en ny profil, bläddra sedan igenom 10 sidor och genomför ett testköp.
+          expected: Sessionen slutförs.
+        - action: Granska taggserverns utgående anrop under sessionen.
+          expected: Inget skickas till en leverantör av analys eller annonsering.
+
+  - id: CONS-T10
+    priority: medium
+    execution: manual
+    tags: [double-opt-in]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 13"]
+    en:
+      title: Marketing starts only after the confirmation link
+      description: Signs up a test address for marketing and checks mailings before and after confirmation.
+      preconditions: A test mailbox and a marketing mailing scheduled in the test environment.
+      expected: No marketing reaches the address before confirmation, and both times are stored.
+      steps:
+        - action: Sign up the test address and run the scheduled mailing.
+          expected: Only the confirmation email arrives.
+        - action: Follow the confirmation link and run the mailing again.
+          expected: The marketing email arrives.
+        - action: Read the stored subscription record.
+          expected: It shows the time of sign-up and the time of confirmation.
+    sv:
+      title: Marknadsföring startar först efter bekräftelselänken
+      description: Anmäler en testadress till marknadsföring och kontrollerar utskick före och efter bekräftelsen.
+      preconditions: En testbrevlåda och ett schemalagt marknadsföringsutskick i testmiljön.
+      expected: Ingen marknadsföring når adressen före bekräftelsen, och båda tiderna sparas.
+      steps:
+        - action: Anmäl testadressen och kör det schemalagda utskicket.
+          expected: Bara bekräftelsemejlet kommer fram.
+        - action: Följ bekräftelselänken och kör utskicket igen.
+          expected: Marknadsföringsmejlet kommer fram.
+        - action: Läs den sparade prenumerationsposten.
+          expected: Den visar tiden för anmälan och tiden för bekräftelsen.
+
+  - id: CONS-T11
+    priority: critical
+    execution: manual
+    tags: [children, age-check]
+    refs: ["GDPR Art. 8(1)", "Lag (2018:218) 2 kap. 4 § (barns samtycke)"]
+    en:
+      title: Sign-up under 13 waits for parental consent
+      description: Signs up with birth dates on each side of the age limit.
+      preconditions: The sign-up flow of a service offered to children and test email addresses for a child and a parent.
+      expected: Only the user aged 13 or more proceeds without parental consent.
+      steps:
+        - action: Sign up with a birth date exactly 12 years and 11 months ago.
+          expected: The flow asks for a parent's email address and the account has no consent-based processing switched on.
+        - action: Sign up with a birth date 13 years and 1 day ago.
+          expected: The flow proceeds to the normal consent questions.
+    sv:
+      title: Registrering under 13 år väntar på vårdnadshavares samtycke
+      description: Registrerar med födelsedatum på var sida om åldersgränsen.
+      preconditions: Registreringsflödet för en tjänst som erbjuds barn och e-postadresser för test för ett barn och en vårdnadshavare.
+      expected: Endast användaren som är 13 år eller äldre går vidare utan vårdnadshavares samtycke.
+      steps:
+        - action: Registrera med ett födelsedatum för exakt 12 år och 11 månader sedan.
+          expected: Flödet ber om en vårdnadshavares e-postadress och kontot har ingen samtyckesbaserad behandling påslagen.
+        - action: Registrera med ett födelsedatum för 13 år och 1 dag sedan.
+          expected: Flödet går vidare till de vanliga frågorna om samtycke.
+
+  - id: CONS-T12
+    priority: high
+    execution: manual
+    tags: [parental-consent, verification]
+    refs: ["GDPR Art. 8(2)"]
+    en:
+      title: Only the parent's link confirms the consent
+      description: Tries to confirm parental consent from the child's account and then through the parent's link.
+      preconditions: A child test account waiting for parental consent and the parent's test mailbox.
+      expected: The child cannot confirm, the parent can, and the record shows who and when.
+      steps:
+        - action: In the child's account, look for a way to confirm the consent.
+          expected: There is none; the account shows that it waits for the parent.
+        - action: Open the link in the parent's mailbox, check the child's name and birth date and confirm.
+          expected: The consent is recorded.
+        - action: Read the consent record.
+          expected: It shows the parent's email address and the time of confirmation.
+    sv:
+      title: Bara vårdnadshavarens länk bekräftar samtycket
+      description: Försöker bekräfta vårdnadshavares samtycke från barnets konto och sedan via vårdnadshavarens länk.
+      preconditions: Ett testkonto för ett barn som väntar på vårdnadshavares samtycke och vårdnadshavarens testbrevlåda.
+      expected: Barnet kan inte bekräfta, vårdnadshavaren kan, och posten visar vem och när.
+      steps:
+        - action: Leta i barnets konto efter ett sätt att bekräfta samtycket.
+          expected: Det finns inget; kontot visar att det väntar på vårdnadshavaren.
+        - action: Öppna länken i vårdnadshavarens brevlåda, kontrollera barnets namn och födelsedatum och bekräfta.
+          expected: Samtycket registreras.
+        - action: Läs samtyckesposten.
+          expected: Den visar vårdnadshavarens e-postadress och tiden för bekräftelsen.
+
+  - id: CONS-T13
+    priority: high
+    execution: manual
+    tags: [children, defaults]
+    refs: ["Regulation (EU) 2022/2065 (DSA) Art. 28"]
+    en:
+      title: Account of a 15-year-old has child-safe defaults
+      description: Creates an account for a 15-year-old and checks advertising, profile visibility and location.
+      preconditions: A new test account with a birth date 15 years ago and a second account that is not a contact.
+      expected: No profiled ads, hidden profile and location off.
+      steps:
+        - action: Browse as the 15-year-old and inspect the ad requests.
+          expected: No ad request carries profiling identifiers or interest segments.
+        - action: Look for the profile as the non-contact account.
+          expected: The profile is not visible.
+        - action: Open the location settings of the 15-year-old.
+          expected: Precise location sharing is off and the public option is not offered.
+    sv:
+      title: Kontot för en 15-åring har säkra standardinställningar
+      description: Skapar ett konto för en 15-åring och kontrollerar annonser, profilens synlighet och plats.
+      preconditions: Ett nytt testkonto med födelsedatum för 15 år sedan och ett andra konto som inte är kontakt.
+      expected: Inga profilerade annonser, dold profil och platsdelning avstängd.
+      steps:
+        - action: Bläddra som 15-åringen och granska annonsanropen.
+          expected: Inget annonsanrop innehåller profileringsidentifierare eller intressesegment.
+        - action: Leta efter profilen som kontot utan kontakt.
+          expected: Profilen syns inte.
+        - action: Öppna 15-åringens platsinställningar.
+          expected: Exakt platsdelning är avstängd och alternativet publik erbjuds inte.
+
+  - id: CONS-T14
+    priority: medium
+    execution: manual
+    tags: [children, plain-language]
+    refs: ["GDPR Art. 12(1)"]
+    en:
+      title: Children understand the privacy notice
+      description: Runs a comprehension test of the children's privacy notice with 5 readers aged 10 to 13.
+      preconditions: The children's privacy notice, three questions on what is collected, why and how to say no, and 5 test readers aged 10 to 13 with parental permission.
+      expected: At least 4 of 5 readers answer all three questions correctly.
+      steps:
+        - action: Let each reader read the notice without help.
+          expected: Each reader finishes reading.
+        - action: Ask the three questions and score the answers against the notice.
+          expected: At least 4 readers answer all three correctly.
+    sv:
+      title: Barn förstår integritetsmeddelandet
+      description: Genomför ett förståelsetest av integritetsmeddelandet för barn med 5 läsare i åldern 10–13 år.
+      preconditions: Integritetsmeddelandet för barn, tre frågor om vad som samlas in, varför och hur man säger nej, och 5 testläsare i åldern 10–13 år med vårdnadshavares tillstånd.
+      expected: Minst 4 av 5 läsare svarar rätt på alla tre frågorna.
+      steps:
+        - action: Låt varje läsare läsa meddelandet utan hjälp.
+          expected: Varje läsare läser klart.
+        - action: Ställ de tre frågorna och bedöm svaren mot meddelandet.
+          expected: Minst 4 läsare svarar rätt på alla tre.

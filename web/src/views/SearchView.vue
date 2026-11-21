@@ -15,6 +15,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useNotify } from '@/composables/notify'
 import { useI18n } from 'vue-i18n'
 import { enumLabel } from '@/i18n/labels'
+import { usePrefsStore } from '@/stores/prefs'
+import { rememberValues } from '@/lib/suggest'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,6 +33,9 @@ const total = ref(0)
 const loading = ref(false)
 const error = ref<unknown>(null)
 const searched = ref(false)
+const prefs = usePrefsStore()
+/** the query submitted from the search box, remembered for autocomplete when it works */
+let submitted = ''
 
 async function loadProjects() {
   if (!auth.tenant) return
@@ -56,6 +61,8 @@ async function search() {
     hits.value = asItems(res)
     total.value = res?.total ?? hits.value.length
     searched.value = true
+    if (submitted === query) void rememberValues(prefs.prefs, '', [{ field: 'search', value: query }])
+    submitted = ''
   } catch (e) {
     error.value = e
     hits.value = []
@@ -65,6 +72,7 @@ async function search() {
   }
 }
 function submit() {
+  submitted = q.value.trim()
   router.replace({ query: { q: q.value.trim() || undefined, types: types.value.join(','), project_id: projectId.value || undefined } })
 }
 watch(
@@ -101,7 +109,7 @@ const terms = computed(() => queryTerms(q.value))
   </div>
   <div class="card" style="margin-bottom: 16px">
     <div class="filterbar" style="margin: 0">
-      <QueryInput v-model="q" scope="requirement" :error="error" :placeholder="t('search.placeholder', { example: '&quot;time out&quot; title~/login/i status:approved' })" @submit="submit" />
+      <QueryInput v-model="q" scope="requirement" suggest="search" :error="error" :placeholder="t('search.placeholder', { example: '&quot;time out&quot; title~/login/i status:approved' })" @submit="submit" />
       <Select v-model="projectId" :options="projects" option-value="id" :option-label="(p: Project) => `${p.key} · ${p.name}`" :placeholder="t('search.allProjects')" :aria-label="t('search.project')" show-clear style="min-width: 180px" />
       <fieldset class="row nowrap plain-fieldset">
         <legend class="sr-only">{{ t('search.types') }}</legend>

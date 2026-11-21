@@ -253,6 +253,124 @@ requirements:
         - method: test
           text: En tillfällig roll som ges med en varaktighet på 8 timmar är borta efter 8 timmar utan manuell åtgärd, och borttagningen loggas.
 
+  - id: ACC-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [identity-lifecycle, provisioning, scim, leaver]
+    refs: ["RFC 7644", "NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3"]
+    tests: [ACC-T12]
+    en:
+      title: Deprovisioning from the identity provider takes effect within 5 minutes
+      description: The system MUST disable a user account and end its sessions within 5 minutes after the organisation's identity provider deactivates the user through the provisioning interface.
+      rationale: The identity provider is where leavers are handled, and a delay or a manual step in each application leaves former staff with access.
+      criteria:
+        - method: test
+          text: A SCIM request that sets active to false is followed within 5 minutes by refused sign-in and refused requests with existing tokens.
+          threshold: "≤ 5 min"
+    sv:
+      title: Avregistrering från identitetsleverantören gäller inom 5 minuter
+      description: Systemet SKA spärra ett användarkonto och avsluta dess sessioner inom 5 minuter efter att organisationens identitetsleverantör har avaktiverat användaren via gränssnittet för provisionering.
+      rationale: Det är i identitetsleverantören som avslut hanteras, och en fördröjning eller ett manuellt steg i varje applikation ger tidigare personal kvar åtkomst.
+      criteria:
+        - method: test
+          text: Efter en SCIM-begäran som sätter active till false avvisas inom 5 minuter både inloggning och anrop med befintliga token.
+          threshold: "≤ 5 min"
+
+  - id: ACC-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [identity-lifecycle, mover, group-mapping]
+    refs: ["RFC 7644", "NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18"]
+    tests: [ACC-T13]
+    en:
+      title: Roles follow identity provider groups when a user moves
+      description: The system MUST remove a role that was granted through an identity provider group within 5 minutes after the user is removed from that group.
+      rationale: When staff change jobs they otherwise keep the old rights and collect permissions over time.
+      criteria:
+        - method: test
+          text: Removing a user from the mapped group removes the role and its permissions within 5 minutes, while roles granted directly stay.
+          threshold: "≤ 5 min"
+    sv:
+      title: Roller följer identitetsleverantörens grupper när en användare byter tjänst
+      description: Systemet SKA ta bort en roll som tilldelats via en grupp hos identitetsleverantören inom 5 minuter efter att användaren tagits bort från gruppen.
+      rationale: När personal byter arbetsuppgifter behåller de annars de gamla rättigheterna och samlar på sig behörigheter över tid.
+      criteria:
+        - method: test
+          text: När en användare tas bort från den mappade gruppen försvinner rollen och dess behörigheter inom 5 minuter, medan direkt tilldelade roller finns kvar.
+          threshold: "≤ 5 min"
+
+  - id: ACC-14
+    type: security
+    obligation: must
+    priority: medium
+    tags: [dormant-accounts, identity-lifecycle]
+    refs: ["NIST SP 800-53 AC-2(3)", "PCI DSS 4.0.1 Req. 8.2.6", "ISO/IEC 27001:2022 A.5.18"]
+    tests: [ACC-T14]
+    en:
+      title: Accounts unused for 90 days are disabled
+      description: The system MUST disable a user account that has not signed in for 90 days and tell the organisation's administrators on the day it is disabled.
+      rationale: Forgotten accounts are seldom watched by anyone, which makes them a common foothold for attackers.
+      criteria:
+        - method: test
+          text: An account with its last sign-in 91 days ago is disabled and listed in a notice to the administrators, while one at 89 days stays active.
+          threshold: "90 days"
+    sv:
+      title: Konton som inte använts på 90 dagar spärras
+      description: Systemet SKA spärra ett användarkonto som inte har loggat in på 90 dagar och meddela organisationens administratörer samma dag som det spärras.
+      rationale: Bortglömda konton bevakas sällan av någon, vilket gör dem till en vanlig väg in för angripare.
+      criteria:
+        - method: test
+          text: Ett konto vars senaste inloggning var för 91 dagar sedan spärras och finns med i ett meddelande till administratörerna, medan ett konto på 89 dagar förblir aktivt.
+          threshold: "90 dagar"
+
+  - id: ACC-15
+    type: security
+    obligation: should
+    priority: medium
+    tags: [break-glass, emergency-access, administration]
+    refs: ["NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 1.1"]
+    tests: [ACC-T15]
+    en:
+      title: Emergency access account with an alert on use
+      description: The system SHOULD offer an emergency administrator account that does not depend on the external identity provider and that alerts every other administrator within 5 minutes of each sign-in.
+      rationale: An outage at the identity provider must not lock everyone out, and an account that bypasses it must not be used unseen.
+      criteria:
+        - method: test
+          text: With the identity provider unreachable the emergency account signs in, and every other administrator gets an alert within 5 minutes.
+          threshold: "≤ 5 min"
+    sv:
+      title: Nödkonto med larm vid användning
+      description: Systemet BÖR erbjuda ett administratörskonto för nödläge som inte är beroende av den externa identitetsleverantören och som larmar varje annan administratör inom 5 minuter efter varje inloggning.
+      rationale: Ett avbrott hos identitetsleverantören får inte stänga ute alla, och ett konto som går förbi den ska inte kunna användas obemärkt.
+      criteria:
+        - method: test
+          text: När identitetsleverantören inte nås kan nödkontot logga in, och varje annan administratör får ett larm inom 5 minuter.
+          threshold: "≤ 5 min"
+
+  - id: ACC-16
+    type: security
+    obligation: may
+    priority: low
+    tags: [network-restriction, conditional-access]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "NIST SP 800-53 AC-17", "ISO/IEC 27001:2022 A.8.20"]
+    tests: [ACC-T16]
+    en:
+      title: Sign-in restricted to the organisation's network ranges
+      description: The system MAY let an administrator restrict sign-in for the organisation to a list of up to 50 IP address ranges in CIDR notation.
+      rationale: Organisations that only work from known networks can reduce the effect of stolen credentials.
+      criteria:
+        - method: test
+          text: With one range listed, sign-in from an address inside it succeeds and sign-in from an address outside it is refused with a message naming the restriction.
+    sv:
+      title: Inloggning begränsad till organisationens nätverksintervall
+      description: Systemet FÅR låta en administratör begränsa inloggning för organisationen till en lista med upp till 50 IP-adressintervall i CIDR-notation.
+      rationale: Organisationer som bara arbetar från kända nätverk kan minska effekten av stulna inloggningsuppgifter.
+      criteria:
+        - method: test
+          text: Med ett intervall i listan lyckas inloggning från en adress inom det, och inloggning från en adress utanför avvisas med ett meddelande som anger begränsningen.
+
 tests:
   - id: ACC-T01
     priority: critical
@@ -573,3 +691,157 @@ tests:
           expected: Svaret är 403.
         - action: Läs granskningsloggen för användaren.
           expected: Loggen visar både tilldelningen och den automatiska borttagningen med tidpunkter.
+
+  - id: ACC-T12
+    priority: high
+    execution: automated
+    tags: [scim, leaver]
+    refs: ["RFC 7644", "NIST SP 800-53 AC-2"]
+    en:
+      title: SCIM deactivation disables the account and its sessions
+      description: A script deactivates a provisioned user through the SCIM interface and measures when access stops.
+      preconditions: A test organisation with SCIM provisioning turned on, a SCIM client token and a provisioned user with an active session.
+      expected: Sign-in and existing sessions are refused within 5 minutes.
+      steps:
+        - action: Send a request with the user's session token.
+          expected: The request succeeds.
+        - action: Send a SCIM PATCH request that sets active to false for the user and note the time.
+          expected: The SCIM interface answers 200 or 204.
+          data: '{"Operations":[{"op":"replace","path":"active","value":false}]}'
+        - action: Repeat the request with the session token and a fresh sign-in every 30 seconds.
+          expected: Both are refused no later than 5 minutes after the noted time.
+    sv:
+      title: Avaktivering via SCIM spärrar kontot och dess sessioner
+      description: Ett skript avaktiverar en provisionerad användare via SCIM-gränssnittet och mäter när åtkomsten upphör.
+      preconditions: En testorganisation med SCIM-provisionering påslagen, en SCIM-klienttoken och en provisionerad användare med en aktiv session.
+      expected: Inloggning och befintliga sessioner avvisas inom 5 minuter.
+      steps:
+        - action: Skicka ett anrop med användarens sessionstoken.
+          expected: Anropet lyckas.
+        - action: Skicka en SCIM PATCH-begäran som sätter active till false för användaren och anteckna tiden.
+          expected: SCIM-gränssnittet svarar 200 eller 204.
+          data: '{"Operations":[{"op":"replace","path":"active","value":false}]}'
+        - action: Upprepa anropet med sessionstoken och en ny inloggning var 30:e sekund.
+          expected: Båda avvisas senast 5 minuter efter den antecknade tiden.
+
+  - id: ACC-T13
+    priority: high
+    execution: manual
+    tags: [mover, group-mapping]
+    refs: ["NIST SP 800-53 AC-2"]
+    en:
+      title: Removing a user from a group removes the mapped role
+      description: Moves a user out of an identity provider group that is mapped to a role.
+      preconditions: A test identity provider with group "Finance" mapped to the role "Approver", and a user who is in the group and also holds the role "Reader" granted directly.
+      expected: The mapped role disappears within 5 minutes and the direct role stays.
+      steps:
+        - action: Sign in as the user and open an approval.
+          expected: The approve button is available.
+        - action: Remove the user from the group "Finance" in the identity provider and note the time.
+          expected: The identity provider shows the change.
+        - action: Reload the approval page every minute for 6 minutes.
+          expected: The approve button is gone within 5 minutes of the noted time, and the user can still read records as "Reader".
+    sv:
+      title: När en användare tas bort ur en grupp försvinner den mappade rollen
+      description: Flyttar en användare ut ur en grupp hos identitetsleverantören som är mappad mot en roll.
+      preconditions: En testidentitetsleverantör där gruppen "Ekonomi" är mappad mot rollen "Godkännare", och en användare som är med i gruppen och även har rollen "Läsare" tilldelad direkt.
+      expected: Den mappade rollen försvinner inom 5 minuter och den direkta rollen finns kvar.
+      steps:
+        - action: Logga in som användaren och öppna ett godkännande.
+          expected: Knappen för att godkänna finns.
+        - action: Ta bort användaren ur gruppen "Ekonomi" hos identitetsleverantören och anteckna tiden.
+          expected: Identitetsleverantören visar ändringen.
+        - action: Ladda om sidan med godkännandet varje minut i 6 minuter.
+          expected: Knappen för att godkänna är borta inom 5 minuter efter den antecknade tiden, och användaren kan fortfarande läsa poster som "Läsare".
+
+  - id: ACC-T14
+    priority: medium
+    execution: automated
+    tags: [dormant-accounts]
+    refs: ["NIST SP 800-53 AC-2(3)"]
+    en:
+      title: Dormant accounts are disabled after 90 days
+      description: A script sets the last sign-in dates of test accounts and runs the daily account check.
+      preconditions: Two test accounts and a test environment clock the script can advance.
+      expected: Only the account past the limit is disabled and reported.
+      steps:
+        - action: Set the last sign-in of account A to 91 days ago and of account B to 89 days ago.
+          expected: Both accounts are active.
+        - action: Run the daily account check.
+          expected: Account A is disabled and account B is still active.
+        - action: Read the notice sent to the organisation's administrators.
+          expected: The notice lists account A and the date of its last sign-in.
+    sv:
+      title: Vilande konton spärras efter 90 dagar
+      description: Ett skript sätter senaste inloggningsdatum för testkonton och kör den dagliga kontokontrollen.
+      preconditions: Två testkonton och en klocka i testmiljön som skriptet kan ställa fram.
+      expected: Endast kontot som passerat gränsen spärras och rapporteras.
+      steps:
+        - action: Sätt senaste inloggning för konto A till 91 dagar sedan och för konto B till 89 dagar sedan.
+          expected: Båda kontona är aktiva.
+        - action: Kör den dagliga kontokontrollen.
+          expected: Konto A är spärrat och konto B är fortfarande aktivt.
+        - action: Läs meddelandet som skickats till organisationens administratörer.
+          expected: Meddelandet listar konto A och datumet för dess senaste inloggning.
+
+  - id: ACC-T15
+    priority: medium
+    execution: manual
+    tags: [break-glass]
+    refs: ["NIST SP 800-53 AC-2"]
+    en:
+      title: Emergency account works without the identity provider and raises an alert
+      description: Blocks the identity provider and signs in with the emergency account.
+      preconditions: A test organisation with single sign-on, an emergency account with a security key, and two other administrators with test mailboxes.
+      expected: The emergency sign-in works and both other administrators are alerted.
+      steps:
+        - action: Block network access from the system to the identity provider.
+          expected: Ordinary single sign-on fails.
+        - action: Sign in with the emergency account and its security key, and note the time.
+          expected: Sign-in succeeds and the administration pages open.
+        - action: Check the mailboxes of the other two administrators.
+          expected: Each has an alert naming the emergency account, received within 5 minutes of the noted time.
+    sv:
+      title: Nödkontot fungerar utan identitetsleverantören och ger larm
+      description: Blockerar identitetsleverantören och loggar in med nödkontot.
+      preconditions: En testorganisation med single sign-on, ett nödkonto med säkerhetsnyckel och två andra administratörer med testbrevlådor.
+      expected: Nödinloggningen fungerar och båda de andra administratörerna larmas.
+      steps:
+        - action: Blockera nätverksåtkomsten från systemet till identitetsleverantören.
+          expected: Vanlig single sign-on misslyckas.
+        - action: Logga in med nödkontot och dess säkerhetsnyckel och anteckna tiden.
+          expected: Inloggningen lyckas och administrationssidorna öppnas.
+        - action: Kontrollera de två andra administratörernas brevlådor.
+          expected: Var och en har ett larm som anger nödkontot, mottaget inom 5 minuter efter den antecknade tiden.
+
+  - id: ACC-T16
+    priority: low
+    execution: manual
+    tags: [network-restriction]
+    refs: ["NIST SP 800-53 AC-17"]
+    en:
+      title: Sign-in is limited to listed address ranges
+      description: Configures an address range and signs in from inside and outside it.
+      preconditions: An administrator account, a test client inside 192.0.2.0/24 and a test client outside it.
+      expected: Only sign-in from the listed range succeeds.
+      steps:
+        - action: Add the range to the organisation's sign-in restriction and save.
+          expected: The range is saved and shown in the list.
+          data: "192.0.2.0/24"
+        - action: Sign in as an ordinary user from the client inside the range.
+          expected: Sign-in succeeds.
+        - action: Sign in as the same user from the client outside the range.
+          expected: Sign-in is refused with a message that names the network restriction.
+    sv:
+      title: Inloggning begränsas till listade adressintervall
+      description: Konfigurerar ett adressintervall och loggar in inifrån och utanför det.
+      preconditions: Ett administratörskonto, en testklient inom 192.0.2.0/24 och en testklient utanför.
+      expected: Endast inloggning från det listade intervallet lyckas.
+      steps:
+        - action: Lägg till intervallet i organisationens inloggningsbegränsning och spara.
+          expected: Intervallet sparas och visas i listan.
+          data: "192.0.2.0/24"
+        - action: Logga in som en vanlig användare från klienten inom intervallet.
+          expected: Inloggningen lyckas.
+        - action: Logga in som samma användare från klienten utanför intervallet.
+          expected: Inloggningen avvisas med ett meddelande som anger nätverksbegränsningen.

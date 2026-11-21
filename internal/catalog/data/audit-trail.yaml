@@ -277,6 +277,120 @@ requirements:
           text: Med 10 miljoner poster visar sökningar på användare, på post och på en period om 1 månad var sin första sida inom 5 sekunder.
           threshold: "≤ 5 s vid 10 000 000 poster"
 
+  - id: AUD-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [configuration-changes, administration]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [AUD-T13]
+    en:
+      title: Configuration and permission changes are audited
+      description: The system MUST record in the audit trail each change to system settings, role definitions, workflows and electronic signature rules, with the administrator, the UTC time and the old and new values.
+      rationale: A change to a workflow or a role can alter many records later without touching any of them, and is then invisible in the record history.
+      criteria:
+        - method: test
+          text: Changing a role's permissions, a workflow step and a signature setting gives three audit entries with administrator, time and both values.
+    sv:
+      title: Ändringar av konfiguration och behörigheter granskningsloggas
+      description: Systemet SKA i granskningsloggen registrera varje ändring av systeminställningar, rolldefinitioner, arbetsflöden och regler för elektroniska underskrifter, med administratören, UTC-tiden och de gamla och nya värdena.
+      rationale: En ändring av ett arbetsflöde eller en roll kan senare påverka många poster utan att röra någon av dem, och syns då inte i postens historik.
+      criteria:
+        - method: test
+          text: En ändring av en rolls behörigheter, ett steg i ett arbetsflöde och en underskriftsinställning ger tre granskningsposter med administratör, tid och båda värdena.
+
+  - id: AUD-14
+    type: security
+    obligation: must
+    priority: critical
+    tags: [fail-closed, audit-failure]
+    refs: ["IEC 62443-3-3 SR 2.10", "IEC 62443-4-2 CR 2.10", "NIST SP 800-53 AU-5", "21 CFR Part 11 §11.10(e)"]
+    tests: [AUD-T14]
+    en:
+      title: No change without an audit entry
+      description: The system MUST refuse a change to a business record when it cannot write the matching audit entry, and tell the user that the change was not saved.
+      rationale: A change saved without its audit entry breaks the completeness that regulators and auditors rely on, and cannot be repaired afterwards.
+      criteria:
+        - method: test
+          text: With the audit store made unavailable, an edit is refused with a message, the record is unchanged, and an alert goes to the operator.
+    sv:
+      title: Ingen ändring utan granskningspost
+      description: Systemet SKA avvisa en ändring av en verksamhetspost när det inte kan skriva motsvarande granskningspost, och meddela användaren att ändringen inte sparades.
+      rationale: En ändring som sparas utan sin granskningspost bryter den fullständighet som tillsynsmyndigheter och revisorer förlitar sig på, och kan inte lagas i efterhand.
+      criteria:
+        - method: test
+          text: När granskningslagret görs otillgängligt avvisas en redigering med ett meddelande, posten är oförändrad och ett larm går till driften.
+
+  - id: AUD-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [impersonation, support-access]
+    refs: ["ISO/IEC 27001:2022 A.8.15", "NIST SP 800-53 AU-3", "OWASP Logging Cheat Sheet"]
+    tests: [AUD-T15]
+    en:
+      title: Both identities recorded during impersonation
+      description: The system MUST record both the acting support or administrator account and the impersonated user in each audit entry made while one user acts as another.
+      rationale: Entries that name only the impersonated user put the support engineer's changes on the customer's account and hide who really acted.
+      criteria:
+        - method: test
+          text: A change made by a support engineer acting as a customer user gives an entry with both account ids and the impersonation session id.
+    sv:
+      title: Båda identiteterna registreras vid agerande som annan användare
+      description: Systemet SKA registrera både det agerande support- eller administratörskontot och den användare som någon agerar som i varje granskningspost som skapas medan en användare agerar som en annan.
+      rationale: Poster som bara anger den användare man agerar som lägger supportteknikerns ändringar på kundens konto och döljer vem som verkligen agerade.
+      criteria:
+        - method: test
+          text: En ändring som en supporttekniker gör som en kundanvändare ger en post med båda kontonas id och id för sessionen.
+
+  - id: AUD-16
+    type: security
+    obligation: should
+    priority: medium
+    tags: [trusted-timestamp, tamper-evidence]
+    refs: ["RFC 3161", "eIDAS Regulation (EU) No 910/2014 Art. 41 (qualified electronic time stamps)", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [AUD-T16]
+    en:
+      title: Daily external time stamp on the audit chain
+      description: The system SHOULD obtain a time stamp from an external time-stamping authority on the latest hash of the audit chain once every 24 hours and store the token with the chain.
+      rationale: An external time stamp proves that the audit trail existed in that form at that time, even against someone who controls the whole system.
+      criteria:
+        - method: test
+          text: Each of the last 7 days has a time-stamp token that verifies against the authority's certificate and matches the chain hash of that day.
+          threshold: "every 24 h"
+    sv:
+      title: Daglig extern tidsstämpel på granskningskedjan
+      description: Systemet BÖR hämta en tidsstämpel från en extern tidsstämpeltjänst på den senaste hashen i granskningskedjan en gång per dygn och lagra tidsstämpeln tillsammans med kedjan.
+      rationale: En extern tidsstämpel visar att granskningsloggen fanns i den formen vid den tidpunkten, även mot någon som styr hela systemet.
+      criteria:
+        - method: test
+          text: Var och en av de senaste 7 dagarna har en tidsstämpel som kan verifieras mot tjänstens certifikat och stämmer med kedjans hash för den dagen.
+          threshold: "en gång per dygn"
+
+  - id: AUD-17
+    type: business
+    obligation: should
+    priority: medium
+    tags: [audit-review, gxp]
+    refs: ["EU GMP Annex 11 §9", "PIC/S PI 041-1 (data integrity)", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [AUD-T17]
+    en:
+      title: Monthly review of audit entries on critical data
+      description: A named reviewer SHOULD review the audit entries on records classified as critical every month and record the review with findings in the system.
+      rationale: An audit trail that nobody reads finds nothing; a regular review catches unauthorised changes and data integrity problems while they can still be corrected.
+      criteria:
+        - method: inspection
+          text: The review record has an entry for each of the last 3 months with reviewer, period covered and findings.
+          threshold: "every month"
+    sv:
+      title: Månatlig granskning av granskningsposter för kritiska data
+      description: En namngiven granskare BÖR granska granskningsposterna för poster som klassats som kritiska varje månad och registrera granskningen med iakttagelser i systemet.
+      rationale: En granskningslogg som ingen läser hittar ingenting; en regelbunden granskning fångar obehöriga ändringar och problem med dataintegriteten medan de fortfarande går att rätta.
+      criteria:
+        - method: inspection
+          text: Granskningsregistret har en post för var och en av de senaste 3 månaderna med granskare, period och iakttagelser.
+          threshold: "varje månad"
+
 tests:
   - id: AUD-T01
     priority: critical
@@ -633,3 +747,137 @@ tests:
           expected: Första sidan visas inom 5 sekunder.
         - action: Sök efter alla poster för en post och därefter efter alla poster under en månad, och mät var och en.
           expected: Varje första sida visas inom 5 sekunder.
+
+  - id: AUD-T13
+    priority: high
+    execution: manual
+    tags: [configuration-changes]
+    refs: ["NIST SP 800-53 AU-2"]
+    en:
+      title: Settings and role changes appear in the audit trail
+      description: Changes a role, a workflow and a signature setting and searches the audit trail.
+      preconditions: An administrator account and an auditor account in a test organisation.
+      expected: Each change has an audit entry with administrator, time and old and new values.
+      steps:
+        - action: As administrator, add a permission to a role, remove a step from a workflow and change the signature meaning list.
+          expected: The three changes are saved.
+        - action: As auditor, search the audit trail for the administrator's changes today.
+          expected: Three entries are listed, each with the administrator, UTC time, old value and new value.
+    sv:
+      title: Ändringar av inställningar och roller syns i granskningsloggen
+      description: Ändrar en roll, ett arbetsflöde och en underskriftsinställning och söker i granskningsloggen.
+      preconditions: Ett administratörskonto och ett granskarkonto i en testorganisation.
+      expected: Varje ändring har en granskningspost med administratör, tid och gamla och nya värden.
+      steps:
+        - action: Lägg som administratör till en behörighet i en roll, ta bort ett steg ur ett arbetsflöde och ändra listan över underskrifters betydelse.
+          expected: De tre ändringarna sparas.
+        - action: Sök som granskare i granskningsloggen efter administratörens ändringar i dag.
+          expected: Tre poster listas, var och en med administratör, UTC-tid, gammalt värde och nytt värde.
+
+  - id: AUD-T14
+    priority: critical
+    execution: automated
+    tags: [fail-closed]
+    refs: ["IEC 62443-3-3 SR 2.10"]
+    en:
+      title: Edits are refused when the audit store is down
+      description: Makes the audit store unavailable in a test environment and tries to edit a record.
+      preconditions: A test environment where the audit store can be stopped, a test record and access to the operator alert channel.
+      expected: The edit is refused, the record is unchanged and an alert is raised.
+      steps:
+        - action: Stop the audit store.
+          expected: The audit store does not accept writes.
+        - action: Edit the test record and save.
+          expected: The save is refused with a message that the change was not saved.
+        - action: Start the audit store and open the record.
+          expected: The record has its earlier value, and the operator channel has an alert about the audit failure.
+    sv:
+      title: Redigeringar avvisas när granskningslagret är nere
+      description: Gör granskningslagret otillgängligt i en testmiljö och försöker redigera en post.
+      preconditions: En testmiljö där granskningslagret kan stoppas, en testpost och åtkomst till driftens larmkanal.
+      expected: Redigeringen avvisas, posten är oförändrad och ett larm ges.
+      steps:
+        - action: Stoppa granskningslagret.
+          expected: Granskningslagret tar inte emot skrivningar.
+        - action: Redigera testposten och spara.
+          expected: Sparandet avvisas med ett meddelande om att ändringen inte sparades.
+        - action: Starta granskningslagret och öppna posten.
+          expected: Posten har sitt tidigare värde, och driftens kanal har ett larm om felet i granskningsloggen.
+
+  - id: AUD-T15
+    priority: high
+    execution: manual
+    tags: [impersonation]
+    refs: ["NIST SP 800-53 AU-3"]
+    en:
+      title: Impersonated changes name the support engineer
+      description: A support engineer acts as a customer user, changes a record and the audit entry is inspected.
+      preconditions: A support account with the right to act as users, a customer test user and an auditor account.
+      expected: The entry names both accounts and the impersonation session.
+      steps:
+        - action: As support, start acting as the customer user and change a record.
+          expected: The change is saved and a banner shows the impersonation.
+        - action: As auditor, open the audit entry of the change.
+          expected: It shows the support account, the customer user and the impersonation session id.
+    sv:
+      title: Ändringar som annan användare anger supportteknikern
+      description: En supporttekniker agerar som en kundanvändare och ändrar en post, och granskningsposten granskas.
+      preconditions: Ett supportkonto med rätt att agera som användare, en kundanvändare för test och ett granskarkonto.
+      expected: Posten anger båda kontona och sessionen.
+      steps:
+        - action: Börja som support agera som kundanvändaren och ändra en post.
+          expected: Ändringen sparas och en banderoll visar att någon agerar som användaren.
+        - action: Öppna som granskare granskningsposten för ändringen.
+          expected: Den visar supportkontot, kundanvändaren och id för sessionen.
+
+  - id: AUD-T16
+    priority: medium
+    execution: automated
+    tags: [trusted-timestamp]
+    refs: ["RFC 3161"]
+    en:
+      title: Daily time-stamp tokens verify against the chain
+      description: A script verifies the time-stamp tokens of the last 7 days against the authority certificate and the audit chain.
+      preconditions: The time-stamp tokens, the authority's certificate chain and read access to the audit chain.
+      expected: Seven valid tokens match the chain hashes of their days.
+      steps:
+        - action: Verify each token's signature against the authority's certificate chain.
+          expected: Seven tokens verify, one per day.
+        - action: Compare each token's message imprint with the chain hash stored for that day.
+          expected: Each imprint matches.
+    sv:
+      title: Dagliga tidsstämplar kan verifieras mot kedjan
+      description: Ett skript verifierar tidsstämplarna för de senaste 7 dagarna mot tjänstens certifikat och granskningskedjan.
+      preconditions: Tidsstämplarna, tjänstens certifikatkedja och läsbehörighet till granskningskedjan.
+      expected: Sju giltiga tidsstämplar stämmer med kedjans hashar för sina dagar.
+      steps:
+        - action: Verifiera varje tidsstämpels signatur mot tjänstens certifikatkedja.
+          expected: Sju tidsstämplar verifieras, en per dag.
+        - action: Jämför varje tidsstämpels meddelandeavtryck med den kedjehash som sparats för den dagen.
+          expected: Varje avtryck stämmer.
+
+  - id: AUD-T17
+    priority: medium
+    execution: manual
+    tags: [audit-review]
+    refs: ["EU GMP Annex 11 §9"]
+    en:
+      title: Audit reviews of critical data were done monthly
+      description: Checks the review record for the last 3 months.
+      preconditions: The list of record types classified as critical and the audit review record.
+      expected: Each month has a review with reviewer, period and findings.
+      steps:
+        - action: Open the review record and filter on the last 3 months.
+          expected: There is one entry per month.
+        - action: Read each entry and follow up one finding.
+          expected: Each entry has reviewer, covered period and findings, and the finding has a recorded action.
+    sv:
+      title: Granskningar av kritiska data gjordes varje månad
+      description: Kontrollerar granskningsregistret för de senaste 3 månaderna.
+      preconditions: Listan över posttyper som klassats som kritiska och registret över granskningar.
+      expected: Varje månad har en granskning med granskare, period och iakttagelser.
+      steps:
+        - action: Öppna granskningsregistret och filtrera på de senaste 3 månaderna.
+          expected: Det finns en post per månad.
+        - action: Läs varje post och följ upp en iakttagelse.
+          expected: Varje post har granskare, period och iakttagelser, och iakttagelsen har en registrerad åtgärd.

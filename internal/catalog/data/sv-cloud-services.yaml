@@ -1,0 +1,630 @@
+area: sv-cloud-services
+prefix: SVCLD
+group: security
+catalogue: services
+name: {en: Cloud services and managed security services, sv: Molntjänster och säkerhetstjänster som köps in}
+description:
+  en: Contract terms for cloud and SaaS services under the EU Data Act (switching notice, transition and retrieval periods, exportable data, switching charges, information on jurisdiction), the shared responsibility model, customer-held keys and change notices, and managed security services with monitoring, detection coverage, log source health, authorised response actions, reporting and handover of detection content.
+  sv: Avtalsvillkor för moln- och SaaS-tjänster enligt dataförordningen (uppsägningstid vid byte, övergångs- och hämtningsperiod, data som kan exporteras, avgifter för byte, information om jurisdiktion), modellen för delat ansvar, nycklar som kunden förvaltar och avisering av ändringar, samt inköpta säkerhetstjänster med övervakning, täckning av detektering, hälsa hos loggkällor, godkända åtgärder vid incidenter, rapportering och överlämning av detekteringsregler.
+
+requirements:
+  - id: SVCLD-01
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [cloud, switching, notice-period, data-act]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    tests: [SVCLD-T01]
+    en:
+      title: Notice period for switching of at most 2 months
+      description: The cloud service contract MUST NOT require a notice period longer than 2 months before the customer starts switching to another provider or to on-premises infrastructure.
+      rationale: A long notice period locks the customer in and is not allowed under the switching rules for data processing services.
+      criteria:
+        - method: review
+          text: The switching clause states a maximum notice period of 2 months, and no other clause sets a longer one.
+          threshold: "≤ 2 months"
+    sv:
+      title: Uppsägningstid inför byte på högst 2 månader
+      description: Avtalet för molntjänsten SKA INTE kräva en uppsägningstid längre än 2 månader innan kunden inleder ett byte till en annan leverantör eller till egen infrastruktur.
+      rationale: En lång uppsägningstid låser in kunden och är inte tillåten enligt reglerna om byte mellan databehandlingstjänster.
+      criteria:
+        - method: review
+          text: Klausulen om byte anger en uppsägningstid på högst 2 månader, och ingen annan klausul anger en längre.
+          threshold: "≤ 2 månader"
+
+  - id: SVCLD-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cloud, switching, transition, data-act]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    tests: [SVCLD-T01]
+    en:
+      title: Transition period of at most 30 days with the service running
+      description: The cloud service contract MUST oblige the provider to complete the switching within a transition period of at most 30 calendar days after the notice period, while keeping the service running at the agreed service levels.
+      rationale: A bounded transition with the service still running lets the customer move without a gap in operations.
+      criteria:
+        - method: review
+          text: The contract states a transition period of at most 30 calendar days and that the service levels apply during it.
+          threshold: "≤ 30 calendar days"
+    sv:
+      title: Övergångsperiod på högst 30 dagar med tjänsten i drift
+      description: Avtalet för molntjänsten SKA förplikta leverantören att slutföra bytet inom en övergångsperiod på högst 30 kalenderdagar efter uppsägningstiden och samtidigt hålla tjänsten i drift på de avtalade servicenivåerna.
+      rationale: En avgränsad övergång där tjänsten fortsätter att fungera gör att kunden kan flytta utan avbrott i verksamheten.
+      criteria:
+        - method: review
+          text: Avtalet anger en övergångsperiod på högst 30 kalenderdagar och att servicenivåerna gäller under den.
+          threshold: "≤ 30 kalenderdagar"
+
+  - id: SVCLD-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cloud, switching, exportable-data, data-act]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)", "ISO/IEC 19941:2017"]
+    tests: [SVCLD-T02]
+    en:
+      title: Exhaustive list of exportable data and digital assets
+      description: The cloud service contract MUST list each category of data and digital assets that the customer can export when switching, including metadata created by the customer's use of the service.
+      rationale: Without a complete list, configuration, logs or metadata the customer depends on can be left behind at exit.
+      criteria:
+        - method: review
+          text: The contract has a list of exportable categories that includes customer data, configuration and usage metadata, and an export test produces each listed category.
+    sv:
+      title: Fullständig förteckning över data och digitala tillgångar som kan exporteras
+      description: Avtalet för molntjänsten SKA lista varje kategori av data och digitala tillgångar som kunden kan exportera vid ett byte, inklusive metadata som har skapats genom kundens användning av tjänsten.
+      rationale: Utan en fullständig förteckning kan konfiguration, loggar eller metadata som kunden är beroende av bli kvar vid avslutet.
+      criteria:
+        - method: review
+          text: Avtalet har en förteckning över exporterbara kategorier som omfattar kunddata, konfiguration och metadata om användning, och en provexport ger varje angiven kategori.
+
+  - id: SVCLD-04
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cloud, switching, data-retrieval, data-act]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    tests: [SVCLD-T02]
+    en:
+      title: Data retrieval period of at least 30 days
+      description: The cloud service contract MUST give the customer a period of at least 30 calendar days after the transition period in which the customer can still retrieve its exportable data.
+      rationale: The retrieval period is a safety net if the migration fails or data turns out to be missing in the new environment.
+      criteria:
+        - method: review
+          text: The contract states a retrieval period of at least 30 calendar days that starts at the end of the transition period.
+          threshold: "≥ 30 calendar days"
+    sv:
+      title: Period för hämtning av data på minst 30 dagar
+      description: Avtalet för molntjänsten SKA ge kunden en period på minst 30 kalenderdagar efter övergångsperioden då kunden fortfarande kan hämta sina exporterbara data.
+      rationale: Hämtningsperioden är ett skyddsnät om flytten misslyckas eller om data visar sig saknas i den nya miljön.
+      criteria:
+        - method: review
+          text: Avtalet anger en hämtningsperiod på minst 30 kalenderdagar som börjar när övergångsperioden slutar.
+          threshold: "≥ 30 kalenderdagar"
+
+  - id: SVCLD-05
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [cloud, switching-charges, egress, data-act]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 29 (gradual withdrawal of switching charges)"]
+    tests: [SVCLD-T03]
+    en:
+      title: No switching or data egress charges for switching
+      description: The cloud service contract MUST NOT contain charges for switching or for data egress when the customer switches, from the date on which the switching rules withdraw switching charges.
+      rationale: Exit fees are a strong lock-in mechanism, and the rules phase them out to make the cloud market contestable.
+      criteria:
+        - method: review
+          text: The price list and the contract contain no switching or egress charge for switching, and an invoice from a test export shows none.
+    sv:
+      title: Inga avgifter för byte eller för utförsel av data vid byte
+      description: Avtalet för molntjänsten SKA INTE innehålla avgifter för byte eller för utförsel av data när kunden byter leverantör, från det datum då reglerna om byte avskaffar avgifterna för byte.
+      rationale: Avgifter vid avslut är ett starkt sätt att låsa in kunder, och reglerna fasar ut dem för att göra molnmarknaden konkurrensutsatt.
+      criteria:
+        - method: review
+          text: Prislistan och avtalet innehåller ingen avgift för byte eller utförsel vid byte, och fakturan efter en provexport visar ingen sådan avgift.
+
+  - id: SVCLD-06
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [cloud, jurisdiction, government-access, data-act]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 28 (obligations regarding transparency on international access and transfer)", "EU Data Act (Regulation (EU) 2023/2854) Art. 32 (international governmental access and transfer)"]
+    tests: [SVCLD-T03]
+    en:
+      title: Jurisdiction and safeguards against foreign government access published
+      description: The provider MUST publish the jurisdiction of the infrastructure used for the service and the technical, organisational and contractual measures it takes against access to customer data by public authorities of third countries that conflicts with Union or national law.
+      rationale: The customer needs this information to assess the legal risk of placing its data with the provider.
+      criteria:
+        - method: inspection
+          text: The provider's website or contract annex states the jurisdiction per region and lists the measures in each of the 3 categories.
+    sv:
+      title: Jurisdiktion och skydd mot utländska myndigheters åtkomst publiceras
+      description: Leverantören SKA publicera vilken jurisdiktion den infrastruktur som används för tjänsten omfattas av och vilka tekniska, organisatoriska och avtalsmässiga åtgärder den vidtar mot åtkomst till kunddata från myndigheter i tredjeland som strider mot unionsrätt eller nationell rätt.
+      rationale: Kunden behöver informationen för att bedöma den rättsliga risken med att placera sina data hos leverantören.
+      criteria:
+        - method: inspection
+          text: Leverantörens webbplats eller en avtalsbilaga anger jurisdiktion per region och listar åtgärder i var och en av de 3 kategorierna.
+
+  - id: SVCLD-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [cloud, shared-responsibility]
+    refs: ["ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)", "CSA Cloud Controls Matrix v4 STA-04"]
+    tests: [SVCLD-T04]
+    en:
+      title: Shared responsibility matrix per service model
+      description: The contract MUST include a responsibility matrix that assigns each security control area of the service to the provider, the customer or both.
+      rationale: Unassigned controls fall between the parties, and misconfigured customer settings are a common cause of cloud data breaches.
+      criteria:
+        - method: review
+          text: The matrix covers identity and access, data protection, logging, patching, backup and network controls, and each row names a responsible party.
+    sv:
+      title: Matris för delat ansvar per tjänstemodell
+      description: Avtalet SKA innehålla en ansvarsmatris som fördelar varje område av säkerhetsåtgärder i tjänsten på leverantören, kunden eller båda.
+      rationale: Åtgärder utan ansvarig hamnar mellan parterna, och felkonfigurerade inställningar hos kunden är en vanlig orsak till dataintrång i molnet.
+      criteria:
+        - method: review
+          text: Matrisen omfattar identitet och åtkomst, dataskydd, loggning, uppdateringar, säkerhetskopiering och nätverk, och varje rad namnger en ansvarig part.
+
+  - id: SVCLD-08
+    type: security
+    obligation: should
+    priority: medium
+    tags: [cloud, encryption, key-management]
+    refs: ["CSA Cloud Controls Matrix v4 CEK-03", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [SVCLD-T04]
+    en:
+      title: Customer-managed encryption keys for stored data
+      description: The cloud service SHOULD let the customer encrypt its stored data with keys that the customer creates, rotates and revokes in its own key management service.
+      rationale: Keys held by the customer let it make the data unreadable at exit or after a breach at the provider.
+      criteria:
+        - method: test
+          text: After the customer revokes its key in a test tenant, the provider's service can no longer read the stored test data.
+    sv:
+      title: Krypteringsnycklar som kunden förvaltar för lagrade data
+      description: Molntjänsten BÖR låta kunden kryptera sina lagrade data med nycklar som kunden skapar, byter och spärrar i sin egen nyckelhanteringstjänst.
+      rationale: Nycklar som kunden har gör att kunden kan göra data oläsliga vid avslut eller efter ett intrång hos leverantören.
+      criteria:
+        - method: test
+          text: När kunden spärrar sin nyckel i en testmiljö kan leverantörens tjänst inte längre läsa de lagrade testdata.
+
+  - id: SVCLD-09
+    type: business
+    obligation: must
+    priority: medium
+    tags: [cloud, change-notice, deprecation]
+    refs: ["ISO/IEC 27001:2022 A.5.22"]
+    tests: [SVCLD-T05]
+    en:
+      title: Notice of 90 days before a feature is removed or reduced
+      description: The provider MUST notify the customer at least 90 days before removing or reducing a feature, an interface or a security control that the customer uses.
+      rationale: The customer needs time to adapt integrations and routines, or to object, before a change breaks its use of the service.
+      criteria:
+        - method: review
+          text: Each removal or reduction in the provider's change log of the last 12 months was notified to the customer at least 90 days before it took effect.
+          threshold: "≥ 90 days"
+    sv:
+      title: Avisering 90 dagar innan en funktion tas bort eller begränsas
+      description: Leverantören SKA meddela kunden minst 90 dagar innan en funktion, ett gränssnitt eller en säkerhetsåtgärd som kunden använder tas bort eller begränsas.
+      rationale: Kunden behöver tid att anpassa integrationer och rutiner, eller att invända, innan en ändring förstör kundens användning av tjänsten.
+      criteria:
+        - method: review
+          text: Varje borttagning eller begränsning i leverantörens ändringslogg under de senaste 12 månaderna aviserades till kunden minst 90 dagar innan den trädde i kraft.
+          threshold: "≥ 90 dagar"
+
+  - id: SVCLD-10
+    type: security
+    obligation: must
+    priority: critical
+    tags: [managed-security, monitoring, alert-triage]
+    refs: ["ISO/IEC 27035-2:2023", "NIST SP 800-61 Rev. 3"]
+    tests: [SVCLD-T06]
+    en:
+      title: Critical alerts analysed and reported within 30 minutes around the clock
+      description: The managed security service MUST analyse each critical alert and notify the customer's named contact of a confirmed incident within 30 minutes of the alert, 24 hours a day and 7 days a week.
+      rationale: Attackers move from first foothold to wider access within hours, so detection outside office hours is worth little without a quick analysis.
+      criteria:
+        - method: test
+          text: A test alert raised at night and one at a weekend are each analysed and reported to the contact within 30 minutes.
+          threshold: "≤ 30 minutes, 24/7"
+    sv:
+      title: Kritiska larm analyseras och rapporteras inom 30 minuter dygnet runt
+      description: Säkerhetstjänsten SKA analysera varje kritiskt larm och meddela kundens namngivna kontakt om en bekräftad incident inom 30 minuter från larmet, dygnet runt alla dagar i veckan.
+      rationale: Angripare tar sig från första fotfäste till bredare åtkomst inom några timmar, så detektering utanför kontorstid är värd lite utan en skyndsam analys.
+      criteria:
+        - method: test
+          text: Ett testlarm som utlöses en natt och ett som utlöses en helg analyseras och rapporteras var för sig till kontakten inom 30 minuter.
+          threshold: "≤ 30 minuter, dygnet runt"
+
+  - id: SVCLD-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [managed-security, detection, coverage]
+    refs: ["MITRE ATT&CK"]
+    tests: [SVCLD-T07]
+    en:
+      title: Detection coverage mapped to attack techniques each quarter
+      description: The provider of the managed security service MUST report each quarter which attack techniques of the agreed threat model its detection rules cover for the customer, with the gaps and a plan for closing them.
+      rationale: A coverage map shows what the service would miss, which an alert count cannot.
+      criteria:
+        - method: review
+          text: The latest quarterly report maps each detection rule to at least 1 technique and lists the uncovered techniques of the threat model with planned dates.
+    sv:
+      title: Täckning av detektering mot angreppstekniker varje kvartal
+      description: Leverantören av säkerhetstjänsten SKA varje kvartal rapportera vilka angreppstekniker i den avtalade hotmodellen som dess detekteringsregler täcker för kunden, med luckorna och en plan för att täppa till dem.
+      rationale: En täckningskarta visar vad tjänsten skulle missa, vilket ett antal larm inte kan visa.
+      criteria:
+        - method: review
+          text: Den senaste kvartalsrapporten kopplar varje detekteringsregel till minst 1 teknik och listar hotmodellens otäckta tekniker med planerade datum.
+
+  - id: SVCLD-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [managed-security, log-sources, monitoring]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [SVCLD-T08]
+    en:
+      title: Alert when an agreed log source stops sending for 1 hour
+      description: The managed security service MUST keep a list of the agreed log sources and raise an alert to the customer when a listed source has sent no events for 1 hour.
+      rationale: A silent log source looks the same as a quiet network, and attackers often disable logging first.
+      criteria:
+        - method: test
+          text: Stopping the log forwarding of 1 listed test source leads to an alert to the customer within 75 minutes.
+          threshold: "silence ≥ 1 hour → alert"
+    sv:
+      title: Larm när en avtalad loggkälla har slutat skicka i 1 timme
+      description: Säkerhetstjänsten SKA föra en lista över de avtalade loggkällorna och larma kunden när en listad källa inte har skickat en enda händelse på 1 timme.
+      rationale: En tyst loggkälla ser likadan ut som ett lugnt nätverk, och angripare stänger ofta av loggningen först.
+      criteria:
+        - method: test
+          text: När vidarebefordringen av loggar från 1 listad testkälla stoppas larmas kunden inom 75 minuter.
+          threshold: "tystnad ≥ 1 timme → larm"
+
+  - id: SVCLD-13
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [managed-security, response, authorisation]
+    refs: ["ISO/IEC 27035-2:2023", "NIST SP 800-61 Rev. 3"]
+    tests: [SVCLD-T09]
+    en:
+      title: Response actions only by an approved playbook
+      description: The provider of the managed security service MUST NOT take a containment action on the customer's systems, such as isolating a host or disabling an account, other than by a playbook that the customer has approved for that action and that class of asset.
+      rationale: An unapproved isolation of a production system can do more harm to the business than the incident itself.
+      criteria:
+        - method: review
+          text: Each containment action in the provider's log of the last 6 months refers to an approved playbook that covers the action and the asset class.
+    sv:
+      title: Åtgärder vid incidenter bara enligt en godkänd spelbok
+      description: Leverantören av säkerhetstjänsten SKA INTE vidta en begränsande åtgärd i kundens system, till exempel att isolera en värd eller spärra ett konto, annat än enligt en spelbok som kunden har godkänt för den åtgärden och den klassen av tillgångar.
+      rationale: En isolering av ett produktionssystem som inte har godkänts kan skada verksamheten mer än själva incidenten.
+      criteria:
+        - method: review
+          text: Varje begränsande åtgärd i leverantörens logg under de senaste 6 månaderna hänvisar till en godkänd spelbok som omfattar åtgärden och tillgångsklassen.
+
+  - id: SVCLD-14
+    type: business
+    obligation: must
+    priority: medium
+    tags: [managed-security, reporting, metrics]
+    refs: ["ISO/IEC 27035-2:2023"]
+    tests: [SVCLD-T08]
+    en:
+      title: Monthly report with incidents, false positives and response times
+      description: The provider of the managed security service MUST deliver a monthly report with the confirmed incidents, the share of alerts closed as false positives, the median time to detect and the median time to notify the customer.
+      rationale: These measures show whether the service is improving and whether the customer is paying for noise.
+      criteria:
+        - method: review
+          text: Each report of the last 6 months has the 4 listed measures, and the incident count matches the incident notices sent that month.
+    sv:
+      title: Månadsrapport med incidenter, falsklarm och svarstider
+      description: Leverantören av säkerhetstjänsten SKA leverera en månadsrapport med bekräftade incidenter, andelen larm som stängts som falsklarm, mediantiden till detektering och mediantiden till avisering av kunden.
+      rationale: Måtten visar om tjänsten förbättras och om kunden betalar för brus.
+      criteria:
+        - method: review
+          text: Varje rapport under de senaste 6 månaderna har de 4 angivna måtten, och antalet incidenter stämmer med de incidentmeddelanden som skickades den månaden.
+
+  - id: SVCLD-15
+    type: business
+    obligation: should
+    priority: medium
+    tags: [managed-security, exit, detection-content]
+    refs: ["ISO/IEC 27036-3:2023"]
+    tests: [SVCLD-T09]
+    en:
+      title: Detection rules developed for the customer handed over at exit
+      description: At the end of the contract the provider of the managed security service SHOULD hand over the detection rules, playbooks and log source configuration it developed for the customer, in a documented format, within 30 days.
+      rationale: Detection content built on the customer's environment is costly to recreate and leaves a gap in protection during the change of provider.
+      criteria:
+        - method: review
+          text: The contract has the handover clause, and the handover package lists rules, playbooks and log source configuration with a format description.
+    sv:
+      title: Detekteringsregler som tagits fram för kunden lämnas över vid avslut
+      description: När avtalet upphör BÖR leverantören av säkerhetstjänsten inom 30 dagar lämna över de detekteringsregler, spelböcker och den konfiguration av loggkällor som den har tagit fram för kunden, i ett dokumenterat format.
+      rationale: Detekteringsregler som bygger på kundens miljö är dyra att ta fram på nytt och lämnar en lucka i skyddet under bytet av leverantör.
+      criteria:
+        - method: review
+          text: Avtalet har klausulen om överlämning, och överlämningspaketet listar regler, spelböcker och konfiguration av loggkällor med en beskrivning av formatet.
+
+tests:
+  - id: SVCLD-T01
+    priority: high
+    execution: manual
+    tags: [switching, contract-review]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    en:
+      title: Notice and transition periods in the switching clause
+      description: Reviews the cloud service contract for the notice period and the transition period for switching.
+      preconditions: The signed cloud service contract with its annexes and the provider's general terms.
+      expected: The notice period is at most 2 months and the transition period at most 30 calendar days with the service levels in force.
+      steps:
+        - action: Search the contract, annexes and general terms for notice periods that apply to switching.
+          expected: The longest is at most 2 months.
+        - action: Read the transition period in the switching clause.
+          expected: It is at most 30 calendar days after the notice period.
+        - action: Read what applies to the service during the transition.
+          expected: The agreed service levels apply.
+    sv:
+      title: Uppsägningstid och övergångsperiod i klausulen om byte
+      description: Granskar uppsägningstiden och övergångsperioden vid byte i avtalet för molntjänsten.
+      preconditions: Det undertecknade avtalet för molntjänsten med bilagor och leverantörens allmänna villkor.
+      expected: Uppsägningstiden är högst 2 månader och övergångsperioden högst 30 kalenderdagar med servicenivåerna i kraft.
+      steps:
+        - action: Sök i avtalet, bilagorna och de allmänna villkoren efter uppsägningstider som gäller vid byte.
+          expected: Den längsta är högst 2 månader.
+        - action: Läs övergångsperioden i klausulen om byte.
+          expected: Den är högst 30 kalenderdagar efter uppsägningstiden.
+        - action: Läs vad som gäller för tjänsten under övergången.
+          expected: De avtalade servicenivåerna gäller.
+
+  - id: SVCLD-T02
+    priority: high
+    execution: manual
+    tags: [switching, export, retrieval]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)", "ISO/IEC 19941:2017"]
+    en:
+      title: Test export of the listed data categories and the retrieval period
+      description: Runs an export from a test tenant and compares it with the list of exportable data in the contract.
+      preconditions: A test tenant with sample data, configuration and usage history, and the contract's list of exportable categories.
+      expected: The export contains each listed category, and the contract gives a retrieval period of at least 30 days.
+      steps:
+        - action: Start the provider's export function in the test tenant.
+          expected: The export completes and can be downloaded.
+        - action: Compare the contents of the export with the listed categories.
+          expected: Each category is present, including configuration and usage metadata.
+          data: "Test tenant with 3 users, 100 records and 1 custom configuration"
+        - action: Read the retrieval clause.
+          expected: The retrieval period is at least 30 calendar days from the end of the transition.
+    sv:
+      title: Provexport av de angivna datakategorierna och hämtningsperioden
+      description: Gör en export från en testmiljö och jämför den med förteckningen över exporterbara data i avtalet.
+      preconditions: En testmiljö med exempeldata, konfiguration och användningshistorik, och avtalets förteckning över exporterbara kategorier.
+      expected: Exporten innehåller varje angiven kategori, och avtalet ger en hämtningsperiod på minst 30 dagar.
+      steps:
+        - action: Starta leverantörens exportfunktion i testmiljön.
+          expected: Exporten blir klar och kan laddas ned.
+        - action: Jämför innehållet i exporten med de angivna kategorierna.
+          expected: Varje kategori finns med, även konfiguration och metadata om användning.
+          data: "Testmiljö med 3 användare, 100 poster och 1 egen konfiguration"
+        - action: Läs klausulen om hämtning.
+          expected: Hämtningsperioden är minst 30 kalenderdagar från övergångens slut.
+
+  - id: SVCLD-T03
+    priority: medium
+    execution: manual
+    tags: [switching-charges, jurisdiction]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 29 (gradual withdrawal of switching charges)", "EU Data Act (Regulation (EU) 2023/2854) Art. 28 (obligations regarding transparency on international access and transfer)"]
+    en:
+      title: Switching charges and jurisdiction information
+      description: Checks the price list and the invoice after a test export, and the provider's published information on jurisdiction.
+      preconditions: The price list, the invoice for the month of the test export and the provider's public information pages.
+      expected: No switching or egress charge for switching appears, and jurisdiction and safeguards are published.
+      steps:
+        - action: Search the price list and the contract for switching and egress charges.
+          expected: No charge applies to switching.
+        - action: Read the invoice for the month of the test export.
+          expected: It has no switching or egress line for the export.
+        - action: Read the provider's information on jurisdiction and government access.
+          expected: It names the jurisdiction per region and lists technical, organisational and contractual measures.
+    sv:
+      title: Avgifter för byte och information om jurisdiktion
+      description: Kontrollerar prislistan och fakturan efter en provexport samt leverantörens publicerade information om jurisdiktion.
+      preconditions: Prislistan, fakturan för den månad då provexporten gjordes och leverantörens publika informationssidor.
+      expected: Ingen avgift för byte eller utförsel vid byte förekommer, och jurisdiktion och skyddsåtgärder är publicerade.
+      steps:
+        - action: Sök i prislistan och avtalet efter avgifter för byte och utförsel.
+          expected: Ingen avgift gäller vid byte.
+        - action: Läs fakturan för den månad då provexporten gjordes.
+          expected: Den har ingen rad för byte eller utförsel för exporten.
+        - action: Läs leverantörens information om jurisdiktion och myndigheters åtkomst.
+          expected: Den anger jurisdiktion per region och listar tekniska, organisatoriska och avtalsmässiga åtgärder.
+
+  - id: SVCLD-T04
+    priority: high
+    execution: manual
+    tags: [shared-responsibility, encryption]
+    refs: ["ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)", "CSA Cloud Controls Matrix v4 CEK-03"]
+    en:
+      title: Responsibility matrix and revocation of a customer key
+      description: Reviews the shared responsibility matrix and tests what happens when the customer revokes its own encryption key.
+      preconditions: The contract annex with the matrix and a test tenant encrypted with a key in the customer's key management service.
+      expected: Each control area has a responsible party, and the provider cannot read the data after the key is revoked.
+      steps:
+        - action: Read the responsibility matrix.
+          expected: Identity and access, data protection, logging, patching, backup and network each have a named party.
+        - action: Read a stored test record in the test tenant.
+          expected: The record is shown.
+        - action: Revoke the key in the customer's key management service and read the record again.
+          expected: The service reports that the data cannot be decrypted.
+    sv:
+      title: Ansvarsmatrisen och spärr av en nyckel som kunden förvaltar
+      description: Granskar matrisen för delat ansvar och testar vad som händer när kunden spärrar sin egen krypteringsnyckel.
+      preconditions: Avtalsbilagan med matrisen och en testmiljö som är krypterad med en nyckel i kundens nyckelhanteringstjänst.
+      expected: Varje område har en ansvarig part, och leverantören kan inte läsa data efter att nyckeln har spärrats.
+      steps:
+        - action: Läs ansvarsmatrisen.
+          expected: Identitet och åtkomst, dataskydd, loggning, uppdateringar, säkerhetskopiering och nätverk har var och en en namngiven part.
+        - action: Läs en lagrad testpost i testmiljön.
+          expected: Posten visas.
+        - action: Spärra nyckeln i kundens nyckelhanteringstjänst och läs posten igen.
+          expected: Tjänsten anger att data inte kan dekrypteras.
+
+  - id: SVCLD-T05
+    priority: medium
+    execution: manual
+    tags: [change-notice]
+    refs: ["ISO/IEC 27001:2022 A.5.22"]
+    en:
+      title: Notice times for removed or reduced features
+      description: Compares the provider's change log with the notices received by the customer.
+      preconditions: The provider's change log of the last 12 months and the customer's archive of provider notices.
+      expected: Each removal or reduction was notified at least 90 days ahead.
+      steps:
+        - action: List the removals and reductions of features, interfaces and security controls in the change log.
+          expected: Each has an effective date.
+        - action: Find the notice for each change in the customer's archive.
+          expected: Each change has a notice.
+        - action: Count the days from each notice to the effective date.
+          expected: Each count is at least 90.
+    sv:
+      title: Aviseringstider för borttagna eller begränsade funktioner
+      description: Jämför leverantörens ändringslogg med de meddelanden som kunden har fått.
+      preconditions: Leverantörens ändringslogg för de senaste 12 månaderna och kundens arkiv av meddelanden från leverantören.
+      expected: Varje borttagning eller begränsning aviserades minst 90 dagar i förväg.
+      steps:
+        - action: Lista borttagningar och begränsningar av funktioner, gränssnitt och säkerhetsåtgärder i ändringsloggen.
+          expected: Varje ändring har ett datum då den träder i kraft.
+        - action: Hitta meddelandet om varje ändring i kundens arkiv.
+          expected: Varje ändring har ett meddelande.
+        - action: Räkna dagarna från varje meddelande till datumet då ändringen träder i kraft.
+          expected: Varje antal är minst 90.
+
+  - id: SVCLD-T06
+    priority: critical
+    execution: manual
+    tags: [managed-security, alert-triage]
+    refs: ["ISO/IEC 27035-2:2023"]
+    en:
+      title: Test alerts outside office hours
+      description: Raises agreed test alerts at night and at a weekend and measures the time to the provider's notice.
+      preconditions: An agreed test procedure with the provider, a test host in scope of monitoring and the customer's named contact.
+      expected: Both test alerts are analysed and reported within 30 minutes.
+      steps:
+        - action: At 02.00 on a weekday, run the agreed test activity on the test host and note the time.
+          expected: The activity is logged by the monitoring.
+          data: "An agreed harmless test signature that matches a critical rule"
+        - action: Record the time of the provider's notice to the named contact.
+          expected: The notice arrives within 30 minutes and states the analysis.
+        - action: Repeat the test on a Saturday afternoon.
+          expected: The notice arrives within 30 minutes.
+    sv:
+      title: Testlarm utanför kontorstid
+      description: Utlöser avtalade testlarm en natt och en helg och mäter tiden till leverantörens meddelande.
+      preconditions: En avtalad testrutin med leverantören, en testvärd som omfattas av övervakningen och kundens namngivna kontakt.
+      expected: Båda testlarmen analyseras och rapporteras inom 30 minuter.
+      steps:
+        - action: Kör den avtalade testaktiviteten på testvärden klockan 02.00 en vardag och notera tiden.
+          expected: Aktiviteten loggas av övervakningen.
+          data: "En avtalad ofarlig testsignatur som matchar en kritisk regel"
+        - action: Notera tiden för leverantörens meddelande till den namngivna kontakten.
+          expected: Meddelandet kommer inom 30 minuter och redovisar analysen.
+        - action: Upprepa testet en lördagseftermiddag.
+          expected: Meddelandet kommer inom 30 minuter.
+
+  - id: SVCLD-T07
+    priority: high
+    execution: manual
+    tags: [managed-security, detection-coverage]
+    refs: ["MITRE ATT&CK"]
+    en:
+      title: Review of the quarterly detection coverage report
+      description: Reviews the mapping of detection rules to attack techniques and the gaps in the latest quarterly report.
+      preconditions: The agreed threat model and the latest quarterly coverage report.
+      expected: Each rule maps to a technique, and each uncovered technique of the threat model has a planned date.
+      steps:
+        - action: Pick 10 detection rules from the report.
+          expected: Each is mapped to at least 1 technique.
+        - action: Compare the techniques of the threat model with the covered techniques.
+          expected: Each uncovered technique is listed as a gap.
+        - action: Read the plan for the gaps.
+          expected: Each gap has a planned date.
+    sv:
+      title: Granskning av kvartalsrapporten om täckning av detektering
+      description: Granskar kopplingen mellan detekteringsregler och angreppstekniker och luckorna i den senaste kvartalsrapporten.
+      preconditions: Den avtalade hotmodellen och den senaste kvartalsrapporten om täckning.
+      expected: Varje regel är kopplad till en teknik, och varje otäckt teknik i hotmodellen har ett planerat datum.
+      steps:
+        - action: Välj 10 detekteringsregler ur rapporten.
+          expected: Varje regel är kopplad till minst 1 teknik.
+        - action: Jämför hotmodellens tekniker med de täckta teknikerna.
+          expected: Varje otäckt teknik är listad som en lucka.
+        - action: Läs planen för luckorna.
+          expected: Varje lucka har ett planerat datum.
+
+  - id: SVCLD-T08
+    priority: high
+    execution: manual
+    tags: [managed-security, log-sources, reporting]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27035-2:2023"]
+    en:
+      title: Silent log source alert and the monthly report
+      description: Stops a test log source and reviews the monthly reports of the service.
+      preconditions: A listed test log source whose forwarding can be stopped, and the monthly reports of the last 6 months.
+      expected: The silent source is alerted within 75 minutes, and each report has the 4 measures with a correct incident count.
+      steps:
+        - action: Stop the log forwarding of the test source and note the time.
+          expected: The source sends no more events.
+        - action: Wait for the provider's alert.
+          expected: The customer gets an alert naming the source within 75 minutes.
+        - action: Read each monthly report.
+          expected: Confirmed incidents, false positive share, median time to detect and median time to notify are shown.
+        - action: Compare the incident count of each report with the incident notices of that month.
+          expected: The counts match.
+    sv:
+      title: Larm för tyst loggkälla och månadsrapporten
+      description: Stoppar en testloggkälla och granskar tjänstens månadsrapporter.
+      preconditions: En listad testloggkälla vars vidarebefordring kan stoppas, och månadsrapporterna för de senaste 6 månaderna.
+      expected: Den tysta källan larmas inom 75 minuter, och varje rapport har de 4 måtten med rätt antal incidenter.
+      steps:
+        - action: Stoppa vidarebefordringen av loggar från testkällan och notera tiden.
+          expected: Källan skickar inga fler händelser.
+        - action: Vänta på leverantörens larm.
+          expected: Kunden får ett larm som namnger källan inom 75 minuter.
+        - action: Läs varje månadsrapport.
+          expected: Bekräftade incidenter, andel falsklarm, mediantid till detektering och mediantid till avisering visas.
+        - action: Jämför antalet incidenter i varje rapport med incidentmeddelandena den månaden.
+          expected: Antalen stämmer.
+
+  - id: SVCLD-T09
+    priority: high
+    execution: manual
+    tags: [managed-security, playbook, exit]
+    refs: ["ISO/IEC 27035-2:2023", "ISO/IEC 27036-3:2023"]
+    en:
+      title: Containment actions against playbooks and the exit clause
+      description: Compares the provider's containment actions with the approved playbooks and reviews the handover clause for detection content.
+      preconditions: The provider's action log of the last 6 months, the approved playbooks and the contract.
+      expected: Each containment action has an approved playbook, and the contract provides for the handover of detection content.
+      steps:
+        - action: List the containment actions in the provider's log.
+          expected: Each refers to a playbook.
+        - action: Check each referred playbook.
+          expected: It is approved by the customer and covers the action and the asset class.
+        - action: Read the exit clause of the contract.
+          expected: It requires the handover of rules, playbooks and log source configuration within 30 days, in a documented format.
+    sv:
+      title: Begränsande åtgärder mot spelböckerna och avslutsklausulen
+      description: Jämför leverantörens begränsande åtgärder med de godkända spelböckerna och granskar klausulen om överlämning av detekteringsregler.
+      preconditions: Leverantörens åtgärdslogg för de senaste 6 månaderna, de godkända spelböckerna och avtalet.
+      expected: Varje begränsande åtgärd har en godkänd spelbok, och avtalet reglerar överlämningen av detekteringsregler.
+      steps:
+        - action: Lista de begränsande åtgärderna i leverantörens logg.
+          expected: Varje åtgärd hänvisar till en spelbok.
+        - action: Kontrollera varje spelbok som det hänvisas till.
+          expected: Den är godkänd av kunden och omfattar åtgärden och tillgångsklassen.
+        - action: Läs avtalets avslutsklausul.
+          expected: Den kräver överlämning av regler, spelböcker och konfiguration av loggkällor inom 30 dagar i ett dokumenterat format.
