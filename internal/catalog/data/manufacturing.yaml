@@ -384,7 +384,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [cyber-resilience-act, vulnerability-reporting, products-with-digital-elements]
-    refs: ["Regulation (EU) 2024/2847 Art. 13", "Regulation (EU) 2024/2847 Art. 14", "Regulation (EU) 2024/2847 Annex I Part II"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period and vulnerability handling)", "Regulation (EU) 2024/2847 (CRA) Art. 14", "Regulation (EU) 2024/2847 (CRA) Annex I Part II"]
     tests: [MFG-T16]
     en:
       title: Vulnerability handling for products with digital elements
@@ -878,7 +878,7 @@ tests:
     priority: critical
     execution: manual
     tags: [cyber-resilience-act, vulnerability-reporting]
-    refs: ["Regulation (EU) 2024/2847 Art. 14"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 14"]
     en:
       title: Review of CRA vulnerability handling for a product
       description: Reviews the SBOM, support period and a reporting drill for one product with digital elements.

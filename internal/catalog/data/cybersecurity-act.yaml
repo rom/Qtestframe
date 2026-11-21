@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [scope, nis2]
-    refs: ["Cybersäkerhetslag (Swedish NIS2 act)", "Directive (EU) 2022/2555 (NIS2) Art. 2, Art. 3 (scope, essential and important entities)"]
+    refs: ["Cybersäkerhetslag (2025:1506) 1 kap. 3–9 §§ (tillämpningsområde, väsentliga och viktiga verksamhetsutövare)", "Directive (EU) 2022/2555 (NIS2) Art. 2, Art. 3 (scope, essential and important entities)"]
     tests: [CSL-T01]
     en:
       title: Documented assessment of whether the Act applies
@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: high
     tags: [registration, supervisory-authority]
-    refs: ["Cybersäkerhetslag (Swedish NIS2 act)", "Directive (EU) 2022/2555 (NIS2) Art. 3(4)"]
+    refs: ["Cybersäkerhetslag (2025:1506) 2 kap. 2 § (anmälningsskyldighet)", "Directive (EU) 2022/2555 (NIS2) Art. 3(4)"]
     tests: [CSL-T01]
     en:
       title: Registration with the supervisory authority kept current
@@ -60,12 +60,12 @@ requirements:
     obligation: must
     priority: critical
     tags: [governance, management-accountability]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(1)", "Cybersäkerhetslag (Swedish NIS2 act)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(1)", "Cybersäkerhetslag (2025:1506)"]
     tests: [CSL-T02]
     en:
       title: Management body approves the risk management measures
       description: The management body MUST approve the organisation's cybersecurity risk management measures and their action plan at least every 12 months, with the decision recorded in the minutes of the meeting.
-      rationale: The Act makes the management accountable for the measures, and an approval in the minutes shows that the decision was taken by the people who answer for it.
+      rationale: NIS2 makes the management body approve the measures and answer for them, and an approval in the minutes shows that the decision was taken by the people who answer for it.
       criteria:
         - method: review
           text: Minutes from the last 12 months record the management body's approval of the measures and the action plan, with the version of the documents approved.
@@ -73,7 +73,7 @@ requirements:
     sv:
       title: Ledningsorganet godkänner riskhanteringsåtgärderna
       description: Ledningsorganet SKA godkänna organisationens åtgärder för hantering av cybersäkerhetsrisker och handlingsplanen för dem minst var 12:e månad, med beslutet protokollfört.
-      rationale: Lagen gör ledningen ansvarig för åtgärderna, och ett protokollfört godkännande visar att beslutet fattades av dem som svarar för det.
+      rationale: NIS2-direktivet låter ledningsorganet godkänna åtgärderna och svara för dem, och ett protokollfört godkännande visar att beslutet fattades av dem som svarar för det.
       criteria:
         - method: review
           text: Protokoll från de senaste 12 månaderna visar ledningsorganets godkännande av åtgärderna och handlingsplanen, med versionen av de godkända dokumenten.
@@ -84,7 +84,7 @@ requirements:
     obligation: must
     priority: high
     tags: [training, management-accountability]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(2)", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(2)", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)", "Cybersäkerhetslag (2025:1506) 2 kap. 4 § (utbildning)"]
     tests: [CSL-T02]
     en:
       title: Yearly cybersecurity training of the management body
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [risk-analysis, all-hazards]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(1), Art. 21(2)(a)", "Implementing Regulation (EU) 2024/2690 Annex §2 (risk management policy)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(1), Art. 21(2)(a)", "Implementing Regulation (EU) 2024/2690 Annex §2 (risk management policy)", "Cybersäkerhetslag (2025:1506) 2 kap. 3 § (säkerhetsåtgärder)"]
     tests: [CSL-T03]
     en:
       title: Risk analysis of the network and information systems
@@ -132,12 +132,12 @@ requirements:
     obligation: must
     priority: critical
     tags: [incident-reporting, nis2, deadlines]
-    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23(4)", "Cybersäkerhetslag (Swedish NIS2 act)"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23(4)", "Cybersäkerhetslag (2025:1506) 2 kap. 5–8 §§ (rapportering av betydande incidenter)"]
     tests: [CSL-T04]
     en:
       title: Early warning in 24 hours, notification in 72 hours, final report in one month
-      description: For each incident that is reportable under the Cybersecurity Act, the organisation MUST send an early warning within 24 hours, an incident notification within 72 hours and a final report within one month of becoming aware of the incident.
-      rationale: These are the deadlines of the Act for a significant incident, and an organisation that first learns them during the incident misses the first one.
+      description: For each incident that is reportable under the Cybersecurity Act, the organisation MUST send an early warning within 24 hours, an incident notification within 72 hours of becoming aware of the incident, and a final report within one month of the incident notification.
+      rationale: These are the deadlines of the Act for a significant incident, and an organisation that first learns them during the incident misses the first one. When the incident is still ongoing after one month, the Act asks for a progress report at that point and the final report within one month after the incident has been handled.
       criteria:
         - method: demonstration
           text: In an exercise, the early warning, the notification and an outline of the final report are produced in time, with the content each stage calls for.
@@ -146,8 +146,8 @@ requirements:
           text: For each reported incident of the last 12 months, the times of the three reports are recorded and within the deadlines.
     sv:
       title: Tidig varning inom 24 timmar, incidentanmälan inom 72 timmar, slutrapport inom en månad
-      description: För varje incident som är rapporteringspliktig enligt cybersäkerhetslagen SKA organisationen skicka en tidig varning inom 24 timmar, en incidentanmälan inom 72 timmar och en slutrapport inom en månad från att den fick kännedom om incidenten.
-      rationale: Detta är lagens tidsfrister för en betydande incident, och en organisation som lär sig dem först under incidenten missar den första.
+      description: För varje incident som är rapporteringspliktig enligt cybersäkerhetslagen SKA organisationen skicka en tidig varning inom 24 timmar, en incidentanmälan inom 72 timmar från att den fick kännedom om incidenten, och en slutrapport inom en månad från incidentanmälan.
+      rationale: Detta är lagens tidsfrister för en betydande incident, och en organisation som lär sig dem först under incidenten missar den första. Om incidenten pågår fortfarande efter en månad kräver lagen en lägesrapport vid den tidpunkten och slutrapporten inom en månad efter att incidenten har hanterats.
       criteria:
         - method: demonstration
           text: I en övning tas den tidiga varningen, incidentanmälan och ett utkast till slutrapport fram i tid, med det innehåll som varje steg kräver.
@@ -215,7 +215,7 @@ requirements:
     en:
       title: Documented vulnerability handling and disclosure
       description: The organisation MUST handle vulnerabilities in its network and information systems through a documented process with a published reporting channel, triage within 5 working days of a report, remediation deadlines by severity and coordination with the national CSIRT (CERT-SE) when other organisations are affected.
-      rationale: The Act lists vulnerability handling and disclosure among the minimum measures, and the national CSIRT acts as coordinator when a vulnerability concerns more than one party.
+      rationale: NIS2 lists vulnerability handling and disclosure among the minimum measures, and the national CSIRT acts as coordinator when a vulnerability concerns more than one party.
       criteria:
         - method: inspection
           text: The process document contains the four parts, and the reporting channel is reachable from the organisation's public website.
@@ -225,7 +225,7 @@ requirements:
     sv:
       title: Dokumenterad hantering och offentliggörande av sårbarheter
       description: Organisationen SKA hantera sårbarheter i sina nätverks- och informationssystem genom en dokumenterad process med en publicerad kanal för rapporter, sortering inom 5 arbetsdagar från en rapport, tidsgränser för åtgärd efter allvarlighetsgrad och samordning med den nationella CSIRT-enheten (CERT-SE) när andra organisationer berörs.
-      rationale: Lagen räknar sårbarhetshantering och offentliggörande av sårbarheter till miniminivån av åtgärder, och den nationella CSIRT-enheten samordnar när en sårbarhet berör fler än en part.
+      rationale: NIS2-direktivet räknar sårbarhetshantering och offentliggörande av sårbarheter till miniminivån av åtgärder, och den nationella CSIRT-enheten samordnar när en sårbarhet berör fler än en part.
       criteria:
         - method: inspection
           text: Processdokumentet innehåller de fyra delarna, och kanalen för rapporter går att nå från organisationens publika webbplats.
@@ -474,7 +474,7 @@ tests:
         - action: Advance the scenario and let the team prepare the incident notification.
           expected: It is ready within 72 simulated hours and contains an initial assessment of severity and impact and the indicators of compromise known so far.
         - action: Advance to the end of the incident and let the team outline the final report.
-          expected: The outline is ready within one simulated month and covers a detailed description, the root cause, the mitigation measures and any cross-border impact.
+          expected: The outline is ready within one simulated month of the incident notification and covers a detailed description, the root cause, the mitigation measures and any cross-border impact.
     sv:
       title: Övning av rapporteringens tre steg
       description: En skrivbordsövning av en rapporteringspliktig incident med simulerad tid, där den tidiga varningen, incidentanmälan och utkastet till slutrapport tas fram.
@@ -488,7 +488,7 @@ tests:
         - action: För scenariot framåt och låt teamet förbereda incidentanmälan.
           expected: Den är klar inom 72 simulerade timmar och innehåller en första bedömning av allvar och påverkan och de indikatorer på intrång som är kända hittills.
         - action: För scenariot fram till incidentens slut och låt teamet göra ett utkast till slutrapport.
-          expected: Utkastet är klart inom en simulerad månad och omfattar en utförlig beskrivning, grundorsaken, de begränsande åtgärderna och eventuell gränsöverskridande påverkan.
+          expected: Utkastet är klart inom en simulerad månad från incidentanmälan och omfattar en utförlig beskrivning, grundorsaken, de begränsande åtgärderna och eventuell gränsöverskridande påverkan.
 
   - id: CSL-T05
     priority: high

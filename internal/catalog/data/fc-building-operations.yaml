@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [accessibility, entrance, step-free]
-    refs: ["BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)", "EN 17210:2021", "ISO 21542:2021"]
+    refs: ["BFS 2024:12 (byggnaders tillgänglighet och användbarhet)", "EN 17210:2021", "ISO 21542:2021"]
     tests: [FCOPS-T01]
     en:
       title: Step-free main entrance with a door of at least 0.8 m clear width
@@ -37,7 +37,7 @@ requirements:
     obligation: must
     priority: high
     tags: [accessibility, toilet]
-    refs: ["BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)", "ISO 21542:2021"]
+    refs: ["BFS 2024:12 (byggnaders tillgänglighet och användbarhet)", "ISO 21542:2021"]
     tests: [FCOPS-T01]
     en:
       title: Accessible toilet on each floor with a turning circle of 1.5 m
@@ -107,7 +107,7 @@ requirements:
     obligation: must
     priority: high
     tags: [accessibility, lift]
-    refs: ["EN 81-70", "BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)"]
+    refs: ["EN 81-70", "BFS 2024:12 (byggnaders tillgänglighet och användbarhet)"]
     tests: [FCOPS-T01]
     en:
       title: Lift to each floor with a car of at least 1.1 × 1.4 m
@@ -131,7 +131,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [energy-performance-certificate, energy]
-    refs: ["Lag (2006:985) om energideklaration för byggnader", "Directive (EU) 2024/1275 (EPBD) (energy performance certificates)"]
+    refs: ["Lag (2006:985) om energideklaration för byggnader", "Directive (EU) 2024/1275 (EPBD) Art. 19 (energy performance certificates)"]
     tests: [FCOPS-T03]
     en:
       title: Valid energy performance certificate for the building
@@ -177,7 +177,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [building-automation, energy, alarms]
-    refs: ["Directive (EU) 2024/1275 (EPBD) (building automation and control systems)"]
+    refs: ["Directive (EU) 2024/1275 (EPBD) Art. 13(10) (building automation and control systems)"]
     tests: [FCOPS-T04]
     en:
       title: Building automation alerts when daily energy use exceeds the baseline by 15 %
@@ -245,19 +245,19 @@ requirements:
     obligation: must
     priority: high
     tags: [ventilation, ovk, mandatory-inspection]
-    refs: ["Förordning (1991:1273) om funktionskontroll av ventilationssystem", "BFS 2011:16 (OVK)"]
+    refs: ["Plan- och byggförordning (2011:338) 5 kap. 1–7 §§ (funktionskontroll av ventilationssystem)", "BFS 2011:16 (OVK) 3 § (besiktningsintervall)"]
     tests: [FCOPS-T07]
     en:
       title: Ventilation inspection within the interval for the building type
       description: The building owner MUST have each ventilation system inspected by a certified inspector within the interval set for the building type and correct each remark by the date stated in the protocol.
-      rationale: Swedish rules require recurring functional inspection of ventilation, usually every 3 or 6 years depending on the building, because poor ventilation harms the indoor environment.
+      rationale: Swedish rules require recurring functional inspection of ventilation, every 3 years for preschools, schools and care premises and for blocks of flats and offices with supply and exhaust ventilation, and every 6 years for blocks of flats and offices with exhaust-only or natural ventilation, because poor ventilation harms the indoor environment.
       criteria:
         - method: review
           text: The latest protocol for each system is within the interval, the inspector's certificate is valid, and each remark has a recorded correction by its date.
     sv:
       title: Ventilationskontroll inom intervallet för byggnadstypen
       description: Byggnadens ägare SKA låta en certifierad funktionskontrollant kontrollera varje ventilationssystem inom det intervall som gäller för byggnadstypen och rätta varje anmärkning till det datum som protokollet anger.
-      rationale: Reglerna kräver återkommande funktionskontroll av ventilationen, oftast vart 3:e eller 6:e år beroende på byggnaden, eftersom dålig ventilation skadar inomhusmiljön.
+      rationale: Reglerna kräver återkommande funktionskontroll av ventilationen, vart 3:e år för förskolor, skolor och vårdlokaler och för flerbostadshus och kontor med FT- eller FTX-ventilation, och vart 6:e år för flerbostadshus och kontor med F-, FX- eller S-ventilation, eftersom dålig ventilation skadar inomhusmiljön.
       criteria:
         - method: review
           text: Det senaste protokollet för varje system ligger inom intervallet, kontrollantens certifikat är giltigt, och varje anmärkning har en dokumenterad rättelse till sitt datum.
@@ -267,19 +267,19 @@ requirements:
     obligation: must
     priority: high
     tags: [lift, periodic-inspection]
-    refs: []
+    refs: ["Plan- och byggförordning (2011:338) 5 kap. 8–11 §§ (kontroll av motordrivna anordningar)", "BFS 2025:11 2 kap. 11 § (besiktningsintervall för hissar)"]
     tests: [FCOPS-T07]
     en:
       title: Periodic lift inspection by an accredited body
       description: The building owner MUST have each lift inspected by an accredited inspection body at the interval set by the national rules and correct each remark by the date in the inspection protocol.
-      rationale: Lifts carry people and can trap or injure them, and periodic inspection is the main check on their safety.
+      rationale: Lifts carry people and can trap or injure them, and periodic inspection is the main check on their safety. Swedish rules set the first recurring inspection 2 years after the first inspection and then every year for passenger lifts, every 2 years for goods lifts, stair lifts and platform lifts serving at most two dwellings, and defects that remain after the inspection without an immediate risk are to be corrected within one month.
       criteria:
         - method: review
           text: Each lift has a current inspection protocol from an accredited body, and each remark has a recorded correction by its date.
     sv:
       title: Återkommande besiktning av hissar av ett ackrediterat organ
       description: Byggnadens ägare SKA låta ett ackrediterat kontrollorgan besiktiga varje hiss med det intervall som de nationella reglerna anger och rätta varje anmärkning till det datum som besiktningsprotokollet anger.
-      rationale: Hissar bär människor och kan stänga in eller skada dem, och återkommande besiktning är den främsta kontrollen av deras säkerhet.
+      rationale: Hissar bär människor och kan stänga in eller skada dem, och återkommande besiktning är den främsta kontrollen av deras säkerhet. Reglerna anger den första återkommande besiktningen 2 år efter den första besiktningen och därefter varje år för personhissar och vartannat år för varuhissar, trapphissar och plattformshissar som betjänar högst två bostäder, och brister som kvarstår efter besiktningen utan omedelbar risk ska åtgärdas inom en månad.
       criteria:
         - method: review
           text: Varje hiss har ett aktuellt besiktningsprotokoll från ett ackrediterat organ, och varje anmärkning har en dokumenterad rättelse till sitt datum.
@@ -313,7 +313,7 @@ tests:
     priority: high
     execution: manual
     tags: [accessibility]
-    refs: ["BBR (BFS 2011:6) avsnitt 3 (tillgänglighet)"]
+    refs: ["BFS 2024:12 (byggnaders tillgänglighet och användbarhet)"]
     en:
       title: Accessibility walk-through of entrance, toilets and lift
       description: Measures the entrance route, the accessible toilets and the lift with a tape measure and a door force gauge.
@@ -487,7 +487,7 @@ tests:
     priority: high
     execution: manual
     tags: [ventilation, lift, mandatory-inspection]
-    refs: ["Förordning (1991:1273) om funktionskontroll av ventilationssystem"]
+    refs: ["Plan- och byggförordning (2011:338) 5 kap. 1–7 §§ (funktionskontroll av ventilationssystem)", "BFS 2011:16 (OVK) 3 § (besiktningsintervall)", "BFS 2025:11 2 kap. 11 § (besiktningsintervall för hissar)"]
     en:
       title: Ventilation and lift inspection protocols
       description: Reviews the latest ventilation inspection and lift inspection protocols and the correction of their remarks.
@@ -499,6 +499,7 @@ tests:
           data: Interval 3 or 6 years for the building type
         - action: For each lift, check the date and the accreditation of the inspection body.
           expected: Each protocol is current and from an accredited body.
+          data: First recurring inspection after 2 years, then every year for passenger lifts
         - action: For each remark in the protocols, find the correction in the work records.
           expected: Each remark has a correction dated by its deadline.
     sv:
@@ -512,6 +513,7 @@ tests:
           data: Intervall 3 eller 6 år för byggnadstypen
         - action: Kontrollera datum och ackreditering för kontrollorganet för varje hiss.
           expected: Varje protokoll är aktuellt och kommer från ett ackrediterat organ.
+          data: Första återkommande besiktning efter 2 år, därefter varje år för personhissar
         - action: Hitta rättelsen i arbetsordrarna för varje anmärkning i protokollen.
           expected: Varje anmärkning har en rättelse daterad senast vid sin tidsgräns.
 

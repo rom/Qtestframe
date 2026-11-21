@@ -168,7 +168,7 @@ requirements:
     obligation: should
     priority: high
     tags: [nis2, early-warning, csirt]
-    refs: ["NIS2 Directive (EU) 2022/2555 Art. 23 (reporting obligations)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14", "ISO/IEC 27001:2022 A.5.5"]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23 (reporting obligations)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14", "ISO/IEC 27001:2022 A.5.5"]
     tests: [INC-T04]
     en:
       title: Early warning of reportable incidents within 24 hours
@@ -408,7 +408,7 @@ tests:
     priority: critical
     execution: manual
     tags: [personal-data-breach, nis2, tabletop]
-    refs: ["GDPR Art. 33", "NIS2 Directive (EU) 2022/2555 Art. 23", "ISO/IEC 27001:2022 A.5.5", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2019 (notification of a data breach)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14"]
+    refs: ["GDPR Art. 33", "Directive (EU) 2022/2555 (NIS2) Art. 23", "ISO/IEC 27001:2022 A.5.5", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2019 (notification of a data breach)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14"]
     en:
       title: Tabletop exercise for a personal data breach
       description: Simulates the discovery of a breach on a Friday afternoon and measures the time to the notification decisions.

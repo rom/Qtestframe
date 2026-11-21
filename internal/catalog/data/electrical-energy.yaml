@@ -338,7 +338,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [black-start, restoration, backup-control-centre]
-    refs: ["Commission Regulation (EU) 2017/2196 (NC ER) Art. 41", "Commission Regulation (EU) 2017/2196 (NC ER) Art. 42", "Directive (EU) 2022/2557 (CER) Art. 13", "Elberedskapslagen (1997:288)"]
+    refs: ["Commission Regulation (EU) 2017/2196 (NC ER) Art. 42 (tools and facilities, backup control room)", "Directive (EU) 2022/2557 (CER) Art. 13", "Elberedskapslag (1997:288)"]
     tests: [ENRG-T14]
     en:
       title: Backup control centre takes over within 3 hours
