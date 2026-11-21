@@ -2,7 +2,7 @@ area: eq-maintenance
 prefix: EQMNT
 group: operations
 catalogue: equipment
-name: {en: Calibration, maintenance and spare parts, sv: Kalibrering, underhåll och reservdelar}
+name: {en: "Calibration, maintenance and spare parts", sv: "Kalibrering, underhåll och reservdelar"}
 description:
   en: Keeping equipment accurate and available over its life, covering the register of measuring equipment, metrological traceability and measurement uncertainty after ISO/IEC 17025, calibration status and out-of-tolerance handling, intermediate checks and intervals, preventive maintenance and its records, critical spare parts and their long-term availability, maintainability and repair time, condition monitoring and maintenance key figures.
   sv: Att hålla utrustningen noggrann och tillgänglig under hela dess liv, med register över mätutrustning, metrologisk spårbarhet och mätosäkerhet enligt ISO/IEC 17025, kalibreringsstatus och hantering av mätvärden utanför tolerans, mellanliggande kontroller och intervall, förebyggande underhåll och dess dokumentation, kritiska reservdelar och deras långsiktiga tillgång, underhållsmässighet och reparationstid, tillståndsövervakning och nyckeltal för underhåll.

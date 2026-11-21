@@ -2,7 +2,7 @@ area: eq-acceptance
 prefix: EQACC
 group: operations
 catalogue: equipment
-name: {en: Procurement, acceptance, commissioning and decommissioning, sv: Upphandling, godkännande, idrifttagning och avveckling}
+name: {en: "Procurement, acceptance, commissioning and decommissioning", sv: "Upphandling, godkännande, idrifttagning och avveckling"}
 description:
   en: The life of a piece of equipment from purchase to disposal, covering the purchase specification and supplier evaluation, factory acceptance test (FAT), delivery inspection, installation and electrical verification, site acceptance test (SAT) and performance run, handover of documentation and training, initial inspection, final acceptance, and decommissioning with energy isolation, data sanitisation and disposal.
   sv: Utrustningens liv från inköp till kassering, med inköpsspecifikation och leverantörsbedömning, fabriksacceptanstest (FAT), leveranskontroll, installation och verifiering av elinstallationen, platsacceptanstest (SAT) och prestandakörning, överlämning av dokumentation och utbildning, första besiktning, slutligt godkännande och avveckling med frånskiljning av energi, sanering av lagringsmedier och kassering.

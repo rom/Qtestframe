@@ -2,7 +2,7 @@ area: hw-emc-safety
 prefix: HWEMC
 group: privacy
 catalogue: hardware
-name: {en: Electrical safety, EMC and CE marking, sv: Elsäkerhet, EMC och CE-märkning}
+name: {en: "Electrical safety, EMC and CE marking", sv: "Elsäkerhet, EMC och CE-märkning"}
 description:
   en: Conformity of electrical and electronic products with the Low Voltage Directive 2014/35/EU and the EMC Directive 2014/30/EU, covering the directive matrix, electrical safety tests, insulation, emission and immunity, technical documentation, the EU declaration of conformity, CE marking, product identification, rating labels and instructions.
   sv: Överensstämmelse för elektriska och elektroniska produkter med lågspänningsdirektivet 2014/35/EU och EMC-direktivet 2014/30/EU, med förteckning över tillämpliga direktiv, elsäkerhetsprovning, isolation, emission och immunitet, teknisk dokumentation, EU-försäkran om överensstämmelse, CE-märkning, produktidentifiering, märkskyltar och instruktioner.
