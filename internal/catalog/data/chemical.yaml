@@ -176,7 +176,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sds, safety-data-sheet, reach]
-    refs: ["Regulation (EC) No 1907/2006 Art. 31", "Regulation (EC) No 1907/2006 Annex II"]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 31(1) (safety data sheet)", "Regulation (EC) No 1907/2006 (REACH) Art. 31(5) (language)", "Regulation (EC) No 1907/2006 (REACH) Art. 31(9) (updates)", "Regulation (EC) No 1907/2006 (REACH) Annex II"]
     tests: [CHEM-T08]
     en:
       title: Current safety data sheet for each substance on site
@@ -414,7 +414,7 @@ requirements:
     obligation: must
     priority: high
     tags: [critical-entity, cer, incident-notification]
-    refs: ["Directive (EU) 2022/2557 Art. 13", "Directive (EU) 2022/2557 Art. 15"]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 15(1)", "Directive (EU) 2022/2557 (CER) Art. 15(2)"]
     tests: [CHEM-T16]
     en:
       title: Incident data for a critical entity notification
@@ -754,7 +754,7 @@ tests:
     priority: high
     execution: manual
     tags: [sds, reach]
-    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 31(5) (language)", "Regulation (EC) No 1907/2006 (REACH) Art. 31(9) (updates)"]
     en:
       title: Receipt without a safety data sheet and a new revision
       description: Tries to receive a substance without a safety data sheet in the site language and loads a newer revision for another substance.
@@ -1008,7 +1008,7 @@ tests:
     priority: high
     execution: manual
     tags: [critical-entity, incident-notification]
-    refs: ["Directive (EU) 2022/2557 Art. 15"]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 15(1)"]
     en:
       title: Notification draft for a disruptive incident
       description: Registers a test incident that stops deliveries and checks the notification draft.

@@ -445,7 +445,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [accessibility, alternative-format, request]
-    refs: ["EN 301 549 V3.2.1 clause 10", "Directive (EU) 2016/2102 Art. 7 (accessibility statement and feedback)"]
+    refs: ["EN 301 549 V3.2.1 clause 10", "Directive (EU) 2016/2102 Art. 7(1) (accessibility statement and feedback mechanism)"]
     tests: [DCUM-T13]
     en:
       title: Accessible alternative delivered within 10 working days of a request
@@ -817,7 +817,7 @@ tests:
     priority: medium
     execution: manual
     tags: [accessibility, html, alternative-format]
-    refs: ["EN 301 549 V3.2.1 clause 9", "Directive (EU) 2016/2102 Art. 7 (accessibility statement and feedback)"]
+    refs: ["EN 301 549 V3.2.1 clause 9", "Directive (EU) 2016/2102 Art. 7(1) (accessibility statement and feedback mechanism)"]
     en:
       title: Web version of manuals and a request for an accessible alternative
       description: Checks the web version of 2 manuals and sends a test request for an accessible alternative.

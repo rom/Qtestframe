@@ -297,7 +297,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [ev-charging, parking, epbd]
-    refs: ["Directive (EU) 2024/1275 Art. 14 (infrastructure for sustainable mobility)"]
+    refs: ["Directive (EU) 2024/1275 (EPBD) Art. 14(1)(a) (recharging points at non-residential buildings)"]
     tests: [FCTI-T08]
     en:
       title: At least 1 charging point for every 5 parking spaces at new non-residential buildings
@@ -561,7 +561,7 @@ tests:
     priority: high
     execution: manual
     tags: [ev-charging]
-    refs: ["Directive (EU) 2024/1275 Art. 14 (infrastructure for sustainable mobility)", "IEC 60364-7-722:2018 §722.531.3 (residual current devices)"]
+    refs: ["Directive (EU) 2024/1275 (EPBD) Art. 14(1)(a) (recharging points at non-residential buildings)", "IEC 60364-7-722:2018 §722.531.3 (residual current devices)"]
     en:
       title: Number of charging points and their fault protection
       description: Counts the charging points and parking spaces and inspects the protective devices of the charging circuits.

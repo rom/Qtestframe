@@ -301,7 +301,7 @@ requirements:
     obligation: must
     priority: high
     tags: [records, registration, public-documents]
-    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)", "Offentlighets- och sekretesslag (2009:400) 5 kap. 2 § (uppgifter i registret)"]
     tests: [EGOV-T13]
     en:
       title: Submissions registered as official documents
@@ -679,7 +679,7 @@ tests:
     priority: high
     execution: manual
     tags: [records, registration]
-    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)"]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 § (registrering av allmänna handlingar)", "Offentlighets- och sekretesslag (2009:400) 5 kap. 2 § (uppgifter i registret)"]
     en:
       title: Submission registered in the records system
       description: Submits an application and looks it up in the records system.

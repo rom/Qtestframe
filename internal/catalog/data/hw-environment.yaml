@@ -319,7 +319,7 @@ requirements:
     obligation: must
     priority: high
     tags: [reach, svhc, customer-information]
-    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 33 (duty to communicate information on substances in articles)"]
+    refs: ["Regulation (EC) No 1907/2006 (REACH) Art. 33(1) (duty to communicate information on substances in articles)"]
     tests: [HWENV-T10]
     en:
       title: Substances of very high concern communicated
@@ -789,7 +789,7 @@ tests:
     priority: high
     execution: manual
     tags: [rohs, exemptions, reach]
-    refs: ["Directive 2011/65/EU (RoHS) Annex III (exempted applications)", "Regulation (EC) No 1907/2006 (REACH) Art. 33 (duty to communicate information on substances in articles)"]
+    refs: ["Directive 2011/65/EU (RoHS) Annex III (exempted applications)", "Regulation (EC) No 1907/2006 (REACH) Art. 33(1) (duty to communicate information on substances in articles)"]
     en:
       title: Exemption list and SVHC information are current
       description: Checks the RoHS exemption list against the expiry dates and the SVHC report against the current candidate list.

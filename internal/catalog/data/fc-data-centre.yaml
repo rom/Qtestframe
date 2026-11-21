@@ -319,7 +319,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [energy-efficiency, reporting, eed]
-    refs: ["Directive (EU) 2023/1791 (EED) Art. 12 (data centres)"]
+    refs: ["Directive (EU) 2023/1791 (EED) Art. 12(1) (data centres)"]
     tests: [FCDC-T11]
     en:
       title: Yearly energy performance report for a data centre of 500 kW or more
@@ -411,24 +411,24 @@ requirements:
     obligation: must
     priority: medium
     tags: [waste-heat, energy-efficiency, data-centre]
-    refs: ["Directive (EU) 2023/1791 Art. 26 (heating and cooling supply)"]
+    refs: ["Directive (EU) 2023/1791 (EED) Art. 26(7)(d) (cost-benefit analysis of waste heat use by data centres)"]
     tests: [FCDC-T14]
     en:
-      title: Cost-benefit analysis of waste heat use for a data centre of 1 MW or more
-      description: Before a new or substantially refurbished data centre with a total rated energy input of 1 MW or more is commissioned, the operator MUST carry out a cost-benefit analysis of using its waste heat, for example in a district heating network.
+      title: Cost-benefit analysis of waste heat use for a data centre above 1 MW
+      description: Before a new or substantially refurbished data centre with a total rated energy input of more than 1 MW is commissioned, the operator MUST carry out a cost-benefit analysis of using its waste heat, for example in a district heating network.
       rationale: Data centres turn almost all their electricity into heat, and using it elsewhere can replace other heat production.
       criteria:
         - method: review
           text: A dated cost-benefit analysis exists before the commissioning date and covers at least 1 heat recipient option.
-          threshold: "≥ 1 MW rated input"
+          threshold: "> 1 MW rated input"
     sv:
-      title: Kostnads-nyttoanalys av spillvärme för ett datacenter på 1 MW eller mer
-      description: Innan ett nytt eller väsentligt renoverat datacenter med en total nominell tillförd effekt på 1 MW eller mer tas i drift SKA driftansvarig göra en kostnads-nyttoanalys av att använda dess spillvärme, till exempel i ett fjärrvärmenät.
+      title: Kostnads-nyttoanalys av spillvärme för ett datacenter över 1 MW
+      description: Innan ett nytt eller väsentligt renoverat datacenter med en total nominell tillförd effekt på mer än 1 MW tas i drift SKA driftansvarig göra en kostnads-nyttoanalys av att använda dess spillvärme, till exempel i ett fjärrvärmenät.
       rationale: Datacenter omvandlar nästan all sin el till värme, och om den används någon annanstans kan den ersätta annan värmeproduktion.
       criteria:
         - method: review
           text: En daterad kostnads-nyttoanalys finns före datumet för driftsättning och omfattar minst 1 alternativ för mottagare av värmen.
-          threshold: "≥ 1 MW nominell tillförd effekt"
+          threshold: "> 1 MW nominell tillförd effekt"
 
   - id: FCDC-19
     type: business
@@ -747,7 +747,7 @@ tests:
     priority: medium
     execution: manual
     tags: [energy-efficiency, pue, reporting]
-    refs: ["EN 50600-4-2 (power usage effectiveness)", "Directive (EU) 2023/1791 (EED) Art. 12 (data centres)"]
+    refs: ["EN 50600-4-2 (power usage effectiveness)", "Directive (EU) 2023/1791 (EED) Art. 12(1) (data centres)"]
     en:
       title: Power usage effectiveness and the yearly energy report
       description: Recalculates the power usage effectiveness from meter readings and checks the yearly report to the European database.
@@ -841,14 +841,14 @@ tests:
     priority: medium
     execution: manual
     tags: [waste-heat, method-statement]
-    refs: ["Directive (EU) 2023/1791 Art. 26 (heating and cooling supply)", "EN 50600-2-6 (management and operational information)"]
+    refs: ["Directive (EU) 2023/1791 (EED) Art. 26(7)(d) (cost-benefit analysis of waste heat use by data centres)", "EN 50600-2-6 (management and operational information)"]
     en:
       title: Waste heat analysis and method statements for critical work
       description: Checks the waste heat analysis for a large data centre and the method statements of recent work on power and cooling.
       preconditions: The rated energy input and commissioning date of the data centre, the waste heat analysis and the work orders of the last 3 months.
       expected: The analysis predates commissioning, and each critical work had an approved method statement in time.
       steps:
-        - action: Read the rated energy input and, at 1 MW or more, the date of the cost-benefit analysis.
+        - action: Read the rated energy input and, above 1 MW, the date of the cost-benefit analysis.
           expected: The analysis is dated before commissioning and covers at least 1 heat recipient.
         - action: Filter the work orders on power and cooling work.
           expected: Each has a method statement attached.
@@ -860,7 +860,7 @@ tests:
       preconditions: Datacentrets nominella tillförda effekt och datum för driftsättning, analysen av spillvärme och arbetsordrarna för de senaste 3 månaderna.
       expected: Analysen är äldre än driftsättningen, och varje kritiskt arbete hade en godkänd arbetsinstruktion i tid.
       steps:
-        - action: Läs den nominella tillförda effekten och, vid 1 MW eller mer, datumet för kostnads-nyttoanalysen.
+        - action: Läs den nominella tillförda effekten och, vid mer än 1 MW, datumet för kostnads-nyttoanalysen.
           expected: Analysen är daterad före driftsättningen och omfattar minst 1 mottagare av värme.
         - action: Filtrera arbetsordrarna på arbeten på kraft och kyla.
           expected: Varje arbetsorder har en bifogad arbetsinstruktion.
