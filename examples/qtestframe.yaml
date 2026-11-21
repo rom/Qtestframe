@@ -76,6 +76,23 @@ runner:
     bash: /bin/bash
     python: /usr/bin/python3
     javascript: /usr/bin/node
+  # Web tests in a real browser (Playwright), run in the background. To try
+  # them: in some directory run `npm i @playwright/test` and
+  # `npx playwright install --with-deps chromium`, point playwright_dir at
+  # it and set enabled: true. seed-demo adds a web test against this server
+  # (server.base_url).
+  web:
+    enabled: false
+    node: /usr/bin/node
+    playwright_dir: ""         # the directory with node_modules/@playwright/test
+    browsers_path: ""          # PLAYWRIGHT_BROWSERS_PATH; empty = Playwright's default
+    browser: chromium          # chromium | firefox | webkit
+    headless: true
+    timeout: 60s               # per test
+    screenshots: on_failure    # on_failure | always | off
+    trace: on_failure          # on_failure | always | off
+    video: "off"               # off | on_failure | always
+    max_parallel: 2
 
 # Outgoing e-mail: notifications by e-mail, invitations of new members and
 # reports sent by e-mail or on a schedule. Off while host is empty; then the

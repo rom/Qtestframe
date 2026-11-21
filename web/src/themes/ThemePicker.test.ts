@@ -71,9 +71,9 @@ describe('ThemePicker', () => {
     const setTheme = vi.spyOn(prefs, 'setTheme').mockResolvedValue()
     ;(el.querySelector('.p-select') as HTMLElement).click()
     await flush()
-    const option = [...document.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes('Green console')) as HTMLElement
+    const option = [...document.querySelectorAll('[role="option"]')].find((o) => o.textContent?.includes('Green terminal')) as HTMLElement
     expect(option).toBeTruthy()
-    expect(document.querySelectorAll('[role="option"]')).toHaveLength(17)
+    expect(document.querySelectorAll('[role="option"]')).toHaveLength(22)
     option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
     await flush()
     expect(onUpdate).toHaveBeenCalledWith('green_console')

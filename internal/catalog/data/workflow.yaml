@@ -1,0 +1,601 @@
+area: workflow
+prefix: WFL
+group: functional
+name: {en: Workflow and approvals, sv: Arbetsflöde och godkännanden}
+description:
+  en: States and transitions, separation of duties, multiple approvers, rejection with a reason, locking of approved versions, approval records, reminders, escalation, delegation, approval queues and signatures at approval.
+  sv: Statusar och övergångar, åtskillnad av uppgifter, flera godkännare, avslag med motivering, låsning av godkända versioner, registrering av godkännanden, påminnelser, eskalering, delegering, godkännandeköer och signering vid godkännande.
+
+requirements:
+  - id: WFL-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [states, transitions, configuration]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    tests: [WFL-T01]
+    en:
+      title: Configurable states and transitions
+      description: The system MUST let an administrator define the states of each item type and the allowed transitions between them, and MUST offer only the allowed transitions from an item's current state.
+      rationale: Organisations differ in how items move from draft to approved, and offering only valid next steps prevents errors.
+      criteria:
+        - method: test
+          text: With the states Draft, In review, Approved and Rejected and 4 defined transitions, an item in Draft offers only "Send for review".
+    sv:
+      title: Konfigurerbara statusar och övergångar
+      description: Systemet SKA låta en administratör definiera statusarna för varje posttyp och de tillåtna övergångarna mellan dem, och bara erbjuda de tillåtna övergångarna från en posts aktuella status.
+      rationale: Organisationer skiljer sig åt i hur poster går från utkast till godkänt, och att bara visa giltiga nästa steg förhindrar fel.
+      criteria:
+        - method: test
+          text: Med statusarna Utkast, Under granskning, Godkänd och Avslagen och 4 definierade övergångar erbjuder en post i Utkast bara "Skicka för granskning".
+
+  - id: WFL-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [transitions, server-side, api]
+    refs: ["OWASP ASVS 5.0 V2 business logic", "OWASP Top 10 2021 A04"]
+    tests: [WFL-T01]
+    en:
+      title: Transition rules enforced on the server
+      description: The server MUST reject a status change through the API that is not an allowed transition from the item's current state, with an error that names the current state.
+      rationale: Hiding a button is not a control; a direct request could otherwise skip review.
+      criteria:
+        - method: test
+          text: An API request that sets a Draft item to Approved is rejected with an error naming the state Draft, and the item stays in Draft.
+    sv:
+      title: Övergångsreglerna kontrolleras på servern
+      description: Servern SKA avvisa en statusändring via API:et som inte är en tillåten övergång från postens aktuella status, med ett fel som anger den aktuella statusen.
+      rationale: Att dölja en knapp är ingen kontroll; en direkt begäran kunde annars hoppa över granskningen.
+      criteria:
+        - method: test
+          text: En API-begäran som sätter en post i Utkast till Godkänd avvisas med ett fel som anger statusen Utkast, och posten stannar i Utkast.
+
+  - id: WFL-03
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [separation-of-duties, approval]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.3", "21 CFR Part 11 §11.10"]
+    tests: [WFL-T02]
+    en:
+      title: No approval of one's own item
+      description: The system MUST NOT let the author or the last editor of an item approve that version of the item.
+      rationale: Separation of duties is the point of an approval; self-approval makes it a formality.
+      criteria:
+        - method: test
+          text: The author and the last editor get no approve action in the user interface and their API approvals are rejected; a third user with the approver role can approve.
+    sv:
+      title: Inget godkännande av egen post
+      description: Systemet SKA INTE låta författaren eller den senaste redigeraren av en post godkänna den versionen av posten.
+      rationale: Åtskillnad av uppgifter är syftet med ett godkännande; att godkänna sitt eget gör det till en formalitet.
+      criteria:
+        - method: test
+          text: Författaren och den senaste redigeraren får ingen godkänn-handling i användargränssnittet och deras godkännanden via API:et avvisas; en tredje användare med godkännarroll kan godkänna.
+
+  - id: WFL-04
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [approval, multiple-approvers]
+    refs: ["ISO 9001:2015 §7.5.2"]
+    tests: [WFL-T03]
+    en:
+      title: Required number of approvals
+      description: The system SHOULD let an administrator set for each item type the number of distinct approvers, from 1 to 5, that an item needs before it reaches the approved state.
+      rationale: Critical documents in regulated work often need a second or a third signature.
+      criteria:
+        - method: test
+          text: With 2 required approvals an item stays in review after the first approval and becomes approved after a second, different approver.
+    sv:
+      title: Antal godkännanden som krävs
+      description: Systemet BÖR låta en administratör ange för varje posttyp antalet olika godkännare, från 1 till 5, som en post behöver innan den når statusen godkänd.
+      rationale: Kritiska dokument i reglerad verksamhet behöver ofta en andra eller tredje underskrift.
+      criteria:
+        - method: test
+          text: Med 2 godkännanden som krav stannar en post i granskning efter det första godkännandet och blir godkänd efter en andra, annan godkännare.
+
+  - id: WFL-05
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [rejection, comment]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    tests: [WFL-T02]
+    en:
+      title: Rejection with a reason
+      description: Rejecting an item MUST require a reason of at least 10 characters, which is shown to the author together with the rejecting user and time.
+      rationale: An author cannot correct an item without knowing why it was rejected.
+      criteria:
+        - method: test
+          text: A rejection without a reason or with 9 characters is refused; one with 10 characters is accepted and shown on the item with name and time.
+          threshold: ≥ 10 characters
+    sv:
+      title: Avslag med motivering
+      description: Ett avslag på en post SKA kräva en motivering på minst 10 tecken, som visas för författaren tillsammans med vem som avslog och när.
+      rationale: En författare kan inte rätta en post utan att veta varför den avslogs.
+      criteria:
+        - method: test
+          text: Ett avslag utan motivering eller med 9 tecken avvisas; ett med 10 tecken godtas och visas på posten med namn och tid.
+          threshold: ≥ 10 tecken
+
+  - id: WFL-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [locking, revision]
+    refs: ["ISO 9001:2015 §7.5.3", "21 CFR Part 11 §11.10"]
+    tests: [WFL-T04]
+    en:
+      title: Approved versions locked
+      description: The system MUST keep an approved version of an item unchanged, and an edit after approval MUST create a new version in the draft state while the approved version stays readable.
+      rationale: What was approved must stay exactly what was approved, and later work needs its own review.
+      criteria:
+        - method: test
+          text: Editing an approved item creates version 2 in Draft, and version 1 is still shown as approved with its original text.
+    sv:
+      title: Godkända versioner låses
+      description: Systemet SKA hålla en godkänd version av en post oförändrad, och en redigering efter godkännandet ska skapa en ny version i utkaststatus medan den godkända versionen förblir läsbar.
+      rationale: Det som godkändes ska förbli exakt det som godkändes, och senare arbete behöver en egen granskning.
+      criteria:
+        - method: test
+          text: Redigering av en godkänd post skapar version 2 i Utkast, och version 1 visas fortfarande som godkänd med sin ursprungliga text.
+
+  - id: WFL-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [approval-record, audit]
+    refs: ["21 CFR Part 11 §11.50", "ISO 9001:2015 §7.5.3"]
+    tests: [WFL-T04]
+    en:
+      title: Record of each approval
+      description: The system MUST record each approval and rejection with the user's name, the time in UTC, the version number of the item and the meaning of the decision.
+      rationale: Auditors need to see who approved exactly which content and when.
+      criteria:
+        - method: inspection
+          text: The approval history of an item with 2 approvals and 1 rejection shows 3 entries with name, UTC time, version and decision.
+    sv:
+      title: Registrering av varje godkännande
+      description: Systemet SKA registrera varje godkännande och avslag med användarens namn, tiden i UTC, postens versionsnummer och beslutets innebörd.
+      rationale: Granskare behöver se vem som godkände exakt vilket innehåll och när.
+      criteria:
+        - method: inspection
+          text: Godkännandehistoriken för en post med 2 godkännanden och 1 avslag visar 3 rader med namn, UTC-tid, version och beslut.
+
+  - id: WFL-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [notification, approval-request]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [WFL-T05]
+    en:
+      title: Approvers notified of a request
+      description: The system SHOULD notify each eligible approver within 5 minutes after an item is sent for approval, with a link to the item.
+      rationale: Approvals stall when approvers do not know that something is waiting for them.
+      criteria:
+        - method: test
+          text: After an item is sent for approval, the 3 eligible approvers receive a notification with a working link within 5 minutes.
+          threshold: ≤ 5 min
+    sv:
+      title: Godkännare aviseras om en begäran
+      description: Systemet BÖR avisera varje behörig godkännare inom 5 minuter efter att en post skickats för godkännande, med en länk till posten.
+      rationale: Godkännanden stannar av när godkännarna inte vet att något väntar på dem.
+      criteria:
+        - method: test
+          text: Efter att en post skickats för godkännande får de 3 behöriga godkännarna en avisering med fungerande länk inom 5 minuter.
+          threshold: ≤ 5 min
+
+  - id: WFL-09
+    type: functional
+    obligation: may
+    priority: low
+    tags: [reminder, escalation]
+    refs: ["ITIL 4 service request management"]
+    tests: [WFL-T05]
+    en:
+      title: Reminders and escalation of waiting approvals
+      description: The system MAY send a reminder to the approvers after 3 working days without a decision and notify the item's project manager after 5 working days.
+      rationale: Reminders keep approvals moving, and escalation makes long delays visible to someone who can act.
+      criteria:
+        - method: test
+          text: With the clock moved forward, a reminder is sent on working day 3 and the project manager is notified on working day 5; weekends are not counted.
+    sv:
+      title: Påminnelser och eskalering av väntande godkännanden
+      description: Systemet FÅR skicka en påminnelse till godkännarna efter 3 arbetsdagar utan beslut och avisera postens projektledare efter 5 arbetsdagar.
+      rationale: Påminnelser håller godkännanden i rörelse, och eskalering gör långa fördröjningar synliga för någon som kan agera.
+      criteria:
+        - method: test
+          text: Med klockan framflyttad skickas en påminnelse arbetsdag 3 och projektledaren aviseras arbetsdag 5; helger räknas inte.
+
+  - id: WFL-10
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [delegation, absence]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.3"]
+    tests: [WFL-T06]
+    en:
+      title: Delegation of approvals during absence
+      description: The system SHOULD let an approver delegate approvals to another user with the approver role for a date range, and SHOULD record each delegated decision with both names.
+      rationale: Holidays should not block approvals, and the record must show who acted on whose behalf.
+      criteria:
+        - method: test
+          text: During the delegation period the delegate can approve and the record names both users; after the period ends the delegate can no longer approve.
+    sv:
+      title: Delegering av godkännanden vid frånvaro
+      description: Systemet BÖR låta en godkännare delegera godkännanden till en annan användare med godkännarroll för en datumperiod och registrera varje delegerat beslut med båda namnen.
+      rationale: Semestrar ska inte stoppa godkännanden, och registreringen måste visa vem som agerade för vems räkning.
+      criteria:
+        - method: test
+          text: Under delegeringsperioden kan ersättaren godkänna och registreringen anger båda användarna; när perioden är slut kan ersättaren inte längre godkänna.
+
+  - id: WFL-11
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [approval-queue, lists]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [WFL-T07]
+    en:
+      title: Queue of approvals waiting for the user
+      description: The system SHOULD show each approver a list of the items waiting for their decision, sorted by waiting time with the oldest first and with the waiting time in days.
+      rationale: Approvers need one place to see their open decisions instead of searching for them.
+      criteria:
+        - method: test
+          text: An approver with 4 waiting items sees exactly those 4, oldest first, each with its waiting time in days.
+    sv:
+      title: Kö med godkännanden som väntar på användaren
+      description: Systemet BÖR visa varje godkännare en lista över poster som väntar på hens beslut, sorterad efter väntetid med den äldsta först och med väntetiden i dagar.
+      rationale: Godkännare behöver ett ställe där de ser sina öppna beslut i stället för att leta efter dem.
+      criteria:
+        - method: test
+          text: En godkännare med 4 väntande poster ser exakt de 4, äldst först, var och en med väntetid i dagar.
+
+  - id: WFL-12
+    type: functional
+    obligation: may
+    priority: low
+    tags: [bulk-approval]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [WFL-T07]
+    en:
+      title: Approval of several items in one action
+      description: The system MAY let an approver approve up to 50 selected items in one action, recording a separate approval for each item.
+      rationale: Release reviews often end with a batch of items that have all been checked.
+      criteria:
+        - method: test
+          text: Approving 50 selected items creates 50 approval records; selecting 51 shows a message stating the limit.
+          threshold: ≤ 50 items per action
+    sv:
+      title: Godkännande av en grupp poster i en handling
+      description: Systemet FÅR låta en godkännare godkänna upp till 50 markerade poster i en handling och registrera ett separat godkännande för varje post.
+      rationale: Granskningar inför en release slutar ofta med en grupp poster som alla har kontrollerats.
+      criteria:
+        - method: test
+          text: Godkännande av 50 markerade poster skapar 50 registreringar; när 51 markeras visas ett meddelande om gränsen.
+          threshold: ≤ 50 poster per handling
+
+  - id: WFL-13
+    type: regulatory
+    obligation: may
+    priority: medium
+    tags: [electronic-signature, re-authentication]
+    refs: ["21 CFR Part 11 §11.200", "EU GMP Annex 11 §14"]
+    tests: [WFL-T08]
+    en:
+      title: Re-authentication at approval
+      description: The system MAY require the approver to enter their password or a second factor again when confirming an approval of an item type marked as regulated.
+      rationale: Regulated electronic signatures need proof that the signing person, not someone at an unlocked computer, approved.
+      criteria:
+        - method: test
+          text: Approving a regulated item asks for the password; a wrong password rejects the approval and a correct one records it with the signature meaning.
+    sv:
+      title: Ny autentisering vid godkännande
+      description: Systemet FÅR kräva att godkännaren anger sitt lösenord eller en andra faktor igen när hen bekräftar ett godkännande av en posttyp som är markerad som reglerad.
+      rationale: Reglerade elektroniska underskrifter behöver bevis för att det var den som skriver under, och inte någon vid en olåst dator, som godkände.
+      criteria:
+        - method: test
+          text: Godkännande av en reglerad post frågar efter lösenordet; ett felaktigt lösenord avvisar godkännandet och ett korrekt registrerar det med underskriftens innebörd.
+
+  - id: WFL-14
+    type: functional
+    obligation: must
+    priority: high
+    tags: [concurrency, approval]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [WFL-T09]
+    en:
+      title: Concurrent decisions give one outcome
+      description: When 2 approvers decide on the same item within the same second, the system MUST apply one decision and reject the other with a message that the item has already changed state.
+      rationale: A simultaneous approval and rejection must not leave the item in an undefined state.
+      criteria:
+        - method: test
+          text: Of 100 pairs of simultaneous approve and reject requests on one item, each pair results in exactly one recorded decision and one rejected request.
+    sv:
+      title: Samtidiga beslut ger ett utfall
+      description: När 2 godkännare fattar beslut om samma post inom samma sekund SKA systemet genomföra ett av besluten och avvisa det andra med ett meddelande om att posten redan har bytt status.
+      rationale: Ett samtidigt godkännande och avslag får inte lämna posten i ett odefinierat läge.
+      criteria:
+        - method: test
+          text: Av 100 par samtidiga begäranden om godkännande och avslag på en post ger varje par exakt ett registrerat beslut och en avvisad begäran.
+
+tests:
+  - id: WFL-T01
+    priority: high
+    execution: manual
+    tags: [states, transitions]
+    refs: ["OWASP ASVS 5.0 V2 business logic"]
+    en:
+      title: Defined transitions offered and enforced
+      description: Defines a workflow, checks the offered actions in the user interface and tries a forbidden transition through the API.
+      preconditions: An administrator, a test user with an API token and an item type without a workflow.
+      expected: Only defined transitions are offered and the API rejects the others.
+      steps:
+        - action: Define the states Draft, In review, Approved and Rejected with the transitions Draft→In review, In review→Approved, In review→Rejected and Rejected→Draft.
+          expected: The workflow is saved.
+        - action: Create an item and open its status menu.
+          expected: The item is in Draft and only "Send for review" is offered.
+        - action: Send an API request that sets the item to Approved.
+          expected: The request is rejected with an error naming the state Draft, and the item is still in Draft.
+          data: "PATCH status=approved"
+    sv:
+      title: Definierade övergångar erbjuds och upprätthålls
+      description: Definierar ett arbetsflöde, kontrollerar de erbjudna handlingarna i användargränssnittet och prövar en otillåten övergång via API:et.
+      preconditions: En administratör, en testanvändare med API-token och en posttyp utan arbetsflöde.
+      expected: Bara definierade övergångar erbjuds och API:et avvisar de övriga.
+      steps:
+        - action: Definiera statusarna Utkast, Under granskning, Godkänd och Avslagen med övergångarna Utkast→Under granskning, Under granskning→Godkänd, Under granskning→Avslagen och Avslagen→Utkast.
+          expected: Arbetsflödet sparas.
+        - action: Skapa en post och öppna dess statusmeny.
+          expected: Posten är i Utkast och bara "Skicka för granskning" erbjuds.
+        - action: Skicka en API-begäran som sätter posten till Godkänd.
+          expected: Begäran avvisas med ett fel som anger statusen Utkast, och posten är fortfarande i Utkast.
+          data: "PATCH status=approved"
+
+  - id: WFL-T02
+    priority: critical
+    execution: manual
+    tags: [separation-of-duties, rejection]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.3"]
+    en:
+      title: Self-approval blocked and rejection reason required
+      description: The author, the last editor and an independent approver act on the same item.
+      preconditions: An item in review written by user A and last edited by user B, both with the approver role, and user C with the approver role.
+      expected: A and B cannot approve, and C can reject only with a reason of at least 10 characters.
+      steps:
+        - action: Open the item as A and as B, and send an approval through the API as each.
+          expected: Neither sees an approve action and both API requests are rejected.
+        - action: As C reject the item without a reason, then with "Too short" (9 characters).
+          expected: Both attempts are refused with a message stating the minimum of 10 characters.
+          data: Too short
+        - action: As C reject the item with the reason "Step 3 lacks an expected result".
+          expected: The rejection is accepted, and A sees the reason with C's name and the time.
+          data: Step 3 lacks an expected result
+    sv:
+      title: Eget godkännande stoppas och avslag kräver motivering
+      description: Författaren, den senaste redigeraren och en oberoende godkännare agerar på samma post.
+      preconditions: En post under granskning som skrivits av användare A och senast redigerats av användare B, båda med godkännarroll, samt användare C med godkännarroll.
+      expected: A och B kan inte godkänna, och C kan bara avslå med en motivering på minst 10 tecken.
+      steps:
+        - action: Öppna posten som A och som B, och skicka ett godkännande via API:et som var och en.
+          expected: Ingen av dem ser en godkänn-handling och båda API-begärandena avvisas.
+        - action: Avslå posten som C utan motivering och sedan med "För kort." (9 tecken).
+          expected: Båda försöken avvisas med ett meddelande om minst 10 tecken.
+          data: För kort.
+        - action: Avslå posten som C med motiveringen "Steg 3 saknar förväntat resultat".
+          expected: Avslaget godtas, och A ser motiveringen med C:s namn och tid.
+          data: Steg 3 saknar förväntat resultat
+
+  - id: WFL-T03
+    priority: medium
+    execution: manual
+    tags: [multiple-approvers]
+    refs: []
+    en:
+      title: Two approvals required
+      description: Sets the required approvals to 2 and lets one and then two approvers approve.
+      preconditions: An item type with 2 required approvals, an item in review and the approvers C and D.
+      expected: The item becomes approved only after two different approvers.
+      steps:
+        - action: Approve the item as C.
+          expected: The item stays in review and shows 1 of 2 approvals.
+        - action: Try to approve again as C.
+          expected: The second approval by C is refused.
+        - action: Approve the item as D.
+          expected: The item becomes approved.
+    sv:
+      title: Två godkännanden krävs
+      description: Sätter antalet godkännanden som krävs till 2 och låter en och sedan två godkännare godkänna.
+      preconditions: En posttyp med 2 godkännanden som krav, en post under granskning och godkännarna C och D.
+      expected: Posten blir godkänd först efter två olika godkännare.
+      steps:
+        - action: Godkänn posten som C.
+          expected: Posten stannar i granskning och visar 1 av 2 godkännanden.
+        - action: Försök godkänna igen som C.
+          expected: Det andra godkännandet från C avvisas.
+        - action: Godkänn posten som D.
+          expected: Posten blir godkänd.
+
+  - id: WFL-T04
+    priority: high
+    execution: manual
+    tags: [locking, approval-record]
+    refs: ["21 CFR Part 11 §11.50"]
+    en:
+      title: Approved version locked and decisions recorded
+      description: Edits an approved item and inspects its versions and approval history.
+      preconditions: An item that was rejected once and then approved by 2 approvers, now at version 1.
+      expected: The approved version stays unchanged and the history lists every decision.
+      steps:
+        - action: Open the approval history of the item.
+          expected: 3 entries show name, UTC time, version 1 and the decision (rejected, approved, approved).
+        - action: Edit the title of the item and save.
+          expected: Version 2 is created in Draft.
+        - action: Open version 1.
+          expected: Version 1 is shown as approved with its original title and cannot be edited.
+    sv:
+      title: Godkänd version låst och beslut registrerade
+      description: Redigerar en godkänd post och granskar dess versioner och godkännandehistorik.
+      preconditions: En post som avslagits en gång och sedan godkänts av 2 godkännare, nu i version 1.
+      expected: Den godkända versionen förblir oförändrad och historiken listar varje beslut.
+      steps:
+        - action: Öppna postens godkännandehistorik.
+          expected: 3 rader visar namn, UTC-tid, version 1 och beslutet (avslagen, godkänd, godkänd).
+        - action: Redigera postens titel och spara.
+          expected: Version 2 skapas i Utkast.
+        - action: Öppna version 1.
+          expected: Version 1 visas som godkänd med sin ursprungliga titel och kan inte redigeras.
+
+  - id: WFL-T05
+    priority: medium
+    execution: automated
+    tags: [notification, reminder, escalation]
+    refs: []
+    en:
+      title: Request notification, reminder and escalation
+      description: An integration test with a controllable clock sends an item for approval and moves the clock forward.
+      preconditions: A test environment with a controllable clock, a mail catcher, 3 eligible approvers and a project manager.
+      expected: Notifications, the reminder and the escalation are sent at the expected times.
+      steps:
+        - action: Send an item for approval on a Thursday at 10:00.
+          expected: The 3 approvers receive a notification with a link within 5 minutes.
+          data: Thursday 10:00
+        - action: Move the clock to the third working day (Tuesday) at 10:00.
+          expected: The approvers receive a reminder; no reminder was sent on Saturday or Sunday.
+        - action: Move the clock to the fifth working day (Thursday) at 10:00.
+          expected: The project manager receives an escalation notice.
+    sv:
+      title: Avisering, påminnelse och eskalering av en begäran
+      description: Ett integrationstest med styrbar klocka skickar en post för godkännande och flyttar klockan framåt.
+      preconditions: En testmiljö med styrbar klocka, en e-postfångare, 3 behöriga godkännare och en projektledare.
+      expected: Aviseringar, påminnelsen och eskaleringen skickas vid de förväntade tidpunkterna.
+      steps:
+        - action: Skicka en post för godkännande en torsdag kl. 10.00.
+          expected: De 3 godkännarna får en avisering med länk inom 5 minuter.
+          data: torsdag kl. 10.00
+        - action: Flytta klockan till tredje arbetsdagen (tisdag) kl. 10.00.
+          expected: Godkännarna får en påminnelse; ingen påminnelse skickades lördag eller söndag.
+        - action: Flytta klockan till femte arbetsdagen (torsdag) kl. 10.00.
+          expected: Projektledaren får ett eskaleringsmeddelande.
+
+  - id: WFL-T06
+    priority: medium
+    execution: manual
+    tags: [delegation]
+    refs: []
+    en:
+      title: Delegation for a date range
+      description: An approver delegates approvals and the delegate approves inside and outside the period.
+      preconditions: Approver C, user E with the approver role, an item waiting for C and a controllable clock.
+      expected: E can approve only during the period, and the record names both users.
+      steps:
+        - action: As C delegate approvals to E from today to tomorrow.
+          expected: The delegation is saved and shown on C's profile.
+        - action: As E approve the waiting item.
+          expected: The approval is recorded as "E on behalf of C".
+        - action: Move the clock two days forward and as E try to approve another item waiting for C.
+          expected: E has no approve action for the item.
+    sv:
+      title: Delegering för en datumperiod
+      description: En godkännare delegerar godkännanden och ersättaren godkänner inom och utanför perioden.
+      preconditions: Godkännaren C, användaren E med godkännarroll, en post som väntar på C och en styrbar klocka.
+      expected: E kan godkänna bara under perioden, och registreringen anger båda användarna.
+      steps:
+        - action: Delegera som C godkännanden till E från i dag till i morgon.
+          expected: Delegeringen sparas och visas på C:s profil.
+        - action: Godkänn som E den väntande posten.
+          expected: Godkännandet registreras som "E för C".
+        - action: Flytta klockan två dagar framåt och försök som E godkänna en annan post som väntar på C.
+          expected: E har ingen godkänn-handling för posten.
+
+  - id: WFL-T07
+    priority: medium
+    execution: manual
+    tags: [approval-queue, bulk-approval]
+    refs: []
+    en:
+      title: Approval queue and approving a batch
+      description: Checks the content and order of the approval queue and approves a batch of items.
+      preconditions: Approver C with 4 waiting items sent 1, 2, 5 and 8 days ago, and a project with 51 items waiting for C's approval.
+      expected: The queue shows the waiting items oldest first, and batch approval is limited to 50 items.
+      steps:
+        - action: Open "My approvals" in the first project.
+          expected: The 4 items are listed with 8, 5, 2 and 1 days of waiting time in that order.
+        - action: In the second project select 51 items and choose approve.
+          expected: A message states the limit of 50 items.
+        - action: Deselect one item and approve the remaining 50.
+          expected: 50 approval records are created, one per item.
+    sv:
+      title: Godkännandekö och godkännande av en grupp
+      description: Kontrollerar innehåll och ordning i godkännandekön och godkänner en grupp poster.
+      preconditions: Godkännaren C med 4 väntande poster som skickades för 1, 2, 5 och 8 dagar sedan, och ett projekt med 51 poster som väntar på C:s godkännande.
+      expected: Kön visar de väntande posterna äldst först, och gruppgodkännande är begränsat till 50 poster.
+      steps:
+        - action: Öppna "Mina godkännanden" i det första projektet.
+          expected: De 4 posterna listas med 8, 5, 2 och 1 dagars väntetid i den ordningen.
+        - action: Markera 51 poster i det andra projektet och välj godkänn.
+          expected: Ett meddelande anger gränsen 50 poster.
+        - action: Avmarkera en post och godkänn de återstående 50.
+          expected: 50 registreringar av godkännanden skapas, en per post.
+
+  - id: WFL-T08
+    priority: medium
+    execution: manual
+    tags: [electronic-signature]
+    refs: ["21 CFR Part 11 §11.200"]
+    en:
+      title: Password asked again for a regulated approval
+      description: Approves an item of a regulated item type with a wrong and then a correct password.
+      preconditions: An item type marked as regulated, an item of it in review and an approver who knows their password.
+      expected: Only the correct password records the approval with its meaning.
+      steps:
+        - action: Choose approve on the item.
+          expected: A dialog asks for the password and the meaning of the signature.
+        - action: Enter a wrong password and confirm.
+          expected: The approval is rejected and the item stays in review.
+        - action: Enter the correct password, choose the meaning "Approved for release" and confirm.
+          expected: The approval is recorded with the meaning "Approved for release".
+          data: Approved for release
+    sv:
+      title: Lösenordet efterfrågas igen vid ett reglerat godkännande
+      description: Godkänner en post av en reglerad posttyp med fel och sedan rätt lösenord.
+      preconditions: En posttyp markerad som reglerad, en post av den typen under granskning och en godkännare som känner till sitt lösenord.
+      expected: Bara rätt lösenord registrerar godkännandet med dess innebörd.
+      steps:
+        - action: Välj godkänn på posten.
+          expected: En dialog frågar efter lösenordet och underskriftens innebörd.
+        - action: Ange ett felaktigt lösenord och bekräfta.
+          expected: Godkännandet avvisas och posten stannar i granskning.
+        - action: Ange rätt lösenord, välj innebörden "Godkänd för release" och bekräfta.
+          expected: Godkännandet registreras med innebörden "Godkänd för release".
+          data: Godkänd för release
+
+  - id: WFL-T09
+    priority: high
+    execution: automated
+    tags: [concurrency]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    en:
+      title: Simultaneous approve and reject requests
+      description: A load script sends an approval and a rejection for the same item at the same moment, 100 times.
+      preconditions: 100 items in review and two approvers with API tokens.
+      expected: Each item has exactly one recorded decision.
+      steps:
+        - action: For each item send an approve request and a reject request in parallel.
+          expected: For each pair one request succeeds and the other is rejected with a message that the state has changed.
+          data: 100 pairs
+        - action: Count the recorded decisions per item.
+          expected: Each item has exactly 1 decision and a state that matches it.
+    sv:
+      title: Samtidiga begäranden om godkännande och avslag
+      description: Ett lastskript skickar ett godkännande och ett avslag för samma post i samma ögonblick, 100 gånger.
+      preconditions: 100 poster under granskning och två godkännare med API-token.
+      expected: Varje post har exakt ett registrerat beslut.
+      steps:
+        - action: Skicka för varje post en begäran om godkännande och en om avslag parallellt.
+          expected: För varje par lyckas en begäran och den andra avvisas med ett meddelande om att statusen har ändrats.
+          data: 100 par
+        - action: Räkna de registrerade besluten per post.
+          expected: Varje post har exakt 1 beslut och en status som stämmer med det.

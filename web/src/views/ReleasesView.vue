@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Releases: scope (requirements), runs, exit criteria and go / no-go.
+import ItemRef from '../components/ItemRef.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DataTable from 'primevue/datatable'
@@ -624,8 +625,7 @@ function itemNote(c: CriterionResult, note?: string) {
               <ul v-if="c.items?.length" class="blocking" :aria-label="t('releasesView.blockingOf', { criterion: describe(c) })">
                 <li v-for="it in c.items" :key="it.kind + it.id" class="row nowrap">
                   <span class="sr-only">{{ itemKindLabel(it.kind) }}</span>
-                  <RouterLink :to="releaseItemRoute(it, proj.pid)" class="key">{{ it.key }}</RouterLink>
-                  <span class="grow ellipsis">{{ it.title }}</span>
+                  <ItemRef :to="releaseItemRoute(it, proj.pid)" :item-key="it.key" :title="it.title" title-class="ellipsis" grow />
                   <Tag v-if="c.type === 'risks_mitigated' && it.note" :value="itemNote(c, it.note)" :severity="riskLevelSeverity(it.note)" />
                   <span v-else-if="it.note" class="small muted">{{ itemNote(c, it.note) }}</span>
                 </li>
@@ -646,7 +646,9 @@ function itemNote(c: CriterionResult, note?: string) {
           <Column field="key" :header="t('common.key')" sortable style="width: 150px">
             <template #body="{ data }"><RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: data.id } }" class="key">{{ data.key || '—' }}</RouterLink></template>
           </Column>
-          <Column field="title" :header="t('common.title')" sortable body-class="stack-main" />
+          <Column field="title" :header="t('common.title')" sortable body-class="stack-main">
+            <template #body="{ data }"><RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: data.id } }" class="item-ref" tabindex="-1"><span class="item-ref-title">{{ data.title }}</span></RouterLink></template>
+          </Column>
           <Column field="status" :header="t('common.status')" style="width: 120px"><template #body="{ data }"><StatusTag :value="data.status" /></template></Column>
           <Column field="coverage" :header="t('workspace.colCoverage')" style="width: 120px"><template #body="{ data }"><StatusTag :value="data.coverage" kind="coverage" /></template></Column>
           <Column field="risk_level" :header="t('risksView.colRisk')" style="width: 110px">

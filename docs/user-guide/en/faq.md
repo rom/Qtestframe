@@ -162,7 +162,7 @@ Select **Help** (the question mark in the top bar) → **Restart intro tour**.
 
 ### Can I change the key of a project?
 
-No. The key is part of every item ID and cannot be changed after the project is created. You can change the project's name, description and colour in **Categories & settings** (or with ✎ on the project list). If you really need another key, create a new project and move the folders into it; the items get new keys.
+No. The key is part of every item ID and cannot be changed after the project is created. You can change the project's name, description and colour in **Categories & settings** (or with ✎ on the project list). If you really need another key, use **Duplicate project** on the project list: the copy gets the new key, and all item keys follow it (see [Save and load projects](reports-and-export.md#save-and-load-projects)). Then delete the original.
 
 ## Files and data
 
@@ -181,6 +181,10 @@ Only images (PNG, JPEG, GIF, WebP), PDF files and plain text are shown in the br
 ### How do I restore a backup?
 
 A **super admin** opens **Administration → Backup**, chooses the backup file under **Restore**, types `RESTORE` and selects **Restore backup**. All current data is replaced and everyone is signed out. The backup must come from the same schema version. Server administrators can use `qtestframe restore --in FILE.zip --yes`. To recover a single item, use its history instead.
+
+### How do I move a project to another server?
+
+Select **Save project** (the download button on the project list) and, on the other server, **Load project** with the file. The copy has everything in the project except secrets such as webhook secrets and the tracker token; see [Save and load projects](reports-and-export.md#save-and-load-projects). To move all organisations at once, a super admin uses a backup instead.
 
 ### Can I get my data out of Qtestframe?
 

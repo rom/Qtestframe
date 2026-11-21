@@ -103,7 +103,7 @@ describe('dynamic keys', () => {
       status: ['draft', 'review', 'approved', 'implemented', 'verified', 'rejected', 'obsolete', 'ready', 'deprecated', 'planned', 'in_progress', 'completed', 'aborted'],
       requirementType: ['functional', 'non_functional', 'security', 'performance', 'usability', 'interface', 'constraint', 'business', 'regulatory'],
       priority: ['critical', 'high', 'medium', 'low'],
-      scriptLanguage: ['sh', 'bash', 'python', 'javascript'],
+      scriptLanguage: ['sh', 'bash', 'python', 'javascript', 'playwright'],
       evaluationMethod: ['test', 'inspection', 'analysis', 'demonstration', 'review'],
       result: ['not_run', 'in_progress', 'passed', 'failed', 'blocked', 'skipped'],
       coverage: ['none', 'not_run', 'passed', 'failed', 'partial'],

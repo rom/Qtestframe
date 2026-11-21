@@ -54,7 +54,7 @@ const (
 )
 
 // Script languages supported by the runner.
-var ScriptLanguages = []string{"sh", "bash", "python", "javascript"}
+var ScriptLanguages = []string{"sh", "bash", "python", "javascript", "playwright"}
 
 // Evaluation (verification) methods – the classic IADT set.
 var EvaluationMethods = []string{"test", "inspection", "analysis", "demonstration", "review"}
@@ -224,7 +224,8 @@ type Preferences struct {
 var (
 	// Themes: light/dark/system plus decorative colour themes.
 	Themes = []string{"light", "dark", "system", "spring", "autumn", "desert", "camouflage",
-		"city_camouflage", "navy", "green_console", "crazy", "ocean", "forest", "sunset", "nordic", "lavender", "high_contrast"}
+		"city_camouflage", "arctic_camouflage", "navy", "midnight", "green_console", "amber_terminal", "crazy",
+		"ocean", "forest", "sunset", "nordic", "lavender", "rose", "high_contrast", "high_contrast_light"}
 	// Languages of the web client ("" = browser language).
 	Languages   = []string{"en", "sv"}
 	StartPages  = []string{"projects", "last_project", "default_project", "search"}
@@ -327,14 +328,17 @@ var DefaultRequirementSources = []string{"Customer", "Contract", "Standard", "Re
 
 // Folder is a node in the requirement or test hierarchy ("group").
 type Folder struct {
-	ID          string    `json:"id"`
-	ProjectID   string    `json:"project_id"`
-	ParentID    *string   `json:"parent_id"`
-	Kind        string    `json:"kind"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Position    int       `json:"position"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          string  `json:"id"`
+	ProjectID   string  `json:"project_id"`
+	ParentID    *string `json:"parent_id"`
+	Kind        string  `json:"kind"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	// Color is '' or #rrggbb; items in the folder (and in subfolders
+	// without a colour of their own) are shown in it.
+	Color     string    `json:"color"`
+	Position  int       `json:"position"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Category is a classification value inside a dimension, e.g.

@@ -206,6 +206,24 @@ runner:
   # Run each script through `qtestframe sandbox-exec` (Landlock + seccomp +
   # rlimits + no_new_privs). Never disable in production.
   sandbox: true
+  # Web tests (script language "playwright") in a real browser, run as
+  # background jobs. Needs Node.js and Playwright (see docs/operations.md
+  # "Web tests"): npm i @playwright/test; npx playwright install --with-deps
+  # chromium. Web tests have no seccomp filter and always network access
+  # (docs/security.md §9).
+  # web:
+  #   enabled: true
+  #   node: /usr/bin/node
+  #   playwright_dir: /opt/qtestframe-playwright
+  #   browsers_path: /opt/qtestframe-playwright/browsers
+  #   browser: chromium        # chromium | firefox | webkit
+  #   headless: true
+  #   timeout: 60s             # per test
+  #   job_timeout: 10m
+  #   screenshots: on_failure  # on_failure | always | off
+  #   trace: on_failure        # on_failure | always | off
+  #   video: "off"             # off | on_failure | always
+  #   max_parallel: 2
   # Block socket creation for sandboxed scripts (seccomp). Leave false if
   # network-based tests must reach services.
   deny_network: false

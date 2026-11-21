@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { allKeys, ancestorKeys, buildTree, canMoveFolder, checkedIds, descendantIds, flatten, folderPath, topMostFolders } from './tree'
+import { allKeys, ancestorKeys, buildTree, canMoveFolder, checkedIds, descendantIds, flatten, folderColors, folderPath, topMostFolders } from './tree'
 import type { Folder } from './types'
 
 function f(id: string, parent: string | null, name = id, position = 0): Folder {
@@ -80,5 +80,19 @@ describe('bulk selection', () => {
   })
   it('reads checked keys', () => {
     expect(checkedIds({ a: { checked: true, partialChecked: false }, b: { checked: false, partialChecked: true }, c: true, d: undefined })).toEqual(['a', 'c'])
+  })
+})
+
+describe('folderColors', () => {
+  const c = (id: string, parent: string | null, color = ''): Folder => ({ ...f(id, parent), color })
+  it('inherits the nearest coloured ancestor', () => {
+    const m = folderColors([c('a', null, '#dc2626'), c('b', 'a'), c('c', 'b', '#16a34a'), c('d', 'c'), c('e', null)])
+    expect([...m]).toEqual([['a', '#dc2626'], ['b', '#dc2626'], ['c', '#16a34a'], ['d', '#16a34a'], ['e', '']])
+    expect(folderColors(null).size).toBe(0)
+  })
+  it('stops at cycles and unknown parents', () => {
+    const m = folderColors([c('x', 'y'), c('y', 'x'), c('z', 'missing')])
+    expect(m.get('x')).toBe('')
+    expect(m.get('z')).toBe('')
   })
 })

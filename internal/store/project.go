@@ -315,12 +315,12 @@ func itoa(n int) string {
 
 // ---------------------------------------------------------------- folders
 
-const folderCols = `id, project_id, parent_id, kind, name, description, position, created_at`
+const folderCols = `id, project_id, parent_id, kind, name, description, color, position, created_at`
 
 func scanFolder(r interface{ Scan(...any) error }) (*model.Folder, error) {
 	var f model.Folder
 	var parent sql.NullString
-	if err := r.Scan(&f.ID, &f.ProjectID, &parent, &f.Kind, &f.Name, &f.Description, &f.Position, &f.CreatedAt); err != nil {
+	if err := r.Scan(&f.ID, &f.ProjectID, &parent, &f.Kind, &f.Name, &f.Description, &f.Color, &f.Position, &f.CreatedAt); err != nil {
 		return nil, err
 	}
 	f.ParentID = strPtr(parent)
@@ -328,6 +328,15 @@ func scanFolder(r interface{ Scan(...any) error }) (*model.Folder, error) {
 }
 
 func validKind(k string) bool { return k == model.KindRequirement || k == model.KindTest }
+
+// cleanFolderColor normalises a folder colour (” or #rrggbb, lower case).
+func cleanFolderColor(f *model.Folder) error {
+	f.Color = strings.ToLower(strings.TrimSpace(f.Color))
+	if f.Color != "" && !colorRe.MatchString(f.Color) {
+		return Invalidf("folder color must be #rrggbb or empty")
+	}
+	return nil
+}
 
 // CreateFolder inserts a folder at the end of its siblings.
 func (s *Store) CreateFolder(ctx context.Context, tenantID string, f *model.Folder) error {
@@ -337,6 +346,9 @@ func (s *Store) CreateFolder(ctx context.Context, tenantID string, f *model.Fold
 	f.Name = strings.TrimSpace(f.Name)
 	if f.Name == "" {
 		return Invalidf("folder name is required")
+	}
+	if err := cleanFolderColor(f); err != nil {
+		return err
 	}
 	if _, err := s.GetProject(ctx, tenantID, f.ProjectID); err != nil {
 		return err
@@ -360,8 +372,8 @@ func (s *Store) CreateFolder(ctx context.Context, tenantID string, f *model.Fold
 			return err
 		}
 		f.Position = pos
-		_, err = c.exec(ctx, `INSERT INTO folders (id, tenant_id, project_id, parent_id, kind, name, description, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			f.ID, tenantID, f.ProjectID, nullStr(f.ParentID), f.Kind, f.Name, f.Description, f.Position, f.CreatedAt)
+		_, err = c.exec(ctx, `INSERT INTO folders (id, tenant_id, project_id, parent_id, kind, name, description, color, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			f.ID, tenantID, f.ProjectID, nullStr(f.ParentID), f.Kind, f.Name, f.Description, f.Color, f.Position, f.CreatedAt)
 		return err
 	})
 }
@@ -414,13 +426,16 @@ func (s *Store) ListFolders(ctx context.Context, tenantID, projectID, kind strin
 	return out, rows.Err()
 }
 
-// UpdateFolder renames a folder.
+// UpdateFolder renames a folder and sets its description and colour.
 func (s *Store) UpdateFolder(ctx context.Context, tenantID string, f *model.Folder) error {
 	f.Name = strings.TrimSpace(f.Name)
 	if f.Name == "" {
 		return Invalidf("folder name is required")
 	}
-	res, err := s.c(ctx).exec(ctx, `UPDATE folders SET name = ?, description = ? WHERE id = ? AND tenant_id = ?`, f.Name, f.Description, f.ID, tenantID)
+	if err := cleanFolderColor(f); err != nil {
+		return err
+	}
+	res, err := s.c(ctx).exec(ctx, `UPDATE folders SET name = ?, description = ?, color = ? WHERE id = ? AND tenant_id = ?`, f.Name, f.Description, f.Color, f.ID, tenantID)
 	if err != nil {
 		return err
 	}

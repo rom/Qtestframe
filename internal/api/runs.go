@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -346,6 +347,9 @@ type executionDetail struct {
 	// Readiness of the test in this run (organisation settings, test and
 	// requirement status, prerequisites).
 	Readiness *Readiness `json:"readiness"`
+	// Job is the latest background job of the execution (automated tests
+	// run as jobs, see scriptjobs.go); nil if it never had one.
+	Job *model.ScriptJob `json:"job,omitempty"`
 }
 
 func (s *Server) executionDetail(r *http.Request, p *Principal, id string) (*executionDetail, error) {
@@ -361,7 +365,11 @@ func (s *Server) executionDetail(r *http.Request, p *Principal, id string) (*exe
 	if err != nil {
 		return nil, err
 	}
-	return &executionDetail{Execution: e, Test: t, Readiness: rd}, nil
+	j, err := s.Store.LatestExecutionJob(r.Context(), p.TenantID(), e.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &executionDetail{Execution: e, Test: t, Readiness: rd, Job: j}, nil
 }
 
 func (s *Server) handleGetExecution(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -433,11 +441,24 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, runner.ErrDisabled)
 		return
 	}
+	if d.Test.ScriptLanguage == runner.LangPlaywright {
+		s.runWebTestNow(w, r, p, d)
+		return
+	}
 	if !d.Readiness.Allowed {
 		notReady(w, d.TestKey, d.Readiness)
 		return
 	}
+	if d.Job != nil && model.JobActive(d.Job.State) {
+		s.fail(w, r, fmt.Errorf("%w: the test is queued or running as a background job", store.ErrConflict))
+		return
+	}
 	run, err := s.Store.GetRun(r.Context(), p.TenantID(), d.RunID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	set, err := s.Store.WebTestSettings(r.Context(), p.TenantID(), run.ProjectID)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -451,10 +472,9 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 	if lang == "" {
 		lang = "sh"
 	}
-	res, err := s.Runner.Run(r.Context(), lang, d.Test.Script, map[string]string{
-		"test_key": d.Test.Key, "run_id": run.ID, "run_name": run.Name,
-		"environment": run.Environment, "build": run.Build,
-	})
+	target := s.executionTarget(r.Context(), p.TenantID(), run, d.Execution, set)
+	env, secrets := scriptEnv(d.Test, run, set, target.BaseURL)
+	res, err := s.Runner.Run(r.Context(), lang, d.Test.Script, env)
 	if err != nil {
 		prev := d.Status
 		if prev == model.ResultInProgress {
@@ -469,7 +489,7 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 		status = model.ResultPassed
 	}
 	dur := res.Duration.Milliseconds()
-	out := res.Output
+	out := runner.Mask(res.Output, secrets)
 	if _, err := s.Store.UpdateExecution(r.Context(), p.TenantID(), d.ID, p.User.Email, store.ExecutionUpdate{Status: &status, Output: &out, DurationMS: &dur}); err != nil {
 		s.fail(w, r, err)
 		return
@@ -481,4 +501,47 @@ func (s *Server) handleRunScript(w http.ResponseWriter, r *http.Request, p *Prin
 		return
 	}
 	writeJSON(w, http.StatusOK, nd)
+}
+
+// runWebTestNow queues a web test of one execution as a background job and
+// answers 202 with the execution (in progress, with its job).
+func (s *Server) runWebTestNow(w http.ResponseWriter, r *http.Request, p *Principal, d *executionDetail) {
+	if !s.Runner.WebEnabled() {
+		s.fail(w, r, runner.ErrWebDisabled)
+		return
+	}
+	run, err := s.Store.GetRun(r.Context(), p.TenantID(), d.RunID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	var res *enqueueResult
+	err = s.Store.InTx(r.Context(), func(ctx context.Context) error {
+		var err error
+		res, err = s.enqueue(ctx, p, run, []model.Execution{*d.Execution})
+		return err
+	})
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if len(res.Queued) == 0 {
+		sk := res.Skipped[0]
+		switch sk.Code {
+		case "not_ready":
+			notReady(w, d.TestKey, d.Readiness)
+		case "active":
+			s.fail(w, r, fmt.Errorf("%w: the test is already queued or running", store.ErrConflict))
+		default:
+			s.fail(w, r, badRequest("%s", sk.Reason))
+		}
+		return
+	}
+	s.audit(r.Context(), p, "execution.script_queued", "execution", d.ID, d.Test.Key)
+	nd, err := s.executionDetail(r, p, d.ID)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusAccepted, nd)
 }

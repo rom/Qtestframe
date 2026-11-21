@@ -1,0 +1,583 @@
+area: checkout
+prefix: SHOP
+group: domain
+name: {en: E-commerce and checkout, sv: E-handel och kassa}
+description:
+  en: Shopping cart, total price before payment, guest checkout, binding order button, stock and price checks, order confirmation, card payments through a provider, strong customer authentication, discount codes, payment errors, rounding of amounts and withdrawal.
+  sv: Varukorg, totalpris före betalning, köp utan konto, knapp för bindande beställning, kontroll av lager och pris, orderbekräftelse, kortbetalning via en betaltjänst, stark kundautentisering, rabattkoder, betalningsfel, avrundning av belopp och ångerrätt.
+
+requirements:
+  - id: SHOP-01
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [cart, persistence]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [SHOP-T01]
+    en:
+      title: Cart kept for 30 days
+      description: The shopping cart of a signed-in customer SHOULD be kept for 30 days and be the same on each device where the customer signs in.
+      rationale: Customers often decide over several days and on different devices, and an emptied cart loses the sale.
+      criteria:
+        - method: test
+          text: Items added on a computer are in the cart on a phone after sign-in, and are still there 29 days later.
+          threshold: 30 days
+    sv:
+      title: Varukorgen sparas i 30 dagar
+      description: Varukorgen för en inloggad kund BÖR sparas i 30 dagar och vara densamma på varje enhet där kunden loggar in.
+      rationale: Kunder bestämmer sig ofta under ett par dagar och på olika enheter, och en tömd varukorg förlorar köpet.
+      criteria:
+        - method: test
+          text: Varor som lagts till på en dator finns i varukorgen på en telefon efter inloggning och finns kvar 29 dagar senare.
+          threshold: 30 dagar
+
+  - id: SHOP-02
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [price, transparency, consumer-law]
+    refs: ["Directive 2011/83/EU Art. 6", "Directive 2011/83/EU Art. 8"]
+    tests: [SHOP-T02]
+    en:
+      title: Total price shown before the order is placed
+      description: Before the customer places the order, the checkout MUST show the total price including taxes, shipping, payment fees and other charges, with each charge listed separately.
+      rationale: Consumer law requires the full price before a binding order, and surprise fees are the most common reason to abandon a purchase.
+      criteria:
+        - method: test
+          text: For an order with 2 items, shipping and a payment fee, the page with the order button shows each charge and a total that equals their sum, including VAT.
+    sv:
+      title: Totalpris visas innan beställningen läggs
+      description: Innan kunden lägger beställningen SKA kassan visa det totala priset inklusive skatter, frakt, betalningsavgifter och andra avgifter, med varje avgift redovisad för sig.
+      rationale: Konsumentlagstiftningen kräver hela priset före en bindande beställning, och oväntade avgifter är den vanligaste orsaken till avbrutna köp.
+      criteria:
+        - method: test
+          text: För en beställning med 2 varor, frakt och betalningsavgift visar sidan med beställningsknappen varje avgift och en summa som är lika med deras summa, inklusive moms.
+
+  - id: SHOP-03
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [guest-checkout, account]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks", "GDPR Art. 5(1)(c)"]
+    tests: [SHOP-T03]
+    en:
+      title: Purchase without creating an account
+      description: The checkout SHOULD let a customer buy as a guest with only an e-mail address and the delivery and payment details, and SHOULD offer to create an account only after the order is placed.
+      rationale: Forced registration is a known cause of abandoned checkouts and collects data the purchase does not need.
+      criteria:
+        - method: test
+          text: A guest completes an order without a password field, and the confirmation page offers to create an account.
+    sv:
+      title: Köp utan att skapa konto
+      description: Kassan BÖR låta en kund handla som gäst med bara e-postadress och uppgifter för leverans och betalning, och erbjuda att skapa ett konto först när beställningen är lagd.
+      rationale: Tvingande registrering är en känd orsak till avbrutna köp och samlar in uppgifter som köpet inte behöver.
+      criteria:
+        - method: test
+          text: En gäst slutför en beställning utan något lösenordsfält, och bekräftelsesidan erbjuder att skapa ett konto.
+
+  - id: SHOP-04
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [order-button, consumer-law]
+    refs: ["Directive 2011/83/EU Art. 8(2)"]
+    tests: [SHOP-T02]
+    en:
+      title: Order button states the obligation to pay
+      description: The button that places a binding order MUST be the only control that places it and carry a label that states the obligation to pay, such as "Order with obligation to pay" or "Buy now".
+      rationale: A consumer is only bound by an online order when the button makes the payment obligation clear.
+      criteria:
+        - method: inspection
+          text: The order button reads "Order with obligation to pay" in English and "Beställ med betalningsskyldighet" in Swedish, and pressing Enter in a form field on the page does not place the order.
+    sv:
+      title: Beställningsknappen anger betalningsskyldigheten
+      description: Knappen som lägger en bindande beställning SKA vara den enda kontroll som lägger beställningen och ha en text som anger betalningsskyldigheten, till exempel "Beställ med betalningsskyldighet" eller "Köp nu".
+      rationale: En konsument blir bara bunden av en beställning på nätet när knappen gör betalningsskyldigheten tydlig.
+      criteria:
+        - method: inspection
+          text: Beställningsknappen har texten "Order with obligation to pay" på engelska och "Beställ med betalningsskyldighet" på svenska, och Enter i ett formulärfält på sidan lägger inte beställningen.
+
+  - id: SHOP-05
+    type: functional
+    obligation: must
+    priority: high
+    tags: [stock, availability]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [SHOP-T04]
+    en:
+      title: Stock checked before payment
+      description: The checkout MUST check the stock of each item before the payment step and MUST tell the customer which items are no longer available and in what quantity.
+      rationale: Taking payment for goods that cannot be delivered leads to refunds and lost trust.
+      criteria:
+        - method: test
+          text: When 1 of 3 ordered units is left in stock, the checkout stops before payment and names the item with 1 available unit.
+    sv:
+      title: Lagret kontrolleras före betalning
+      description: Kassan SKA kontrollera lagersaldot för varje vara före betalningssteget och tala om för kunden vilka varor som inte längre finns och i vilken mängd.
+      rationale: Att ta betalt för varor som inte kan levereras leder till återbetalningar och förlorat förtroende.
+      criteria:
+        - method: test
+          text: När 1 av 3 beställda enheter finns kvar i lager stannar kassan före betalningen och anger varan med 1 tillgänglig enhet.
+
+  - id: SHOP-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [price, changes]
+    refs: ["Directive 2005/29/EC Art. 6"]
+    tests: [SHOP-T04]
+    en:
+      title: Price changes since the item was added shown
+      description: When the price of an item in the cart has changed since it was added, the checkout MUST show the old and the new price and MUST ask the customer to confirm before payment.
+      rationale: Charging a different price than the customer saw is misleading and leads to disputes.
+      criteria:
+        - method: test
+          text: After the price of a cart item is raised from 199 to 249, the checkout shows both prices and the order can only be placed after the customer confirms.
+    sv:
+      title: Prisändringar sedan varan lades i korgen visas
+      description: När priset på en vara i varukorgen har ändrats sedan den lades till SKA kassan visa det gamla och det nya priset och be kunden bekräfta före betalningen.
+      rationale: Att ta ett annat pris än det kunden såg är vilseledande och leder till tvister.
+      criteria:
+        - method: test
+          text: När priset på en vara i korgen höjs från 199 till 249 visar kassan båda priserna och beställningen kan bara läggas efter att kunden har bekräftat.
+
+  - id: SHOP-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [confirmation, e-mail, consumer-law]
+    refs: ["Directive 2011/83/EU Art. 8(7)"]
+    tests: [SHOP-T05]
+    en:
+      title: Order confirmation by e-mail
+      description: The system MUST send an order confirmation by e-mail within 5 minutes after the order is placed, with the order number, items, quantities, total price, delivery address and the information on the right of withdrawal.
+      rationale: The confirmation is the customer's record of the contract and a legal requirement for distance selling.
+      criteria:
+        - method: test
+          text: A placed order produces one e-mail within 5 minutes that contains each of the listed parts.
+          threshold: ≤ 5 min
+    sv:
+      title: Orderbekräftelse via e-post
+      description: Systemet SKA skicka en orderbekräftelse via e-post inom 5 minuter efter att beställningen lagts, med ordernummer, varor, antal, totalpris, leveransadress och information om ångerrätten.
+      rationale: Bekräftelsen är kundens dokumentation av avtalet och ett lagkrav vid distansförsäljning.
+      criteria:
+        - method: test
+          text: En lagd beställning ger ett e-postmeddelande inom 5 minuter som innehåller var och en av de uppräknade delarna.
+          threshold: ≤ 5 min
+
+  - id: SHOP-08
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [payment, card-data, pci-dss]
+    refs: ["PCI DSS v4.0 Req. 3", "PCI DSS v4.0 SAQ A"]
+    tests: [SHOP-T06]
+    en:
+      title: Card details never handled by the system
+      description: The system MUST NOT receive, store or log card numbers or card security codes, which the customer enters only in the payment provider's own fields or pages.
+      rationale: Keeping card data out of the system removes most of the PCI DSS scope and the risk of a card data breach.
+      criteria:
+        - method: inspection
+          text: A capture of the traffic to the system's servers during a card payment and a search of the logs and database contain no test card number or security code.
+    sv:
+      title: Kortuppgifter hanteras aldrig av systemet
+      description: Systemet SKA INTE ta emot, spara eller logga kortnummer eller kortets säkerhetskod, som kunden i stället anger i betaltjänstens egna fält eller sidor.
+      rationale: När kortdata hålls utanför systemet försvinner det mesta av kraven i PCI DSS och risken för ett intrång i kortdata.
+      criteria:
+        - method: inspection
+          text: En inspelning av trafiken till systemets servrar under en kortbetalning och en sökning i loggar och databas innehåller inget testkortnummer eller någon säkerhetskod.
+
+  - id: SHOP-09
+    type: functional
+    obligation: must
+    priority: high
+    tags: [payment, sca, 3-d-secure]
+    refs: ["Directive (EU) 2015/2366 Art. 97", "Commission Delegated Regulation (EU) 2018/389"]
+    tests: [SHOP-T06]
+    en:
+      title: Return from strong customer authentication
+      description: After the customer completes, cancels or fails strong customer authentication with the card issuer, the system MUST return the customer to the checkout with the cart, addresses and chosen delivery kept.
+      rationale: A failed or cancelled authentication should allow another attempt, not a restart of the whole purchase.
+      criteria:
+        - method: test
+          text: With the provider's test cards for success, cancel and failure, each attempt returns to the checkout with the cart and addresses unchanged, and only success places the order.
+    sv:
+      title: Återkomst från stark kundautentisering
+      description: Efter att kunden har slutfört, avbrutit eller misslyckats med stark kundautentisering hos kortutgivaren SKA systemet föra kunden tillbaka till kassan med varukorg, adresser och valt leveranssätt kvar.
+      rationale: En misslyckad eller avbruten autentisering ska ge möjlighet till ett nytt försök, inte att hela köpet börjar om.
+      criteria:
+        - method: test
+          text: Med betaltjänstens testkort för lyckad, avbruten och misslyckad autentisering återvänder varje försök till kassan med oförändrad varukorg och adresser, och bara det lyckade lägger beställningen.
+
+  - id: SHOP-10
+    type: functional
+    obligation: should
+    priority: low
+    tags: [discount-codes]
+    refs: ["Directive 2005/29/EC Art. 6"]
+    tests: [SHOP-T07]
+    en:
+      title: Discount codes with clear outcomes
+      description: The checkout SHOULD accept one discount code per order, SHOULD show the discount as a separate line, and SHOULD state the reason when a code is rejected, such as expired or minimum order value not reached.
+      rationale: Customers who cannot tell why a code failed contact support or leave.
+      criteria:
+        - method: test
+          text: A valid code adds a discount line; an expired code, a code below its minimum order value and a second code each give a message with the specific reason.
+    sv:
+      title: Rabattkoder med tydligt utfall
+      description: Kassan BÖR godta en rabattkod per beställning, visa rabatten på en egen rad och ange orsaken när en kod avvisas, till exempel att den gått ut eller att lägsta ordervärde inte nåtts.
+      rationale: Kunder som inte förstår varför en kod inte fungerade kontaktar supporten eller lämnar.
+      criteria:
+        - method: test
+          text: En giltig kod lägger till en rabattrad; en utgången kod, en kod under sitt lägsta ordervärde och en andra kod ger var och en ett meddelande med den specifika orsaken.
+
+  - id: SHOP-11
+    type: usability
+    obligation: must
+    priority: high
+    tags: [payment, errors]
+    refs: ["ISO 9241-110:2020 user error robustness", "Nielsen heuristic 9"]
+    tests: [SHOP-T06]
+    en:
+      title: Clear message and retry after a declined payment
+      description: When a payment is declined, the checkout MUST show a message that says the payment was not completed and what the customer can do, without technical error codes, and MUST let the customer try another payment method without entering the addresses again.
+      rationale: Customers who are unsure whether they were charged either pay twice or give up.
+      criteria:
+        - method: test
+          text: With a declined test card the message states that nothing was charged and offers another method; switching method keeps the addresses.
+    sv:
+      title: Tydligt meddelande och nytt försök efter nekad betalning
+      description: När en betalning nekas SKA kassan visa ett meddelande som säger att betalningen inte genomfördes och vad kunden kan göra, utan tekniska felkoder, och låta kunden pröva ett annat betalsätt utan att ange adresserna igen.
+      rationale: Kunder som är osäkra på om de debiterats betalar antingen två gånger eller ger upp.
+      criteria:
+        - method: test
+          text: Med ett nekat testkort anger meddelandet att inget har debiterats och erbjuder ett annat betalsätt; byte av betalsätt behåller adresserna.
+
+  - id: SHOP-12
+    type: functional
+    obligation: must
+    priority: high
+    tags: [rounding, currency, vat]
+    refs: ["ISO 4217", "Directive 2006/112/EC Art. 226"]
+    tests: [SHOP-T08]
+    en:
+      title: Amounts rounded to the currency's minor unit
+      description: The system MUST calculate amounts with decimal arithmetic, round each order line to the currency's minor unit and make the order total equal the sum of the rounded lines.
+      rationale: Floating-point rounding produces totals that differ by one cent from the lines, which breaks accounting and invoices.
+      criteria:
+        - method: test
+          text: An order of 3 items at 0.10 EUR with 25 percent VAT gives line totals and a total that match a decimal reference calculation to the cent.
+    sv:
+      title: Belopp avrundas till valutans minsta enhet
+      description: Systemet SKA beräkna belopp med decimalaritmetik, avrunda varje orderrad till valutans minsta enhet och låta orderns summa vara lika med summan av de avrundade raderna.
+      rationale: Avrundning med flyttal ger summor som skiljer sig ett öre från raderna, vilket stör bokföring och fakturor.
+      criteria:
+        - method: test
+          text: En beställning med 3 varor à 0,10 EUR med 25 procent moms ger radsummor och en total som stämmer på öret med en referensberäkning med decimaler.
+
+  - id: SHOP-13
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [withdrawal, returns, consumer-law]
+    refs: ["Directive 2011/83/EU Art. 9", "Directive 2011/83/EU Art. 11"]
+    tests: [SHOP-T09]
+    en:
+      title: Withdrawal from an order online
+      description: The system SHOULD let a customer notify withdrawal from an order online within 14 days of delivery, from the order page or a link in the confirmation, and SHOULD confirm the withdrawal by e-mail within 5 minutes.
+      rationale: An online withdrawal is the easiest way to exercise the right and leaves a record for both parties.
+      criteria:
+        - method: test
+          text: A withdrawal on day 14 after delivery is accepted and confirmed by e-mail; on day 15 the order page explains that the period has passed.
+          threshold: 14 days after delivery
+    sv:
+      title: Ångra en beställning på nätet
+      description: Systemet BÖR låta en kund meddela att hen ångrar en beställning på nätet inom 14 dagar efter leveransen, från ordersidan eller en länk i bekräftelsen, och bekräfta ångern via e-post inom 5 minuter.
+      rationale: Ånger på nätet är det enklaste sättet att utöva rättigheten och ger dokumentation för båda parter.
+      criteria:
+        - method: test
+          text: En ånger dag 14 efter leveransen godtas och bekräftas via e-post; dag 15 förklarar ordersidan att perioden har gått ut.
+          threshold: 14 dagar efter leverans
+
+tests:
+  - id: SHOP-T01
+    priority: medium
+    execution: manual
+    tags: [cart]
+    refs: []
+    en:
+      title: Cart across devices and over time
+      description: Adds items on one device, checks the cart on another and after the clock is moved forward.
+      preconditions: A customer account, a computer and a phone, and a test environment with a controllable clock.
+      expected: The cart is the same on both devices and is kept for 30 days.
+      steps:
+        - action: Sign in on the computer and add 2 items to the cart.
+          expected: The cart shows 2 items.
+        - action: Sign in on the phone and open the cart.
+          expected: The same 2 items with the same quantities are shown.
+        - action: Move the clock 29 days forward and open the cart.
+          expected: The 2 items are still in the cart.
+    sv:
+      title: Varukorg mellan enheter och över tid
+      description: Lägger till varor på en enhet, kontrollerar korgen på en annan och efter att klockan flyttats framåt.
+      preconditions: Ett kundkonto, en dator och en telefon, och en testmiljö med styrbar klocka.
+      expected: Varukorgen är densamma på båda enheterna och sparas i 30 dagar.
+      steps:
+        - action: Logga in på datorn och lägg 2 varor i varukorgen.
+          expected: Varukorgen visar 2 varor.
+        - action: Logga in på telefonen och öppna varukorgen.
+          expected: Samma 2 varor med samma antal visas.
+        - action: Flytta klockan 29 dagar framåt och öppna varukorgen.
+          expected: De 2 varorna finns kvar i korgen.
+
+  - id: SHOP-T02
+    priority: critical
+    execution: manual
+    tags: [price, order-button]
+    refs: ["Directive 2011/83/EU Art. 8(2)"]
+    en:
+      title: Total price and order button on the final page
+      description: Goes through the checkout to the final page and inspects the price breakdown and the order button.
+      preconditions: Two items at 199.00 and 99.00 SEK including VAT, shipping of 49.00 SEK and an invoice fee of 29.00 SEK.
+      expected: Each charge and the correct total are shown, and only the labelled button places the order.
+      steps:
+        - action: Add the items, choose shipping and invoice as payment, and go to the final page.
+          expected: The page lists 199.00, 99.00, shipping 49.00 and invoice fee 29.00, with the total 376.00 SEK including VAT.
+          data: "199.00 + 99.00 + 49.00 + 29.00 = 376.00 SEK"
+        - action: Read the label of the order button in English and Swedish.
+          expected: The labels are "Order with obligation to pay" and "Beställ med betalningsskyldighet".
+        - action: Put the focus in a form field on the page and press Enter.
+          expected: No order is placed.
+    sv:
+      title: Totalpris och beställningsknapp på sista sidan
+      description: Går igenom kassan till sista sidan och granskar prisuppdelningen och beställningsknappen.
+      preconditions: Två varor för 199,00 och 99,00 kr inklusive moms, frakt för 49,00 kr och en fakturaavgift på 29,00 kr.
+      expected: Varje avgift och rätt totalsumma visas, och bara den märkta knappen lägger beställningen.
+      steps:
+        - action: Lägg till varorna, välj frakt och faktura som betalsätt och gå till sista sidan.
+          expected: Sidan listar 199,00, 99,00, frakt 49,00 och fakturaavgift 29,00, med summan 376,00 kr inklusive moms.
+          data: "199,00 + 99,00 + 49,00 + 29,00 = 376,00 kr"
+        - action: Läs beställningsknappens text på engelska och svenska.
+          expected: Texterna är "Order with obligation to pay" och "Beställ med betalningsskyldighet".
+        - action: Placera fokus i ett formulärfält på sidan och tryck på Enter.
+          expected: Ingen beställning läggs.
+
+  - id: SHOP-T03
+    priority: medium
+    execution: manual
+    tags: [guest-checkout]
+    refs: []
+    en:
+      title: Guest purchase and account offer afterwards
+      description: Completes a purchase as a guest and checks what is asked for.
+      preconditions: A signed-out browser and an item in stock.
+      expected: The purchase needs no account and an account is offered afterwards.
+      steps:
+        - action: Add the item and choose to check out as a guest.
+          expected: The checkout asks for an e-mail address, delivery address and payment, without a password field.
+        - action: Complete the purchase with a test payment.
+          expected: The order is placed.
+        - action: Look at the confirmation page.
+          expected: The page offers to create an account with the e-mail address already filled in.
+    sv:
+      title: Gästköp och erbjudande om konto efteråt
+      description: Slutför ett köp som gäst och kontrollerar vad som efterfrågas.
+      preconditions: En utloggad webbläsare och en vara i lager.
+      expected: Köpet kräver inget konto och ett konto erbjuds efteråt.
+      steps:
+        - action: Lägg till varan och välj att gå till kassan som gäst.
+          expected: Kassan frågar efter e-postadress, leveransadress och betalning, utan lösenordsfält.
+        - action: Slutför köpet med en testbetalning.
+          expected: Beställningen läggs.
+        - action: Titta på bekräftelsesidan.
+          expected: Sidan erbjuder att skapa ett konto med e-postadressen redan ifylld.
+
+  - id: SHOP-T04
+    priority: high
+    execution: manual
+    tags: [stock, price]
+    refs: []
+    en:
+      title: Stock and price changed during the purchase
+      description: Changes the stock and the price of cart items in the back office while the customer is in the checkout.
+      preconditions: A cart with 3 units of item A at 199 and 1 unit of item B, and access to the back office.
+      expected: The checkout reports the stock shortage and the price change before payment.
+      steps:
+        - action: In the back office set the stock of item A to 1 and continue to the payment step as the customer.
+          expected: The checkout stops before payment and states that only 1 unit of item A is available.
+        - action: Reduce item A to 1 unit, then raise the price of item B from 199 to 249 in the back office.
+          expected: The checkout shows item B with the old price 199 and the new price 249.
+          data: 199 → 249
+        - action: Try to place the order without confirming, then confirm the new price.
+          expected: The order is blocked until the customer confirms and is then placed at 249.
+    sv:
+      title: Lager och pris ändras under köpet
+      description: Ändrar lagersaldo och pris för varor i korgen i administrationen medan kunden är i kassan.
+      preconditions: En varukorg med 3 enheter av vara A för 199 och 1 enhet av vara B, och åtkomst till administrationen.
+      expected: Kassan rapporterar lagerbristen och prisändringen före betalningen.
+      steps:
+        - action: Sätt lagersaldot för vara A till 1 i administrationen och fortsätt som kund till betalningssteget.
+          expected: Kassan stannar före betalningen och anger att bara 1 enhet av vara A finns.
+        - action: Minska vara A till 1 enhet och höj sedan priset på vara B från 199 till 249 i administrationen.
+          expected: Kassan visar vara B med det gamla priset 199 och det nya priset 249.
+          data: 199 → 249
+        - action: Försök lägga beställningen utan att bekräfta och bekräfta sedan det nya priset.
+          expected: Beställningen stoppas tills kunden bekräftar och läggs sedan för 249.
+
+  - id: SHOP-T05
+    priority: high
+    execution: automated
+    tags: [confirmation, e-mail]
+    refs: ["Directive 2011/83/EU Art. 8(7)"]
+    en:
+      title: Content and timing of the order confirmation
+      description: An end-to-end test places an order and inspects the confirmation e-mail.
+      preconditions: A mail catcher and a test order with 2 items to a fictitious address.
+      expected: One confirmation with each required part arrives within 5 minutes.
+      steps:
+        - action: Place the order and note the order number.
+          expected: The confirmation page shows the order number.
+        - action: Wait for the e-mail in the mail catcher.
+          expected: Exactly one e-mail arrives within 5 minutes.
+        - action: Check its content.
+          expected: It contains the order number, both items with quantities, the total price, the delivery address and the information on the right of withdrawal.
+    sv:
+      title: Innehåll och tidpunkt för orderbekräftelsen
+      description: Ett end-to-end-test lägger en beställning och granskar bekräftelsemeddelandet.
+      preconditions: En e-postfångare och en testbeställning med 2 varor till en påhittad adress.
+      expected: En bekräftelse med varje obligatorisk del kommer inom 5 minuter.
+      steps:
+        - action: Lägg beställningen och anteckna ordernumret.
+          expected: Bekräftelsesidan visar ordernumret.
+        - action: Vänta på meddelandet i e-postfångaren.
+          expected: Exakt ett meddelande kommer inom 5 minuter.
+        - action: Kontrollera innehållet.
+          expected: Det innehåller ordernumret, båda varorna med antal, totalpriset, leveransadressen och informationen om ångerrätten.
+
+  - id: SHOP-T06
+    priority: critical
+    execution: manual
+    tags: [payment, sca, card-data]
+    refs: ["PCI DSS v4.0 Req. 3", "Commission Delegated Regulation (EU) 2018/389"]
+    en:
+      title: Card payments with authentication outcomes and declines
+      description: Pays with the payment provider's test cards while recording the traffic to the system's servers.
+      preconditions: The payment provider's test mode, its documented test cards for authentication success, cancellation, failure and decline, and a proxy that records traffic to the system's servers.
+      expected: Each outcome returns to the checkout with data kept, declines are explained, and no card data reaches the system.
+      steps:
+        - action: Pay with the test card that cancels authentication, then with the one that fails it.
+          expected: Each attempt returns to the checkout with the cart, addresses and delivery choice unchanged, and no order is placed.
+        - action: Pay with the test card that is declined.
+          expected: A message states that the payment was not completed and nothing was charged, without error codes, and another payment method is offered.
+        - action: Switch to another method and pay with the test card that succeeds.
+          expected: The addresses are still filled in and the order is placed.
+        - action: Search the recorded traffic, the logs and the database for the test card numbers and security codes.
+          expected: None of them is found.
+    sv:
+      title: Kortbetalningar med olika autentiseringsutfall och nekanden
+      description: Betalar med betaltjänstens testkort medan trafiken till systemets servrar spelas in.
+      preconditions: Betaltjänstens testläge, dess dokumenterade testkort för lyckad, avbruten och misslyckad autentisering och för nekad betalning, och en proxy som spelar in trafiken till systemets servrar.
+      expected: Varje utfall leder tillbaka till kassan med uppgifterna kvar, nekanden förklaras och inga kortdata når systemet.
+      steps:
+        - action: Betala med testkortet som avbryter autentiseringen och sedan med det som misslyckas.
+          expected: Varje försök leder tillbaka till kassan med oförändrad varukorg, adresser och leveranssätt, och ingen beställning läggs.
+        - action: Betala med testkortet som nekas.
+          expected: Ett meddelande anger att betalningen inte genomfördes och att inget har debiterats, utan felkoder, och ett annat betalsätt erbjuds.
+        - action: Byt betalsätt och betala med testkortet som lyckas.
+          expected: Adresserna är fortfarande ifyllda och beställningen läggs.
+        - action: Sök i den inspelade trafiken, loggarna och databasen efter testkortens nummer och säkerhetskoder.
+          expected: Inget av dem hittas.
+
+  - id: SHOP-T07
+    priority: low
+    execution: automated
+    tags: [discount-codes]
+    refs: []
+    en:
+      title: Valid and rejected discount codes
+      description: An API test applies discount codes in different states to a cart.
+      preconditions: A cart worth 300.00, a valid 10 percent code, an expired code and a code with a minimum order value of 500.00.
+      expected: The valid code gives a discount line and every rejection states its reason.
+      steps:
+        - action: Apply the valid code.
+          expected: A separate discount line of 30.00 is added.
+          data: 10 % of 300.00
+        - action: Apply a second code to the same order.
+          expected: The code is rejected with a message that only one code is allowed per order.
+        - action: Remove the valid code and apply the expired code, then the code with a minimum of 500.00.
+          expected: The messages state "expired" and "minimum order value 500.00 not reached".
+    sv:
+      title: Giltiga och avvisade rabattkoder
+      description: Ett API-test tillämpar rabattkoder i olika tillstånd på en varukorg.
+      preconditions: En varukorg värd 300,00, en giltig kod på 10 procent, en utgången kod och en kod med lägsta ordervärde 500,00.
+      expected: Den giltiga koden ger en rabattrad och varje avvisning anger sin orsak.
+      steps:
+        - action: Tillämpa den giltiga koden.
+          expected: En separat rabattrad på 30,00 läggs till.
+          data: 10 % av 300,00
+        - action: Tillämpa en andra kod på samma beställning.
+          expected: Koden avvisas med ett meddelande om att bara en kod är tillåten per beställning.
+        - action: Ta bort den giltiga koden och tillämpa den utgångna koden och sedan koden med lägsta värde 500,00.
+          expected: Meddelandena anger "har gått ut" och "lägsta ordervärde 500,00 har inte nåtts".
+
+  - id: SHOP-T08
+    priority: high
+    execution: automated
+    tags: [rounding]
+    refs: ["ISO 4217"]
+    en:
+      title: Rounding of order lines and totals
+      description: A unit test calculates orders with values that expose floating-point rounding errors and compares them with a decimal reference.
+      preconditions: The order calculation function and a reference calculation with decimal numbers.
+      expected: Lines and totals match the reference to the minor unit.
+      steps:
+        - action: Calculate an order of 3 units at 0.10 EUR with 25 percent VAT.
+          expected: The line is 0.30 net, 0.08 VAT (0.075 rounded half up) and 0.38 gross, matching the reference.
+          data: "3 × 0.10 EUR, 25 % VAT"
+        - action: Calculate an order of 7 different lines with prices that have 3 decimals before rounding.
+          expected: The total equals the sum of the rounded lines exactly.
+        - action: Calculate an order in JPY.
+          expected: Every amount is a whole number of yen.
+    sv:
+      title: Avrundning av orderrader och summor
+      description: Ett enhetstest beräknar beställningar med värden som avslöjar avrundningsfel med flyttal och jämför dem med en referens med decimaltal.
+      preconditions: Funktionen som beräknar beställningar och en referensberäkning med decimaltal.
+      expected: Rader och summor stämmer med referensen på minsta enheten.
+      steps:
+        - action: Beräkna en beställning med 3 enheter à 0,10 EUR med 25 procent moms.
+          expected: Raden blir 0,30 netto, 0,08 moms (0,075 avrundat uppåt) och 0,38 brutto, som i referensen.
+          data: "3 × 0,10 EUR, 25 % moms"
+        - action: Beräkna en beställning med 7 olika rader med priser som har 3 decimaler före avrundning.
+          expected: Summan är exakt lika med summan av de avrundade raderna.
+        - action: Beräkna en beställning i JPY.
+          expected: Varje belopp är ett helt antal yen.
+
+  - id: SHOP-T09
+    priority: medium
+    execution: manual
+    tags: [withdrawal]
+    refs: ["Directive 2011/83/EU Art. 11"]
+    en:
+      title: Online withdrawal within and after the period
+      description: Withdraws from orders on the last day of the period and the day after.
+      preconditions: Two delivered test orders, a mail catcher and a controllable clock.
+      expected: The withdrawal on day 14 is accepted and confirmed, and on day 15 it is refused with an explanation.
+      steps:
+        - action: Move the clock to day 14 after delivery of order 1 and use the withdrawal link in its confirmation.
+          expected: The withdrawal is accepted and a confirmation e-mail arrives within 5 minutes.
+          data: day 14
+        - action: Move the clock to day 15 after delivery of order 2 and open its order page.
+          expected: The page explains that the withdrawal period has passed and offers the support contact.
+          data: day 15
+    sv:
+      title: Ånger på nätet inom och efter ångerfristen
+      description: Ångrar beställningar sista dagen av ångerfristen och dagen efter.
+      preconditions: Två levererade testbeställningar, en e-postfångare och en styrbar klocka.
+      expected: Ångern dag 14 godtas och bekräftas, och dag 15 avvisas den med en förklaring.
+      steps:
+        - action: Flytta klockan till dag 14 efter leveransen av beställning 1 och använd ångerlänken i dess bekräftelse.
+          expected: Ångern godtas och ett bekräftelsemeddelande kommer inom 5 minuter.
+          data: dag 14
+        - action: Flytta klockan till dag 15 efter leveransen av beställning 2 och öppna dess ordersida.
+          expected: Sidan förklarar att ångerfristen har gått ut och visar kontaktuppgifter till supporten.
+          data: dag 15

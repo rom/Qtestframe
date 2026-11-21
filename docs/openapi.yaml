@@ -1447,7 +1447,7 @@ paths:
       summary: Update folder
       operationId: patchFoldersById
       description: |-
-        `{"name","description"}`
+        `{"name","description","color"}` (color: #rrggbb or "" to clear)
 
         **Permission:** any authenticated user; the handler checks: `requirement.write` or `test.write` according to the folder's kind.
       x-permission: authenticated
@@ -4720,7 +4720,7 @@ paths:
       summary: Run script
       operationId: postExecutionsByIdRunScript
       description: |-
-        run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test`
+        run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled, the test may not be executed or it is queued or running as a job) → execution with embedded `test`. A web test (script language `playwright`) is queued as a background job instead: 202 with the execution (status `in_progress`) and its `job`; poll GET /executions/{id} until `job.state` is no longer queued or running
 
         **Permission:** `script.execute`.
       x-permission: script.execute
@@ -5957,8 +5957,10 @@ paths:
       - Reports and export
       summary: Generate report
       operationId: postProjectsByPidReportsGenerate
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{template?, params?, custom?, format: pdf|docx|xlsx|csv, archive?: bool, name?}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
+        `{template?, params?, custom?, format: pdf|docx|xlsx|csv, archive?: bool, name?, lang?: en|sv}` (`lang`: the language of the report's texts, see "Report language" in docs/api.md); without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
 
         **Permission:** `export`.
       x-permission: export
@@ -5988,6 +5990,9 @@ paths:
                   type: boolean
                 name:
                   type: string
+                lang:
+                  type: string
+                  description: language of the report's texts (en, sv); default the lang query parameter, the user's preferred language, Accept-Language, en
       responses:
         '200':
           description: The report file (201 with a File when archived)
@@ -6154,8 +6159,10 @@ paths:
       - Reports and export
       summary: Report batch
       operationId: postProjectsByPidReportsBatch
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}`
+        `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive", "lang"?}` (at most 50; every report in `lang`). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}`
 
         **Permission:** `export` checked by the router; export (archive also needs requirement.write or test.write).
       x-permission: export
@@ -6217,8 +6224,10 @@ paths:
       - Reports and export
       summary: Generate report definition
       operationId: postReportsDefinitionsByIdGenerate
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{format, archive?}`
+        `{format, archive?, name?, lang?}`
 
         **Permission:** `export`.
       x-permission: export
@@ -9669,8 +9678,10 @@ paths:
       - Reports and export
       summary: Send a report by e-mail
       operationId: postProjectsByPidReportsEmail
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{template | config | definition_id, format, recipients:[user ids], addresses?, message?}` → 202 `{queued, skipped}`; other addresses need `project.update`; at most 50 recipients
+        `{template | config | definition_id, format, recipients:[user ids], addresses?, message?, lang?}` (report and e-mail in `lang`) → 202 `{queued, skipped}`; other addresses need `project.update`; at most 50 recipients
 
         **Permission:** `export`.
       x-permission: export
@@ -9725,8 +9736,10 @@ paths:
       - Reports and export
       summary: Schedule a report
       operationId: postProjectsByPidReportsSubscriptions
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{definition_id, frequency: daily|weekly|monthly, weekday?, day_of_month?, time, timezone, format, recipients, addresses?, message?, enabled?}` → ReportSubscription; also needs requirement.write or test.write
+        `{definition_id, frequency: daily|weekly|monthly, weekday?, day_of_month?, time, timezone, format, recipients, addresses?, message?, enabled?, lang?}` → ReportSubscription (`lang`, else the query parameter, is stored: the language the report is sent in); also needs requirement.write or test.write
 
         **Permission:** `export`.
       x-permission: export
@@ -9759,8 +9772,10 @@ paths:
       - Reports and export
       summary: Update scheduled report
       operationId: patchReportsSubscriptionsById
+      parameters:
+      - $ref: '#/components/parameters/reportLang'
       description: |-
-        the owner or `project.update`
+        the owner or `project.update`; the same fields as on create; a supported `lang` (body, else query parameter) replaces the stored language
 
         **Permission:** `export`.
       x-permission: export
@@ -10177,6 +10192,314 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/archive:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Save project
+      operationId: getProjectsByPidArchive
+      description: |-
+        Downloads the whole project as a project archive (`application/zip`, `<key>-project-<time>.zip`): `manifest.json` (`kind: qtestframe-project`, `format_version`, `schema_version`, `app_version`, `created_at`, `driver`, `project {id, key, name}`, `tables {table: rows}`, `files`, `file_bytes`), `tables/<table>.jsonl` with every row of the project and `files/<id>` with the content of each file. Webhook secrets, the tracker token, accounts, memberships, sessions, API tokens, notifications, e-mail subscriptions, the audit log and the trash are not included. Audited as `project.save`.
+
+        **Permission:** `project.update`, `export`.
+      x-permission: project.update, export
+      responses:
+        '200':
+          description: The project archive
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/import:
+    post:
+      tags:
+      - Projects
+      summary: Load project
+      operationId: postProjectsImport
+      description: |-
+        multipart `archive` (a project archive) + optional `key`, `name` (default: those of the archive) and `dry_run=true` (checks everything, saves nothing, answers 200 and reports a taken key as `key_taken: true`). Creates a **new** project in the current organisation in one transaction: every row gets a new id and all references (ids in columns, JSON and texts; item keys such as `OLD-REQ-1` when the key changes) are rewritten; sequence counters are kept, so new items get the next free key. Rows that refer to something outside the archive (e.g. a reviewer without an account here) are left out and counted in `skipped`. Loaded webhooks are disabled and have no secret. → `{project, manifest, imported: {table: rows}, skipped?, files, dry_run?, key_taken?}`. 409 when the key is taken or the archive comes from a newer schema; 400 for invalid archives. Audited as `project.load`.
+
+        **Permission:** `project.create`.
+      x-permission: project.create
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - archive
+              properties:
+                archive:
+                  type: string
+                  format: binary
+                  description: The project archive (ZIP)
+                key:
+                  type: string
+                  description: Key of the new project (default the archive's)
+                name:
+                  type: string
+                  description: Name of the new project (default the archive's)
+                dry_run:
+                  type: boolean
+                  description: Check only; nothing is saved (200)
+      responses:
+        '200':
+          description: Dry run; nothing is saved
+          content:
+            application/json:
+              schema:
+                type: object
+        '201':
+          description: The new project and what was loaded
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/duplicate:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Duplicate project
+      operationId: postProjectsByPidDuplicate
+      description: |-
+        `{key, name?}` → saves the project and loads it again as a new project (like Save project + Load project) → the same result as Load project. 409 when the key is taken. Audited as `project.duplicate`.
+
+        **Permission:** `project.create`, `project.update`, `export`.
+      x-permission: project.create, project.update, export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - key
+              properties:
+                key:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/web-tests:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Runs and executions
+      summary: Get web test settings
+      operationId: getProjectsByPidWebTests
+      description: |-
+        the project's web test settings `{base_url, environment_urls: [{environment, base_url}], variables: [{name, value, secret, has_value}], enabled, browser}`; the values of secret variables are never returned (`value` is empty, `has_value` says whether one is saved); `enabled` tells whether the server runs web tests (`runner.web.enabled`)
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Runs and executions
+      summary: Save web test settings
+      operationId: putProjectsByPidWebTests
+      description: |-
+        replaces the settings `{base_url, environment_urls, variables}` (400 for a URL that is not http(s), a duplicate environment or variable, an invalid variable name); a secret variable sent with an empty `value` keeps its saved value; a variable left out is deleted → the settings as GET returns them
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/run-automated:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Runs and executions
+      summary: Run automated tests
+      operationId: postRunsByIdRunAutomated
+      description: |-
+        queues the automated executions of the run as background jobs `{execution_ids?: [], include_passed?: false}` — without `execution_ids` every automated execution that has not passed (all with `include_passed`); executions that may not be executed (readiness) are left out, a prerequisite in the same run and configuration that is queued too runs first → 202 `{queued: [job], skipped: [{execution_id, test_key, configuration_name, reason, code}]}` (`code`: not_automated, no_script, disabled, active, not_ready, cycle); 409 if script execution is disabled
+
+        **Permission:** `script.execute`.
+      x-permission: script.execute
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/jobs:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Runs and executions
+      summary: List background jobs
+      operationId: getRunsByIdJobs
+      description: |-
+        the current background jobs of the run (the batches that still have queued or running jobs, else the latest batch) → `{items: [{id, execution_id, test_key, test_title, configuration_name, state, message, after, requested_by, created_at, started_at, finished_at}], counts: {queued, running, done, passed, failed, skipped, cancelled, error, total}, active}`; `state` is queued, running, passed, failed, skipped, cancelled, error or interrupted
+
+        **Permission:** `run.read`.
+      x-permission: run.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/runs/{id}/jobs/cancel:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Runs and executions
+      summary: Cancel background jobs
+      operationId: postRunsByIdJobsCancel
+      description: |-
+        cancels queued jobs of the run `{job_ids?: [], running?: false}` (all queued ones without `job_ids`); their executions get their earlier result back; with `running` running jobs are stopped too → `{cancelled, stopping}`
+
+        **Permission:** `script.execute`.
+      x-permission: script.execute
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+        description: JSON object; see the description for the fields.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/executions/{id}/run-script/cancel:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Runs and executions
+      summary: Cancel script job
+      operationId: postExecutionsByIdRunScriptCancel
+      description: |-
+        cancels the queued background job of the execution or stops its running one → `{cancelled, stopping}`; 409 if it has none
+
+        **Permission:** `script.execute`.
+      x-permission: script.execute
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -10196,6 +10519,14 @@ components:
       bearerFormat: qtf_<token>
       description: 'API token (`Authorization: Bearer qtf_…`) from `POST /api/v1/tokens`; bound to one tenant, no CSRF header needed.'
   parameters:
+    reportLang:
+      name: lang
+      in: query
+      required: false
+      description: language of the report's own texts (en, sv; also e.g. sv-SE). Used when the body has no supported `lang`; then the user's preferred language, the Accept-Language header and English follow.
+      schema:
+        type: string
+        example: sv
     catalogLang:
       name: lang
       in: query
@@ -11255,6 +11586,9 @@ components:
           type: string
         description:
           type: string
+        color:
+          type: string
+          description: '#rrggbb or empty; items in the folder and in subfolders without a colour of their own are shown in it'
         position:
           type: integer
         created_at:

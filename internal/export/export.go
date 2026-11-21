@@ -24,6 +24,32 @@ type Dataset struct {
 	Subtitle    string
 	GeneratedAt time.Time
 	Sections    []Section
+	// Lang is the language of the texts the writers add ("Generated",
+	// page numbers, …): en (default) or sv.
+	Lang string
+}
+
+// labels are the texts the writers add, per language.
+var labels = map[string]map[string]string{
+	"en": {"generated": "Generated", "page": "Page %d/%s", "section": "Section %d", "sectionCol": "Section", "rows": "Rows",
+		"noData": "(no data)", "noRows": "(no rows)", "summary": "Summary", "docLang": "en-US"},
+	"sv": {"generated": "Skapad", "page": "Sida %d/%s", "section": "Avsnitt %d", "sectionCol": "Avsnitt", "rows": "Rader",
+		"noData": "(inga data)", "noRows": "(inga rader)", "summary": "Sammanfattning", "docLang": "sv-SE"},
+}
+
+// label returns a writer text in the dataset's language (English when the
+// language is not supported).
+func (ds Dataset) label(key string) string {
+	if m, ok := labels[ds.Lang]; ok {
+		return m[key]
+	}
+	return labels["en"][key]
+}
+
+// english reports whether the dataset's texts are English.
+func (ds Dataset) english() bool {
+	_, ok := labels[ds.Lang]
+	return !ok || ds.Lang == "en"
 }
 
 // Format is an export file format.
@@ -111,14 +137,14 @@ func generatedAt(ds Dataset) time.Time {
 	return ds.GeneratedAt
 }
 
-func sectionTitle(s Section, i int) string {
+func (ds Dataset) sectionTitle(s Section, i int) string {
 	switch {
 	case s.Title != "":
 		return s.Title
 	case s.Name != "":
 		return s.Name
 	}
-	return fmt.Sprintf("Section %d", i+1)
+	return fmt.Sprintf(ds.label("section"), i+1)
 }
 
 // cell returns row[i] or "" when the row is short.

@@ -397,7 +397,7 @@ onMounted(() => {
       <Column field="title" :header="t('common.title')" sortable body-class="stack-main">
         <template #body="{ data }">
           <div style="min-width: 0">
-            <div class="ellipsis" style="max-width: 420px" :title="data.title">{{ data.title }}</div>
+            <button type="button" class="link-button ellipsis" style="display: block; max-width: 420px" tabindex="-1" :title="data.title" @click.stop="openEdit(data)">{{ data.title }}</button>
             <div class="small muted">{{ formatDateTime(data.created_at) }}<template v-if="data.created_by"> · {{ data.created_by }}</template></div>
           </div>
         </template>

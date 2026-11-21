@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from '../components/ItemRef.vue'
 import { useUndoStore } from '@/stores/undo'
 import { entry, recordUndo, toggleEntry } from '@/lib/undoActions'
 import { chunks, linkPlan, type LinkPair } from '@/lib/bulkLinks'
@@ -22,7 +23,7 @@ import TraceRulesPanel from '@/components/TraceRulesPanel.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/lib/api'
 import { linkKey } from '@/lib/collections'
-import { COVERAGE_COLORS } from '@/lib/colors'
+import { COVERAGE_COLORS, RESULT_ICONS, traceMark } from '@/lib/colors'
 import { percent } from '@/lib/format'
 import { P } from '@/lib/permissions'
 import type { TraceLink, Traceability } from '@/lib/types'
@@ -81,6 +82,13 @@ function linkedCols(reqId: string) {
 function cellLabel(rKey: string, tKey: string) {
   return t('traceability.linkCell', { req: rKey, test: tKey })
 }
+/** spoken state of a matrix mark: the test's result, and suspect when it is */
+function markText(reqId: string, tc: { id: string; last_result: string }) {
+  if (!isLinked(reqId, tc.id)) return ''
+  const res = enumLabel('result', traceMark(tc.last_result).result)
+  return isSuspect(reqId, tc.id) ? ` (${res}, ${t('suspect.label')})` : ` (${res})`
+}
+const markLegend = Object.keys(RESULT_ICONS).map((k) => ({ key: k, ...traceMark(k) }))
 
 // coverage and results in one configuration ('' all, 'none' without configuration)
 const cfg = useConfigurations(() => proj.pid)
@@ -306,9 +314,18 @@ async function toggle(reqId: string, testId: string) {
     <Select v-if="cfg.configurations.value.length" v-model="configuration" :options="configOptions" option-label="label" option-value="value" :aria-label="t('configurations.coverageIn')" style="min-width: 170px" />
     <span class="row small nowrap"><ToggleSwitch v-model="onlyLinkedTests" input-id="olt" /><label for="olt">{{ t('traceability.onlyLinked') }}</label><HelpTip id="trace.onlyLinked" :label="t('traceability.onlyLinked')" /></span>
     <HelpTip id="trace.coverage" :label="t('traceability.coverage')" />
-    <ul class="row small muted plain-list trace-legend" :aria-label="t('traceability.legend')">
-      <li v-for="(c, k) in COVERAGE_COLORS" :key="k" class="row nowrap" style="gap: 4px"><span aria-hidden="true" :style="{ width: '10px', height: '10px', borderRadius: '3px', background: c }" />{{ enumLabel('coverage', String(k)) }}</li>
-    </ul>
+    <div class="trace-legends">
+      <ul class="row small muted plain-list trace-legend" :aria-label="t('traceability.legend')">
+        <li v-for="(c, k) in COVERAGE_COLORS" :key="k" class="row nowrap" style="gap: 4px"><span aria-hidden="true" :style="{ width: '10px', height: '10px', borderRadius: '3px', background: c }" />{{ enumLabel('coverage', String(k)) }}</li>
+      </ul>
+      <ul v-if="view === 'matrix'" class="row small muted plain-list trace-legend" :aria-label="t('traceability.markLegend')">
+        <li class="nowrap">{{ t('traceability.markLegendTitle') }}</li>
+        <li v-for="m in markLegend" :key="m.key" class="row nowrap" style="gap: 4px">
+          <span class="mark-swatch" aria-hidden="true" :style="{ '--mark': m.color }"><i :class="m.icon" /></span>{{ enumLabel('result', m.key) }}
+        </li>
+        <li class="row nowrap" style="gap: 4px"><span class="mark-swatch suspect" aria-hidden="true"><i class="pi pi-exclamation-triangle" /></span>{{ t('suspect.label') }}</li>
+      </ul>
+    </div>
   </div>
   <div v-if="canBulk && data && data.requirements.length && data.tests.length" class="bulkbar trace-bulk" role="toolbar" :aria-label="t('traceability.bulk.toolbar')">
     <span class="row nowrap small"><Checkbox v-model="allShown" binary input-id="trace-all" /><label for="trace-all">{{ t('traceability.bulk.selectAll') }}</label></span>
@@ -342,8 +359,7 @@ async function toggle(reqId: string, testId: string) {
     <li v-for="r in rows" :key="r.id" class="card trace-item" :style="{ borderLeft: '4px solid ' + (COVERAGE_COLORS[r.coverage || 'none'] ?? '#94a3b8') }">
       <div class="row trace-item-head">
         <Checkbox v-if="canBulk" v-model="selReqs" :value="r.id" :input-id="'trl-' + r.id" :aria-label="t('traceability.bulk.selectOne', { key: r.key })" />
-        <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" class="key">{{ r.key }}</RouterLink>
-        <span class="grow trace-title">{{ r.title }}</span>
+        <ItemRef :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" :item-key="r.key" :title="r.title" title-class="trace-title" grow />
         <StatusTag :value="r.obligation" kind="obligation" empty="" />
         <StatusTag :value="r.coverage || 'none'" kind="coverage" />
       </div>
@@ -355,17 +371,18 @@ async function toggle(reqId: string, testId: string) {
             type="button"
             class="trace-chip"
             :class="{ linked: isLinked(r.id, tc.id) }"
+            :style="isLinked(r.id, tc.id) ? { '--mark': traceMark(tc.last_result).color } : undefined"
             :aria-pressed="isLinked(r.id, tc.id)"
-            :aria-label="cellLabel(r.key, tc.key)"
+            :aria-label="cellLabel(r.key, tc.key) + markText(r.id, tc)"
             :title="tc.title"
             :disabled="!!busy"
             @click="toggle(r.id, tc.id)"
           >
-            <i :class="busy === linkKey(r.id, tc.id) ? 'pi pi-spin pi-spinner' : isLinked(r.id, tc.id) ? 'pi pi-check' : 'pi pi-plus'" aria-hidden="true" />
+            <i :class="busy === linkKey(r.id, tc.id) ? 'pi pi-spin pi-spinner' : isLinked(r.id, tc.id) ? traceMark(tc.last_result).icon : 'pi pi-plus'" aria-hidden="true" />
             <span class="mono">{{ tc.key }}</span>
           </button>
-          <RouterLink v-else :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: tc.id } }" class="trace-chip linked" :title="tc.title">
-            <i class="pi pi-check" aria-hidden="true" /><span class="mono">{{ tc.key }}</span>
+          <RouterLink v-else :to="{ name: 'tests', params: { projectId: proj.pid }, query: { item: tc.id } }" class="trace-chip linked" :style="{ '--mark': traceMark(tc.last_result).color }" :title="tc.title">
+            <i :class="traceMark(tc.last_result).icon" aria-hidden="true" /><span class="mono">{{ tc.key }}</span><span class="sr-only">{{ markText(r.id, tc) }}</span>
           </RouterLink>
         </template>
         <span v-if="!linkedCols(r.id).length && !showAll[r.id]" class="small muted">{{ t('traceability.noLinkedTests') }}</span>
@@ -405,28 +422,33 @@ async function toggle(reqId: string, testId: string) {
           <th scope="row" class="sticky-col req-cell" :style="{ borderLeft: '4px solid ' + (COVERAGE_COLORS[r.coverage || 'none'] ?? '#94a3b8') }">
             <div class="row nowrap">
               <Checkbox v-if="canBulk" v-model="selReqs" :value="r.id" :input-id="'trm-' + r.id" :aria-label="t('traceability.bulk.selectOne', { key: r.key })" />
-              <RouterLink :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" class="key">{{ r.key }}</RouterLink>
-              <span class="ellipsis grow" :title="r.title">{{ r.title }}</span>
+              <ItemRef :to="{ name: 'requirements', params: { projectId: proj.pid }, query: { item: r.id } }" :item-key="r.key" :title="r.title" :hint="r.title" title-class="ellipsis" grow />
               <StatusTag :value="r.obligation" kind="obligation" empty="" />
             </div>
           </th>
           <td style="padding: 2px 8px; text-align: center"><StatusTag :value="r.coverage || 'none'" kind="coverage" /></td>
-          <td v-for="tc in cols" :key="tc.id" class="cell" :class="{ linked: isLinked(r.id, tc.id), suspect: isSuspect(r.id, tc.id), editable: canEdit }">
+          <td
+            v-for="tc in cols"
+            :key="tc.id"
+            class="cell"
+            :class="{ linked: isLinked(r.id, tc.id), suspect: isSuspect(r.id, tc.id), editable: canEdit }"
+            :style="isLinked(r.id, tc.id) ? { '--mark': traceMark(tc.last_result).color } : undefined"
+          >
             <button
               v-if="canEdit"
               type="button"
               class="cell-button"
               :aria-pressed="isLinked(r.id, tc.id)"
-              :aria-label="cellLabel(r.key, tc.key) + (isSuspect(r.id, tc.id) ? ` (${t('suspect.label')})` : '')"
-              :title="`${r.key} ↔ ${tc.key}` + (isSuspect(r.id, tc.id) ? ` – ${t('suspect.label')}: ${linkMap.get(linkKey(r.id, tc.id))?.suspect_reason ?? ''}` : '')"
+              :aria-label="cellLabel(r.key, tc.key) + markText(r.id, tc)"
+              :title="`${r.key} ↔ ${tc.key}` + (isLinked(r.id, tc.id) ? ` – ${enumLabel('result', traceMark(tc.last_result).result)}` : '') + (isSuspect(r.id, tc.id) ? ` – ${t('suspect.label')}: ${linkMap.get(linkKey(r.id, tc.id))?.suspect_reason ?? ''}` : '')"
               @click="toggle(r.id, tc.id)"
             >
               <i v-if="busy === linkKey(r.id, tc.id)" class="pi pi-spin pi-spinner" aria-hidden="true" />
               <i v-else-if="isSuspect(r.id, tc.id)" class="pi pi-exclamation-triangle" aria-hidden="true" />
-              <i v-else-if="isLinked(r.id, tc.id)" class="pi pi-check" aria-hidden="true" />
+              <i v-else-if="isLinked(r.id, tc.id)" :class="traceMark(tc.last_result).icon" aria-hidden="true" />
             </button>
             <template v-else-if="isLinked(r.id, tc.id)">
-              <i :class="isSuspect(r.id, tc.id) ? 'pi pi-exclamation-triangle' : 'pi pi-check'" aria-hidden="true" /><span class="sr-only">{{ t('traceability.linkedCell', { req: r.key, test: tc.key }) }}{{ isSuspect(r.id, tc.id) ? ` (${t('suspect.label')})` : '' }}</span>
+              <i :class="isSuspect(r.id, tc.id) ? 'pi pi-exclamation-triangle' : traceMark(tc.last_result).icon" aria-hidden="true" /><span class="sr-only">{{ t('traceability.linkedCell', { req: r.key, test: tc.key }) }}{{ markText(r.id, tc) }}</span>
             </template>
           </td>
         </tr>

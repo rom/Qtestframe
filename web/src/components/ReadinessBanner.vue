@@ -2,6 +2,7 @@
 // Why a test cannot (or should not yet) be executed: a red message when the
 // organisation settings block execution, an amber one when they allow it but
 // the test, its requirements or its prerequisites are not ready.
+import ItemRef from './ItemRef.vue'
 import { computed } from 'vue'
 import Message from 'primevue/message'
 import { useI18n } from 'vue-i18n'
@@ -36,8 +37,7 @@ function target(i: ReadinessIssue) {
           <div class="readiness-reason">
             <i :class="i.blocking ? 'pi pi-ban' : 'pi pi-exclamation-triangle'" aria-hidden="true" />
             <span class="sr-only">{{ i.blocking ? t('readiness.blocking') : t('readiness.warning') }}:</span>
-            <RouterLink :to="target(i)" class="key">{{ i.key }}</RouterLink>
-            <span v-if="!compact" class="muted ellipsis readiness-title">{{ i.title }}</span>
+            <ItemRef :to="target(i)" :item-key="i.key" :title="compact ? '' : i.title" title-class="muted ellipsis readiness-title" />
           </div>
           <div class="readiness-text">{{ explain(i).reason }}</div>
           <div v-if="!compact" class="small readiness-fix"><b>{{ t('readiness.whatToDo') }}</b> {{ explain(i).fix }}</div>

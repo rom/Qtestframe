@@ -70,9 +70,13 @@ type ReportSubscription struct {
 	Format     string `json:"format"`
 	// Recipients are user IDs of tenant members; Addresses other e-mail
 	// addresses (allowed with project.update only).
-	Recipients []string   `json:"recipients"`
-	Addresses  []string   `json:"addresses"`
-	Message    string     `json:"message"`
+	Recipients []string `json:"recipients"`
+	Addresses  []string `json:"addresses"`
+	Message    string   `json:"message"`
+	// Language is the language the report and its e-mail are in (en, sv:
+	// the UI language of whoever created or last changed the
+	// subscription); "" = the owner's preferred language.
+	Language   string     `json:"lang"`
 	Enabled    bool       `json:"enabled"`
 	NextRunAt  *time.Time `json:"next_run_at"`
 	LastRunAt  *time.Time `json:"last_run_at"`

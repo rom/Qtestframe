@@ -36,16 +36,38 @@ När ett testfall läggs till i en körning kopieras stegen in i körningen. Sen
 
 ## Automatiserade testfall: skript
 
-Växla **Exekveringstyp** till **Automatiserat** för att visa fältet **Skript**. Välj **Skriptspråk**: **sh**, **Bash**, **Python** eller **JavaScript** (Node.js).
+Växla **Exekveringstyp** till **Automatiserat** för att visa fältet **Skript**. Välj **Skriptspråk**: **sh**, **Bash**, **Python**, **JavaScript** (Node.js) eller **Webbtest (Playwright)** (se [Webbtester](#webbtester-playwright)).
 
 ![Ett automatiserat testfall med ett skalskript](../images/sv-tests-script.png)
 
 - Skriptet körs på servern i en sandlåda när någon väljer **Kör skript** i exekveringsvyn.
 - Slutkod **0** betyder **Godkänd**; alla andra slutkoder, eller en överskriden tidsgräns, betyder **Underkänd**.
 - Standardutdata och fel sparas som exekveringens **Utdata**, tillsammans med tidsåtgången.
-- Skriptet kan läsa miljövariablerna `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT` och `QTF_BUILD`, så att ett skript kan testa den miljö och det bygge som körningen anger.
+- Skriptet kan läsa miljövariablerna `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD` och `QTF_BASE_URL`, så att ett skript kan testa den miljö och det bygge som körningen anger. Projektets [testvariabler](administration.md#webbtester) finns som `QTF_VAR_<NAMN>`, till exempel `QTF_VAR_USERNAME`; värdena för hemliga variabler maskeras som `***` i sparade utdata.
 
 Att köra skript kräver rollen **Ansvarig** och måste ha aktiverats av administratören (`runner.enabled`). Om dina skript körs någon annanstans, till exempel i en CI-pipeline, lämna skriptet tomt och [importera utfallen](runs.md#importera-utfall-från-ci) i stället. Steg är valfria för automatiserade testfall.
+
+## Webbtester (Playwright)
+
+Ett **webbtest** styr en riktig webbläsare med [Playwright](https://playwright.dev): välj skriptspråket **Webbtest (Playwright)**. Redigeraren erbjuder en **startmall**; välj **Infoga startmall** när skriptet är tomt.
+
+Skriv skriptet på ett av två sätt:
+
+- **Innehållet i ett test** (det vanliga). Qtestframe lägger in det i ett Playwright-test med testfallets namn, med `page`, `context`, `request` och `baseURL` till hands och `test` och `expect` importerade:
+
+  ```js
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Logga in');
+  await page.getByLabel('E-post').fill(process.env.QTF_VAR_USERNAME);
+  ```
+
+- **En hel spec-fil**: när skriptet själv anropar `test(` (till exempel `test('…', async ({ page }) => { … })` eller `test.describe(…)`) används det som det är. Importera då `test` och `expect` från `@playwright/test` själv. Alla tester i filen måste gå igenom för att exekveringen ska bli godkänd.
+
+Sökvägar som `page.goto('/login')` är relativa till projektets **bas-URL** (en administratör anger den under **Inställningar → Webbtester**, även en per körningsmiljö). En [testkonfiguration](administration.md#testkonfigurationer) med dimensionen **Webbläsare** (eller **Browser**) väljer webbläsare: *Chrome*, *Chromium* eller *Edge* körs i Chromium, *Firefox* i Firefox, *Safari* eller *WebKit* i WebKit; en dimension **Bas-URL** ersätter bas-URL:en.
+
+**Spela in skriptet i stället för att skriva det**: kör `npx playwright codegen https://din-app.example.com` på en dator med Node.js, klicka igenom scenariot i webbläsaren som öppnas och kopiera raderna inuti det genererade `test(…)` till skriptet (eller klistra in hela filen).
+
+Webbtester körs på servern i bakgrunden när någon väljer **Kör skript** eller [Kör automatiserade tester](runs.md#kör-alla-automatiserade-tester); utfallet, utdata, skärmbilder och ett spår (trace) sparas med exekveringen (se [Webbtester och deras bevis](runs.md#webbtester-och-deras-bevis)). Servern måste ha Playwright installerat och webbtester aktiverade (se [Webbtester](administration.md#webbtester)).
 
 ## Delade steg
 
@@ -98,7 +120,7 @@ Ett objekt kan ha hur många kategorivärden som helst, även flera i samma dime
 
 I frågor matchar `category:Negative` värdets namn och `dimension:Polarity/Negative` den fullständiga formen.
 
-På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](runs.md#defekter)) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
+På samma sida finns projektets **Namn**, **Beskrivning**, **URL-mall för felhanteringssystem** (se [Defekter](runs.md#defekter)), avsnittet [Spara och läs in](reports-and-export.md#spara-och-läs-in-projekt) (**Spara projekt**, **Duplicera projekt**, **Läs in projekt**) och, för administratörer, **Ta bort projekt**. Att redigera kategorier kräver **Ansvarig** (eller skrivbehörighet för deras område, Testare för testfallskategorier).
 
 ## Markera många tester som klara på en gång
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from './ItemRef.vue'
 import { useUndoStore } from '@/stores/undo'
 import { recordUndo, toggleEntry } from '@/lib/undoActions'
 import { computed, ref, watch } from 'vue'
@@ -146,10 +147,7 @@ async function remove(r: Relation) {
       </div>
       <div v-for="r in g.items" :key="r.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
         <Checkbox v-if="canWrite && relations.length > 1" v-model="sel" :value="r.id" :aria-label="t('relations.bulk.selectOne', { key: otherEnd(r, requirementId).key, type: relationText(g.type, g.direction) })" />
-        <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: otherEnd(r, requirementId).id } }" class="key">
-          {{ otherEnd(r, requirementId).key }}
-        </RouterLink>
-        <span class="grow ellipsis">{{ otherEnd(r, requirementId).title }}</span>
+        <ItemRef :to="{ name: 'requirements', params: { projectId }, query: { item: otherEnd(r, requirementId).id } }" :item-key="otherEnd(r, requirementId).key" :title="otherEnd(r, requirementId).title" title-class="ellipsis" grow />
         <Button v-if="canWrite" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('relations.remove')" v-tooltip="t('relations.remove')" @click="remove(r)" />
       </div>
     </div>

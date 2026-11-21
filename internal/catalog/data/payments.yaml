@@ -1,0 +1,551 @@
+area: payments
+prefix: PAY
+group: privacy
+name: {en: Payments and card data, sv: Betalningar och kortdata}
+description:
+  en: Handling of card data within PCI DSS scope, payment page scripts, strong customer authentication, idempotent and verified payment flows, amounts, refunds, receipts and reconciliation.
+  sv: Hantering av kortdata inom PCI DSS, skript på betalsidor, stark kundautentisering, idempotenta och verifierade betalflöden, belopp, återbetalningar, kvitton och avstämning.
+
+requirements:
+  - id: PAY-01
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [card-data, pci-dss, storage]
+    refs: ["PCI DSS v4.0 Requirement 3.3.1 (sensitive authentication data not retained after authorisation)", "PCI DSS v4.0 Requirement 3.5.1 (PAN rendered unreadable)"]
+    tests: [PAY-T01]
+    en:
+      title: No stored card numbers or security codes
+      description: The system MUST NOT store full card numbers, card security codes or magnetic stripe data, and keeps only the payment provider's token and the last 4 digits.
+      rationale: Stored card data makes the whole system part of the PCI DSS scope and a target worth attacking.
+      criteria:
+        - method: inspection
+          text: A scan of the databases, logs, backups and message queues for card number patterns finds only test tokens and last-4 values.
+    sv:
+      title: Inga lagrade kortnummer eller säkerhetskoder
+      description: Systemet SKA INTE lagra fullständiga kortnummer, kortens säkerhetskoder eller magnetremsdata, utan behåller bara betalleverantörens token och de 4 sista siffrorna.
+      rationale: Lagrade kortdata gör hela systemet till en del av PCI DSS-omfånget och till ett mål som är värt att angripa.
+      criteria:
+        - method: inspection
+          text: En skanning av databaser, loggar, säkerhetskopior och meddelandeköer efter mönster för kortnummer hittar bara testtoken och värden med 4 sista siffror.
+
+  - id: PAY-02
+    type: security
+    obligation: should
+    priority: high
+    tags: [hosted-fields, pci-dss, scope]
+    refs: ["PCI DSS v4.0 SAQ A (eligibility criteria)", "PCI SSC Information Supplement: Best Practices for Securing E-commerce"]
+    tests: [PAY-T01]
+    en:
+      title: Card details are entered in the provider's fields
+      description: Card details SHOULD be entered in a payment page or embedded fields served by a PCI DSS validated payment provider, so that they never reach the system's servers.
+      rationale: When card data does not pass through the system, its compliance effort falls from a full assessment to a short self-assessment.
+      criteria:
+        - method: test
+          text: A capture of the network traffic during a test payment shows the card number sent only to the provider's domain.
+    sv:
+      title: Kortuppgifter anges i leverantörens fält
+      description: Kortuppgifter BÖR anges på en betalsida eller i inbäddade fält som levereras av en PCI DSS-validerad betalleverantör, så att de aldrig når systemets servrar.
+      rationale: När kortdata inte passerar systemet minskar arbetet med regelefterlevnad från en fullständig bedömning till en kort självskattning.
+      criteria:
+        - method: test
+          text: En inspelning av nätverkstrafiken under en testbetalning visar att kortnumret bara skickas till leverantörens domän.
+
+  - id: PAY-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [masking, display]
+    refs: ["PCI DSS v4.0 Requirement 3.4.1 (PAN masked when displayed)"]
+    tests: [PAY-T02]
+    en:
+      title: Card numbers are masked when shown
+      description: The system MUST show at most the last 4 digits of a card number in the user interface, receipts, exports and support tools.
+      rationale: Screens, printouts and exports are seen by many more people than the database.
+      criteria:
+        - method: test
+          text: The payment history, the receipt, a CSV export and the support view each show the card as brand and last 4 digits only.
+    sv:
+      title: Kortnummer maskeras när de visas
+      description: Systemet SKA visa högst de 4 sista siffrorna i ett kortnummer i användargränssnittet, kvitton, exporter och supportverktyg.
+      rationale: Skärmar, utskrifter och exporter ses av många fler personer än databasen.
+      criteria:
+        - method: test
+          text: Betalhistoriken, kvittot, en CSV-export och supportvyn visar var och en kortet enbart som kortmärke och 4 sista siffror.
+
+  - id: PAY-04
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [idempotency, double-charge]
+    refs: ["IETF draft-ietf-httpapi-idempotency-key-header (Idempotency-Key header)"]
+    tests: [PAY-T03]
+    en:
+      title: A repeated payment request charges only once
+      description: The system MUST send each payment to the provider with an idempotency key, so that a repeated request with the same key results in one charge.
+      rationale: Timeouts and double clicks make clients repeat requests, and a customer charged twice loses trust at once.
+      criteria:
+        - method: test
+          text: Three identical payment requests with the same key, sent within 2 seconds, create one charge and return the same payment id.
+    sv:
+      title: En upprepad betalningsbegäran debiterar bara en gång
+      description: Systemet SKA skicka varje betalning till leverantören med en idempotensnyckel, så att en upprepad begäran med samma nyckel ger en enda debitering.
+      rationale: Tidsgränser och dubbelklick får klienter att upprepa anrop, och en kund som debiteras två gånger tappar förtroendet direkt.
+      criteria:
+        - method: test
+          text: Tre identiska betalningsanrop med samma nyckel som skickas inom 2 sekunder ger en debitering och returnerar samma betalnings-id.
+
+  - id: PAY-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [webhook, signature, replay]
+    refs: ["OWASP ASVS 4.0.3 §13.2.6", "PCI DSS v4.0 Requirement 6.2.4 (common software attacks)"]
+    tests: [PAY-T04]
+    en:
+      title: Payment notifications are verified
+      description: The system MUST accept a payment notification from the provider only when its signature is valid and its timestamp is less than 5 minutes old.
+      rationale: An unverified notification lets anyone mark an order as paid, and an old one can be replayed.
+      criteria:
+        - method: test
+          text: Notifications with a missing signature, a wrong signature and a timestamp 6 minutes old are rejected, and the order status does not change.
+          threshold: "timestamp < 5 min"
+    sv:
+      title: Betalningsaviseringar verifieras
+      description: Systemet SKA godta en betalningsavisering från leverantören enbart när signaturen är giltig och tidsstämpeln är mindre än 5 minuter gammal.
+      rationale: En overifierad avisering låter vem som helst markera en order som betald, och en gammal avisering kan spelas upp igen.
+      criteria:
+        - method: test
+          text: Aviseringar med saknad signatur, felaktig signatur och en tidsstämpel som är 6 minuter gammal avvisas, och orderns status ändras inte.
+          threshold: "tidsstämpel < 5 min"
+
+  - id: PAY-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [amounts, currency, rounding]
+    refs: ["ISO 4217 (currency codes and minor units)"]
+    tests: [PAY-T05]
+    en:
+      title: Amounts are stored in minor units with a currency
+      description: The system MUST store and calculate monetary amounts as integers in the currency's minor unit together with an ISO 4217 currency code.
+      rationale: Floating-point arithmetic produces rounding errors of a cent here and there, which break reconciliation and receipts.
+      criteria:
+        - method: test
+          text: Adding 0.10 three times in SEK gives exactly 30 öre, and an amount in JPY, which has no minor unit, is stored without decimals.
+    sv:
+      title: Belopp lagras i minsta valutaenhet med valuta
+      description: Systemet SKA lagra och räkna med penningbelopp som heltal i valutans minsta enhet tillsammans med en valutakod enligt ISO 4217.
+      rationale: Flyttalsaritmetik ger avrundningsfel på ett öre här och där, vilket förstör avstämningen och kvittona.
+      criteria:
+        - method: test
+          text: Att lägga ihop 0,10 tre gånger i SEK ger exakt 30 öre, och ett belopp i JPY, som saknar mindre enhet, lagras utan decimaler.
+
+  - id: PAY-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [sca, 3-d-secure, psd2]
+    refs: ["PSD2 (Directive (EU) 2015/2366) Art. 97", "Commission Delegated Regulation (EU) 2018/389 (RTS on strong customer authentication)"]
+    tests: [PAY-T06]
+    en:
+      title: Strong customer authentication for card payments in the EEA
+      description: The system MUST start strong customer authentication, such as 3-D Secure 2, for customer-initiated card payments in the EEA that the provider does not exempt.
+      rationale: Issuers decline payments without the required authentication, and the merchant carries the fraud loss when it is skipped.
+      criteria:
+        - method: test
+          text: A payment with the provider's test card that requires authentication shows the challenge, and the payment succeeds only after it is completed.
+    sv:
+      title: Stark kundautentisering för kortbetalningar inom EES
+      description: Systemet SKA starta stark kundautentisering, till exempel 3-D Secure 2, för kundinitierade kortbetalningar inom EES som leverantören inte undantar.
+      rationale: Kortutgivare avvisar betalningar utan den autentisering som krävs, och handlaren bär bedrägeriförlusten när den hoppas över.
+      criteria:
+        - method: test
+          text: En betalning med leverantörens testkort som kräver autentisering visar utmaningen, och betalningen lyckas först när den har slutförts.
+
+  - id: PAY-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [reconciliation, settlement]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.16 (monitoring activities)"]
+    tests: [PAY-T07]
+    en:
+      title: Daily reconciliation with the payment provider
+      description: The system MUST compare its payment records with the provider's settlement report each day and alert finance staff to each difference within 24 hours.
+      rationale: Lost notifications, partial refunds and fees leave orders and money out of step, and differences grow harder to explain with time.
+      criteria:
+        - method: test
+          text: A settlement report with one payment missing from the system and one amount that differs by 1 öre produces an alert with both differences within 24 hours.
+          threshold: "≤ 24 h"
+    sv:
+      title: Daglig avstämning mot betalleverantören
+      description: Systemet SKA jämföra sina betalningsposter med leverantörens avräkningsrapport varje dag och larma ekonomipersonalen om varje avvikelse inom 24 timmar.
+      rationale: Förlorade aviseringar, delvisa återbetalningar och avgifter gör att ordrar och pengar inte stämmer, och avvikelser blir svårare att förklara med tiden.
+      criteria:
+        - method: test
+          text: En avräkningsrapport med en betalning som saknas i systemet och ett belopp som skiljer med 1 öre ger ett larm med båda avvikelserna inom 24 timmar.
+          threshold: "≤ 24 h"
+
+  - id: PAY-09
+    type: functional
+    obligation: must
+    priority: high
+    tags: [refund, validation]
+    refs: ["PCI DSS v4.0 Requirement 6.2.4 (business logic abuse)"]
+    tests: [PAY-T05, PAY-T09]
+    en:
+      title: Refunds cannot exceed the captured amount
+      description: The system MUST reject a refund when the sum of all refunds of a payment would exceed the captured amount.
+      rationale: Repeated or parallel refund requests are a known way to take money out of a shop.
+      criteria:
+        - method: test
+          text: For a payment of 100.00 two parallel refunds of 60.00 result in one accepted and one rejected refund.
+    sv:
+      title: Återbetalningar kan inte överstiga det dragna beloppet
+      description: Systemet SKA avvisa en återbetalning när summan av alla återbetalningar för en betalning skulle överstiga det dragna beloppet.
+      rationale: Upprepade eller parallella begäranden om återbetalning är ett känt sätt att ta ut pengar ur en butik.
+      criteria:
+        - method: test
+          text: För en betalning på 100,00 ger två parallella återbetalningar på 60,00 en godkänd och en avvisad återbetalning.
+
+  - id: PAY-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [payment-page, scripts, integrity]
+    refs: ["PCI DSS v4.0 Requirement 6.4.3 (payment page scripts)", "PCI DSS v4.0 Requirement 11.6.1 (change and tamper detection)"]
+    tests: [PAY-T08]
+    en:
+      title: Scripts on the payment page are authorised and monitored
+      description: The system MUST load on the payment page only scripts listed in an inventory with their purpose and integrity hash, and alert within 24 hours when a script or security header changes.
+      rationale: Injected scripts on payment pages copy card data as it is typed, which is how many large card data thefts happened.
+      criteria:
+        - method: test
+          text: A script added to the payment page that is not in the inventory is blocked by the Content Security Policy, and the change raises an alert within 24 hours.
+          threshold: "alert ≤ 24 h"
+    sv:
+      title: Skript på betalsidan är godkända och övervakas
+      description: Systemet SKA på betalsidan bara läsa in skript som finns i en förteckning med syfte och integritetshash, och larma inom 24 timmar när ett skript eller ett säkerhetshuvud ändras.
+      rationale: Injicerade skript på betalsidor kopierar kortdata medan de skrivs, vilket är hur många stora stölder av kortdata har gått till.
+      criteria:
+        - method: test
+          text: Ett skript som läggs till på betalsidan utan att finnas i förteckningen blockeras av Content Security Policy, och ändringen ger ett larm inom 24 timmar.
+          threshold: "larm ≤ 24 h"
+
+  - id: PAY-11
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [receipt, email]
+    refs: ["Swedish Accounting Act (1999:1078) Ch. 5 §7 (content of vouchers)", "Council Directive 2006/112/EC Art. 226 (invoice details)"]
+    tests: [PAY-T02]
+    en:
+      title: Receipt within 5 minutes of a payment
+      description: The system SHOULD send the payer a receipt within 5 minutes of a successful payment, showing amount, currency, VAT, date, seller and the card's last 4 digits.
+      rationale: Customers need proof of payment for their own accounts, and missing receipts lead to support requests and disputes.
+      criteria:
+        - method: test
+          text: After a test payment a receipt with the six items arrives within 5 minutes.
+          threshold: "≤ 5 min"
+    sv:
+      title: Kvitto inom 5 minuter efter en betalning
+      description: Systemet BÖR skicka ett kvitto till betalaren inom 5 minuter efter en lyckad betalning som visar belopp, valuta, moms, datum, säljare och kortets 4 sista siffror.
+      rationale: Kunder behöver bevis på betalningen för sin egen bokföring, och kvitton som saknas leder till supportärenden och tvister.
+      criteria:
+        - method: test
+          text: Efter en testbetalning kommer ett kvitto med de sex uppgifterna inom 5 minuter.
+          threshold: "≤ 5 min"
+
+tests:
+  - id: PAY-T01
+    priority: critical
+    execution: manual
+    tags: [card-data, pci-dss, network]
+    refs: ["PCI DSS v4.0 Requirement 12.5.2 (scope confirmation)"]
+    en:
+      title: Card data never reaches or stays in the system
+      description: Captures the traffic of a test payment and scans the system's data stores for card numbers.
+      preconditions: The provider's test environment and test card numbers; a proxy or browser tool that records network traffic; read access to databases, logs, backups and queues of the test environment.
+      expected: The card number is sent only to the provider, and no full card number or security code is found in any data store.
+      steps:
+        - action: Record the network traffic while paying with a provider test card.
+          expected: The card number and security code appear only in requests to the provider's domain.
+          data: "provider test card, security code 123"
+        - action: Search the databases, application logs, the latest backup and the message queues for the test card number and for any 13 to 19 digit number that passes the Luhn check.
+          expected: Only the provider token and the last 4 digits are found.
+        - action: Search the same stores for the security code next to card fields.
+          expected: No security code is found.
+    sv:
+      title: Kortdata når aldrig eller stannar aldrig i systemet
+      description: Spelar in trafiken för en testbetalning och skannar systemets datalager efter kortnummer.
+      preconditions: Leverantörens testmiljö och testkortnummer; en proxy eller ett webbläsarverktyg som spelar in nätverkstrafik; läsåtkomst till databaser, loggar, säkerhetskopior och köer i testmiljön.
+      expected: Kortnumret skickas bara till leverantören, och inget fullständigt kortnummer och ingen säkerhetskod finns i något datalager.
+      steps:
+        - action: Spela in nätverkstrafiken medan du betalar med ett testkort från leverantören.
+          expected: Kortnumret och säkerhetskoden finns bara i anrop till leverantörens domän.
+          data: "leverantörens testkort, säkerhetskod 123"
+        - action: Sök i databaserna, applikationsloggarna, den senaste säkerhetskopian och meddelandeköerna efter testkortnumret och efter tal med 13 till 19 siffror som klarar Luhn-kontrollen.
+          expected: Bara leverantörens token och de 4 sista siffrorna hittas.
+        - action: Sök i samma lager efter säkerhetskoden intill kortfält.
+          expected: Ingen säkerhetskod hittas.
+
+  - id: PAY-T02
+    priority: high
+    execution: manual
+    tags: [masking, receipt]
+    refs: []
+    en:
+      title: Masked card numbers and the receipt
+      description: Makes a test payment and checks the receipt and each place where the card is shown.
+      preconditions: A customer test account; the provider's test environment; a support account; a test mailbox for the customer.
+      expected: The card is shown with at most 4 digits everywhere, and a complete receipt arrives within 5 minutes.
+      steps:
+        - action: Pay an order with a test card and note the time.
+          expected: The payment succeeds.
+        - action: Open the receipt email.
+          expected: It arrives within 5 minutes and shows amount, currency, VAT, date, seller and the last 4 digits.
+        - action: Open the payment history, a CSV export of payments and the support view of the payment.
+          expected: Each shows the card brand and the last 4 digits only.
+    sv:
+      title: Maskerade kortnummer och kvittot
+      description: Gör en testbetalning och kontrollerar kvittot och varje ställe där kortet visas.
+      preconditions: Ett testkonto för en kund; leverantörens testmiljö; ett supportkonto; en testbrevlåda för kunden.
+      expected: Kortet visas med högst 4 siffror överallt, och ett fullständigt kvitto kommer inom 5 minuter.
+      steps:
+        - action: Betala en order med ett testkort och notera tiden.
+          expected: Betalningen lyckas.
+        - action: Öppna kvittot i e-posten.
+          expected: Det kommer inom 5 minuter och visar belopp, valuta, moms, datum, säljare och de 4 sista siffrorna.
+        - action: Öppna betalhistoriken, en CSV-export av betalningar och supportvyn för betalningen.
+          expected: Var och en visar bara kortmärket och de 4 sista siffrorna.
+
+  - id: PAY-T03
+    priority: critical
+    execution: automated
+    tags: [idempotency]
+    refs: []
+    en:
+      title: Repeated payment requests with the same key
+      description: Sends the same payment request three times with one idempotency key and checks the charges at the provider.
+      preconditions: The provider's test environment; an order ready for payment; a script that can send requests in parallel.
+      expected: There is one charge, and all three responses carry the same payment id.
+      steps:
+        - action: Send three identical payment requests with the same idempotency key within 2 seconds.
+          expected: Each request returns success with the same payment id.
+          data: "Idempotency-Key: one UUID for all three"
+        - action: List the charges for the order in the provider's dashboard.
+          expected: There is exactly one charge.
+        - action: Send a fourth request with a new key for the same order.
+          expected: The request is refused because the order is already paid.
+    sv:
+      title: Upprepade betalningsanrop med samma nyckel
+      description: Skickar samma betalningsanrop tre gånger med en idempotensnyckel och kontrollerar debiteringarna hos leverantören.
+      preconditions: Leverantörens testmiljö; en order som är redo för betalning; ett skript som kan skicka anrop parallellt.
+      expected: Det finns en debitering, och alla tre svaren har samma betalnings-id.
+      steps:
+        - action: Skicka tre identiska betalningsanrop med samma idempotensnyckel inom 2 sekunder.
+          expected: Varje anrop ger ett lyckat svar med samma betalnings-id.
+          data: "Idempotency-Key: ett UUID för alla tre"
+        - action: Lista debiteringarna för ordern i leverantörens kontrollpanel.
+          expected: Det finns exakt en debitering.
+        - action: Skicka ett fjärde anrop med en ny nyckel för samma order.
+          expected: Anropet nekas eftersom ordern redan är betald.
+
+  - id: PAY-T04
+    priority: critical
+    execution: automated
+    tags: [webhook, signature]
+    refs: []
+    en:
+      title: Forged and replayed payment notifications are rejected
+      description: Sends payment notifications without a signature, with a wrong signature and with an old timestamp to the notification endpoint.
+      preconditions: An unpaid test order; the notification endpoint of the test environment; the provider's test signing secret is available to the test script but not written in the test.
+      expected: Only the correctly signed, current notification marks the order as paid.
+      steps:
+        - action: Send a notification that the order is paid without a signature header.
+          expected: The response is 400 or 401 and the order stays unpaid.
+        - action: Send the same notification with a signature made with a different secret.
+          expected: The response is 400 or 401 and the order stays unpaid.
+        - action: Send a correctly signed notification with a timestamp 6 minutes old.
+          expected: The response is 400 or 401 and the order stays unpaid.
+          data: "timestamp: now − 6 min"
+        - action: Send a correctly signed notification with the current time.
+          expected: The order is marked as paid.
+    sv:
+      title: Förfalskade och återspelade betalningsaviseringar avvisas
+      description: Skickar betalningsaviseringar utan signatur, med felaktig signatur och med gammal tidsstämpel till ändpunkten för aviseringar.
+      preconditions: En obetald testorder; testmiljöns ändpunkt för aviseringar; leverantörens hemlighet för testsignering finns tillgänglig för testskriptet men står inte i testet.
+      expected: Bara den korrekt signerade, aktuella aviseringen markerar ordern som betald.
+      steps:
+        - action: Skicka en avisering om att ordern är betald utan signaturhuvud.
+          expected: Svaret är 400 eller 401 och ordern förblir obetald.
+        - action: Skicka samma avisering med en signatur gjord med en annan hemlighet.
+          expected: Svaret är 400 eller 401 och ordern förblir obetald.
+        - action: Skicka en korrekt signerad avisering med en tidsstämpel som är 6 minuter gammal.
+          expected: Svaret är 400 eller 401 och ordern förblir obetald.
+          data: "tidsstämpel: nu − 6 min"
+        - action: Skicka en korrekt signerad avisering med aktuell tid.
+          expected: Ordern markeras som betald.
+
+  - id: PAY-T05
+    priority: high
+    execution: automated
+    tags: [amounts, refund]
+    refs: []
+    en:
+      title: Amount arithmetic and refund limits
+      description: Checks amount calculations in minor units and sends two parallel refunds that together exceed the payment.
+      preconditions: The payment service in the test environment; a captured test payment of 100.00 SEK.
+      expected: Amounts are exact integers in minor units, and only refunds up to the captured amount are accepted.
+      steps:
+        - action: Create an order with three lines of 0.10 SEK and read the stored total.
+          expected: The total is stored as the integer 30 with currency SEK.
+        - action: Create an order of 500 JPY and read the stored amount.
+          expected: The amount is stored as 500 with currency JPY.
+        - action: Send two refund requests of 60.00 SEK for the 100.00 SEK payment at the same time.
+          expected: One refund is accepted and the other is rejected with a message that it exceeds the remaining amount.
+          data: "2 × 60.00 SEK in parallel"
+    sv:
+      title: Beräkning av belopp och gräns för återbetalningar
+      description: Kontrollerar beloppsberäkningar i minsta valutaenhet och skickar två parallella återbetalningar som tillsammans överstiger betalningen.
+      preconditions: Betaltjänsten i testmiljön; en dragen testbetalning på 100,00 SEK.
+      expected: Belopp är exakta heltal i minsta enhet, och bara återbetalningar upp till det dragna beloppet godtas.
+      steps:
+        - action: Skapa en order med tre rader på 0,10 SEK och läs den lagrade summan.
+          expected: Summan lagras som heltalet 30 med valutan SEK.
+        - action: Skapa en order på 500 JPY och läs det lagrade beloppet.
+          expected: Beloppet lagras som 500 med valutan JPY.
+        - action: Skicka två begäranden om återbetalning på 60,00 SEK för betalningen på 100,00 SEK samtidigt.
+          expected: En återbetalning godtas och den andra avvisas med ett meddelande om att den överstiger återstående belopp.
+          data: "2 × 60,00 SEK parallellt"
+
+  - id: PAY-T06
+    priority: high
+    execution: manual
+    tags: [sca, 3-d-secure]
+    refs: []
+    en:
+      title: Strong customer authentication with a challenge test card
+      description: Pays with the provider's test cards that require and that do not require authentication.
+      preconditions: The provider's test environment with test cards for a 3-D Secure challenge and for a frictionless flow.
+      expected: The challenge is shown when it is required, and the payment succeeds only after it is completed.
+      steps:
+        - action: Pay with the test card that requires a challenge.
+          expected: The issuer's challenge page or app prompt is shown.
+        - action: Cancel the challenge.
+          expected: The payment fails with a message that the authentication was not completed, and the order stays unpaid.
+        - action: Pay again with the same card and complete the challenge.
+          expected: The payment succeeds and the order is marked as paid.
+        - action: Pay with the frictionless test card.
+          expected: The payment succeeds without a challenge, and the payment record shows that authentication took place.
+    sv:
+      title: Stark kundautentisering med ett testkort som kräver utmaning
+      description: Betalar med leverantörens testkort som kräver och som inte kräver autentisering.
+      preconditions: Leverantörens testmiljö med testkort för en 3-D Secure-utmaning och för ett flöde utan utmaning.
+      expected: Utmaningen visas när den krävs, och betalningen lyckas först när den har slutförts.
+      steps:
+        - action: Betala med testkortet som kräver en utmaning.
+          expected: Kortutgivarens utmaningssida eller en uppmaning i appen visas.
+        - action: Avbryt utmaningen.
+          expected: Betalningen misslyckas med ett meddelande om att autentiseringen inte slutfördes, och ordern förblir obetald.
+        - action: Betala igen med samma kort och slutför utmaningen.
+          expected: Betalningen lyckas och ordern markeras som betald.
+        - action: Betala med testkortet för flöde utan utmaning.
+          expected: Betalningen lyckas utan utmaning, och betalningsposten visar att autentisering har skett.
+
+  - id: PAY-T07
+    priority: high
+    execution: automated
+    tags: [reconciliation]
+    refs: []
+    en:
+      title: Reconciliation finds missing and differing payments
+      description: Feeds a prepared settlement report into the reconciliation job and checks the alert.
+      preconditions: Ten test payments in the system; a settlement report file with eleven payments, one of which is missing in the system and one with an amount that differs by 1 öre.
+      expected: The reconciliation alert lists exactly the two differences within 24 hours.
+      steps:
+        - action: Place the settlement report where the reconciliation job reads it and run the job.
+          expected: The job finishes and reports two differences.
+          data: "11 payments; 1 missing, 1 differs by 0.01 SEK"
+        - action: Open the alert sent to the finance mailbox.
+          expected: It names the missing payment and the differing amount with both values.
+        - action: Run the job again with a report that matches the system.
+          expected: No alert is sent.
+    sv:
+      title: Avstämningen hittar saknade och avvikande betalningar
+      description: Matar in en förberedd avräkningsrapport i avstämningsjobbet och kontrollerar larmet.
+      preconditions: Tio testbetalningar i systemet; en avräkningsrapport med elva betalningar, varav en saknas i systemet och en har ett belopp som skiljer med 1 öre.
+      expected: Avstämningslarmet anger exakt de två avvikelserna inom 24 timmar.
+      steps:
+        - action: Lägg avräkningsrapporten där avstämningsjobbet läser den och kör jobbet.
+          expected: Jobbet avslutas och rapporterar två avvikelser.
+          data: "11 betalningar; 1 saknas, 1 skiljer med 0,01 SEK"
+        - action: Öppna larmet som skickades till ekonomins brevlåda.
+          expected: Det namnger den saknade betalningen och det avvikande beloppet med båda värdena.
+        - action: Kör jobbet igen med en rapport som stämmer med systemet.
+          expected: Inget larm skickas.
+
+  - id: PAY-T08
+    priority: high
+    execution: manual
+    tags: [payment-page, scripts, csp]
+    refs: ["PCI DSS v4.0 Requirement 6.4.3", "PCI DSS v4.0 Requirement 11.6.1"]
+    en:
+      title: An unlisted script on the payment page is blocked and detected
+      description: Adds a script that is not in the inventory to the payment page in staging and checks the browser and the change detection.
+      preconditions: The script inventory of the payment page; deploy rights to staging; the change detection is configured for staging.
+      expected: The browser blocks the script, and an alert about the change arrives within 24 hours.
+      steps:
+        - action: Compare the scripts loaded by the payment page with the inventory.
+          expected: Each loaded script is listed with its purpose and integrity hash.
+        - action: Deploy a version of the payment page that loads an extra script from an unlisted host.
+          expected: The browser console reports that the Content Security Policy blocked the script.
+          data: "https://unlisted.example/collect.js"
+        - action: Wait for the change detection.
+          expected: An alert naming the changed page and script arrives within 24 hours.
+    sv:
+      title: Ett skript utanför förteckningen på betalsidan blockeras och upptäcks
+      description: Lägger till ett skript som inte finns i förteckningen på betalsidan i staging och kontrollerar webbläsaren och ändringsdetekteringen.
+      preconditions: Förteckningen över betalsidans skript; behörighet att driftsätta i staging; ändringsdetekteringen är konfigurerad för staging.
+      expected: Webbläsaren blockerar skriptet, och ett larm om ändringen kommer inom 24 timmar.
+      steps:
+        - action: Jämför skripten som betalsidan läser in med förteckningen.
+          expected: Varje inläst skript finns med sitt syfte och sin integritetshash.
+        - action: Driftsätt en version av betalsidan som läser in ett extra skript från en värd som inte finns i förteckningen.
+          expected: Webbläsarens konsol rapporterar att Content Security Policy blockerade skriptet.
+          data: "https://unlisted.example/collect.js"
+        - action: Vänta på ändringsdetekteringen.
+          expected: Ett larm som namnger den ändrade sidan och skriptet kommer inom 24 timmar.
+
+  - id: PAY-T09
+    priority: high
+    execution: automated
+    tags: [refund, concurrency]
+    refs: []
+    en:
+      title: Parallel refund requests under load
+      description: Sends 100 parallel refund requests for one payment and checks that the refunded total never exceeds the captured amount.
+      preconditions: A captured test payment of 100.00 SEK in the provider's test environment; a script that can send 100 requests at the same time.
+      expected: The accepted refunds add up to at most 100.00 SEK, and the system's and the provider's totals match.
+      steps:
+        - action: Send 100 refund requests of 5.00 SEK each at the same time.
+          expected: At most 20 requests are accepted and the rest are rejected with a message that the remaining amount is too low.
+          data: "100 × 5.00 SEK, in parallel"
+        - action: Read the refunded total of the payment in the system.
+          expected: The total is at most 100.00 SEK.
+        - action: Read the refunded total in the provider's dashboard.
+          expected: It equals the total in the system.
+    sv:
+      title: Parallella begäranden om återbetalning under last
+      description: Skickar 100 parallella begäranden om återbetalning för en betalning och kontrollerar att den återbetalda summan aldrig överstiger det dragna beloppet.
+      preconditions: En dragen testbetalning på 100,00 SEK i leverantörens testmiljö; ett skript som kan skicka 100 anrop samtidigt.
+      expected: De godkända återbetalningarna blir sammanlagt högst 100,00 SEK, och summorna i systemet och hos leverantören stämmer överens.
+      steps:
+        - action: Skicka 100 begäranden om återbetalning på 5,00 SEK vardera samtidigt.
+          expected: Högst 20 begäranden godtas och resten avvisas med ett meddelande om att återstående belopp är för lågt.
+          data: "100 × 5,00 SEK, parallellt"
+        - action: Läs den återbetalda summan för betalningen i systemet.
+          expected: Summan är högst 100,00 SEK.
+        - action: Läs den återbetalda summan i leverantörens kontrollpanel.
+          expected: Den är lika med summan i systemet.

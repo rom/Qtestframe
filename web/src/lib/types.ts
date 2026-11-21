@@ -1,5 +1,6 @@
 // TypeScript mirrors of internal/model/model.go (JSON tags are authoritative).
 import type { FlakyTest, GroupCoverage } from './metrics'
+import type { ScriptJob } from './webTests'
 
 export interface Tenant {
   id: string
@@ -99,6 +100,8 @@ export interface ReportSubscription {
   recipients: string[]
   addresses: string[]
   message: string
+  /** language the report is sent in (en, sv); empty = the owner's preference */
+  lang?: string
   enabled: boolean
   next_run_at: string | null
   last_run_at: string | null
@@ -244,6 +247,8 @@ export interface Folder {
   kind: ItemKind
   name: string
   description: string
+  /** '' or #rrggbb; subfolders without their own colour inherit it */
+  color?: string
   position: number
   created_at: string
 }
@@ -566,6 +571,8 @@ export interface Execution {
   /** iterations of a data-driven test (single executions) and their number (lists) */
   iterations?: Iteration[]
   iteration_count?: number
+  /** the latest background job (automated tests run as jobs; GET /executions/{id}) */
+  job?: ScriptJob | null
 }
 
 export interface Relation {
@@ -689,6 +696,10 @@ export interface Meta {
   email_enabled?: boolean
   /** Hour of the day (UTC) when daily digests are sent. */
   email_digest_hour?: number
+  /** Whether the server runs scripts (runner.enabled). */
+  runner_enabled?: boolean
+  /** Whether the server runs web tests with Playwright (runner.web.enabled). */
+  web_tests_enabled?: boolean
 }
 
 export interface Dashboard {

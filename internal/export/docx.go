@@ -35,7 +35,7 @@ const docxDocRels = xmlHeader + `<Relationships xmlns="http://schemas.openxmlfor
 	`</Relationships>`
 
 const docxStyles = xmlHeader + `<w:styles xmlns:w="` + nsW + `">` +
-	`<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault>` +
+	`<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="{{LANG}}"/></w:rPr></w:rPrDefault>` +
 	`<w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>` +
 	`<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>` +
 	`<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/>` +
@@ -145,16 +145,16 @@ func docxDocument(ds Dataset) string {
 	if ds.Subtitle != "" {
 		docxPara(&b, "Subtitle", ds.Subtitle)
 	}
-	docxPara(&b, "", "Generated "+generatedAt(ds).Format("2006-01-02 15:04:05 MST"))
+	docxPara(&b, "", ds.label("generated")+" "+generatedAt(ds).Format("2006-01-02 15:04:05 MST"))
 	for i, s := range ds.Sections {
-		docxPara(&b, "Heading1", sectionTitle(s, i))
+		docxPara(&b, "Heading1", ds.sectionTitle(s, i))
 		if width(s) == 0 {
-			docxPara(&b, "", "(no data)")
+			docxPara(&b, "", ds.label("noData"))
 			continue
 		}
 		docxTable(&b, s)
 		if len(s.Rows) == 0 {
-			docxPara(&b, "", "(no rows)")
+			docxPara(&b, "", ds.label("noRows"))
 		} else {
 			b.WriteString("<w:p/>") // a table must not be the last body element before sectPr
 		}
@@ -187,7 +187,7 @@ func WriteDOCX(w io.Writer, ds Dataset) error {
 		{"_rels/.rels", docxRootRels},
 		{"word/_rels/document.xml.rels", docxDocRels},
 		{"word/document.xml", docxDocument(ds)},
-		{"word/styles.xml", docxStyles},
+		{"word/styles.xml", strings.Replace(docxStyles, "{{LANG}}", ds.label("docLang"), 1)},
 		{"docProps/core.xml", docxCore(ds)},
 	}
 	for _, p := range parts {

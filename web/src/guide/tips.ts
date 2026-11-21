@@ -38,6 +38,10 @@ export const TIPS = {
   'test.status': TEST_FIELDS,
   'test.estimate': TEST_FIELDS,
   'test.script': { page: 'tests', anchor: { en: 'automated-tests-scripts', sv: 'automatiserade-testfall-skript' } },
+  'test.webTest': { page: 'tests', anchor: { en: 'web-tests-playwright', sv: 'webbtester-playwright' } },
+  'settings.webTests': { page: 'administration', anchor: { en: 'web-tests', sv: 'webbtester' } },
+  'run.automated': { page: 'runs', anchor: { en: 'run-all-automated-tests', sv: 'kör-alla-automatiserade-tester' } },
+  'runner.webEvidence': { page: 'runs', anchor: { en: 'web-tests-and-their-evidence', sv: 'webbtester-och-deras-bevis' } },
   'test.steps': { page: 'tests', anchor: { en: 'manual-tests-steps', sv: 'manuella-testfall-steg' } },
   'test.expected': { page: 'tests', anchor: { en: 'manual-tests-steps', sv: 'manuella-testfall-steg' } },
   'test.calls': { page: 'tests', anchor: { en: 'shared-steps', sv: 'delade-steg' } },
@@ -63,6 +67,7 @@ export const TIPS = {
   'token.expires': { page: 'administration', anchor: { en: 'api-tokens', sv: 'api-nycklar' } },
   'member.role': { page: 'administration', anchor: { en: 'roles-and-permissions', sv: 'roller-och-behörigheter' } },
   'member.initialPassword': { page: 'administration', anchor: { en: 'members', sv: 'medlemmar' } },
+  'report.format': { page: 'reports-and-export', anchor: { en: 'standard-reports', sv: 'standardrapporter' } },
   'report.groupBy': CUSTOM_REPORTS,
   'report.columns': CUSTOM_REPORTS,
   'export.aspects': { page: 'reports-and-export', anchor: { en: 'export', sv: 'export' } },
@@ -70,6 +75,7 @@ export const TIPS = {
   'settings.defectTemplate': DEFECTS,
   'settings.dimension': CATEGORIES,
   'settings.sources': REQ_FIELDS,
+  'settings.archive': { page: 'reports-and-export', anchor: { en: 'save-and-load-projects', sv: 'spara-och-läs-in-projekt' } },
 } satisfies Record<string, TipTarget>
 
 export type TipId = keyof typeof TIPS

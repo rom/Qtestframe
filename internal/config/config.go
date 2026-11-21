@@ -168,6 +168,60 @@ type Runner struct {
 	Sandbox        bool              `yaml:"sandbox"`
 	// DenyNetwork blocks socket creation for sandboxed scripts (seccomp).
 	DenyNetwork bool `yaml:"deny_network"`
+	// Web configures web tests (script language "playwright"), which run
+	// in a real browser through Playwright as background jobs.
+	Web WebRunner `yaml:"web"`
+}
+
+// WebRunner configures web tests run with Playwright (@playwright/test).
+// They need runner.enabled as well. Web tests always have network access
+// (deny_network does not apply) and run without the seccomp filter of the
+// script sandbox; see docs/security.md.
+type WebRunner struct {
+	Enabled bool `yaml:"enabled"`
+	// Node is the Node.js binary (default /usr/bin/node).
+	Node string `yaml:"node"`
+	// PlaywrightDir is the directory that contains
+	// node_modules/@playwright/test (e.g. where `npm i @playwright/test`
+	// was run). Specs resolve @playwright/test from there.
+	PlaywrightDir string `yaml:"playwright_dir"`
+	// Command replaces the default command
+	// "<node> <playwright_dir>/node_modules/@playwright/test/cli.js", e.g.
+	// "/opt/pw/node_modules/.bin/playwright"; "test --config <file>" is
+	// appended. Split at spaces.
+	Command string `yaml:"command"`
+	// BrowsersPath is PLAYWRIGHT_BROWSERS_PATH (where `npx playwright
+	// install` put the browsers); empty = Playwright's default.
+	BrowsersPath string `yaml:"browsers_path"`
+	// Browser is the default browser: chromium, firefox or webkit. A test
+	// configuration with a Browser dimension picks another one.
+	Browser string `yaml:"browser"`
+	// Channel is the default Chromium channel (e.g. chrome, msedge); empty
+	// = the bundled Chromium.
+	Channel string `yaml:"channel"`
+	// BrowserChannels: a configuration "Chrome" or "Edge" uses the
+	// installed Google Chrome (channel chrome) or Microsoft Edge (msedge)
+	// instead of the bundled Chromium.
+	BrowserChannels bool `yaml:"browser_channels"`
+	// ExecutablePath overrides the Chromium executable (launch option).
+	ExecutablePath string `yaml:"executable_path"`
+	Headless       bool   `yaml:"headless"`
+	// Timeout is the timeout of one test (Playwright's per-test timeout).
+	Timeout time.Duration `yaml:"timeout"`
+	// JobTimeout bounds a whole Playwright process (all tests of a spec).
+	JobTimeout time.Duration `yaml:"job_timeout"`
+	// Screenshots: on_failure (default), always or off.
+	Screenshots string `yaml:"screenshots"`
+	// Trace: on_failure (default), always or off.
+	Trace string `yaml:"trace"`
+	// Video: off (default), on_failure or always.
+	Video string `yaml:"video"`
+	// MaxParallel is the number of jobs (web tests, or scripts started
+	// with "Run automated tests") that run at the same time.
+	MaxParallel int `yaml:"max_parallel"`
+	// MaxEvidenceMB limits one evidence file (screenshot, trace, video);
+	// larger files are left out (default files.max_upload_mb).
+	MaxEvidenceMB int `yaml:"max_evidence_mb"`
 }
 
 // Hardening toggles in-process Linux hardening.
@@ -212,6 +266,8 @@ func Default() Config {
 				"sh": "/bin/sh", "bash": "/bin/bash",
 				"python": "/usr/bin/python3", "javascript": "/usr/bin/node",
 			},
+			Web: WebRunner{Node: "/usr/bin/node", Browser: "chromium", Headless: true, Timeout: 60 * time.Second,
+				JobTimeout: 10 * time.Minute, Screenshots: "on_failure", Trace: "on_failure", Video: "off", MaxParallel: 2},
 		},
 		Requirements: Requirements{AutoCreateTest: true},
 		Files:        Files{MaxUploadMB: 25},
@@ -322,6 +378,17 @@ func applyEnv(c *Config) {
 			c.Email.Port = n
 		}
 	}
+	setBool := func(key string, dst *bool) {
+		if v, ok := os.LookupEnv(key); ok {
+			*dst = v == "1" || strings.EqualFold(v, "true")
+		}
+	}
+	setBool("QTF_RUNNER_ENABLED", &c.Runner.Enabled)
+	setBool("QTF_RUNNER_WEB_ENABLED", &c.Runner.Web.Enabled)
+	set("QTF_RUNNER_WORK_DIR", &c.Runner.WorkDir)
+	set("QTF_RUNNER_WEB_NODE", &c.Runner.Web.Node)
+	set("QTF_RUNNER_WEB_PLAYWRIGHT_DIR", &c.Runner.Web.PlaywrightDir)
+	set("QTF_RUNNER_WEB_BROWSERS_PATH", &c.Runner.Web.BrowsersPath)
 	if v, ok := os.LookupEnv("QTF_COOKIE_SECURE"); ok {
 		c.Auth.CookieSecure = v == "1" || strings.EqualFold(v, "true")
 	}
@@ -433,11 +500,45 @@ func (c *Config) Validate() error {
 	if c.Runner.Enabled && c.Runner.Timeout <= 0 {
 		errs = append(errs, errors.New("runner.timeout must be positive"))
 	}
+	errs = append(errs, c.Runner.Web.validate()...)
 	errs = append(errs, c.Email.validate()...)
 	if c.Email.On() && c.Server.BaseURL == "" {
 		errs = append(errs, errors.New("server.base_url is required for e-mail (links in the messages)"))
 	}
 	return errors.Join(errs...)
+}
+
+func (w WebRunner) validate() []error {
+	var errs []error
+	if w.MaxParallel < 1 || w.MaxParallel > 32 {
+		errs = append(errs, errors.New("runner.web.max_parallel must be between 1 and 32"))
+	}
+	if !w.Enabled {
+		return errs
+	}
+	switch w.Browser {
+	case "chromium", "firefox", "webkit":
+	default:
+		errs = append(errs, fmt.Errorf("runner.web.browser must be chromium, firefox or webkit, got %q", w.Browser))
+	}
+	for _, o := range []struct{ key, v string }{{"screenshots", w.Screenshots}, {"trace", w.Trace}} {
+		if o.v != "on_failure" && o.v != "always" && o.v != "off" {
+			errs = append(errs, fmt.Errorf("runner.web.%s must be on_failure, always or off, got %q", o.key, o.v))
+		}
+	}
+	if w.Video != "off" && w.Video != "on_failure" && w.Video != "always" {
+		errs = append(errs, fmt.Errorf("runner.web.video must be off, on_failure or always, got %q", w.Video))
+	}
+	if w.Timeout <= 0 || w.JobTimeout <= 0 {
+		errs = append(errs, errors.New("runner.web.timeout and runner.web.job_timeout must be positive"))
+	}
+	if w.Command == "" && (w.PlaywrightDir == "" || w.Node == "") {
+		errs = append(errs, errors.New("runner.web needs playwright_dir (the directory with node_modules/@playwright/test) and node, or a command"))
+	}
+	if w.MaxEvidenceMB < 0 {
+		errs = append(errs, errors.New("runner.web.max_evidence_mb must not be negative"))
+	}
+	return errs
 }
 
 func (e Email) validate() []error {

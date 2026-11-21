@@ -51,8 +51,14 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 		}
 		return ""
 	}
+	// top-level folders get a colour per area (shown on their items); the
+	// same area has the same colour for requirements and tests
+	folderColor := map[string]string{"Authentication": "#dc2626", "Payments": "#0d9488", "Operations": "#475569"}
 	folder := func(kind, name string, parent *string) (*model.Folder, error) {
 		f := &model.Folder{ProjectID: p.ID, Kind: kind, Name: name, ParentID: parent}
+		if parent == nil {
+			f.Color = folderColor[name]
+		}
 		return f, st.CreateFolder(ctx, tenantID, f)
 	}
 	rf, err := folder(model.KindRequirement, "Authentication", nil)
@@ -196,6 +202,9 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 			Severity: "warning", Scope: model.KindRequirement, Selector: "obligation:must OR obligation:shall", Kind: model.TraceVerifiedBy,
 			TraceRuleOptions: model.TraceRuleOptions{NotSuspect: true, Every: true}},
 		{Name: "Every test verifies a requirement", Severity: "warning", Scope: model.KindTest, Kind: model.TraceVerifies, Min: 1},
+		{Name: "Every MUST requirement has a passing test", Description: "Before a release, each mandatory requirement needs at least one linked test whose last result passed.",
+			Severity: "warning", Scope: model.KindRequirement, Selector: "obligation:must OR obligation:shall", Kind: model.TraceVerifiedBy, Min: 1,
+			TraceRuleOptions: model.TraceRuleOptions{Passed: true}},
 	} {
 		tr.ProjectID, tr.Enabled, tr.CreatedBy = p.ID, true, "seed"
 		if err := st.CreateTraceRule(ctx, tenantID, &tr); err != nil {
@@ -227,7 +236,64 @@ func SeedDemo(ctx context.Context, live *store.Store, tenantID string) (*model.P
 	if err := seedConfigurations(ctx, st, tenantID, p, tf, reqs[0], testIDs[0]); err != nil {
 		return nil, err
 	}
+	tf4, err := folder(model.KindTest, "Operations", nil)
+	if err != nil {
+		return nil, err
+	}
+	if err := seedCoverageTests(ctx, st, tenantID, p.ID, reqs, tf, tf3, tf4); err != nil {
+		return nil, err
+	}
 	return p, nil
+}
+
+// seedCoverageTests gives every demo requirement without a test one that
+// verifies it (not yet run), so every requirement has a related test.
+func seedCoverageTests(ctx context.Context, st *store.Store, tenantID, projectID string, reqs []*model.Requirement, auth, payments, ops *model.Folder) error {
+	specs := []struct {
+		req    string
+		folder *model.Folder
+		title  string
+		exec   string
+		steps  []model.TestStep
+		script string
+	}{
+		{"Single sign-on", auth, "Sign in through the corporate identity provider", model.ExecManual, []model.TestStep{
+			{Action: "Choose Sign in with company account on the login page", Expected: "The identity provider's sign-in page opens"},
+			{Action: "Sign in at the identity provider with a test account", Expected: "The portal dashboard is shown for the same user"},
+			{Action: "Repeat with the SAML 2.0 connection", Expected: "Sign-in succeeds the same way"},
+		}, ""},
+		{"Transfer response time", payments, "Transfer confirmation time under load", model.ExecAutomated, nil,
+			"#!/bin/sh\n# simulated load test: 100 transfers, report the 95th percentile\necho \"p95 confirmation time: 1.4 s (limit 2 s)\"\nexit 0\n"},
+		{"Central logging", ops, "Audit events reach the central log server", model.ExecManual, []model.TestStep{
+			{Action: "Sign in and change a requirement", Expected: "The change is saved"},
+			{Action: "Search the central syslog server for the audit event", Expected: "The event is found within 1 minute with user, time and action"},
+		}, ""},
+		{"Architecture overview", ops, "Review of the deployment architecture description", model.ExecManual, []model.TestStep{
+			{Action: "Compare the architecture description with the deployed environment", Expected: "Every component and connection in the description exists in the deployment"},
+		}, ""},
+	}
+	byTitle := map[string]*model.Requirement{}
+	for _, r := range reqs {
+		byTitle[r.Title] = r
+	}
+	for _, sp := range specs {
+		r := byTitle[sp.req]
+		if r == nil {
+			continue
+		}
+		t := &model.TestCase{ProjectID: projectID, FolderID: &sp.folder.ID, Title: sp.title, ExecutionType: sp.exec,
+			Steps: sp.steps, Script: sp.script, Status: "ready", CreatedBy: "seed", Tags: []string{sp.exec}}
+		if sp.script != "" {
+			t.ScriptLanguage = "sh"
+		}
+		if err := st.CreateTest(ctx, tenantID, t); err != nil {
+			return err
+		}
+		if err := st.CreateLink(ctx, tenantID, &model.TraceLink{RequirementID: r.ID, TestCaseID: t.ID}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // seedConfigurations adds browser/OS configurations, a data-driven login
@@ -303,4 +369,49 @@ func itoa(n int) string {
 		return string(rune('0' + n))
 	}
 	return itoa(n/10) + string(rune('0'+n%10))
+}
+
+// DemoWebTest is the script of the demo's web test (Playwright): it opens
+// the login page of the server itself.
+const DemoWebTest = `// the base URL is the project's (Settings → Web tests)
+await page.goto('/login');
+await expect(page).toHaveTitle(/Qtestframe/i);
+await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Sign in|Logga in/);
+`
+
+// SeedDemoWeb adds a web test that runs against baseURL (the demo server
+// itself, server.base_url) and a run "Web smoke" with it, and sets the
+// project's web test base URL and an example variable.
+func SeedDemoWeb(ctx context.Context, st *store.Store, tenantID string, p *model.Project, baseURL string) error {
+	f := &model.Folder{ProjectID: p.ID, Kind: model.KindTest, Name: "Web"}
+	if err := st.CreateFolder(ctx, tenantID, f); err != nil {
+		return err
+	}
+	t := &model.TestCase{ProjectID: p.ID, FolderID: &f.ID, Title: "Login page shows the sign-in form", ExecutionType: model.ExecAutomated,
+		ScriptLanguage: "playwright", Script: DemoWebTest, Status: "ready", CreatedBy: "seed", Tags: []string{model.ExecAutomated, "web"},
+		Description: "Web test (Playwright) against the server itself: press Run script in the execution runner."}
+	if err := st.CreateTest(ctx, tenantID, t); err != nil {
+		return err
+	}
+	reqs, err := st.ListRequirements(ctx, tenantID, p.ID)
+	if err != nil {
+		return err
+	}
+	for _, r := range reqs {
+		if r.Title == "Password login" {
+			if err := st.CreateLink(ctx, tenantID, &model.TraceLink{RequirementID: r.ID, TestCaseID: t.ID}); err != nil {
+				return err
+			}
+		}
+	}
+	set := &model.WebTestSettings{BaseURL: strings.TrimRight(baseURL, "/"),
+		Variables: []model.TestVariable{{Name: "USERNAME", Value: "admin@example.com"}}}
+	if set.BaseURL != "" && !store.ValidBaseURL(set.BaseURL) {
+		set.BaseURL = ""
+	}
+	if err := st.SaveWebTestSettings(ctx, tenantID, p.ID, set); err != nil {
+		return err
+	}
+	run := &model.TestRun{ProjectID: p.ID, Name: "Web smoke", Environment: "local", CreatedBy: "seed"}
+	return st.CreateRun(ctx, tenantID, run, []string{t.ID})
 }

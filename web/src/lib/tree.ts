@@ -46,6 +46,25 @@ function createsCycle(folders: readonly Folder[], id: string): boolean {
   return false
 }
 
+/**
+ * Effective colour of every folder: its own colour, else the nearest
+ * coloured ancestor's ('' without one). Items take their folder's colour.
+ */
+export function folderColors(folders: readonly Folder[] | null | undefined): Map<string, string> {
+  const byId = new Map((folders ?? []).map((f) => [f.id, f]))
+  const out = new Map<string, string>()
+  for (const f of folders ?? []) {
+    let cur: Folder | undefined = f
+    const seen = new Set<string>()
+    while (cur && !cur.color && cur.parent_id && !seen.has(cur.id)) {
+      seen.add(cur.id)
+      cur = byId.get(cur.parent_id)
+    }
+    out.set(f.id, cur?.color ?? '')
+  }
+  return out
+}
+
 /** Ids of the folder and all its descendants. */
 export function descendantIds(folders: readonly Folder[], id: string): Set<string> {
   const children = new Map<string, string[]>()

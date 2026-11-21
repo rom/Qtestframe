@@ -209,7 +209,7 @@ func TestProjectStatus(t *testing.T) {
 	if len(rr.Rows) != 2 || rr.Rows[0][0] != "Run 2" || rr.Rows[1][5] != "3" || rr.Rows[1][7] != "1" {
 		t.Fatal(rr.Rows)
 	}
-	if s := recentRuns(append(d.Runs, d.Runs...), 3); len(s.Rows) != 3 {
+	if s := newLoc("").recentRuns(append(d.Runs, d.Runs...), 3); len(s.Rows) != 3 {
 		t.Fatal(len(s.Rows))
 	}
 	renderAll(t, ds)
@@ -490,7 +490,7 @@ func recs() []query.MapRecord {
 
 func TestBuildCustomPlain(t *testing.T) {
 	c := CustomConfig{Entity: "requirement", Columns: []string{"key", "tag", "criteria"}, SortBy: "key", Query: "status:x"}
-	ds := BuildCustom(c, recs(), "P – Proj", t0)
+	ds := BuildCustom(c, recs(), "P – Proj", t0, "")
 	if ds.Title != "Custom report – Requirements" || ds.Subtitle != "P – Proj · Filter: status:x" || !ds.GeneratedAt.Equal(t0) {
 		t.Fatal(ds.Title, ds.Subtitle)
 	}
@@ -508,7 +508,7 @@ func TestBuildCustomPlain(t *testing.T) {
 		t.Fatal(s.Rows[2])
 	}
 	c.SortDesc, c.IncludeSummary, c.Title = true, true, "Mine"
-	ds = BuildCustom(c, recs(), "P", time.Time{})
+	ds = BuildCustom(c, recs(), "P", time.Time{}, "en")
 	if ds.Title != "Mine" || len(ds.Sections) != 2 || ds.Sections[0].Name != "summary" || ds.GeneratedAt.IsZero() {
 		t.Fatal(ds.Title, names(ds))
 	}
@@ -520,7 +520,7 @@ func TestBuildCustomPlain(t *testing.T) {
 
 func TestBuildCustomGrouped(t *testing.T) {
 	c := CustomConfig{Entity: "requirement", Columns: []string{"key", "title"}, GroupBy: "tag", SortBy: "key", IncludeSummary: true}
-	ds := BuildCustom(c, recs(), "P", t0)
+	ds := BuildCustom(c, recs(), "P", t0, "")
 	// summary, a, b, (none)
 	if got := strings.Join(names(ds), ","); got != "summary,a,b,(none)" {
 		t.Fatal(got)
@@ -536,7 +536,7 @@ func TestBuildCustomGrouped(t *testing.T) {
 	}
 	renderAll(t, ds)
 	// grouping without records gives an empty table
-	ds = BuildCustom(CustomConfig{Entity: "run", Columns: []string{"name"}, GroupBy: "status"}, nil, "P", t0)
+	ds = BuildCustom(CustomConfig{Entity: "run", Columns: []string{"name"}, GroupBy: "status"}, nil, "P", t0, "")
 	if len(ds.Sections) != 1 || ds.Sections[0].Title != "Test runs" {
 		t.Fatal(names(ds))
 	}

@@ -208,7 +208,7 @@ func (s *Store) AcceptUserInvitations(ctx context.Context, userID string) (int, 
 // ---------------------------------------------------------------- report subscriptions
 
 const subscriptionCols = `s.id, s.project_id, s.definition_id, d.name, s.owner_id, u.email, s.frequency, s.weekday, s.day_of_month, s.time_of_day, s.timezone, s.format,
-	s.recipients, s.addresses, s.message, s.enabled, s.next_run_at, s.last_run_at, s.last_sent_at, s.last_error, s.created_at, s.updated_at`
+	s.recipients, s.addresses, s.message, s.language, s.enabled, s.next_run_at, s.last_run_at, s.last_sent_at, s.last_error, s.created_at, s.updated_at`
 
 const subscriptionFrom = ` FROM report_subscriptions s JOIN report_definitions d ON d.id = s.definition_id JOIN users u ON u.id = s.owner_id `
 
@@ -217,7 +217,7 @@ func scanSubscription(r interface{ Scan(...any) error }) (*model.ReportSubscript
 	var rec, addr string
 	var next, last, sent sql.NullTime
 	if err := r.Scan(&x.ID, &x.ProjectID, &x.DefinitionID, &x.DefinitionName, &x.OwnerID, &x.OwnerEmail, &x.Frequency, &x.Weekday, &x.DayOfMonth, &x.TimeOfDay, &x.Timezone, &x.Format,
-		&rec, &addr, &x.Message, &x.Enabled, &next, &last, &sent, &x.LastError, &x.CreatedAt, &x.UpdatedAt); err != nil {
+		&rec, &addr, &x.Message, &x.Language, &x.Enabled, &next, &last, &sent, &x.LastError, &x.CreatedAt, &x.UpdatedAt); err != nil {
 		return nil, err
 	}
 	x.Recipients, x.Addresses = decodeTags(rec), decodeTags(addr)
@@ -279,9 +279,9 @@ func (s *Store) CreateReportSubscription(ctx context.Context, tenantID string, x
 	x.ID, x.CreatedAt = newID(), s.now()
 	x.UpdatedAt = x.CreatedAt
 	_, err = s.c(ctx).exec(ctx, `INSERT INTO report_subscriptions (id, tenant_id, project_id, definition_id, owner_id, frequency, weekday, day_of_month, time_of_day, timezone, format,
-		recipients, addresses, message, enabled, next_run_at, last_error, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?)`,
+		recipients, addresses, message, language, enabled, next_run_at, last_error, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?)`,
 		x.ID, tenantID, x.ProjectID, x.DefinitionID, x.OwnerID, x.Frequency, x.Weekday, x.DayOfMonth, x.TimeOfDay, x.Timezone, x.Format,
-		encodeList(x.Recipients), encodeList(x.Addresses), x.Message, x.Enabled, nullTime(x.NextRunAt), x.CreatedAt, x.UpdatedAt)
+		encodeList(x.Recipients), encodeList(x.Addresses), x.Message, x.Language, x.Enabled, nullTime(x.NextRunAt), x.CreatedAt, x.UpdatedAt)
 	return mapErr(err, "report subscription")
 }
 
@@ -357,9 +357,9 @@ func (s *Store) UpdateReportSubscription(ctx context.Context, tenantID string, x
 	}
 	x.UpdatedAt = s.now()
 	res, err := s.c(ctx).exec(ctx, `UPDATE report_subscriptions SET frequency = ?, weekday = ?, day_of_month = ?, time_of_day = ?, timezone = ?, format = ?, recipients = ?, addresses = ?,
-		message = ?, enabled = ?, next_run_at = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
+		message = ?, language = ?, enabled = ?, next_run_at = ?, updated_at = ? WHERE id = ? AND tenant_id = ?`,
 		x.Frequency, x.Weekday, x.DayOfMonth, x.TimeOfDay, x.Timezone, x.Format, encodeList(x.Recipients), encodeList(x.Addresses),
-		x.Message, x.Enabled, nullTime(x.NextRunAt), x.UpdatedAt, x.ID, tenantID)
+		x.Message, x.Language, x.Enabled, nullTime(x.NextRunAt), x.UpdatedAt, x.ID, tenantID)
 	if err != nil {
 		return err
 	}

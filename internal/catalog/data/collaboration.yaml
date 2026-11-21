@@ -1,0 +1,597 @@
+area: collaboration
+prefix: COLL
+group: functional
+name: {en: Collaboration, sv: Samarbete}
+description:
+  en: Comments and threads, mentions and their notifications, editing and deleting comments, sharing links inside and outside the organisation, presence of other users and safe rendering of comment text.
+  sv: Kommentarer och trådar, omnämnanden och aviseringar om dem, redigering och borttagning av kommentarer, delningslänkar inom och utanför organisationen, andra användares närvaro och säker visning av kommentarstext.
+
+requirements:
+  - id: COLL-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [comments]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    tests: [COLL-T01]
+    en:
+      title: Comments on items
+      description: The system MUST let each user with read access to an item add comments of up to 10 000 characters to it, shown with the author's name and the time in the reader's time zone.
+      rationale: Discussion next to the item keeps decisions traceable and out of private e-mail.
+      criteria:
+        - method: test
+          text: A comment of 10 000 characters is saved and shown with author and local time; one of 10 001 characters is refused with a message stating the limit.
+          threshold: ≤ 10 000 characters
+    sv:
+      title: Kommentarer på poster
+      description: Systemet SKA låta varje användare med läsrätt till en post lägga till kommentarer på upp till 10 000 tecken, som visas med författarens namn och tiden i läsarens tidszon.
+      rationale: Diskussion bredvid posten gör beslut spårbara och håller dem borta från privat e-post.
+      criteria:
+        - method: test
+          text: En kommentar på 10 000 tecken sparas och visas med författare och lokal tid; en på 10 001 tecken avvisas med ett meddelande om gränsen.
+          threshold: ≤ 10 000 tecken
+
+  - id: COLL-02
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [comments, threads, resolve]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [COLL-T01]
+    en:
+      title: Reply threads that can be resolved
+      description: The system SHOULD let users reply to a comment in a thread and mark the thread as resolved, which collapses it and records who resolved it.
+      rationale: Threads keep separate questions apart, and resolving them shows which questions are still open.
+      criteria:
+        - method: test
+          text: A thread with 3 replies collapses when resolved, shows the resolving user and opens again with all 3 replies.
+    sv:
+      title: Svarstrådar som kan markeras som lösta
+      description: Systemet BÖR låta användare svara på en kommentar i en tråd och markera tråden som löst, vilket fäller ihop den och registrerar vem som löste den.
+      rationale: Trådar håller isär olika frågor, och lösta trådar visar vilka frågor som fortfarande är öppna.
+      criteria:
+        - method: test
+          text: En tråd med 3 svar fälls ihop när den löses, visar vem som löste den och öppnas igen med alla 3 svaren.
+
+  - id: COLL-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [mentions, access-control]
+    refs: ["OWASP ASVS 5.0 V8 authorization", "OWASP Top 10 2021 A01"]
+    tests: [COLL-T02]
+    en:
+      title: Mention suggestions limited to users with access
+      description: When a user types "@" in a comment, the suggestion list MUST contain only active users who have read access to the item.
+      rationale: Suggesting users outside the project reveals who exists in the organisation and invites mentions that cannot be read.
+      criteria:
+        - method: test
+          text: Typing "@an" in a comment suggests the 2 project members whose names start with "An" and not the user "Anders" who lacks access or the deactivated user "Anna".
+    sv:
+      title: Förslag vid omnämnande begränsas till användare med åtkomst
+      description: När en användare skriver "@" i en kommentar SKA förslagslistan bara innehålla aktiva användare som har läsrätt till posten.
+      rationale: Förslag på användare utanför projektet röjer vilka som finns i organisationen och leder till omnämnanden som inte kan läsas.
+      criteria:
+        - method: test
+          text: När "@an" skrivs i en kommentar föreslås de 2 projektmedlemmar vars namn börjar på "An", men inte användaren "Anders" som saknar åtkomst eller den inaktiverade användaren "Anna".
+
+  - id: COLL-04
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [mentions, notification]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [COLL-T02]
+    en:
+      title: Mentioned users notified
+      description: The system SHOULD notify a mentioned user within 5 minutes with the item's identifier and a link to the comment, once per comment even when the user is mentioned twice in it.
+      rationale: A mention is a request for attention and loses its value if it arrives late or repeatedly.
+      criteria:
+        - method: test
+          text: A comment that mentions a user twice results in one notification within 5 minutes whose link opens the comment.
+          threshold: ≤ 5 min
+    sv:
+      title: Omnämnda användare aviseras
+      description: Systemet BÖR avisera en omnämnd användare inom 5 minuter med postens identitet och en länk till kommentaren, en gång per kommentar även när användaren nämns två gånger i den.
+      rationale: Ett omnämnande är en begäran om uppmärksamhet och förlorar sitt värde om det kommer sent eller upprepat.
+      criteria:
+        - method: test
+          text: En kommentar som nämner en användare två gånger ger en avisering inom 5 minuter vars länk öppnar kommentaren.
+          threshold: ≤ 5 min
+
+  - id: COLL-05
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [mentions, access-control]
+    refs: ["OWASP ASVS 5.0 V8 authorization"]
+    tests: [COLL-T03]
+    en:
+      title: Mentions do not grant access
+      description: Mentioning a user who lacks read access to the item MUST NOT give that user access to the item or send them its content.
+      rationale: Access is decided by roles, not by who happens to be named in a text.
+      criteria:
+        - method: test
+          text: A user mentioned by a typed full name without access receives no notification with content, and opening the item's address gives a "no access" page.
+    sv:
+      title: Omnämnanden ger ingen åtkomst
+      description: Ett omnämnande av en användare som saknar läsrätt till posten SKA INTE ge användaren åtkomst till posten eller skicka postens innehåll till hen.
+      rationale: Åtkomst bestäms av roller, inte av vem som råkar nämnas i en text.
+      criteria:
+        - method: test
+          text: En användare utan åtkomst som nämns med fullständigt namn får ingen avisering med innehåll, och postens adress ger sidan "ingen åtkomst".
+
+  - id: COLL-06
+    type: functional
+    obligation: should
+    priority: low
+    tags: [comments, edit, history]
+    refs: ["ISO/IEC 25010:2023 accountability"]
+    tests: [COLL-T04]
+    en:
+      title: Edited comments marked
+      description: The system SHOULD let authors edit their own comments and SHOULD mark an edited comment as edited with the time of the last change, keeping the earlier texts in the item's history.
+      rationale: Readers must be able to tell that a comment they replied to has changed.
+      criteria:
+        - method: test
+          text: An edited comment shows "edited" with the time, and the item's history shows the original and the new text.
+    sv:
+      title: Redigerade kommentarer märks
+      description: Systemet BÖR låta författare redigera sina egna kommentarer och märka en redigerad kommentar som redigerad med tiden för den senaste ändringen, med de tidigare texterna kvar i postens historik.
+      rationale: Läsare måste kunna se att en kommentar de svarat på har ändrats.
+      criteria:
+        - method: test
+          text: En redigerad kommentar visar "redigerad" med tid, och postens historik visar den ursprungliga och den nya texten.
+
+  - id: COLL-07
+    type: functional
+    obligation: should
+    priority: low
+    tags: [comments, delete, threads]
+    refs: ["ISO 9241-110:2020 conformity with user expectations"]
+    tests: [COLL-T04]
+    en:
+      title: Deleted comment leaves a placeholder in a thread
+      description: When a comment with replies is deleted, the thread SHOULD show a placeholder with the text "Comment deleted" and the time of deletion in its place, keeping the replies.
+      rationale: Replies lose their meaning and order if the comment they answer disappears without a trace.
+      criteria:
+        - method: test
+          text: Deleting the first comment of a thread with 2 replies shows the placeholder and both replies in their order.
+    sv:
+      title: Borttagen kommentar lämnar en platshållare i en tråd
+      description: När en kommentar med svar tas bort BÖR tråden visa en platshållare med texten "Kommentaren har tagits bort" och tiden för borttagningen på dess plats, med svaren kvar.
+      rationale: Svar tappar sin mening och ordning om kommentaren de besvarar försvinner spårlöst.
+      criteria:
+        - method: test
+          text: När den första kommentaren i en tråd med 2 svar tas bort visas platshållaren och båda svaren i sin ordning.
+
+  - id: COLL-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [sharing, links, access-control]
+    refs: ["OWASP ASVS 5.0 V8 authorization"]
+    tests: [COLL-T05]
+    en:
+      title: Internal share links respect permissions
+      description: A link copied with the share action MUST open the item only after sign-in and only for users with read access to it.
+      rationale: Links are forwarded freely, so the permission check must happen when the link is opened.
+      criteria:
+        - method: test
+          text: A share link opened signed out leads to the sign-in page, then to the item for a project member and to a "no access" page for a non-member.
+    sv:
+      title: Interna delningslänkar följer behörigheterna
+      description: En länk som kopierats med delningsfunktionen SKA öppna posten först efter inloggning och bara för användare med läsrätt till den.
+      rationale: Länkar skickas vidare fritt, så behörighetskontrollen måste ske när länken öppnas.
+      criteria:
+        - method: test
+          text: En delningslänk som öppnas utloggad leder till inloggningssidan och därefter till posten för en projektmedlem och till sidan "ingen åtkomst" för den som inte är medlem.
+
+  - id: COLL-09
+    type: security
+    obligation: may
+    priority: medium
+    tags: [sharing, external, expiry]
+    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 Annex A 5.14"]
+    tests: [COLL-T06]
+    en:
+      title: Read-only links for external readers
+      description: The system MAY let a user with the manager role create a read-only link to one item for readers without an account, valid for at most 30 days and revocable at any time, with each opening logged.
+      rationale: Customers and auditors sometimes need to see one item without getting an account.
+      criteria:
+        - method: test
+          text: An external link opens the item read-only without sign-in, stops working after revocation and after its expiry date, and each opening is logged with time and address.
+          threshold: validity ≤ 30 days
+    sv:
+      title: Skrivskyddade länkar för externa läsare
+      description: Systemet FÅR låta en användare med projektledarroll skapa en skrivskyddad länk till en post för läsare utan konto, giltig i högst 30 dagar och möjlig att återkalla när som helst, där varje öppning loggas.
+      rationale: Kunder och granskare behöver ibland se en post utan att få ett konto.
+      criteria:
+        - method: test
+          text: En extern länk öppnar posten skrivskyddad utan inloggning, slutar fungera efter återkallelse och efter sitt slutdatum, och varje öppning loggas med tid och adress.
+          threshold: giltighet ≤ 30 dagar
+
+  - id: COLL-10
+    type: usability
+    obligation: may
+    priority: low
+    tags: [presence, concurrency]
+    refs: ["ISO 9241-110:2020 self-descriptiveness"]
+    tests: [COLL-T07]
+    en:
+      title: Other users on the same item shown
+      description: The system MAY show on an open item which other users are viewing or editing it, updated within 10 seconds of a user opening or leaving the item.
+      rationale: Knowing that a colleague is editing the same item avoids conflicting changes.
+      criteria:
+        - method: demonstration
+          text: When a second user opens the item for editing, the first user sees the second user's name with "editing" within 10 seconds, and it disappears within 10 seconds after the second user leaves.
+          threshold: ≤ 10 s
+    sv:
+      title: Andra användare på samma post visas
+      description: Systemet FÅR visa på en öppen post vilka andra användare som tittar på eller redigerar den, uppdaterat inom 10 sekunder efter att en användare öppnar eller lämnar posten.
+      rationale: Att veta att en kollega redigerar samma post undviker motstridiga ändringar.
+      criteria:
+        - method: demonstration
+          text: När en andra användare öppnar posten för redigering ser den första användaren den andras namn med "redigerar" inom 10 sekunder, och det försvinner inom 10 sekunder efter att den andra användaren lämnat.
+          threshold: ≤ 10 s
+
+  - id: COLL-11
+    type: security
+    obligation: must
+    priority: critical
+    tags: [comments, xss, markdown]
+    refs: ["OWASP ASVS 5.0 V1 encoding and sanitization", "OWASP Top 10 2021 A03"]
+    tests: [COLL-T08]
+    en:
+      title: Comment text rendered safely
+      description: The system MUST render comment text as plain text or a restricted Markdown subset with HTML tags, script and event attributes removed, and links limited to the http, https and mailto schemes.
+      rationale: Comments are written by users and are read by others, which makes them a common route for stored cross-site scripting.
+      criteria:
+        - method: test
+          text: Comments with script tags, event attributes, a javascript link and a data link are shown as harmless text, and no script runs.
+    sv:
+      title: Kommentarstext visas säkert
+      description: Systemet SKA visa kommentarstext som ren text eller en begränsad delmängd av Markdown där HTML-taggar, skript och händelseattribut tas bort och länkar begränsas till schemana http, https och mailto.
+      rationale: Kommentarer skrivs av användare och läses av andra, vilket gör dem till en vanlig väg för lagrad cross-site scripting.
+      criteria:
+        - method: test
+          text: Kommentarer med skripttaggar, händelseattribut, en javascript-länk och en data-länk visas som ofarlig text, och inget skript körs.
+
+  - id: COLL-12
+    type: usability
+    obligation: should
+    priority: low
+    tags: [comments, unread]
+    refs: ["Nielsen heuristic 1"]
+    tests: [COLL-T01]
+    en:
+      title: Comment count and unread marker in lists
+      description: Lists of items SHOULD show the number of comments of each item and mark items with comments the user has not yet read.
+      rationale: Users see where a discussion is going on without opening each item.
+      criteria:
+        - method: test
+          text: An item with 3 comments shows the count 3 and an unread marker for a user who has not opened it since the last comment; the marker disappears after opening.
+    sv:
+      title: Antal kommentarer och oläst-markering i listor
+      description: Listor med poster BÖR visa antalet kommentarer för varje post och markera poster med kommentarer som användaren ännu inte har läst.
+      rationale: Användare ser var en diskussion pågår utan att öppna varje post.
+      criteria:
+        - method: test
+          text: En post med 3 kommentarer visar antalet 3 och en oläst-markering för en användare som inte öppnat den sedan den senaste kommentaren; markeringen försvinner när posten öppnas.
+
+  - id: COLL-13
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [comments, export]
+    refs: ["ISO/IEC 25010:2023 portability"]
+    tests: [COLL-T09]
+    en:
+      title: Comments included in exports
+      description: A full export of a project SHOULD include each comment with its thread, author, time, edit marker and resolved state.
+      rationale: Discussions are part of the record and must survive a move to another system.
+      criteria:
+        - method: test
+          text: A project with 20 comments in 5 threads exports all 20 with their thread and metadata, and an import of the export restores the threads.
+    sv:
+      title: Kommentarer ingår i exporter
+      description: En fullständig export av ett projekt BÖR innehålla varje kommentar med tråd, författare, tid, redigeringsmarkering och löst-status.
+      rationale: Diskussioner är en del av dokumentationen och måste följa med vid en flytt till ett annat system.
+      criteria:
+        - method: test
+          text: Ett projekt med 20 kommentarer i 5 trådar exporterar alla 20 med tråd och metadata, och en import av exporten återställer trådarna.
+
+tests:
+  - id: COLL-T01
+    priority: high
+    execution: manual
+    tags: [comments, threads]
+    refs: []
+    en:
+      title: Comments, threads and unread markers
+      description: Two users comment on an item, reply in a thread, resolve it and check the list markers.
+      preconditions: Users A and B with read access to a project and an item without comments, A in Stockholm time and B in New York time.
+      expected: Comments are shown with author and local time, threads can be resolved, and lists show count and unread state.
+      steps:
+        - action: As A add a comment of exactly 10 000 characters, then try one of 10 001 characters.
+          expected: The first is saved with A's name and Stockholm time; the second is refused with the limit stated.
+          data: 10 000 and 10 001 characters
+        - action: As B open the item list.
+          expected: The item shows 1 comment and an unread marker.
+        - action: As B open the item, check the time of A's comment and reply to it 3 times.
+          expected: A's comment shows New York time, and the unread marker is gone from B's list.
+        - action: As A resolve the thread and then expand it.
+          expected: The thread collapses with "Resolved by A" and expands with the 3 replies.
+    sv:
+      title: Kommentarer, trådar och oläst-markeringar
+      description: Två användare kommenterar en post, svarar i en tråd, löser den och kontrollerar markeringarna i listan.
+      preconditions: Användarna A och B med läsrätt till ett projekt och en post utan kommentarer, A med Stockholmstid och B med New York-tid.
+      expected: Kommentarer visas med författare och lokal tid, trådar kan lösas och listor visar antal och oläst-status.
+      steps:
+        - action: Lägg som A till en kommentar på exakt 10 000 tecken och försök sedan med en på 10 001 tecken.
+          expected: Den första sparas med A:s namn och Stockholmstid; den andra avvisas med gränsen angiven.
+          data: 10 000 och 10 001 tecken
+        - action: Öppna postlistan som B.
+          expected: Posten visar 1 kommentar och en oläst-markering.
+        - action: Öppna posten som B, kontrollera tiden för A:s kommentar och svara på den 3 gånger.
+          expected: A:s kommentar visar New York-tid, och oläst-markeringen är borta från B:s lista.
+        - action: Lös tråden som A och fäll sedan ut den.
+          expected: Tråden fälls ihop med "Löst av A" och fälls ut med de 3 svaren.
+
+  - id: COLL-T02
+    priority: high
+    execution: manual
+    tags: [mentions]
+    refs: ["OWASP ASVS 5.0 V8 authorization"]
+    en:
+      title: Mention suggestions and notifications
+      description: Types a mention and checks the suggestions and the notification sent to the mentioned user.
+      preconditions: Project members "Andrea" and "Antonio", a non-member "Anders", a deactivated member "Anna", and a mail catcher.
+      expected: Only active members are suggested and the mentioned user gets one notification.
+      steps:
+        - action: Type "@an" in a comment on a project item.
+          expected: The suggestions are Andrea and Antonio only.
+          data: "@an"
+        - action: Mention Andrea twice in the same comment and save.
+          expected: The comment is saved with two mentions.
+        - action: Check Andrea's notifications and the mail catcher for 5 minutes.
+          expected: Andrea gets exactly one notification whose link opens the comment.
+    sv:
+      title: Förslag och aviseringar vid omnämnanden
+      description: Skriver ett omnämnande och kontrollerar förslagen och aviseringen till den omnämnda användaren.
+      preconditions: Projektmedlemmarna "Andrea" och "Antonio", en icke-medlem "Anders", en inaktiverad medlem "Anna" och en e-postfångare.
+      expected: Bara aktiva medlemmar föreslås och den omnämnda användaren får en avisering.
+      steps:
+        - action: Skriv "@an" i en kommentar på en post i projektet.
+          expected: Förslagen är bara Andrea och Antonio.
+          data: "@an"
+        - action: Nämn Andrea två gånger i samma kommentar och spara.
+          expected: Kommentaren sparas med två omnämnanden.
+        - action: Följ Andreas aviseringar och e-postfångaren i 5 minuter.
+          expected: Andrea får exakt en avisering vars länk öppnar kommentaren.
+
+  - id: COLL-T03
+    priority: high
+    execution: manual
+    tags: [mentions, access-control]
+    refs: []
+    en:
+      title: Mention of a user without access
+      description: Mentions a non-member by typing the full mention text and checks what the non-member receives.
+      preconditions: A project item and the non-member "Anders" with a mailbox in the mail catcher.
+      expected: Anders gets neither access nor content.
+      steps:
+        - action: Type the full mention text for Anders in a comment and save.
+          expected: The comment is saved; the text is not turned into a mention, or the author is told that Anders has no access.
+          data: "@Anders"
+        - action: Check Anders's notifications and mailbox.
+          expected: No notification contains the item's title or the comment.
+        - action: As Anders open the item's address.
+          expected: A "no access" page is shown.
+    sv:
+      title: Omnämnande av en användare utan åtkomst
+      description: Nämner en icke-medlem genom att skriva hela omnämnandet och kontrollerar vad icke-medlemmen får.
+      preconditions: En post i projektet och icke-medlemmen "Anders" med en brevlåda i e-postfångaren.
+      expected: Anders får varken åtkomst eller innehåll.
+      steps:
+        - action: Skriv hela omnämnandet av Anders i en kommentar och spara.
+          expected: Kommentaren sparas; texten blir inget omnämnande, eller så får författaren veta att Anders saknar åtkomst.
+          data: "@Anders"
+        - action: Kontrollera Anders aviseringar och brevlåda.
+          expected: Ingen avisering innehåller postens titel eller kommentaren.
+        - action: Öppna postens adress som Anders.
+          expected: Sidan "ingen åtkomst" visas.
+
+  - id: COLL-T04
+    priority: low
+    execution: manual
+    tags: [comments, edit, delete]
+    refs: []
+    en:
+      title: Editing and deleting comments in a thread
+      description: Edits one comment and deletes another that has replies.
+      preconditions: An item with a thread of 1 comment by A and 2 replies by B, and a second comment by A without replies.
+      expected: The edit is marked and kept in history, and the deleted comment leaves a placeholder.
+      steps:
+        - action: As A edit the second comment and save.
+          expected: The comment shows "edited" with the time of the change.
+        - action: Open the item's history.
+          expected: The history shows the original and the edited text.
+        - action: As A delete the first comment of the thread.
+          expected: The thread shows "Comment deleted" with the time, followed by B's 2 replies in their order.
+    sv:
+      title: Redigera och ta bort kommentarer i en tråd
+      description: Redigerar en kommentar och tar bort en annan som har svar.
+      preconditions: En post med en tråd med 1 kommentar av A och 2 svar av B, och en andra kommentar av A utan svar.
+      expected: Redigeringen märks och sparas i historiken, och den borttagna kommentaren lämnar en platshållare.
+      steps:
+        - action: Redigera som A den andra kommentaren och spara.
+          expected: Kommentaren visar "redigerad" med tiden för ändringen.
+        - action: Öppna postens historik.
+          expected: Historiken visar den ursprungliga och den redigerade texten.
+        - action: Ta som A bort den första kommentaren i tråden.
+          expected: Tråden visar "Kommentaren har tagits bort" med tid, följt av B:s 2 svar i sin ordning.
+
+  - id: COLL-T05
+    priority: high
+    execution: manual
+    tags: [sharing, links]
+    refs: ["OWASP ASVS 5.0 V8 authorization"]
+    en:
+      title: Internal share link with and without access
+      description: Copies a share link and opens it as a signed-out user, a member and a non-member.
+      preconditions: A project item, a member and a non-member of the project, and a private browser window.
+      expected: The link always requires sign-in and opens the item only for the member.
+      steps:
+        - action: Copy the item's share link and open it in a private window.
+          expected: The sign-in page is shown.
+        - action: Sign in as the member.
+          expected: The item opens.
+        - action: Open the link in a new private window and sign in as the non-member.
+          expected: A "no access" page is shown without the item's title.
+    sv:
+      title: Intern delningslänk med och utan åtkomst
+      description: Kopierar en delningslänk och öppnar den som utloggad, som medlem och som icke-medlem.
+      preconditions: En post i projektet, en medlem och en icke-medlem i projektet och ett privat webbläsarfönster.
+      expected: Länken kräver alltid inloggning och öppnar posten bara för medlemmen.
+      steps:
+        - action: Kopiera postens delningslänk och öppna den i ett privat fönster.
+          expected: Inloggningssidan visas.
+        - action: Logga in som medlemmen.
+          expected: Posten öppnas.
+        - action: Öppna länken i ett nytt privat fönster och logga in som icke-medlemmen.
+          expected: Sidan "ingen åtkomst" visas utan postens titel.
+
+  - id: COLL-T06
+    priority: medium
+    execution: manual
+    tags: [sharing, external, expiry]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.14"]
+    en:
+      title: External read-only link, revocation and expiry
+      description: Creates an external link, opens it without an account, revokes it and checks the expiry.
+      preconditions: A user with the manager role, a project item and a controllable clock.
+      expected: The link gives read-only access until it is revoked or expires, and openings are logged.
+      steps:
+        - action: Create an external link with a validity of 31 days, then of 30 days.
+          expected: 31 days is refused; the 30-day link is created.
+          data: 31, 30 days
+        - action: Open the link in a private window.
+          expected: The item is shown read-only without sign-in, and the log lists the opening with time and address.
+        - action: Create a second link and move the clock 31 days forward.
+          expected: The second link shows an "expired" page.
+        - action: Revoke the first link and open it again.
+          expected: The link shows a "revoked" page.
+    sv:
+      title: Extern skrivskyddad länk, återkallelse och utgång
+      description: Skapar en extern länk, öppnar den utan konto, återkallar den och kontrollerar utgången.
+      preconditions: En användare med projektledarroll, en post i projektet och en styrbar klocka.
+      expected: Länken ger skrivskyddad åtkomst tills den återkallas eller går ut, och öppningar loggas.
+      steps:
+        - action: Skapa en extern länk med giltighet 31 dagar och sedan 30 dagar.
+          expected: 31 dagar avvisas; länken med 30 dagar skapas.
+          data: 31, 30 dagar
+        - action: Öppna länken i ett privat fönster.
+          expected: Posten visas skrivskyddad utan inloggning, och loggen visar öppningen med tid och adress.
+        - action: Skapa en andra länk och flytta klockan 31 dagar framåt.
+          expected: Den andra länken visar sidan "har gått ut".
+        - action: Återkalla den första länken och öppna den igen.
+          expected: Länken visar sidan "återkallad".
+
+  - id: COLL-T07
+    priority: low
+    execution: manual
+    tags: [presence]
+    refs: []
+    en:
+      title: Presence of another editor
+      description: Two users open the same item and the first watches the presence display.
+      preconditions: Users A and B with edit access to the same item, in two browsers.
+      expected: The presence display updates within 10 seconds.
+      steps:
+        - action: As A open the item.
+          expected: No other users are shown.
+        - action: As B open the same item for editing.
+          expected: Within 10 seconds A sees B's name with "editing".
+        - action: As B close the item.
+          expected: Within 10 seconds B's name disappears from A's view.
+    sv:
+      title: Närvaro av en annan redigerare
+      description: Två användare öppnar samma post och den första följer närvarovisningen.
+      preconditions: Användarna A och B med redigeringsrätt till samma post, i två webbläsare.
+      expected: Närvarovisningen uppdateras inom 10 sekunder.
+      steps:
+        - action: Öppna posten som A.
+          expected: Inga andra användare visas.
+        - action: Öppna samma post för redigering som B.
+          expected: Inom 10 sekunder ser A B:s namn med "redigerar".
+        - action: Stäng posten som B.
+          expected: Inom 10 sekunder försvinner B:s namn från A:s vy.
+
+  - id: COLL-T08
+    priority: critical
+    execution: automated
+    tags: [xss, comments]
+    refs: ["OWASP ASVS 5.0 V1 encoding and sanitization"]
+    en:
+      title: Script injection attempts in comments
+      description: A browser test posts comments with injection payloads and checks the rendered result.
+      preconditions: A test item and a browser test that fails when a dialog opens or a script marker is set.
+      expected: Every payload is shown as harmless text and no script runs.
+      steps:
+        - action: Post a comment containing a script tag.
+          expected: The text is shown without executing and no dialog opens.
+          data: "<script>window.x=1</script>"
+        - action: Post a comment with an image tag that has an error handler.
+          expected: No image element with an event attribute is rendered.
+          data: "<img src=x onerror=alert(1)>"
+        - action: Post Markdown links with the javascript and data schemes.
+          expected: The links are rendered as text or removed, and clicking them runs nothing.
+          data: "[a](javascript:alert(1)) [b](data:text/html,x)"
+        - action: Post a Markdown link with the https scheme.
+          expected: The link is rendered and opens the address.
+          data: "[c](https://example.org)"
+    sv:
+      title: Försök till skriptinjektion i kommentarer
+      description: Ett webbläsartest postar kommentarer med injektionsdata och kontrollerar hur de visas.
+      preconditions: En testpost och ett webbläsartest som misslyckas om en dialog öppnas eller en skriptmarkör sätts.
+      expected: Varje försök visas som ofarlig text och inget skript körs.
+      steps:
+        - action: Posta en kommentar som innehåller en skripttagg.
+          expected: Texten visas utan att köras och ingen dialog öppnas.
+          data: "<script>window.x=1</script>"
+        - action: Posta en kommentar med en bildtagg som har en felhanterare.
+          expected: Inget bildelement med händelseattribut visas.
+          data: "<img src=x onerror=alert(1)>"
+        - action: Posta Markdown-länkar med schemana javascript och data.
+          expected: Länkarna visas som text eller tas bort, och ett klick på dem kör ingenting.
+          data: "[a](javascript:alert(1)) [b](data:text/html,x)"
+        - action: Posta en Markdown-länk med schemat https.
+          expected: Länken visas och öppnar adressen.
+          data: "[c](https://example.org)"
+
+  - id: COLL-T09
+    priority: medium
+    execution: automated
+    tags: [export, comments]
+    refs: []
+    en:
+      title: Comments in a project export and re-import
+      description: An integration test exports a project with comment threads and imports it into an empty project.
+      preconditions: A project with 20 comments in 5 threads, of which 2 threads are resolved and 1 comment is edited.
+      expected: The export holds every comment with its metadata and the import restores the threads.
+      steps:
+        - action: Export the project.
+          expected: The export contains 20 comments, each with thread, author, time, edit marker and resolved state.
+        - action: Import the export into an empty project.
+          expected: The new project has 5 threads with the same 20 comments, 2 resolved threads and 1 edited comment.
+    sv:
+      title: Kommentarer i en projektexport och återimport
+      description: Ett integrationstest exporterar ett projekt med kommentarstrådar och importerar det till ett tomt projekt.
+      preconditions: Ett projekt med 20 kommentarer i 5 trådar, varav 2 trådar är lösta och 1 kommentar är redigerad.
+      expected: Exporten innehåller varje kommentar med metadata och importen återställer trådarna.
+      steps:
+        - action: Exportera projektet.
+          expected: Exporten innehåller 20 kommentarer, var och en med tråd, författare, tid, redigeringsmarkering och löst-status.
+        - action: Importera exporten till ett tomt projekt.
+          expected: Det nya projektet har 5 trådar med samma 20 kommentarer, 2 lösta trådar och 1 redigerad kommentar.

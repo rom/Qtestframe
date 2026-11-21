@@ -148,6 +148,9 @@ default):
 | GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
 | GET | `/projects/{pid}/flaky-tests` | project.read – `?limit=n` |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
+| GET | `/projects/{pid}/archive` | project.update + export – save the project as a [project archive](#project-archives-save-load-duplicate) (`application/zip`) |
+| POST | `/projects/import` | project.create – multipart `archive` + optional `key`, `name`, `dry_run=true`: load an archive as a new project → 201 `ProjectLoadResult` |
+| POST | `/projects/{pid}/duplicate` | project.create + project.update + export – `{"key","name"?}`: save and load in one step → 201 `ProjectLoadResult` |
 
 A `Project` has `color` (`#rrggbb` or `""` for the theme colour; anything
 else → 400), `requirement_sources` (the list the requirement editor offers
@@ -158,6 +161,61 @@ them). `type` is one of `/meta` `project_types` (`general` by default,
 `software`, `hardware`, `system`, `business`); `tech_context` (at most 8000
 characters) describes the technology of a software project and is included
 in prompts.
+
+### Project archives (save, load, duplicate)
+
+`GET /projects/{pid}/archive` streams one project as a ZIP file
+(`<key>-project-<yyyymmdd-hhmmss>.zip`), read in one consistent snapshot:
+
+| Entry | Content |
+|---|---|
+| `manifest.json` | `{"kind":"qtestframe-project", "format_version":1, "schema_version", "app_version", "created_at", "driver", "project":{"id","key","name"}, "tables":{table: rows}, "files", "file_bytes"}` |
+| `tables/<table>.jsonl` | every row of the project, one JSON object per line (column → value; times RFC 3339, booleans `true`/`false`), the same portable encoding as a [backup](#administration-additions) |
+| `files/<file id>` | the content of each document, attachment, report and the project icon |
+
+The tables are the project row (settings, sequence counters, defect tracker
+settings), configurations, releases, folders, categories, requirements with
+categories and criteria, tests with steps and categories, trace links, runs
+with run configurations, executions, iterations and step results, relations,
+baselines with items and sign-offs, files and attachments, report
+definitions, test dependencies, item links, release scopes, defects and their
+links, risks and their requirements, webhooks, review requests, metric
+snapshots, traceability rules, and the revisions and comments of all these
+rows. **Not included:** webhook secrets (webhooks are saved switched off),
+the tracker token, accounts, memberships, roles, sessions, API and SCIM
+tokens, invitations, notifications, e-mail report subscriptions, the audit
+log and the trash. References to people (`created_by`, `user_id`,
+`reviewer_id`, e-mail addresses) are kept as plain values.
+
+`POST /projects/import` (multipart: `archive`, optional `key` and `name`,
+default the archive's) creates a **new** project in the current organisation
+in one transaction:
+
+- every row gets a new id; every value that is an id of an archived row is
+  rewritten, in id columns, in JSON (snapshots, options) and in texts
+  (descriptions that link to an item). When the key changes, item keys and
+  key references in texts follow (`OLD-REQ-1` → `NEW-REQ-1`); the sequence
+  counters are kept, so new items get the next free key;
+- foreign keys are checked against the archive: a reference to a row
+  outside it is cleared when optional, otherwise the row is left out (as
+  are its dependants); a reference to an account that does not exist on
+  this server (e.g. a reviewer) leaves the row out. Left-out rows are
+  counted in `skipped`;
+- secrets are stripped again and every `tenant_id` is the importer's
+  organisation, so a hand-made archive cannot reach other projects.
+
+Answer (201): `ProjectLoadResult` = `{"project": Project, "manifest": {…},
+"imported": {table: rows}, "skipped": {table: rows}?, "files": n}`. With
+`dry_run=true` everything is checked and rolled back (200, `"dry_run": true`,
+`"key_taken": true` when the key exists). Errors: 400 for files that are not
+project archives (also full backups), unknown entries, wrong counts or
+checksums and invalid keys; 409 when the key is taken or the archive was
+saved with a newer schema version (older archives load; missing columns get
+their defaults). The upload is limited like a restore (4 GiB uncompressed).
+Audit actions: `project.save`, `project.load`, `project.duplicate`.
+
+Roles are organisation-wide, so the loading user's access to the new project
+is that of their role; no membership is created or copied.
 
 ### Prompts (software projects)
 
@@ -274,8 +332,8 @@ Reading needs `project.read`. Writing folders needs `requirement.write` or
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/folders?kind=requirement\|test` | flat list (client builds tree via `parent_id`) |
-| POST | `/projects/{pid}/folders` | `{"kind","name","description","parent_id"}` |
-| PATCH | `/folders/{id}` | `{"name","description"}` |
+| POST | `/projects/{pid}/folders` | `{"kind","name","description","parent_id","color"}` |
+| PATCH | `/folders/{id}` | `{"name","description","color"}` – `color` is `#rrggbb` or `""` (none). Items show the colour of their folder or of the nearest coloured parent folder; a test folder mirrored from a requirement folder takes its colour. |
 | POST | `/folders/{id}/move` | `{"parent_id": id\|null, "position": n, "project_id"?: id}` – moving to another project moves contained items too. Cycles are rejected (409). |
 | POST | `/projects/{pid}/folders/bulk` | `{"ids":[...], "action": "move\|delete", "parent_id"?, "project_id"?, "cascade"?}` – folders of one kind (write permission of that kind). Folders inside another selected folder go with it; a move into a selected folder is refused (409) before anything moves → `{"moved": n}` / `{"deleted": n}` |
 | DELETE | `/folders/{id}?cascade=true` | without cascade children/items are moved to the parent |
@@ -577,7 +635,8 @@ and keeps web links.
 
 A built-in library of standard requirements and tests for software
 development (security, privacy, performance, reliability, operations,
-usability, accessibility, common functionality), in English and Swedish.
+usability, accessibility, common functionality, domain-specific functionality
+such as checkout and billing), in English and Swedish.
 The texts are written for Qtestframe and cite the standards they are based
 on (OWASP ASVS, WCAG, ISO/IEC 25010, NIST SP 800-63B …) in `refs` by name
 and section, without copying them. The content lives in
@@ -794,9 +853,56 @@ import) `run.execute`.
 | POST | `/runs/{id}/executions/bulk` | `{"ids":[...] \| "all": true, "from": [results]?, "set": {"status"?, "assignee"?, "notes_append"?}}` (run.execute) → `{"updated", "rejected", "skipped"}`, each `[{id, key, title, status, assignee, reason}]` with the values before; or `{"ids" \| "all", "from"?, "remove": true}` (run.write) → `{"removed": n, "skipped"}`. `status` is `passed`, `failed`, `blocked`, `skipped` or `not_run`; `from` keeps only executions with those results (others are `skipped` with reason `status`, unchanged ones with `already`). Results that record an execution go through the readiness check; refusals are `rejected` with the blocking issues as `reason`. Executions are applied in passes, so prerequisites in the same request are recorded first. Step results are not changed. |
 | POST | `/runs/{id}/results?configuration=` | CI import: `{"results":[{"test_key","status","duration_ms","output","configuration"?}]}` (see *Configurations of imported results* below) → `{"updated":n,"unknown":["KEY"],"rejected":[{"test_key","readiness","reason"}]}`; results of tests that may not be executed (see below) are not recorded; `reason` spells out the blocking issues |
 | POST | `/runs/{id}/junit?create_missing=&configuration=` | JUnit XML import (see below): body `application/xml`/`text/xml`, or multipart with one or more `file` parts; at most 20 MB → `{"updated","unknown","rejected","unmapped":["test case name"],"created":[{"id","key","title"}]}` (the first three as for `/results`); 400 for malformed XML |
-| GET | `/executions/{id}` | `Execution` with `step_results` (each with `iteration_id`), `iterations` (data-driven tests), `readiness` and embedded `test` (TestCase incl. steps & script) |
+| GET | `/executions/{id}` | `Execution` with `step_results` (each with `iteration_id`), `iterations` (data-driven tests), `readiness`, embedded `test` (TestCase incl. steps & script) and `job`, its latest background job (see *Background jobs* below; absent if it never had one) |
 | PATCH | `/executions/{id}` | `{"status","notes","assignee","output","duration_ms","step_results":[{"id","status","actual","evidence"}],"iterations":[{"id","status"?,"notes"?}]}` – status derived from steps (or iterations) when omitted and steps or iterations given; 409 `not_ready` when the update records an execution that the settings forbid |
-| POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled or the test may not be executed) → execution with embedded `test` |
+| POST | `/executions/{id}/run-script` | run automated script server-side (permission `script.execute`; 400 if the test has no automated script, 409 if the runner is disabled, the test may not be executed or it is queued or running as a job) → execution with embedded `test`. A **web test** (script language `playwright`) is queued as a background job instead → 202 with the execution (`in_progress`) and its `job` |
+| POST | `/executions/{id}/run-script/cancel` | (script.execute) cancels the queued job of the execution or stops its running one → `{cancelled, stopping}`; 409 if it has none |
+| POST | `/runs/{id}/run-automated` | (script.execute) "Run automated tests": `{"execution_ids"?: [...], "include_passed"?: false}` queues background jobs for the automated executions of the run — without `execution_ids` every automated execution that has not passed (all with `include_passed`) → 202 `{"queued": [job], "skipped": [{execution_id, test_key, configuration_name, reason, code}]}`; `code` is `not_automated`, `no_script`, `disabled` (the server does not run that language), `active` (already queued or running), `not_ready` (readiness: the blocking issues are the `reason`) or `cycle` |
+| GET | `/runs/{id}/jobs` | (run.read) the current jobs of the run — the batches with queued or running jobs, else the latest batch → `{"items": [job], "counts": {queued, running, done, passed, failed, skipped, cancelled, error, total}, "active": bool}` |
+| POST | `/runs/{id}/jobs/cancel` | (script.execute) `{"job_ids"?: [...], "running"?: false}` cancels queued jobs (all queued ones of the run without `job_ids`); their executions get their earlier result back; with `running` running jobs are stopped too → `{cancelled, stopping}` |
+
+**Background jobs.** Web tests take seconds to minutes, so they never run
+inside a request: `run-script` of a web test and `run-automated` enqueue
+**jobs** and answer at once. A job is `{id, run_id, execution_id, batch_id,
+seq, state, after, requested_by, message, created_at, started_at,
+finished_at, test_key, test_title, configuration_name}`; `state` is
+`queued`, `running`, `passed`, `failed`, `skipped` (not executed: e.g. its
+prerequisite failed meanwhile — `message` says why), `cancelled`, `error`
+(it could not run, e.g. Node.js is missing) or `interrupted` (the server
+stopped). Its execution is `in_progress` while the job is queued or running
+and gets its earlier result back when the job is cancelled, skipped,
+failed to start or interrupted. A worker pool of `runner.web.max_parallel`
+jobs per server process runs them in queue order; `after` lists the jobs
+of prerequisites (tests the test depends on, in the same run and
+configuration) that must finish first, and the readiness is checked again
+just before a job starts. Jobs do not survive a restart: on start-up (and,
+with several instances on PostgreSQL, when an instance's heartbeat is more
+than a minute old) unfinished jobs become `interrupted` and their
+executions are reset with a note in the output. `run-automated` also runs
+scripts of the other languages as jobs; `run-script` of those still runs
+synchronously. A finished web test stores its result, the Playwright
+output (secrets masked) and the duration, and attaches its screenshots,
+trace (`trace.zip`) and video to the execution (tagged `web-test`,
+replacing those of its previous run).
+
+**Web tests.** Script language `playwright`: the script is the body of a
+Playwright test (`await page.goto('/login'); …`), wrapped into
+`test(<title>, async ({ page, context, request, baseURL }) => { … })`, or,
+when it calls `test(` itself, a complete spec file. The base URL is, in
+this order, the value of a configuration dimension named `Base URL` (or
+`URL`, `Bas-URL`), the URL of the run's environment in the project's web
+test settings, or the project's base URL; a configuration dimension
+`Browser`/`Webbläsare` picks the browser (Chrome, Chromium, Edge →
+chromium; Firefox → firefox; Safari, WebKit → webkit), else the server's
+default. Project variables are passed to every automated script as
+`QTF_VAR_<NAME>`, together with `QTF_BASE_URL`, `QTF_BROWSER`,
+`QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT` and
+`QTF_BUILD`.
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/projects/{pid}/web-tests` | project.read | `{base_url, environment_urls: [{environment, base_url}], variables: [{name, value, secret, has_value}], enabled, browser}`; secret values are never returned (`value` empty, `has_value`) |
+| PUT | `/projects/{pid}/web-tests` | project.update | `{base_url, environment_urls, variables}` (replaces them); a secret variable with an empty `value` keeps its saved value; 400 for non-http(s) URLs, duplicate environments or variable names (case-insensitive), names other than `[A-Za-z_][A-Za-z0-9_]*` (at most 64), values over 4096 bytes, more than 100 variables |
 
 **JUnit XML import.** `POST /runs/{id}/junit` reads `<testsuites>` or
 `<testsuite>` documents (suites may nest) as written by Playwright, pytest,
@@ -920,7 +1026,7 @@ dimensions and values up to 100 characters, names up to 200.
 
 | Key | Values | Effect |
 |---|---|---|
-| `theme` | `light`, `dark`, `system`, `spring`, `autumn`, `desert`, `camouflage`, `city_camouflage`, `navy`, `green_console`, `crazy` | colour theme (applied on every device) |
+| `theme` | `light`, `dark`, `system`, `spring`, `autumn`, `desert`, `camouflage`, `city_camouflage`, `arctic_camouflage`, `navy`, `midnight`, `green_console`, `amber_terminal`, `crazy`, `ocean`, `forest`, `sunset`, `nordic`, `lavender`, `rose`, `high_contrast`, `high_contrast_light` | colour theme (applied on every device) |
 | `language` | `en`, `sv`; empty = browser language | language of the web client |
 | `start_page` | `projects`, `last_project`, `default_project`, `search` | page shown after login / on `/` |
 | `default_project_id` | project id | used by `start_page: default_project` |
@@ -1440,28 +1546,46 @@ Custom report config (`CustomConfig`):
  "title": "Approved requirements", "run_id": "(execution only)"}
 ```
 
+**Report language.** Every text a report adds – its title, section
+names, column headers, metric names, enumeration values (statuses,
+results, coverage, obligation, priority, types, severities), the
+"Generated" line, page numbers and "no data" notes – is produced in English
+(`en`, the default) or Swedish (`sv`); the project's own content (titles,
+names, notes, tags, …) is never translated. The language is chosen by,
+in this order: the request's `lang` field (body), the `lang` query
+parameter, the user's preferred language (`preferences.language`), the
+browser's `Accept-Language` header, English. Tags like `sv-SE` are
+accepted; unsupported languages are ignored at each step. The web client
+sends its current UI language as `lang` with every report request. In
+English, custom reports keep the stored enumeration values (`approved`);
+in Swedish they show the labels of the UI (`Godkänt`). The e-mail of an
+e-mailed report is in the report's language.
+
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/projects/{pid}/reports/fields?entity=` | export | available columns `[{id, label}]` |
-| POST | `/projects/{pid}/reports/generate` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv, archive?: bool, name?}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
+| POST | `/projects/{pid}/reports/generate?lang=` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv, archive?: bool, name?, lang?: en\|sv}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
 | GET | `/projects/{pid}/reports/definitions` | export | saved custom reports |
 | POST | `/projects/{pid}/reports/definitions` | requirement.write or test.write | `{name, description, config}` |
 | GET / PATCH / DELETE | `/reports/definitions/{id}` | export / write | |
-| POST | `/reports/definitions/{id}/generate` | export | `{format, archive?}` |
-| POST | `/projects/{pid}/reports/batch` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive"}` (at most 50). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
+| POST | `/reports/definitions/{id}/generate?lang=` | export | `{format, archive?, name?, lang?}` |
+| POST | `/projects/{pid}/reports/batch?lang=` | export (archive also needs requirement.write or test.write) | `{"templates":[{"template","params"}], "definitions":[ids], "format", "archive", "lang"?}` (at most 50; every report in `lang`). Without `archive` → one `application/zip` with every report (any failure → error, nothing sent); with `archive` → `{"files":[File], "failed":[{name, error}]}` |
 | DELETE | `/projects/{pid}/reports/definitions/bulk` | requirement.write or test.write | `{"ids":[...]}` → `{"deleted": n}` |
 | GET | `/projects/{pid}/reports/recipients` | export | members who may read the project `{"items":[{user_id, email, display_name, role}], "addresses_allowed": bool, "email_enabled": bool}` |
-| POST | `/projects/{pid}/reports/email` | export | `{template + params? \| custom \| definition_id, format, recipients: [user ids], addresses?: [...], message?}` → 202 `{"queued": n, "skipped": [{user_id, reason}]}`. The report is rendered now and e-mailed in the background as an attachment. Members who may not read what the report shows are skipped (`no_access`, `disabled`); `addresses` (other e-mail addresses) need project.update (403). At most 50 recipients; 30 report e-mails per user in 10 minutes (429). A failed delivery becomes an in-app notification (`report.email_failed`) of the sender |
+| POST | `/projects/{pid}/reports/email?lang=` | export | `{template + params? \| custom \| definition_id, format, recipients: [user ids], addresses?: [...], message?, lang?}` → 202 `{"queued": n, "skipped": [{user_id, reason}]}`. The report is rendered now and e-mailed in the background as an attachment. Members who may not read what the report shows are skipped (`no_access`, `disabled`); `addresses` (other e-mail addresses) need project.update (403). At most 50 recipients; 30 report e-mails per user in 10 minutes (429). A failed delivery becomes an in-app notification (`report.email_failed`) of the sender |
 | GET | `/projects/{pid}/reports/subscriptions` | export | `{"items":[ReportSubscription], "email_enabled"}` |
-| POST | `/projects/{pid}/reports/subscriptions` | export + (requirement.write or test.write) | `{definition_id, frequency: daily\|weekly\|monthly, weekday?: 0–6 (0 = Sunday), day_of_month?: 1–28, time: "HH:MM", timezone: IANA name, format, recipients: [user ids], addresses?, message?, enabled?}` → 201; the caller is the owner. Not with an API token |
-| PATCH | `/reports/subscriptions/{id}` | owner or project.update (and requirement.write or test.write) | the same fields except `definition_id`; the next run is computed again |
+| POST | `/projects/{pid}/reports/subscriptions?lang=` | export + (requirement.write or test.write) | `{definition_id, frequency: daily\|weekly\|monthly, weekday?: 0–6 (0 = Sunday), day_of_month?: 1–28, time: "HH:MM", timezone: IANA name, format, recipients: [user ids], addresses?, message?, enabled?, lang?}` → 201; the caller is the owner. Not with an API token. `lang` (body, else query parameter) is stored with the subscription |
+| PATCH | `/reports/subscriptions/{id}?lang=` | owner or project.update (and requirement.write or test.write) | the same fields except `definition_id`; the next run is computed again; a supported `lang` replaces the stored language, otherwise it is kept |
 | DELETE | `/reports/subscriptions/{id}` | owner or project.update | |
 | POST | `/reports/subscriptions/{id}/send` | owner or project.update | sends the report now and waits for the mail server → the subscription with `last_sent_at` / `last_error` (the schedule is unchanged) |
 
 `ReportSubscription` = `{id, project_id, definition_id, definition_name,
 owner_id, owner_email, frequency, weekday, day_of_month, time, timezone,
-format, recipients, addresses, message, enabled, next_run_at, last_run_at,
-last_sent_at, last_error, created_at, updated_at}`. A scheduled report is
+format, recipients, addresses, message, lang, enabled, next_run_at, last_run_at,
+last_sent_at, last_error, created_at, updated_at}`. `lang` is the language
+the report and its e-mail are sent in: the UI language of whoever created
+or last changed the subscription; `""` (subscriptions without one) uses
+the owner's preferred language, else English. A scheduled report is
 generated with the owner's permissions at the time it is sent (the owner
 must still be an enabled member with `export`; outside addresses are only
 used while the owner holds project.update) and goes to the recipients who

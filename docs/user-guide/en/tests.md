@@ -36,16 +36,38 @@ When a test is added to a run, its steps are copied into the run. Editing the te
 
 ## Automated tests: scripts
 
-Switch **Execution type** to **Automated** to show the **Script** field. Choose the **Script language**: **sh**, **Bash**, **Python** or **JavaScript** (Node.js).
+Switch **Execution type** to **Automated** to show the **Script** field. Choose the **Script language**: **sh**, **Bash**, **Python**, **JavaScript** (Node.js) or **Web test (Playwright)** (see [Web tests](#web-tests-playwright)).
 
 ![An automated test with a shell script](../images/en-tests-script.png)
 
 - The script runs on the server in a sandbox when someone selects **Run script** in the execution runner.
 - Exit code **0** means **Passed**; any other exit code, or exceeding the time limit, means **Failed**.
 - Standard output and errors are stored as the execution's **Output**, together with the duration.
-- The script can read these environment variables: `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT` and `QTF_BUILD`, so one script can test the environment and build named in the run.
+- The script can read these environment variables: `QTF_TEST_KEY`, `QTF_RUN_ID`, `QTF_RUN_NAME`, `QTF_ENVIRONMENT`, `QTF_BUILD` and `QTF_BASE_URL`, so one script can test the environment and build named in the run. The project's [test variables](administration.md#web-tests) arrive as `QTF_VAR_<NAME>`, for example `QTF_VAR_USERNAME`; the values of secret variables are masked as `***` in the stored output.
 
 Running scripts needs the **Manager** role and must be enabled by the administrator (`runner.enabled`). If your scripts run elsewhere, for example in a CI pipeline, leave the script empty and [import the results](runs.md#import-results-from-ci) instead. Steps are optional for automated tests.
+
+## Web tests (Playwright)
+
+A **web test** drives a real browser with [Playwright](https://playwright.dev): choose the script language **Web test (Playwright)**. The editor offers a **starter template**; select **Insert starter template** when the script is empty.
+
+Write the script in one of two ways:
+
+- **The body of one test** (the usual case). Qtestframe wraps it into a Playwright test named after the test case, with `page`, `context`, `request` and `baseURL` at hand and `test` and `expect` imported:
+
+  ```js
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sign in');
+  await page.getByLabel('E-mail').fill(process.env.QTF_VAR_USERNAME);
+  ```
+
+- **A complete spec file**: when the script calls `test(` itself (for example `test('…', async ({ page }) => { … })` or `test.describe(…)`), it is used as it is. Import `test` and `expect` from `@playwright/test` yourself. Every test of the file must pass for the execution to pass.
+
+Paths such as `page.goto('/login')` are relative to the **base URL** of the project (an administrator sets it under **Settings → Web tests**, also one per run environment). A [test configuration](administration.md#test-configurations) with a **Browser** dimension picks the browser: *Chrome*, *Chromium* or *Edge* run in Chromium, *Firefox* in Firefox, *Safari* or *WebKit* in WebKit; a **Base URL** dimension overrides the base URL.
+
+**Record a script instead of typing it**: on a computer with Node.js, run `npx playwright codegen https://your-app.example.com`, click through the scenario in the browser that opens, and copy the lines inside the generated `test(…)` into the script (or paste the whole file).
+
+Web tests run on the server in the background when someone selects **Run script** or [Run automated tests](runs.md#run-all-automated-tests); the result, the output, screenshots and a trace are stored with the execution (see [Web tests and their evidence](runs.md#web-tests-and-their-evidence)). The server must have Playwright installed and web tests enabled (see [Web tests](administration.md#web-tests)).
 
 ## Shared steps
 
@@ -98,7 +120,7 @@ An item can have any number of category values, also several of the same dimensi
 
 In queries, `category:Negative` matches the value name and `dimension:Polarity/Negative` the full form.
 
-The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](runs.md#defects)) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
+The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](runs.md#defects)), the [Save and load](reports-and-export.md#save-and-load-projects) section (**Save project**, **Duplicate project**, **Load project**) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
 
 ## Mark many tests ready at once
 

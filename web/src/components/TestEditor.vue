@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
@@ -51,6 +52,7 @@ import { enumLabel, enumOptions } from '@/i18n/labels'
 import { buildTree, flatten, folderPath } from '@/lib/tree'
 import type { Category, DataRow, Folder, Requirement, TestCase, TraceLink } from '@/lib/types'
 import { useMetaStore } from '@/stores/meta'
+import { PLAYWRIGHT, WEB_STARTER } from '@/lib/webTests'
 import { useNotify } from '@/composables/notify'
 
 const props = defineProps<{
@@ -438,6 +440,8 @@ const scriptPlaceholder = computed(() => {
       return `import sys\n# ${t('tests.scriptComment')}\nsys.exit(0)`
     case 'javascript':
       return `// ${t('tests.scriptCommentShort')}\nprocess.exit(0)`
+    case PLAYWRIGHT:
+      return WEB_STARTER
     default:
       return `#!/bin/sh\nset -e\n# ${t('tests.scriptComment')}\ncurl -fsS http://localhost:8080/healthz`
   }
@@ -536,9 +540,15 @@ const scriptPlaceholder = computed(() => {
     <template v-if="form.execution_type === 'automated'">
       <div class="section-title"><i class="pi pi-code" /> {{ t('tests.script') }} <HelpTip id="test.script" :label="t('tests.script')" /></div>
       <div class="row">
-        <Select v-model="form.script_language" :options="languageOptions" option-label="label" option-value="value" :disabled="!canWrite" style="width: 160px" :aria-label="t('fields.script_language')" />
-        <span class="small muted">{{ t('tests.scriptHint') }}</span>
+        <Select v-model="form.script_language" :options="languageOptions" option-label="label" option-value="value" :disabled="!canWrite" style="width: 220px" :aria-label="t('fields.script_language')" />
+        <span v-if="form.script_language !== PLAYWRIGHT" class="small muted">{{ t('tests.scriptHint') }}</span>
+        <template v-else>
+          <Button v-if="canWrite && !form.script.trim()" size="small" :label="t('webTests.starter')" icon="pi pi-file-edit" text @click="form.script = WEB_STARTER" />
+          <HelpTip id="test.webTest" :label="t('enums.scriptLanguage.playwright')" />
+        </template>
       </div>
+      <p v-if="form.script_language === PLAYWRIGHT" class="small muted" style="margin: 4px 0 8px">{{ t('webTests.editorHelp') }}</p>
+      <Message v-if="form.script_language === PLAYWRIGHT && meta.loaded && !meta.meta.web_tests_enabled" severity="info" :closable="false" style="margin-bottom: 8px">{{ t('webTests.editorOff') }}</Message>
       <Textarea v-model="form.script" class="code-input w-full" rows="12" :placeholder="scriptPlaceholder" :aria-label="t('tests.script')" spellcheck="false" :disabled="!canWrite" style="font-family: var(--qtf-mono)" />
     </template>
 
@@ -560,8 +570,7 @@ const scriptPlaceholder = computed(() => {
               <i class="pi pi-directions" style="color: var(--p-primary-color)" />
               <span>
                 {{ t('tests.calls') }}
-                <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" class="key">{{ data.call_test_key || t('tests.callTestFallback') }}</RouterLink>
-                <template v-if="data.call_test_title"> – {{ data.call_test_title }}</template>
+                <ItemRef :to="{ name: 'tests', params: { projectId }, query: { item: data.call_test_id } }" :item-key="data.call_test_key || t('tests.callTestFallback')" :title="data.call_test_title" />
               </span>
             </div>
             <Textarea v-else v-model="data.action" rows="1" auto-resize class="w-full" :disabled="!canWrite" :placeholder="t('tests.actionPlaceholder')" :aria-label="t('tests.stepActionN', { n: index + 1 })" />
@@ -591,8 +600,7 @@ const scriptPlaceholder = computed(() => {
       <div v-if="calledBy.length" class="row small" style="margin-top: 8px; gap: 6px">
         <i class="pi pi-share-alt muted" /><span class="muted">{{ t('tests.usedBy') }}</span>
         <span v-for="(c, i) in calledBy" :key="c.id">
-          <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: c.id } }" class="key" :title="c.title">{{ c.key }}</RouterLink>
-          <span class="muted">&nbsp;{{ c.title }}</span>{{ i < calledBy.length - 1 ? ',' : '' }}
+          <ItemRef :to="{ name: 'tests', params: { projectId }, query: { item: c.id } }" :item-key="c.key" :title="c.title" title-class="muted" />{{ i < calledBy.length - 1 ? ',' : '' }}
         </span>
       </div>
     </div>
@@ -619,8 +627,7 @@ const scriptPlaceholder = computed(() => {
       </div>
       <div v-if="!links.length" class="muted small">{{ t('tests.verifiesNothing') }}</div>
       <div v-for="l in links" :key="l.id" class="row nowrap" style="padding: 5px 0; border-bottom: 1px solid var(--qtf-border)">
-        <RouterLink :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" class="key">{{ l.requirement_key || reqById.get(l.requirement_id)?.key }}</RouterLink>
-        <span class="grow ellipsis">{{ reqById.get(l.requirement_id)?.title }}</span>
+        <ItemRef :to="{ name: 'requirements', params: { projectId }, query: { item: l.requirement_id } }" :item-key="l.requirement_key || reqById.get(l.requirement_id)?.key" :title="reqById.get(l.requirement_id)?.title" title-class="ellipsis" grow />
         <SuspectLink :link="l" :can-confirm="canLink" @confirmed="onSuspectConfirmed" />
         <StatusTag :value="reqById.get(l.requirement_id)?.obligation" kind="obligation" empty="" />
         <Button v-if="canLink" icon="pi pi-times" text rounded size="small" severity="secondary" :aria-label="t('common.unlinkItem', { key: l.requirement_key || reqById.get(l.requirement_id)?.key || '' })" v-tooltip="t('common.unlink')" @click="removeLink(l)" />

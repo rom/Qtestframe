@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Traceability rules of a project: evaluation results with the violating
 // items, and (with project.update) creating, editing and deleting rules.
+import ItemRef from './ItemRef.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
@@ -282,8 +283,7 @@ function remove(r: TraceRule) {
           <ul v-if="open[res.rule.id]" :id="'trv-' + res.rule.id" class="plain-list violations" :aria-label="t('traceRules.violationsOf', { name: res.rule.name })">
             <li v-for="v in res.violations" :key="v.kind + v.id" class="row nowrap">
               <span class="sr-only">{{ t(`traceRules.scope.${v.kind === 'test' ? 'test' : 'requirement'}`) }}</span>
-              <RouterLink :to="violationRoute(v, projectId)" class="key">{{ v.key }}</RouterLink>
-              <span class="grow ellipsis" :title="v.title">{{ v.title }}</span>
+              <ItemRef :to="violationRoute(v, projectId)" :item-key="v.key" :title="v.title" :hint="v.title" title-class="ellipsis" grow />
               <span class="small muted nowrap">{{ violationText(v, t) }}</span>
             </li>
             <li v-if="res.violation_count > res.violations.length" class="small muted">{{ t('traceRules.more', { n: res.violation_count - res.violations.length }) }}</li>

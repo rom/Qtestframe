@@ -60,6 +60,14 @@ const ALL_CONFIGS = [
   { name: 'nordic/en', theme: 'nordic', lang: 'en' },
   { name: 'lavender/sv', theme: 'lavender', lang: 'sv' },
   { name: 'high_contrast/en', theme: 'high_contrast', lang: 'en' },
+  { name: 'high_contrast/sv', theme: 'high_contrast', lang: 'sv' },
+  { name: 'high_contrast_light/en', theme: 'high_contrast_light', lang: 'en' },
+  { name: 'camouflage/en', theme: 'camouflage', lang: 'en' },
+  { name: 'city_camouflage/sv', theme: 'city_camouflage', lang: 'sv' },
+  { name: 'arctic_camouflage/sv', theme: 'arctic_camouflage', lang: 'sv' },
+  { name: 'midnight/en', theme: 'midnight', lang: 'en' },
+  { name: 'amber_terminal/en', theme: 'amber_terminal', lang: 'en' },
+  { name: 'rose/sv', theme: 'rose', lang: 'sv' },
 ]
 
 const VIEWPORTS = pick(ALL_VIEWPORTS, 'QTF_A11Y_VIEWPORTS')
@@ -144,9 +152,24 @@ async function discover(request) {
   const hasDefinitions = items(await api(request, 'GET', `/projects/${pid}/reports/definitions`).catch(() => [])).length > 0
   // the first catalogue requirement, for the preview
   const catalogReq = items(await api(request, 'GET', '/catalog/requirements').catch(() => []))[0]
+  // web tests (Playwright): a run with background jobs and the execution of a web test
+  let jobsRun = null
+  for (const r of runs) {
+    const j = await api(request, 'GET', `/runs/${r.id}/jobs`).catch(() => null)
+    if (j?.counts?.total) {
+      jobsRun = r
+      break
+    }
+  }
+  const webTest = tests.find((t) => t.script_language === 'playwright')
+  const webRun = runs.find((r) => r.name === 'Web smoke')
+  const webEx = webRun ? items(await api(request, 'GET', `/runs/${webRun.id}/executions`)).find((e) => e.test_case_id === webTest?.id) : null
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
+    // save / load / duplicate a project (project archives)
+    { name: 'project-load-dialog', path: '/projects', open: '.page-header .actions button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
+    { name: 'project-duplicate-dialog', path: '/projects', open: '.project-cards li:first-child button:has(.pi-copy)', wait: '.p-dialog #project-duplicate-form' },
     { name: 'dashboard', path: `${p}/dashboard`, wait: 'canvas' },
     { name: 'dashboard-trends', path: `${p}/dashboard?tab=trends`, wait: 'canvas, .empty' },
     { name: 'dashboard-quality', path: `${p}/dashboard?tab=quality`, wait: 'canvas, .empty' },
@@ -208,6 +231,10 @@ async function discover(request) {
     { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },
     { name: 'configurations', path: `${p}/settings?tab=configurations`, wait: '#h-configs' },
+    { name: 'web-tests-settings', path: `${p}/settings?tab=webtests`, wait: '#h-web-tests' },
+    webTest && { name: 'web-test-editor', path: `${p}/tests?item=${webTest.id}`, wait: '.p-drawer' },
+    webRun && webEx && { name: 'execute-web', path: `${p}/runs/${webRun.id}/exec/${webEx.id}`, wait: '.web-evidence' },
+    jobsRun && { name: 'run-jobs', path: `${p}/runs/${jobsRun.id}`, open: '.run-jobs button[aria-controls="run-jobs-list"]', wait: '#run-jobs-list' },
     { name: 'configurations-bulk', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] .p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     { name: 'configuration-dialog', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-plus)', wait: '.p-dialog #cfg-form' },
     { name: 'configurations-generate', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-th-large)', wait: '.p-dialog .preview' },
@@ -218,6 +245,7 @@ async function discover(request) {
     ddEx && { name: 'test-data-paste', path: `${p}/tests?item=${ddEx.test_case_id}`, open: '.p-drawer button:has(.pi-clipboard)', wait: '.p-dialog #td-paste' },
     ddLinks.length > 0 && { name: 'requirement-coverage', path: `${p}/requirements?item=${ddLinks[0].requirement_id}`, wait: '.cov-table' },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
+    { name: 'settings-project-load-dialog', path: `${p}/settings?tab=project`, open: 'section.project-archive button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
     // the folder tree is a side panel from 1200 px (a drawer below)
     { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', minWidth: 1200 },
     { name: 'folders-bulk-drawer', path: `${p}/requirements`, open: ['.page-header .actions button:has(.pi-folder)', '.p-drawer button.p-button:has(.pi-check-square)', '.p-drawer .p-tree .p-checkbox'], wait: '.p-drawer .folder-bulk', maxWidth: 1199 },
@@ -440,7 +468,7 @@ async function main() {
       for (const vp of VIEWPORTS) {
         const opts = { viewport: { width: vp.width, height: vp.height }, isMobile: vp.mobile, hasTouch: vp.mobile, reducedMotion: 'reduce', locale: cfg.lang === 'sv' ? 'sv-SE' : 'en-GB' }
         const local = ({ lang, theme }) => {
-          const dark = ['dark', 'camouflage', 'city_camouflage', 'navy', 'green_console'].includes(theme)
+          const dark = ['dark', 'camouflage', 'city_camouflage', 'navy', 'midnight', 'green_console', 'amber_terminal', 'forest', 'high_contrast'].includes(theme)
           localStorage.setItem('qtf.lang', lang)
           localStorage.setItem('qtf.theme', dark ? 'dark' : 'light')
           if (theme !== 'light' && theme !== 'dark') localStorage.setItem('qtf.decor', theme)

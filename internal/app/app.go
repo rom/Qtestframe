@@ -332,6 +332,9 @@ func cmdSeedDemo(args []string, env Env) error {
 	if err != nil {
 		return err
 	}
+	if err := SeedDemoWeb(env.Ctx, st, t.ID, p, cfg.Server.BaseURL); err != nil {
+		return err
+	}
 	fmt.Fprintf(env.Stdout, "seeded demo project %s in tenant %s\n", p.Key, t.Slug)
 	return nil
 }
@@ -501,6 +504,29 @@ func hardeningOptions(cfg config.Config) hardening.Options {
 		for _, i := range cfg.Runner.Interpreters {
 			o.ExecPaths = append(o.ExecPaths, filepath.Dir(i))
 		}
+		// web tests: the child processes (Node, Playwright, the browser)
+		// inherit the server's Landlock domain
+		if w := cfg.Runner.Web; w.Enabled {
+			for _, p := range []string{w.PlaywrightDir, w.BrowsersPath} {
+				if abs, err := filepath.Abs(p); p != "" && err == nil {
+					o.ExecPaths = append(o.ExecPaths, abs)
+				}
+			}
+			for _, p := range []string{w.Node, w.ExecutablePath} {
+				if p != "" {
+					o.ExecPaths = append(o.ExecPaths, filepath.Dir(p))
+					if real, err := filepath.EvalSymlinks(p); err == nil {
+						o.ExecPaths = append(o.ExecPaths, filepath.Dir(real))
+					}
+				}
+			}
+			if f := strings.Fields(w.Command); len(f) > 0 && filepath.IsAbs(f[0]) {
+				o.ExecPaths = append(o.ExecPaths, filepath.Dir(f[0]))
+			}
+			o.ExecPaths = append(o.ExecPaths, "/sbin")
+			o.ReadOnlyPaths = append(o.ReadOnlyPaths, "/etc", "/proc", "/sys")
+			o.ReadWritePaths = append(o.ReadWritePaths, "/dev/shm")
+		}
 	}
 	return o
 }
@@ -600,6 +626,8 @@ func cmdServe(args []string, env Env) error {
 		log.Info("e-mail enabled", "host", cfg.Email.Host, "port", cfg.Email.Port, "tls", cfg.Email.TLS, "from", cfg.Email.From)
 	}
 	srv.StartJobs(ctx)
+	// automated tests (web tests, "Run automated tests") run in the background
+	srv.StartScriptJobs(ctx)
 	errc := make(chan error, 1)
 	go func() { errc <- hs.Serve(ln) }()
 	log.Info("qtestframe listening", "addr", ln.Addr().String(), "tls", tlsOn, "version", Version, "db", cfg.Database.Driver)
@@ -615,7 +643,8 @@ func cmdServe(args []string, env Env) error {
 	sctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	err = hs.Shutdown(sctx)
-	srv.WaitMail() // e-mails in flight (each is bounded by email.timeout)
+	srv.WaitJobsStopped(10 * time.Second) // jobs end when ctx does
+	srv.WaitMail()                        // e-mails in flight (each is bounded by email.timeout)
 	return err
 }
 

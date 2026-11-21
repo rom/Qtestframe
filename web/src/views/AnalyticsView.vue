@@ -3,6 +3,7 @@
 // obligation levels, consistent use of keywords, requirements without an
 // obligation, tests or criteria, failing coverage, duplicates, conflicts
 // and the language findings summed up per rule.
+import ItemRef from '../components/ItemRef.vue'
 import { computed, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -203,8 +204,7 @@ const healthClass = computed(() => {
                 <div v-if="text(f).fix" class="small"><b>{{ t('readiness.whatToDo') }}</b> {{ text(f).fix }}</div>
                 <ul v-if="f.items.length" class="plain-list finding-items">
                   <li v-for="it in expanded.has(i) ? f.items : f.items.slice(0, SHOWN)" :key="it.id" class="row nowrap">
-                    <RouterLink :to="itemRoute(it)" class="key">{{ it.key }}</RouterLink>
-                    <span class="ellipsis grow">{{ it.title }}</span>
+                    <ItemRef :to="itemRoute(it)" :item-key="it.key" :title="it.title" title-class="ellipsis" grow />
                     <span v-if="it.note" class="small muted mono">{{ itemNote(f, it.note, t, te) }}</span>
                   </li>
                 </ul>

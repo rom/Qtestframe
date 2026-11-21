@@ -7,18 +7,18 @@ import { isHexColor, PROJECT_COLORS, readableOn } from '@/lib/projectColors'
 import { uid } from '@/lib/a11y'
 
 const model = defineModel<string>({ default: '' })
-defineProps<{ disabled?: boolean }>()
+defineProps<{ disabled?: boolean; label?: string; noneLabel?: string }>()
 const { t } = useI18n()
 const name = uid('pcolor')
 const custom = computed(() => isHexColor(model.value) && !(PROJECT_COLORS as readonly string[]).includes(model.value.toLowerCase()))
 </script>
 
 <template>
-  <div class="color-picker" role="radiogroup" :aria-label="t('projectColor.label')">
-    <label class="swatch theme" :class="{ on: !model }" :title="t('projectColor.theme')">
+  <div class="color-picker" role="radiogroup" :aria-label="label ?? t('projectColor.label')">
+    <label class="swatch theme" :class="{ on: !model }" :title="noneLabel ?? t('projectColor.theme')">
       <input type="radio" :name="name" value="" :checked="!model" :disabled="disabled" class="sr-only" @change="model = ''" />
       <i class="pi pi-palette" aria-hidden="true" />
-      <span class="sr-only">{{ t('projectColor.theme') }}</span>
+      <span class="sr-only">{{ noneLabel ?? t('projectColor.theme') }}</span>
     </label>
     <label v-for="c in PROJECT_COLORS" :key="c" class="swatch" :class="{ on: model.toLowerCase() === c }" :style="{ background: c, color: readableOn(c) }" :title="c">
       <input type="radio" :name="name" :value="c" :checked="model.toLowerCase() === c" :disabled="disabled" class="sr-only" @change="model = c" />

@@ -400,12 +400,13 @@ const runName = computed(() => runs.value.find((r) => r.id === runId.value)?.nam
                 <RouterLink
                   v-if="execByTest.get(x.id)"
                   :to="{ name: 'execute', params: { projectId: proj.pid, runId: runId!, executionId: execByTest.get(x.id)!.id } }"
-                  class="key"
-                  >{{ x.key }}</RouterLink
+                  class="item-ref stage-test-link"
+                  :title="x.title"
+                  ><span class="key">{{ x.key }}</span><span class="item-ref-title small ellipsis">{{ x.title }}</span></RouterLink
                 >
+                <span v-else class="stage-test-link"><span class="key">{{ x.key }}</span><span class="small ellipsis" :title="x.title">{{ x.title }}</span></span>
                 <StatusTag :value="x.status" kind="result" />
               </div>
-              <div class="small ellipsis" :title="x.title">{{ x.title }}</div>
               <div class="small muted">{{ x.after.length ? t('flow.after', { keys: x.after.join(', ') }) : t('flow.noDeps') }}</div>
               <RouterLink :to="{ name: 'flow', params: { projectId: proj.pid }, query: { test: x.id } }" class="small" @click="mode = 'test'; testId = x.id">{{ t('flow.flowOfTest') }}</RouterLink>
             </li>

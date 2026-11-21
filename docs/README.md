@@ -40,6 +40,7 @@ Status, Context, Decision, Consequences).
 | [0012](adr/0012-syslog-shipping-rfc5424.md) | Syslog shipping with RFC 5424 over UDP, TCP and TLS |
 | [0013](adr/0013-coverage-floor-85-percent.md) | A test coverage floor of 85 % |
 | [0014](adr/0014-tenant-configurable-roles.md) | Tenant-configurable roles on top of built-in defaults (supersedes the fixed matrix of 0008) |
+| [0015](adr/0015-web-tests-as-background-jobs.md) | Web tests with Playwright as background jobs, with a browser-friendly sandbox |
 
 ## Where to start
 

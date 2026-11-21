@@ -8,6 +8,8 @@ import {
   prioritySeverity,
   readableTextColor,
   RESULT_COLORS,
+  RESULT_ICONS,
+  traceMark,
   resultSeverity,
   statusSeverity,
 } from './colors'
@@ -60,5 +62,14 @@ describe('colours', () => {
   it('defaultCategoryColor is stable', () => {
     expect(defaultCategoryColor('Polarity')).toBe(defaultCategoryColor('Polarity'))
     expect(defaultCategoryColor('')).toMatch(/^#/)
+  })
+})
+
+describe('traceMark', () => {
+  it('colours a mark by the test result and falls back to not run', () => {
+    expect(traceMark('failed')).toEqual({ result: 'failed', color: RESULT_COLORS.failed, icon: 'pi pi-times' })
+    expect(traceMark('').result).toBe('not_run')
+    expect(traceMark('weird').icon).toBe(RESULT_ICONS.not_run)
+    expect(Object.keys(RESULT_ICONS).sort()).toEqual(Object.keys(RESULT_COLORS).sort())
   })
 })

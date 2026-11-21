@@ -73,6 +73,11 @@ type Server struct {
 	// mails tracks e-mails in flight (see WaitMail).
 	mails       sync.WaitGroup
 	mailLimiter *rateLimiter
+
+	// jobs runs automated tests in the background (scriptjobs.go);
+	// JobHeartbeat is its heartbeat interval (tests; 0 = 15s).
+	jobs         *jobManager
+	JobHeartbeat time.Duration
 }
 
 // New creates a server and its identity providers.
@@ -88,6 +93,7 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
 		// report e-mails per user (no open relay)
 		mailLimiter: newRateLimiter(30, 10*time.Minute),
+		jobs:        newJobManager(),
 	}
 	if e := cfg.Email; e.On() {
 		s.Mail = mail.NewSMTP(mail.SMTPConfig{Host: e.Host, Port: e.Port, Username: e.Username, Password: e.Password, TLS: e.TLS, Timeout: e.Timeout})
@@ -316,6 +322,8 @@ func (s *Server) routes() {
 	s.routesEmail(h)
 	s.routesConfigurations(h)
 	s.routesCatalog(h)
+	s.routesWebTests(h)
+	s.routesProjectArchive(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -516,7 +524,7 @@ func (s *Server) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
 	case errors.Is(err, errForbidden):
 		writeError(w, http.StatusForbidden, "forbidden", err.Error())
-	case errors.Is(err, runner.ErrDisabled):
+	case errors.Is(err, runner.ErrDisabled), errors.Is(err, runner.ErrWebDisabled):
 		writeError(w, http.StatusConflict, "conflict", err.Error())
 	default:
 		s.Log.Error("request failed", "path", r.URL.Path, "err", err)

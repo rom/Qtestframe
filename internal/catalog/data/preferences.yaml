@@ -1,0 +1,563 @@
+area: preferences
+prefix: PREF
+group: usability
+name: {en: User preferences and personalisation, sv: Användarinställningar och anpassning}
+description:
+  en: Colour theme, text size and motion, start page, list columns and saved views, preferences that follow the user between devices, organisation defaults and locks, keyboard shortcuts and resetting to defaults.
+  sv: Färgtema, textstorlek och rörelse, startsida, kolumner och sparade vyer i listor, inställningar som följer användaren mellan enheter, organisationens standardvärden och låsningar, kortkommandon och återställning till standard.
+
+requirements:
+  - id: PREF-01
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [theme, dark-mode]
+    refs: ["CSS Media Queries Level 5 prefers-color-scheme", "WCAG 2.2 SC 1.4.3"]
+    tests: [PREF-T01]
+    en:
+      title: Light, dark and system colour theme
+      description: The user interface SHOULD offer a light theme, a dark theme and a setting that follows the operating system, with text contrast of at least 4.5:1 in both themes.
+      rationale: A dark theme reduces glare in dim rooms, and following the system avoids a separate choice in each application.
+      criteria:
+        - method: test
+          text: Each of the three settings gives the expected theme, and a contrast check of 10 sampled pages finds no body text below 4.5:1 in either theme.
+          threshold: contrast ≥ 4.5:1
+    sv:
+      title: Ljust, mörkt och systemets färgtema
+      description: Användargränssnittet BÖR erbjuda ett ljust tema, ett mörkt tema och en inställning som följer operativsystemet, med en textkontrast på minst 4,5:1 i båda temana.
+      rationale: Ett mörkt tema minskar bländning i dämpad belysning, och att följa systemet sparar ett separat val i varje program.
+      criteria:
+        - method: test
+          text: Var och en av de tre inställningarna ger det förväntade temat, och en kontrastkontroll av 10 utvalda sidor hittar ingen brödtext under 4,5:1 i något av temana.
+          threshold: kontrast ≥ 4,5:1
+
+  - id: PREF-02
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [feedback, apply]
+    refs: ["ISO 9241-110:2020 conformity with user expectations"]
+    tests: [PREF-T01, PREF-T08]
+    en:
+      title: Changed preferences apply without reloading
+      description: A changed display preference SHOULD take effect on the open page within 1 second, without a page reload and without losing unsaved input.
+      rationale: Seeing the effect at once lets users judge a setting, and a reload would discard their work.
+      criteria:
+        - method: test
+          text: Switching the theme and the text size while a form holds unsaved input changes the page within 1 second and keeps the input.
+          threshold: ≤ 1 s
+    sv:
+      title: Ändrade inställningar gäller utan omladdning
+      description: En ändrad visningsinställning BÖR få effekt på den öppna sidan inom 1 sekund, utan att sidan laddas om och utan att osparad inmatning går förlorad.
+      rationale: När effekten syns direkt kan användaren bedöma inställningen, och en omladdning skulle kasta bort pågående arbete.
+      criteria:
+        - method: test
+          text: Byte av tema och textstorlek medan ett formulär innehåller osparad inmatning ändrar sidan inom 1 sekund och behåller inmatningen.
+          threshold: ≤ 1 s
+
+  - id: PREF-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [sync, devices]
+    refs: ["ISO/IEC 25010:2023 interaction capability"]
+    tests: [PREF-T02]
+    en:
+      title: Preferences follow the user between devices
+      description: The system MUST store a user's preferences with the account and apply them at the next sign-in on another device or browser.
+      rationale: Users who work on a laptop and a phone expect the same language, theme and views on both.
+      criteria:
+        - method: test
+          text: Language, theme and list columns changed in one browser are in effect after signing in with a second browser on another device.
+    sv:
+      title: Inställningar följer användaren mellan enheter
+      description: Systemet SKA spara användarens inställningar med kontot och tillämpa dem vid nästa inloggning på en annan enhet eller i en annan webbläsare.
+      rationale: Användare som arbetar på en bärbar dator och en mobiltelefon förväntar sig samma språk, tema och vyer på båda.
+      criteria:
+        - method: test
+          text: Språk, tema och listkolumner som ändrats i en webbläsare gäller efter inloggning med en andra webbläsare på en annan enhet.
+
+  - id: PREF-04
+    type: usability
+    obligation: should
+    priority: low
+    tags: [reset, defaults]
+    refs: ["ISO 9241-110:2020 controllability"]
+    tests: [PREF-T03]
+    en:
+      title: Reset of preferences to the defaults
+      description: The preferences page SHOULD offer one control that, after a confirmation, resets each of the user's preferences to the organisation's default value.
+      rationale: Users who have changed many settings need a way back to a known state.
+      criteria:
+        - method: test
+          text: After changing 5 preferences and confirming the reset, each of the 5 has the default value.
+    sv:
+      title: Återställning av inställningar till standard
+      description: Inställningssidan BÖR erbjuda en kontroll som efter en bekräftelse återställer var och en av användarens inställningar till organisationens standardvärde.
+      rationale: Användare som har ändrat ett antal inställningar behöver en väg tillbaka till ett känt läge.
+      criteria:
+        - method: test
+          text: Efter att 5 inställningar har ändrats och återställningen bekräftats har alla 5 standardvärdet.
+
+  - id: PREF-05
+    type: functional
+    obligation: may
+    priority: low
+    tags: [start-page, navigation]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [PREF-T03]
+    en:
+      title: Chosen start page after sign-in
+      description: The system MAY let each user choose which page opens after sign-in from a list of the main pages.
+      rationale: A tester who starts each day in the same list saves a navigation step every time.
+      criteria:
+        - method: demonstration
+          text: A user who chooses the test runs page as start page lands on it after the next sign-in.
+    sv:
+      title: Vald startsida efter inloggning
+      description: Systemet FÅR låta varje användare välja vilken sida som öppnas efter inloggning bland huvudsidorna.
+      rationale: En testare som börjar varje dag i samma lista sparar ett navigeringssteg varje gång.
+      criteria:
+        - method: demonstration
+          text: En användare som väljer sidan med körningar som startsida hamnar där efter nästa inloggning.
+
+  - id: PREF-06
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [columns, lists]
+    refs: ["ISO 9241-110:2020 suitability for individualisation"]
+    tests: [PREF-T04]
+    en:
+      title: Visible columns and their order remembered per list
+      description: Each list SHOULD let the user show, hide and reorder its columns and SHOULD keep that choice per list for the user's next visit.
+      rationale: Different roles need different columns, and choosing them again on each visit wastes time.
+      criteria:
+        - method: test
+          text: Hiding 2 columns and moving 1 in the requirement list is still in effect after signing out and in, while the test list is unchanged.
+    sv:
+      title: Synliga kolumner och deras ordning sparas per lista
+      description: Varje lista BÖR låta användaren visa, dölja och ordna om sina kolumner och spara valet per lista till användarens nästa besök.
+      rationale: Olika roller behöver olika kolumner, och att välja dem igen vid varje besök tar tid.
+      criteria:
+        - method: test
+          text: Att dölja 2 kolumner och flytta 1 i kravlistan gäller fortfarande efter utloggning och ny inloggning, medan testfallslistan är oförändrad.
+
+  - id: PREF-07
+    type: functional
+    obligation: may
+    priority: low
+    tags: [saved-views, filters]
+    refs: ["ISO 9241-110:2020 suitability for individualisation"]
+    tests: [PREF-T05]
+    en:
+      title: Named saved views
+      description: The system MAY let a user save up to 20 named views per list, each with its filters, sort order and columns, and open a view with one selection.
+      rationale: Recurring questions such as "my failed tests this week" become one click.
+      criteria:
+        - method: test
+          text: A saved view restores its filters, sort order and columns, and a 21st view is refused with a message stating the limit of 20.
+          threshold: 20 views per list
+    sv:
+      title: Namngivna sparade vyer
+      description: Systemet FÅR låta en användare spara upp till 20 namngivna vyer per lista, var och en med filter, sorteringsordning och kolumner, och öppna en vy med ett enda val.
+      rationale: Återkommande frågor som "mina misslyckade testfall den här veckan" blir ett klick.
+      criteria:
+        - method: test
+          text: En sparad vy återställer sina filter, sin sorteringsordning och sina kolumner, och en 21:a vy avvisas med ett meddelande om gränsen 20.
+          threshold: 20 vyer per lista
+
+  - id: PREF-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [organisation, defaults, administration]
+    refs: ["ISO/IEC 25010:2023 interaction capability"]
+    tests: [PREF-T06]
+    en:
+      title: Organisation-wide default preferences
+      description: The system SHOULD let an administrator set default values of the user preferences for the organisation, which apply to each user who has not changed that preference.
+      rationale: An organisation can set its language, date format and start page once instead of asking every user to do it.
+      criteria:
+        - method: test
+          text: After the administrator sets Swedish as the default language, a new user and a user without a language choice get Swedish, and a user who chose English keeps English.
+    sv:
+      title: Standardinställningar för hela organisationen
+      description: Systemet BÖR låta en administratör ange standardvärden för användarinställningarna i organisationen, och de gäller för varje användare som inte har ändrat inställningen själv.
+      rationale: En organisation kan ställa in språk, datumformat och startsida en gång i stället för att be varje användare göra det.
+      criteria:
+        - method: test
+          text: Efter att administratören har satt svenska som standardspråk får en ny användare och en användare utan eget språkval svenska, och en användare som valt engelska behåller engelska.
+
+  - id: PREF-09
+    type: functional
+    obligation: may
+    priority: low
+    tags: [organisation, lock, administration]
+    refs: ["ISO/IEC 25010:2023 interaction capability"]
+    tests: [PREF-T06]
+    en:
+      title: Locked preferences
+      description: The system MAY let an administrator lock a preference at the organisation's value, so that users see the value but the control to change it is disabled with a note naming the lock.
+      rationale: Some organisations require one date format or language in shared reports.
+      criteria:
+        - method: test
+          text: A locked date format is shown as disabled on the users' preferences pages with an explanation, and an API request to change it is rejected.
+    sv:
+      title: Låsta inställningar
+      description: Systemet FÅR låta en administratör låsa en inställning till organisationens värde, så att användarna ser värdet men kontrollen för att ändra det är inaktiverad med en förklaring om låsningen.
+      rationale: En del organisationer kräver ett enda datumformat eller språk i gemensamma rapporter.
+      criteria:
+        - method: test
+          text: Ett låst datumformat visas inaktiverat på användarnas inställningssidor med en förklaring, och en API-begäran om att ändra det avvisas.
+
+  - id: PREF-10
+    type: usability
+    obligation: must
+    priority: high
+    tags: [keyboard-shortcuts, accessibility]
+    refs: ["WCAG 2.2 SC 2.1.4"]
+    tests: [PREF-T07]
+    en:
+      title: Single-key shortcuts can be turned off
+      description: When the user interface has keyboard shortcuts that consist of a single letter, digit or punctuation key, the preferences MUST offer a setting that turns these shortcuts off.
+      rationale: Speech input users and users who press keys by mistake otherwise trigger actions they did not intend.
+      criteria:
+        - method: test
+          text: With the setting off, pressing each single-key shortcut outside a text field triggers no action.
+    sv:
+      title: Kortkommandon med en tangent kan stängas av
+      description: När användargränssnittet har kortkommandon som består av en enda bokstav, siffra eller ett skiljetecken SKA inställningarna erbjuda en inställning som stänger av dessa kortkommandon.
+      rationale: Användare av röststyrning och användare som trycker på tangenter av misstag utlöser annars handlingar de inte avsåg.
+      criteria:
+        - method: test
+          text: Med inställningen avstängd utlöser inget av kortkommandona med en tangent någon handling när det trycks utanför ett textfält.
+
+  - id: PREF-11
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [text-size, motion, accessibility]
+    refs: ["WCAG 2.2 SC 1.4.4", "WCAG 2.2 SC 2.3.3"]
+    tests: [PREF-T08]
+    en:
+      title: Text size and reduced motion in the preferences
+      description: The preferences SHOULD offer text sizes from 100 to 200 percent in steps of 25 percent and a setting that turns off animations, both independent of the browser and operating system settings.
+      rationale: Users on shared or managed computers cannot always change the system settings.
+      criteria:
+        - method: test
+          text: Each of the 5 text sizes enlarges the text without loss of content, and with animations off no transition longer than 0 ms runs on a page change.
+    sv:
+      title: Textstorlek och minskad rörelse i inställningarna
+      description: Inställningarna BÖR erbjuda textstorlekar från 100 till 200 procent i steg om 25 procent och en inställning som stänger av animeringar, båda oberoende av webbläsarens och operativsystemets inställningar.
+      rationale: Användare på delade eller centralt hanterade datorer kan inte alltid ändra systemets inställningar.
+      criteria:
+        - method: test
+          text: Var och en av de 5 textstorlekarna förstorar texten utan att innehåll går förlorat, och med animeringar avstängda körs ingen övergång längre än 0 ms vid sidbyte.
+
+  - id: PREF-12
+    type: functional
+    obligation: must
+    priority: high
+    tags: [robustness, defaults]
+    refs: ["ISO/IEC 25010:2023 fault tolerance"]
+    tests: [PREF-T09]
+    en:
+      title: Invalid stored preference falls back to the default
+      description: When a stored preference has an unknown or invalid value, the system MUST use the default value for that preference and MUST let the user sign in and work.
+      rationale: A preference written by an older version or a damaged record must not lock a user out.
+      criteria:
+        - method: test
+          text: A user whose stored theme is "neon" and whose page size is "-5" signs in, gets the default theme and page size, and the invalid values are logged once.
+    sv:
+      title: Ogiltig sparad inställning ersätts av standardvärdet
+      description: När en sparad inställning har ett okänt eller ogiltigt värde SKA systemet använda inställningens standardvärde och låta användaren logga in och arbeta.
+      rationale: En inställning som skrivits av en äldre version eller en skadad post får inte stänga ute en användare.
+      criteria:
+        - method: test
+          text: En användare vars sparade tema är "neon" och vars sidstorlek är "-5" loggar in, får standardtema och standardsidstorlek, och de ogiltiga värdena loggas en gång.
+
+tests:
+  - id: PREF-T01
+    priority: medium
+    execution: manual
+    tags: [theme]
+    refs: ["WCAG 2.2 SC 1.4.3"]
+    en:
+      title: Theme settings and contrast
+      description: Switches between the three theme settings and checks the result and the contrast.
+      preconditions: A signed-in user, an operating system set to dark mode, a contrast checker and an open form with unsaved input.
+      expected: Each setting gives the expected theme within 1 second without a reload, and the contrast is at least 4.5:1.
+      steps:
+        - action: Choose the light theme.
+          expected: The page turns light within 1 second and the unsaved input is still there.
+        - action: Choose the dark theme.
+          expected: The page turns dark within 1 second without a reload.
+        - action: Choose "follow the system" and switch the operating system to light mode.
+          expected: The page follows the operating system.
+        - action: Measure the body text contrast on 10 sampled pages in both themes.
+          expected: Every measured value is at least 4.5:1.
+          data: 4.5:1
+    sv:
+      title: Temainställningar och kontrast
+      description: Växlar mellan de tre temainställningarna och kontrollerar resultatet och kontrasten.
+      preconditions: En inloggad användare, ett operativsystem inställt på mörkt läge, ett kontrastverktyg och ett öppet formulär med osparad inmatning.
+      expected: Varje inställning ger det förväntade temat inom 1 sekund utan omladdning, och kontrasten är minst 4,5:1.
+      steps:
+        - action: Välj det ljusa temat.
+          expected: Sidan blir ljus inom 1 sekund och den osparade inmatningen finns kvar.
+        - action: Välj det mörka temat.
+          expected: Sidan blir mörk inom 1 sekund utan omladdning.
+        - action: Välj "följ systemet" och byt operativsystemet till ljust läge.
+          expected: Sidan följer operativsystemet.
+        - action: Mät brödtextens kontrast på 10 utvalda sidor i båda temana.
+          expected: Varje uppmätt värde är minst 4,5:1.
+          data: 4,5:1
+
+  - id: PREF-T02
+    priority: high
+    execution: manual
+    tags: [sync, devices]
+    refs: []
+    en:
+      title: Preferences on a second device
+      description: Changes preferences in one browser and checks them after sign-in on another device.
+      preconditions: One test user, a desktop browser and a phone browser where the user is signed out.
+      expected: The changed preferences apply on the second device.
+      steps:
+        - action: In the desktop browser set the language to Swedish, the theme to dark and hide the "Owner" column in the requirement list.
+          expected: The changes take effect in the desktop browser.
+        - action: Sign in on the phone.
+          expected: The interface is in Swedish with the dark theme.
+        - action: Open the requirement list on the phone.
+          expected: The "Owner" column is hidden.
+    sv:
+      title: Inställningar på en andra enhet
+      description: Ändrar inställningar i en webbläsare och kontrollerar dem efter inloggning på en annan enhet.
+      preconditions: En testanvändare, en webbläsare på en dator och en webbläsare på en mobiltelefon där användaren är utloggad.
+      expected: De ändrade inställningarna gäller på den andra enheten.
+      steps:
+        - action: Ställ i datorns webbläsare in språket på svenska, temat på mörkt och dölj kolumnen "Ägare" i kravlistan.
+          expected: Ändringarna gäller i datorns webbläsare.
+        - action: Logga in på mobiltelefonen.
+          expected: Gränssnittet är på svenska med mörkt tema.
+        - action: Öppna kravlistan på mobiltelefonen.
+          expected: Kolumnen "Ägare" är dold.
+
+  - id: PREF-T03
+    priority: low
+    execution: manual
+    tags: [reset, start-page]
+    refs: []
+    en:
+      title: Start page and reset to defaults
+      description: Sets a start page and other preferences and then resets them.
+      preconditions: A signed-in user with every preference at its default value.
+      expected: The chosen start page opens after sign-in, and the reset restores every default.
+      steps:
+        - action: Choose the test runs page as start page, sign out and sign in.
+          expected: The test runs page opens after sign-in.
+        - action: Change the theme, text size, page size and language as well.
+          expected: Each change takes effect.
+        - action: Use the reset control and confirm.
+          expected: The 5 changed preferences have their default values and the next sign-in opens the default start page.
+    sv:
+      title: Startsida och återställning till standard
+      description: Ställer in en startsida och andra inställningar och återställer dem sedan.
+      preconditions: En inloggad användare med varje inställning på standardvärdet.
+      expected: Den valda startsidan öppnas efter inloggning, och återställningen ger tillbaka varje standardvärde.
+      steps:
+        - action: Välj sidan med körningar som startsida, logga ut och logga in.
+          expected: Sidan med körningar öppnas efter inloggningen.
+        - action: Ändra också tema, textstorlek, sidstorlek och språk.
+          expected: Varje ändring får effekt.
+        - action: Använd återställningskontrollen och bekräfta.
+          expected: De 5 ändrade inställningarna har sina standardvärden och nästa inloggning öppnar standardstartsidan.
+
+  - id: PREF-T04
+    priority: medium
+    execution: manual
+    tags: [columns]
+    refs: []
+    en:
+      title: Column choice remembered per list
+      description: Changes the columns of one list and checks that they are kept and do not affect another list.
+      preconditions: A signed-in user and a project with requirements and tests.
+      expected: The column choice is kept for that list only.
+      steps:
+        - action: In the requirement list hide the columns "Priority" and "Tags" and move "Status" to the first position.
+          expected: The list shows the new column set at once.
+        - action: Sign out, sign in and open the requirement list.
+          expected: The same columns in the same order are shown.
+        - action: Open the test list.
+          expected: The test list shows its default columns.
+    sv:
+      title: Kolumnval sparas per lista
+      description: Ändrar kolumnerna i en lista och kontrollerar att valet behålls och inte påverkar en annan lista.
+      preconditions: En inloggad användare och ett projekt med krav och testfall.
+      expected: Kolumnvalet behålls bara för den listan.
+      steps:
+        - action: Dölj kolumnerna "Prioritet" och "Taggar" i kravlistan och flytta "Status" först.
+          expected: Listan visar genast den nya kolumnuppsättningen.
+        - action: Logga ut, logga in och öppna kravlistan.
+          expected: Samma kolumner i samma ordning visas.
+        - action: Öppna testfallslistan.
+          expected: Testfallslistan visar sina standardkolumner.
+
+  - id: PREF-T05
+    priority: low
+    execution: manual
+    tags: [saved-views]
+    refs: []
+    en:
+      title: Saving and opening named views
+      description: Saves views with filters, sorting and columns, opens them and tries to exceed the limit.
+      preconditions: A signed-in user with 19 saved views on the test list.
+      expected: A saved view restores its settings and the 21st view is refused.
+      steps:
+        - action: Filter the test list on status "failed" and owner "me", sort by date descending, and save the view as "My failures".
+          expected: The view is saved and appears in the list of views.
+          data: My failures
+        - action: Reset the list and open "My failures".
+          expected: The filters, sort order and columns of the view are restored.
+        - action: Try to save one more view.
+          expected: The view is refused with a message stating the limit of 20.
+    sv:
+      title: Spara och öppna namngivna vyer
+      description: Sparar vyer med filter, sortering och kolumner, öppnar dem och försöker överskrida gränsen.
+      preconditions: En inloggad användare med 19 sparade vyer i testfallslistan.
+      expected: En sparad vy återställer sina inställningar och den 21:a vyn avvisas.
+      steps:
+        - action: Filtrera testfallslistan på status "misslyckad" och ägare "jag", sortera på datum fallande och spara vyn som "Mina fel".
+          expected: Vyn sparas och visas i listan över vyer.
+          data: Mina fel
+        - action: Återställ listan och öppna "Mina fel".
+          expected: Vyns filter, sorteringsordning och kolumner återställs.
+        - action: Försök spara ytterligare en vy.
+          expected: Vyn avvisas med ett meddelande om gränsen 20.
+
+  - id: PREF-T06
+    priority: medium
+    execution: manual
+    tags: [organisation, defaults, lock]
+    refs: []
+    en:
+      title: Organisation defaults and locked preferences
+      description: An administrator sets defaults and a lock, and three users check the effect.
+      preconditions: An administrator, a new user, a user without a language choice and a user who chose English.
+      expected: Defaults apply to users without their own choice, and a locked preference cannot be changed.
+      steps:
+        - action: As administrator set Swedish as the organisation's default language.
+          expected: The setting is saved.
+        - action: Sign in as each of the three users.
+          expected: The new user and the user without a choice see Swedish; the user who chose English sees English.
+        - action: As administrator lock the date format at "YYYY-MM-DD".
+          expected: The users' preferences show the date format as disabled with a note about the lock.
+          data: YYYY-MM-DD
+        - action: As a user send an API request that changes the date format.
+          expected: The request is rejected and the format is unchanged.
+    sv:
+      title: Organisationens standardvärden och låsta inställningar
+      description: En administratör ställer in standardvärden och en låsning, och tre användare kontrollerar effekten.
+      preconditions: En administratör, en ny användare, en användare utan eget språkval och en användare som valt engelska.
+      expected: Standardvärdena gäller för användare utan eget val, och en låst inställning går inte att ändra.
+      steps:
+        - action: Ställ som administratör in svenska som organisationens standardspråk.
+          expected: Inställningen sparas.
+        - action: Logga in som var och en av de tre användarna.
+          expected: Den nya användaren och användaren utan eget val ser svenska; användaren som valt engelska ser engelska.
+        - action: Lås som administratör datumformatet till "ÅÅÅÅ-MM-DD".
+          expected: Användarnas inställningar visar datumformatet inaktiverat med en förklaring om låsningen.
+          data: ÅÅÅÅ-MM-DD
+        - action: Skicka som användare en API-begäran som ändrar datumformatet.
+          expected: Begäran avvisas och formatet är oförändrat.
+
+  - id: PREF-T07
+    priority: high
+    execution: manual
+    tags: [keyboard-shortcuts]
+    refs: ["WCAG 2.2 SC 2.1.4"]
+    en:
+      title: Turning off single-key shortcuts
+      description: Checks that single-key shortcuts work by default and do nothing when switched off.
+      preconditions: A signed-in user and the list of single-key shortcuts from the shortcut overview.
+      expected: With the setting off no single-key shortcut triggers an action.
+      steps:
+        - action: Press each single-key shortcut outside a text field.
+          expected: Each shortcut triggers its action.
+        - action: Turn the single-key shortcuts off in the preferences.
+          expected: The setting is saved.
+        - action: Press each single-key shortcut again outside a text field.
+          expected: No action is triggered.
+    sv:
+      title: Stänga av kortkommandon med en tangent
+      description: Kontrollerar att kortkommandon med en tangent fungerar som standard och inte gör något när de är avstängda.
+      preconditions: En inloggad användare och listan över kortkommandon med en tangent från översikten över kortkommandon.
+      expected: Med inställningen avstängd utlöser inget kortkommando med en tangent någon handling.
+      steps:
+        - action: Tryck på varje kortkommando med en tangent utanför ett textfält.
+          expected: Varje kortkommando utlöser sin handling.
+        - action: Stäng av kortkommandona med en tangent i inställningarna.
+          expected: Inställningen sparas.
+        - action: Tryck på varje kortkommando med en tangent igen utanför ett textfält.
+          expected: Ingen handling utlöses.
+
+  - id: PREF-T08
+    priority: medium
+    execution: manual
+    tags: [text-size, motion]
+    refs: ["WCAG 2.2 SC 1.4.4"]
+    en:
+      title: Text size and animations from the preferences
+      description: Steps through the text sizes and turns off animations while the browser settings stay at their defaults.
+      preconditions: A browser with zoom at 100 percent and the operating system's reduced motion setting off.
+      expected: The text sizes and the animation setting apply independently of the browser and system.
+      steps:
+        - action: Select each text size from 100 to 200 percent in steps of 25 and look at the requirement list and the editor.
+          expected: The text grows at each step within 1 second, and no text is cut off or overlaps.
+          data: 100, 125, 150, 175, 200 %
+        - action: Turn animations off and open a dialog and a side panel.
+          expected: The dialog and panel appear without a transition.
+    sv:
+      title: Textstorlek och animeringar från inställningarna
+      description: Stegar igenom textstorlekarna och stänger av animeringar medan webbläsarens inställningar står kvar på standard.
+      preconditions: En webbläsare med zoom på 100 procent och operativsystemets inställning för minskad rörelse avstängd.
+      expected: Textstorlekarna och animeringsinställningen gäller oberoende av webbläsare och system.
+      steps:
+        - action: Välj varje textstorlek från 100 till 200 procent i steg om 25 och titta på kravlistan och redigeraren.
+          expected: Texten växer vid varje steg inom 1 sekund, och ingen text klipps eller överlappar.
+          data: 100, 125, 150, 175, 200 %
+        - action: Stäng av animeringar och öppna en dialog och en sidopanel.
+          expected: Dialogen och panelen visas utan övergång.
+
+  - id: PREF-T09
+    priority: high
+    execution: automated
+    tags: [robustness]
+    refs: ["ISO/IEC 25010:2023 fault tolerance"]
+    en:
+      title: Sign-in with invalid stored preferences
+      description: An integration test writes invalid preference values directly to storage and signs in as that user.
+      preconditions: A test user and direct write access to the preference storage of the test database.
+      expected: The user signs in with default values and the invalid values are logged.
+      steps:
+        - action: Store the theme "neon" and the page size "-5" for the test user.
+          expected: The values are stored.
+          data: "theme=neon; page_size=-5"
+        - action: Sign in as the test user and load the requirement list.
+          expected: Sign-in succeeds, the default theme is used and the list uses the default page size.
+        - action: Read the application log.
+          expected: One entry per invalid preference names the preference without blocking the request.
+    sv:
+      title: Inloggning med ogiltiga sparade inställningar
+      description: Ett integrationstest skriver ogiltiga inställningsvärden direkt i lagringen och loggar in som den användaren.
+      preconditions: En testanvändare och direkt skrivåtkomst till inställningarna i testdatabasen.
+      expected: Användaren loggas in med standardvärden och de ogiltiga värdena loggas.
+      steps:
+        - action: Spara temat "neon" och sidstorleken "-5" för testanvändaren.
+          expected: Värdena sparas.
+          data: "theme=neon; page_size=-5"
+        - action: Logga in som testanvändaren och läs in kravlistan.
+          expected: Inloggningen lyckas, standardtemat används och listan har standardsidstorleken.
+        - action: Läs programloggen.
+          expected: En rad per ogiltig inställning anger inställningen utan att begäran stoppas.

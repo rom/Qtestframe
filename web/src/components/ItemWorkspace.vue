@@ -33,7 +33,7 @@ import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
 import { dragIds, encodeIds, ITEMS_MIME } from '@/lib/dnd'
-import { folderPath } from '@/lib/tree'
+import { folderColors, folderPath } from '@/lib/tree'
 import { formatDate } from '@/lib/format'
 import { levelRank, riskLevelSeverity } from '@/lib/risks'
 import { useI18n } from 'vue-i18n'
@@ -92,6 +92,11 @@ const bulkLinksOpen = ref(false)
 const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
 const folders = computed(() => proj.folders[props.kind])
+// rows take the colour of their folder (or of its nearest coloured parent)
+const colorOfFolder = computed(() => folderColors(folders.value))
+const rowFolderColor = (row: { folder_id?: string | null }) => (row.folder_id ? colorOfFolder.value.get(row.folder_id) : '') || ''
+const folderRowClass = (row: Item) => (rowFolderColor(row) ? 'folder-colored' : '')
+const folderRowStyle = (row: Item) => (rowFolderColor(row) ? { '--folder-color': rowFolderColor(row) } : undefined)
 const categories = computed(() => proj.categoriesFor(props.kind))
 
 // ---------- filter state ----------
@@ -584,6 +589,8 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
       <DataTable
         :ref="layout.bind"
         v-model:selection="selection"
+        :row-class="folderRowClass"
+        :row-style="folderRowStyle"
         v-stack
         reorderable-columns
         @column-reorder="layout.onReorder()"
@@ -612,7 +619,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
           </template>
         </Column>
         <Column field="key" :header="t('workspace.colKey')" :reorderable-column="false" sortable style="width: 130px">
-          <template #body="{ data }"><span class="key">{{ data.key }}</span></template>
+          <template #body="{ data }"><button type="button" class="link-button key-link" tabindex="-1" @click.stop="openEditor((data as Item).id)"><span class="key">{{ data.key }}</span></button></template>
         </Column>
         <Column field="title" :header="t('workspace.colTitle')" :reorderable-column="false" sortable style="min-width: 240px" body-class="stack-main">
           <template #body="{ data }">
@@ -646,7 +653,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
             <span v-else-if="c.field === 'criteria_count' || c.field === 'step_count'" class="small" :class="{ muted: !data[c.field] }">{{ data[c.field] ?? 0 }}</span>
             <span v-else-if="c.field === 'created_by' || c.field === 'source'" class="small">{{ data[c.field] }}</span>
             <span v-else-if="c.field === 'type'" class="small">{{ enumLabel('requirementType', data.type) }}</span>
-            <span v-else-if="c.field === 'folder_path'" class="small muted">{{ data.folder_path }}</span>
+            <span v-else-if="c.field === 'folder_path'" class="small muted row nowrap" style="gap: 6px"><span v-if="rowFolderColor(data)" class="folder-swatch" aria-hidden="true" :style="{ background: rowFolderColor(data) }" />{{ data.folder_path }}</span>
             <span v-else-if="c.field === 'suspect_links'" class="small" :class="data.suspect_links ? 'suspect' : 'muted'">
               <i v-if="data.suspect_links" class="pi pi-exclamation-triangle" aria-hidden="true" /> {{ data.suspect_links ?? 0 }}
             </span>

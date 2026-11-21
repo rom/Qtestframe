@@ -2,6 +2,7 @@
 // "Coverage by configuration" of a requirement: the latest result of every
 // linked test in every configuration it is planned in, and the coverage per
 // configuration. Shown once a linked test was planned in a configuration.
+import ItemRef from './ItemRef.vue'
 import { computed, ref, watch } from 'vue'
 import StatusTag from './StatusTag.vue'
 import HelpLink from '@/guide/HelpLink.vue'
@@ -59,8 +60,7 @@ const label = (c: { id: string; name: string }) => (c.id ? c.name : t('configura
         <tbody>
           <tr v-for="x in tests" :key="x.id">
             <th scope="row">
-              <RouterLink :to="{ name: 'tests', params: { projectId }, query: { item: x.id } }" class="key">{{ x.key }}</RouterLink>
-              <span class="small muted ellipsis" style="margin-left: 6px">{{ x.title }}</span>
+              <ItemRef :to="{ name: 'tests', params: { projectId }, query: { item: x.id } }" :item-key="x.key" :title="x.title" title-class="small muted ellipsis" />
             </th>
             <td v-for="c in configs" :key="c.id">
               <StatusTag v-if="resultIn(x, c.id)" :value="resultIn(x, c.id)" kind="result" />
