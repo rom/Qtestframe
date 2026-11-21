@@ -5084,19 +5084,6 @@ paths:
 
         **Permission:** signed in; read of each field in its project.
       x-permission: authenticated
-  /api/v1/projects/{pid}/export/view:
-    parameters:
-    - $ref: '#/components/parameters/pid'
-    post:
-      tags:
-      - Reports and export
-      summary: Export a view
-      operationId: postProjectsByPidExportView
-      description: |-
-        Renders a table the client shows (e.g. the spreadsheet view with its visible columns, order, sort and filters) as `xlsx`, `csv`, `md`, `pdf` or `docx`. At most 200 columns and 2,000,000 cells. The response has `Content-Disposition: attachment; filename="<KEY>-<name>-<YYYYMMDD-HHMMSS>.<ext>"`.
-
-        **Permission:** `export`.
-      x-permission: export
       requestBody:
         required: true
         content:
@@ -5130,6 +5117,55 @@ paths:
                 properties:
                   recorded:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Auth
+      summary: Clear my autocomplete history
+      operationId: deleteSuggestHistory
+      description: |-
+        Deletes the caller's autocomplete history in every organisation → `{"deleted": n}`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/export/view:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Reports and export
+      summary: Export a view
+      operationId: postProjectsByPidExportView
+      description: |-
+        Renders a table the client shows (e.g. the spreadsheet view with its visible columns, order, sort and filters) as `xlsx`, `csv`, `md`, `pdf` or `docx`. At most 200 columns and 2,000,000 cells. The response has `Content-Disposition: attachment; filename="<KEY>-<name>-<YYYYMMDD-HHMMSS>.<ext>"`.
+
+        **Permission:** `export`.
+      x-permission: export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
               required:
               - format
               - columns
@@ -5189,30 +5225,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        default:
-          $ref: '#/components/responses/Error'
-    delete:
-      tags:
-      - Auth
-      summary: Clear my autocomplete history
-      operationId: deleteSuggestHistory
-      description: |-
-        Deletes the caller's autocomplete history in every organisation → `{"deleted": n}`.
-
-        **Permission:** signed in.
-      x-permission: authenticated
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  deleted:
-                    type: integer
-        '401':
-          $ref: '#/components/responses/Unauthorized'
         default:
           $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/export:
