@@ -352,6 +352,144 @@ requirements:
         - method: inspection
           text: Varje ändringsorder de senaste 12 månaderna som berör delar för säkerhet eller EMC har en bedömning och, där det anges, en ny provningsrapport daterad före produktionsstart.
 
+  - id: HWEMC-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [market-access, compliance-matrix, other-markets]
+    refs: ["Commission Notice 2022/C 247/01 (Blue Guide)"]
+    tests: [HWEMC-T11]
+    en:
+      title: Compliance matrix for each market outside the EU
+      description: The manufacturer MUST keep, for each target market outside the EU, a compliance matrix listing the approvals, markings, test reports and local representative the market's rules call for, approved before the product is shipped to that market.
+      rationale: Each market has its own approval and marking rules, and a product shipped without them can be stopped at customs or withdrawn.
+      criteria:
+        - method: inspection
+          text: For each market in the sales plan, the matrix lists the approvals and markings with references to the evidence, and the approval date precedes the first shipment.
+    sv:
+      title: Matris över regelefterlevnad för varje marknad utanför EU
+      description: Tillverkaren SKA för varje målmarknad utanför EU ha en matris över regelefterlevnad som anger de godkännanden, märkningar, testrapporter och lokala representanter som marknadens regler kräver, godkänd innan produkten levereras till den marknaden.
+      rationale: Varje marknad har egna regler för godkännande och märkning, och en produkt som levereras utan dem kan stoppas i tullen eller dras tillbaka.
+      criteria:
+        - method: inspection
+          text: För varje marknad i försäljningsplanen anger matrisen godkännanden och märkningar med hänvisningar till underlagen, och godkännandedatumet ligger före den första leveransen.
+
+  - id: HWEMC-17
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [fcc, emissions, united-states]
+    refs: ["47 CFR Part 15 §15.109 (radiated emission limits)", "47 CFR Part 2 §2.906 (supplier's declaration of conformity)"]
+    tests: [HWEMC-T11]
+    en:
+      title: Unintentional radiators for the United States within the FCC class limits
+      description: A digital device sold in the United States MUST meet the radiated and conducted emission limits of its FCC Part 15 class, shown by a test report, before a supplier's declaration of conformity is issued.
+      rationale: Digital devices placed on the US market without authorisation under the FCC rules can be refused entry and lead to fines.
+      criteria:
+        - method: inspection
+          text: The test report shows the emissions below the class limits, and the supplier's declaration of conformity refers to the report and to the tested model.
+    sv:
+      title: Oavsiktliga strålkällor för USA inom FCC:s klassgränser
+      description: En digital apparat som säljs i USA SKA uppfylla gränserna för utstrålade och ledningsbundna emissioner för sin klass enligt FCC Part 15, visat med en testrapport, innan en leverantörsförsäkran om överensstämmelse utfärdas.
+      rationale: Digitala apparater som släpps ut på den amerikanska marknaden utan godkännande enligt FCC:s regler kan nekas införsel och leda till böter.
+      criteria:
+        - method: inspection
+          text: Testrapporten visar emissioner under klassgränserna, och leverantörsförsäkran hänvisar till rapporten och till den testade modellen.
+
+  - id: HWEMC-18
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [harmonics, flicker, mains]
+    refs: ["IEC 61000-3-2:2018 (limits for harmonic current emissions)", "IEC 61000-3-3:2013 (limitation of voltage changes, fluctuations and flicker)"]
+    tests: [HWEMC-T12]
+    en:
+      title: Harmonic current and flicker within limits on the public mains
+      description: A product that connects to the public low-voltage mains with an input current of up to 16 A per phase MUST keep its harmonic currents within the limits of its IEC 61000-3-2 class and its voltage fluctuations within the IEC 61000-3-3 limits.
+      rationale: Harmonic currents from many devices distort the supply voltage, and rapid load changes cause visible light flicker for other users of the network.
+      criteria:
+        - method: test
+          text: Measurements at rated voltage and full load show each harmonic up to the 40th and the flicker values within the limits.
+    sv:
+      title: Övertoner och flimmer inom gränserna på det allmänna elnätet
+      description: En produkt som ansluts till det allmänna lågspänningsnätet med en ingångsström på högst 16 A per fas SKA hålla sina övertonsströmmar inom gränserna för sin klass enligt IEC 61000-3-2 och sina spänningsvariationer inom gränserna i IEC 61000-3-3.
+      rationale: Övertonsströmmar från många apparater förvränger nätspänningen, och snabba lastförändringar ger synligt ljusflimmer för andra användare av nätet.
+      criteria:
+        - method: test
+          text: Mätningar vid märkspänning och full last visar att varje överton till och med den 40:e och flimmervärdena ligger inom gränserna.
+
+  - id: HWEMC-19
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [immunity, radio-frequency]
+    refs: ["IEC 61000-4-3:2020 (radiated, radio-frequency, electromagnetic field immunity)", "IEC 61000-4-6:2023 (immunity to conducted disturbances induced by radio-frequency fields)", "EN 55035:2017 (CISPR 35)"]
+    tests: [HWEMC-T13]
+    en:
+      title: Immunity to radiated and conducted radio-frequency fields
+      description: The product MUST keep its specified function without loss of data or reset when exposed to a radiated field of 3 V/m from 80 MHz to 6 GHz and to conducted disturbances of 3 V on each cable port.
+      rationale: Mobile phones, radios and nearby transmitters create fields that make poorly protected products reset or give wrong readings.
+      criteria:
+        - method: test
+          text: The immunity test report shows performance criterion A at 3 V/m and 3 V over the stated frequency range.
+          threshold: 3 V/m, 3 V
+    sv:
+      title: Immunitet mot utstrålade och ledningsbundna radiofrekventa fält
+      description: Produkten SKA behålla sin specificerade funktion utan dataförlust eller omstart när den utsätts för ett utstrålat fält på 3 V/m från 80 MHz till 6 GHz och för ledningsbundna störningar på 3 V på varje kabelport.
+      rationale: Mobiltelefoner, radioapparater och närliggande sändare ger fält som får dåligt skyddade produkter att starta om eller visa fel värden.
+      criteria:
+        - method: test
+          text: Testrapporten för immunitet visar funktionskriterium A vid 3 V/m och 3 V över det angivna frekvensområdet.
+          threshold: 3 V/m, 3 V
+
+  - id: HWEMC-20
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [protective-earth, production-test, class-i]
+    refs: ["IEC 62368-1:2023 (protective bonding)"]
+    tests: [HWEMC-T14]
+    en:
+      title: Protective earth continuity tested on each class I unit
+      description: The production test MUST measure the resistance between the earth pin of the mains inlet and each accessible conductive part of each class I unit, and reject a unit above 0.1 Ω at a test current of at least 10 A.
+      rationale: A loose or missing earth connection leaves metal parts that can become live after an insulation fault, and is not found by a functional test.
+      criteria:
+        - method: test
+          text: A unit with the earth screw loosened is rejected by the test station, and the production records show a measured value for each shipped unit.
+          threshold: ≤ 0.1 Ω
+    sv:
+      title: Skyddsjordens kontinuitet provas på varje enhet i skyddsklass I
+      description: Produktionsprovningen SKA mäta resistansen mellan jordstiftet i nätintaget och varje åtkomlig ledande del på varje enhet i skyddsklass I, och underkänna en enhet över 0,1 Ω vid en provström på minst 10 A.
+      rationale: En lös eller saknad jordförbindelse lämnar metalldelar som kan bli spänningsförande efter ett isolationsfel, och upptäcks inte vid ett funktionsprov.
+      criteria:
+        - method: test
+          text: En enhet med lossad jordskruv underkänns av teststationen, och produktionsprotokollen visar ett uppmätt värde för varje levererad enhet.
+          threshold: ≤ 0,1 Ω
+
+  - id: HWEMC-21
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [touch-temperature, burn, safety]
+    refs: ["IEC 62368-1:2023 (thermal burn injury)"]
+    tests: [HWEMC-T14]
+    en:
+      title: Accessible surfaces below the touch temperature limits
+      description: In normal use at the maximum rated ambient temperature, each surface that a user can touch MUST stay within the temperature limits of IEC 62368-1 for its material and contact time, with metal surfaces held in normal use at no more than 48 °C.
+      rationale: Users touch enclosures, handles and connectors, and hot surfaces cause burns or make users drop the product.
+      criteria:
+        - method: test
+          text: Thermocouple measurements at the maximum rated ambient and full load show each accessible surface within its limit.
+          threshold: metal handled surfaces ≤ 48 °C
+    sv:
+      title: Åtkomliga ytor under gränserna för beröringstemperatur
+      description: Vid normal användning och den högsta angivna omgivningstemperaturen SKA varje yta som en användare kan röra hålla sig inom temperaturgränserna i IEC 62368-1 för sitt material och sin kontakttid, och metallytor som hålls vid normal användning ligger på högst 48 °C.
+      rationale: Användare rör vid höljen, handtag och kontakter, och heta ytor orsakar brännskador eller gör att användaren tappar produkten.
+      criteria:
+        - method: test
+          text: Mätningar med termoelement vid högsta angivna omgivningstemperatur och full last visar att varje åtkomlig yta ligger inom sin gräns.
+          threshold: metallytor som hålls ≤ 48 °C
+
 tests:
   - id: HWEMC-T01
     priority: critical
@@ -636,3 +774,137 @@ tests:
           expected: Den filtrerade listan tas fram.
         - action: Läs bedömningen och de provningsrapporter som anges för varje filtrerad ändring.
           expected: Var och en har en bedömning och varje angiven provningsrapport, daterade före produktionsstart.
+
+  - id: HWEMC-T11
+    priority: high
+    execution: manual
+    tags: [market-access, fcc]
+    refs: ["Commission Notice 2022/C 247/01 (Blue Guide)", "47 CFR Part 15 §15.109 (radiated emission limits)", "47 CFR Part 2 §2.906 (supplier's declaration of conformity)"]
+    en:
+      title: Market compliance matrix and evidence for a non-EU market
+      description: Checks the compliance matrix of each non-EU market and the evidence behind it, with the United States as an example.
+      preconditions: The sales plan, the compliance matrices, the shipping records and, for the United States, the FCC test report and the supplier's declaration of conformity.
+      expected: Each market has an approved matrix with evidence before the first shipment.
+      steps:
+        - action: Compare the markets in the sales plan with the compliance matrices.
+          expected: Each non-EU market has a matrix.
+        - action: Compare the approval date of each matrix with the first shipment to that market.
+          expected: Each matrix was approved before the first shipment.
+        - action: Open the FCC test report and compare the results with the class limits.
+          expected: Each emission result is below the limit of the declared class.
+        - action: Read the supplier's declaration of conformity.
+          expected: It names the tested model and refers to the test report.
+    sv:
+      title: Matris över regelefterlevnad och underlag för en marknad utanför EU
+      description: Kontrollerar matrisen över regelefterlevnad för varje marknad utanför EU och underlagen bakom den, med USA som exempel.
+      preconditions: Försäljningsplanen, matriserna över regelefterlevnad, leveransprotokollen och, för USA, testrapporten enligt FCC och leverantörsförsäkran om överensstämmelse.
+      expected: Varje marknad har en godkänd matris med underlag före den första leveransen.
+      steps:
+        - action: Jämför marknaderna i försäljningsplanen med matriserna över regelefterlevnad.
+          expected: Varje marknad utanför EU har en matris.
+        - action: Jämför godkännandedatumet för varje matris med den första leveransen till den marknaden.
+          expected: Varje matris godkändes före den första leveransen.
+        - action: Öppna testrapporten enligt FCC och jämför resultaten med klassgränserna.
+          expected: Varje emissionsresultat ligger under gränsen för den angivna klassen.
+        - action: Läs leverantörsförsäkran om överensstämmelse.
+          expected: Den anger den testade modellen och hänvisar till testrapporten.
+
+  - id: HWEMC-T12
+    priority: high
+    execution: manual
+    tags: [harmonics, flicker]
+    refs: ["IEC 61000-3-2:2018 (limits for harmonic current emissions)", "IEC 61000-3-3:2013 (limitation of voltage changes, fluctuations and flicker)"]
+    en:
+      title: Harmonic current and flicker measurement
+      description: Measures harmonic currents and flicker of a mains-powered product at full load.
+      preconditions: A product sample, a power analyser and flicker meter meeting the measurement standards, and a reference supply set to the rated voltage.
+      expected: Each harmonic and each flicker value is within its limit.
+      steps:
+        - action: Run the product at full load from the reference supply until its input power is stable.
+          expected: The input power changes by less than 2 % over 5 minutes.
+          data: 230 V, 50 Hz
+        - action: Record the harmonic currents up to the 40th order over the observation period.
+          expected: Each harmonic is below the limit of the product's class.
+        - action: Record the short-term flicker and the relative voltage change over a cycle of operating modes.
+          expected: The flicker and voltage change values are below the limits.
+    sv:
+      title: Mätning av övertonsströmmar och flimmer
+      description: Mäter övertonsströmmar och flimmer från en nätansluten produkt vid full last.
+      preconditions: Ett produktexemplar, en effektanalysator och flimmermätare som uppfyller mätstandarderna, och en referensmatning inställd på märkspänningen.
+      expected: Varje överton och varje flimmervärde ligger inom sin gräns.
+      steps:
+        - action: Kör produkten med full last från referensmatningen tills ingångseffekten är stabil.
+          expected: Ingångseffekten ändras mindre än 2 % under 5 minuter.
+          data: 230 V, 50 Hz
+        - action: Registrera övertonsströmmarna till och med ordning 40 under observationsperioden.
+          expected: Varje överton ligger under gränsen för produktens klass.
+        - action: Registrera korttidsflimmer och relativ spänningsändring över en cykel av driftlägen.
+          expected: Värdena för flimmer och spänningsändring ligger under gränserna.
+
+  - id: HWEMC-T13
+    priority: high
+    execution: manual
+    tags: [immunity]
+    refs: ["IEC 61000-4-3:2020 (radiated, radio-frequency, electromagnetic field immunity)", "IEC 61000-4-6:2023 (immunity to conducted disturbances induced by radio-frequency fields)", "EN 55035:2017 (CISPR 35)"]
+    en:
+      title: Radiated and conducted radio-frequency immunity
+      description: Exposes the product to radiated and conducted radio-frequency disturbances while it runs its test mode.
+      preconditions: An accredited or in-house EMC laboratory with an anechoic chamber and coupling networks, and the product in a test mode that shows its function and error counters.
+      expected: The product works without reset or data loss during each test.
+      steps:
+        - action: Sweep a 3 V/m field from 80 MHz to 6 GHz with 80 % amplitude modulation at each face of the product.
+          expected: No reset, display fault or error count increase.
+          data: 3 V/m, 1 kHz 80 % AM, 1 % frequency steps
+        - action: Inject 3 V of conducted disturbance on each power and signal cable port from 150 kHz to 80 MHz.
+          expected: No reset, display fault or error count increase.
+        - action: Read the error counters and data log after the test.
+          expected: No data has been lost.
+    sv:
+      title: Immunitet mot utstrålade och ledningsbundna radiofrekventa störningar
+      description: Utsätter produkten för utstrålade och ledningsbundna radiofrekventa störningar medan den kör sitt testläge.
+      preconditions: Ett ackrediterat eller eget EMC-laboratorium med ekofritt rum och kopplingsnät, och produkten i ett testläge som visar dess funktion och felräknare.
+      expected: Produkten fungerar utan omstart eller dataförlust under varje prov.
+      steps:
+        - action: Svep ett fält på 3 V/m från 80 MHz till 6 GHz med 80 % amplitudmodulering mot varje sida av produkten.
+          expected: Ingen omstart, inget visningsfel och ingen ökning av felräknaren.
+          data: 3 V/m, 1 kHz 80 % AM, frekvenssteg om 1 %
+        - action: Injicera 3 V ledningsbunden störning på varje kraft- och signalkabelport från 150 kHz till 80 MHz.
+          expected: Ingen omstart, inget visningsfel och ingen ökning av felräknaren.
+        - action: Läs felräknarna och dataloggen efter provet.
+          expected: Inga data har gått förlorade.
+
+  - id: HWEMC-T14
+    priority: high
+    execution: manual
+    tags: [protective-earth, touch-temperature]
+    refs: ["IEC 62368-1:2023 (protective bonding)", "IEC 62368-1:2023 (thermal burn injury)"]
+    en:
+      title: Earth continuity rejection and surface temperatures
+      description: Checks that the production earth continuity test rejects a faulty unit and measures the accessible surface temperatures.
+      preconditions: The production test station, a class I unit with its earth screw loosened, a sample unit with thermocouples on the accessible surfaces and a climatic chamber.
+      expected: The faulty unit is rejected and each surface is within its temperature limit.
+      steps:
+        - action: Test the unit with the loosened earth screw on the production station.
+          expected: The station measures more than 0.1 Ω and rejects the unit.
+        - action: Read the earth continuity results in the production records for one week.
+          expected: Each shipped unit has a measured value of at most 0.1 Ω.
+        - action: Run the sample unit at full load in the chamber at the maximum rated ambient until temperatures are stable.
+          expected: The temperatures change by less than 1 °C over 30 minutes.
+          data: +40 °C ambient
+        - action: Read the surface thermocouples.
+          expected: Each surface is within its limit and handled metal parts are at most 48 °C.
+    sv:
+      title: Underkänd jordkontinuitet och yttemperaturer
+      description: Kontrollerar att produktionens prov av jordkontinuitet underkänner en felaktig enhet och mäter temperaturen på åtkomliga ytor.
+      preconditions: Produktionens teststation, en enhet i skyddsklass I med lossad jordskruv, ett exemplar med termoelement på de åtkomliga ytorna och en klimatkammare.
+      expected: Den felaktiga enheten underkänns och varje yta ligger inom sin temperaturgräns.
+      steps:
+        - action: Prova enheten med lossad jordskruv på produktionsstationen.
+          expected: Stationen mäter mer än 0,1 Ω och underkänner enheten.
+        - action: Läs resultaten för jordkontinuitet i produktionsprotokollen för en vecka.
+          expected: Varje levererad enhet har ett uppmätt värde på högst 0,1 Ω.
+        - action: Kör exemplaret med full last i kammaren vid högsta angivna omgivningstemperatur tills temperaturerna är stabila.
+          expected: Temperaturerna ändras mindre än 1 °C under 30 minuter.
+          data: +40 °C omgivning
+        - action: Läs termoelementen på ytorna.
+          expected: Varje yta ligger inom sin gräns och metalldelar som hålls har högst 48 °C.

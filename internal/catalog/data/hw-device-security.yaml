@@ -326,6 +326,142 @@ requirements:
         - method: test
           text: Råa sampel från entropikällan klarar uppskattningen enligt SP 800-90B med minst den min-entropi som anges i konstruktionen, och ett framtvingat fel i hälsotestet stoppar nyckelgenereringen med ett loggat fel.
 
+  - id: HWSEC-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [firmware, fallback, boot]
+    refs: ["NIST SP 800-193 (platform firmware resiliency)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
+    tests: [HWSEC-T11]
+    en:
+      title: Automatic return to the previous firmware after a failed start
+      description: The device MUST start the previous firmware image when a newly installed image fails its start-up health check or does not confirm a successful start within 5 minutes.
+      rationale: An update that installs correctly but does not run leaves a device out of service unless it can return to the last working image by itself.
+      criteria:
+        - method: test
+          text: An image built to fail its health check is installed, and the device runs the previous image within 5 minutes without manual action.
+          threshold: ≤ 5 min
+    sv:
+      title: Automatisk återgång till föregående firmware efter en misslyckad start
+      description: Enheten SKA starta den föregående firmwareavbildningen när en nyinstallerad avbildning inte klarar sin hälsokontroll vid start eller inte bekräftar en lyckad start inom 5 minuter.
+      rationale: En uppdatering som installeras korrekt men inte fungerar gör att enheten står utan funktion om den inte själv kan gå tillbaka till den senaste fungerande avbildningen.
+      criteria:
+        - method: test
+          text: En avbildning som byggts för att inte klara hälsokontrollen installeras, och enheten kör den föregående avbildningen inom 5 minuter utan manuell åtgärd.
+          threshold: ≤ 5 min
+
+  - id: HWSEC-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [firmware, memory-protection, exploit-mitigation]
+    refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)"]
+    tests: [HWSEC-T12]
+    en:
+      title: Stack and data memory not executable
+      description: The firmware MUST configure the memory protection unit so that stack, heap and other writable data regions are not executable and code regions are not writable at run time.
+      rationale: Marking writable memory as non-executable stops a buffer overflow from running injected code, which is the most common way to take over an embedded device.
+      criteria:
+        - method: test
+          text: A debug build that jumps into a stack buffer and writes to a code region raises a memory fault in both cases.
+    sv:
+      title: Stack- och dataminne är inte körbart
+      description: Firmware SKA konfigurera minnesskyddsenheten så att stack, heap och andra skrivbara dataområden inte är körbara och kodområden inte är skrivbara under drift.
+      rationale: När skrivbart minne markeras som icke körbart kan ett buffertspill inte köra inskjuten kod, vilket är det vanligaste sättet att ta över en inbyggd enhet.
+      criteria:
+        - method: test
+          text: En felsökningsversion som hoppar in i en stackbuffert och skriver till ett kodområde ger ett minnesfel i båda fallen.
+
+  - id: HWSEC-17
+    type: security
+    obligation: must
+    priority: high
+    tags: [device-identity, certificate, provisioning]
+    refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    tests: [HWSEC-T13]
+    en:
+      title: Unique device identity certificate from production
+      description: Each device MUST leave production with a unique key pair generated inside the device and a certificate for it signed by the manufacturer's device certification authority.
+      rationale: A per-device identity lets back-end services authenticate each device, and lets a compromised device be revoked without affecting the rest of the fleet.
+      criteria:
+        - method: test
+          text: Certificates read from 10 devices of one lot have distinct public keys and serial numbers and validate against the manufacturer's device certification authority.
+    sv:
+      title: Unik identitetscertifikat för enheten från produktionen
+      description: Varje enhet SKA lämna produktionen med ett unikt nyckelpar som genererats i enheten och ett certifikat för det som signerats av tillverkarens certifikatutfärdare för enheter.
+      rationale: En identitet per enhet gör att tjänster i bakänden kan autentisera varje enhet, och att en komprometterad enhet kan spärras utan att resten av beståndet påverkas.
+      criteria:
+        - method: test
+          text: Certifikat som läses från 10 enheter ur en serie har olika publika nycklar och serienummer och valideras mot tillverkarens certifikatutfärdare för enheter.
+
+  - id: HWSEC-18
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [provisioning, private-keys, production]
+    refs: ["IEC 62443-4-1 SM-8"]
+    tests: [HWSEC-T13]
+    en:
+      title: No device private key leaves the device in production
+      description: The production test station MUST NOT read, store or log the private key of a device that it provisions.
+      rationale: A production station that stores keys becomes a single place from which every device identity can be copied.
+      criteria:
+        - method: inspection
+          text: A review of the station software and a search of its logs and storage find no device private key.
+    sv:
+      title: Ingen privat nyckel lämnar enheten i produktionen
+      description: Produktionens teststation SKA INTE läsa, lagra eller logga den privata nyckeln för en enhet som den programmerar.
+      rationale: En produktionsstation som lagrar nycklar blir en enda plats där varje enhetsidentitet kan kopieras.
+      criteria:
+        - method: inspection
+          text: En granskning av stationens programvara och en sökning i dess loggar och lagring hittar ingen privat nyckel för enheter.
+
+  - id: HWSEC-19
+    type: security
+    obligation: must
+    priority: high
+    tags: [external-flash, encryption, confidentiality]
+    refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    tests: [HWSEC-T14]
+    en:
+      title: Data in external flash encrypted with a device-unique key
+      description: The device MUST encrypt configuration, credentials and user data stored in external flash memory with a key that is unique to the device and stored only in protected internal storage.
+      rationale: External flash can be desoldered and read in minutes, so data stored in clear or with a shared key is exposed by one stolen device.
+      criteria:
+        - method: test
+          text: A raw dump of the external flash of a configured device contains none of the configured credentials or test strings in clear, and the dump does not decrypt on a second device.
+    sv:
+      title: Data i externt flashminne krypteras med en nyckel som är unik för enheten
+      description: Enheten SKA kryptera konfiguration, inloggningsuppgifter och användardata som lagras i externt flashminne med en nyckel som är unik för enheten och som endast lagras i skyddad intern lagring.
+      rationale: Externt flashminne kan lödas loss och läsas på några minuter, så data som lagras i klartext eller med en gemensam nyckel exponeras genom en enda stulen enhet.
+      criteria:
+        - method: test
+          text: En rådump av det externa flashminnet i en konfigurerad enhet innehåller ingen av de konfigurerade inloggningsuppgifterna eller teststrängarna i klartext, och dumpen går inte att dekryptera på en andra enhet.
+
+  - id: HWSEC-20
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-updates, support, free-of-charge]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8"]
+    tests: [HWSEC-T15]
+    en:
+      title: Security updates published within 30 days and free of charge
+      description: The manufacturer MUST publish a firmware update that fixes each actively exploited or critical vulnerability within 30 days of confirming it, free of charge to each user within the support period.
+      rationale: Users can only stay protected when fixes arrive soon after a flaw is known and nothing stops them from installing it.
+      criteria:
+        - method: inspection
+          text: The vulnerability records of the last 12 months show, for each critical or exploited vulnerability, a free update published within 30 days of confirmation.
+          threshold: ≤ 30 days
+    sv:
+      title: Säkerhetsuppdateringar publiceras inom 30 dagar och utan kostnad
+      description: Tillverkaren SKA publicera en firmwareuppdatering som åtgärdar varje aktivt utnyttjad eller kritisk sårbarhet inom 30 dagar från att den bekräftats, utan kostnad för varje användare inom supportperioden.
+      rationale: Användare kan bara förbli skyddade när rättningar kommer kort efter att en brist blivit känd och inget hindrar dem från att installera dem.
+      criteria:
+        - method: inspection
+          text: Sårbarhetsposterna för de senaste 12 månaderna visar, för varje kritisk eller utnyttjad sårbarhet, en kostnadsfri uppdatering som publicerats inom 30 dagar från bekräftelsen.
+          threshold: ≤ 30 dagar
+
 tests:
   - id: HWSEC-T01
     priority: critical
@@ -616,3 +752,155 @@ tests:
           expected: Den uppskattade min-entropin per sampel är minst det värde som anges i konstruktionen.
         - action: Framtvinga ett fel i hälsotestet och begär en ny nyckel.
           expected: Nyckelgenereringen stoppas och ett fel loggas.
+
+  - id: HWSEC-T11
+    priority: high
+    execution: manual
+    tags: [firmware, fallback]
+    refs: ["NIST SP 800-193 (platform firmware resiliency)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)"]
+    en:
+      title: Failed start of a new firmware image
+      description: Installs a firmware image that fails its health check and checks the automatic return to the previous image.
+      preconditions: A device running a known release, a correctly signed test image that fails its start-up health check, and access to the device log.
+      expected: The device returns to the previous image within 5 minutes and logs the event.
+      steps:
+        - action: Install the failing test image through the normal update path and start a timer.
+          expected: The update is accepted and the device restarts into the new image.
+        - action: Wait for the device to return to service.
+          expected: Within 5 minutes the device runs the previous release without manual action.
+        - action: Read the device log.
+          expected: The log records the failed health check and the return to the previous image.
+    sv:
+      title: Misslyckad start av en ny firmwareavbildning
+      description: Installerar en firmwareavbildning som inte klarar sin hälsokontroll och kontrollerar den automatiska återgången till föregående avbildning.
+      preconditions: En enhet med en känd version, en korrekt signerad testavbildning som inte klarar hälsokontrollen vid start och tillgång till enhetens logg.
+      expected: Enheten går tillbaka till föregående avbildning inom 5 minuter och loggar händelsen.
+      steps:
+        - action: Installera den felande testavbildningen via den vanliga uppdateringsvägen och starta en timer.
+          expected: Uppdateringen godtas och enheten startar om i den nya avbildningen.
+        - action: Vänta tills enheten är i drift igen.
+          expected: Inom 5 minuter kör enheten den föregående versionen utan manuell åtgärd.
+        - action: Läs enhetens logg.
+          expected: Loggen registrerar den misslyckade hälsokontrollen och återgången till föregående avbildning.
+
+  - id: HWSEC-T12
+    priority: high
+    execution: automated
+    tags: [memory-protection]
+    refs: ["IEC 62443-4-1 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)"]
+    en:
+      title: Execution from the stack and writes to code memory
+      description: A test build tries to execute code from the stack and to write to a code region, and the script checks that both cause a fault.
+      preconditions: A debug build of the current firmware with a test command that triggers each access, and a debug probe connected to a development unit.
+      expected: Both accesses are stopped by the memory protection unit.
+      steps:
+        - action: Send the test command that copies an instruction to a stack buffer and jumps to it.
+          expected: The processor raises a memory management fault and the device restarts.
+        - action: Send the test command that writes a word into the code region.
+          expected: The processor raises a memory management fault and the word in flash is unchanged.
+        - action: Read the memory protection unit regions with the debug probe.
+          expected: Each writable region has the execute-never attribute and each code region is read-only.
+    sv:
+      title: Körning från stacken och skrivning till kodminne
+      description: En testversion försöker köra kod från stacken och skriva till ett kodområde, och skriptet kontrollerar att båda ger ett fel.
+      preconditions: En felsökningsversion av aktuell firmware med ett testkommando som utlöser varje åtkomst, och en felsökningsprob ansluten till en utvecklingsenhet.
+      expected: Båda åtkomsterna stoppas av minnesskyddsenheten.
+      steps:
+        - action: Skicka testkommandot som kopierar en instruktion till en stackbuffert och hoppar dit.
+          expected: Processorn ger ett minneshanteringsfel och enheten startar om.
+        - action: Skicka testkommandot som skriver ett ord i kodområdet.
+          expected: Processorn ger ett minneshanteringsfel och ordet i flashminnet är oförändrat.
+        - action: Läs minnesskyddsenhetens regioner med felsökningsproben.
+          expected: Varje skrivbar region har attributet för icke körbar och varje kodregion är skrivskyddad.
+
+  - id: HWSEC-T13
+    priority: high
+    execution: manual
+    tags: [provisioning, device-identity]
+    refs: ["IEC 62443-4-2 CR 1.2", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "IEC 62443-4-1 SM-8"]
+    en:
+      title: Device certificates and key handling at the production station
+      description: Checks the identity certificates of produced devices and the key handling of the production test station.
+      preconditions: 10 devices from one production lot, the manufacturer's device certification authority certificate, and read access to the production station software, logs and storage.
+      expected: Each device has its own key pair and certificate, and the station holds no device private key.
+      steps:
+        - action: Read the identity certificate of each of the 10 devices.
+          expected: Each certificate has a distinct public key and serial number.
+        - action: Validate each certificate against the device certification authority.
+          expected: Each certificate validates.
+        - action: Search the station logs, database and file system for private key material.
+          expected: No device private key is found.
+    sv:
+      title: Enhetscertifikat och nyckelhantering i produktionens teststation
+      description: Kontrollerar identitetscertifikaten för producerade enheter och nyckelhanteringen i produktionens teststation.
+      preconditions: 10 enheter ur en produktionsserie, certifikatet för tillverkarens certifikatutfärdare för enheter och läsåtkomst till teststationens programvara, loggar och lagring.
+      expected: Varje enhet har ett eget nyckelpar och certifikat, och stationen innehåller inga privata nycklar för enheter.
+      steps:
+        - action: Läs identitetscertifikatet för var och en av de 10 enheterna.
+          expected: Varje certifikat har en egen publik nyckel och ett eget serienummer.
+        - action: Validera varje certifikat mot certifikatutfärdaren för enheter.
+          expected: Varje certifikat valideras.
+        - action: Sök efter privat nyckelmaterial i stationens loggar, databas och filsystem.
+          expected: Ingen privat nyckel för enheter hittas.
+
+  - id: HWSEC-T14
+    priority: high
+    execution: manual
+    tags: [external-flash, encryption]
+    refs: ["IEC 62443-4-2 CR 4.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)"]
+    en:
+      title: Raw dump of the external flash
+      description: Reads the external flash of a configured device and checks that secrets and user data are encrypted with a device-unique key.
+      preconditions: Two devices of the same model, one configured with known test credentials and test strings, and a flash programmer.
+      expected: No configured secret or test string is found in clear, and the data cannot be used on the second device.
+      steps:
+        - action: Configure the first device with the test credentials and a known test string in user data, then power it off.
+          expected: The device is configured.
+          data: test Wi-Fi password and the string QTF-FLASH-MARKER
+        - action: Read the external flash with the programmer and search the dump for the test values.
+          expected: None of the test values is found in clear.
+        - action: Write the dump to the external flash of the second device and start it.
+          expected: The second device does not show the first device's configuration or user data.
+    sv:
+      title: Rådump av det externa flashminnet
+      description: Läser det externa flashminnet i en konfigurerad enhet och kontrollerar att hemligheter och användardata är krypterade med en nyckel som är unik för enheten.
+      preconditions: Två enheter av samma modell, där den ena är konfigurerad med kända inloggningsuppgifter och teststrängar för test, och en programmerare för flashminne.
+      expected: Ingen konfigurerad hemlighet eller teststräng hittas i klartext, och datan går inte att använda på den andra enheten.
+      steps:
+        - action: Konfigurera den första enheten med testuppgifterna och en känd teststräng i användardata och stäng sedan av den.
+          expected: Enheten är konfigurerad.
+          data: testlösenord för Wi-Fi och strängen QTF-FLASH-MARKER
+        - action: Läs det externa flashminnet med programmeraren och sök efter testvärdena i dumpen.
+          expected: Inget av testvärdena hittas i klartext.
+        - action: Skriv dumpen till det externa flashminnet i den andra enheten och starta den.
+          expected: Den andra enheten visar inte den första enhetens konfiguration eller användardata.
+
+  - id: HWSEC-T15
+    priority: high
+    execution: manual
+    tags: [security-updates]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §8"]
+    en:
+      title: Time from confirmed vulnerability to free update
+      description: Compares the confirmation date of each critical or exploited vulnerability with the publication date of its fix.
+      preconditions: The vulnerability records and the firmware release notes of the last 12 months, and the update terms published to users.
+      expected: Each fix is published within 30 days of confirmation and offered at no cost.
+      steps:
+        - action: List the vulnerabilities rated critical or marked as actively exploited with their confirmation dates.
+          expected: The list is complete against the vulnerability records.
+        - action: Find the release that fixes each one and its publication date.
+          expected: Each fix was published within 30 days of confirmation.
+        - action: Read the update terms for users within the support period.
+          expected: The security updates are offered without a fee or a paid subscription.
+    sv:
+      title: Tid från bekräftad sårbarhet till kostnadsfri uppdatering
+      description: Jämför datumet då varje kritisk eller utnyttjad sårbarhet bekräftades med publiceringsdatumet för dess rättning.
+      preconditions: Sårbarhetsposterna och versionsinformationen för firmware för de senaste 12 månaderna, och de villkor för uppdateringar som publicerats för användarna.
+      expected: Varje rättning publiceras inom 30 dagar från bekräftelsen och erbjuds utan kostnad.
+      steps:
+        - action: Lista sårbarheterna som klassats som kritiska eller markerats som aktivt utnyttjade med deras datum för bekräftelse.
+          expected: Listan stämmer med sårbarhetsposterna.
+        - action: Hitta versionen som rättar var och en och dess publiceringsdatum.
+          expected: Varje rättning publicerades inom 30 dagar från bekräftelsen.
+        - action: Läs villkoren för uppdateringar för användare inom supportperioden.
+          expected: Säkerhetsuppdateringarna erbjuds utan avgift eller betald prenumeration.

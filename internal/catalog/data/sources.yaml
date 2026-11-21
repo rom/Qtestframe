@@ -1842,3 +1842,56 @@ sources:
     jurisdiction: US
     name: {en: "NIST system and platform security guidance (SP 800-160, 800-193, 800-90B)", sv: "NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)"}
     match: ["NIST SP 800-160", "NIST SP 800-193", "NIST SP 800-90B"]
+
+  # --- Sources added for the hardware, equipment, system and communications catalogues ---
+  - id: iec-lithium-batteries
+    kind: standard
+    jurisdiction: international
+    name: {en: "IEC standards for secondary lithium cells and batteries (IEC 62133, 61960, 62619)", sv: "IEC-standarder för sekundära litiumceller och litiumbatterier (IEC 62133, 61960, 62619)"}
+    match: ["IEC 62133", "IEC 61960", "IEC 62619"]
+    url: https://webstore.iec.ch/en/publication/32662
+  - id: un-manual-tests-criteria
+    kind: guideline
+    jurisdiction: international
+    name: {en: "UN Recommendations on the Transport of Dangerous Goods, Manual of Tests and Criteria", sv: "FN:s rekommendationer om transport av farligt gods, handbok för provning och kriterier"}
+    match: ["UN Manual of Tests and Criteria"]
+    url: https://unece.org/transport/dangerous-goods/un-manual-tests-and-criteria
+  - id: espr
+    kind: law
+    jurisdiction: EU
+    short: ESPR
+    name: {en: "Ecodesign for Sustainable Products Regulation, Regulation (EU) 2024/1781", sv: "Förordningen om ekodesign för hållbara produkter (EU) 2024/1781"}
+    match: ["Regulation (EU) 2024/1781"]
+    url: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+  - id: ecodesign-standby
+    kind: law
+    jurisdiction: EU
+    name: {en: "Commission Regulation (EU) 2023/826, ecodesign requirements for off mode, standby mode and networked standby", sv: "Kommissionens förordning (EU) 2023/826 om ekodesignkrav för frånläge, standbyläge och nätverksanslutet standbyläge"}
+    match: ["Commission Regulation (EU) 2023/826"]
+    url: https://eur-lex.europa.eu/eli/reg/2023/826/oj
+  - id: ecodesign-eps
+    kind: law
+    jurisdiction: EU
+    name: {en: "Commission Regulation (EU) 2019/1782, ecodesign requirements for external power supplies", sv: "Kommissionens förordning (EU) 2019/1782 om ekodesignkrav för externa nätaggregat"}
+    match: ["Commission Regulation (EU) 2019/1782"]
+    url: https://eur-lex.europa.eu/eli/reg/2019/1782/oj
+  - id: common-charger
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Common charger, Directive (EU) 2022/2380 amending the Radio Equipment Directive", sv: "Gemensam laddare, direktiv (EU) 2022/2380 om ändring av radioutrustningsdirektivet"}
+    match: ["Directive (EU) 2022/2380"]
+    url: https://eur-lex.europa.eu/eli/dir/2022/2380/oj
+  - id: iec-61340
+    kind: standard
+    jurisdiction: international
+    short: IEC 61340
+    name: {en: "IEC 61340 Electrostatics, protection of electronic devices from electrostatic phenomena", sv: "IEC 61340 Elektrostatik, skydd av elektroniska komponenter mot elektrostatiska fenomen"}
+    match: ["IEC 61340"]
+    url: https://www.iec.ch/
+  - id: fcc-47-cfr
+    kind: law
+    jurisdiction: US
+    short: FCC 47 CFR
+    name: {en: "US Code of Federal Regulations Title 47 (FCC), Parts 2 and 15", sv: "USA:s Code of Federal Regulations avdelning 47 (FCC), del 2 och 15"}
+    match: ["47 CFR Part 15", "47 CFR Part 2 "]
+    url: https://www.ecfr.gov/current/title-47
