@@ -1,0 +1,895 @@
+area: electrical-energy
+prefix: ENRG
+group: domain
+name: {en: Electrical energy, sv: Elenergi}
+description:
+  en: Software and systems for electricity transmission, distribution and metering, covering SCADA, EMS and DMS functions, IEC 61850 substation communication, secure telecontrol protocols, smart metering, frequency-based load shedding, outage management, market and balancing data exchange, time synchronisation, backup control centres, remote access and security monitoring of the grid.
+  sv: Programvara och system för överföring, distribution och mätning av el, med funktioner i SCADA, EMS och DMS, kommunikation i ställverk enligt IEC 61850, säkra fjärrkontrollprotokoll, smarta elmätare, frekvensstyrd lastfrånkoppling, avbrottshantering, utbyte av marknads- och balansdata, tidssynkronisering, reservdriftcentraler, fjärråtkomst och säkerhetsövervakning av elnätet.
+
+requirements:
+  - id: ENRG-01
+    type: performance
+    obligation: must
+    priority: high
+    tags: [scada, telemetry, scan-rate]
+    refs: ["IEC 60870-4:1990", "IEC 60870-5-104:2006", "ISO/IEC 25010:2023 time behaviour"]
+    tests: [ENRG-T01]
+    en:
+      title: Telemetry reaches SCADA within seconds
+      description: The SCADA system MUST show a breaker status change from a substation within 2 seconds and an analogue measurement change beyond its deadband within 4 seconds after the change at the RTU or IED, with the quality flags of the source.
+      rationale: Grid operators switch and redispatch on the values they see, and stale values lead to wrong decisions during disturbances.
+      criteria:
+        - method: test
+          text: For 20 operated breakers and 20 stepped analogue values, the time from the change at the RTU to the display in SCADA is measured with synchronised clocks.
+          threshold: status ≤ 2 s; analogue ≤ 4 s
+    sv:
+      title: Mätvärden når SCADA inom sekunder
+      description: SCADA-systemet SKA visa en ändrad brytarställning från ett ställverk inom 2 sekunder och en ändring av ett analogt mätvärde utöver dess dödband inom 4 sekunder efter ändringen i RTU:n eller IED:n, med källans kvalitetsflaggor.
+      rationale: Driftoperatörer kopplar om och omfördelar produktion utifrån de värden de ser, och inaktuella värden leder till felaktiga beslut vid störningar.
+      criteria:
+        - method: test
+          text: För 20 manövrerade brytare och 20 stegade analoga värden mäts tiden från ändringen i RTU:n till visningen i SCADA med synkroniserade klockor.
+          threshold: ställning ≤ 2 s; analogt ≤ 4 s
+
+  - id: ENRG-02
+    type: functional
+    obligation: must
+    priority: high
+    tags: [ems, state-estimation]
+    refs: ["Commission Regulation (EU) 2017/1485 (SO GL)", "IEC 61970-301 (CIM)"]
+    tests: [ENRG-T02]
+    en:
+      title: State estimation runs every minute and after topology changes
+      description: The EMS MUST run the state estimator every 60 seconds and within 10 seconds after a topology change, and MUST alarm the operator when 3 runs in a row produce no valid solution.
+      rationale: Contingency analysis and security assessment depend on a current, valid estimate of the grid state.
+      criteria:
+        - method: test
+          text: Run times in the EMS log show intervals of at most 60 seconds, a run starts within 10 seconds after a breaker opening, and 3 forced non-converging runs raise an alarm.
+          threshold: every 60 s; ≤ 10 s after topology change
+    sv:
+      title: Tillståndsskattningen körs varje minut och efter topologiändringar
+      description: EMS-systemet SKA köra tillståndsskattningen var 60:e sekund och inom 10 sekunder efter en topologiändring, och larma operatören när 3 körningar i följd inte ger någon giltig lösning.
+      rationale: Analys av felfall och bedömning av driftsäkerheten bygger på en aktuell och giltig skattning av nätets tillstånd.
+      criteria:
+        - method: test
+          text: Körtiderna i EMS-loggen visar intervall på högst 60 sekunder, en körning startar inom 10 sekunder efter att en brytare öppnats, och 3 framtvingade körningar som inte konvergerar ger ett larm.
+          threshold: var 60:e s; ≤ 10 s efter topologiändring
+
+  - id: ENRG-03
+    type: performance
+    obligation: must
+    priority: critical
+    tags: [iec-61850, goose, protection]
+    refs: ["IEC 61850-5:2013 transfer time class TT6", "IEC 61850-8-1:2011", "IEC 61850-10:2012"]
+    tests: [ENRG-T03]
+    en:
+      title: GOOSE trip messages delivered within 3 ms
+      description: The substation automation system MUST deliver a GOOSE trip or interlocking message from the publishing IED to the subscribing IED with a transfer time of at most 3 ms, also while the station bus carries 50 % background load.
+      rationale: Protection schemes that use GOOSE instead of wires only clear faults in time when messages arrive within the time class of hard-wired signals.
+      criteria:
+        - method: test
+          text: Over 1 000 trip messages measured with a time-synchronised network analyser, the longest transfer time is at most 3 ms with and without background load.
+          threshold: ≤ 3 ms
+    sv:
+      title: GOOSE-meddelanden för utlösning levereras inom 3 ms
+      description: Stationsautomationssystemet SKA leverera ett GOOSE-meddelande för utlösning eller förregling från den publicerande IED:n till den prenumererande IED:n med en överföringstid på högst 3 ms, även när stationsbussen har 50 % bakgrundslast.
+      rationale: Skyddssystem som använder GOOSE i stället för kablar bortkopplar bara fel i tid när meddelandena kommer fram inom samma tidsklass som trådbundna signaler.
+      criteria:
+        - method: test
+          text: Över 1 000 utlösningsmeddelanden som mäts med en tidssynkroniserad nätverksanalysator är den längsta överföringstiden högst 3 ms med och utan bakgrundslast.
+          threshold: ≤ 3 ms
+
+  - id: ENRG-04
+    type: functional
+    obligation: must
+    priority: high
+    tags: [iec-61850, test-mode, simulation]
+    refs: ["IEC 61850-7-4:2010 Mod and Beh", "IEC 61850-7-1:2011", "IEC 61850-8-1:2011"]
+    tests: [ENRG-T04]
+    en:
+      title: Test mode does not operate primary equipment
+      description: An IED in normal mode MUST ignore GOOSE and sampled value messages that carry the test flag, and the substation HMI MUST show each logical device that is in test, test-blocked or simulation mode.
+      rationale: Testing one protection function in a live substation must not trip breakers through messages that other IEDs take as real.
+      criteria:
+        - method: test
+          text: A test-flagged trip message from an IED in test mode does not operate the breaker of a subscriber in normal mode, and the HMI lists the IED in test mode.
+    sv:
+      title: Testläge manövrerar inte primärutrustning
+      description: En IED i normalläge SKA ignorera GOOSE-meddelanden och samplade värden som bär testflaggan, och ställverkets operatörsbild SKA visa varje logisk enhet som är i test-, testblockerat eller simuleringsläge.
+      rationale: Test av en skyddsfunktion i ett ställverk i drift ska inte lösa ut brytare genom meddelanden som andra IED:er tolkar som verkliga.
+      criteria:
+        - method: test
+          text: Ett testflaggat utlösningsmeddelande från en IED i testläge manövrerar inte brytaren hos en prenumerant i normalläge, och operatörsbilden listar IED:n i testläge.
+
+  - id: ENRG-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [iec-60870-5-104, dnp3, secure-authentication, iec-62351]
+    refs: ["IEC 62351-5", "IEC 62351-3", "IEEE 1815-2012 (DNP3 Secure Authentication v5)", "IEC 62443-3-3:2013 SR 3.1"]
+    tests: [ENRG-T05]
+    en:
+      title: Telecontrol commands authenticated
+      description: The SCADA front end MUST send control commands to RTUs over IEC 60870-5-104 or DNP3 only with IEC 62351-5 or DNP3 Secure Authentication, over TLS according to IEC 62351-3 where the link is IP-based, and the RTU MUST reject a command whose authentication fails.
+      rationale: Unauthenticated telecontrol lets anyone with network access open breakers, as in known attacks on distribution grids.
+      criteria:
+        - method: test
+          text: A select-before-operate command with a valid authentication is executed, and the same command with a changed authentication value or a replayed sequence number is rejected and logged.
+    sv:
+      title: Fjärrkontrollkommandon autentiseras
+      description: SCADA-systemets frontend SKA skicka styrkommandon till RTU:er över IEC 60870-5-104 eller DNP3 bara med autentisering enligt IEC 62351-5 eller DNP3 Secure Authentication, över TLS enligt IEC 62351-3 där förbindelsen är IP-baserad, och RTU:n SKA avvisa ett kommando vars autentisering misslyckas.
+      rationale: Oautentiserad fjärrkontroll låter vem som helst med nätåtkomst öppna brytare, som vid kända attacker mot distributionsnät.
+      criteria:
+        - method: test
+          text: Ett kommando med välj-före-manöver och giltig autentisering utförs, och samma kommando med ändrat autentiseringsvärde eller återspelat sekvensnummer avvisas och loggas.
+
+  - id: ENRG-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [rbac, iec-62351, switching]
+    refs: ["IEC 62351-8:2020", "IEC 62443-3-3:2013 SR 2.1", "ISO/IEC 27019:2024"]
+    tests: [ENRG-T06]
+    en:
+      title: Switching commands limited by role and area of responsibility
+      description: The SCADA system MUST let a user issue switching commands only for the network area assigned to the user's operator role, and MUST let only users with an engineering role change protection settings or the network model.
+      rationale: Role-based limits prevent a mistake or a compromised account from affecting parts of the grid the user is not responsible for.
+      criteria:
+        - method: test
+          text: An operator for area North can operate a breaker in North but not in South, and cannot change a protection setting; an engineer can change the setting.
+    sv:
+      title: Kopplingskommandon begränsas av roll och ansvarsområde
+      description: SCADA-systemet SKA låta en användare ge kopplingskommandon bara för det nätområde som är tilldelat användarens operatörsroll, och bara låta användare med ingenjörsroll ändra skyddsinställningar eller nätmodellen.
+      rationale: Rollbaserade begränsningar hindrar att ett misstag eller ett kapat konto påverkar delar av nätet som användaren inte ansvarar för.
+      criteria:
+        - method: test
+          text: En operatör för område Norr kan manövrera en brytare i Norr men inte i Söder och kan inte ändra en skyddsinställning; en ingenjör kan ändra inställningen.
+
+  - id: ENRG-07
+    type: security
+    obligation: should
+    priority: high
+    tags: [goose, iec-62351, replay]
+    refs: ["IEC 62351-6:2020", "IEC 61850-8-1:2011", "IEC 62443-3-3:2013 SR 3.1"]
+    tests: [ENRG-T05]
+    en:
+      title: GOOSE messages authenticated and replay checked
+      description: IEDs that support it SHOULD authenticate GOOSE messages according to IEC 62351-6, and each subscribing IED SHOULD discard a GOOSE message whose state and sequence numbers show that it is a replay.
+      rationale: An attacker on the station bus can otherwise inject or replay trip messages that look genuine.
+      criteria:
+        - method: test
+          text: A captured and replayed GOOSE trip message and a message with a wrong authentication value are discarded by the subscriber and counted in its diagnostics.
+    sv:
+      title: GOOSE-meddelanden autentiseras och kontrolleras mot återspelning
+      description: IED:er som stöder det BÖR autentisera GOOSE-meddelanden enligt IEC 62351-6, och varje prenumererande IED BÖR kasta ett GOOSE-meddelande vars tillstånds- och sekvensnummer visar att det är återspelat.
+      rationale: Annars kan en angripare på stationsbussen skicka in eller återspela utlösningsmeddelanden som ser äkta ut.
+      criteria:
+        - method: test
+          text: Ett inspelat och återspelat GOOSE-meddelande för utlösning och ett meddelande med fel autentiseringsvärde kastas av prenumeranten och räknas i dess diagnostik.
+
+  - id: ENRG-08
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [smart-metering, privacy, gdpr]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25", "Directive (EU) 2019/944 Art. 20", "Directive (EU) 2019/944 Art. 23"]
+    tests: [ENRG-T07]
+    en:
+      title: Detailed meter data only to the customer and authorised parties
+      description: The metering data system MUST give consumption data with a resolution finer than one day only to the customer and to parties that the customer has authorised, and MUST log each access to such data with user, purpose and time.
+      rationale: Quarter-hour consumption reveals when people are at home and what they do, so it is personal data that needs strict access control.
+      criteria:
+        - method: test
+          text: A supplier without the customer's authorisation receives only daily values, an authorised energy service sees 15-minute values, and both accesses are in the access log.
+    sv:
+      title: Detaljerade mätdata bara till kunden och behöriga parter
+      description: Mätdatasystemet SKA lämna ut förbrukningsdata med finare upplösning än ett dygn bara till kunden och till parter som kunden har gett behörighet, och logga varje åtkomst till sådana data med användare, syfte och tid.
+      rationale: Förbrukning per kvart avslöjar när människor är hemma och vad de gör, så det är personuppgifter som behöver strikt åtkomstkontroll.
+      criteria:
+        - method: test
+          text: En elhandlare utan kundens medgivande får bara dygnsvärden, en energitjänst med medgivande ser 15-minutersvärden, och båda åtkomsterna finns i åtkomstloggen.
+
+  - id: ENRG-09
+    type: security
+    obligation: must
+    priority: critical
+    tags: [smart-metering, remote-disconnect, four-eyes]
+    refs: ["ISO/IEC 27019:2024", "IEC 62443-3-3:2013 SR 2.1", "Directive (EU) 2019/944 Art. 20"]
+    tests: [ENRG-T08]
+    en:
+      title: Remote disconnection needs two persons and a protected-customer check
+      description: The head-end system MUST execute a remote disconnection of a supply only after a second authorised user has approved it and after a check against the register of customers with life-supporting equipment, and MUST stop disconnections beyond 50 per hour per approver.
+      rationale: Mass remote disconnection is a known attack on smart grids, and a wrongful disconnection can endanger people at home.
+      criteria:
+        - method: test
+          text: A disconnection approved by the same user who requested it is refused, a disconnection of a registered protected customer is blocked, and the 51st disconnection within an hour is stopped.
+          threshold: ≤ 50 per hour per approver
+    sv:
+      title: Fjärrfrånkoppling kräver två personer och kontroll av skyddade kunder
+      description: Insamlingssystemet SKA utföra en fjärrfrånkoppling av en anläggning först när en andra behörig användare har godkänt den och efter en kontroll mot registret över kunder med livsuppehållande utrustning, och stoppa frånkopplingar utöver 50 per timme och godkännare.
+      rationale: Massfrånkoppling på distans är en känd attack mot smarta elnät, och en felaktig frånkoppling kan utsätta människor i hemmet för fara.
+      criteria:
+        - method: test
+          text: En frånkoppling som godkänns av samma användare som begärde den avvisas, en frånkoppling av en registrerad skyddad kund blockeras och den 51:a frånkopplingen inom en timme stoppas.
+          threshold: ≤ 50 per timme och godkännare
+
+  - id: ENRG-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [smart-metering, firmware-update, code-signing]
+    refs: ["IEC 62443-4-2:2019 CR 3.4", "IEC 62056-5-3 (DLMS/COSEM image transfer)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I"]
+    tests: [ENRG-T09]
+    en:
+      title: Signed meter firmware rolled out in stages
+      description: A meter MUST activate new firmware only after it has verified the vendor's signature on the image, and the head-end system MUST roll out a firmware version to at most 1 % of the meters first and continue only after an operator has approved the pilot results.
+      rationale: A faulty or malicious firmware image sent to every meter at once could disable metering or supply in a whole region.
+      criteria:
+        - method: test
+          text: A meter keeps its old firmware and reports an error for an image with a broken signature, and a new rollout stops after the pilot group until it is approved.
+          threshold: pilot ≤ 1 % of meters
+    sv:
+      title: Signerad firmware för elmätare rullas ut stegvis
+      description: En elmätare SKA aktivera ny firmware först när den har verifierat leverantörens signatur på avbildningen, och insamlingssystemet SKA först rulla ut en firmwareversion till högst 1 % av mätarna och fortsätta först när en operatör har godkänt resultatet från pilotgruppen.
+      rationale: En felaktig eller skadlig firmware som skickas till varje mätare på en gång skulle kunna slå ut mätningen eller elleveransen i en hel region.
+      criteria:
+        - method: test
+          text: En mätare behåller sin gamla firmware och rapporterar ett fel för en avbildning med trasig signatur, och en ny utrullning stannar efter pilotgruppen tills den godkänns.
+          threshold: pilot ≤ 1 % av mätarna
+
+  - id: ENRG-11
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [load-shedding, under-frequency, grid-frequency]
+    refs: ["Commission Regulation (EU) 2017/2196 (NC ER) Annex", "Commission Regulation (EU) 2017/1485 (SO GL)"]
+    tests: [ENRG-T10]
+    en:
+      title: Under-frequency load shedding by configured stages
+      description: The load shedding function MUST open the feeders of a stage within 150 ms after the measured frequency has stayed below that stage's threshold for its configured delay, starting with a first stage at 49.0 Hz, and MUST record each operation with frequency, time and disconnected load.
+      rationale: Automatic disconnection of demand in stages stops a frequency collapse after a large loss of generation and protects the rest of the system.
+      criteria:
+        - method: test
+          text: With a frequency ramp injected by a test set, each stage opens its feeders within 150 ms after its threshold and delay, and the record shows the values.
+          threshold: ≤ 150 ms after threshold and delay
+    sv:
+      title: Lastfrånkoppling vid underfrekvens i inställda steg
+      description: Funktionen för lastfrånkoppling SKA öppna ett stegs utgående ledningar inom 150 ms efter att den uppmätta frekvensen legat under stegets gränsvärde under dess inställda fördröjning, med ett första steg vid 49,0 Hz, och registrera varje frånkoppling med frekvens, tid och bortkopplad last.
+      rationale: Automatisk bortkoppling av last i steg stoppar ett frekvensras efter ett stort produktionsbortfall och skyddar resten av elsystemet.
+      criteria:
+        - method: test
+          text: Med en frekvensramp från en provutrustning öppnar varje steg sina utgående ledningar inom 150 ms efter gränsvärde och fördröjning, och registreringen visar värdena.
+          threshold: ≤ 150 ms efter gränsvärde och fördröjning
+
+  - id: ENRG-12
+    type: functional
+    obligation: should
+    priority: high
+    tags: [outage-management, smart-metering, dms]
+    refs: ["IEC 61968-3:2004", "Directive (EU) 2019/944 Art. 20"]
+    tests: [ENRG-T11]
+    en:
+      title: Outage location predicted from meter events
+      description: The outage management system SHOULD predict the faulted network section within 5 minutes after it receives the first power-loss events from smart meters or customer calls, and SHOULD show the number of affected customers.
+      rationale: A predicted fault location sends crews to the right place and lets customers be told about the outage before they call.
+      criteria:
+        - method: test
+          text: For a simulated fault with 30 power-loss events, the predicted section matches the faulted section within 5 minutes and the customer count is correct.
+          threshold: ≤ 5 min
+    sv:
+      title: Avbrottets plats förutsägs från mätarhändelser
+      description: Avbrottshanteringssystemet BÖR förutsäga den felbehäftade nätdelen inom 5 minuter efter att det tagit emot de första händelserna om spänningsbortfall från smarta elmätare eller kundsamtal, och visa antalet berörda kunder.
+      rationale: En förutsagd felplats skickar montörerna till rätt ställe och gör att kunderna kan informeras om avbrottet innan de ringer.
+      criteria:
+        - method: test
+          text: För ett simulerat fel med 30 händelser om spänningsbortfall stämmer den förutsagda nätdelen med den felbehäftade inom 5 minuter och antalet kunder är korrekt.
+          threshold: ≤ 5 min
+
+  - id: ENRG-13
+    type: interface
+    obligation: must
+    priority: high
+    tags: [market, balancing, data-exchange]
+    refs: ["Commission Regulation (EU) 2017/2195 (EB GL)", "Regulation (EU) No 1227/2011 (REMIT) Art. 8", "IEC 62325-451 (ENTSO-E market documents)"]
+    tests: [ENRG-T12]
+    en:
+      title: Schedules and bids delivered and acknowledged before gate closure
+      description: The system MUST send each schedule and balancing bid in the market document format agreed with the system operator before gate closure, and MUST alarm the operator when no positive acknowledgement has arrived 5 minutes before gate closure.
+      rationale: A schedule or bid that is not received in time leads to imbalance costs and can weaken system balancing.
+      criteria:
+        - method: test
+          text: A bid sent to a test endpoint that does not acknowledge raises an alarm 5 minutes before gate closure, and a rejected document shows the rejection reason.
+          threshold: alarm at gate closure − 5 min
+    sv:
+      title: Planer och bud levereras och kvitteras före stängningstiden
+      description: Systemet SKA skicka varje produktionsplan och balansbud i det format för marknadsdokument som avtalats med systemoperatören före stängningstiden, och larma operatören när ingen positiv kvittens har kommit 5 minuter före stängningstiden.
+      rationale: En plan eller ett bud som inte tas emot i tid leder till obalanskostnader och kan försämra balanseringen av elsystemet.
+      criteria:
+        - method: test
+          text: Ett bud som skickas till en testmottagare som inte kvitterar ger ett larm 5 minuter före stängningstiden, och ett avvisat dokument visar orsaken till avvisningen.
+          threshold: larm vid stängningstid − 5 min
+
+  - id: ENRG-14
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [time-synchronisation, ptp, sampled-values]
+    refs: ["IEC/IEEE 61850-9-3:2016", "IEEE 1588-2019", "IEC/IEEE 60255-118-1:2018", "IEC 62443-3-3:2013 SR 2.11"]
+    tests: [ENRG-T13]
+    en:
+      title: Substation clocks synchronised to 1 µs
+      description: IEDs and merging units that use sampled values or synchrophasors MUST keep their clock within 1 µs of the grandmaster using the IEC/IEEE 61850-9-3 profile, and MUST mark their data as not synchronised within 1 second after they lose synchronisation.
+      rationale: Differential protection and phasor measurements compare values from different places, and unsynchronised samples can cause false trips.
+      criteria:
+        - method: test
+          text: The measured offset of 5 IEDs against a reference clock is at most 1 µs, and disconnecting the grandmaster sets the synchronisation flag in the sampled values within 1 second.
+          threshold: ≤ 1 µs
+    sv:
+      title: Klockor i ställverket synkroniserade till 1 µs
+      description: IED:er och sammanslagningsenheter som använder samplade värden eller synkrofasorer SKA hålla sin klocka inom 1 µs från huvudklockan med profilen i IEC/IEEE 61850-9-3, och märka sina data som osynkroniserade inom 1 sekund efter att de förlorat synkroniseringen.
+      rationale: Differentialskydd och fasvektormätningar jämför värden från olika platser, och osynkroniserade sampel kan ge felaktiga utlösningar.
+      criteria:
+        - method: test
+          text: Uppmätt avvikelse för 5 IED:er mot en referensklocka är högst 1 µs, och när huvudklockan kopplas bort sätts synkroniseringsflaggan i de samplade värdena inom 1 sekund.
+          threshold: ≤ 1 µs
+
+  - id: ENRG-15
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [black-start, restoration, backup-control-centre]
+    refs: ["Commission Regulation (EU) 2017/2196 (NC ER) Art. 41", "Commission Regulation (EU) 2017/2196 (NC ER) Art. 42", "Directive (EU) 2022/2557 (CER) Art. 13", "Elberedskapslagen (1997:288)"]
+    tests: [ENRG-T14]
+    en:
+      title: Backup control centre takes over within 3 hours
+      description: The SCADA and EMS functions MUST be available at the backup control centre within 3 hours after the main control centre is lost, with the network model, black-start and restoration switching sequences no older than 24 hours.
+      rationale: Grid restoration after a blackout depends on a working control centre, and the main one may be lost in the same event.
+      criteria:
+        - method: test
+          text: In an exercise, operators at the backup control centre take control of the grid and open the black-start sequence within 3 hours, with model data no older than 24 hours.
+          threshold: ≤ 3 h; data ≤ 24 h old
+    sv:
+      title: Reservdriftcentralen tar över inom 3 timmar
+      description: Funktionerna i SCADA och EMS SKA vara tillgängliga i reservdriftcentralen inom 3 timmar efter att huvuddriftcentralen gått förlorad, med nätmodell, dödnätsstart och kopplingssekvenser för återuppbyggnad som inte är äldre än 24 timmar.
+      rationale: Återuppbyggnaden av elnätet efter ett storavbrott kräver en fungerande driftcentral, och huvudcentralen kan gå förlorad i samma händelse.
+      criteria:
+        - method: test
+          text: Vid en övning tar operatörer i reservdriftcentralen över styrningen av nätet och öppnar sekvensen för dödnätsstart inom 3 timmar, med modelldata som inte är äldre än 24 timmar.
+          threshold: ≤ 3 h; data ≤ 24 h gamla
+
+  - id: ENRG-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-logging, iec-62351, monitoring]
+    refs: ["IEC 62351-7:2017", "IEC 62443-3-3:2013 SR 2.8", "Commission Delegated Regulation (EU) 2024/1366 (Network Code on Cybersecurity)", "Directive (EU) 2022/2555 (NIS2) Art. 21", "NERC CIP-007-6 R4"]
+    tests: [ENRG-T15]
+    en:
+      title: Security events from SCADA and IEDs collected centrally
+      description: The system MUST collect logins, failed logins, setting changes, firmware changes and configuration downloads from SCADA servers, RTUs and IEDs in a central log within 5 minutes and MUST keep them for 12 months.
+      rationale: Attacks on grid control systems are found and investigated through events from the field devices, not only from the servers.
+      criteria:
+        - method: test
+          text: A failed login and a setting change on a test IED and a login on a SCADA server appear in the central log within 5 minutes, and entries from 12 months ago can be searched.
+          threshold: ≤ 5 min; kept 12 months
+    sv:
+      title: Säkerhetshändelser från SCADA och IED:er samlas centralt
+      description: Systemet SKA samla inloggningar, misslyckade inloggningar, ändrade inställningar, ändrad firmware och nedladdade konfigurationer från SCADA-servrar, RTU:er och IED:er i en central logg inom 5 minuter och spara dem i 12 månader.
+      rationale: Attacker mot elnätets styrsystem upptäcks och utreds genom händelser från fältutrustningen, inte bara från servrarna.
+      criteria:
+        - method: test
+          text: En misslyckad inloggning och en ändrad inställning i en test-IED och en inloggning på en SCADA-server visas i den centrala loggen inom 5 minuter, och poster från 12 månader tillbaka går att söka fram.
+          threshold: ≤ 5 min; sparas 12 månader
+
+  - id: ENRG-17
+    type: security
+    obligation: must
+    priority: critical
+    tags: [remote-access, mfa, substation]
+    refs: ["IEC 62443-3-3:2013 SR 1.13", "ISO/IEC 27019:2024", "Commission Delegated Regulation (EU) 2024/1366 (Network Code on Cybersecurity)", "NERC CIP-005-7 R2"]
+    tests: [ENRG-T16]
+    en:
+      title: Remote engineering access to substations through a controlled gateway
+      description: Remote engineering access to IEDs and RTUs in substations MUST go through an access gateway that requires multi-factor authentication, limits each session to the substations of an approved work order and records the session.
+      rationale: Engineering access can change protection settings, so it must be restricted to approved work and traceable afterwards.
+      criteria:
+        - method: test
+          text: An engineer with an approved work order for one substation reaches its IEDs after multi-factor authentication, cannot reach another substation, and the session recording is stored.
+    sv:
+      title: Fjärråtkomst för ingenjörsarbete i ställverk via en kontrollerad gateway
+      description: Fjärråtkomst för ingenjörsarbete till IED:er och RTU:er i ställverk SKA gå via en åtkomstgateway som kräver flerfaktorsautentisering, begränsar varje session till ställverken i en godkänd arbetsorder och spelar in sessionen.
+      rationale: Ingenjörsåtkomst kan ändra skyddsinställningar, så den ska begränsas till godkänt arbete och vara spårbar i efterhand.
+      criteria:
+        - method: test
+          text: En ingenjör med godkänd arbetsorder för ett ställverk når dess IED:er efter flerfaktorsautentisering, når inte ett annat ställverk och sessionens inspelning sparas.
+
+tests:
+  - id: ENRG-T01
+    priority: high
+    execution: automated
+    tags: [scada, telemetry]
+    refs: []
+    en:
+      title: Telemetry latency from RTU to SCADA display
+      description: A test script operates simulated breakers and steps analogue values at a test RTU and measures when SCADA shows them.
+      preconditions: A test RTU connected to the SCADA test system, clocks of both synchronised to the same reference, and access to the SCADA event and value log.
+      expected: Status changes appear within 2 seconds and analogue changes within 4 seconds, with quality flags.
+      steps:
+        - action: Toggle 20 breaker status inputs on the test RTU, one every 10 seconds.
+          expected: Each change is in the SCADA event log within 2 seconds of the RTU time stamp.
+        - action: Step 20 analogue inputs by twice their deadband.
+          expected: Each new value is displayed within 4 seconds.
+        - action: Set one analogue input to invalid quality at the RTU.
+          expected: SCADA shows the value with an invalid quality mark within 4 seconds.
+    sv:
+      title: Fördröjning för mätvärden från RTU till SCADA-bild
+      description: Ett testskript manövrerar simulerade brytare och stegar analoga värden i en test-RTU och mäter när SCADA visar dem.
+      preconditions: En test-RTU ansluten till SCADA-testsystemet, båda klockorna synkroniserade mot samma referens, och åtkomst till SCADA-systemets händelse- och värdelogg.
+      expected: Ändrade ställningar visas inom 2 sekunder och analoga ändringar inom 4 sekunder, med kvalitetsflaggor.
+      steps:
+        - action: Växla 20 brytarställningsingångar i test-RTU:n, en var 10:e sekund.
+          expected: Varje ändring finns i SCADA-systemets händelselogg inom 2 sekunder från RTU:ns tidsstämpel.
+        - action: Stega 20 analoga ingångar med två gånger deras dödband.
+          expected: Varje nytt värde visas inom 4 sekunder.
+        - action: Sätt en analog ingång till ogiltig kvalitet i RTU:n.
+          expected: SCADA visar värdet med en markering för ogiltig kvalitet inom 4 sekunder.
+
+  - id: ENRG-T02
+    priority: high
+    execution: manual
+    tags: [ems, state-estimation]
+    refs: []
+    en:
+      title: State estimator cycle and failure alarm
+      description: Observes the state estimator on the EMS test system during normal running, a topology change and forced non-convergence.
+      preconditions: An EMS test system with a network model, live or simulated telemetry, and a way to corrupt measurements so that the estimator cannot converge.
+      expected: The estimator runs every 60 seconds, starts within 10 seconds after a topology change, and alarms after 3 failed runs.
+      steps:
+        - action: Read the state estimator run times in the EMS log for 15 minutes.
+          expected: No interval between runs is longer than 60 seconds.
+        - action: Open a breaker in the simulated grid.
+          expected: A new run starts within 10 seconds and the topology in the result shows the breaker open.
+        - action: Corrupt measurements so that 3 consecutive runs do not converge.
+          expected: After the third run the operator receives an alarm that the estimate is invalid.
+    sv:
+      title: Tillståndsskattningens cykel och larm vid fel
+      description: Observerar tillståndsskattningen i EMS-testsystemet vid vanlig drift, en topologiändring och framtvingad utebliven konvergens.
+      preconditions: Ett EMS-testsystem med nätmodell, verkliga eller simulerade mätvärden, och ett sätt att förvanska mätvärden så att skattningen inte konvergerar.
+      expected: Skattningen körs var 60:e sekund, startar inom 10 sekunder efter en topologiändring och larmar efter 3 misslyckade körningar.
+      steps:
+        - action: Läs körtiderna för tillståndsskattningen i EMS-loggen under 15 minuter.
+          expected: Inget intervall mellan körningarna är längre än 60 sekunder.
+        - action: Öppna en brytare i det simulerade nätet.
+          expected: En ny körning startar inom 10 sekunder och topologin i resultatet visar brytaren öppen.
+        - action: Förvanska mätvärden så att 3 körningar i följd inte konvergerar.
+          expected: Efter den tredje körningen får operatören ett larm om att skattningen är ogiltig.
+
+  - id: ENRG-T03
+    priority: critical
+    execution: automated
+    tags: [iec-61850, goose]
+    refs: ["IEC 61850-10:2012"]
+    en:
+      title: GOOSE transfer time with and without background load
+      description: Measures the transfer time of GOOSE trip messages between two IEDs on a test station bus.
+      preconditions: Two IEDs on a test station bus, a network analyser with time-synchronised capture ports at the publisher and the subscriber, and a traffic generator.
+      expected: The longest transfer time is at most 3 ms in both runs.
+      steps:
+        - action: Trigger 1 000 trip messages from the publishing IED and capture them at both ports.
+          expected: The longest transfer time from publisher output to subscriber binary output is at most 3 ms.
+        - action: Load the station bus to 50 % with the traffic generator and repeat the 1 000 trip messages.
+          expected: The longest transfer time is still at most 3 ms and no message is lost.
+          data: "50 % of 100 Mbit/s as multicast background traffic"
+    sv:
+      title: Överföringstid för GOOSE med och utan bakgrundslast
+      description: Mäter överföringstiden för GOOSE-meddelanden för utlösning mellan två IED:er på en teststationsbuss.
+      preconditions: Två IED:er på en teststationsbuss, en nätverksanalysator med tidssynkroniserade mätportar vid publicisten och prenumeranten, och en trafikgenerator.
+      expected: Den längsta överföringstiden är högst 3 ms i båda körningarna.
+      steps:
+        - action: Utlös 1 000 utlösningsmeddelanden från den publicerande IED:n och fånga dem vid båda portarna.
+          expected: Den längsta överföringstiden från publicistens utgång till prenumerantens binära utgång är högst 3 ms.
+        - action: Belasta stationsbussen till 50 % med trafikgeneratorn och upprepa de 1 000 utlösningsmeddelandena.
+          expected: Den längsta överföringstiden är fortfarande högst 3 ms och inget meddelande går förlorat.
+          data: "50 % av 100 Mbit/s som multicasttrafik i bakgrunden"
+
+  - id: ENRG-T04
+    priority: high
+    execution: manual
+    tags: [iec-61850, test-mode]
+    refs: ["IEC 61850-7-4:2010"]
+    en:
+      title: Test-flagged messages do not trip a subscriber in normal mode
+      description: Puts one IED in test mode and checks how a subscriber in normal mode and the HMI react.
+      preconditions: A test substation with a publishing IED, a subscribing IED in normal mode wired to a breaker simulator, and the substation HMI.
+      expected: The subscriber ignores the test-flagged trip and the HMI shows the IED in test mode.
+      steps:
+        - action: Set the logical device of the publishing IED to test mode.
+          expected: The substation HMI lists the logical device as in test mode.
+        - action: Trigger a trip in the publishing IED.
+          expected: The GOOSE message carries the test flag and the breaker simulator does not operate.
+        - action: Set the subscribing IED to test mode as well and trigger the trip again.
+          expected: The breaker simulator operates, showing that the subscriber accepts test messages only in test mode.
+    sv:
+      title: Testflaggade meddelanden löser inte ut en prenumerant i normalläge
+      description: Sätter en IED i testläge och kontrollerar hur en prenumerant i normalläge och operatörsbilden reagerar.
+      preconditions: Ett testställverk med en publicerande IED, en prenumererande IED i normalläge kopplad till en brytarsimulator, och ställverkets operatörsbild.
+      expected: Prenumeranten ignorerar den testflaggade utlösningen och operatörsbilden visar IED:n i testläge.
+      steps:
+        - action: Sätt den publicerande IED:ns logiska enhet i testläge.
+          expected: Ställverkets operatörsbild listar den logiska enheten som i testläge.
+        - action: Utlös en utlösning i den publicerande IED:n.
+          expected: GOOSE-meddelandet bär testflaggan och brytarsimulatorn manövreras inte.
+        - action: Sätt även den prenumererande IED:n i testläge och utlös igen.
+          expected: Brytarsimulatorn manövreras, vilket visar att prenumeranten bara godtar testmeddelanden i testläge.
+
+  - id: ENRG-T05
+    priority: critical
+    execution: automated
+    tags: [secure-authentication, goose, replay]
+    refs: ["IEC 62351-5", "IEC 62351-6:2020"]
+    en:
+      title: Tampered and replayed control messages are rejected
+      description: A test tool sends valid, tampered and replayed telecontrol commands and GOOSE messages in a test network.
+      preconditions: A test RTU with secure authentication enabled, a SCADA front end, a GOOSE subscriber that supports IEC 62351-6, and a test tool that can capture, alter and resend messages.
+      expected: Only authentic, fresh messages are acted on, and rejected ones are logged or counted.
+      steps:
+        - action: Send a select-before-operate command from the SCADA front end.
+          expected: The RTU executes the command and the session uses TLS.
+        - action: Send the same command with one byte of the authentication value changed.
+          expected: The RTU rejects the command and logs an authentication failure.
+        - action: Resend a captured, previously accepted command.
+          expected: The RTU rejects it as a replay.
+        - action: Replay a captured GOOSE trip message and send one with a wrong authentication value.
+          expected: The subscriber discards both and its diagnostic counters increase.
+    sv:
+      title: Manipulerade och återspelade styrmeddelanden avvisas
+      description: Ett testverktyg skickar giltiga, manipulerade och återspelade fjärrkontrollkommandon och GOOSE-meddelanden i ett testnät.
+      preconditions: En test-RTU med påslagen säker autentisering, en SCADA-frontend, en GOOSE-prenumerant med stöd för IEC 62351-6 och ett testverktyg som kan fånga, ändra och skicka om meddelanden.
+      expected: Bara äkta och nya meddelanden leder till åtgärd, och avvisade loggas eller räknas.
+      steps:
+        - action: Skicka ett kommando med välj-före-manöver från SCADA-frontenden.
+          expected: RTU:n utför kommandot och sessionen använder TLS.
+        - action: Skicka samma kommando med en byte i autentiseringsvärdet ändrad.
+          expected: RTU:n avvisar kommandot och loggar ett autentiseringsfel.
+        - action: Skicka om ett inspelat kommando som tidigare godtagits.
+          expected: RTU:n avvisar det som återspelat.
+        - action: Återspela ett inspelat GOOSE-meddelande för utlösning och skicka ett med fel autentiseringsvärde.
+          expected: Prenumeranten kastar båda och dess diagnostikräknare ökar.
+
+  - id: ENRG-T06
+    priority: high
+    execution: manual
+    tags: [rbac, switching]
+    refs: ["IEC 62351-8:2020"]
+    en:
+      title: Switching permissions follow role and area
+      description: Signs in with operator and engineer roles and tries switching and setting changes in different areas.
+      preconditions: SCADA test users "operator North" and "engineer", and breakers in the areas North and South of the test network model.
+      expected: Each user can act only within the role and area assigned.
+      steps:
+        - action: As operator North, open a breaker in area North.
+          expected: The command is accepted and executed.
+        - action: As operator North, try to open a breaker in area South.
+          expected: The command is refused with a message about the area of responsibility.
+        - action: As operator North, try to change a protection setting.
+          expected: The change is refused.
+        - action: As engineer, change the same protection setting.
+          expected: The change is accepted and logged with the engineer's user name.
+    sv:
+      title: Kopplingsbehörighet följer roll och område
+      description: Loggar in med operatörs- och ingenjörsroll och försöker koppla och ändra inställningar i olika områden.
+      preconditions: Testanvändarna "operatör Norr" och "ingenjör" i SCADA, och brytare i områdena Norr och Söder i testnätets modell.
+      expected: Varje användare kan bara agera inom tilldelad roll och tilldelat område.
+      steps:
+        - action: Öppna en brytare i område Norr som operatör Norr.
+          expected: Kommandot godtas och utförs.
+        - action: Försök öppna en brytare i område Söder som operatör Norr.
+          expected: Kommandot avvisas med ett meddelande om ansvarsområdet.
+        - action: Försök ändra en skyddsinställning som operatör Norr.
+          expected: Ändringen avvisas.
+        - action: Ändra samma skyddsinställning som ingenjör.
+          expected: Ändringen godtas och loggas med ingenjörens användarnamn.
+
+  - id: ENRG-T07
+    priority: critical
+    execution: manual
+    tags: [smart-metering, privacy]
+    refs: ["GDPR Art. 25"]
+    en:
+      title: Access to quarter-hour meter data
+      description: Requests detailed consumption data as parties with and without the customer's authorisation.
+      preconditions: A test metering point with 15-minute values, a supplier account without authorisation, an energy service account authorised by the test customer, and the access log.
+      expected: Detailed data goes only to the authorised party and each access is logged.
+      steps:
+        - action: As the supplier without authorisation, request the consumption of the test metering point for the last week.
+          expected: Only daily values are returned.
+        - action: As the authorised energy service, request the same period.
+          expected: 15-minute values are returned.
+        - action: Open the access log for the metering point.
+          expected: Both requests are listed with user, purpose and time.
+    sv:
+      title: Åtkomst till mätdata per kvart
+      description: Begär detaljerade förbrukningsdata som parter med och utan kundens medgivande.
+      preconditions: En testmätpunkt med 15-minutersvärden, ett konto för en elhandlare utan medgivande, ett konto för en energitjänst med testkundens medgivande, och åtkomstloggen.
+      expected: Detaljerade data lämnas bara till den behöriga parten och varje åtkomst loggas.
+      steps:
+        - action: Begär förbrukningen för testmätpunkten den senaste veckan som elhandlaren utan medgivande.
+          expected: Bara dygnsvärden returneras.
+        - action: Begär samma period som energitjänsten med medgivande.
+          expected: 15-minutersvärden returneras.
+        - action: Öppna åtkomstloggen för mätpunkten.
+          expected: Båda förfrågningarna listas med användare, syfte och tid.
+
+  - id: ENRG-T08
+    priority: critical
+    execution: manual
+    tags: [remote-disconnect, four-eyes]
+    refs: []
+    en:
+      title: Remote disconnection controls
+      description: Requests remote disconnections in the head-end test system to check approval, protected customers and the rate limit.
+      preconditions: Two test users with disconnection rights, a test meter registered as a protected customer, and 60 test meters that are not protected.
+      expected: Disconnections need a second approver, protected customers are blocked and the hourly limit is enforced.
+      steps:
+        - action: As user A, request and then try to approve a disconnection of an unprotected meter.
+          expected: Self-approval is refused.
+        - action: Have user B approve the request.
+          expected: The meter is disconnected and the action is logged with both users.
+        - action: Request the disconnection of the protected test meter and have user B approve it.
+          expected: The disconnection is blocked with a reference to the protected customer register.
+        - action: Request 51 disconnections within one hour, all approved by user B.
+          expected: The first 50 run and the 51st is stopped with a rate-limit message.
+    sv:
+      title: Kontroller vid fjärrfrånkoppling
+      description: Begär fjärrfrånkopplingar i insamlingssystemets testmiljö för att kontrollera godkännande, skyddade kunder och gränsen per timme.
+      preconditions: Två testanvändare med behörighet att frånkoppla, en testmätare registrerad som skyddad kund och 60 testmätare som inte är skyddade.
+      expected: Frånkopplingar kräver en andra godkännare, skyddade kunder blockeras och gränsen per timme upprätthålls.
+      steps:
+        - action: Begär som användare A en frånkoppling av en mätare som inte är skyddad och försök sedan godkänna den.
+          expected: Att godkänna sin egen begäran avvisas.
+        - action: Låt användare B godkänna begäran.
+          expected: Mätaren frånkopplas och åtgärden loggas med båda användarna.
+        - action: Begär frånkoppling av den skyddade testmätaren och låt användare B godkänna den.
+          expected: Frånkopplingen blockeras med hänvisning till registret över skyddade kunder.
+        - action: Begär 51 frånkopplingar inom en timme som användare B godkänner.
+          expected: De första 50 utförs och den 51:a stoppas med ett meddelande om gränsen.
+
+  - id: ENRG-T09
+    priority: high
+    execution: manual
+    tags: [firmware-update, smart-metering]
+    refs: []
+    en:
+      title: Meter firmware signature check and staged rollout
+      description: Sends a tampered and a valid firmware image to test meters and starts a staged rollout.
+      preconditions: A head-end test system with 200 test meters, a signed firmware image from the vendor and a copy of it with one byte changed.
+      expected: Tampered images are never activated and a rollout stops after the pilot group.
+      steps:
+        - action: Send the changed image to one test meter.
+          expected: The meter rejects the image, keeps its firmware version and reports a signature error.
+        - action: Start a rollout of the valid image to all 200 test meters.
+          expected: The image is sent to at most 2 meters (1 %) and the rollout waits for approval.
+        - action: Approve the pilot results as operator.
+          expected: The rollout continues to the remaining meters and each meter reports the new version.
+    sv:
+      title: Signaturkontroll och stegvis utrullning av mätarfirmware
+      description: Skickar en manipulerad och en giltig firmwareavbildning till testmätare och startar en stegvis utrullning.
+      preconditions: Ett insamlingssystem i testmiljö med 200 testmätare, en signerad firmwareavbildning från leverantören och en kopia av den med en byte ändrad.
+      expected: Manipulerade avbildningar aktiveras aldrig och en utrullning stannar efter pilotgruppen.
+      steps:
+        - action: Skicka den ändrade avbildningen till en testmätare.
+          expected: Mätaren avvisar avbildningen, behåller sin firmwareversion och rapporterar ett signaturfel.
+        - action: Starta en utrullning av den giltiga avbildningen till de 200 testmätarna.
+          expected: Avbildningen skickas till högst 2 mätare (1 %) och utrullningen väntar på godkännande.
+        - action: Godkänn resultatet från pilotgruppen som operatör.
+          expected: Utrullningen fortsätter till resterande mätare och varje mätare rapporterar den nya versionen.
+
+  - id: ENRG-T10
+    priority: critical
+    execution: automated
+    tags: [load-shedding, under-frequency]
+    refs: ["Commission Regulation (EU) 2017/2196 (NC ER) Annex"]
+    en:
+      title: Under-frequency stages operate in order and on time
+      description: A secondary injection test set ramps the frequency down at the load shedding relay or controller and records the trip outputs.
+      preconditions: The load shedding function on a test bench with its stage settings, a test set that injects voltage with a controllable frequency and records output times.
+      expected: Each stage trips within 150 ms after its threshold and delay, and each operation is recorded.
+      steps:
+        - action: Ramp the frequency from 50.0 Hz down to 48.0 Hz at 0.5 Hz per second.
+          expected: Each stage trips in order, within 150 ms after its threshold and delay are reached.
+          data: "stage 1 at 49.0 Hz, then 0.2 Hz steps; ramp 0.5 Hz/s"
+        - action: Stop the ramp at 49.1 Hz and hold it for 60 seconds.
+          expected: No stage trips.
+        - action: Open the operation records.
+          expected: Each trip is recorded with frequency, time and the load of the opened feeders.
+    sv:
+      title: Underfrekvenssteg löser ut i ordning och i tid
+      description: En provutrustning för sekundärinjicering sänker frekvensen vid reläet eller styrenheten för lastfrånkoppling och registrerar utlösningsutgångarna.
+      preconditions: Funktionen för lastfrånkoppling i en testrigg med sina stegsinställningar, och en provutrustning som injicerar spänning med styrbar frekvens och registrerar utgångarnas tider.
+      expected: Varje steg löser ut inom 150 ms efter sitt gränsvärde och sin fördröjning, och varje frånkoppling registreras.
+      steps:
+        - action: Sänk frekvensen från 50,0 Hz till 48,0 Hz med 0,5 Hz per sekund.
+          expected: Stegen löser ut i ordning, vart och ett inom 150 ms efter att gränsvärde och fördröjning nåtts.
+          data: "steg 1 vid 49,0 Hz, sedan steg om 0,2 Hz; ramp 0,5 Hz/s"
+        - action: Stoppa rampen vid 49,1 Hz och håll frekvensen i 60 sekunder.
+          expected: Inget steg löser ut.
+        - action: Öppna registreringarna av frånkopplingar.
+          expected: Varje utlösning är registrerad med frekvens, tid och lasten på de öppnade utgående ledningarna.
+
+  - id: ENRG-T11
+    priority: high
+    execution: manual
+    tags: [outage-management]
+    refs: []
+    en:
+      title: Predicted outage location from power-loss events
+      description: Simulates a fault on a feeder in the outage management test system and compares the prediction with the actual fault.
+      preconditions: An outage management test system with the network model and customer connections, and a simulator that sends power-loss events from meters downstream of a chosen fuse.
+      expected: The predicted section and the customer count are correct within 5 minutes.
+      steps:
+        - action: Send 30 power-loss events from meters downstream of the chosen fuse over 2 minutes.
+          expected: Within 5 minutes of the first event the system predicts an outage at the chosen fuse.
+          data: "30 meters behind one fuse, events spread over 120 s"
+        - action: Compare the number of affected customers with the network model.
+          expected: The count matches the customers connected downstream of the fuse.
+    sv:
+      title: Förutsagd avbrottsplats från händelser om spänningsbortfall
+      description: Simulerar ett fel på en utgående ledning i avbrottshanteringens testsystem och jämför förutsägelsen med det verkliga felet.
+      preconditions: Ett testsystem för avbrottshantering med nätmodell och kundanslutningar, och en simulator som skickar händelser om spänningsbortfall från mätare efter en vald säkring.
+      expected: Förutsagd nätdel och antal kunder är korrekta inom 5 minuter.
+      steps:
+        - action: Skicka 30 händelser om spänningsbortfall från mätare efter den valda säkringen under 2 minuter.
+          expected: Inom 5 minuter efter den första händelsen förutsäger systemet ett avbrott vid den valda säkringen.
+          data: "30 mätare efter en säkring, händelser spridda över 120 s"
+        - action: Jämför antalet berörda kunder med nätmodellen.
+          expected: Antalet stämmer med kunderna som är anslutna efter säkringen.
+
+  - id: ENRG-T12
+    priority: high
+    execution: automated
+    tags: [market, balancing]
+    refs: []
+    en:
+      title: Missing and rejected acknowledgements before gate closure
+      description: Sends bids to test endpoints that acknowledge, reject or stay silent, and checks the alarms.
+      preconditions: A market communication test environment with three test endpoints configured to acknowledge, reject and not answer, and a gate closure 30 minutes ahead.
+      expected: Acknowledged bids are marked delivered, rejections show their reason, and a missing acknowledgement is alarmed 5 minutes before gate closure.
+      steps:
+        - action: Send a bid to the acknowledging endpoint.
+          expected: The bid is marked as acknowledged with the time of the acknowledgement.
+        - action: Send a bid to the rejecting endpoint.
+          expected: The bid is marked as rejected with the reason code from the response.
+        - action: Send a bid to the silent endpoint and wait until 5 minutes before gate closure.
+          expected: An alarm names the bid and the missing acknowledgement.
+    sv:
+      title: Uteblivna och avvisade kvittenser före stängningstiden
+      description: Skickar bud till testmottagare som kvitterar, avvisar eller inte svarar och kontrollerar larmen.
+      preconditions: En testmiljö för marknadskommunikation med tre testmottagare inställda på att kvittera, avvisa och inte svara, och en stängningstid om 30 minuter.
+      expected: Kvitterade bud markeras som levererade, avvisningar visar sin orsak och en utebliven kvittens larmas 5 minuter före stängningstiden.
+      steps:
+        - action: Skicka ett bud till mottagaren som kvitterar.
+          expected: Budet markeras som kvitterat med kvittensens tid.
+        - action: Skicka ett bud till mottagaren som avvisar.
+          expected: Budet markeras som avvisat med orsakskoden från svaret.
+        - action: Skicka ett bud till mottagaren som inte svarar och vänta till 5 minuter före stängningstiden.
+          expected: Ett larm anger budet och den uteblivna kvittensen.
+
+  - id: ENRG-T13
+    priority: high
+    execution: manual
+    tags: [time-synchronisation, ptp]
+    refs: ["IEC/IEEE 61850-9-3:2016"]
+    en:
+      title: PTP offset and loss-of-synchronisation flag
+      description: Measures the clock offset of IEDs against a reference and disconnects the grandmaster.
+      preconditions: A test station bus with a PTP grandmaster, 5 IEDs or merging units using the IEC/IEEE 61850-9-3 profile, and a reference clock with a measurement output.
+      expected: Offsets are at most 1 µs, and loss of the grandmaster is flagged within 1 second.
+      steps:
+        - action: Measure the pulse-per-second offset of each IED against the reference clock for 10 minutes.
+          expected: The largest offset is at most 1 µs.
+        - action: Disconnect the grandmaster and capture the sampled values of a merging unit.
+          expected: Within 1 second the synchronisation flag in the sampled values shows not synchronised.
+        - action: Reconnect the grandmaster.
+          expected: The flag returns to synchronised and the offset is again at most 1 µs.
+    sv:
+      title: PTP-avvikelse och flagga för förlorad synkronisering
+      description: Mäter klockavvikelsen för IED:er mot en referens och kopplar bort huvudklockan.
+      preconditions: En teststationsbuss med en PTP-huvudklocka, 5 IED:er eller sammanslagningsenheter med profilen i IEC/IEEE 61850-9-3, och en referensklocka med mätutgång.
+      expected: Avvikelserna är högst 1 µs, och förlorad huvudklocka flaggas inom 1 sekund.
+      steps:
+        - action: Mät avvikelsen för sekundpulsen från varje IED mot referensklockan i 10 minuter.
+          expected: Den största avvikelsen är högst 1 µs.
+        - action: Koppla bort huvudklockan och fånga de samplade värdena från en sammanslagningsenhet.
+          expected: Inom 1 sekund visar synkroniseringsflaggan i de samplade värdena att de är osynkroniserade.
+        - action: Anslut huvudklockan igen.
+          expected: Flaggan visar synkroniserat igen och avvikelsen är åter högst 1 µs.
+
+  - id: ENRG-T14
+    priority: critical
+    execution: manual
+    tags: [backup-control-centre, black-start]
+    refs: ["Commission Regulation (EU) 2017/2196 (NC ER) Art. 42"]
+    en:
+      title: Exercise of a move to the backup control centre
+      description: Simulates loss of the main control centre in a planned exercise and times the takeover.
+      preconditions: A planned exercise with the operators of the backup control centre, the takeover procedure, and agreement with the grid operations manager.
+      expected: The backup control centre controls the grid within 3 hours with model data no older than 24 hours.
+      steps:
+        - action: Declare the main control centre lost and start the clock.
+          expected: The takeover procedure starts at the backup control centre.
+        - action: Start SCADA and EMS at the backup control centre and check the age of the network model and restoration sequences.
+          expected: The model and the sequences are no older than 24 hours.
+        - action: Operate a test breaker and open the black-start sequence for one area.
+          expected: The breaker operates and the sequence is shown; the elapsed time is at most 3 hours.
+    sv:
+      title: Övning av flytt till reservdriftcentralen
+      description: Simulerar att huvuddriftcentralen går förlorad i en planerad övning och tar tid på övertagandet.
+      preconditions: En planerad övning med operatörerna i reservdriftcentralen, rutinen för övertagande och överenskommelse med driftchefen.
+      expected: Reservdriftcentralen styr nätet inom 3 timmar med modelldata som inte är äldre än 24 timmar.
+      steps:
+        - action: Förklara huvuddriftcentralen förlorad och starta tidtagningen.
+          expected: Rutinen för övertagande startar i reservdriftcentralen.
+        - action: Starta SCADA och EMS i reservdriftcentralen och kontrollera åldern på nätmodellen och sekvenserna för återuppbyggnad.
+          expected: Modellen och sekvenserna är inte äldre än 24 timmar.
+        - action: Manövrera en testbrytare och öppna sekvensen för dödnätsstart för ett område.
+          expected: Brytaren manövreras och sekvensen visas; den förflutna tiden är högst 3 timmar.
+
+  - id: ENRG-T15
+    priority: high
+    execution: manual
+    tags: [security-logging, monitoring]
+    refs: ["IEC 62351-7:2017"]
+    en:
+      title: Field device events in the central security log
+      description: Triggers security events on a test IED and a SCADA server and searches the central log.
+      preconditions: A test IED and a SCADA server that send events to the central log, an engineering tool, and read access to the central log.
+      expected: Each event is in the central log within 5 minutes, and 12-month-old entries are searchable.
+      steps:
+        - action: Enter a wrong password on the test IED, then sign in and change one setting.
+          expected: The failed login and the setting change are in the central log within 5 minutes with device name and user.
+        - action: Sign in to the SCADA server.
+          expected: The login is in the central log within 5 minutes.
+        - action: Search the central log for entries from the test IED 12 months ago.
+          expected: Entries from that period are returned.
+    sv:
+      title: Händelser från fältutrustning i den centrala säkerhetsloggen
+      description: Utlöser säkerhetshändelser i en test-IED och en SCADA-server och söker i den centrala loggen.
+      preconditions: En test-IED och en SCADA-server som skickar händelser till den centrala loggen, ett ingenjörsverktyg och läsbehörighet till den centrala loggen.
+      expected: Varje händelse finns i den centrala loggen inom 5 minuter, och 12 månader gamla poster går att söka fram.
+      steps:
+        - action: Ange fel lösenord i test-IED:n, logga sedan in och ändra en inställning.
+          expected: Den misslyckade inloggningen och den ändrade inställningen finns i den centrala loggen inom 5 minuter med enhetsnamn och användare.
+        - action: Logga in på SCADA-servern.
+          expected: Inloggningen finns i den centrala loggen inom 5 minuter.
+        - action: Sök i den centrala loggen efter poster från test-IED:n för 12 månader sedan.
+          expected: Poster från den perioden returneras.
+
+  - id: ENRG-T16
+    priority: critical
+    execution: manual
+    tags: [remote-access, substation]
+    refs: ["IEC 62443-3-3:2013 SR 1.13"]
+    en:
+      title: Remote engineering access limited to the work order
+      description: Connects through the access gateway with a work order for one substation and tries to reach another.
+      preconditions: A test engineer account with a registered second factor, an approved work order for substation A, and IEDs in substations A and B reachable from the gateway.
+      expected: Access is limited to substation A after multi-factor authentication, and the session is recorded.
+      steps:
+        - action: Sign in to the access gateway with password and second factor and choose the work order.
+          expected: The gateway opens a session that lists only the devices of substation A.
+        - action: Try to connect to an IED in substation B from the session.
+          expected: The connection is refused and logged.
+        - action: End the session and open its recording as an administrator.
+          expected: The recording shows the actions with user, work order and times.
+    sv:
+      title: Fjärråtkomst för ingenjörsarbete begränsas till arbetsordern
+      description: Ansluter via åtkomstgatewayen med en arbetsorder för ett ställverk och försöker nå ett annat.
+      preconditions: Ett testkonto för en ingenjör med registrerad andra faktor, en godkänd arbetsorder för ställverk A, och IED:er i ställverk A och B som kan nås från gatewayen.
+      expected: Åtkomsten begränsas till ställverk A efter flerfaktorsautentisering, och sessionen spelas in.
+      steps:
+        - action: Logga in på åtkomstgatewayen med lösenord och andra faktor och välj arbetsordern.
+          expected: Gatewayen öppnar en session som bara listar enheterna i ställverk A.
+        - action: Försök ansluta till en IED i ställverk B från sessionen.
+          expected: Anslutningen avvisas och loggas.
+        - action: Avsluta sessionen och öppna inspelningen som administratör.
+          expected: Inspelningen visar åtgärderna med användare, arbetsorder och tider.
