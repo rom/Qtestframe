@@ -28,6 +28,9 @@ type Pack struct {
 	Ambiguous, TBD, Unbounded, AndOr, Passive, Escape, AmbNeg []string
 	// Markers are frequent function words used for language detection.
 	Markers []string
+	// Letters are characters typical for the language; text containing any
+	// of them scores extra in language detection.
+	Letters string
 }
 
 // compiled is a pack with compiled phrase tables.
@@ -37,6 +40,8 @@ type compiled struct {
 	keywords, ambiguous, tbd, unbounded, andOr, passive, escape []phrase
 	ambiguousNegation                                           []phrase
 	markers                                                     map[string]bool
+	markerList                                                  []string
+	letters                                                     string
 }
 
 // rfcKeywords are the English RFC 2119 keywords. Other packs accept them in
@@ -141,6 +146,7 @@ var Swedish = Pack{
 	Passive:   []string{"kunna", "ha möjlighet att", "ha förmåga att", "vara kapabel att", "vara i stånd att"},
 	Escape:    []string{"om möjligt", "där tillämpligt", "i mån av", "i den mån", "om inte", "utom", "förutom", "med undantag för"},
 	AmbNeg:    []string{"måste inte"},
+	Letters:   "åäö",
 	Markers: []string{"och", "att", "är", "ska", "skall", "måste", "bör", "får", "inte", "för", "med", "som",
 		"systemet", "användaren", "en", "ett", "det", "av", "på", "när", "till", "om", "eller", "kunna"},
 }
@@ -169,9 +175,14 @@ func Register(p Pack) {
 		escape:            compileWords(p.Escape),
 		ambiguousNegation: compileWords(p.AmbNeg),
 		markers:           map[string]bool{},
+		letters:           strings.ToLower(p.Letters),
 	}
 	for _, m := range p.Markers {
-		c.markers[strings.ToLower(m)] = true
+		m = strings.ToLower(m)
+		if !c.markers[m] {
+			c.markerList = append(c.markerList, m)
+		}
+		c.markers[m] = true
 	}
 	packs[p.Code] = c
 }
@@ -209,7 +220,7 @@ func Detect(text string) string {
 				score++
 			}
 		}
-		if code == "sv" && strings.ContainsAny(strings.ToLower(text), "åäö") {
+		if pk.letters != "" && strings.ContainsAny(strings.ToLower(text), pk.letters) {
 			score += 2
 		}
 		if score > bestScore || (score == bestScore && code == "en") {
@@ -236,7 +247,7 @@ func DetectConfident(text string, minScore int) (lang string, ok bool) {
 				score++
 			}
 		}
-		if code == "sv" && strings.ContainsAny(strings.ToLower(text), "åäö") {
+		if pk.letters != "" && strings.ContainsAny(strings.ToLower(text), pk.letters) {
 			score += 2
 		}
 		switch {

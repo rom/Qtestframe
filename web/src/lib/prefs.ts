@@ -26,6 +26,8 @@ export function normalizePrefs(raw: Partial<Preferences> | null | undefined): Pr
   if (p.compact_tables === true) out.compact_tables = true
   if (p.hide_analysis === true) out.hide_analysis = true
   if (typeof p.create_linked_test === 'boolean') out.create_linked_test = p.create_linked_test
+  // --- obligation keyword highlighting ---
+  if (p.hide_obligation_highlight === true) out.hide_obligation_highlight = true
   return out
 }
 
@@ -40,6 +42,8 @@ const KEYS: (keyof Preferences)[] = [
   'compact_tables',
   'hide_analysis',
   'create_linked_test',
+  // --- obligation keyword highlighting ---
+  'hide_obligation_highlight',
 ]
 
 /**

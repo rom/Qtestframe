@@ -89,9 +89,16 @@ function toForm(p: Preferences) {
     compact_tables: !!p.compact_tables,
     hide_analysis: !!p.hide_analysis,
     create_linked_test: typeof p.create_linked_test === 'boolean' ? p.create_linked_test : null,
+    // --- obligation keyword highlighting ---
+    hide_obligation_highlight: !!p.hide_obligation_highlight,
   }
 }
 const pform = ref(toForm(prefsStore.prefs))
+// --- obligation keyword highlighting: the switch shows "highlight" (on by default) ---
+const highlightObligations = computed({
+  get: () => !pform.value.hide_obligation_highlight,
+  set: (v: boolean) => (pform.value.hide_obligation_highlight = !v),
+})
 // language is kept apart from the shared preference helpers: '' = browser default
 const storedLang = computed(() => normalizeLang(auth.user?.preferences?.language) ?? '')
 const langForm = ref<string>(storedLang.value)
@@ -461,6 +468,13 @@ onMounted(() => {
           <span id="pf-editor-l" class="field-label">{{ t('profile.requirementEditor') }}</span>
           <label class="row nowrap small" for="pf-analysis"><ToggleSwitch v-model="pform.hide_analysis" input-id="pf-analysis" /> {{ t('profile.hideAnalysis') }}</label>
         </div>
+        <!-- obligation keyword highlighting -->
+        <div v-field class="field" role="group" aria-labelledby="pf-obligation-l">
+          <span id="pf-obligation-l" class="field-label">{{ t('obligationKw.prefGroup') }}</span>
+          <label class="row nowrap small" for="pf-obligation-kw"><ToggleSwitch v-model="highlightObligations" input-id="pf-obligation-kw" /> {{ t('obligationKw.pref') }}</label>
+          <span class="small muted">{{ t('obligationKw.prefHint') }}</span>
+        </div>
+        <!-- /obligation keyword highlighting -->
         <div class="full row" style="justify-content: flex-end">
           <span v-if="prefsDirty" class="small muted" style="margin-right: auto"><i class="pi pi-circle-fill" style="font-size: 8px; color: var(--p-amber-500)" /> {{ t('profile.unsaved') }}</span>
           <Button :label="t('common.discard')" text severity="secondary" :disabled="!prefsDirty" @click="resetPrefs" />

@@ -40,6 +40,8 @@ export const usePrefsStore = defineStore('prefs', () => {
   const rows = computed(() => pageSize(prefs.value))
   const rowsPerPage = computed(() => rowsOptions(rows.value))
   const hideAnalysis = computed(() => !!prefs.value.hide_analysis)
+  // --- obligation keyword highlighting (on unless turned off) ---
+  const highlightObligations = computed(() => !prefs.value.hide_obligation_highlight)
 
   function createLinkedTest(serverDefault: boolean | undefined): boolean {
     return createLinkedTestDefault(prefs.value, serverDefault)
@@ -128,5 +130,5 @@ export const usePrefsStore = defineStore('prefs', () => {
     return readLastProject(auth.tenant?.id)
   }
 
-  return { prefs, rows, rowsPerPage, hideAnalysis, themePref, theme, createLinkedTest, rowsFor, apply, start, save, setTheme, toggleTheme, rememberProject, lastProject }
+  return { prefs, rows, rowsPerPage, hideAnalysis, highlightObligations, themePref, theme, createLinkedTest, rowsFor, apply, start, save, setTheme, toggleTheme, rememberProject, lastProject }
 })

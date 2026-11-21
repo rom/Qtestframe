@@ -246,6 +246,44 @@ label.required::after { content: ' *'; color: var(--p-red-600, #dc2626); }
 .kw-issue { text-decoration: underline wavy #f59e0b; text-underline-offset: 3px; }
 .app-dark .kw-strong { color: #fca5a5; } .app-dark .kw-medium { color: #fcd34d; } .app-dark .kw-weak { color: #7dd3fc; }
 
+/* ---------- obligation keywords in requirement texts (ObligationMark.vue) ----------
+   Text keeps the theme's text colour (contrast is the theme's); the level
+   shows in a light tint of a level colour and, not by colour alone, in the
+   weight and the underline style: must solid, must not double, should
+   dashed, should not dashed and double-weight, may dotted. */
+.obligation-kw {
+  --ob-c: var(--p-primary-color);
+  color: var(--qtf-text);
+  background: color-mix(in srgb, var(--ob-c) 14%, transparent);
+  border-radius: 3px;
+  padding: 0 2px;
+  text-decoration-line: underline;
+  text-decoration-color: var(--ob-c);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-skip-ink: none;
+}
+.obligation-must { --ob-c: var(--p-red-600); font-weight: 800; text-decoration-style: solid; }
+.obligation-must-not { --ob-c: var(--p-red-600); font-weight: 800; text-decoration-style: double; text-decoration-thickness: 3px; }
+.obligation-should { --ob-c: var(--p-amber-600); font-weight: 700; text-decoration-style: dashed; }
+.obligation-should-not { --ob-c: var(--p-amber-600); font-weight: 700; text-decoration-style: double; }
+.obligation-may { --ob-c: var(--p-sky-600); font-weight: 600; text-decoration-style: dotted; }
+.app-dark .obligation-must, .app-dark .obligation-must-not { --ob-c: var(--p-red-400); }
+.app-dark .obligation-should, .app-dark .obligation-should-not { --ob-c: var(--p-amber-400); }
+.app-dark .obligation-may { --ob-c: var(--p-sky-400); }
+/* high contrast: no tint, the underline in the text colour */
+:root[data-theme="high_contrast"] .obligation-kw, :root[data-theme="high_contrast_light"] .obligation-kw { --ob-c: var(--qtf-text); background: transparent; }
+@media (forced-colors: active) { .obligation-kw { --ob-c: CanvasText; background: transparent; } }
+/* the level hint is for screen readers; it is not copied with the text */
+.obligation-sr { user-select: none; }
+/* a requirement's description shown read-only (no write permission) */
+.description-readonly { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; padding: 8px 10px; border: 1px solid var(--qtf-border); border-radius: 6px; background: var(--qtf-bg); min-height: 2.4em; }
+/* the editor's line under the description */
+.obligation-preview { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-top: 6px; font-size: 12.5px; }
+.obligation-preview .ob-note { display: inline-flex; gap: 4px; align-items: baseline; }
+.obligation-preview .ob-warn .pi { color: var(--p-amber-600); }
+.app-dark .obligation-preview .ob-warn .pi { color: var(--p-amber-400); }
+
 /* traceability matrix */
 .matrix-wrap { overflow: auto; max-height: calc(100dvh - 230px); min-height: 240px; border: 1px solid var(--qtf-border); border-radius: 8px; background: var(--qtf-card); }
 table.matrix { border-collapse: separate; border-spacing: 0; font-size: 12px; }

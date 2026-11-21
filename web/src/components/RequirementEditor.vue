@@ -3,6 +3,8 @@ import ItemRef from './ItemRef.vue'
 import SuspectLink from './SuspectLink.vue'
 import ConfigurationCoverage from './ConfigurationCoverage.vue'
 import ObligationHelp from './ObligationHelp.vue'
+import ObligationKeywordLine from './ObligationKeywordLine.vue'
+import MentionText from './MentionText.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
@@ -18,7 +20,7 @@ import { useAuthStore } from '@/stores/auth'
 import TagSuggestions from './TagSuggestions.vue'
 import MentionInput from './MentionInput.vue'
 import HelpTip from '@/guide/HelpTip.vue'
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
@@ -41,6 +43,7 @@ import Tab from 'primevue/tab'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { debounce, moveItem } from '@/lib/collections'
 import { segments } from '@/lib/highlight'
+import { displayLevel } from '@/lib/obligationKeywords'
 import { formatDateTime } from '@/lib/format'
 import { useI18n } from 'vue-i18n'
 import { uid } from '@/lib/a11y'
@@ -73,6 +76,20 @@ const notify = useNotify()
 const prefs = usePrefsStore()
 const { t, te } = useI18n()
 const tabsId = uid('req-tabs')
+// ---------- obligation keywords (read-only text, line under the editor) ----------
+const descLabelId = uid('req-desc')
+const obligationHelpId = uid('req-obl-help')
+const obligationHelpOpen = ref(false)
+/** open the obligation help (again, if the author closed it) and move there */
+async function openObligationHelp() {
+  obligationHelpOpen.value = false
+  await nextTick()
+  obligationHelpOpen.value = true
+  await nextTick()
+  const el = document.getElementById(obligationHelpId)
+  el?.scrollIntoView?.({ block: 'nearest' })
+  el?.querySelector<HTMLElement>('summary')?.focus()
+}
 const linkCount = ref<number | null>(null)
 watch(
   () => props.itemId,
@@ -316,10 +333,10 @@ watch(
 onBeforeUnmount(() => runAnalysis.cancel())
 watch(() => props.itemId, load, { immediate: true })
 
+/** keyword style in the analysis text: the obligation highlight of its level */
 function strength(level: string): string {
-  if (/^(must|shall)/.test(level)) return 'kw-strong'
-  if (/^should/.test(level)) return 'kw-medium'
-  return 'kw-weak'
+  const d = displayLevel(level)
+  return d ? `obligation-kw obligation-${d}` : 'kw-weak'
 }
 const highlighted = computed(() => {
   const a = analysis.value
@@ -570,9 +587,24 @@ function criterionLabel(id: string | null) {
       <InputText v-model="form.title" :disabled="!canWrite" required autofocus />
     </div>
     <div v-field class="field">
-      <label>{{ t('common.description') }}</label>
-      <MentionInput v-model="form.description" multiline rows="5" auto-resize :project-id="projectId" :disabled="!canWrite" :placeholder="t('requirements.descriptionPlaceholder')" />
-      <ObligationHelp v-if="canWrite" :open="isNew" />
+      <label v-if="canWrite">{{ t('common.description') }}</label>
+      <span v-else :id="descLabelId" class="field-label">{{ t('common.description') }}</span>
+      <MentionInput v-if="canWrite" v-model="form.description" multiline rows="5" auto-resize :project-id="projectId" :placeholder="t('requirements.descriptionPlaceholder')" />
+      <!-- read-only: the text with its obligation keywords highlighted -->
+      <div v-else class="description-readonly" role="group" :aria-labelledby="descLabelId">
+        <MentionText v-if="form.description" :text="form.description" :project-id="projectId" obligations :lang="analysisLanguage" />
+        <span v-else class="muted">{{ t('common.noDescription') }}</span>
+      </div>
+      <ObligationKeywordLine
+        v-if="canWrite && prefs.highlightObligations && form.description.trim()"
+        :text="form.description"
+        :chosen="form.obligation"
+        :lang="analysisLanguage"
+        can-write
+        @apply="(l) => (form.obligation = l)"
+        @help="openObligationHelp"
+      />
+      <ObligationHelp v-if="canWrite" :id="obligationHelpId" :open="isNew || obligationHelpOpen" />
     </div>
 
     <div v-if="form.description.trim() && !prefs.hideAnalysis" class="analysis" role="region" :aria-label="t('analysis.title')" :aria-busy="analyzing">

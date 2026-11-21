@@ -221,6 +221,12 @@ type Preferences struct {
 	IntroDone        bool   `json:"intro_done,omitempty"` // first-login intro tour finished or skipped // personal default for the editor checkbox
 	// EmailNotifications: off (default) | immediate | digest (see EmailModes).
 	EmailNotifications string `json:"email_notifications,omitempty"`
+
+	// --- obligation keyword highlighting ---
+	// HideObligationHighlight turns off highlighting obligation keywords
+	// (MUST, SKA INTE …) in requirement descriptions; highlighting is on
+	// by default.
+	HideObligationHighlight bool `json:"hide_obligation_highlight,omitempty"`
 }
 
 // Preference value sets.

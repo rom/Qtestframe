@@ -116,6 +116,7 @@ Preferences are stored with your account and applied on every device. Change the
 | **Also create linked test (new requirements)** | Your personal default for the checkbox in the requirement editor. |
 | **Compact tables** | Denser table rows, to see more at once. |
 | **Hide the live requirement-language analysis** | Turns off the analysis box in the requirement editor. |
+| **Highlight obligation keywords** | On by default: marks MUST, SHOULD, MAY, SKA, BÖR, FÅR … in requirement descriptions and shows the keyword line under the description in the editor. See [Highlighted obligation keywords](requirements.md#highlighted-obligation-keywords). |
 
 ### Security
 

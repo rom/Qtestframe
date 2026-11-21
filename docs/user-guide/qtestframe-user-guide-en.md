@@ -173,6 +173,7 @@ Preferences are stored with your account and applied on every device. Change the
 | **Also create linked test (new requirements)** | Your personal default for the checkbox in the requirement editor. |
 | **Compact tables** | Denser table rows, to see more at once. |
 | **Hide the live requirement-language analysis** | Turns off the analysis box in the requirement editor. |
+| **Highlight obligation keywords** | On by default: marks MUST, SHOULD, MAY, SKA, BÖR, FÅR … in requirement descriptions and shows the keyword line under the description in the editor. See [Highlighted obligation keywords](#highlighted-obligation-keywords). |
 
 ### Security
 
@@ -471,6 +472,24 @@ When you create a requirement with **Obligation** set to **Auto-detect from text
 Only UPPER-CASE keywords carry normative meaning (RFC 8174). Write `MUST`, not `must`. Requirements written in Swedish use the Swedish keywords described under [The language analysis](#the-language-analysis). The [References](#references) page lists these and other standards for requirements and testing.
 
 While you write, **Help: obligation levels** below the description (open for new requirements) shows the keywords of each level in the language of the interface, what they mean and an example, with tips on writing them. [Analytics](#requirement-analytics) shows how the levels and keywords are spread over the project.
+
+### Highlighted obligation keywords
+
+Wherever a requirement's description is shown read-only, its obligation keywords are highlighted: in the requirement editor when you may only read the requirement, in the [catalogue](#catalogue) preview and in the preview of [Import requirements](#import-requirements). Each level has its own style, and the levels differ not only in colour but also in weight and underline, so they are clear in every theme, high contrast included:
+
+| Level | Keywords | Underline |
+|---|---|---|
+| Must | MUST, SHALL, REQUIRED, SKA, SKALL, MÅSTE | solid, extra bold |
+| Must not | MUST NOT, SHALL NOT, SKA INTE, FÅR INTE | double, extra bold |
+| Should | SHOULD, RECOMMENDED, BÖR | dashed, bold |
+| Should not | SHOULD NOT, NOT RECOMMENDED, BÖR INTE | double, bold |
+| May | MAY, OPTIONAL, FÅR, VALFRI | dotted |
+
+Negations such as `MUST NOT` and `SKA INTE` are one keyword. Only keywords written in capitals are highlighted, only whole words (`MAYBE` is not `MAY`), and never inside links or code between backticks (`` `MUST` ``). Point at a keyword to see its meaning; screen readers read the level after the keyword, for example "MUST NOT (obligation: Must not)". The keywords are the same ones the [language analysis](#the-language-analysis) knows.
+
+While you edit the description, the line **Obligation keyword** under it shows the keywords found as you type, with their level. It tells you when the keyword does not match the **Obligation** field (with a button to set the field to the detected level), when the text has more than one keyword and when a keyword is written in lower case. **What do the keywords mean?** opens **Help: obligation levels**.
+
+To turn the highlighting and the line off, clear **Highlight obligation keywords** in your [preferences](#preferences).
 
 ## The language analysis
 

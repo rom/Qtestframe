@@ -1,0 +1,310 @@
+{
+  "levels": [
+    "must_not",
+    "must",
+    "shall_not",
+    "shall",
+    "should_not",
+    "should",
+    "may",
+    "optional",
+    "will",
+    "describe"
+  ],
+  "packs": [
+    {
+      "code": "en",
+      "uppercase_rule": true,
+      "keywords": [
+        {
+          "text": "NOT RECOMMENDED",
+          "level": "should_not"
+        },
+        {
+          "text": "RECOMMENDED",
+          "level": "should"
+        },
+        {
+          "text": "INFORMATIVE",
+          "level": "describe"
+        },
+        {
+          "text": "SHOULD NOT",
+          "level": "should_not"
+        },
+        {
+          "text": "SHALL NOT",
+          "level": "shall_not"
+        },
+        {
+          "text": "DESCRIBES",
+          "level": "describe"
+        },
+        {
+          "text": "MUST NOT",
+          "level": "must_not"
+        },
+        {
+          "text": "REQUIRED",
+          "level": "must"
+        },
+        {
+          "text": "OPTIONAL",
+          "level": "optional"
+        },
+        {
+          "text": "DESCRIBE",
+          "level": "describe"
+        },
+        {
+          "text": "SHOULD",
+          "level": "should"
+        },
+        {
+          "text": "SHALL",
+          "level": "shall"
+        },
+        {
+          "text": "NOTE:",
+          "level": "describe"
+        },
+        {
+          "text": "MUST",
+          "level": "must"
+        },
+        {
+          "text": "WILL",
+          "level": "will"
+        },
+        {
+          "text": "MAY",
+          "level": "may"
+        }
+      ],
+      "markers": [
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "of",
+        "to",
+        "in",
+        "is",
+        "be",
+        "for",
+        "with",
+        "that",
+        "when",
+        "shall",
+        "must",
+        "should",
+        "may",
+        "not",
+        "system",
+        "user",
+        "it",
+        "on",
+        "by"
+      ],
+      "examples": "MUST, SHALL, SHOULD, MAY"
+    },
+    {
+      "code": "sv",
+      "uppercase_rule": false,
+      "keywords": [
+        {
+          "text": "REKOMMENDERAS INTE",
+          "level": "should_not"
+        },
+        {
+          "text": "NOT RECOMMENDED",
+          "level": "should_not",
+          "case_sensitive": true
+        },
+        {
+          "text": "BEHÖVER INTE",
+          "level": "optional"
+        },
+        {
+          "text": "OBLIGATORISKT",
+          "level": "must"
+        },
+        {
+          "text": "OBLIGATORISKA",
+          "level": "must"
+        },
+        {
+          "text": "REKOMMENDERAS",
+          "level": "should"
+        },
+        {
+          "text": "OBLIGATORISK",
+          "level": "must"
+        },
+        {
+          "text": "ANMÄRKNING:",
+          "level": "describe"
+        },
+        {
+          "text": "MÅSTE INTE",
+          "level": "optional"
+        },
+        {
+          "text": "INFORMATIVT",
+          "level": "describe"
+        },
+        {
+          "text": "RECOMMENDED",
+          "level": "should",
+          "case_sensitive": true
+        },
+        {
+          "text": "SKALL INTE",
+          "level": "shall_not"
+        },
+        {
+          "text": "KOMMER ATT",
+          "level": "will"
+        },
+        {
+          "text": "INFORMATIV",
+          "level": "describe"
+        },
+        {
+          "text": "SHOULD NOT",
+          "level": "should_not",
+          "case_sensitive": true
+        },
+        {
+          "text": "FÅR INTE",
+          "level": "must_not"
+        },
+        {
+          "text": "BÖR INTE",
+          "level": "should_not"
+        },
+        {
+          "text": "BESKRIVER",
+          "level": "describe"
+        },
+        {
+          "text": "SHALL NOT",
+          "level": "shall_not",
+          "case_sensitive": true
+        },
+        {
+          "text": "SKA INTE",
+          "level": "shall_not"
+        },
+        {
+          "text": "VALFRITT",
+          "level": "optional"
+        },
+        {
+          "text": "MUST NOT",
+          "level": "must_not",
+          "case_sensitive": true
+        },
+        {
+          "text": "REQUIRED",
+          "level": "must",
+          "case_sensitive": true
+        },
+        {
+          "text": "OPTIONAL",
+          "level": "optional",
+          "case_sensitive": true
+        },
+        {
+          "text": "FÅR EJ",
+          "level": "must_not"
+        },
+        {
+          "text": "BÖR EJ",
+          "level": "should_not"
+        },
+        {
+          "text": "VALFRIA",
+          "level": "optional"
+        },
+        {
+          "text": "MÅSTE",
+          "level": "must"
+        },
+        {
+          "text": "VALFRI",
+          "level": "optional"
+        },
+        {
+          "text": "SHOULD",
+          "level": "should",
+          "case_sensitive": true
+        },
+        {
+          "text": "SKALL",
+          "level": "shall"
+        },
+        {
+          "text": "SHALL",
+          "level": "shall",
+          "case_sensitive": true
+        },
+        {
+          "text": "BÖR",
+          "level": "should"
+        },
+        {
+          "text": "FÅR",
+          "level": "may"
+        },
+        {
+          "text": "NOT:",
+          "level": "describe"
+        },
+        {
+          "text": "MUST",
+          "level": "must",
+          "case_sensitive": true
+        },
+        {
+          "text": "SKA",
+          "level": "shall"
+        },
+        {
+          "text": "MAY",
+          "level": "may",
+          "case_sensitive": true
+        }
+      ],
+      "markers": [
+        "och",
+        "att",
+        "är",
+        "ska",
+        "skall",
+        "måste",
+        "bör",
+        "får",
+        "inte",
+        "för",
+        "med",
+        "som",
+        "systemet",
+        "användaren",
+        "en",
+        "ett",
+        "det",
+        "av",
+        "på",
+        "när",
+        "till",
+        "om",
+        "eller",
+        "kunna"
+      ],
+      "letters": "åäö",
+      "examples": "SKA, MÅSTE, BÖR, FÅR"
+    }
+  ]
+}
