@@ -38,7 +38,7 @@ export function auditQuery(f: AuditFilters): string {
 }
 
 /** Parameters of GET /audit (empty ones left out). */
-export function auditParams(f: AuditFilters, format?: 'csv'): Record<string, string | number> {
+export function auditParams(f: AuditFilters, format?: 'csv' | 'md'): Record<string, string | number> {
   const out: Record<string, string | number> = {}
   const q = auditQuery(f)
   if (q) out.q = q

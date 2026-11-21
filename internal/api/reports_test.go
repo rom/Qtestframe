@@ -92,7 +92,7 @@ func TestReportTemplatesAndFields(t *testing.T) {
 	ids := map[string]bool{}
 	for _, x := range tmpls {
 		ids[x["id"].(string)] = true
-		if len(x["formats"].([]any)) != 4 || x["params"] == nil {
+		if len(x["formats"].([]any)) != 5 || x["params"] == nil {
 			t.Fatal(x)
 		}
 	}

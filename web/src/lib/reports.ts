@@ -1,7 +1,7 @@
 // Reports: standard templates, the custom report builder and generate requests.
 // See docs/api.md "Reports".
 
-export const REPORT_FORMATS = ['pdf', 'docx', 'xlsx', 'csv'] as const
+export const REPORT_FORMATS = ['pdf', 'docx', 'xlsx', 'csv', 'md'] as const
 export type ReportFormat = (typeof REPORT_FORMATS)[number]
 export const REPORT_ENTITIES = ['requirement', 'test', 'run', 'execution'] as const
 export type ReportEntity = (typeof REPORT_ENTITIES)[number]
@@ -12,6 +12,7 @@ export const FORMAT_INFO: Record<ReportFormat, { label: string; icon: string }> 
   docx: { label: 'Word', icon: 'pi pi-file-word' },
   xlsx: { label: 'Excel', icon: 'pi pi-file-excel' },
   csv: { label: 'CSV', icon: 'pi pi-file' },
+  md: { label: 'Markdown', icon: 'pi pi-hashtag' },
 }
 
 /** The standard templates the client knows (labels are translated by id). */

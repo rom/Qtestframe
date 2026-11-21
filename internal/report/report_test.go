@@ -128,7 +128,7 @@ func TestTemplatesList(t *testing.T) {
 				t.Fatalf("missing %s in %v", k, x)
 			}
 		}
-		if len(x["formats"].([]any)) != 4 {
+		if len(x["formats"].([]any)) != 5 {
 			t.Fatal(x)
 		}
 	}

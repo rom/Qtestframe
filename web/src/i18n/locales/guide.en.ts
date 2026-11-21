@@ -83,7 +83,7 @@ const guideEn = {
     token_expires: "When the token stops working. Short-lived tokens limit the damage if one leaks.",
     member_role: "Viewer reads, Tester also executes tests and edits tests, Manager also writes requirements and projects, Admin manages members and tokens.",
     member_initialPassword: "The first password of a new local account. Give it to the person through a safe channel and ask them to change it after the first sign-in.",
-    report_format: "PDF, Word, Excel or CSV. The report is produced in the language you are using now: its titles, column headers and values such as statuses follow the interface, your own texts stay as written.",
+    report_format: "PDF, Word, Excel, CSV or Markdown. The report is produced in the language you are using now: its titles, column headers and values such as statuses follow the interface, your own texts stay as written.",
     report_groupBy: "Groups the rows by a field, with a count per group, for example requirements per status.",
     report_columns: "Choose the columns of the report and drag them into the order you want.",
     export_aspects: "The parts of the project to export. An optional query below limits the requirements and tests.",

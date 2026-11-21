@@ -35,6 +35,7 @@ describe('auditParams', () => {
       format: 'csv',
     })
     expect(auditParams({ limit: 0 })).toEqual({})
+    expect(auditParams({ q: 'action:login' }, 'md')).toEqual({ q: 'action:login', format: 'md' })
   })
 })
 

@@ -205,7 +205,7 @@ Så fungerar det:
 - Filtrera på användare, åtgärd, objekt eller detaljer med en fråga, till exempel `user:anna action:delete` eller `entity:requirement created_at>=2026-09-01`.
 - Begränsa tidsperioden med **Från datum** och **Till datum**.
 - **Antal poster** anger hur många som visas (upp till 5000).
-- **Exportera CSV** laddar ner den filtrerade loggen till en revisor.
+- **Exportera CSV** laddar ner den filtrerade loggen till en revisor; **Exportera Markdown** laddar ner den som ett Markdown-dokument med datumintervallet och filtret.
 
 ## Organisationer
 

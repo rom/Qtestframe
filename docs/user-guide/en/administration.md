@@ -205,7 +205,7 @@ How it works:
 - Filter by user, action, entity or details with a query, for example `user:anna action:delete` or `entity:requirement created_at>=2026-09-01`.
 - Limit the time range with **From date** and **To date**.
 - **Number of entries** sets how many are shown (up to 5000).
-- **Export CSV** downloads the filtered log for an auditor.
+- **Export CSV** downloads the filtered log for an auditor; **Export Markdown** downloads it as a Markdown document with the date range and filter.
 
 ## Organisations
 

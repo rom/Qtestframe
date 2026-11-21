@@ -19,10 +19,11 @@ const notify = useNotify()
 const { t } = useI18n()
 
 const formats = computed(() => [
-  { value: 'xlsx', label: 'Excel', icon: 'pi pi-file-excel', desc: t('export.formatXlsx') },
-  { value: 'csv', label: 'CSV', icon: 'pi pi-file', desc: t('export.formatCsv') },
   { value: 'pdf', label: 'PDF', icon: 'pi pi-file-pdf', desc: t('export.formatPdf') },
   { value: 'docx', label: 'Word', icon: 'pi pi-file-word', desc: t('export.formatDocx') },
+  { value: 'xlsx', label: 'Excel', icon: 'pi pi-file-excel', desc: t('export.formatXlsx') },
+  { value: 'csv', label: 'CSV', icon: 'pi pi-file', desc: t('export.formatCsv') },
+  { value: 'md', label: 'Markdown', icon: 'pi pi-hashtag', desc: t('export.formatMd') },
   { value: 'reqif', label: 'ReqIF', icon: 'pi pi-sitemap', desc: t('export.formatReqif') },
   { value: 'reqifz', label: t('export.reqifzLabel'), icon: 'pi pi-box', desc: t('export.formatReqifz') },
 ])

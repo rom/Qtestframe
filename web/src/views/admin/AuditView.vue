@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Audit trail: date range, user/action/entity filters, free query, paging,
-// CSV export and a detail drawer per entry.
+// CSV and Markdown export and a detail drawer per entry.
 import { computed, onMounted, ref } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -64,10 +64,10 @@ function reset() {
   user.value = action.value = entity.value = q.value = ''
   load()
 }
-async function exportCsv() {
+async function exportAs(format: 'csv' | 'md') {
   exporting.value = true
   try {
-    const name = await api.download('/audit', auditParams(filters.value, 'csv'), 'audit-log.csv')
+    const name = await api.download('/audit', auditParams(filters.value, format), `audit-log.${format}`)
     notify.ok(t('audit.exported'), name)
   } catch (e) {
     notify.fail(e, t('audit.exportFailed'))
@@ -108,7 +108,8 @@ const details = computed(() => prettyDetails(detail.value?.details))
         <span v-if="badRange" class="small error-text" role="alert">{{ t('audit.badRange') }}</span>
         <span class="grow" />
         <Button :label="t('common.clear')" text severity="secondary" @click="reset" />
-        <Button :label="t('audit.exportCsv')" icon="pi pi-file" severity="secondary" outlined :loading="exporting" :disabled="badRange" @click="exportCsv" />
+        <Button :label="t('audit.exportCsv')" icon="pi pi-file" severity="secondary" outlined :loading="exporting" :disabled="badRange" @click="exportAs('csv')" />
+        <Button :label="t('audit.exportMd')" icon="pi pi-hashtag" severity="secondary" outlined :loading="exporting" :disabled="badRange" @click="exportAs('md')" />
         <Button type="submit" :label="t('common.apply')" icon="pi pi-search" :disabled="badRange" />
       </div>
     </form>
