@@ -1345,3 +1345,336 @@ sources:
     jurisdiction: international
     name: {en: "Web performance guidance (web.dev, HTTP Archive, Google Web Fundamentals)", sv: "Vägledning om webbprestanda (web.dev, HTTP Archive, Google Web Fundamentals)"}
     match: ["web.dev", "HTTP Archive", "Google Web Fundamentals"]
+  # ---------------------------------------------------------------- governance, projects, services, facilities, documentation, education
+  - id: decision-768-2008
+    kind: law
+    jurisdiction: EU
+    short: Decision 768/2008/EC
+    name: {en: "Decision No 768/2008/EC on a common framework for the marketing of products", sv: "Beslut nr 768/2008/EG om en gemensam ram för saluföring av produkter"}
+    match: ["Decision No 768/2008/EC"]
+  - id: epbd
+    kind: directive
+    jurisdiction: EU
+    short: EPBD
+    name: {en: "Energy Performance of Buildings Directive (EU) 2024/1275", sv: "Direktivet om byggnaders energiprestanda (EU) 2024/1275"}
+    match: ["Directive (EU) 2024/1275"]
+  - id: weee
+    kind: directive
+    jurisdiction: EU
+    short: WEEE
+    name: {en: "Waste Electrical and Electronic Equipment Directive 2012/19/EU", sv: "Direktivet om avfall som utgörs av eller innehåller elektriska eller elektroniska produkter (WEEE) 2012/19/EU"}
+    match: ["Directive 2012/19/EU"]
+  - id: public-procurement-directive
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Public Procurement Directive 2014/24/EU", sv: "Direktivet om offentlig upphandling 2014/24/EU"}
+    match: ["Directive 2014/24/EU"]
+  - id: se-bbr
+    kind: law
+    jurisdiction: SE
+    short: BBR
+    name: {en: "Boverket's building regulations (BBR, BFS 2011:6)", sv: "Boverkets byggregler (BBR, BFS 2011:6)"}
+    match: ["BBR "]
+  - id: se-ovk
+    kind: law
+    jurisdiction: SE
+    short: OVK
+    name: {en: "Ventilation inspection rules: Förordning (1991:1273) and Boverket BFS 2011:16 (OVK)", sv: "Funktionskontroll av ventilationssystem: förordning (1991:1273) och Boverkets BFS 2011:16 (OVK)"}
+    match: ["BFS 2011:16", "Förordning (1991:1273)"]
+  - id: se-camera-surveillance
+    kind: law
+    jurisdiction: SE
+    name: {en: "Camera Surveillance Act (2018:1200)", sv: "Kamerabevakningslag (2018:1200)"}
+    match: ["Kamerabevakningslag"]
+  - id: se-lso
+    kind: law
+    jurisdiction: SE
+    short: LSO
+    name: {en: "Civil Protection Act (2003:778)", sv: "Lag (2003:778) om skydd mot olyckor"}
+    match: ["Lag (2003:778)"]
+  - id: se-energy-declaration
+    kind: law
+    jurisdiction: SE
+    name: {en: "Act (2006:985) on energy performance certificates for buildings", sv: "Lag (2006:985) om energideklaration för byggnader"}
+    match: ["Lag (2006:985)"]
+  - id: se-lou
+    kind: law
+    jurisdiction: SE
+    short: LOU
+    name: {en: "Public Procurement Act (2016:1145)", sv: "Lag (2016:1145) om offentlig upphandling (LOU)"}
+    match: ["Lag (2016:1145)"]
+  - id: se-language-act
+    kind: law
+    jurisdiction: SE
+    name: {en: "Language Act (2009:600)", sv: "Språklag (2009:600)"}
+    match: ["Språklag"]
+  - id: iso-10002
+    kind: standard
+    jurisdiction: international
+    short: ISO 10002
+    name: {en: "ISO 10002 Customer satisfaction: complaints handling", sv: "ISO 10002 Kundtillfredsställelse: klagomålshantering"}
+    match: ["ISO 10002"]
+  - id: iso-10004
+    kind: standard
+    jurisdiction: international
+    short: ISO 10004
+    name: {en: "ISO 10004 Customer satisfaction: monitoring and measuring", sv: "ISO 10004 Kundtillfredsställelse: övervakning och mätning"}
+    match: ["ISO 10004"]
+  - id: iso-10006
+    kind: standard
+    jurisdiction: international
+    short: ISO 10006
+    name: {en: "ISO 10006 Quality management in projects", sv: "ISO 10006 Kvalitetsledning i projekt"}
+    match: ["ISO 10006"]
+  - id: iso-10007
+    kind: standard
+    jurisdiction: international
+    short: ISO 10007
+    name: {en: "ISO 10007 Guidelines for configuration management", sv: "ISO 10007 Riktlinjer för konfigurationsledning"}
+    match: ["ISO 10007"]
+  - id: iso-10015
+    kind: standard
+    jurisdiction: international
+    short: ISO 10015
+    name: {en: "ISO 10015 Guidelines for competence management and people development", sv: "ISO 10015 Riktlinjer för kompetensförsörjning och personalutveckling"}
+    match: ["ISO 10015"]
+  - id: iso-14001
+    kind: standard
+    jurisdiction: international
+    short: ISO 14001
+    name: {en: "ISO 14001 Environmental management systems", sv: "ISO 14001 Miljöledningssystem"}
+    match: ["ISO 14001"]
+  - id: iso-14289
+    kind: standard
+    jurisdiction: international
+    short: PDF/UA
+    name: {en: "ISO 14289 PDF/UA accessible PDF", sv: "ISO 14289 PDF/UA tillgänglig PDF"}
+    match: ["ISO 14289"]
+  - id: iso-15489
+    kind: standard
+    jurisdiction: international
+    short: ISO 15489
+    name: {en: "ISO 15489 Records management", sv: "ISO 15489 Informationshantering: dokumenthantering"}
+    match: ["ISO 15489"]
+  - id: iso-17100
+    kind: standard
+    jurisdiction: international
+    short: ISO 17100
+    name: {en: "ISO 17100 Translation services", sv: "ISO 17100 Översättningstjänster"}
+    match: ["ISO 17100"]
+  - id: iso-19011
+    kind: standard
+    jurisdiction: international
+    short: ISO 19011
+    name: {en: "ISO 19011 Guidelines for auditing management systems", sv: "ISO 19011 Vägledning för revision av ledningssystem"}
+    match: ["ISO 19011"]
+  - id: iso-21500-family
+    kind: standard
+    jurisdiction: international
+    short: ISO 21502
+    name: {en: "ISO 21502, 21508 and 21511 Project, programme and portfolio management", sv: "ISO 21502, 21508 och 21511 Projekt-, program- och portföljstyrning"}
+    match: ["ISO 21502", "ISO 21508", "ISO 21511"]
+  - id: iso-21542
+    kind: standard
+    jurisdiction: international
+    short: ISO 21542
+    name: {en: "ISO 21542 Accessibility and usability of the built environment", sv: "ISO 21542 Tillgänglighet och användbarhet i den byggda miljön"}
+    match: ["ISO 21542"]
+  - id: iso-24495
+    kind: standard
+    jurisdiction: international
+    short: ISO 24495
+    name: {en: "ISO 24495 Plain language", sv: "ISO 24495 Klarspråk"}
+    match: ["ISO 24495"]
+  - id: iso-29993
+    kind: standard
+    jurisdiction: international
+    short: ISO 29993
+    name: {en: "ISO 29993 Learning services outside formal education", sv: "ISO 29993 Utbildningstjänster utanför det formella utbildningssystemet"}
+    match: ["ISO 29993"]
+  - id: iso-31000
+    kind: standard
+    jurisdiction: international
+    short: ISO 31000
+    name: {en: "ISO 31000 Risk management guidelines", sv: "ISO 31000 Riskhantering: vägledning"}
+    match: ["ISO 31000"]
+  - id: iso-3864
+    kind: standard
+    jurisdiction: international
+    short: ISO 3864
+    name: {en: "ISO 3864 Safety colours and safety signs", sv: "ISO 3864 Säkerhetsfärger och säkerhetsskyltar"}
+    match: ["ISO 3864"]
+  - id: iso-41001
+    kind: standard
+    jurisdiction: international
+    short: ISO 41001
+    name: {en: "ISO 41001 Facility management systems", sv: "ISO 41001 Ledningssystem för fastighetsförvaltning (facility management)"}
+    match: ["ISO 41001"]
+  - id: iso-50001
+    kind: standard
+    jurisdiction: international
+    short: ISO 50001
+    name: {en: "ISO 50001 Energy management systems", sv: "ISO 50001 Ledningssystem för energi"}
+    match: ["ISO 50001"]
+  - id: iso-55001
+    kind: standard
+    jurisdiction: international
+    short: ISO 55001
+    name: {en: "ISO 55001 Asset management systems", sv: "ISO 55001 Ledningssystem för tillgångsförvaltning"}
+    match: ["ISO 55001"]
+  - id: iso-20000
+    kind: standard
+    jurisdiction: international
+    short: ISO/IEC 20000-1
+    name: {en: "ISO/IEC 20000-1 Service management systems", sv: "ISO/IEC 20000-1 Ledningssystem för tjänster"}
+    match: ["ISO/IEC 20000"]
+  - id: iso-15289
+    kind: standard
+    jurisdiction: international
+    short: ISO/IEC/IEEE 15289
+    name: {en: "ISO/IEC/IEEE 15289 Content of life-cycle information items", sv: "ISO/IEC/IEEE 15289 Innehåll i informationsobjekt för livscykeln"}
+    match: ["ISO/IEC/IEEE 15289"]
+  - id: iso-29148
+    kind: standard
+    jurisdiction: international
+    short: ISO/IEC/IEEE 29148
+    name: {en: "ISO/IEC/IEEE 29148 Requirements engineering", sv: "ISO/IEC/IEEE 29148 Kravhantering"}
+    match: ["ISO/IEC/IEEE 29148"]
+  - id: iec-82079
+    kind: standard
+    jurisdiction: international
+    short: IEC/IEEE 82079-1
+    name: {en: "IEC/IEEE 82079-1 Preparation of information for use (instructions for use)", sv: "IEC/IEEE 82079-1 Framtagning av information för användning (bruksanvisningar)"}
+    match: ["IEC/IEEE 82079"]
+  - id: iec-61082
+    kind: standard
+    jurisdiction: international
+    short: IEC 61082
+    name: {en: "IEC 61082 Preparation of documents used in electrotechnology", sv: "IEC 61082 Dokument inom elektrotekniken"}
+    match: ["IEC 61082"]
+  - id: iec-81346
+    kind: standard
+    jurisdiction: international
+    short: IEC 81346
+    name: {en: "IEC 81346 Structuring principles and reference designations", sv: "IEC 81346 Strukturering och referensbeteckningar"}
+    match: ["IEC 81346"]
+  - id: iec-62402
+    kind: standard
+    jurisdiction: international
+    short: IEC 62402
+    name: {en: "IEC 62402 Obsolescence management", sv: "IEC 62402 Hantering av inkurans"}
+    match: ["IEC 62402"]
+  - id: iec-60118
+    kind: standard
+    jurisdiction: international
+    short: IEC 60118-4
+    name: {en: "IEC 60118-4 Audio-frequency induction loop systems", sv: "IEC 60118-4 Hörselslingor"}
+    match: ["IEC 60118"]
+  - id: en-13306
+    kind: standard
+    jurisdiction: EU
+    short: EN 13306
+    name: {en: "EN 13306 Maintenance terminology", sv: "EN 13306 Underhållsterminologi"}
+    match: ["EN 13306"]
+  - id: en-maintenance
+    kind: standard
+    jurisdiction: EU
+    name: {en: "European maintenance standards (EN 13269, EN 13460, EN 15341, EN 17007)", sv: "Europeiska underhållsstandarder (EN 13269, EN 13460, EN 15341, EN 17007)"}
+    match: ["EN 13269", "EN 13460", "EN 15341", "EN 17007"]
+  - id: en-50110
+    kind: standard
+    jurisdiction: EU
+    short: EN 50110-1
+    name: {en: "EN 50110-1 Operation of electrical installations", sv: "EN 50110-1 Skötsel av elektriska anläggningar"}
+    match: ["EN 50110"]
+  - id: en-50600
+    kind: standard
+    jurisdiction: EU
+    short: EN 50600
+    name: {en: "EN 50600 Data centre facilities and infrastructures", sv: "EN 50600 Datacenteranläggningar och infrastruktur"}
+    match: ["EN 50600"]
+  - id: en-building-security
+    kind: standard
+    jurisdiction: EU
+    name: {en: "European security and safety standards for buildings (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)", sv: "Europeiska standarder för skydd av byggnader (EN 1627, EN 50131, EN 60839-11-1, EN 62676-4)"}
+    match: ["EN 1627", "EN 50131", "EN 60839", "EN 62676"]
+  - id: en-fire-safety
+    kind: standard
+    jurisdiction: EU
+    name: {en: "European fire and emergency standards (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)", sv: "Europeiska standarder för brand och nödbelysning (EN 54, EN 1155, EN 1838, EN 15004-1, EN 50172)"}
+    match: ["EN 54", "EN 1155", "EN 1838", "EN 15004", "EN 50172"]
+  - id: en-accessibility-built
+    kind: standard
+    jurisdiction: EU
+    name: {en: "European accessibility standards for the built environment (EN 17210, EN 81-70)", sv: "Europeiska tillgänglighetsstandarder för byggd miljö (EN 17210, EN 81-70)"}
+    match: ["EN 17210", "EN 81-70"]
+  - id: etsi-radio-en
+    kind: standard
+    jurisdiction: EU
+    name: {en: "ETSI harmonised radio standards (EN 300 328, EN 300 396, EN 301 893)", sv: "ETSI harmoniserade radiostandarder (EN 300 328, EN 300 396, EN 301 893)"}
+    match: ["ETSI EN 300 328", "ETSI EN 300 396", "ETSI EN 301 893"]
+  - id: itu-r
+    kind: standard
+    jurisdiction: international
+    short: ITU-R
+    name: {en: "ITU-R recommendations (radio propagation)", sv: "ITU-R-rekommendationer (radioutbredning)"}
+    match: ["ITU-R "]
+  - id: ieee-802-1x
+    kind: standard
+    jurisdiction: international
+    short: IEEE 802.1X
+    name: {en: "IEEE 802.1X Port-based network access control", sv: "IEEE 802.1X Portbaserad nätverksåtkomstkontroll"}
+    match: ["IEEE 802.1X"]
+  - id: xapi
+    kind: standard
+    jurisdiction: international
+    short: xAPI
+    name: {en: "IEEE 9274.1.1 Experience API (xAPI)", sv: "IEEE 9274.1.1 Experience API (xAPI)"}
+    match: ["IEEE 9274"]
+  - id: scorm
+    kind: standard
+    jurisdiction: international
+    short: SCORM
+    name: {en: "SCORM e-learning content packaging", sv: "SCORM, paketering av e-lärandeinnehåll"}
+    match: ["SCORM"]
+  - id: isae-3402
+    kind: standard
+    jurisdiction: international
+    short: ISAE 3402
+    name: {en: "ISAE 3402 Assurance reports on controls at a service organisation", sv: "ISAE 3402 Bestyrkanderapporter om kontroller hos en serviceorganisation"}
+    match: ["ISAE 3402"]
+  - id: nist-800-88
+    kind: guideline
+    jurisdiction: US
+    short: NIST SP 800-88
+    name: {en: "NIST SP 800-88 Guidelines for media sanitization", sv: "NIST SP 800-88 Riktlinjer för sanering av lagringsmedia"}
+    match: ["NIST SP 800-88"]
+  - id: ashrae-tc99
+    kind: guideline
+    jurisdiction: international
+    short: ASHRAE TC 9.9
+    name: {en: "ASHRAE TC 9.9 Thermal guidelines for data processing environments", sv: "ASHRAE TC 9.9 Termiska riktlinjer för datormiljöer"}
+    match: ["ASHRAE TC 9.9"]
+  - id: prince2
+    kind: practice
+    jurisdiction: international
+    short: PRINCE2
+    name: {en: "PRINCE2 project management method", sv: "PRINCE2, projektstyrningsmetod"}
+    match: ["PRINCE2"]
+  - id: pmbok
+    kind: practice
+    jurisdiction: international
+    short: PMBOK
+    name: {en: "PMBOK Guide (Project Management Institute)", sv: "PMBOK Guide (Project Management Institute)"}
+    match: ["PMBOK Guide"]
+  - id: training-models
+    kind: practice
+    jurisdiction: international
+    name: {en: "Training design and evaluation models (ADDIE, Kirkpatrick)", sv: "Modeller för utformning och utvärdering av utbildning (ADDIE, Kirkpatrick)"}
+    match: ["ADDIE", "Kirkpatrick"]
+  - id: raci
+    kind: practice
+    jurisdiction: international
+    short: RACI
+    name: {en: "RACI responsibility assignment matrix", sv: "RACI-matris för ansvarsfördelning"}
+    match: ["RACI "]
