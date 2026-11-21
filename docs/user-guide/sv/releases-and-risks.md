@@ -142,3 +142,7 @@ Utgångskriteriet **Risker hanterade** med nivån *Hög* blockerar en release s�
 2. Lägg kraven i releasens omfattning.
 3. Lägg till **Risker hanterade** med den nivå ni kan acceptera i utgångskriterierna.
 4. Testa kraven i releasens körningar; när åtgärderna fungerar sätter du riskerna till *Åtgärdad*.
+
+## Riskrapporten
+
+**Riskrapport** under **Rapporter** sammanfattar registret inför ett granskningsmöte eller en revision: nyckeltal, risker per nivå och status, värmekartan, de största riskerna, registret, spårbarheten från varje risk till dess krav, deras testfall och senaste utfall, och de öppna risker vars åtgärd ännu inte är testad. Se [Standardrapporter](reports-and-export.md#standardrapporter). [Översikten](traceability-and-coverage.md#översikten) visar de öppna riskerna per nivå och en liten värmekarta.

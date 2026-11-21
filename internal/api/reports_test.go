@@ -86,7 +86,7 @@ func TestReportTemplatesAndFields(t *testing.T) {
 	pid := a.project("FLD")
 	var tmpls []map[string]any
 	a.call("GET", "/api/v1/reports/templates", nil, 200, &tmpls)
-	if len(tmpls) != 6 {
+	if len(tmpls) != 7 {
 		t.Fatal(tmpls)
 	}
 	ids := map[string]bool{}
@@ -96,7 +96,7 @@ func TestReportTemplatesAndFields(t *testing.T) {
 			t.Fatal(x)
 		}
 	}
-	for _, id := range []string{"project_status", "requirements_coverage", "traceability", "run_summary", "defects", "test_inventory"} {
+	for _, id := range []string{"project_status", "requirements_coverage", "traceability", "run_summary", "defects", "test_inventory", "risks"} {
 		if !ids[id] {
 			t.Fatal("missing", id)
 		}
@@ -119,7 +119,7 @@ func TestGenerateTemplateReports(t *testing.T) {
 	fx := newReportFixture(t, a)
 	gen := "/api/v1/projects/" + fx.pid + "/reports/generate"
 	magic := map[string]string{"pdf": "%PDF", "docx": "PK", "xlsx": "PK", "csv": "PK"}
-	for _, tmpl := range []string{"project_status", "requirements_coverage", "traceability", "run_summary", "defects", "test_inventory"} {
+	for _, tmpl := range []string{"project_status", "requirements_coverage", "traceability", "run_summary", "defects", "test_inventory", "risks"} {
 		for _, f := range []string{"pdf", "docx", "xlsx", "csv"} {
 			res, data := a.download(gen, map[string]any{"template": tmpl, "format": f, "params": map[string]string{"run_id": fx.runID}}, 200)
 			if !bytes.HasPrefix(data, []byte(magic[f])) {

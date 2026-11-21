@@ -16,7 +16,7 @@ export const FORMAT_INFO: Record<ReportFormat, { label: string; icon: string }> 
 }
 
 /** The standard templates the client knows (labels are translated by id). */
-export const KNOWN_TEMPLATES = ['project_status', 'requirements_coverage', 'traceability', 'run_summary', 'defects', 'test_inventory'] as const
+export const KNOWN_TEMPLATES = ['project_status', 'requirements_coverage', 'traceability', 'run_summary', 'defects', 'test_inventory', 'risks'] as const
 
 export interface TemplateParam {
   name: string

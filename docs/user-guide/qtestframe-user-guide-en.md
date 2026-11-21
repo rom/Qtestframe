@@ -1455,6 +1455,10 @@ The exit criterion **Risks mitigated** with the level *High* blocks a release wh
 3. Add **Risks mitigated** with the level you can accept to the exit criteria.
 4. Test the requirements in the release's runs; as the mitigation works, set the risks to *Mitigated*.
 
+## The risk report
+
+The **Risk report** under **Reports** summarises the register for a review meeting or an audit: key figures, risks by level and status, the heat map, the top risks, the register, the traceability from each risk to its requirements, their tests and latest results, and the open risks whose mitigation is not tested yet. See [Standard reports](#standard-reports). The [dashboard](#the-dashboard) shows the open risks per level and a small heat map.
+
 # Defects
 
 A **defect** (bug) is a problem found while testing. Every defect has a key such as `SHOP-BUG-3`, a title, a description, a status, a severity, a priority and an assignee, and it is linked to the requirements, tests and executions it concerns. Defects are under **Defects** in the project sidebar.
@@ -2168,6 +2172,21 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 | **Run summary** | one run: totals, executions, defects and durations | the run (required) |
 | **Defects** | all defects recorded on executions, grouped by defect | – |
 | **Test inventory** | tests by folder, type, status and category | optional filter |
+| **Risk report** | the [risks](#releases-and-risks) with key figures, a heat map, the risk register, traceability to requirements and tests, untested mitigations and the top risks | – |
+
+**The risk report** contains:
+
+- **Key figures**: all risks; open risks (*Identified* or *Mitigating*); mitigated, accepted and closed risks; open risks per level; open risks without requirements, with an untested mitigation and with a verified mitigation; and open risks that have not been changed for 90 days or more.
+- **Risks by level and status**: a table with one row per level and one column per status.
+- **Open risks by mitigation state** (see below).
+- **Heat map**: likelihood (rows, 5 at the top) × impact (columns). Each cell gives the number of risks that are not closed and the cell's level, for example *2 · High*, so the table can be read without colours.
+- **Top open risks**: the ten open risks with the highest score.
+- **Risk register**: every risk with key, title, category, owner, likelihood, impact, score, level, status, mitigation, the requirements that address it, the mitigation state and when it was last changed.
+- **Traceability**: one row per risk, requirement and linked test, with the requirement's coverage and the test's latest result.
+- **Open risks with untested mitigation**: open risks without requirements, or with requirements that have no tests, and which of their requirements have no tests or have not passed.
+- **Open risks not updated for 90 days or more**: a reminder to review them.
+
+The **mitigation state** of a risk comes from the requirements that address it: *No requirements*, *Untested* (none of them has linked tests), *Partly tested* (some have), *Tested, not all passed* (all have tests, but not all tests passed) or *Verified* (all linked tests of all its requirements passed). A risk has one likelihood × impact score; the report shows that score and its level, and how far the mitigation is verified by tests.
 
 ![The reports page with the standard reports and the custom report builder](images/en-reports.png)
 

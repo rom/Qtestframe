@@ -5933,7 +5933,10 @@ paths:
       - Reports and export
       summary: Report templates
       operationId: getReportsTemplates
-      description: '**Permission:** any authenticated user; the handler checks: any member.'
+      description: |-
+        The standard reports `[{id, name, description, params, formats}]`: `project_status`, `requirements_coverage`, `traceability`, `run_summary`, `defects`, `test_inventory` and `risks` (see "Reports" in docs/api.md).
+
+        **Permission:** any authenticated user; the handler checks: any member.
       x-permission: authenticated
       responses:
         '200':

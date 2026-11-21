@@ -1760,6 +1760,16 @@ params, formats}]`; `formats` is `pdf`, `docx`, `xlsx`, `csv`, `md`):
 | `run_summary` | one run: totals, executions, defects, durations | `run_id` (required) |
 | `defects` | defects recorded on executions, grouped by defect | – |
 | `test_inventory` | tests by folder, type, status and category | `query` |
+| `risks` | risk report: key figures (open, mitigated, accepted, closed, open per level, untested and verified mitigations, open risks not updated for 90 days), risks by level × status, open risks by mitigation state, the likelihood × impact heat map (risks not closed; every cell gives its count and level), the top 10 open risks, the risk register, risk → requirement → test traceability with coverage and latest results, open risks with untested mitigation, and open risks due for review | – |
+
+The risk report's *mitigation state* of a risk is derived from the
+requirements that address it: `no_requirements`, `untested` (none has
+linked tests), `partly_tested` (some have), `tested` (all have, not all
+passed) or `verified` (all linked tests of all its requirements passed).
+A risk has a single likelihood × impact score and no review date: the
+register shows that score and level, and "due for review" lists the open
+risks whose `updated_at` is 90 days old or more. Recipients of an e-mailed
+risk report need requirement.read and test.read.
 
 Custom report config (`CustomConfig`):
 

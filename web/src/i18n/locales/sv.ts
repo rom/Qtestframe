@@ -3401,6 +3401,10 @@ const sv: Messages = {
         name: 'Testförteckning',
         description: 'Tester per mapp, typ, status och kategori',
       },
+      risks: {
+        name: 'Riskrapport',
+        description: 'Risker per nivå och status, värmekarta, riskregister, spårbarhet till krav och testfall med senaste utfall, otestade åtgärder och de största riskerna',
+      },
     },
     custom: 'Anpassad rapport',
     loadDefinition: 'Läs in sparad rapport',

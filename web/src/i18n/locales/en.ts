@@ -3399,6 +3399,10 @@ const en = {
         name: 'Test inventory',
         description: 'Tests by folder, type, status and category',
       },
+      risks: {
+        name: 'Risk report',
+        description: 'Risks by level and status, heat map, risk register, traceability to requirements and tests with their latest results, untested mitigations and the top risks',
+      },
     },
     custom: 'Custom report',
     loadDefinition: 'Load saved report',
