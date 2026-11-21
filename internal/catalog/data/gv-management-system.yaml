@@ -400,6 +400,94 @@ requirements:
         - method: inspection
           text: Kommunikationsplanen har en post för varje policy och för revisionsresultat, och varje post anger målgrupp, kanal, frekvens och ansvarig roll.
 
+  - id: GVMS-18
+    type: business
+    obligation: must
+    priority: medium
+    tags: [context, internal-issues, external-issues]
+    refs: ["ISO/IEC 27001:2022 §4.1", "ISO 9001:2026 §4.1"]
+    tests: [GVMS-T13]
+    en:
+      title: Internal and external issues reviewed every 12 months
+      description: The organisation MUST record the internal and external issues that affect the outcomes of its management system and review the list at least once every 12 months as an input to the management review.
+      rationale: Changes in the market, technology, law or organisation shift the risks, and a management system that ignores them aims at yesterday's problems.
+      criteria:
+        - method: review
+          text: A list of issues less than 12 months old exists and is referred to in the minutes of the latest management review.
+    sv:
+      title: Interna och externa frågor ses över var 12:e månad
+      description: Organisationen SKA dokumentera de interna och externa frågor som påverkar resultatet av ledningssystemet och se över listan minst en gång var 12:e månad som underlag till ledningens genomgång.
+      rationale: Förändringar i marknad, teknik, lagstiftning eller organisation flyttar riskerna, och ett ledningssystem som bortser från dem siktar på gårdagens problem.
+      criteria:
+        - method: review
+          text: En lista över frågor som är mindre än 12 månader gammal finns, och protokollet från den senaste ledningens genomgång hänvisar till den.
+
+  - id: GVMS-19
+    type: business
+    obligation: must
+    priority: medium
+    tags: [interested-parties, requirements]
+    refs: ["ISO/IEC 27001:2022 §4.2", "ISO 9001:2026 §4.2"]
+    tests: [GVMS-T13]
+    en:
+      title: Register of interested parties and their requirements
+      description: The organisation MUST keep a register of the interested parties relevant to the management system, with their requirements and the requirements that the system addresses.
+      rationale: Requirements from customers, authorities and owners only shape the management system when they are known and recorded.
+      criteria:
+        - method: review
+          text: The register lists each party with its requirements, and each requirement marked as addressed refers to a process or control.
+    sv:
+      title: Register över intressenter och deras krav
+      description: Organisationen SKA föra ett register över de intressenter som är relevanta för ledningssystemet, med deras krav och vilka av kraven som systemet hanterar.
+      rationale: Krav från kunder, myndigheter och ägare påverkar ledningssystemet bara när de är kända och dokumenterade.
+      criteria:
+        - method: review
+          text: Registret listar varje intressent med dess krav, och varje krav som markerats som hanterat hänvisar till en process eller åtgärd.
+
+  - id: GVMS-20
+    type: business
+    obligation: must
+    priority: medium
+    tags: [planning-of-changes, change, management-system]
+    refs: ["ISO/IEC 27001:2022 §6.3", "ISO 9001:2026 §6.3"]
+    tests: [GVMS-T14]
+    en:
+      title: Planned changes to the management system
+      description: The organisation MUST plan each change to the management system, such as a new process, a reorganisation or a new scope, with its purpose, its consequences, the resources it needs and the responsibilities, before the change is made.
+      rationale: Unplanned changes to processes and roles leave gaps in controls that are found only at the next audit or incident.
+      criteria:
+        - method: review
+          text: Each change to the management system in the last 12 months has a plan dated before the change with the 4 listed parts.
+    sv:
+      title: Planerade ändringar av ledningssystemet
+      description: Organisationen SKA planera varje ändring av ledningssystemet, till exempel en ny process, en omorganisation eller en ny omfattning, med syfte, konsekvenser, behov av resurser och ansvar, innan ändringen görs.
+      rationale: Oplanerade ändringar av processer och roller lämnar luckor i åtgärderna som upptäcks först vid nästa revision eller incident.
+      criteria:
+        - method: review
+          text: Varje ändring av ledningssystemet under de senaste 12 månaderna har en plan daterad före ändringen med de 4 angivna delarna.
+
+  - id: GVMS-21
+    type: security
+    obligation: must
+    priority: high
+    tags: [statement-of-applicability, isms, controls]
+    refs: ["ISO/IEC 27001:2022 §6.1.3"]
+    tests: [GVMS-T14]
+    en:
+      title: Statement of applicability with a reason for each control
+      description: An information security management system MUST have an approved statement of applicability that lists each Annex A control as included or excluded, with the reason for each and the implementation status of each included control.
+      rationale: The statement links the risk treatment to the controls, and auditors and customers use it to see what is in place.
+      criteria:
+        - method: review
+          text: The statement lists each of the 93 controls of the 2022 edition with inclusion, reason and status, and has a dated approval.
+    sv:
+      title: Uttalande om tillämplighet med ett skäl för varje åtgärd
+      description: Ett ledningssystem för informationssäkerhet SKA ha ett godkänt uttalande om tillämplighet som listar varje åtgärd i bilaga A som inkluderad eller exkluderad, med skälet för varje åtgärd och genomförandestatus för varje inkluderad åtgärd.
+      rationale: Uttalandet kopplar riskbehandlingen till åtgärderna, och revisorer och kunder använder det för att se vad som finns på plats.
+      criteria:
+        - method: review
+          text: Uttalandet listar var och en av de 93 åtgärderna i 2022 års utgåva med inkludering, skäl och status, och har ett daterat godkännande.
+
 tests:
   - id: GVMS-T01
     priority: high
@@ -728,3 +816,63 @@ tests:
           expected: Rapporten är yngre än 3 år och granskaren har ingen rapporteringsväg till säkerhetsfunktionen.
         - action: Jämför posterna i kommunikationsplanen med listan över policyer.
           expected: Varje policy och revisionsresultaten har en post med målgrupp, kanal, frekvens och ansvarig roll.
+
+  - id: GVMS-T13
+    priority: medium
+    execution: manual
+    tags: [context, interested-parties]
+    refs: ["ISO/IEC 27001:2022 §4.1", "ISO/IEC 27001:2022 §4.2"]
+    en:
+      title: Context and interested parties of the management system
+      description: Reviews the list of internal and external issues and the register of interested parties.
+      preconditions: The list of issues, the register of interested parties and the minutes of the latest management review.
+      expected: The issues are current and used in the review, and each addressed requirement refers to a process or control.
+      steps:
+        - action: Read the date of the list of issues.
+          expected: It is less than 12 months old.
+        - action: Search the minutes of the latest management review for the list.
+          expected: The minutes refer to it.
+        - action: Pick 5 requirements marked as addressed in the register of interested parties.
+          expected: Each refers to an existing process or control.
+    sv:
+      title: Ledningssystemets förutsättningar och intressenter
+      description: Granskar listan över interna och externa frågor och registret över intressenter.
+      preconditions: Listan över frågor, registret över intressenter och protokollet från den senaste ledningens genomgång.
+      expected: Frågorna är aktuella och används i genomgången, och varje hanterat krav hänvisar till en process eller åtgärd.
+      steps:
+        - action: Läs datumet för listan över frågor.
+          expected: Den är mindre än 12 månader gammal.
+        - action: Sök efter listan i protokollet från den senaste ledningens genomgång.
+          expected: Protokollet hänvisar till den.
+        - action: Välj 5 krav som markerats som hanterade i registret över intressenter.
+          expected: Varje krav hänvisar till en befintlig process eller åtgärd.
+
+  - id: GVMS-T14
+    priority: high
+    execution: manual
+    tags: [planning-of-changes, statement-of-applicability]
+    refs: ["ISO/IEC 27001:2022 §6.3", "ISO/IEC 27001:2022 §6.1.3"]
+    en:
+      title: Change plans and the statement of applicability
+      description: Checks the plans for recent changes to the management system and the completeness of the statement of applicability.
+      preconditions: The list of changes to the management system in the last 12 months with their plans, and the statement of applicability.
+      expected: Each change was planned in advance, and the statement covers each control with reason and status.
+      steps:
+        - action: Compare the date of each change plan with the date of the change.
+          expected: The plan is earlier and has purpose, consequences, resources and responsibilities.
+        - action: Count the controls in the statement of applicability.
+          expected: There are 93.
+        - action: Check each control for inclusion, reason and, if included, status.
+          expected: Each field is filled in, and the statement has a dated approval.
+    sv:
+      title: Planer för ändringar och uttalandet om tillämplighet
+      description: Kontrollerar planerna för de senaste ändringarna av ledningssystemet och att uttalandet om tillämplighet är fullständigt.
+      preconditions: Listan över ändringar av ledningssystemet under de senaste 12 månaderna med deras planer, och uttalandet om tillämplighet.
+      expected: Varje ändring planerades i förväg, och uttalandet omfattar varje åtgärd med skäl och status.
+      steps:
+        - action: Jämför datumet för varje plan med datumet för ändringen.
+          expected: Planen är tidigare och har syfte, konsekvenser, resurser och ansvar.
+        - action: Räkna åtgärderna i uttalandet om tillämplighet.
+          expected: De är 93.
+        - action: Kontrollera inkludering, skäl och, för inkluderade åtgärder, status för varje åtgärd.
+          expected: Varje fält är ifyllt, och uttalandet har ett daterat godkännande.

@@ -1954,3 +1954,50 @@ sources:
     name: {en: "Act on flammable and explosive goods (Lag 2010:1011)", sv: "Lag (2010:1011) om brandfarliga och explosiva varor"}
     match: ["Lag (2010:1011)"]
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-20101011-om-brandfarliga-och-explosiva_sfs-2010-1011/
+  - id: iso-37301
+    kind: standard
+    jurisdiction: international
+    short: ISO 37301
+    name: {en: "ISO 37301 Compliance management systems: requirements with guidance for use", sv: "ISO 37301 Ledningssystem för regelefterlevnad: krav med vägledning"}
+    match: ["ISO 37301"]
+    url: https://www.iso.org/standard/75080.html
+  - id: se-arkivlag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Archives Act (Arkivlag 1990:782)", sv: "Arkivlag (1990:782)"}
+    match: ["Arkivlag (1990:782)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arkivlag-1990782_sfs-1990-782/
+  - id: se-osl
+    kind: law
+    jurisdiction: SE
+    short: OSL
+    name: {en: "Public Access to Information and Secrecy Act (Offentlighets- och sekretesslag 2009:400)", sv: "Offentlighets- och sekretesslag (2009:400)"}
+    match: ["Offentlighets- och sekretesslag (2009:400)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/
+  - id: whistleblower-directive
+    kind: directive
+    jurisdiction: EU
+    short: Whistleblower Directive
+    name: {en: "Whistleblower Protection Directive (EU) 2019/1937", sv: "Visselblåsardirektivet (EU) 2019/1937"}
+    match: ["Directive (EU) 2019/1937"]
+    url: https://eur-lex.europa.eu/eli/dir/2019/1937/oj
+  - id: se-visselblasarlag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Swedish Whistleblower Act (Lag 2021:890)", sv: "Lag (2021:890) om skydd för personer som rapporterar om missförhållanden"}
+    match: ["Lag (2021:890)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2021890-om-skydd-for-personer-som_sfs-2021-890/
+  - id: iso-14721
+    kind: standard
+    jurisdiction: international
+    short: ISO 14721
+    name: {en: "ISO 14721 Open archival information system (OAIS) reference model", sv: "ISO 14721 Referensmodell för öppna arkivinformationssystem (OAIS)"}
+    match: ["ISO 14721"]
+    url: https://www.iso.org/search.html?q=ISO%2014721
+  - id: iec-62740
+    kind: standard
+    jurisdiction: international
+    short: IEC 62740
+    name: {en: "IEC 62740 Root cause analysis (RCA)", sv: "IEC 62740 Grundorsaksanalys (RCA)"}
+    match: ["IEC 62740"]
+    url: https://webstore.iec.ch/
