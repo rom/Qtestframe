@@ -354,6 +354,144 @@ requirements:
         - method: inspection
           text: Rapporterna för de senaste 3 månaderna innehåller de fyra nyckeltalen per kritisk utrustning, och en omräkning av ett nyckeltal ur arbetsordrarna ger samma värde inom 1 %.
 
+  - id: EQMNT-16
+    type: business
+    obligation: must
+    priority: high
+    tags: [obsolescence, installed-base, lifecycle]
+    refs: ["IEC 62402:2019 (obsolescence management)"]
+    tests: [EQMNT-T11]
+    en:
+      title: Yearly obsolescence review of the installed equipment
+      description: The maintenance organisation MUST review the end-of-support and end-of-production dates of the controllers, drives, operator stations and other critical components of each production line at least every 12 months, and record a mitigation for each item that reaches end of support within 3 years.
+      rationale: Equipment runs for decades while its electronics are discontinued after a few years, and late reactions leave no time for a planned replacement.
+      criteria:
+        - method: inspection
+          text: The latest review is less than 12 months old, covers each line and has a mitigation for each item with end of support within 3 years.
+          threshold: review ≤ 12 months
+    sv:
+      title: Årlig genomgång av inkurans i den installerade utrustningen
+      description: Underhållsorganisationen SKA minst var 12:e månad gå igenom datum för slut på support och slut på tillverkning för styrsystem, drivsystem, operatörsstationer och andra kritiska komponenter i varje produktionslinje, och registrera en åtgärd för varje del som når slutet på supporten inom 3 år.
+      rationale: Utrustning körs i årtionden medan dess elektronik slutar tillverkas efter ett fåtal år, och sena reaktioner lämnar ingen tid för ett planerat utbyte.
+      criteria:
+        - method: inspection
+          text: Den senaste genomgången är mindre än 12 månader gammal, omfattar varje linje och har en åtgärd för varje del med slut på support inom 3 år.
+          threshold: genomgång ≤ 12 månader
+
+  - id: EQMNT-17
+    type: business
+    obligation: must
+    priority: medium
+    tags: [competence, maintenance-personnel]
+    refs: ["ISO 55001:2024 §7.2 (competence)"]
+    tests: [EQMNT-T12]
+    en:
+      title: Maintenance tasks assigned only to qualified personnel
+      description: The maintenance system MUST assign each work order type that calls for a specific qualification only to persons whose recorded qualification for that type is valid on the planned date.
+      rationale: Work by people without the right training or authorisation causes faults and accidents, especially on electrical, pressure and lifting equipment.
+      criteria:
+        - method: test
+          text: Assigning a work order that needs an electrical qualification to a person without it is refused, and a sample of 20 closed orders shows valid qualifications.
+    sv:
+      title: Underhållsuppgifter tilldelas endast kvalificerad personal
+      description: Underhållssystemet SKA tilldela varje typ av arbetsorder som kräver en viss kvalifikation endast till personer vars registrerade kvalifikation för den typen är giltig på det planerade datumet.
+      rationale: Arbete av personer utan rätt utbildning eller behörighet orsakar fel och olyckor, särskilt på el-, tryck- och lyftutrustning.
+      criteria:
+        - method: test
+          text: En tilldelning av en arbetsorder som kräver elbehörighet till en person utan den nekas, och ett urval av 20 stängda order visar giltiga kvalifikationer.
+
+  - id: EQMNT-18
+    type: business
+    obligation: must
+    priority: high
+    tags: [root-cause-analysis, failures]
+    refs: ["ISO 9001:2026 §10.2 (nonconformity and corrective action)"]
+    tests: [EQMNT-T13]
+    en:
+      title: Root cause analysis of each failure that stops production for 4 hours
+      description: The maintenance organisation MUST complete a documented root cause analysis within 30 days for each failure that stops a production line for more than 4 hours, with actions that have an owner and a due date.
+      rationale: Repairing the failed part without finding the cause lets the same failure return.
+      criteria:
+        - method: inspection
+          text: Each stop longer than 4 hours in the last 12 months has an analysis dated within 30 days, and each action has an owner and a due date.
+          threshold: ≤ 30 days
+    sv:
+      title: Grundorsaksanalys av varje fel som stoppar produktionen i 4 timmar
+      description: Underhållsorganisationen SKA inom 30 dagar slutföra en dokumenterad grundorsaksanalys för varje fel som stoppar en produktionslinje i mer än 4 timmar, med åtgärder som har en ansvarig och ett slutdatum.
+      rationale: Om den trasiga delen repareras utan att orsaken hittas kommer samma fel tillbaka.
+      criteria:
+        - method: inspection
+          text: Varje stopp längre än 4 timmar under de senaste 12 månaderna har en analys daterad inom 30 dagar, och varje åtgärd har en ansvarig och ett slutdatum.
+          threshold: ≤ 30 dagar
+
+  - id: EQMNT-19
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [electrical-safety, work-permit]
+    refs: ["EN 50110-1:2023"]
+    tests: [EQMNT-T12]
+    en:
+      title: Work on electrical installations under a work permit
+      description: Each maintenance task on or near an electrical installation above 50 V AC or 120 V DC MUST be carried out under a work permit that names the person in charge of the work, the isolation points and the verification of absence of voltage.
+      rationale: Clear responsibility and a verified dead state are what prevent electric shock and arc flash injuries during maintenance.
+      criteria:
+        - method: inspection
+          text: A sample of 10 electrical work orders each has a signed permit with the person in charge, isolation points and a recorded voltage check.
+    sv:
+      title: Arbete på elektriska anläggningar under arbetstillstånd
+      description: Varje underhållsuppgift på eller nära en elektrisk anläggning över 50 V AC eller 120 V DC SKA utföras under ett arbetstillstånd som anger arbetsansvarig, frånskiljningspunkter och kontroll av spänningslöshet.
+      rationale: Tydligt ansvar och ett kontrollerat spänningslöst läge är det som förhindrar elolycksfall och ljusbågsskador vid underhåll.
+      criteria:
+        - method: inspection
+          text: Ett urval av 10 arbetsorder för elarbete har vardera ett undertecknat tillstånd med arbetsansvarig, frånskiljningspunkter och en registrerad spänningskontroll.
+
+  - id: EQMNT-20
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [failure-data, taxonomy, reliability]
+    refs: ["ISO 14224:2016"]
+    tests: [EQMNT-T13]
+    en:
+      title: Failure records coded with failure mode, cause and mechanism
+      description: Each corrective work order MUST record the failed equipment item and its failure mode, failure mechanism and failure cause using the codes of the organisation's failure taxonomy.
+      rationale: Coded failure data can be counted and compared, which free text in work orders cannot.
+      criteria:
+        - method: inspection
+          text: A sample of 30 corrective work orders has a valid code in each of the three failure fields.
+    sv:
+      title: Felregistreringar kodas med felsätt, felorsak och felmekanism
+      description: Varje arbetsorder för avhjälpande underhåll SKA registrera den felande utrustningsenheten och dess felsätt, felmekanism och felorsak med koderna i organisationens feltaxonomi.
+      rationale: Kodade feldata kan räknas och jämföras, vilket fritext i arbetsorder inte kan.
+      criteria:
+        - method: inspection
+          text: Ett urval av 30 arbetsorder för avhjälpande underhåll har en giltig kod i vart och ett av de tre felfälten.
+
+  - id: EQMNT-21
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [lifting-equipment, periodic-inspection]
+    refs: ["Directive 2009/104/EC Art. 5(2) (periodic inspection)"]
+    tests: [EQMNT-T14]
+    en:
+      title: Lifting equipment examined at least every 12 months
+      description: Each lifting machine and lifting accessory MUST be thoroughly examined by a competent person at least every 12 months, and carry a mark showing its safe working load and the date of its next examination.
+      rationale: Wear and damage to chains, slings, hooks and brakes develop in use and cause loads to fall if they are not found in time.
+      criteria:
+        - method: inspection
+          text: Each lifting item in the register has an examination report less than 12 months old, and 10 sampled items carry a mark with load and next date.
+          threshold: ≤ 12 months
+    sv:
+      title: Lyftutrustning undersöks minst var 12:e månad
+      description: Varje lyftanordning och lyftredskap SKA undersökas noggrant av en kompetent person minst var 12:e månad och ha en märkning som visar högsta tillåtna last och datum för nästa undersökning.
+      rationale: Slitage och skador på kättingar, stroppar, krokar och bromsar uppstår vid användning och gör att laster faller om de inte upptäcks i tid.
+      criteria:
+        - method: inspection
+          text: Varje lyftenhet i registret har ett undersökningsprotokoll som är mindre än 12 månader gammalt, och 10 utvalda enheter har en märkning med last och nästa datum.
+          threshold: ≤ 12 månader
+
 tests:
   - id: EQMNT-T01
     priority: high
@@ -632,3 +770,123 @@ tests:
           expected: Tillgänglighet, MTBF, MTTR och andelen planerade timmar anges.
         - action: Räkna om MTTR för en utrustning för den senaste månaden ur dess arbetsorder.
           expected: Resultatet ligger inom 1 % av det rapporterade värdet.
+
+  - id: EQMNT-T11
+    priority: high
+    execution: manual
+    tags: [obsolescence]
+    refs: ["IEC 62402:2019 (obsolescence management)"]
+    en:
+      title: Obsolescence review of the installed base
+      description: Checks the latest obsolescence review against the installed component list.
+      preconditions: The latest obsolescence review, the installed component list of each production line and the makers' life-cycle notices.
+      expected: The review is current, complete and has a mitigation for each item near end of support.
+      steps:
+        - action: Read the date of the latest review.
+          expected: The review is less than 12 months old.
+        - action: Compare the lines and components in the review with the installed component list.
+          expected: Each line and each critical component is covered.
+        - action: List the items with end of support within 3 years.
+          expected: Each has a recorded mitigation such as a spare stock, a last-time buy or a planned replacement.
+    sv:
+      title: Genomgång av inkurans i den installerade basen
+      description: Kontrollerar den senaste genomgången av inkurans mot listan över installerade komponenter.
+      preconditions: Den senaste genomgången av inkurans, listan över installerade komponenter för varje produktionslinje och tillverkarnas meddelanden om livscykelstatus.
+      expected: Genomgången är aktuell, fullständig och har en åtgärd för varje del som närmar sig slutet på supporten.
+      steps:
+        - action: Läs datumet för den senaste genomgången.
+          expected: Genomgången är mindre än 12 månader gammal.
+        - action: Jämför linjerna och komponenterna i genomgången med listan över installerade komponenter.
+          expected: Varje linje och varje kritisk komponent omfattas.
+        - action: Lista delarna med slut på support inom 3 år.
+          expected: Var och en har en registrerad åtgärd som ett reservlager, ett sista köp eller ett planerat utbyte.
+
+  - id: EQMNT-T12
+    priority: high
+    execution: manual
+    tags: [competence, electrical-safety]
+    refs: ["ISO 55001:2024 §7.2 (competence)", "EN 50110-1:2023"]
+    en:
+      title: Qualification check at assignment and electrical work permits
+      description: Tries to assign a qualified task to an unqualified person and samples closed work orders and electrical permits.
+      preconditions: A planner account in the maintenance system, a test person without electrical qualification and the closed work orders and permits of the last 3 months.
+      expected: The unqualified assignment is refused and the sampled orders have valid qualifications and complete permits.
+      steps:
+        - action: Assign an electrical work order to the test person without the qualification.
+          expected: The system refuses the assignment and names the missing qualification.
+        - action: Check the qualifications of the assignees of 20 closed work orders that need a qualification.
+          expected: Each assignee had a valid qualification on the work date.
+        - action: Open the permits of 10 electrical work orders.
+          expected: Each permit names the person in charge, the isolation points and a recorded voltage check.
+    sv:
+      title: Kontroll av kvalifikation vid tilldelning och tillstånd för elarbete
+      description: Försöker tilldela en kvalificerad uppgift till en person utan kvalifikation och tar stickprov på stängda arbetsorder och tillstånd för elarbete.
+      preconditions: Ett planerarkonto i underhållssystemet, en testperson utan elbehörighet och de stängda arbetsorderna och tillstånden för de senaste 3 månaderna.
+      expected: Den okvalificerade tilldelningen nekas och de utvalda orderna har giltiga kvalifikationer och fullständiga tillstånd.
+      steps:
+        - action: Tilldela en arbetsorder för elarbete till testpersonen utan behörighet.
+          expected: Systemet nekar tilldelningen och anger den saknade kvalifikationen.
+        - action: Kontrollera kvalifikationerna för de tilldelade personerna i 20 stängda arbetsorder som kräver en kvalifikation.
+          expected: Varje tilldelad person hade en giltig kvalifikation på arbetsdagen.
+        - action: Öppna tillstånden för 10 arbetsorder för elarbete.
+          expected: Varje tillstånd anger arbetsansvarig, frånskiljningspunkter och en registrerad spänningskontroll.
+
+  - id: EQMNT-T13
+    priority: medium
+    execution: manual
+    tags: [root-cause-analysis, failure-data]
+    refs: ["ISO 9001:2026 §10.2 (nonconformity and corrective action)", "ISO 14224:2016"]
+    en:
+      title: Root cause analyses and failure coding
+      description: Compares long production stops with root cause analyses and checks the failure codes of corrective work orders.
+      preconditions: The production stop log and the corrective work orders of the last 12 months, and the failure taxonomy.
+      expected: Each long stop has a timely analysis with owned actions, and the work orders are fully coded.
+      steps:
+        - action: List the stops longer than 4 hours from the stop log.
+          expected: A list of stops with dates is produced.
+        - action: Find the root cause analysis of each stop.
+          expected: Each has an analysis dated within 30 days with actions that have an owner and a due date.
+        - action: Select 30 corrective work orders and read the failure fields.
+          expected: Each has a valid failure mode, mechanism and cause code from the taxonomy.
+    sv:
+      title: Grundorsaksanalyser och felkodning
+      description: Jämför långa produktionsstopp med grundorsaksanalyser och kontrollerar felkoderna i arbetsorder för avhjälpande underhåll.
+      preconditions: Loggen över produktionsstopp och arbetsorderna för avhjälpande underhåll för de senaste 12 månaderna samt feltaxonomin.
+      expected: Varje långt stopp har en analys i tid med åtgärder som har en ansvarig, och arbetsorderna är fullständigt kodade.
+      steps:
+        - action: Lista stoppen längre än 4 timmar ur stopploggen.
+          expected: En lista över stopp med datum tas fram.
+        - action: Hitta grundorsaksanalysen för varje stopp.
+          expected: Var och en har en analys daterad inom 30 dagar med åtgärder som har en ansvarig och ett slutdatum.
+        - action: Välj 30 arbetsorder för avhjälpande underhåll och läs felfälten.
+          expected: Var och en har en giltig kod för felsätt, mekanism och orsak från taxonomin.
+
+  - id: EQMNT-T14
+    priority: critical
+    execution: manual
+    tags: [lifting-equipment]
+    refs: ["Directive 2009/104/EC Art. 5(2) (periodic inspection)"]
+    en:
+      title: Lifting equipment register, examination reports and marking
+      description: Checks the examination reports of the lifting equipment and the marking on sampled items.
+      preconditions: The lifting equipment register, the examination reports and access to the stores and work areas.
+      expected: Each item has a current examination and sampled items are marked.
+      steps:
+        - action: Compare the register with the examination reports.
+          expected: Each item has a report less than 12 months old by a named competent person.
+        - action: Pick 10 items in the stores and work areas, at least 5 of them slings or chains.
+          expected: Each item is in the register.
+        - action: Read the mark on each picked item.
+          expected: Each shows the safe working load and the next examination date, and the date is in the future.
+    sv:
+      title: Register, undersökningsprotokoll och märkning för lyftutrustning
+      description: Kontrollerar undersökningsprotokollen för lyftutrustningen och märkningen på utvalda enheter.
+      preconditions: Registret över lyftutrustning, undersökningsprotokollen och tillträde till förråd och arbetsområden.
+      expected: Varje enhet har en aktuell undersökning och de utvalda enheterna är märkta.
+      steps:
+        - action: Jämför registret med undersökningsprotokollen.
+          expected: Varje enhet har ett protokoll som är mindre än 12 månader gammalt och utfört av en namngiven kompetent person.
+        - action: Välj 10 enheter i förråd och arbetsområden, varav minst 5 stroppar eller kättingar.
+          expected: Varje enhet finns i registret.
+        - action: Läs märkningen på varje vald enhet.
+          expected: Var och en visar högsta tillåtna last och datum för nästa undersökning, och datumet har inte passerats.

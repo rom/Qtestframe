@@ -1895,3 +1895,23 @@ sources:
     name: {en: "US Code of Federal Regulations Title 47 (FCC), Parts 2 and 15", sv: "USA:s Code of Federal Regulations avdelning 47 (FCC), del 2 och 15"}
     match: ["47 CFR Part 15", "47 CFR Part 2 "]
     url: https://www.ecfr.gov/current/title-47
+  - id: ped
+    kind: directive
+    jurisdiction: EU
+    short: PED
+    name: {en: "Pressure Equipment Directive 2014/68/EU", sv: "Direktivet om tryckbärande anordningar 2014/68/EU"}
+    match: ["Directive 2014/68/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2014/68/oj
+  - id: noise-at-work
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Noise at work, Directive 2003/10/EC on exposure of workers to the risks arising from noise", sv: "Buller i arbetet, direktiv 2003/10/EG om arbetstagares exponering för risker som har samband med buller"}
+    match: ["Directive 2003/10/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/2003/10/oj
+  - id: iso-4126
+    kind: standard
+    jurisdiction: international
+    short: ISO 4126
+    name: {en: "ISO 4126 Safety devices for protection against excessive pressure", sv: "ISO 4126 Säkerhetsanordningar för skydd mot för högt tryck"}
+    match: ["ISO 4126"]
+    url: https://www.iso.org/standard/50826.html

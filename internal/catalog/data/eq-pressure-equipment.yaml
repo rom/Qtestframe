@@ -1,0 +1,606 @@
+area: eq-pressure-equipment
+prefix: EQPED
+group: privacy
+catalogue: equipment
+name: {en: Pressure equipment, sv: Tryckbärande anordningar}
+description:
+  en: Requirements for the design, manufacture and use of pressure equipment such as vessels, piping, safety accessories and assemblies, covering classification and conformity assessment under the Pressure Equipment Directive, hazard analysis, strength design, pressure limiting devices, permanent joints and non-destructive testing, proof testing, material documents, marking, instructions, and inspection before and during use.
+  sv: Krav på konstruktion, tillverkning och användning av tryckbärande anordningar som kärl, rörledningar, säkerhetsutrustning och aggregat, med klassificering och bedömning av överensstämmelse enligt direktivet om tryckbärande anordningar, riskanalys, hållfasthetsdimensionering, tryckbegränsande anordningar, permanenta förband och oförstörande provning, tryckprovning, materialintyg, märkning, bruksanvisning samt kontroll före och under användning.
+
+requirements:
+  - id: EQPED-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [register, classification]
+    refs: ["Directive 2014/68/EU (PED) Art. 13 (classification of pressure equipment)"]
+    tests: [EQPED-T01]
+    en:
+      title: Register of pressure equipment with its classification data
+      description: The owner MUST keep a register of each pressure equipment item on the site with its maximum allowable pressure PS, temperature range TS, volume or nominal size, fluid group, category, conformity route and the dates of its last and next inspection.
+      rationale: The classification data decide which rules and inspection intervals apply, and an item missing from the register is not inspected.
+      criteria:
+        - method: inspection
+          text: A walk-down of one plant area finds each pressure equipment item in the register with each listed field filled in.
+    sv:
+      title: Register över tryckbärande anordningar med klassificeringsuppgifter
+      description: Ägaren SKA föra ett register över varje tryckbärande anordning på anläggningen med högsta tillåtna tryck PS, temperaturområde TS, volym eller nominell storlek, fluidgrupp, kategori, väg för bedömning av överensstämmelse och datum för senaste och nästa kontroll.
+      rationale: Klassificeringsuppgifterna avgör vilka regler och kontrollintervall som gäller, och en anordning som saknas i registret blir inte kontrollerad.
+      criteria:
+        - method: inspection
+          text: En genomgång av ett anläggningsområde hittar varje tryckbärande anordning i registret med varje angivet fält ifyllt.
+
+  - id: EQPED-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [classification, category, design]
+    refs: ["Directive 2014/68/EU (PED) Art. 13 (classification of pressure equipment)", "Directive 2014/68/EU (PED) Annex II (conformity assessment tables)"]
+    tests: [EQPED-T02]
+    en:
+      title: Category determined before design starts
+      description: The manufacturer MUST determine and record the category of each pressure equipment item from its fluid group, PS and volume or nominal size, using the conformity assessment tables, before the detailed design starts.
+      rationale: The category sets the conformity assessment modules and whether a notified body takes part, so a late or wrong classification invalidates the assessment.
+      criteria:
+        - method: inspection
+          text: Each item in the technical file has a classification record dated before the design release, and a recalculation of 5 items with the tables gives the same category.
+    sv:
+      title: Kategori bestäms innan konstruktionen påbörjas
+      description: Tillverkaren SKA bestämma och registrera kategorin för varje tryckbärande anordning utifrån fluidgrupp, PS och volym eller nominell storlek med hjälp av tabellerna för bedömning av överensstämmelse, innan den detaljerade konstruktionen påbörjas.
+      rationale: Kategorin avgör vilka moduler för bedömning av överensstämmelse som gäller och om ett anmält organ deltar, så en sen eller felaktig klassificering gör bedömningen ogiltig.
+      criteria:
+        - method: inspection
+          text: Varje anordning i den tekniska dokumentationen har ett klassificeringsprotokoll daterat före konstruktionsreleasen, och en omräkning av 5 anordningar med tabellerna ger samma kategori.
+
+  - id: EQPED-03
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [conformity-assessment, notified-body]
+    refs: ["Directive 2014/68/EU (PED) Art. 14 (conformity assessment procedures)"]
+    tests: [EQPED-T02]
+    en:
+      title: Conformity assessment module that matches the category
+      description: Pressure equipment of category II, III or IV MUST be assessed with a module allowed for its category, with a notified body certificate for the modules that call for one, before it is placed on the market.
+      rationale: Higher categories carry higher hazards, and the directive gives them stricter assessment with an independent body.
+      criteria:
+        - method: inspection
+          text: For each delivered item of category II or higher, the declaration names a module allowed for its category and the certificate number of the notified body.
+    sv:
+      title: Modul för bedömning av överensstämmelse som motsvarar kategorin
+      description: Tryckbärande anordningar i kategori II, III eller IV SKA bedömas med en modul som är tillåten för kategorin, med ett intyg från ett anmält organ för de moduler som kräver det, innan de släpps ut på marknaden.
+      rationale: Högre kategorier har högre risker, och direktivet ger dem en striktare bedömning med ett oberoende organ.
+      criteria:
+        - method: inspection
+          text: För varje levererad anordning i kategori II eller högre anger försäkran en modul som är tillåten för kategorin och intygsnumret från det anmälda organet.
+
+  - id: EQPED-04
+    type: regulatory
+    obligation: must_not
+    priority: medium
+    tags: [sound-engineering-practice, ce-marking]
+    refs: ["Directive 2014/68/EU (PED) Art. 4(3) (sound engineering practice)"]
+    tests: [EQPED-T02]
+    en:
+      title: No CE marking on equipment below the category thresholds
+      description: Pressure equipment at or below the thresholds for category I MUST NOT carry the CE marking under the directive, and is designed and made to sound engineering practice with instructions and identification of the manufacturer.
+      rationale: A CE marking on such equipment wrongly claims an assessment that was never made and misleads users and inspectors.
+      criteria:
+        - method: inspection
+          text: The items in the register classified as sound engineering practice carry no CE marking for pressure and each has instructions and the manufacturer's identification.
+    sv:
+      title: Ingen CE-märkning på anordningar under kategorigränserna
+      description: Tryckbärande anordningar på eller under gränserna för kategori I SKA INTE bära CE-märkning enligt direktivet, och konstrueras och tillverkas enligt god teknisk praxis med bruksanvisning och identifiering av tillverkaren.
+      rationale: En CE-märkning på sådana anordningar påstår felaktigt en bedömning som aldrig gjorts och vilseleder användare och kontrollanter.
+      criteria:
+        - method: inspection
+          text: Anordningarna i registret som klassats som god teknisk praxis har ingen CE-märkning för tryck och var och en har bruksanvisning och tillverkarens identifiering.
+
+  - id: EQPED-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [hazard-analysis, design]
+    refs: ["Directive 2014/68/EU (PED) Annex I (preliminary observations, hazard analysis)"]
+    tests: [EQPED-T03]
+    en:
+      title: Documented hazard analysis for each pressure equipment design
+      description: The manufacturer MUST document a hazard analysis for each design that covers overpressure, temperature extremes, corrosion and erosion, fatigue, filling and emptying, and reasonably foreseeable misuse, and links each hazard to a design measure.
+      rationale: The essential safety requirements only apply to the hazards the manufacturer has identified, so a missing hazard leaves no safeguard against it.
+      criteria:
+        - method: inspection
+          text: The hazard analysis of a sampled design covers each listed hazard type and names a design measure for each identified hazard.
+    sv:
+      title: Dokumenterad riskanalys för varje konstruktion av tryckbärande anordning
+      description: Tillverkaren SKA dokumentera en riskanalys för varje konstruktion som omfattar övertryck, extrema temperaturer, korrosion och erosion, utmattning, fyllning och tömning samt rimligen förutsebar felanvändning, och som kopplar varje risk till en konstruktionsåtgärd.
+      rationale: De väsentliga säkerhetskraven tillämpas bara på de risker som tillverkaren har identifierat, så en saknad risk lämnar inget skydd mot den.
+      criteria:
+        - method: inspection
+          text: Riskanalysen för en utvald konstruktion omfattar varje angiven typ av risk och anger en konstruktionsåtgärd för varje identifierad risk.
+
+  - id: EQPED-06
+    type: constraint
+    obligation: must
+    priority: critical
+    tags: [strength, design-calculation, corrosion-allowance]
+    refs: ["Directive 2014/68/EU (PED) Annex I §2.2 (design for adequate strength)"]
+    tests: [EQPED-T03]
+    en:
+      title: Strength calculation at the design conditions with corrosion allowance
+      description: The design calculation MUST show that each pressure-bearing part withstands PS at the most unfavourable TS with the stated corrosion allowance, using a design method from a harmonised standard or an equivalent documented method.
+      rationale: Wall thickness that is enough when new can fall below the safe value after years of corrosion at high temperature.
+      criteria:
+        - method: analysis
+          text: An independent recalculation of the shell and nozzles of a sampled design confirms the thicknesses at PS, the worst TS and the corrosion allowance.
+    sv:
+      title: Hållfasthetsberäkning vid konstruktionsvillkoren med korrosionstillägg
+      description: Konstruktionsberäkningen SKA visa att varje tryckbärande del tål PS vid den mest ogynnsamma TS med det angivna korrosionstillägget, med en beräkningsmetod från en harmoniserad standard eller en likvärdig dokumenterad metod.
+      rationale: En godstjocklek som räcker som ny kan efter flera års korrosion vid hög temperatur bli lägre än det säkra värdet.
+      criteria:
+        - method: analysis
+          text: En oberoende omräkning av mantel och stutsar för en utvald konstruktion bekräftar tjocklekarna vid PS, sämsta TS och korrosionstillägget.
+
+  - id: EQPED-07
+    type: constraint
+    obligation: must_not
+    priority: critical
+    tags: [overpressure, pressure-limiting]
+    refs: ["Directive 2014/68/EU (PED) Annex I §7.3 (pressure limiting devices)", "Directive 2014/68/EU (PED) Annex I §2.11 (safety accessories)"]
+    tests: [EQPED-T04]
+    en:
+      title: Momentary pressure surges limited to 10 % above PS
+      description: The pressure limiting devices MUST NOT allow the pressure to exceed PS by more than 10 % during a momentary surge, in each operating and upset case of the hazard analysis.
+      rationale: Short pressure peaks above the design value fatigue and can rupture the equipment even when the average pressure is within limits.
+      criteria:
+        - method: analysis
+          text: The relief sizing calculation shows the accumulated pressure at full relief at most 1.1 × PS for each case of the hazard analysis.
+          threshold: ≤ 1.1 × PS
+    sv:
+      title: Kortvariga trycktoppar begränsade till 10 % över PS
+      description: De tryckbegränsande anordningarna SKA INTE låta trycket överstiga PS med mer än 10 % vid en kortvarig trycktopp, i varje drift- och störningsfall i riskanalysen.
+      rationale: Korta trycktoppar över konstruktionsvärdet ger utmattning och kan spräcka anordningen även när medeltrycket ligger inom gränserna.
+      criteria:
+        - method: analysis
+          text: Dimensioneringsberäkningen för säkerhetsventilen visar ett ackumulerat tryck vid full avblåsning på högst 1,1 × PS för varje fall i riskanalysen.
+          threshold: ≤ 1,1 × PS
+
+  - id: EQPED-08
+    type: constraint
+    obligation: must
+    priority: critical
+    tags: [safety-valve, set-pressure, relief-capacity]
+    refs: ["ISO 4126-1:2013 (safety valves)", "Directive 2014/68/EU (PED) Annex I §2.11 (safety accessories)"]
+    tests: [EQPED-T04]
+    en:
+      title: Safety valve set at or below PS and sized for the full relief load
+      description: Each safety valve MUST have a set pressure at or below the PS of the equipment it protects and a certified discharge capacity at least equal to the largest relief load of the hazard analysis.
+      rationale: A valve set too high or too small does not stop the pressure rise in the case it is there for.
+      criteria:
+        - method: inspection
+          text: The valve data sheet and test certificate show the set pressure at or below PS and a certified capacity at or above the largest relief load.
+    sv:
+      title: Säkerhetsventil inställd på högst PS och dimensionerad för hela avblåsningslasten
+      description: Varje säkerhetsventil SKA ha ett öppningstryck som är lika med eller lägre än PS för den anordning den skyddar och en certifierad avblåsningskapacitet som inte är lägre än den största avblåsningslasten i riskanalysen.
+      rationale: En ventil som är inställd för högt eller är för liten stoppar inte tryckökningen i det fall den finns till för.
+      criteria:
+        - method: inspection
+          text: Ventilens datablad och provningsintyg visar ett öppningstryck på högst PS och en certifierad kapacitet på minst den största avblåsningslasten.
+
+  - id: EQPED-09
+    type: constraint
+    obligation: must
+    priority: critical
+    tags: [welding, permanent-joining, qualification]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.1.2 (permanent joining)"]
+    tests: [EQPED-T05]
+    en:
+      title: Permanent joints made by qualified personnel with approved procedures
+      description: Each permanent joint of pressure-bearing parts MUST be made by personnel with a valid qualification to an approved joining procedure, approved by a notified body or a recognised third-party organisation for equipment of category II, III or IV.
+      rationale: The strength of a weld depends on the procedure and the welder, and faults in it are the most common cause of pressure equipment failure.
+      criteria:
+        - method: inspection
+          text: The weld map of a sampled item links each joint to a procedure with an approval and to a welder with a qualification valid on the welding date.
+    sv:
+      title: Permanenta förband utförda av kvalificerad personal med godkända förfaranden
+      description: Varje permanent förband i tryckbärande delar SKA utföras av personal med giltig kvalifikation enligt ett godkänt förbandsförfarande, som för anordningar i kategori II, III eller IV har godkänts av ett anmält organ eller en erkänd tredjepartsorganisation.
+      rationale: En svets hållfasthet beror på förfarandet och svetsaren, och fel i svetsar är den vanligaste orsaken till haverier i tryckbärande anordningar.
+      criteria:
+        - method: inspection
+          text: Svetskartan för en utvald anordning kopplar varje förband till ett förfarande med godkännande och till en svetsare med en kvalifikation som var giltig på svetsdatumet.
+
+  - id: EQPED-10
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [non-destructive-testing, welds]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.1.3 (non-destructive tests)"]
+    tests: [EQPED-T05]
+    en:
+      title: Non-destructive testing of permanent joints by qualified personnel
+      description: The non-destructive testing of permanent joints MUST be carried out to the extent set in the design code by personnel qualified for the method, approved by a recognised third-party organisation for equipment of category III or IV.
+      rationale: Internal weld defects are not visible, and only testing by competent staff finds them before the equipment is pressurised.
+      criteria:
+        - method: inspection
+          text: The test reports of a sampled item cover the extent set in the code, and each report is signed by a person qualified for the method.
+    sv:
+      title: Oförstörande provning av permanenta förband av kvalificerad personal
+      description: Den oförstörande provningen av permanenta förband SKA utföras i den omfattning som konstruktionskoden anger av personal som är kvalificerad för metoden, och som för anordningar i kategori III eller IV har godkänts av en erkänd tredjepartsorganisation.
+      rationale: Inre svetsfel syns inte, och bara provning av kompetent personal hittar dem innan anordningen trycksätts.
+      criteria:
+        - method: inspection
+          text: Provningsrapporterna för en utvald anordning omfattar den omfattning som koden anger, och varje rapport är undertecknad av en person som är kvalificerad för metoden.
+
+  - id: EQPED-11
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [proof-test, hydrostatic-test]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.2.2 (proof test)", "Directive 2014/68/EU (PED) Annex I §7.4 (hydrostatic test pressure)"]
+    tests: [EQPED-T06]
+    en:
+      title: Hydrostatic proof test at the directive's test pressure
+      description: The final assessment of each pressure vessel MUST include a hydrostatic proof test at no less than the greater of 1.25 times the maximum loading at TS corrected for test temperature and 1.43 times PS.
+      rationale: The proof test shows that the finished item holds pressure with margin before it goes into service.
+      criteria:
+        - method: inspection
+          text: The test record of a sampled vessel shows a test pressure at or above the calculated value, the hold time and no leakage or visible deformation.
+          threshold: ≥ max(1.25 × loading × temperature ratio, 1.43 × PS)
+    sv:
+      title: Hydrostatisk tryckprovning vid direktivets provtryck
+      description: Slutbedömningen av varje tryckkärl SKA omfatta en hydrostatisk tryckprovning vid ett tryck som inte är lägre än det högre av 1,25 gånger den högsta belastningen vid TS korrigerad för provtemperaturen och 1,43 gånger PS.
+      rationale: Tryckprovningen visar att den färdiga anordningen håller trycket med marginal innan den tas i drift.
+      criteria:
+        - method: inspection
+          text: Provningsprotokollet för ett utvalt kärl visar ett provtryck på eller över det beräknade värdet, hålltiden och inget läckage eller synlig deformation.
+          threshold: ≥ max(1,25 × belastning × temperaturkvot, 1,43 × PS)
+
+  - id: EQPED-12
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [materials, inspection-documents, traceability]
+    refs: ["Directive 2014/68/EU (PED) Annex I §4.3 (material documentation)"]
+    tests: [EQPED-T10]
+    en:
+      title: Material inspection documents for each main pressure-bearing part
+      description: Each main pressure-bearing part MUST be traceable by heat or batch marking to an inspection document from the material maker that gives the specific test results of that heat or batch.
+      rationale: Material with the wrong composition or strength cannot be found once it is formed and welded into the equipment.
+      criteria:
+        - method: inspection
+          text: The material list of a sampled vessel links each main part to an inspection document with specific test results, and the heat numbers on the parts match the documents.
+    sv:
+      title: Materialintyg för varje huvudsaklig tryckbärande del
+      description: Varje huvudsaklig tryckbärande del SKA vara spårbar genom chargemärkning eller satsmärkning till ett kontrollintyg från materialtillverkaren som anger de specifika provningsresultaten för den chargen eller satsen.
+      rationale: Material med fel sammansättning eller hållfasthet går inte att upptäcka när det väl har formats och svetsats in i anordningen.
+      criteria:
+        - method: inspection
+          text: Materiallistan för ett utvalt kärl kopplar varje huvuddel till ett kontrollintyg med specifika provningsresultat, och chargenumren på delarna stämmer med intygen.
+
+  - id: EQPED-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [marking, data-plate]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.3 (marking and labelling)"]
+    tests: [EQPED-T09]
+    en:
+      title: Data plate with the pressure equipment markings
+      description: Each pressure equipment item MUST carry, on the item or on a plate firmly attached to it, the manufacturer's name and address, year of manufacture, identification, PS, TS and, for vessels, the volume, together with the CE marking and the notified body number where the conformity route uses one.
+      rationale: Inspectors and operators read the limits and the identity of the item from the plate during its whole life.
+      criteria:
+        - method: inspection
+          text: The plates of 5 sampled items carry each listed marking, matching the declaration of conformity.
+    sv:
+      title: Typskylt med märkningen för tryckbärande anordningar
+      description: Varje tryckbärande anordning SKA på anordningen eller på en skylt som sitter fast på den ange tillverkarens namn och adress, tillverkningsår, identifiering, PS, TS och, för kärl, volymen, tillsammans med CE-märkningen och det anmälda organets nummer när vägen för bedömning av överensstämmelse har ett anmält organ.
+      rationale: Kontrollanter och operatörer läser anordningens gränser och identitet från skylten under hela dess livstid.
+      criteria:
+        - method: inspection
+          text: Skyltarna på 5 utvalda anordningar har varje angiven märkning, som stämmer med försäkran om överensstämmelse.
+
+  - id: EQPED-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [instructions, operation, maintenance]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.4 (operating instructions)"]
+    tests: [EQPED-T07]
+    en:
+      title: Instructions for installation, use, maintenance and inspection
+      description: The manufacturer MUST supply, in the language of the country of use, instructions for mounting, putting into service, use, maintenance and in-service inspection of each item, including the limits for pressure, temperature and fluid.
+      rationale: The user can only keep the equipment within its design limits and inspect it correctly when the manufacturer has stated how.
+      criteria:
+        - method: inspection
+          text: The instructions of 3 sampled items are in the national language and cover each listed phase and the operating limits.
+    sv:
+      title: Anvisningar för installation, användning, underhåll och kontroll
+      description: Tillverkaren SKA leverera anvisningar på användningslandets språk för montering, idrifttagning, användning, underhåll och kontroll under drift av varje anordning, inklusive gränserna för tryck, temperatur och fluid.
+      rationale: Användaren kan bara hålla anordningen inom dess konstruktionsgränser och kontrollera den rätt när tillverkaren har angett hur.
+      criteria:
+        - method: inspection
+          text: Anvisningarna för 3 utvalda anordningar är på det nationella språket och omfattar varje angiven fas och driftgränserna.
+
+  - id: EQPED-15
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [in-service-inspection, installation-inspection]
+    refs: ["Directive 2009/104/EC Art. 5(1) (inspection of work equipment)", "Directive 2009/104/EC Art. 5(2) (periodic inspection)"]
+    tests: [EQPED-T08]
+    en:
+      title: Inspection before first use and at the set intervals
+      description: Each pressure equipment item MUST pass an installation inspection by a competent body before first use and periodic inspections at the intervals set for its class, and is taken out of service when an inspection is overdue.
+      rationale: Installation faults, corrosion and cracking develop or appear only in the plant, and regular inspection finds them before a rupture.
+      criteria:
+        - method: inspection
+          text: The register shows an installation inspection before the first use date for each item and no item in service with an overdue inspection.
+    sv:
+      title: Kontroll före första användning och med de fastställda intervallen
+      description: Varje tryckbärande anordning SKA genomgå en installationskontroll av ett kompetent organ före första användning och återkommande kontroller med de intervall som gäller för dess klass, och tas ur drift när en kontroll är försenad.
+      rationale: Installationsfel, korrosion och sprickor uppstår eller syns först i anläggningen, och regelbunden kontroll hittar dem innan en bristning.
+      criteria:
+        - method: inspection
+          text: Registret visar en installationskontroll före datumet för första användning för varje anordning och ingen anordning i drift med en försenad kontroll.
+
+tests:
+  - id: EQPED-T01
+    priority: high
+    execution: manual
+    tags: [register, in-service-inspection, instructions]
+    refs: ["Directive 2014/68/EU (PED) Art. 13 (classification of pressure equipment)"]
+    en:
+      title: Pressure equipment register against a plant walk-down
+      description: Walks down a plant area and compares the pressure equipment found with the register.
+      preconditions: The pressure equipment register, access to one plant area with a responsible operator, and the inspection reports and instructions archive.
+      expected: Each item found in the plant is in the register with its classification data.
+      steps:
+        - action: Walk down the area and note each vessel, pressurised pipe system and safety accessory with its plate data.
+          expected: A list of the items found is made.
+        - action: Compare the list with the register.
+          expected: Each item is in the register with PS, TS, volume or size, fluid group, category, conformity route and inspection dates.
+    sv:
+      title: Registret över tryckbärande anordningar jämfört med en genomgång av anläggningen
+      description: Går igenom ett anläggningsområde och jämför de tryckbärande anordningar som hittas med registret.
+      preconditions: Registret över tryckbärande anordningar, tillträde till ett anläggningsområde med en ansvarig operatör samt arkivet med kontrollrapporter och anvisningar.
+      expected: Varje anordning som hittas i anläggningen finns i registret med sina klassificeringsuppgifter.
+      steps:
+        - action: Gå igenom området och anteckna varje kärl, trycksatt rörsystem och säkerhetsutrustning med uppgifterna på skylten.
+          expected: En lista över de anordningar som hittats tas fram.
+        - action: Jämför listan med registret.
+          expected: Varje anordning finns i registret med PS, TS, volym eller storlek, fluidgrupp, kategori, väg för bedömning av överensstämmelse och kontrolldatum.
+
+  - id: EQPED-T02
+    priority: high
+    execution: manual
+    tags: [classification, conformity-assessment]
+    refs: ["Directive 2014/68/EU (PED) Art. 13 (classification of pressure equipment)", "Directive 2014/68/EU (PED) Annex II (conformity assessment tables)", "Directive 2014/68/EU (PED) Art. 14 (conformity assessment procedures)", "Directive 2014/68/EU (PED) Art. 4(3) (sound engineering practice)"]
+    en:
+      title: Classification and conformity route of delivered equipment
+      description: Recalculates the category of sampled items and checks the conformity route and marking that follow from it.
+      preconditions: The technical files and declarations of conformity of 5 delivered items, including at least one below the category I thresholds, and the conformity assessment tables.
+      expected: The categories are correct and each item has the module, certificate and marking that its category calls for.
+      steps:
+        - action: Recalculate the category of each item from its fluid group, PS and volume or nominal size.
+          expected: The result matches the recorded category, and the record is dated before the design release.
+          data: vessel, gas group 1, PS 16 bar, V 200 l
+        - action: For each item of category II or higher, read the module and notified body number in the declaration.
+          expected: The module is allowed for the category and a certificate number is given.
+        - action: Inspect the item below the category I thresholds.
+          expected: It carries no CE marking for pressure and has instructions and the manufacturer's identification.
+    sv:
+      title: Klassificering och väg för bedömning av överensstämmelse för levererade anordningar
+      description: Räknar om kategorin för utvalda anordningar och kontrollerar den väg för bedömning av överensstämmelse och den märkning som följer av den.
+      preconditions: Den tekniska dokumentationen och försäkringarna om överensstämmelse för 5 levererade anordningar, varav minst en under gränserna för kategori I, och tabellerna för bedömning av överensstämmelse.
+      expected: Kategorierna stämmer och varje anordning har den modul, det intyg och den märkning som dess kategori kräver.
+      steps:
+        - action: Räkna om kategorin för varje anordning utifrån fluidgrupp, PS och volym eller nominell storlek.
+          expected: Resultatet stämmer med den registrerade kategorin, och protokollet är daterat före konstruktionsreleasen.
+          data: kärl, gas i grupp 1, PS 16 bar, V 200 l
+        - action: För varje anordning i kategori II eller högre, läs modulen och det anmälda organets nummer i försäkran.
+          expected: Modulen är tillåten för kategorin och ett intygsnummer anges.
+        - action: Granska anordningen under gränserna för kategori I.
+          expected: Den har ingen CE-märkning för tryck och har anvisningar och tillverkarens identifiering.
+
+  - id: EQPED-T03
+    priority: high
+    execution: manual
+    tags: [hazard-analysis, strength]
+    refs: ["Directive 2014/68/EU (PED) Annex I (preliminary observations, hazard analysis)", "Directive 2014/68/EU (PED) Annex I §2.2 (design for adequate strength)"]
+    en:
+      title: Hazard analysis and independent strength recalculation
+      description: Reviews the hazard analysis of a sampled design and recalculates the main wall thicknesses.
+      preconditions: The hazard analysis, design calculation and drawings of a sampled vessel, the design code used and an engineer who did not take part in the design.
+      expected: Each hazard type is covered with a measure and the recalculated thicknesses confirm the design.
+      steps:
+        - action: Check the hazard analysis for overpressure, temperature extremes, corrosion and erosion, fatigue, filling and emptying, and foreseeable misuse.
+          expected: Each type is covered and each identified hazard has a design measure.
+        - action: Recalculate the required shell and nozzle thicknesses at PS and the worst TS with the corrosion allowance.
+          expected: The drawn thicknesses are at or above the recalculated values.
+        - action: Compare the design method with the harmonised standard or the documented equivalent.
+          expected: The method is named and its use is documented.
+    sv:
+      title: Riskanalys och oberoende omräkning av hållfastheten
+      description: Granskar riskanalysen för en utvald konstruktion och räknar om de viktigaste godstjocklekarna.
+      preconditions: Riskanalysen, konstruktionsberäkningen och ritningarna för ett utvalt kärl, den konstruktionskod som använts och en ingenjör som inte deltog i konstruktionen.
+      expected: Varje typ av risk omfattas med en åtgärd och de omräknade tjocklekarna bekräftar konstruktionen.
+      steps:
+        - action: Kontrollera att riskanalysen tar upp övertryck, extrema temperaturer, korrosion och erosion, utmattning, fyllning och tömning samt förutsebar felanvändning.
+          expected: Varje typ omfattas och varje identifierad risk har en konstruktionsåtgärd.
+        - action: Räkna om erforderliga tjocklekar för mantel och stutsar vid PS och sämsta TS med korrosionstillägget.
+          expected: De ritade tjocklekarna är lika med eller större än de omräknade värdena.
+        - action: Jämför beräkningsmetoden med den harmoniserade standarden eller den dokumenterade likvärdiga metoden.
+          expected: Metoden är angiven och dess användning är dokumenterad.
+
+  - id: EQPED-T04
+    priority: critical
+    execution: manual
+    tags: [safety-valve, overpressure]
+    refs: ["Directive 2014/68/EU (PED) Annex I §7.3 (pressure limiting devices)", "Directive 2014/68/EU (PED) Annex I §2.11 (safety accessories)", "ISO 4126-1:2013 (safety valves)"]
+    en:
+      title: Safety valve data and relief sizing
+      description: Checks the set pressure and capacity of a safety valve against the protected equipment and the relief sizing calculation.
+      preconditions: The data plate of a protected vessel, the safety valve data sheet and test certificate, and the relief sizing calculation with the relief cases from the hazard analysis.
+      expected: The valve is set at or below PS, has enough capacity and keeps the accumulated pressure within 1.1 × PS.
+      steps:
+        - action: Compare the valve set pressure with the PS of the vessel.
+          expected: The set pressure is at or below PS.
+        - action: Compare the certified capacity with the largest relief load in the calculation.
+          expected: The capacity is at or above the largest relief load.
+        - action: Read the accumulated pressure at full relief for each relief case.
+          expected: Each value is at most 1.1 × PS.
+          data: PS 10 bar, limit 11 bar
+    sv:
+      title: Säkerhetsventilens data och dimensionering av avblåsning
+      description: Kontrollerar öppningstryck och kapacitet för en säkerhetsventil mot den skyddade anordningen och dimensioneringsberäkningen för avblåsning.
+      preconditions: Typskylten på ett skyddat kärl, säkerhetsventilens datablad och provningsintyg samt dimensioneringsberäkningen med avblåsningsfallen från riskanalysen.
+      expected: Ventilen är inställd på högst PS, har tillräcklig kapacitet och håller det ackumulerade trycket inom 1,1 × PS.
+      steps:
+        - action: Jämför ventilens öppningstryck med kärlets PS.
+          expected: Öppningstrycket är lika med eller lägre än PS.
+        - action: Jämför den certifierade kapaciteten med den största avblåsningslasten i beräkningen.
+          expected: Kapaciteten är lika med eller större än den största avblåsningslasten.
+        - action: Läs det ackumulerade trycket vid full avblåsning för varje avblåsningsfall.
+          expected: Varje värde är högst 1,1 × PS.
+          data: PS 10 bar, gräns 11 bar
+
+  - id: EQPED-T05
+    priority: high
+    execution: manual
+    tags: [welding, non-destructive-testing, materials]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.1.2 (permanent joining)", "Directive 2014/68/EU (PED) Annex I §3.1.3 (non-destructive tests)"]
+    en:
+      title: Welding and testing records of a sampled vessel
+      description: Follows the joints and main parts of a sampled vessel to the welding approvals, test reports and material documents.
+      preconditions: The manufacturing record book of a category III vessel with weld map, joining procedures and approvals, welder qualifications, test reports and material inspection documents, and access to the vessel.
+      expected: Each joint and test is traceable to valid approvals and qualifications.
+      steps:
+        - action: Link each joint on the weld map to its procedure and welder.
+          expected: Each procedure has an approval and each welder's qualification was valid on the welding date.
+        - action: Compare the non-destructive test reports with the extent set in the code.
+          expected: The extent is covered and each report is signed by a person qualified for the method.
+    sv:
+      title: Svets- och provningsprotokoll för ett utvalt kärl
+      description: Följer förbanden och huvuddelarna i ett utvalt kärl till svetsgodkännanden, provningsrapporter och materialintyg.
+      preconditions: Tillverkningsdokumentationen för ett kärl i kategori III med svetskarta, förbandsförfaranden och godkännanden, svetsarkvalifikationer, provningsrapporter och materialintyg samt tillgång till kärlet.
+      expected: Varje förband och prov är spårbart till giltiga godkännanden och kvalifikationer.
+      steps:
+        - action: Koppla varje förband på svetskartan till dess förfarande och svetsare.
+          expected: Varje förfarande har ett godkännande och varje svetsares kvalifikation var giltig på svetsdatumet.
+        - action: Jämför rapporterna från oförstörande provning med den omfattning som koden anger.
+          expected: Omfattningen täcks och varje rapport är undertecknad av en person som är kvalificerad för metoden.
+
+  - id: EQPED-T06
+    priority: critical
+    execution: manual
+    tags: [proof-test, marking]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.2.2 (proof test)", "Directive 2014/68/EU (PED) Annex I §7.4 (hydrostatic test pressure)"]
+    en:
+      title: Proof test record of a finished vessel
+      description: Checks the test pressure of the proof test against the required value.
+      preconditions: The proof test record, design data and declaration of conformity of a finished vessel, and access to its data plate.
+      expected: The test pressure is at or above the required value without leakage or deformation.
+      steps:
+        - action: Calculate the required test pressure from PS, the maximum loading at TS and the material strength ratio at test and design temperature.
+          expected: The required value is the greater of the two expressions.
+          data: PS 10 bar, ratio 1.1, 1.25 × 10 × 1.1 = 13.75 bar, 1.43 × 10 = 14.3 bar
+        - action: Read the test pressure, hold time and result in the record.
+          expected: The test pressure is at or above the required value and no leakage or deformation is recorded.
+    sv:
+      title: Protokoll från tryckprovning av ett färdigt kärl
+      description: Kontrollerar provtrycket vid tryckprovningen mot det erforderliga värdet.
+      preconditions: Protokollet från tryckprovningen, konstruktionsdata och försäkran om överensstämmelse för ett färdigt kärl samt tillgång till dess typskylt.
+      expected: Provtrycket är lika med eller högre än det erforderliga värdet utan läckage eller deformation.
+      steps:
+        - action: Beräkna det erforderliga provtrycket utifrån PS, den högsta belastningen vid TS och kvoten mellan materialets hållfasthet vid prov- och konstruktionstemperatur.
+          expected: Det erforderliga värdet är det högre av de två uttrycken.
+          data: PS 10 bar, kvot 1,1, 1,25 × 10 × 1,1 = 13,75 bar, 1,43 × 10 = 14,3 bar
+        - action: Läs provtryck, hålltid och resultat i protokollet.
+          expected: Provtrycket är lika med eller högre än det erforderliga värdet och inget läckage eller ingen deformation finns registrerad.
+
+  - id: EQPED-T07
+    priority: high
+    execution: manual
+    tags: [register, in-service-inspection, instructions]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.4 (operating instructions)"]
+    en:
+      title: Instructions of sampled pressure equipment
+      description: Checks that the instructions of sampled items are in the national language and cover each phase of use.
+      preconditions: The instructions archive and the register, with 3 items selected at random.
+      expected: Each instruction covers each phase and the operating limits in the national language.
+      steps:
+        - action: Open the instructions of 3 items.
+          expected: Each is in the national language and covers mounting, putting into service, use, maintenance, inspection and the operating limits.
+    sv:
+      title: Anvisningar för utvalda tryckbärande anordningar
+      description: Kontrollerar att anvisningarna för utvalda anordningar är på det nationella språket och omfattar varje fas i användningen.
+      preconditions: Arkivet med anvisningar och registret, med 3 slumpvis valda anordningar.
+      expected: Varje anvisning omfattar varje fas och driftgränserna på det nationella språket.
+      steps:
+        - action: Öppna anvisningarna för 3 anordningar.
+          expected: Var och en är på det nationella språket och omfattar montering, idrifttagning, användning, underhåll, kontroll och driftgränserna.
+
+  - id: EQPED-T08
+    priority: high
+    execution: manual
+    tags: [register, in-service-inspection, instructions]
+    refs: ["Directive 2009/104/EC Art. 5(1) (inspection of work equipment)", "Directive 2009/104/EC Art. 5(2) (periodic inspection)"]
+    en:
+      title: Installation and periodic inspection dates
+      description: Compares the inspection dates in the register with the first use dates and today.
+      preconditions: The pressure equipment register and the inspection reports.
+      expected: Each item had an installation inspection before first use and none in service is overdue.
+      steps:
+        - action: Compare the inspection dates with today's date and the first use dates.
+          expected: Each item had an installation inspection before first use and none in service is overdue.
+    sv:
+      title: Datum för installationskontroll och återkommande kontroll
+      description: Jämför kontrolldatumen i registret med datumen för första användning och med dagens datum.
+      preconditions: Registret över tryckbärande anordningar och kontrollrapporterna.
+      expected: Varje anordning hade en installationskontroll före första användning och ingen anordning i drift är försenad.
+      steps:
+        - action: Jämför kontrolldatumen med dagens datum och datumen för första användning.
+          expected: Varje anordning hade en installationskontroll före första användning och ingen anordning i drift är försenad.
+
+  - id: EQPED-T09
+    priority: critical
+    execution: manual
+    tags: [proof-test, marking]
+    refs: ["Directive 2014/68/EU (PED) Annex I §3.3 (marking and labelling)"]
+    en:
+      title: Data plate of a finished vessel
+      description: Compares the markings on the data plate of a finished vessel with its declaration of conformity.
+      preconditions: Access to the data plate of a finished vessel and its declaration of conformity.
+      expected: The plate carries each marking and agrees with the declaration.
+      steps:
+        - action: Read the data plate and compare it with the declaration.
+          expected: Name and address, year, identification, PS, TS, volume, CE marking and notified body number are present and match.
+    sv:
+      title: Typskylt på ett färdigt kärl
+      description: Jämför märkningen på typskylten på ett färdigt kärl med dess försäkran om överensstämmelse.
+      preconditions: Tillgång till typskylten på ett färdigt kärl och dess försäkran om överensstämmelse.
+      expected: Skylten har varje märkning och stämmer med försäkran.
+      steps:
+        - action: Läs typskylten och jämför den med försäkran.
+          expected: Namn och adress, år, identifiering, PS, TS, volym, CE-märkning och det anmälda organets nummer finns och stämmer.
+
+  - id: EQPED-T10
+    priority: high
+    execution: manual
+    tags: [welding, non-destructive-testing, materials]
+    refs: ["Directive 2014/68/EU (PED) Annex I §4.3 (material documentation)"]
+    en:
+      title: Material traceability of the main pressure-bearing parts
+      description: Follows the heat numbers on the main parts of a sampled vessel to the material inspection documents.
+      preconditions: Access to a finished vessel and its material list and inspection documents.
+      expected: Each main part is traceable to an inspection document with specific test results.
+      steps:
+        - action: Read the heat numbers on three main parts of the vessel and find their inspection documents.
+          expected: Each heat number has an inspection document with specific test results.
+    sv:
+      title: Materialspårbarhet för de huvudsakliga tryckbärande delarna
+      description: Följer chargenumren på huvuddelarna i ett utvalt kärl till materialintygen.
+      preconditions: Tillgång till ett färdigt kärl och dess materiallista och materialintyg.
+      expected: Varje huvuddel är spårbar till ett kontrollintyg med specifika provningsresultat.
+      steps:
+        - action: Läs chargenumren på tre huvuddelar i kärlet och hitta deras kontrollintyg.
+          expected: Varje chargenummer har ett kontrollintyg med specifika provningsresultat.
