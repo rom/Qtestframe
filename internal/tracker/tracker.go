@@ -332,16 +332,51 @@ func mergeLabels(lists ...[]string) []string {
 	return out
 }
 
-// issueNumber extracts the number from "owner/repo#12", "#12" or "12".
-func issueNumber(key, example string) (string, error) {
+// issueNumber extracts the number from "owner/repo#12", "#12" or "12". A
+// key that names another repository or project than own (owner/repo or
+// group/project; a numeric GitLab project ID cannot be compared) is
+// refused: the number would find a different issue.
+func issueNumber(key, own, example string) (string, error) {
 	k := strings.TrimSpace(key)
 	if i := strings.LastIndex(k, "#"); i >= 0 {
+		if !ownsPrefix(k[:i], own) {
+			return "", fmt.Errorf("%w: %s belongs to another project than %s", ErrBadKey, k, own)
+		}
 		k = k[i+1:]
 	}
 	if n, err := strconv.Atoi(k); err != nil || n <= 0 {
 		return "", fmt.Errorf("%w: %s", ErrBadKey, example)
 	}
 	return k, nil
+}
+
+func ownsPrefix(prefix, own string) bool {
+	prefix, own = strings.Trim(prefix, "/ "), strings.Trim(own, "/ ")
+	if prefix == "" || own == "" {
+		return true
+	}
+	if _, err := strconv.Atoi(own); err == nil {
+		return true // a GitLab project ID: the path is not known here
+	}
+	return strings.EqualFold(prefix, own)
+}
+
+// Owns reports whether an issue key (from Issue.Key) can belong to the
+// configured tracker: the same type, and for GitHub and GitLab the same
+// repository or project.
+func Owns(t *model.DefectTracker, trackerType, key string) bool {
+	if t == nil || t.Type != trackerType {
+		return false
+	}
+	k := strings.TrimSpace(key)
+	i := strings.LastIndex(k, "#")
+	switch t.Type {
+	case "github":
+		return i < 0 || ownsPrefix(k[:i], t.Repo)
+	case "gitlab":
+		return i < 0 || ownsPrefix(k[:i], t.Project)
+	}
+	return true
 }
 
 // ---------------------------------------------------------------- Jira
@@ -587,7 +622,7 @@ func (g *github) Create(ctx context.Context, in NewIssue) (*Issue, error) {
 }
 
 func (g *github) Get(ctx context.Context, key string) (*Issue, error) {
-	n, err := issueNumber(key, ghKeyHint)
+	n, err := issueNumber(key, g.cfg.Repo, ghKeyHint)
 	if err != nil {
 		return nil, err
 	}
@@ -599,7 +634,7 @@ func (g *github) Get(ctx context.Context, key string) (*Issue, error) {
 }
 
 func (g *github) Update(ctx context.Context, key string, in NewIssue) (*Issue, error) {
-	n, err := issueNumber(key, ghKeyHint)
+	n, err := issueNumber(key, g.cfg.Repo, ghKeyHint)
 	if err != nil {
 		return nil, err
 	}
@@ -617,7 +652,7 @@ func (g *github) Update(ctx context.Context, key string, in NewIssue) (*Issue, e
 }
 
 func (g *github) Comment(ctx context.Context, key, text string) error {
-	n, err := issueNumber(key, ghKeyHint)
+	n, err := issueNumber(key, g.cfg.Repo, ghKeyHint)
 	if err != nil {
 		return err
 	}

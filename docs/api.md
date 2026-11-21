@@ -1501,7 +1501,10 @@ A requirement can be turned into an issue of the project's tracker
 (GitLab, GitHub or Jira, as configured above). The issue is linked as a
 web [item link](#item-links) of the requirement with `issue` (key and
 state). Reading needs `requirement.read`; creating, updating and syncing
-change the requirement's links and need `requirement.write`. Every create,
+change the requirement's links and need `requirement.write`. An issue
+link counts for the configured tracker only (same type and, for GitHub and
+GitLab, the same repository or project), so after switching the tracker a
+requirement can get an issue in the new one. Every create,
 update and sync is written to the audit log (`requirement.issue.create`,
 `requirement.issue.update`, `requirement.issue.sync`).
 

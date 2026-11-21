@@ -1,20 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from './api'
 import { DEFAULT_REQUIREMENT_LABELS } from './defectTracker'
-import { bulkIssueResult, existingIssue, issueLinkOf, issueStateTag, issueSyncResult, previewLabels } from './requirementIssues'
+import { bulkIssueResult, existingIssue, issueStateTag, issueSyncResult, previewLabels } from './requirementIssues'
 import type { ItemLink } from './types'
 
 const link = (id: string, tracker?: string, direction = 'outgoing') =>
   ({ id, direction, target_type: 'url', url: 'https://x/' + id, issue: tracker ? { tracker, key: 'g/p#' + id, status: 'opened', state: 'open', synced_at: null } : undefined }) as unknown as ItemLink
 
 describe('requirement issues', () => {
-  it('finds the issue link of the tracker', () => {
-    const links = [link('1'), link('2', 'github'), link('3', 'gitlab', 'incoming'), link('4', 'gitlab')]
-    expect(issueLinkOf(links, 'gitlab')?.id).toBe('4')
-    expect(issueLinkOf(links, 'github')?.id).toBe('2')
-    expect(issueLinkOf(links, 'jira')).toBeUndefined()
-    expect(issueLinkOf(null, 'gitlab')).toBeUndefined()
-  })
   it('colours the state', () => {
     expect(issueStateTag('open')).toBe('info')
     expect(issueStateTag('closed')).toBe('success')

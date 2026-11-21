@@ -171,7 +171,7 @@ func TestGitLab(t *testing.T) {
 	if got, err := c.Get(ctx, "1"); err != nil || got.Mapped != "closed" || !got.Closed {
 		t.Fatal(got, err)
 	}
-	for _, k := range []string{"", "abc", "#0", "qa/web/shop#x"} {
+	for _, k := range []string{"", "abc", "#0", "qa/web/shop#x", "qa/other#1"} {
 		if _, err := c.Get(ctx, k); !errors.Is(err, ErrBadKey) {
 			t.Errorf("%q: %v", k, err)
 		}
@@ -217,6 +217,29 @@ func TestGitLab(t *testing.T) {
 	g := newGitLab(&model.DefectTracker{Project: "42"}, nil)
 	if is := g.issue(&glIssue{IID: 5, State: "opened"}); is.Key != "42#5" || g.base != GitLabURL+"/api/v4/projects/42" {
 		t.Fatal(is, g.base)
+	}
+	// keys of another repository or project are not this tracker's
+	gl := &model.DefectTracker{Type: "gitlab", Project: "QA/Shop"}
+	gh := &model.DefectTracker{Type: "github", Repo: "acme/shop"}
+	for _, tc := range []struct {
+		t    *model.DefectTracker
+		typ  string
+		key  string
+		want bool
+	}{
+		{gl, "gitlab", "qa/shop#1", true},
+		{gl, "gitlab", "qa/web#1", false},
+		{gl, "gitlab", "#1", true},
+		{gl, "github", "qa/shop#1", false},
+		{&model.DefectTracker{Type: "gitlab", Project: "42"}, "gitlab", "qa/web#1", true},
+		{gh, "github", "Acme/Shop#3", true},
+		{gh, "github", "acme/web#3", false},
+		{&model.DefectTracker{Type: "jira"}, "jira", "SHOP-1", true},
+		{nil, "jira", "SHOP-1", false},
+	} {
+		if got := Owns(tc.t, tc.typ, tc.key); got != tc.want {
+			t.Errorf("%v %s %s: %v", tc.t, tc.typ, tc.key, got)
+		}
 	}
 }
 

@@ -5,11 +5,6 @@
 import { ApiError } from './api'
 import type { ItemLink } from './types'
 
-/** The requirement's link to an issue of the tracker type (the first one). */
-export function issueLinkOf(links: readonly ItemLink[] | null | undefined, tracker: string): ItemLink | undefined {
-  return (links ?? []).find((l) => l.direction !== 'incoming' && !!l.issue && l.issue.tracker === tracker)
-}
-
 /** PrimeVue tag severity of an issue state: open issues are work in progress. */
 export function issueStateTag(state: string | null | undefined): 'info' | 'success' | 'secondary' {
   if (state === 'open') return 'info'

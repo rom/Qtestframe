@@ -151,7 +151,7 @@ func (g *gitlab) Create(ctx context.Context, in NewIssue) (*Issue, error) {
 }
 
 func (g *gitlab) Get(ctx context.Context, key string) (*Issue, error) {
-	n, err := issueNumber(key, glKeyHint)
+	n, err := issueNumber(key, g.cfg.Project, glKeyHint)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (g *gitlab) Get(ctx context.Context, key string) (*Issue, error) {
 }
 
 func (g *gitlab) Update(ctx context.Context, key string, in NewIssue) (*Issue, error) {
-	n, err := issueNumber(key, glKeyHint)
+	n, err := issueNumber(key, g.cfg.Project, glKeyHint)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func (g *gitlab) Update(ctx context.Context, key string, in NewIssue) (*Issue, e
 }
 
 func (g *gitlab) Comment(ctx context.Context, key, text string) error {
-	n, err := issueNumber(key, glKeyHint)
+	n, err := issueNumber(key, g.cfg.Project, glKeyHint)
 	if err != nil {
 		return err
 	}

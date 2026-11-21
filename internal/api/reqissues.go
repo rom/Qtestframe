@@ -50,11 +50,12 @@ const maxBulkIssues = 100
 // trackerNames name the trackers in link labels and comments.
 var trackerNames = map[string]string{"gitlab": "GitLab", "github": "GitHub", "jira": "Jira"}
 
-// issueLinkOf returns the requirement's link to an issue of the tracker type.
-func issueLinkOf(links []model.ItemLink, reqID, trackerType string) *model.ItemLink {
+// issueLinkOf returns the requirement's link to an issue of the configured
+// tracker (same type, and same repository or project).
+func issueLinkOf(links []model.ItemLink, reqID string, t *model.DefectTracker) *model.ItemLink {
 	for i := range links {
 		l := &links[i]
-		if l.SourceID == reqID && l.Issue != nil && l.Issue.Tracker == trackerType {
+		if l.SourceID == reqID && l.Issue != nil && tracker.Owns(t, l.Issue.Tracker, l.Issue.Key) {
 			return l
 		}
 	}
@@ -391,7 +392,7 @@ func (s *Server) requirementIssue(r *http.Request, p *Principal) (*reqIssueCtx, 
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return x, req, issueLinkOf(links, req.ID, x.t.Type), nil
+	return x, req, issueLinkOf(links, req.ID, x.t), nil
 }
 
 type issuePreview struct {
@@ -605,7 +606,7 @@ func (s *Server) handleBulkRequirementIssues(w http.ResponseWriter, r *http.Requ
 	created, updated, skipped := []issueResult{}, []issueResult{}, []issueResult{}
 	failed := []issueFailure{}
 	for _, req := range reqs {
-		l := issueLinkOf(links, req.ID, x.t.Type)
+		l := issueLinkOf(links, req.ID, x.t)
 		switch {
 		case l == nil:
 			nl, err := x.create(req)
@@ -670,7 +671,7 @@ func (s *Server) handleSyncRequirementIssues(w http.ResponseWriter, r *http.Requ
 	failed := []issueFailure{}
 	for i := range links {
 		l := &links[i]
-		if l.Issue.Tracker != x.t.Type {
+		if !tracker.Owns(x.t, l.Issue.Tracker, l.Issue.Key) {
 			continue
 		}
 		req, err := s.Store.GetRequirement(r.Context(), p.TenantID(), l.SourceID)

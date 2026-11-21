@@ -323,8 +323,14 @@ func TestRequirementIssuesGitHubJira(t *testing.T) {
 	if cr["link"].(map[string]any)["issue"].(map[string]any)["key"] != "acme/shop#1" {
 		t.Fatal(cr)
 	}
-	// switching the tracker: the GitHub issue does not block a GitLab one,
-	// and is not synced with GitLab
+	// another repository: the issue of acme/shop is not its issue
+	a.m("PUT", "/api/v1/projects/"+f.pid+"/defect-tracker", map[string]any{"type": "github", "url": ts.URL, "repo": "acme/web"}, 200)
+	if pv := a.m("GET", "/api/v1/requirements/"+f.r1+"/issue", nil, 200); pv["link"] != nil {
+		t.Fatal(pv)
+	}
+	a.m("PUT", "/api/v1/requirements/"+f.r1+"/issue", nil, 404)
+	// switching the tracker: the GitHub issue does not block a Jira one,
+	// and is not synced with Jira
 	a.m("PUT", "/api/v1/projects/"+f.pid+"/defect-tracker", map[string]any{"type": "jira", "url": ts.URL, "project_key": "SHOP"}, 200)
 	if got := a.m("GET", "/api/v1/projects/"+f.pid+"/defect-tracker", nil, 200); got["requirement_issue_type"] != "Task" {
 		t.Fatal(got)
