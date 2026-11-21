@@ -139,6 +139,9 @@ type User struct {
 	Avatar string `json:"avatar"`
 	// MustChangePassword is set after an administrator reset the password.
 	MustChangePassword bool `json:"must_change_password"`
+	// MFAEnabled: the user has a confirmed second factor (filled by the
+	// user lists and /auth/me, not stored in the users table).
+	MFAEnabled bool `json:"mfa_enabled"`
 }
 
 // LoginEvent records a sign-in attempt.
@@ -259,6 +262,8 @@ type Membership struct {
 	// SCIM is set when the identity provider manages the membership
 	// (SCIM provisioning); its role follows the provider's groups.
 	SCIM bool `json:"scim,omitempty"`
+	// MFAEnabled: the member has a confirmed second factor (member lists).
+	MFAEnabled bool `json:"mfa_enabled"`
 }
 
 // Session is a server-side login session.
@@ -272,6 +277,9 @@ type Session struct {
 	IP        string
 	UserAgent string
 	LastSeen  *time.Time
+	// MFAEnrolRequired: the MFA policy requires a second factor the user
+	// has not set up; the session can only reach /api/v1/auth/ until then.
+	MFAEnrolRequired bool
 }
 
 // APIToken allows non-interactive (CI) access.
@@ -1135,4 +1143,73 @@ type TraceRuleOptions struct {
 	// Every: every trace of the kind must meet the conditions (e.g. no
 	// suspect link at all), not only Min of them.
 	Every bool `json:"every,omitempty"`
+}
+
+// MFA policy modes.
+const (
+	MFAOptional = "optional" // users may enrol
+	MFAAll      = "all"      // required for everyone in the scope
+	MFARoles    = "roles"    // required for the listed roles
+)
+
+// MFASuperAdminRole is the pseudo-role of super administrators in the
+// server policy's role list.
+const MFASuperAdminRole = "super_admin"
+
+// MFAPolicy is the MFA policy of the server (Scope "") or of a tenant.
+type MFAPolicy struct {
+	Scope string   `json:"scope"`
+	Mode  string   `json:"mode"`
+	Roles []string `json:"roles"`
+	// GraceDays: users the policy newly covers may keep signing in without
+	// a second factor for this many days; afterwards they must enrol at
+	// their next sign-in. 0 = at the next sign-in.
+	GraceDays int `json:"grace_days"`
+	// RememberDays: "remember this device" skips the second factor for
+	// this many days (server policy only; 0 = off).
+	RememberDays int `json:"remember_days"`
+	// RequiredSince is when the policy started to require MFA (the grace
+	// period counts from then, or from the user's creation if later).
+	RequiredSince *time.Time `json:"required_since"`
+	UpdatedBy     string     `json:"updated_by"`
+	UpdatedAt     *time.Time `json:"updated_at"`
+}
+
+// Requires reports whether the policy requires MFA for a role (or the
+// super administrator pseudo-role).
+func (p *MFAPolicy) Requires(role string) bool {
+	switch p.Mode {
+	case MFAAll:
+		return true
+	case MFARoles:
+		for _, r := range p.Roles {
+			if r == role {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// UserMFA is a user's TOTP enrolment.
+type UserMFA struct {
+	UserID     string
+	Secret     string
+	EnabledAt  *time.Time
+	LastStep   int64
+	CreatedAt  time.Time
+	CodesLeft  int
+	CodesTotal int
+}
+
+// MFAChallenge is a sign-in waiting for its second factor.
+type MFAChallenge struct {
+	ID        string
+	UserID    string
+	TenantID  string
+	Method    string
+	Details   string
+	Attempts  int
+	CreatedAt time.Time
+	ExpiresAt time.Time
 }

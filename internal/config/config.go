@@ -126,8 +126,25 @@ type OIDC struct {
 	EmailClaim       string   `yaml:"email_claim"`
 	NameClaim        string   `yaml:"name_claim"`
 	GroupsClaim      string   `yaml:"groups_claim"`
-	Provisioning     `yaml:",inline"`
+	// LocalMFA decides whether a sign-in through this provider also needs
+	// Qtestframe's own second factor (see docs/security.md): "off" (the
+	// default: the identity provider is responsible for MFA),
+	// "unless_idp_mfa" (needed unless the ID token's amr/acr claims show
+	// that the provider used MFA) or "always".
+	LocalMFA string `yaml:"local_mfa"`
+	// MFAAMRValues are amr values that count as MFA by the provider
+	// (default "mfa"); MFAACRValues are acr values that do.
+	MFAAMRValues []string `yaml:"mfa_amr_values"`
+	MFAACRValues []string `yaml:"mfa_acr_values"`
+	Provisioning `yaml:",inline"`
 }
+
+// OIDC local_mfa values.
+const (
+	LocalMFAOff          = "off"
+	LocalMFAUnlessIdPMFA = "unless_idp_mfa"
+	LocalMFAAlways       = "always"
+)
 
 // SAML is a SAML 2.0 identity provider.
 type SAML struct {
@@ -474,6 +491,11 @@ func (c *Config) Validate() error {
 			errs = append(errs, fmt.Errorf("duplicate oidc provider %q", o.Name))
 		}
 		names["oidc/"+o.Name] = true
+		switch o.LocalMFA {
+		case "", LocalMFAOff, LocalMFAUnlessIdPMFA, LocalMFAAlways:
+		default:
+			errs = append(errs, fmt.Errorf("oidc provider %q: local_mfa must be off, unless_idp_mfa or always, got %q", o.Name, o.LocalMFA))
+		}
 	}
 	for _, s := range c.Auth.SAML {
 		if s.Name == "" || (s.IDPMetadataURL == "" && s.IDPMetadataFile == "") {

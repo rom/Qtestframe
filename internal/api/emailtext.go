@@ -39,6 +39,12 @@ var mailTexts = map[string]map[string]string{
 		"test.subject":         "Qtestframe test e-mail",
 		"test.intro":           "This is a test e-mail from Qtestframe, sent by %s. E-mail delivery works.",
 		"by":                   "by %s",
+		"mfa.reset.subject":    "Your multi-factor authentication was reset",
+		"mfa.reset.intro":      "%s reset the multi-factor authentication of your Qtestframe account. Your authenticator app and recovery codes no longer work, and you were signed out. Set up a new authenticator app in your profile after signing in.",
+		"mfa.disabled.subject": "Multi-factor authentication was turned off",
+		"mfa.disabled.intro":   "Multi-factor authentication was turned off for your Qtestframe account. Signing in now needs only your password.",
+		"mfa.notYou":           "If you did not expect this, contact your administrator and change your password.",
+		"mfa.action":           "Open your profile",
 	},
 	"sv": {
 		"notification.subject": "%s",
@@ -69,6 +75,12 @@ var mailTexts = map[string]map[string]string{
 		"test.subject":         "Testmeddelande från Qtestframe",
 		"test.intro":           "Det här är ett testmeddelande från Qtestframe, skickat av %s. E-postutskicket fungerar.",
 		"by":                   "av %s",
+		"mfa.reset.subject":    "Din tvåstegsverifiering har återställts",
+		"mfa.reset.intro":      "%s har återställt tvåstegsverifieringen för ditt Qtestframe-konto. Din autentiseringsapp och dina återställningskoder fungerar inte längre, och du har loggats ut. Konfigurera en ny autentiseringsapp i din profil när du har loggat in.",
+		"mfa.disabled.subject": "Tvåstegsverifieringen har stängts av",
+		"mfa.disabled.intro":   "Tvåstegsverifieringen har stängts av för ditt Qtestframe-konto. Inloggning kräver nu bara ditt lösenord.",
+		"mfa.notYou":           "Om du inte väntade dig detta, kontakta din administratör och byt lösenord.",
+		"mfa.action":           "Öppna din profil",
 	},
 }
 

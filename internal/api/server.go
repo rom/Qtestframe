@@ -54,6 +54,8 @@ type Server struct {
 	signer *auth.Signer
 
 	limiter *rateLimiter
+	// mfaLimiter bounds the second-factor attempts of one account.
+	mfaLimiter *rateLimiter
 	// scimLimiter bounds the requests of one SCIM token, scimAuthLimiter
 	// the failed SCIM authentications of one client address.
 	scimLimiter     *rateLimiter
@@ -88,6 +90,8 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		SAML:    map[string]*auth.SAMLProvider{},
 		signer:  auth.NewSigner(nil),
 		limiter: newRateLimiter(10, 5*time.Minute),
+		// second-factor attempts per account, whatever the address
+		mfaLimiter: newRateLimiter(10, 15*time.Minute),
 		// identity providers sync in bursts (Entra ID: initial cycle)
 		scimLimiter:     newRateLimiter(1200, time.Minute),
 		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
@@ -138,6 +142,9 @@ func (s *Server) routes() {
 	pub("GET /api/v1/auth/providers", s.handleProviders)
 	pub("POST /api/v1/auth/login", s.handleLogin)
 	pub("POST /api/v1/auth/logout", s.handleLogout)
+	// the second factor of a sign-in (mfa.go): the qtf_mfa cookie is the credential
+	pub("GET /api/v1/auth/mfa/challenge", s.handleMFAChallenge)
+	pub("POST /api/v1/auth/mfa/verify", s.handleMFAVerify)
 	// e-mail invitations (invitations.go): the token is the credential
 	pub("GET /api/v1/invitations/{token}", s.handleGetInvitation)
 	pub("POST /api/v1/invitations/{token}/accept", s.handleAcceptInvitation)
@@ -324,6 +331,7 @@ func (s *Server) routes() {
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)
+	s.routesMFA(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

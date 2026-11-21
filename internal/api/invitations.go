@@ -297,7 +297,12 @@ func (s *Server) handleAcceptInvitation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	s.limiter.reset(key)
-	sess, err := s.startSession(w, r, u, inv.TenantID)
+	enrol, err := s.mfaEnrolDue(ctx, u)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	sess, err := s.startSession(w, r, u, inv.TenantID, enrol)
 	if err != nil {
 		s.fail(w, r, err)
 		return

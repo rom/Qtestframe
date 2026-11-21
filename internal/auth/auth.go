@@ -177,6 +177,10 @@ type Identity struct {
 	Email    string   // e-mail address
 	Name     string   // display name
 	Groups   []string // group memberships for role mapping
+	// AMR and ACR are the authentication methods and context class the
+	// identity provider reported (OIDC amr/acr claims; empty for SAML).
+	AMR []string
+	ACR string
 }
 
 // MapRole returns the most privileged role granted by groups through

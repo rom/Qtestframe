@@ -179,6 +179,14 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
+	on, err := s.Store.MFAEnabledUsers(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	for i := range us {
+		us[i].MFAEnabled = on[us[i].ID]
+	}
 	writeJSON(w, http.StatusOK, listOf(us))
 }
 
@@ -280,6 +288,9 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, p *Pri
 type memberView struct {
 	model.Membership
 	Invitation *invitationView `json:"invitation,omitempty"`
+	// MFARequired: the server or tenant MFA policy requires a second factor
+	// for the member's role in this tenant (or for everyone).
+	MFARequired bool `json:"mfa_required"`
 }
 
 func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -293,12 +304,19 @@ func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, err)
 		return
 	}
+	pols, err := s.Store.MFAPolicies(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	server, tenant := pols[""], pols[p.TenantID()]
 	out := make([]memberView, len(ms))
 	for i, m := range ms {
 		out[i].Membership = m
 		if inv, ok := invs[m.UserID]; ok {
 			out[i].Invitation = s.viewInvitation(&inv)
 		}
+		out[i].MFARequired = (server != nil && (server.Requires("") || server.Requires(m.Role))) || (tenant != nil && tenant.Requires(m.Role))
 	}
 	writeJSON(w, http.StatusOK, listOf(out))
 }
