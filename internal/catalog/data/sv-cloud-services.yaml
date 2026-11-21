@@ -13,7 +13,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [cloud, switching, notice-period, data-act]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(d) (maximum notice period)"]
     tests: [SVCLD-T01]
     en:
       title: Notice period for switching of at most 2 months
@@ -37,7 +37,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cloud, switching, transition, data-act]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(a) (maximum transitional period)"]
     tests: [SVCLD-T01]
     en:
       title: Transition period of at most 30 days with the service running
@@ -61,7 +61,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cloud, switching, exportable-data, data-act]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)", "ISO/IEC 19941:2017"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(e) (exhaustive specification of exportable data and digital assets)", "ISO/IEC 19941:2017"]
     tests: [SVCLD-T02]
     en:
       title: Exhaustive list of exportable data and digital assets
@@ -83,7 +83,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cloud, switching, data-retrieval, data-act]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(g) (minimum data retrieval period)"]
     tests: [SVCLD-T02]
     en:
       title: Data retrieval period of at least 30 days
@@ -107,18 +107,18 @@ requirements:
     obligation: must_not
     priority: high
     tags: [cloud, switching-charges, egress, data-act]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 29 (gradual withdrawal of switching charges)"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 29(1) (no switching charges from 12 January 2027)"]
     tests: [SVCLD-T03]
     en:
       title: No switching or data egress charges for switching
-      description: The cloud service contract MUST NOT contain charges for switching or for data egress when the customer switches, from the date on which the switching rules withdraw switching charges.
+      description: The cloud service contract MUST NOT contain charges for switching or for data egress when the customer switches, from 12 January 2027.
       rationale: Exit fees are a strong lock-in mechanism, and the rules phase them out to make the cloud market contestable.
       criteria:
         - method: review
           text: The price list and the contract contain no switching or egress charge for switching, and an invoice from a test export shows none.
     sv:
       title: Inga avgifter för byte eller för utförsel av data vid byte
-      description: Avtalet för molntjänsten SKA INTE innehålla avgifter för byte eller för utförsel av data när kunden byter leverantör, från det datum då reglerna om byte avskaffar avgifterna för byte.
+      description: Avtalet för molntjänsten SKA INTE innehålla avgifter för byte eller för utförsel av data när kunden byter leverantör, från och med den 12 januari 2027.
       rationale: Avgifter vid avslut är ett starkt sätt att låsa in kunder, och reglerna fasar ut dem för att göra molnmarknaden konkurrensutsatt.
       criteria:
         - method: review
@@ -129,18 +129,18 @@ requirements:
     obligation: must
     priority: medium
     tags: [cloud, jurisdiction, government-access, data-act]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 28 (obligations regarding transparency on international access and transfer)", "EU Data Act (Regulation (EU) 2023/2854) Art. 32 (international governmental access and transfer)"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 28(1) (contractual transparency obligations on international access and transfer)", "EU Data Act (Regulation (EU) 2023/2854) Art. 32(1) (international governmental access and transfer)"]
     tests: [SVCLD-T03]
     en:
       title: Jurisdiction and safeguards against foreign government access published
-      description: The provider MUST publish the jurisdiction of the infrastructure used for the service and the technical, organisational and contractual measures it takes against access to customer data by public authorities of third countries that conflicts with Union or national law.
+      description: The provider MUST publish the jurisdiction of the infrastructure used for the service and the technical, organisational and contractual measures it takes against access by public authorities of third countries to non-personal customer data held in the Union, where that access conflicts with Union or national law.
       rationale: The customer needs this information to assess the legal risk of placing its data with the provider.
       criteria:
         - method: inspection
           text: The provider's website or contract annex states the jurisdiction per region and lists the measures in each of the 3 categories.
     sv:
       title: Jurisdiktion och skydd mot utländska myndigheters åtkomst publiceras
-      description: Leverantören SKA publicera vilken jurisdiktion den infrastruktur som används för tjänsten omfattas av och vilka tekniska, organisatoriska och avtalsmässiga åtgärder den vidtar mot åtkomst till kunddata från myndigheter i tredjeland som strider mot unionsrätt eller nationell rätt.
+      description: Leverantören SKA publicera vilken jurisdiktion den infrastruktur som används för tjänsten omfattas av och vilka tekniska, organisatoriska och avtalsmässiga åtgärder den vidtar mot att myndigheter i tredjeland kommer åt kunddata som inte är personuppgifter och som lagras i unionen, när åtkomsten strider mot unionsrätt eller nationell rätt.
       rationale: Kunden behöver informationen för att bedöma den rättsliga risken med att placera sina data hos leverantören.
       criteria:
         - method: inspection
@@ -355,7 +355,7 @@ tests:
     priority: high
     execution: manual
     tags: [switching, contract-review]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(a) (maximum transitional period)", "EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(d) (maximum notice period)"]
     en:
       title: Notice and transition periods in the switching clause
       description: Reviews the cloud service contract for the notice period and the transition period for switching.
@@ -385,7 +385,7 @@ tests:
     priority: high
     execution: manual
     tags: [switching, export, retrieval]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25 (contractual terms concerning switching)", "ISO/IEC 19941:2017"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(e) (exhaustive specification of exportable data and digital assets)", "EU Data Act (Regulation (EU) 2023/2854) Art. 25(2)(g) (minimum data retrieval period)", "ISO/IEC 19941:2017"]
     en:
       title: Test export of the listed data categories and the retrieval period
       description: Runs an export from a test tenant and compares it with the list of exportable data in the contract.
@@ -417,7 +417,7 @@ tests:
     priority: medium
     execution: manual
     tags: [switching-charges, jurisdiction]
-    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 29 (gradual withdrawal of switching charges)", "EU Data Act (Regulation (EU) 2023/2854) Art. 28 (obligations regarding transparency on international access and transfer)"]
+    refs: ["EU Data Act (Regulation (EU) 2023/2854) Art. 29(1) (no switching charges from 12 January 2027)", "EU Data Act (Regulation (EU) 2023/2854) Art. 28(1) (contractual transparency obligations on international access and transfer)"]
     en:
       title: Switching charges and jurisdiction information
       description: Checks the price list and the invoice after a test export, and the provider's published information on jurisdiction.
