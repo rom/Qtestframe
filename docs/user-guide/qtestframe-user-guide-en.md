@@ -27,7 +27,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Search and filters](#search-and-filters) | The query language with many examples |
 | [Reports and export](#reports-and-export) | Standard reports, the custom report builder, export formats and the document archive |
 | [Documents](#documents) | The project's document archive: uploads, previews and links |
-| [Administration](#administration) | Organisations, users, members and roles, password resets, API tokens, the audit log, backup and restore |
+| [Administration](#administration) | Organisations, users, members and roles, project sharing, password resets, API tokens, the audit log, backup and restore |
 | [Accessibility and languages](#accessibility-and-languages) | Keyboard use, screen readers, themes, English and Swedish, phones and tablets |
 | [FAQ](#faq) | Answers to common questions |
 | [References](#references) | RFC 2119, RFC 8174 and other RFCs, NIST publications, and standards for requirements and testing |
@@ -68,6 +68,7 @@ Open the address your administrator gave you (for a local trial installation `ht
 1. Enter your **E-mail** and **Password** and select **Sign in**.
 2. If you belong to several organisations and want to start in a particular one, select **Sign in to a specific organisation…** and enter its short name (slug), for example `acme`. Without it you start in your default organisation (see [Preferences](#preferences)) or the one you used last.
 3. If your organisation uses single sign-on, the page shows a button per provider below **or continue with**. Select it and sign in at your identity provider; you return to Qtestframe automatically.
+4. If you use [multi-factor authentication](#multi-factor-authentication), the page then asks for the **Authentication code**: open your authenticator app, enter the 6-digit code it shows for Qtestframe and select **Verify**. Each code works once; if one is refused, wait for the next. Without your phone, select **Use a recovery code instead** and enter one of your recovery codes. If your organisation allows it, **Remember this device** skips the code on this browser for a number of days.
 
 The language buttons at the top of the sign-in page switch between English and Swedish before you sign in. After sign-in, the language in your preferences wins.
 
@@ -80,6 +81,7 @@ The language buttons at the top of the sign-in page switch between English and S
   ![The intro tour: a step card next to the highlighted Requirements entry of the sidebar, with Back, Next and Skip tour](images/en-intro-tour.png)
 - **Sign-in information.** On later sign-ins Qtestframe can show when and from where you last signed in, and how many failed attempts there have been since. If you do not recognise a sign-in, change your password and sign out your other sessions (see [Security](#security)).
 - **A forced password change.** If an administrator has reset your password, you must choose a new one before you can continue.
+- **Multi-factor authentication required.** If your organisation requires a second factor and you have not set one up, a reminder tells you by when; after that date you must [set up an authenticator app](#multi-factor-authentication) at sign-in before you can continue.
 
 ## The layout
 
@@ -177,7 +179,29 @@ Preferences are stored with your account and applied on every device. Change the
 - **Password**: for local accounts, enter your **Current password** and the **New password** twice, then select **Change password**. If you sign in with single sign-on, your password is managed by your identity provider.
 - **API tokens**: tokens for CI pipelines and scripts are created under **Administration → API tokens** (see [API tokens](#api-tokens)).
 - **Active sessions**: every browser and device that is signed in with your account, with browser, IP address, sign-in time and last activity. **Sign out** ends one session; **Sign out all other sessions** ends all except the one you are using.
-- **Sign-in history**: your recent sign-ins and failed attempts, if shown.
+- **Sign-in history**: your recent sign-ins and failed attempts, if shown. Wrong codes of the second factor are listed as failed attempts with the method *Second factor*.
+
+### Multi-factor authentication
+
+A second factor protects your account even if someone learns your password: after the password you enter a 6-digit code from an **authenticator app** on your phone, for example Microsoft Authenticator, Google Authenticator, 1Password or FreeOTP.
+
+**Turn it on**
+
+1. In your profile, under **Multi-factor authentication**, select **Set up authenticator app**.
+2. Scan the QR code with the app. On a phone, **Open in an authenticator app on this device** adds the account directly; if you cannot scan, select **Cannot scan the code? Enter the key by hand** and type the setup key into the app.
+3. Enter the 6-digit code the app shows and select **Turn on**.
+4. Qtestframe shows ten **recovery codes**. Save them now (**Copy** or **Download**), for example in a password manager: they are shown only this once. Each code works once and lets you sign in without your phone. Then select **I have saved the codes**.
+
+From then on, every sign-in with your password asks for a code. API tokens are not affected.
+
+**Later**
+
+- **New recovery codes** creates ten new codes (the old ones stop working). Do this when only a few are left; the profile warns you.
+- **Forget remembered devices** makes every browser where you chose *Remember this device* ask for a code again.
+- **Turn off** removes the authenticator app and your recovery codes; both need a current code (or a recovery code). If your organisation requires multi-factor authentication, you cannot turn it off. You get an e-mail when it is turned off.
+- **New phone or lost phone**: with a recovery code you can still sign in; turn MFA off and set it up again with the new phone. Without phone and recovery codes, ask an administrator to [reset your multi-factor authentication](#reset-multi-factor-authentication).
+
+If you sign in with single sign-on, your identity provider usually asks for the second factor; Qtestframe asks for its own code only if the server is configured to do so.
 
 ## Next steps
 
@@ -2315,6 +2339,7 @@ Files are stored in the Qtestframe database, not on a separate file share. That 
 | **Role matrix** (roles and permissions) | everyone |
 | **API tokens** | Tester and up (your own tokens) |
 | **Provisioning (SCIM)** | Admins |
+| **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
 | **Audit log** | Manager and up |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
@@ -2396,6 +2421,45 @@ If the person already has an account, they are added at once and get an e-mail t
 *(Admin, for local accounts)*: select **Reset password** in the member's row. Qtestframe generates a **temporary password** and shows it **once**; copy it and give it to the person through a safe channel. The person is signed out everywhere and must choose a new password at the next sign-in.
 
 Admins can only reset passwords of people who belong to their organisation alone; for super admins and people who are members of other organisations too, a super admin must do it. Accounts that sign in through single sign-on have no password in Qtestframe.
+
+### Reset multi-factor authentication
+
+The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or **Missing** when the [MFA policy](#multi-factor-authentication-1) requires it for the member but they have not set it up yet.
+
+*(Admin)* When someone has lost both their phone and their recovery codes, select **Reset MFA** (the shield) in their row and confirm. Their authenticator app, recovery codes and remembered devices are removed, they are signed out everywhere and told by a notification and an e-mail. They then sign in with their password alone, or, if MFA is required for them, set up a new authenticator app at the next sign-in. Make sure the request really comes from that person before you reset. As for passwords, admins can only reset people who belong to their organisation alone; super admins can reset anyone, also under [Users](#users). Every reset is recorded in the [audit log](#audit-log).
+
+## Multi-factor authentication
+
+**Administration → Multi-factor authentication** decides who must use a second factor (an authenticator app, see [your profile](#multi-factor-authentication)) when signing in with a password. The page shows how many members already use it.
+
+- **Policy of the organisation** *(Admin)*: **Optional** (the default: everyone may, nobody must), **Required for everyone** or **Required for some roles**, for example only for admins. It applies to the members by their role in this organisation.
+- **Server policy** *(Super admin)*: the same choices for every user of the installation; a role counts in any organisation, and *Super admin* can be chosen as a role. An organisation can require more than the server, never less.
+- **Grace period**: people the policy newly covers may keep signing in without a second factor for this many days; they see a reminder with the date. Afterwards they must set it up at their next sign-in before they can do anything else. **0** means at the next sign-in.
+- **Remember this device** *(Super admin, server policy)*: the number of days a browser may skip the code after the user chose *Remember this device*; **0** (the default) turns the option off.
+
+API tokens are not affected. People who sign in with single sign-on normally get their second factor from the identity provider; whether Qtestframe asks for its own code as well is set per provider in the server configuration (`local_mfa`). Every policy change is recorded in the [audit log](#audit-log).
+
+## Project sharing
+
+By default every member of the organisation sees every project, with their organisation role. **Sharing** changes that per project: you can restrict a project to the people who work on it, and give people a different role in one project than in the organisation.
+
+Open it with **Share** in the project header (or the share button of a project on the **Projects** page), or under **Categories & settings → Sharing**. You need `project.update` in the project *(Manager, or a project role that has it)*.
+
+**Access** has two choices:
+
+- **Everyone in the organisation** (the default): every member sees the project with their organisation role. Project members get their project role instead.
+- **Restricted to project members**: only the project members (and the organisation's admins) see the project. For everyone else it does not exist: it is missing from the project list, search, reviews and notifications, and links to it show *not found*. Restricted projects show a lock (🔒) in the project list and the header.
+
+**Project members** are people of the organisation or groups from your [identity provider (SCIM)](#provisioning-with-scim), each with a **project role**: any role of the organisation, also your own. Inside the project the project role **replaces** the organisation role, so it can raise or lower someone's rights there: a Tester of the organisation can be Manager in one project, a Manager only Viewer in another. A person's own membership wins over a group's; several groups add up. Admins of the organisation always have full access to every project.
+
+- **Add**: search for a person or group by name or e-mail, choose the project role and select **Add**. Only members of the organisation can be added (add new people under [Members](#members) first). The person gets a notification (and an e-mail if they want e-mail notifications).
+- **Change a role**: pick another role in the member's row.
+- **Remove** removes someone from the project; members can also leave a project themselves. **Several members at once**: tick them, then choose **Set project role** or **Remove**.
+- You can only give, change or remove roles whose project permissions you have in the project yourself, so nobody can give more than they have.
+- When you restrict a project that you see through your organisation role, you are added as a project member with that role, so you do not lock yourself out.
+- Organisation-wide permissions – members, roles, API tokens, the audit log, creating projects – always follow the organisation role. API tokens never exceed their own role, also in a project.
+
+Every change of the access or the members is recorded in the [audit log](#audit-log). Removing someone from the organisation removes their project memberships too. A duplicated project keeps the members of the original.
 
 ## E-mail
 
@@ -2694,6 +2758,10 @@ You are signed in but not working in an organisation. Choose one in the organisa
 ### How do I switch to another organisation?
 
 Use the organisation switch at the left of the top bar (on phones, the building icon). Qtestframe opens that organisation's project list. To start in a particular organisation every time, set **Default organisation** in your preferences.
+
+### A colleague cannot see a project. Why?
+
+The project is probably **restricted** (it shows a lock 🔒): only its project members and the organisation's admins see it. Someone who may change the project adds your colleague with **Share** in the project header; see [Project sharing](#project-sharing). The project role can also be lower than the organisation role, so a colleague may see a project but not be allowed to edit it.
 
 ## Editing
 
