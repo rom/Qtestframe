@@ -1915,3 +1915,24 @@ sources:
     name: {en: "ISO 4126 Safety devices for protection against excessive pressure", sv: "ISO 4126 Säkerhetsanordningar för skydd mot för högt tryck"}
     match: ["ISO 4126"]
     url: https://www.iso.org/standard/50826.html
+  - id: iso-11064
+    kind: standard
+    jurisdiction: international
+    short: ISO 11064
+    name: {en: "ISO 11064 Ergonomic design of control centres", sv: "ISO 11064 Ergonomisk utformning av kontrollcentraler"}
+    match: ["ISO 11064"]
+    url: https://www.iso.org/standard/19042.html
+  - id: iso-10075
+    kind: standard
+    jurisdiction: international
+    short: ISO 10075
+    name: {en: "ISO 10075 Ergonomic principles related to mental workload", sv: "ISO 10075 Ergonomiska principer för mental belastning"}
+    match: ["ISO 10075"]
+    url: https://www.iso.org/standard/76686.html
+  - id: gsn
+    kind: practice
+    jurisdiction: international
+    short: GSN
+    name: {en: "Goal Structuring Notation (GSN) Community Standard, Safety-Critical Systems Club", sv: "Goal Structuring Notation (GSN) Community Standard, Safety-Critical Systems Club"}
+    match: ["GSN Community Standard"]
+    url: https://scsc.uk/gsn

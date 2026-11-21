@@ -386,6 +386,142 @@ requirements:
         - method: analysis
           text: Bedömningen av varje redundant arkitektur visar poängen och betafaktorn, och samma betafaktor används i beräkningen.
 
+  - id: SYRAMS-18
+    type: business
+    obligation: must
+    priority: high
+    tags: [safety-case, gsn, argument]
+    refs: ["GSN Community Standard Version 3", "EN 50129:2018 (safety case for safety-related electronic systems)"]
+    tests: [SYRAMS-T13]
+    en:
+      title: Safety argument structured with claims, arguments and evidence
+      description: The safety case MUST present its argument as a goal structure in which each claim is supported by sub-claims or by referenced evidence, and no goal is left undeveloped when the safety case is submitted for acceptance.
+      rationale: A structured argument shows the reviewer why the evidence supports the safety claim and exposes gaps that a narrative hides.
+      criteria:
+        - method: inspection
+          text: The goal structure of the submitted safety case has no undeveloped goal, and each solution node refers to an existing evidence item.
+    sv:
+      title: Säkerhetsargumentation strukturerad med påståenden, argument och belägg
+      description: Säkerhetsbevisningen SKA presentera sin argumentation som en målstruktur där varje påstående stöds av delpåståenden eller av refererade belägg, och inget mål lämnas outvecklat när säkerhetsbevisningen lämnas in för godkännande.
+      rationale: En strukturerad argumentation visar granskaren varför beläggen stöder säkerhetspåståendet och synliggör luckor som en löptext döljer.
+      criteria:
+        - method: inspection
+          text: Målstrukturen i den inlämnade säkerhetsbevisningen har inget outvecklat mål, och varje lösningsnod hänvisar till ett befintligt belägg.
+
+  - id: SYRAMS-19
+    type: business
+    obligation: must
+    priority: critical
+    tags: [safety-case, application-conditions, srac]
+    refs: ["EN 50129:2018 (safety case for safety-related electronic systems)"]
+    tests: [SYRAMS-T13]
+    en:
+      title: Safety-related application conditions handed to the users
+      description: The safety case MUST list each safety-related application condition that the operator, maintainer or integrator has to fulfil, and trace each condition to the operating or maintenance documents handed over.
+      rationale: The safety argument holds only if the conditions it assumes are met in operation, and those who operate the system have to know them.
+      criteria:
+        - method: inspection
+          text: Each condition in the safety case is traced to a clause of the handed-over operating or maintenance documents.
+    sv:
+      title: Säkerhetsrelaterade tillämpningsvillkor överlämnas till användarna
+      description: Säkerhetsbevisningen SKA ange varje säkerhetsrelaterat tillämpningsvillkor som operatören, underhållaren eller integratören har att uppfylla, och spåra varje villkor till de drift- eller underhållsdokument som överlämnas.
+      rationale: Säkerhetsargumentationen håller bara om de villkor den förutsätter uppfylls i drift, och de som driver systemet behöver känna till dem.
+      criteria:
+        - method: inspection
+          text: Varje villkor i säkerhetsbevisningen är spårat till ett avsnitt i de överlämnade drift- eller underhållsdokumenten.
+
+  - id: SYRAMS-20
+    type: business
+    obligation: must
+    priority: high
+    tags: [independent-safety-assessment, acceptance]
+    refs: ["EN 50126-1:2017 (safety case)", "EN 50129:2018 (safety case for safety-related electronic systems)"]
+    tests: [SYRAMS-T14]
+    en:
+      title: Independent safety assessment report before acceptance
+      description: An assessor independent of the design and verification teams MUST issue a safety assessment report on the safety case, with each finding marked as blocking closed, before the system is accepted for operation.
+      rationale: The independent assessor gives the acceptance authority a judgement that does not depend on the people who built the system.
+      criteria:
+        - method: inspection
+          text: The assessment report is dated before acceptance, the assessor's independence is documented, and no blocking finding is open.
+    sv:
+      title: Rapport från oberoende säkerhetsbedömning före godkännande
+      description: En bedömare som är oberoende av konstruktions- och verifieringsteamen SKA utfärda en rapport om säkerhetsbedömning av säkerhetsbevisningen, med varje fynd markerat som blockerande stängt, innan systemet godkänns för drift.
+      rationale: Den oberoende bedömaren ger den godkännande myndigheten ett omdöme som inte beror på de personer som byggde systemet.
+      criteria:
+        - method: inspection
+          text: Bedömningsrapporten är daterad före godkännandet, bedömarens oberoende är dokumenterat och inget blockerande fynd är öppet.
+
+  - id: SYRAMS-21
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [safety-case, configuration, evidence]
+    refs: ["EN 50129:2018 (safety case for safety-related electronic systems)", "ISO 10007:2017 §5.3.3 (configuration baselines)"]
+    tests: [SYRAMS-T14]
+    en:
+      title: Each safety evidence item tied to a baselined version
+      description: Each evidence item referenced by the safety case MUST identify a version of the configuration item it was produced for that is part of the product baseline submitted for acceptance.
+      rationale: Evidence for an earlier version does not show that the delivered version is safe.
+      criteria:
+        - method: inspection
+          text: A sample of 20 evidence references each names a configuration item version that is in the submitted product baseline.
+    sv:
+      title: Varje säkerhetsbelägg kopplat till en baslinjelagd version
+      description: Varje belägg som säkerhetsbevisningen hänvisar till SKA ange en version av den konfigurationsenhet som det togs fram för som ingår i den produktbaslinje som lämnas in för godkännande.
+      rationale: Belägg för en tidigare version visar inte att den levererade versionen är säker.
+      criteria:
+        - method: inspection
+          text: Ett urval av 20 hänvisningar till belägg anger var och en en version av en konfigurationsenhet som finns i den inlämnade produktbaslinjen.
+
+  - id: SYRAMS-22
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [fracas, failure-reporting, reliability-growth]
+    refs: ["IEC 60300-3-2:2004 (collection of dependability data from the field)"]
+    tests: [SYRAMS-T15]
+    en:
+      title: Failure reporting, analysis and corrective action system
+      description: The supplier MUST run a failure reporting, analysis and corrective action system from the start of system testing to the end of the warranty period, in which each failure is recorded within 2 working days and closed with a cause and a corrective action or a justified decision.
+      rationale: Failures seen in test and early operation are the best data on how the design behaves, and they are lost when nobody records and analyses them.
+      criteria:
+        - method: inspection
+          text: The failure log shows each failure reported within 2 working days of its occurrence, and each closed failure has a cause and an action or justification.
+          threshold: ≤ 2 working days
+    sv:
+      title: System för felrapportering, felanalys och korrigerande åtgärder
+      description: Leverantören SKA driva ett system för felrapportering, felanalys och korrigerande åtgärder från starten av systemprovningen till slutet av garantitiden, där varje fel registreras inom 2 arbetsdagar och stängs med en orsak och en korrigerande åtgärd eller ett motiverat beslut.
+      rationale: Fel som syns vid provning och tidig drift är de bästa uppgifterna om hur konstruktionen beter sig, och de går förlorade när ingen registrerar och analyserar dem.
+      criteria:
+        - method: inspection
+          text: Felloggen visar varje fel rapporterat inom 2 arbetsdagar från att det inträffade, och varje stängt fel har en orsak och en åtgärd eller motivering.
+          threshold: ≤ 2 arbetsdagar
+
+  - id: SYRAMS-23
+    type: performance
+    obligation: must
+    priority: high
+    tags: [maintainability, mttr, demonstration]
+    refs: ["IEC 60300-3-10:2025 (maintainability)"]
+    tests: [SYRAMS-T15]
+    en:
+      title: Mean time to repair demonstrated before acceptance
+      description: The supplier MUST demonstrate, with at least 30 corrective maintenance tasks on faults inserted by the customer, that the mean active repair time of the system is at most 30 minutes.
+      rationale: A predicted repair time only becomes credible when maintainers have shown it with the real tools, documents and spare parts.
+      criteria:
+        - method: demonstration
+          text: The demonstration record of 30 or more tasks gives a mean active repair time of at most 30 minutes.
+          threshold: MTTR ≤ 30 min
+    sv:
+      title: Medeltid till reparation demonstreras före godkännande
+      description: Leverantören SKA med minst 30 avhjälpande underhållsuppgifter på fel som kunden lagt in visa att systemets genomsnittliga aktiva reparationstid är högst 30 minuter.
+      rationale: En beräknad reparationstid blir trovärdig först när underhållspersonal har visat den med de verkliga verktygen, dokumenten och reservdelarna.
+      criteria:
+        - method: demonstration
+          text: Demonstrationsprotokollet med 30 eller fler uppgifter ger en genomsnittlig aktiv reparationstid på högst 30 minuter.
+          threshold: MTTR ≤ 30 min
+
 tests:
   - id: SYRAMS-T01
     priority: high
@@ -724,3 +860,93 @@ tests:
           expected: Var och en har ett felträd med minimala snittmängder och en sannolikhet för topphändelsen.
         - action: Lista de minimala snittmängderna av ordning ett.
           expected: Var och en har en registrerad motivering.
+
+  - id: SYRAMS-T13
+    priority: high
+    execution: manual
+    tags: [safety-case, gsn]
+    refs: ["GSN Community Standard Version 3", "EN 50129:2018 (safety case for safety-related electronic systems)"]
+    en:
+      title: Goal structure completeness and application conditions
+      description: Checks that the safety argument has no undeveloped goals and that each application condition reaches the user documents.
+      preconditions: The submitted safety case with its goal structure, the evidence register and the handed-over operating and maintenance documents.
+      expected: The argument is fully developed and each condition is in the documents.
+      steps:
+        - action: Search the goal structure for goals marked as undeveloped or without a supporting node.
+          expected: None is found.
+        - action: Follow 10 solution nodes to the evidence register.
+          expected: Each refers to an existing evidence item.
+        - action: Trace each safety-related application condition to the handed-over documents.
+          expected: Each condition is found in a named clause.
+    sv:
+      title: Fullständig målstruktur och tillämpningsvillkor
+      description: Kontrollerar att säkerhetsargumentationen saknar outvecklade mål och att varje tillämpningsvillkor når användardokumenten.
+      preconditions: Den inlämnade säkerhetsbevisningen med sin målstruktur, registret över belägg och de överlämnade drift- och underhållsdokumenten.
+      expected: Argumentationen är fullt utvecklad och varje villkor finns i dokumenten.
+      steps:
+        - action: Sök i målstrukturen efter mål som är markerade som outvecklade eller saknar en stödjande nod.
+          expected: Inget sådant hittas.
+        - action: Följ 10 lösningsnoder till registret över belägg.
+          expected: Var och en hänvisar till ett befintligt belägg.
+        - action: Spåra varje säkerhetsrelaterat tillämpningsvillkor till de överlämnade dokumenten.
+          expected: Varje villkor finns i ett angivet avsnitt.
+
+  - id: SYRAMS-T14
+    priority: high
+    execution: manual
+    tags: [independent-safety-assessment, configuration]
+    refs: ["EN 50126-1:2017 (safety case)", "EN 50129:2018 (safety case for safety-related electronic systems)", "ISO 10007:2017 §5.3.3 (configuration baselines)"]
+    en:
+      title: Independent assessment report and evidence versions
+      description: Checks the independent safety assessment and that the evidence refers to the submitted baseline.
+      preconditions: The safety assessment report, the organisation chart of the project, the evidence register and the submitted product baseline.
+      expected: The assessment is independent, timely and without open blocking findings, and the evidence matches the baseline.
+      steps:
+        - action: Compare the assessor with the design and verification teams in the organisation chart.
+          expected: The assessor is in neither team.
+        - action: Read the report date and the status of blocking findings.
+          expected: The report predates acceptance and no blocking finding is open.
+        - action: Compare the versions in 20 evidence references with the product baseline.
+          expected: Each version is in the baseline.
+    sv:
+      title: Rapport från oberoende bedömning och versioner av belägg
+      description: Kontrollerar den oberoende säkerhetsbedömningen och att beläggen avser den inlämnade baslinjen.
+      preconditions: Rapporten från säkerhetsbedömningen, projektets organisationsplan, registret över belägg och den inlämnade produktbaslinjen.
+      expected: Bedömningen är oberoende, gjord i tid och utan öppna blockerande fynd, och beläggen stämmer med baslinjen.
+      steps:
+        - action: Jämför bedömaren med konstruktions- och verifieringsteamen i organisationsplanen.
+          expected: Bedömaren ingår i inget av teamen.
+        - action: Läs rapportens datum och status för blockerande fynd.
+          expected: Rapporten är daterad före godkännandet och inget blockerande fynd är öppet.
+        - action: Jämför versionerna i 20 hänvisningar till belägg med produktbaslinjen.
+          expected: Varje version finns i baslinjen.
+
+  - id: SYRAMS-T15
+    priority: high
+    execution: manual
+    tags: [fracas, maintainability]
+    refs: ["IEC 60300-3-2:2004 (collection of dependability data from the field)", "IEC 60300-3-10:2025 (maintainability)"]
+    en:
+      title: Failure log timeliness and maintainability demonstration
+      description: Checks the failure reporting times and closures, and reviews the maintainability demonstration.
+      preconditions: The failure log since the start of system testing, the test logs and the maintainability demonstration record.
+      expected: Failures are reported within 2 working days and closed with a cause, and the demonstrated mean repair time is at most 30 minutes.
+      steps:
+        - action: Compare the occurrence date in the test logs with the report date of 20 failures.
+          expected: Each was reported within 2 working days.
+        - action: Read the closure of each closed failure in the sample.
+          expected: Each has a cause and an action or a justification.
+        - action: Count the tasks in the demonstration record and calculate the mean active repair time.
+          expected: At least 30 tasks and a mean of at most 30 minutes.
+    sv:
+      title: Felloggens aktualitet och demonstration av underhållsmässighet
+      description: Kontrollerar tiderna för felrapportering och stängning och granskar demonstrationen av underhållsmässighet.
+      preconditions: Felloggen sedan starten av systemprovningen, testloggarna och demonstrationsprotokollet för underhållsmässighet.
+      expected: Fel rapporteras inom 2 arbetsdagar och stängs med en orsak, och den demonstrerade genomsnittliga reparationstiden är högst 30 minuter.
+      steps:
+        - action: Jämför datumet då felet inträffade i testloggarna med rapportdatumet för 20 fel.
+          expected: Varje fel rapporterades inom 2 arbetsdagar.
+        - action: Läs stängningen av varje stängt fel i urvalet.
+          expected: Var och en har en orsak och en åtgärd eller en motivering.
+        - action: Räkna uppgifterna i demonstrationsprotokollet och beräkna den genomsnittliga aktiva reparationstiden.
+          expected: Minst 30 uppgifter och ett medelvärde på högst 30 minuter.

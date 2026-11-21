@@ -1,0 +1,522 @@
+area: sys-human-factors
+prefix: SYHF
+group: usability
+catalogue: system
+name: {en: Human factors and operator interfaces, sv: Människa-system-interaktion och operatörsgränssnitt}
+description:
+  en: Human-centred design of systems with operators, covering the human-centred design plan, context of use, user requirements, task analysis, usability evaluation, use errors, mode awareness and manual takeover, overview displays, control room layout, workstation dimensions and environment, mental workload and integrated validation with operators.
+  sv: Människocentrerad design av system med operatörer, med plan för människocentrerad design, användningssammanhang, användarkrav, uppgiftsanalys, utvärdering av användbarhet, användningsfel, medvetenhet om driftläge och manuellt övertagande, översiktsbilder, kontrollrummets utformning, arbetsplatsens mått och miljö, mental belastning och integrerad validering med operatörer.
+
+requirements:
+  - id: SYHF-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [human-centred-design, plan]
+    refs: ["ISO 9241-210:2019 §6 (planning human-centred design)"]
+    tests: [SYHF-T01]
+    en:
+      title: Human-centred design plan in the project plan
+      description: The project MUST have a human-centred design plan, approved before the concept phase ends, that names the human factors activities, their methods, the responsible people, the user groups to involve and the points where results feed design decisions.
+      rationale: Human factors work that is not planned is done too late to change the design, when it can only add training and warnings.
+      criteria:
+        - method: inspection
+          text: The project plan contains or refers to a human-centred design plan approved before the concept gate, with each listed element.
+    sv:
+      title: Plan för människocentrerad design i projektplanen
+      description: Projektet SKA ha en plan för människocentrerad design, godkänd innan konceptfasen avslutas, som anger aktiviteterna för människa-system-interaktion, deras metoder, ansvariga personer, de användargrupper som medverkar och de punkter där resultaten styr konstruktionsbeslut.
+      rationale: Arbete med människa-system-interaktion som inte planeras görs för sent för att ändra konstruktionen, när det bara kan leda till mer utbildning och fler varningar.
+      criteria:
+        - method: inspection
+          text: Projektplanen innehåller eller hänvisar till en plan för människocentrerad design som godkänts före konceptbeslutet, med varje angivet element.
+
+  - id: SYHF-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [context-of-use, users, environment]
+    refs: ["ISO 9241-210:2019 §7.2 (understanding and specifying the context of use)"]
+    tests: [SYHF-T01]
+    en:
+      title: Documented context of use for each user group
+      description: The project MUST document, for each user group, the users' characteristics, goals and tasks, the equipment they use, and the physical, social and organisational environment, based on observation or interviews with at least 3 members of the group.
+      rationale: Design decisions made without knowing who the users are and where they work fit an imagined user and fail for the real ones.
+      criteria:
+        - method: inspection
+          text: Each user group in the plan has a context of use description covering each listed aspect, with references to observations or interviews of at least 3 members.
+          threshold: ≥ 3 members per group
+    sv:
+      title: Dokumenterat användningssammanhang för varje användargrupp
+      description: Projektet SKA för varje användargrupp dokumentera användarnas egenskaper, mål och uppgifter, den utrustning de använder och den fysiska, sociala och organisatoriska miljön, baserat på observationer eller intervjuer med minst 3 personer i gruppen.
+      rationale: Konstruktionsbeslut som fattas utan kunskap om vilka användarna är och var de arbetar passar en tänkt användare och fungerar inte för de verkliga.
+      criteria:
+        - method: inspection
+          text: Varje användargrupp i planen har en beskrivning av användningssammanhanget som omfattar varje angiven aspekt, med hänvisningar till observationer eller intervjuer med minst 3 personer.
+          threshold: ≥ 3 personer per grupp
+
+  - id: SYHF-03
+    type: business
+    obligation: must
+    priority: medium
+    tags: [user-requirements, traceability]
+    refs: ["ISO 9241-210:2019 §7.3 (specifying the user requirements)"]
+    tests: [SYHF-T01]
+    en:
+      title: User requirements traced to the context of use
+      description: Each user requirement MUST refer to the task or context of use finding it comes from, and state a measurable usability target for effectiveness, efficiency or satisfaction where it concerns a task.
+      rationale: User requirements without a source are hard to defend in trade-offs, and requirements without a target cannot be evaluated.
+      criteria:
+        - method: inspection
+          text: A sample of 20 user requirements each has a source reference, and each task-related one has a measurable target.
+    sv:
+      title: Användarkrav spårade till användningssammanhanget
+      description: Varje användarkrav SKA hänvisa till den uppgift eller det fynd om användningssammanhanget som det kommer från, och ange ett mätbart användbarhetsmål för ändamålsenlighet, effektivitet eller tillfredsställelse när det gäller en uppgift.
+      rationale: Användarkrav utan källa är svåra att försvara vid avvägningar, och krav utan mål kan inte utvärderas.
+      criteria:
+        - method: inspection
+          text: Ett urval av 20 användarkrav har vart och ett en källhänvisning, och vart och ett som gäller en uppgift har ett mätbart mål.
+
+  - id: SYHF-04
+    type: business
+    obligation: must
+    priority: high
+    tags: [task-analysis, critical-tasks]
+    refs: ["ISO 11064-1:2000 (principles for the design of control centres)"]
+    tests: [SYHF-T02]
+    en:
+      title: Task analysis of each critical operator task
+      description: The project MUST perform a task analysis of each operator task marked as critical in the hazard analysis, stating the steps, the information and controls needed at each step, the time available and the consequence of an error.
+      rationale: The interface can only give operators the right information at the right moment when the designer knows what each critical task demands.
+      criteria:
+        - method: inspection
+          text: Each critical task in the hazard analysis has a task analysis with steps, information and control needs, time available and error consequence.
+    sv:
+      title: Uppgiftsanalys av varje kritisk operatörsuppgift
+      description: Projektet SKA göra en uppgiftsanalys av varje operatörsuppgift som markerats som kritisk i riskanalysen, med stegen, den information och de reglage som behövs i varje steg, den tid som finns och konsekvensen av ett fel.
+      rationale: Gränssnittet kan bara ge operatörerna rätt information i rätt ögonblick när konstruktören vet vad varje kritisk uppgift kräver.
+      criteria:
+        - method: inspection
+          text: Varje kritisk uppgift i riskanalysen har en uppgiftsanalys med steg, behov av information och reglage, tillgänglig tid och felkonsekvens.
+
+  - id: SYHF-05
+    type: usability
+    obligation: must
+    priority: high
+    tags: [usability-evaluation, iterations, representative-users]
+    refs: ["ISO 9241-210:2019 §7.5 (evaluating the designs against requirements)"]
+    tests: [SYHF-T03]
+    en:
+      title: Usability evaluation with representative users in each design iteration
+      description: Each design iteration of the operator interface MUST be evaluated with at least 5 representative users performing the critical tasks, with each problem rated as serious fixed or accepted by the design authority before the next iteration.
+      rationale: Evaluation with real users finds problems that designers cannot see in their own work, and fixing them early is cheap.
+      criteria:
+        - method: inspection
+          text: Each iteration has an evaluation report with at least 5 users from the user groups, and each serious problem has a fix or a signed acceptance.
+          threshold: ≥ 5 users per iteration
+    sv:
+      title: Utvärdering av användbarhet med representativa användare i varje designiteration
+      description: Varje designiteration av operatörsgränssnittet SKA utvärderas med minst 5 representativa användare som utför de kritiska uppgifterna, där varje problem som bedömts som allvarligt åtgärdas eller godtas av konstruktionsansvarig före nästa iteration.
+      rationale: Utvärdering med verkliga användare hittar problem som konstruktörer inte ser i sitt eget arbete, och det är billigt att åtgärda dem tidigt.
+      criteria:
+        - method: inspection
+          text: Varje iteration har en utvärderingsrapport med minst 5 användare ur användargrupperna, och varje allvarligt problem har en åtgärd eller ett undertecknat godtagande.
+          threshold: ≥ 5 användare per iteration
+
+  - id: SYHF-06
+    type: usability
+    obligation: must
+    priority: high
+    tags: [use-errors, critical-tasks, mitigation]
+    refs: ["ISO 9241-110:2020 (use error robustness)"]
+    tests: [SYHF-T02]
+    en:
+      title: Use error analysis with a mitigation for each critical use error
+      description: The project MUST identify the foreseeable use errors of each critical task, such as wrong selection, omitted step or misread value, and record for each a design mitigation that prevents it or makes it detectable before harm.
+      rationale: Operators make errors under stress and fatigue, and the design decides whether an error is caught or leads to an incident.
+      criteria:
+        - method: inspection
+          text: Each critical task has a use error list, and each use error has a design mitigation traced to a requirement and verified by a test.
+    sv:
+      title: Analys av användningsfel med en åtgärd för varje kritiskt användningsfel
+      description: Projektet SKA identifiera de förutsebara användningsfelen i varje kritisk uppgift, till exempel fel val, utelämnat steg eller felavläst värde, och för vart och ett registrera en konstruktionsåtgärd som förhindrar felet eller gör det upptäckbart innan skada uppstår.
+      rationale: Operatörer gör fel under stress och trötthet, och konstruktionen avgör om ett fel fångas upp eller leder till en händelse.
+      criteria:
+        - method: inspection
+          text: Varje kritisk uppgift har en lista över användningsfel, och varje användningsfel har en konstruktionsåtgärd som är spårad till ett krav och verifierad med ett test.
+
+  - id: SYHF-07
+    type: usability
+    obligation: must
+    priority: high
+    tags: [mode-awareness, automation, self-descriptiveness]
+    refs: ["ISO 9241-110:2020 (self-descriptiveness)"]
+    tests: [SYHF-T04]
+    en:
+      title: Active operating mode and automation state always on screen
+      description: The operator interface MUST show the active operating mode and the state of each automatic function on every display page, in the same screen position on each page.
+      rationale: Mode confusion, where operators believe the system is in a different mode than it is, is a recurring cause of accidents with automated systems.
+      criteria:
+        - method: inspection
+          text: A walk-through of each display page shows the mode and automation indicators in the same position on each page.
+    sv:
+      title: Aktivt driftläge och automatikens tillstånd syns alltid på skärmen
+      description: Operatörsgränssnittet SKA visa det aktiva driftläget och tillståndet för varje automatisk funktion på varje skärmbild, på samma plats på varje bild.
+      rationale: Förväxling av driftlägen, där operatörer tror att systemet är i ett annat läge än det är, är en återkommande orsak till olyckor med automatiserade system.
+      criteria:
+        - method: inspection
+          text: En genomgång av varje skärmbild visar indikatorerna för driftläge och automatik på samma plats på varje bild.
+
+  - id: SYHF-08
+    type: usability
+    obligation: must
+    priority: critical
+    tags: [manual-takeover, automation, controllability]
+    refs: ["ISO 9241-110:2020 (controllability)"]
+    tests: [SYHF-T04]
+    en:
+      title: Manual takeover of an automatic function within 2 seconds
+      description: The system MUST hand manual control of each automatic function to the operator after a single action on the display that shows it, and confirm the takeover within 2 seconds.
+      rationale: When automation behaves unexpectedly, the operator has to be able to step in at once without searching through menus.
+      criteria:
+        - method: test
+          text: For each automatic function, a single action takes manual control and the confirmation appears within 2 seconds.
+          threshold: ≤ 2 s
+    sv:
+      title: Manuellt övertagande av en automatisk funktion inom 2 sekunder
+      description: Systemet SKA lämna över manuell kontroll av varje automatisk funktion till operatören efter en enda åtgärd på den skärmbild som visar funktionen, och bekräfta övertagandet inom 2 sekunder.
+      rationale: När automatiken beter sig oväntat behöver operatören ingripa direkt utan att leta i menyer.
+      criteria:
+        - method: test
+          text: För varje automatisk funktion tar en enda åtgärd manuell kontroll och bekräftelsen visas inom 2 sekunder.
+          threshold: ≤ 2 s
+
+  - id: SYHF-09
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [overview-display, situation-awareness]
+    refs: ["ANSI/ISA-101.01-2015 (human machine interfaces for process automation systems)"]
+    tests: [SYHF-T04]
+    en:
+      title: Overview display of the whole area of responsibility
+      description: The operator interface SHOULD provide an overview display that shows the state of the operator's whole area of responsibility on one screen, with abnormal conditions highlighted, without scrolling or opening other pages.
+      rationale: An overview gives operators the big picture so that they notice developing problems before alarms come.
+      criteria:
+        - method: inspection
+          text: The overview display fits one screen without scrolling and shows each unit of the area with abnormal states highlighted.
+    sv:
+      title: Översiktsbild över hela ansvarsområdet
+      description: Operatörsgränssnittet BÖR ha en översiktsbild som visar tillståndet för operatörens hela ansvarsområde på en skärm, med onormala tillstånd framhävda, utan rullning eller öppning av andra bilder.
+      rationale: En översikt ger operatörerna helhetsbilden så att de märker problem som håller på att utvecklas innan larmen kommer.
+      criteria:
+        - method: inspection
+          text: Översiktsbilden ryms på en skärm utan rullning och visar varje enhet i området med onormala tillstånd framhävda.
+
+  - id: SYHF-10
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [control-room, layout, sightlines]
+    refs: ["ISO 11064-3:1999 (control room layout)"]
+    tests: [SYHF-T05]
+    en:
+      title: Shared displays visible from each operator workstation
+      description: The control room layout MUST give each operator workstation a direct line of sight to the shared wall displays, with the displays within 60° of the operator's forward line of sight horizontally.
+      rationale: Shared displays support team awareness only when each operator can read them from the seated working position.
+      criteria:
+        - method: inspection
+          text: Measurements from each workstation show an unobstructed view of each shared display within 60° of the forward line of sight.
+          threshold: ≤ 60° horizontal
+    sv:
+      title: Gemensamma skärmar synliga från varje operatörsarbetsplats
+      description: Kontrollrummets utformning SKA ge varje operatörsarbetsplats fri sikt mot de gemensamma väggskärmarna, med skärmarna inom 60° från operatörens siktlinje rakt fram i horisontalplanet.
+      rationale: Gemensamma skärmar stöder teamets lägesbild bara när varje operatör kan läsa dem från sin sittande arbetsställning.
+      criteria:
+        - method: inspection
+          text: Mätningar från varje arbetsplats visar fri sikt mot varje gemensam skärm inom 60° från siktlinjen rakt fram.
+          threshold: ≤ 60° horisontellt
+
+  - id: SYHF-11
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [workstation, anthropometry, ergonomics]
+    refs: ["ISO 11064-4:2013 (layout and dimensions of workstations)"]
+    tests: [SYHF-T05]
+    en:
+      title: Workstation dimensions for the 5th to 95th percentile of the users
+      description: The operator workstations MUST let users from the 5th percentile female to the 95th percentile male of the user population reach the primary controls and read the primary displays from the seated position, using the adjustment range of the chair and desk.
+      rationale: A workstation sized for an average user forces short and tall operators into strained postures over long shifts.
+      criteria:
+        - method: inspection
+          text: Checks with test persons at both ends of the range, or with an anthropometric model, show reach and view of the primary controls and displays.
+    sv:
+      title: Arbetsplatsens mått för 5:e till 95:e percentilen av användarna
+      description: Operatörsarbetsplatserna SKA låta användare från 5:e percentilen kvinna till 95:e percentilen man i användarpopulationen nå de primära reglagen och läsa de primära skärmarna i sittande ställning, med stolens och bordets inställningsområde.
+      rationale: En arbetsplats som är dimensionerad för en genomsnittlig användare tvingar korta och långa operatörer till påfrestande arbetsställningar under långa skift.
+      criteria:
+        - method: inspection
+          text: Kontroller med testpersoner i båda ändarna av intervallet, eller med en antropometrisk modell, visar att de primära reglagen och skärmarna kan nås och ses.
+
+  - id: SYHF-12
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [control-room, lighting, noise]
+    refs: ["ISO 11064-6:2005 (environmental requirements for control centres)"]
+    tests: [SYHF-T05]
+    en:
+      title: Control room lighting and background noise within the design limits
+      description: The control room MUST provide an adjustable illuminance of 200 lx to 500 lx at the work surfaces without glare on the displays, and a background noise level of at most 45 dB(A) with the equipment running.
+      rationale: Glare, poor lighting and noise tire operators and lead to misread displays and missed audible alarms.
+      criteria:
+        - method: test
+          text: Light measurements at each work surface cover the 200–500 lx range with no reflection on the displays, and the noise level is at most 45 dB(A).
+          threshold: 200–500 lx, ≤ 45 dB(A)
+    sv:
+      title: Belysning och bakgrundsbuller i kontrollrummet inom konstruktionsgränserna
+      description: Kontrollrummet SKA ge en inställbar belysningsstyrka från 200 lx till 500 lx på arbetsytorna utan bländning på skärmarna, och en bakgrundsljudnivå på högst 45 dB(A) med utrustningen i drift.
+      rationale: Bländning, dålig belysning och buller tröttar ut operatörer och leder till felavlästa skärmar och missade ljudlarm.
+      criteria:
+        - method: test
+          text: Ljusmätningar på varje arbetsyta täcker intervallet 200–500 lx utan reflexer på skärmarna, och ljudnivån är högst 45 dB(A).
+          threshold: 200–500 lx, ≤ 45 dB(A)
+
+  - id: SYHF-13
+    type: usability
+    obligation: should
+    priority: high
+    tags: [mental-workload, simulator, peak-scenarios]
+    refs: ["ISO 10075-2:2024 (design principles for mental workload)"]
+    tests: [SYHF-T06]
+    en:
+      title: Mental workload assessed in peak-load scenarios
+      description: The mental workload of operators SHOULD be assessed in a simulator for each peak-load scenario of the concept of operations, with a mean workload score below 60 on a 0 to 100 scale.
+      rationale: Peaks of workload during upsets are when operators make the errors that matter, so workload has to be checked in those scenarios.
+      criteria:
+        - method: test
+          text: Workload ratings collected after each peak scenario give a mean below 60 out of 100.
+          threshold: mean < 60/100
+    sv:
+      title: Mental belastning bedöms i scenarier med toppbelastning
+      description: Operatörernas mentala belastning BÖR bedömas i en simulator för varje scenario med toppbelastning i driftkonceptet, med ett genomsnittligt belastningsvärde under 60 på en skala från 0 till 100.
+      rationale: Toppar i belastningen vid störningar är just då operatörer gör de fel som spelar roll, så belastningen behöver kontrolleras i de scenarierna.
+      criteria:
+        - method: test
+          text: Belastningsskattningar som samlats in efter varje toppscenario ger ett medelvärde under 60 av 100.
+          threshold: medelvärde < 60/100
+
+  - id: SYHF-14
+    type: usability
+    obligation: must
+    priority: critical
+    tags: [integrated-validation, simulator, acceptance]
+    refs: ["ISO 11064-7:2006 (principles for the evaluation of control centres)", "ISO/IEC/IEEE 15288:2023 §6.4.11 (validation process)"]
+    tests: [SYHF-T06]
+    en:
+      title: Integrated system validation with operating crews before acceptance
+      description: Before acceptance, at least 2 operating crews MUST perform the critical scenarios on the integrated system or a full-scope simulator, with each scenario meeting its success criteria for task completion and time.
+      rationale: Only a test with real crews on the complete system shows that people, procedures and technology work together under realistic conditions.
+      criteria:
+        - method: test
+          text: The validation report shows each critical scenario performed by at least 2 crews, with each success criterion met or a deviation with a corrective action.
+          threshold: ≥ 2 crews
+    sv:
+      title: Integrerad systemvalidering med driftlag före godkännande
+      description: Före godkännandet SKA minst 2 driftlag utföra de kritiska scenarierna på det integrerade systemet eller en fullskalig simulator, där varje scenario uppfyller sina framgångskriterier för genomförande och tid.
+      rationale: Bara ett test med verkliga driftlag på det kompletta systemet visar att människor, procedurer och teknik fungerar tillsammans under realistiska förhållanden.
+      criteria:
+        - method: test
+          text: Valideringsrapporten visar varje kritiskt scenario utfört av minst 2 driftlag, där varje framgångskriterium är uppfyllt eller har en avvikelse med en korrigerande åtgärd.
+          threshold: ≥ 2 driftlag
+
+tests:
+  - id: SYHF-T01
+    priority: high
+    execution: manual
+    tags: [human-centred-design, context-of-use, user-requirements]
+    refs: ["ISO 9241-210:2019 §6 (planning human-centred design)", "ISO 9241-210:2019 §7.2 (understanding and specifying the context of use)", "ISO 9241-210:2019 §7.3 (specifying the user requirements)"]
+    en:
+      title: Human-centred design plan, context of use and user requirements
+      description: Reviews the human-centred design plan, the context of use descriptions and a sample of user requirements.
+      preconditions: The project plan, the human-centred design plan, the concept gate record, the context of use descriptions and the requirements tool.
+      expected: The plan was approved in time, each user group has a context of use, and user requirements have sources and targets.
+      steps:
+        - action: Compare the approval date of the plan with the concept gate date and read its contents.
+          expected: The plan is approved before the gate and names activities, methods, owners, user groups and decision points.
+        - action: Open the context of use of each user group.
+          expected: Each covers characteristics, goals, tasks, equipment and environment and refers to at least 3 observed or interviewed members.
+        - action: Select 20 user requirements at random.
+          expected: Each has a source reference, and each task-related requirement has a measurable target.
+          data: target such as 95 % task completion within 3 minutes
+    sv:
+      title: Plan för människocentrerad design, användningssammanhang och användarkrav
+      description: Granskar planen för människocentrerad design, beskrivningarna av användningssammanhang och ett urval av användarkrav.
+      preconditions: Projektplanen, planen för människocentrerad design, protokollet från konceptbeslutet, beskrivningarna av användningssammanhang och kravverktyget.
+      expected: Planen godkändes i tid, varje användargrupp har ett användningssammanhang och användarkraven har källor och mål.
+      steps:
+        - action: Jämför planens godkännandedatum med datumet för konceptbeslutet och läs dess innehåll.
+          expected: Planen är godkänd före beslutet och anger aktiviteter, metoder, ansvariga, användargrupper och beslutspunkter.
+        - action: Öppna användningssammanhanget för varje användargrupp.
+          expected: Varje beskrivning omfattar egenskaper, mål, uppgifter, utrustning och miljö och hänvisar till minst 3 observerade eller intervjuade personer.
+        - action: Välj 20 användarkrav slumpvis.
+          expected: Varje krav har en källhänvisning, och varje uppgiftsrelaterat krav har ett mätbart mål.
+          data: mål som 95 % genomförda uppgifter inom 3 minuter
+
+  - id: SYHF-T02
+    priority: high
+    execution: manual
+    tags: [task-analysis, use-errors]
+    refs: ["ISO 11064-1:2000 (principles for the design of control centres)", "ISO 9241-110:2020 (use error robustness)"]
+    en:
+      title: Task analyses and use error mitigations of the critical tasks
+      description: Checks that each critical task has a task analysis and a use error list with verified mitigations.
+      preconditions: The hazard analysis with critical operator tasks, the task analyses, the use error lists, the requirements and the test results.
+      expected: Each critical task is analysed and each use error has a verified mitigation.
+      steps:
+        - action: List the critical operator tasks from the hazard analysis.
+          expected: A list of critical tasks is produced.
+        - action: Open the task analysis of each.
+          expected: Each states steps, information and controls per step, time available and error consequence.
+        - action: Pick 5 use errors and follow each mitigation to its requirement and test result.
+          expected: Each mitigation is in a requirement and the test passed.
+    sv:
+      title: Uppgiftsanalyser och åtgärder mot användningsfel för de kritiska uppgifterna
+      description: Kontrollerar att varje kritisk uppgift har en uppgiftsanalys och en lista över användningsfel med verifierade åtgärder.
+      preconditions: Riskanalysen med kritiska operatörsuppgifter, uppgiftsanalyserna, listorna över användningsfel, kraven och testresultaten.
+      expected: Varje kritisk uppgift är analyserad och varje användningsfel har en verifierad åtgärd.
+      steps:
+        - action: Lista de kritiska operatörsuppgifterna från riskanalysen.
+          expected: En lista över kritiska uppgifter tas fram.
+        - action: Öppna uppgiftsanalysen för var och en.
+          expected: Varje analys anger steg, information och reglage per steg, tillgänglig tid och felkonsekvens.
+        - action: Välj 5 användningsfel och följ varje åtgärd till dess krav och testresultat.
+          expected: Varje åtgärd finns i ett krav och testet är godkänt.
+
+  - id: SYHF-T03
+    priority: high
+    execution: manual
+    tags: [usability-evaluation]
+    refs: ["ISO 9241-210:2019 §7.5 (evaluating the designs against requirements)"]
+    en:
+      title: Usability evaluation reports of the design iterations
+      description: Checks the number and selection of participants and the handling of serious problems in each iteration's evaluation.
+      preconditions: The evaluation reports of each completed design iteration, the user group definitions and the design authority's decisions.
+      expected: Each iteration had at least 5 representative users and each serious problem was handled before the next iteration.
+      steps:
+        - action: Count the participants of each evaluation and compare them with the user groups.
+          expected: Each has at least 5 participants from the user groups.
+        - action: List the problems rated serious in each report.
+          expected: A list per iteration is produced.
+        - action: Check each serious problem in the next iteration's design or the decision log.
+          expected: Each is fixed in the next iteration or has a signed acceptance.
+    sv:
+      title: Utvärderingsrapporter för användbarhet från designiterationerna
+      description: Kontrollerar antal och urval av deltagare och hanteringen av allvarliga problem i varje iterations utvärdering.
+      preconditions: Utvärderingsrapporterna för varje genomförd designiteration, definitionerna av användargrupper och konstruktionsansvarigs beslut.
+      expected: Varje iteration hade minst 5 representativa användare och varje allvarligt problem hanterades före nästa iteration.
+      steps:
+        - action: Räkna deltagarna i varje utvärdering och jämför dem med användargrupperna.
+          expected: Varje utvärdering har minst 5 deltagare ur användargrupperna.
+        - action: Lista problemen som bedömts som allvarliga i varje rapport.
+          expected: En lista per iteration tas fram.
+        - action: Kontrollera varje allvarligt problem i nästa iterations konstruktion eller i beslutsloggen.
+          expected: Varje problem är åtgärdat i nästa iteration eller har ett undertecknat godtagande.
+
+  - id: SYHF-T04
+    priority: critical
+    execution: manual
+    tags: [mode-awareness, manual-takeover, overview-display]
+    refs: ["ISO 9241-110:2020 (self-descriptiveness)", "ISO 9241-110:2020 (controllability)", "ANSI/ISA-101.01-2015 (human machine interfaces for process automation systems)"]
+    en:
+      title: Mode indicators, manual takeover and overview display
+      description: Walks through the display pages, takes manual control of each automatic function and checks the overview display.
+      preconditions: The operator interface connected to the system or a simulator, the list of automatic functions and a stopwatch or screen recording with time stamps.
+      expected: Mode indicators are on each page, each takeover takes one action and is confirmed within 2 seconds, and the overview fits one screen.
+      steps:
+        - action: Open each display page in turn.
+          expected: The active mode and the automation states are shown in the same position on each page.
+        - action: For each automatic function, take manual control from the page that shows it and time the confirmation.
+          expected: One action is needed and the confirmation appears within 2 seconds.
+        - action: Open the overview display and create an abnormal condition in one unit.
+          expected: The overview fits one screen without scrolling and highlights the unit.
+    sv:
+      title: Indikatorer för driftläge, manuellt övertagande och översiktsbild
+      description: Går igenom skärmbilderna, tar manuell kontroll över varje automatisk funktion och kontrollerar översiktsbilden.
+      preconditions: Operatörsgränssnittet anslutet till systemet eller en simulator, listan över automatiska funktioner och ett stoppur eller en skärminspelning med tidsstämplar.
+      expected: Indikatorer för driftläge finns på varje bild, varje övertagande kräver en åtgärd och bekräftas inom 2 sekunder, och översikten ryms på en skärm.
+      steps:
+        - action: Öppna varje skärmbild i tur och ordning.
+          expected: Det aktiva driftläget och automatikens tillstånd visas på samma plats på varje bild.
+        - action: För varje automatisk funktion, ta manuell kontroll från den bild som visar den och mät tiden till bekräftelsen.
+          expected: En åtgärd behövs och bekräftelsen visas inom 2 sekunder.
+        - action: Öppna översiktsbilden och skapa ett onormalt tillstånd i en enhet.
+          expected: Översikten ryms på en skärm utan rullning och framhäver enheten.
+
+  - id: SYHF-T05
+    priority: medium
+    execution: manual
+    tags: [control-room, workstation, environment]
+    refs: ["ISO 11064-3:1999 (control room layout)", "ISO 11064-4:2013 (layout and dimensions of workstations)", "ISO 11064-6:2005 (environmental requirements for control centres)"]
+    en:
+      title: Control room sightlines, workstation fit and environment
+      description: Measures sightlines, workstation reach and the light and noise in the control room.
+      preconditions: The finished control room with equipment running, a goniometer or laser measure, a calibrated lux meter, a calibrated sound level meter and two test persons near the 5th percentile female and 95th percentile male of the user population.
+      expected: Each workstation sees the shared displays within 60°, both test persons reach and see the primary controls and displays, and light and noise are within limits.
+      steps:
+        - action: Measure the horizontal angle from each seated position to each shared display.
+          expected: Each display is visible without obstruction within 60°.
+        - action: Let each test person adjust the chair and desk and operate the primary controls.
+          expected: Both reach each primary control and read each primary display.
+        - action: Measure the illuminance at each work surface at the lowest and highest setting and look for reflections on the displays.
+          expected: The range covers 200 lx to 500 lx and no display shows a reflection.
+        - action: Measure the background noise at each workstation.
+          expected: The level is at most 45 dB(A).
+          data: LAeq over 5 minutes
+    sv:
+      title: Sikt, arbetsplatsens passform och miljö i kontrollrummet
+      description: Mäter siktlinjer, räckvidd vid arbetsplatsen samt ljus och buller i kontrollrummet.
+      preconditions: Det färdiga kontrollrummet med utrustningen i drift, en vinkelmätare eller lasermätare, en kalibrerad luxmätare, en kalibrerad ljudnivåmätare och två testpersoner nära 5:e percentilen kvinna och 95:e percentilen man i användarpopulationen.
+      expected: Varje arbetsplats ser de gemensamma skärmarna inom 60°, båda testpersonerna når och ser de primära reglagen och skärmarna, och ljus och buller ligger inom gränserna.
+      steps:
+        - action: Mät den horisontella vinkeln från varje sittplats till varje gemensam skärm.
+          expected: Varje skärm syns utan hinder inom 60°.
+        - action: Låt varje testperson ställa in stol och bord och manövrera de primära reglagen.
+          expected: Båda når varje primärt reglage och kan läsa varje primär skärm.
+        - action: Mät belysningsstyrkan på varje arbetsyta vid lägsta och högsta inställning och leta efter reflexer på skärmarna.
+          expected: Intervallet omfattar 200 lx till 500 lx och ingen skärm visar en reflex.
+        - action: Mät bakgrundsbullret vid varje arbetsplats.
+          expected: Nivån är högst 45 dB(A).
+          data: LAeq under 5 minuter
+
+  - id: SYHF-T06
+    priority: critical
+    execution: manual
+    tags: [integrated-validation, mental-workload]
+    refs: ["ISO 10075-2:2024 (design principles for mental workload)", "ISO 11064-7:2006 (principles for the evaluation of control centres)", "ISO/IEC/IEEE 15288:2023 §6.4.11 (validation process)"]
+    en:
+      title: Integrated validation with crews and workload ratings
+      description: Runs the critical and peak-load scenarios with operating crews and collects workload ratings.
+      preconditions: The integrated system or a full-scope simulator, at least 2 trained operating crews, the critical and peak-load scenarios with success criteria, and a workload rating form on a 0 to 100 scale.
+      expected: Each scenario meets its success criteria with each crew and the mean workload stays below 60.
+      steps:
+        - action: Run each critical scenario with each crew and record task completion and time.
+          expected: Each scenario meets its success criteria or the deviation is recorded with a corrective action.
+        - action: Run each peak-load scenario and collect a workload rating from each operator right after it.
+          expected: Ratings are collected from each operator.
+          data: trip of the main feed pump during start-up
+        - action: Calculate the mean rating of each peak scenario.
+          expected: Each mean is below 60.
+    sv:
+      title: Integrerad validering med driftlag och skattningar av belastning
+      description: Kör de kritiska scenarierna och scenarierna med toppbelastning med driftlag och samlar in skattningar av belastningen.
+      preconditions: Det integrerade systemet eller en fullskalig simulator, minst 2 utbildade driftlag, de kritiska scenarierna och scenarierna med toppbelastning med framgångskriterier samt ett formulär för skattning av belastning på en skala från 0 till 100.
+      expected: Varje scenario uppfyller sina framgångskriterier med varje driftlag och den genomsnittliga belastningen ligger under 60.
+      steps:
+        - action: Kör varje kritiskt scenario med varje driftlag och registrera genomförande och tid.
+          expected: Varje scenario uppfyller sina framgångskriterier eller så registreras avvikelsen med en korrigerande åtgärd.
+        - action: Kör varje scenario med toppbelastning och samla in en skattning av belastningen från varje operatör direkt efteråt.
+          expected: Skattningar samlas in från varje operatör.
+          data: utlösning av huvudmatarpumpen under uppstart
+        - action: Beräkna medelvärdet av skattningarna för varje toppscenario.
+          expected: Varje medelvärde ligger under 60.

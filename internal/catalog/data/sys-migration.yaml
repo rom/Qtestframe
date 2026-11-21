@@ -1,0 +1,526 @@
+area: sys-migration
+prefix: SYMIG
+group: operations
+catalogue: system
+name: {en: System migration and cut-over, sv: Systemmigrering och driftövergång}
+description:
+  en: Moving from a legacy system to a new one, covering migration strategy and inventory, data mapping, data quality and reconciliation, rehearsals, the cut-over runbook, go/no-go decision, rollback, change freeze, parallel run, hypercare and decommissioning of the legacy system with archiving.
+  sv: Övergång från ett äldre system till ett nytt, med migreringsstrategi och inventering, datamappning, datakvalitet och avstämning, generalrepetitioner, körschema för driftövergången, beslut om start eller avbrott, återgång, ändringsstopp, parallelldrift, förstärkt stöd efter driftstart och avveckling av det äldre systemet med arkivering.
+
+requirements:
+  - id: SYMIG-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [migration-strategy, transition]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    tests: [SYMIG-T01]
+    en:
+      title: Migration strategy chosen against documented criteria
+      description: The project MUST choose the migration strategy (single cut-over, phased or parallel) against documented criteria for business downtime, risk, cost and data dependencies, and have the choice approved by the system owner before migration design starts.
+      rationale: The strategy drives the whole migration design, and changing it late means redoing rehearsals, runbooks and contracts.
+      criteria:
+        - method: inspection
+          text: The strategy decision lists the options, the criteria and their assessment, and is signed by the system owner before the migration design date.
+    sv:
+      title: Migreringsstrategi vald mot dokumenterade kriterier
+      description: Projektet SKA välja migreringsstrategi (en enda övergång, etappvis eller parallell) mot dokumenterade kriterier för verksamhetens driftavbrott, risk, kostnad och databeroenden, och få valet godkänt av systemägaren innan utformningen av migreringen påbörjas.
+      rationale: Strategin styr hela utformningen av migreringen, och en sen ändring innebär att generalrepetitioner, körscheman och avtal måste göras om.
+      criteria:
+        - method: inspection
+          text: Strategibeslutet anger alternativen, kriterierna och bedömningen av dem, och är undertecknat av systemägaren före datumet för utformningen av migreringen.
+
+  - id: SYMIG-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [inventory, scope, interfaces]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    tests: [SYMIG-T01]
+    en:
+      title: Inventory of the data, interfaces, reports and users to migrate
+      description: The project MUST keep an inventory of each data object, interface, report, batch job and user group of the legacy system, with an owner and a decision to migrate, replace or retire each item.
+      rationale: Items that nobody listed, such as a monthly report or a nightly file transfer, are found only when they stop working after cut-over.
+      criteria:
+        - method: inspection
+          text: A comparison of the inventory with the legacy system's job scheduler, interface list and report catalogue finds no item missing, and each item has an owner and a decision.
+    sv:
+      title: Inventering av data, gränssnitt, rapporter och användare som ska flyttas
+      description: Projektet SKA föra en inventering av varje dataobjekt, gränssnitt, rapport, batchjobb och användargrupp i det äldre systemet, med en ägare och ett beslut om att flytta, ersätta eller avveckla varje post.
+      rationale: Poster som ingen listat, till exempel en månadsrapport eller en nattlig filöverföring, upptäcks först när de slutar fungera efter övergången.
+      criteria:
+        - method: inspection
+          text: En jämförelse av inventeringen med det äldre systemets jobbschemaläggare, gränssnittslista och rapportkatalog hittar ingen saknad post, och varje post har en ägare och ett beslut.
+
+  - id: SYMIG-03
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [data-mapping, data-owner]
+    refs: ["ISO/IEC 25012:2008 (data quality model)"]
+    tests: [SYMIG-T02]
+    en:
+      title: Field-level mapping approved by the data owner
+      description: Each migrated data object MUST have a field-level mapping from source to target, including the transformation and default rules, approved in writing by the data owner before the first rehearsal.
+      rationale: Transformation rules carry business meaning, and only the data owner can confirm that a code conversion or default value is right.
+      criteria:
+        - method: inspection
+          text: Each data object in the inventory marked for migration has a mapping with each target field covered and a dated approval from its owner before the first rehearsal.
+    sv:
+      title: Mappning på fältnivå godkänd av dataägaren
+      description: Varje dataobjekt som flyttas SKA ha en mappning på fältnivå från källa till mål, inklusive regler för transformering och standardvärden, skriftligen godkänd av dataägaren före den första generalrepetitionen.
+      rationale: Transformeringsregler bär verksamhetens innebörd, och bara dataägaren kan bekräfta att en kodomvandling eller ett standardvärde är rätt.
+      criteria:
+        - method: inspection
+          text: Varje dataobjekt i inventeringen som är markerat för flytt har en mappning där varje målfält omfattas och ett daterat godkännande från ägaren före den första generalrepetitionen.
+
+  - id: SYMIG-04
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [data-quality, profiling, cleansing]
+    refs: ["ISO/IEC 25012:2008 (data quality model)"]
+    tests: [SYMIG-T02]
+    en:
+      title: Source data profiled and cleansed before the final migration
+      description: The share of source records that fail the target system's validation rules MUST be below 0.5 % for each data object in the last rehearsal before cut-over, after profiling and cleansing.
+      rationale: Records that fail validation stop at cut-over or enter the new system as errors, and cleansing them in a cut-over weekend is not possible.
+      criteria:
+        - method: test
+          text: The rejection report of the last rehearsal shows below 0.5 % rejected records for each data object.
+          threshold: < 0.5 %
+    sv:
+      title: Källdata profileras och tvättas före den slutliga migreringen
+      description: Andelen poster i källan som inte klarar målsystemets valideringsregler SKA vara under 0,5 % för varje dataobjekt i den sista generalrepetitionen före övergången, efter profilering och tvätt.
+      rationale: Poster som inte klarar valideringen stoppar övergången eller hamnar som fel i det nya systemet, och de går inte att tvätta under en övergångshelg.
+      criteria:
+        - method: test
+          text: Rapporten över avvisade poster från den sista generalrepetitionen visar under 0,5 % avvisade poster för varje dataobjekt.
+          threshold: < 0,5 %
+
+  - id: SYMIG-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [rehearsal, dress-rehearsal, timing]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    tests: [SYMIG-T03]
+    en:
+      title: Two timed full rehearsals in a production-like environment
+      description: The project MUST run at least 2 full rehearsals of the cut-over with a copy of production data in a production-like environment, the last one completing within 80 % of the planned cut-over window.
+      rationale: Only a full rehearsal with real data volumes shows how long the cut-over takes and which steps fail.
+      criteria:
+        - method: inspection
+          text: Two rehearsal reports with production data copies exist, and the last one shows a duration within 80 % of the window.
+          threshold: ≤ 80 % of the window
+    sv:
+      title: Två tidtagna fullständiga generalrepetitioner i en produktionslik miljö
+      description: Projektet SKA genomföra minst 2 fullständiga generalrepetitioner av övergången med en kopia av produktionsdata i en produktionslik miljö, där den sista avslutas inom 80 % av det planerade övergångsfönstret.
+      rationale: Bara en fullständig generalrepetition med verkliga datamängder visar hur lång tid övergången tar och vilka steg som misslyckas.
+      criteria:
+        - method: inspection
+          text: Två rapporter från generalrepetitioner med kopior av produktionsdata finns, och den sista visar en tidsåtgång inom 80 % av fönstret.
+          threshold: ≤ 80 % av fönstret
+
+  - id: SYMIG-06
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [reconciliation, control-totals, completeness]
+    refs: ["ISO/IEC 25012:2008 (data quality model)"]
+    tests: [SYMIG-T04]
+    en:
+      title: Record counts and control totals reconciled for each data object
+      description: After the migration, the record count and the agreed control totals of each migrated data object in the target MUST equal those of the source, minus the records rejected and logged with a reason.
+      rationale: Reconciliation is the evidence that no customer, balance or transaction was lost or duplicated in the move.
+      criteria:
+        - method: test
+          text: The reconciliation report shows, for each data object, equal counts and control totals after accounting for the logged rejections.
+          threshold: difference 0
+    sv:
+      title: Antal poster och kontrollsummor stäms av för varje dataobjekt
+      description: Efter migreringen SKA antalet poster och de överenskomna kontrollsummorna för varje flyttat dataobjekt i målet vara lika med dem i källan, minus de poster som avvisats och loggats med ett skäl.
+      rationale: Avstämningen är beviset för att ingen kund, inget saldo och ingen transaktion har försvunnit eller dubblerats vid flytten.
+      criteria:
+        - method: test
+          text: Avstämningsrapporten visar, för varje dataobjekt, lika antal och kontrollsummor efter att de loggade avvisningarna räknats in.
+          threshold: skillnad 0
+
+  - id: SYMIG-07
+    type: business
+    obligation: must
+    priority: high
+    tags: [runbook, cut-over]
+    refs: ["ITIL 4 Release management"]
+    tests: [SYMIG-T03]
+    en:
+      title: Cut-over runbook with owner, timing and check for each step
+      description: The cut-over runbook MUST list each step with its owner, planned start time, planned duration, dependencies and the check that confirms the step is complete.
+      rationale: A cut-over involves many teams under time pressure, and a runbook without owners and checks leaves steps forgotten or done twice.
+      criteria:
+        - method: inspection
+          text: Each step in the runbook has each of the five listed fields filled in, and the runbook was used in the last rehearsal.
+    sv:
+      title: Körschema för övergången med ansvarig, tid och kontroll för varje steg
+      description: Körschemat för övergången SKA ange varje steg med ansvarig, planerad starttid, planerad varaktighet, beroenden och den kontroll som bekräftar att steget är klart.
+      rationale: En övergång omfattar många team under tidspress, och ett körschema utan ansvariga och kontroller gör att steg glöms bort eller görs två gånger.
+      criteria:
+        - method: inspection
+          text: Varje steg i körschemat har vart och ett av de fem angivna fälten ifyllt, och körschemat användes i den sista generalrepetitionen.
+
+  - id: SYMIG-08
+    type: business
+    obligation: must
+    priority: critical
+    tags: [go-no-go, decision, checkpoint]
+    refs: ["ITIL 4 Change enablement"]
+    tests: [SYMIG-T05]
+    en:
+      title: Go or no-go decision at the point of no return
+      description: The cut-over leader MUST hold a go or no-go decision against documented criteria at each checkpoint in the runbook, including the last point from which rollback is still possible, and record the decision and its basis.
+      rationale: Continuing past the point of no return with an unresolved problem turns a delay into an outage.
+      criteria:
+        - method: inspection
+          text: The cut-over log has a recorded decision with the criteria result at each checkpoint, including the point of no return.
+    sv:
+      title: Beslut om fortsättning eller avbrott vid punkten utan återvändo
+      description: Ledaren för övergången SKA fatta ett beslut om fortsättning eller avbrott mot dokumenterade kriterier vid varje kontrollpunkt i körschemat, inklusive den sista punkten från vilken återgång fortfarande är möjlig, och registrera beslutet och dess grund.
+      rationale: Att fortsätta förbi punkten utan återvändo med ett olöst problem gör en försening till ett avbrott.
+      criteria:
+        - method: inspection
+          text: Övergångsloggen har ett registrerat beslut med resultatet mot kriterierna vid varje kontrollpunkt, inklusive punkten utan återvändo.
+
+  - id: SYMIG-09
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [rollback, rehearsal]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    tests: [SYMIG-T05]
+    en:
+      title: Rollback to the legacy system rehearsed within 4 hours
+      description: The rollback to the legacy system from the point of no return MUST be rehearsed at least once and complete within 4 hours with the legacy system back in service and no data lost.
+      rationale: A rollback plan that has never been run is a hope, not a fallback.
+      criteria:
+        - method: test
+          text: The rollback rehearsal report shows the legacy system back in service within 4 hours with reconciled data.
+          threshold: ≤ 4 h
+    sv:
+      title: Återgång till det äldre systemet repeterad inom 4 timmar
+      description: Återgången till det äldre systemet från punkten utan återvändo SKA repeteras minst en gång och vara klar inom 4 timmar med det äldre systemet i drift igen och inga data förlorade.
+      rationale: En återgångsplan som aldrig har körts är en förhoppning, inte en reserv.
+      criteria:
+        - method: test
+          text: Rapporten från repetitionen av återgången visar det äldre systemet i drift igen inom 4 timmar med avstämda data.
+          threshold: ≤ 4 h
+
+  - id: SYMIG-10
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [change-freeze, cut-over]
+    refs: ["ITIL 4 Change enablement"]
+    tests: [SYMIG-T06]
+    en:
+      title: Change freeze on the legacy system before cut-over
+      description: From 5 working days before the cut-over until its end, changes to the legacy system's configuration, code and reference data MUST be limited to emergency changes approved by the cut-over leader.
+      rationale: A change to the source in the last days invalidates the rehearsed mapping and timing.
+      criteria:
+        - method: inspection
+          text: The change log of the legacy system for the freeze period shows only emergency changes, each approved by the cut-over leader.
+          threshold: 5 working days
+    sv:
+      title: Ändringsstopp i det äldre systemet före övergången
+      description: Från 5 arbetsdagar före övergången till dess slut SKA ändringar i det äldre systemets konfiguration, kod och referensdata begränsas till akuta ändringar som godkänts av ledaren för övergången.
+      rationale: En ändring i källan de sista dagarna gör den repeterade mappningen och tidsplanen ogiltig.
+      criteria:
+        - method: inspection
+          text: Ändringsloggen för det äldre systemet under stopperioden visar endast akuta ändringar, var och en godkänd av ledaren för övergången.
+          threshold: 5 arbetsdagar
+
+  - id: SYMIG-11
+    type: functional
+    obligation: should
+    priority: high
+    tags: [parallel-run, output-comparison]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.11 (validation process)"]
+    tests: [SYMIG-T06]
+    en:
+      title: Parallel run with comparison of critical outputs
+      description: For each output marked as critical, such as invoices, payments or regulatory reports, the old and new systems SHOULD run in parallel for at least 10 working days with each difference explained before the old output is switched off.
+      rationale: Comparing real outputs side by side finds calculation and rule differences that test cases did not cover.
+      criteria:
+        - method: inspection
+          text: The comparison report covers 10 working days for each critical output, and each difference has an explanation and a closure.
+          threshold: ≥ 10 working days
+    sv:
+      title: Parallelldrift med jämförelse av kritiska utdata
+      description: För varje utdata som markerats som kritisk, till exempel fakturor, betalningar eller rapporter till myndigheter, BÖR det gamla och det nya systemet köras parallellt i minst 10 arbetsdagar med varje skillnad förklarad innan den gamla utdatan stängs av.
+      rationale: När verkliga utdata jämförs sida vid sida hittas skillnader i beräkningar och regler som testfallen inte täckte.
+      criteria:
+        - method: inspection
+          text: Jämförelserapporten omfattar 10 arbetsdagar för varje kritisk utdata, och varje skillnad har en förklaring och en stängning.
+          threshold: ≥ 10 arbetsdagar
+
+  - id: SYMIG-12
+    type: business
+    obligation: must
+    priority: medium
+    tags: [hypercare, incident-management]
+    refs: ["ITIL 4 Incident management"]
+    tests: [SYMIG-T07]
+    en:
+      title: Hypercare period with daily incident review
+      description: The project MUST run a hypercare period of at least 4 weeks after cut-over, with an extended support team and a daily review of the open incidents, and end it only when agreed exit criteria are met.
+      rationale: Users meet the new system for real in the first weeks, and quick handling of problems then decides whether they accept it.
+      criteria:
+        - method: inspection
+          text: The hypercare log shows a daily review for at least 4 weeks and a signed exit against the criteria.
+          threshold: ≥ 4 weeks
+    sv:
+      title: Period med förstärkt stöd och daglig genomgång av incidenter
+      description: Projektet SKA ha en period med förstärkt stöd på minst 4 veckor efter övergången, med ett utökat supportteam och en daglig genomgång av de öppna incidenterna, och avsluta den först när överenskomna utgångskriterier är uppfyllda.
+      rationale: Användarna möter det nya systemet på riktigt under de första veckorna, och en snabb hantering av problem då avgör om de godtar det.
+      criteria:
+        - method: inspection
+          text: Loggen för det förstärkta stödet visar en daglig genomgång under minst 4 veckor och ett undertecknat avslut mot kriterierna.
+          threshold: ≥ 4 veckor
+
+  - id: SYMIG-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [decommissioning, archive, retention]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.14 (disposal process)", "ISO 15489-1:2016 (records management)"]
+    tests: [SYMIG-T07]
+    en:
+      title: Legacy data archived with read access before shutdown
+      description: Before the legacy system is shut down, the records that were not migrated and are still within their retention period MUST be archived in a format readable without the legacy system, with search by the main identifiers and access control.
+      rationale: Records kept for legal reasons still have to be found and read after the system that created them is gone.
+      criteria:
+        - method: test
+          text: Searches for 10 records known only in the legacy data return each record from the archive with its content and metadata, and a user without archive rights is refused.
+    sv:
+      title: Äldre data arkiveras med läsåtkomst före avstängning
+      description: Innan det äldre systemet stängs av SKA de handlingar som inte flyttats och som fortfarande är inom sin bevarandetid arkiveras i ett format som går att läsa utan det äldre systemet, med sökning på de viktigaste identifierarna och behörighetsstyrning.
+      rationale: Handlingar som sparas av rättsliga skäl behöver fortfarande kunna hittas och läsas när systemet som skapade dem är borta.
+      criteria:
+        - method: test
+          text: Sökningar efter 10 handlingar som bara finns i de äldre data ger varje handling från arkivet med innehåll och metadata, och en användare utan behörighet till arkivet nekas.
+
+tests:
+  - id: SYMIG-T01
+    priority: high
+    execution: manual
+    tags: [migration-strategy, inventory]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    en:
+      title: Strategy decision and migration inventory
+      description: Checks the strategy decision and compares the migration inventory with the legacy system.
+      preconditions: The strategy decision record, the migration inventory, and read access to the legacy system's job scheduler, interface list and report catalogue.
+      expected: The strategy was decided against criteria in time and the inventory is complete with owners and decisions.
+      steps:
+        - action: Read the strategy decision.
+          expected: It lists the options, the criteria and the assessment, and is signed by the system owner before the migration design date.
+        - action: Export the jobs, interfaces and reports from the legacy system and compare them with the inventory.
+          expected: No item is missing from the inventory.
+        - action: Read the owner and decision of each inventory item.
+          expected: Each item has an owner and a migrate, replace or retire decision.
+    sv:
+      title: Strategibeslut och inventering för migreringen
+      description: Kontrollerar strategibeslutet och jämför inventeringen för migreringen med det äldre systemet.
+      preconditions: Protokollet för strategibeslutet, inventeringen för migreringen och läsåtkomst till det äldre systemets jobbschemaläggare, gränssnittslista och rapportkatalog.
+      expected: Strategin beslutades mot kriterier i tid och inventeringen är fullständig med ägare och beslut.
+      steps:
+        - action: Läs strategibeslutet.
+          expected: Det anger alternativen, kriterierna och bedömningen och är undertecknat av systemägaren före datumet för utformningen av migreringen.
+        - action: Exportera jobb, gränssnitt och rapporter från det äldre systemet och jämför dem med inventeringen.
+          expected: Ingen post saknas i inventeringen.
+        - action: Läs ägaren och beslutet för varje post i inventeringen.
+          expected: Varje post har en ägare och ett beslut om att flytta, ersätta eller avveckla.
+
+  - id: SYMIG-T02
+    priority: high
+    execution: manual
+    tags: [data-mapping, data-quality]
+    refs: ["ISO/IEC 25012:2008 (data quality model)"]
+    en:
+      title: Mapping approvals and rejection rate of the last rehearsal
+      description: Checks the mapping approvals and the rejected records of the last rehearsal.
+      preconditions: The mapping specifications, the inventory, the approval records and the rejection report of the last rehearsal.
+      expected: Each mapping is approved before the first rehearsal and each data object has below 0.5 % rejected records.
+      steps:
+        - action: For each data object marked for migration, open its mapping.
+          expected: Each target field is mapped with its transformation or default rule.
+        - action: Compare the approval date of each mapping with the date of the first rehearsal.
+          expected: Each approval is from the data owner and dated before the first rehearsal.
+        - action: Read the rejection rate of each data object in the last rehearsal.
+          expected: Each rate is below 0.5 %.
+          data: 1 200 rejected of 400 000 customer records = 0.3 %
+    sv:
+      title: Godkännanden av mappning och andel avvisade poster i den sista generalrepetitionen
+      description: Kontrollerar godkännandena av mappningarna och de avvisade posterna i den sista generalrepetitionen.
+      preconditions: Mappningsspecifikationerna, inventeringen, godkännandeprotokollen och rapporten över avvisade poster från den sista generalrepetitionen.
+      expected: Varje mappning är godkänd före den första generalrepetitionen och varje dataobjekt har under 0,5 % avvisade poster.
+      steps:
+        - action: Öppna mappningen för varje dataobjekt som är markerat för flytt.
+          expected: Varje målfält är mappat med sin regel för transformering eller standardvärde.
+        - action: Jämför godkännandedatumet för varje mappning med datumet för den första generalrepetitionen.
+          expected: Varje godkännande kommer från dataägaren och är daterat före den första generalrepetitionen.
+        - action: Läs andelen avvisade poster för varje dataobjekt i den sista generalrepetitionen.
+          expected: Varje andel är under 0,5 %.
+          data: 1 200 avvisade av 400 000 kundposter = 0,3 %
+
+  - id: SYMIG-T03
+    priority: high
+    execution: manual
+    tags: [rehearsal, runbook]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)", "ITIL 4 Release management"]
+    en:
+      title: Rehearsal reports and runbook completeness
+      description: Checks the number and duration of full rehearsals and the fields of the cut-over runbook.
+      preconditions: The rehearsal reports, the planned cut-over window and the cut-over runbook.
+      expected: Two full rehearsals were run with production data, the last within 80 % of the window, and each runbook step is complete.
+      steps:
+        - action: Count the full rehearsals with a production data copy.
+          expected: At least 2 are reported.
+        - action: Compare the duration of the last rehearsal with the window.
+          expected: The duration is within 80 % of the window.
+          data: window 48 h, last rehearsal 36 h
+        - action: Check each runbook step for owner, start time, duration, dependencies and completion check.
+          expected: Each field is filled in for each step.
+    sv:
+      title: Rapporter från generalrepetitioner och körschemats fullständighet
+      description: Kontrollerar antal och tidsåtgång för fullständiga generalrepetitioner och fälten i körschemat för övergången.
+      preconditions: Rapporterna från generalrepetitionerna, det planerade övergångsfönstret och körschemat för övergången.
+      expected: Två fullständiga generalrepetitioner genomfördes med produktionsdata, den sista inom 80 % av fönstret, och varje steg i körschemat är fullständigt.
+      steps:
+        - action: Räkna de fullständiga generalrepetitionerna med en kopia av produktionsdata.
+          expected: Minst 2 är rapporterade.
+        - action: Jämför tidsåtgången för den sista generalrepetitionen med fönstret.
+          expected: Tidsåtgången ligger inom 80 % av fönstret.
+          data: fönster 48 h, sista repetitionen 36 h
+        - action: Kontrollera varje steg i körschemat för ansvarig, starttid, varaktighet, beroenden och kontroll av att steget är klart.
+          expected: Varje fält är ifyllt för varje steg.
+
+  - id: SYMIG-T04
+    priority: critical
+    execution: automated
+    tags: [reconciliation]
+    refs: ["ISO/IEC 25012:2008 (data quality model)"]
+    en:
+      title: Reconciliation of counts and control totals after migration
+      description: A script compares record counts and control totals of each data object between source and target and accounts for logged rejections.
+      preconditions: Read access to the source and target databases after the migration, the agreed control totals per data object and the rejection log.
+      expected: Counts and totals agree for each data object after the logged rejections.
+      steps:
+        - action: Count the records of each data object in the source and in the target.
+          expected: The difference equals the number of logged rejections for the object.
+        - action: Calculate each agreed control total in the source and in the target.
+          expected: The totals agree after removing the rejected records.
+          data: sum of open balances, number of active contracts
+        - action: Check that each rejection in the log has a reason.
+          expected: Each rejected record has a logged reason.
+    sv:
+      title: Avstämning av antal och kontrollsummor efter migreringen
+      description: Ett skript jämför antal poster och kontrollsummor för varje dataobjekt mellan källa och mål och räknar in loggade avvisningar.
+      preconditions: Läsåtkomst till käll- och måldatabaserna efter migreringen, de överenskomna kontrollsummorna per dataobjekt och loggen över avvisningar.
+      expected: Antal och summor stämmer för varje dataobjekt efter de loggade avvisningarna.
+      steps:
+        - action: Räkna posterna för varje dataobjekt i källan och i målet.
+          expected: Skillnaden är lika med antalet loggade avvisningar för objektet.
+        - action: Beräkna varje överenskommen kontrollsumma i källan och i målet.
+          expected: Summorna stämmer efter att de avvisade posterna räknats bort.
+          data: summa öppna saldon, antal aktiva avtal
+        - action: Kontrollera att varje avvisning i loggen har ett skäl.
+          expected: Varje avvisad post har ett loggat skäl.
+
+  - id: SYMIG-T05
+    priority: critical
+    execution: manual
+    tags: [go-no-go, rollback]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    en:
+      title: Checkpoint decisions and rollback rehearsal
+      description: Checks the go or no-go decisions in the cut-over log and the rollback rehearsal.
+      preconditions: The cut-over log of the last rehearsal or the real cut-over, the go or no-go criteria and the rollback rehearsal report.
+      expected: Each checkpoint has a recorded decision and the rollback was completed within 4 hours.
+      steps:
+        - action: Compare the checkpoints in the runbook with the decisions in the log.
+          expected: Each checkpoint, including the point of no return, has a decision with the criteria result.
+        - action: Read the start and end time of the rollback rehearsal.
+          expected: The legacy system was back in service within 4 hours.
+        - action: Read the reconciliation after the rollback.
+          expected: No data was lost in the legacy system.
+    sv:
+      title: Beslut vid kontrollpunkter och repetition av återgång
+      description: Kontrollerar besluten om fortsättning eller avbrott i övergångsloggen och repetitionen av återgången.
+      preconditions: Övergångsloggen från den sista generalrepetitionen eller den verkliga övergången, kriterierna för fortsättning eller avbrott och rapporten från repetitionen av återgången.
+      expected: Varje kontrollpunkt har ett registrerat beslut och återgången slutfördes inom 4 timmar.
+      steps:
+        - action: Jämför kontrollpunkterna i körschemat med besluten i loggen.
+          expected: Varje kontrollpunkt, inklusive punkten utan återvändo, har ett beslut med resultatet mot kriterierna.
+        - action: Läs start- och sluttid för repetitionen av återgången.
+          expected: Det äldre systemet var i drift igen inom 4 timmar.
+        - action: Läs avstämningen efter återgången.
+          expected: Inga data har gått förlorade i det äldre systemet.
+
+  - id: SYMIG-T06
+    priority: high
+    execution: manual
+    tags: [change-freeze, parallel-run]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC/IEEE 15288:2023 §6.4.11 (validation process)"]
+    en:
+      title: Changes during the freeze and parallel run comparison
+      description: Checks the legacy system's changes during the freeze and the comparison of critical outputs during the parallel run.
+      preconditions: The change log of the legacy system, the cut-over date and the parallel run comparison report.
+      expected: Only approved emergency changes during the freeze, and 10 days of explained differences for each critical output.
+      steps:
+        - action: List the changes to the legacy system in the 5 working days before cut-over.
+          expected: Each is an emergency change approved by the cut-over leader.
+        - action: Count the compared working days for each critical output.
+          expected: Each has at least 10 working days.
+        - action: Read each difference in the comparison report.
+          expected: Each has an explanation and a closure.
+    sv:
+      title: Ändringar under ändringsstoppet och jämförelse vid parallelldrift
+      description: Kontrollerar ändringarna i det äldre systemet under ändringsstoppet och jämförelsen av kritiska utdata under parallelldriften.
+      preconditions: Ändringsloggen för det äldre systemet, datumet för övergången och jämförelserapporten från parallelldriften.
+      expected: Endast godkända akuta ändringar under stoppet, och 10 dagar med förklarade skillnader för varje kritisk utdata.
+      steps:
+        - action: Lista ändringarna i det äldre systemet under de 5 arbetsdagarna före övergången.
+          expected: Var och en är en akut ändring som godkänts av ledaren för övergången.
+        - action: Räkna de jämförda arbetsdagarna för varje kritisk utdata.
+          expected: Varje utdata har minst 10 arbetsdagar.
+        - action: Läs varje skillnad i jämförelserapporten.
+          expected: Var och en har en förklaring och en stängning.
+
+  - id: SYMIG-T07
+    priority: high
+    execution: manual
+    tags: [hypercare, archive]
+    refs: ["ITIL 4 Incident management", "ISO/IEC/IEEE 15288:2023 §6.4.14 (disposal process)", "ISO 15489-1:2016 (records management)"]
+    en:
+      title: Hypercare log and archive search before shutdown
+      description: Checks the hypercare reviews and exit, and searches the archive for legacy records before the legacy system is shut down.
+      preconditions: The hypercare log and exit criteria, the archive of the legacy data, a list of 10 records that exist only in the legacy data, an archive user account and a test account without archive rights.
+      expected: Hypercare ran 4 weeks with daily reviews, and the archive returns each record to authorised users only.
+      steps:
+        - action: Read the hypercare log.
+          expected: It shows a daily review of open incidents for at least 4 weeks and a signed exit against the criteria.
+        - action: Search the archive for each of the 10 records by its main identifier.
+          expected: Each record is found with its content and metadata.
+        - action: Repeat one search with the test account without archive rights.
+          expected: Access is refused.
+    sv:
+      title: Logg för förstärkt stöd och sökning i arkivet före avstängning
+      description: Kontrollerar genomgångarna och avslutet av det förstärkta stödet och söker i arkivet efter äldre handlingar innan det äldre systemet stängs av.
+      preconditions: Loggen och utgångskriterierna för det förstärkta stödet, arkivet med de äldre data, en lista över 10 handlingar som bara finns i de äldre data, ett användarkonto för arkivet och ett testkonto utan behörighet till arkivet.
+      expected: Det förstärkta stödet pågick i 4 veckor med dagliga genomgångar, och arkivet visar varje handling endast för behöriga användare.
+      steps:
+        - action: Läs loggen för det förstärkta stödet.
+          expected: Den visar en daglig genomgång av öppna incidenter under minst 4 veckor och ett undertecknat avslut mot kriterierna.
+        - action: Sök efter var och en av de 10 handlingarna i arkivet med dess huvudidentifierare.
+          expected: Varje handling hittas med innehåll och metadata.
+        - action: Upprepa en sökning med testkontot utan behörighet till arkivet.
+          expected: Åtkomsten nekas.
