@@ -1,0 +1,618 @@
+area: hw-device-security
+prefix: HWSEC
+group: security
+catalogue: hardware
+name: {en: Embedded device security, sv: Säkerhet i inbyggda enheter}
+description:
+  en: Security of the hardware and firmware of embedded and connected devices, covering secure boot and anti-rollback, debug and console ports, signed and fail-safe firmware updates, unique credentials, hardware-protected key storage, tamper detection, attack surface, the firmware bill of materials and support period, factory reset and random number generation, with references to the Cyber Resilience Act, EN 18031 and IEC 62443-4-2.
+  sv: Säkerhet i hårdvara och firmware för inbyggda och uppkopplade enheter, med säker uppstart och skydd mot nedgradering, felsöknings- och konsolportar, signerade och felsäkra firmwareuppdateringar, unika inloggningsuppgifter, hårdvaruskyddad nyckellagring, upptäckt av manipulering, attackyta, materialförteckning för firmware och supportperiod, fabriksåterställning och slumptalsgenerering, med hänvisningar till cyberresiliensförordningen, EN 18031 och IEC 62443-4-2.
+
+requirements:
+  - id: HWSEC-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [secure-boot, chain-of-trust, firmware]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "NIST SP 800-193 (platform firmware resiliency)"]
+    tests: [HWSEC-T01]
+    en:
+      title: Secure boot verifies each stage of the boot chain
+      description: The device MUST verify the signature of the bootloader, the operating system and the application firmware against a public key anchored in immutable hardware before running each stage, and MUST refuse to run a stage whose signature does not verify.
+      rationale: Without a verified chain of trust, an attacker with brief physical or remote access can install persistent malicious firmware.
+      criteria:
+        - method: test
+          text: A firmware image with one changed byte and an image signed with a test key are each refused at boot, and the device stays in its recovery state.
+    sv:
+      title: Säker uppstart verifierar varje steg i uppstartskedjan
+      description: Enheten SKA verifiera signaturen för startladdaren, operativsystemet och applikationsfirmwaren mot en publik nyckel som är förankrad i oföränderlig hårdvara innan varje steg körs, och vägra köra ett steg vars signatur inte kan verifieras.
+      rationale: Utan en verifierad förtroendekedja kan en angripare med kort fysisk åtkomst eller fjärråtkomst installera bestående skadlig firmware.
+      criteria:
+        - method: test
+          text: En firmwareavbild med en ändrad byte och en avbild signerad med en testnyckel vägras var för sig vid uppstart, och enheten stannar i sitt återställningsläge.
+
+  - id: HWSEC-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [anti-rollback, firmware, version]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
+    tests: [HWSEC-T01]
+    en:
+      title: Rollback to firmware with a known vulnerability is refused
+      description: The device MUST keep a security version counter in one-time programmable or replay-protected storage and MUST refuse to boot or install a firmware image whose security version is lower than the counter.
+      rationale: An attacker who can install an older, correctly signed image can bring back a vulnerability that has already been fixed.
+      criteria:
+        - method: test
+          text: After an update to security version 5, a correctly signed image with security version 4 is refused both by the updater and at boot.
+    sv:
+      title: Nedgradering till firmware med känd sårbarhet vägras
+      description: Enheten SKA hålla en räknare för säkerhetsversion i engångsprogrammerbart eller replayskyddat minne och vägra starta eller installera en firmwareavbild vars säkerhetsversion är lägre än räknaren.
+      rationale: En angripare som kan installera en äldre, korrekt signerad avbild kan återinföra en sårbarhet som redan har åtgärdats.
+      criteria:
+        - method: test
+          text: Efter en uppdatering till säkerhetsversion 5 vägras en korrekt signerad avbild med säkerhetsversion 4 både av uppdateringsfunktionen och vid uppstart.
+
+  - id: HWSEC-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [debug-port, jtag, swd, production]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "ETSI EN 303 645 provision 5.6-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)"]
+    tests: [HWSEC-T02]
+    en:
+      title: Debug ports locked on production units
+      description: On each production unit, the JTAG and SWD debug interfaces MUST be permanently disabled or locked so that they only open after a challenge-response authentication with a device-unique key held by the manufacturer.
+      rationale: An open debug port gives full read and write access to memory and keys, which defeats every other protection on the device.
+      criteria:
+        - method: test
+          text: A debug probe connected to a production unit cannot halt the processor or read memory, and the lock fuse state read by the production test is set for each unit of one lot.
+          threshold: 100 % of production units locked
+    sv:
+      title: Felsökningsportar låsta på produktionsenheter
+      description: På varje produktionsenhet SKA felsökningsgränssnitten JTAG och SWD vara permanent avstängda eller låsta så att de bara öppnas efter en autentisering med utmaning och svar med en enhetsunik nyckel som tillverkaren har.
+      rationale: En öppen felsökningsport ger full läs- och skrivåtkomst till minne och nycklar, vilket slår ut varje annat skydd i enheten.
+      criteria:
+        - method: test
+          text: En felsökningsprob som ansluts till en produktionsenhet kan inte stoppa processorn eller läsa minnet, och låssäkringens läge som produktionstestet läser är satt för varje enhet i ett parti.
+          threshold: 100 % av produktionsenheterna låsta
+
+  - id: HWSEC-04
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [serial-console, uart, shell]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 ACM)"]
+    tests: [HWSEC-T02]
+    en:
+      title: No unauthenticated shell on the serial console
+      description: The serial console of a production unit MUST NOT give access to a command shell, a boot loader prompt or a memory dump function without prior authentication with a device-unique credential.
+      rationale: Serial pins are easy to find on a circuit board, and an open console is a common way into consumer and industrial devices.
+      criteria:
+        - method: test
+          text: Connected to the console pins of a production unit at the common baud rates, a tester gets no shell or prompt during boot or in operation without authentication.
+    sv:
+      title: Inget oautentiserat skal på seriekonsolen
+      description: Seriekonsolen på en produktionsenhet SKA INTE ge åtkomst till ett kommandoskal, en prompt i startladdaren eller en funktion för minnesdump utan föregående autentisering med en enhetsunik inloggningsuppgift.
+      rationale: Seriestift är lätta att hitta på ett kretskort, och en öppen konsol är en vanlig väg in i konsument- och industrienheter.
+      criteria:
+        - method: test
+          text: Ansluten till konsolstiften på en produktionsenhet med de vanliga överföringshastigheterna får en testare inget skal eller någon prompt under uppstart eller i drift utan autentisering.
+
+  - id: HWSEC-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [firmware-update, signature, integrity]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)", "IEC 62443-4-2 CR 3.10 (support for updates)"]
+    tests: [HWSEC-T03]
+    en:
+      title: Firmware updates verified before installation
+      description: The device MUST verify the signature and integrity of a firmware update package before writing any part of it to the active boot storage, and MUST reject a package that fails verification while leaving the running firmware unchanged.
+      rationale: Updates are the main way to fix vulnerabilities and also the main way to plant malicious firmware if their origin is not checked.
+      criteria:
+        - method: test
+          text: A tampered package and a package signed with an unknown key are rejected with a logged reason, and the device continues to run its current firmware.
+    sv:
+      title: Firmwareuppdateringar verifieras före installation
+      description: Enheten SKA verifiera signatur och integritet för ett firmwareuppdateringspaket innan någon del av det skrivs till det aktiva startminnet, och avvisa ett paket som inte klarar verifieringen med den körande firmwaren oförändrad.
+      rationale: Uppdateringar är det främsta sättet att åtgärda sårbarheter och också det främsta sättet att plantera skadlig firmware om ursprunget inte kontrolleras.
+      criteria:
+        - method: test
+          text: Ett manipulerat paket och ett paket signerat med en okänd nyckel avvisas med loggad orsak, och enheten fortsätter att köra sin aktuella firmware.
+
+  - id: HWSEC-06
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [firmware-update, fail-safe, a-b-partitions]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(h)", "NIST SP 800-193 (platform firmware resiliency)"]
+    tests: [HWSEC-T03]
+    en:
+      title: Power loss during an update leaves a bootable device
+      description: An interruption of power or network at any point of a firmware update MUST leave the device able to boot a verified firmware image, either the previous or the new one, without manual intervention.
+      rationale: Devices that become unusable after an interrupted update cause field returns and push operators to postpone security updates.
+      criteria:
+        - method: test
+          text: Cutting power at 10 different points of an update leaves the device booting a verified image each time.
+          threshold: 10 of 10 interruptions recover
+    sv:
+      title: Strömavbrott under en uppdatering lämnar en startbar enhet
+      description: Ett avbrott i ström eller nätverk när som helst under en firmwareuppdatering SKA lämna enheten i stånd att starta en verifierad firmwareavbild, antingen den föregående eller den nya, utan manuellt ingrepp.
+      rationale: Enheter som blir oanvändbara efter en avbruten uppdatering ger returer från fält och får operatörer att skjuta upp säkerhetsuppdateringar.
+      criteria:
+        - method: test
+          text: Strömavbrott vid 10 olika tidpunkter under en uppdatering lämnar enheten med en verifierad avbild som startar varje gång.
+          threshold: 10 av 10 avbrott återhämtas
+
+  - id: HWSEC-07
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [default-password, credentials, provisioning]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(b)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)", "ETSI EN 303 645 provision 5.1-1"]
+    tests: [HWSEC-T04]
+    en:
+      title: No universal default password
+      description: The device MUST NOT ship with a password, key or other credential that is the same on more than one unit or that can be derived from public information such as the serial number or MAC address.
+      rationale: Shared default credentials let one leaked value open every device of the product, as large botnets have shown.
+      criteria:
+        - method: test
+          text: The initial credentials of 20 units from 2 lots are pairwise different, and none can be computed from the label data with the derivation methods listed in the test plan.
+          threshold: 0 shared credentials in 20 units
+    sv:
+      title: Inget gemensamt standardlösenord
+      description: Enheten SKA INTE levereras med ett lösenord, en nyckel eller någon annan inloggningsuppgift som är densamma på mer än en enhet eller som kan härledas ur offentlig information som serienummer eller MAC-adress.
+      rationale: Gemensamma standarduppgifter gör att ett enda läckt värde öppnar varje enhet av produkten, vilket stora botnät har visat.
+      criteria:
+        - method: test
+          text: De ursprungliga inloggningsuppgifterna för 20 enheter från 2 partier är parvis olika, och ingen kan beräknas ur etikettens uppgifter med de härledningsmetoder som anges i testplanen.
+          threshold: 0 gemensamma uppgifter bland 20 enheter
+
+  - id: HWSEC-08
+    type: security
+    obligation: must
+    priority: critical
+    tags: [key-storage, secure-element, confidentiality]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(e)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)"]
+    tests: [HWSEC-T05]
+    en:
+      title: Private keys in hardware-protected storage
+      description: The device MUST keep its private keys and long-term secrets in a secure element or a hardware-isolated key store that performs the cryptographic operations internally, so that the keys cannot be read out through software, the debug port or a dump of the external flash.
+      rationale: Keys in plain flash can be copied with a cheap programmer, and a copied device key lets an attacker impersonate the device.
+      criteria:
+        - method: test
+          text: A raw dump of the external flash and a memory read through an authenticated debug session contain no private key material, verified by a search for the known test key.
+    sv:
+      title: Privata nycklar i hårdvaruskyddad lagring
+      description: Enheten SKA förvara sina privata nycklar och långlivade hemligheter i ett säkert element eller ett hårdvaruisolerat nyckellager som utför de kryptografiska operationerna internt, så att nycklarna inte kan läsas ut via programvara, felsökningsporten eller en dump av det externa flashminnet.
+      rationale: Nycklar i vanligt flashminne kan kopieras med en billig programmerare, och en kopierad enhetsnyckel låter en angripare utge sig för att vara enheten.
+      criteria:
+        - method: test
+          text: En rådump av det externa flashminnet och en minnesläsning via en autentiserad felsökningssession innehåller inget material från privata nycklar, verifierat genom sökning efter den kända testnyckeln.
+
+  - id: HWSEC-09
+    type: security
+    obligation: may
+    priority: low
+    tags: [tamper-detection, enclosure, physical-security]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)"]
+    tests: [HWSEC-T06]
+    en:
+      title: Detection of enclosure opening
+      description: A device installed in unattended locations MAY detect the opening of its enclosure with a switch or sensor, log the event with a timestamp and report it to the management system at the next connection.
+      rationale: Detecting physical access warns the operator that a device may have been tampered with and should be checked or replaced.
+      criteria:
+        - method: test
+          text: When fitted, opening the enclosure of a powered unit creates a log entry with timestamp and a report in the management system within 5 minutes after reconnection.
+    sv:
+      title: Upptäckt av att kapslingen öppnas
+      description: En enhet som installeras på obevakade platser FÅR upptäcka att dess kapsling öppnas med en brytare eller sensor, logga händelsen med tidsstämpel och rapportera den till förvaltningssystemet vid nästa anslutning.
+      rationale: Att upptäcka fysisk åtkomst varnar operatören om att en enhet kan ha manipulerats och behöver kontrolleras eller bytas.
+      criteria:
+        - method: test
+          text: När funktionen finns ger öppning av kapslingen på en strömsatt enhet en loggpost med tidsstämpel och en rapport i förvaltningssystemet inom 5 minuter efter återanslutning.
+
+  - id: HWSEC-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [attack-surface, network-services, secure-by-default]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(j)", "ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)"]
+    tests: [HWSEC-T07]
+    en:
+      title: Only documented network services open in the delivered state
+      description: In the delivered state, the device MUST listen only on the network ports and services listed in its security documentation, and MUST keep each further service disabled until an administrator enables it.
+      rationale: Each open service adds attack surface, and services that nobody knows about are never patched or monitored.
+      criteria:
+        - method: test
+          text: A full TCP and UDP port scan of a factory-reset unit finds exactly the documented ports open.
+          threshold: 0 undocumented open ports
+    sv:
+      title: Bara dokumenterade nätverkstjänster öppna i leveransläget
+      description: I leveransläget SKA enheten bara lyssna på de nätverksportar och tjänster som anges i dess säkerhetsdokumentation och hålla varje ytterligare tjänst avstängd tills en administratör slår på den.
+      rationale: Varje öppen tjänst ökar attackytan, och tjänster som ingen känner till uppdateras och övervakas aldrig.
+      criteria:
+        - method: test
+          text: En fullständig portskanning för TCP och UDP av en fabriksåterställd enhet hittar exakt de dokumenterade portarna öppna.
+          threshold: 0 odokumenterade öppna portar
+
+  - id: HWSEC-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [sbom, firmware, components]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CycloneDX 1.6"]
+    tests: [HWSEC-T08]
+    en:
+      title: Software bill of materials for each firmware release
+      description: The manufacturer MUST produce a machine-readable software bill of materials for each firmware release that lists at least the top-level components with name, supplier, version and a unique identifier.
+      rationale: A bill of materials is how a manufacturer finds out within hours which devices contain a newly disclosed vulnerable component.
+      criteria:
+        - method: inspection
+          text: The bill of materials of the latest firmware release validates against its schema, and each component found by a binary scan of the image appears in it.
+    sv:
+      title: Materialförteckning för programvara för varje firmwarerelease
+      description: Tillverkaren SKA ta fram en maskinläsbar materialförteckning för programvara för varje firmwarerelease som anger minst komponenterna på översta nivån med namn, leverantör, version och en unik identifierare.
+      rationale: En materialförteckning är hur en tillverkare inom några timmar tar reda på vilka enheter som innehåller en nyligen offentliggjord sårbar komponent.
+      criteria:
+        - method: inspection
+          text: Materialförteckningen för den senaste firmwarereleasen validerar mot sitt schema, och varje komponent som en binär skanning av avbilden hittar finns med i den.
+
+  - id: HWSEC-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [support-period, security-updates, labelling]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)", "Regulation (EU) 2024/2847 (CRA) Annex II (information and instructions to the user)"]
+    tests: [HWSEC-T08]
+    en:
+      title: Support period stated at the time of purchase
+      description: The manufacturer MUST state the end date of the security support period, given at least as month and year, on the product information available at the time of purchase, and the support period MUST be at least 5 years from market placement.
+      rationale: Buyers need to know how long the device will receive security updates, and the CRA sets five years as the default minimum.
+      criteria:
+        - method: inspection
+          text: The packaging or the product page shows the end of support as month and year, and the date is at least 5 years after market placement.
+          threshold: ≥ 5 years
+    sv:
+      title: Supportperioden anges vid köptillfället
+      description: Tillverkaren SKA ange slutdatum för säkerhetssupporten, minst som månad och år, i den produktinformation som finns vid köptillfället, och supportperioden SKA vara minst 5 år från utsläppandet på marknaden.
+      rationale: Köpare behöver veta hur länge enheten får säkerhetsuppdateringar, och cyberresiliensförordningen anger fem år som utgångspunkt för minimitiden.
+      criteria:
+        - method: inspection
+          text: Förpackningen eller produktsidan visar supportens slut som månad och år, och datumet ligger minst 5 år efter utsläppandet på marknaden.
+          threshold: ≥ 5 år
+
+  - id: HWSEC-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [factory-reset, data-deletion, decommissioning]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)", "Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)"]
+    tests: [HWSEC-T09]
+    en:
+      title: Factory reset erases user data and credentials
+      description: A factory reset MUST erase each item of user data, each user credential and each network configuration from the device's storage so that it cannot be recovered by reading the storage, while keeping the device identity and the firmware.
+      rationale: Devices are resold, returned and scrapped, and data left on them exposes the previous owner's credentials and personal data.
+      criteria:
+        - method: test
+          text: After a factory reset of a unit loaded with known test data, a raw dump of its storage contains none of the test strings, and the device boots to its initial setup.
+    sv:
+      title: Fabriksåterställning raderar användardata och inloggningsuppgifter
+      description: En fabriksåterställning SKA radera varje användardata, varje inloggningsuppgift för användare och varje nätverksinställning ur enhetens minne så att de inte kan återskapas genom att minnet läses, men behålla enhetens identitet och firmware.
+      rationale: Enheter säljs vidare, returneras och skrotas, och data som lämnas kvar röjer den tidigare ägarens inloggningsuppgifter och personuppgifter.
+      criteria:
+        - method: test
+          text: Efter fabriksåterställning av en enhet som laddats med kända testdata innehåller en rådump av dess minne ingen av teststrängarna, och enheten startar i sin första konfiguration.
+
+  - id: HWSEC-14
+    type: security
+    obligation: should
+    priority: medium
+    tags: [random-numbers, trng, cryptography]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 CRY)", "NIST SP 800-90B (entropy sources)"]
+    tests: [HWSEC-T10]
+    en:
+      title: Health-tested hardware entropy source
+      description: The device SHOULD seed its cryptographic random number generator from a hardware entropy source that runs the start-up and continuous health tests of NIST SP 800-90B and stops key generation when a test fails.
+      rationale: Weak random numbers on embedded devices have led to predictable keys shared across thousands of units.
+      criteria:
+        - method: test
+          text: Raw samples from the entropy source pass the SP 800-90B estimation with at least the min-entropy stated in the design, and a forced health test failure stops key generation with a logged error.
+    sv:
+      title: Hårdvarukälla för entropi med hälsotester
+      description: Enheten BÖR initiera sin kryptografiska slumptalsgenerator från en hårdvarukälla för entropi som kör start- och löpande hälsotester enligt NIST SP 800-90B och stoppar nyckelgenerering när ett test misslyckas.
+      rationale: Svaga slumptal i inbyggda enheter har lett till förutsägbara nycklar som delats av tusentals enheter.
+      criteria:
+        - method: test
+          text: Råa sampel från entropikällan klarar uppskattningen enligt SP 800-90B med minst den min-entropi som anges i konstruktionen, och ett framtvingat fel i hälsotestet stoppar nyckelgenereringen med ett loggat fel.
+
+tests:
+  - id: HWSEC-T01
+    priority: critical
+    execution: manual
+    tags: [secure-boot, anti-rollback]
+    refs: ["IEC 62443-4-2 EDR 3.14 (integrity of the boot process)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SUM)"]
+    en:
+      title: Tampered, foreign-signed and older images are refused
+      description: Tries to boot and install modified, foreign-signed and older firmware images on a production unit.
+      preconditions: A production unit at security version 5, a programmer for its flash, and three prepared images (one changed byte, signed with a test key, correctly signed with security version 4).
+      expected: Each image is refused and the device stays in a safe state.
+      steps:
+        - action: Write the image with one changed byte to the boot storage and power the unit.
+          expected: Boot stops at verification and the device enters its recovery state.
+        - action: Write the image signed with the test key and power the unit.
+          expected: Boot stops at verification and the device enters its recovery state.
+        - action: Offer the security version 4 image through the updater and then write it directly to storage.
+          expected: The updater rejects it, and at boot it is refused because of the version counter.
+    sv:
+      title: Manipulerade, främmande signerade och äldre avbilder vägras
+      description: Försöker starta och installera ändrade, främmande signerade och äldre firmwareavbilder på en produktionsenhet.
+      preconditions: En produktionsenhet med säkerhetsversion 5, en programmerare för dess flashminne och tre förberedda avbilder (en ändrad byte, signerad med en testnyckel, korrekt signerad med säkerhetsversion 4).
+      expected: Varje avbild vägras och enheten stannar i ett säkert läge.
+      steps:
+        - action: Skriv avbilden med en ändrad byte till startminnet och slå på enheten.
+          expected: Uppstarten stoppas vid verifieringen och enheten går till sitt återställningsläge.
+        - action: Skriv avbilden som signerats med testnyckeln och slå på enheten.
+          expected: Uppstarten stoppas vid verifieringen och enheten går till sitt återställningsläge.
+        - action: Erbjud avbilden med säkerhetsversion 4 via uppdateringsfunktionen och skriv den sedan direkt till minnet.
+          expected: Uppdateringsfunktionen avvisar den, och vid uppstart vägras den på grund av versionsräknaren.
+
+  - id: HWSEC-T02
+    priority: critical
+    execution: manual
+    tags: [debug-port, serial-console]
+    refs: ["IEC 62443-4-2 EDR 2.13 (use of physical diagnostic and test interfaces)"]
+    en:
+      title: Debug port and serial console on a production unit
+      description: Connects a debug probe and a serial adapter to a production unit and checks the lock records of a lot.
+      preconditions: A production unit with its test pads exposed, a JTAG/SWD probe, a USB serial adapter and the production test records of one lot.
+      expected: Neither interface gives access without authentication, and each unit of the lot is locked.
+      steps:
+        - action: Connect the debug probe and try to halt the processor and read memory.
+          expected: The probe cannot halt the processor or read memory.
+        - action: Connect the serial adapter at 9600, 57600 and 115200 baud and observe boot and operation, pressing common break keys.
+          expected: No shell, boot loader prompt or dump function appears without authentication.
+          data: "break keys: Enter, Ctrl+C, Esc, space"
+        - action: Read the lock fuse state in the production test records of the lot.
+          expected: Each unit is recorded as locked.
+    sv:
+      title: Felsökningsport och seriekonsol på en produktionsenhet
+      description: Ansluter en felsökningsprob och en serieadapter till en produktionsenhet och kontrollerar låsprotokollen för ett parti.
+      preconditions: En produktionsenhet med friliggande testytor, en prob för JTAG/SWD, en USB-serieadapter och produktionens provningsprotokoll för ett parti.
+      expected: Inget av gränssnitten ger åtkomst utan autentisering, och varje enhet i partiet är låst.
+      steps:
+        - action: Anslut felsökningsproben och försök stoppa processorn och läsa minnet.
+          expected: Proben kan inte stoppa processorn eller läsa minnet.
+        - action: Anslut serieadaptern med 9600, 57600 och 115200 baud och iaktta uppstart och drift medan vanliga avbrottstangenter trycks.
+          expected: Inget skal, ingen prompt i startladdaren och ingen dumpfunktion visas utan autentisering.
+          data: "avbrottstangenter: Enter, Ctrl+C, Esc, mellanslag"
+        - action: Läs låssäkringens läge i produktionens provningsprotokoll för partiet.
+          expected: Varje enhet är registrerad som låst.
+
+  - id: HWSEC-T03
+    priority: critical
+    execution: automated
+    tags: [firmware-update, fail-safe]
+    refs: ["IEC 62443-4-2 CR 3.10 (support for updates)", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(c)"]
+    en:
+      title: Update verification and power loss during update
+      description: A test rig offers bad update packages and cuts power at 10 points of a good update.
+      preconditions: A unit on a test rig with a controllable power supply, a valid update package, a tampered package and a package signed with an unknown key.
+      expected: Bad packages are rejected and the device boots a verified image after each interruption.
+      steps:
+        - action: Offer the tampered and the unknown-key packages.
+          expected: Both are rejected with a logged reason and the running firmware is unchanged.
+        - action: Start the valid update and cut power at a chosen point, then restore power.
+          expected: The device boots a verified image, the previous or the new one.
+        - action: Repeat the previous step for 10 points spread over the whole update.
+          expected: The device recovers each time without manual intervention.
+    sv:
+      title: Verifiering av uppdateringar och strömavbrott under uppdatering
+      description: En testrigg erbjuder felaktiga uppdateringspaket och bryter strömmen vid 10 tidpunkter under en korrekt uppdatering.
+      preconditions: En enhet i en testrigg med styrbar strömförsörjning, ett giltigt uppdateringspaket, ett manipulerat paket och ett paket signerat med en okänd nyckel.
+      expected: Felaktiga paket avvisas och enheten startar en verifierad avbild efter varje avbrott.
+      steps:
+        - action: Erbjud det manipulerade paketet och paketet med okänd nyckel.
+          expected: Båda avvisas med loggad orsak och den körande firmwaren är oförändrad.
+        - action: Starta den giltiga uppdateringen, bryt strömmen vid en vald tidpunkt och slå sedan på strömmen igen.
+          expected: Enheten startar en verifierad avbild, den föregående eller den nya.
+        - action: Upprepa föregående steg för 10 tidpunkter spridda över hela uppdateringen.
+          expected: Enheten återhämtar sig varje gång utan manuellt ingrepp.
+
+  - id: HWSEC-T04
+    priority: critical
+    execution: manual
+    tags: [default-password]
+    refs: ["ETSI EN 303 645 provision 5.1-1", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    en:
+      title: Initial credentials are unique and not derivable
+      description: Collects the initial credentials of 20 units from 2 lots and tries the listed derivation methods.
+      preconditions: 20 units from 2 production lots with their labels, and the list of derivation methods in the test plan.
+      expected: All 20 credentials differ and none can be derived from the label.
+      steps:
+        - action: Record the initial credential of each unit.
+          expected: The 20 values are pairwise different.
+        - action: Apply each listed derivation method to the serial number and MAC address on each label.
+          expected: No method produces the unit's credential.
+          data: "methods: last digits of serial number, MAC address without separators, common hashes of either"
+    sv:
+      title: De ursprungliga inloggningsuppgifterna är unika och går inte att härleda
+      description: Samlar in de ursprungliga inloggningsuppgifterna för 20 enheter från 2 partier och prövar de angivna härledningsmetoderna.
+      preconditions: 20 enheter från 2 produktionspartier med sina etiketter, och listan över härledningsmetoder i testplanen.
+      expected: Alla 20 uppgifterna skiljer sig åt och ingen kan härledas ur etiketten.
+      steps:
+        - action: Anteckna den ursprungliga inloggningsuppgiften för varje enhet.
+          expected: De 20 värdena är parvis olika.
+        - action: Tillämpa varje angiven härledningsmetod på serienumret och MAC-adressen på varje etikett.
+          expected: Ingen metod ger enhetens inloggningsuppgift.
+          data: "metoder: serienumrets sista siffror, MAC-adress utan avgränsare, vanliga hashar av någon av dem"
+
+  - id: HWSEC-T05
+    priority: critical
+    execution: manual
+    tags: [key-storage]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 SSM)"]
+    en:
+      title: No private key material in flash or memory dumps
+      description: Dumps the external flash and the memory of a unit provisioned with a known test key and searches for it.
+      preconditions: A unit provisioned with a known test key, a flash programmer, an authenticated debug session and a search tool.
+      expected: The test key is found in neither dump.
+      steps:
+        - action: Desolder or clip onto the external flash and dump its content.
+          expected: A full raw dump is obtained.
+        - action: Read the processor memory through the authenticated debug session while the device signs data.
+          expected: A memory dump is obtained.
+        - action: Search both dumps for the test key in raw, hexadecimal and base64 forms.
+          expected: No match is found.
+    sv:
+      title: Inget material från privata nycklar i dumpar av flash eller minne
+      description: Dumpar det externa flashminnet och minnet i en enhet som försetts med en känd testnyckel och söker efter den.
+      preconditions: En enhet försedd med en känd testnyckel, en flashprogrammerare, en autentiserad felsökningssession och ett sökverktyg.
+      expected: Testnyckeln finns inte i någon av dumparna.
+      steps:
+        - action: Löd loss eller klämanslut det externa flashminnet och dumpa dess innehåll.
+          expected: En fullständig rådump erhålls.
+        - action: Läs processorns minne via den autentiserade felsökningssessionen medan enheten signerar data.
+          expected: En minnesdump erhålls.
+        - action: Sök i båda dumparna efter testnyckeln i rå form, hexadecimal form och base64-form.
+          expected: Ingen träff hittas.
+
+  - id: HWSEC-T06
+    priority: low
+    execution: manual
+    tags: [tamper-detection]
+    refs: ["IEC 62443-4-2 EDR 3.11 (physical tamper resistance and detection)"]
+    en:
+      title: Enclosure opening is logged and reported
+      description: Opens the enclosure of a powered unit with tamper detection and checks the log and the management system.
+      preconditions: A powered unit with tamper detection, disconnected from the network, and access to the management system.
+      expected: The opening is logged and reported after reconnection.
+      steps:
+        - action: Open the enclosure and note the time.
+          expected: The device log shows a tamper event with the time.
+        - action: Reconnect the unit to the network.
+          expected: The management system shows the tamper event within 5 minutes.
+    sv:
+      title: Öppning av kapslingen loggas och rapporteras
+      description: Öppnar kapslingen på en strömsatt enhet med manipuleringsdetektering och kontrollerar loggen och förvaltningssystemet.
+      preconditions: En strömsatt enhet med manipuleringsdetektering, bortkopplad från nätverket, och åtkomst till förvaltningssystemet.
+      expected: Öppningen loggas och rapporteras efter återanslutning.
+      steps:
+        - action: Öppna kapslingen och anteckna tiden.
+          expected: Enhetens logg visar en manipuleringshändelse med tiden.
+        - action: Anslut enheten till nätverket igen.
+          expected: Förvaltningssystemet visar manipuleringshändelsen inom 5 minuter.
+
+  - id: HWSEC-T07
+    priority: high
+    execution: automated
+    tags: [attack-surface, port-scan]
+    refs: ["ETSI EN 303 645 provision 5.6-1", "IEC 62443-4-2 CR 7.7 (least functionality)"]
+    en:
+      title: Port scan of a factory-reset unit
+      description: A script scans all TCP and UDP ports of a factory-reset unit and compares the result with the documentation.
+      preconditions: A factory-reset unit on an isolated test network, a port scanner and the list of documented ports.
+      expected: The open ports equal the documented ports.
+      steps:
+        - action: Scan TCP ports 1 to 65535 and UDP ports 1 to 65535.
+          expected: The scan completes and lists the open ports.
+        - action: Compare the open ports with the documented list.
+          expected: Each open port is documented and no documented port is missing.
+    sv:
+      title: Portskanning av en fabriksåterställd enhet
+      description: Ett skript skannar alla TCP- och UDP-portar på en fabriksåterställd enhet och jämför resultatet med dokumentationen.
+      preconditions: En fabriksåterställd enhet i ett isolerat testnät, en portskanner och listan över dokumenterade portar.
+      expected: De öppna portarna är desamma som de dokumenterade.
+      steps:
+        - action: Skanna TCP-portarna 1 till 65535 och UDP-portarna 1 till 65535.
+          expected: Skanningen slutförs och anger de öppna portarna.
+        - action: Jämför de öppna portarna med den dokumenterade listan.
+          expected: Varje öppen port är dokumenterad och ingen dokumenterad port saknas.
+
+  - id: HWSEC-T08
+    priority: high
+    execution: manual
+    tags: [sbom, support-period]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)"]
+    en:
+      title: Firmware bill of materials and stated support period
+      description: Validates the bill of materials of the latest firmware and checks the support period in the product information.
+      preconditions: The latest firmware image, its bill of materials, a schema validator, a binary composition scanner, the packaging and the product page.
+      expected: The bill of materials is valid and complete, and the support end date is shown and far enough ahead.
+      steps:
+        - action: Validate the bill of materials against its schema.
+          expected: Validation passes.
+        - action: Scan the firmware image and compare the components found with the bill of materials.
+          expected: Each component found is listed with name, supplier, version and identifier.
+        - action: Read the end of support on the packaging or product page.
+          expected: It is shown as month and year and lies at least 5 years after market placement.
+    sv:
+      title: Materialförteckning för firmware och angiven supportperiod
+      description: Validerar materialförteckningen för den senaste firmwaren och kontrollerar supportperioden i produktinformationen.
+      preconditions: Den senaste firmwareavbilden, dess materialförteckning, en schemavaliderare, en binär komponentskanner, förpackningen och produktsidan.
+      expected: Materialförteckningen är giltig och fullständig, och supportens slutdatum visas och ligger tillräckligt långt fram.
+      steps:
+        - action: Validera materialförteckningen mot dess schema.
+          expected: Valideringen godkänns.
+        - action: Skanna firmwareavbilden och jämför de hittade komponenterna med materialförteckningen.
+          expected: Varje hittad komponent finns med namn, leverantör, version och identifierare.
+        - action: Läs supportens slut på förpackningen eller produktsidan.
+          expected: Det visas som månad och år och ligger minst 5 år efter utsläppandet på marknaden.
+
+  - id: HWSEC-T09
+    priority: high
+    execution: manual
+    tags: [factory-reset]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(3)(e) (EN 18031-2 DLM)"]
+    en:
+      title: Factory reset leaves no recoverable user data
+      description: Loads a unit with known test data, resets it and searches a raw dump of its storage.
+      preconditions: A unit, a set of distinctive test strings, a flash programmer and a search tool.
+      expected: None of the test strings remains and the device starts in initial setup.
+      steps:
+        - action: Configure a Wi-Fi network, a user account and stored user data that contain the test strings.
+          expected: The device stores and uses them.
+          data: "test strings such as QTF-TEST-WIFI-7731 and QTF-TEST-USER-4410"
+        - action: Run the factory reset and let the device restart.
+          expected: The device starts in its initial setup.
+        - action: Dump the raw storage and search for each test string.
+          expected: No test string is found.
+    sv:
+      title: Fabriksåterställning lämnar inga användardata som kan återskapas
+      description: Laddar en enhet med kända testdata, återställer den och söker i en rådump av dess minne.
+      preconditions: En enhet, en uppsättning särpräglade teststrängar, en flashprogrammerare och ett sökverktyg.
+      expected: Ingen av teststrängarna finns kvar och enheten startar i sin första konfiguration.
+      steps:
+        - action: Konfigurera ett wifinätverk, ett användarkonto och lagrade användardata som innehåller teststrängarna.
+          expected: Enheten lagrar och använder dem.
+          data: "teststrängar som QTF-TEST-WIFI-7731 och QTF-TEST-USER-4410"
+        - action: Kör fabriksåterställningen och låt enheten starta om.
+          expected: Enheten startar i sin första konfiguration.
+        - action: Dumpa det råa minnet och sök efter varje teststräng.
+          expected: Ingen teststräng hittas.
+
+  - id: HWSEC-T10
+    priority: medium
+    execution: manual
+    tags: [random-numbers]
+    refs: ["NIST SP 800-90B (entropy sources)"]
+    en:
+      title: Entropy assessment and health test failure
+      description: Collects raw samples from the entropy source, estimates their min-entropy and forces a health test failure.
+      preconditions: A unit with a test firmware build that exports raw entropy samples and can force a health test failure, and the SP 800-90B estimation tool.
+      expected: The min-entropy meets the design value and a failure stops key generation.
+      steps:
+        - action: Collect 1 000 000 raw samples and run the estimation tool.
+          expected: The estimated min-entropy per sample is at least the value stated in the design.
+        - action: Force a health test failure and request a new key.
+          expected: Key generation stops and an error is logged.
+    sv:
+      title: Bedömning av entropi och fel i hälsotest
+      description: Samlar in råa sampel från entropikällan, uppskattar deras min-entropi och framtvingar ett fel i hälsotestet.
+      preconditions: En enhet med en testversion av firmwaren som exporterar råa entropisampel och kan framtvinga ett fel i hälsotestet, och verktyget för uppskattning enligt SP 800-90B.
+      expected: Min-entropin uppfyller konstruktionens värde och ett fel stoppar nyckelgenereringen.
+      steps:
+        - action: Samla in 1 000 000 råa sampel och kör uppskattningsverktyget.
+          expected: Den uppskattade min-entropin per sampel är minst det värde som anges i konstruktionen.
+        - action: Framtvinga ett fel i hälsotestet och begär en ny nyckel.
+          expected: Nyckelgenereringen stoppas och ett fel loggas.

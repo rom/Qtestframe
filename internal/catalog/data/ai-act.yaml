@@ -1,0 +1,956 @@
+area: ai-act
+prefix: AIACT
+group: domain
+catalogue: software
+name: {en: EU AI Act compliance, sv: Efterlevnad av AI-förordningen}
+description:
+  en: Obligations of the EU Artificial Intelligence Act (Regulation (EU) 2024/1689) for providers and deployers of AI systems, covering risk classification, prohibited practices, the high-risk obligations (risk management system, data governance, technical documentation, record-keeping, transparency, human oversight, accuracy, robustness and cybersecurity, post-market monitoring and serious incident reporting), general-purpose AI models, AI literacy and the labelling of AI-generated content.
+  sv: Skyldigheter enligt EU:s AI-förordning (förordning (EU) 2024/1689) för leverantörer och tillhandahållare av AI-system, med riskklassificering, förbjudna AI-metoder, skyldigheterna för AI-system med hög risk (riskhanteringssystem, dataförvaltning, teknisk dokumentation, registrering av händelser, transparens, mänsklig tillsyn, noggrannhet, robusthet och cybersäkerhet, övervakning efter utsläppande på marknaden och rapportering av allvarliga incidenter), AI-modeller för allmänna ändamål, AI-kunnighet och märkning av AI-genererat innehåll.
+
+requirements:
+  - id: AIACT-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [risk-classification, high-risk, inventory]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 6 (classification rules for high-risk AI systems)", "EU AI Act (Regulation (EU) 2024/1689) Annex III (high-risk use cases)", "NIST AI RMF 1.0 GOVERN 1.6 (inventory of AI systems)"]
+    tests: [AIACT-T01]
+    en:
+      title: Risk category recorded for each AI system
+      description: The organisation MUST record, for each AI system it provides or deploys, its intended purpose and its category under the AI Act (prohibited, high-risk under Annex I, high-risk under Annex III, transparency obligations only, or no specific obligations) with the reasoning and the date of the assessment.
+      rationale: The obligations of the AI Act depend entirely on the category, so a missing or undocumented classification leaves every later obligation unclear.
+      criteria:
+        - method: inspection
+          text: The AI system register lists each AI system in production with intended purpose, category, reasoning, assessor and date, and a sample of 5 systems matches their actual use.
+          threshold: 0 systems without a category
+    sv:
+      title: Riskkategori registrerad för varje AI-system
+      description: Organisationen SKA för varje AI-system som den levererar eller tillhandahåller registrera dess avsedda ändamål och dess kategori enligt AI-förordningen (förbjuden, hög risk enligt bilaga I, hög risk enligt bilaga III, endast transparenskrav eller inga särskilda krav) med motivering och datum för bedömningen.
+      rationale: Skyldigheterna i AI-förordningen beror helt på kategorin, så en saknad eller odokumenterad klassificering gör alla senare skyldigheter oklara.
+      criteria:
+        - method: inspection
+          text: Registret över AI-system visar varje AI-system i produktion med avsett ändamål, kategori, motivering, bedömare och datum, och ett stickprov på 5 system stämmer med hur de faktiskt används.
+          threshold: 0 system utan kategori
+
+  - id: AIACT-02
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [prohibited-practices, release-gate]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices)"]
+    tests: [AIACT-T01]
+    en:
+      title: No release without a prohibited-practice screening
+      description: The organisation MUST NOT put an AI feature into service before a documented screening against each prohibited practice in Art. 5(1) of the AI Act shows that none of them applies to the feature.
+      rationale: Prohibited practices carry the highest fines of the regulation, and a screening at the release gate stops them before they reach users.
+      criteria:
+        - method: review
+          text: Each AI feature released in the last 12 months has a signed screening record that addresses each of the practices in Art. 5(1)(a) to (h) and is dated before the release.
+    sv:
+      title: Ingen release utan granskning mot förbjudna metoder
+      description: Organisationen SKA INTE ta en AI-funktion i bruk innan en dokumenterad granskning mot varje förbjuden metod i artikel 5.1 i AI-förordningen visar att ingen av dem gäller för funktionen.
+      rationale: Förbjudna metoder ger de högsta sanktionsavgifterna i förordningen, och en granskning vid releasebeslutet stoppar dem innan de når användarna.
+      criteria:
+        - method: review
+          text: Varje AI-funktion som släppts de senaste 12 månaderna har ett undertecknat granskningsprotokoll som tar upp var och en av metoderna i artikel 5.1 a–h och är daterat före releasen.
+
+  - id: AIACT-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [risk-classification, derogation, documentation]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 6(3) (derogation for Annex III systems)", "EU AI Act (Regulation (EU) 2024/1689) Art. 6(4) (documentation of the assessment)"]
+    tests: [AIACT-T01]
+    en:
+      title: Documented reasons when an Annex III system is not high-risk
+      description: When the organisation concludes that an AI system listed in Annex III is not high-risk, it MUST document which condition of Art. 6(3) applies and why the system does not profile natural persons, and keep this assessment available for the authorities before the system is placed on the market.
+      rationale: The derogation is narrow, and the regulation expects the provider to show the reasoning on request.
+      criteria:
+        - method: inspection
+          text: Each Annex III system marked as not high-risk has an assessment that names the condition used, states that no profiling takes place and is dated before market placement.
+    sv:
+      title: Dokumenterade skäl när ett system i bilaga III inte bedöms ha hög risk
+      description: När organisationen bedömer att ett AI-system som anges i bilaga III inte har hög risk SKA den dokumentera vilket villkor i artikel 6.3 som gäller och varför systemet inte profilerar fysiska personer, och hålla bedömningen tillgänglig för myndigheterna innan systemet släpps ut på marknaden.
+      rationale: Undantaget är snävt, och förordningen förutsätter att leverantören kan visa sina skäl på begäran.
+      criteria:
+        - method: inspection
+          text: Varje system i bilaga III som markerats som inte högrisk har en bedömning som anger det villkor som används, slår fast att ingen profilering sker och är daterad före utsläppandet på marknaden.
+
+  - id: AIACT-04
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [risk-management, high-risk, life-cycle]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(1) (risk management system)", "EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)", "ISO/IEC 23894:2023 §6.4 (risk assessment)"]
+    tests: [AIACT-T02]
+    en:
+      title: Risk management system for each high-risk AI system
+      description: The provider MUST run a documented risk management process for each high-risk AI system that identifies the known and foreseeable risks to health, safety and fundamental rights, evaluates them, records the measures taken and is reviewed at each release and at least every 12 months.
+      rationale: The AI Act treats risk management as a continuous process across the whole life cycle, not a single assessment before launch.
+      criteria:
+        - method: inspection
+          text: The risk register of the system shows risks to health, safety and fundamental rights with evaluation and measures, and review entries for each release and at intervals of at most 12 months.
+          threshold: review interval ≤ 12 months
+    sv:
+      title: Riskhanteringssystem för varje AI-system med hög risk
+      description: Leverantören SKA driva en dokumenterad riskhanteringsprocess för varje AI-system med hög risk som identifierar kända och förutsebara risker för hälsa, säkerhet och grundläggande rättigheter, utvärderar dem, registrerar vidtagna åtgärder och granskas vid varje release och minst var 12:e månad.
+      rationale: AI-förordningen ser riskhantering som en fortlöpande process under hela livscykeln, inte som en enstaka bedömning före lansering.
+      criteria:
+        - method: inspection
+          text: Systemets riskregister visar risker för hälsa, säkerhet och grundläggande rättigheter med utvärdering och åtgärder, och granskningsposter för varje release och med högst 12 månaders mellanrum.
+          threshold: granskningsintervall ≤ 12 månader
+
+  - id: AIACT-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [testing, metrics, high-risk]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(6) (testing of high-risk AI systems)", "EU AI Act (Regulation (EU) 2024/1689) Art. 9(8) (prior defined metrics and thresholds)", "EU AI Act (Regulation (EU) 2024/1689) Art. 15(1) (accuracy, robustness and cybersecurity)"]
+    tests: [AIACT-T03]
+    en:
+      title: Testing against metrics defined before testing starts
+      description: The provider MUST test each release of a high-risk AI system against accuracy and robustness metrics and pass thresholds that were documented before the test run, and MUST block the release when a threshold is not met.
+      rationale: Metrics chosen after the results are known invite selective reporting, and the regulation asks for thresholds defined in advance.
+      criteria:
+        - method: inspection
+          text: The test plan with metrics and thresholds is dated before the test report, and a release with a metric below its threshold is shown as blocked in the release record.
+    sv:
+      title: Test mot mått som bestämts innan testningen börjar
+      description: Leverantören SKA testa varje release av ett AI-system med hög risk mot mått för noggrannhet och robusthet och mot godkännandegränser som dokumenterats före testkörningen, och stoppa releasen när en gräns inte uppnås.
+      rationale: Mått som väljs när resultaten redan är kända inbjuder till selektiv rapportering, och förordningen kräver gränser som bestämts i förväg.
+      criteria:
+        - method: inspection
+          text: Testplanen med mått och gränser är daterad före testrapporten, och en release där ett mått ligger under sin gräns visas som stoppad i releaseprotokollet.
+
+  - id: AIACT-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [data-governance, datasets, lineage]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 10(2) (data governance and management practices)", "ISO/IEC 42001:2023 Annex A.7.5 (data provenance)"]
+    tests: [AIACT-T04]
+    en:
+      title: Documented origin and preparation of training data
+      description: For each training, validation and test data set of a high-risk AI system, the provider MUST document the origin, the collection method, the purpose of collection for personal data, the preparation steps (labelling, cleaning, enrichment) and the assumptions on what the data represents.
+      rationale: The quality of a model cannot be assessed without knowing where its data came from and how it was changed.
+      criteria:
+        - method: inspection
+          text: The data sheet of each data set used by the current model version contains origin, collection method, purpose, preparation steps and assumptions.
+    sv:
+      title: Dokumenterat ursprung och dokumenterad förberedelse av träningsdata
+      description: För varje datamängd för träning, validering och test av ett AI-system med hög risk SKA leverantören dokumentera ursprunget, insamlingsmetoden, ändamålet med insamlingen för personuppgifter, förberedelsestegen (märkning, rensning, berikning) och antagandena om vad datan representerar.
+      rationale: En modells kvalitet går inte att bedöma utan att veta var datan kommer ifrån och hur den har ändrats.
+      criteria:
+        - method: inspection
+          text: Databladet för varje datamängd som används av den aktuella modellversionen innehåller ursprung, insamlingsmetod, ändamål, förberedelsesteg och antaganden.
+
+  - id: AIACT-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [bias, data-governance, fairness]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 10(2)(f) (examination for possible biases)", "EU AI Act (Regulation (EU) 2024/1689) Art. 10(2)(g) (measures to detect, prevent and mitigate biases)", "ISO/IEC TR 24027:2021 (bias in AI systems)"]
+    tests: [AIACT-T04]
+    en:
+      title: Data sets examined for bias before training
+      description: The provider MUST examine each training data set of a high-risk AI system for under-representation and skew across the groups named in the risk assessment, and MUST record each bias found together with the measure taken to detect, prevent or reduce it.
+      rationale: Biased data leads to discriminatory outputs that harm fundamental rights and are hard to correct after deployment.
+      criteria:
+        - method: analysis
+          text: The bias report shows, for each group in the risk assessment, its share of the data set and the comparison with the target population, and each gap above 5 percentage points has a recorded measure.
+          threshold: gaps > 5 percentage points have a measure
+    sv:
+      title: Datamängder granskas för snedvridning före träning
+      description: Leverantören SKA granska varje träningsdatamängd för ett AI-system med hög risk för underrepresentation och snedfördelning mellan de grupper som anges i riskbedömningen, och registrera varje snedvridning som hittas tillsammans med åtgärden för att upptäcka, förhindra eller minska den.
+      rationale: Snedvriden data ger diskriminerande utdata som skadar grundläggande rättigheter och är svåra att rätta efter driftsättning.
+      criteria:
+        - method: analysis
+          text: Rapporten om snedvridning visar för varje grupp i riskbedömningen dess andel av datamängden och jämförelsen med målpopulationen, och varje skillnad över 5 procentenheter har en registrerad åtgärd.
+          threshold: skillnader > 5 procentenheter har en åtgärd
+
+  - id: AIACT-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [technical-documentation, high-risk]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 11(1) (technical documentation)", "EU AI Act (Regulation (EU) 2024/1689) Annex IV (content of technical documentation)", "EU AI Act (Regulation (EU) 2024/1689) Art. 18 (documentation keeping)"]
+    tests: [AIACT-T05]
+    en:
+      title: Technical documentation complete before market placement
+      description: The provider MUST complete the technical documentation of a high-risk AI system with each element listed in Annex IV before the system is placed on the market, update it with each substantial modification and keep it for 10 years after the last unit is placed on the market.
+      rationale: The technical documentation is the evidence of conformity that authorities and notified bodies examine.
+      criteria:
+        - method: inspection
+          text: A checklist of the Annex IV elements is filled in with a reference for each, the document version matches the deployed model version, and the retention period is set to 10 years in the document management system.
+          threshold: retention ≥ 10 years
+    sv:
+      title: Fullständig teknisk dokumentation före utsläppande på marknaden
+      description: Leverantören SKA färdigställa den tekniska dokumentationen för ett AI-system med hög risk med varje del som anges i bilaga IV innan systemet släpps ut på marknaden, uppdatera den vid varje väsentlig ändring och bevara den i 10 år efter att den sista enheten släppts ut på marknaden.
+      rationale: Den tekniska dokumentationen är beviset på överensstämmelse som myndigheter och anmälda organ granskar.
+      criteria:
+        - method: inspection
+          text: En checklista över delarna i bilaga IV är ifylld med en hänvisning för varje del, dokumentversionen motsvarar den driftsatta modellversionen och bevarandetiden är satt till 10 år i dokumenthanteringssystemet.
+          threshold: bevarande ≥ 10 år
+
+  - id: AIACT-09
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [logging, record-keeping, traceability]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 12(1) (automatic recording of events)", "EU AI Act (Regulation (EU) 2024/1689) Art. 12(2) (logging for traceability)", "ISO/IEC 42001:2023 Annex A.6.2.8 (AI system recording of event logs)"]
+    tests: [AIACT-T06]
+    en:
+      title: Automatic event log for each use of a high-risk AI system
+      description: A high-risk AI system MUST automatically record, for each use, the start and end time, the model version, a reference to the input data, the output and the identity of the person who reviewed the output.
+      rationale: Event logs make it possible to trace a harmful outcome back to its input, model version and reviewer, which post-market monitoring and incident investigation depend on.
+      criteria:
+        - method: test
+          text: After 3 test uses, the log contains 3 entries, each with start and end time, model version, input reference, output and reviewer.
+    sv:
+      title: Automatisk händelselogg för varje användning av ett AI-system med hög risk
+      description: Ett AI-system med hög risk SKA automatiskt registrera start- och sluttid, modellversion, en hänvisning till indata, utdata och identiteten på den person som granskade utdata för varje användning.
+      rationale: Händelseloggar gör det möjligt att spåra ett skadligt utfall tillbaka till dess indata, modellversion och granskare, vilket övervakning efter utsläppande och utredning av incidenter är beroende av.
+      criteria:
+        - method: test
+          text: Efter 3 testanvändningar innehåller loggen 3 poster, var och en med start- och sluttid, modellversion, hänvisning till indata, utdata och granskare.
+
+  - id: AIACT-10
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [logging, retention, deployer]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 19(1) (automatically generated logs)", "EU AI Act (Regulation (EU) 2024/1689) Art. 26(6) (deployer log retention)"]
+    tests: [AIACT-T06]
+    en:
+      title: Event logs kept for at least six months
+      description: The system MUST keep the automatically generated event logs of a high-risk AI system for at least 6 months, protected against change and deletion by the users of the AI system.
+      rationale: Both providers and deployers keep logs for at least six months so that incidents can be investigated after they are discovered.
+      criteria:
+        - method: test
+          text: An entry older than 6 months can still be read, and an attempt by an ordinary user to change or delete an entry is refused and logged.
+          threshold: retention ≥ 6 months
+    sv:
+      title: Händelseloggar sparas i minst sex månader
+      description: Systemet SKA spara de automatiskt genererade händelseloggarna för ett AI-system med hög risk i minst 6 månader, skyddade mot ändring och radering av AI-systemets användare.
+      rationale: Både leverantörer och tillhandahållare sparar loggar i minst sex månader så att incidenter kan utredas efter att de upptäckts.
+      criteria:
+        - method: test
+          text: En post som är äldre än 6 månader kan fortfarande läsas, och ett försök av en vanlig användare att ändra eller radera en post avvisas och loggas.
+          threshold: bevarande ≥ 6 månader
+
+  - id: AIACT-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [transparency, instructions-for-use, deployer]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 13(2) (instructions for use)", "EU AI Act (Regulation (EU) 2024/1689) Art. 13(3) (content of the instructions)"]
+    tests: [AIACT-T05]
+    en:
+      title: Instructions for use given to deployers
+      description: The provider MUST supply deployers of a high-risk AI system with instructions for use that state the intended purpose, the declared accuracy and its metrics, the known limitations and foreseeable misuse, the human oversight measures, the input data it needs and the expected lifetime with maintenance needs.
+      rationale: Deployers can only use and supervise the system correctly when they know its purpose, limits and how to oversee it.
+      criteria:
+        - method: review
+          text: The instructions for use contain each of the six listed topics, and a deployer representative confirms in a review that each topic can be understood without contacting the provider.
+    sv:
+      title: Bruksanvisning till tillhandahållare
+      description: Leverantören SKA ge tillhandahållare av ett AI-system med hög risk en bruksanvisning som anger avsett ändamål, deklarerad noggrannhet och dess mått, kända begränsningar och förutsebar felanvändning, åtgärderna för mänsklig tillsyn, de indata som krävs och den förväntade livslängden med underhållsbehov.
+      rationale: Tillhandahållare kan använda och övervaka systemet korrekt först när de känner till dess ändamål, gränser och hur tillsynen går till.
+      criteria:
+        - method: review
+          text: Bruksanvisningen innehåller vart och ett av de sex angivna ämnena, och en företrädare för tillhandahållaren bekräftar vid en granskning att varje ämne går att förstå utan att kontakta leverantören.
+
+  - id: AIACT-12
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [human-oversight, override, stop]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 14(4)(d) (disregard or override the output)", "EU AI Act (Regulation (EU) 2024/1689) Art. 14(4)(e) (stop button)", "NIST AI RMF 1.0 MANAGE 2.4 (mechanisms to disengage AI systems)"]
+    tests: [AIACT-T07]
+    en:
+      title: Overseer can override the output and stop the system
+      description: A high-risk AI system MUST let an assigned overseer disregard, override or reverse each output before it takes effect, and stop the system with a single action that brings it to a safe state within 10 seconds.
+      rationale: Human oversight only works when the person in charge can actually prevent an output from having effect and halt the system.
+      criteria:
+        - method: demonstration
+          text: An overseer replaces a proposed output with their own decision, which is the one that takes effect, and the stop action halts processing within 10 seconds with no further outputs issued.
+          threshold: stop ≤ 10 s
+    sv:
+      title: Tillsynspersonen kan åsidosätta utdata och stoppa systemet
+      description: Ett AI-system med hög risk SKA låta en utsedd tillsynsperson bortse från, åsidosätta eller upphäva varje utdata innan det verkställs, och stoppa systemet med en enda åtgärd som för det till ett säkert läge inom 10 sekunder.
+      rationale: Mänsklig tillsyn fungerar bara när den ansvariga personen verkligen kan hindra att ett utdata får verkan och stoppa systemet.
+      criteria:
+        - method: demonstration
+          text: En tillsynsperson ersätter ett föreslaget utdata med sitt eget beslut, som är det som får verkan, och stoppåtgärden avbryter bearbetningen inom 10 sekunder utan att fler utdata ges.
+          threshold: stopp ≤ 10 s
+
+  - id: AIACT-13
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [human-oversight, automation-bias, confidence]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 14(4)(a) (understanding capacities and limitations)", "EU AI Act (Regulation (EU) 2024/1689) Art. 14(4)(b) (automation bias)"]
+    tests: [AIACT-T07]
+    en:
+      title: Confidence and limitations shown next to each output
+      description: The oversight interface SHOULD show next to each output its confidence score and a link to the known limitations of the model, so that the overseer can judge when to doubt the output.
+      rationale: Overseers tend to accept automated outputs without question, and visible confidence and limitations counter this automation bias.
+      criteria:
+        - method: demonstration
+          text: For 5 outputs with different confidence scores, the interface shows each score and the limitations link opens the current list of limitations.
+    sv:
+      title: Säkerhet och begränsningar visas bredvid varje utdata
+      description: Gränssnittet för tillsyn BÖR visa varje utdatas konfidensvärde och en länk till modellens kända begränsningar bredvid utdata, så att tillsynspersonen kan bedöma när utdata bör ifrågasättas.
+      rationale: Tillsynspersoner tenderar att godta automatiska utdata utan att ifrågasätta dem, och synliga konfidensvärden och begränsningar motverkar denna automationsbias.
+      criteria:
+        - method: demonstration
+          text: För 5 utdata med olika konfidensvärden visar gränssnittet varje värde, och länken till begränsningarna öppnar den aktuella listan.
+
+  - id: AIACT-14
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [robustness, fallback, errors]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 15(4) (resilience to errors, faults and inconsistencies)", "ISO/IEC 25059:2023 (robustness)"]
+    tests: [AIACT-T08]
+    en:
+      title: Defined fallback for invalid input and internal faults
+      description: A high-risk AI system MUST detect input outside its documented input range and internal faults, and in each such case MUST return no automated decision but route the case to a person with the reason recorded.
+      rationale: The regulation asks for resilience to errors and faults, and a defined fallback prevents silent wrong decisions on data the model was not built for.
+      criteria:
+        - method: test
+          text: Of 20 test inputs outside the documented range and 2 injected faults, each one results in a manual-handling case with a recorded reason and no automated decision.
+          threshold: 22 of 22 cases routed
+    sv:
+      title: Bestämd reservväg vid ogiltiga indata och interna fel
+      description: Ett AI-system med hög risk SKA upptäcka indata utanför sitt dokumenterade indataområde och interna fel, och i varje sådant fall inte lämna något automatiskt beslut utan skicka ärendet till en person med orsaken registrerad.
+      rationale: Förordningen kräver motståndskraft mot fel och störningar, och en bestämd reservväg förhindrar tysta felbeslut på data som modellen inte är byggd för.
+      criteria:
+        - method: test
+          text: Av 20 testindata utanför det dokumenterade området och 2 injicerade fel leder vart och ett till ett ärende för manuell hantering med registrerad orsak och inget automatiskt beslut.
+          threshold: 22 av 22 fall skickas vidare
+
+  - id: AIACT-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [cybersecurity, adversarial, data-poisoning]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 15(5) (cybersecurity of high-risk AI systems)", "OWASP Top 10 for LLM Applications 2025 LLM04 (data and model poisoning)", "NIST AI 100-2 (adversarial machine learning)"]
+    tests: [AIACT-T08]
+    en:
+      title: Protection against poisoning and adversarial input
+      description: The provider MUST include data poisoning, model poisoning, adversarial examples and model evasion in the threat model of a high-risk AI system, and MUST test the release against at least one attack of each kind with the result recorded.
+      rationale: AI-specific attacks change the behaviour of a model without touching the surrounding software, so ordinary security testing does not find them.
+      criteria:
+        - method: inspection
+          text: The threat model names the four attack kinds with countermeasures, and the release test report records at least one executed attack of each kind with its outcome.
+    sv:
+      title: Skydd mot förgiftning och antagonistiska indata
+      description: Leverantören SKA ta med förgiftning av data, förgiftning av modell, antagonistiska exempel och kringgående av modellen i hotmodellen för ett AI-system med hög risk, och testa releasen mot minst en attack av varje slag med resultatet registrerat.
+      rationale: AI-specifika attacker ändrar en modells beteende utan att röra den omgivande programvaran, så vanlig säkerhetstestning hittar dem inte.
+      criteria:
+        - method: inspection
+          text: Hotmodellen anger de fyra typerna av attacker med motåtgärder, och testrapporten för releasen visar minst en genomförd attack av varje typ med dess utfall.
+
+  - id: AIACT-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [post-market-monitoring, performance, feedback]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 72(1) (post-market monitoring system)", "EU AI Act (Regulation (EU) 2024/1689) Art. 72(3) (post-market monitoring plan)", "NIST AI RMF 1.0 MANAGE 4.1 (post-deployment monitoring)"]
+    tests: [AIACT-T09]
+    en:
+      title: Post-market monitoring plan with performance data
+      description: The provider MUST operate a post-market monitoring plan for each high-risk AI system that collects accuracy, complaint and override data from deployment, analyses it at least monthly and records each corrective action decided.
+      rationale: Performance in real use differs from test results, and the regulation requires the provider to keep checking compliance after release.
+      criteria:
+        - method: inspection
+          text: The monitoring plan names the data sources, and the analysis reports for the last 3 months each show accuracy, complaint count, override rate and the decisions taken.
+          threshold: analysis at least monthly
+    sv:
+      title: Plan för övervakning efter utsläppande med prestandadata
+      description: Leverantören SKA driva en plan för övervakning efter utsläppande på marknaden för varje AI-system med hög risk som samlar in data om noggrannhet, klagomål och åsidosättanden från driften, analyserar dem minst en gång i månaden och registrerar varje korrigerande åtgärd som beslutas.
+      rationale: Prestanda i verklig användning skiljer sig från testresultaten, och förordningen kräver att leverantören fortsätter att kontrollera efterlevnaden efter release.
+      criteria:
+        - method: inspection
+          text: Övervakningsplanen anger datakällorna, och analysrapporterna för de senaste 3 månaderna visar var och en noggrannhet, antal klagomål, andel åsidosättanden och fattade beslut.
+          threshold: analys minst varje månad
+
+  - id: AIACT-17
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [serious-incident, reporting, deadline]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 73(2) (reporting within 15 days)", "EU AI Act (Regulation (EU) 2024/1689) Art. 73(3) (reporting within 2 days)", "EU AI Act (Regulation (EU) 2024/1689) Art. 73(4) (reporting within 10 days in the event of death)"]
+    tests: [AIACT-T10]
+    en:
+      title: Serious incidents reported within the legal deadlines
+      description: The provider MUST report a serious incident with a high-risk AI system to the market surveillance authority within 15 days of becoming aware of it, within 10 days when a person has died, and within 2 days for a widespread infringement or a serious disruption of critical infrastructure.
+      rationale: Missed deadlines are a breach in themselves and delay the measures that authorities can take to protect other users.
+      criteria:
+        - method: review
+          text: The incident procedure sets the three deadlines with the start of the clock, and an exercise of each incident type produces a report draft before its deadline.
+          threshold: 2 days, 10 days, 15 days
+    sv:
+      title: Allvarliga incidenter rapporteras inom de lagstadgade tidsfristerna
+      description: Leverantören SKA rapportera en allvarlig incident med ett AI-system med hög risk till marknadskontrollmyndigheten inom 15 dagar från att den fått kännedom om den, inom 10 dagar när en person har avlidit och inom 2 dagar vid en omfattande överträdelse eller en allvarlig störning av kritisk infrastruktur.
+      rationale: Missade tidsfrister är en överträdelse i sig och fördröjer de åtgärder som myndigheterna kan vidta för att skydda andra användare.
+      criteria:
+        - method: review
+          text: Incidentrutinen anger de tre tidsfristerna och när tiden börjar räknas, och en övning av varje incidenttyp ger ett rapportutkast före tidsfristen.
+          threshold: 2 dagar, 10 dagar, 15 dagar
+
+  - id: AIACT-18
+    type: functional
+    obligation: must
+    priority: high
+    tags: [transparency, disclosure, chatbot]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 50(1) (transparency for AI systems interacting with persons)"]
+    tests: [AIACT-T11]
+    en:
+      title: Persons told that they interact with an AI system
+      description: An AI system that interacts directly with natural persons MUST tell each person at the start of the first interaction that they are dealing with an AI system, in the language of the interface.
+      rationale: People have a right to know when they talk to a machine so that they can judge the answers and ask for a human.
+      criteria:
+        - method: demonstration
+          text: A new conversation in English and one in Swedish each start with a notice in that language that the counterpart is an AI system.
+    sv:
+      title: Personer informeras om att de interagerar med ett AI-system
+      description: Ett AI-system som interagerar direkt med fysiska personer SKA tala om för varje person i början av den första interaktionen att de har att göra med ett AI-system, på gränssnittets språk.
+      rationale: Människor har rätt att veta när de talar med en maskin så att de kan bedöma svaren och be om en människa.
+      criteria:
+        - method: demonstration
+          text: En ny konversation på engelska och en på svenska börjar var och en med ett meddelande på det språket om att motparten är ett AI-system.
+
+  - id: AIACT-19
+    type: functional
+    obligation: must
+    priority: high
+    tags: [generated-content, watermark, labelling]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 50(2) (marking of synthetic content)", "C2PA Technical Specification 2.1 (content credentials)"]
+    tests: [AIACT-T11]
+    en:
+      title: Machine-readable marking of generated content
+      description: A system that generates synthetic audio, images, video or text MUST mark each output in a machine-readable format that identifies it as artificially generated and that survives saving and download of the file.
+      rationale: Machine-readable marks let platforms and readers detect synthetic content automatically, which limits disinformation.
+      criteria:
+        - method: test
+          text: A generated image and a generated audio file, downloaded and opened in a metadata reader, each carry a mark that identifies them as AI-generated.
+    sv:
+      title: Maskinläsbar märkning av genererat innehåll
+      description: Ett system som genererar syntetiskt ljud, bilder, video eller text SKA märka varje utdata i ett maskinläsbart format som anger att det är artificiellt genererat och som bevaras när filen sparas och laddas ned.
+      rationale: Maskinläsbar märkning gör att plattformar och läsare kan upptäcka syntetiskt innehåll automatiskt, vilket begränsar desinformation.
+      criteria:
+        - method: test
+          text: En genererad bild och en genererad ljudfil som laddas ned och öppnas i ett verktyg för metadata bär var och en en märkning som anger att de är AI-genererade.
+
+  - id: AIACT-20
+    type: functional
+    obligation: must
+    priority: high
+    tags: [deep-fake, labelling, deployer]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 50(4) (disclosure of deep fakes)"]
+    tests: [AIACT-T11]
+    en:
+      title: Visible label on deep fakes
+      description: A deployer that publishes image, audio or video content generated or changed by AI to resemble real persons, places or events MUST show a visible label stating that the content is artificially generated or manipulated, at the first exposure of the viewer.
+      rationale: A visible label tells viewers directly that the content is not authentic, which a hidden machine-readable mark alone does not do.
+      criteria:
+        - method: inspection
+          text: Each published deep fake in a sample of 10 shows the label from its first frame or at the top of the page.
+    sv:
+      title: Synlig märkning av deepfakes
+      description: En tillhandahållare som publicerar bild-, ljud- eller videoinnehåll som AI har genererat eller ändrat så att det liknar verkliga personer, platser eller händelser SKA visa en synlig märkning om att innehållet är artificiellt genererat eller manipulerat när betraktaren först möter det.
+      rationale: En synlig märkning talar direkt om för betraktaren att innehållet inte är äkta, vilket en dold maskinläsbar märkning inte gör.
+      criteria:
+        - method: inspection
+          text: Varje publicerad deepfake i ett stickprov på 10 visar märkningen från den första bildrutan eller högst upp på sidan.
+
+  - id: AIACT-21
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [gpai, documentation, downstream]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 53(1)(a) (technical documentation of the model)", "EU AI Act (Regulation (EU) 2024/1689) Art. 53(1)(b) (information for downstream providers)", "EU AI Act (Regulation (EU) 2024/1689) Annex XI (technical documentation of general-purpose AI models)", "EU AI Act (Regulation (EU) 2024/1689) Annex XII (transparency information for downstream providers)"]
+    tests: [AIACT-T12]
+    en:
+      title: Documentation of a general-purpose AI model
+      description: The provider of a general-purpose AI model MUST keep technical documentation covering the elements of Annex XI and MUST give downstream providers the information listed in Annex XII before they integrate the model.
+      rationale: Downstream providers need to know a model's capabilities and limits to meet their own obligations.
+      criteria:
+        - method: inspection
+          text: The model documentation addresses each element of Annex XI and Annex XII, and the information package is available to downstream providers through the model's distribution channel.
+    sv:
+      title: Dokumentation av en AI-modell för allmänna ändamål
+      description: Leverantören av en AI-modell för allmänna ändamål SKA hålla teknisk dokumentation som omfattar delarna i bilaga XI och ge leverantörer längre ned i värdekedjan den information som anges i bilaga XII innan de integrerar modellen.
+      rationale: Leverantörer längre ned i kedjan behöver känna till modellens förmågor och gränser för att uppfylla sina egna skyldigheter.
+      criteria:
+        - method: inspection
+          text: Modelldokumentationen tar upp varje del i bilaga XI och bilaga XII, och informationspaketet finns tillgängligt för leverantörer längre ned i kedjan via modellens distributionskanal.
+
+  - id: AIACT-22
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [gpai, copyright, training-data]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 53(1)(c) (copyright policy)", "EU AI Act (Regulation (EU) 2024/1689) Art. 53(1)(d) (summary of training content)"]
+    tests: [AIACT-T12]
+    en:
+      title: Copyright policy and public summary of training content
+      description: The provider of a general-purpose AI model MUST adopt a policy for complying with Union copyright law, including reservations of rights by rightholders, and MUST publish a summary of the content used for training using the template of the AI Office.
+      rationale: Rightholders can only exercise their rights when they can see what kinds of content a model was trained on.
+      criteria:
+        - method: inspection
+          text: The copyright policy describes how machine-readable reservations of rights are detected and honoured, and the published training summary uses the current template and matches the training data inventory.
+    sv:
+      title: Upphovsrättspolicy och offentlig sammanfattning av träningsinnehåll
+      description: Leverantören av en AI-modell för allmänna ändamål SKA anta en policy för att följa unionens upphovsrättslagstiftning, inklusive rättighetshavares förbehåll, och offentliggöra en sammanfattning av det innehåll som använts för träning enligt AI-byråns mall.
+      rationale: Rättighetshavare kan bara utöva sina rättigheter när de kan se vilka slags innehåll en modell har tränats på.
+      criteria:
+        - method: inspection
+          text: Upphovsrättspolicyn anger hur maskinläsbara förbehåll upptäcks och respekteras, och den publicerade sammanfattningen använder den aktuella mallen och stämmer med förteckningen över träningsdata.
+
+  - id: AIACT-23
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [conformity-assessment, ce-marking, registration]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 43 (conformity assessment)", "EU AI Act (Regulation (EU) 2024/1689) Art. 47 (EU declaration of conformity)", "EU AI Act (Regulation (EU) 2024/1689) Art. 48 (CE marking)", "EU AI Act (Regulation (EU) 2024/1689) Art. 49 (registration)"]
+    tests: [AIACT-T13]
+    en:
+      title: Conformity assessment, declaration, CE marking and registration before release
+      description: The provider MUST complete the conformity assessment, sign the EU declaration of conformity, affix the CE marking and register a high-risk AI system in the EU database before the system is placed on the market or put into service.
+      rationale: These steps are the formal proof of compliance and a precondition for lawful market placement.
+      criteria:
+        - method: inspection
+          text: The release record of the system holds the assessment report, the signed declaration, evidence of the CE marking and the registration number, each dated before the release date.
+    sv:
+      title: Bedömning av överensstämmelse, försäkran, CE-märkning och registrering före release
+      description: Leverantören SKA slutföra bedömningen av överensstämmelse, underteckna EU-försäkran om överensstämmelse, anbringa CE-märkningen och registrera ett AI-system med hög risk i EU-databasen innan systemet släpps ut på marknaden eller tas i bruk.
+      rationale: Dessa steg är det formella beviset på efterlevnad och en förutsättning för att systemet lagligt ska få släppas ut på marknaden.
+      criteria:
+        - method: inspection
+          text: Systemets releaseprotokoll innehåller bedömningsrapporten, den undertecknade försäkran, belägg för CE-märkningen och registreringsnumret, vart och ett daterat före releasedatum.
+
+  - id: AIACT-24
+    type: business
+    obligation: must
+    priority: medium
+    tags: [ai-literacy, training, staff]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 4 (AI literacy)", "ISO/IEC 42001:2023 §7.2 (competence)"]
+    tests: [AIACT-T14]
+    en:
+      title: AI literacy training for staff who operate AI systems
+      description: The organisation MUST give each employee and contractor who operates or oversees an AI system a training on its capabilities, limits and risks before they start, and MUST record the completed training.
+      rationale: Staff who understand what an AI system can and cannot do use it more safely and notice when it goes wrong.
+      criteria:
+        - method: inspection
+          text: The training records list each person with an AI operation or oversight role and a completed training dated before their first access.
+          threshold: 100 % of the role holders trained
+    sv:
+      title: Utbildning i AI-kunnighet för personal som använder AI-system
+      description: Organisationen SKA ge varje anställd och konsult som använder eller övervakar ett AI-system en utbildning om dess förmågor, gränser och risker innan de börjar, och registrera den genomförda utbildningen.
+      rationale: Personal som förstår vad ett AI-system kan och inte kan göra använder det säkrare och märker när något går fel.
+      criteria:
+        - method: inspection
+          text: Utbildningsregistret visar varje person med en roll för användning eller tillsyn av AI och en genomförd utbildning daterad före personens första åtkomst.
+          threshold: 100 % av rollinnehavarna utbildade
+
+tests:
+  - id: AIACT-T01
+    priority: critical
+    execution: manual
+    tags: [risk-classification, prohibited-practices]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 5(1) (prohibited AI practices)", "EU AI Act (Regulation (EU) 2024/1689) Art. 6 (classification rules for high-risk AI systems)"]
+    en:
+      title: AI system register with classification and prohibited-practice screening
+      description: Reviews the AI system register, the classification of each system and the screening records against prohibited practices.
+      preconditions: Access to the AI system register, the release records of the last 12 months and a list of the AI features in production.
+      expected: Each AI system has a category with reasoning, each release has a prior screening, and each Annex III system marked as not high-risk has a documented derogation.
+      steps:
+        - action: Compare the list of AI features in production with the register.
+          expected: Each feature appears in the register with intended purpose, category, reasoning and date.
+        - action: For 5 released features, open the screening record and compare its date with the release date.
+          expected: Each record addresses each practice in Art. 5(1) and is dated before the release.
+        - action: Open the assessment of each Annex III system marked as not high-risk.
+          expected: The assessment names the condition of Art. 6(3) used and states that the system does not profile persons.
+    sv:
+      title: Register över AI-system med klassificering och granskning mot förbjudna metoder
+      description: Granskar registret över AI-system, klassificeringen av varje system och granskningsprotokollen mot förbjudna metoder.
+      preconditions: Åtkomst till registret över AI-system, releaseprotokollen för de senaste 12 månaderna och en lista över AI-funktionerna i produktion.
+      expected: Varje AI-system har en kategori med motivering, varje release har en föregående granskning, och varje system i bilaga III som markerats som inte högrisk har ett dokumenterat undantag.
+      steps:
+        - action: Jämför listan över AI-funktioner i produktion med registret.
+          expected: Varje funktion finns i registret med avsett ändamål, kategori, motivering och datum.
+        - action: Öppna granskningsprotokollet för 5 släppta funktioner och jämför dess datum med releasedatum.
+          expected: Varje protokoll tar upp varje metod i artikel 5.1 och är daterat före releasen.
+        - action: Öppna bedömningen för varje system i bilaga III som markerats som inte högrisk.
+          expected: Bedömningen anger det villkor i artikel 6.3 som används och slår fast att systemet inte profilerar personer.
+
+  - id: AIACT-T02
+    priority: high
+    execution: manual
+    tags: [risk-management]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(2) (iterative risk management process)"]
+    en:
+      title: Risk register of a high-risk AI system is current
+      description: Checks that the risk register covers the three kinds of harm and is reviewed at each release and at least yearly.
+      preconditions: The risk register and the release history of one high-risk AI system.
+      expected: The register covers health, safety and fundamental rights with measures, and no gap between reviews exceeds 12 months.
+      steps:
+        - action: Read the risks in the register and sort them by kind of harm.
+          expected: At least one risk is recorded for each of health, safety and fundamental rights, each with an evaluation and a measure.
+        - action: Compare the review dates with the release dates.
+          expected: Each release has a review entry, and no two consecutive reviews are more than 12 months apart.
+    sv:
+      title: Riskregistret för ett AI-system med hög risk är aktuellt
+      description: Kontrollerar att riskregistret omfattar de tre typerna av skada och granskas vid varje release och minst en gång om året.
+      preconditions: Riskregistret och releasehistoriken för ett AI-system med hög risk.
+      expected: Registret omfattar hälsa, säkerhet och grundläggande rättigheter med åtgärder, och inget mellanrum mellan granskningar överstiger 12 månader.
+      steps:
+        - action: Läs riskerna i registret och sortera dem efter typ av skada.
+          expected: Minst en risk är registrerad för vardera hälsa, säkerhet och grundläggande rättigheter, var och en med utvärdering och åtgärd.
+        - action: Jämför granskningsdatumen med releasedatumen.
+          expected: Varje release har en granskningspost, och inga två granskningar i följd ligger mer än 12 månader isär.
+
+  - id: AIACT-T03
+    priority: high
+    execution: manual
+    tags: [testing, metrics, release-gate]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 9(8) (prior defined metrics and thresholds)"]
+    en:
+      title: Release blocked when a predefined metric is not met
+      description: Checks that metrics are defined before testing and that a failed threshold stops the release.
+      preconditions: The test plan and test report of the latest release and a test environment where a model with lower accuracy can be submitted for release.
+      expected: Thresholds predate the results, and a model below a threshold cannot be released.
+      steps:
+        - action: Compare the date of the test plan with the date of the test report.
+          expected: The test plan with metrics and thresholds is dated before the test report.
+        - action: Submit a model version whose accuracy is 3 percentage points below the threshold for release.
+          expected: The release is blocked and the record names the failed metric.
+          data: "threshold 0.90, measured 0.87"
+    sv:
+      title: Releasen stoppas när ett förutbestämt mått inte uppnås
+      description: Kontrollerar att måtten bestäms före testningen och att en gräns som inte uppnås stoppar releasen.
+      preconditions: Testplanen och testrapporten för den senaste releasen och en testmiljö där en modell med lägre noggrannhet kan lämnas in för release.
+      expected: Gränserna är äldre än resultaten, och en modell under en gräns kan inte släppas.
+      steps:
+        - action: Jämför testplanens datum med testrapportens datum.
+          expected: Testplanen med mått och gränser är daterad före testrapporten.
+        - action: Lämna in en modellversion vars noggrannhet ligger 3 procentenheter under gränsen för release.
+          expected: Releasen stoppas och protokollet anger det mått som inte uppnåddes.
+          data: "gräns 0,90, uppmätt 0,87"
+
+  - id: AIACT-T04
+    priority: high
+    execution: manual
+    tags: [data-governance, bias]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 10(2) (data governance and management practices)", "EU AI Act (Regulation (EU) 2024/1689) Art. 10(2)(f) (examination for possible biases)"]
+    en:
+      title: Data sheets and bias report for the training data
+      description: Reviews the data sheets of the data sets used by the current model and the bias report.
+      preconditions: The model card of the current model version with its list of data sets, their data sheets and the bias report.
+      expected: Each data set is documented, and each bias gap above the limit has a measure.
+      steps:
+        - action: For each data set listed on the model card, open its data sheet.
+          expected: The sheet contains origin, collection method, purpose, preparation steps and assumptions.
+        - action: Read the group shares in the bias report and compare them with the target population.
+          expected: Each gap above 5 percentage points has a recorded measure with an owner.
+    sv:
+      title: Datablad och rapport om snedvridning för träningsdata
+      description: Granskar databladen för de datamängder som den aktuella modellen använder och rapporten om snedvridning.
+      preconditions: Modellkortet för den aktuella modellversionen med dess lista över datamängder, deras datablad och rapporten om snedvridning.
+      expected: Varje datamängd är dokumenterad, och varje skillnad över gränsen har en åtgärd.
+      steps:
+        - action: Öppna databladet för varje datamängd som anges på modellkortet.
+          expected: Databladet innehåller ursprung, insamlingsmetod, ändamål, förberedelsesteg och antaganden.
+        - action: Läs gruppandelarna i rapporten om snedvridning och jämför dem med målpopulationen.
+          expected: Varje skillnad över 5 procentenheter har en registrerad åtgärd med en ansvarig.
+
+  - id: AIACT-T05
+    priority: high
+    execution: manual
+    tags: [technical-documentation, instructions-for-use]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Annex IV (content of technical documentation)", "EU AI Act (Regulation (EU) 2024/1689) Art. 13(3) (content of the instructions)"]
+    en:
+      title: Technical documentation and instructions for use are complete
+      description: Checks the technical documentation against Annex IV and the instructions for use against the topics the deployer needs.
+      preconditions: The technical documentation, the instructions for use and the deployed model version of one high-risk AI system.
+      expected: Both documents are complete, current and kept for the retention period.
+      steps:
+        - action: Walk through the Annex IV checklist and follow each reference.
+          expected: Each element has a reference that leads to existing content.
+        - action: Compare the document version with the deployed model version and read the retention setting.
+          expected: The versions match and the retention period is 10 years.
+        - action: Check the instructions for use for intended purpose, accuracy, limitations, oversight measures, input data and lifetime.
+          expected: All six topics are present.
+    sv:
+      title: Teknisk dokumentation och bruksanvisning är fullständiga
+      description: Kontrollerar den tekniska dokumentationen mot bilaga IV och bruksanvisningen mot de ämnen som tillhandahållaren behöver.
+      preconditions: Den tekniska dokumentationen, bruksanvisningen och den driftsatta modellversionen för ett AI-system med hög risk.
+      expected: Båda dokumenten är fullständiga, aktuella och bevaras under bevarandetiden.
+      steps:
+        - action: Gå igenom checklistan för bilaga IV och följ varje hänvisning.
+          expected: Varje del har en hänvisning som leder till befintligt innehåll.
+        - action: Jämför dokumentversionen med den driftsatta modellversionen och läs inställningen för bevarande.
+          expected: Versionerna stämmer och bevarandetiden är 10 år.
+        - action: Kontrollera att bruksanvisningen tar upp avsett ändamål, noggrannhet, begränsningar, tillsynsåtgärder, indata och livslängd.
+          expected: Alla sex ämnena finns med.
+
+  - id: AIACT-T06
+    priority: critical
+    execution: automated
+    tags: [logging, retention]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 12(1) (automatic recording of events)", "EU AI Act (Regulation (EU) 2024/1689) Art. 19(1) (automatically generated logs)"]
+    en:
+      title: Event log entries are complete and protected
+      description: A script makes test uses of the AI system and checks the log entries, their protection and the retention setting.
+      preconditions: A test environment of the AI system with a reviewer account, an ordinary user account and read access to the event log.
+      expected: Each use is logged with all fields, ordinary users cannot change the log, and the retention is at least 6 months.
+      steps:
+        - action: Make 3 uses of the AI system and approve each output with the reviewer account.
+          expected: The log holds 3 new entries with start and end time, model version, input reference, output and reviewer.
+        - action: As the ordinary user, try to change and then delete one of the entries.
+          expected: Both attempts are refused and the attempts are logged.
+        - action: Read the retention setting of the log store and the oldest entry.
+          expected: The retention is at least 6 months and the oldest entry is readable.
+    sv:
+      title: Poster i händelseloggen är fullständiga och skyddade
+      description: Ett skript använder AI-systemet i test och kontrollerar loggposterna, deras skydd och inställningen för bevarande.
+      preconditions: En testmiljö för AI-systemet med ett granskarkonto, ett vanligt användarkonto och läsbehörighet till händelseloggen.
+      expected: Varje användning loggas med alla fält, vanliga användare kan inte ändra loggen och bevarandetiden är minst 6 månader.
+      steps:
+        - action: Använd AI-systemet 3 gånger och godkänn varje utdata med granskarkontot.
+          expected: Loggen har 3 nya poster med start- och sluttid, modellversion, hänvisning till indata, utdata och granskare.
+        - action: Försök som vanlig användare att ändra och sedan radera en av posterna.
+          expected: Båda försöken avvisas och loggas.
+        - action: Läs loggarkivets inställning för bevarande och den äldsta posten.
+          expected: Bevarandetiden är minst 6 månader och den äldsta posten går att läsa.
+
+  - id: AIACT-T07
+    priority: critical
+    execution: manual
+    tags: [human-oversight, override, stop]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 14(4)(d) (disregard or override the output)", "EU AI Act (Regulation (EU) 2024/1689) Art. 14(4)(e) (stop button)"]
+    en:
+      title: Overseer overrides an output and stops the system
+      description: Demonstrates the override and the stop function and checks the information shown with each output.
+      preconditions: A test environment with an overseer account and a queue of 5 pending outputs with different confidence scores.
+      expected: The overseer's decision takes effect, the stop halts the system within 10 seconds, and confidence and limitations are shown.
+      steps:
+        - action: Open the 5 pending outputs one by one.
+          expected: Each shows its confidence score and a link to the limitations of the model.
+        - action: Override one output with a different decision and confirm.
+          expected: The overseer's decision is the one stored and acted on, and the override is logged.
+        - action: Press the stop action while outputs are being produced and time it.
+          expected: Processing stops within 10 seconds and no further outputs are issued.
+    sv:
+      title: Tillsynspersonen åsidosätter ett utdata och stoppar systemet
+      description: Visar funktionerna för att åsidosätta och stoppa och kontrollerar den information som visas med varje utdata.
+      preconditions: En testmiljö med ett konto för tillsynsperson och en kö med 5 väntande utdata med olika konfidensvärden.
+      expected: Tillsynspersonens beslut får verkan, stoppet avbryter systemet inom 10 sekunder och konfidensvärden och begränsningar visas.
+      steps:
+        - action: Öppna de 5 väntande utdata ett i taget.
+          expected: Vart och ett visar sitt konfidensvärde och en länk till modellens begränsningar.
+        - action: Åsidosätt ett utdata med ett annat beslut och bekräfta.
+          expected: Tillsynspersonens beslut är det som sparas och verkställs, och åsidosättandet loggas.
+        - action: Tryck på stoppåtgärden medan utdata produceras och ta tid.
+          expected: Bearbetningen stoppas inom 10 sekunder och inga fler utdata ges.
+
+  - id: AIACT-T08
+    priority: high
+    execution: manual
+    tags: [robustness, cybersecurity]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 15(4) (resilience to errors, faults and inconsistencies)", "EU AI Act (Regulation (EU) 2024/1689) Art. 15(5) (cybersecurity of high-risk AI systems)"]
+    en:
+      title: Fallback on invalid input and AI-specific attacks tested
+      description: Sends input outside the documented range, injects faults and checks the records of AI-specific attack tests.
+      preconditions: A test environment, the documented input range, 20 prepared out-of-range inputs, a way to inject 2 faults, the threat model and the release test report.
+      expected: No automated decision is made on invalid input or faults, and each attack kind has been tested.
+      steps:
+        - action: Send the 20 out-of-range inputs and inject the 2 faults.
+          expected: Each case goes to manual handling with a recorded reason and no automated decision.
+          data: "values beyond the documented range, missing mandatory fields, a stopped model service"
+        - action: Compare the threat model with the release test report.
+          expected: Data poisoning, model poisoning, adversarial examples and model evasion each have at least one executed test with an outcome.
+    sv:
+      title: Reservväg vid ogiltiga indata och test av AI-specifika attacker
+      description: Skickar indata utanför det dokumenterade området, injicerar fel och kontrollerar protokollen från test av AI-specifika attacker.
+      preconditions: En testmiljö, det dokumenterade indataområdet, 20 förberedda indata utanför området, ett sätt att injicera 2 fel, hotmodellen och testrapporten för releasen.
+      expected: Inga automatiska beslut fattas vid ogiltiga indata eller fel, och varje typ av attack har testats.
+      steps:
+        - action: Skicka de 20 indata utanför området och injicera de 2 felen.
+          expected: Varje fall går till manuell hantering med registrerad orsak och utan automatiskt beslut.
+          data: "värden utanför det dokumenterade området, saknade obligatoriska fält, en stoppad modelltjänst"
+        - action: Jämför hotmodellen med testrapporten för releasen.
+          expected: Förgiftning av data, förgiftning av modell, antagonistiska exempel och kringgående av modellen har var och en minst ett genomfört test med utfall.
+
+  - id: AIACT-T09
+    priority: high
+    execution: manual
+    tags: [post-market-monitoring]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 72(3) (post-market monitoring plan)"]
+    en:
+      title: Post-market monitoring reports for the last three months
+      description: Reviews the monitoring plan and the monthly analysis reports.
+      preconditions: The post-market monitoring plan and the analysis reports of one high-risk AI system for the last 3 months.
+      expected: Each month has a report with the four indicators and the decisions taken.
+      steps:
+        - action: Read the data sources in the monitoring plan.
+          expected: Accuracy, complaints and overrides from deployment are named as sources.
+        - action: Open the 3 latest monthly reports.
+          expected: Each shows accuracy, complaint count, override rate and the corrective actions decided or a statement that none was needed.
+    sv:
+      title: Rapporter från övervakning efter utsläppande för de senaste tre månaderna
+      description: Granskar övervakningsplanen och de månatliga analysrapporterna.
+      preconditions: Planen för övervakning efter utsläppande och analysrapporterna för ett AI-system med hög risk för de senaste 3 månaderna.
+      expected: Varje månad har en rapport med de fyra indikatorerna och de beslut som fattats.
+      steps:
+        - action: Läs datakällorna i övervakningsplanen.
+          expected: Noggrannhet, klagomål och åsidosättanden från driften anges som källor.
+        - action: Öppna de 3 senaste månadsrapporterna.
+          expected: Var och en visar noggrannhet, antal klagomål, andel åsidosättanden och beslutade korrigerande åtgärder eller ett konstaterande att inga behövdes.
+
+  - id: AIACT-T10
+    priority: critical
+    execution: manual
+    tags: [serious-incident, exercise]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 73(2) (reporting within 15 days)", "EU AI Act (Regulation (EU) 2024/1689) Art. 73(3) (reporting within 2 days)", "EU AI Act (Regulation (EU) 2024/1689) Art. 73(4) (reporting within 10 days in the event of death)"]
+    en:
+      title: Serious incident reporting exercise
+      description: Runs a tabletop exercise for each of the three incident types and measures the time to a report draft.
+      preconditions: The incident procedure, the incident team and three prepared incident scenarios.
+      expected: Each scenario produces a report draft well before its legal deadline.
+      steps:
+        - action: Read the deadlines and the start of the clock in the incident procedure.
+          expected: The procedure sets 2, 10 and 15 days and starts the clock when the provider becomes aware of the incident.
+        - action: Run the scenario of a disruption of critical infrastructure and note when the report draft is ready.
+          expected: The draft is ready within 2 days of the start of the scenario.
+          data: "scenario: model outage stops dispatching in a power distribution grid"
+        - action: Run the scenarios of a death and of a health harm and note when each draft is ready.
+          expected: The drafts are ready within 10 and 15 days respectively.
+    sv:
+      title: Övning i rapportering av allvarliga incidenter
+      description: Genomför en skrivbordsövning för var och en av de tre incidenttyperna och mäter tiden till ett rapportutkast.
+      preconditions: Incidentrutinen, incidentgruppen och tre förberedda incidentscenarier.
+      expected: Varje scenario ger ett rapportutkast i god tid före den lagstadgade tidsfristen.
+      steps:
+        - action: Läs tidsfristerna och när tiden börjar räknas i incidentrutinen.
+          expected: Rutinen anger 2, 10 och 15 dagar och börjar räkna när leverantören får kännedom om incidenten.
+        - action: Genomför scenariot med en störning av kritisk infrastruktur och anteckna när rapportutkastet är klart.
+          expected: Utkastet är klart inom 2 dagar från scenariots start.
+          data: "scenario: ett modellavbrott stoppar driftstyrningen i ett eldistributionsnät"
+        - action: Genomför scenarierna med ett dödsfall och med en hälsoskada och anteckna när varje utkast är klart.
+          expected: Utkasten är klara inom 10 respektive 15 dagar.
+
+  - id: AIACT-T11
+    priority: high
+    execution: manual
+    tags: [transparency, generated-content, deep-fake]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 50(1) (transparency for AI systems interacting with persons)", "EU AI Act (Regulation (EU) 2024/1689) Art. 50(2) (marking of synthetic content)", "EU AI Act (Regulation (EU) 2024/1689) Art. 50(4) (disclosure of deep fakes)"]
+    en:
+      title: AI disclosure, machine-readable marking and visible labels
+      description: Checks the notice at the start of a conversation, the marking of generated files and the labels on published deep fakes.
+      preconditions: Access to the conversational AI feature in English and Swedish, the generation feature for images and audio, a metadata reader and the list of published deep fakes.
+      expected: The notice, the machine-readable mark and the visible label are each present.
+      steps:
+        - action: Start a new conversation in English and another in Swedish.
+          expected: Each starts with a notice in its language that the counterpart is an AI system.
+        - action: Generate an image and an audio file, download them and open them in the metadata reader.
+          expected: Both files carry a mark that identifies them as AI-generated.
+        - action: Open 10 published deep fakes.
+          expected: Each shows the visible label at its first frame or at the top of the page.
+    sv:
+      title: Information om AI, maskinläsbar märkning och synliga etiketter
+      description: Kontrollerar meddelandet i början av en konversation, märkningen av genererade filer och etiketterna på publicerade deepfakes.
+      preconditions: Åtkomst till den konverserande AI-funktionen på engelska och svenska, genereringsfunktionen för bilder och ljud, ett verktyg för metadata och listan över publicerade deepfakes.
+      expected: Meddelandet, den maskinläsbara märkningen och den synliga etiketten finns alla.
+      steps:
+        - action: Starta en ny konversation på engelska och en annan på svenska.
+          expected: Var och en börjar med ett meddelande på sitt språk om att motparten är ett AI-system.
+        - action: Generera en bild och en ljudfil, ladda ned dem och öppna dem i verktyget för metadata.
+          expected: Båda filerna bär en märkning som anger att de är AI-genererade.
+        - action: Öppna 10 publicerade deepfakes.
+          expected: Var och en visar den synliga etiketten i den första bildrutan eller högst upp på sidan.
+
+  - id: AIACT-T12
+    priority: high
+    execution: manual
+    tags: [gpai, documentation, copyright]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Annex XI (technical documentation of general-purpose AI models)", "EU AI Act (Regulation (EU) 2024/1689) Art. 53(1)(c) (copyright policy)", "EU AI Act (Regulation (EU) 2024/1689) Art. 53(1)(d) (summary of training content)"]
+    en:
+      title: General-purpose AI model documentation, copyright policy and training summary
+      description: Reviews the documentation package of a general-purpose AI model.
+      preconditions: The technical documentation, the downstream information package, the copyright policy, the published training summary and the training data inventory of the model.
+      expected: Each document exists, is complete and agrees with the inventory.
+      steps:
+        - action: Check the technical documentation and the downstream package against Annex XI and Annex XII.
+          expected: Each element is addressed, and the package is reachable through the distribution channel.
+        - action: Read how the copyright policy handles machine-readable reservations of rights.
+          expected: The policy describes how reservations are detected and that such content is excluded.
+        - action: Compare the published training summary with the training data inventory.
+          expected: The summary uses the current template and each main data source in the inventory appears in it.
+    sv:
+      title: Dokumentation, upphovsrättspolicy och träningssammanfattning för en AI-modell för allmänna ändamål
+      description: Granskar dokumentationspaketet för en AI-modell för allmänna ändamål.
+      preconditions: Modellens tekniska dokumentation, informationspaketet för leverantörer längre ned i kedjan, upphovsrättspolicyn, den publicerade träningssammanfattningen och förteckningen över träningsdata.
+      expected: Varje dokument finns, är fullständigt och stämmer med förteckningen.
+      steps:
+        - action: Kontrollera den tekniska dokumentationen och informationspaketet mot bilaga XI och bilaga XII.
+          expected: Varje del tas upp, och paketet går att nå via distributionskanalen.
+        - action: Läs hur upphovsrättspolicyn hanterar maskinläsbara förbehåll.
+          expected: Policyn anger hur förbehåll upptäcks och att sådant innehåll utesluts.
+        - action: Jämför den publicerade träningssammanfattningen med förteckningen över träningsdata.
+          expected: Sammanfattningen använder den aktuella mallen och varje huvudsaklig datakälla i förteckningen finns med i den.
+
+  - id: AIACT-T13
+    priority: critical
+    execution: manual
+    tags: [conformity-assessment, ce-marking, registration]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 47 (EU declaration of conformity)", "EU AI Act (Regulation (EU) 2024/1689) Art. 49 (registration)"]
+    en:
+      title: Conformity evidence dated before the release
+      description: Checks the release record of a high-risk AI system for the conformity evidence and its dates.
+      preconditions: The release record of one high-risk AI system and access to the EU database search.
+      expected: All four pieces of evidence exist and predate the release.
+      steps:
+        - action: Open the assessment report, the declaration of conformity and the evidence of CE marking in the release record.
+          expected: Each exists, the declaration is signed, and each is dated before the release date.
+        - action: Search the EU database for the registration number in the record.
+          expected: The registration is found and names the same system and provider.
+    sv:
+      title: Belägg för överensstämmelse daterade före releasen
+      description: Kontrollerar releaseprotokollet för ett AI-system med hög risk med avseende på belägg för överensstämmelse och deras datum.
+      preconditions: Releaseprotokollet för ett AI-system med hög risk och åtkomst till sökfunktionen i EU-databasen.
+      expected: Alla fyra beläggen finns och är äldre än releasen.
+      steps:
+        - action: Öppna bedömningsrapporten, försäkran om överensstämmelse och belägget för CE-märkning i releaseprotokollet.
+          expected: Vart och ett finns, försäkran är undertecknad och vart och ett är daterat före releasedatum.
+        - action: Sök i EU-databasen efter registreringsnumret i protokollet.
+          expected: Registreringen hittas och anger samma system och leverantör.
+
+  - id: AIACT-T14
+    priority: medium
+    execution: manual
+    tags: [ai-literacy, training]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 4 (AI literacy)"]
+    en:
+      title: AI literacy training recorded before first access
+      description: Compares the list of AI role holders with the training records and the access logs.
+      preconditions: The list of persons with AI operation or oversight roles, the training records and the access log of the AI systems.
+      expected: Each role holder completed the training before their first access.
+      steps:
+        - action: Match each role holder with a training record.
+          expected: Each role holder has a completed training.
+        - action: Compare the training date with the first access in the access log for 10 role holders.
+          expected: The training date is before the first access for each of them.
+    sv:
+      title: Utbildning i AI-kunnighet registrerad före första åtkomst
+      description: Jämför listan över rollinnehavare för AI med utbildningsregistret och åtkomstloggarna.
+      preconditions: Listan över personer med roller för användning eller tillsyn av AI, utbildningsregistret och åtkomstloggen för AI-systemen.
+      expected: Varje rollinnehavare har genomfört utbildningen före sin första åtkomst.
+      steps:
+        - action: Para ihop varje rollinnehavare med en utbildningspost.
+          expected: Varje rollinnehavare har en genomförd utbildning.
+        - action: Jämför utbildningsdatum med första åtkomst i åtkomstloggen för 10 rollinnehavare.
+          expected: Utbildningsdatum ligger före första åtkomst för var och en av dem.

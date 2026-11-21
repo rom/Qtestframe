@@ -1,0 +1,648 @@
+area: sys-integration
+prefix: SYINT
+group: quality
+catalogue: system
+name: {en: "Interfaces, integration, verification and validation", sv: "Gränssnitt, integration, verifiering och validering"}
+description:
+  en: How the elements of a system are joined and proven, covering the interface register and interface control documents, interface agreements and compatibility checks, the integration strategy and entry criteria, behaviour on loss of an interface, the verification plan and environment, calibrated test equipment, regression verification, validation in the operational environment, independent verification, anomaly handling and the verification summary before acceptance.
+  sv: Hur systemets delar fogas samman och bevisas, med gränssnittsregister och gränssnittsdokument (ICD), överenskommelser om gränssnitt och kontroller av kompatibilitet, integrationsstrategi och ingångskriterier, beteende när ett gränssnitt förloras, verifieringsplan och verifieringsmiljö, kalibrerad provutrustning, regressionsverifiering, validering i driftmiljön, oberoende verifiering, hantering av avvikelser och sammanställning av verifieringen före godkännandet.
+
+requirements:
+  - id: SYINT-01
+    type: interface
+    obligation: must
+    priority: high
+    tags: [interface-register, n2-diagram]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.4 (system architecture definition process)", "ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)"]
+    tests: [SYINT-T01]
+    en:
+      title: Register of internal and external interfaces
+      description: The project MUST keep a register of each interface between system elements and between the system and external systems, giving for each the two parties, the interface type (mechanical, electrical, data, human), an owner on each side and the controlling document.
+      rationale: Most integration problems arise at interfaces, and an interface that nobody has listed has no owner to resolve them.
+      criteria:
+        - method: inspection
+          text: Each connection in the architecture diagram appears in the register with both parties, type, two owners and a controlling document.
+          threshold: 0 unregistered interfaces
+    sv:
+      title: Register över interna och externa gränssnitt
+      description: Projektet SKA föra ett register över varje gränssnitt mellan systemets delar och mellan systemet och externa system, med de två parterna, gränssnittstypen (mekaniskt, elektriskt, data, människa), en ägare på varje sida och det styrande dokumentet för varje gränssnitt.
+      rationale: De flesta integrationsproblem uppstår i gränssnitt, och ett gränssnitt som ingen har förtecknat saknar en ägare som kan lösa dem.
+      criteria:
+        - method: inspection
+          text: Varje förbindelse i arkitekturdiagrammet finns i registret med båda parter, typ, två ägare och ett styrande dokument.
+          threshold: 0 oregistrerade gränssnitt
+
+  - id: SYINT-02
+    type: interface
+    obligation: must
+    priority: high
+    tags: [interface-control-document, icd]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.5 (design definition process)", "IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    tests: [SYINT-T01]
+    en:
+      title: Interface control document for each external interface
+      description: Each external interface MUST be specified in an interface control document that states the physical connection, the electrical characteristics, the protocol and message formats, the data definitions with units and ranges, the timing, the error handling and the document version.
+      rationale: An interface that is described only in emails or meetings is implemented differently on each side.
+      criteria:
+        - method: inspection
+          text: The interface control document of each external interface covers the seven listed topics, and each data item has a unit and range.
+    sv:
+      title: Gränssnittsdokument för varje externt gränssnitt
+      description: Varje externt gränssnitt SKA specificeras i ett gränssnittsdokument som anger den fysiska anslutningen, de elektriska egenskaperna, protokoll och meddelandeformat, datadefinitionerna med enheter och områden, tidskraven, felhanteringen och dokumentversionen.
+      rationale: Ett gränssnitt som bara beskrivs i e-post eller på möten implementeras olika på var sida.
+      criteria:
+        - method: inspection
+          text: Gränssnittsdokumentet för varje externt gränssnitt omfattar de sju angivna ämnena, och varje datapost har enhet och område.
+
+  - id: SYINT-03
+    type: interface
+    obligation: must
+    priority: high
+    tags: [interface-agreement, change-control]
+    refs: ["ISO 10007:2017 (change control)", "ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)"]
+    tests: [SYINT-T01]
+    en:
+      title: Interface documents agreed by both sides before implementation
+      description: Each interface control document MUST be signed by the owners on both sides before either side starts implementing it, and each later change MUST be approved by both owners before it is applied.
+      rationale: An interface changed by one side alone breaks the other side, often discovered only at integration.
+      criteria:
+        - method: inspection
+          text: Each interface control document has both signatures dated before the implementation start, and each revision has approvals from both owners.
+    sv:
+      title: Gränssnittsdokument godkänns av båda sidor före implementering
+      description: Varje gränssnittsdokument SKA undertecknas av ägarna på båda sidor innan någon sida börjar implementera det, och varje senare ändring SKA godkännas av båda ägarna innan den genomförs.
+      rationale: Ett gränssnitt som ändras av ena sidan ensam bryter den andra sidan, vilket ofta upptäcks först vid integrationen.
+      criteria:
+        - method: inspection
+          text: Varje gränssnittsdokument har båda underskrifterna daterade före implementeringsstart, och varje revision har godkännanden från båda ägarna.
+
+  - id: SYINT-04
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [interface-compatibility, simulators, early-testing]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)"]
+    tests: [SYINT-T02]
+    en:
+      title: Interface compatibility checked with simulators before integration
+      description: Each side of an external data interface SHOULD be tested against a simulator of the other side built from the interface control document before the two real elements are connected.
+      rationale: Testing against a simulator finds format and timing mismatches early, when both sides can still change cheaply.
+      criteria:
+        - method: inspection
+          text: The test reports show a passed simulator test for each side of each external data interface, dated before the first connection of the real elements.
+    sv:
+      title: Gränssnittens kompatibilitet kontrolleras med simulatorer före integration
+      description: Varje sida av ett externt datagränssnitt BÖR testas mot en simulator av den andra sidan, byggd utifrån gränssnittsdokumentet, innan de två verkliga delarna ansluts.
+      rationale: Test mot en simulator hittar fel i format och tider tidigt, när båda sidor fortfarande kan ändras billigt.
+      criteria:
+        - method: inspection
+          text: Testrapporterna visar ett godkänt simulatortest för varje sida av varje externt datagränssnitt, daterat före den första anslutningen av de verkliga delarna.
+
+  - id: SYINT-05
+    type: business
+    obligation: must
+    priority: high
+    tags: [integration-strategy, test-rigs]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)"]
+    tests: [SYINT-T03]
+    en:
+      title: Integration plan with order, builds and enabling systems
+      description: The project MUST plan the integration with the order in which elements are joined, the content of each integration build, and the test rigs, simulators and tools each step needs with the date each is ready.
+      rationale: Integration fails when enabling systems arrive late or elements are joined in an order that hides the cause of faults.
+      criteria:
+        - method: inspection
+          text: The integration plan lists the order, each build's content and the enabling systems with ready dates, and each enabling system was ready before its step started.
+    sv:
+      title: Integrationsplan med ordning, byggen och stödsystem
+      description: Projektet SKA planera integrationen med den ordning i vilken delarna fogas samman, innehållet i varje integrationsbygge och de testriggar, simulatorer och verktyg som varje steg behöver med datum när var och en är klar.
+      rationale: Integrationen misslyckas när stödsystemen kommer sent eller delarna fogas samman i en ordning som döljer felens orsak.
+      criteria:
+        - method: inspection
+          text: Integrationsplanen anger ordningen, varje bygges innehåll och stödsystemen med datum när de är klara, och varje stödsystem var klart innan dess steg började.
+
+  - id: SYINT-06
+    type: business
+    obligation: must_not
+    priority: high
+    tags: [integration-entry-criteria, element-verification]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)", "ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    tests: [SYINT-T03]
+    en:
+      title: No integration of an element that has not passed its own verification
+      description: An element MUST NOT enter system integration before it has passed its element-level verification with the results recorded and its open anomalies reviewed by the integration lead.
+      rationale: Unverified elements turn integration into debugging, and faults are much harder to locate in the assembled system.
+      criteria:
+        - method: inspection
+          text: For each element in the integration log, a passed element verification report and a signed anomaly review are dated before its integration date.
+    sv:
+      title: Ingen integration av en del som inte klarat sin egen verifiering
+      description: En del SKA INTE gå in i systemintegrationen innan den har klarat sin verifiering på delnivå med resultaten registrerade och sina öppna avvikelser granskade av integrationsansvarig.
+      rationale: Overifierade delar gör integrationen till felsökning, och fel är mycket svårare att lokalisera i det sammansatta systemet.
+      criteria:
+        - method: inspection
+          text: För varje del i integrationsloggen finns en godkänd verifieringsrapport på delnivå och en undertecknad granskning av avvikelser, daterade före dess integrationsdatum.
+
+  - id: SYINT-07
+    type: interface
+    obligation: must
+    priority: high
+    tags: [interface-loss, degraded-mode, fault-handling]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.5 (design definition process)", "IEC 61508-2:2010 §7.4 (requirements for hardware safety integrity)"]
+    tests: [SYINT-T04]
+    en:
+      title: Defined behaviour on loss of an external interface
+      description: The system MUST detect the loss of each external interface within the detection time stated in its interface control document (5 seconds by default), signal it to the operator and enter the degraded mode defined for that interface.
+      rationale: An interface loss that goes unnoticed leaves the system acting on stale data, which can be worse than stopping.
+      criteria:
+        - method: test
+          text: Disconnecting each external interface in turn leads to an operator alarm and the defined degraded mode within the stated detection time.
+          threshold: detection ≤ 5 s by default
+    sv:
+      title: Bestämt beteende när ett externt gränssnitt förloras
+      description: Systemet SKA upptäcka förlust av varje externt gränssnitt inom den upptäcktstid som anges i dess gränssnittsdokument (5 sekunder som standardvärde), signalera det till operatören och gå till det nedsatta driftläge som definierats för gränssnittet.
+      rationale: En förlust av ett gränssnitt som inte märks gör att systemet agerar på inaktuella data, vilket kan vara värre än att stanna.
+      criteria:
+        - method: test
+          text: När varje externt gränssnitt kopplas bort i tur och ordning ges ett larm till operatören och det definierade nedsatta driftläget intas inom den angivna upptäcktstiden.
+          threshold: upptäckt ≤ 5 s som standardvärde
+
+  - id: SYINT-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [verification-plan, methods, levels]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)", "ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    tests: [SYINT-T05]
+    en:
+      title: Verification plan for each requirement
+      description: The verification plan MUST give, for each system requirement, the verification method, the level at which it is verified (element, subsystem, system), the environment, the responsible party and the pass criterion.
+      rationale: Requirements without a planned verification are discovered unverified at acceptance, when there is no time left.
+      criteria:
+        - method: analysis
+          text: The verification matrix lists each requirement in the baseline with method, level, environment, responsible party and pass criterion.
+          threshold: 0 requirements without a plan
+    sv:
+      title: Verifieringsplan för varje krav
+      description: Verifieringsplanen SKA för varje systemkrav ange verifieringsmetod, den nivå där det verifieras (del, delsystem, system), miljö, ansvarig part och godkännandekriterium.
+      rationale: Krav utan planerad verifiering upptäcks som overifierade vid godkännandet, när det inte finns någon tid kvar.
+      criteria:
+        - method: analysis
+          text: Verifieringsmatrisen anger varje krav i baslinjen med metod, nivå, miljö, ansvarig part och godkännandekriterium.
+          threshold: 0 krav utan plan
+
+  - id: SYINT-09
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [verification-environment, configuration, reproducibility]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)", "ISO/IEC/IEEE 29119-3:2021"]
+    tests: [SYINT-T06]
+    en:
+      title: Configuration of the test object and test environment recorded with each result
+      description: Each verification result MUST record the configuration of the system under test (baseline or build identifier) and of the verification environment (rigs, simulators and test equipment with their versions or serial numbers).
+      rationale: A result without its configuration cannot be repeated or trusted after the next change.
+      criteria:
+        - method: inspection
+          text: 20 sampled verification results each name the build of the system under test and the identifiers of the environment items used.
+    sv:
+      title: Konfiguration av testobjekt och testmiljö registreras med varje resultat
+      description: Varje verifieringsresultat SKA registrera konfigurationen av systemet som testas (baslinje eller byggidentitet) och av verifieringsmiljön (riggar, simulatorer och provutrustning med versioner eller serienummer).
+      rationale: Ett resultat utan sin konfiguration kan inte upprepas eller litas på efter nästa ändring.
+      criteria:
+        - method: inspection
+          text: 20 verifieringsresultat i ett stickprov anger var och ett bygget av systemet som testas och identiteterna för de miljödelar som använts.
+
+  - id: SYINT-10
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [test-equipment, calibration]
+    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    tests: [SYINT-T06]
+    en:
+      title: Calibrated equipment for verification measurements
+      description: Each measuring instrument used to verify a quantitative requirement MUST have a valid calibration on the date of the measurement, with its identifier recorded in the verification result.
+      rationale: A measurement with an uncalibrated instrument does not prove that the requirement is met.
+      criteria:
+        - method: inspection
+          text: For 10 sampled quantitative results, the recorded instrument's calibration was valid on the measurement date.
+    sv:
+      title: Kalibrerad utrustning för verifieringsmätningar
+      description: Varje mätinstrument som används för att verifiera ett kvantitativt krav SKA ha en giltig kalibrering på mätdagen, med sin identitet registrerad i verifieringsresultatet.
+      rationale: En mätning med ett okalibrerat instrument bevisar inte att kravet är uppfyllt.
+      criteria:
+        - method: inspection
+          text: För 10 kvantitativa resultat i ett stickprov var det registrerade instrumentets kalibrering giltig på mätdagen.
+
+  - id: SYINT-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [regression-verification, impact-analysis]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)", "ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    tests: [SYINT-T07]
+    en:
+      title: Verification repeated after each change based on its impact
+      description: After each approved change to a verified baseline, the project MUST select the verifications to repeat from the change's impact analysis and the traceability links, and MUST record the selection and its results before the changed baseline is released.
+      rationale: Changes often break verified behaviour in elements that were not changed, and an impact-based selection finds this without repeating everything.
+      criteria:
+        - method: inspection
+          text: For 3 sampled changes, the selection references the impact analysis and the affected requirements, and each selected verification has a result dated before the release.
+    sv:
+      title: Verifieringen upprepas efter varje ändring utifrån dess påverkan
+      description: Efter varje godkänd ändring av en verifierad baslinje SKA projektet välja de verifieringar som ska upprepas utifrån ändringens konsekvensanalys och spårbarhetslänkarna, och registrera urvalet och dess resultat innan den ändrade baslinjen släpps.
+      rationale: Ändringar bryter ofta verifierat beteende i delar som inte ändrats, och ett urval utifrån påverkan hittar detta utan att allt behöver upprepas.
+      criteria:
+        - method: inspection
+          text: För 3 ändringar i ett stickprov hänvisar urvalet till konsekvensanalysen och de berörda kraven, och varje vald verifiering har ett resultat daterat före releasen.
+
+  - id: SYINT-12
+    type: business
+    obligation: must
+    priority: high
+    tags: [validation, operational-environment, users]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.11 (validation process)", "IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    tests: [SYINT-T08]
+    en:
+      title: Validation with real users in the operational environment
+      description: The system MUST be validated in its operational environment, or a representative one, by intended users who perform each scenario of the concept of operations, with each scenario's outcome and the users' findings recorded.
+      rationale: Verification proves that the system meets its requirements, and only validation shows that those requirements meet the real needs.
+      criteria:
+        - method: demonstration
+          text: The validation report lists each scenario of the concept of operations with the users who performed it, the environment, the outcome and the findings.
+    sv:
+      title: Validering med verkliga användare i driftmiljön
+      description: Systemet SKA valideras i sin driftmiljö, eller en representativ sådan, av avsedda användare som genomför varje scenario i driftkonceptet, med varje scenarios utfall och användarnas iakttagelser registrerade.
+      rationale: Verifiering bevisar att systemet uppfyller sina krav, och bara validering visar att kraven motsvarar de verkliga behoven.
+      criteria:
+        - method: demonstration
+          text: Valideringsrapporten anger varje scenario i driftkonceptet med de användare som genomförde det, miljön, utfallet och iakttagelserna.
+
+  - id: SYINT-13
+    type: business
+    obligation: should
+    priority: medium
+    tags: [independent-verification, safety-requirements]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)", "IEC 61508-1:2010 §8 (functional safety assessment)"]
+    tests: [SYINT-T09]
+    en:
+      title: Independent verification of safety requirements
+      description: The verification of each safety-related requirement SHOULD be performed or witnessed by a person who did not take part in the design of the element concerned.
+      rationale: Designers tend to test what they designed for, and an independent person questions the assumptions.
+      criteria:
+        - method: inspection
+          text: For each safety-related requirement, the verification record names the verifier or witness, and that person is not on the design team of the element.
+    sv:
+      title: Oberoende verifiering av säkerhetskrav
+      description: Verifieringen av varje säkerhetsrelaterat krav BÖR utföras eller bevittnas av en person som inte deltog i konstruktionen av den berörda delen.
+      rationale: Konstruktörer tenderar att testa det som de konstruerat för, och en oberoende person ifrågasätter antagandena.
+      criteria:
+        - method: inspection
+          text: För varje säkerhetsrelaterat krav anger verifieringsprotokollet verifierare eller vittne, och den personen ingår inte i delens konstruktionsteam.
+
+  - id: SYINT-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [anomalies, defect-handling, re-verification]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)", "ISO/IEC/IEEE 29119-3:2021"]
+    tests: [SYINT-T10]
+    en:
+      title: Anomaly report for each failed verification
+      description: Each failed or inconclusive verification MUST create an anomaly report with severity, affected requirement and configuration, and the anomaly MUST be closed only after the verification has been repeated and passed on a recorded configuration.
+      rationale: Anomalies closed without re-verification often come back, and an unrecorded failure is lost.
+      criteria:
+        - method: inspection
+          text: Each failed verification result of the last 3 months links to an anomaly, and each closed anomaly links to a passed re-verification with its configuration.
+    sv:
+      title: Avvikelserapport för varje misslyckad verifiering
+      description: Varje misslyckad eller ofullständig verifiering SKA skapa en avvikelserapport med allvarlighetsgrad, berört krav och konfiguration, och avvikelsen SKA stängas först efter att verifieringen har upprepats och godkänts på en registrerad konfiguration.
+      rationale: Avvikelser som stängs utan ny verifiering kommer ofta tillbaka, och ett misslyckande som inte registreras går förlorat.
+      criteria:
+        - method: inspection
+          text: Varje misslyckat verifieringsresultat de senaste 3 månaderna länkar till en avvikelse, och varje stängd avvikelse länkar till en godkänd ny verifiering med sin konfiguration.
+
+  - id: SYINT-15
+    type: business
+    obligation: must
+    priority: critical
+    tags: [verification-summary, acceptance, waivers]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)", "ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    tests: [SYINT-T11]
+    en:
+      title: Verification summary before acceptance
+      description: Before acceptance, the project MUST issue a verification summary that shows, for each requirement in the product baseline, a passed verification or an approved waiver, and that lists each open anomaly with its severity.
+      rationale: The summary is the evidence that the delivered system meets its requirements, and the customer accepts it on that basis.
+      criteria:
+        - method: inspection
+          text: The summary covers each requirement of the product baseline with a passed result or a waiver signed by the customer, and lists 0 open anomalies of the highest severity.
+          threshold: 0 unverified requirements without a waiver
+    sv:
+      title: Sammanställning av verifieringen före godkännande
+      description: Före godkännandet SKA projektet ge ut en sammanställning av verifieringen som för varje krav i produktbaslinjen visar en godkänd verifiering eller ett godkänt undantag, och som anger varje öppen avvikelse med sin allvarlighetsgrad.
+      rationale: Sammanställningen är beviset på att det levererade systemet uppfyller sina krav, och kunden godkänner systemet på den grunden.
+      criteria:
+        - method: inspection
+          text: Sammanställningen omfattar varje krav i produktbaslinjen med ett godkänt resultat eller ett undantag undertecknat av kunden, och anger 0 öppna avvikelser av högsta allvarlighetsgrad.
+          threshold: 0 overifierade krav utan undantag
+
+tests:
+  - id: SYINT-T01
+    priority: high
+    execution: manual
+    tags: [interface-register, icd]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.4 (system architecture definition process)"]
+    en:
+      title: Interface register and interface control documents
+      description: Compares the architecture diagram with the interface register and reviews the interface control documents.
+      preconditions: The architecture diagram, the interface register and the interface control documents with their signatures and revision history.
+      expected: Each interface is registered, specified and agreed by both sides.
+      steps:
+        - action: Match each connection in the architecture diagram with a register entry.
+          expected: Each has an entry with both parties, type, two owners and a controlling document.
+        - action: Read the interface control document of each external interface.
+          expected: It covers connection, electrical characteristics, protocol, data with units and ranges, timing, error handling and version.
+        - action: Compare the signature dates with the implementation start, and read the approvals of each revision.
+          expected: Both sides signed before implementation, and each revision has both approvals.
+    sv:
+      title: Gränssnittsregister och gränssnittsdokument
+      description: Jämför arkitekturdiagrammet med gränssnittsregistret och granskar gränssnittsdokumenten.
+      preconditions: Arkitekturdiagrammet, gränssnittsregistret och gränssnittsdokumenten med underskrifter och revisionshistorik.
+      expected: Varje gränssnitt är registrerat, specificerat och överenskommet av båda sidor.
+      steps:
+        - action: Para ihop varje förbindelse i arkitekturdiagrammet med en post i registret.
+          expected: Var och en har en post med båda parter, typ, två ägare och ett styrande dokument.
+        - action: Läs gränssnittsdokumentet för varje externt gränssnitt.
+          expected: Det omfattar anslutning, elektriska egenskaper, protokoll, data med enheter och områden, tidskrav, felhantering och version.
+        - action: Jämför underskriftsdatumen med implementeringsstarten och läs godkännandena för varje revision.
+          expected: Båda sidor skrev under före implementeringen, och varje revision har båda godkännandena.
+
+  - id: SYINT-T02
+    priority: medium
+    execution: manual
+    tags: [interface-compatibility]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)"]
+    en:
+      title: Simulator tests before first connection
+      description: Checks that each side of each external data interface passed a simulator test before the real elements were connected.
+      preconditions: The list of external data interfaces, the simulator test reports and the integration log with the first connection dates.
+      expected: Each side has a passed simulator test dated before the first connection.
+      steps:
+        - action: Match each side of each external data interface with a simulator test report.
+          expected: Each side has a report with a pass.
+        - action: Compare each report date with the first connection date in the integration log.
+          expected: Each report is earlier.
+    sv:
+      title: Simulatortest före första anslutning
+      description: Kontrollerar att varje sida av varje externt datagränssnitt klarade ett simulatortest innan de verkliga delarna anslöts.
+      preconditions: Listan över externa datagränssnitt, testrapporterna från simulatortesterna och integrationsloggen med datum för första anslutning.
+      expected: Varje sida har ett godkänt simulatortest daterat före första anslutningen.
+      steps:
+        - action: Para ihop varje sida av varje externt datagränssnitt med en testrapport från simulatortest.
+          expected: Varje sida har en godkänd rapport.
+        - action: Jämför datum för varje rapport med datum för första anslutning i integrationsloggen.
+          expected: Varje rapport är tidigare.
+
+  - id: SYINT-T03
+    priority: high
+    execution: manual
+    tags: [integration-strategy, entry-criteria]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.8 (integration process)"]
+    en:
+      title: Integration plan and element entry criteria
+      description: Reviews the integration plan and checks the entry evidence of each integrated element.
+      preconditions: The integration plan, the integration log, the readiness records of the enabling systems and the element verification reports.
+      expected: The plan is complete, enabling systems were ready in time and each element passed its verification before integration.
+      steps:
+        - action: Read the order, build contents and enabling systems in the plan.
+          expected: Each is given with ready dates.
+        - action: Compare each enabling system's ready date with the start of its step.
+          expected: Each was ready first.
+        - action: For each element in the integration log, find its verification report and anomaly review.
+          expected: Both exist, are passed or signed, and are dated before the integration date.
+    sv:
+      title: Integrationsplan och ingångskriterier för delar
+      description: Granskar integrationsplanen och kontrollerar ingångsbeläggen för varje integrerad del.
+      preconditions: Integrationsplanen, integrationsloggen, protokollen över när stödsystemen var klara och verifieringsrapporterna för delarna.
+      expected: Planen är fullständig, stödsystemen var klara i tid och varje del klarade sin verifiering före integrationen.
+      steps:
+        - action: Läs ordning, byggens innehåll och stödsystem i planen.
+          expected: Vart och ett anges med datum när det är klart.
+        - action: Jämför datum när varje stödsystem var klart med starten för dess steg.
+          expected: Varje stödsystem var klart först.
+        - action: Leta upp verifieringsrapporten och granskningen av avvikelser för varje del i integrationsloggen.
+          expected: Båda finns, är godkända eller undertecknade och är daterade före integrationsdatum.
+
+  - id: SYINT-T04
+    priority: high
+    execution: manual
+    tags: [interface-loss, degraded-mode]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.5 (design definition process)"]
+    en:
+      title: Loss of each external interface
+      description: Disconnects each external interface in turn on the integrated system and measures detection and response.
+      preconditions: The integrated system in a test environment, the interface control documents with detection times and degraded modes, and a timer.
+      expected: Each loss is detected in time, alarmed and handled by the defined degraded mode.
+      steps:
+        - action: Disconnect the first external interface and start the timer.
+          expected: An operator alarm naming the interface appears within the stated detection time.
+          data: "default detection time 5 s"
+        - action: Observe the system behaviour after the alarm.
+          expected: The system is in the degraded mode defined for that interface.
+        - action: Reconnect, wait for normal operation and repeat for each other external interface.
+          expected: Each interface gives the same result.
+    sv:
+      title: Förlust av varje externt gränssnitt
+      description: Kopplar bort varje externt gränssnitt i tur och ordning på det integrerade systemet och mäter upptäckt och reaktion.
+      preconditions: Det integrerade systemet i en testmiljö, gränssnittsdokumenten med upptäcktstider och nedsatta driftlägen, och ett tidtagarur.
+      expected: Varje förlust upptäcks i tid, larmas och hanteras av det definierade nedsatta driftläget.
+      steps:
+        - action: Koppla bort det första externa gränssnittet och starta tidtagningen.
+          expected: Ett larm till operatören som anger gränssnittet visas inom den angivna upptäcktstiden.
+          data: "upptäcktstid 5 s som standardvärde"
+        - action: Iaktta systemets beteende efter larmet.
+          expected: Systemet är i det nedsatta driftläge som definierats för gränssnittet.
+        - action: Anslut igen, vänta på normal drift och upprepa för varje annat externt gränssnitt.
+          expected: Varje gränssnitt ger samma resultat.
+
+  - id: SYINT-T05
+    priority: high
+    execution: automated
+    tags: [verification-plan]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    en:
+      title: Verification matrix covers the baseline
+      description: A script compares the requirements baseline with the verification matrix.
+      preconditions: Read access to the requirements baseline and the verification matrix.
+      expected: Each requirement has a complete verification plan entry.
+      steps:
+        - action: List the requirements of the baseline that are missing in the matrix.
+          expected: The list is empty.
+        - action: List the matrix entries with an empty method, level, environment, responsible party or pass criterion.
+          expected: The list is empty.
+    sv:
+      title: Verifieringsmatrisen täcker baslinjen
+      description: Ett skript jämför kravbaslinjen med verifieringsmatrisen.
+      preconditions: Läsbehörighet till kravbaslinjen och verifieringsmatrisen.
+      expected: Varje krav har en fullständig post i verifieringsplanen.
+      steps:
+        - action: Lista de krav i baslinjen som saknas i matrisen.
+          expected: Listan är tom.
+        - action: Lista posterna i matrisen med tom metod, nivå, miljö, ansvarig part eller tomt godkännandekriterium.
+          expected: Listan är tom.
+
+  - id: SYINT-T06
+    priority: medium
+    execution: manual
+    tags: [verification-environment, calibration]
+    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)"]
+    en:
+      title: Recorded configuration and calibrated instruments in results
+      description: Checks the configuration data of sampled results and the calibration of the instruments used.
+      preconditions: Access to the verification results, the register of measuring equipment with calibration history.
+      expected: Each result names its configuration, and each instrument was calibrated on the measurement date.
+      steps:
+        - action: Read 20 randomly chosen verification results.
+          expected: Each names the build of the system under test and the environment items with versions or serial numbers.
+        - action: For 10 quantitative results, look up the instrument in the register.
+          expected: The calibration was valid on the measurement date.
+    sv:
+      title: Registrerad konfiguration och kalibrerade instrument i resultaten
+      description: Kontrollerar konfigurationsuppgifterna i resultat i ett stickprov och kalibreringen av de instrument som använts.
+      preconditions: Åtkomst till verifieringsresultaten och registret över mätutrustning med kalibreringshistorik.
+      expected: Varje resultat anger sin konfiguration, och varje instrument var kalibrerat på mätdagen.
+      steps:
+        - action: Läs 20 slumpvis valda verifieringsresultat.
+          expected: Vart och ett anger bygget av systemet som testas och miljödelarna med versioner eller serienummer.
+        - action: Slå upp instrumentet i registret för 10 kvantitativa resultat.
+          expected: Kalibreringen var giltig på mätdagen.
+
+  - id: SYINT-T07
+    priority: high
+    execution: manual
+    tags: [regression-verification]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    en:
+      title: Regression selection for approved changes
+      description: Reviews the regression selection and results for 3 approved changes.
+      preconditions: 3 approved change requests with their impact analyses, the traceability links, the regression selections and the release dates.
+      expected: Each selection follows the impact analysis and its verifications passed before release.
+      steps:
+        - action: Compare each selection with the impact analysis and the requirements traced to the affected items.
+          expected: Each affected requirement has a selected verification or a reason for leaving it out.
+        - action: Read the results of the selected verifications.
+          expected: Each has a result dated before the release of the changed baseline.
+    sv:
+      title: Urval för regressionsverifiering vid godkända ändringar
+      description: Granskar urvalet och resultaten av regressionsverifieringen för 3 godkända ändringar.
+      preconditions: 3 godkända ändringsbegäranden med konsekvensanalyser, spårbarhetslänkarna, urvalen för regression och releasedatumen.
+      expected: Varje urval följer konsekvensanalysen och dess verifieringar godkändes före releasen.
+      steps:
+        - action: Jämför varje urval med konsekvensanalysen och de krav som spåras till de berörda objekten.
+          expected: Varje berört krav har en vald verifiering eller ett skäl till att det utelämnats.
+        - action: Läs resultaten av de valda verifieringarna.
+          expected: Var och en har ett resultat daterat före releasen av den ändrade baslinjen.
+
+  - id: SYINT-T08
+    priority: high
+    execution: manual
+    tags: [validation]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.11 (validation process)"]
+    en:
+      title: Validation report against the concept of operations
+      description: Compares the validation report with the scenarios of the concept of operations.
+      preconditions: The concept of operations and the validation report with its participant list.
+      expected: Each scenario was performed by intended users in a representative environment.
+      steps:
+        - action: Match each scenario of the concept of operations with an entry in the validation report.
+          expected: Each scenario has an entry with outcome and findings.
+        - action: Read the participants and environment of each entry.
+          expected: Participants are intended users, and the environment is operational or documented as representative.
+    sv:
+      title: Valideringsrapport mot driftkonceptet
+      description: Jämför valideringsrapporten med scenarierna i driftkonceptet.
+      preconditions: Driftkonceptet och valideringsrapporten med sin deltagarlista.
+      expected: Varje scenario genomfördes av avsedda användare i en representativ miljö.
+      steps:
+        - action: Para ihop varje scenario i driftkonceptet med en post i valideringsrapporten.
+          expected: Varje scenario har en post med utfall och iakttagelser.
+        - action: Läs deltagare och miljö för varje post.
+          expected: Deltagarna är avsedda användare, och miljön är driftmiljön eller dokumenterad som representativ.
+
+  - id: SYINT-T09
+    priority: medium
+    execution: manual
+    tags: [independent-verification]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)"]
+    en:
+      title: Independence of safety requirement verification
+      description: Compares the verifiers of safety-related requirements with the design teams.
+      preconditions: The list of safety-related requirements, their verification records and the design team lists.
+      expected: Each verifier or witness is independent of the design.
+      steps:
+        - action: Read the verifier or witness of each safety-related requirement.
+          expected: Each record names a person.
+        - action: Compare each named person with the design team of the element.
+          expected: No named person is on that design team.
+    sv:
+      title: Oberoende vid verifiering av säkerhetskrav
+      description: Jämför verifierarna av säkerhetsrelaterade krav med konstruktionsteamen.
+      preconditions: Listan över säkerhetsrelaterade krav, deras verifieringsprotokoll och listorna över konstruktionsteamen.
+      expected: Varje verifierare eller vittne är oberoende av konstruktionen.
+      steps:
+        - action: Läs verifierare eller vittne för varje säkerhetsrelaterat krav.
+          expected: Varje protokoll anger en person.
+        - action: Jämför varje angiven person med delens konstruktionsteam.
+          expected: Ingen angiven person ingår i det konstruktionsteamet.
+
+  - id: SYINT-T10
+    priority: high
+    execution: automated
+    tags: [anomalies]
+    refs: ["IEEE 1012-2016 (system, software and hardware verification and validation)", "ISO/IEC/IEEE 29119-3:2021"]
+    en:
+      title: Failed results have anomalies and closures have re-verification
+      description: A script cross-checks verification results and anomaly reports of the last 3 months.
+      preconditions: Read access to the verification results and the anomaly tracker.
+      expected: No failed result without an anomaly and no closure without a passed re-verification.
+      steps:
+        - action: List failed or inconclusive results of the last 3 months without a linked anomaly.
+          expected: The list is empty.
+        - action: List anomalies closed in the period without a linked passed re-verification with configuration.
+          expected: The list is empty.
+    sv:
+      title: Misslyckade resultat har avvikelser och stängningar har ny verifiering
+      description: Ett skript stämmer av verifieringsresultat och avvikelserapporter för de senaste 3 månaderna.
+      preconditions: Läsbehörighet till verifieringsresultaten och avvikelsehanteringen.
+      expected: Inget misslyckat resultat utan avvikelse och ingen stängning utan godkänd ny verifiering.
+      steps:
+        - action: Lista misslyckade eller ofullständiga resultat från de senaste 3 månaderna utan länkad avvikelse.
+          expected: Listan är tom.
+        - action: Lista avvikelser som stängts under perioden utan länkad godkänd ny verifiering med konfiguration.
+          expected: Listan är tom.
+
+  - id: SYINT-T11
+    priority: critical
+    execution: manual
+    tags: [verification-summary, acceptance]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.9 (verification process)", "ISO/IEC/IEEE 15288:2023 §6.4.10 (transition process)"]
+    en:
+      title: Verification summary covers the product baseline
+      description: Compares the verification summary with the product baseline and the anomaly tracker.
+      preconditions: The verification summary, the product baseline, the signed waivers and the anomaly tracker.
+      expected: Each requirement is passed or waived and no open anomaly of the highest severity remains.
+      steps:
+        - action: Match each requirement in the product baseline with the summary.
+          expected: Each has a passed result or a waiver signed by the customer.
+        - action: Compare the open anomalies in the summary with the tracker.
+          expected: The lists match and no anomaly of the highest severity is open.
+    sv:
+      title: Sammanställningen av verifieringen täcker produktbaslinjen
+      description: Jämför sammanställningen av verifieringen med produktbaslinjen och avvikelsehanteringen.
+      preconditions: Sammanställningen av verifieringen, produktbaslinjen, de undertecknade undantagen och avvikelsehanteringen.
+      expected: Varje krav är godkänt eller undantaget och ingen öppen avvikelse av högsta allvarlighetsgrad finns kvar.
+      steps:
+        - action: Para ihop varje krav i produktbaslinjen med sammanställningen.
+          expected: Varje krav har ett godkänt resultat eller ett undantag undertecknat av kunden.
+        - action: Jämför de öppna avvikelserna i sammanställningen med avvikelsehanteringen.
+          expected: Listorna stämmer och ingen avvikelse av högsta allvarlighetsgrad är öppen.

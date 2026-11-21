@@ -1,0 +1,638 @@
+area: hw-emc-safety
+prefix: HWEMC
+group: privacy
+catalogue: hardware
+name: {en: "Electrical safety, EMC and CE marking", sv: "Elsäkerhet, EMC och CE-märkning"}
+description:
+  en: Conformity of electrical and electronic products with the Low Voltage Directive 2014/35/EU and the EMC Directive 2014/30/EU, covering the directive matrix, electrical safety tests, insulation, emission and immunity, technical documentation, the EU declaration of conformity, CE marking, product identification, rating labels and instructions.
+  sv: Överensstämmelse för elektriska och elektroniska produkter med lågspänningsdirektivet 2014/35/EU och EMC-direktivet 2014/30/EU, med förteckning över tillämpliga direktiv, elsäkerhetsprovning, isolation, emission och immunitet, teknisk dokumentation, EU-försäkran om överensstämmelse, CE-märkning, produktidentifiering, märkskyltar och instruktioner.
+
+requirements:
+  - id: HWEMC-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [directives, conformity, compliance-matrix]
+    refs: ["Directive 2014/35/EU (LVD) Art. 1", "Directive 2014/30/EU (EMC) Art. 2", "Commission Notice 2022/C 247/01 (Blue Guide)"]
+    tests: [HWEMC-T01]
+    en:
+      title: Directive matrix for each product
+      description: The manufacturer MUST keep, for each product variant, a matrix of the EU product directives and regulations that apply to it (at least LVD, EMC, RED, RoHS, WEEE and the CRA), stating for each why it applies or not and which harmonised standards are used.
+      rationale: Missing one applicable directive makes the whole declaration of conformity wrong, and the matrix is the start of every conformity assessment.
+      criteria:
+        - method: inspection
+          text: The matrix of each product variant on the market covers the six legal acts with a decision and reason each, and lists the harmonised standards with their dates.
+    sv:
+      title: Förteckning över tillämpliga direktiv för varje produkt
+      description: Tillverkaren SKA för varje produktvariant hålla en förteckning över de EU-direktiv och EU-förordningar för produkter som gäller för den (minst LVD, EMC, RED, RoHS, WEEE och CRA), med skälet till att vart och ett gäller eller inte gäller och vilka harmoniserade standarder som används.
+      rationale: Missas ett tillämpligt direktiv blir hela försäkran om överensstämmelse felaktig, och förteckningen är början på varje bedömning av överensstämmelse.
+      criteria:
+        - method: inspection
+          text: Förteckningen för varje produktvariant på marknaden omfattar de sex rättsakterna med beslut och skäl för var och en, och anger de harmoniserade standarderna med datum.
+
+  - id: HWEMC-02
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [electrical-safety, harmonised-standard, type-test]
+    refs: ["Directive 2014/35/EU (LVD) Art. 3", "Directive 2014/35/EU (LVD) Annex I (safety objectives)", "Directive 2014/35/EU (LVD) Art. 12 (presumption of conformity)", "IEC 62368-1:2023"]
+    tests: [HWEMC-T02]
+    en:
+      title: Electrical safety type test against a harmonised standard
+      description: Each product variant MUST pass a type test of electrical safety against the harmonised product safety standard named in the directive matrix (for example EN IEC 62368-1), performed by an accredited laboratory, before it is placed on the market.
+      rationale: A passed type test against a harmonised standard gives presumption of conformity with the safety objectives of the Low Voltage Directive.
+      criteria:
+        - method: inspection
+          text: The type test report names the product variant and hardware revision, the standard and edition, the laboratory and its accreditation, and states a pass for each clause.
+    sv:
+      title: Typprovning av elsäkerhet mot en harmoniserad standard
+      description: Varje produktvariant SKA klara en typprovning av elsäkerhet mot den harmoniserade standard för produktsäkerhet som anges i förteckningen (till exempel EN IEC 62368-1), utförd av ett ackrediterat laboratorium, innan den släpps ut på marknaden.
+      rationale: En godkänd typprovning mot en harmoniserad standard ger presumtion om överensstämmelse med säkerhetsmålen i lågspänningsdirektivet.
+      criteria:
+        - method: inspection
+          text: Typprovningsrapporten anger produktvariant och hårdvarurevision, standard och utgåva, laboratoriet och dess ackreditering, och anger godkänt för varje avsnitt.
+
+  - id: HWEMC-03
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [electric-strength, production-test, insulation]
+    refs: ["IEC 62368-1:2023 (electric strength test)", "Directive 2014/35/EU (LVD) Annex I (safety objectives)"]
+    tests: [HWEMC-T03]
+    en:
+      title: Electric strength test on each produced unit
+      description: Production MUST apply an electric strength test between the mains input and the accessible conductive parts of each unit of a mains-powered product, at the voltage and duration stated in the test specification, and MUST reject each unit that breaks down.
+      rationale: Assembly faults such as pinched wires or solder bridges can bridge the insulation of a single unit even when the design passed its type test.
+      criteria:
+        - method: inspection
+          text: The production test records of one batch show a test result with voltage and duration for each serial number, and each failed unit is marked as rejected.
+          threshold: 100 % of units tested
+    sv:
+      title: Spänningsprovning av varje tillverkad enhet
+      description: Tillverkningen SKA spänningsprova isolationen mellan nätingången och de åtkomliga ledande delarna på varje enhet av en nätansluten produkt, med den spänning och varaktighet som anges i provningsspecifikationen, och kassera varje enhet där isolationen slår igenom.
+      rationale: Monteringsfel som klämda ledare eller lödbryggor kan överbrygga isolationen i en enskild enhet även när konstruktionen har klarat sin typprovning.
+      criteria:
+        - method: inspection
+          text: Produktionens provningsprotokoll för en tillverkningssats visar ett resultat med spänning och varaktighet för varje serienummer, och varje underkänd enhet är markerad som kasserad.
+          threshold: 100 % av enheterna provas
+
+  - id: HWEMC-04
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [creepage, clearance, pcb-layout]
+    refs: ["IEC 60664-1:2020 (insulation coordination)", "IEC 62368-1:2023"]
+    tests: [HWEMC-T02]
+    en:
+      title: Creepage and clearance distances meet the insulation class
+      description: The circuit board layout MUST keep creepage and clearance distances between mains circuits and safety extra-low voltage circuits at or above the values for reinforced insulation at the product's working voltage, pollution degree and altitude stated in the design specification.
+      rationale: Distances below the required values can flash over under overvoltage or contamination and expose the user to mains voltage.
+      criteria:
+        - method: inspection
+          text: A design rule check with the insulation distances as rules reports no violation, and measurements at the 3 narrowest points of the built board meet the values.
+          threshold: 0 violations
+    sv:
+      title: Kryp- och luftavstånd uppfyller isolationsklassen
+      description: Kretskortets layout SKA hålla kryp- och luftavstånden mellan nätkretsar och kretsar med skyddsklenspänning på minst de värden som gäller för förstärkt isolation vid produktens arbetsspänning, föroreningsgrad och höjd över havet enligt konstruktionsspecifikationen.
+      rationale: Avstånd under de föreskrivna värdena kan ge överslag vid överspänning eller nedsmutsning och utsätta användaren för nätspänning.
+      criteria:
+        - method: inspection
+          text: En kontroll av konstruktionsregler med isolationsavstånden som regler rapporterar inga överträdelser, och mätningar vid de 3 smalaste punkterna på det byggda kortet uppfyller värdena.
+          threshold: 0 överträdelser
+
+  - id: HWEMC-05
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [emc, emission, radiated, conducted]
+    refs: ["Directive 2014/30/EU (EMC) Art. 6 (essential requirements)", "Directive 2014/30/EU (EMC) Annex I §1(a) (emission)", "EN 55032:2015 (CISPR 32)"]
+    tests: [HWEMC-T04]
+    en:
+      title: Emissions within the limits of the target class
+      description: Each product variant MUST pass the conducted and radiated emission tests of the harmonised EMC emission standard for its class (class B for residential use), with a margin of at least 3 dB below each limit across the measured frequency range.
+      rationale: Emissions above the limits disturb radio services and other equipment, and a margin covers the spread between produced units.
+      criteria:
+        - method: test
+          text: The accredited test report shows conducted and radiated emissions for the variant, and the highest peak is at least 3 dB below the class limit.
+          threshold: margin ≥ 3 dB
+    sv:
+      title: Emissioner inom gränserna för målklassen
+      description: Varje produktvariant SKA klara provningarna av ledningsbunden och utstrålad emission enligt den harmoniserade EMC-standarden för emission i sin klass (klass B för bostadsmiljö), med en marginal på minst 3 dB under varje gränsvärde över hela det uppmätta frekvensområdet.
+      rationale: Emissioner över gränsvärdena stör radiotjänster och annan utrustning, och en marginal täcker spridningen mellan tillverkade enheter.
+      criteria:
+        - method: test
+          text: Den ackrediterade provningsrapporten visar ledningsbunden och utstrålad emission för varianten, och den högsta toppen ligger minst 3 dB under klassens gränsvärde.
+          threshold: marginal ≥ 3 dB
+
+  - id: HWEMC-06
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [emc, immunity, esd]
+    refs: ["Directive 2014/30/EU (EMC) Annex I §1(b) (immunity)", "EN 55035:2017 (CISPR 35)", "IEC 61000-4-2:2008 (electrostatic discharge immunity)"]
+    tests: [HWEMC-T05]
+    en:
+      title: Immunity to electrostatic discharge, bursts and surges
+      description: Each product variant MUST keep its intended function during and after the immunity tests of the harmonised EMC immunity standard for its environment, including electrostatic discharge of ±4 kV contact and ±8 kV air, with no loss of stored data and no reset.
+      rationale: Products that lose function or data when touched or when other equipment switches nearby fail in the field and cause service calls.
+      criteria:
+        - method: test
+          text: The test report lists each immunity test with level and performance criterion, and the product met criterion A or B in each test with no data loss.
+          threshold: ESD ±4 kV contact, ±8 kV air
+    sv:
+      title: Immunitet mot elektrostatisk urladdning, transienter och stötpulser
+      description: Varje produktvariant SKA behålla sin avsedda funktion under och efter immunitetsprovningarna i den harmoniserade EMC-standarden för immunitet i sin miljö, inklusive elektrostatisk urladdning på ±4 kV vid kontakt och ±8 kV i luft, utan förlust av lagrade data och utan omstart.
+      rationale: Produkter som tappar funktion eller data när de vidrörs eller när annan utrustning slår till i närheten fallerar i fält och orsakar servicebesök.
+      criteria:
+        - method: test
+          text: Provningsrapporten anger varje immunitetsprovning med nivå och funktionskriterium, och produkten uppfyllde kriterium A eller B i varje provning utan dataförlust.
+          threshold: ESD ±4 kV kontakt, ±8 kV luft
+
+  - id: HWEMC-07
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [emc, pre-compliance, design-revision]
+    refs: ["Directive 2014/30/EU (EMC) Art. 7(1) (obligations of manufacturers)", "EN 55032:2015 (CISPR 32)"]
+    tests: [HWEMC-T06]
+    en:
+      title: EMC pre-compliance scan for each hardware revision
+      description: The development team SHOULD run a radiated and conducted emission pre-compliance scan on each new hardware revision before it is released for production, and record the margin to the class limit.
+      rationale: Layout and component changes often shift emissions, and an early scan finds problems before a costly accredited test or a recall.
+      criteria:
+        - method: inspection
+          text: Each hardware revision released in the last 24 months has a pre-compliance scan record with the margin, dated before the release.
+    sv:
+      title: Förprovning av EMC för varje hårdvarurevision
+      description: Utvecklingsteamet BÖR göra en förprovning av utstrålad och ledningsbunden emission på varje ny hårdvarurevision innan den släpps till produktion, och registrera marginalen till klassens gränsvärde.
+      rationale: Ändringar i layout och komponenter flyttar ofta emissionerna, och en tidig mätning hittar problem före en dyr ackrediterad provning eller en återkallelse.
+      criteria:
+        - method: inspection
+          text: Varje hårdvarurevision som släppts de senaste 24 månaderna har ett protokoll från förprovningen med marginalen, daterat före releasen.
+
+  - id: HWEMC-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [technical-documentation, retention]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(3)", "Directive 2014/35/EU (LVD) Annex III §2 (technical documentation)", "Directive 2014/30/EU (EMC) Art. 7(3)", "Directive 2014/30/EU (EMC) Annex II §2 (technical documentation)"]
+    tests: [HWEMC-T07]
+    en:
+      title: Technical documentation kept for ten years
+      description: The manufacturer MUST keep the technical documentation of each product variant (general description, design and manufacturing drawings, risk analysis, list of standards applied, test reports) together with the EU declaration of conformity for 10 years after the last unit is placed on the market.
+      rationale: Market surveillance authorities can ask for the documentation at any time during this period, and missing documents count as non-conformity.
+      criteria:
+        - method: inspection
+          text: The technical file of a sampled variant contains the five listed parts, and the document system shows a retention of 10 years after end of sales.
+          threshold: retention ≥ 10 years
+    sv:
+      title: Teknisk dokumentation bevaras i tio år
+      description: Tillverkaren SKA bevara den tekniska dokumentationen för varje produktvariant (allmän beskrivning, konstruktions- och tillverkningsritningar, riskanalys, förteckning över tillämpade standarder, provningsrapporter) tillsammans med EU-försäkran om överensstämmelse i 10 år efter att den sista enheten släppts ut på marknaden.
+      rationale: Marknadskontrollmyndigheter kan begära dokumentationen när som helst under denna tid, och saknade dokument räknas som bristande överensstämmelse.
+      criteria:
+        - method: inspection
+          text: Den tekniska dokumentationen för en variant i ett stickprov innehåller de fem angivna delarna, och dokumentsystemet visar en bevarandetid på 10 år efter försäljningens slut.
+          threshold: bevarande ≥ 10 år
+
+  - id: HWEMC-09
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [declaration-of-conformity, ce-marking]
+    refs: ["Directive 2014/35/EU (LVD) Art. 15 (EU declaration of conformity)", "Directive 2014/35/EU (LVD) Annex IV", "Directive 2014/30/EU (EMC) Art. 15 (EU declaration of conformity)", "Directive 2014/30/EU (EMC) Annex IV"]
+    tests: [HWEMC-T01]
+    en:
+      title: Signed EU declaration of conformity for each variant
+      description: The manufacturer MUST issue a single EU declaration of conformity for each product variant that identifies the product, lists each applicable directive and regulation with the harmonised standards and their dates, and is signed by a named person on behalf of the manufacturer before market placement.
+      rationale: The declaration is the manufacturer's legal statement of compliance and the document that distributors and authorities ask for first.
+      criteria:
+        - method: inspection
+          text: The declaration of each variant on the market matches the directive matrix, carries a signature with name, function, place and date, and the date is before the first shipment.
+    sv:
+      title: Undertecknad EU-försäkran om överensstämmelse för varje variant
+      description: Tillverkaren SKA utfärda en samlad EU-försäkran om överensstämmelse för varje produktvariant som identifierar produkten, anger varje tillämpligt direktiv och varje tillämplig förordning med de harmoniserade standarderna och deras datum, och som undertecknats av en namngiven person för tillverkarens räkning före utsläppandet på marknaden.
+      rationale: Försäkran är tillverkarens juridiska intygande om efterlevnad och det dokument som distributörer och myndigheter frågar efter först.
+      criteria:
+        - method: inspection
+          text: Försäkran för varje variant på marknaden stämmer med förteckningen över direktiv, bär underskrift med namn, befattning, ort och datum, och datumet ligger före första leveransen.
+
+  - id: HWEMC-10
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [ce-marking, labelling]
+    refs: ["Directive 2014/35/EU (LVD) Art. 17 (rules for affixing the CE marking)", "Directive 2014/30/EU (EMC) Art. 17 (rules for affixing the CE marking)", "Regulation (EC) No 765/2008 Art. 30 (general principles of the CE marking)", "Regulation (EC) No 765/2008 Annex II (CE marking)"]
+    tests: [HWEMC-T08]
+    en:
+      title: CE marking visible, legible and indelible
+      description: The CE marking MUST be affixed to the product or its data plate with the proportions of the official graphic and a height of at least 5 mm, so that it is visible, legible and indelible, and it MUST also appear on the packaging and the accompanying documents.
+      rationale: A missing or malformed CE marking stops products at customs and in market surveillance even when the product itself complies.
+      criteria:
+        - method: inspection
+          text: On 5 sampled units the marking measures at least 5 mm, matches the official proportions and remains legible after 15 s of rubbing with a cloth soaked in water and then in petroleum spirit.
+          threshold: height ≥ 5 mm
+    sv:
+      title: CE-märkningen är synlig, läsbar och outplånlig
+      description: CE-märkningen SKA anbringas på produkten eller dess märkskylt med proportionerna i den officiella symbolen och en höjd på minst 5 mm så att den är synlig, läsbar och outplånlig, och den SKA också finnas på förpackningen och de medföljande dokumenten.
+      rationale: En saknad eller felaktig CE-märkning stoppar produkter i tullen och vid marknadskontroll även när själva produkten uppfyller kraven.
+      criteria:
+        - method: inspection
+          text: På 5 enheter i ett stickprov är märkningen minst 5 mm hög, följer de officiella proportionerna och är läsbar efter 15 s gnidning med en trasa fuktad med vatten och därefter med lacknafta.
+          threshold: höjd ≥ 5 mm
+
+  - id: HWEMC-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [product-identification, serial-number, traceability]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(5)", "Directive 2014/30/EU (EMC) Art. 7(5)"]
+    tests: [HWEMC-T08]
+    en:
+      title: Type, batch or serial number on each unit
+      description: Each unit MUST carry its type designation and a batch or serial number that links it to its production records, marked on the product itself or, where the size of the product does not allow it, on the packaging.
+      rationale: Identification lets the manufacturer and the authorities trace and recall the units affected by a fault.
+      criteria:
+        - method: inspection
+          text: On 5 sampled units the type and serial number are present, and each serial number finds the unit's production test record.
+    sv:
+      title: Typbeteckning och sats- eller serienummer på varje enhet
+      description: Varje enhet SKA bära sin typbeteckning och ett sats- eller serienummer som kopplar den till dess tillverkningsprotokoll, märkt på själva produkten eller, när produktens storlek inte medger det, på förpackningen.
+      rationale: Identifieringen gör att tillverkaren och myndigheterna kan spåra och återkalla de enheter som berörs av ett fel.
+      criteria:
+        - method: inspection
+          text: På 5 enheter i ett stickprov finns typbeteckning och serienummer, och varje serienummer leder till enhetens provningsprotokoll från tillverkningen.
+
+  - id: HWEMC-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [manufacturer-address, labelling]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(6)", "Directive 2014/30/EU (EMC) Art. 7(6)"]
+    tests: [HWEMC-T08]
+    en:
+      title: Manufacturer name and postal address on the product
+      description: The product MUST show the manufacturer's name, registered trade name or trade mark and a single postal address at which the manufacturer can be contacted.
+      rationale: Users and authorities have to be able to reach the party responsible for the product.
+      criteria:
+        - method: inspection
+          text: The label of 5 sampled units shows name and postal address, and a letter to the address is deliverable according to the postal service lookup.
+    sv:
+      title: Tillverkarens namn och postadress på produkten
+      description: Produkten SKA visa tillverkarens namn, registrerade firma eller varumärke och en enda postadress där tillverkaren kan kontaktas.
+      rationale: Användare och myndigheter behöver kunna nå den part som ansvarar för produkten.
+      criteria:
+        - method: inspection
+          text: Etiketten på 5 enheter i ett stickprov visar namn och postadress, och adressen är giltig enligt postens adressökning.
+
+  - id: HWEMC-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [instructions, safety-information, languages]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(7)", "Directive 2014/30/EU (EMC) Art. 7(7)"]
+    tests: [HWEMC-T09]
+    en:
+      title: Instructions and safety information in the language of each market
+      description: Each unit MUST be accompanied by instructions and safety information in the official language or languages of each Member State where it is sold, as listed in the market language table.
+      rationale: Safety information that the user cannot read does not protect them, and the directives require it in a language that the user understands.
+      criteria:
+        - method: inspection
+          text: For each market in the sales plan, the language table lists the languages, and the printed or digital instructions in each language are present in the shipped package.
+    sv:
+      title: Instruktioner och säkerhetsinformation på varje marknads språk
+      description: Varje enhet SKA åtföljas av instruktioner och säkerhetsinformation på det eller de officiella språken i varje medlemsstat där den säljs, enligt tabellen över marknadsspråk.
+      rationale: Säkerhetsinformation som användaren inte kan läsa skyddar inte, och direktiven kräver den på ett språk som användaren förstår.
+      criteria:
+        - method: inspection
+          text: För varje marknad i försäljningsplanen anger språktabellen språken, och de tryckta eller digitala instruktionerna på varje språk finns i den levererade förpackningen.
+
+  - id: HWEMC-14
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [rating-label, markings]
+    refs: ["IEC 62368-1:2023 Annex F (equipment markings, instructions and instructional safeguards)"]
+    tests: [HWEMC-T08]
+    en:
+      title: Electrical rating on the data plate
+      description: The data plate MUST state the rated voltage or voltage range, the rated frequency, the rated current or power and the protection class symbol, in the units and symbols defined by the product safety standard.
+      rationale: Installers and users need the rating to connect the product to a suitable supply and protection.
+      criteria:
+        - method: inspection
+          text: The data plate of 5 sampled units shows the four items, and the values match the measured input current at nominal voltage within 10 %.
+          threshold: rated current within 10 % of measured
+    sv:
+      title: Elektriska märkdata på märkskylten
+      description: Märkskylten SKA ange märkspänning eller spänningsområde, märkfrekvens, märkström eller märkeffekt och symbolen för skyddsklass, med de enheter och symboler som produktsäkerhetsstandarden anger.
+      rationale: Installatörer och användare behöver märkdata för att ansluta produkten till en passande matning och ett passande skydd.
+      criteria:
+        - method: inspection
+          text: Märkskylten på 5 enheter i ett stickprov visar de fyra uppgifterna, och värdena stämmer med uppmätt ingångsström vid nominell spänning inom 10 %.
+          threshold: märkström inom 10 % av uppmätt
+
+  - id: HWEMC-15
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [change-control, conformity, series-production]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(4)", "Directive 2014/30/EU (EMC) Art. 7(4)"]
+    tests: [HWEMC-T10]
+    en:
+      title: Conformity reassessed after each relevant design change
+      description: Before a change of components, layout, enclosure or firmware that can affect electrical safety or EMC enters production, the manufacturer MUST record an assessment of its effect and repeat the tests that the assessment names.
+      rationale: Series production has to stay in conformity, and small changes such as a new power supply or a cheaper capacitor often break it.
+      criteria:
+        - method: inspection
+          text: Each engineering change order of the last 12 months that touches safety or EMC parts has an assessment and, where named, a repeated test report dated before production start.
+    sv:
+      title: Överensstämmelsen bedöms på nytt efter varje relevant konstruktionsändring
+      description: Innan en ändring av komponenter, layout, kapsling eller firmware som kan påverka elsäkerhet eller EMC går in i produktion SKA tillverkaren registrera en bedömning av dess inverkan och göra om de provningar som bedömningen anger.
+      rationale: Serietillverkningen behöver fortsätta att överensstämma, och små ändringar som ett nytt nätaggregat eller en billigare kondensator bryter ofta överensstämmelsen.
+      criteria:
+        - method: inspection
+          text: Varje ändringsorder de senaste 12 månaderna som berör delar för säkerhet eller EMC har en bedömning och, där det anges, en ny provningsrapport daterad före produktionsstart.
+
+tests:
+  - id: HWEMC-T01
+    priority: critical
+    execution: manual
+    tags: [directives, declaration-of-conformity]
+    refs: ["Directive 2014/35/EU (LVD) Art. 15 (EU declaration of conformity)", "Directive 2014/30/EU (EMC) Art. 15 (EU declaration of conformity)"]
+    en:
+      title: Directive matrix and declaration of conformity agree
+      description: Compares the directive matrix of a product variant with its EU declaration of conformity and the shipping records.
+      preconditions: The directive matrix, the EU declaration of conformity and the date of the first shipment of one product variant.
+      expected: The matrix is complete and the declaration matches it and predates the first shipment.
+      steps:
+        - action: Read the matrix decisions for LVD, EMC, RED, RoHS, WEEE and the CRA.
+          expected: Each has a decision, a reason and, where it applies, the harmonised standards with dates.
+        - action: Compare the legal acts and standards in the declaration with the matrix.
+          expected: They match one to one.
+        - action: Read the signature block and compare its date with the first shipment.
+          expected: Name, function, place and date are given, and the date is before the first shipment.
+    sv:
+      title: Förteckningen över direktiv och försäkran om överensstämmelse stämmer
+      description: Jämför förteckningen över direktiv för en produktvariant med dess EU-försäkran om överensstämmelse och leveransuppgifterna.
+      preconditions: Förteckningen över direktiv, EU-försäkran om överensstämmelse och datum för första leveransen av en produktvariant.
+      expected: Förteckningen är fullständig och försäkran stämmer med den och är äldre än första leveransen.
+      steps:
+        - action: Läs förteckningens beslut för LVD, EMC, RED, RoHS, WEEE och CRA.
+          expected: Vart och ett har ett beslut, ett skäl och, där det gäller, de harmoniserade standarderna med datum.
+        - action: Jämför rättsakterna och standarderna i försäkran med förteckningen.
+          expected: De stämmer överens en till en.
+        - action: Läs underskriftsdelen och jämför dess datum med första leveransen.
+          expected: Namn, befattning, ort och datum anges, och datumet ligger före första leveransen.
+
+  - id: HWEMC-T02
+    priority: critical
+    execution: manual
+    tags: [electrical-safety, creepage]
+    refs: ["IEC 62368-1:2023", "IEC 60664-1:2020 (insulation coordination)"]
+    en:
+      title: Safety type test report and insulation distances
+      description: Reviews the safety type test report and measures the insulation distances on a built board.
+      preconditions: The type test report, the design rule check report, a built board of the current revision and a measuring microscope.
+      expected: The report covers the current revision with a pass, and the distances meet the specification.
+      steps:
+        - action: Read the variant, revision, standard, laboratory and verdicts in the type test report.
+          expected: The current revision is named, the laboratory is accredited and each clause is passed.
+        - action: Read the design rule check report for insulation distances.
+          expected: It reports no violation.
+        - action: Measure creepage and clearance at the 3 narrowest points between mains and low-voltage circuits.
+          expected: Each value is at or above the specified reinforced insulation distance.
+    sv:
+      title: Typprovningsrapport för säkerhet och isolationsavstånd
+      description: Granskar typprovningsrapporten för säkerhet och mäter isolationsavstånden på ett byggt kort.
+      preconditions: Typprovningsrapporten, rapporten från kontrollen av konstruktionsregler, ett byggt kort av aktuell revision och ett mätmikroskop.
+      expected: Rapporten omfattar den aktuella revisionen med godkänt resultat, och avstånden uppfyller specifikationen.
+      steps:
+        - action: Läs variant, revision, standard, laboratorium och utlåtanden i typprovningsrapporten.
+          expected: Den aktuella revisionen anges, laboratoriet är ackrediterat och varje avsnitt är godkänt.
+        - action: Läs rapporten från kontrollen av konstruktionsregler för isolationsavstånd.
+          expected: Den rapporterar inga överträdelser.
+        - action: Mät kryp- och luftavstånd vid de 3 smalaste punkterna mellan nätkretsar och lågspänningskretsar.
+          expected: Varje värde är minst lika stort som det specificerade avståndet för förstärkt isolation.
+
+  - id: HWEMC-T03
+    priority: critical
+    execution: manual
+    tags: [electric-strength, production-test]
+    refs: ["IEC 62368-1:2023 (electric strength test)"]
+    en:
+      title: Production electric strength test rejects a faulty unit
+      description: Checks the production test records and runs the tester on a unit with a known insulation fault.
+      preconditions: Access to the production line tester, the test records of one batch and a prepared unit with a reduced insulation distance.
+      expected: Each unit has a record and the faulty unit is rejected.
+      steps:
+        - action: Compare the serial numbers of the batch with the test records.
+          expected: Each serial number has a record with voltage, duration and result.
+        - action: Test the prepared faulty unit on the line tester.
+          expected: The tester reports a breakdown and the unit is marked as rejected.
+    sv:
+      title: Spänningsprovningen i produktionen kasserar en felaktig enhet
+      description: Kontrollerar produktionens provningsprotokoll och kör provutrustningen på en enhet med ett känt isolationsfel.
+      preconditions: Åtkomst till provutrustningen i produktionslinjen, provningsprotokollen för en tillverkningssats och en förberedd enhet med minskat isolationsavstånd.
+      expected: Varje enhet har ett protokoll och den felaktiga enheten kasseras.
+      steps:
+        - action: Jämför tillverkningssatsens serienummer med provningsprotokollen.
+          expected: Varje serienummer har ett protokoll med spänning, varaktighet och resultat.
+        - action: Prova den förberedda felaktiga enheten i provutrustningen.
+          expected: Utrustningen rapporterar genomslag och enheten markeras som kasserad.
+
+  - id: HWEMC-T04
+    priority: critical
+    execution: manual
+    tags: [emc, emission]
+    refs: ["EN 55032:2015 (CISPR 32)"]
+    en:
+      title: Emission test report shows the required margin
+      description: Reviews the accredited emission test report of a product variant.
+      preconditions: The accredited EMC emission test report of the variant and the class limits of the standard.
+      expected: Conducted and radiated emissions are reported with at least 3 dB margin.
+      steps:
+        - action: Read the variant, hardware revision and class in the report.
+          expected: They match the current production revision and class B for a residential product.
+        - action: Read the highest peak in the conducted and in the radiated emission plots.
+          expected: Each is at least 3 dB below the limit line.
+    sv:
+      title: Provningsrapporten för emission visar föreskriven marginal
+      description: Granskar den ackrediterade provningsrapporten för emission för en produktvariant.
+      preconditions: Den ackrediterade provningsrapporten för EMC-emission för varianten och standardens gränsvärden för klassen.
+      expected: Ledningsbunden och utstrålad emission redovisas med minst 3 dB marginal.
+      steps:
+        - action: Läs variant, hårdvarurevision och klass i rapporten.
+          expected: De stämmer med den aktuella produktionsrevisionen och klass B för en produkt för bostadsmiljö.
+        - action: Läs den högsta toppen i diagrammen för ledningsbunden och utstrålad emission.
+          expected: Var och en ligger minst 3 dB under gränslinjen.
+
+  - id: HWEMC-T05
+    priority: critical
+    execution: manual
+    tags: [emc, immunity, esd]
+    refs: ["IEC 61000-4-2:2008 (electrostatic discharge immunity)", "EN 55035:2017 (CISPR 35)"]
+    en:
+      title: Electrostatic discharge on the user-accessible points
+      description: Applies electrostatic discharges to the points a user touches while the product runs a defined function.
+      preconditions: An ESD generator, a ground reference plane setup, a unit running a logged test function with stored data and the list of user-accessible points.
+      expected: The product keeps its function, resets nothing and keeps its data.
+      steps:
+        - action: Apply 10 contact discharges of ±4 kV to each conductive accessible point.
+          expected: The function continues or recovers by itself without a reset, and the log shows no error.
+          data: "±4 kV contact, 10 discharges per polarity and point"
+        - action: Apply 10 air discharges of ±8 kV to each insulating accessible point.
+          expected: The function continues or recovers by itself without a reset.
+          data: "±8 kV air, 10 discharges per polarity and point"
+        - action: Read the stored data after the test.
+          expected: The data equals the data before the test.
+    sv:
+      title: Elektrostatisk urladdning på punkter som användaren kommer åt
+      description: Ger elektrostatiska urladdningar på de punkter som en användare vidrör medan produkten kör en bestämd funktion.
+      preconditions: En ESD-generator, en uppställning med jordreferensplan, en enhet som kör en loggad testfunktion med lagrade data och listan över punkter som användaren kommer åt.
+      expected: Produkten behåller sin funktion, startar inte om och behåller sina data.
+      steps:
+        - action: Ge 10 kontakturladdningar på ±4 kV på varje ledande åtkomlig punkt.
+          expected: Funktionen fortsätter eller återhämtar sig själv utan omstart, och loggen visar inga fel.
+          data: "±4 kV kontakt, 10 urladdningar per polaritet och punkt"
+        - action: Ge 10 lufturladdningar på ±8 kV på varje isolerande åtkomlig punkt.
+          expected: Funktionen fortsätter eller återhämtar sig själv utan omstart.
+          data: "±8 kV luft, 10 urladdningar per polaritet och punkt"
+        - action: Läs de lagrade data efter provningen.
+          expected: Data är desamma som före provningen.
+
+  - id: HWEMC-T06
+    priority: medium
+    execution: manual
+    tags: [pre-compliance]
+    refs: ["EN 55032:2015 (CISPR 32)"]
+    en:
+      title: Pre-compliance records for released revisions
+      description: Compares the hardware revisions released in the last 24 months with the pre-compliance scan records.
+      preconditions: The release history of hardware revisions and the pre-compliance scan records.
+      expected: Each released revision has a scan with a margin, dated before its release.
+      steps:
+        - action: List the hardware revisions released in the last 24 months.
+          expected: The list is complete according to the product data management system.
+        - action: Find the scan record of each revision.
+          expected: Each revision has a record with the margin, dated before its release.
+    sv:
+      title: Protokoll från förprovning för släppta revisioner
+      description: Jämför de hårdvarurevisioner som släppts de senaste 24 månaderna med protokollen från förprovningen.
+      preconditions: Releasehistoriken för hårdvarurevisioner och protokollen från förprovningen.
+      expected: Varje släppt revision har en mätning med marginal, daterad före dess release.
+      steps:
+        - action: Lista de hårdvarurevisioner som släppts de senaste 24 månaderna.
+          expected: Listan är fullständig enligt systemet för produktdata.
+        - action: Leta upp protokollet för varje revision.
+          expected: Varje revision har ett protokoll med marginalen, daterat före dess release.
+
+  - id: HWEMC-T07
+    priority: high
+    execution: manual
+    tags: [technical-documentation]
+    refs: ["Directive 2014/35/EU (LVD) Annex III §2 (technical documentation)", "Directive 2014/30/EU (EMC) Annex II §2 (technical documentation)"]
+    en:
+      title: Technical file is complete and kept long enough
+      description: Opens the technical file of a sampled product variant and its retention setting.
+      preconditions: Access to the document management system and one product variant chosen at random.
+      expected: All five parts are present and kept for 10 years after end of sales.
+      steps:
+        - action: Open the technical file of the variant.
+          expected: It contains the general description, drawings, risk analysis, list of standards and test reports.
+        - action: Read the retention setting of the file.
+          expected: The retention is 10 years after the end of sales date.
+    sv:
+      title: Den tekniska dokumentationen är fullständig och bevaras tillräckligt länge
+      description: Öppnar den tekniska dokumentationen för en produktvariant i ett stickprov och dess inställning för bevarande.
+      preconditions: Åtkomst till dokumenthanteringssystemet och en slumpvis vald produktvariant.
+      expected: Alla fem delarna finns och bevaras i 10 år efter försäljningens slut.
+      steps:
+        - action: Öppna variantens tekniska dokumentation.
+          expected: Den innehåller allmän beskrivning, ritningar, riskanalys, förteckning över standarder och provningsrapporter.
+        - action: Läs dokumentationens inställning för bevarande.
+          expected: Bevarandetiden är 10 år efter datum för försäljningens slut.
+
+  - id: HWEMC-T08
+    priority: high
+    execution: manual
+    tags: [ce-marking, labelling]
+    refs: ["Regulation (EC) No 765/2008 Annex II (CE marking)", "Directive 2014/35/EU (LVD) Art. 6(5)", "Directive 2014/35/EU (LVD) Art. 6(6)", "IEC 62368-1:2023 Annex F (equipment markings, instructions and instructional safeguards)"]
+    en:
+      title: Labels on sampled units
+      description: Inspects the CE marking, identification, manufacturer address and rating on 5 units from stock.
+      preconditions: 5 units taken from finished goods stock, a ruler, a cloth, water and petroleum spirit, and a power meter.
+      expected: Each unit is correctly and durably marked.
+      steps:
+        - action: Measure the CE marking and compare it with the official graphic.
+          expected: It is at least 5 mm high with the official proportions.
+        - action: Rub the marking for 15 s with a water-soaked cloth and then 15 s with a cloth soaked in petroleum spirit.
+          expected: The marking and the data plate remain legible.
+        - action: Read type, serial number, manufacturer name and postal address, and look up the serial number.
+          expected: All are present and the serial number finds the production test record.
+        - action: Read the rating and measure the input current at nominal voltage.
+          expected: Voltage, frequency, current or power and class symbol are shown, and the measured current is within 10 % of the rating.
+    sv:
+      title: Märkning på enheter i ett stickprov
+      description: Kontrollerar CE-märkning, identifiering, tillverkarens adress och märkdata på 5 enheter från lagret.
+      preconditions: 5 enheter tagna från lagret av färdiga varor, en linjal, en trasa, vatten och lacknafta samt en effektmätare.
+      expected: Varje enhet är korrekt och beständigt märkt.
+      steps:
+        - action: Mät CE-märkningen och jämför den med den officiella symbolen.
+          expected: Den är minst 5 mm hög med de officiella proportionerna.
+        - action: Gnid märkningen i 15 s med en trasa fuktad med vatten och därefter i 15 s med en trasa fuktad med lacknafta.
+          expected: Märkningen och märkskylten är fortfarande läsbara.
+        - action: Läs typbeteckning, serienummer, tillverkarens namn och postadress, och slå upp serienumret.
+          expected: Allt finns och serienumret leder till provningsprotokollet från tillverkningen.
+        - action: Läs märkdata och mät ingångsströmmen vid nominell spänning.
+          expected: Spänning, frekvens, ström eller effekt och symbol för skyddsklass visas, och den uppmätta strömmen ligger inom 10 % av märkvärdet.
+
+  - id: HWEMC-T09
+    priority: high
+    execution: manual
+    tags: [instructions, languages]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(7)"]
+    en:
+      title: Instructions in each market language in the shipped package
+      description: Compares the languages in a shipped package with the market language table.
+      preconditions: The sales plan, the market language table and one shipped package per sales region.
+      expected: Each market language is present in the package for that market.
+      steps:
+        - action: Compare the markets in the sales plan with the language table.
+          expected: Each market has its official languages listed.
+        - action: Open each package and list the languages of the instructions and safety information.
+          expected: Each listed language for the region is present.
+    sv:
+      title: Instruktioner på varje marknads språk i den levererade förpackningen
+      description: Jämför språken i en levererad förpackning med tabellen över marknadsspråk.
+      preconditions: Försäljningsplanen, tabellen över marknadsspråk och en levererad förpackning per försäljningsregion.
+      expected: Varje marknadsspråk finns i förpackningen för den marknaden.
+      steps:
+        - action: Jämför marknaderna i försäljningsplanen med språktabellen.
+          expected: Varje marknad har sina officiella språk angivna.
+        - action: Öppna varje förpackning och lista språken i instruktionerna och säkerhetsinformationen.
+          expected: Varje angivet språk för regionen finns.
+
+  - id: HWEMC-T10
+    priority: high
+    execution: manual
+    tags: [change-control]
+    refs: ["Directive 2014/35/EU (LVD) Art. 6(4)", "Directive 2014/30/EU (EMC) Art. 7(4)"]
+    en:
+      title: Engineering changes with a conformity assessment
+      description: Reviews the engineering change orders of the last 12 months that touch safety or EMC parts.
+      preconditions: The engineering change orders of the last 12 months, the list of safety and EMC parts and the production start dates.
+      expected: Each relevant change has an assessment and the repeated tests it names, before production start.
+      steps:
+        - action: Filter the change orders on those that touch a part in the safety or EMC list.
+          expected: The filtered list is produced.
+        - action: For each filtered change, read the assessment and the test reports it names.
+          expected: Each has an assessment and each named test report, dated before production start.
+    sv:
+      title: Konstruktionsändringar med bedömning av överensstämmelse
+      description: Granskar ändringsordrarna för de senaste 12 månaderna som berör delar för säkerhet eller EMC.
+      preconditions: Ändringsordrarna för de senaste 12 månaderna, listan över delar för säkerhet och EMC och datumen för produktionsstart.
+      expected: Varje relevant ändring har en bedömning och de nya provningar som den anger, före produktionsstart.
+      steps:
+        - action: Filtrera ändringsordrarna på dem som berör en del i listan för säkerhet eller EMC.
+          expected: Den filtrerade listan tas fram.
+        - action: Läs bedömningen och de provningsrapporter som anges för varje filtrerad ändring.
+          expected: Var och en har en bedömning och varje angiven provningsrapport, daterade före produktionsstart.
