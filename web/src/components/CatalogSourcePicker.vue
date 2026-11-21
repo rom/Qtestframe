@@ -86,7 +86,7 @@ function apply() {
                 <span>{{ t('catalog.sources.counts', { requirements: t('catalog.nRequirements', { n: s.requirements }, s.requirements), tests: t('catalog.nTests', { n: s.tests }, s.tests) }) }}</span>
               </span>
             </label>
-            <a v-if="s.url" :href="s.url" target="_blank" rel="noopener" class="small" :aria-label="t('catalog.sources.openSource', { name: s.name })"><i class="pi pi-external-link" aria-hidden="true" /></a>
+            <a v-if="s.url" :href="s.url" target="_blank" rel="noopener noreferrer" class="small" :aria-label="t('catalog.sources.openSource', { name: s.name })"><i class="pi pi-external-link" aria-hidden="true" /></a>
           </li>
         </ul>
       </fieldset>

@@ -18,6 +18,7 @@ import {
   nodeCounts,
   nodeLabel,
   originText,
+  refLinks,
   searchScore,
   selectionState,
   sourceLabel,
@@ -218,6 +219,20 @@ describe('display', () => {
   it('describes the origin', () => {
     expect(originText('AUTH-01', ['NIST', 'OWASP'])).toBe('AUTH-01 · NIST · OWASP')
     expect(originText('AUTH-01', null)).toBe('AUTH-01')
+  })
+  it('links the refs to their texts, https only', () => {
+    const targets = [
+      { ref: 'RFC 2119', source: 'ietf-rfc', name: 'IETF RFCs', url: 'https://www.rfc-editor.org/rfc/rfc2119' },
+      { ref: 'Bad', source: 'x', url: 'javascript:alert(1)' },
+      { ref: 'Plain', source: 'p' },
+    ]
+    expect(refLinks(['RFC 2119', 'Bad', 'Plain', 'Unknown'], targets)).toEqual([
+      { ref: 'RFC 2119', source: 'ietf-rfc', name: 'IETF RFCs', url: 'https://www.rfc-editor.org/rfc/rfc2119' },
+      { ref: 'Bad', source: 'x', name: undefined, url: undefined },
+      { ref: 'Plain', source: 'p', name: undefined, url: undefined },
+      { ref: 'Unknown', source: undefined, name: undefined, url: undefined },
+    ])
+    expect(refLinks(['A'], undefined)).toEqual([{ ref: 'A', source: undefined, name: undefined, url: undefined }])
   })
 })
 

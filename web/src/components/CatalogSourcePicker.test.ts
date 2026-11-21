@@ -14,7 +14,7 @@ const flush = async () => {
 }
 
 const src = (id: string, kind: string, name: string, n: number): CatalogSource => ({ id, kind, name, requirements: n, tests: n + 1, catalogues: ['software'], jurisdiction: 'EU' })
-const sources = [src('gdpr', 'law', 'General Data Protection Regulation', 40), src('cra', 'law', 'Cyber Resilience Act', 30), src('iso-27001', 'standard', 'ISO/IEC 27001', 70)]
+const sources = [{ ...src('gdpr', 'law', 'General Data Protection Regulation', 40), url: 'https://eur-lex.europa.eu/eli/reg/2016/679/oj' }, src('cra', 'law', 'Cyber Resilience Act', 30), src('iso-27001', 'standard', 'ISO/IEC 27001', 70)]
 const kinds = [
   { id: 'law', name: 'Laws and regulations' },
   { id: 'standard', name: 'Standards' },
@@ -47,6 +47,10 @@ describe('CatalogSourcePicker', () => {
     expect(cra.checked).toBe(true)
     const label = document.body.querySelector('label[for="src-gdpr"]')
     expect(label?.textContent).toContain('40 requirements · 41 tests')
+    // the official text opens in a new tab, without the opener or referrer
+    const links = [...document.body.querySelectorAll('.src-item a')] as HTMLAnchorElement[]
+    expect(links.map((a) => [a.href, a.target, a.rel])).toEqual([['https://eur-lex.europa.eu/eli/reg/2016/679/oj', '_blank', 'noopener noreferrer']])
+    expect(links[0].getAttribute('aria-label')).toContain('General Data Protection Regulation')
     // choose GDPR too, then apply
     ;(document.body.querySelector('#src-gdpr') as HTMLInputElement).click()
     await flush()

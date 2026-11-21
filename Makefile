@@ -9,7 +9,7 @@ GUIDE_LANGS ?=
 GUIDE_ARGS = --out $(GUIDE_OUT) $(if $(GUIDE_LANGS),--lang $(GUIDE_LANGS))
 
 .PHONY: all build web web-deps go go-pkcs11 test-pkcs11 test-tpm test test-go test-web coverage coverage-go coverage-web \
-        lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf guide-docs
+        lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf guide-docs refs-docs
 
 all: build
 
@@ -94,6 +94,13 @@ guide-pdf: web/node_modules/.package-lock.json
 # use); CI fails when they are out of date with the guide pages
 guide-docs: web/node_modules/.package-lock.json
 	node web/scripts/guide-export.mjs --no-pdf --out docs/user-guide
+
+# the "Sources cited in the catalogue" section of the guide's references
+# page (docs/user-guide/<lang>/references.md), generated from the source
+# registry internal/catalog/data/sources.yaml; go test fails when it is out
+# of date. Then refresh the single-file guides (guide-docs).
+refs-docs:
+	go run ./internal/catalog/cmd/refsdoc -dir docs/user-guide
 
 web/node_modules/.package-lock.json: web/package-lock.json
 	cd web && npm ci

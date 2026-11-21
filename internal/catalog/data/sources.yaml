@@ -11,7 +11,16 @@
 #     match: ["GDPR "]            # prefixes a ref starts with (case sensitive)
 #     regex: ['^OWASP .*Cheat Sheet']   # optional Go regular expressions
 #     clause: 'Art\. \d+'         # optional: the clause group of a ref (default: see FORMAT.md)
-#     url: https://…              # optional
+#     url: https://…              # the official or publisher page (https only)
+#     links:                      # optional: the documents of a family, each with its page
+#       - {label: "IEC 60300-1", url: https://…}           # refs starting with the label link here
+#       - {label: "CISPR 32 (EN 55032)", url: https://…, match: ["EN 55032"]}
+#     ref_links:                  # optional: a link per cited document derived from the ref
+#       - {regex: '^RFC (\d{1,5})\b', label: 'RFC $1', url: 'https://www.rfc-editor.org/rfc/rfc$1'}
+#
+# The "Sources cited in the catalogue" section of the user guide
+# (docs/user-guide/<lang>/references.md) is generated from this file:
+# run `make refs-docs` after a change (go test fails until it is current).
 
 kinds:
   - id: law
@@ -94,46 +103,58 @@ sources:
     jurisdiction: EU
     name: {en: "Methane Emissions Regulation (EU) 2024/1787", sv: "Förordningen om metanutsläpp i energisektorn (EU) 2024/1787"}
     match: ["Regulation (EU) 2024/1787"]
+    url: https://eur-lex.europa.eu/eli/reg/2024/1787/oj
   - id: remit
     kind: law
     jurisdiction: EU
     short: REMIT
     name: {en: "REMIT, Regulation (EU) No 1227/2011 on wholesale energy market integrity", sv: "REMIT, förordning (EU) nr 1227/2011 om integritet och öppenhet på grossistmarknaderna för energi"}
     match: ["Regulation (EU) No 1227/2011"]
+    url: https://eur-lex.europa.eu/eli/reg/2011/1227/oj
   - id: reach
     kind: law
     jurisdiction: EU
     short: REACH
     name: {en: "REACH, Regulation (EC) No 1907/2006", sv: "Reach-förordningen (EG) nr 1907/2006"}
     match: ["Regulation (EC) No 1907/2006"]
+    url: https://eur-lex.europa.eu/eli/reg/2006/1907/oj
   - id: clp
     kind: law
     jurisdiction: EU
     short: CLP
     name: {en: "CLP Regulation (EC) No 1272/2008 on classification, labelling and packaging", sv: "CLP-förordningen (EG) nr 1272/2008 om klassificering, märkning och förpackning"}
     match: ["Regulation (EC) No 1272/2008"]
+    url: https://eur-lex.europa.eu/eli/reg/2008/1272/oj
   - id: e-prtr
     kind: law
     jurisdiction: EU
     short: E-PRTR
     name: {en: "E-PRTR Regulation (EC) No 166/2006", sv: "E-PRTR-förordningen (EG) nr 166/2006"}
     match: ["Regulation (EC) No 166/2006"]
+    url: https://eur-lex.europa.eu/eli/reg/2006/166/oj
   - id: eu-network-codes
     kind: law
     jurisdiction: EU
     name: {en: "EU electricity network codes and guidelines (SO GL, EB GL, NC ER)", sv: "EU:s nätföreskrifter och riktlinjer för el (SO GL, EB GL, NC ER)"}
     match: ["Commission Regulation (EU) 2017/1485", "Commission Regulation (EU) 2017/2195", "Commission Regulation (EU) 2017/2196"]
+    url: https://eur-lex.europa.eu/eli/reg/2017/1485/oj
+    links:
+      - {label: "Commission Regulation (EU) 2017/1485", url: "https://eur-lex.europa.eu/eli/reg/2017/1485/oj"}
+      - {label: "Commission Regulation (EU) 2017/2195", url: "https://eur-lex.europa.eu/eli/reg/2017/2195/oj"}
+      - {label: "Commission Regulation (EU) 2017/2196", url: "https://eur-lex.europa.eu/eli/reg/2017/2196/oj"}
   - id: nccs
     kind: law
     jurisdiction: EU
     short: NCCS
     name: {en: "Network Code on Cybersecurity, Delegated Regulation (EU) 2024/1366", sv: "Nätföreskrifter för cybersäkerhet, delegerad förordning (EU) 2024/1366"}
     match: ["Commission Delegated Regulation (EU) 2024/1366"]
+    url: https://eur-lex.europa.eu/eli/reg_del/2024/1366/oj
   - id: eu-ets-mrr
     kind: law
     jurisdiction: EU
     name: {en: "EU ETS Monitoring and Reporting Regulation (EU) 2018/2066", sv: "Förordningen om övervakning och rapportering inom EU ETS, (EU) 2018/2066"}
     match: ["Commission Implementing Regulation (EU) 2018/2066"]
+    url: https://eur-lex.europa.eu/eli/reg_impl/2018/2066/oj
 
   # ---------------------------------------------------------------- EU directives
   - id: nis2
@@ -158,6 +179,10 @@ sources:
     match: ["Directive 2014/53/EU", "Commission Delegated Regulation (EU) 2022/30", "EN 18031"]
     clause: 'Art\. 3\(3\)\([a-z]\)'
     url: https://eur-lex.europa.eu/eli/dir/2014/53/oj
+    links:
+      - {label: "Directive 2014/53/EU", url: "https://eur-lex.europa.eu/eli/dir/2014/53/oj"}
+      - {label: "Commission Delegated Regulation (EU) 2022/30", url: "https://eur-lex.europa.eu/eli/reg_del/2022/30/oj"}
+      - {label: "EN 18031", url: "https://single-market-economy.ec.europa.eu/single-market/goods/european-standards/harmonised-standards/radio-equipment_en"}
   - id: eprivacy
     kind: directive
     jurisdiction: EU
@@ -172,6 +197,9 @@ sources:
     name: {en: "Payment Services Directive (EU) 2015/2366 (PSD2) with the RTS on strong customer authentication", sv: "Betaltjänstdirektivet (EU) 2015/2366 (PSD2) med tekniska standarder för stark kundautentisering"}
     match: ["PSD2", "Directive (EU) 2015/2366", "Commission Delegated Regulation (EU) 2018/389"]
     url: https://eur-lex.europa.eu/eli/dir/2015/2366/oj
+    links:
+      - {label: "Directive (EU) 2015/2366", url: "https://eur-lex.europa.eu/eli/dir/2015/2366/oj", match: ["Directive (EU) 2015/2366", "PSD2"]}
+      - {label: "Commission Delegated Regulation (EU) 2018/389", url: "https://eur-lex.europa.eu/eli/reg_del/2018/389/oj"}
   - id: eecc
     kind: directive
     jurisdiction: EU
@@ -179,11 +207,15 @@ sources:
     name: {en: "European Electronic Communications Code, Directive (EU) 2018/1972", sv: "Europeiska kodexen för elektronisk kommunikation, direktiv (EU) 2018/1972"}
     match: ["Directive (EU) 2018/1972", "Commission Delegated Regulation (EU) 2023/444"]
     url: https://eur-lex.europa.eu/eli/dir/2018/1972/oj
+    links:
+      - {label: "Directive (EU) 2018/1972", url: "https://eur-lex.europa.eu/eli/dir/2018/1972/oj"}
+      - {label: "Commission Delegated Regulation (EU) 2023/444", url: "https://eur-lex.europa.eu/eli/reg_del/2023/444/oj"}
   - id: electricity-directive
     kind: directive
     jurisdiction: EU
     name: {en: "Electricity Market Directive (EU) 2019/944", sv: "Elmarknadsdirektivet (EU) 2019/944"}
     match: ["Directive (EU) 2019/944"]
+    url: https://eur-lex.europa.eu/eli/dir/2019/944/oj
   - id: energy-efficiency
     kind: directive
     jurisdiction: EU
@@ -196,52 +228,65 @@ sources:
     name: {en: "Web Accessibility Directive (EU) 2016/2102", sv: "Webbtillgänglighetsdirektivet (EU) 2016/2102"}
     match: ["Directive (EU) 2016/2102", "Commission Implementing Decision (EU) 2018/1523"]
     url: https://eur-lex.europa.eu/eli/dir/2016/2102/oj
+    links:
+      - {label: "Directive (EU) 2016/2102", url: "https://eur-lex.europa.eu/eli/dir/2016/2102/oj"}
+      - {label: "Commission Implementing Decision (EU) 2018/1523", url: "https://eur-lex.europa.eu/eli/dec_impl/2018/1523/oj"}
   - id: consumer-rights
     kind: directive
     jurisdiction: EU
     name: {en: "Consumer Rights Directive 2011/83/EU (as amended by Directive (EU) 2023/2673)", sv: "Konsumenträttighetsdirektivet 2011/83/EU (ändrat genom direktiv (EU) 2023/2673)"}
     match: ["Directive 2011/83/EU", "Directive (EU) 2023/2673"]
     url: https://eur-lex.europa.eu/eli/dir/2011/83/oj
+    links:
+      - {label: "Directive 2011/83/EU", url: "https://eur-lex.europa.eu/eli/dir/2011/83/oj"}
+      - {label: "Directive (EU) 2023/2673", url: "https://eur-lex.europa.eu/eli/dir/2023/2673/oj"}
   - id: ucpd
     kind: directive
     jurisdiction: EU
     short: UCPD
     name: {en: "Unfair Commercial Practices Directive 2005/29/EC", sv: "Direktivet om otillbörliga affärsmetoder 2005/29/EG"}
     match: ["Directive 2005/29/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/2005/29/oj
   - id: unfair-terms
     kind: directive
     jurisdiction: EU
     name: {en: "Unfair Contract Terms Directive 93/13/EEC", sv: "Direktivet om oskäliga avtalsvillkor 93/13/EEG"}
     match: ["Directive 93/13/EEC"]
+    url: https://eur-lex.europa.eu/eli/dir/1993/13/oj
   - id: vat
     kind: directive
     jurisdiction: EU
     name: {en: "VAT Directive 2006/112/EC", sv: "Mervärdesskattedirektivet 2006/112/EG"}
     match: ["Directive 2006/112/EC", "Council Directive 2006/112/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/2006/112/oj
   - id: mid
     kind: directive
     jurisdiction: EU
     short: MID
     name: {en: "Measuring Instruments Directive 2014/32/EU", sv: "Mätinstrumentdirektivet 2014/32/EU"}
     match: ["Directive 2014/32/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2014/32/oj
   - id: atex-workplace
     kind: directive
     jurisdiction: EU
     short: ATEX 153
     name: {en: "ATEX Workplace Directive 1999/92/EC", sv: "ATEX-direktivet om arbetsplatser 1999/92/EG"}
     match: ["Directive 1999/92/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/1999/92/oj
   - id: seveso
     kind: directive
     jurisdiction: EU
     short: Seveso III
     name: {en: "Seveso III Directive 2012/18/EU", sv: "Seveso III-direktivet 2012/18/EU"}
     match: ["Directive 2012/18/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2012/18/oj
   - id: ied
     kind: directive
     jurisdiction: EU
     short: IED
     name: {en: "Industrial Emissions Directive 2010/75/EU", sv: "Industriutsläppsdirektivet 2010/75/EU"}
     match: ["Directive 2010/75/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2010/75/oj
 
   # ---------------------------------------------------------------- EU guidance
   - id: edpb
@@ -250,18 +295,23 @@ sources:
     short: EDPB
     name: {en: "EDPB and Article 29 Working Party guidelines", sv: "Riktlinjer från EDPB och artikel 29-gruppen"}
     match: ["EDPB", "Article 29 Working Party"]
+    url: https://www.edpb.europa.eu/documents_en
+    links:
+      - {label: "EDPB Guidelines 9/2022", url: "https://www.edpb.europa.eu/documents/guideline/guidelines-92022-on-personal-data-breach-notification-under-gdpr_en"}
   - id: enisa
     kind: guideline
     jurisdiction: EU
     short: ENISA
     name: {en: "ENISA guidance", sv: "Vägledningar från ENISA"}
     match: ["ENISA"]
+    url: https://www.enisa.europa.eu/publications
   - id: eu-gmp
     kind: guideline
     jurisdiction: EU
     short: EU GMP
     name: {en: "EU Good Manufacturing Practice guidelines (EudraLex Volume 4)", sv: "EU:s riktlinjer för god tillverkningssed (EudraLex volym 4)"}
     match: ["EU GMP"]
+    url: https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en
 
   # ---------------------------------------------------------------- Sweden
   - id: se-cybersakerhetslag
@@ -279,38 +329,51 @@ sources:
     name: {en: "Swedish Protective Security Act (2018:585), Ordinance (2021:955) and regulations", sv: "Säkerhetsskyddslagen (2018:585), säkerhetsskyddsförordningen (2021:955) och föreskrifter"}
     match: ["Säkerhetsskyddslag", "Säkerhetsskyddsförordning", "Försvarsmaktens föreskrifter om säkerhetsskydd", "PMFS 2022:1"]
     clause: '\d+ kap\.'
+    url: https://lagen.nu/2018:585
+    links:
+      - {label: "Säkerhetsskyddslag (2018:585)", url: "https://lagen.nu/2018:585", match: ["Säkerhetsskyddslag"]}
+      - {label: "Säkerhetsskyddsförordning (2021:955)", url: "https://lagen.nu/2021:955", match: ["Säkerhetsskyddsförordning"]}
   - id: se-dos
     kind: law
     jurisdiction: SE
     short: DOS-lagen
     name: {en: "Swedish Act on accessibility of digital public services (2018:1937) and DIGG regulations", sv: "Lagen (2018:1937) om tillgänglighet till digital offentlig service och DIGG:s föreskrifter"}
     match: ["Lag (2018:1937)", "DIGG"]
+    url: https://lagen.nu/2018:1937
+    links:
+      - {label: "Lag (2018:1937)", url: "https://lagen.nu/2018:1937"}
+      - {label: "DIGG MDFFS 2019:2", url: "https://www.digg.se/om-oss/forfattningssamling/foreskrifter-om-tillganglighet-till-digital-offentlig-service-mdffs-20192/grundforfattning-mdffs-20192", match: ["DIGG"]}
   - id: se-lek
     kind: law
     jurisdiction: SE
     short: LEK
     name: {en: "Swedish Electronic Communications Act (2022:482)", sv: "Lagen (2022:482) om elektronisk kommunikation"}
     match: ["Lag (2022:482)", "Swedish Electronic Communications Act"]
+    url: https://lagen.nu/2022:482
   - id: se-bokforingslag
     kind: law
     jurisdiction: SE
     name: {en: "Swedish Bookkeeping Act (1999:1078)", sv: "Bokföringslagen (1999:1078)"}
     match: ["Swedish Accounting Act (1999:1078)", "Swedish Bookkeeping Act (1999:1078)"]
+    url: https://lagen.nu/1999:1078
   - id: se-marknadsforingslag
     kind: law
     jurisdiction: SE
     name: {en: "Swedish Marketing Act (2008:486)", sv: "Marknadsföringslagen (2008:486)"}
     match: ["Swedish Marketing Act"]
+    url: https://lagen.nu/2008:486
   - id: se-patientdatalag
     kind: law
     jurisdiction: SE
     name: {en: "Swedish Patient Data Act (2008:355)", sv: "Patientdatalagen (2008:355)"}
     match: ["Swedish Patient Data Act"]
+    url: https://lagen.nu/2008:355
   - id: se-elberedskapslag
     kind: law
     jurisdiction: SE
     name: {en: "Swedish Electricity Preparedness Act (1997:288)", sv: "Elberedskapslag (1997:288)"}
     match: ["Elberedskapslag"]
+    url: https://lagen.nu/1997:288
 
   # ---------------------------------------------------------------- other national
   - id: fda-21-cfr-11
@@ -319,17 +382,20 @@ sources:
     short: 21 CFR Part 11
     name: {en: "US FDA 21 CFR Part 11 (electronic records and signatures)", sv: "Amerikanska FDA 21 CFR Part 11 (elektroniska register och underskrifter)"}
     match: ["21 CFR Part 11"]
+    url: https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-11
   - id: hipaa
     kind: law
     jurisdiction: US
     short: HIPAA
     name: {en: "HIPAA Security Rule (45 CFR Part 164)", sv: "HIPAA Security Rule (45 CFR del 164)"}
     match: ["HIPAA"]
+    url: https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C
   - id: osha-psm
     kind: law
     jurisdiction: US
     name: {en: "OSHA Process Safety Management, 29 CFR 1910.119", sv: "OSHA processäkerhet, 29 CFR 1910.119"}
     match: ["OSHA 29 CFR 1910.119"]
+    url: https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.119
   - id: nerc-cip
     kind: standard
     jurisdiction: US
@@ -337,17 +403,20 @@ sources:
     name: {en: "NERC Critical Infrastructure Protection standards", sv: "NERC:s standarder för skydd av kritisk infrastruktur (CIP)"}
     match: ["NERC CIP-"]
     clause: 'CIP-\d+'
+    url: https://www.nerc.com/standards/reliability-standards
   - id: hse-hsg250
     kind: guideline
     jurisdiction: UK
     name: {en: "UK HSE HSG250, Guidance on permit-to-work systems", sv: "Brittiska HSE HSG250, vägledning om arbetstillståndssystem"}
     match: ["HSE HSG250"]
+    url: https://www.hse.gov.uk/pubns/books/hsg250.htm
   - id: norsok
     kind: standard
     jurisdiction: "NO"
     short: NORSOK
     name: {en: "NORSOK standards (Norwegian petroleum industry)", sv: "NORSOK-standarder (norsk petroleumindustri)"}
     match: ["NORSOK "]
+    url: https://standard.no/en/sectors/petroleum/
 
   # ---------------------------------------------------------------- ISO/IEC 27000 series
   - id: iso-27001
@@ -363,96 +432,124 @@ sources:
     short: ISO/IEC 27002
     name: {en: "ISO/IEC 27002 Information security controls", sv: "ISO/IEC 27002 Säkerhetsåtgärder för informationssäkerhet"}
     match: ["ISO/IEC 27002"]
+    url: https://www.iso.org/standard/75652.html
   - id: iso-27005
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27005
     name: {en: "ISO/IEC 27005 Information security risk management", sv: "ISO/IEC 27005 Riskhantering för informationssäkerhet"}
     match: ["ISO/IEC 27005"]
+    url: https://www.iso.org/standard/80585.html
   - id: iso-27017
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27017
     name: {en: "ISO/IEC 27017 Information security controls for cloud services", sv: "ISO/IEC 27017 Säkerhetsåtgärder för molntjänster"}
     match: ["ISO/IEC 27017"]
+    url: https://www.iso.org/standard/82878.html
   - id: iso-27018
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27018
     name: {en: "ISO/IEC 27018 Protection of PII in public clouds", sv: "ISO/IEC 27018 Skydd av personuppgifter i publika moln"}
     match: ["ISO/IEC 27018"]
+    url: https://www.iso.org/standard/88150.html
   - id: iso-27019
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27019
     name: {en: "ISO/IEC 27019 Information security for the energy utility industry", sv: "ISO/IEC 27019 Informationssäkerhet för energibranschen"}
     match: ["ISO/IEC 27019"]
+    url: https://www.iso.org/standard/85056.html
   - id: iso-27031
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27031
     name: {en: "ISO/IEC 27031 ICT readiness for business continuity", sv: "ISO/IEC 27031 IT-beredskap för kontinuitet"}
     match: ["ISO/IEC 27031"]
+    url: https://www.iso.org/standard/80975.html
   - id: iso-27033
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27033
     name: {en: "ISO/IEC 27033 Network security", sv: "ISO/IEC 27033 Nätverkssäkerhet"}
     match: ["ISO/IEC 27033"]
+    url: https://www.iso.org/standard/63461.html
+    links:
+      - {label: "ISO/IEC 27033-1", url: "https://www.iso.org/standard/63461.html"}
+      - {label: "ISO/IEC 27033-2", url: "https://www.iso.org/standard/51581.html"}
+      - {label: "ISO/IEC 27033-4", url: "https://www.iso.org/standard/51583.html"}
+      - {label: "ISO/IEC 27033-5", url: "https://www.iso.org/standard/51584.html"}
+      - {label: "ISO/IEC 27033-6", url: "https://www.iso.org/standard/51585.html"}
   - id: iso-27034
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27034
     name: {en: "ISO/IEC 27034 Application security", sv: "ISO/IEC 27034 Applikationssäkerhet"}
     match: ["ISO/IEC 27034"]
+    url: https://www.iso.org/standard/44378.html
   - id: iso-27035
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27035
     name: {en: "ISO/IEC 27035 Information security incident management", sv: "ISO/IEC 27035 Hantering av informationssäkerhetsincidenter"}
     match: ["ISO/IEC 27035"]
+    url: https://www.iso.org/standard/78973.html
+    links:
+      - {label: "ISO/IEC 27035-1", url: "https://www.iso.org/standard/78973.html"}
+      - {label: "ISO/IEC 27035-2", url: "https://www.iso.org/standard/78974.html"}
   - id: iso-27036
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27036
     name: {en: "ISO/IEC 27036 Information security for supplier relationships", sv: "ISO/IEC 27036 Informationssäkerhet i leverantörsrelationer"}
     match: ["ISO/IEC 27036"]
+    url: https://www.iso.org/standard/82060.html
+    links:
+      - {label: "ISO/IEC 27036-2", url: "https://www.iso.org/standard/82060.html"}
+      - {label: "ISO/IEC 27036-3", url: "https://www.iso.org/standard/82890.html"}
   - id: iso-27037
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27037
     name: {en: "ISO/IEC 27037 Handling of digital evidence", sv: "ISO/IEC 27037 Hantering av digitala bevis"}
     match: ["ISO/IEC 27037"]
+    url: https://www.iso.org/standard/44381.html
   - id: iso-27040
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27040
     name: {en: "ISO/IEC 27040 Storage security", sv: "ISO/IEC 27040 Lagringssäkerhet"}
     match: ["ISO/IEC 27040"]
+    url: https://www.iso.org/standard/80194.html
   - id: iso-27701
     kind: standard
     jurisdiction: international
     short: ISO/IEC 27701
     name: {en: "ISO/IEC 27701 Privacy information management", sv: "ISO/IEC 27701 Ledningssystem för integritetsskydd"}
     match: ["ISO/IEC 27701"]
+    url: https://www.iso.org/standard/85819.html
   - id: iso-29147
     kind: standard
     jurisdiction: international
     short: ISO/IEC 29147
     name: {en: "ISO/IEC 29147 Vulnerability disclosure", sv: "ISO/IEC 29147 Offentliggörande av sårbarheter"}
     match: ["ISO/IEC 29147"]
+    url: https://www.iso.org/standard/72311.html
   - id: iso-30111
     kind: standard
     jurisdiction: international
     short: ISO/IEC 30111
     name: {en: "ISO/IEC 30111 Vulnerability handling processes", sv: "ISO/IEC 30111 Processer för sårbarhetshantering"}
     match: ["ISO/IEC 30111"]
+    url: https://www.iso.org/standard/69725.html
   - id: iso-42001
     kind: standard
     jurisdiction: international
     short: ISO/IEC 42001
     name: {en: "ISO/IEC 42001 AI management systems", sv: "ISO/IEC 42001 Ledningssystem för AI"}
     match: ["ISO/IEC 42001"]
+    url: https://www.iso.org/standard/81230.html
 
   # ---------------------------------------------------------------- IEC 62443
   - id: iec-62443-2-1
@@ -461,42 +558,49 @@ sources:
     short: IEC 62443-2-1
     name: {en: "IEC 62443-2-1 Security programme requirements for asset owners", sv: "IEC 62443-2-1 Krav på säkerhetsprogram för anläggningsägare"}
     match: ["IEC 62443-2-1"]
+    url: https://webstore.iec.ch/en/publication/62883
   - id: iec-62443-2-3
     kind: standard
     jurisdiction: international
     short: IEC 62443-2-3
     name: {en: "IEC TR 62443-2-3 Patch management in the IACS environment", sv: "IEC TR 62443-2-3 Patchhantering i industriella styrsystem"}
     match: ["IEC 62443-2-3", "IEC TR 62443-2-3"]
+    url: https://webstore.iec.ch/en/publication/22811
   - id: iec-62443-2-4
     kind: standard
     jurisdiction: international
     short: IEC 62443-2-4
     name: {en: "IEC 62443-2-4 Security programme requirements for IACS service providers", sv: "IEC 62443-2-4 Krav på säkerhetsprogram för tjänsteleverantörer"}
     match: ["IEC 62443-2-4"]
+    url: https://webstore.iec.ch/en/publication/67631
   - id: iec-62443-3-2
     kind: standard
     jurisdiction: international
     short: IEC 62443-3-2
     name: {en: "IEC 62443-3-2 Security risk assessment for system design", sv: "IEC 62443-3-2 Säkerhetsriskbedömning för systemdesign"}
     match: ["IEC 62443-3-2"]
+    url: https://webstore.iec.ch/en/publication/30727
   - id: iec-62443-3-3
     kind: standard
     jurisdiction: international
     short: IEC 62443-3-3
     name: {en: "IEC 62443-3-3 System security requirements and security levels", sv: "IEC 62443-3-3 Säkerhetskrav och säkerhetsnivåer för system"}
     match: ["IEC 62443-3-3"]
+    url: https://webstore.iec.ch/en/publication/7033
   - id: iec-62443-4-1
     kind: standard
     jurisdiction: international
     short: IEC 62443-4-1
     name: {en: "IEC 62443-4-1 Secure product development lifecycle requirements", sv: "IEC 62443-4-1 Krav på säker produktutvecklingsprocess"}
     match: ["IEC 62443-4-1"]
+    url: https://webstore.iec.ch/en/publication/33615
   - id: iec-62443-4-2
     kind: standard
     jurisdiction: international
     short: IEC 62443-4-2
     name: {en: "IEC 62443-4-2 Technical security requirements for IACS components", sv: "IEC 62443-4-2 Tekniska säkerhetskrav för komponenter i industriella styrsystem"}
     match: ["IEC 62443-4-2"]
+    url: https://webstore.iec.ch/en/publication/34421
 
   # ---------------------------------------------------------------- quality, usability, engineering
   - id: iso-25010
@@ -506,17 +610,24 @@ sources:
     name: {en: "ISO/IEC 25010 Product quality model", sv: "ISO/IEC 25010 Kvalitetsmodell för produkter"}
     match: ["ISO/IEC 25010"]
     clause: '§\s*\d+\.\d+\.\d+|(?:20(?:11|23)) [a-z][a-z ]+'
+    url: https://www.iso.org/standard/78176.html
   - id: iso-25012
     kind: standard
     jurisdiction: international
     short: ISO/IEC 25012
     name: {en: "ISO/IEC 25012 Data quality model", sv: "ISO/IEC 25012 Kvalitetsmodell för data"}
     match: ["ISO/IEC 25012"]
+    url: https://www.iso.org/standard/35736.html
   - id: iso-25000-measures
     kind: standard
     jurisdiction: international
     name: {en: "ISO/IEC 25000 series quality measurement and reporting (25022, 25023, 25062)", sv: "ISO/IEC 25000-serien, kvalitetsmätning och rapportering (25022, 25023, 25062)"}
     match: ["ISO/IEC 25022", "ISO/IEC 25023", "ISO/IEC 25062"]
+    url: https://www.iso.org/standard/35746.html
+    links:
+      - {label: "ISO/IEC 25022", url: "https://www.iso.org/standard/35746.html"}
+      - {label: "ISO/IEC 25023", url: "https://www.iso.org/standard/35747.html"}
+      - {label: "ISO/IEC 25062", url: "https://www.iso.org/standard/43046.html"}
   - id: iso-9241
     kind: standard
     jurisdiction: international
@@ -524,125 +635,156 @@ sources:
     name: {en: "ISO 9241 Ergonomics of human-system interaction", sv: "ISO 9241 Ergonomi för människa–system-interaktion"}
     match: ["ISO 9241-"]
     clause: 'ISO 9241-\d+'
+    url: https://www.iso.org/standard/63500.html
+    links:
+      - {label: "ISO 9241-11", url: "https://www.iso.org/standard/63500.html", match: ["ISO 9241-11:"]}
+      - {label: "ISO 9241-110", url: "https://www.iso.org/standard/75258.html"}
+      - {label: "ISO 9241-143", url: "https://www.iso.org/standard/53590.html"}
+      - {label: "ISO 9241-303", url: "https://www.iso.org/standard/57992.html"}
   - id: iso-9001
     kind: standard
     jurisdiction: international
     short: ISO 9001
     name: {en: "ISO 9001 Quality management systems", sv: "ISO 9001 Ledningssystem för kvalitet"}
     match: ["ISO 9001"]
+    url: https://www.iso.org/standard/88464.html
   - id: iso-22301
     kind: standard
     jurisdiction: international
     short: ISO 22301
     name: {en: "ISO 22301 Business continuity management systems", sv: "ISO 22301 Ledningssystem för kontinuitet"}
     match: ["ISO 22301"]
+    url: https://www.iso.org/standard/75106.html
   - id: iso-45001
     kind: standard
     jurisdiction: international
     short: ISO 45001
     name: {en: "ISO 45001 Occupational health and safety management systems", sv: "ISO 45001 Ledningssystem för arbetsmiljö"}
     match: ["ISO 45001"]
+    url: https://www.iso.org/standard/63787.html
   - id: iso-17025
     kind: standard
     jurisdiction: international
     short: ISO/IEC 17025
     name: {en: "ISO/IEC 17025 Competence of testing and calibration laboratories", sv: "ISO/IEC 17025 Kompetens hos provnings- och kalibreringslaboratorier"}
     match: ["ISO/IEC 17025"]
+    url: https://www.iso.org/standard/66912.html
   - id: iso-12207
     kind: standard
     jurisdiction: international
     short: ISO/IEC/IEEE 12207
     name: {en: "ISO/IEC/IEEE 12207 Software life cycle processes", sv: "ISO/IEC/IEEE 12207 Livscykelprocesser för programvara"}
     match: ["ISO/IEC/IEEE 12207"]
+    url: https://www.iso.org/standard/63712.html
   - id: iso-26514
     kind: standard
     jurisdiction: international
     short: ISO/IEC/IEEE 26514
     name: {en: "ISO/IEC/IEEE 26514 Design and development of information for users", sv: "ISO/IEC/IEEE 26514 Utformning av användarinformation"}
     match: ["ISO/IEC/IEEE 26514"]
+    url: https://www.iso.org/standard/77451.html
   - id: iso-29119
     kind: standard
     jurisdiction: international
     short: ISO/IEC/IEEE 29119
     name: {en: "ISO/IEC/IEEE 29119 Software testing", sv: "ISO/IEC/IEEE 29119 Programvarutestning"}
     match: ["ISO/IEC/IEEE 29119"]
+    url: https://www.iso.org/standard/79429.html
+    links:
+      - {label: "ISO/IEC/IEEE 29119-3", url: "https://www.iso.org/standard/79429.html"}
   - id: iso-42010
     kind: standard
     jurisdiction: international
     short: ISO/IEC/IEEE 42010
     name: {en: "ISO/IEC/IEEE 42010 Architecture description", sv: "ISO/IEC/IEEE 42010 Arkitekturbeskrivning"}
     match: ["ISO/IEC/IEEE 42010"]
+    url: https://www.iso.org/standard/74393.html
   - id: iso-19941
     kind: standard
     jurisdiction: international
     short: ISO/IEC 19941
     name: {en: "ISO/IEC 19941 Cloud computing interoperability and portability", sv: "ISO/IEC 19941 Interoperabilitet och portabilitet för molntjänster"}
     match: ["ISO/IEC 19941"]
+    url: https://www.iso.org/standard/66639.html
   - id: iso-20889
     kind: standard
     jurisdiction: international
     short: ISO/IEC 20889
     name: {en: "ISO/IEC 20889 Privacy enhancing data de-identification techniques", sv: "ISO/IEC 20889 Tekniker för avidentifiering av data"}
     match: ["ISO/IEC 20889"]
+    url: https://www.iso.org/standard/69373.html
   - id: iso-21031
     kind: standard
     jurisdiction: international
     short: ISO/IEC 21031
     name: {en: "ISO/IEC 21031 Software Carbon Intensity (SCI) specification", sv: "ISO/IEC 21031 Specifikation för programvarans koldioxidintensitet (SCI)"}
     match: ["ISO/IEC 21031"]
+    url: https://www.iso.org/standard/86612.html
   - id: iso-5230
     kind: standard
     jurisdiction: international
     short: OpenChain
     name: {en: "OpenChain ISO/IEC 5230 Open source licence compliance", sv: "OpenChain ISO/IEC 5230 Efterlevnad av licenser för öppen källkod"}
     match: ["OpenChain ISO/IEC 5230"]
+    url: https://www.iso.org/standard/81039.html
   - id: iso-barcode
     kind: standard
     jurisdiction: international
     name: {en: "ISO/IEC 15415 and 15416 Bar code print quality", sv: "ISO/IEC 15415 och 15416 Utskriftskvalitet för streckkoder"}
     match: ["ISO/IEC 15415", "ISO/IEC 15416"]
+    url: https://www.iso.org/standard/76876.html
+    links:
+      - {label: "ISO/IEC 15415", url: "https://www.iso.org/standard/76876.html"}
+      - {label: "ISO/IEC 15416", url: "https://www.iso.org/standard/83390.html"}
   - id: iso-8601
     kind: standard
     jurisdiction: international
     short: ISO 8601
     name: {en: "ISO 8601 Date and time representation", sv: "ISO 8601 Representation av datum och tid"}
     match: ["ISO 8601"]
+    url: https://www.iso.org/standard/70907.html
   - id: iso-4217
     kind: standard
     jurisdiction: international
     short: ISO 4217
     name: {en: "ISO 4217 Currency codes", sv: "ISO 4217 Valutakoder"}
     match: ["ISO 4217"]
+    url: https://www.iso.org/standard/64758.html
   - id: iso-639
     kind: standard
     jurisdiction: international
     short: ISO 639
     name: {en: "ISO 639 Language codes", sv: "ISO 639 Språkkoder"}
     match: ["ISO 639"]
+    url: https://www.iso.org/standard/74575.html
   - id: iso-32000
     kind: standard
     jurisdiction: international
     short: ISO 32000
     name: {en: "ISO 32000 Portable Document Format (PDF)", sv: "ISO 32000 Portable Document Format (PDF)"}
     match: ["ISO 32000"]
+    url: https://www.iso.org/standard/75839.html
   - id: iso-8000
     kind: standard
     jurisdiction: international
     short: ISO 8000
     name: {en: "ISO 8000 Data quality", sv: "ISO 8000 Datakvalitet"}
     match: ["ISO 8000"]
+    url: https://www.iso.org/standard/60805.html
   - id: iso-14064
     kind: standard
     jurisdiction: international
     short: ISO 14064
     name: {en: "ISO 14064 Greenhouse gas quantification and reporting", sv: "ISO 14064 Kvantifiering och rapportering av växthusgaser"}
     match: ["ISO 14064"]
+    url: https://www.iso.org/standard/66453.html
   - id: ecma-376
     kind: standard
     jurisdiction: international
     short: ECMA-376
     name: {en: "ECMA-376 Office Open XML file formats", sv: "ECMA-376 Office Open XML-filformat"}
     match: ["ECMA-376"]
+    url: https://ecma-international.org/publications-and-standards/standards/ecma-376/
 
   # ---------------------------------------------------------------- industrial, energy, process
   - id: iec-61508
@@ -651,119 +793,159 @@ sources:
     short: IEC 61508
     name: {en: "IEC 61508 Functional safety of E/E/PE safety-related systems", sv: "IEC 61508 Funktionssäkerhet för elektriska, elektroniska och programmerbara säkerhetssystem"}
     match: ["IEC 61508"]
+    url: https://webstore.iec.ch/en/publication/5515
+    links:
+      - {label: "IEC 61508-1", url: "https://webstore.iec.ch/en/publication/5515"}
+      - {label: "IEC 61508-2", url: "https://webstore.iec.ch/en/publication/5516"}
+      - {label: "IEC 61508-3", url: "https://webstore.iec.ch/en/publication/5517"}
+      - {label: "IEC 61508-5", url: "https://webstore.iec.ch/en/publication/5519"}
+      - {label: "IEC 61508-6", url: "https://webstore.iec.ch/en/publication/5520"}
   - id: iec-61511
     kind: standard
     jurisdiction: international
     short: IEC 61511
     name: {en: "IEC 61511 Functional safety for the process industry sector", sv: "IEC 61511 Funktionssäkerhet inom processindustrin"}
     match: ["IEC 61511"]
+    url: https://webstore.iec.ch/en/publication/24241
   - id: iec-62061
     kind: standard
     jurisdiction: international
     short: IEC 62061
     name: {en: "IEC 62061 Functional safety of machinery control systems", sv: "IEC 62061 Funktionssäkerhet för maskiners styrsystem"}
     match: ["IEC 62061"]
+    url: https://webstore.iec.ch/en/publication/59927
   - id: iso-13849
     kind: standard
     jurisdiction: international
     short: ISO 13849
     name: {en: "ISO 13849 Safety-related parts of machine control systems", sv: "ISO 13849 Säkerhetsrelaterade delar av maskiners styrsystem"}
     match: ["ISO 13849"]
+    url: https://www.iso.org/standard/73481.html
+    links:
+      - {label: "ISO 13849-1", url: "https://www.iso.org/standard/73481.html"}
+      - {label: "ISO 13849-2", url: "https://www.iso.org/standard/53640.html"}
   - id: iec-61131
     kind: standard
     jurisdiction: international
     short: IEC 61131-3
     name: {en: "IEC 61131-3 Programmable controller languages", sv: "IEC 61131-3 Programspråk för programmerbara styrsystem"}
     match: ["IEC 61131"]
+    url: https://webstore.iec.ch/en/publication/4552
   - id: iec-60079
     kind: standard
     jurisdiction: international
     short: IEC 60079
     name: {en: "IEC 60079 Explosive atmospheres", sv: "IEC 60079 Explosiv atmosfär"}
     match: ["IEC 60079"]
+    url: https://webstore.iec.ch/en/publication/63327
   - id: isa-88
     kind: standard
     jurisdiction: international
     short: ISA-88
     name: {en: "ISA-88 / IEC 61512 Batch control", sv: "ISA-88 / IEC 61512 Satsvis processtyrning"}
     match: ["ANSI/ISA-88", "IEC 61512"]
+    url: https://www.isa.org/standards-and-publications/isa-standards/isa-88-standards
+    links:
+      - {label: "IEC 61512-1", url: "https://webstore.iec.ch/en/publication/75287"}
   - id: isa-95
     kind: standard
     jurisdiction: international
     short: ISA-95
     name: {en: "ISA-95 / IEC 62264 Enterprise-control system integration", sv: "ISA-95 / IEC 62264 Integration mellan affärs- och styrsystem"}
     match: ["ANSI/ISA-95", "IEC 62264"]
+    url: https://www.isa.org/standards-and-publications/isa-standards/isa-95-standard
+    links:
+      - {label: "IEC 62264-1", url: "https://www.iso.org/standard/57308.html"}
+      - {label: "IEC 62264-2", url: "https://webstore.iec.ch/en/publication/75127"}
+      - {label: "IEC 62264-3", url: "https://webstore.iec.ch/en/publication/33511"}
   - id: alarm-management
     kind: standard
     jurisdiction: international
     short: ISA-18.2
     name: {en: "ISA-18.2 / IEC 62682 Alarm management", sv: "ISA-18.2 / IEC 62682 Larmhantering"}
     match: ["ANSI/ISA-18.2", "IEC 62682"]
+    url: https://webstore.iec.ch/en/publication/65543
+    links:
+      - {label: "IEC 62682", url: "https://webstore.iec.ch/en/publication/65543"}
   - id: isa-101
     kind: standard
     jurisdiction: international
     short: ISA-101
     name: {en: "ANSI/ISA-101.01 Human machine interfaces for process automation", sv: "ANSI/ISA-101.01 Operatörsgränssnitt för processautomation"}
     match: ["ANSI/ISA-101"]
+    url: https://www.isa.org/standards-and-publications/isa-standards/isa-101-standards
   - id: eemua-191
     kind: guideline
     jurisdiction: international
     short: EEMUA 191
     name: {en: "EEMUA 191 Alarm systems guide", sv: "EEMUA 191 Vägledning för larmsystem"}
     match: ["EEMUA 191"]
+    url: https://www.eemua.org/products/publications/digital/eemua-publication-191
   - id: iso-22400
     kind: standard
     jurisdiction: international
     short: ISO 22400
     name: {en: "ISO 22400 Key performance indicators for manufacturing operations", sv: "ISO 22400 Nyckeltal för tillverkning"}
     match: ["ISO 22400"]
+    url: https://www.iso.org/standard/54497.html
   - id: iso-22514
     kind: standard
     jurisdiction: international
     short: ISO 22514
     name: {en: "ISO 22514 Statistical methods in process management (capability)", sv: "ISO 22514 Statistiska metoder för processtyrning (duglighet)"}
     match: ["ISO 22514"]
+    url: https://www.iso.org/standard/88883.html
   - id: iso-7870
     kind: standard
     jurisdiction: international
     short: ISO 7870
     name: {en: "ISO 7870 Control charts", sv: "ISO 7870 Styrdiagram"}
     match: ["ISO 7870"]
+    url: https://www.iso.org/standard/78859.html
   - id: condition-monitoring
     kind: standard
     jurisdiction: international
     name: {en: "ISO 17359 and ISO 13374 Condition monitoring of machines", sv: "ISO 17359 och ISO 13374 Tillståndsövervakning av maskiner"}
     match: ["ISO 17359", "ISO 13374"]
+    url: https://www.iso.org/standard/71194.html
+    links:
+      - {label: "ISO 17359", url: "https://www.iso.org/standard/71194.html"}
+      - {label: "ISO 13374-1", url: "https://www.iso.org/standard/21832.html"}
   - id: iso-14224
     kind: standard
     jurisdiction: international
     short: ISO 14224
     name: {en: "ISO 14224 Reliability and maintenance data for petroleum and natural gas equipment", sv: "ISO 14224 Tillförlitlighets- och underhållsdata för utrustning inom olja och gas"}
     match: ["ISO 14224"]
+    url: https://www.iso.org/standard/64076.html
   - id: iso-13702
     kind: standard
     jurisdiction: international
     short: ISO 13702
     name: {en: "ISO 13702 Control and mitigation of fires and explosions on offshore installations", sv: "ISO 13702 Kontroll och begränsning av brand och explosion på offshoreanläggningar"}
     match: ["ISO 13702"]
+    url: https://www.iso.org/standard/57416.html
   - id: api-petroleum
     kind: standard
     jurisdiction: US
     short: API
     name: {en: "American Petroleum Institute standards and recommended practices", sv: "American Petroleum Institutes standarder och rekommenderade praxis"}
     match: ["API RP ", "API Std ", "API MPMS "]
+    url: https://www.api.org/products-and-services/standards
   - id: iogp
     kind: guideline
     jurisdiction: international
     short: IOGP
     name: {en: "IOGP reports", sv: "IOGP-rapporter"}
     match: ["IOGP "]
+    url: https://idms.iogp.org/
   - id: ogmp
     kind: practice
     jurisdiction: international
     short: OGMP 2.0
     name: {en: "Oil and Gas Methane Partnership 2.0 reporting framework", sv: "Oil and Gas Methane Partnership 2.0, rapporteringsramverk"}
     match: ["OGMP 2.0"]
+    url: https://ogmpartnership.org/
   - id: dnv-rp-g108
     kind: guideline
     jurisdiction: international
@@ -776,6 +958,7 @@ sources:
     short: PIC/S
     name: {en: "PIC/S guidance on data management and integrity", sv: "PIC/S vägledning om datahantering och dataintegritet"}
     match: ["PIC/S"]
+    url: https://picscheme.org/en/publications
   - id: iec-61850
     kind: standard
     jurisdiction: international
@@ -783,12 +966,20 @@ sources:
     name: {en: "IEC 61850 Communication networks and systems for power utility automation", sv: "IEC 61850 Kommunikation för automation i elnät"}
     match: ["IEC 61850", "IEC/IEEE 61850"]
     clause: '61850-[\d-]+'
+    url: https://webstore.iec.ch/en/publication/6028
+    links:
+      - {label: "IEC 61850-5", url: "https://webstore.iec.ch/en/publication/6012"}
+      - {label: "IEC 61850-7-1", url: "https://webstore.iec.ch/en/publication/6014"}
+      - {label: "IEC 61850-10", url: "https://webstore.iec.ch/en/publication/6008"}
   - id: iec-60870
     kind: standard
     jurisdiction: international
     short: IEC 60870
     name: {en: "IEC 60870 Telecontrol equipment and systems", sv: "IEC 60870 Fjärrkontrollutrustning och system"}
     match: ["IEC 60870"]
+    url: https://webstore.iec.ch/en/publication/3755
+    links:
+      - {label: "IEC 60870-5-104", url: "https://webstore.iec.ch/en/publication/3746"}
   - id: iec-62351
     kind: standard
     jurisdiction: international
@@ -796,18 +987,26 @@ sources:
     name: {en: "IEC 62351 Power systems data and communications security", sv: "IEC 62351 Säkerhet för data och kommunikation i elkraftsystem"}
     match: ["IEC 62351"]
     clause: '62351-\d+'
+    url: https://webstore.iec.ch/en/publication/6912
+    links:
+      - {label: "IEC 62351-5", url: "https://webstore.iec.ch/en/publication/65511"}
+      - {label: "IEC 62351-7", url: "https://webstore.iec.ch/en/publication/30593"}
   - id: iec-cim
     kind: standard
     jurisdiction: international
     short: IEC CIM
     name: {en: "IEC Common Information Model (IEC 61968, 61970, 62325)", sv: "IEC:s gemensamma informationsmodell (IEC 61968, 61970, 62325)"}
     match: ["IEC 61968", "IEC 61970", "IEC 62325"]
+    url: https://webstore.iec.ch/en/publication/62698
+    links:
+      - {label: "IEC 61970-301", url: "https://webstore.iec.ch/en/publication/62698"}
   - id: iec-62056
     kind: standard
     jurisdiction: international
     short: DLMS/COSEM
     name: {en: "IEC 62056 Electricity metering data exchange (DLMS/COSEM)", sv: "IEC 62056 Datautbyte för elmätning (DLMS/COSEM)"}
     match: ["IEC 62056"]
+    url: https://webstore.iec.ch/en/publication/67915
   - id: iec-62541
     kind: standard
     jurisdiction: international
@@ -815,23 +1014,27 @@ sources:
     name: {en: "IEC 62541 OPC Unified Architecture", sv: "IEC 62541 OPC Unified Architecture"}
     match: ["IEC 62541"]
     clause: '62541-\d+'
+    url: https://reference.opcfoundation.org/
   - id: iec-60255-118
     kind: standard
     jurisdiction: international
     name: {en: "IEC/IEEE 60255-118-1 Synchrophasor measurements", sv: "IEC/IEEE 60255-118-1 Synkrofasmätning"}
     match: ["IEC/IEEE 60255-118"]
+    url: https://webstore.iec.ch/en/publication/28722
   - id: ieee-1588
     kind: standard
     jurisdiction: international
     short: IEEE 1588
     name: {en: "IEEE 1588 Precision Time Protocol", sv: "IEEE 1588 Precision Time Protocol"}
     match: ["IEEE 1588"]
+    url: https://standards.ieee.org/ieee/1588/6825/
   - id: ieee-1815
     kind: standard
     jurisdiction: international
     short: DNP3
     name: {en: "IEEE 1815 Distributed Network Protocol (DNP3)", sv: "IEEE 1815 Distributed Network Protocol (DNP3)"}
     match: ["IEEE 1815"]
+    url: https://standards.ieee.org/ieee/1815/5414/
   - id: emissions-monitoring
     kind: standard
     jurisdiction: EU
@@ -846,18 +1049,25 @@ sources:
     name: {en: "EN 301 549 Accessibility requirements for ICT products and services", sv: "EN 301 549 Tillgänglighetskrav för IKT-produkter och tjänster"}
     match: ["EN 301 549"]
     clause: '9\.\d+'
+    url: https://www.etsi.org/deliver/etsi_en/301500_301599/301549/
   - id: etsi-en-303-645
     kind: standard
     jurisdiction: EU
     short: ETSI EN 303 645
     name: {en: "ETSI EN 303 645 Cyber security for consumer IoT", sv: "ETSI EN 303 645 Cybersäkerhet för konsumentprodukter för sakernas internet"}
     match: ["ETSI EN 303 645"]
+    url: https://www.etsi.org/deliver/etsi_en/303600_303699/303645/
   - id: etsi-nfv
     kind: standard
     jurisdiction: international
     short: ETSI NFV
     name: {en: "ETSI NFV specifications (network functions virtualisation)", sv: "ETSI NFV-specifikationer (virtualisering av nätfunktioner)"}
     match: ["ETSI GS NFV"]
+    url: https://www.etsi.org/technologies/nfv
+    links:
+      - {label: "ETSI GS NFV-SEC 001", url: "https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/001/"}
+      - {label: "ETSI GS NFV-SEC 021", url: "https://www.etsi.org/deliver/etsi_gs/NFV-SEC/001_099/021/"}
+      - {label: "ETSI GS NFV-SOL 004", url: "https://www.etsi.org/deliver/etsi_gs/NFV-SOL/001_099/004/"}
   - id: etsi-ts
     kind: standard
     jurisdiction: international
@@ -865,6 +1075,13 @@ sources:
     name: {en: "ETSI technical specifications (lawful interception, retained data, emergency location)", sv: "ETSI tekniska specifikationer (laglig avlyssning, lagrade data, nödpositionering)"}
     match: ["ETSI TS "]
     clause: 'TS \d+ \d+'
+    url: https://www.etsi.org/standards
+    links:
+      - {label: "ETSI TS 102 232-1", url: "https://www.etsi.org/deliver/etsi_ts/102200_102299/10223201/"}
+      - {label: "ETSI TS 102 657", url: "https://www.etsi.org/deliver/etsi_ts/102600_102699/102657/"}
+      - {label: "ETSI TS 103 221-1", url: "https://www.etsi.org/deliver/etsi_ts/103200_103299/10322101/"}
+      - {label: "ETSI TS 103 221-2", url: "https://www.etsi.org/deliver/etsi_ts/103200_103299/10322102/"}
+      - {label: "ETSI TS 103 625", url: "https://www.etsi.org/deliver/etsi_ts/103600_103699/103625/"}
   - id: 3gpp
     kind: standard
     jurisdiction: international
@@ -872,6 +1089,9 @@ sources:
     name: {en: "3GPP technical specifications", sv: "3GPP tekniska specifikationer"}
     match: ["3GPP TS "]
     clause: 'TS \d+\.\d+'
+    url: https://www.3gpp.org/specifications-technologies
+    ref_links:
+      - {regex: '^3GPP TS (\d\d)\.(\d{3})\b', label: '3GPP TS $1.$2', url: 'https://www.3gpp.org/DynaReport/$1$2.htm'}
   - id: gsma
     kind: guideline
     jurisdiction: international
@@ -885,6 +1105,9 @@ sources:
     name: {en: "ITU-T Recommendations", sv: "ITU-T-rekommendationer"}
     match: ["ITU-T "]
     clause: '[A-Z]\.\d+(?:\.\d+)?'
+    url: https://www.itu.int/en/ITU-T/publications/Pages/recs.aspx
+    ref_links:
+      - {regex: '^ITU-T ([A-Z])\.(\d+(?:\.\d+)?)\b', label: 'ITU-T $1.$2', url: 'https://www.itu.int/rec/T-REC-$1.$2'}
   - id: tm-forum
     kind: standard
     jurisdiction: international
@@ -892,30 +1115,35 @@ sources:
     name: {en: "TM Forum Open APIs", sv: "TM Forum Open API:er"}
     match: ["TM Forum "]
     clause: 'TMF\d+'
+    url: https://www.tmforum.org/oda/open-apis
   - id: en-16931
     kind: standard
     jurisdiction: EU
     short: EN 16931
     name: {en: "EN 16931 Electronic invoicing", sv: "EN 16931 Elektronisk fakturering"}
     match: ["EN 16931"]
+    url: https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Obtaining+a+copy+of+the+European+standard+on+eInvoicing
   - id: peppol
     kind: standard
     jurisdiction: international
     short: Peppol
     name: {en: "Peppol BIS Billing", sv: "Peppol BIS Billing"}
     match: ["Peppol "]
+    url: https://docs.peppol.eu/poacc/billing/3.0/
   - id: gs1
     kind: standard
     jurisdiction: international
     short: GS1
     name: {en: "GS1 General Specifications", sv: "GS1 General Specifications"}
     match: ["GS1 "]
+    url: https://www.gs1.org/standards/barcodes-epcrfid-id-keys/gs1-general-specifications
   - id: upu
     kind: standard
     jurisdiction: international
     short: UPU
     name: {en: "Universal Postal Union standards (S42 addressing)", sv: "Världspostföreningens standarder (S42 adressering)"}
     match: ["UPU "]
+    url: https://www.upu.int/en/postal-solutions/programmes-services/addressing-solutions
 
   # ---------------------------------------------------------------- web, application security
   - id: owasp-asvs
@@ -940,12 +1168,14 @@ sources:
     short: OWASP LLM Top 10
     name: {en: "OWASP Top 10 for LLM applications", sv: "OWASP Top 10 för LLM-applikationer"}
     match: ["OWASP Top 10 for LLM"]
+    url: https://genai.owasp.org/llm-top-10/
   - id: owasp-api-top-10
     kind: practice
     jurisdiction: international
     short: OWASP API Top 10
     name: {en: "OWASP API Security Top 10", sv: "OWASP API Security Top 10"}
     match: ["OWASP API Security Top 10"]
+    url: https://owasp.org/API-Security/editions/2023/en/0x11-t10/
   - id: owasp-wstg
     kind: guideline
     jurisdiction: international
@@ -953,6 +1183,7 @@ sources:
     name: {en: "OWASP Web Security Testing Guide", sv: "OWASP Web Security Testing Guide"}
     match: ["OWASP Web Security Testing Guide"]
     clause: 'WSTG-[A-Z]+|§\s*\d+\.\d+'
+    url: https://owasp.org/www-project-web-security-testing-guide/
   - id: owasp-masvs
     kind: standard
     jurisdiction: international
@@ -960,12 +1191,14 @@ sources:
     name: {en: "OWASP Mobile Application Security Verification Standard (MASVS)", sv: "OWASP Mobile Application Security Verification Standard (MASVS)"}
     match: ["OWASP MASVS"]
     clause: 'MASVS-[A-Z]+'
+    url: https://mas.owasp.org/MASVS/
   - id: owasp-samm
     kind: practice
     jurisdiction: international
     short: OWASP SAMM
     name: {en: "OWASP Software Assurance Maturity Model (SAMM)", sv: "OWASP Software Assurance Maturity Model (SAMM)"}
     match: ["OWASP SAMM"]
+    url: https://owaspsamm.org/
   - id: owasp-cheat-sheets
     kind: guideline
     jurisdiction: international
@@ -974,6 +1207,7 @@ sources:
     match: ["OWASP CSV Injection", "OWASP Code Review Guide"]
     regex: ['^OWASP .*Cheat Sheet']
     clause: '^OWASP .*?(?:Cheat Sheet|Guide|Injection)'
+    url: https://cheatsheetseries.owasp.org/
   - id: cwe
     kind: standard
     jurisdiction: international
@@ -982,48 +1216,66 @@ sources:
     match: ["CWE-", "CWE Top 25", "MITRE CWE"]
     clause: 'CWE-\d+'
     url: https://cwe.mitre.org/
+    ref_links:
+      - {regex: '^CWE-(\d+)\b', label: 'CWE-$1', url: 'https://cwe.mitre.org/data/definitions/$1.html'}
   - id: mitre-attack
     kind: practice
     jurisdiction: international
     short: MITRE ATT&CK
     name: {en: "MITRE ATT&CK", sv: "MITRE ATT&CK"}
     match: ["MITRE ATT&CK"]
+    url: https://attack.mitre.org/
+    ref_links:
+      - {regex: '^MITRE ATT&CK (T\d{4})\b', label: 'MITRE ATT&CK $1', url: 'https://attack.mitre.org/techniques/$1/'}
   - id: cve
     kind: practice
     jurisdiction: international
     short: CVE
     name: {en: "CVE Program", sv: "CVE-programmet"}
     match: ["CVE Program"]
+    url: https://www.cve.org/
   - id: cisa
     kind: guideline
     jurisdiction: US
     short: CISA
     name: {en: "CISA guidance and catalogues (KEV, VEX)", sv: "CISA:s vägledningar och kataloger (KEV, VEX)"}
     match: ["CISA "]
+    url: https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+    links:
+      - {label: "CISA Known Exploited Vulnerabilities Catalog", url: "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"}
+      - {label: "CISA Minimum Requirements for VEX", url: "https://www.cisa.gov/resources-tools/resources/minimum-requirements-vulnerability-exploitability-exchange-vex"}
   - id: first
     kind: standard
     jurisdiction: international
     short: FIRST
     name: {en: "FIRST standards and guidelines (CVSS, EPSS, multi-party disclosure)", sv: "FIRST:s standarder och riktlinjer (CVSS, EPSS, samordnat offentliggörande)"}
     match: ["FIRST "]
+    url: https://www.first.org/standards/
+    links:
+      - {label: "FIRST CVSS v4.0", url: "https://www.first.org/cvss/v4.0/specification-document"}
+      - {label: "FIRST EPSS", url: "https://www.first.org/epss/"}
+      - {label: "FIRST Guidelines and Practices for Multi-Party Vulnerability Coordination", url: "https://www.first.org/global/sigs/vulnerability-coordination/multiparty/guidelines-v1.1"}
   - id: cert-cc
     kind: guideline
     jurisdiction: international
     short: CERT/CC
     name: {en: "CERT/CC Guide to Coordinated Vulnerability Disclosure", sv: "CERT/CC:s vägledning om samordnat offentliggörande av sårbarheter"}
     match: ["CERT/CC"]
+    url: https://certcc.github.io/CERT-Guide-to-CVD/
   - id: csaf
     kind: standard
     jurisdiction: international
     short: CSAF
     name: {en: "OASIS Common Security Advisory Framework (CSAF)", sv: "OASIS Common Security Advisory Framework (CSAF)"}
     match: ["OASIS CSAF"]
+    url: https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html
   - id: mqtt
     kind: standard
     jurisdiction: international
     short: MQTT
     name: {en: "OASIS MQTT", sv: "OASIS MQTT"}
     match: ["OASIS MQTT"]
+    url: https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html
   - id: pci-dss
     kind: standard
     jurisdiction: international
@@ -1039,6 +1291,7 @@ sources:
     short: CSA CCM
     name: {en: "CSA Cloud Controls Matrix", sv: "CSA Cloud Controls Matrix"}
     match: ["CSA Cloud Controls Matrix"]
+    url: https://cloudsecurityalliance.org/research/cloud-controls-matrix
   - id: nist-800-63
     kind: guideline
     jurisdiction: US
@@ -1052,78 +1305,102 @@ sources:
     short: NIST SP 800-53
     name: {en: "NIST SP 800-53 Security and privacy controls", sv: "NIST SP 800-53 Säkerhets- och integritetsåtgärder"}
     match: ["NIST SP 800-53"]
+    url: https://doi.org/10.6028/NIST.SP.800-53r5
   - id: nist-ssdf
     kind: practice
     jurisdiction: US
     short: NIST SSDF
     name: {en: "NIST SP 800-218 Secure Software Development Framework (SSDF)", sv: "NIST SP 800-218 Ramverk för säker programvaruutveckling (SSDF)"}
     match: ["NIST SP 800-218"]
+    url: https://doi.org/10.6028/NIST.SP.800-218
   - id: nist-800-61
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-61
     name: {en: "NIST SP 800-61 Computer security incident handling guide", sv: "NIST SP 800-61 Vägledning för hantering av säkerhetsincidenter"}
     match: ["NIST SP 800-61"]
+    url: https://doi.org/10.6028/NIST.SP.800-61r2
   - id: nist-crypto
     kind: standard
     jurisdiction: US
     name: {en: "NIST cryptographic standards and guidelines (FIPS 180-4, SP 800-52, 800-57, 800-90A, 800-107, 800-131A)", sv: "NIST:s kryptografiska standarder och riktlinjer (FIPS 180-4, SP 800-52, 800-57, 800-90A, 800-107, 800-131A)"}
     match: ["NIST FIPS", "NIST SP 800-52", "NIST SP 800-57", "NIST SP 800-90A", "NIST SP 800-107", "NIST SP 800-131A"]
     clause: '(?:FIPS|SP) [\d-]+[A-Z]?'
+    url: https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines
+    links:
+      - {label: "NIST FIPS 180-4", url: "https://doi.org/10.6028/NIST.FIPS.180-4"}
+      - {label: "NIST SP 800-52 Rev. 2", url: "https://doi.org/10.6028/NIST.SP.800-52r2"}
+      - {label: "NIST SP 800-57 Part 1 Rev. 5", url: "https://doi.org/10.6028/NIST.SP.800-57pt1r5"}
+      - {label: "NIST SP 800-90A Rev. 1", url: "https://doi.org/10.6028/NIST.SP.800-90Ar1"}
+      - {label: "NIST SP 800-107 Rev. 1", url: "https://doi.org/10.6028/NIST.SP.800-107r1"}
+      - {label: "NIST SP 800-131A Rev. 2", url: "https://doi.org/10.6028/NIST.SP.800-131Ar2"}
   - id: nist-800-82
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-82
     name: {en: "NIST SP 800-82 Guide to operational technology security", sv: "NIST SP 800-82 Vägledning för säkerhet i driftteknik (OT)"}
     match: ["NIST SP 800-82"]
+    url: https://doi.org/10.6028/NIST.SP.800-82r3
   - id: nist-800-190
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-190
     name: {en: "NIST SP 800-190 Application container security guide", sv: "NIST SP 800-190 Säkerhet för applikationscontainrar"}
     match: ["NIST SP 800-190"]
+    url: https://doi.org/10.6028/NIST.SP.800-190
   - id: nist-800-207
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-207
     name: {en: "NIST SP 800-207 Zero trust architecture", sv: "NIST SP 800-207 Nollförtroendearkitektur"}
     match: ["NIST SP 800-207"]
+    url: https://doi.org/10.6028/NIST.SP.800-207
   - id: nist-800-209
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-209
     name: {en: "NIST SP 800-209 Security guidelines for storage infrastructure", sv: "NIST SP 800-209 Säkerhetsriktlinjer för lagringsinfrastruktur"}
     match: ["NIST SP 800-209"]
+    url: https://doi.org/10.6028/NIST.SP.800-209
   - id: nist-800-34
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-34
     name: {en: "NIST SP 800-34 Contingency planning guide", sv: "NIST SP 800-34 Vägledning för kontinuitetsplanering"}
     match: ["NIST SP 800-34"]
+    url: https://doi.org/10.6028/NIST.SP.800-34r1
   - id: nist-800-84
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-84
     name: {en: "NIST SP 800-84 Test, training and exercise programmes", sv: "NIST SP 800-84 Program för test, utbildning och övning"}
     match: ["NIST SP 800-84"]
+    url: https://doi.org/10.6028/NIST.SP.800-84
   - id: nist-ai
     kind: practice
     jurisdiction: US
     short: NIST AI RMF
     name: {en: "NIST AI Risk Management Framework and Generative AI Profile", sv: "NIST:s ramverk för AI-riskhantering och profilen för generativ AI"}
     match: ["NIST AI "]
+    url: https://www.nist.gov/itl/ai-risk-management-framework
+    links:
+      - {label: "NIST AI RMF 1.0", url: "https://doi.org/10.6028/NIST.AI.100-1"}
+      - {label: "NIST AI 600-1", url: "https://doi.org/10.6028/NIST.AI.600-1"}
+      - {label: "NIST AI 100-2", url: "https://doi.org/10.6028/NIST.AI.100-2e2025"}
   - id: ntia-sbom
     kind: guideline
     jurisdiction: US
     short: NTIA SBOM
     name: {en: "NTIA Minimum Elements for a Software Bill of Materials", sv: "NTIA:s minimikrav för en programvaruförteckning (SBOM)"}
     match: ["NTIA Minimum Elements"]
+    url: https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom
   - id: fema-ics
     kind: practice
     jurisdiction: US
     short: ICS
     name: {en: "FEMA Incident Command System", sv: "FEMA Incident Command System"}
     match: ["FEMA Incident Command System"]
+    url: https://training.fema.gov/emiweb/is/icsresource/
   - id: wcag
     kind: standard
     jurisdiction: international
@@ -1139,12 +1416,26 @@ sources:
     name: {en: "W3C web standards (internationalisation, Trace Context, WebAuthn, CSP, Media Queries)", sv: "W3C:s webbstandarder (internationalisering, Trace Context, WebAuthn, CSP, Media Queries)"}
     match: ["W3C Character Model", "W3C Content Security Policy", "W3C Internationalization", "W3C Personal names", "W3C Structural markup", "W3C Trace Context", "W3C Web Authentication", "CSS Media Queries", "Media Queries Level"]
     clause: '^(?:W3C [A-Za-z ]+?(?: Level \d+)?|(?:CSS )?Media Queries Level \d+)(?:$|[:(]| \()'
+    url: https://www.w3.org/TR/
+    links:
+      - {label: "W3C Character Model for the World Wide Web", url: "https://www.w3.org/TR/charmod/"}
+      - {label: "W3C Character Model: String Matching", url: "https://www.w3.org/TR/charmod-norm/"}
+      - {label: "W3C Content Security Policy Level 3", url: "https://www.w3.org/TR/CSP3/"}
+      - {label: "W3C Internationalization Best Practices", url: "https://www.w3.org/International/techniques/authoring-html"}
+      - {label: "W3C Internationalization: language negotiation", url: "https://www.w3.org/International/questions/qa-accept-lang-locales"}
+      - {label: "W3C Internationalization: text size in translation", url: "https://www.w3.org/International/articles/article-text-size"}
+      - {label: "W3C Personal names around the world", url: "https://www.w3.org/International/questions/qa-personal-names"}
+      - {label: "W3C Structural markup and right-to-left text in HTML", url: "https://www.w3.org/International/questions/qa-html-dir"}
+      - {label: "W3C Trace Context", url: "https://www.w3.org/TR/trace-context/"}
+      - {label: "W3C Web Authentication Level 2", url: "https://www.w3.org/TR/webauthn-2/"}
+      - {label: "Media Queries Level 5", url: "https://www.w3.org/TR/mediaqueries-5/", match: ["Media Queries Level 5", "CSS Media Queries Level 5"]}
   - id: w3c-wsg
     kind: guideline
     jurisdiction: international
     short: WSG
     name: {en: "W3C Web Sustainability Guidelines (WSG)", sv: "W3C:s riktlinjer för hållbar webb (WSG)"}
     match: ["W3C Web Sustainability Guidelines"]
+    url: https://www.w3.org/TR/web-sustainability-guidelines/
   - id: whatwg
     kind: standard
     jurisdiction: international
@@ -1152,6 +1443,10 @@ sources:
     name: {en: "WHATWG Living Standards (HTML, Fetch)", sv: "WHATWG Living Standards (HTML, Fetch)"}
     match: ["HTML Living Standard", "Fetch Living Standard"]
     clause: '^\w+ Living Standard'
+    url: https://spec.whatwg.org/
+    links:
+      - {label: "HTML Living Standard", url: "https://html.spec.whatwg.org/multipage/"}
+      - {label: "Fetch Living Standard", url: "https://fetch.spec.whatwg.org/"}
   - id: ietf-rfc
     kind: standard
     jurisdiction: international
@@ -1160,6 +1455,9 @@ sources:
     match: ["RFC ", "IETF draft-", "Postel's robustness principle"]
     clause: '^RFC \d+\w*|draft-[a-z0-9-]+'
     url: https://www.rfc-editor.org/
+    ref_links:
+      - {regex: '^RFC (\d{1,5})\b', label: 'RFC $1', url: 'https://www.rfc-editor.org/rfc/rfc$1'}
+      - {regex: '^IETF (draft-[a-z0-9-]+)', label: '$1', url: 'https://datatracker.ietf.org/doc/$1/'}
   - id: unicode
     kind: standard
     jurisdiction: international
@@ -1167,53 +1465,72 @@ sources:
     name: {en: "The Unicode Standard, CLDR, ICU and ISO/IEC 10646", sv: "Unicode-standarden, CLDR, ICU och ISO/IEC 10646"}
     match: ["The Unicode Standard", "Unicode ", "ICU MessageFormat", "ISO/IEC 10646"]
     clause: '(?:UAX|UTS) #\d+|CLDR|ICU|10646|Unicode Standard'
+    url: https://www.unicode.org/standard/standard.html
+    links:
+      - {label: "Unicode CLDR", url: "https://cldr.unicode.org/"}
+      - {label: "Unicode UAX #9", url: "https://www.unicode.org/reports/tr9/"}
+      - {label: "Unicode UAX #15", url: "https://www.unicode.org/reports/tr15/"}
+      - {label: "Unicode UTS #10", url: "https://www.unicode.org/reports/tr10/"}
+      - {label: "Unicode UTS #35", url: "https://www.unicode.org/reports/tr35/"}
+      - {label: "ICU MessageFormat", url: "https://unicode-org.github.io/icu/userguide/format_parse/messages/"}
+      - {label: "ISO/IEC 10646", url: "https://www.iso.org/standard/76835.html"}
   - id: iana-tz
     kind: standard
     jurisdiction: international
     short: tz
     name: {en: "IANA Time Zone Database", sv: "IANA:s tidszonsdatabas"}
     match: ["IANA Time Zone Database"]
+    url: https://www.iana.org/time-zones
   - id: openapi
     kind: standard
     jurisdiction: international
     short: OpenAPI
     name: {en: "OpenAPI Specification", sv: "OpenAPI Specification"}
     match: ["OpenAPI Specification"]
+    url: https://spec.openapis.org/oas/v3.1.0
   - id: openid-connect
     kind: standard
     jurisdiction: international
     short: OIDC
     name: {en: "OpenID Connect", sv: "OpenID Connect"}
     match: ["OpenID Connect"]
+    url: https://openid.net/specs/openid-connect-core-1_0.html
   - id: opentelemetry
     kind: standard
     jurisdiction: international
     short: OpenTelemetry
     name: {en: "OpenTelemetry specification", sv: "OpenTelemetry-specifikationen"}
     match: ["OpenTelemetry specification"]
+    url: https://opentelemetry.io/docs/specs/otel/
   - id: openfeature
     kind: standard
     jurisdiction: international
     short: OpenFeature
     name: {en: "OpenFeature specification", sv: "OpenFeature-specifikationen"}
     match: ["OpenFeature specification"]
+    url: https://openfeature.dev/specification/
   - id: standard-webhooks
     kind: standard
     jurisdiction: international
     name: {en: "Standard Webhooks specification", sv: "Standard Webhooks-specifikationen"}
     match: ["Standard Webhooks"]
+    url: https://www.standardwebhooks.com/
   - id: oci
     kind: standard
     jurisdiction: international
     short: OCI
     name: {en: "Open Container Initiative specifications", sv: "Open Container Initiatives specifikationer"}
     match: ["Open Container Initiative"]
+    url: https://opencontainers.org/
+    links:
+      - {label: "Open Container Initiative Image Format Specification", url: "https://github.com/opencontainers/image-spec"}
   - id: c2pa
     kind: standard
     jurisdiction: international
     short: C2PA
     name: {en: "C2PA content credentials specification", sv: "C2PA-specifikationen för innehållsursprung"}
     match: ["C2PA"]
+    url: https://c2pa.org/specifications/specifications/2.1/specs/C2PA_Specification.html
 
   # ---------------------------------------------------------------- supply chain and licences
   - id: slsa
@@ -1222,35 +1539,56 @@ sources:
     short: SLSA
     name: {en: "SLSA supply-chain levels for software artifacts", sv: "SLSA, nivåer för säkerhet i programvarans leveranskedja"}
     match: ["SLSA "]
+    url: https://slsa.dev/spec/v1.0/
   - id: openssf-scorecard
     kind: practice
     jurisdiction: international
     name: {en: "OpenSSF Scorecard", sv: "OpenSSF Scorecard"}
     match: ["OpenSSF Scorecard"]
+    url: https://scorecard.dev/
   - id: cyclonedx
     kind: standard
     jurisdiction: international
     short: CycloneDX
     name: {en: "CycloneDX bill of materials standard", sv: "CycloneDX-standarden för materialförteckningar"}
     match: ["CycloneDX"]
+    url: https://cyclonedx.org/specification/overview/
   - id: spdx
     kind: standard
     jurisdiction: international
     short: SPDX
     name: {en: "SPDX specification and licence list", sv: "SPDX-specifikationen och licenslistan"}
     match: ["SPDX "]
+    url: https://spdx.dev/
+    links:
+      - {label: "SPDX Specification 2.3", url: "https://spdx.github.io/spdx-spec/v2.3/", match: ["SPDX 2.3", "SPDX Specification 2.3"]}
+      - {label: "SPDX License List", url: "https://spdx.org/licenses/"}
   - id: reuse
     kind: practice
     jurisdiction: international
     short: REUSE
     name: {en: "REUSE Specification (licence and copyright information)", sv: "REUSE-specifikationen (licens- och upphovsrättsinformation)"}
     match: ["REUSE Specification"]
+    url: https://reuse.software/spec-3.2/
   - id: oss-licences
     kind: practice
     jurisdiction: international
     name: {en: "Open source and content licence conditions", sv: "Villkor i licenser för öppen källkod och innehåll"}
     match: ["Apache License", "BSD 3-Clause License", "MIT License", "GNU AGPL", "GNU GPL", "GNU LGPL", "Mozilla Public License", "Server Side Public License", "SIL Open Font License", "Creative Commons"]
     clause: '^(?:Apache License|BSD 3-Clause License|MIT License|GNU [A-Z]+|Mozilla Public License|Server Side Public License|SIL Open Font License|Creative Commons)'
+    url: https://opensource.org/licenses
+    links:
+      - {label: "Apache License 2.0", url: "https://www.apache.org/licenses/LICENSE-2.0"}
+      - {label: "BSD 3-Clause License", url: "https://opensource.org/license/bsd-3-clause"}
+      - {label: "MIT License", url: "https://opensource.org/license/mit"}
+      - {label: "GNU AGPL v3", url: "https://www.gnu.org/licenses/agpl-3.0.html"}
+      - {label: "GNU GPL v3", url: "https://www.gnu.org/licenses/gpl-3.0.html"}
+      - {label: "GNU LGPL v2.1", url: "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html"}
+      - {label: "Mozilla Public License 2.0", url: "https://www.mozilla.org/en-US/MPL/2.0/"}
+      - {label: "Server Side Public License v1", url: "https://www.mongodb.com/legal/licensing/server-side-public-license"}
+      - {label: "Creative Commons Attribution-ShareAlike 4.0", url: "https://creativecommons.org/licenses/by-sa/4.0/"}
+      - {label: "Creative Commons licences 4.0", url: "https://creativecommons.org/licenses/"}
+      - {label: "SIL Open Font License 1.1", url: "https://openfontlicense.org/"}
 
   # ---------------------------------------------------------------- operations and engineering practice
   - id: google-sre
@@ -1269,6 +1607,7 @@ sources:
     name: {en: "ITIL 4 service management practices", sv: "ITIL 4, praxis för tjänstehantering"}
     match: ["ITIL 4"]
     clause: 'ITIL 4 [A-Za-z ]+? (?:management|enablement)'
+    url: https://www.axelos.com/certifications/itil-service-management
   - id: twelve-factor
     kind: practice
     jurisdiction: international
@@ -1276,55 +1615,73 @@ sources:
     name: {en: "The Twelve-Factor App", sv: "The Twelve-Factor App"}
     match: ["The Twelve-Factor App"]
     clause: '\b[IVX]+\b'
+    url: https://12factor.net/
   - id: aws-well-architected
     kind: practice
     jurisdiction: international
     name: {en: "AWS Well-Architected Framework", sv: "AWS Well-Architected Framework"}
     match: ["AWS Well-Architected"]
+    url: https://aws.amazon.com/architecture/well-architected/
+    links:
+      - {label: "AWS Well-Architected Framework, Sustainability Pillar", url: "https://docs.aws.amazon.com/wellarchitected/latest/sustainability-pillar/sustainability-pillar.html"}
+      - {label: "AWS Well-Architected SaaS Lens", url: "https://docs.aws.amazon.com/wellarchitected/latest/saas-lens/saas-lens.html"}
   - id: green-software
     kind: practice
     jurisdiction: international
     short: GSF
     name: {en: "Green Software Foundation guidance", sv: "Vägledningar från Green Software Foundation"}
     match: ["Green Software Foundation"]
+    url: https://greensoftware.foundation/
+    links:
+      - {label: "Green Software Foundation: Carbon Aware SDK", url: "https://github.com/Green-Software-Foundation/carbon-aware-sdk"}
+      - {label: "Green Software Foundation: SCI guidance", url: "https://sci-guide.greensoftware.foundation/"}
   - id: ghg-protocol
     kind: standard
     jurisdiction: international
     short: GHG Protocol
     name: {en: "Greenhouse Gas Protocol", sv: "Greenhouse Gas Protocol"}
     match: ["GHG Protocol"]
+    url: https://ghgprotocol.org/
+    links:
+      - {label: "GHG Protocol Scope 3 Standard", url: "https://ghgprotocol.org/corporate-value-chain-scope-3-standard"}
   - id: dora-devops
     kind: practice
     jurisdiction: international
     name: {en: "DORA State of DevOps research", sv: "DORA:s forskning State of DevOps"}
     match: ["DORA State of DevOps"]
+    url: https://dora.dev/research/
   - id: continuous-delivery
     kind: practice
     jurisdiction: international
     name: {en: "Continuous Delivery (Humble and Farley)", sv: "Continuous Delivery (Humble och Farley)"}
     match: ["Humble and Farley"]
+    url: https://continuousdelivery.com/
   - id: feature-toggles
     kind: practice
     jurisdiction: international
     name: {en: "Feature Toggles (Martin Fowler's site)", sv: "Feature Toggles (Martin Fowlers webbplats)"}
     match: ["Martin Fowler: Feature Toggles"]
+    url: https://martinfowler.com/articles/feature-toggles.html
   - id: semver
     kind: standard
     jurisdiction: international
     short: SemVer
     name: {en: "Semantic Versioning", sv: "Semantisk versionshantering"}
     match: ["Semantic Versioning"]
+    url: https://semver.org/spec/v2.0.0.html
   - id: keep-a-changelog
     kind: practice
     jurisdiction: international
     name: {en: "Keep a Changelog", sv: "Keep a Changelog"}
     match: ["Keep a Changelog"]
+    url: https://keepachangelog.com/en/1.1.0/
   - id: m3aawg
     kind: practice
     jurisdiction: international
     short: M3AAWG
     name: {en: "M3AAWG best practices for email", sv: "M3AAWG:s bästa praxis för e-post"}
     match: ["M3AAWG"]
+    url: https://www.m3aawg.org/published-documents
   - id: istqb
     kind: practice
     jurisdiction: international
@@ -1332,12 +1689,16 @@ sources:
     name: {en: "ISTQB syllabi", sv: "ISTQB:s kursplaner"}
     match: ["ISTQB "]
     clause: 'CT[A-Z-]+'
+    url: https://www.istqb.org/
+    links:
+      - {label: "ISTQB CTFL 4.0", url: "https://www.istqb.org/certifications/certified-tester-foundation-level-ctfl-v4-0/"}
   - id: nielsen-heuristics
     kind: practice
     jurisdiction: international
     name: {en: "Nielsen's usability heuristics", sv: "Nielsens användbarhetsheuristiker"}
     match: ["Nielsen heuristic"]
     clause: 'heuristic \d+'
+    url: https://www.nngroup.com/articles/ten-usability-heuristics/
   - id: sus
     kind: practice
     jurisdiction: international
@@ -1350,11 +1711,19 @@ sources:
     name: {en: "Platform design guidelines (Material Design, Apple Human Interface Guidelines)", sv: "Plattformarnas designriktlinjer (Material Design, Apples Human Interface Guidelines)"}
     match: ["Material Design", "Apple Human Interface Guidelines"]
     clause: '^(?:Material Design|Apple Human Interface Guidelines)'
+    links:
+      - {label: "Material Design", url: "https://m3.material.io/"}
+      - {label: "Apple Human Interface Guidelines", url: "https://developer.apple.com/design/human-interface-guidelines/"}
   - id: web-performance
     kind: guideline
     jurisdiction: international
     name: {en: "Web performance guidance (web.dev, HTTP Archive, Google Web Fundamentals)", sv: "Vägledning om webbprestanda (web.dev, HTTP Archive, Google Web Fundamentals)"}
     match: ["web.dev", "HTTP Archive", "Google Web Fundamentals"]
+    url: https://web.dev/
+    links:
+      - {label: "web.dev Core Web Vitals", url: "https://web.dev/articles/vitals"}
+      - {label: "web.dev Performance budgets", url: "https://web.dev/articles/performance-budgets-101"}
+      - {label: "HTTP Archive Web Almanac 2024, Page Weight chapter", url: "https://almanac.httparchive.org/en/2024/page-weight"}
   # ---------------------------------------------------------------- governance, projects, services, facilities, documentation, education
   - id: decision-768-2008
     kind: law
@@ -1362,23 +1731,27 @@ sources:
     short: Decision 768/2008/EC
     name: {en: "Decision No 768/2008/EC on a common framework for the marketing of products", sv: "Beslut nr 768/2008/EG om en gemensam ram för saluföring av produkter"}
     match: ["Decision No 768/2008/EC"]
+    url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32008D0768
   - id: epbd
     kind: directive
     jurisdiction: EU
     short: EPBD
     name: {en: "Energy Performance of Buildings Directive (EU) 2024/1275", sv: "Direktivet om byggnaders energiprestanda (EU) 2024/1275"}
     match: ["Directive (EU) 2024/1275"]
+    url: https://eur-lex.europa.eu/eli/dir/2024/1275/oj
   - id: weee
     kind: directive
     jurisdiction: EU
     short: WEEE
     name: {en: "Waste Electrical and Electronic Equipment Directive 2012/19/EU", sv: "Direktivet om avfall som utgörs av eller innehåller elektriska eller elektroniska produkter (WEEE) 2012/19/EU"}
     match: ["Directive 2012/19/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2012/19/oj
   - id: public-procurement-directive
     kind: directive
     jurisdiction: EU
     name: {en: "Public Procurement Directive 2014/24/EU", sv: "Direktivet om offentlig upphandling 2014/24/EU"}
     match: ["Directive 2014/24/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2014/24/oj
   - id: se-byggregler
     kind: law
     jurisdiction: SE
@@ -1404,196 +1777,233 @@ sources:
     jurisdiction: SE
     name: {en: "Camera Surveillance Act (2018:1200)", sv: "Kamerabevakningslag (2018:1200)"}
     match: ["Kamerabevakningslag"]
+    url: https://lagen.nu/2018:1200
   - id: se-lso
     kind: law
     jurisdiction: SE
     short: LSO
     name: {en: "Civil Protection Act (2003:778)", sv: "Lag (2003:778) om skydd mot olyckor"}
     match: ["Lag (2003:778)"]
+    url: https://lagen.nu/2003:778
   - id: se-energy-declaration
     kind: law
     jurisdiction: SE
     name: {en: "Act (2006:985) on energy performance certificates for buildings", sv: "Lag (2006:985) om energideklaration för byggnader"}
     match: ["Lag (2006:985)"]
+    url: https://lagen.nu/2006:985
   - id: se-lou
     kind: law
     jurisdiction: SE
     short: LOU
     name: {en: "Public Procurement Act (2016:1145)", sv: "Lag (2016:1145) om offentlig upphandling (LOU)"}
     match: ["Lag (2016:1145)"]
+    url: https://lagen.nu/2016:1145
   - id: se-language-act
     kind: law
     jurisdiction: SE
     name: {en: "Language Act (2009:600)", sv: "Språklag (2009:600)"}
     match: ["Språklag"]
+    url: https://lagen.nu/2009:600
   - id: iso-10002
     kind: standard
     jurisdiction: international
     short: ISO 10002
     name: {en: "ISO 10002 Customer satisfaction: complaints handling", sv: "ISO 10002 Kundtillfredsställelse: klagomålshantering"}
     match: ["ISO 10002"]
+    url: https://www.iso.org/standard/71580.html
   - id: iso-10004
     kind: standard
     jurisdiction: international
     short: ISO 10004
     name: {en: "ISO 10004 Customer satisfaction: monitoring and measuring", sv: "ISO 10004 Kundtillfredsställelse: övervakning och mätning"}
     match: ["ISO 10004"]
+    url: https://www.iso.org/standard/71582.html
   - id: iso-10006
     kind: standard
     jurisdiction: international
     short: ISO 10006
     name: {en: "ISO 10006 Quality management in projects", sv: "ISO 10006 Kvalitetsledning i projekt"}
     match: ["ISO 10006"]
+    url: https://www.iso.org/standard/70376.html
   - id: iso-10007
     kind: standard
     jurisdiction: international
     short: ISO 10007
     name: {en: "ISO 10007 Guidelines for configuration management", sv: "ISO 10007 Riktlinjer för konfigurationsledning"}
     match: ["ISO 10007"]
+    url: https://www.iso.org/standard/70400.html
   - id: iso-10015
     kind: standard
     jurisdiction: international
     short: ISO 10015
     name: {en: "ISO 10015 Guidelines for competence management and people development", sv: "ISO 10015 Riktlinjer för kompetensförsörjning och personalutveckling"}
     match: ["ISO 10015"]
+    url: https://www.iso.org/standard/69459.html
   - id: iso-14001
     kind: standard
     jurisdiction: international
     short: ISO 14001
     name: {en: "ISO 14001 Environmental management systems", sv: "ISO 14001 Miljöledningssystem"}
     match: ["ISO 14001"]
+    url: https://www.iso.org/standard/92300.html
   - id: iso-14289
     kind: standard
     jurisdiction: international
     short: PDF/UA
     name: {en: "ISO 14289 PDF/UA accessible PDF", sv: "ISO 14289 PDF/UA tillgänglig PDF"}
     match: ["ISO 14289"]
+    url: https://www.iso.org/standard/64599.html
   - id: iso-15489
     kind: standard
     jurisdiction: international
     short: ISO 15489
     name: {en: "ISO 15489 Records management", sv: "ISO 15489 Informationshantering: dokumenthantering"}
     match: ["ISO 15489"]
+    url: https://www.iso.org/standard/62542.html
   - id: iso-17100
     kind: standard
     jurisdiction: international
     short: ISO 17100
     name: {en: "ISO 17100 Translation services", sv: "ISO 17100 Översättningstjänster"}
     match: ["ISO 17100"]
+    url: https://www.iso.org/standard/59149.html
   - id: iso-19011
     kind: standard
     jurisdiction: international
     short: ISO 19011
     name: {en: "ISO 19011 Guidelines for auditing management systems", sv: "ISO 19011 Vägledning för revision av ledningssystem"}
     match: ["ISO 19011"]
+    url: https://www.iso.org/standard/88984.html
   - id: iso-21500-family
     kind: standard
     jurisdiction: international
     short: ISO 21502
     name: {en: "ISO 21502, 21508 and 21511 Project, programme and portfolio management", sv: "ISO 21502, 21508 och 21511 Projekt-, program- och portföljstyrning"}
     match: ["ISO 21502", "ISO 21508", "ISO 21511"]
+    url: https://www.iso.org/standard/74947.html
+    links:
+      - {label: "ISO 21502", url: "https://www.iso.org/standard/74947.html"}
+      - {label: "ISO 21508", url: "https://www.iso.org/standard/63582.html"}
+      - {label: "ISO 21511", url: "https://www.iso.org/standard/69702.html"}
   - id: iso-21542
     kind: standard
     jurisdiction: international
     short: ISO 21542
     name: {en: "ISO 21542 Accessibility and usability of the built environment", sv: "ISO 21542 Tillgänglighet och användbarhet i den byggda miljön"}
     match: ["ISO 21542"]
+    url: https://www.iso.org/standard/71860.html
   - id: iso-24495
     kind: standard
     jurisdiction: international
     short: ISO 24495
     name: {en: "ISO 24495 Plain language", sv: "ISO 24495 Klarspråk"}
     match: ["ISO 24495"]
+    url: https://www.iso.org/standard/78907.html
   - id: iso-29993
     kind: standard
     jurisdiction: international
     short: ISO 29993
     name: {en: "ISO 29993 Learning services outside formal education", sv: "ISO 29993 Utbildningstjänster utanför det formella utbildningssystemet"}
     match: ["ISO 29993"]
+    url: https://www.iso.org/standard/70357.html
   - id: iso-31000
     kind: standard
     jurisdiction: international
     short: ISO 31000
     name: {en: "ISO 31000 Risk management guidelines", sv: "ISO 31000 Riskhantering: vägledning"}
     match: ["ISO 31000"]
+    url: https://www.iso.org/standard/65694.html
   - id: iso-3864
     kind: standard
     jurisdiction: international
     short: ISO 3864
     name: {en: "ISO 3864 Safety colours and safety signs", sv: "ISO 3864 Säkerhetsfärger och säkerhetsskyltar"}
     match: ["ISO 3864"]
+    url: https://www.iso.org/standard/66836.html
   - id: iso-41001
     kind: standard
     jurisdiction: international
     short: ISO 41001
     name: {en: "ISO 41001 Facility management systems", sv: "ISO 41001 Ledningssystem för fastighetsförvaltning (facility management)"}
     match: ["ISO 41001"]
+    url: https://www.iso.org/standard/68021.html
   - id: iso-50001
     kind: standard
     jurisdiction: international
     short: ISO 50001
     name: {en: "ISO 50001 Energy management systems", sv: "ISO 50001 Ledningssystem för energi"}
     match: ["ISO 50001"]
+    url: https://www.iso.org/standard/69426.html
   - id: iso-55001
     kind: standard
     jurisdiction: international
     short: ISO 55001
     name: {en: "ISO 55001 Asset management systems", sv: "ISO 55001 Ledningssystem för tillgångsförvaltning"}
     match: ["ISO 55001"]
+    url: https://www.iso.org/standard/83054.html
   - id: iso-20000
     kind: standard
     jurisdiction: international
     short: ISO/IEC 20000-1
     name: {en: "ISO/IEC 20000-1 Service management systems", sv: "ISO/IEC 20000-1 Ledningssystem för tjänster"}
     match: ["ISO/IEC 20000"]
+    url: https://www.iso.org/standard/70636.html
   - id: iso-15289
     kind: standard
     jurisdiction: international
     short: ISO/IEC/IEEE 15289
     name: {en: "ISO/IEC/IEEE 15289 Content of life-cycle information items", sv: "ISO/IEC/IEEE 15289 Innehåll i informationsobjekt för livscykeln"}
     match: ["ISO/IEC/IEEE 15289"]
+    url: https://www.iso.org/standard/74909.html
   - id: iso-29148
     kind: standard
     jurisdiction: international
     short: ISO/IEC/IEEE 29148
     name: {en: "ISO/IEC/IEEE 29148 Requirements engineering", sv: "ISO/IEC/IEEE 29148 Kravhantering"}
     match: ["ISO/IEC/IEEE 29148"]
+    url: https://www.iso.org/standard/72089.html
   - id: iec-82079
     kind: standard
     jurisdiction: international
     short: IEC/IEEE 82079-1
     name: {en: "IEC/IEEE 82079-1 Preparation of information for use (instructions for use)", sv: "IEC/IEEE 82079-1 Framtagning av information för användning (bruksanvisningar)"}
     match: ["IEC/IEEE 82079"]
+    url: https://www.iso.org/standard/71620.html
   - id: iec-61082
     kind: standard
     jurisdiction: international
     short: IEC 61082
     name: {en: "IEC 61082 Preparation of documents used in electrotechnology", sv: "IEC 61082 Dokument inom elektrotekniken"}
     match: ["IEC 61082"]
+    url: https://webstore.iec.ch/en/publication/4469
   - id: iec-81346
     kind: standard
     jurisdiction: international
     short: IEC 81346
     name: {en: "IEC 81346 Structuring principles and reference designations", sv: "IEC 81346 Strukturering och referensbeteckningar"}
     match: ["IEC 81346"]
+    url: https://www.iso.org/standard/82229.html
   - id: iec-62402
     kind: standard
     jurisdiction: international
     short: IEC 62402
     name: {en: "IEC 62402 Obsolescence management", sv: "IEC 62402 Hantering av inkurans"}
     match: ["IEC 62402"]
+    url: https://webstore.iec.ch/en/publication/59531
   - id: iec-60118
     kind: standard
     jurisdiction: international
     short: IEC 60118-4
     name: {en: "IEC 60118-4 Audio-frequency induction loop systems", sv: "IEC 60118-4 Hörselslingor"}
     match: ["IEC 60118"]
+    url: https://webstore.iec.ch/en/publication/798
   - id: en-13306
     kind: standard
     jurisdiction: EU
     short: EN 13306
     name: {en: "EN 13306 Maintenance terminology", sv: "EN 13306 Underhållsterminologi"}
     match: ["EN 13306"]
+    url: https://www.sis.se/en/produkter/standardization/vocabularies/services/ss-en-133062017/
   - id: en-maintenance
     kind: standard
     jurisdiction: EU
@@ -1626,70 +2036,90 @@ sources:
     jurisdiction: EU
     name: {en: "European accessibility standards for the built environment (EN 17210, EN 81-70)", sv: "Europeiska tillgänglighetsstandarder för byggd miljö (EN 17210, EN 81-70)"}
     match: ["EN 17210", "EN 81-70"]
+    url: https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/
+    links:
+      - {label: "EN 17210", url: "https://www.sis.se/en/produkter/construction-materials-and-building/elements-of-buildings/elements-of-buildings-in-general/ss-en-172102021/"}
   - id: etsi-radio-en
     kind: standard
     jurisdiction: EU
     name: {en: "ETSI harmonised radio standards (EN 300 328, EN 300 396, EN 301 893)", sv: "ETSI harmoniserade radiostandarder (EN 300 328, EN 300 396, EN 301 893)"}
     match: ["ETSI EN 300 328", "ETSI EN 300 396", "ETSI EN 301 893"]
+    url: https://www.etsi.org/deliver/etsi_en/300300_300399/300328/
+    links:
+      - {label: "ETSI EN 300 328", url: "https://www.etsi.org/deliver/etsi_en/300300_300399/300328/"}
+      - {label: "ETSI EN 301 893", url: "https://www.etsi.org/deliver/etsi_en/301800_301899/301893/"}
   - id: itu-r
     kind: standard
     jurisdiction: international
     short: ITU-R
     name: {en: "ITU-R recommendations (radio propagation)", sv: "ITU-R-rekommendationer (radioutbredning)"}
     match: ["ITU-R "]
+    url: https://www.itu.int/pub/R-REC
+    ref_links:
+      - {regex: '^ITU-R P\.(\d+)\b', label: 'ITU-R P.$1', url: 'https://www.itu.int/rec/R-REC-P.$1'}
   - id: ieee-802-1x
     kind: standard
     jurisdiction: international
     short: IEEE 802.1X
     name: {en: "IEEE 802.1X Port-based network access control", sv: "IEEE 802.1X Portbaserad nätverksåtkomstkontroll"}
     match: ["IEEE 802.1X"]
+    url: https://standards.ieee.org/ieee/802.1X/7345/
   - id: xapi
     kind: standard
     jurisdiction: international
     short: xAPI
     name: {en: "IEEE 9274.1.1 Experience API (xAPI)", sv: "IEEE 9274.1.1 Experience API (xAPI)"}
     match: ["IEEE 9274"]
+    url: https://standards.ieee.org/ieee/9274.1.1/7321/
   - id: scorm
     kind: standard
     jurisdiction: international
     short: SCORM
     name: {en: "SCORM e-learning content packaging", sv: "SCORM, paketering av e-lärandeinnehåll"}
     match: ["SCORM"]
+    url: https://www.adlnet.gov/research/scorm
   - id: isae-3402
     kind: standard
     jurisdiction: international
     short: ISAE 3402
     name: {en: "ISAE 3402 Assurance reports on controls at a service organisation", sv: "ISAE 3402 Bestyrkanderapporter om kontroller hos en serviceorganisation"}
     match: ["ISAE 3402"]
+    url: https://www.iaasb.org/consultations-projects/assurance-reports-service-organizations-controls
   - id: nist-800-88
     kind: guideline
     jurisdiction: US
     short: NIST SP 800-88
     name: {en: "NIST SP 800-88 Guidelines for media sanitization", sv: "NIST SP 800-88 Riktlinjer för sanering av lagringsmedia"}
     match: ["NIST SP 800-88"]
+    url: https://doi.org/10.6028/NIST.SP.800-88r2
   - id: ashrae-tc99
     kind: guideline
     jurisdiction: international
     short: ASHRAE TC 9.9
     name: {en: "ASHRAE TC 9.9 Thermal guidelines for data processing environments", sv: "ASHRAE TC 9.9 Termiska riktlinjer för datormiljöer"}
     match: ["ASHRAE TC 9.9"]
+    url: https://tc0909.ashraetcs.org/
   - id: prince2
     kind: practice
     jurisdiction: international
     short: PRINCE2
     name: {en: "PRINCE2 project management method", sv: "PRINCE2, projektstyrningsmetod"}
     match: ["PRINCE2"]
+    url: https://www.axelos.com/certifications/propath/prince2-project-management
   - id: pmbok
     kind: practice
     jurisdiction: international
     short: PMBOK
     name: {en: "PMBOK Guide (Project Management Institute)", sv: "PMBOK Guide (Project Management Institute)"}
     match: ["PMBOK Guide"]
+    url: https://www.pmi.org/standards/pmbok
   - id: training-models
     kind: practice
     jurisdiction: international
     name: {en: "Training design and evaluation models (ADDIE, Kirkpatrick)", sv: "Modeller för utformning och utvärdering av utbildning (ADDIE, Kirkpatrick)"}
     match: ["ADDIE", "Kirkpatrick"]
+    links:
+      - {label: "Kirkpatrick four-level training evaluation model", url: "https://www.kirkpatrickpartners.com/the-kirkpatrick-model/"}
   - id: raci
     kind: practice
     jurisdiction: international
@@ -1703,149 +2133,233 @@ sources:
     short: LVD
     name: {en: "Low Voltage Directive 2014/35/EU", sv: "Lågspänningsdirektivet 2014/35/EU"}
     match: ["Directive 2014/35/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2014/35/oj
   - id: emc-directive
     kind: directive
     jurisdiction: EU
     short: EMC
     name: {en: "Electromagnetic Compatibility Directive 2014/30/EU", sv: "EMC-direktivet 2014/30/EU"}
     match: ["Directive 2014/30/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2014/30/oj
   - id: rohs
     kind: directive
     jurisdiction: EU
     short: RoHS
     name: {en: "RoHS Directive 2011/65/EU on hazardous substances in electrical and electronic equipment", sv: "RoHS-direktivet 2011/65/EU om farliga ämnen i elektrisk och elektronisk utrustning"}
     match: ["Directive 2011/65/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2011/65/oj
   - id: work-equipment-directive
     kind: directive
     jurisdiction: EU
     name: {en: "Work Equipment Directive 2009/104/EC", sv: "Arbetsutrustningsdirektivet 2009/104/EG"}
     match: ["Directive 2009/104/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/2009/104/oj
   - id: waste-framework-directive
     kind: directive
     jurisdiction: EU
     name: {en: "Waste Framework Directive 2008/98/EC", sv: "Avfallsdirektivet 2008/98/EG"}
     match: ["Directive 2008/98/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/2008/98/oj
   - id: reg-765-2008
     kind: law
     jurisdiction: EU
     name: {en: "Regulation (EC) No 765/2008 on accreditation and CE marking", sv: "Förordning (EG) nr 765/2008 om ackreditering och CE-märkning"}
     match: ["Regulation (EC) No 765/2008"]
+    url: https://eur-lex.europa.eu/eli/reg/2008/765/oj
   - id: batteries-regulation
     kind: law
     jurisdiction: EU
     name: {en: "Batteries Regulation (EU) 2023/1542", sv: "Batteriförordningen (EU) 2023/1542"}
     match: ["Regulation (EU) 2023/1542"]
+    url: https://eur-lex.europa.eu/eli/reg/2023/1542/oj
   - id: blue-guide
     kind: guideline
     jurisdiction: EU
     short: Blue Guide
     name: {en: "The Blue Guide on the implementation of EU product rules (2022/C 247/01)", sv: "Blå guiden om genomförandet av EU:s produktregler (2022/C 247/01)"}
     match: ["Commission Notice 2022/C 247/01"]
+    url: https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:52022XC0629(04)
   - id: iso-ai-standards
     kind: standard
     jurisdiction: international
     name: {en: "ISO/IEC AI standards (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)", sv: "ISO/IEC-standarder för AI (22989, 23894, 25059, 5259, 8183, TR 24027, TS 4213)"}
     match: ["ISO/IEC 22989", "ISO/IEC 23894", "ISO/IEC 25059", "ISO/IEC 5259", "ISO/IEC 8183", "ISO/IEC TR 24027", "ISO/IEC TS 4213"]
+    url: https://www.iso.org/standard/74296.html
+    links:
+      - {label: "ISO/IEC 22989", url: "https://www.iso.org/standard/74296.html"}
+      - {label: "ISO/IEC 23894", url: "https://www.iso.org/standard/77304.html"}
+      - {label: "ISO/IEC 25059", url: "https://www.iso.org/standard/80655.html"}
+      - {label: "ISO/IEC 5259-2", url: "https://www.iso.org/standard/81860.html"}
+      - {label: "ISO/IEC 8183", url: "https://www.iso.org/standard/83002.html"}
+      - {label: "ISO/IEC TR 24027", url: "https://www.iso.org/standard/77607.html"}
+      - {label: "ISO/IEC TS 4213", url: "https://www.iso.org/standard/79799.html"}
   - id: mitre-atlas
     kind: practice
     jurisdiction: international
     short: MITRE ATLAS
     name: {en: "MITRE ATLAS adversarial threat landscape for AI systems", sv: "MITRE ATLAS, hotlandskap för AI-system"}
     match: ["MITRE ATLAS"]
+    url: https://atlas.mitre.org/
   - id: iso-15288
     kind: standard
     jurisdiction: international
     short: ISO/IEC/IEEE 15288
     name: {en: "ISO/IEC/IEEE 15288 System life cycle processes", sv: "ISO/IEC/IEEE 15288 Livscykelprocesser för system"}
     match: ["ISO/IEC/IEEE 15288"]
+    url: https://www.iso.org/standard/81702.html
   - id: iso-systems-lifecycle
     kind: standard
     jurisdiction: international
     name: {en: "Systems and software life-cycle standards (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)", sv: "Standarder för livscykel för system och programvara (ISO/IEC/IEEE 15939, 24748-1, IEEE 1012)"}
     match: ["ISO/IEC/IEEE 15939", "ISO/IEC/IEEE 24748", "IEEE 1012"]
+    url: https://www.iso.org/standard/71197.html
+    links:
+      - {label: "ISO/IEC/IEEE 15939", url: "https://www.iso.org/standard/71197.html"}
+      - {label: "ISO/IEC/IEEE 24748-1", url: "https://www.iso.org/standard/84709.html"}
+      - {label: "IEEE 1012", url: "https://standards.ieee.org/ieee/1012/5609/"}
   - id: sae-eia-649
     kind: standard
     jurisdiction: international
     short: EIA-649
     name: {en: "SAE EIA-649 Configuration management standard", sv: "SAE EIA-649 Standard för konfigurationsledning"}
     match: ["SAE EIA-649"]
+    url: https://www.sae.org/standards/content/eia649c/
   - id: en-50126
     kind: standard
     jurisdiction: EU
     short: EN 50126
     name: {en: "EN 50126 and EN 50129 Railway RAMS and safety-related electronic systems", sv: "EN 50126 och EN 50129 RAMS för järnväg och säkerhetsrelaterade elektroniska system"}
     match: ["EN 50126", "EN 50129"]
+    url: https://www.sis.se/en/produkter/electrical-engineering/electric-traction-equipment/ss-en-50126-1/
   - id: iec-dependability
     kind: standard
     jurisdiction: international
     name: {en: "IEC dependability standards (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)", sv: "IEC-standarder för driftsäkerhet (IEC 60300, 60812, 61025, 61078, 61124, 61163, 61703, 61709, 62506, TR 63069)"}
     match: ["IEC 60300", "IEC 60812", "IEC 61025", "IEC 61078", "IEC 61124", "IEC 61163", "IEC 61703", "IEC 61709", "IEC 62506", "IEC TR 63069"]
+    url: https://webstore.iec.ch/en/publication/1293
+    links:
+      - {label: "IEC 60300-1", url: "https://webstore.iec.ch/en/publication/1293"}
+      - {label: "IEC 60812", url: "https://webstore.iec.ch/en/publication/26359"}
+      - {label: "IEC 61025", url: "https://webstore.iec.ch/en/publication/4311"}
+      - {label: "IEC 61703", url: "https://webstore.iec.ch/en/publication/25646"}
+      - {label: "IEC 61709", url: "https://webstore.iec.ch/en/publication/28554"}
   - id: iec-product-safety
     kind: standard
     jurisdiction: international
     name: {en: "IEC electrical product safety standards (IEC 62368-1, 60664-1, 60204-1, 60364-6)", sv: "IEC-standarder för elsäkerhet hos produkter (IEC 62368-1, 60664-1, 60204-1, 60364-6)"}
     match: ["IEC 62368", "IEC 60664", "IEC 60204", "IEC 60364"]
+    url: https://webstore.iec.ch/en/publication/69308
+    links:
+      - {label: "IEC 62368-1", url: "https://webstore.iec.ch/en/publication/69308"}
+      - {label: "IEC 60664-1", url: "https://webstore.iec.ch/en/publication/59671"}
+      - {label: "IEC 60204-1", url: "https://webstore.iec.ch/en/publication/26037"}
+      - {label: "IEC 60364-6", url: "https://webstore.iec.ch/en/publication/24656"}
   - id: emc-standards
     kind: standard
     jurisdiction: international
     name: {en: "EMC standards (EN 55032, EN 55035, IEC 61000-4)", sv: "EMC-standarder (EN 55032, EN 55035, IEC 61000-4)"}
     match: ["EN 55032", "EN 55035", "IEC 61000"]
+    url: https://webstore.iec.ch/en/publication/22046
+    links:
+      - {label: "CISPR 32 (EN 55032)", url: "https://webstore.iec.ch/en/publication/22046", match: ["EN 55032"]}
+      - {label: "CISPR 35 (EN 55035)", url: "https://webstore.iec.ch/en/publication/25667", match: ["EN 55035"]}
+      - {label: "IEC 61000-4-2", url: "https://webstore.iec.ch/en/publication/68954"}
+      - {label: "IEC 61000-4-11", url: "https://webstore.iec.ch/en/publication/63503"}
   - id: iec-environmental-testing
     kind: standard
     jurisdiction: international
     name: {en: "Environmental testing and protection classes (IEC 60068, 60721-3, 60529, 62262)", sv: "Miljöprovning och skyddsklasser (IEC 60068, 60721-3, 60529, 62262)"}
     match: ["IEC 60068", "IEC 60721", "IEC 60529", "IEC 62262"]
+    url: https://webstore.iec.ch/en/publication/501
+    links:
+      - {label: "IEC 60068-1", url: "https://webstore.iec.ch/en/publication/501"}
+      - {label: "IEC 60529", url: "https://webstore.iec.ch/en/publication/2452"}
   - id: hw-materials-standards
     kind: standard
     jurisdiction: international
     name: {en: "Material declaration and marking standards (EN IEC 63000, IEC 62474, EN 50419)", sv: "Standarder för materialdeklaration och märkning (EN IEC 63000, IEC 62474, EN 50419)"}
     match: ["EN IEC 63000", "IEC 62474", "EN 50419"]
+    url: https://webstore.iec.ch/en/publication/29857
+    links:
+      - {label: "IEC 62474", url: "https://webstore.iec.ch/en/publication/29857"}
   - id: ipc
     kind: standard
     jurisdiction: international
     short: IPC
     name: {en: "IPC electronics assembly and board standards (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)", sv: "IPC-standarder för kretskort och elektronikmontering (IPC-2221, IPC-6012, IPC-A-610, J-STD-001)"}
     match: ["IPC-", "IPC J-STD"]
+    url: https://www.electronics.org/ipc-standards
   - id: ecss
     kind: standard
     jurisdiction: international
     short: ECSS
     name: {en: "ECSS space product assurance standards", sv: "ECSS-standarder för produktsäkring inom rymd"}
     match: ["ECSS-"]
+    url: https://ecss.nl/standards/
+    links:
+      - {label: "ECSS-Q-ST-30-11C", url: "https://ecss.nl/standard/ecss-q-st-30-11c-rev-2-derating-eee-components-23-june-2021/"}
   - id: ieee-1149
     kind: standard
     jurisdiction: international
     short: IEEE 1149.1
     name: {en: "IEEE 1149.1 Boundary scan (JTAG)", sv: "IEEE 1149.1 Boundary scan (JTAG)"}
     match: ["IEEE 1149.1"]
+    url: https://standards.ieee.org/ieee/1149.1/4484/
   - id: machine-safety-standards
     kind: standard
     jurisdiction: international
     name: {en: "Machine safety standards (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)", sv: "Standarder för maskinsäkerhet (ISO 12100, 13850, 13855, 13857, 14118, 14119, 14120)"}
     match: ["ISO 12100", "ISO 13850", "ISO 13855", "ISO 13857", "ISO 14118", "ISO 14119", "ISO 14120"]
+    url: https://www.iso.org/standard/51528.html
+    links:
+      - {label: "ISO 12100", url: "https://www.iso.org/standard/51528.html"}
+      - {label: "ISO 13850", url: "https://www.iso.org/standard/59970.html"}
+      - {label: "ISO 13855", url: "https://www.iso.org/standard/80590.html"}
+      - {label: "ISO 13857", url: "https://www.iso.org/standard/69569.html"}
+      - {label: "ISO 14118", url: "https://www.iso.org/standard/66460.html"}
+      - {label: "ISO 14119", url: "https://www.iso.org/standard/75942.html"}
+      - {label: "ISO 14120", url: "https://www.iso.org/standard/59545.html"}
   - id: hmi-standards
     kind: standard
     jurisdiction: international
     name: {en: "Operator interface standards (IEC 60073, 60447, 61310-1, EN 894-3, ISO 7010)", sv: "Standarder för operatörsgränssnitt (IEC 60073, 60447, 61310-1, EN 894-3, ISO 7010)"}
     match: ["IEC 60073", "IEC 60447", "IEC 61310", "EN 894", "ISO 7010"]
+    url: https://webstore.iec.ch/en/publication/5263
+    links:
+      - {label: "IEC 61310-1", url: "https://webstore.iec.ch/en/publication/5263"}
+      - {label: "ISO 7010", url: "https://www.iso.org/standard/72424.html"}
   - id: iec-acceptance
     kind: standard
     jurisdiction: international
     name: {en: "IEC acceptance and commissioning of process equipment (IEC 62381, IEC 62337)", sv: "IEC-standarder för acceptans och idrifttagning av processutrustning (IEC 62381, IEC 62337)"}
     match: ["IEC 62381", "IEC 62337"]
+    url: https://webstore.iec.ch/en/publication/6871
+    links:
+      - {label: "IEC 62337", url: "https://webstore.iec.ch/en/publication/6871"}
   - id: metrology
     kind: standard
     jurisdiction: international
     name: {en: "Metrology standards and guides (ISO 10012, JCGM 100 GUM, ILAC-G24)", sv: "Standarder och vägledningar för mätteknik (ISO 10012, JCGM 100 GUM, ILAC-G24)"}
     match: ["ISO 10012", "JCGM 100", "ILAC-G24"]
+    url: https://www.iso.org/standard/26033.html
+    links:
+      - {label: "ISO 10012", url: "https://www.iso.org/standard/26033.html"}
+      - {label: "JCGM 100", url: "https://www.bipm.org/en/doi/10.59161/JCGM100-2008E"}
+      - {label: "ILAC-G24", url: "https://ilac.org/publications-and-resources/ilac-guidance-series/"}
   - id: iso-20816
     kind: standard
     jurisdiction: international
     short: ISO 20816
     name: {en: "ISO 20816 Mechanical vibration measurement", sv: "ISO 20816 Mätning av mekaniska vibrationer"}
     match: ["ISO 20816"]
+    url: https://www.iso.org/standard/63180.html
   - id: nist-system-security
     kind: guideline
     jurisdiction: US
     name: {en: "NIST system and platform security guidance (SP 800-160, 800-193, 800-90B)", sv: "NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)"}
     match: ["NIST SP 800-160", "NIST SP 800-193", "NIST SP 800-90B"]
+    url: https://doi.org/10.6028/NIST.SP.800-160v1r1
+    links:
+      - {label: "NIST SP 800-160 Vol. 1 Rev. 1", url: "https://doi.org/10.6028/NIST.SP.800-160v1r1"}
+      - {label: "NIST SP 800-193", url: "https://doi.org/10.6028/NIST.SP.800-193"}
+      - {label: "NIST SP 800-90B", url: "https://doi.org/10.6028/NIST.SP.800-90B"}

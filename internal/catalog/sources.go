@@ -30,6 +30,14 @@ type Source struct {
 	Short string `yaml:"short" json:"short,omitempty"`
 	Name  Names  `yaml:"name" json:"name"`
 	URL   string `yaml:"url" json:"url,omitempty"`
+	// Links are the documents of a source that groups several (a family
+	// of standards, a law with its implementing acts), each with its own
+	// page. A ref links to the document whose match prefix it starts with.
+	Links []SourceLink `yaml:"links" json:"links,omitempty"`
+	// RefLinks derive a link per cited document from the refs themselves
+	// (RFC 2119 → rfc-editor.org/rfc/rfc2119), for families too large to
+	// list.
+	RefLinks []RefLink `yaml:"ref_links" json:"-"`
 	// Match are prefixes a ref starts with (case sensitive).
 	Match []string `yaml:"match" json:"-"`
 	// Regex are regular expressions a ref matches (Go syntax).
@@ -42,6 +50,33 @@ type Source struct {
 
 	res      []*regexp.Regexp
 	clauseRe *regexp.Regexp
+}
+
+// SourceLink is one document of a source, with its own page.
+type SourceLink struct {
+	// Label names the document (its designation, the same in every
+	// language), e.g. "IEC 60300-1".
+	Label string `yaml:"label" json:"label"`
+	URL   string `yaml:"url" json:"url"`
+	// Match are the prefixes of the refs that cite the document; default:
+	// the label.
+	Match []string `yaml:"match" json:"-"`
+}
+
+// RefLink derives a document link from a ref: when Regex matches the ref,
+// Label and URL are expanded with its capture groups ($1, $2 …).
+type RefLink struct {
+	Regex string `yaml:"regex" json:"-"`
+	Label string `yaml:"label" json:"-"`
+	URL   string `yaml:"url" json:"-"`
+
+	re *regexp.Regexp
+}
+
+// DocLink is a link to a cited document (or to its source as a whole).
+type DocLink struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
 }
 
 var jurisdictionRe = regexp.MustCompile(`^(?:[A-Z]{2}|international)$`)
@@ -73,8 +108,37 @@ func (c *Catalog) loadSources(bad func(string, ...any)) {
 		if s.Jurisdiction != "" && !jurisdictionRe.MatchString(s.Jurisdiction) {
 			bad("source %s: jurisdiction must be two capitals (EU, SE …) or international", s.ID)
 		}
-		if s.URL != "" && !strings.HasPrefix(s.URL, "https://") {
-			bad("source %s: url must start with https://", s.ID)
+		if s.URL != "" && !validURL(s.URL) {
+			bad("source %s: url must start with https:// and have no spaces", s.ID)
+		}
+		labels := map[string]bool{}
+		for _, l := range s.Links {
+			switch {
+			case strings.TrimSpace(l.Label) == "" || labels[l.Label]:
+				bad("source %s: link %q: empty or duplicate label", s.ID, l.Label)
+			case !validURL(l.URL):
+				bad("source %s: link %s: url must start with https:// and have no spaces", s.ID, l.Label)
+			}
+			labels[l.Label] = true
+			for _, m := range l.Match {
+				if strings.TrimSpace(m) == "" {
+					bad("source %s: link %s: empty match prefix", s.ID, l.Label)
+				}
+			}
+		}
+		for i := range s.RefLinks {
+			rl := &s.RefLinks[i]
+			re, err := regexp.Compile(rl.Regex)
+			switch {
+			case err != nil:
+				bad("source %s: ref_links regex %q: %v", s.ID, rl.Regex, err)
+				continue
+			case strings.TrimSpace(rl.Label) == "":
+				bad("source %s: ref_links %q: label is needed", s.ID, rl.Regex)
+			case !validURL(rl.URL):
+				bad("source %s: ref_links %q: url must start with https:// and have no spaces", s.ID, rl.Regex)
+			}
+			rl.re = re
 		}
 		for _, l := range Languages {
 			if strings.TrimSpace(s.Name[l]) == "" {
@@ -109,6 +173,61 @@ func (c *Catalog) loadSources(bad func(string, ...any)) {
 			}
 		}
 	}
+}
+
+func validURL(u string) bool {
+	return strings.HasPrefix(u, "https://") && len(u) > len("https://") && !strings.ContainsAny(u, " \t\r\n<>\"")
+}
+
+// DocLink returns the most specific link for ref, a ref of the source:
+// the document a ref_links pattern derives from it, else the link whose
+// match prefix (the longest) it starts with, else the source's own url.
+// ok is false when the source has no link at all.
+func (s *Source) DocLink(ref string) (DocLink, bool) {
+	if d, ok := s.refLink(ref); ok {
+		return d, true
+	}
+	best, n := -1, 0
+	for i, l := range s.Links {
+		for _, m := range linkMatch(l) {
+			if strings.HasPrefix(ref, m) && len(m) > n {
+				best, n = i, len(m)
+			}
+		}
+	}
+	if best >= 0 {
+		return DocLink{Label: s.Links[best].Label, URL: s.Links[best].URL}, true
+	}
+	if s.URL != "" {
+		return DocLink{Label: s.Short, URL: s.URL}, true
+	}
+	return DocLink{}, false
+}
+
+func linkMatch(l SourceLink) []string {
+	if len(l.Match) > 0 {
+		return l.Match
+	}
+	return []string{l.Label}
+}
+
+// refLink expands the first ref_links pattern that matches ref.
+func (s *Source) refLink(ref string) (DocLink, bool) {
+	for _, rl := range s.RefLinks {
+		if rl.re == nil {
+			continue
+		}
+		idx := rl.re.FindStringSubmatchIndex(ref)
+		if idx == nil {
+			continue
+		}
+		u := string(rl.re.ExpandString(nil, rl.URL, ref, idx))
+		if !validURL(u) {
+			continue
+		}
+		return DocLink{Label: string(rl.re.ExpandString(nil, rl.Label, ref, idx)), URL: u}, true
+	}
+	return DocLink{}, false
 }
 
 // Matches reports whether ref belongs to the source.
