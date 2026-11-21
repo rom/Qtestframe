@@ -1895,3 +1895,10 @@ sources:
     name: {en: "Kubernetes security documentation (Pod Security Standards, RBAC good practices, auditing, encryption at rest)", sv: "Kubernetes säkerhetsdokumentation (Pod Security Standards, god praxis för RBAC, granskning, kryptering vid lagring)"}
     match: ["Kubernetes "]
     url: https://kubernetes.io/docs/concepts/security/
+  - id: owasp-mastg
+    kind: practice
+    jurisdiction: international
+    short: OWASP MASTG
+    name: {en: "OWASP Mobile Application Security Testing Guide (MASTG)", sv: "OWASP Mobile Application Security Testing Guide (MASTG, testguide för mobilappar)"}
+    match: ["OWASP MASTG"]
+    url: https://mas.owasp.org/MASTG/
