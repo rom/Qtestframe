@@ -54,9 +54,11 @@ func TestSaveAndLoadProjectAPI(t *testing.T) {
 	}
 
 	// dry run: the archive's key is taken, another key is fine
-	_ = a.upload("POST", "/api/v1/projects/import", "archive", "arc.zip", "application/zip", archive, map[string]string{"dry_run": "true"}, 409)
+	if taken := a.upload("POST", "/api/v1/projects/import", "archive", "arc.zip", "application/zip", archive, map[string]string{"dry_run": "true"}, 200); taken["key_taken"] != true {
+		t.Fatal(taken)
+	}
 	dry := a.upload("POST", "/api/v1/projects/import", "archive", "arc.zip", "application/zip", archive, map[string]string{"dry_run": "true", "key": "NEW"}, 200)
-	if dry["dry_run"] != true || dry["manifest"].(map[string]any)["project"].(map[string]any)["key"] != "ARC" {
+	if dry["dry_run"] != true || dry["key_taken"] != nil || dry["manifest"].(map[string]any)["project"].(map[string]any)["key"] != "ARC" {
 		t.Fatal(dry)
 	}
 	if ps := items(a.m("GET", "/api/v1/projects", nil, 200)); len(ps) != 1 {

@@ -98,7 +98,7 @@ An item can have any number of category values, also several of the same dimensi
 
 In queries, `category:Negative` matches the value name and `dimension:Polarity/Negative` the full form.
 
-The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](runs.md#defects)) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
+The same page holds the project's **Name**, **Description**, the **Defect tracker URL template** (see [Defects](runs.md#defects)), the [Save and load](reports-and-export.md#save-and-load-projects) section (**Save project**, **Duplicate project**, **Load project**) and, for admins, **Delete project**. Editing categories needs **Manager** (or the write permission of their scope, Tester for test categories).
 
 ## Mark many tests ready at once
 

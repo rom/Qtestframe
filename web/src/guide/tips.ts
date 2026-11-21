@@ -70,6 +70,7 @@ export const TIPS = {
   'settings.defectTemplate': DEFECTS,
   'settings.dimension': CATEGORIES,
   'settings.sources': REQ_FIELDS,
+  'settings.archive': { page: 'reports-and-export', anchor: { en: 'save-and-load-projects', sv: 'spara-och-läs-in-projekt' } },
 } satisfies Record<string, TipTarget>
 
 export type TipId = keyof typeof TIPS

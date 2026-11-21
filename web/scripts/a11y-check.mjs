@@ -147,6 +147,9 @@ async function discover(request) {
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
+    // save / load / duplicate a project (project archives)
+    { name: 'project-load-dialog', path: '/projects', open: '.page-header .actions button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
+    { name: 'project-duplicate-dialog', path: '/projects', open: '.project-cards li:first-child button:has(.pi-copy)', wait: '.p-dialog #project-duplicate-form' },
     { name: 'dashboard', path: `${p}/dashboard`, wait: 'canvas' },
     { name: 'dashboard-trends', path: `${p}/dashboard?tab=trends`, wait: 'canvas, .empty' },
     { name: 'dashboard-quality', path: `${p}/dashboard?tab=quality`, wait: 'canvas, .empty' },
@@ -218,6 +221,7 @@ async function discover(request) {
     ddEx && { name: 'test-data-paste', path: `${p}/tests?item=${ddEx.test_case_id}`, open: '.p-drawer button:has(.pi-clipboard)', wait: '.p-dialog #td-paste' },
     ddLinks.length > 0 && { name: 'requirement-coverage', path: `${p}/requirements?item=${ddLinks[0].requirement_id}`, wait: '.cov-table' },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
+    { name: 'settings-project-load-dialog', path: `${p}/settings?tab=project`, open: 'section.project-archive button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
     // the folder tree is a side panel from 1200 px (a drawer below)
     { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', minWidth: 1200 },
     { name: 'folders-bulk-drawer', path: `${p}/requirements`, open: ['.page-header .actions button:has(.pi-folder)', '.p-drawer button.p-button:has(.pi-check-square)', '.p-drawer .p-tree .p-checkbox'], wait: '.p-drawer .folder-bulk', maxWidth: 1199 },

@@ -17,6 +17,9 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import Message from 'primevue/message'
 import ProjectIcon from '@/components/ProjectIcon.vue'
+import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
+import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
+import { totalRows, type ProjectLoadResult } from '@/lib/projectArchive'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
 import { formatDate, relativeTime } from '@/lib/format'
@@ -123,6 +126,42 @@ function remove(p: Project) {
 function open(p: Project) {
   router.push({ name: 'dashboard', params: { projectId: p.id } })
 }
+
+// save, load and duplicate (project archives)
+const canSave = computed(() => auth.can([P.projectUpdate, P.export]))
+const canDuplicate = computed(() => auth.can([P.projectCreate, P.projectUpdate, P.export]))
+const takenKeys = computed(() => projects.value.map((p) => p.key))
+const loadDialog = ref(false)
+const duplicateDialog = ref(false)
+const duplicating = ref<Project | null>(null)
+const savingId = ref('')
+async function saveArchive(p: Project) {
+  savingId.value = p.id
+  try {
+    const name = await api.download(`/projects/${p.id}/archive`, undefined, `${p.key.toLowerCase()}-project.zip`)
+    notify.ok(t('projectArchive.saved'), name)
+  } catch (e) {
+    notify.fail(e, t('projectArchive.saveFailed'))
+  } finally {
+    savingId.value = ''
+  }
+}
+function openDuplicate(p: Project) {
+  duplicating.value = p
+  duplicateDialog.value = true
+}
+function onLoaded(p: Project, res: ProjectLoadResult) {
+  notify.ok(t('projectArchive.loaded'), loadedDetail(p, res))
+  open(p)
+}
+function onDuplicated(p: Project, res: ProjectLoadResult) {
+  notify.ok(t('projectArchive.duplicated'), loadedDetail(p, res))
+  open(p)
+}
+function loadedDetail(p: Project, res: ProjectLoadResult) {
+  const skipped = totalRows(res.skipped)
+  return `${p.key} · ${p.name}` + (skipped ? ` · ${t('projectArchive.skipped', { n: skipped }, skipped)}` : '')
+}
 </script>
 
 <template>
@@ -149,6 +188,7 @@ function open(p: Project) {
       >
         <template #option="{ option }"><i :class="option.i" :title="option.l" aria-hidden="true" /><span class="sr-only">{{ option.l }}</span></template>
       </SelectButton>
+      <Button v-if="auth.can(P.projectCreate)" :label="t('projectArchive.load')" icon="pi pi-upload" severity="secondary" outlined @click="loadDialog = true" />
       <Button v-if="auth.can(P.projectCreate)" :label="t('projects.new')" icon="pi pi-plus" @click="openCreate" />
     </div>
   </div>
@@ -174,6 +214,8 @@ function open(p: Project) {
           </div>
         </div>
         <div class="row nowrap" @click.stop>
+          <Button v-if="canSave" icon="pi pi-download" text rounded severity="secondary" :loading="savingId === p.id" :aria-label="t('projectArchive.saveNamed', { name: p.name })" v-tooltip="t('projectArchive.save')" @click="saveArchive(p)" />
+          <Button v-if="canDuplicate" icon="pi pi-copy" text rounded severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: p.name })" v-tooltip="t('projectArchive.duplicate')" @click="openDuplicate(p)" />
           <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: p.name })" v-tooltip="t('common.edit')" @click="openEdit(p)" />
           <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: p.name })" v-tooltip="t('common.delete')" @click="remove(p)" />
         </div>
@@ -192,9 +234,11 @@ function open(p: Project) {
       </Column>
       <Column field="description" :header="t('common.description')" />
       <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
-      <Column header="" style="width: 100px">
+      <Column header="" style="width: 180px">
         <template #body="{ data }">
           <div class="row nowrap" @click.stop>
+            <Button v-if="canSave" icon="pi pi-download" text rounded severity="secondary" :loading="savingId === data.id" :aria-label="t('projectArchive.saveNamed', { name: data.name })" @click="saveArchive(data)" />
+            <Button v-if="canDuplicate" icon="pi pi-copy" text rounded severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: data.name })" @click="openDuplicate(data)" />
             <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: data.name })" @click="openEdit(data)" />
             <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: data.name })" @click="remove(data)" />
           </div>
@@ -202,6 +246,9 @@ function open(p: Project) {
       </Column>
     </DataTable>
   </div>
+
+  <ProjectLoadDialog v-model:visible="loadDialog" :taken-keys="takenKeys" @loaded="onLoaded" />
+  <ProjectDuplicateDialog v-model:visible="duplicateDialog" :project="duplicating" :taken-keys="takenKeys" @duplicated="onDuplicated" />
 
   <Dialog v-model:visible="dialog" :header="editing ? t('projects.edit') : t('projects.new')" modal style="width: min(520px, 95vw)">
     <form class="grid" style="gap: 12px" @submit.prevent="save">

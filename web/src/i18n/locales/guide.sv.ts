@@ -86,6 +86,7 @@ const guideSv: GuideMessages = {
     export_aspects: "De delar av projektet som exporteras. En valfri fråga nedanför begränsar kraven och testfallen.",
     query_filter: "Filtrera med frågespråket, till exempel status:approved priority=high eller -has:criteria. Tryck Enter för att använda filtret.",
     settings_defectTemplate: "En URL med {'{'}id{'}'}, till exempel https://jira.example.com/browse/{'{'}id{'}'}. Defekt-id i exekveringar blir länkar till ditt ärendesystem.",
+    settings_archive: 'Spara projektet som en fil med allt utom hemligheter, och läs in en sådan fil som ett nytt projekt med valfri nyckel, här eller på en annan server. Duplicera gör båda i ett steg.',
     settings_sources: "Källorna som erbjuds i ett kravs fält Källa, en per rad. Källor som redan används i projektet erbjuds också, och annan text kan fortfarande skrivas. Töm listan för att återgå till standardlistan.",
     settings_dimension: "En dimension grupperar kategorivärden, till exempel Område med Betalning och Gränssnitt. Varje objekt kan ha värden i flera dimensioner.",
   },

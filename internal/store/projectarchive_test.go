@@ -252,7 +252,10 @@ func TestProjectArchiveRoundTrip(t *testing.T) {
 		}
 	}
 
-	// the key is taken now
+	// the key is taken now: a dry run says so, a load fails
+	if dry, err := loadProject(st, fx.ten.ID, orig, store.ProjectImport{Key: "COPY", DryRun: true}); err != nil || !dry.KeyTaken || dry.Project.Key != "COPY" {
+		t.Fatal(dry, err)
+	}
 	if _, err := loadProject(st, fx.ten.ID, orig, store.ProjectImport{Key: "COPY"}); !errors.Is(err, store.ErrConflict) || !strings.Contains(err.Error(), "COPY already exists") {
 		t.Fatal(err)
 	}
@@ -378,6 +381,34 @@ func TestProjectArchiveRejects(t *testing.T) {
 	if n := count(t, st, `SELECT COUNT(*) FROM requirements WHERE project_id = ?`, ps[0].ID); n != count(t, st, `SELECT COUNT(*) FROM requirements WHERE project_id = ?`, fx.project.ID) {
 		t.Fatal("rows were added to another project", n)
 	}
+	bad("manifest JSON", rewrite(t, b, func(n string, d []byte) []byte {
+		if n == "manifest.json" {
+			return []byte("{")
+		}
+		return d
+	}), store.ErrInvalid, "manifest.json")
+	bad("two projects", rewrite(t, b, func(n string, d []byte) []byte {
+		if n == "tables/projects.jsonl" {
+			return append(d, bytes.Replace(d, []byte(fx.project.ID), []byte("11111111-2222-3333-4444-555555555555"), 1)...)
+		}
+		return d
+	}), store.ErrInvalid, "")
+	// a tracker setting that is not JSON is reset; the project still loads
+	broken := rewrite(t, b, func(n string, d []byte) []byte {
+		if n == "tables/projects.jsonl" {
+			return []byte(strings.Replace(string(d), `"defect_tracker":"{`, `"defect_tracker":"not json{`, 1))
+		}
+		return d
+	})
+	res, err = loadProject(st, fx.ten.ID, broken, store.ProjectImport{Key: "BROKEN"})
+	must(t, err)
+	if tr, err := st.DefectTracker(ctx, fx.ten.ID, res.Project.ID); err != nil || tr.Type != "" {
+		t.Fatal(tr, err)
+	}
+	oldLine := store.MaxRestoreLine
+	store.MaxRestoreLine = 64
+	bad("long line", b, store.ErrInvalid, "exceeds")
+	store.MaxRestoreLine = oldLine
 	// size limits
 	old := store.MaxRestoreSize
 	store.MaxRestoreSize = 1000

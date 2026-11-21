@@ -162,7 +162,7 @@ Välj **Hjälp** (frågetecknet i övre fältet) → **Starta introduktionsturen
 
 ### Kan jag ändra nyckeln för ett projekt?
 
-Nej. Nyckeln ingår i varje objekts id och kan inte ändras när projektet har skapats. Du kan ändra projektets namn, beskrivning och färg under **Kategorier & inställningar** (eller med ✎ i projektlistan). Om du verkligen behöver en annan nyckel, skapa ett nytt projekt och flytta mapparna dit; objekten får då nya nycklar.
+Nej. Nyckeln ingår i varje objekts id och kan inte ändras när projektet har skapats. Du kan ändra projektets namn, beskrivning och färg under **Kategorier & inställningar** (eller med ✎ i projektlistan). Om du verkligen behöver en annan nyckel, använd **Duplicera projekt** i projektlistan: kopian får den nya nyckeln och alla objektnycklar följer med (se [Spara och läs in projekt](reports-and-export.md#spara-och-läs-in-projekt)). Ta sedan bort originalet.
 
 ## Filer och data
 
@@ -181,6 +181,10 @@ Bara bilder (PNG, JPEG, GIF, WebP), PDF-filer och vanlig text visas i webbläsar
 ### Hur återställer jag en säkerhetskopia?
 
 En **superadministratör** öppnar **Administration → Säkerhetskopiering**, väljer filen med säkerhetskopian under **Återställning**, skriver `RESTORE` och väljer **Återställ säkerhetskopia**. Alla aktuella data ersätts och alla loggas ut. Säkerhetskopian måste komma från samma schemaversion. Serveradministratörer kan använda `qtestframe restore --in FIL.zip --yes`. För att få tillbaka ett enskilt objekt använder du i stället dess versionshistorik.
+
+### Hur flyttar jag ett projekt till en annan server?
+
+Välj **Spara projekt** (nedladdningsknappen i projektlistan) och, på den andra servern, **Läs in projekt** med filen. Kopian har allt i projektet utom hemligheter som webhook-hemligheter och felhanteringssystemets token; se [Spara och läs in projekt](reports-and-export.md#spara-och-läs-in-projekt). För att flytta alla organisationer på en gång använder en superadministratör i stället en säkerhetskopia.
 
 ### Kan jag få ut mina data ur Qtestframe?
 

@@ -148,6 +148,9 @@ default):
 | GET | `/projects/{pid}/metrics/trends` | project.read – `?range=30\|90\|365` or `?since=YYYY-MM-DD` |
 | GET | `/projects/{pid}/flaky-tests` | project.read – `?limit=n` |
 | GET | `/projects/{pid}/requirement-sources` | requirement.read – `{"configured":[...], "custom":bool, "used":[{"source","count"}]}`: the project's list and the sources requirements use, most used first |
+| GET | `/projects/{pid}/archive` | project.update + export – save the project as a [project archive](#project-archives-save-load-duplicate) (`application/zip`) |
+| POST | `/projects/import` | project.create – multipart `archive` + optional `key`, `name`, `dry_run=true`: load an archive as a new project → 201 `ProjectLoadResult` |
+| POST | `/projects/{pid}/duplicate` | project.create + project.update + export – `{"key","name"?}`: save and load in one step → 201 `ProjectLoadResult` |
 
 A `Project` has `color` (`#rrggbb` or `""` for the theme colour; anything
 else → 400), `requirement_sources` (the list the requirement editor offers
@@ -158,6 +161,61 @@ them). `type` is one of `/meta` `project_types` (`general` by default,
 `software`, `hardware`, `system`, `business`); `tech_context` (at most 8000
 characters) describes the technology of a software project and is included
 in prompts.
+
+### Project archives (save, load, duplicate)
+
+`GET /projects/{pid}/archive` streams one project as a ZIP file
+(`<key>-project-<yyyymmdd-hhmmss>.zip`), read in one consistent snapshot:
+
+| Entry | Content |
+|---|---|
+| `manifest.json` | `{"kind":"qtestframe-project", "format_version":1, "schema_version", "app_version", "created_at", "driver", "project":{"id","key","name"}, "tables":{table: rows}, "files", "file_bytes"}` |
+| `tables/<table>.jsonl` | every row of the project, one JSON object per line (column → value; times RFC 3339, booleans `true`/`false`), the same portable encoding as a [backup](#administration-additions) |
+| `files/<file id>` | the content of each document, attachment, report and the project icon |
+
+The tables are the project row (settings, sequence counters, defect tracker
+settings), configurations, releases, folders, categories, requirements with
+categories and criteria, tests with steps and categories, trace links, runs
+with run configurations, executions, iterations and step results, relations,
+baselines with items and sign-offs, files and attachments, report
+definitions, test dependencies, item links, release scopes, defects and their
+links, risks and their requirements, webhooks, review requests, metric
+snapshots, traceability rules, and the revisions and comments of all these
+rows. **Not included:** webhook secrets (webhooks are saved switched off),
+the tracker token, accounts, memberships, roles, sessions, API and SCIM
+tokens, invitations, notifications, e-mail report subscriptions, the audit
+log and the trash. References to people (`created_by`, `user_id`,
+`reviewer_id`, e-mail addresses) are kept as plain values.
+
+`POST /projects/import` (multipart: `archive`, optional `key` and `name`,
+default the archive's) creates a **new** project in the current organisation
+in one transaction:
+
+- every row gets a new id; every value that is an id of an archived row is
+  rewritten, in id columns, in JSON (snapshots, options) and in texts
+  (descriptions that link to an item). When the key changes, item keys and
+  key references in texts follow (`OLD-REQ-1` → `NEW-REQ-1`); the sequence
+  counters are kept, so new items get the next free key;
+- foreign keys are checked against the archive: a reference to a row
+  outside it is cleared when optional, otherwise the row is left out (as
+  are its dependants); a reference to an account that does not exist on
+  this server (e.g. a reviewer) leaves the row out. Left-out rows are
+  counted in `skipped`;
+- secrets are stripped again and every `tenant_id` is the importer's
+  organisation, so a hand-made archive cannot reach other projects.
+
+Answer (201): `ProjectLoadResult` = `{"project": Project, "manifest": {…},
+"imported": {table: rows}, "skipped": {table: rows}?, "files": n}`. With
+`dry_run=true` everything is checked and rolled back (200, `"dry_run": true`,
+`"key_taken": true` when the key exists). Errors: 400 for files that are not
+project archives (also full backups), unknown entries, wrong counts or
+checksums and invalid keys; 409 when the key is taken or the archive was
+saved with a newer schema version (older archives load; missing columns get
+their defaults). The upload is limited like a restore (4 GiB uncompressed).
+Audit actions: `project.save`, `project.load`, `project.duplicate`.
+
+Roles are organisation-wide, so the loading user's access to the new project
+is that of their role; no membership is created or copied.
 
 ### Prompts (software projects)
 

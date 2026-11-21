@@ -355,8 +355,8 @@ func exportRows(ctx context.Context, c conn, t archiveTable, args []any, w io.Wr
 type ProjectImport struct {
 	// Key and Name of the new project; empty: those of the archive.
 	Key, Name string
-	// DryRun checks the archive and the key and counts the rows, but saves
-	// nothing.
+	// DryRun checks the archive and counts the rows, but saves nothing; a
+	// key that is taken is reported (KeyTaken) instead of failing.
 	DryRun bool
 }
 
@@ -371,6 +371,9 @@ type ProjectImportResult struct {
 	Skipped  map[string]int `json:"skipped,omitempty"`
 	Files    int            `json:"files"`
 	DryRun   bool           `json:"dry_run,omitempty"`
+	// KeyTaken (dry runs only): a project with the key exists already, so
+	// loading it under that key would fail.
+	KeyTaken bool `json:"key_taken,omitempty"`
 }
 
 var uuidRe = regexp.MustCompile(`[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`)
@@ -489,8 +492,15 @@ func (s *Store) ImportProject(ctx context.Context, tenantID string, r io.ReaderA
 		if err := c.row(ctx, `SELECT COUNT(*) FROM projects WHERE tenant_id = ? AND key = ?`, tenantID, key).Scan(&n); err != nil {
 			return err
 		}
-		if n > 0 {
+		if n > 0 && !opt.DryRun {
 			return Conflictf("a project with key %s already exists: choose another key", key)
+		}
+		res.KeyTaken = n > 0
+		// a dry run with a taken key loads under a stand-in key (and is
+		// rolled back anyway)
+		rowKey := key
+		if res.KeyTaken {
+			rowKey = "QTFDRYRUN" + strings.ToUpper(strings.ReplaceAll(newID(), "-", "")[:7])
 		}
 		budget := &budgetReader{left: MaxRestoreSize}
 		users := map[string]bool{}
@@ -507,7 +517,7 @@ func (s *Store) ImportProject(ctx context.Context, tenantID string, r io.ReaderA
 			im.files, im.budget = files, budget
 			if t.name == "projects" {
 				im.project = func(row map[string]any) {
-					row["key"], row["name"], row["created_at"], row["updated_at"] = key, name, now.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano)
+					row["key"], row["name"], row["created_at"], row["updated_at"] = rowKey, name, now.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano)
 				}
 			}
 			var buffered []restoreRow

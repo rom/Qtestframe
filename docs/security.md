@@ -383,6 +383,16 @@ Further measures:
   created or rotated. Use tracker tokens with the smallest scope that works
   (GitHub fine-grained token with Issues read/write on one repository; a
   Jira user that can only create and browse issues in the project).
+* **Project archives** (*Save project*, `GET /projects/{pid}/archive`)
+  contain all project data in plain form (texts, results, files, version
+  history, user ids and e-mail addresses in *created by* and similar fields),
+  but never webhook secrets, tracker tokens, password hashes, sessions, API
+  or SCIM tokens, memberships, notifications or the audit log. Saving needs
+  `project.update` and `export` (Manager and Admin by default); loading needs
+  `project.create` and always creates a new project with new ids in the
+  caller's organisation; rows of an archive that point outside it are left
+  out, secrets are stripped again, and loaded webhooks are disabled.
+  Treat saved archives like the project itself.
 * **Outgoing requests.** Tracker calls and webhook deliveries go to URLs
   that project administrators (`project.update`) configure, from the
   server's network. Restrict who has that permission, and if the server

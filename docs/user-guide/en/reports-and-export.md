@@ -1,6 +1,6 @@
 # Reports and export
 
-Qtestframe gets data out in two ways:
+Qtestframe gets data out in two ways (a whole project can also be [saved as a file and loaded again](#save-and-load-projects)):
 
 - **Export** downloads the raw project data (requirements, criteria, tests, traceability, runs) as spreadsheets or documents, for reviews, audits, offline work or other tools.
 - **Reports** produce formatted documents for people: a project status report, a coverage report, a run summary, a defect list or a report you design yourself. Reports can be downloaded or stored in the project's [document archive](documents.md).
@@ -130,6 +130,24 @@ Good to know:
 - If the server was down when a report was due, it is sent once when the server is back, not once for every missed time.
 - Deleting the saved report also deletes its schedules.
 
+## Save and load projects
+
+A whole project can be saved as one file and loaded again as a **new** project, on the same server or another one: to hand a project over, keep a copy outside the server, or start a new project from a template.
+
+- **Save project**: on the project list (the download button of a project) or under **Categories & settings → Project → Save and load**. The file (`<key>-project-<date>.zip`) holds everything in the project: requirements with criteria and folders, tests with steps and test data, traceability links and relations, links, runs with all results, iterations and evidence, defects, risks, releases, baselines and sign-offs, reviews, comments, version history, documents and attachments with their content, categories, configurations, traceability rules, saved reports, webhooks and the project settings. It needs the permissions to change the project and to export (by default **Manager** and **Admin**).
+- **Load project**: on the project list, or in the same section of the settings. Choose the file; Qtestframe checks it and shows what it contains. Then choose the **Key** and **Name** of the new project (a free key is suggested if the original one is taken) and select **Load project**. You need the permission to create projects. The new project opens when it is ready.
+- **Duplicate project** does both in one step: it creates a copy with a new key inside the same organisation.
+
+What to know about loaded projects:
+
+- The new project gets new IDs everywhere, and item keys follow the new project key (`DEMO-REQ-1` becomes `COPY-REQ-1`, also where a description mentions it). New items continue the numbering of the original.
+- People stay as they were: *created by*, owners and assignees are kept as text, and comments and reviews refer to the same accounts. A review request whose reviewer has no account on the server is left out; the result says how many entries were left out.
+- **Secrets are never saved**: webhooks are loaded switched off and without their secret, and the defect tracker without its token. Set them again under **Categories & settings → Project** before you switch them on.
+- Members, roles, API tokens, notifications, scheduled e-mail reports, the audit log and the trash are not part of the file. Access to the new project follows the roles of the organisation, as for every project.
+- A file saved by a newer version of Qtestframe cannot be loaded; update the server first. Files from older versions load.
+
+The file contains the project data in plain form. Store it as carefully as the project itself.
+
 ## Which one to use?
 
 | Need | Use |
@@ -141,3 +159,4 @@ Good to know:
 | Evidence for an audit or a release | **Reports → Requirements coverage** or **Run summary**, saved to the archive, together with a [baseline](baselines.md) |
 | A recurring list with your own columns | A saved **custom report** |
 | The same report in people's inbox every week | A saved custom report under **Scheduled reports** |
+| Hand a whole project over, keep a copy or start from a template | **Save project** and **Load project** (see [above](#save-and-load-projects)) |
