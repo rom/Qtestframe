@@ -239,7 +239,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [protective-security, classified-information]
-    refs: ["Säkerhetsskyddslag (2018:585)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)", "Säkerhetsskyddsförordning (2021:955) 3 kap. 3 § (godkännande av informationssystem)"]
     tests: [DCDC-T06]
     en:
       title: Security-classified documents only in approved systems
@@ -643,7 +643,7 @@ tests:
     priority: critical
     execution: manual
     tags: [protective-security]
-    refs: ["Säkerhetsskyddslag (2018:585)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 2 § (informationssäkerhet)"]
     en:
       title: No security-classified documents in ordinary systems
       description: Searches the ordinary document systems for documents marked as security-classified.

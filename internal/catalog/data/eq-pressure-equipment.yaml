@@ -83,14 +83,14 @@ requirements:
     tests: [EQPED-T02]
     en:
       title: No CE marking on equipment below the category thresholds
-      description: Pressure equipment at or below the thresholds for category I MUST NOT carry the CE marking under the directive, and is designed and made to sound engineering practice with instructions and identification of the manufacturer.
+      description: Pressure equipment that falls below category I because it is at or below the pressure and volume limits of the directive's scope MUST NOT carry the CE marking under the directive, and is designed and made to sound engineering practice with instructions and identification of the manufacturer.
       rationale: A CE marking on such equipment wrongly claims an assessment that was never made and misleads users and inspectors.
       criteria:
         - method: inspection
           text: The items in the register classified as sound engineering practice carry no CE marking for pressure and each has instructions and the manufacturer's identification.
     sv:
       title: Ingen CE-märkning på anordningar under kategorigränserna
-      description: Tryckbärande anordningar på eller under gränserna för kategori I SKA INTE bära CE-märkning enligt direktivet, och konstrueras och tillverkas enligt god teknisk praxis med bruksanvisning och identifiering av tillverkaren.
+      description: Tryckbärande anordningar som hamnar under kategori I eftersom de ligger på eller under direktivets gränser för tryck och volym SKA INTE bära CE-märkning enligt direktivet, och konstrueras och tillverkas enligt god teknisk praxis med bruksanvisning och identifiering av tillverkaren.
       rationale: En CE-märkning på sådana anordningar påstår felaktigt en bedömning som aldrig gjorts och vilseleder användare och kontrollanter.
       criteria:
         - method: inspection
@@ -263,14 +263,14 @@ requirements:
     tests: [EQPED-T10]
     en:
       title: Material inspection documents for each main pressure-bearing part
-      description: Each main pressure-bearing part MUST be traceable by heat or batch marking to an inspection document from the material maker that gives the specific test results of that heat or batch.
+      description: Each main pressure-bearing part of equipment in category II, III or IV MUST be traceable by heat or batch marking to an inspection document from the material maker that gives the specific test results of that heat or batch.
       rationale: Material with the wrong composition or strength cannot be found once it is formed and welded into the equipment.
       criteria:
         - method: inspection
           text: The material list of a sampled vessel links each main part to an inspection document with specific test results, and the heat numbers on the parts match the documents.
     sv:
       title: Materialintyg för varje huvudsaklig tryckbärande del
-      description: Varje huvudsaklig tryckbärande del SKA vara spårbar genom chargemärkning eller satsmärkning till ett kontrollintyg från materialtillverkaren som anger de specifika provningsresultaten för den chargen eller satsen.
+      description: Varje huvudsaklig tryckbärande del i en anordning i kategori II, III eller IV SKA vara spårbar genom chargemärkning eller satsmärkning till ett kontrollintyg från materialtillverkaren som anger de specifika provningsresultaten för den chargen eller satsen.
       rationale: Material med fel sammansättning eller hållfasthet går inte att upptäcka när det väl har formats och svetsats in i anordningen.
       criteria:
         - method: inspection

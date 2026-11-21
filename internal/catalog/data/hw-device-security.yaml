@@ -263,7 +263,7 @@ requirements:
     obligation: must
     priority: high
     tags: [support-period, security-updates, labelling]
-    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)", "Regulation (EU) 2024/2847 (CRA) Annex II (information and instructions to the user)"]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(8) (support period)", "Regulation (EU) 2024/2847 (CRA) Art. 13(19) (end date of the support period at the time of purchase)", "Regulation (EU) 2024/2847 (CRA) Annex II point 7 (type of support and end date of the support period)"]
     tests: [HWSEC-T08]
     en:
       title: Support period stated at the time of purchase

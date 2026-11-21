@@ -214,7 +214,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [cookies, tracking, consent]
-    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 6(1)(a)", "Swedish Electronic Communications Act (LEK) ch. 9 §28", "GDPR Art. 25(2)", "ISO/IEC 27001:2022 A.5.34"]
+    refs: ["ePrivacy Directive 2002/58/EC Art. 5(3)", "GDPR Art. 6(1)(a)", "Lag (2022:482) 9 kap. 28 § (kakor)", "GDPR Art. 25(2)", "ISO/IEC 27001:2022 A.5.34"]
     tests: [PRIV-T10]
     en:
       title: No tracking before consent

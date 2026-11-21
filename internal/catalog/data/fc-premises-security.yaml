@@ -243,7 +243,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [protective-security, security-analysis, physical-security]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "PMFS 2022:1"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "PMFS 2022:1", "Säkerhetsskyddslag (2018:585) 2 kap. 3 § (fysisk säkerhet)"]
     tests: [FCSEC-T09]
     en:
       title: Physical protection of security-sensitive activity based on the security analysis
@@ -679,7 +679,7 @@ tests:
     priority: critical
     execution: manual
     tags: [protective-security]
-    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)"]
+    refs: ["Säkerhetsskyddslag (2018:585) 2 kap. 1 § (säkerhetsskyddsanalys)", "Säkerhetsskyddslag (2018:585) 2 kap. 3 § (fysisk säkerhet)"]
     en:
       title: Physical measures in the protective security plan found on site
       description: Compares the physical measures decided in the protective security plan with the premises.

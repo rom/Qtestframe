@@ -391,7 +391,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [design-for-disassembly, batteries, repair]
-    refs: ["Directive 2012/19/EU (WEEE) Art. 4 (product design)", "Regulation (EU) 2023/1542 (Batteries Regulation) Art. 11 (removability and replaceability of portable batteries)"]
+    refs: ["Directive 2012/19/EU (WEEE) Art. 4 (product design)", "Regulation (EU) 2023/1542 (Batteries Regulation) Art. 11(1) (removability and replaceability of portable batteries)"]
     tests: [HWENV-T12]
     en:
       title: Batteries removable with commercially available tools
@@ -415,7 +415,7 @@ requirements:
     obligation: must
     priority: high
     tags: [repairability, spare-parts, ecodesign]
-    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1)(e) (repairability)"]
     tests: [HWENV-T13]
     en:
       title: Spare parts available for 7 years after the last unit is sold
@@ -439,7 +439,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [repairability, repair-information]
-    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1)(e) (repairability)"]
     tests: [HWENV-T13]
     en:
       title: Repair information available to professional repairers
@@ -461,7 +461,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [repairability, disassembly, fasteners]
-    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)", "Directive 2012/19/EU (WEEE) Art. 4 (product design)"]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1)(e) (repairability)", "Directive 2012/19/EU (WEEE) Art. 4 (product design)"]
     tests: [HWENV-T14]
     en:
       title: Replaceable parts removed with reusable fasteners and common tools
@@ -485,18 +485,18 @@ requirements:
     obligation: must
     priority: medium
     tags: [digital-product-passport, data-carrier, ecodesign]
-    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 9 (general requirements for the digital product passport)"]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 10(1)(a)–(b) (data carrier of the digital product passport)"]
     tests: [HWENV-T15]
     en:
       title: Data carrier linking each unit to its digital product passport
-      description: Where a delegated act for the product group sets a digital product passport, each unit MUST carry a data carrier on the product or its packaging that resolves to the passport of that model, batch or unit.
+      description: Where a delegated act for the product group sets a digital product passport, each unit MUST carry a data carrier on the product, its packaging or its accompanying documentation, as the delegated act specifies, that resolves to the passport of that model, batch or unit.
       rationale: The passport gives repairers, recyclers and authorities the product's material, repair and compliance data without depending on the manufacturer's current website.
       criteria:
         - method: test
           text: Scanning the data carrier on 5 sampled units opens the passport of the matching model, batch or unit with the data the delegated act lists.
     sv:
       title: Databärare som kopplar varje enhet till dess digitala produktpass
-      description: När en delegerad akt för produktgruppen fastställer ett digitalt produktpass SKA varje enhet ha en databärare på produkten eller förpackningen som leder till passet för den modellen, satsen eller enheten.
+      description: När en delegerad akt för produktgruppen fastställer ett digitalt produktpass SKA varje enhet ha en databärare på produkten, förpackningen eller den medföljande dokumentationen, enligt vad den delegerade akten anger, som leder till passet för den modellen, satsen eller enheten.
       rationale: Passet ger reparatörer, återvinnare och myndigheter produktens uppgifter om material, reparation och regelefterlevnad utan att bero på tillverkarens aktuella webbplats.
       criteria:
         - method: test
@@ -507,7 +507,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [standby, energy, ecodesign]
-    refs: ["Commission Regulation (EU) 2023/826 Annex II (power demand in off mode and standby mode)"]
+    refs: ["Commission Regulation (EU) 2023/826 Annex III point 1 (power consumption in off mode and standby mode)"]
     tests: [HWENV-T16]
     en:
       title: Standby and off mode power within the ecodesign limits
@@ -845,7 +845,7 @@ tests:
     priority: medium
     execution: manual
     tags: [design-for-disassembly, batteries]
-    refs: ["Regulation (EU) 2023/1542 (Batteries Regulation) Art. 11 (removability and replaceability of portable batteries)"]
+    refs: ["Regulation (EU) 2023/1542 (Batteries Regulation) Art. 11(1) (removability and replaceability of portable batteries)"]
     en:
       title: Battery replacement by an end user
       description: A person who has not seen the product before replaces the battery following the instructions.
@@ -873,7 +873,7 @@ tests:
     priority: medium
     execution: manual
     tags: [repairability, spare-parts]
-    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)"]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1)(e) (repairability)"]
     en:
       title: Spare parts plan and repairer access to repair information
       description: Checks the spare parts plan of a model and requests its repair information as a professional repairer.
@@ -907,7 +907,7 @@ tests:
     priority: medium
     execution: manual
     tags: [disassembly]
-    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1) (product aspects)", "Directive 2012/19/EU (WEEE) Art. 4 (product design)"]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 5(1)(e) (repairability)", "Directive 2012/19/EU (WEEE) Art. 4 (product design)"]
     en:
       title: Timed replacement of each replaceable part
       description: A trained repairer removes and refits each replaceable part with commercially available tools while the time is measured.
@@ -939,7 +939,7 @@ tests:
     priority: medium
     execution: manual
     tags: [digital-product-passport]
-    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 9 (general requirements for the digital product passport)"]
+    refs: ["Regulation (EU) 2024/1781 (ESPR) Art. 10(1)(a)–(b) (data carrier of the digital product passport)"]
     en:
       title: Scan of the product passport data carrier
       description: Scans the data carrier on sampled units and checks the passport that opens.
@@ -969,7 +969,7 @@ tests:
     priority: high
     execution: manual
     tags: [standby, energy]
-    refs: ["Commission Regulation (EU) 2023/826 Annex II (power demand in off mode and standby mode)"]
+    refs: ["Commission Regulation (EU) 2023/826 Annex III point 1 (power consumption in off mode and standby mode)"]
     en:
       title: Off mode and standby power measurement
       description: Measures the power drawn by sampled units in off mode and in standby mode.

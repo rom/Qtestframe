@@ -180,7 +180,7 @@ requirements:
     obligation: must
     priority: high
     tags: [number-portability, porting]
-    refs: ["Directive (EU) 2018/1972 Art. 106"]
+    refs: ["Directive (EU) 2018/1972 Art. 106(5) (number portability within one working day)"]
     tests: [TEL-T08]
     en:
       title: Number ported within one working day
@@ -814,7 +814,7 @@ tests:
     priority: high
     execution: manual
     tags: [number-portability]
-    refs: ["Directive (EU) 2018/1972 Art. 106"]
+    refs: ["Directive (EU) 2018/1972 Art. 106(5) (number portability within one working day)"]
     en:
       title: Number porting on the agreed date
       description: Ports a test number from a donor network to the system's network and measures the interruption.
