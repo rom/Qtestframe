@@ -1,0 +1,658 @@
+area: dc-technical-documentation
+prefix: DCTD
+group: operations
+catalogue: documentation
+name: {en: Technical documentation, sv: Teknisk dokumentation}
+description:
+  en: The delivered technical documentation set (ISO/IEC/IEEE 15289 information items) with documentation plan, system and architecture description, interface specifications, drawings with reference designations, as-built documentation and maintenance manuals.
+  sv: Den levererade tekniska dokumentationen (informationsobjekt enligt ISO/IEC/IEEE 15289) med dokumentationsplan, system- och arkitekturbeskrivning, gränssnittsspecifikationer, ritningar med referensbeteckningar, relationshandlingar och underhållsinstruktioner.
+
+requirements:
+  - id: DCTD-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [documentation-plan, information-items]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T01]
+    en:
+      title: Documentation plan with each information item
+      description: The supplier MUST deliver a documentation plan that lists each information item to be delivered with its type, its owner and the project milestone at which it is delivered.
+      rationale: An agreed list of documents prevents disputes at acceptance about what was to be delivered and when.
+      criteria:
+        - method: review
+          text: The plan lists each information item named in the contract with type, owner and delivery milestone, and the customer has approved it.
+    sv:
+      title: Dokumentationsplan med varje informationsobjekt
+      description: Leverantören SKA leverera en dokumentationsplan som anger varje informationsobjekt som levereras med dess typ, ägare och den projektmilstolpe då det levereras.
+      rationale: En överenskommen förteckning över dokument förhindrar tvister vid godkännandet om vad som skulle levereras och när.
+      criteria:
+        - method: review
+          text: Planen anger varje informationsobjekt som nämns i avtalet med typ, ägare och leveransmilstolpe, och beställaren har godkänt den.
+
+  - id: DCTD-02
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [system-description]
+    refs: ["ISO/IEC/IEEE 15289:2019 (description)"]
+    tests: [DCTD-T02]
+    en:
+      title: System description with purpose, boundaries and interfaces
+      description: The system description MUST state the purpose of the system, its boundaries, its main functions, its external interfaces and its operating environment.
+      rationale: The system description is the entry point for everyone who operates, maintains or changes the system later.
+      criteria:
+        - method: review
+          text: The system description has a section for each of the five topics, and each external interface in the interface list is named in it.
+    sv:
+      title: Systembeskrivning med syfte, gränser och gränssnitt
+      description: Systembeskrivningen SKA ange systemets syfte, dess avgränsning, dess huvudfunktioner, dess externa gränssnitt och dess driftmiljö.
+      rationale: Systembeskrivningen är ingången för alla som senare driver, underhåller eller ändrar systemet.
+      criteria:
+        - method: review
+          text: Systembeskrivningen har ett avsnitt för vart och ett av de fem områdena, och varje externt gränssnitt i gränssnittsförteckningen nämns i den.
+
+  - id: DCTD-03
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [architecture-description, stakeholders]
+    refs: ["ISO/IEC/IEEE 42010:2022"]
+    tests: [DCTD-T02]
+    en:
+      title: Architecture views that address stakeholder concerns
+      description: The architecture description SHOULD list the stakeholders and their concerns and name for each concern the architecture view that addresses it.
+      rationale: Linking views to concerns shows readers where to look and reveals concerns that no view answers.
+      criteria:
+        - method: review
+          text: Each listed concern is mapped to at least one view, and each view in the description addresses at least one listed concern.
+    sv:
+      title: Arkitekturvyer som besvarar intressenternas frågor
+      description: Arkitekturbeskrivningen BÖR ange intressenterna och deras frågeställningar och för varje frågeställning ange den arkitekturvy som besvarar den.
+      rationale: Att koppla vyer till frågeställningar visar läsaren var den ska leta och avslöjar frågeställningar som ingen vy besvarar.
+      criteria:
+        - method: review
+          text: Varje angiven frågeställning är kopplad till minst en vy, och varje vy i beskrivningen besvarar minst en angiven frågeställning.
+
+  - id: DCTD-04
+    type: interface
+    obligation: must
+    priority: high
+    tags: [interface-specification]
+    refs: ["ISO/IEC/IEEE 15289:2019 (specification)", "ISO/IEC/IEEE 29148:2018 (interface requirements)"]
+    tests: [DCTD-T03]
+    en:
+      title: Specification for each external interface
+      description: Each external interface MUST have an interface specification that states the protocol, the data formats, the error handling, the timing limits, the version and the responsible party on each side.
+      rationale: Integration faults are usually caused by assumptions that two parties made differently because nothing was written down.
+      criteria:
+        - method: inspection
+          text: Each interface in the interface list has a specification with all six parts filled in.
+          threshold: "6 parts"
+    sv:
+      title: Specifikation för varje externt gränssnitt
+      description: Varje externt gränssnitt SKA ha en gränssnittsspecifikation som anger protokoll, dataformat, felhantering, tidsgränser, version och ansvarig part på varje sida.
+      rationale: Integrationsfel orsakas oftast av antaganden som två parter har gjort olika eftersom inget skrevs ned.
+      criteria:
+        - method: inspection
+          text: Varje gränssnitt i gränssnittsförteckningen har en specifikation där alla sex delarna är ifyllda.
+          threshold: "6 delar"
+
+  - id: DCTD-05
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [interface-specification, change-notice]
+    refs: ["ISO/IEC/IEEE 15289:2019 (specification)"]
+    tests: [DCTD-T03]
+    en:
+      title: Notice of incompatible interface changes 30 days ahead
+      description: The owner of an interface specification SHOULD send a new version with an incompatible change to the other party at least 30 days before the change takes effect.
+      rationale: The other party needs time to adapt and test; an unannounced incompatible change breaks the integration in production.
+      criteria:
+        - method: review
+          text: For each incompatible interface change of the last 12 months the version history shows that the new version was sent at least 30 days before the change took effect.
+          threshold: "≥ 30 days"
+    sv:
+      title: Avisering av inkompatibla gränssnittsändringar 30 dagar i förväg
+      description: Ägaren till en gränssnittsspecifikation BÖR skicka en ny version med en inkompatibel ändring till motparten minst 30 dagar innan ändringen börjar gälla.
+      rationale: Motparten behöver tid att anpassa och testa; en oaviserad inkompatibel ändring slår ut integrationen i produktion.
+      criteria:
+        - method: review
+          text: För varje inkompatibel gränssnittsändring under de senaste 12 månaderna visar versionshistoriken att den nya versionen skickades minst 30 dagar innan ändringen började gälla.
+          threshold: "≥ 30 dagar"
+
+  - id: DCTD-06
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [drawings, reference-designation]
+    refs: ["IEC 81346-1:2022", "IEC 61082-1:2014"]
+    tests: [DCTD-T04]
+    en:
+      title: Consistent reference designations in drawings and on site
+      description: Drawings SHOULD identify each component with a reference designation according to IEC 81346 that is the same in each drawing, in the asset register and on the component's label.
+      rationale: One designation per component lets a technician go from drawing to cabinet to register without guessing.
+      criteria:
+        - method: inspection
+          text: For 20 components picked from the drawings, the designation in each drawing, in the asset register and on the label on site is identical.
+    sv:
+      title: Enhetliga referensbeteckningar i ritningar och på plats
+      description: Ritningarna BÖR märka varje komponent med en referensbeteckning enligt IEC 81346 som är densamma i varje ritning, i tillgångsregistret och på komponentens skylt.
+      rationale: En beteckning per komponent låter en tekniker gå från ritning till skåp till register utan att gissa.
+      criteria:
+        - method: inspection
+          text: För 20 komponenter som väljs ur ritningarna är beteckningen i varje ritning, i tillgångsregistret och på skylten på plats identisk.
+
+  - id: DCTD-07
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [as-built]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T05]
+    en:
+      title: As-built documentation within 30 days of commissioning
+      description: The supplier MUST deliver as-built documentation that shows the installed state within 30 days after commissioning.
+      rationale: Design documents describe what was planned; maintenance and later changes need what was actually built.
+      criteria:
+        - method: inspection
+          text: The as-built documentation is dated no more than 30 days after commissioning, and a sample of 10 installed items matches it.
+          threshold: "≤ 30 days"
+    sv:
+      title: Relationshandlingar inom 30 dagar efter driftsättning
+      description: Leverantören SKA leverera relationshandlingar som visar det installerade utförandet inom 30 dagar efter driftsättningen.
+      rationale: Projekteringshandlingar beskriver vad som planerades; underhåll och senare ändringar behöver det som faktiskt byggdes.
+      criteria:
+        - method: inspection
+          text: Relationshandlingarna är daterade högst 30 dagar efter driftsättningen, och ett urval av 10 installerade delar stämmer med dem.
+          threshold: "≤ 30 dagar"
+
+  - id: DCTD-08
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [as-built, deviations]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T05]
+    en:
+      title: Deviations from the design listed in the as-built set
+      description: The as-built documentation SHOULD contain a list of each deviation from the approved design with its reason and approval.
+      rationale: A list of deviations explains why the installation differs from the design and avoids later work to restore the design by mistake.
+      criteria:
+        - method: review
+          text: Each difference found between design and as-built drawings in a sample of 5 drawings appears in the deviation list with reason and approval.
+    sv:
+      title: Avvikelser från projekteringen förtecknade i relationshandlingarna
+      description: Relationshandlingarna BÖR innehålla en förteckning över varje avvikelse från den godkända projekteringen med orsak och godkännande.
+      rationale: En förteckning över avvikelser förklarar varför installationen skiljer sig från projekteringen och undviker senare arbete med att av misstag återställa den ursprungliga lösningen.
+      criteria:
+        - method: review
+          text: Varje skillnad mellan projekterings- och relationsritningar i ett urval av 5 ritningar finns i förteckningen över avvikelser med orsak och godkännande.
+
+  - id: DCTD-09
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [maintenance-manual]
+    refs: ["EN 13460:2009", "IEC/IEEE 82079-1:2019"]
+    tests: [DCTD-T06]
+    en:
+      title: Maintenance manual for each asset type
+      description: The supplier MUST deliver a maintenance manual for each delivered asset type that states the maintenance tasks, their intervals, the tools, the spare parts and the qualifications of the staff.
+      rationale: The maintenance organisation can plan and carry out maintenance only when the tasks and resources are written down by the supplier.
+      criteria:
+        - method: review
+          text: Each asset type in the delivery has a maintenance manual with all five parts.
+          threshold: "5 parts"
+    sv:
+      title: Underhållsinstruktion för varje typ av tillgång
+      description: Leverantören SKA leverera en underhållsinstruktion för varje levererad typ av tillgång som anger underhållsåtgärder, deras intervall, verktyg, reservdelar och personalens behörighet.
+      rationale: Underhållsorganisationen kan planera och utföra underhållet bara när åtgärderna och resurserna är nedskrivna av leverantören.
+      criteria:
+        - method: review
+          text: Varje typ av tillgång i leveransen har en underhållsinstruktion med alla fem delarna.
+          threshold: "5 delar"
+
+  - id: DCTD-10
+    type: constraint
+    obligation: must
+    priority: critical
+    tags: [maintenance-manual, safety]
+    refs: ["IEC/IEEE 82079-1:2019 (safety-related information)", "Regulation (EU) 2023/1230 Annex III §1.7.4"]
+    tests: [DCTD-T06]
+    en:
+      title: Safety information for each maintenance task
+      description: The maintenance manual MUST state for each task with a hazard the hazard, the isolation and lock-out steps and the protective equipment before the work steps.
+      rationale: Safety information placed before the steps is read before the work starts, when it can still prevent an accident.
+      criteria:
+        - method: inspection
+          text: Each task in the manual that involves electrical, mechanical, thermal or chemical hazards starts with the hazard, isolation steps and protective equipment.
+    sv:
+      title: Säkerhetsinformation för varje underhållsåtgärd
+      description: Underhållsinstruktionen SKA för varje åtgärd med en risk ange risken, stegen för frånkoppling och låsning och skyddsutrustningen före arbetsstegen.
+      rationale: Säkerhetsinformation som står före stegen läses innan arbetet börjar, när den fortfarande kan förhindra en olycka.
+      criteria:
+        - method: inspection
+          text: Varje åtgärd i instruktionen som innebär elektriska, mekaniska, termiska eller kemiska risker inleds med risken, stegen för frånkoppling och skyddsutrustningen.
+
+  - id: DCTD-11
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [maintenance-manual, troubleshooting]
+    refs: ["EN 13460:2009"]
+    tests: [DCTD-T07]
+    en:
+      title: Troubleshooting table for each alarm code
+      description: The maintenance manual SHOULD contain a troubleshooting table that gives for each alarm or fault code the probable causes and the corrective actions.
+      rationale: A table from code to action shortens repair time and reduces the number of parts replaced on a guess.
+      criteria:
+        - method: inspection
+          text: Each alarm and fault code in the system's code list appears in the table with at least one cause and one action.
+    sv:
+      title: Felsökningstabell för varje larmkod
+      description: Underhållsinstruktionen BÖR innehålla en felsökningstabell som för varje larm- eller felkod anger trolig orsak och åtgärd.
+      rationale: En tabell från kod till åtgärd förkortar reparationstiden och minskar antalet delar som byts på chans.
+      criteria:
+        - method: inspection
+          text: Varje larm- och felkod i systemets kodlista finns i tabellen med minst en orsak och en åtgärd.
+
+  - id: DCTD-12
+    type: business
+    obligation: must
+    priority: high
+    tags: [acceptance, delivery]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T08]
+    en:
+      title: Final documentation as a condition for acceptance
+      description: The customer MUST make the delivery of the final documentation set listed in the documentation plan a condition for the final acceptance of the system.
+      rationale: Documentation that is promised after acceptance is rarely delivered in full, because the incentive to finish it is gone.
+      criteria:
+        - method: review
+          text: The acceptance protocol lists the documentation set as an acceptance criterion, and each item in the documentation plan is marked as delivered before the acceptance date.
+    sv:
+      title: Slutlig dokumentation som villkor för godkännande
+      description: Beställaren SKA göra leveransen av den slutliga dokumentation som anges i dokumentationsplanen till ett villkor för slutgodkännandet av systemet.
+      rationale: Dokumentation som utlovas efter godkännandet levereras sällan fullständigt, eftersom drivkraften att färdigställa den är borta.
+      criteria:
+        - method: review
+          text: Godkännandeprotokollet anger dokumentationen som ett godkännandekriterium, och varje objekt i dokumentationsplanen är markerat som levererat före godkännandedatumet.
+
+  - id: DCTD-13
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [delivery, file-format]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T08]
+    en:
+      title: Searchable PDF and editable source files
+      description: The supplier SHOULD deliver each document both as a searchable PDF and in its editable source format.
+      rationale: The PDF serves as the fixed record, while the source files let the owner keep the documents current after the supplier has left.
+      criteria:
+        - method: inspection
+          text: Each delivered document has a PDF whose text can be searched and a source file that opens in the agreed authoring tool.
+    sv:
+      title: Sökbar PDF och redigerbara källfiler
+      description: Leverantören BÖR leverera varje dokument både som en sökbar PDF och i sitt redigerbara källformat.
+      rationale: PDF-filen fungerar som fastställd handling, medan källfilerna låter ägaren hålla dokumenten aktuella efter att leverantören har lämnat.
+      criteria:
+        - method: inspection
+          text: Varje levererat dokument har en PDF vars text är sökbar och en källfil som går att öppna i det överenskomna redigeringsverktyget.
+
+  - id: DCTD-14
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [currency, change]
+    refs: ["ISO 9001:2015 §7.5.2"]
+    tests: [DCTD-T09]
+    en:
+      title: Documentation updated within 20 working days of a change
+      description: The owner of the system MUST update each affected technical document within 20 working days after a change to the installed system has been completed.
+      rationale: Documentation that lags behind the system misleads operators and technicians in exactly the situations where they rely on it.
+      criteria:
+        - method: review
+          text: For 10 completed changes from the change log, each affected document has a new version dated no more than 20 working days after the change.
+          threshold: "≤ 20 working days"
+    sv:
+      title: Dokumentationen uppdateras inom 20 arbetsdagar efter en ändring
+      description: Systemets ägare SKA uppdatera varje berört tekniskt dokument inom 20 arbetsdagar efter att en ändring i det installerade systemet har slutförts.
+      rationale: Dokumentation som släpar efter systemet vilseleder operatörer och tekniker just i de situationer där de förlitar sig på den.
+      criteria:
+        - method: review
+          text: För 10 slutförda ändringar i ändringsloggen har varje berört dokument en ny version daterad högst 20 arbetsdagar efter ändringen.
+          threshold: "≤ 20 arbetsdagar"
+
+  - id: DCTD-15
+    type: constraint
+    obligation: should
+    priority: low
+    tags: [cross-reference, document-id]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T09]
+    en:
+      title: Cross-references by document identifier and version
+      description: Each cross-reference between technical documents SHOULD name the target document by its unique identifier and version.
+      rationale: References by title break when documents are renamed, and references without a version hide that the target has changed.
+      criteria:
+        - method: inspection
+          text: In a sample of 5 documents each cross-reference contains a document identifier and a version, and each one resolves to an existing document in the register.
+    sv:
+      title: Hänvisningar med dokumentidentitet och version
+      description: Varje hänvisning mellan tekniska dokument BÖR ange måldokumentet med dess unika identitet och version.
+      rationale: Hänvisningar med titel slutar fungera när dokument byter namn, och hänvisningar utan version döljer att måldokumentet har ändrats.
+      criteria:
+        - method: inspection
+          text: I ett urval av 5 dokument innehåller varje hänvisning en dokumentidentitet och en version, och var och en leder till ett befintligt dokument i registret.
+
+  - id: DCTD-16
+    type: usability
+    obligation: may
+    priority: low
+    tags: [glossary]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T10]
+    en:
+      title: Shared glossary for the documentation set
+      description: The documentation set MAY include a shared glossary of terms and abbreviations that each document refers to.
+      rationale: A shared glossary keeps terms consistent between documents written by different authors.
+      criteria:
+        - method: inspection
+          text: The glossary exists, and each abbreviation used in a sample of 5 documents is defined in it.
+    sv:
+      title: Gemensam ordlista för dokumentationen
+      description: Dokumentationen FÅR innehålla en gemensam ordlista med termer och förkortningar som varje dokument hänvisar till.
+      rationale: En gemensam ordlista håller termerna enhetliga mellan dokument som har skrivits av olika författare.
+      criteria:
+        - method: inspection
+          text: Ordlistan finns, och varje förkortning som används i ett urval av 5 dokument är definierad i den.
+
+tests:
+  - id: DCTD-T01
+    priority: high
+    execution: manual
+    tags: [documentation-plan]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    en:
+      title: Review of the documentation plan against the contract
+      description: Checks that the documentation plan covers every information item in the contract.
+      preconditions: The contract with its list of documentation deliverables and the documentation plan.
+      expected: Every contracted information item is in the plan with type, owner and delivery milestone, and the plan is approved.
+      steps:
+        - action: Match each documentation deliverable in the contract to an entry in the plan.
+          expected: Each deliverable has an entry.
+        - action: Check the type, owner and delivery milestone of each entry.
+          expected: Each entry has all three.
+        - action: Check the approval of the plan.
+          expected: The plan carries the customer's approval with a date.
+    sv:
+      title: Granskning av dokumentationsplanen mot avtalet
+      description: Kontrollerar att dokumentationsplanen täcker varje informationsobjekt i avtalet.
+      preconditions: Avtalet med förteckningen över dokumentationsleveranser och dokumentationsplanen.
+      expected: Varje avtalat informationsobjekt finns i planen med typ, ägare och leveransmilstolpe, och planen är godkänd.
+      steps:
+        - action: Koppla varje dokumentationsleverans i avtalet till en post i planen.
+          expected: Varje leverans har en post.
+        - action: Kontrollera typ, ägare och leveransmilstolpe för varje post.
+          expected: Varje post har alla tre.
+        - action: Kontrollera godkännandet av planen.
+          expected: Planen har beställarens godkännande med datum.
+
+  - id: DCTD-T02
+    priority: high
+    execution: manual
+    tags: [system-description, architecture-description]
+    refs: ["ISO/IEC/IEEE 15289:2019 (description)", "ISO/IEC/IEEE 42010:2022"]
+    en:
+      title: Review of the system and architecture descriptions
+      description: Checks the content of the system description and the mapping of architecture views to stakeholder concerns.
+      preconditions: The system description, the architecture description and the interface list.
+      expected: The system description covers the five topics and every interface, and every concern is addressed by a view.
+      steps:
+        - action: Check the system description for sections on purpose, boundaries, main functions, external interfaces and operating environment.
+          expected: All five sections exist.
+        - action: Compare the interfaces in the interface list with those named in the system description.
+          expected: Each interface in the list is named.
+        - action: Map each stakeholder concern in the architecture description to the views.
+          expected: Each concern has at least one view, and each view addresses at least one concern.
+    sv:
+      title: Granskning av system- och arkitekturbeskrivningen
+      description: Kontrollerar systembeskrivningens innehåll och kopplingen mellan arkitekturvyer och intressenternas frågeställningar.
+      preconditions: Systembeskrivningen, arkitekturbeskrivningen och gränssnittsförteckningen.
+      expected: Systembeskrivningen täcker de fem områdena och varje gränssnitt, och varje frågeställning besvaras av en vy.
+      steps:
+        - action: Kontrollera att systembeskrivningen har avsnitt om syfte, avgränsning, huvudfunktioner, externa gränssnitt och driftmiljö.
+          expected: Alla fem avsnitten finns.
+        - action: Jämför gränssnitten i gränssnittsförteckningen med dem som nämns i systembeskrivningen.
+          expected: Varje gränssnitt i förteckningen nämns.
+        - action: Koppla varje frågeställning i arkitekturbeskrivningen till vyerna.
+          expected: Varje frågeställning har minst en vy, och varje vy besvarar minst en frågeställning.
+
+  - id: DCTD-T03
+    priority: high
+    execution: manual
+    tags: [interface-specification]
+    refs: ["ISO/IEC/IEEE 15289:2019 (specification)"]
+    en:
+      title: Inspection of interface specifications and change notices
+      description: Checks the completeness of interface specifications and the notice period of incompatible changes.
+      preconditions: The interface list, the interface specifications with their version history and the change notices of the last 12 months.
+      expected: Each specification has all six parts, and each incompatible change was sent at least 30 days before it took effect.
+      steps:
+        - action: Open the specification of each interface in the list.
+          expected: Each has protocol, data formats, error handling, timing limits, version and the responsible party on each side.
+        - action: For each incompatible change in the version history, compare the date it was sent with the date it took effect.
+          expected: Each change was sent at least 30 days in advance.
+    sv:
+      title: Inspektion av gränssnittsspecifikationer och ändringsaviseringar
+      description: Kontrollerar att gränssnittsspecifikationerna är fullständiga och aviseringstiden för inkompatibla ändringar.
+      preconditions: Gränssnittsförteckningen, gränssnittsspecifikationerna med versionshistorik och ändringsaviseringarna under de senaste 12 månaderna.
+      expected: Varje specifikation har alla sex delarna, och varje inkompatibel ändring skickades minst 30 dagar innan den började gälla.
+      steps:
+        - action: Öppna specifikationen för varje gränssnitt i förteckningen.
+          expected: Varje specifikation har protokoll, dataformat, felhantering, tidsgränser, version och ansvarig part på varje sida.
+        - action: Jämför för varje inkompatibel ändring i versionshistoriken datumet då den skickades med datumet då den började gälla.
+          expected: Varje ändring skickades minst 30 dagar i förväg.
+
+  - id: DCTD-T04
+    priority: medium
+    execution: manual
+    tags: [drawings, reference-designation]
+    refs: ["IEC 81346-1:2022"]
+    en:
+      title: Reference designations on drawings, register and site
+      description: Compares reference designations in drawings, in the asset register and on labels on site.
+      preconditions: The current drawings, the asset register and access to the installation.
+      expected: The designation of each sampled component is identical in each drawing, in the register and on its label.
+      steps:
+        - action: Pick 20 components from the drawings and note their designations in each drawing where they appear.
+          expected: Each component has the same designation in each drawing.
+          data: "Sample of 20 components"
+        - action: Look up each component in the asset register.
+          expected: The register uses the same designation.
+        - action: Find each component on site and read its label.
+          expected: The label shows the same designation.
+    sv:
+      title: Referensbeteckningar i ritningar, register och på plats
+      description: Jämför referensbeteckningarna i ritningarna, i tillgångsregistret och på skyltarna på plats.
+      preconditions: De gällande ritningarna, tillgångsregistret och tillträde till installationen.
+      expected: Beteckningen för varje komponent i urvalet är identisk i varje ritning, i registret och på skylten.
+      steps:
+        - action: Välj 20 komponenter ur ritningarna och notera deras beteckningar i varje ritning där de förekommer.
+          expected: Varje komponent har samma beteckning i varje ritning.
+          data: "Urval av 20 komponenter"
+        - action: Slå upp varje komponent i tillgångsregistret.
+          expected: Registret använder samma beteckning.
+        - action: Leta upp varje komponent på plats och läs dess skylt.
+          expected: Skylten visar samma beteckning.
+
+  - id: DCTD-T05
+    priority: high
+    execution: manual
+    tags: [as-built]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    en:
+      title: Inspection of as-built documentation
+      description: Checks the date of the as-built documentation, its match with the installation and its list of deviations.
+      preconditions: The commissioning date, the as-built documentation with its deviation list, the approved design drawings and access to the installation.
+      expected: The as-built set was delivered within 30 days, matches the sampled installation and lists every deviation from the design.
+      steps:
+        - action: Compare the date of the as-built documentation with the commissioning date.
+          expected: The difference is 30 days or less.
+        - action: Pick 10 installed items and compare them with the as-built drawings on site.
+          expected: Each item matches the drawing.
+          data: "Sample of 10 installed items"
+        - action: Compare 5 as-built drawings with the corresponding design drawings and look up each difference in the deviation list.
+          expected: Each difference is in the list with a reason and an approval.
+    sv:
+      title: Inspektion av relationshandlingar
+      description: Kontrollerar relationshandlingarnas datum, att de stämmer med installationen och förteckningen över avvikelser.
+      preconditions: Datumet för driftsättningen, relationshandlingarna med förteckningen över avvikelser, de godkända projekteringsritningarna och tillträde till installationen.
+      expected: Relationshandlingarna levererades inom 30 dagar, stämmer med urvalet av installationen och förtecknar varje avvikelse från projekteringen.
+      steps:
+        - action: Jämför relationshandlingarnas datum med datumet för driftsättningen.
+          expected: Skillnaden är högst 30 dagar.
+        - action: Välj 10 installerade delar och jämför dem med relationsritningarna på plats.
+          expected: Varje del stämmer med ritningen.
+          data: "Urval av 10 installerade delar"
+        - action: Jämför 5 relationsritningar med motsvarande projekteringsritningar och leta upp varje skillnad i förteckningen över avvikelser.
+          expected: Varje skillnad finns i förteckningen med orsak och godkännande.
+
+  - id: DCTD-T06
+    priority: critical
+    execution: manual
+    tags: [maintenance-manual, safety]
+    refs: ["EN 13460:2009", "IEC/IEEE 82079-1:2019 (safety-related information)"]
+    en:
+      title: Review of maintenance manuals and their safety information
+      description: Checks that each asset type has a complete maintenance manual and that hazardous tasks start with safety information.
+      preconditions: The list of delivered asset types and their maintenance manuals.
+      expected: Each manual has the five parts, and each hazardous task starts with hazard, isolation steps and protective equipment.
+      steps:
+        - action: Find the maintenance manual for each asset type in the delivery.
+          expected: Each manual has tasks, intervals, tools, spare parts and staff qualifications.
+        - action: Go through the tasks in each manual that involve electrical, mechanical, thermal or chemical hazards.
+          expected: Each such task begins with the hazard, the isolation and lock-out steps and the protective equipment, before the first work step.
+    sv:
+      title: Granskning av underhållsinstruktioner och deras säkerhetsinformation
+      description: Kontrollerar att varje typ av tillgång har en fullständig underhållsinstruktion och att riskfyllda åtgärder inleds med säkerhetsinformation.
+      preconditions: Förteckningen över levererade typer av tillgångar och deras underhållsinstruktioner.
+      expected: Varje instruktion har de fem delarna, och varje riskfylld åtgärd inleds med risk, steg för frånkoppling och skyddsutrustning.
+      steps:
+        - action: Leta upp underhållsinstruktionen för varje typ av tillgång i leveransen.
+          expected: Varje instruktion har åtgärder, intervall, verktyg, reservdelar och personalens behörighet.
+        - action: Gå igenom åtgärderna i varje instruktion som innebär elektriska, mekaniska, termiska eller kemiska risker.
+          expected: Varje sådan åtgärd inleds med risken, stegen för frånkoppling och låsning och skyddsutrustningen, före det första arbetssteget.
+
+  - id: DCTD-T07
+    priority: medium
+    execution: manual
+    tags: [troubleshooting]
+    refs: ["EN 13460:2009"]
+    en:
+      title: Troubleshooting table covers each code
+      description: Compares the troubleshooting table in the maintenance manual with the system's list of alarm and fault codes.
+      preconditions: The system's code list exported from the control system and the maintenance manual.
+      expected: Each code is in the table with at least one cause and one action.
+      steps:
+        - action: Match each code in the exported code list to a row in the troubleshooting table.
+          expected: Each code has a row.
+        - action: Check the cause and action columns of each row.
+          expected: Each row has at least one cause and one action.
+    sv:
+      title: Felsökningstabellen täcker varje kod
+      description: Jämför felsökningstabellen i underhållsinstruktionen med systemets förteckning över larm- och felkoder.
+      preconditions: Systemets kodlista exporterad från styrsystemet och underhållsinstruktionen.
+      expected: Varje kod finns i tabellen med minst en orsak och en åtgärd.
+      steps:
+        - action: Koppla varje kod i den exporterade kodlistan till en rad i felsökningstabellen.
+          expected: Varje kod har en rad.
+        - action: Kontrollera kolumnerna för orsak och åtgärd i varje rad.
+          expected: Varje rad har minst en orsak och en åtgärd.
+
+  - id: DCTD-T08
+    priority: high
+    execution: manual
+    tags: [acceptance, file-format]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    en:
+      title: Documentation at acceptance and delivery formats
+      description: Checks that the final documentation was delivered before acceptance and in both formats.
+      preconditions: The acceptance protocol, the documentation plan with delivery status and the delivered document files.
+      expected: The documentation set is an acceptance criterion, every item was delivered before acceptance, and each document has a searchable PDF and an editable source.
+      steps:
+        - action: Check the acceptance criteria in the acceptance protocol.
+          expected: The documentation set is listed as a criterion.
+        - action: Compare the delivery date of each item in the plan with the acceptance date.
+          expected: Each item was delivered before acceptance.
+        - action: For each document, search for a word from its body text in the PDF and open the source file in the agreed authoring tool.
+          expected: The search finds the word, and the source file opens.
+    sv:
+      title: Dokumentation vid godkännandet och leveransformat
+      description: Kontrollerar att den slutliga dokumentationen levererades före godkännandet och i båda formaten.
+      preconditions: Godkännandeprotokollet, dokumentationsplanen med leveransstatus och de levererade dokumentfilerna.
+      expected: Dokumentationen är ett godkännandekriterium, varje objekt levererades före godkännandet, och varje dokument har en sökbar PDF och en redigerbar källfil.
+      steps:
+        - action: Kontrollera godkännandekriterierna i godkännandeprotokollet.
+          expected: Dokumentationen anges som ett kriterium.
+        - action: Jämför leveransdatumet för varje objekt i planen med godkännandedatumet.
+          expected: Varje objekt levererades före godkännandet.
+        - action: Sök i varje dokuments PDF efter ett ord ur brödtexten och öppna källfilen i det överenskomna redigeringsverktyget.
+          expected: Sökningen hittar ordet, och källfilen öppnas.
+
+  - id: DCTD-T09
+    priority: medium
+    execution: manual
+    tags: [currency, cross-reference]
+    refs: ["ISO 9001:2015 §7.5.2"]
+    en:
+      title: Documentation follows changes and references resolve
+      description: Checks that documents are updated after changes and that their cross-references are by identifier and version.
+      preconditions: The change log of the last 6 months, the document register and the technical documents.
+      expected: Each affected document was updated within 20 working days, and each sampled cross-reference names an existing document by identifier and version.
+      steps:
+        - action: Pick 10 completed changes and find the documents each change affects.
+          expected: Each affected document has a new version dated no more than 20 working days after the change.
+          data: "Sample of 10 completed changes"
+        - action: Pick 5 documents and check each cross-reference in them against the document register.
+          expected: Each reference has an identifier and a version, and the referenced document exists in the register.
+    sv:
+      title: Dokumentationen följer ändringar och hänvisningarna fungerar
+      description: Kontrollerar att dokumenten uppdateras efter ändringar och att hänvisningarna anger identitet och version.
+      preconditions: Ändringsloggen för de senaste 6 månaderna, dokumentregistret och de tekniska dokumenten.
+      expected: Varje berört dokument uppdaterades inom 20 arbetsdagar, och varje hänvisning i urvalet anger ett befintligt dokument med identitet och version.
+      steps:
+        - action: Välj 10 slutförda ändringar och leta upp de dokument som varje ändring berör.
+          expected: Varje berört dokument har en ny version daterad högst 20 arbetsdagar efter ändringen.
+          data: "Urval av 10 slutförda ändringar"
+        - action: Välj 5 dokument och kontrollera varje hänvisning i dem mot dokumentregistret.
+          expected: Varje hänvisning har identitet och version, och det dokument som hänvisas till finns i registret.
+
+  - id: DCTD-T10
+    priority: low
+    execution: manual
+    tags: [glossary]
+    refs: ["ISO/IEC/IEEE 15289:2019 (information items)"]
+    en:
+      title: Abbreviations defined in the glossary
+      description: Checks that abbreviations used in the documents are defined in the shared glossary.
+      preconditions: The shared glossary and 5 documents from the documentation set.
+      expected: Each abbreviation used in the sampled documents is defined in the glossary.
+      steps:
+        - action: List the abbreviations used in the 5 documents.
+          expected: A list of abbreviations exists.
+        - action: Look up each abbreviation in the glossary.
+          expected: Each abbreviation is defined.
+    sv:
+      title: Förkortningar definierade i ordlistan
+      description: Kontrollerar att förkortningar som används i dokumenten är definierade i den gemensamma ordlistan.
+      preconditions: Den gemensamma ordlistan och 5 dokument ur dokumentationen.
+      expected: Varje förkortning som används i dokumenten i urvalet är definierad i ordlistan.
+      steps:
+        - action: Lista förkortningarna som används i de 5 dokumenten.
+          expected: Det finns en lista över förkortningar.
+        - action: Slå upp varje förkortning i ordlistan.
+          expected: Varje förkortning är definierad.

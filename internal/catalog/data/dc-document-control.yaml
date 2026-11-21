@@ -1,0 +1,716 @@
+area: dc-document-control
+prefix: DCDC
+group: privacy
+catalogue: documentation
+name: {en: Document control and regulatory documentation, sv: Dokumentstyrning och regulatorisk dokumentation}
+description:
+  en: Control of documented information (identification, approval, versions, distribution, retention and disposal per ISO 9001 clause 7.5), classification and handling of documents, and regulatory documentation such as the CE technical file, the EU declaration of conformity, CRA Annex VII and, at a high level, AI Act Annex IV.
+  sv: Styrning av dokumenterad information (identifiering, godkännande, versioner, distribution, bevarande och gallring enligt ISO 9001 avsnitt 7.5), klassning och hantering av dokument samt regulatorisk dokumentation som teknisk dokumentation för CE-märkning, EU-försäkran om överensstämmelse, bilaga VII i cyberresiliensförordningen och, på övergripande nivå, bilaga IV i AI-förordningen.
+
+requirements:
+  - id: DCDC-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [document-control, identification]
+    refs: ["ISO 9001:2015 §7.5.2", "ISO/IEC 27001:2022 §7.5.2"]
+    tests: [DCDC-T01]
+    en:
+      title: Identifier, version, status and owner for each document
+      description: Each controlled document MUST carry a unique identifier, a version number, a status of draft, approved or withdrawn, and a named owner.
+      rationale: Readers and auditors can only tell which document is valid when each one is uniquely identified and has a clear status.
+      criteria:
+        - method: inspection
+          text: Each entry in the document register has the four attributes, no identifier occurs twice, and the attributes on the documents match the register.
+    sv:
+      title: Identitet, version, status och ägare för varje dokument
+      description: Varje styrt dokument SKA ha en unik identitet, ett versionsnummer, en status som utkast, fastställt eller upphävt och en namngiven ägare.
+      rationale: Läsare och revisorer kan avgöra vilket dokument som gäller bara när varje dokument är unikt identifierat och har en tydlig status.
+      criteria:
+        - method: inspection
+          text: Varje post i dokumentregistret har de fyra uppgifterna, ingen identitet förekommer två gånger, och uppgifterna i dokumenten stämmer med registret.
+
+  - id: DCDC-02
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [document-control, periodic-review]
+    refs: ["ISO 9001:2015 §7.5.2"]
+    tests: [DCDC-T01]
+    en:
+      title: Review of each controlled document every 24 months
+      description: The owner of each controlled document SHOULD review it at least once every 24 months and record the review even when nothing changes.
+      rationale: Documents that are never reviewed drift from practice, and a recorded review shows that the content is still valid.
+      criteria:
+        - method: inspection
+          text: Each approved document in the register has a review date less than 24 months old.
+          threshold: "≤ 24 months between reviews"
+    sv:
+      title: Granskning av varje styrt dokument var 24:e månad
+      description: Ägaren till varje styrt dokument BÖR granska det minst en gång var 24:e månad och registrera granskningen även när inget ändras.
+      rationale: Dokument som aldrig granskas glider isär från arbetssättet, och en registrerad granskning visar att innehållet fortfarande gäller.
+      criteria:
+        - method: inspection
+          text: Varje fastställt dokument i registret har ett granskningsdatum som är yngre än 24 månader.
+          threshold: "≤ 24 månader mellan granskningarna"
+
+  - id: DCDC-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [document-control, approval]
+    refs: ["ISO 9001:2015 §7.5.2", "ISO/IEC 27001:2022 §7.5.2"]
+    tests: [DCDC-T02]
+    en:
+      title: Approval by a person other than the author
+      description: A controlled document MUST be approved by a person other than its author before it is released.
+      rationale: A second person's approval catches errors and confirms that the content is accepted by the organisation, not only by its writer.
+      criteria:
+        - method: test
+          text: An author who tries to approve their own document is refused, and approval by another authorised person releases the document.
+    sv:
+      title: Fastställs av någon annan än författaren
+      description: Ett styrt dokument SKA fastställas av en annan person än författaren innan det ges ut.
+      rationale: En andra persons fastställelse fångar fel och bekräftar att innehållet är godtaget av organisationen och inte bara av skribenten.
+      criteria:
+        - method: test
+          text: En författare som försöker fastställa sitt eget dokument avvisas, och fastställelse av en annan behörig person ger ut dokumentet.
+
+  - id: DCDC-04
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [document-control, change-history]
+    refs: ["ISO 9001:2015 §7.5.3.2"]
+    tests: [DCDC-T02]
+    en:
+      title: Change history in each version
+      description: Each new version of a controlled document SHOULD record what was changed, who changed it and the date of approval.
+      rationale: A change history lets readers see what is new without comparing whole documents and shows auditors how the content evolved.
+      criteria:
+        - method: inspection
+          text: For 10 documents with more than one version each version has a change history entry with the change, the author and the approval date.
+    sv:
+      title: Ändringshistorik i varje version
+      description: Varje ny version av ett styrt dokument BÖR ange vad som har ändrats, vem som ändrade det och datum för fastställelse.
+      rationale: En ändringshistorik låter läsarna se vad som är nytt utan att jämföra hela dokument och visar revisorer hur innehållet har utvecklats.
+      criteria:
+        - method: inspection
+          text: För 10 dokument med mer än en version har varje version en post i ändringshistoriken med ändringen, författaren och datum för fastställelse.
+
+  - id: DCDC-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [document-control, obsolete-documents]
+    refs: ["ISO 9001:2015 §7.5.3.2"]
+    tests: [DCDC-T03]
+    en:
+      title: Only the current version at the points of use
+      description: The organisation MUST make only the current approved version of a controlled document available at the points of use and mark each superseded version as withdrawn.
+      rationale: Work done from an outdated instruction is one of the most frequent causes of nonconformities.
+      criteria:
+        - method: inspection
+          text: At 5 points of use, each controlled document found is the current version, and superseded versions in the archive are marked as withdrawn.
+    sv:
+      title: Bara den gällande versionen där dokumenten används
+      description: Organisationen SKA göra enbart den gällande fastställda versionen av ett styrt dokument tillgänglig där det används och märka varje ersatt version som upphävd.
+      rationale: Arbete som utförs efter en inaktuell instruktion är en av de vanligaste orsakerna till avvikelser.
+      criteria:
+        - method: inspection
+          text: På 5 platser där dokumenten används är varje styrt dokument som hittas den gällande versionen, och ersatta versioner i arkivet är märkta som upphävda.
+
+  - id: DCDC-06
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [document-control, distribution]
+    refs: ["ISO 9001:2015 §7.5.3.2"]
+    tests: [DCDC-T03]
+    en:
+      title: Recipients notified of a new version within 2 working days
+      description: The document management system SHOULD notify each person on the distribution list of a document within 2 working days after a new version has been approved.
+      rationale: People who rely on a document need to know when it changes, especially when they hold printed or offline copies.
+      criteria:
+        - method: test
+          text: Approving a new version of a test document sends a notice to each person on its distribution list within 2 working days.
+          threshold: "≤ 2 working days"
+    sv:
+      title: Mottagare meddelas om ny version inom 2 arbetsdagar
+      description: Dokumenthanteringssystemet BÖR meddela varje person på ett dokuments sändlista inom 2 arbetsdagar efter att en ny version har fastställts.
+      rationale: Personer som förlitar sig på ett dokument behöver veta när det ändras, särskilt när de har utskrivna exemplar eller kopior utan nätverk.
+      criteria:
+        - method: test
+          text: Fastställelse av en ny version av ett testdokument skickar ett meddelande till varje person på dess sändlista inom 2 arbetsdagar.
+          threshold: "≤ 2 arbetsdagar"
+
+  - id: DCDC-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [retention, records]
+    refs: ["ISO 9001:2015 §7.5.3.2", "ISO 15489-1:2016", "ISO/IEC 27001:2022 A.5.33"]
+    tests: [DCDC-T04]
+    en:
+      title: Retention schedule per document type
+      description: The organisation MUST keep a retention schedule that states for each document type the retention period, its legal or contractual basis and the disposal method.
+      rationale: Without a schedule, records are either destroyed too early, losing evidence, or kept too long, increasing risk and cost.
+      criteria:
+        - method: review
+          text: Each document type in the register maps to an entry in the retention schedule with a period, a basis and a disposal method.
+    sv:
+      title: Bevarandeplan per dokumenttyp
+      description: Organisationen SKA ha en bevarande- och gallringsplan som för varje dokumenttyp anger bevarandetid, dess grund i lag eller avtal och metod för gallring.
+      rationale: Utan plan förstörs handlingar antingen för tidigt, så att bevis går förlorade, eller sparas för länge, vilket ökar risker och kostnader.
+      criteria:
+        - method: review
+          text: Varje dokumenttyp i registret motsvaras av en post i bevarande- och gallringsplanen med tid, grund och gallringsmetod.
+
+  - id: DCDC-08
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [retention, disposal]
+    refs: ["ISO 15489-1:2016"]
+    tests: [DCDC-T04]
+    en:
+      title: Disposal within 3 months after the retention period
+      description: The organisation SHOULD dispose of each document within 3 months after its retention period has ended and keep a disposal record.
+      rationale: Documents kept beyond their period add risk without value, and the disposal record proves that disposal followed the schedule.
+      criteria:
+        - method: inspection
+          text: No document in the archive is more than 3 months past its retention period, and each disposal of the last 12 months has a disposal record.
+          threshold: "≤ 3 months"
+    sv:
+      title: Gallring inom 3 månader efter bevarandetiden
+      description: Organisationen BÖR gallra varje dokument inom 3 månader efter att dess bevarandetid har löpt ut och föra protokoll över gallringen.
+      rationale: Dokument som sparas längre än sin tid ökar riskerna utan att tillföra värde, och gallringsprotokollet visar att gallringen följde planen.
+      criteria:
+        - method: inspection
+          text: Inget dokument i arkivet har passerat sin bevarandetid med mer än 3 månader, och varje gallring under de senaste 12 månaderna har ett gallringsprotokoll.
+          threshold: "≤ 3 månader"
+
+  - id: DCDC-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [classification, labelling]
+    refs: ["ISO/IEC 27001:2022 A.5.12", "ISO/IEC 27001:2022 A.5.13"]
+    tests: [DCDC-T05]
+    en:
+      title: Classification label on each document
+      description: Each document MUST carry a classification label from the organisation's classification scheme on each page and in its metadata.
+      rationale: A visible label tells every reader how the document is to be handled without consulting the author.
+      criteria:
+        - method: inspection
+          text: In a sample of 20 documents each page and the metadata show a label that exists in the classification scheme.
+    sv:
+      title: Klassningsmärkning på varje dokument
+      description: Varje dokument SKA ha en märkning med informationsklass ur organisationens klassningsmodell på varje sida och i sina metadata.
+      rationale: En synlig märkning talar om för varje läsare hur dokumentet hanteras utan att författaren behöver tillfrågas.
+      criteria:
+        - method: inspection
+          text: I ett urval av 20 dokument visar varje sida och metadata en märkning som finns i klassningsmodellen.
+
+  - id: DCDC-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [classification, handling-rules]
+    refs: ["ISO/IEC 27001:2022 A.5.13", "ISO/IEC 27001:2022 A.5.14", "ISO/IEC 27001:2022 A.5.10"]
+    tests: [DCDC-T05]
+    en:
+      title: Handling rules for each classification level
+      description: The classification scheme MUST state for each level the rules for storage, sending, printing, sharing with external parties and destruction.
+      rationale: A label is useful only when every level has rules that people can follow.
+      criteria:
+        - method: review
+          text: The handling rules cover the five activities for each level, and a document of the highest level sent as a test follows the rules for sending.
+    sv:
+      title: Hanteringsregler för varje informationsklass
+      description: Klassningsmodellen SKA ange regler för lagring, sändning, utskrift, delning med externa parter och förstöring för varje nivå.
+      rationale: En märkning är till nytta bara när varje nivå har regler som människor kan följa.
+      criteria:
+        - method: review
+          text: Hanteringsreglerna täcker de fem aktiviteterna för varje nivå, och ett dokument i den högsta nivån som skickas som test följer reglerna för sändning.
+
+  - id: DCDC-11
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [protective-security, classified-information]
+    refs: ["Säkerhetsskyddslag (2018:585)"]
+    tests: [DCDC-T06]
+    en:
+      title: Security-classified documents only in approved systems
+      description: Documents that contain security-classified information MUST NOT be stored or processed in a system that has not been approved for that classification level.
+      rationale: Information that concerns national security needs protection that ordinary office systems do not give.
+      criteria:
+        - method: inspection
+          text: A search for the protective security labels in the ordinary document management system and file shares returns no documents.
+    sv:
+      title: Säkerhetsskyddsklassificerade dokument bara i godkända system
+      description: Dokument som innehåller säkerhetsskyddsklassificerade uppgifter SKA INTE lagras eller behandlas i ett system som inte har godkänts för den säkerhetsskyddsklassen.
+      rationale: Uppgifter som rör Sveriges säkerhet behöver ett skydd som vanliga kontorssystem inte ger.
+      criteria:
+        - method: inspection
+          text: En sökning efter säkerhetsskyddsmärkningarna i det ordinarie dokumenthanteringssystemet och på filytorna ger inga dokument.
+
+  - id: DCDC-12
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [ce-marking, technical-file]
+    refs: ["Regulation (EU) 2023/1230 Annex IV", "Decision No 768/2008/EC Annex II"]
+    tests: [DCDC-T07]
+    en:
+      title: CE technical file compiled before placing on the market
+      description: The manufacturer MUST compile the technical file for each product variant before it is placed on the market, with the product description, the risk assessment, the list of applied standards, the test reports and a copy of the EU declaration of conformity.
+      rationale: The technical file is the evidence of conformity that a market surveillance authority asks for, and it cannot be recreated after the fact.
+      criteria:
+        - method: review
+          text: For each product variant the technical file is dated before the first delivery and contains the five parts.
+          threshold: "5 parts"
+    sv:
+      title: Teknisk dokumentation för CE-märkning före utsläppande på marknaden
+      description: Tillverkaren SKA sammanställa den tekniska dokumentationen för varje produktvariant innan den släpps ut på marknaden, med produktbeskrivning, riskbedömning, förteckning över tillämpade standarder, provningsrapporter och en kopia av EU-försäkran om överensstämmelse.
+      rationale: Den tekniska dokumentationen är det bevis på överensstämmelse som en marknadskontrollmyndighet begär, och den går inte att återskapa i efterhand.
+      criteria:
+        - method: review
+          text: För varje produktvariant är den tekniska dokumentationen daterad före den första leveransen och innehåller de fem delarna.
+          threshold: "5 delar"
+
+  - id: DCDC-13
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [declaration-of-conformity]
+    refs: ["Decision No 768/2008/EC Annex III", "Regulation (EU) 2024/2847 (CRA) Annex V"]
+    tests: [DCDC-T08]
+    en:
+      title: Complete EU declaration of conformity
+      description: The EU declaration of conformity MUST identify the product, the manufacturer, the applicable Union legislation and the applied standards, and carry the date and the signature of an authorised person.
+      rationale: The declaration is the manufacturer's formal statement of conformity, and a missing element makes it invalid.
+      criteria:
+        - method: review
+          text: Each declaration contains the six elements, and the legislation listed matches the regulatory register for the product.
+          threshold: "6 elements"
+    sv:
+      title: Fullständig EU-försäkran om överensstämmelse
+      description: EU-försäkran om överensstämmelse SKA identifiera produkten, tillverkaren, den tillämpliga unionslagstiftningen och de tillämpade standarderna och ha datum och underskrift av en behörig person.
+      rationale: Försäkran är tillverkarens formella intyg om överensstämmelse, och ett element som saknas gör den ogiltig.
+      criteria:
+        - method: review
+          text: Varje försäkran innehåller de sex elementen, och den angivna lagstiftningen stämmer med det regulatoriska registret för produkten.
+          threshold: "6 element"
+
+  - id: DCDC-14
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [retention, technical-file]
+    refs: ["Decision No 768/2008/EC Annex I Art. R2(3)", "Regulation (EU) 2024/2847 (CRA) Art. 13(13)"]
+    tests: [DCDC-T08]
+    en:
+      title: Technical documentation kept for 10 years
+      description: The manufacturer MUST keep the technical documentation and the EU declaration of conformity for at least 10 years after the last unit of the product variant was placed on the market.
+      rationale: Authorities can request the documentation long after a product's sale, and the retention period is set in Union law.
+      criteria:
+        - method: inspection
+          text: The retention schedule sets at least 10 years for both document types, and the documents of a product variant discontinued 9 years ago can be retrieved.
+          threshold: "≥ 10 years"
+    sv:
+      title: Teknisk dokumentation sparas i 10 år
+      description: Tillverkaren SKA spara den tekniska dokumentationen och EU-försäkran om överensstämmelse i minst 10 år efter att den sista enheten av produktvarianten släpptes ut på marknaden.
+      rationale: Myndigheter kan begära dokumentationen långt efter att en produkt sålts, och bevarandetiden är fastställd i unionsrätten.
+      criteria:
+        - method: inspection
+          text: Bevarandeplanen anger minst 10 år för båda dokumenttyperna, och dokumenten för en produktvariant som utgick för 9 år sedan kan hämtas.
+          threshold: "≥ 10 år"
+
+  - id: DCDC-15
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cra, technical-documentation]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex VII", "Regulation (EU) 2024/2847 (CRA) Art. 31"]
+    tests: [DCDC-T09]
+    en:
+      title: Technical documentation per CRA Annex VII
+      description: The technical documentation of a product with digital elements MUST contain the general description, the design and development information, the cybersecurity risk assessment, the vulnerability handling process, the test reports and the information on the software bill of materials.
+      rationale: The CRA makes this documentation the basis for showing conformity with its essential cybersecurity requirements.
+      criteria:
+        - method: review
+          text: The technical documentation has a section for each of the six topics, and each section refers to the current product version.
+          threshold: "6 topics"
+    sv:
+      title: Teknisk dokumentation enligt bilaga VII i cyberresiliensförordningen
+      description: Den tekniska dokumentationen för en produkt med digitala element SKA innehålla en allmän beskrivning, information om konstruktion och utveckling, cybersäkerhetsriskbedömningen, processen för sårbarhetshantering, provningsrapporterna och informationen om programvaruförteckningen.
+      rationale: Cyberresiliensförordningen gör denna dokumentation till grunden för att visa överensstämmelse med de väsentliga cybersäkerhetskraven.
+      criteria:
+        - method: review
+          text: Den tekniska dokumentationen har ett avsnitt för vart och ett av de sex områdena, och varje avsnitt avser den gällande produktversionen.
+          threshold: "6 områden"
+
+  - id: DCDC-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [ai-act, technical-documentation]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 11", "EU AI Act (Regulation (EU) 2024/1689) Annex IV"]
+    tests: [DCDC-T10]
+    en:
+      title: Technical documentation of a high-risk AI system
+      description: The provider of a high-risk AI system MUST draw up its technical documentation according to AI Act Annex IV before the system is placed on the market and update it with each substantial change.
+      rationale: The documentation lets authorities assess the system's compliance and is the reference for later changes.
+      criteria:
+        - method: review
+          text: The documentation is dated before the market placement, covers each heading of Annex IV, and its version history has an entry for each substantial change in the change log.
+    sv:
+      title: Teknisk dokumentation för ett AI-system med hög risk
+      description: Leverantören av ett AI-system med hög risk SKA upprätta dess tekniska dokumentation enligt bilaga IV i AI-förordningen innan systemet släpps ut på marknaden och uppdatera den vid varje väsentlig ändring.
+      rationale: Dokumentationen låter myndigheterna bedöma om systemet uppfyller kraven och är utgångspunkten för senare ändringar.
+      criteria:
+        - method: review
+          text: Dokumentationen är daterad före utsläppandet på marknaden, täcker varje rubrik i bilaga IV, och dess versionshistorik har en post för varje väsentlig ändring i ändringsloggen.
+
+  - id: DCDC-17
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [regulatory-register, conformity-assessment]
+    refs: ["Decision No 768/2008/EC Annex II"]
+    tests: [DCDC-T11]
+    en:
+      title: Register of regulations per product
+      description: The manufacturer SHOULD keep a register that states for each product the applicable Union legislation, the conformity assessment procedure chosen and the location of its technical documentation.
+      rationale: A single overview makes it visible when a new regulation applies to a product and where its evidence is kept.
+      criteria:
+        - method: inspection
+          text: Each product in the product list has an entry with the legislation, the procedure and a link to the technical documentation that opens.
+    sv:
+      title: Register över regelverk per produkt
+      description: Tillverkaren BÖR föra ett register som för varje produkt anger tillämplig unionslagstiftning, valt förfarande för bedömning av överensstämmelse och var den tekniska dokumentationen finns.
+      rationale: En samlad översikt synliggör när en ny förordning blir tillämplig på en produkt och var underlaget förvaras.
+      criteria:
+        - method: inspection
+          text: Varje produkt i produktförteckningen har en post med lagstiftning, förfarande och en länk till den tekniska dokumentationen som går att öppna.
+
+tests:
+  - id: DCDC-T01
+    priority: high
+    execution: manual
+    tags: [document-control]
+    refs: ["ISO 9001:2015 §7.5.2"]
+    en:
+      title: Inspection of the document register
+      description: Checks identification, status, ownership and review dates of controlled documents.
+      preconditions: An export of the document register and read access to the documents.
+      expected: Every entry has identifier, version, status and owner, identifiers are unique, documents match the register, and approved documents were reviewed within 24 months.
+      steps:
+        - action: Filter the export for entries with a missing identifier, version, status or owner, and for duplicate identifiers.
+          expected: Both filters return no entries.
+        - action: Open 10 documents and compare the attributes on the document with the register.
+          expected: The attributes match.
+          data: "Sample of 10 documents"
+        - action: Filter the approved documents for a review date older than 24 months.
+          expected: The filter returns no entries.
+    sv:
+      title: Inspektion av dokumentregistret
+      description: Kontrollerar identifiering, status, ägare och granskningsdatum för styrda dokument.
+      preconditions: En export av dokumentregistret och läsbehörighet till dokumenten.
+      expected: Varje post har identitet, version, status och ägare, identiteterna är unika, dokumenten stämmer med registret, och fastställda dokument har granskats inom 24 månader.
+      steps:
+        - action: Filtrera exporten på poster som saknar identitet, version, status eller ägare och på dubbla identiteter.
+          expected: Båda filtren ger inga poster.
+        - action: Öppna 10 dokument och jämför uppgifterna i dokumentet med registret.
+          expected: Uppgifterna stämmer.
+          data: "Urval av 10 dokument"
+        - action: Filtrera de fastställda dokumenten på ett granskningsdatum som är äldre än 24 månader.
+          expected: Filtret ger inga poster.
+
+  - id: DCDC-T02
+    priority: high
+    execution: manual
+    tags: [approval, change-history]
+    refs: ["ISO 9001:2015 §7.5.2", "ISO 9001:2015 §7.5.3.2"]
+    en:
+      title: Approval rule and change history
+      description: Tests that authors cannot approve their own documents and checks the change history of documents with several versions.
+      preconditions: A test document in draft status written by user A, a second authorised approver B, and 10 documents with more than one version.
+      expected: Self-approval is refused, approval by B releases the document, and each version has a complete change history entry.
+      steps:
+        - action: As user A, try to approve the test document.
+          expected: The approval is refused with a message that the author cannot approve.
+        - action: As user B, approve the test document.
+          expected: The document changes to approved status and is released.
+        - action: Open the change history of the 10 documents.
+          expected: Each version has an entry with the change, the author and the approval date.
+    sv:
+      title: Regel för fastställelse och ändringshistorik
+      description: Testar att författare inte kan fastställa sina egna dokument och kontrollerar ändringshistoriken för dokument med flera versioner.
+      preconditions: Ett testdokument med status utkast skrivet av användare A, en andra behörig person B som fastställer och 10 dokument med mer än en version.
+      expected: Fastställelse av eget dokument avvisas, fastställelse av B ger ut dokumentet, och varje version har en fullständig post i ändringshistoriken.
+      steps:
+        - action: Försök som användare A att fastställa testdokumentet.
+          expected: Fastställelsen avvisas med ett meddelande om att författaren inte kan fastställa.
+        - action: Fastställ testdokumentet som användare B.
+          expected: Dokumentet får status fastställt och ges ut.
+        - action: Öppna ändringshistoriken för de 10 dokumenten.
+          expected: Varje version har en post med ändringen, författaren och datum för fastställelse.
+
+  - id: DCDC-T03
+    priority: high
+    execution: manual
+    tags: [obsolete-documents, distribution]
+    refs: ["ISO 9001:2015 §7.5.3.2"]
+    en:
+      title: Current versions at points of use and change notices
+      description: Checks the versions found at points of use and tests the notice to the distribution list.
+      preconditions: Access to 5 points of use such as control rooms, workshops and shared folders, and a test document with a distribution list of 3 test users.
+      expected: Only current versions are found at the points of use, and each person on the distribution list is notified within 2 working days of a new version.
+      steps:
+        - action: At each point of use, list the controlled documents found and compare their versions with the register.
+          expected: Each document found is the current approved version.
+        - action: Check the status of superseded versions in the archive.
+          expected: Each superseded version is marked as withdrawn.
+        - action: Approve a new version of the test document and check the notices received by the 3 test users.
+          expected: Each test user receives a notice within 2 working days.
+    sv:
+      title: Gällande versioner där dokumenten används och ändringsmeddelanden
+      description: Kontrollerar vilka versioner som finns där dokumenten används och testar meddelandet till sändlistan.
+      preconditions: Tillträde till 5 platser där dokument används, till exempel kontrollrum, verkstäder och gemensamma mappar, och ett testdokument med en sändlista med 3 testanvändare.
+      expected: Bara gällande versioner finns där dokumenten används, och varje person på sändlistan meddelas inom 2 arbetsdagar om en ny version.
+      steps:
+        - action: Lista de styrda dokument som finns på varje plats och jämför deras versioner med registret.
+          expected: Varje dokument som hittas är den gällande fastställda versionen.
+        - action: Kontrollera statusen för ersatta versioner i arkivet.
+          expected: Varje ersatt version är märkt som upphävd.
+        - action: Fastställ en ny version av testdokumentet och kontrollera meddelandena till de 3 testanvändarna.
+          expected: Varje testanvändare får ett meddelande inom 2 arbetsdagar.
+
+  - id: DCDC-T04
+    priority: high
+    execution: manual
+    tags: [retention, disposal]
+    refs: ["ISO 15489-1:2016", "ISO/IEC 27001:2022 A.5.33"]
+    en:
+      title: Review of the retention schedule and disposals
+      description: Checks that every document type has a retention rule and that disposals follow it.
+      preconditions: The retention schedule, the document register with document types and retention dates, and the disposal records of the last 12 months.
+      expected: Each document type has a period, basis and disposal method, no document is more than 3 months overdue, and each disposal has a record.
+      steps:
+        - action: Map each document type in the register to the retention schedule.
+          expected: Each type has a period, a basis and a disposal method.
+        - action: Filter the register for documents whose retention period ended more than 3 months ago.
+          expected: The filter returns no documents.
+        - action: Compare the disposals in the register with the disposal records.
+          expected: Each disposal has a record.
+    sv:
+      title: Granskning av bevarandeplanen och gallringar
+      description: Kontrollerar att varje dokumenttyp har en regel för bevarande och att gallringarna följer den.
+      preconditions: Bevarande- och gallringsplanen, dokumentregistret med dokumenttyper och bevarandedatum och gallringsprotokollen för de senaste 12 månaderna.
+      expected: Varje dokumenttyp har tid, grund och gallringsmetod, inget dokument är mer än 3 månader försenat, och varje gallring har ett protokoll.
+      steps:
+        - action: Koppla varje dokumenttyp i registret till bevarande- och gallringsplanen.
+          expected: Varje typ har tid, grund och gallringsmetod.
+        - action: Filtrera registret på dokument vars bevarandetid löpte ut för mer än 3 månader sedan.
+          expected: Filtret ger inga dokument.
+        - action: Jämför gallringarna i registret med gallringsprotokollen.
+          expected: Varje gallring har ett protokoll.
+
+  - id: DCDC-T05
+    priority: high
+    execution: manual
+    tags: [classification]
+    refs: ["ISO/IEC 27001:2022 A.5.12", "ISO/IEC 27001:2022 A.5.13", "ISO/IEC 27001:2022 A.5.14"]
+    en:
+      title: Classification labels and handling rules
+      description: Checks the labels on a sample of documents and the handling rules of the classification scheme.
+      preconditions: The classification scheme with handling rules, 20 documents of different types and a test document with the highest level.
+      expected: Every sampled document is labelled on each page and in the metadata, and the handling rules cover each activity and level.
+      steps:
+        - action: Check the label on each page and in the metadata of the 20 documents.
+          expected: Each document has a label from the scheme on each page and in the metadata.
+          data: "Sample of 20 documents"
+        - action: Check the handling rules for storage, sending, printing, external sharing and destruction for each level.
+          expected: Each level has a rule for each of the five activities.
+        - action: Send the test document to an external test address following the rules for its level.
+          expected: The steps of the rule can be carried out with the tools available, for example encryption.
+    sv:
+      title: Klassningsmärkning och hanteringsregler
+      description: Kontrollerar märkningen på ett urval av dokument och hanteringsreglerna i klassningsmodellen.
+      preconditions: Klassningsmodellen med hanteringsregler, 20 dokument av olika typer och ett testdokument i den högsta nivån.
+      expected: Varje dokument i urvalet är märkt på varje sida och i metadata, och hanteringsreglerna täcker varje aktivitet och nivå.
+      steps:
+        - action: Kontrollera märkningen på varje sida och i metadata för de 20 dokumenten.
+          expected: Varje dokument har en märkning ur modellen på varje sida och i metadata.
+          data: "Urval av 20 dokument"
+        - action: Kontrollera hanteringsreglerna för lagring, sändning, utskrift, extern delning och förstöring för varje nivå.
+          expected: Varje nivå har en regel för var och en av de fem aktiviteterna.
+        - action: Skicka testdokumentet till en extern testadress enligt reglerna för dess nivå.
+          expected: Stegen i regeln kan utföras med de verktyg som finns, till exempel kryptering.
+
+  - id: DCDC-T06
+    priority: critical
+    execution: manual
+    tags: [protective-security]
+    refs: ["Säkerhetsskyddslag (2018:585)"]
+    en:
+      title: No security-classified documents in ordinary systems
+      description: Searches the ordinary document systems for documents marked as security-classified.
+      preconditions: Search access to the ordinary document management system and file shares, granted by the security protection manager, and the list of protective security labels.
+      expected: No document with a protective security label is found in the ordinary systems.
+      steps:
+        - action: Search the document management system for each protective security label.
+          expected: The search returns no documents.
+        - action: Search the file shares for each protective security label in file names and content.
+          expected: The search returns no files.
+    sv:
+      title: Inga säkerhetsskyddsklassificerade dokument i ordinarie system
+      description: Söker i de ordinarie dokumentsystemen efter dokument som är märkta som säkerhetsskyddsklassificerade.
+      preconditions: Sökbehörighet till det ordinarie dokumenthanteringssystemet och filytorna, beviljad av säkerhetsskyddschefen, och listan över säkerhetsskyddsmärkningar.
+      expected: Inget dokument med en säkerhetsskyddsmärkning hittas i de ordinarie systemen.
+      steps:
+        - action: Sök i dokumenthanteringssystemet efter varje säkerhetsskyddsmärkning.
+          expected: Sökningen ger inga dokument.
+        - action: Sök på filytorna efter varje säkerhetsskyddsmärkning i filnamn och innehåll.
+          expected: Sökningen ger inga filer.
+
+  - id: DCDC-T07
+    priority: critical
+    execution: manual
+    tags: [technical-file]
+    refs: ["Regulation (EU) 2023/1230 Annex IV", "Decision No 768/2008/EC Annex II"]
+    en:
+      title: Review of the CE technical file
+      description: Checks the date and content of the technical file for each product variant.
+      preconditions: The list of product variants with their first delivery dates and their technical files.
+      expected: Each technical file is dated before the first delivery and contains the five parts.
+      steps:
+        - action: Compare the date of each technical file with the first delivery date of the variant.
+          expected: Each file is dated before the first delivery.
+        - action: Check each file for product description, risk assessment, list of applied standards, test reports and a copy of the declaration of conformity.
+          expected: Each file contains the five parts.
+    sv:
+      title: Granskning av den tekniska dokumentationen för CE-märkning
+      description: Kontrollerar datum och innehåll i den tekniska dokumentationen för varje produktvariant.
+      preconditions: Förteckningen över produktvarianter med datum för första leverans och deras tekniska dokumentation.
+      expected: Varje teknisk dokumentation är daterad före den första leveransen och innehåller de fem delarna.
+      steps:
+        - action: Jämför datumet för varje teknisk dokumentation med datumet för variantens första leverans.
+          expected: Varje dokumentation är daterad före den första leveransen.
+        - action: Kontrollera att varje dokumentation innehåller produktbeskrivning, riskbedömning, förteckning över tillämpade standarder, provningsrapporter och en kopia av försäkran om överensstämmelse.
+          expected: Varje dokumentation innehåller de fem delarna.
+
+  - id: DCDC-T08
+    priority: critical
+    execution: manual
+    tags: [declaration-of-conformity, retention]
+    refs: ["Decision No 768/2008/EC Annex III", "Decision No 768/2008/EC Annex I Art. R2(3)"]
+    en:
+      title: Review of declarations of conformity and their retention
+      description: Checks the content of each declaration of conformity and the retention of documentation for discontinued variants.
+      preconditions: The declarations of conformity, the regulatory register, the retention schedule and a product variant discontinued about 9 years ago.
+      expected: Each declaration has the six elements and the right legislation, and the documentation of the discontinued variant can be retrieved.
+      steps:
+        - action: Check each declaration for product identification, manufacturer, legislation, standards, date and signature.
+          expected: Each declaration contains the six elements.
+        - action: Compare the legislation in each declaration with the regulatory register for the product.
+          expected: The legislation matches.
+        - action: Check the retention period in the schedule and retrieve the technical file and declaration of the discontinued variant.
+          expected: The schedule sets at least 10 years, and both documents are retrieved.
+    sv:
+      title: Granskning av försäkringar om överensstämmelse och deras bevarande
+      description: Kontrollerar innehållet i varje försäkran om överensstämmelse och bevarandet av dokumentation för utgångna varianter.
+      preconditions: Försäkringarna om överensstämmelse, det regulatoriska registret, bevarandeplanen och en produktvariant som utgick för omkring 9 år sedan.
+      expected: Varje försäkran har de sex elementen och rätt lagstiftning, och dokumentationen för den utgångna varianten kan hämtas.
+      steps:
+        - action: Kontrollera att varje försäkran har produktidentifiering, tillverkare, lagstiftning, standarder, datum och underskrift.
+          expected: Varje försäkran innehåller de sex elementen.
+        - action: Jämför lagstiftningen i varje försäkran med det regulatoriska registret för produkten.
+          expected: Lagstiftningen stämmer.
+        - action: Kontrollera bevarandetiden i planen och hämta den tekniska dokumentationen och försäkran för den utgångna varianten.
+          expected: Planen anger minst 10 år, och båda dokumenten hämtas.
+
+  - id: DCDC-T09
+    priority: high
+    execution: manual
+    tags: [cra]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Annex VII"]
+    en:
+      title: Review of CRA technical documentation
+      description: Checks that the technical documentation of a product with digital elements covers the topics of CRA Annex VII for the current version.
+      preconditions: The technical documentation of the product and its current version number.
+      expected: Each of the six topics has a section that refers to the current version.
+      steps:
+        - action: Find the sections on general description, design and development, cybersecurity risk assessment, vulnerability handling, test reports and the software bill of materials.
+          expected: Each of the six sections exists.
+        - action: Check the product version referred to in each section.
+          expected: Each section refers to the current product version.
+    sv:
+      title: Granskning av teknisk dokumentation enligt cyberresiliensförordningen
+      description: Kontrollerar att den tekniska dokumentationen för en produkt med digitala element täcker områdena i bilaga VII för den gällande versionen.
+      preconditions: Produktens tekniska dokumentation och dess gällande versionsnummer.
+      expected: Vart och ett av de sex områdena har ett avsnitt som avser den gällande versionen.
+      steps:
+        - action: Leta upp avsnitten om allmän beskrivning, konstruktion och utveckling, cybersäkerhetsriskbedömning, sårbarhetshantering, provningsrapporter och programvaruförteckningen.
+          expected: Vart och ett av de sex avsnitten finns.
+        - action: Kontrollera vilken produktversion varje avsnitt avser.
+          expected: Varje avsnitt avser den gällande produktversionen.
+
+  - id: DCDC-T10
+    priority: high
+    execution: manual
+    tags: [ai-act]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Annex IV"]
+    en:
+      title: Review of high-risk AI system documentation
+      description: Checks the date, coverage and updates of the technical documentation of a high-risk AI system.
+      preconditions: The technical documentation with its version history, the market placement date and the change log of the AI system.
+      expected: The documentation predates market placement, covers each Annex IV heading and is updated for each substantial change.
+      steps:
+        - action: Compare the date of the first approved version with the market placement date.
+          expected: The documentation is dated before the market placement.
+        - action: Map the headings of Annex IV to the sections of the documentation.
+          expected: Each heading has a section.
+        - action: Match each substantial change in the change log to a version of the documentation.
+          expected: Each substantial change has a corresponding version.
+    sv:
+      title: Granskning av dokumentationen för ett AI-system med hög risk
+      description: Kontrollerar datum, täckning och uppdateringar av den tekniska dokumentationen för ett AI-system med hög risk.
+      preconditions: Den tekniska dokumentationen med versionshistorik, datumet för utsläppandet på marknaden och AI-systemets ändringslogg.
+      expected: Dokumentationen är äldre än utsläppandet, täcker varje rubrik i bilaga IV och uppdateras för varje väsentlig ändring.
+      steps:
+        - action: Jämför datumet för den första fastställda versionen med datumet för utsläppandet på marknaden.
+          expected: Dokumentationen är daterad före utsläppandet.
+        - action: Koppla rubrikerna i bilaga IV till avsnitten i dokumentationen.
+          expected: Varje rubrik har ett avsnitt.
+        - action: Koppla varje väsentlig ändring i ändringsloggen till en version av dokumentationen.
+          expected: Varje väsentlig ändring har en motsvarande version.
+
+  - id: DCDC-T11
+    priority: medium
+    execution: manual
+    tags: [regulatory-register]
+    refs: ["Decision No 768/2008/EC Annex II"]
+    en:
+      title: Inspection of the regulatory register
+      description: Checks that each product has an entry with legislation, procedure and documentation location.
+      preconditions: The product list and the regulatory register.
+      expected: Each product has a complete entry, and each documentation link opens.
+      steps:
+        - action: Match each product in the product list to an entry in the register.
+          expected: Each product has an entry with legislation and conformity assessment procedure.
+        - action: Open the documentation link of each entry.
+          expected: Each link opens the technical documentation of the product.
+    sv:
+      title: Inspektion av det regulatoriska registret
+      description: Kontrollerar att varje produkt har en post med lagstiftning, förfarande och var dokumentationen finns.
+      preconditions: Produktförteckningen och det regulatoriska registret.
+      expected: Varje produkt har en fullständig post, och varje länk till dokumentationen går att öppna.
+      steps:
+        - action: Koppla varje produkt i produktförteckningen till en post i registret.
+          expected: Varje produkt har en post med lagstiftning och förfarande för bedömning av överensstämmelse.
+        - action: Öppna länken till dokumentationen i varje post.
+          expected: Varje länk öppnar produktens tekniska dokumentation.
