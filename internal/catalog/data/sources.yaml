@@ -1863,3 +1863,9 @@ sources:
     name: {en: "Open Internet Regulation (EU) 2015/2120", sv: "Förordningen om öppen internetanslutning (EU) 2015/2120"}
     match: ["Regulation (EU) 2015/2120"]
     url: https://eur-lex.europa.eu/eli/reg/2015/2120/oj
+  - id: offline-web
+    kind: standard
+    jurisdiction: international
+    name: {en: "Offline web application specifications (W3C Service Workers, W3C Indexed Database API, WHATWG Storage)", sv: "Specifikationer för webbapplikationer offline (W3C Service Workers, W3C Indexed Database API, WHATWG Storage)"}
+    match: ["W3C Service Workers", "W3C Indexed Database API", "WHATWG Storage Living Standard"]
+    url: https://www.w3.org/TR/service-workers/
