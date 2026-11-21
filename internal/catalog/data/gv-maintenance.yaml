@@ -1,0 +1,796 @@
+area: gv-maintenance
+prefix: GVMT
+group: operations
+catalogue: governance
+name: {en: Asset, configuration and maintenance management, sv: Tillgångs-, konfigurations- och underhållsstyrning}
+description:
+  en: Asset register and criticality, configuration baselines and audits, maintenance plans with preventive, condition-based and corrective maintenance (EN 13306 terms), work orders, failure records, spare parts and maintenance indicators.
+  sv: Tillgångsregister och kritikalitet, konfigurationsbaslinjer och konfigurationsrevisioner, underhållsplaner med förebyggande, tillståndsbaserat och avhjälpande underhåll (begrepp enligt EN 13306), arbetsorder, felrapporter, reservdelar och nyckeltal för underhåll.
+
+requirements:
+  - id: GVMT-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [asset-register]
+    refs: ["ISO 55001:2014 §7.5", "ISO/IEC 27001:2022 A.5.9"]
+    tests: [GVMT-T01]
+    en:
+      title: Asset register with owner and criticality
+      description: The organisation MUST keep an asset register in which each asset has a unique identifier, an owner, a location, a criticality class and a life-cycle status.
+      rationale: Maintenance, security and replacement decisions all start from knowing which assets exist, where they are and who answers for them.
+      criteria:
+        - method: inspection
+          text: Each entry in the asset register has all five fields filled in, and no identifier occurs twice.
+    sv:
+      title: Tillgångsregister med ägare och kritikalitet
+      description: Organisationen SKA föra ett tillgångsregister där varje tillgång har en unik identitet, en ägare, en placering, en kritikalitetsklass och en livscykelstatus.
+      rationale: Beslut om underhåll, säkerhet och utbyte utgår från att det är känt vilka tillgångar som finns, var de finns och vem som ansvarar för dem.
+      criteria:
+        - method: inspection
+          text: Varje post i tillgångsregistret har alla fem fälten ifyllda, och ingen identitet förekommer två gånger.
+
+  - id: GVMT-02
+    type: business
+    obligation: should
+    priority: medium
+    tags: [asset-register, criticality]
+    refs: ["ISO 55001:2014 §6.2", "EN 13306:2017 (criticality)"]
+    tests: [GVMT-T01]
+    en:
+      title: Criticality classes that steer the maintenance strategy
+      description: The organisation SHOULD classify each asset into one of 3 criticality classes from the consequence of its failure for safety, operations and cost.
+      rationale: A shared criticality scale lets maintenance effort and spare parts be focused on the assets whose failure costs the most.
+      criteria:
+        - method: review
+          text: A documented criticality scale with 3 classes and their consequence criteria exists, and each asset in the register has one of the 3 classes.
+          threshold: "3 classes"
+    sv:
+      title: Kritikalitetsklasser som styr underhållsstrategin
+      description: Organisationen BÖR placera varje tillgång i en av 3 kritikalitetsklasser utifrån vilka konsekvenser ett fel ger för säkerhet, drift och kostnad.
+      rationale: En gemensam skala för kritikalitet låter underhållsinsatser och reservdelar riktas mot de tillgångar vars fel kostar mest.
+      criteria:
+        - method: review
+          text: Det finns en dokumenterad kritikalitetsskala med 3 klasser och deras konsekvenskriterier, och varje tillgång i registret har en av de 3 klasserna.
+          threshold: "3 klasser"
+
+  - id: GVMT-03
+    type: business
+    obligation: should
+    priority: medium
+    tags: [asset-register, inventory]
+    refs: ["ISO/IEC 27001:2022 A.5.9", "ISO 55001:2014 §9.1"]
+    tests: [GVMT-T02]
+    en:
+      title: Yearly physical inventory against the asset register
+      description: The organisation SHOULD compare the asset register with a physical inventory at least once every 12 months in which at least 98 % of the checked assets match the register.
+      rationale: A register that drifts from reality leads to maintenance on assets that are gone and none on assets that are missing from it.
+      criteria:
+        - method: review
+          text: An inventory report less than 12 months old exists, and its match rate between register and physical assets is at least 98 %.
+          threshold: "≥ 98 % match"
+    sv:
+      title: Årlig fysisk inventering mot tillgångsregistret
+      description: Organisationen BÖR minst en gång var 12:e månad jämföra tillgångsregistret med en fysisk inventering där minst 98 % av de kontrollerade tillgångarna stämmer med registret.
+      rationale: Ett register som glider isär från verkligheten leder till underhåll av tillgångar som inte längre finns och inget underhåll av tillgångar som saknas i det.
+      criteria:
+        - method: review
+          text: Det finns en inventeringsrapport som är yngre än 12 månader, och dess andel överensstämmelse mellan register och fysiska tillgångar är minst 98 %.
+          threshold: "≥ 98 % överensstämmelse"
+
+  - id: GVMT-04
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [configuration, baseline]
+    refs: ["ISO 10007:2017", "ISO/IEC 27001:2022 A.8.9", "ISO/IEC 20000-1:2018 (configuration management)"]
+    tests: [GVMT-T03]
+    en:
+      title: Configuration baseline for each delivered system
+      description: Each delivered system MUST have an approved configuration baseline that lists its configuration items with identifier, version and settings document.
+      rationale: Without a baseline it cannot be shown what was delivered, and faults cannot be traced to a change.
+      criteria:
+        - method: inspection
+          text: Each system in the asset register has an approved baseline, and each configuration item in it has an identifier, a version and a reference to its settings document.
+    sv:
+      title: Konfigurationsbaslinje för varje levererat system
+      description: Varje levererat system SKA ha en godkänd konfigurationsbaslinje som anger systemets konfigurationsobjekt med identitet, version och inställningsdokument.
+      rationale: Utan baslinje kan det inte visas vad som levererades, och fel kan inte spåras till en ändring.
+      criteria:
+        - method: inspection
+          text: Varje system i tillgångsregistret har en godkänd baslinje, och varje konfigurationsobjekt i den har en identitet, en version och en hänvisning till sitt inställningsdokument.
+
+  - id: GVMT-05
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [configuration, change]
+    refs: ["ISO 10007:2017", "ITIL 4 Service configuration management"]
+    tests: [GVMT-T03]
+    en:
+      title: Configuration record updated within 1 working day
+      description: The configuration record MUST be updated within 1 working day after a change to a configuration item has been completed.
+      rationale: Records that lag behind the installed configuration mislead the next person who troubleshoots or changes the system.
+      criteria:
+        - method: inspection
+          text: For 10 completed changes from the change log, the configuration record shows the new state no later than 1 working day after the completion time.
+          threshold: "≤ 1 working day"
+    sv:
+      title: Konfigurationsposten uppdateras inom 1 arbetsdag
+      description: Konfigurationsposten SKA uppdateras inom 1 arbetsdag efter att en ändring av ett konfigurationsobjekt har slutförts.
+      rationale: Poster som släpar efter den installerade konfigurationen vilseleder nästa person som felsöker eller ändrar systemet.
+      criteria:
+        - method: inspection
+          text: För 10 slutförda ändringar i ändringsloggen visar konfigurationsposten det nya läget senast 1 arbetsdag efter tidpunkten för slutförandet.
+          threshold: "≤ 1 arbetsdag"
+
+  - id: GVMT-06
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [configuration, audit]
+    refs: ["ISO 10007:2017 (configuration audit)"]
+    tests: [GVMT-T04]
+    en:
+      title: Yearly configuration audit
+      description: The organisation SHOULD audit each critical system once every 12 months by comparing its installed configuration with its approved baseline.
+      rationale: Unrecorded changes accumulate over time; a regular audit finds them before they cause a fault or a security gap.
+      criteria:
+        - method: review
+          text: Each critical system has a configuration audit report less than 12 months old, and each deviation found has a recorded decision.
+          threshold: "≤ 12 months between audits"
+    sv:
+      title: Årlig konfigurationsrevision
+      description: Organisationen BÖR revidera varje kritiskt system en gång var 12:e månad genom att jämföra den installerade konfigurationen med den godkända baslinjen.
+      rationale: Oregistrerade ändringar samlas på hög med tiden; en regelbunden revision hittar dem innan de orsakar ett fel eller en säkerhetsbrist.
+      criteria:
+        - method: review
+          text: Varje kritiskt system har en rapport från en konfigurationsrevision som är yngre än 12 månader, och varje avvikelse som har upptäckts har ett dokumenterat beslut.
+          threshold: "≤ 12 månader mellan revisionerna"
+
+  - id: GVMT-07
+    type: business
+    obligation: must
+    priority: high
+    tags: [maintenance-plan, preventive-maintenance]
+    refs: ["EN 13306:2017 (maintenance types)", "ISO 55001:2014 §8.1", "EN 17007:2017"]
+    tests: [GVMT-T05]
+    en:
+      title: Maintenance plan with a strategy per asset
+      description: The maintenance plan MUST state for each asset in criticality class 1 or 2 whether it receives predetermined, condition-based or corrective maintenance, with the tasks and intervals.
+      rationale: Choosing the maintenance type per asset from its criticality avoids both over-maintenance and unplanned stops.
+      criteria:
+        - method: review
+          text: Each class 1 and class 2 asset has an entry in the maintenance plan with a maintenance type, its tasks and an interval or trigger condition.
+    sv:
+      title: Underhållsplan med strategi per tillgång
+      description: Underhållsplanen SKA ange för varje tillgång i kritikalitetsklass 1 eller 2 om den har förutbestämt, tillståndsbaserat eller avhjälpande underhåll, med åtgärder och intervall.
+      rationale: Att välja underhållstyp per tillgång utifrån dess kritikalitet undviker både överunderhåll och oplanerade stopp.
+      criteria:
+        - method: review
+          text: Varje tillgång i klass 1 och klass 2 har en post i underhållsplanen med underhållstyp, åtgärder och ett intervall eller ett villkor som utlöser underhållet.
+
+  - id: GVMT-08
+    type: business
+    obligation: should
+    priority: medium
+    tags: [maintenance-plan, manufacturer]
+    refs: ["ISO/IEC 27001:2022 A.7.13", "EN 13306:2017 (preventive maintenance)"]
+    tests: [GVMT-T05]
+    en:
+      title: Manufacturer intervals as the starting point
+      description: The maintenance plan SHOULD use the maintenance intervals stated by the manufacturer, with a documented approval for each deviation from them.
+      rationale: Manufacturer intervals protect the warranty and the safety case; deviations need a reason that can be reviewed.
+      criteria:
+        - method: inspection
+          text: For each class 1 asset the plan interval equals the manufacturer's interval or refers to an approved deviation.
+    sv:
+      title: Tillverkarens intervall som utgångspunkt
+      description: Underhållsplanen BÖR utgå från tillverkarens rekommenderade underhållsintervall med ett dokumenterat godkännande för varje avvikelse från dem.
+      rationale: Tillverkarens intervall skyddar garantin och säkerhetsunderlaget; avvikelser behöver ett skäl som kan granskas.
+      criteria:
+        - method: inspection
+          text: För varje tillgång i klass 1 är intervallet i planen lika med tillverkarens intervall eller hänvisar till ett godkänt avsteg.
+
+  - id: GVMT-09
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [preventive-maintenance, kpi]
+    refs: ["EN 15341:2019", "EN 13306:2017 (preventive maintenance)"]
+    tests: [GVMT-T06]
+    en:
+      title: Preventive maintenance done on schedule
+      description: At least 95 % of the preventive work orders in a month SHOULD be completed within 7 days of their planned date.
+      rationale: Preventive maintenance that slips turns into corrective maintenance at a worse time and a higher cost.
+      criteria:
+        - method: analysis
+          text: The monthly report of the last 6 months shows a preventive maintenance compliance of at least 95 % with a 7-day tolerance.
+          threshold: "≥ 95 % within ± 7 days"
+    sv:
+      title: Förebyggande underhåll utförs enligt plan
+      description: Minst 95 % av de förebyggande arbetsordrarna under en månad BÖR slutföras inom 7 dagar från det planerade datumet.
+      rationale: Förebyggande underhåll som skjuts upp blir avhjälpande underhåll vid en sämre tidpunkt och till en högre kostnad.
+      criteria:
+        - method: analysis
+          text: Månadsrapporten för de senaste 6 månaderna visar att minst 95 % av det förebyggande underhållet utförts med en tolerans på 7 dagar.
+          threshold: "≥ 95 % inom ± 7 dagar"
+
+  - id: GVMT-10
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [condition-based-maintenance, condition-monitoring]
+    refs: ["EN 13306:2017 (condition-based maintenance)", "ISO 17359:2018"]
+    tests: [GVMT-T07]
+    en:
+      title: Condition thresholds that create work orders
+      description: Each monitored condition parameter SHOULD have a documented alert threshold at which a work order is created for the asset.
+      rationale: Condition monitoring pays off only when a measured deterioration leads to a planned action before the failure.
+      criteria:
+        - method: demonstration
+          text: A simulated reading above the threshold of a monitored parameter creates a work order for the right asset with the reading attached.
+    sv:
+      title: Tillståndsgränser som skapar arbetsorder
+      description: Varje övervakad tillståndsparameter BÖR ha en dokumenterad larmgräns där en arbetsorder skapas för tillgången.
+      rationale: Tillståndsövervakning lönar sig bara när en uppmätt försämring leder till en planerad åtgärd före felet.
+      criteria:
+        - method: demonstration
+          text: Ett simulerat mätvärde över gränsen för en övervakad parameter skapar en arbetsorder för rätt tillgång med mätvärdet bifogat.
+
+  - id: GVMT-11
+    type: functional
+    obligation: must
+    priority: high
+    tags: [work-order]
+    refs: ["EN 13460:2009", "EN 13306:2017 (maintenance task)"]
+    tests: [GVMT-T08]
+    en:
+      title: Contents of a work order
+      description: Each work order MUST record the asset identifier, the task, the planned date, the assigned technician, the safety precautions, the parts used, the time spent and the findings.
+      rationale: Complete work orders give the maintenance history that failure analysis, cost follow-up and audits rely on.
+      criteria:
+        - method: inspection
+          text: In a sample of 20 closed work orders each of the eight fields is filled in.
+          threshold: "8 fields"
+    sv:
+      title: Innehållet i en arbetsorder
+      description: Varje arbetsorder SKA ange tillgångens identitet, åtgärden, planerat datum, tilldelad tekniker, säkerhetsåtgärder, använda delar, nedlagd tid och iakttagelser.
+      rationale: Fullständiga arbetsorder ger den underhållshistorik som felanalys, kostnadsuppföljning och revisioner bygger på.
+      criteria:
+        - method: inspection
+          text: I ett urval av 20 stängda arbetsorder är vart och ett av de åtta fälten ifyllt.
+          threshold: "8 fält"
+
+  - id: GVMT-12
+    type: functional
+    obligation: must_not
+    priority: high
+    tags: [work-order, functional-check]
+    refs: ["EN 13306:2017 (function check)"]
+    tests: [GVMT-T08]
+    en:
+      title: No closure without a functional check
+      description: A work order MUST NOT be closed before the technician has recorded a passed functional check of the asset.
+      rationale: The functional check confirms that the asset works after the intervention and that nothing was left disconnected.
+      criteria:
+        - method: test
+          text: An attempt to close a work order without a recorded functional check is refused, and closing succeeds once a passed check is recorded.
+    sv:
+      title: Ingen stängning utan funktionskontroll
+      description: En arbetsorder SKA INTE stängas innan teknikern har registrerat en godkänd funktionskontroll av tillgången.
+      rationale: Funktionskontrollen bekräftar att tillgången fungerar efter ingreppet och att inget har lämnats bortkopplat.
+      criteria:
+        - method: test
+          text: Ett försök att stänga en arbetsorder utan registrerad funktionskontroll avvisas, och stängningen lyckas när en godkänd kontroll har registrerats.
+
+  - id: GVMT-13
+    type: performance
+    obligation: must
+    priority: high
+    tags: [corrective-maintenance, response-time]
+    refs: ["EN 13306:2017 (corrective maintenance)"]
+    tests: [GVMT-T09]
+    en:
+      title: Work order for a fault on a critical asset within 4 hours
+      description: A reported fault on a class 1 asset MUST lead to an assigned corrective work order within 4 hours of the report.
+      rationale: Critical assets carry the largest consequences, so their faults need a fixed and short path from report to action.
+      criteria:
+        - method: analysis
+          text: For the faults on class 1 assets in the last 3 months, the time from fault report to assigned work order is at most 4 hours in each case.
+          threshold: "≤ 4 hours"
+    sv:
+      title: Arbetsorder för fel på kritisk tillgång inom 4 timmar
+      description: Ett rapporterat fel på en tillgång i klass 1 SKA leda till en tilldelad avhjälpande arbetsorder inom 4 timmar från felanmälan.
+      rationale: Kritiska tillgångar har de allvarligaste konsekvenserna, så deras fel behöver en fast och kort väg från anmälan till åtgärd.
+      criteria:
+        - method: analysis
+          text: För felen på tillgångar i klass 1 under de senaste 3 månaderna är tiden från felanmälan till tilldelad arbetsorder högst 4 timmar i varje fall.
+          threshold: "≤ 4 timmar"
+
+  - id: GVMT-14
+    type: business
+    obligation: should
+    priority: medium
+    tags: [failure-data, corrective-maintenance]
+    refs: ["ISO 14224:2016", "EN 13306:2017 (failure)"]
+    tests: [GVMT-T09]
+    en:
+      title: Failure mode and cause codes on corrective work
+      description: Each corrective work order SHOULD record a failure mode and a failure cause from a shared code list.
+      rationale: Coded failure data makes recurring faults visible and gives the basis for changing the maintenance plan.
+      criteria:
+        - method: inspection
+          text: In a sample of 20 corrective work orders each one has a failure mode and a failure cause taken from the code list.
+    sv:
+      title: Kodning av felsätt och felorsak vid avhjälpande underhåll
+      description: Varje avhjälpande arbetsorder BÖR ange ett felsätt och en felorsak ur en gemensam kodlista.
+      rationale: Kodade feldata synliggör återkommande fel och ger underlag för att ändra underhållsplanen.
+      criteria:
+        - method: inspection
+          text: I ett urval av 20 avhjälpande arbetsorder har varje order ett felsätt och en felorsak hämtade ur kodlistan.
+
+  - id: GVMT-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [spare-parts]
+    refs: ["EN 13460:2009 (spare parts list)", "EN 13306:2017 (spare part)"]
+    tests: [GVMT-T10]
+    en:
+      title: Spare parts list with minimum stock for critical assets
+      description: Each class 1 asset MUST have a spare parts list that states for each part the article number, the minimum stock and the storage location.
+      rationale: A defined minimum stock for critical parts keeps repair times short when a critical asset fails.
+      criteria:
+        - method: inspection
+          text: Each class 1 asset has a spare parts list in which every part has an article number, a minimum stock and a storage location.
+    sv:
+      title: Reservdelslista med lägsta lagernivå för kritiska tillgångar
+      description: Varje tillgång i klass 1 SKA ha en reservdelslista som för varje del anger artikelnummer, lägsta lagernivå och lagerplats.
+      rationale: En fastställd lägsta lagernivå för kritiska delar håller reparationstiderna korta när en kritisk tillgång går sönder.
+      criteria:
+        - method: inspection
+          text: Varje tillgång i klass 1 har en reservdelslista där varje del har artikelnummer, lägsta lagernivå och lagerplats.
+
+  - id: GVMT-16
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [spare-parts, reorder]
+    refs: ["EN 13460:2009 (spare parts list)"]
+    tests: [GVMT-T10]
+    en:
+      title: Reorder within 1 working day below the reorder point
+      description: The organisation SHOULD place a reorder within 1 working day after the stock of a spare part falls below its reorder point.
+      rationale: A fixed reorder time keeps the stock from running out while a part is on its way.
+      criteria:
+        - method: analysis
+          text: For the stock withdrawals of the last 3 months that crossed a reorder point, each reorder was placed within 1 working day.
+          threshold: "≤ 1 working day"
+    sv:
+      title: Beställning inom 1 arbetsdag under beställningspunkten
+      description: Organisationen BÖR lägga en beställning inom 1 arbetsdag efter att lagret av en reservdel har sjunkit under dess beställningspunkt.
+      rationale: En fast tid för ny beställning hindrar att lagret tar slut medan en del är på väg.
+      criteria:
+        - method: analysis
+          text: För de lageruttag under de senaste 3 månaderna som passerade en beställningspunkt lades varje beställning inom 1 arbetsdag.
+          threshold: "≤ 1 arbetsdag"
+
+  - id: GVMT-17
+    type: business
+    obligation: should
+    priority: medium
+    tags: [spare-parts, lead-time]
+    refs: ["EN 13460:2009 (spare parts list)", "IEC 62402:2019"]
+    tests: [GVMT-T11]
+    en:
+      title: Lead time recorded for long-lead parts
+      description: The spare parts list SHOULD mark each part with a delivery lead time longer than 4 weeks and record its lead time and supplier.
+      rationale: Knowing which parts take long to get makes it possible to stock them in advance or arrange a buffer agreement.
+      criteria:
+        - method: inspection
+          text: Each part with a lead time longer than 4 weeks is marked in the list with its lead time and supplier.
+          threshold: "> 4 weeks"
+    sv:
+      title: Ledtid registrerad för delar med lång ledtid
+      description: Reservdelslistan BÖR markera varje del med en leveranstid längre än 4 veckor och ange dess ledtid och leverantör.
+      rationale: Att veta vilka delar som tar lång tid att få fram gör det möjligt att lagerhålla dem i förväg eller avtala om en buffert.
+      criteria:
+        - method: inspection
+          text: Varje del med en ledtid längre än 4 veckor är markerad i listan med ledtid och leverantör.
+          threshold: "> 4 veckor"
+
+  - id: GVMT-18
+    type: business
+    obligation: should
+    priority: medium
+    tags: [kpi, mtbf, mttr]
+    refs: ["EN 15341:2019"]
+    tests: [GVMT-T12]
+    en:
+      title: Monthly maintenance indicators
+      description: The maintenance manager SHOULD report preventive maintenance compliance, mean time between failures, mean time to repair and work order backlog every month.
+      rationale: A fixed set of indicators shows whether the maintenance strategy works and where it needs to change.
+      criteria:
+        - method: review
+          text: Each monthly report of the last 6 months contains the four indicators with their target values.
+          threshold: "4 indicators per month"
+    sv:
+      title: Nyckeltal för underhåll varje månad
+      description: Underhållschefen BÖR varje månad rapportera andelen utfört förebyggande underhåll, medeltid mellan fel, medeltid för reparation och balansen av arbetsorder.
+      rationale: En fast uppsättning nyckeltal visar om underhållsstrategin fungerar och var den behöver ändras.
+      criteria:
+        - method: review
+          text: Varje månadsrapport för de senaste 6 månaderna innehåller de fyra nyckeltalen med sina målvärden.
+          threshold: "4 nyckeltal per månad"
+
+  - id: GVMT-19
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [maintenance-history, retention]
+    refs: ["ISO 55001:2014 §7.6", "EN 13460:2009"]
+    tests: [GVMT-T12]
+    en:
+      title: Maintenance history kept for the asset's lifetime
+      description: The organisation MUST keep the maintenance history of each asset for its whole service life and for at least 2 years after its decommissioning.
+      rationale: The history is the evidence for warranty claims, accident investigations and decisions about similar assets.
+      criteria:
+        - method: inspection
+          text: For 3 assets decommissioned within the last 2 years the complete work order history can still be retrieved.
+          threshold: "≥ 2 years after decommissioning"
+    sv:
+      title: Underhållshistorik sparas under tillgångens livslängd
+      description: Organisationen SKA spara underhållshistoriken för varje tillgång under hela dess brukstid och i minst 2 år efter att den har avvecklats.
+      rationale: Historiken är underlaget vid garantianspråk, olycksutredningar och beslut om motsvarande tillgångar.
+      criteria:
+        - method: inspection
+          text: För 3 tillgångar som har avvecklats under de senaste 2 åren kan den fullständiga historiken av arbetsorder fortfarande hämtas.
+          threshold: "≥ 2 år efter avvecklingen"
+
+tests:
+  - id: GVMT-T01
+    priority: high
+    execution: manual
+    tags: [asset-register, criticality]
+    refs: ["ISO 55001:2014 §7.5", "ISO/IEC 27001:2022 A.5.9"]
+    en:
+      title: Inspection of the asset register
+      description: Checks that the asset register is complete and that each asset has a criticality class from the documented scale.
+      preconditions: An export of the asset register and the documented criticality scale.
+      expected: Every asset has identifier, owner, location, criticality class and life-cycle status, identifiers are unique and classes come from the scale.
+      steps:
+        - action: Filter the export for entries with any of the five fields empty.
+          expected: The filter returns no entries.
+        - action: Count the occurrences of each identifier.
+          expected: Each identifier occurs exactly once.
+        - action: Compare the criticality values in the export with the classes of the documented scale.
+          expected: Each value is one of the 3 classes, and the scale states consequence criteria for each class.
+    sv:
+      title: Inspektion av tillgångsregistret
+      description: Kontrollerar att tillgångsregistret är fullständigt och att varje tillgång har en kritikalitetsklass från den dokumenterade skalan.
+      preconditions: En export av tillgångsregistret och den dokumenterade kritikalitetsskalan.
+      expected: Varje tillgång har identitet, ägare, placering, kritikalitetsklass och livscykelstatus, identiteterna är unika och klasserna kommer från skalan.
+      steps:
+        - action: Filtrera exporten på poster där något av de fem fälten är tomt.
+          expected: Filtret ger inga poster.
+        - action: Räkna förekomsterna av varje identitet.
+          expected: Varje identitet förekommer exakt en gång.
+        - action: Jämför kritikalitetsvärdena i exporten med klasserna i den dokumenterade skalan.
+          expected: Varje värde är en av de 3 klasserna, och skalan anger konsekvenskriterier för varje klass.
+
+  - id: GVMT-T02
+    priority: medium
+    execution: manual
+    tags: [inventory]
+    refs: ["ISO/IEC 27001:2022 A.5.9"]
+    en:
+      title: Spot check of the asset register on site
+      description: Checks the latest inventory report and repeats the comparison for a sample on site.
+      preconditions: The latest inventory report, the asset register and access to one site with at least 20 registered assets.
+      expected: The inventory report is less than 12 months old with a match rate of at least 98 %, and the sample on site confirms it.
+      steps:
+        - action: Check the date and the match rate in the latest inventory report.
+          expected: The report is less than 12 months old and states a match rate of at least 98 %.
+        - action: Pick 20 assets from the register for the site and find each one on site by identifier and location.
+          expected: At least 19 of the 20 assets are found at the registered location.
+          data: "Sample of 20 assets"
+        - action: Pick 5 assets found on site and look them up in the register.
+          expected: Each of the 5 assets is in the register.
+    sv:
+      title: Stickprov av tillgångsregistret på plats
+      description: Kontrollerar den senaste inventeringsrapporten och upprepar jämförelsen för ett urval på plats.
+      preconditions: Den senaste inventeringsrapporten, tillgångsregistret och tillträde till en plats med minst 20 registrerade tillgångar.
+      expected: Inventeringsrapporten är yngre än 12 månader med minst 98 % överensstämmelse, och urvalet på plats bekräftar det.
+      steps:
+        - action: Kontrollera datumet och andelen överensstämmelse i den senaste inventeringsrapporten.
+          expected: Rapporten är yngre än 12 månader och anger minst 98 % överensstämmelse.
+        - action: Välj 20 tillgångar ur registret för platsen och leta upp var och en på plats med hjälp av identitet och placering.
+          expected: Minst 19 av de 20 tillgångarna finns på den registrerade platsen.
+          data: "Urval av 20 tillgångar"
+        - action: Välj 5 tillgångar som finns på plats och slå upp dem i registret.
+          expected: Var och en av de 5 tillgångarna finns i registret.
+
+  - id: GVMT-T03
+    priority: high
+    execution: manual
+    tags: [configuration]
+    refs: ["ISO 10007:2017", "ISO/IEC 27001:2022 A.8.9"]
+    en:
+      title: Configuration baseline and record updates
+      description: Checks that each system has an approved baseline and that configuration records follow completed changes.
+      preconditions: The list of delivered systems, their configuration baselines and the change log of the last 3 months.
+      expected: Each system has an approved baseline with complete items, and each sampled change is reflected in the record within 1 working day.
+      steps:
+        - action: For each delivered system, open its configuration baseline.
+          expected: The baseline is approved, and each item has an identifier, a version and a reference to its settings document.
+        - action: Pick 10 completed changes from the change log and compare their completion time with the update time of the configuration record.
+          expected: Each record was updated no later than 1 working day after the change was completed.
+          data: "Sample of 10 completed changes"
+    sv:
+      title: Konfigurationsbaslinje och uppdatering av konfigurationsposter
+      description: Kontrollerar att varje system har en godkänd baslinje och att konfigurationsposterna följer slutförda ändringar.
+      preconditions: Listan över levererade system, deras konfigurationsbaslinjer och ändringsloggen för de senaste 3 månaderna.
+      expected: Varje system har en godkänd baslinje med fullständiga objekt, och varje ändring i urvalet syns i posten inom 1 arbetsdag.
+      steps:
+        - action: Öppna konfigurationsbaslinjen för varje levererat system.
+          expected: Baslinjen är godkänd, och varje objekt har en identitet, en version och en hänvisning till sitt inställningsdokument.
+        - action: Välj 10 slutförda ändringar ur ändringsloggen och jämför tidpunkten för slutförandet med tidpunkten då konfigurationsposten uppdaterades.
+          expected: Varje post uppdaterades senast 1 arbetsdag efter att ändringen slutfördes.
+          data: "Urval av 10 slutförda ändringar"
+
+  - id: GVMT-T04
+    priority: medium
+    execution: manual
+    tags: [configuration, audit]
+    refs: ["ISO 10007:2017 (configuration audit)"]
+    en:
+      title: Configuration audit of a critical system
+      description: Checks the audit history and repeats a configuration audit for one critical system.
+      preconditions: The list of critical systems, their latest configuration audit reports, and read access to one critical system and its approved baseline.
+      expected: Each critical system has an audit report less than 12 months old, and the repeated audit finds no deviation without a recorded decision.
+      steps:
+        - action: Check the date of the latest configuration audit report for each critical system.
+          expected: Each report is less than 12 months old.
+        - action: For one critical system, read the installed versions and settings and compare them with the approved baseline.
+          expected: Each deviation found is listed in the latest audit report with a recorded decision.
+    sv:
+      title: Konfigurationsrevision av ett kritiskt system
+      description: Kontrollerar revisionshistoriken och upprepar en konfigurationsrevision för ett kritiskt system.
+      preconditions: Listan över kritiska system, deras senaste rapporter från konfigurationsrevision och läsbehörighet till ett kritiskt system och dess godkända baslinje.
+      expected: Varje kritiskt system har en revisionsrapport som är yngre än 12 månader, och den upprepade revisionen hittar ingen avvikelse utan dokumenterat beslut.
+      steps:
+        - action: Kontrollera datumet för den senaste rapporten från konfigurationsrevision för varje kritiskt system.
+          expected: Varje rapport är yngre än 12 månader.
+        - action: Läs av installerade versioner och inställningar för ett kritiskt system och jämför dem med den godkända baslinjen.
+          expected: Varje avvikelse som upptäcks finns i den senaste revisionsrapporten med ett dokumenterat beslut.
+
+  - id: GVMT-T05
+    priority: high
+    execution: manual
+    tags: [maintenance-plan]
+    refs: ["EN 13306:2017 (maintenance types)", "ISO 55001:2014 §8.1", "ISO/IEC 27001:2022 A.7.13"]
+    en:
+      title: Review of the maintenance plan
+      description: Checks the maintenance type, tasks and intervals of critical assets against the plan and the manufacturer's instructions.
+      preconditions: The maintenance plan, the asset register with criticality classes and the manufacturer's maintenance instructions for class 1 assets.
+      expected: Each class 1 and class 2 asset has a maintenance type with tasks and interval or trigger, and class 1 intervals follow the manufacturer or an approved deviation.
+      steps:
+        - action: List the class 1 and class 2 assets and find each in the maintenance plan.
+          expected: Each asset has an entry with a maintenance type, its tasks and an interval or trigger condition.
+        - action: For each class 1 asset, compare the plan interval with the manufacturer's recommended interval.
+          expected: The intervals are equal or the plan refers to an approved deviation.
+    sv:
+      title: Granskning av underhållsplanen
+      description: Kontrollerar underhållstyp, åtgärder och intervall för kritiska tillgångar mot planen och tillverkarens anvisningar.
+      preconditions: Underhållsplanen, tillgångsregistret med kritikalitetsklasser och tillverkarens underhållsanvisningar för tillgångar i klass 1.
+      expected: Varje tillgång i klass 1 och 2 har en underhållstyp med åtgärder och intervall eller villkor, och intervallen för klass 1 följer tillverkaren eller ett godkänt avsteg.
+      steps:
+        - action: Lista tillgångarna i klass 1 och klass 2 och leta upp var och en i underhållsplanen.
+          expected: Varje tillgång har en post med underhållstyp, åtgärder och ett intervall eller ett utlösande villkor.
+        - action: Jämför för varje tillgång i klass 1 intervallet i planen med tillverkarens rekommenderade intervall.
+          expected: Intervallen är lika eller så hänvisar planen till ett godkänt avsteg.
+
+  - id: GVMT-T06
+    priority: medium
+    execution: manual
+    tags: [preventive-maintenance, kpi]
+    refs: ["EN 15341:2019"]
+    en:
+      title: Preventive maintenance compliance over 6 months
+      description: Recalculates the preventive maintenance compliance from the work order data.
+      preconditions: An export of all preventive work orders of the last 6 months with planned and completion dates.
+      expected: Each month at least 95 % of the preventive work orders were completed within 7 days of their planned date.
+      steps:
+        - action: For each work order, calculate the difference between completion date and planned date.
+          expected: A difference in days exists for each completed order.
+        - action: For each month, divide the number of orders with a difference of at most 7 days by the number of planned orders.
+          expected: The share is at least 95 % in each of the 6 months.
+          data: "Tolerance ± 7 days"
+        - action: Compare the calculated shares with the values in the monthly reports.
+          expected: The reported values match the calculated ones.
+    sv:
+      title: Andel utfört förebyggande underhåll under 6 månader
+      description: Räknar om andelen utfört förebyggande underhåll utifrån data om arbetsorder.
+      preconditions: En export av alla förebyggande arbetsorder under de senaste 6 månaderna med planerat datum och slutdatum.
+      expected: Varje månad slutfördes minst 95 % av de förebyggande arbetsordrarna inom 7 dagar från det planerade datumet.
+      steps:
+        - action: Beräkna för varje arbetsorder skillnaden mellan slutdatum och planerat datum.
+          expected: Det finns en skillnad i dagar för varje slutförd order.
+        - action: Dela för varje månad antalet order med en skillnad på högst 7 dagar med antalet planerade order.
+          expected: Andelen är minst 95 % under var och en av de 6 månaderna.
+          data: "Tolerans ± 7 dagar"
+        - action: Jämför de beräknade andelarna med värdena i månadsrapporterna.
+          expected: De rapporterade värdena stämmer med de beräknade.
+
+  - id: GVMT-T07
+    priority: medium
+    execution: manual
+    tags: [condition-based-maintenance]
+    refs: ["EN 13306:2017 (condition-based maintenance)", "ISO 17359:2018"]
+    en:
+      title: Condition threshold creates a work order
+      description: Demonstrates that a reading above a condition threshold leads to a work order.
+      preconditions: A monitored asset in a test or maintenance mode, the list of condition parameters with their thresholds, and a way to inject a test reading.
+      expected: Every parameter has a threshold, and a reading above it creates a work order for the right asset with the reading attached.
+      steps:
+        - action: Check the list of monitored parameters for a documented threshold.
+          expected: Each parameter has a threshold.
+        - action: Inject a test reading 10 % above the threshold of one parameter, for example vibration velocity.
+          expected: A work order is created for the asset within the configured delay.
+          data: "Reading = threshold + 10 %"
+        - action: Open the created work order.
+          expected: It names the right asset and has the reading and the parameter attached.
+    sv:
+      title: Tillståndsgräns skapar en arbetsorder
+      description: Visar att ett mätvärde över en tillståndsgräns leder till en arbetsorder.
+      preconditions: En övervakad tillgång i test- eller underhållsläge, listan över tillståndsparametrar med deras gränser och ett sätt att föra in ett testvärde.
+      expected: Varje parameter har en gräns, och ett mätvärde över den skapar en arbetsorder för rätt tillgång med mätvärdet bifogat.
+      steps:
+        - action: Kontrollera att varje övervakad parameter i listan har en dokumenterad gräns.
+          expected: Varje parameter har en gräns.
+        - action: För in ett testvärde 10 % över gränsen för en parameter, till exempel vibrationshastighet.
+          expected: En arbetsorder skapas för tillgången inom den inställda fördröjningen.
+          data: "Mätvärde = gräns + 10 %"
+        - action: Öppna den skapade arbetsordern.
+          expected: Den anger rätt tillgång och har mätvärdet och parametern bifogade.
+
+  - id: GVMT-T08
+    priority: high
+    execution: manual
+    tags: [work-order]
+    refs: ["EN 13460:2009", "EN 13306:2017 (function check)"]
+    en:
+      title: Work order contents and closure rule
+      description: Checks the fields of closed work orders and the rule that a work order cannot be closed without a functional check.
+      preconditions: The maintenance management system with at least 20 closed work orders, and a technician account with an open test work order.
+      expected: All sampled work orders are complete, and the test work order can be closed only after a passed functional check is recorded.
+      steps:
+        - action: Pick 20 closed work orders and check the eight fields of each.
+          expected: Each order has asset, task, planned date, technician, safety precautions, parts, time spent and findings.
+          data: "Sample of 20 closed work orders"
+        - action: As the technician, try to close the open test work order without a functional check.
+          expected: The closure is refused with a message about the missing functional check.
+        - action: Record a passed functional check and close the work order again.
+          expected: The work order is closed.
+    sv:
+      title: Arbetsorderns innehåll och regeln för stängning
+      description: Kontrollerar fälten i stängda arbetsorder och regeln att en arbetsorder inte kan stängas utan funktionskontroll.
+      preconditions: Underhållssystemet med minst 20 stängda arbetsorder och ett teknikerkonto med en öppen arbetsorder för test.
+      expected: Alla arbetsorder i urvalet är fullständiga, och testordern kan stängas först efter att en godkänd funktionskontroll har registrerats.
+      steps:
+        - action: Välj 20 stängda arbetsorder och kontrollera de åtta fälten i var och en.
+          expected: Varje order har tillgång, åtgärd, planerat datum, tekniker, säkerhetsåtgärder, delar, nedlagd tid och iakttagelser.
+          data: "Urval av 20 stängda arbetsorder"
+        - action: Försök som tekniker att stänga testordern utan funktionskontroll.
+          expected: Stängningen avvisas med ett meddelande om att funktionskontrollen saknas.
+        - action: Registrera en godkänd funktionskontroll och stäng arbetsordern igen.
+          expected: Arbetsordern stängs.
+
+  - id: GVMT-T09
+    priority: high
+    execution: manual
+    tags: [corrective-maintenance, failure-data]
+    refs: ["EN 13306:2017 (corrective maintenance)", "ISO 14224:2016"]
+    en:
+      title: Response time and failure coding of corrective work
+      description: Checks the time from fault report to work order on critical assets and the failure coding of corrective work orders.
+      preconditions: The fault reports and corrective work orders of the last 3 months and the failure code list.
+      expected: Every class 1 fault had an assigned work order within 4 hours, and the sampled corrective orders carry a failure mode and cause from the code list.
+      steps:
+        - action: For each fault on a class 1 asset, calculate the time from the fault report to the assignment of the work order.
+          expected: The time is at most 4 hours in each case.
+        - action: Pick 20 corrective work orders and check their failure mode and failure cause.
+          expected: Each order has both values, and both come from the code list.
+          data: "Sample of 20 corrective work orders"
+    sv:
+      title: Svarstid och felkodning vid avhjälpande underhåll
+      description: Kontrollerar tiden från felanmälan till arbetsorder för kritiska tillgångar och felkodningen av avhjälpande arbetsorder.
+      preconditions: Felanmälningarna och de avhjälpande arbetsordrarna för de senaste 3 månaderna samt kodlistan för fel.
+      expected: Varje fel i klass 1 hade en tilldelad arbetsorder inom 4 timmar, och arbetsordrarna i urvalet har felsätt och felorsak ur kodlistan.
+      steps:
+        - action: Beräkna för varje fel på en tillgång i klass 1 tiden från felanmälan till att arbetsordern tilldelades.
+          expected: Tiden är högst 4 timmar i varje fall.
+        - action: Välj 20 avhjälpande arbetsorder och kontrollera deras felsätt och felorsak.
+          expected: Varje order har båda värdena, och båda kommer från kodlistan.
+          data: "Urval av 20 avhjälpande arbetsorder"
+
+  - id: GVMT-T10
+    priority: high
+    execution: manual
+    tags: [spare-parts]
+    refs: ["EN 13460:2009 (spare parts list)"]
+    en:
+      title: Spare parts lists and reorders
+      description: Checks the spare parts lists of critical assets and the reorder time after the stock falls below the reorder point.
+      preconditions: The spare parts lists of class 1 assets and the stock movements and purchase orders of the last 3 months.
+      expected: Every list is complete, and each reorder was placed within 1 working day after the stock fell below the reorder point.
+      steps:
+        - action: Open the spare parts list of each class 1 asset.
+          expected: Each part has an article number, a minimum stock and a storage location.
+        - action: Find the stock withdrawals that took a part below its reorder point and the matching purchase orders.
+          expected: Each purchase order was placed within 1 working day of the withdrawal.
+    sv:
+      title: Reservdelslistor och nybeställningar
+      description: Kontrollerar reservdelslistorna för kritiska tillgångar och tiden till ny beställning när lagret sjunker under beställningspunkten.
+      preconditions: Reservdelslistorna för tillgångar i klass 1 och lagerrörelserna och inköpsordrarna för de senaste 3 månaderna.
+      expected: Varje lista är fullständig, och varje ny beställning lades inom 1 arbetsdag efter att lagret sjönk under beställningspunkten.
+      steps:
+        - action: Öppna reservdelslistan för varje tillgång i klass 1.
+          expected: Varje del har artikelnummer, lägsta lagernivå och lagerplats.
+        - action: Leta upp de lageruttag som tog en del under dess beställningspunkt och de inköpsorder som hör till dem.
+          expected: Varje inköpsorder lades inom 1 arbetsdag efter uttaget.
+
+  - id: GVMT-T11
+    priority: medium
+    execution: manual
+    tags: [spare-parts, lead-time]
+    refs: ["EN 13460:2009 (spare parts list)"]
+    en:
+      title: Marking of long-lead spare parts
+      description: Checks that parts with a long delivery time are marked with their lead time and supplier.
+      preconditions: The spare parts lists and the supplier lead times from the purchasing system.
+      expected: Every part with a lead time longer than 4 weeks is marked with lead time and supplier.
+      steps:
+        - action: List the parts whose lead time in the purchasing system is longer than 4 weeks.
+          expected: A list of long-lead parts exists.
+          data: "Lead time > 4 weeks"
+        - action: Find each long-lead part in the spare parts lists.
+          expected: Each part is marked as long-lead with its lead time and supplier.
+    sv:
+      title: Markering av reservdelar med lång ledtid
+      description: Kontrollerar att delar med lång leveranstid är markerade med ledtid och leverantör.
+      preconditions: Reservdelslistorna och leverantörernas ledtider i inköpssystemet.
+      expected: Varje del med en ledtid längre än 4 veckor är markerad med ledtid och leverantör.
+      steps:
+        - action: Lista de delar vars ledtid i inköpssystemet är längre än 4 veckor.
+          expected: Det finns en lista över delar med lång ledtid.
+          data: "Ledtid > 4 veckor"
+        - action: Leta upp varje del med lång ledtid i reservdelslistorna.
+          expected: Varje del är markerad med lång ledtid, ledtid och leverantör.
+
+  - id: GVMT-T12
+    priority: medium
+    execution: manual
+    tags: [kpi, maintenance-history]
+    refs: ["EN 15341:2019", "ISO 55001:2014 §7.6"]
+    en:
+      title: Maintenance indicators and retained history
+      description: Checks the monthly indicator reports and the availability of the maintenance history of decommissioned assets.
+      preconditions: The monthly maintenance reports of the last 6 months and the list of assets decommissioned within the last 2 years.
+      expected: Each report has the four indicators with targets, and the history of decommissioned assets can be retrieved.
+      steps:
+        - action: Open each monthly report of the last 6 months.
+          expected: Each report shows preventive maintenance compliance, mean time between failures, mean time to repair and backlog with their targets.
+        - action: Pick 3 decommissioned assets and retrieve their work order history.
+          expected: The complete history of each asset is retrieved, from commissioning to decommissioning.
+    sv:
+      title: Nyckeltal för underhåll och sparad historik
+      description: Kontrollerar månadsrapporterna med nyckeltal och att underhållshistoriken för avvecklade tillgångar finns kvar.
+      preconditions: Underhållets månadsrapporter för de senaste 6 månaderna och listan över tillgångar som har avvecklats under de senaste 2 åren.
+      expected: Varje rapport har de fyra nyckeltalen med målvärden, och historiken för avvecklade tillgångar kan hämtas.
+      steps:
+        - action: Öppna varje månadsrapport för de senaste 6 månaderna.
+          expected: Varje rapport visar andel utfört förebyggande underhåll, medeltid mellan fel, medeltid för reparation och balans av arbetsorder med målvärden.
+        - action: Välj 3 avvecklade tillgångar och hämta deras historik av arbetsorder.
+          expected: Den fullständiga historiken för varje tillgång hämtas, från driftsättning till avveckling.
