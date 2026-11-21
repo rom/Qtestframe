@@ -1,0 +1,563 @@
+area: multi-tenancy
+prefix: TEN
+group: security
+name: {en: Multi-tenancy isolation, sv: Isolering mellan kunder}
+description:
+  en: Separation of the data, caches, jobs, keys and capacity of organisations that share one installation, and the export and deletion of a whole tenant.
+  sv: Åtskillnad av data, cacheminnen, jobb, nycklar och kapacitet för organisationer som delar en installation, samt export och radering av en hel kund.
+
+requirements:
+  - id: TEN-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [tenant-context, authorisation]
+    refs: ["OWASP ASVS 4.0.3 §4.1.2", "OWASP Top 10:2021 A01 (broken access control)", "CSA Cloud Controls Matrix v4 DSP-17"]
+    tests: [TEN-T01]
+    en:
+      title: The tenant comes from the authenticated session
+      description: The system MUST take the tenant of each request from the authenticated session and ignore a tenant id sent in the URL, a header or the body.
+      rationale: A tenant id that the client can choose lets a user of one organisation address another organisation's data by changing one value.
+      criteria:
+        - method: test
+          text: A request from organisation A with the id of organisation B in the URL, a header and the body returns only data of organisation A or is refused.
+    sv:
+      title: Kunden bestäms av den autentiserade sessionen
+      description: Systemet SKA hämta kunden för varje anrop från den autentiserade sessionen och bortse från ett kund-id som skickas i URL:en, ett huvud eller innehållet.
+      rationale: Ett kund-id som klienten kan välja låter en användare i en organisation nå en annan organisations data genom att ändra ett värde.
+      criteria:
+        - method: test
+          text: Ett anrop från organisation A med organisation B:s id i URL:en, ett huvud och innehållet ger bara data från organisation A eller nekas.
+
+  - id: TEN-02
+    type: security
+    obligation: must
+    priority: critical
+    tags: [data-layer, row-level-security]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1 (segregation in virtual computing environments)"]
+    tests: [TEN-T02]
+    en:
+      title: Tenant filter enforced in the data layer
+      description: The data access layer or database row-level security MUST add the tenant condition to each query on tenant data.
+      rationale: When each handler has to remember the filter, one forgotten condition exposes the data of every organisation.
+      criteria:
+        - method: inspection
+          text: Queries on tenant tables go through the shared data layer or a database policy, and a code search finds no direct query that bypasses it.
+        - method: test
+          text: A query run without a tenant context returns an error and no rows.
+    sv:
+      title: Kundfiltret tillämpas i dataåtkomstlagret
+      description: Dataåtkomstlagret eller databasens radnivåsäkerhet SKA lägga till kundvillkoret i varje fråga mot kunddata.
+      rationale: När varje hanterare måste komma ihåg filtret räcker ett glömt villkor för att röja alla organisationers data.
+      criteria:
+        - method: inspection
+          text: Frågor mot kundtabeller går genom det gemensamma dataåtkomstlagret eller en databaspolicy, och en kodsökning hittar ingen direkt fråga som går förbi det.
+        - method: test
+          text: En fråga som körs utan kundkontext ger ett fel och inga rader.
+
+  - id: TEN-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [cache, isolation]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet (shared resources)", "CWE-524 (use of cache containing sensitive information)"]
+    tests: [TEN-T03]
+    en:
+      title: Cache entries are separated per tenant
+      description: The system MUST include the tenant id in the key of each cache entry that holds tenant data.
+      rationale: A shared cache key returns one organisation's cached answer to the next organisation that asks the same question.
+      criteria:
+        - method: test
+          text: The same request made by organisation A and then by organisation B returns each organisation's own data, also when the first answer is cached.
+    sv:
+      title: Cacheposter hålls åtskilda per kund
+      description: Systemet SKA ta med kund-id i nyckeln för varje cachepost som innehåller kunddata.
+      rationale: En gemensam cachenyckel ger en organisations cachade svar till nästa organisation som ställer samma fråga.
+      criteria:
+        - method: test
+          text: Samma anrop från organisation A och därefter från organisation B ger varje organisation dess egna data, även när det första svaret ligger i cacheminnet.
+
+  - id: TEN-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [search, isolation]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet"]
+    tests: [TEN-T03]
+    en:
+      title: Search results contain only the tenant's documents
+      description: The search service MUST filter each query on the tenant of the caller, including suggestions, facet counts and highlighted snippets.
+      rationale: Search indexes often hold all organisations in one index, and facet counts or suggestions can reveal names from another tenant.
+      criteria:
+        - method: test
+          text: A search by organisation A for a word that occurs only in organisation B's data returns no hits, no suggestions and zero in every facet.
+    sv:
+      title: Sökresultat innehåller bara kundens egna dokument
+      description: Söktjänsten SKA filtrera varje fråga på anroparens kund, även förslag, antal per filterval och markerade textutdrag.
+      rationale: Sökindex innehåller ofta alla organisationer i ett index, och antal per filterval eller förslag kan avslöja namn från en annan kund.
+      criteria:
+        - method: test
+          text: En sökning från organisation A efter ett ord som bara finns i organisation B:s data ger inga träffar, inga förslag och noll i varje filterval.
+
+  - id: TEN-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [background-jobs, tenant-context]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet"]
+    tests: [TEN-T04]
+    en:
+      title: Background jobs run in the tenant that queued them
+      description: Each background job MUST run with the tenant of the request that queued it and fail when it has no tenant.
+      rationale: Jobs run outside a user request, so a missing tenant context easily turns into a job that reads or writes across all organisations.
+      criteria:
+        - method: test
+          text: An export job queued by organisation A contains only A's data, and a job queued without a tenant fails with an error in the job log.
+    sv:
+      title: Bakgrundsjobb körs i kunden som köade dem
+      description: Varje bakgrundsjobb SKA köras med kunden från det anrop som köade jobbet och misslyckas när det saknar kund.
+      rationale: Jobb körs utanför ett användaranrop, så en saknad kundkontext blir lätt ett jobb som läser eller skriver över alla organisationer.
+      criteria:
+        - method: test
+          text: Ett exportjobb som organisation A köat innehåller bara A:s data, och ett jobb som köats utan kund misslyckas med ett fel i jobbloggen.
+
+  - id: TEN-06
+    type: security
+    obligation: should
+    priority: medium
+    tags: [encryption, keys]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §6.2", "CSA Cloud Controls Matrix v4 CEK-03"]
+    tests: [TEN-T05]
+    en:
+      title: Separate encryption key for each tenant
+      description: The system SHOULD encrypt each tenant's stored files and sensitive fields with a data key that belongs to that tenant only.
+      rationale: A key of its own limits the damage of a data access bug to one organisation and lets a tenant's data be made unreadable by destroying its key.
+      criteria:
+        - method: inspection
+          text: The key store holds one key per tenant, and the stored data of two tenants decrypts only with their own key.
+    sv:
+      title: Egen krypteringsnyckel för varje kund
+      description: Systemet BÖR kryptera varje kunds lagrade filer och känsliga fält med en datanyckel som bara hör till den kunden.
+      rationale: En egen nyckel begränsar skadan av ett fel i dataåtkomsten till en organisation och gör att en kunds data kan göras oläsliga genom att nyckeln förstörs.
+      criteria:
+        - method: inspection
+          text: Nyckellagret har en nyckel per kund, och två kunders lagrade data går bara att dekryptera med deras egen nyckel.
+
+  - id: TEN-07
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [quota, noisy-neighbour, rate-limit]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "AWS Well-Architected SaaS Lens (noisy neighbour)"]
+    tests: [TEN-T06]
+    en:
+      title: Resource quota per tenant
+      description: The system SHOULD limit each tenant to 20 % of the shared request capacity, so that the 95th percentile response time of other tenants rises by less than 20 %.
+      rationale: Without a quota one organisation's import or script slows the service down for every other organisation.
+      criteria:
+        - method: test
+          text: While one tenant sends five times its quota, the other tenants' 95th percentile response time rises by less than 20 %.
+          threshold: "quota 20 % of capacity; p95 of others + < 20 %"
+    sv:
+      title: Resurskvot per kund
+      description: Systemet BÖR begränsa varje kund till 20 % av den gemensamma anropskapaciteten, så att 95:e percentilen av svarstiden för övriga kunder ökar med mindre än 20 %.
+      rationale: Utan kvot gör en organisations import eller skript tjänsten långsammare för alla andra organisationer.
+      criteria:
+        - method: test
+          text: Medan en kund skickar fem gånger sin kvot ökar övriga kunders 95:e percentil för svarstiden med mindre än 20 %.
+          threshold: "kvot 20 % av kapaciteten; p95 för övriga + < 20 %"
+
+  - id: TEN-08
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [export, portability, offboarding]
+    refs: ["GDPR Art. 20 (right to data portability)", "EU Data Act (Regulation (EU) 2023/2854) Art. 23–25 (switching between data processing services)"]
+    tests: [TEN-T07]
+    en:
+      title: Export of a whole tenant
+      description: The system SHOULD produce a complete machine-readable export of a tenant's data within 24 hours of an administrator's request.
+      rationale: Organisations that leave a service need their data in a form another system can read, and regulation increasingly requires it.
+      criteria:
+        - method: test
+          text: An export of a test tenant is ready within 24 hours and contains every record, file and history entry counted in the database.
+          threshold: "≤ 24 h"
+    sv:
+      title: Export av en hel kund
+      description: Systemet BÖR ta fram en fullständig maskinläsbar export av en kunds data inom 24 timmar från en administratörs begäran.
+      rationale: Organisationer som lämnar en tjänst behöver sina data i en form som ett annat system kan läsa, och regelverk kräver det i allt högre grad.
+      criteria:
+        - method: test
+          text: En export av en testkund är klar inom 24 timmar och innehåller varje post, fil och historikpost som räknats i databasen.
+          threshold: "≤ 24 h"
+
+  - id: TEN-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [deletion, offboarding]
+    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 Annex A 8.10 (information deletion)"]
+    tests: [TEN-T07, TEN-T09]
+    en:
+      title: Deletion of a tenant after the contract ends
+      description: The system MUST delete a tenant's data from primary storage, search indexes and caches within 30 days after the contract has ended.
+      rationale: A processor may keep customer data only as long as the contract allows, and forgotten tenants are a lasting leak risk.
+      criteria:
+        - method: test
+          text: 30 days after a test tenant is closed, no row, file, index entry or cache entry with its tenant id is found.
+          threshold: "≤ 30 days"
+    sv:
+      title: Radering av en kund när avtalet har upphört
+      description: Systemet SKA radera en kunds data från primär lagring, sökindex och cacheminnen inom 30 dagar efter att avtalet har upphört.
+      rationale: Ett personuppgiftsbiträde får bara behålla kunddata så länge avtalet tillåter, och bortglömda kunder är en bestående risk för läckor.
+      criteria:
+        - method: test
+          text: 30 dagar efter att en testkund avslutats hittas ingen rad, fil, indexpost eller cachepost med kundens id.
+          threshold: "≤ 30 dagar"
+
+  - id: TEN-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [regression-test, pipeline, isolation]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4 (insecure direct object references)"]
+    tests: [TEN-T02]
+    en:
+      title: Cross-tenant tests for each endpoint
+      description: The automated test suite MUST call each API endpoint that takes a record id with the credentials of a second tenant and expect a refusal.
+      rationale: New endpoints are added continuously, and an automatic check is the only way to know that each of them keeps tenants apart.
+      criteria:
+        - method: inspection
+          text: The list of API endpoints and the list of cross-tenant tests match one to one, and the pipeline fails when an endpoint has no such test.
+    sv:
+      title: Tester mellan kunder för varje ändpunkt
+      description: Den automatiska testsviten SKA anropa varje API-ändpunkt som tar ett post-id med en annan kunds inloggningsuppgifter och förvänta sig att anropet nekas.
+      rationale: Nya ändpunkter läggs till hela tiden, och en automatisk kontroll är det enda sättet att veta att var och en håller isär kunderna.
+      criteria:
+        - method: inspection
+          text: Listan över API-ändpunkter och listan över tester mellan kunder stämmer överens en till en, och pipelinen fallerar när en ändpunkt saknar ett sådant test.
+
+  - id: TEN-11
+    type: security
+    obligation: should
+    priority: high
+    tags: [support-access, approval]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09"]
+    tests: [TEN-T08]
+    en:
+      title: Support access to a tenant needs its approval
+      description: Access by the service provider's support staff to a tenant's data SHOULD require approval by an administrator of that tenant and end automatically after 24 hours.
+      rationale: Customers need control over who at the provider can see their data, and standing support access is a target for attackers.
+      criteria:
+        - method: test
+          text: A support engineer without approval cannot open the tenant, and an approved session ends 24 hours after approval.
+          threshold: "≤ 24 h"
+        - method: inspection
+          text: The tenant's audit trail lists each support access with the engineer, the approver and the period.
+    sv:
+      title: Supportåtkomst till en kund kräver kundens godkännande
+      description: Åtkomst till en kunds data för tjänsteleverantörens supportpersonal BÖR kräva godkännande av en administratör hos kunden och upphöra automatiskt efter 24 timmar.
+      rationale: Kunder behöver styra vem hos leverantören som kan se deras data, och stående supportåtkomst är ett mål för angripare.
+      criteria:
+        - method: test
+          text: En supporttekniker utan godkännande kommer inte åt kunden, och en godkänd session upphör 24 timmar efter godkännandet.
+          threshold: "≤ 24 h"
+        - method: inspection
+          text: Kundens granskningslogg visar varje supportåtkomst med tekniker, godkännare och period.
+
+tests:
+  - id: TEN-T01
+    priority: critical
+    execution: automated
+    tags: [tenant-context, api]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.5.4"]
+    en:
+      title: A tenant id chosen by the client is ignored
+      description: Sends requests from organisation A in which the id of organisation B is placed in the URL, a header and the body.
+      preconditions: Two organisations A and B with one project each; an API token of a user in organisation A.
+      expected: Every request returns only data of organisation A or is refused; no data of organisation B is returned or changed.
+      steps:
+        - action: List projects with the token of A and the query parameter tenant set to B's id.
+          expected: Only A's projects are returned.
+          data: "?tenant=<id of B>"
+        - action: Repeat the request with a header X-Tenant-Id set to B's id.
+          expected: Only A's projects are returned.
+        - action: Create a project with the body field tenant_id set to B's id.
+          expected: The project is created in organisation A or the request is rejected with 400.
+        - action: As a user of B, list B's projects.
+          expected: No new project has appeared in organisation B.
+    sv:
+      title: Ett kund-id som klienten väljer ignoreras
+      description: Skickar anrop från organisation A där organisation B:s id ligger i URL:en, ett huvud och innehållet.
+      preconditions: Två organisationer A och B med ett projekt var; en API-token för en användare i organisation A.
+      expected: Varje anrop ger bara data från organisation A eller nekas; inga data från organisation B returneras eller ändras.
+      steps:
+        - action: Lista projekt med A:s token och frågeparametern tenant satt till B:s id.
+          expected: Bara A:s projekt returneras.
+          data: "?tenant=<B:s id>"
+        - action: Upprepa anropet med huvudet X-Tenant-Id satt till B:s id.
+          expected: Bara A:s projekt returneras.
+        - action: Skapa ett projekt med fältet tenant_id i innehållet satt till B:s id.
+          expected: Projektet skapas i organisation A eller anropet avvisas med 400.
+        - action: Lista B:s projekt som användare i B.
+          expected: Inget nytt projekt har dykt upp i organisation B.
+
+  - id: TEN-T02
+    priority: critical
+    execution: automated
+    tags: [data-layer, regression-test, pipeline]
+    refs: []
+    en:
+      title: Cross-tenant suite covers every endpoint and the data layer
+      description: Runs the cross-tenant test suite, compares it with the endpoint list and runs a query without tenant context.
+      preconditions: The pipeline's test environment with two seeded tenants; the generated list of API endpoints.
+      expected: Every endpoint that takes an id refuses the other tenant, every such endpoint has a test, and a query without tenant fails.
+      steps:
+        - action: Run the cross-tenant suite, which calls each endpoint with an id of tenant B and the token of tenant A.
+          expected: Each call returns 403 or 404 and no data of tenant B.
+        - action: Compare the endpoints covered by the suite with the generated endpoint list.
+          expected: No endpoint that takes a record id is missing from the suite.
+        - action: Add a new endpoint without a cross-tenant test in a test branch and run the pipeline.
+          expected: The pipeline fails and names the endpoint.
+        - action: Call the data layer from a unit test without setting a tenant context.
+          expected: The call returns an error and no rows.
+    sv:
+      title: Testsviten mellan kunder täcker varje ändpunkt och dataåtkomstlagret
+      description: Kör testsviten mellan kunder, jämför den med listan över ändpunkter och kör en fråga utan kundkontext.
+      preconditions: Pipelinens testmiljö med två kunder med testdata; den genererade listan över API-ändpunkter.
+      expected: Varje ändpunkt som tar ett id nekar den andra kunden, varje sådan ändpunkt har ett test, och en fråga utan kund misslyckas.
+      steps:
+        - action: Kör testsviten mellan kunder, som anropar varje ändpunkt med ett id från kund B och kund A:s token.
+          expected: Varje anrop ger 403 eller 404 och inga data från kund B.
+        - action: Jämför ändpunkterna som sviten täcker med den genererade listan över ändpunkter.
+          expected: Ingen ändpunkt som tar ett post-id saknas i sviten.
+        - action: Lägg till en ny ändpunkt utan test mellan kunder i en testgren och kör pipelinen.
+          expected: Pipelinen fallerar och namnger ändpunkten.
+        - action: Anropa dataåtkomstlagret från ett enhetstest utan att ange någon kundkontext.
+          expected: Anropet ger ett fel och inga rader.
+
+  - id: TEN-T03
+    priority: high
+    execution: automated
+    tags: [cache, search]
+    refs: []
+    en:
+      title: Cache and search keep tenants apart
+      description: Makes the same cached request from two tenants and searches for a word that occurs only in one of them.
+      preconditions: Tenants A and B with different data; the word "zebracorn" occurs only in a record of tenant B; caching is enabled.
+      expected: Each tenant gets its own cached data, and A finds no trace of B's word.
+      steps:
+        - action: As tenant A, request the dashboard summary twice so that the second answer comes from the cache.
+          expected: Both answers show A's figures.
+        - action: As tenant B, request the same dashboard summary.
+          expected: The answer shows B's figures, not A's cached figures.
+        - action: As tenant A, search for zebracorn and type "zebr" in the search box.
+          expected: No hits, no suggestion and zero in every facet.
+          data: "search term: zebracorn"
+    sv:
+      title: Cacheminne och sökning håller isär kunderna
+      description: Gör samma cachade anrop från två kunder och söker efter ett ord som bara finns hos den ena.
+      preconditions: Kunderna A och B med olika data; ordet "zebracorn" finns bara i en post hos kund B; cachning är påslagen.
+      expected: Varje kund får sina egna cachade data, och A hittar inga spår av B:s ord.
+      steps:
+        - action: Begär översiktens sammanfattning två gånger som kund A så att det andra svaret kommer från cacheminnet.
+          expected: Båda svaren visar A:s siffror.
+        - action: Begär samma sammanfattning som kund B.
+          expected: Svaret visar B:s siffror och inte A:s cachade siffror.
+        - action: Sök efter zebracorn som kund A och skriv "zebr" i sökrutan.
+          expected: Inga träffar, inga förslag och noll i varje filterval.
+          data: "sökterm: zebracorn"
+
+  - id: TEN-T04
+    priority: high
+    execution: automated
+    tags: [background-jobs]
+    refs: []
+    en:
+      title: Background jobs carry the tenant
+      description: Queues an export job for one tenant and a job without tenant, and checks their results.
+      preconditions: Tenants A and B with data; access to the job queue and the job log in the test environment.
+      expected: The job of A contains only A's data, and the job without tenant fails.
+      steps:
+        - action: As an administrator of A, start a full export.
+          expected: The job is queued with A's tenant id.
+        - action: Open the export file when the job has finished.
+          expected: It contains only records of tenant A.
+        - action: Put a job of the same type in the queue without a tenant id.
+          expected: The job fails and the job log states that the tenant is missing; no file is produced.
+    sv:
+      title: Bakgrundsjobb bär med sig kunden
+      description: Köar ett exportjobb för en kund och ett jobb utan kund och kontrollerar resultaten.
+      preconditions: Kunderna A och B med data; åtkomst till jobbkön och jobbloggen i testmiljön.
+      expected: A:s jobb innehåller bara A:s data, och jobbet utan kund misslyckas.
+      steps:
+        - action: Starta en fullständig export som administratör hos A.
+          expected: Jobbet köas med A:s kund-id.
+        - action: Öppna exportfilen när jobbet är klart.
+          expected: Den innehåller bara poster från kund A.
+        - action: Lägg ett jobb av samma typ i kön utan kund-id.
+          expected: Jobbet misslyckas och jobbloggen anger att kunden saknas; ingen fil skapas.
+
+  - id: TEN-T05
+    priority: medium
+    execution: manual
+    tags: [encryption, keys]
+    refs: []
+    en:
+      title: Each tenant's data is encrypted with its own key
+      description: Inspects the key store and tries to decrypt one tenant's stored file with another tenant's key.
+      preconditions: Tenants A and B each with one uploaded file; an operator with access to the key store in the test environment.
+      expected: There is one key per tenant, and a file decrypts only with its own tenant's key.
+      steps:
+        - action: List the data keys in the key store with their tenant ids.
+          expected: Tenant A and tenant B each have their own key.
+        - action: Decrypt the stored file of tenant A with A's key.
+          expected: The original file is returned.
+        - action: Try to decrypt the stored file of tenant A with B's key.
+          expected: Decryption fails.
+    sv:
+      title: Varje kunds data krypteras med en egen nyckel
+      description: Granskar nyckellagret och försöker dekryptera en kunds lagrade fil med en annan kunds nyckel.
+      preconditions: Kunderna A och B med en uppladdad fil var; en driftansvarig med åtkomst till nyckellagret i testmiljön.
+      expected: Det finns en nyckel per kund, och en fil går bara att dekryptera med den egna kundens nyckel.
+      steps:
+        - action: Lista datanycklarna i nyckellagret med deras kund-id.
+          expected: Kund A och kund B har var sin nyckel.
+        - action: Dekryptera kund A:s lagrade fil med A:s nyckel.
+          expected: Den ursprungliga filen returneras.
+        - action: Försök att dekryptera kund A:s lagrade fil med B:s nyckel.
+          expected: Dekrypteringen misslyckas.
+
+  - id: TEN-T06
+    priority: medium
+    execution: automated
+    tags: [quota, load-test]
+    refs: ["ISTQB CT-PT Performance Testing syllabus §1.2"]
+    en:
+      title: One busy tenant does not slow down the others
+      description: A load test runs normal traffic for nine tenants while a tenth sends five times its quota.
+      preconditions: A production-like environment with ten tenants; the quota is set to 20 % of measured capacity; a load generator.
+      expected: The busy tenant is throttled, and the others' 95th percentile response time rises by less than 20 %.
+      steps:
+        - action: Run normal traffic for the nine tenants for 15 minutes and record their 95th percentile response time.
+          expected: A baseline is recorded.
+        - action: Keep the normal traffic and let the tenth tenant send five times its quota for 15 minutes.
+          expected: The tenth tenant receives 429 responses for the requests above its quota.
+          data: "5 × quota"
+        - action: Compare the nine tenants' 95th percentile with the baseline.
+          expected: The increase is less than 20 %.
+    sv:
+      title: En belastad kund gör inte de andra långsammare
+      description: Ett lasttest kör normal trafik för nio kunder medan en tionde skickar fem gånger sin kvot.
+      preconditions: En produktionslik miljö med tio kunder; kvoten är satt till 20 % av den uppmätta kapaciteten; en lastgenerator.
+      expected: Den belastade kunden stryps, och övriga kunders 95:e percentil för svarstiden ökar med mindre än 20 %.
+      steps:
+        - action: Kör normal trafik för de nio kunderna i 15 minuter och registrera deras 95:e percentil för svarstiden.
+          expected: Ett utgångsvärde registreras.
+        - action: Behåll den normala trafiken och låt den tionde kunden skicka fem gånger sin kvot i 15 minuter.
+          expected: Den tionde kunden får svaret 429 för anropen över kvoten.
+          data: "5 × kvoten"
+        - action: Jämför de nio kundernas 95:e percentil med utgångsvärdet.
+          expected: Ökningen är mindre än 20 %.
+
+  - id: TEN-T07
+    priority: high
+    execution: manual
+    tags: [export, deletion, offboarding]
+    refs: []
+    en:
+      title: Export and deletion of a closed tenant
+      description: Exports a test tenant, closes it and checks after the deletion period that no data remains.
+      preconditions: A test tenant with records, files and history; counts of each per table; the deletion period is set to 30 days, or a test clock can be moved forward.
+      expected: The export is complete and ready within 24 hours, and after 30 days no data of the tenant remains in storage, indexes or caches.
+      steps:
+        - action: As the tenant's administrator, request a full export and note the time.
+          expected: The export is ready within 24 hours.
+        - action: Compare the number of records, files and history entries in the export with the counts from the database.
+          expected: The numbers are the same.
+        - action: Close the tenant and move the test clock forward 30 days, or wait until the deletion job has run.
+          expected: The deletion job reports the tenant as deleted.
+        - action: Search the database tables, the file storage, the search index and the cache for the tenant id.
+          expected: No entry with the tenant id is found.
+    sv:
+      title: Export och radering av en avslutad kund
+      description: Exporterar en testkund, avslutar den och kontrollerar efter raderingsperioden att inga data finns kvar.
+      preconditions: En testkund med poster, filer och historik; antal av var och en per tabell; raderingsperioden är satt till 30 dagar, eller så kan en testklocka flyttas fram.
+      expected: Exporten är fullständig och klar inom 24 timmar, och efter 30 dagar finns inga av kundens data kvar i lagring, index eller cacheminnen.
+      steps:
+        - action: Begär en fullständig export som kundens administratör och notera tiden.
+          expected: Exporten är klar inom 24 timmar.
+        - action: Jämför antalet poster, filer och historikposter i exporten med antalen från databasen.
+          expected: Antalen är desamma.
+        - action: Avsluta kunden och flytta testklockan 30 dagar framåt, eller vänta tills raderingsjobbet har körts.
+          expected: Raderingsjobbet rapporterar kunden som raderad.
+        - action: Sök efter kundens id i databastabellerna, fillagringen, sökindexet och cacheminnet.
+          expected: Ingen post med kundens id hittas.
+
+  - id: TEN-T08
+    priority: high
+    execution: manual
+    tags: [support-access, approval, audit]
+    refs: []
+    en:
+      title: Support access with and without approval
+      description: A support engineer tries to open a tenant before and after its administrator approves, and the audit trail is checked.
+      preconditions: A support engineer account at the provider; an administrator account of a test tenant; the test clock can be moved forward.
+      expected: Access needs approval, ends after 24 hours and is listed in the tenant's audit trail.
+      steps:
+        - action: As the support engineer, open the test tenant without approval.
+          expected: Access is refused with a message that approval is needed.
+        - action: As the tenant administrator, approve support access, then open the tenant as the support engineer.
+          expected: The support engineer can view the tenant.
+        - action: Move the clock 24 hours forward and reload the page.
+          expected: The support session has ended and the tenant is no longer reachable.
+          data: "approval + 24 h"
+        - action: Open the tenant's audit trail.
+          expected: The access is listed with engineer, approver, start and end time.
+    sv:
+      title: Supportåtkomst med och utan godkännande
+      description: En supporttekniker försöker öppna en kund före och efter att dess administratör godkänner, och granskningsloggen kontrolleras.
+      preconditions: Ett konto för en supporttekniker hos leverantören; ett administratörskonto hos en testkund; testklockan kan flyttas fram.
+      expected: Åtkomsten kräver godkännande, upphör efter 24 timmar och syns i kundens granskningslogg.
+      steps:
+        - action: Öppna testkunden som supporttekniker utan godkännande.
+          expected: Åtkomsten nekas med ett meddelande om att godkännande behövs.
+        - action: Godkänn supportåtkomst som kundens administratör och öppna sedan kunden som supporttekniker.
+          expected: Supportteknikern kan se kunden.
+        - action: Flytta klockan 24 timmar framåt och läs in sidan igen.
+          expected: Supportsessionen har upphört och kunden går inte längre att nå.
+          data: "godkännande + 24 h"
+        - action: Öppna kundens granskningslogg.
+          expected: Åtkomsten visas med tekniker, godkännare, starttid och sluttid.
+
+  - id: TEN-T09
+    priority: medium
+    execution: automated
+    tags: [deletion, orphaned-data]
+    refs: []
+    en:
+      title: Scheduled check for data of closed tenants
+      description: A scheduled job counts rows, files, index entries and cache entries per tenant id and compares them with the list of active and closing tenants.
+      preconditions: The check job runs in a test environment with one active tenant, one tenant closed 10 days ago and one closed 31 days ago.
+      expected: The job reports data only for the tenant closed more than 30 days ago that was left in place on purpose.
+      steps:
+        - action: Leave one record of the tenant closed 31 days ago in a table and run the check job.
+          expected: The job reports that tenant with the table and the number of rows.
+          data: "1 row left in the items table"
+        - action: Read the job's result for the tenant closed 10 days ago.
+          expected: It is not reported, because its deletion period has not passed.
+        - action: Delete the leftover record and run the job again.
+          expected: The job reports no data for closed tenants.
+    sv:
+      title: Schemalagd kontroll av data från avslutade kunder
+      description: Ett schemalagt jobb räknar rader, filer, indexposter och cacheposter per kund-id och jämför dem med listan över aktiva och avslutade kunder.
+      preconditions: Kontrolljobbet körs i en testmiljö med en aktiv kund, en kund som avslutades för 10 dagar sedan och en som avslutades för 31 dagar sedan.
+      expected: Jobbet rapporterar data bara för den kund som avslutades för mer än 30 dagar sedan och där data avsiktligt lämnats kvar.
+      steps:
+        - action: Lämna kvar en post från kunden som avslutades för 31 dagar sedan i en tabell och kör kontrolljobbet.
+          expected: Jobbet rapporterar kunden med tabellen och antalet rader.
+          data: "1 rad kvar i tabellen items"
+        - action: Läs jobbets resultat för kunden som avslutades för 10 dagar sedan.
+          expected: Den rapporteras inte, eftersom dess raderingsperiod inte har gått ut.
+        - action: Radera den kvarlämnade posten och kör jobbet igen.
+          expected: Jobbet rapporterar inga data för avslutade kunder.

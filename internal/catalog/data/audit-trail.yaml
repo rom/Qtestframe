@@ -231,6 +231,52 @@ requirements:
         - method: demonstration
           text: Historikfliken för en post visar dess ändringar med användare, tidpunkt, fält, gammalt värde och nytt värde i omvänd tidsordning.
 
+  - id: AUD-11
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [audit-trail, read-access, sensitive-data]
+    refs: ["Swedish Patient Data Act (2008:355) Ch. 4 §3 (access logging)", "HIPAA Security Rule 45 CFR §164.312(b) (audit controls)"]
+    tests: [AUD-T11]
+    en:
+      title: Reading a sensitive record is recorded
+      description: The system SHOULD record in the audit trail each time a user opens a record classified as sensitive, with user, time and record.
+      rationale: For health, personnel and case data the question is often who looked at a record, not only who changed it.
+      criteria:
+        - method: test
+          text: Opening a sensitive record creates an audit entry with user, time and record id within 1 minute, and opening an ordinary record does not.
+    sv:
+      title: Läsning av en känslig post registreras
+      description: Systemet BÖR registrera i ändringsloggen varje gång en användare öppnar en post som klassats som känslig, med användare, tid och post.
+      rationale: För hälso-, personal- och ärendeuppgifter är frågan ofta vem som har tittat på en post, inte bara vem som har ändrat den.
+      criteria:
+        - method: test
+          text: Att öppna en känslig post skapar en post i ändringsloggen med användare, tid och post-id inom 1 minut, och att öppna en vanlig post gör det inte.
+
+  - id: AUD-12
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [audit-trail, search, performance]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "EU GMP Annex 11 §9 (audit trails available and convertible)"]
+    tests: [AUD-T12]
+    en:
+      title: Search of the audit trail within 5 seconds
+      description: The audit trail SHOULD return the entries for a given user, record or period within 5 seconds when it holds 10 million entries.
+      rationale: Investigations and audits ask many questions in a row, and slow searches make people export everything instead.
+      criteria:
+        - method: test
+          text: With 10 million entries, searches by user, by record and by a 1-month period each return their first page within 5 seconds.
+          threshold: "≤ 5 s at 10 000 000 entries"
+    sv:
+      title: Sökning i ändringsloggen inom 5 sekunder
+      description: Ändringsloggen BÖR visa posterna för en viss användare, post eller period inom 5 sekunder när den innehåller 10 miljoner poster.
+      rationale: Utredningar och revisioner ställer många frågor i följd, och långsamma sökningar får människor att exportera allt i stället.
+      criteria:
+        - method: test
+          text: Med 10 miljoner poster visar sökningar på användare, på post och på en period om 1 månad var sin första sida inom 5 sekunder.
+          threshold: "≤ 5 s vid 10 000 000 poster"
+
 tests:
   - id: AUD-T01
     priority: critical
@@ -525,3 +571,65 @@ tests:
           expected: Varje ändring visas med användare, tidpunkt, fält, gammalt värde och nytt värde.
         - action: Kontrollera ordningen i listan.
           expected: Den senaste ändringen ligger överst.
+
+  - id: AUD-T11
+    priority: medium
+    execution: manual
+    tags: [audit-trail, read-access]
+    refs: []
+    en:
+      title: Opening a sensitive record leaves an audit entry
+      description: Opens a sensitive and an ordinary record and checks the audit trail.
+      preconditions: A record classified as sensitive and an ordinary record; a user with read access to both; an auditor account.
+      expected: Only the sensitive record's opening is recorded, with user, time and record id.
+      steps:
+        - action: As the user, open the sensitive record and note the time.
+          expected: The record is shown.
+        - action: As the user, open the ordinary record.
+          expected: The record is shown.
+        - action: As the auditor, search the audit trail for the user's entries of the last 5 minutes.
+          expected: There is a read entry for the sensitive record with user, time and record id, and none for the ordinary record.
+    sv:
+      title: Att öppna en känslig post ger en post i ändringsloggen
+      description: Öppnar en känslig och en vanlig post och kontrollerar ändringsloggen.
+      preconditions: En post som klassats som känslig och en vanlig post; en användare med läsrätt till båda; ett konto för granskare.
+      expected: Bara öppnandet av den känsliga posten registreras, med användare, tid och post-id.
+      steps:
+        - action: Öppna den känsliga posten som användaren och notera tiden.
+          expected: Posten visas.
+        - action: Öppna den vanliga posten som användaren.
+          expected: Posten visas.
+        - action: Sök som granskare i ändringsloggen efter användarens poster de senaste 5 minuterna.
+          expected: Det finns en läspost för den känsliga posten med användare, tid och post-id, och ingen för den vanliga posten.
+
+  - id: AUD-T12
+    priority: medium
+    execution: automated
+    tags: [audit-trail, search, performance]
+    refs: []
+    en:
+      title: Audit trail searches with 10 million entries
+      description: Fills the audit trail of a test environment with 10 million entries and times three typical searches.
+      preconditions: A production-like test environment; a script that generates 10 million audit entries spread over 2 years, 500 users and 100 000 records.
+      expected: Each search returns its first page within 5 seconds.
+      steps:
+        - action: Generate the 10 million entries and wait until indexing has finished.
+          expected: The audit trail reports 10 million entries.
+          data: "10 000 000 entries, 2 years, 500 users, 100 000 records"
+        - action: Search for all entries of one user and measure the time to the first page.
+          expected: The first page is shown within 5 seconds.
+        - action: Search for all entries of one record, then for all entries in one month, and measure each.
+          expected: Each first page is shown within 5 seconds.
+    sv:
+      title: Sökningar i ändringsloggen med 10 miljoner poster
+      description: Fyller ändringsloggen i en testmiljö med 10 miljoner poster och tar tid på tre typiska sökningar.
+      preconditions: En produktionslik testmiljö; ett skript som genererar 10 miljoner poster i ändringsloggen fördelade på 2 år, 500 användare och 100 000 poster.
+      expected: Varje sökning visar sin första sida inom 5 sekunder.
+      steps:
+        - action: Generera de 10 miljoner posterna och vänta tills indexeringen är klar.
+          expected: Ändringsloggen anger 10 miljoner poster.
+          data: "10 000 000 poster, 2 år, 500 användare, 100 000 poster"
+        - action: Sök efter alla poster för en användare och mät tiden till första sidan.
+          expected: Första sidan visas inom 5 sekunder.
+        - action: Sök efter alla poster för en post och därefter efter alla poster under en månad, och mät var och en.
+          expected: Varje första sida visas inom 5 sekunder.

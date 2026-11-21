@@ -1,0 +1,521 @@
+area: sustainability
+prefix: GRN
+group: quality
+name: {en: Energy efficiency and sustainability, sv: Energieffektivitet och hållbarhet}
+description:
+  en: Measurement of energy use and emissions, right-sized infrastructure, idle environments, page weight, compression, caching, polling and the timing and placement of workloads.
+  sv: Mätning av energianvändning och utsläpp, rätt dimensionerad infrastruktur, vilande miljöer, sidvikt, komprimering, cachning, avfrågning samt tidpunkt och placering av arbetslaster.
+
+requirements:
+  - id: GRN-01
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [measurement, energy, emissions]
+    refs: ["ISO/IEC 21031:2024 (Software Carbon Intensity specification)", "GHG Protocol Scope 3 Standard, category 1 (purchased goods and services)"]
+    tests: [GRN-T01, GRN-T08]
+    en:
+      title: Monthly report of energy use and emissions
+      description: The operations team SHOULD report the energy use in kWh and the emissions in kg CO2e of each environment every month, based on the hosting provider's data or a documented estimation method.
+      rationale: What is not measured cannot be reduced, and customers and annual reports increasingly ask for these figures.
+      criteria:
+        - method: inspection
+          text: Reports exist for each of the last 3 months with kWh and kg CO2e per environment and a reference to the data source or method.
+          threshold: "1 report per month"
+    sv:
+      title: Månatlig rapport över energianvändning och utsläpp
+      description: Driftteamet BÖR varje månad rapportera energianvändningen i kWh och utsläppen i kg CO2e för varje miljö, baserat på driftleverantörens data eller en dokumenterad beräkningsmetod.
+      rationale: Det som inte mäts går inte att minska, och kunder och årsredovisningar efterfrågar allt oftare dessa siffror.
+      criteria:
+        - method: inspection
+          text: Rapporter finns för var och en av de senaste 3 månaderna med kWh och kg CO2e per miljö och en hänvisning till datakällan eller metoden.
+          threshold: "1 rapport per månad"
+
+  - id: GRN-02
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [sci, functional-unit, regression]
+    refs: ["ISO/IEC 21031:2024 (Software Carbon Intensity specification)", "Green Software Foundation: SCI guidance"]
+    tests: [GRN-T01]
+    en:
+      title: Carbon intensity per transaction does not grow between releases
+      description: The Software Carbon Intensity per 1 000 API requests SHOULD rise by no more than 5 % from one release to the next.
+      rationale: A rate per unit of work shows whether the software itself became less efficient, independent of growth in users.
+      criteria:
+        - method: analysis
+          text: The SCI score per 1 000 requests is computed for the last two releases with the same method, and the increase is at most 5 %.
+          threshold: "increase ≤ 5 % per release"
+    sv:
+      title: Koldioxidintensiteten per transaktion ökar inte mellan releaser
+      description: Software Carbon Intensity per 1 000 API-anrop BÖR öka med högst 5 % från en release till nästa.
+      rationale: Ett mått per arbetsenhet visar om själva programvaran har blivit mindre energisnål, oberoende av att antalet användare växer.
+      criteria:
+        - method: analysis
+          text: SCI-värdet per 1 000 anrop beräknas för de två senaste releaserna med samma metod, och ökningen är högst 5 %.
+          threshold: "ökning ≤ 5 % per release"
+
+  - id: GRN-03
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [right-sizing, utilisation]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "AWS Well-Architected Framework, Sustainability Pillar SUS02"]
+    tests: [GRN-T02]
+    en:
+      title: Average CPU utilisation of at least 40 %
+      description: The production compute capacity SHOULD be sized so that the average CPU utilisation over a week is at least 40 %, while the peak stays below 80 %.
+      rationale: Servers that idle at a few percent still draw a large part of their peak power, so oversizing wastes energy and money.
+      criteria:
+        - method: analysis
+          text: The weekly average CPU utilisation of the production cluster is at least 40 % and the 99th percentile is below 80 %.
+          threshold: "average ≥ 40 %, p99 < 80 %"
+    sv:
+      title: Genomsnittlig processorbelastning på minst 40 %
+      description: Produktionens beräkningskapacitet BÖR dimensioneras så att den genomsnittliga processorbelastningen över en vecka är minst 40 %, medan toppen stannar under 80 %.
+      rationale: Servrar som går på tomgång med några procents belastning drar ändå en stor del av sin toppeffekt, så överdimensionering slösar energi och pengar.
+      criteria:
+        - method: analysis
+          text: Produktionsklustrets genomsnittliga processorbelastning per vecka är minst 40 % och 99:e percentilen ligger under 80 %.
+          threshold: "medel ≥ 40 %, p99 < 80 %"
+
+  - id: GRN-04
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [idle, non-production, scheduling]
+    refs: ["AWS Well-Architected Framework, Sustainability Pillar SUS02 (align resources to demand)", "Green Software Foundation: Principles of Green Software Engineering (energy proportionality)"]
+    tests: [GRN-T03]
+    en:
+      title: Test environments are shut down outside working hours
+      description: Development and test environments SHOULD scale to zero compute instances between 20:00 and 07:00 on weekdays and during weekends, and start again within 10 minutes on request.
+      rationale: Non-production environments idle about 70 % of the week, and turning them off is the simplest reduction of energy use.
+      criteria:
+        - method: inspection
+          text: The compute metrics of each test environment show zero running instances in the agreed hours of the last week.
+        - method: test
+          text: A start request at 21:00 brings a test environment up within 10 minutes.
+          threshold: "start ≤ 10 min"
+    sv:
+      title: Testmiljöer stängs av utanför arbetstid
+      description: Utvecklings- och testmiljöer BÖR skalas ner till noll beräkningsinstanser mellan 20.00 och 07.00 på vardagar och under helger, och starta igen inom 10 minuter vid begäran.
+      rationale: Miljöer utanför produktion står oanvända ungefär 70 % av veckan, och att stänga av dem är det enklaste sättet att minska energianvändningen.
+      criteria:
+        - method: inspection
+          text: Mätvärdena för varje testmiljö visar noll körande instanser under de överenskomna tiderna den senaste veckan.
+        - method: test
+          text: En begäran om start klockan 21.00 får upp en testmiljö inom 10 minuter.
+          threshold: "start ≤ 10 min"
+
+  - id: GRN-05
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [page-weight, frontend]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §3 (UX design)", "HTTP Archive Web Almanac 2024, Page Weight chapter"]
+    tests: [GRN-T04]
+    en:
+      title: Transferred page weight of at most 1 MB
+      description: Each main page of the web interface SHOULD transfer at most 1 MB of data on the first load with an empty cache, and at most 100 kB on a repeat visit.
+      rationale: Data transfer costs energy in networks and devices, and lighter pages also load sooner on slow connections.
+      criteria:
+        - method: test
+          text: Measurements of each main page show at most 1 MB transferred with an empty cache and at most 100 kB with a warm cache.
+          threshold: "≤ 1 MB cold, ≤ 100 kB warm"
+    sv:
+      title: Överförd sidvikt på högst 1 MB
+      description: Varje huvudsida i webbgränssnittet BÖR överföra högst 1 MB data vid första inläsningen med tom cache och högst 100 kB vid ett återbesök.
+      rationale: Dataöverföring kostar energi i nät och enheter, och lättare sidor laddas dessutom fortare på långsamma anslutningar.
+      criteria:
+        - method: test
+          text: Mätningar av varje huvudsida visar högst 1 MB överfört med tom cache och högst 100 kB med fylld cache.
+          threshold: "≤ 1 MB tom cache, ≤ 100 kB fylld cache"
+
+  - id: GRN-06
+    type: performance
+    obligation: should
+    priority: low
+    tags: [images, formats, frontend]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §2.7 (optimise media)", "web.dev: Serve images in modern formats"]
+    tests: [GRN-T04]
+    en:
+      title: Images in WebP or AVIF at their display size
+      description: The web interface SHOULD deliver raster images in WebP or AVIF format and at most 1.5 times the pixel width at which they are displayed.
+      rationale: Images are the largest part of page weight, and the newer formats and correct sizes cut their size by half or more.
+      criteria:
+        - method: test
+          text: An audit of the main pages finds no raster image in JPEG or PNG above 20 kB and no image wider than 1.5 times its display width.
+          threshold: "≤ 1.5 × display width"
+    sv:
+      title: Bilder i WebP eller AVIF i visningsstorlek
+      description: Webbgränssnittet BÖR leverera rasterbilder i formatet WebP eller AVIF och med högst 1,5 gånger den bredd i pixlar som de visas i.
+      rationale: Bilder är den största delen av sidvikten, och de nyare formaten och rätt storlek minskar deras storlek med hälften eller mer.
+      criteria:
+        - method: test
+          text: En granskning av huvudsidorna hittar ingen rasterbild i JPEG eller PNG över 20 kB och ingen bild som är bredare än 1,5 gånger visningsbredden.
+          threshold: "≤ 1,5 × visningsbredden"
+
+  - id: GRN-07
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [compression, http]
+    refs: ["RFC 9110 §8.4 (content codings)", "RFC 7932 (Brotli)"]
+    tests: [GRN-T05]
+    en:
+      title: Text responses are compressed
+      description: The system MUST compress HTML, CSS, JavaScript, JSON and SVG responses larger than 1 kB with Brotli or gzip when the client accepts it.
+      rationale: Text compresses to a fraction of its size, which saves transfer energy and time for every request.
+      criteria:
+        - method: test
+          text: Requests with Accept-Encoding br, gzip for each of the five content types return a compressed response with Content-Encoding br or gzip.
+          threshold: "> 1 kB compressed"
+    sv:
+      title: Textsvar komprimeras
+      description: Systemet SKA komprimera svar med HTML, CSS, JavaScript, JSON och SVG som är större än 1 kB med Brotli eller gzip när klienten accepterar det.
+      rationale: Text kan komprimeras till en bråkdel av sin storlek, vilket sparar energi och tid för överföringen vid varje anrop.
+      criteria:
+        - method: test
+          text: Anrop med Accept-Encoding br, gzip för var och en av de fem innehållstyperna ger ett komprimerat svar med Content-Encoding br eller gzip.
+          threshold: "> 1 kB komprimeras"
+
+  - id: GRN-08
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [caching, static-assets, http]
+    refs: ["RFC 9111 (HTTP caching)", "RFC 8246 (immutable Cache-Control extension)"]
+    tests: [GRN-T05]
+    en:
+      title: Long caching of versioned static files
+      description: The system SHOULD serve static files with a content hash in their name with "Cache-Control public, max-age=31536000, immutable".
+      rationale: Files that never change under the same name need to be downloaded only once per browser, which removes most repeat traffic.
+      criteria:
+        - method: test
+          text: Each JavaScript, CSS and font file with a hash in its name is served with the header, and a reload loads it from the browser cache.
+    sv:
+      title: Lång cachning av versionerade statiska filer
+      description: Systemet BÖR leverera statiska filer med en innehållshash i namnet med "Cache-Control public, max-age=31536000, immutable".
+      rationale: Filer som aldrig ändras under samma namn behöver bara laddas ner en gång per webbläsare, vilket tar bort det mesta av den upprepade trafiken.
+      criteria:
+        - method: test
+          text: Varje JavaScript-, CSS- och typsnittsfil med hash i namnet levereras med huvudet, och en omladdning hämtar den från webbläsarens cache.
+
+  - id: GRN-09
+    type: non_functional
+    obligation: should
+    priority: low
+    tags: [polling, push, client]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0 §4 (web development)", "RFC 6455 (WebSocket protocol)"]
+    tests: [GRN-T06]
+    en:
+      title: Clients poll at most once a minute
+      description: Browser and mobile clients SHOULD receive updates through push or server-sent events, and poll the server at most once every 60 seconds while the page is visible and not at all while it is hidden.
+      rationale: Frequent polling from thousands of open tabs creates server load and network traffic that carries no new information.
+      criteria:
+        - method: test
+          text: A page left open for 10 minutes makes at most 10 polling requests while visible and none in a hidden tab.
+          threshold: "≤ 1 request per 60 s visible, 0 hidden"
+    sv:
+      title: Klienter avfrågar servern högst en gång i minuten
+      description: Webbläsar- och mobilklienter BÖR ta emot uppdateringar via push eller serverskickade händelser, och avfråga servern högst var 60:e sekund medan sidan syns och inte alls när den är dold.
+      rationale: Täta avfrågningar från tusentals öppna flikar skapar serverlast och nätverkstrafik som inte innehåller någon ny information.
+      criteria:
+        - method: test
+          text: En sida som står öppen i 10 minuter gör högst 10 avfrågningar när den syns och inga i en dold flik.
+          threshold: "≤ 1 anrop per 60 s synlig, 0 dold"
+
+  - id: GRN-10
+    type: non_functional
+    obligation: may
+    priority: low
+    tags: [carbon-aware, batch, scheduling]
+    refs: ["Green Software Foundation: Carbon Aware SDK", "ISO/IEC 21031:2024 (Software Carbon Intensity specification)"]
+    tests: [GRN-T07]
+    en:
+      title: Deferrable batch jobs run in low-carbon hours
+      description: The scheduler MAY move batch jobs that have a deadline of 24 hours or more to the hours with the lowest forecast grid carbon intensity before the deadline.
+      rationale: The carbon intensity of electricity varies several times over a day, so the same job can cause much lower emissions at another hour.
+      criteria:
+        - method: test
+          text: A deferrable job submitted at 08:00 with a forecast that is lowest at 02:00 the next day starts within one hour of 02:00 and finishes before its deadline.
+    sv:
+      title: Uppskjutbara batchjobb körs när koldioxidintensiteten är låg
+      description: Schemaläggaren FÅR flytta batchjobb med en tidsgräns på 24 timmar eller mer till de timmar före tidsgränsen då elnätets prognostiserade koldioxidintensitet är lägst.
+      rationale: Elens koldioxidintensitet varierar flerfaldigt under ett dygn, så samma jobb kan ge betydligt lägre utsläpp vid en annan timme.
+      criteria:
+        - method: test
+          text: Ett uppskjutbart jobb som läggs in klockan 08.00 med en prognos som är lägst klockan 02.00 nästa dygn startar inom en timme från 02.00 och blir klart före tidsgränsen.
+
+  - id: GRN-11
+    type: constraint
+    obligation: should
+    priority: low
+    tags: [region, hosting, carbon-intensity]
+    refs: ["Green Software Foundation: Principles of Green Software Engineering (carbon awareness)", "EU Energy Efficiency Directive (EU) 2023/1791 Art. 12 (data centres)"]
+    tests: [GRN-T02]
+    en:
+      title: Hosting region chosen with grid carbon intensity in mind
+      description: When choosing a hosting region, the organisation SHOULD record the average grid carbon intensity of each candidate region and choose one below 100 g CO2e per kWh where latency and data residency rules allow it.
+      rationale: The same workload can emit ten times more in one region than in another, and the choice is made once and then rarely revisited.
+      criteria:
+        - method: review
+          text: The decision record for the current hosting region lists the candidates with their carbon intensity, latency and data residency, and the chosen region is below 100 g CO2e per kWh or the reason is stated.
+          threshold: "< 100 g CO2e/kWh"
+    sv:
+      title: Driftregion väljs med hänsyn till elnätets koldioxidintensitet
+      description: När en driftregion väljs BÖR organisationen dokumentera den genomsnittliga koldioxidintensiteten i elnätet för varje kandidatregion och välja en under 100 g CO2e per kWh där fördröjning och regler för datalokalisering tillåter det.
+      rationale: Samma arbetslast kan ge tio gånger högre utsläpp i en region än i en annan, och valet görs en gång och omprövas sällan.
+      criteria:
+        - method: review
+          text: Beslutsunderlaget för den nuvarande driftregionen anger kandidaterna med koldioxidintensitet, fördröjning och datalokalisering, och den valda regionen ligger under 100 g CO2e per kWh eller så anges skälet.
+          threshold: "< 100 g CO2e/kWh"
+
+tests:
+  - id: GRN-T01
+    priority: medium
+    execution: manual
+    tags: [measurement, sci]
+    refs: ["ISO/IEC 21031:2024"]
+    en:
+      title: Energy reports and carbon intensity per release
+      description: Checks the monthly energy and emissions reports and compares the SCI score of the last two releases.
+      preconditions: The monthly reports; the hosting provider's emissions data; request counts and the SCI calculation sheet for the last two releases.
+      expected: Each month has a complete report, and the SCI per 1 000 requests rose by at most 5 %.
+      steps:
+        - action: Open the reports of the last 3 months.
+          expected: Each lists kWh and kg CO2e per environment with a reference to the data source or method.
+        - action: Compute the SCI per 1 000 requests for the previous release from its measured energy, the grid intensity, the embodied emissions share and its request count.
+          expected: A value is obtained and documented.
+        - action: Compute the SCI per 1 000 requests for the current release with the same method.
+          expected: The value is at most 5 % higher than for the previous release.
+          data: "threshold + 5 %"
+    sv:
+      title: Energirapporter och koldioxidintensitet per release
+      description: Kontrollerar de månatliga rapporterna över energi och utsläpp och jämför SCI-värdet för de två senaste releaserna.
+      preconditions: De månatliga rapporterna; driftleverantörens utsläppsdata; antal anrop och beräkningsunderlaget för SCI för de två senaste releaserna.
+      expected: Varje månad har en fullständig rapport, och SCI per 1 000 anrop ökade med högst 5 %.
+      steps:
+        - action: Öppna rapporterna för de senaste 3 månaderna.
+          expected: Var och en anger kWh och kg CO2e per miljö med en hänvisning till datakällan eller metoden.
+        - action: Beräkna SCI per 1 000 anrop för den föregående releasen utifrån uppmätt energi, nätets intensitet, andelen inbyggda utsläpp och antalet anrop.
+          expected: Ett värde tas fram och dokumenteras.
+        - action: Beräkna SCI per 1 000 anrop för den aktuella releasen med samma metod.
+          expected: Värdet är högst 5 % högre än för den föregående releasen.
+          data: "gränsvärde + 5 %"
+
+  - id: GRN-T02
+    priority: medium
+    execution: manual
+    tags: [right-sizing, region, review]
+    refs: []
+    en:
+      title: Utilisation of production and the region decision
+      description: Reads a week of CPU metrics for production and reviews the decision record for the hosting region.
+      preconditions: Read access to the production metrics; the decision record for the hosting region.
+      expected: Average utilisation is at least 40 % with the 99th percentile below 80 %, and the region decision considered carbon intensity.
+      steps:
+        - action: Export the CPU utilisation of the production cluster for the last 7 days.
+          expected: The average is at least 40 % and the 99th percentile is below 80 %.
+          data: "7 days, 1-minute resolution"
+        - action: Read the decision record for the hosting region.
+          expected: It lists candidate regions with grid carbon intensity, latency and data residency.
+        - action: Compare the chosen region's carbon intensity with the limit.
+          expected: It is below 100 g CO2e per kWh, or the record states why another region was chosen.
+    sv:
+      title: Belastning i produktion och beslutet om region
+      description: Läser en veckas mätvärden för processorbelastning i produktion och granskar beslutsunderlaget för driftregionen.
+      preconditions: Läsåtkomst till produktionens mätvärden; beslutsunderlaget för driftregionen.
+      expected: Medelbelastningen är minst 40 % med 99:e percentilen under 80 %, och beslutet om region tog hänsyn till koldioxidintensiteten.
+      steps:
+        - action: Exportera processorbelastningen för produktionsklustret de senaste 7 dagarna.
+          expected: Medelvärdet är minst 40 % och 99:e percentilen ligger under 80 %.
+          data: "7 dagar, upplösning 1 minut"
+        - action: Läs beslutsunderlaget för driftregionen.
+          expected: Det anger kandidatregioner med elnätets koldioxidintensitet, fördröjning och datalokalisering.
+        - action: Jämför den valda regionens koldioxidintensitet med gränsvärdet.
+          expected: Den ligger under 100 g CO2e per kWh, eller så anger underlaget varför en annan region valdes.
+
+  - id: GRN-T03
+    priority: medium
+    execution: manual
+    tags: [idle, non-production]
+    refs: []
+    en:
+      title: Test environments are off at night and start on request
+      description: Reads the instance counts of the test environments for the last week and starts one environment in the evening.
+      preconditions: Read access to the compute metrics of the test environments; permission to start an environment on request.
+      expected: The environments ran zero instances in the agreed hours and start within 10 minutes on request.
+      steps:
+        - action: Read the running instance count of each test environment for the last 7 days.
+          expected: The count is zero between 20:00 and 07:00 on weekdays and through the weekend.
+        - action: At 21:00, request a start of one test environment and note the time.
+          expected: The environment answers its health check within 10 minutes.
+          data: "start request at 21:00"
+        - action: Check the environment again at 23:00 without further use.
+          expected: The environment has scaled back to zero.
+    sv:
+      title: Testmiljöer är avstängda på natten och startar vid begäran
+      description: Läser antalet instanser i testmiljöerna den senaste veckan och startar en miljö på kvällen.
+      preconditions: Läsåtkomst till testmiljöernas mätvärden; behörighet att starta en miljö vid begäran.
+      expected: Miljöerna körde noll instanser under de överenskomna tiderna och startar inom 10 minuter vid begäran.
+      steps:
+        - action: Läs antalet körande instanser i varje testmiljö de senaste 7 dagarna.
+          expected: Antalet är noll mellan 20.00 och 07.00 på vardagar och under hela helgen.
+        - action: Begär klockan 21.00 en start av en testmiljö och notera tiden.
+          expected: Miljön svarar på sin hälsokontroll inom 10 minuter.
+          data: "begäran om start klockan 21.00"
+        - action: Kontrollera miljön igen klockan 23.00 utan att ha använt den.
+          expected: Miljön har skalats ner till noll igen.
+
+  - id: GRN-T04
+    priority: medium
+    execution: automated
+    tags: [page-weight, images]
+    refs: ["W3C Web Sustainability Guidelines (WSG) 1.0"]
+    en:
+      title: Page weight and images of the main pages
+      description: A script loads each main page with an empty and a warm cache and audits the images.
+      preconditions: The list of main pages; a headless browser that records transferred bytes and image sizes.
+      expected: Each page transfers at most 1 MB cold and 100 kB warm, and images use WebP or AVIF at most 1.5 times their display width.
+      steps:
+        - action: Load each main page with an empty cache and sum the transferred bytes.
+          expected: Each page transfers at most 1 MB.
+        - action: Reload each page with the cache filled.
+          expected: Each page transfers at most 100 kB.
+        - action: List the raster images of each page with format, file size, intrinsic width and display width.
+          expected: No JPEG or PNG is above 20 kB, and no image is wider than 1.5 times its display width.
+          data: "display width at a 1280 px viewport"
+    sv:
+      title: Sidvikt och bilder på huvudsidorna
+      description: Ett skript läser in varje huvudsida med tom och fylld cache och granskar bilderna.
+      preconditions: Listan över huvudsidor; en webbläsare utan gränssnitt som registrerar överförda byte och bildstorlekar.
+      expected: Varje sida överför högst 1 MB med tom cache och 100 kB med fylld, och bilderna är i WebP eller AVIF med högst 1,5 gånger visningsbredden.
+      steps:
+        - action: Läs in varje huvudsida med tom cache och summera de överförda byten.
+          expected: Varje sida överför högst 1 MB.
+        - action: Läs in varje sida igen med fylld cache.
+          expected: Varje sida överför högst 100 kB.
+        - action: Lista rasterbilderna på varje sida med format, filstorlek, egen bredd och visningsbredd.
+          expected: Ingen JPEG eller PNG är större än 20 kB, och ingen bild är bredare än 1,5 gånger visningsbredden.
+          data: "visningsbredd vid ett fönster på 1280 px"
+
+  - id: GRN-T05
+    priority: medium
+    execution: automated
+    tags: [compression, caching, http]
+    refs: ["RFC 9110", "RFC 9111"]
+    en:
+      title: Compression and cache headers
+      description: Requests text resources with compression accepted and checks the cache headers of versioned static files.
+      preconditions: The public host name of the test environment; the build manifest with hashed file names.
+      expected: Text responses above 1 kB are compressed, and hashed files are served as immutable for one year.
+      steps:
+        - action: Request an HTML page, a CSS file, a JavaScript file, a JSON API response and an SVG image, each above 1 kB, with Accept-Encoding br, gzip.
+          expected: Each response has Content-Encoding br or gzip and is smaller than the uncompressed size.
+        - action: Request each hashed JavaScript, CSS and font file from the manifest.
+          expected: Each response has Cache-Control public, max-age=31536000, immutable.
+        - action: Reload the page in a browser with the network panel open.
+          expected: The hashed files are served from the browser cache without a request to the server.
+    sv:
+      title: Komprimering och cachehuvuden
+      description: Begär textresurser med komprimering accepterad och kontrollerar cachehuvudena för versionerade statiska filer.
+      preconditions: Testmiljöns publika värdnamn; byggmanifestet med hashade filnamn.
+      expected: Textsvar över 1 kB komprimeras, och hashade filer levereras som oföränderliga i ett år.
+      steps:
+        - action: Begär en HTML-sida, en CSS-fil, en JavaScript-fil, ett JSON-svar från API:et och en SVG-bild, var och en över 1 kB, med Accept-Encoding br, gzip.
+          expected: Varje svar har Content-Encoding br eller gzip och är mindre än den okomprimerade storleken.
+        - action: Begär varje hashad JavaScript-, CSS- och typsnittsfil från manifestet.
+          expected: Varje svar har Cache-Control public, max-age=31536000, immutable.
+        - action: Läs in sidan igen i en webbläsare med nätverkspanelen öppen.
+          expected: De hashade filerna hämtas från webbläsarens cache utan anrop till servern.
+
+  - id: GRN-T06
+    priority: low
+    execution: manual
+    tags: [polling, client]
+    refs: []
+    en:
+      title: Polling of an open page, visible and hidden
+      description: Leaves a page with live updates open for 10 minutes in a visible and a hidden tab and counts the requests.
+      preconditions: A page that shows live updates; a browser with the network panel.
+      expected: At most 10 polling requests in 10 minutes while visible, and none while hidden.
+      steps:
+        - action: Open the page, clear the network panel and leave it visible for 10 minutes.
+          expected: The panel shows a push or event stream connection and at most 10 polling requests.
+        - action: Switch to another tab for 10 minutes and then return.
+          expected: No polling request was made while the tab was hidden, and the page shows current data on return.
+    sv:
+      title: Avfrågning från en öppen sida, synlig och dold
+      description: Låter en sida med direktuppdateringar stå öppen i 10 minuter i en synlig och en dold flik och räknar anropen.
+      preconditions: En sida som visar direktuppdateringar; en webbläsare med nätverkspanel.
+      expected: Högst 10 avfrågningar på 10 minuter när sidan syns, och inga när den är dold.
+      steps:
+        - action: Öppna sidan, töm nätverkspanelen och låt sidan synas i 10 minuter.
+          expected: Panelen visar en anslutning för push eller händelseström och högst 10 avfrågningar.
+        - action: Byt till en annan flik i 10 minuter och gå sedan tillbaka.
+          expected: Inga avfrågningar gjordes medan fliken var dold, och sidan visar aktuella data när du kommer tillbaka.
+
+  - id: GRN-T07
+    priority: low
+    execution: automated
+    tags: [carbon-aware, batch]
+    refs: []
+    en:
+      title: A deferrable job is moved to the low-carbon hour
+      description: Submits a deferrable job with a fixed carbon intensity forecast and checks when it runs.
+      preconditions: The scheduler in a test environment with a carbon intensity forecast that can be replaced by a test file; a job with a 24-hour deadline.
+      expected: The job starts within one hour of the forecast minimum and finishes before its deadline.
+      steps:
+        - action: Load a forecast in which 02:00 the next day has the lowest intensity.
+          expected: The scheduler reports 02:00 as the best start time.
+          data: "minimum at 02:00, 120 g at 08:00, 40 g at 02:00"
+        - action: Submit the job at 08:00 with a deadline of 08:00 the next day.
+          expected: The job is scheduled, not started at once.
+        - action: Read the job's start and end times after it has run.
+          expected: It started between 01:00 and 03:00 and finished before 08:00.
+    sv:
+      title: Ett uppskjutbart jobb flyttas till timmen med lägst koldioxidintensitet
+      description: Lägger in ett uppskjutbart jobb med en fast prognos för koldioxidintensitet och kontrollerar när det körs.
+      preconditions: Schemaläggaren i en testmiljö med en prognos för koldioxidintensitet som kan ersättas med en testfil; ett jobb med en tidsgräns på 24 timmar.
+      expected: Jobbet startar inom en timme från prognosens lägsta punkt och blir klart före tidsgränsen.
+      steps:
+        - action: Läs in en prognos där klockan 02.00 nästa dygn har lägst intensitet.
+          expected: Schemaläggaren anger 02.00 som bästa starttid.
+          data: "lägst klockan 02.00, 120 g klockan 08.00, 40 g klockan 02.00"
+        - action: Lägg in jobbet klockan 08.00 med tidsgränsen 08.00 nästa dygn.
+          expected: Jobbet schemaläggs och startas inte direkt.
+        - action: Läs jobbets start- och sluttid när det har körts.
+          expected: Det startade mellan 01.00 och 03.00 och blev klart före 08.00.
+
+  - id: GRN-T08
+    priority: low
+    execution: manual
+    tags: [measurement, reconciliation]
+    refs: ["GHG Protocol Scope 3 Standard"]
+    en:
+      title: Energy report matches the provider's data
+      description: Compares one month's energy and emissions report with the hosting provider's own data for the same period.
+      preconditions: The energy and emissions report of last month; the hosting provider's emissions export or invoice data for the same month.
+      expected: The report's totals agree with the provider's data within 5 %, or the difference is explained.
+      steps:
+        - action: Sum the kWh and kg CO2e of all environments in the report.
+          expected: Totals are obtained.
+        - action: Read the same totals from the provider's export for the same month and accounts.
+          expected: Totals are obtained.
+        - action: Compare the two pairs of totals.
+          expected: They differ by at most 5 %, or the report states the cause of the difference.
+          data: "tolerance 5 %"
+    sv:
+      title: Energirapporten stämmer med leverantörens data
+      description: Jämför en månads rapport över energi och utsläpp med driftleverantörens egna data för samma period.
+      preconditions: Rapporten över energi och utsläpp för förra månaden; driftleverantörens export av utsläppsdata eller fakturaunderlag för samma månad.
+      expected: Rapportens summor stämmer med leverantörens data inom 5 %, eller så förklaras skillnaden.
+      steps:
+        - action: Summera kWh och kg CO2e för alla miljöer i rapporten.
+          expected: Summor tas fram.
+        - action: Läs samma summor ur leverantörens export för samma månad och konton.
+          expected: Summor tas fram.
+        - action: Jämför de två paren av summor.
+          expected: De skiljer sig med högst 5 %, eller så anger rapporten orsaken till skillnaden.
+          data: "tolerans 5 %"
