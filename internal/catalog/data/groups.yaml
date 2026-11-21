@@ -12,3 +12,5 @@ groups:
     name: {en: Usability and accessibility, sv: Användbarhet och tillgänglighet}
   - id: functional
     name: {en: Common functionality, sv: Vanlig funktionalitet}
+  - id: domain
+    name: {en: Domain-specific functionality, sv: Domänspecifik funktionalitet}

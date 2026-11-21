@@ -3,8 +3,8 @@ prefix: A11Y
 group: usability
 name: {en: Accessibility, sv: Tillgänglighet}
 description:
-  en: Keyboard operation, focus, text alternatives, contrast, reflow, structure, forms, screen reader support, motion, captions and conformance with WCAG 2.2 AA and EN 301 549.
-  sv: Tangentbordsstyrning, fokus, textalternativ, kontrast, omflödning, struktur, formulär, stöd för skärmläsare, rörelse, undertexter och överensstämmelse med WCAG 2.2 AA och EN 301 549.
+  en: Keyboard operation, focus, text alternatives, contrast, reflow, structure, forms, screen reader support, motion, captions, time limits, hover content, language of parts, label in name, consistent help and conformance with WCAG 2.2 AA and EN 301 549.
+  sv: Tangentbordsstyrning, fokus, textalternativ, kontrast, omflödning, struktur, formulär, stöd för skärmläsare, rörelse, undertexter, tidsgränser, innehåll vid hovring, språk för textavsnitt, etikett i namnet, enhetlig hjälp och överensstämmelse med WCAG 2.2 AA och EN 301 549.
 
 requirements:
   - id: A11Y-01
@@ -413,6 +413,120 @@ requirements:
           text: En automatisk mätning visar inget interaktivt element under 24 × 24 CSS-pixlar som saknar avståndet.
           threshold: "≥ 24 × 24 CSS px"
 
+  - id: A11Y-19
+    type: usability
+    obligation: must
+    priority: high
+    tags: [timing, session, warning]
+    refs: ["WCAG 2.2 SC 2.2.1", "EN 301 549 V3.2.1 §9.2.2.1"]
+    tests: [A11Y-T14]
+    en:
+      title: Warning before a time limit ends
+      description: When a session or a task has a time limit, the user interface MUST warn the user at least 2 minutes before the limit ends and offer a single action that extends it at least 10 times.
+      rationale: Users who read, type or navigate slowly lose their work when a time limit ends without warning.
+      criteria:
+        - method: test
+          text: With a 30-minute idle limit, a warning appears after 28 minutes, is announced by a screen reader, and pressing "Continue" extends the session; this works 10 times in a row.
+          threshold: warning ≥ 2 min before the limit
+    sv:
+      title: Varning innan en tidsgräns löper ut
+      description: När en session eller en uppgift har en tidsgräns SKA användargränssnittet varna användaren minst 2 minuter innan gränsen löper ut och erbjuda en enda handling som förlänger den minst 10 gånger.
+      rationale: Användare som läser, skriver eller navigerar långsamt förlorar sitt arbete när en tidsgräns löper ut utan förvarning.
+      criteria:
+        - method: test
+          text: Med en tidsgräns på 30 minuters inaktivitet visas en varning efter 28 minuter som läses upp av en skärmläsare, och "Fortsätt" förlänger sessionen; det fungerar 10 gånger i följd.
+          threshold: varning ≥ 2 min före gränsen
+
+  - id: A11Y-20
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [tooltips, hover, focus]
+    refs: ["WCAG 2.2 SC 1.4.13"]
+    tests: [A11Y-T15]
+    en:
+      title: Content shown on hover or focus can be dismissed and kept
+      description: Content that appears on pointer hover or keyboard focus, such as tooltips and pop-overs, MUST close with the Escape key without moving the focus, MUST stay visible while the pointer is over it and MUST stay until the user moves away or dismisses it.
+      rationale: Tooltips that cover content or vanish when the pointer moves onto them block users with magnification and low dexterity.
+      criteria:
+        - method: test
+          text: On 5 sampled tooltips, Escape closes each without moving the focus, the pointer can move onto each without it closing, and none closes by itself within 30 seconds.
+    sv:
+      title: Innehåll som visas vid hovring eller fokus kan stängas och ligger kvar
+      description: Innehåll som visas när pekaren hovrar eller tangentbordsfokus hamnar på ett element, till exempel verktygstips och popup-paneler, SKA stängas med Escape utan att fokus flyttas, synas medan pekaren är över det och ligga kvar tills användaren flyttar bort eller stänger det.
+      rationale: Verktygstips som täcker innehåll eller försvinner när pekaren flyttas till dem hindrar användare med förstoring och nedsatt finmotorik.
+      criteria:
+        - method: test
+          text: På 5 utvalda verktygstips stänger Escape vart och ett utan att fokus flyttas, pekaren kan flyttas in i vart och ett utan att det stängs, och inget stängs av sig självt inom 30 sekunder.
+
+  - id: A11Y-21
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [language, screen-reader]
+    refs: ["WCAG 2.2 SC 3.1.1", "WCAG 2.2 SC 3.1.2"]
+    tests: [A11Y-T16]
+    en:
+      title: Language of the page and of passages
+      description: Each page MUST declare its interface language in the document's language attribute, and text in another language, such as a requirement written in English shown in a Swedish interface, MUST be marked with its own language attribute.
+      rationale: Screen readers choose their pronunciation from the language attribute, and English text read with Swedish rules is hard to understand.
+      criteria:
+        - method: inspection
+          text: An automated check finds the interface language on each page, and a stored item with a known language is marked with that language where it is shown.
+    sv:
+      title: Språk för sidan och för textavsnitt
+      description: Varje sida SKA ange sitt gränssnittsspråk i dokumentets språkattribut, och text på ett annat språk, till exempel ett krav skrivet på engelska som visas i ett svenskt gränssnitt, ska märkas med ett eget språkattribut.
+      rationale: Skärmläsare väljer uttal utifrån språkattributet, och engelsk text som läses med svenska uttalsregler är svår att förstå.
+      criteria:
+        - method: inspection
+          text: En automatisk kontroll hittar gränssnittsspråket på varje sida, och en sparad post med känt språk är märkt med det språket där den visas.
+
+  - id: A11Y-22
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [label-in-name, speech-input]
+    refs: ["WCAG 2.2 SC 2.5.3"]
+    tests: [A11Y-T16]
+    en:
+      title: Visible label included in the accessible name
+      description: The accessible name of each control with a visible text label MUST contain that visible text, starting with it.
+      rationale: Speech input users activate controls by saying what they see, which fails when the hidden name differs.
+      criteria:
+        - method: inspection
+          text: An automated check of all pages finds no control whose accessible name does not start with its visible label.
+          threshold: 0 mismatches
+    sv:
+      title: Den synliga etiketten ingår i det tillgängliga namnet
+      description: Det tillgängliga namnet för varje kontroll med en synlig textetikett SKA innehålla den synliga texten och börja med den.
+      rationale: Användare av röststyrning aktiverar kontroller genom att säga det de ser, vilket misslyckas när det dolda namnet är ett annat.
+      criteria:
+        - method: inspection
+          text: En automatisk kontroll av alla sidor hittar ingen kontroll vars tillgängliga namn inte börjar med dess synliga etikett.
+          threshold: 0 avvikelser
+
+  - id: A11Y-23
+    type: usability
+    obligation: should
+    priority: low
+    tags: [consistent-help, navigation]
+    refs: ["WCAG 2.2 SC 3.2.6"]
+    tests: [A11Y-T17]
+    en:
+      title: Help in the same place on each page
+      description: Links to help, contact details and support SHOULD appear in the same relative position on each page where they are offered.
+      rationale: Users who need help find it without searching each page anew.
+      criteria:
+        - method: inspection
+          text: On 10 sampled pages the help and support links are in the same region and in the same order.
+    sv:
+      title: Hjälp på samma ställe på varje sida
+      description: Länkar till hjälp, kontaktuppgifter och support BÖR finnas på samma relativa plats på varje sida där de erbjuds.
+      rationale: Användare som behöver hjälp hittar den utan att leta på varje sida på nytt.
+      criteria:
+        - method: inspection
+          text: På 10 utvalda sidor finns hjälp- och supportlänkarna i samma område och i samma ordning.
+
 tests:
   - id: A11Y-T01
     priority: critical
@@ -807,3 +921,125 @@ tests:
         - action: För varje element under 24 × 24 pixlar kontrollerar skriptet om en cirkel på 24 pixlar runt dess mitt överlappar en annan klickyta.
           expected: Inget för litet element har en överlappande granne, och länkar i löptext räknas inte.
           data: "24 × 24 CSS px"
+
+  - id: A11Y-T14
+    priority: high
+    execution: manual
+    tags: [timing, session]
+    refs: ["WCAG 2.2 SC 2.2.1"]
+    en:
+      title: Time limit warning and extension
+      description: Waits for the idle warning with a screen reader running and extends the session repeatedly.
+      preconditions: A test environment with a 30-minute idle limit, or a shortened limit with the same 2-minute warning, and a screen reader running.
+      expected: The warning comes 2 minutes before the limit, is announced, and extends the session every time.
+      steps:
+        - action: Sign in, open a form, type some text and wait without input.
+          expected: After 28 minutes a warning appears and the screen reader announces it.
+          data: 30 min limit
+        - action: Press "Continue" in the warning.
+          expected: The warning closes, the session continues and the typed text is still there.
+        - action: Repeat the wait and the extension 10 times.
+          expected: Each extension works and the session never ends while "Continue" is used.
+    sv:
+      title: Varning och förlängning vid tidsgräns
+      description: Väntar på varningen för inaktivitet med en skärmläsare igång och förlänger sessionen upprepade gånger.
+      preconditions: En testmiljö med en tidsgräns på 30 minuters inaktivitet, eller en förkortad gräns med samma varning 2 minuter före, och en skärmläsare igång.
+      expected: Varningen kommer 2 minuter före gränsen, läses upp och förlänger sessionen varje gång.
+      steps:
+        - action: Logga in, öppna ett formulär, skriv en text och vänta utan att göra något.
+          expected: Efter 28 minuter visas en varning som skärmläsaren läser upp.
+          data: gräns 30 min
+        - action: Tryck på "Fortsätt" i varningen.
+          expected: Varningen stängs, sessionen fortsätter och den skrivna texten finns kvar.
+        - action: Upprepa väntan och förlängningen 10 gånger.
+          expected: Varje förlängning fungerar och sessionen avslutas aldrig så länge "Fortsätt" används.
+
+  - id: A11Y-T15
+    priority: medium
+    execution: manual
+    tags: [tooltips, hover]
+    refs: ["WCAG 2.2 SC 1.4.13"]
+    en:
+      title: Tooltips dismissible, hoverable and persistent
+      description: Opens 5 sampled tooltips with the pointer and the keyboard and checks the three conditions.
+      preconditions: A list of 5 controls that show a tooltip or pop-over, and browser zoom at 200 percent.
+      expected: Each tooltip can be closed with Escape, entered with the pointer and stays until dismissed.
+      steps:
+        - action: Move the keyboard focus to each control and press Escape.
+          expected: The tooltip closes and the focus stays on the control.
+        - action: Hover over each control and move the pointer onto the tooltip.
+          expected: The tooltip stays open while the pointer is over it.
+        - action: Open each tooltip and wait 30 seconds without moving.
+          expected: The tooltip is still visible.
+    sv:
+      title: Verktygstips kan stängas, nås med pekaren och ligger kvar
+      description: Öppnar 5 utvalda verktygstips med pekare och tangentbord och kontrollerar de tre villkoren.
+      preconditions: En lista med 5 kontroller som visar ett verktygstips eller en popup-panel, och webbläsarens zoom på 200 procent.
+      expected: Varje verktygstips kan stängas med Escape, nås med pekaren och ligger kvar tills det stängs.
+      steps:
+        - action: Flytta tangentbordsfokus till varje kontroll och tryck på Escape.
+          expected: Verktygstipset stängs och fokus stannar på kontrollen.
+        - action: Hovra över varje kontroll och flytta pekaren in i verktygstipset.
+          expected: Verktygstipset är öppet så länge pekaren är över det.
+        - action: Öppna varje verktygstips och vänta 30 sekunder utan att röra pekaren.
+          expected: Verktygstipset syns fortfarande.
+
+  - id: A11Y-T16
+    priority: medium
+    execution: automated
+    tags: [language, label-in-name]
+    refs: ["WCAG 2.2 SC 3.1.2", "WCAG 2.2 SC 2.5.3"]
+    en:
+      title: Language attributes and label in name
+      description: A browser script checks the language attributes of pages and passages and compares accessible names with visible labels.
+      preconditions: The interface set to Swedish, a project with one requirement whose language is English, and the list of all pages.
+      expected: Each page declares Swedish, the English requirement is marked as English, and every accessible name starts with its visible label.
+      steps:
+        - action: Load each page and read the language attribute of the document.
+          expected: Each page declares "sv".
+          data: lang="sv"
+        - action: Open the English requirement and read the language attribute of its title and description.
+          expected: Both are marked "en".
+          data: lang="en"
+        - action: For each control with visible text, compare its accessible name with the visible text.
+          expected: Each accessible name starts with the visible text; 0 mismatches are reported.
+    sv:
+      title: Språkattribut och etikett i namnet
+      description: Ett webbläsarskript kontrollerar språkattributen för sidor och textavsnitt och jämför tillgängliga namn med synliga etiketter.
+      preconditions: Gränssnittet inställt på svenska, ett projekt med ett krav vars språk är engelska, och listan över alla sidor.
+      expected: Varje sida anger svenska, det engelska kravet är märkt som engelska och varje tillgängligt namn börjar med sin synliga etikett.
+      steps:
+        - action: Läs in varje sida och läs dokumentets språkattribut.
+          expected: Varje sida anger "sv".
+          data: lang="sv"
+        - action: Öppna det engelska kravet och läs språkattributet för dess titel och beskrivning.
+          expected: Båda är märkta "en".
+          data: lang="en"
+        - action: Jämför för varje kontroll med synlig text dess tillgängliga namn med den synliga texten.
+          expected: Varje tillgängligt namn börjar med den synliga texten; 0 avvikelser rapporteras.
+
+  - id: A11Y-T17
+    priority: low
+    execution: manual
+    tags: [consistent-help]
+    refs: ["WCAG 2.2 SC 3.2.6"]
+    en:
+      title: Position of help and support links
+      description: Compares where the help and support links appear on sampled pages.
+      preconditions: A list of 10 sample pages of different kinds, including a list, an editor and a settings page.
+      expected: The help and support links are in the same region and order on each page.
+      steps:
+        - action: Open each sample page and note the region and order of the help and support links.
+          expected: Each page shows them in the same region, for example the page header.
+        - action: Compare the order of the links between the pages.
+          expected: The order is the same on all 10 pages.
+    sv:
+      title: Placering av hjälp- och supportlänkar
+      description: Jämför var hjälp- och supportlänkarna finns på ett urval sidor.
+      preconditions: En lista med 10 exempelsidor av olika slag, däribland en lista, en redigerare och en inställningssida.
+      expected: Hjälp- och supportlänkarna finns i samma område och ordning på varje sida.
+      steps:
+        - action: Öppna varje exempelsida och anteckna område och ordning för hjälp- och supportlänkarna.
+          expected: Varje sida visar dem i samma område, till exempel sidhuvudet.
+        - action: Jämför länkarnas ordning mellan sidorna.
+          expected: Ordningen är densamma på alla 10 sidorna.

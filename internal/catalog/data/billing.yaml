@@ -1,0 +1,601 @@
+area: billing
+prefix: BILL
+group: domain
+name: {en: Billing and subscriptions, sv: Fakturering och abonnemang}
+description:
+  en: Plan changes and proration, cancellation, renewal and price change notices, free trials, invoice content and numbering, credit notes, electronic invoices, failed payments, usage limits and access to billing data.
+  sv: Byte av abonnemangsnivå och proportionell debitering, uppsägning, aviseringar om förnyelse och prisändring, gratis provperioder, fakturainnehåll och numrering, kreditfakturor, elektroniska fakturor, misslyckade betalningar, användningsgränser och åtkomst till faktureringsuppgifter.
+
+requirements:
+  - id: BILL-01
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [plan-change, proration]
+    refs: ["ISO/IEC 25010:2023 functional correctness"]
+    tests: [BILL-T01]
+    en:
+      title: Prorated charge on a plan change
+      description: When a customer changes plan during a billing period, the system SHOULD charge or credit the price difference for the remaining days of the period, calculated per day.
+      rationale: Customers accept a change more readily when they pay only for what they use.
+      criteria:
+        - method: test
+          text: An upgrade from 100 to 200 per 30-day month on day 11 charges 66.67 for the remaining 20 days.
+    sv:
+      title: Proportionell debitering vid byte av nivå
+      description: När en kund byter abonnemangsnivå under en faktureringsperiod BÖR systemet debitera eller kreditera prisskillnaden för periodens återstående dagar, beräknad per dag.
+      rationale: Kunder accepterar ett byte lättare när de bara betalar för det de använder.
+      criteria:
+        - method: test
+          text: En uppgradering från 100 till 200 per månad om 30 dagar på dag 11 debiterar 66,67 för de återstående 20 dagarna.
+
+  - id: BILL-02
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [plan-change, upgrade, downgrade]
+    refs: ["ISO 9241-110:2020 conformity with user expectations"]
+    tests: [BILL-T01]
+    en:
+      title: Upgrades at once and downgrades at period end
+      description: The system SHOULD apply an upgrade immediately and a downgrade at the end of the current billing period, and SHOULD show the date on which a downgrade takes effect before the customer confirms it.
+      rationale: Customers who upgrade want the new features now, while a downgrade should not remove features they have already paid for.
+      criteria:
+        - method: test
+          text: An upgrade unlocks the higher plan's features within 1 minute; a downgrade shows its effective date and the features stay until that date.
+    sv:
+      title: Uppgradering direkt och nedgradering vid periodens slut
+      description: Systemet BÖR genomföra en uppgradering direkt och en nedgradering vid slutet av den aktuella faktureringsperioden, och visa det datum då en nedgradering börjar gälla innan kunden bekräftar den.
+      rationale: Kunder som uppgraderar vill ha de nya funktionerna nu, medan en nedgradering inte ska ta bort funktioner de redan har betalat för.
+      criteria:
+        - method: test
+          text: En uppgradering låser upp den högre nivåns funktioner inom 1 minut; en nedgradering visar sitt datum och funktionerna finns kvar fram till dess.
+
+  - id: BILL-03
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cancellation, consumer-law]
+    refs: ["Directive 2011/83/EU", "Directive (EU) 2023/2673"]
+    tests: [BILL-T02]
+    en:
+      title: Online cancellation in at most as many steps as sign-up
+      description: The system MUST let a customer cancel a subscription online in no more steps than were needed to start it, and MUST confirm the cancellation and its effective date on screen and by e-mail.
+      rationale: Making cancellation harder than sign-up is a dark pattern that consumer law increasingly forbids.
+      criteria:
+        - method: test
+          text: With a sign-up of 3 steps, cancellation takes at most 3 steps from the account page, shows the end date and sends an e-mail with that date within 5 minutes.
+    sv:
+      title: Uppsägning på nätet med högst samma antal steg som tecknandet
+      description: Systemet SKA låta en kund säga upp ett abonnemang på nätet med högst samma antal steg som behövdes för att teckna det, och bekräfta uppsägningen och dess slutdatum på skärmen och via e-post.
+      rationale: Att göra uppsägningen svårare än tecknandet är ett manipulativt mönster som konsumentlagstiftningen i allt högre grad förbjuder.
+      criteria:
+        - method: test
+          text: När tecknandet tar 3 steg tar uppsägningen högst 3 steg från kontosidan, visar slutdatumet och skickar ett e-postmeddelande med datumet inom 5 minuter.
+
+  - id: BILL-04
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [renewal, notice]
+    refs: ["Directive 2011/83/EU Art. 6"]
+    tests: [BILL-T03]
+    en:
+      title: Notice before an annual renewal
+      description: The system SHOULD notify the customer by e-mail 7 days before an annual subscription renews, with the renewal date, the amount and a link to cancel.
+      rationale: An unexpected annual charge leads to refund requests and chargebacks.
+      criteria:
+        - method: test
+          text: For a subscription renewing on 2026-12-31 the notice is sent on 2026-12-24 with date, amount and a working cancel link.
+          threshold: 7 days before renewal
+    sv:
+      title: Avisering före en årlig förnyelse
+      description: Systemet BÖR avisera kunden via e-post 7 dagar innan ett årsabonnemang förnyas, med förnyelsedatum, belopp och en länk för uppsägning.
+      rationale: En oväntad årsdebitering leder till krav på återbetalning och återkrav via kortutgivaren.
+      criteria:
+        - method: test
+          text: För ett abonnemang som förnyas 2026-12-31 skickas aviseringen 2026-12-24 med datum, belopp och en fungerande uppsägningslänk.
+          threshold: 7 dagar före förnyelse
+
+  - id: BILL-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [price-change, notice]
+    refs: ["Directive 93/13/EEC Annex 1(j)", "Directive 2011/83/EU Art. 6"]
+    tests: [BILL-T03]
+    en:
+      title: Price changes announced 30 days ahead
+      description: The system MUST notify each affected customer of a price increase at least 30 days before it applies to their subscription, stating the old and new price and the date.
+      rationale: Customers need time to decide whether to keep a subscription at the new price.
+      criteria:
+        - method: test
+          text: A price increase entered with an effective date 30 days ahead sends one notice to each affected customer at once; an effective date 29 days ahead is refused.
+          threshold: ≥ 30 days notice
+    sv:
+      title: Prisändringar aviseras 30 dagar i förväg
+      description: Systemet SKA avisera varje berörd kund om en prishöjning minst 30 dagar innan den börjar gälla för kundens abonnemang, med gammalt och nytt pris och datumet.
+      rationale: Kunder behöver tid att avgöra om de vill behålla abonnemanget till det nya priset.
+      criteria:
+        - method: test
+          text: En prishöjning som registreras med giltighet om 30 dagar skickar direkt en avisering till varje berörd kund; giltighet om 29 dagar avvisas.
+          threshold: ≥ 30 dagars varsel
+
+  - id: BILL-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [trial, consent]
+    refs: ["Directive 2005/29/EC Annex I", "Directive 2011/83/EU Art. 22"]
+    tests: [BILL-T04]
+    en:
+      title: Free trial ends without a charge by default
+      description: A free trial MUST end without any charge for a customer who has not confirmed a paid subscription, and the system MUST remind a customer who has confirmed one 3 days before the first charge.
+      rationale: Charging after a trial without clear consent is a common source of complaints and chargebacks.
+      criteria:
+        - method: test
+          text: A trial without confirmation ends on its last day with no charge; a trial with confirmation sends a reminder 3 days before the first charge.
+    sv:
+      title: Gratis provperiod upphör utan debitering som standard
+      description: En gratis provperiod SKA upphöra utan debitering för en kund som inte har bekräftat ett betalt abonnemang, och systemet ska påminna en kund som har bekräftat ett 3 dagar före den första debiteringen.
+      rationale: Debitering efter en provperiod utan tydligt samtycke är en vanlig källa till klagomål och återkrav.
+      criteria:
+        - method: test
+          text: En provperiod utan bekräftelse upphör sista dagen utan debitering; en provperiod med bekräftelse skickar en påminnelse 3 dagar före den första debiteringen.
+
+  - id: BILL-07
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [invoice, vat]
+    refs: ["Directive 2006/112/EC Art. 226"]
+    tests: [BILL-T05]
+    en:
+      title: Invoice content required for VAT
+      description: Each invoice MUST state the issue date, a unique sequential number, the seller's and, for business customers, the buyer's VAT number, both parties' names and addresses, the items with quantities, the taxable amount per VAT rate, the rate and the VAT amount.
+      rationale: Invoices without these details cannot be used for VAT deduction and are not valid under EU VAT rules.
+      criteria:
+        - method: inspection
+          text: An invoice for a business customer with items at 25 and 12 percent VAT contains each listed detail, with taxable amount and VAT per rate.
+    sv:
+      title: Fakturainnehåll som krävs för moms
+      description: Varje faktura SKA ange utfärdandedatum, ett unikt löpnummer, säljarens och, för företagskunder, köparens momsregistreringsnummer, båda parternas namn och adresser, varorna med antal, beskattningsunderlaget per momssats, momssatsen och momsbeloppet.
+      rationale: Fakturor utan dessa uppgifter kan inte användas för avdrag och är inte giltiga enligt EU:s momsregler.
+      criteria:
+        - method: inspection
+          text: En faktura till en företagskund med varor på 25 och 12 procent moms innehåller varje uppräknad uppgift, med beskattningsunderlag och moms per momssats.
+
+  - id: BILL-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [invoice, numbering]
+    refs: ["Directive 2006/112/EC Art. 226(2)"]
+    tests: [BILL-T05]
+    en:
+      title: Invoice numbers without gaps
+      description: The system MUST give invoices numbers from one ascending sequence per series without gaps or duplicates, also when invoices are created at the same time.
+      rationale: Tax authorities treat gaps in invoice numbering as a sign of removed invoices.
+      criteria:
+        - method: test
+          text: 500 invoices created by 10 parallel processes get the numbers 1 to 500 exactly once each.
+    sv:
+      title: Fakturanummer utan luckor
+      description: Systemet SKA ge fakturor nummer ur en stigande nummerserie per serie utan luckor eller dubbletter, även när fakturor skapas samtidigt.
+      rationale: Skattemyndigheter ser luckor i fakturanumreringen som ett tecken på borttagna fakturor.
+      criteria:
+        - method: test
+          text: 500 fakturor som skapas av 10 parallella processer får numren 1 till 500 exakt en gång vardera.
+
+  - id: BILL-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [credit-note, invoice, immutability]
+    refs: ["Directive 2006/112/EC Art. 219"]
+    tests: [BILL-T06]
+    en:
+      title: Corrections only by credit note
+      description: The system MUST keep an issued invoice unchanged and MUST make each correction or refund with a credit note that refers to the number of the original invoice.
+      rationale: Editing an issued invoice breaks the audit trail that accounting and tax rules require.
+      criteria:
+        - method: test
+          text: An attempt to edit an issued invoice is refused; a partial refund creates a credit note with its own number that names the original invoice number.
+    sv:
+      title: Rättelser bara med kreditfaktura
+      description: Systemet SKA hålla en utfärdad faktura oförändrad och göra varje rättelse eller återbetalning med en kreditfaktura som hänvisar till den ursprungliga fakturans nummer.
+      rationale: Att redigera en utfärdad faktura bryter den verifieringskedja som bokförings- och skatteregler kräver.
+      criteria:
+        - method: test
+          text: Ett försök att redigera en utfärdad faktura avvisas; en delvis återbetalning skapar en kreditfaktura med eget nummer som anger den ursprungliga fakturans nummer.
+
+  - id: BILL-10
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [e-invoice, pdf]
+    refs: ["EN 16931-1:2017", "Peppol BIS Billing 3.0"]
+    tests: [BILL-T07]
+    en:
+      title: Invoices as PDF and as electronic invoices
+      description: The system SHOULD offer each invoice as a PDF and as an electronic invoice that conforms to the European standard for electronic invoicing.
+      rationale: Public sector buyers in the EU must accept electronic invoices, and many companies process them automatically.
+      criteria:
+        - method: test
+          text: The electronic invoice of a test invoice passes a validator for the European standard with no errors, and its amounts equal those in the PDF.
+    sv:
+      title: Fakturor som PDF och som e-faktura
+      description: Systemet BÖR erbjuda varje faktura som PDF och som elektronisk faktura som följer den europeiska standarden för elektronisk fakturering.
+      rationale: Offentliga köpare i EU måste ta emot e-fakturor, och många företag behandlar dem automatiskt.
+      criteria:
+        - method: test
+          text: E-fakturan för en testfaktura går igenom en validerare för den europeiska standarden utan fel, och dess belopp är lika med beloppen i PDF:en.
+
+  - id: BILL-11
+    type: business
+    obligation: should
+    priority: medium
+    tags: [failed-payment, dunning, suspension]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [BILL-T08]
+    en:
+      title: Retries and notices after a failed payment
+      description: After a failed recurring payment the system SHOULD retry it 3 times over 7 days with a notice to the billing contact each time, then suspend the subscription and keep the customer's data for 30 days after suspension.
+      rationale: Many failed payments are temporary, and abrupt loss of data punishes customers for an expired card.
+      criteria:
+        - method: test
+          text: With a failing test card, retries and notices occur on days 1, 3 and 7, the subscription is suspended on day 7, and the data is still present on day 37.
+          threshold: 3 retries in 7 days; data kept 30 days
+    sv:
+      title: Nya försök och aviseringar efter misslyckad betalning
+      description: Efter en misslyckad återkommande betalning BÖR systemet försöka igen 3 gånger under 7 dagar med en avisering till faktureringskontakten varje gång, därefter stänga av abonnemanget och spara kundens data i 30 dagar efter avstängningen.
+      rationale: Många misslyckade betalningar är tillfälliga, och att plötsligt förlora data straffar kunder för ett utgånget kort.
+      criteria:
+        - method: test
+          text: Med ett testkort som misslyckas sker nya försök och aviseringar dag 1, 3 och 7, abonnemanget stängs av dag 7 och data finns kvar dag 37.
+          threshold: 3 nya försök på 7 dagar; data sparas 30 dagar
+
+  - id: BILL-12
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [usage, limits, alerts]
+    refs: ["Nielsen heuristic 1"]
+    tests: [BILL-T09]
+    en:
+      title: Usage against plan limits shown with alerts
+      description: The system SHOULD show administrators the current usage of each plan limit, such as users or storage, and SHOULD notify them when usage reaches 80 and 100 percent of a limit.
+      rationale: Customers who see a limit coming can upgrade before work is blocked.
+      criteria:
+        - method: test
+          text: With a limit of 10 users, the usage page shows 8 of 10 after the 8th user is added and a notice is sent; adding the 10th sends a second notice.
+          threshold: alerts at 80 % and 100 %
+    sv:
+      title: Användning mot nivåns gränser visas med varningar
+      description: Systemet BÖR visa administratörer den aktuella användningen av varje gräns i abonnemangsnivån, till exempel användare eller lagring, och avisera dem när användningen når 80 och 100 procent av en gräns.
+      rationale: Kunder som ser att en gräns närmar sig kan uppgradera innan arbetet stoppas.
+      criteria:
+        - method: test
+          text: Med en gräns på 10 användare visar användningssidan 8 av 10 efter att den 8:e användaren lagts till och en avisering skickas; när den 10:e läggs till skickas en andra avisering.
+          threshold: varningar vid 80 % och 100 %
+
+  - id: BILL-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [access-control, billing-role]
+    refs: ["OWASP ASVS 5.0 V8 authorization", "ISO/IEC 27001:2022 Annex A 5.15"]
+    tests: [BILL-T10]
+    en:
+      title: Billing data limited to the billing role
+      description: The system MUST show invoices, payment methods and plan changes only to users with the administrator or billing role of the organisation.
+      rationale: Payment details and spending are confidential to the organisation's finance function.
+      criteria:
+        - method: test
+          text: A user with the tester role gets a refusal for the billing pages and the billing API; a user with the billing role sees invoices but no project content.
+    sv:
+      title: Faktureringsuppgifter bara för faktureringsrollen
+      description: Systemet SKA visa fakturor, betalningsmetoder och byte av abonnemangsnivå bara för användare med organisationens administratörs- eller faktureringsroll.
+      rationale: Betalningsuppgifter och kostnader är konfidentiella för organisationens ekonomifunktion.
+      criteria:
+        - method: test
+          text: En användare med testarroll nekas på faktureringssidorna och i fakturerings-API:et; en användare med faktureringsroll ser fakturor men inget projektinnehåll.
+
+tests:
+  - id: BILL-T01
+    priority: medium
+    execution: automated
+    tags: [plan-change, proration]
+    refs: []
+    en:
+      title: Upgrade and downgrade during a period
+      description: An integration test with a controllable clock changes the plan of two test subscriptions in the middle of a period.
+      preconditions: Two subscriptions on a 30-day period from 2026-11-01, plans at 100 and 200 per period, and a controllable clock.
+      expected: The upgrade is prorated and immediate, and the downgrade takes effect at the end of the period.
+      steps:
+        - action: On 2026-11-11 upgrade subscription 1 from 100 to 200.
+          expected: A charge of 66.67 for 20 days is created and the higher plan's features are available within 1 minute.
+          data: "(200 − 100) × 20 / 30 = 66.67"
+        - action: On 2026-11-11 start a downgrade of subscription 2 from 200 to 100.
+          expected: The confirmation shows the effective date 2026-12-01 before the customer confirms.
+        - action: Move the clock to 2026-11-30 and then to 2026-12-01.
+          expected: Subscription 2 has the higher plan's features on 2026-11-30 and the lower plan on 2026-12-01.
+    sv:
+      title: Uppgradering och nedgradering mitt i en period
+      description: Ett integrationstest med styrbar klocka byter nivå på två testabonnemang mitt i en period.
+      preconditions: Två abonnemang med perioder om 30 dagar från 2026-11-01, nivåer för 100 och 200 per period och en styrbar klocka.
+      expected: Uppgraderingen debiteras proportionellt och gäller direkt, och nedgraderingen gäller från periodens slut.
+      steps:
+        - action: Uppgradera abonnemang 1 från 100 till 200 den 2026-11-11.
+          expected: En debitering på 66,67 för 20 dagar skapas och den högre nivåns funktioner är tillgängliga inom 1 minut.
+          data: "(200 − 100) × 20 / 30 = 66,67"
+        - action: Påbörja en nedgradering av abonnemang 2 från 200 till 100 den 2026-11-11.
+          expected: Bekräftelsen visar datumet 2026-12-01 innan kunden bekräftar.
+        - action: Flytta klockan till 2026-11-30 och sedan till 2026-12-01.
+          expected: Abonnemang 2 har den högre nivåns funktioner den 2026-11-30 och den lägre nivån den 2026-12-01.
+
+  - id: BILL-T02
+    priority: high
+    execution: manual
+    tags: [cancellation]
+    refs: []
+    en:
+      title: Steps to cancel compared with steps to sign up
+      description: Counts the steps of signing up and of cancelling a subscription and checks the confirmations.
+      preconditions: A new customer account, a mail catcher and a plan that can be started online.
+      expected: Cancelling takes no more steps than signing up and is confirmed on screen and by e-mail.
+      steps:
+        - action: Start the subscription from the plan page and count the pages and confirmations.
+          expected: The count is recorded, for example 3 steps.
+        - action: Cancel the subscription from the account page and count the steps.
+          expected: The cancellation takes no more steps than the sign-up.
+        - action: Check the screen and the mail catcher.
+          expected: Both state the cancellation and its end date, and the e-mail arrives within 5 minutes.
+    sv:
+      title: Antal steg för uppsägning jämfört med tecknande
+      description: Räknar stegen för att teckna och för att säga upp ett abonnemang och kontrollerar bekräftelserna.
+      preconditions: Ett nytt kundkonto, en e-postfångare och en abonnemangsnivå som kan tecknas på nätet.
+      expected: Uppsägningen tar inte fler steg än tecknandet och bekräftas på skärmen och via e-post.
+      steps:
+        - action: Teckna abonnemanget från sidan med abonnemangsnivåer och räkna sidor och bekräftelser.
+          expected: Antalet antecknas, till exempel 3 steg.
+        - action: Säg upp abonnemanget från kontosidan och räkna stegen.
+          expected: Uppsägningen tar inte fler steg än tecknandet.
+        - action: Kontrollera skärmen och e-postfångaren.
+          expected: Båda anger uppsägningen och slutdatumet, och e-postmeddelandet kommer inom 5 minuter.
+
+  - id: BILL-T03
+    priority: medium
+    execution: automated
+    tags: [renewal, price-change]
+    refs: []
+    en:
+      title: Renewal and price change notices
+      description: An integration test with a controllable clock checks the renewal notice and the notice period for price increases.
+      preconditions: An annual subscription renewing on 2026-12-31, 3 customers on a plan, a mail catcher and a controllable clock.
+      expected: The renewal notice comes 7 days ahead and price increases need 30 days' notice.
+      steps:
+        - action: Move the clock to 2026-12-23 and then to 2026-12-24.
+          expected: No notice on 2026-12-23; on 2026-12-24 a notice with date, amount and a cancel link is sent.
+          data: renewal 2026-12-31
+        - action: Enter a price increase for the plan with an effective date 29 days ahead.
+          expected: The change is refused with the 30-day minimum stated.
+        - action: Enter the increase with an effective date 30 days ahead.
+          expected: Each of the 3 customers receives one notice with old price, new price and date.
+    sv:
+      title: Aviseringar om förnyelse och prisändring
+      description: Ett integrationstest med styrbar klocka kontrollerar aviseringen om förnyelse och varselperioden för prishöjningar.
+      preconditions: Ett årsabonnemang som förnyas 2026-12-31, 3 kunder på en nivå, en e-postfångare och en styrbar klocka.
+      expected: Aviseringen om förnyelse kommer 7 dagar i förväg och prishöjningar kräver 30 dagars varsel.
+      steps:
+        - action: Flytta klockan till 2026-12-23 och sedan till 2026-12-24.
+          expected: Ingen avisering den 2026-12-23; den 2026-12-24 skickas en avisering med datum, belopp och uppsägningslänk.
+          data: förnyelse 2026-12-31
+        - action: Registrera en prishöjning för nivån med giltighet om 29 dagar.
+          expected: Ändringen avvisas med minimigränsen 30 dagar angiven.
+        - action: Registrera höjningen med giltighet om 30 dagar.
+          expected: Var och en av de 3 kunderna får en avisering med gammalt pris, nytt pris och datum.
+
+  - id: BILL-T04
+    priority: high
+    execution: automated
+    tags: [trial]
+    refs: []
+    en:
+      title: End of a free trial with and without confirmation
+      description: An integration test runs two 14-day trials to their end, one without and one with a confirmed paid subscription.
+      preconditions: Two trial accounts started on 2026-11-01, one with a confirmed subscription and payment method, a test payment provider and a controllable clock.
+      expected: The unconfirmed trial ends without a charge and the confirmed one gets a reminder 3 days before the first charge.
+      steps:
+        - action: Move the clock to 2026-11-12.
+          expected: The confirmed account receives a reminder of the first charge on 2026-11-15; the other account receives none.
+        - action: Move the clock to 2026-11-15.
+          expected: The unconfirmed trial has ended with no payment attempt; the confirmed account is charged once.
+    sv:
+      title: Slut på gratis provperiod med och utan bekräftelse
+      description: Ett integrationstest kör två provperioder om 14 dagar till slutet, en utan och en med bekräftat betalt abonnemang.
+      preconditions: Två provkonton som startade 2026-11-01, ett med bekräftat abonnemang och betalningsmetod, en testbetaltjänst och en styrbar klocka.
+      expected: Provperioden utan bekräftelse upphör utan debitering och den bekräftade får en påminnelse 3 dagar före den första debiteringen.
+      steps:
+        - action: Flytta klockan till 2026-11-12.
+          expected: Det bekräftade kontot får en påminnelse om den första debiteringen den 2026-11-15; det andra kontot får ingen.
+        - action: Flytta klockan till 2026-11-15.
+          expected: Provperioden utan bekräftelse har upphört utan betalningsförsök; det bekräftade kontot debiteras en gång.
+
+  - id: BILL-T05
+    priority: critical
+    execution: automated
+    tags: [invoice, numbering, vat]
+    refs: ["Directive 2006/112/EC Art. 226"]
+    en:
+      title: Invoice content and gapless numbering
+      description: A test creates invoices in parallel, checks the numbers and inspects the content of one invoice.
+      preconditions: An empty invoice series, a fictitious business customer with a VAT number, and items at 25 and 12 percent VAT.
+      expected: The numbers form one gapless sequence and the invoice holds every required detail.
+      steps:
+        - action: Create 500 invoices from 10 parallel processes.
+          expected: The numbers 1 to 500 each occur exactly once.
+          data: 10 × 50 invoices
+        - action: Open the invoice for the business customer.
+          expected: It shows issue date, number, both VAT numbers, both names and addresses, items with quantities, and taxable amount, rate and VAT for 25 and 12 percent.
+    sv:
+      title: Fakturainnehåll och numrering utan luckor
+      description: Ett test skapar fakturor parallellt, kontrollerar numren och granskar innehållet i en faktura.
+      preconditions: En tom fakturaserie, en påhittad företagskund med momsregistreringsnummer och varor med 25 och 12 procent moms.
+      expected: Numren bildar en följd utan luckor och fakturan innehåller varje uppgift som krävs.
+      steps:
+        - action: Skapa 500 fakturor från 10 parallella processer.
+          expected: Numren 1 till 500 förekommer exakt en gång vardera.
+          data: 10 × 50 fakturor
+        - action: Öppna fakturan till företagskunden.
+          expected: Den visar utfärdandedatum, nummer, båda momsregistreringsnumren, båda namnen och adresserna, varor med antal samt beskattningsunderlag, momssats och moms för 25 och 12 procent.
+
+  - id: BILL-T06
+    priority: high
+    execution: manual
+    tags: [credit-note]
+    refs: []
+    en:
+      title: Correcting an issued invoice
+      description: Tries to edit an issued invoice and makes a partial refund.
+      preconditions: An issued invoice with number 1042 for 1 000.00.
+      expected: The invoice cannot be edited and the refund creates a credit note that refers to it.
+      steps:
+        - action: Try to change the amount of invoice 1042 in the user interface and through the API.
+          expected: Both attempts are refused and the invoice is unchanged.
+        - action: Refund 250.00 of invoice 1042.
+          expected: A credit note with its own number for −250.00 is created and names invoice 1042.
+          data: 250.00
+    sv:
+      title: Rättelse av en utfärdad faktura
+      description: Försöker redigera en utfärdad faktura och gör en delvis återbetalning.
+      preconditions: En utfärdad faktura med nummer 1042 på 1 000,00.
+      expected: Fakturan kan inte redigeras och återbetalningen skapar en kreditfaktura som hänvisar till den.
+      steps:
+        - action: Försök ändra beloppet på faktura 1042 i användargränssnittet och via API:et.
+          expected: Båda försöken avvisas och fakturan är oförändrad.
+        - action: Återbetala 250,00 av faktura 1042.
+          expected: En kreditfaktura med eget nummer på −250,00 skapas och anger faktura 1042.
+          data: 250,00
+
+  - id: BILL-T07
+    priority: medium
+    execution: automated
+    tags: [e-invoice]
+    refs: ["EN 16931-1:2017"]
+    en:
+      title: Electronic invoice validated against the European standard
+      description: Generates the PDF and the electronic invoice of a test invoice and validates the electronic one.
+      preconditions: A test invoice with 3 lines and 2 VAT rates, and a validator for the European e-invoicing standard.
+      expected: The electronic invoice is valid and matches the PDF.
+      steps:
+        - action: Download the invoice as PDF and as electronic invoice.
+          expected: Both files are produced.
+        - action: Validate the electronic invoice.
+          expected: The validator reports no errors.
+        - action: Compare totals, VAT per rate and the invoice number between the two files.
+          expected: The values are equal.
+    sv:
+      title: E-faktura validerad mot den europeiska standarden
+      description: Skapar PDF och e-faktura för en testfaktura och validerar e-fakturan.
+      preconditions: En testfaktura med 3 rader och 2 momssatser, och en validerare för den europeiska standarden för e-fakturering.
+      expected: E-fakturan är giltig och stämmer med PDF:en.
+      steps:
+        - action: Ladda ned fakturan som PDF och som e-faktura.
+          expected: Båda filerna skapas.
+        - action: Validera e-fakturan.
+          expected: Valideraren rapporterar inga fel.
+        - action: Jämför summor, moms per momssats och fakturanummer mellan de två filerna.
+          expected: Värdena är lika.
+
+  - id: BILL-T08
+    priority: medium
+    execution: automated
+    tags: [failed-payment]
+    refs: []
+    en:
+      title: Payment retries, suspension and data retention
+      description: An integration test lets a recurring payment fail and moves the clock through the retry schedule.
+      preconditions: A subscription with a test card that always fails, a billing contact with a mailbox in the mail catcher and a controllable clock.
+      expected: Retries and notices follow the schedule, the subscription is suspended on day 7 and data is kept for 30 more days.
+      steps:
+        - action: Let the payment fail on the renewal date and move the clock to days 1, 3 and 7.
+          expected: A retry and a notice to the billing contact happen on each of the 3 days.
+          data: days 1, 3, 7
+        - action: Check the subscription after the third failed retry.
+          expected: The subscription is suspended and users see a message about the payment.
+        - action: Move the clock to day 37 and look up the customer's projects.
+          expected: The projects are still stored.
+    sv:
+      title: Nya betalningsförsök, avstängning och lagring av data
+      description: Ett integrationstest låter en återkommande betalning misslyckas och flyttar klockan genom schemat för nya försök.
+      preconditions: Ett abonnemang med ett testkort som alltid misslyckas, en faktureringskontakt med brevlåda i e-postfångaren och en styrbar klocka.
+      expected: Nya försök och aviseringar följer schemat, abonnemanget stängs av dag 7 och data sparas i ytterligare 30 dagar.
+      steps:
+        - action: Låt betalningen misslyckas på förnyelsedagen och flytta klockan till dag 1, 3 och 7.
+          expected: Ett nytt försök och en avisering till faktureringskontakten sker var och en av de 3 dagarna.
+          data: dag 1, 3, 7
+        - action: Kontrollera abonnemanget efter det tredje misslyckade försöket.
+          expected: Abonnemanget är avstängt och användarna ser ett meddelande om betalningen.
+        - action: Flytta klockan till dag 37 och slå upp kundens projekt.
+          expected: Projekten finns fortfarande sparade.
+
+  - id: BILL-T09
+    priority: medium
+    execution: manual
+    tags: [usage, limits]
+    refs: []
+    en:
+      title: Usage display and limit alerts
+      description: Adds users up to the plan limit and watches the usage page and the notices.
+      preconditions: An organisation on a plan with a limit of 10 users, 7 users today and an administrator with a mailbox.
+      expected: The usage page is current and notices are sent at 80 and 100 percent.
+      steps:
+        - action: Add the 8th user and open the usage page.
+          expected: The page shows 8 of 10 users and the administrator receives a notice about 80 percent.
+        - action: Add the 9th user.
+          expected: No new notice is sent.
+        - action: Add the 10th user.
+          expected: The page shows 10 of 10 and a second notice about 100 percent is sent.
+    sv:
+      title: Visning av användning och varningar vid gränser
+      description: Lägger till användare upp till nivåns gräns och följer användningssidan och aviseringarna.
+      preconditions: En organisation på en nivå med en gräns på 10 användare, 7 användare i dag och en administratör med brevlåda.
+      expected: Användningssidan är aktuell och aviseringar skickas vid 80 och 100 procent.
+      steps:
+        - action: Lägg till den 8:e användaren och öppna användningssidan.
+          expected: Sidan visar 8 av 10 användare och administratören får en avisering om 80 procent.
+        - action: Lägg till den 9:e användaren.
+          expected: Ingen ny avisering skickas.
+        - action: Lägg till den 10:e användaren.
+          expected: Sidan visar 10 av 10 och en andra avisering om 100 procent skickas.
+
+  - id: BILL-T10
+    priority: high
+    execution: automated
+    tags: [access-control, billing-role]
+    refs: ["OWASP ASVS 5.0 V8 authorization"]
+    en:
+      title: Access to billing pages by role
+      description: An API and browser test opens the billing pages and endpoints as users with different roles.
+      preconditions: Users with the tester, billing and administrator roles in one organisation, and a project with content.
+      expected: Only the billing and administrator roles reach billing data, and the billing role sees no project content.
+      steps:
+        - action: As the tester open the invoice list and call the billing API.
+          expected: Both are refused.
+        - action: As the billing user open the invoice list and the project list.
+          expected: The invoices are shown; the project list is empty or refused.
+        - action: As the administrator open the invoice list and change the payment method.
+          expected: Both are allowed.
+    sv:
+      title: Åtkomst till faktureringssidor per roll
+      description: Ett API- och webbläsartest öppnar faktureringssidorna och anropen som användare med olika roller.
+      preconditions: Användare med rollerna testare, fakturering och administratör i samma organisation, och ett projekt med innehåll.
+      expected: Bara rollerna fakturering och administratör når faktureringsuppgifter, och faktureringsrollen ser inget projektinnehåll.
+      steps:
+        - action: Öppna fakturalistan och anropa fakturerings-API:et som testaren.
+          expected: Båda nekas.
+        - action: Öppna fakturalistan och projektlistan som faktureringsanvändaren.
+          expected: Fakturorna visas; projektlistan är tom eller nekas.
+        - action: Öppna fakturalistan och byt betalningsmetod som administratören.
+          expected: Båda är tillåtna.
