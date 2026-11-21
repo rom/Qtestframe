@@ -10177,6 +10177,128 @@ paths:
           $ref: '#/components/responses/Forbidden'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/archive:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Save project
+      operationId: getProjectsByPidArchive
+      description: |-
+        Downloads the whole project as a project archive (`application/zip`, `<key>-project-<time>.zip`): `manifest.json` (`kind: qtestframe-project`, `format_version`, `schema_version`, `app_version`, `created_at`, `driver`, `project {id, key, name}`, `tables {table: rows}`, `files`, `file_bytes`), `tables/<table>.jsonl` with every row of the project and `files/<id>` with the content of each file. Webhook secrets, the tracker token, accounts, memberships, sessions, API tokens, notifications, e-mail subscriptions, the audit log and the trash are not included. Audited as `project.save`.
+
+        **Permission:** `project.update`, `export`.
+      x-permission: project.update, export
+      responses:
+        '200':
+          description: The project archive
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/import:
+    post:
+      tags:
+      - Projects
+      summary: Load project
+      operationId: postProjectsImport
+      description: |-
+        multipart `archive` (a project archive) + optional `key`, `name` (default: those of the archive) and `dry_run=true` (checks everything, saves nothing, answers 200). Creates a **new** project in the current organisation in one transaction: every row gets a new id and all references (ids in columns, JSON and texts; item keys such as `OLD-REQ-1` when the key changes) are rewritten; sequence counters are kept, so new items get the next free key. Rows that refer to something outside the archive (e.g. a reviewer without an account here) are left out and counted in `skipped`. Loaded webhooks are disabled and have no secret. → `{project, manifest, imported: {table: rows}, skipped?, files, dry_run?}`. 409 when the key is taken or the archive comes from a newer schema; 400 for invalid archives. Audited as `project.load`.
+
+        **Permission:** `project.create`.
+      x-permission: project.create
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - archive
+              properties:
+                archive:
+                  type: string
+                  format: binary
+                  description: The project archive (ZIP)
+                key:
+                  type: string
+                  description: Key of the new project (default the archive's)
+                name:
+                  type: string
+                  description: Name of the new project (default the archive's)
+                dry_run:
+                  type: boolean
+                  description: Check only; nothing is saved (200)
+      responses:
+        '200':
+          description: Dry run; nothing is saved
+          content:
+            application/json:
+              schema:
+                type: object
+        '201':
+          description: The new project and what was loaded
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/duplicate:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Duplicate project
+      operationId: postProjectsByPidDuplicate
+      description: |-
+        `{key, name?}` → saves the project and loads it again as a new project (like Save project + Load project) → the same result as Load project. 409 when the key is taken. Audited as `project.duplicate`.
+
+        **Permission:** `project.create`, `project.update`, `export`.
+      x-permission: project.create, project.update, export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - key
+              properties:
+                key:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
