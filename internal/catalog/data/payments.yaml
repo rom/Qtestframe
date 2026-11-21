@@ -257,6 +257,104 @@ requirements:
           text: Efter en testbetalning kommer ett kvitto med de sex uppgifterna inom 5 minuter.
           threshold: "≤ 5 min"
 
+  - id: PAY-12
+    type: security
+    obligation: must
+    priority: high
+    tags: [card-testing, fraud, rate-limit]
+    refs: ["OWASP API Security Top 10 2023 API6", "CWE-799", "NIST SP 800-53 SI-4"]
+    tests: [PAY-T10]
+    en:
+      title: Protection against card testing
+      description: The system MUST block further payment attempts from a source address or customer account for 1 hour after 5 declined card authorisations within 10 minutes.
+      rationale: Criminals use checkout pages to test stolen card numbers in bulk, which brings fees, chargebacks and a risk of losing the merchant account.
+      criteria:
+        - method: test
+          text: After 5 declines within 10 minutes the 6th attempt is refused without being sent to the provider, and attempts from another source still work.
+          threshold: "5 declines in 10 min → 1 h block"
+    sv:
+      title: Skydd mot testning av kortnummer
+      description: Systemet SKA spärra fler betalningsförsök från en källadress eller ett kundkonto i 1 timme efter 5 nekade kortauktoriseringar inom 10 minuter.
+      rationale: Brottslingar använder kassasidor för att i stor skala testa stulna kortnummer, vilket ger avgifter, återkrav och risk att förlora inlösenavtalet.
+      criteria:
+        - method: test
+          text: Efter 5 nekanden inom 10 minuter avvisas det 6:e försöket utan att skickas till leverantören, och försök från en annan källa fungerar fortfarande.
+          threshold: "5 nekanden på 10 min → 1 h spärr"
+
+  - id: PAY-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [api-keys, payment-provider, least-privilege]
+    refs: ["PCI DSS 4.0.1 Req. 7.2.5", "ISO/IEC 27001:2022 A.8.2", "OWASP Secrets Management Cheat Sheet"]
+    tests: [PAY-T11]
+    en:
+      title: Restricted keys for the payment provider
+      description: The system MUST call the payment provider's API with restricted keys that allow only the operations each service uses, and use no key with full account rights in any service.
+      rationale: A leaked full-rights key lets the finder issue refunds to their own cards, change payout accounts or read every transaction.
+      criteria:
+        - method: inspection
+          text: The provider's key list shows one restricted key per service with the permissions that service needs, and no full-rights key is in use.
+        - method: test
+          text: A refund call made with the key of the checkout service is refused by the provider.
+    sv:
+      title: Begränsade nycklar hos betalningsleverantören
+      description: Systemet SKA anropa betalningsleverantörens API med begränsade nycklar som bara tillåter de operationer som varje tjänst använder, och inte använda någon nyckel med fullständiga kontorättigheter i någon tjänst.
+      rationale: En läckt nyckel med fullständiga rättigheter låter den som hittar den göra återbetalningar till sina egna kort, ändra utbetalningskonton eller läsa varje transaktion.
+      criteria:
+        - method: inspection
+          text: Leverantörens nyckellista visar en begränsad nyckel per tjänst med de behörigheter tjänsten behöver, och ingen nyckel med fullständiga rättigheter används.
+        - method: test
+          text: Ett anrop om återbetalning med kassatjänstens nyckel avvisas av leverantören.
+
+  - id: PAY-14
+    type: security
+    obligation: must
+    priority: high
+    tags: [refunds, four-eyes, segregation-of-duties]
+    refs: ["ISO/IEC 27001:2022 A.5.3", "NIST SP 800-53 AC-5"]
+    tests: [PAY-T12]
+    en:
+      title: Second approval for large refunds and payout changes
+      description: The system MUST require approval by a second user with the finance role before it carries out a refund above 10 000 SEK or a change of the payout bank account.
+      rationale: Refunds and payout changes move money out, and one compromised or dishonest account must not be enough to do it.
+      criteria:
+        - method: test
+          text: A refund of 10 001 SEK stays pending until a second finance user approves, the initiator cannot approve it, and a refund of 9 999 SEK runs at once.
+          threshold: "> 10 000 SEK"
+    sv:
+      title: Andra godkännande för stora återbetalningar och ändrade utbetalningskonton
+      description: Systemet SKA kräva godkännande av en andra användare med ekonomirollen innan det genomför en återbetalning över 10 000 kronor eller en ändring av bankkontot för utbetalningar.
+      rationale: Återbetalningar och ändrade utbetalningar flyttar pengar ut, och ett komprometterat eller ohederligt konto ska inte räcka för att göra det.
+      criteria:
+        - method: test
+          text: En återbetalning på 10 001 kronor väntar tills en andra ekonomianvändare godkänner, initiativtagaren kan inte godkänna den, och en återbetalning på 9 999 kronor genomförs direkt.
+          threshold: "> 10 000 kr"
+
+  - id: PAY-15
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [pci-scope, compliance]
+    refs: ["PCI DSS 4.0.1 Req. 12.5.2", "PCI DSS 4.0.1 Req. 12.8.5"]
+    tests: [PAY-T13]
+    en:
+      title: Yearly confirmation of the card data scope
+      description: The supplier MUST confirm the PCI DSS scope of the system every 12 months and after each change to the payment flow, with a data flow diagram and a list of the service providers that handle card data.
+      rationale: A new integration or a changed checkout can bring card data into systems that were assumed to be out of scope and have no controls for it.
+      criteria:
+        - method: review
+          text: The latest scope confirmation is less than 12 months old, postdates the last change to the payment flow, and contains the diagram and the provider list with each provider's responsibilities.
+          threshold: "≤ 12 months"
+    sv:
+      title: Årlig bekräftelse av omfattningen för kortdata
+      description: Leverantören SKA bekräfta systemets omfattning enligt PCI DSS var 12:e månad och efter varje ändring av betalflödet, med ett dataflödesdiagram och en lista över de tjänsteleverantörer som hanterar kortdata.
+      rationale: En ny integration eller en ändrad kassa kan föra in kortdata i system som antogs ligga utanför omfattningen och saknar skydd för det.
+      criteria:
+        - method: review
+          text: Den senaste bekräftelsen är yngre än 12 månader, är senare än den senaste ändringen av betalflödet och innehåller diagrammet och leverantörslistan med varje leverantörs ansvar.
+          threshold: "≤ 12 månader"
+
 tests:
   - id: PAY-T01
     priority: critical
@@ -549,3 +647,123 @@ tests:
           expected: Summan är högst 100,00 SEK.
         - action: Läs den återbetalda summan i leverantörens kontrollpanel.
           expected: Den är lika med summan i systemet.
+
+  - id: PAY-T10
+    priority: high
+    execution: automated
+    tags: [card-testing]
+    refs: ["CWE-799"]
+    en:
+      title: Repeated declines block further attempts
+      description: A script submits declined test cards from one source and checks that further attempts are blocked.
+      preconditions: The payment provider's test mode with test cards that are always declined and always approved, and two source addresses.
+      expected: The 6th attempt within 10 minutes is blocked for 1 hour, and another source is not affected.
+      steps:
+        - action: From source A, pay 5 times with a declined test card within 10 minutes.
+          expected: Each attempt is declined by the provider.
+        - action: From source A, pay with an approved test card.
+          expected: The attempt is refused by the system and the provider's log shows no request for it.
+        - action: From source B, pay with the approved test card.
+          expected: The payment succeeds.
+        - action: Advance the clock by 61 minutes and pay from source A with the approved test card.
+          expected: The payment succeeds.
+    sv:
+      title: Upprepade nekanden spärrar fler försök
+      description: Ett skript skickar nekade testkort från en källa och kontrollerar att fler försök spärras.
+      preconditions: Betalningsleverantörens testläge med testkort som alltid nekas och alltid godkänns, och två källadresser.
+      expected: Det 6:e försöket inom 10 minuter spärras i 1 timme, och en annan källa påverkas inte.
+      steps:
+        - action: Betala 5 gånger från källa A med ett nekat testkort inom 10 minuter.
+          expected: Varje försök nekas av leverantören.
+        - action: Betala från källa A med ett godkänt testkort.
+          expected: Försöket avvisas av systemet och leverantörens logg visar inget anrop för det.
+        - action: Betala från källa B med det godkända testkortet.
+          expected: Betalningen lyckas.
+        - action: Ställ fram klockan 61 minuter och betala från källa A med det godkända testkortet.
+          expected: Betalningen lyckas.
+
+  - id: PAY-T11
+    priority: high
+    execution: manual
+    tags: [api-keys, payment-provider]
+    refs: ["PCI DSS 4.0.1 Req. 7.2.5"]
+    en:
+      title: Each service has a restricted provider key
+      description: Reviews the payment provider's API keys and tries an operation outside a key's permissions.
+      preconditions: Read access to the provider's key management in the test account and the key of the checkout service.
+      expected: Keys are restricted per service and a refund with the checkout key fails.
+      steps:
+        - action: List the active API keys in the provider's dashboard and match each to a service.
+          expected: Each service has its own restricted key, and no full-rights key is in active use.
+        - action: Call the refund operation with the checkout service's key.
+          expected: The provider refuses the call with a permission error.
+    sv:
+      title: Varje tjänst har en begränsad nyckel hos leverantören
+      description: Granskar betalningsleverantörens API-nycklar och provar en operation utanför en nyckels behörigheter.
+      preconditions: Läsbehörighet till leverantörens nyckelhantering i testkontot och kassatjänstens nyckel.
+      expected: Nycklarna är begränsade per tjänst och en återbetalning med kassanyckeln misslyckas.
+      steps:
+        - action: Lista de aktiva API-nycklarna i leverantörens administrationsvy och koppla var och en till en tjänst.
+          expected: Varje tjänst har en egen begränsad nyckel, och ingen nyckel med fullständiga rättigheter används.
+        - action: Anropa operationen för återbetalning med kassatjänstens nyckel.
+          expected: Leverantören avvisar anropet med ett behörighetsfel.
+
+  - id: PAY-T12
+    priority: high
+    execution: manual
+    tags: [refunds, four-eyes]
+    refs: ["NIST SP 800-53 AC-5"]
+    en:
+      title: Large refunds wait for a second finance user
+      description: Starts refunds above and below the threshold and a payout account change.
+      preconditions: Two users with the finance role, F1 and F2, and captured test payments of 20 000 SEK.
+      expected: Refunds above 10 000 SEK and payout changes need F2's approval; smaller refunds run directly.
+      steps:
+        - action: As F1, refund 10 001 SEK of a payment.
+          expected: The refund is pending approval and nothing is sent to the provider.
+        - action: As F1, try to approve the own refund.
+          expected: The approval is refused.
+        - action: As F2, approve the refund.
+          expected: The refund is sent to the provider.
+        - action: As F1, refund 9 999 SEK and change the payout bank account.
+          expected: The refund runs at once, and the account change is pending approval.
+    sv:
+      title: Stora återbetalningar väntar på en andra ekonomianvändare
+      description: Startar återbetalningar över och under tröskeln och en ändring av utbetalningskonto.
+      preconditions: Två användare med ekonomirollen, F1 och F2, och dragna testbetalningar på 20 000 kronor.
+      expected: Återbetalningar över 10 000 kronor och ändrade utbetalningskonton kräver godkännande av F2; mindre återbetalningar genomförs direkt.
+      steps:
+        - action: Återbetala som F1 10 001 kronor av en betalning.
+          expected: Återbetalningen väntar på godkännande och inget skickas till leverantören.
+        - action: Försök som F1 godkänna den egna återbetalningen.
+          expected: Godkännandet avvisas.
+        - action: Godkänn återbetalningen som F2.
+          expected: Återbetalningen skickas till leverantören.
+        - action: Återbetala som F1 9 999 kronor och ändra bankkontot för utbetalningar.
+          expected: Återbetalningen genomförs direkt, och kontoändringen väntar på godkännande.
+
+  - id: PAY-T13
+    priority: medium
+    execution: manual
+    tags: [pci-scope]
+    refs: ["PCI DSS 4.0.1 Req. 12.5.2"]
+    en:
+      title: PCI DSS scope confirmation is current
+      description: Reviews the latest scope confirmation against the change history of the payment flow.
+      preconditions: The latest scope confirmation, the change history of the payment flow and the list of service providers.
+      expected: The confirmation is recent, follows the last change and is complete.
+      steps:
+        - action: Compare the date of the confirmation with today and with the last change to the payment flow.
+          expected: It is less than 12 months old and later than the last change.
+        - action: Check its content.
+          expected: It contains a current data flow diagram and each service provider that handles card data with its responsibilities.
+    sv:
+      title: Bekräftelsen av PCI DSS-omfattningen är aktuell
+      description: Granskar den senaste bekräftelsen av omfattningen mot ändringshistoriken för betalflödet.
+      preconditions: Den senaste bekräftelsen av omfattningen, ändringshistoriken för betalflödet och listan över tjänsteleverantörer.
+      expected: Bekräftelsen är ny, kommer efter den senaste ändringen och är fullständig.
+      steps:
+        - action: Jämför bekräftelsens datum med dagens datum och med den senaste ändringen av betalflödet.
+          expected: Den är yngre än 12 månader och senare än den senaste ändringen.
+        - action: Kontrollera innehållet.
+          expected: Den innehåller ett aktuellt dataflödesdiagram och varje tjänsteleverantör som hanterar kortdata med sitt ansvar.
