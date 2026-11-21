@@ -152,7 +152,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [static-analysis, sast, ci]
-    refs: ["ISO/IEC 27001:2022 A.8.25 (secure development life cycle)", "OWASP ASVS 4.0 V1.1 (secure software development lifecycle)", "IEC 62443-4-1 SI-1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3"]
+    refs: ["ISO/IEC 27001:2022 A.8.25 (secure development life cycle)", "IEC 62443-4-1 SI-1", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §3"]
     tests: [MNT-T05]
     en:
       title: No merge with severe static analysis findings

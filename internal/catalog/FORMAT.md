@@ -20,7 +20,7 @@ requirements:
     obligation: must            # must | must_not | should | should_not | may (the keyword used in the text)
     priority: high              # critical | high | medium | low
     tags: [password, login]     # lower case, a-z 0-9 and "-"
-    refs: ["NIST SP 800-63B §5.1.1.2"]   # standards it is based on: cited, never copied
+    refs: ["NIST SP 800-63B-4 §3.1.1.2 (password verifiers)"]   # standards it is based on: cited, never copied
     tests: [AUTH-T01, AUTH-T02] # at least one catalogue test that verifies it (same or other area)
     en:
       title: Minimum password length          # short, no final full stop
@@ -144,6 +144,9 @@ actually check.
 | CER (resilience of critical entities) | `Directive (EU) 2022/2557 (CER) Art. 13(1)(d)` |
 | NIS2 | `Directive (EU) 2022/2555 (NIS2) Art. 23` |
 | Swedish Cybersecurity Act (implements NIS2) | `Cybersäkerhetslag (2025:1506) 2 kap. 3 §` |
+| OWASP ASVS (current edition 5.0; no 4.0 numbering) | `OWASP ASVS 5.0 V6.2.1 (password length)`, or the section `OWASP ASVS 5.0 V13.3 (secret management)` |
+| NIST SP 800-63-4 digital identity guidelines (not the Rev. 3 numbering) | `NIST SP 800-63B-4 §3.1.1.2 (password verifiers)`, `NIST SP 800-63A-4 §3.8 (confirmation codes)` |
+| PCI DSS (current version v4.0.1) | `PCI DSS v4.0.1 Req. 8.2.6`, `PCI DSS v4.0.1 SAQ A (eligibility criteria)` |
 | MITRE CWE weakness (current CWE list; prefer base and variant entries, never deprecated ones) | `CWE-521 (weak password requirements)`, `CWE Top 25 Most Dangerous Software Weaknesses` |
 | MITRE ATT&CK technique, sub-technique or mitigation (Enterprise, ICS or Mobile; never revoked or deprecated ids) | `MITRE ATT&CK T1110.001 (password guessing)`, `MITRE ATT&CK T0886 (remote services)`, `MITRE ATT&CK M1032 (multi-factor authentication)` |
 | Radio Equipment Directive, Art. 3(3)(d)–(f) as applied by Delegated Regulation (EU) 2022/30, with the harmonised standard EN 18031-1/-2/-3 and its mechanism (AUM, ACM, SCM, SSM, SUM, RLM, CCK, CRY, GEC, DLM …) | `Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)` |

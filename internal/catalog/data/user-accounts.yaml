@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [invitation]
-    refs: ["OWASP ASVS 4.0.3 V2.3", "ISO/IEC 27001:2022 A.5.16", "IEC 62443-3-3 SR 1.3"]
+    refs: ["OWASP ASVS 5.0 V6.4.1 (activation codes)", "ISO/IEC 27001:2022 A.5.16", "IEC 62443-3-3 SR 1.3"]
     tests: [ACCT-T01]
     en:
       title: Invitation of users by an administrator
@@ -36,7 +36,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [invitation, tokens]
-    refs: ["OWASP ASVS 4.0.3 V2.3.1", "OWASP ASVS 4.0.3 V3.5"]
+    refs: ["OWASP ASVS 5.0 V6.4.1 (activation codes)"]
     tests: [ACCT-T01]
     en:
       title: Used or revoked invitations are rejected
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: high
     tags: [e-mail-verification, registration]
-    refs: ["OWASP ASVS 4.0.3 V2.1", "NIST SP 800-63A §5.1", "ISO/IEC 27001:2022 A.5.16"]
+    refs: ["OWASP ASVS 5.0 V6.4.1 (activation codes)", "NIST SP 800-63A-4 §3.8 (confirmation codes)", "ISO/IEC 27001:2022 A.5.16"]
     tests: [ACCT-T02]
     en:
       title: E-mail address verified before activation
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [e-mail-verification, profile]
-    refs: ["OWASP ASVS 4.0.3 V2.2.3", "ISO/IEC 27001:2022 A.5.16"]
+    refs: ["OWASP ASVS 5.0 V6.3.7 (notification of authentication changes)", "ISO/IEC 27001:2022 A.5.16"]
     tests: [ACCT-T03]
     en:
       title: Changed e-mail address verified before use
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [deactivation, sessions]
-    refs: ["ISO/IEC 27001:2022 A.5.18", "OWASP ASVS 4.0.3 V3.3", "IEC 62443-3-3 SR 1.3"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "OWASP ASVS 5.0 V7.4.2 (sessions ended when an account is disabled)", "IEC 62443-3-3 SR 1.3"]
     tests: [ACCT-T04]
     en:
       title: Deactivation ends access within one minute
@@ -262,7 +262,7 @@ requirements:
     obligation: must
     priority: high
     tags: [audit-log, administration]
-    refs: ["ISO/IEC 27001:2022 A.8.15", "OWASP ASVS 4.0.3 V7.2", "IEC 62443-3-3 SR 2.8"]
+    refs: ["ISO/IEC 27001:2022 A.8.15", "OWASP ASVS 5.0 V16.3.3 (documented security events)", "IEC 62443-3-3 SR 2.8"]
     tests: [ACCT-T08]
     en:
       title: Account changes recorded in the audit log
@@ -380,7 +380,7 @@ tests:
     priority: high
     execution: automated
     tags: [invitation, api]
-    refs: ["OWASP ASVS 4.0.3 V2.3", "IEC 62443-3-3 SR 1.3"]
+    refs: ["OWASP ASVS 5.0 V6.4.1 (activation codes)", "IEC 62443-3-3 SR 1.3"]
     en:
       title: Invitation link validity, single use and revocation
       description: An API test creates invitations, moves the test clock and checks when the links are accepted.
@@ -420,7 +420,7 @@ tests:
     priority: high
     execution: manual
     tags: [registration, e-mail-verification]
-    refs: ["OWASP ASVS 4.0.3 V2.1", "ISO/IEC 27001:2022 A.5.16"]
+    refs: ["OWASP ASVS 5.0 V6.4.1 (activation codes)", "ISO/IEC 27001:2022 A.5.16"]
     en:
       title: Self-registration and e-mail verification
       description: Checks the self-registration setting and that a new account is activated only through a valid verification link.

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [validation, server-side]
-    refs: ["OWASP ASVS 4.0 V5.1", "OWASP Input Validation Cheat Sheet", "NIST SP 800-53 SI-10", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "IEC 62443-4-2 CR 3.5", "CWE-20 (improper input validation)", "CWE-602 (client-side enforcement of server-side security)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["OWASP ASVS 5.0 V2.2.2 (validation at a trusted service layer)", "OWASP Input Validation Cheat Sheet", "NIST SP 800-53 SI-10", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "IEC 62443-4-2 CR 3.5", "CWE-20 (improper input validation)", "CWE-602 (client-side enforcement of server-side security)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [INP-T01]
     en:
       title: Server-side validation of input
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [injection, sql-injection]
-    refs: ["OWASP ASVS 4.0 V5.3.4", "OWASP Top 10 2021 A03", "OWASP SQL Injection Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-89 (SQL injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["OWASP ASVS 5.0 V1.2.4 (parameterized queries)", "OWASP Top 10 2021 A03", "OWASP SQL Injection Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-89 (SQL injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [INP-T02]
     en:
       title: Parameterised database queries
@@ -64,7 +64,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [injection, command-injection]
-    refs: ["OWASP ASVS 4.0 V5.3.8", "OWASP Top 10 2021 A03", "OWASP OS Command Injection Defense Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-78 (OS command injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["OWASP ASVS 5.0 V1.2.5 (OS command injection)", "OWASP Top 10 2021 A03", "OWASP OS Command Injection Defense Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-78 (OS command injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [INP-T03]
     en:
       title: No user input in shell commands
@@ -90,7 +90,7 @@ requirements:
     obligation: must
     priority: high
     tags: [injection, ldap-injection]
-    refs: ["OWASP ASVS 4.0 V5.3.7", "OWASP LDAP Injection Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-90 (LDAP injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["OWASP ASVS 5.0 V1.2.6 (LDAP injection)", "OWASP LDAP Injection Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-90 (LDAP injection)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [INP-T04]
     en:
       title: Escaped input in LDAP filters
@@ -112,7 +112,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [xss, output-encoding]
-    refs: ["OWASP ASVS 4.0 V5.3.3", "OWASP Top 10 2021 A03", "OWASP Cross Site Scripting Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-79 (cross-site scripting)", "CWE-116 (improper encoding or escaping of output)"]
+    refs: ["OWASP ASVS 5.0 V1.2.1 (output encoding)", "OWASP Top 10 2021 A03", "OWASP Cross Site Scripting Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-79 (cross-site scripting)", "CWE-116 (improper encoding or escaping of output)"]
     tests: [INP-T05]
     en:
       title: Context-aware output encoding
@@ -138,7 +138,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [xss, content-security-policy]
-    refs: ["OWASP ASVS 4.0 V14.4.3", "W3C Content Security Policy Level 3", "ISO/IEC 27001:2022 A.8.26", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-79 (cross-site scripting)", "MITRE ATT&CK T1059.007 (JavaScript)"]
+    refs: ["OWASP ASVS 5.0 V3.4.3 (Content-Security-Policy)", "W3C Content Security Policy Level 3", "ISO/IEC 27001:2022 A.8.26", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(k)", "CWE-79 (cross-site scripting)", "MITRE ATT&CK T1059.007 (JavaScript)"]
     tests: [INP-T06]
     en:
       title: Content Security Policy without inline scripts
@@ -160,7 +160,7 @@ requirements:
     obligation: must
     priority: high
     tags: [file-upload]
-    refs: ["OWASP ASVS 4.0 V12.1", "OWASP ASVS 4.0 V12.2", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-434 (unrestricted upload of file with dangerous type)", "CWE-770 (allocation of resources without limits or throttling)"]
+    refs: ["OWASP ASVS 5.0 V5.2.1 (file size)", "OWASP ASVS 5.0 V5.2.2 (file extension and content)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-434 (unrestricted upload of file with dangerous type)", "CWE-770 (allocation of resources without limits or throttling)"]
     tests: [INP-T07]
     en:
       title: Uploaded files are checked by type and size
@@ -182,7 +182,7 @@ requirements:
     obligation: must
     priority: high
     tags: [file-upload, storage]
-    refs: ["OWASP ASVS 4.0 V12.4", "OWASP ASVS 4.0 V12.5", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-552 (files or directories accessible to external parties)", "MITRE ATT&CK T1505.003 (web shell)"]
+    refs: ["OWASP ASVS 5.0 V5.3.1 (uploaded files not executed)", "OWASP ASVS 5.0 V5.3.2 (generated file paths)", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-552 (files or directories accessible to external parties)", "MITRE ATT&CK T1505.003 (web shell)"]
     tests: [INP-T08]
     en:
       title: Uploaded files are stored outside the web root
@@ -208,7 +208,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [deserialisation]
-    refs: ["OWASP ASVS 4.0 V5.5", "OWASP Top 10 2021 A08", "OWASP Deserialization Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-502 (deserialization of untrusted data)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["OWASP ASVS 5.0 V1.5.2 (safe deserialization)", "OWASP Top 10 2021 A08", "OWASP Deserialization Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-502 (deserialization of untrusted data)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [INP-T09]
     en:
       title: No deserialisation of untrusted objects
@@ -234,7 +234,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [ssrf, outbound-requests]
-    refs: ["OWASP ASVS 4.0 V5.2.6", "OWASP Top 10 2021 A10", "OWASP Server-Side Request Forgery Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-918 (server-side request forgery)", "MITRE ATT&CK T1552.005 (cloud instance metadata API)"]
+    refs: ["OWASP ASVS 5.0 V1.3.6 (server-side request forgery)", "OWASP Top 10 2021 A10", "OWASP Server-Side Request Forgery Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "CWE-918 (server-side request forgery)", "MITRE ATT&CK T1552.005 (cloud instance metadata API)"]
     tests: [INP-T10]
     en:
       title: Protection against server-side request forgery
@@ -256,7 +256,7 @@ requirements:
     obligation: must
     priority: high
     tags: [xml, xxe]
-    refs: ["OWASP ASVS 4.0 V5.5.2", "OWASP XML External Entity Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-611 (XML external entity reference)", "CWE-776 (XML entity expansion)"]
+    refs: ["OWASP ASVS 5.0 V1.5.1 (XML parser configuration)", "OWASP XML External Entity Prevention Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "CWE-611 (XML external entity reference)", "CWE-776 (XML entity expansion)"]
     tests: [INP-T11]
     en:
       title: XML parsers do not resolve external entities

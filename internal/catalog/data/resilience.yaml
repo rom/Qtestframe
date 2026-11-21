@@ -200,7 +200,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [error-message, information-disclosure]
-    refs: ["OWASP ASVS 4.0 V7.4.1 (generic error messages)", "OWASP Top 10 2021 A05 (security misconfiguration)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
+    refs: ["OWASP ASVS 5.0 V16.5.1 (generic error messages)", "OWASP Top 10 2021 A05 (security misconfiguration)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
     tests: [RES-T07]
     en:
       title: No internal details in error responses
@@ -222,7 +222,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [error-message, correlation-id, support]
-    refs: ["RFC 9457 (Problem Details for HTTP APIs)", "OWASP ASVS 4.0 V7.4.1"]
+    refs: ["RFC 9457 (Problem Details for HTTP APIs)", "OWASP ASVS 5.0 V16.5.1 (generic error messages)"]
     tests: [RES-T07, OBS-T02]
     en:
       title: Reference number in server error messages
@@ -614,7 +614,7 @@ tests:
     priority: high
     execution: manual
     tags: [error-message, information-disclosure]
-    refs: ["OWASP ASVS 4.0 V7.4.1", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
+    refs: ["OWASP ASVS 5.0 V16.5.1 (generic error messages)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.7", "IEC 62443-4-2 CR 3.7"]
     en:
       title: Error messages for users and API clients
       description: Provokes user errors and server errors and reviews the resulting messages and responses.

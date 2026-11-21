@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cloud, shared-responsibility]
-    refs: ["ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)", "CSA Cloud Controls Matrix v4 STA-04"]
+    refs: ["ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)", "CSA Cloud Controls Matrix v4.0 STA-04"]
     tests: [SVCLD-T04]
     en:
       title: Shared responsibility matrix per service model
@@ -173,7 +173,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [cloud, encryption, key-management]
-    refs: ["CSA Cloud Controls Matrix v4 CEK-03", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["CSA Cloud Controls Matrix v4.0 CEK-08 (CSC key management capability)", "ISO/IEC 27001:2022 A.8.24"]
     tests: [SVCLD-T04]
     en:
       title: Customer-managed encryption keys for stored data
@@ -447,7 +447,7 @@ tests:
     priority: high
     execution: manual
     tags: [shared-responsibility, encryption]
-    refs: ["ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)", "CSA Cloud Controls Matrix v4 CEK-03"]
+    refs: ["ISO/IEC 27017:2026 (shared roles and responsibilities within a cloud computing environment)", "CSA Cloud Controls Matrix v4.0 CEK-03"]
     en:
       title: Responsibility matrix and revocation of a customer key
       description: Reviews the shared responsibility matrix and tests what happens when the customer revokes its own encryption key.

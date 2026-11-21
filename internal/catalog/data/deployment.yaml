@@ -196,7 +196,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [secrets, repository]
-    refs: ["OWASP ASVS 4.0 V2.10.4 (no secrets in source code)", "ISO/IEC 27001:2022 A.8.4 (access to source code)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-4-1 SM-7"]
+    refs: ["OWASP ASVS 5.0 V13.3.1 (secrets management solution)", "ISO/IEC 27001:2022 A.8.4 (access to source code)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-4-1 SM-7"]
     tests: [DEP-T08]
     en:
       title: No secrets in the source repository
@@ -608,7 +608,7 @@ tests:
     priority: critical
     execution: automated
     tags: [secrets, ci, scanning]
-    refs: ["OWASP ASVS 4.0 V2.10.4", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-4-1 SM-7"]
+    refs: ["OWASP ASVS 5.0 V13.3.1 (secrets management solution)", "ISO/IEC 27001:2022 A.5.17", "IEC 62443-4-1 SM-7"]
     en:
       title: Secret scanning of the repository
       description: A secret scanner (for example gitleaks) runs over the full history and as a pipeline check on new commits.

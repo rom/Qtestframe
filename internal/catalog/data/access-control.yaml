@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [authorisation, deny-by-default]
-    refs: ["OWASP ASVS 4.0 V4.1", "OWASP Top 10 2021 A01", "NIST SP 800-53 AC-3", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-862 (missing authorization)", "CWE-276 (incorrect default permissions)"]
+    refs: ["OWASP ASVS 5.0 V8.2.1 (function-level access)", "OWASP Top 10 2021 A01", "NIST SP 800-53 AC-3", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-862 (missing authorization)", "CWE-276 (incorrect default permissions)"]
     tests: [ACC-T01]
     en:
       title: Access is denied by default
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [authorisation, idor, object-level]
-    refs: ["OWASP ASVS 4.0 V4.2.1", "OWASP Top 10 2021 A01", "OWASP API Security Top 10 2023 API1", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-639 (authorization bypass through user-controlled key)", "CWE-863 (incorrect authorization)"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "OWASP Top 10 2021 A01", "OWASP API Security Top 10 2023 API1", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-639 (authorization bypass through user-controlled key)", "CWE-863 (incorrect authorization)"]
     tests: [ACC-T02]
     en:
       title: Object-level authorisation on every request
@@ -60,7 +60,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [authorisation, client-side]
-    refs: ["OWASP ASVS 4.0 V4.1.2", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "CWE-602 (client-side enforcement of server-side security)", "CWE-807 (reliance on untrusted inputs in a security decision)", "CWE-565 (reliance on cookies without validation and integrity checking)"]
+    refs: ["OWASP ASVS 5.0 V8.3.1 (authorization at a trusted service layer)", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "CWE-602 (client-side enforcement of server-side security)", "CWE-807 (reliance on untrusted inputs in a security decision)", "CWE-565 (reliance on cookies without validation and integrity checking)"]
     tests: [ACC-T03]
     en:
       title: Roles sent by the client are not trusted
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [least-privilege, provisioning]
-    refs: ["NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.8.2", "OWASP ASVS 4.0 V4.1.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)", "CWE-276 (incorrect default permissions)", "CWE-266 (incorrect privilege assignment)", "MITRE ATT&CK M1018 (user account management)"]
+    refs: ["NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.8.2", "OWASP ASVS 5.0 V8.2.1 (function-level access)", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)", "CWE-276 (incorrect default permissions)", "CWE-266 (incorrect privilege assignment)", "MITRE ATT&CK M1018 (user account management)"]
     tests: [ACC-T05]
     en:
       title: New accounts start with the least privileged role
@@ -126,7 +126,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [administrator, privileged-functions]
-    refs: ["OWASP ASVS 4.0 V4.3.1", "NIST SP 800-53 AC-6(9)", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "CWE-862 (missing authorization)", "CWE-269 (improper privilege management)", "MITRE ATT&CK T1098 (account manipulation)"]
+    refs: ["OWASP ASVS 5.0 V8.4.2 (administrative interfaces)", "NIST SP 800-53 AC-6(9)", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "CWE-862 (missing authorization)", "CWE-269 (improper privilege management)", "MITRE ATT&CK T1098 (account manipulation)"]
     tests: [ACC-T06]
     en:
       title: Administration functions need the administrator role
@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [multi-tenancy, tenant-isolation]
-    refs: ["OWASP ASVS 4.0 V4.2", "ISO/IEC 27001:2022 A.8.3", "OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "GDPR Art. 32(1)(b)", "CWE-639 (authorization bypass through user-controlled key)", "CWE-653 (improper isolation or compartmentalization)"]
+    refs: ["OWASP ASVS 5.0 V8.4.1 (cross-tenant controls)", "ISO/IEC 27001:2022 A.8.3", "OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "GDPR Art. 32(1)(b)", "CWE-639 (authorization bypass through user-controlled key)", "CWE-653 (improper isolation or compartmentalization)"]
     tests: [ACC-T08]
     en:
       title: Tenant data is isolated
@@ -192,7 +192,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [access-review, reporting]
-    refs: ["ISO/IEC 27001:2022 A.5.18", "NIST SP 800-53 AC-2(3)", "PCI DSS 4.0 Req. 7.2.4", "IEC 62443-3-3 SR 1.3", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "NIST SP 800-53 AC-2(3)", "PCI DSS v4.0.1 Req. 7.2.4", "IEC 62443-3-3 SR 1.3", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
     tests: [ACC-T09]
     en:
       title: Report for periodic access reviews
@@ -306,7 +306,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [dormant-accounts, identity-lifecycle]
-    refs: ["NIST SP 800-53 AC-2(3)", "PCI DSS 4.0.1 Req. 8.2.6", "ISO/IEC 27001:2022 A.5.18", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
+    refs: ["NIST SP 800-53 AC-2(3)", "PCI DSS v4.0.1 Req. 8.2.6", "ISO/IEC 27001:2022 A.5.18", "MITRE ATT&CK T1078 (valid accounts)", "MITRE ATT&CK M1018 (user account management)"]
     tests: [ACC-T14]
     en:
       title: Accounts unused for 90 days are disabled
@@ -376,7 +376,7 @@ tests:
     priority: critical
     execution: automated
     tags: [authorisation, deny-by-default]
-    refs: ["OWASP ASVS 4.0 V4.1", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-862 (missing authorization)", "CWE-276 (incorrect default permissions)"]
+    refs: ["OWASP ASVS 5.0 V8.2.1 (function-level access)", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)", "CWE-862 (missing authorization)", "CWE-276 (incorrect default permissions)"]
     en:
       title: Every endpoint refuses callers without permission
       description: A script calls every route from the API description without a session and with a user who has no role.

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [file-type, allow-list, content-sniffing]
-    refs: ["OWASP ASVS 4.0.3 §12.2 (file integrity)", "OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "MITRE ATT&CK T1505.003 (web shell)"]
+    refs: ["OWASP ASVS 5.0 V5.2.2 (file extension and content)", "OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5", "MITRE ATT&CK T1505.003 (web shell)"]
     tests: [UPLS-T01]
     en:
       title: Allow-list of file types checked against the content
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [storage, file-name, path-traversal]
-    refs: ["OWASP ASVS 4.0.3 §12.3 (file execution)", "CWE-22 (path traversal)", "ISO/IEC 27001:2022 A.8.28", "CWE-552 (files or directories accessible to external parties)", "MITRE ATT&CK T1505.003 (web shell)"]
+    refs: ["OWASP ASVS 5.0 V5.3.2 (generated file paths)", "CWE-22 (path traversal)", "ISO/IEC 27001:2022 A.8.28", "CWE-552 (files or directories accessible to external parties)", "MITRE ATT&CK T1505.003 (web shell)"]
     tests: [UPLS-T03]
     en:
       title: Files are stored under generated names outside the web root
@@ -134,7 +134,7 @@ requirements:
     obligation: must
     priority: high
     tags: [download, headers, xss]
-    refs: ["OWASP ASVS 4.0.3 §12.5.2", "OWASP HTTP Headers Cheat Sheet (X-Content-Type-Options)", "CWE-79 (cross-site scripting)"]
+    refs: ["OWASP ASVS 5.0 V3.2.1 (content rendered in the intended context)", "OWASP HTTP Headers Cheat Sheet (X-Content-Type-Options)", "CWE-79 (cross-site scripting)"]
     tests: [UPLS-T04]
     en:
       title: User files are delivered as downloads
@@ -178,7 +178,7 @@ requirements:
     obligation: must
     priority: high
     tags: [archive, zip-bomb, denial-of-service]
-    refs: ["OWASP ASVS 4.0.3 §12.1.2 (compressed files)", "CWE-409 (improper handling of highly compressed data)", "ISO/IEC 27001:2022 A.8.28", "MITRE ATT&CK T1499.004 (application or system exploitation)"]
+    refs: ["OWASP ASVS 5.0 V5.2.3 (compressed files)", "CWE-409 (improper handling of highly compressed data)", "ISO/IEC 27001:2022 A.8.28", "MITRE ATT&CK T1499.004 (application or system exploitation)"]
     tests: [UPLS-T05]
     en:
       title: Limits on unpacked archives
@@ -246,7 +246,7 @@ requirements:
     obligation: must
     priority: high
     tags: [download, authorisation, signed-url]
-    refs: ["OWASP ASVS 4.0.3 §4.2.1 (operation level access control)", "OWASP Top 10:2021 A01 (broken access control)", "ISO/IEC 27001:2022 A.8.3", "CWE-862 (missing authorization)", "CWE-1472 (generation of credential with long expiration)"]
+    refs: ["OWASP ASVS 5.0 V8.2.2 (data-specific access)", "OWASP Top 10:2021 A01 (broken access control)", "ISO/IEC 27001:2022 A.8.3", "CWE-862 (missing authorization)", "CWE-1472 (generation of credential with long expiration)"]
     tests: [UPLS-T07]
     en:
       title: Download links are checked and expire after 15 minutes
@@ -270,7 +270,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [file-name, xss, display]
-    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28", "CWE-116 (improper encoding or escaping of output)"]
+    refs: ["OWASP ASVS 5.0 V1.2.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28", "CWE-116 (improper encoding or escaping of output)"]
     tests: [UPLS-T08]
     en:
       title: Original file names are shown as plain text

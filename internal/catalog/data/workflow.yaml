@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [transitions, server-side, api]
-    refs: ["OWASP ASVS 5.0 V2 business logic", "OWASP Top 10 2021 A04"]
+    refs: ["OWASP ASVS 5.0 V2.3.1 (business logic step order)", "OWASP Top 10 2021 A04"]
     tests: [WFL-T01]
     en:
       title: Transition rules enforced on the server
@@ -422,7 +422,7 @@ tests:
     priority: high
     execution: manual
     tags: [states, transitions]
-    refs: ["OWASP ASVS 5.0 V2 business logic"]
+    refs: ["OWASP ASVS 5.0 V2.3.1 (business logic step order)"]
     en:
       title: Defined transitions offered and enforced
       description: Defines a workflow, checks the offered actions in the user interface and tries a forbidden transition through the API.

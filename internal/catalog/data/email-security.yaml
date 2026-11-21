@@ -58,7 +58,7 @@ requirements:
     obligation: should
     priority: high
     tags: [dmarc, reporting]
-    refs: ["RFC 7489 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
+    refs: ["RFC 9989 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     tests: [MAILS-T01, MAILS-T09]
     en:
       title: DMARC policy that rejects or quarantines
@@ -106,7 +106,7 @@ requirements:
     obligation: must
     priority: high
     tags: [header-injection, input-validation]
-    refs: ["CWE-93 (CRLF injection)", "OWASP ASVS 4.0.3 §5.2.3 (mail injection)", "ISO/IEC 27001:2022 A.8.28"]
+    refs: ["CWE-93 (CRLF injection)", "OWASP ASVS 5.0 V1.3.11 (mail injection)", "ISO/IEC 27001:2022 A.8.28"]
     tests: [MAILS-T03]
     en:
       title: No header injection in outgoing email
@@ -128,7 +128,7 @@ requirements:
     obligation: must
     priority: high
     tags: [html-email, xss, output-encoding]
-    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28", "CWE-116 (improper encoding or escaping of output)"]
+    refs: ["OWASP ASVS 5.0 V1.2.1 (output encoding)", "CWE-79 (cross-site scripting)", "ISO/IEC 27001:2022 A.8.28", "CWE-116 (improper encoding or escaping of output)"]
     tests: [MAILS-T03]
     en:
       title: User content is encoded in HTML email
@@ -150,7 +150,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [content, confidentiality]
-    refs: ["OWASP ASVS 4.0.3 §8.3.1", "GDPR Art. 32 (security of processing)", "ISO/IEC 27001:2022 A.5.14", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1114 (email collection)"]
+    refs: ["OWASP ASVS 5.0 V14.2.6 (minimum sensitive data)", "GDPR Art. 32 (security of processing)", "ISO/IEC 27001:2022 A.5.14", "CWE-312 (cleartext storage of sensitive information)", "MITRE ATT&CK T1114 (email collection)"]
     tests: [MAILS-T04]
     en:
       title: No passwords or confidential content in email
@@ -172,7 +172,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [invitation, links, expiry]
-    refs: ["OWASP ASVS 4.0.3 §2.5.1", "NIST SP 800-63B §6.1.2 (enrollment codes)", "ISO/IEC 27001:2022 A.5.17", "CWE-1472 (generation of credential with long expiration)"]
+    refs: ["OWASP ASVS 5.0 V6.4.1 (activation codes)", "NIST SP 800-63A-4 §3.8 (confirmation codes)", "ISO/IEC 27001:2022 A.5.17", "CWE-1472 (generation of credential with long expiration)"]
     tests: [MAILS-T05]
     en:
       title: Invitation links work once and expire after 7 days
@@ -268,7 +268,7 @@ requirements:
     obligation: must
     priority: high
     tags: [inbound-email, dmarc, reply-by-email]
-    refs: ["RFC 7489 §6.6 (mail receiver actions)", "RFC 6376", "ISO/IEC 27001:2022 A.5.14", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1684.002 (email spoofing)"]
+    refs: ["RFC 9989 §5.3 (mail receiver actions)", "RFC 6376", "ISO/IEC 27001:2022 A.5.14", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T10]
     en:
       title: Inbound email is authenticated before it changes data
@@ -290,7 +290,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [parked-domains, spf, dmarc]
-    refs: ["M3AAWG Protecting Parked Domains Best Common Practices", "RFC 7208", "RFC 7489", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)"]
+    refs: ["M3AAWG Protecting Parked Domains Best Common Practices", "RFC 7208", "RFC 9989 (DMARC)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T11]
     en:
       title: Domains that send no email say so
@@ -312,7 +312,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [dmarc-reports, monitoring]
-    refs: ["RFC 7489 §7 (DMARC feedback)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1684.002 (email spoofing)"]
+    refs: ["RFC 9990 (DMARC aggregate reporting)", "M3AAWG Email Authentication Recommended Best Practices", "ISO/IEC 27001:2022 A.8.16", "MITRE ATT&CK T1684.002 (email spoofing)"]
     tests: [MAILS-T12]
     en:
       title: Weekly review of DMARC aggregate reports
@@ -382,7 +382,7 @@ tests:
     priority: high
     execution: automated
     tags: [spf, dkim, dmarc, dns]
-    refs: ["RFC 7208", "RFC 6376", "RFC 7489", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
+    refs: ["RFC 7208", "RFC 6376", "RFC 9989 (DMARC)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     en:
       title: SPF, DKIM and DMARC of the sending domains
       description: Looks up the DNS records of each sending domain and checks the authentication results of a received test message.
@@ -634,7 +634,7 @@ tests:
     priority: medium
     execution: manual
     tags: [dmarc, reporting]
-    refs: ["RFC 7489 §7 (DMARC reporting)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
+    refs: ["RFC 9990 (DMARC aggregate reporting)", "ISO/IEC 27001:2022 A.5.14", "MITRE ATT&CK T1684.002 (email spoofing)", "MITRE ATT&CK T1566 (phishing)"]
     en:
       title: DMARC aggregate reports are received and read
       description: Checks that aggregate reports reach the report address and that unknown senders in them are followed up.
@@ -666,7 +666,7 @@ tests:
     priority: high
     execution: manual
     tags: [inbound-email, dmarc]
-    refs: ["RFC 7489 §6.6 (mail receiver actions)", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1684.002 (email spoofing)"]
+    refs: ["RFC 9989 §5.3 (mail receiver actions)", "CWE-290 (authentication bypass by spoofing)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     en:
       title: Forged replies do not add comments
       description: Sends a genuine and a forged reply to a notification email.
@@ -696,7 +696,7 @@ tests:
     priority: medium
     execution: automated
     tags: [parked-domains]
-    refs: ["RFC 7208", "RFC 7489", "MITRE ATT&CK T1684.002 (email spoofing)"]
+    refs: ["RFC 7208", "RFC 9989 (DMARC)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     en:
       title: Non-sending domains publish restrictive records
       description: A script looks up SPF and DMARC records for each registered domain that sends no email.
@@ -722,7 +722,7 @@ tests:
     priority: medium
     execution: manual
     tags: [dmarc-reports]
-    refs: ["RFC 7489 §7 (DMARC feedback)", "MITRE ATT&CK T1684.002 (email spoofing)"]
+    refs: ["RFC 9990 (DMARC aggregate reporting)", "MITRE ATT&CK T1684.002 (email spoofing)"]
     en:
       title: DMARC reports are reviewed and acted on
       description: Compares the DMARC aggregate reports of the last 4 weeks with the review log and tickets.

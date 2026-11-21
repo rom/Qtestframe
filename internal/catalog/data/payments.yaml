@@ -12,7 +12,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [card-data, pci-dss, storage]
-    refs: ["PCI DSS v4.0 Requirement 3.3.1 (sensitive authentication data not retained after authorisation)", "PCI DSS v4.0 Requirement 3.5.1 (PAN rendered unreadable)", "CWE-312 (cleartext storage of sensitive information)"]
+    refs: ["PCI DSS v4.0.1 Req. 3.3.1 (sensitive authentication data not retained after authorisation)", "PCI DSS v4.0.1 Req. 3.5.1 (PAN rendered unreadable)", "CWE-312 (cleartext storage of sensitive information)"]
     tests: [PAY-T01]
     en:
       title: No stored card numbers or security codes
@@ -34,7 +34,7 @@ requirements:
     obligation: should
     priority: high
     tags: [hosted-fields, pci-dss, scope]
-    refs: ["PCI DSS v4.0 SAQ A (eligibility criteria)", "PCI SSC Information Supplement: Best Practices for Securing E-commerce"]
+    refs: ["PCI DSS v4.0.1 SAQ A (eligibility criteria)", "PCI SSC Information Supplement: Best Practices for Securing E-commerce"]
     tests: [PAY-T01]
     en:
       title: Card details are entered in the provider's fields
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: high
     tags: [masking, display]
-    refs: ["PCI DSS v4.0 Requirement 3.4.1 (PAN masked when displayed)", "ISO/IEC 27001:2022 A.8.11", "CWE-359 (exposure of private personal information)"]
+    refs: ["PCI DSS v4.0.1 Req. 3.4.1 (PAN masked when displayed)", "ISO/IEC 27001:2022 A.8.11", "CWE-359 (exposure of private personal information)"]
     tests: [PAY-T02]
     en:
       title: Card numbers are masked when shown
@@ -100,7 +100,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [webhook, signature, replay]
-    refs: ["OWASP ASVS 4.0.3 §13.2.6", "PCI DSS v4.0 Requirement 6.2.4 (common software attacks)", "IEC 62443-3-3 SR 3.1", "CWE-347 (improper verification of cryptographic signature)", "CWE-294 (authentication bypass by capture-replay)"]
+    refs: ["OWASP ASVS 5.0 V4.1.5 (per-message signatures)", "PCI DSS v4.0.1 Req. 6.2.4 (common software attacks)", "IEC 62443-3-3 SR 3.1", "CWE-347 (improper verification of cryptographic signature)", "CWE-294 (authentication bypass by capture-replay)"]
     tests: [PAY-T04]
     en:
       title: Payment notifications are verified
@@ -192,7 +192,7 @@ requirements:
     obligation: must
     priority: high
     tags: [refund, validation]
-    refs: ["PCI DSS v4.0 Requirement 6.2.4 (business logic abuse)"]
+    refs: ["PCI DSS v4.0.1 Req. 6.2.4 (business logic abuse)"]
     tests: [PAY-T05, PAY-T09]
     en:
       title: Refunds cannot exceed the captured amount
@@ -214,7 +214,7 @@ requirements:
     obligation: must
     priority: high
     tags: [payment-page, scripts, integrity]
-    refs: ["PCI DSS v4.0 Requirement 6.4.3 (payment page scripts)", "PCI DSS v4.0 Requirement 11.6.1 (change and tamper detection)", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1059.007 (JavaScript)"]
+    refs: ["PCI DSS v4.0.1 Req. 6.4.3 (payment page scripts)", "PCI DSS v4.0.1 Req. 11.6.1 (change and tamper detection)", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1059.007 (JavaScript)"]
     tests: [PAY-T08]
     en:
       title: Scripts on the payment page are authorised and monitored
@@ -286,7 +286,7 @@ requirements:
     obligation: must
     priority: high
     tags: [api-keys, payment-provider, least-privilege]
-    refs: ["PCI DSS 4.0.1 Req. 7.2.5", "ISO/IEC 27001:2022 A.8.2", "OWASP Secrets Management Cheat Sheet", "CWE-250 (execution with unnecessary privileges)"]
+    refs: ["PCI DSS v4.0.1 Req. 7.2.5", "ISO/IEC 27001:2022 A.8.2", "OWASP Secrets Management Cheat Sheet", "CWE-250 (execution with unnecessary privileges)"]
     tests: [PAY-T11]
     en:
       title: Restricted keys for the payment provider
@@ -336,7 +336,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [pci-scope, compliance]
-    refs: ["PCI DSS 4.0.1 Req. 12.5.2", "PCI DSS 4.0.1 Req. 12.8.5"]
+    refs: ["PCI DSS v4.0.1 Req. 12.5.2", "PCI DSS v4.0.1 Req. 12.8.5"]
     tests: [PAY-T13]
     en:
       title: Yearly confirmation of the card data scope
@@ -360,7 +360,7 @@ tests:
     priority: critical
     execution: manual
     tags: [card-data, pci-dss, network]
-    refs: ["PCI DSS v4.0 Requirement 12.5.2 (scope confirmation)", "CWE-312 (cleartext storage of sensitive information)"]
+    refs: ["PCI DSS v4.0.1 Req. 12.5.2 (scope confirmation)", "CWE-312 (cleartext storage of sensitive information)"]
     en:
       title: Card data never reaches or stays in the system
       description: Captures the traffic of a test payment and scans the system's data stores for card numbers.
@@ -588,7 +588,7 @@ tests:
     priority: high
     execution: manual
     tags: [payment-page, scripts, csp]
-    refs: ["PCI DSS v4.0 Requirement 6.4.3", "PCI DSS v4.0 Requirement 11.6.1", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1059.007 (JavaScript)"]
+    refs: ["PCI DSS v4.0.1 Req. 6.4.3", "PCI DSS v4.0.1 Req. 11.6.1", "CWE-829 (inclusion of functionality from untrusted control sphere)", "MITRE ATT&CK T1059.007 (JavaScript)"]
     en:
       title: An unlisted script on the payment page is blocked and detected
       description: Adds a script that is not in the inventory to the payment page in staging and checks the browser and the change detection.
@@ -686,7 +686,7 @@ tests:
     priority: high
     execution: manual
     tags: [api-keys, payment-provider]
-    refs: ["PCI DSS 4.0.1 Req. 7.2.5", "CWE-250 (execution with unnecessary privileges)"]
+    refs: ["PCI DSS v4.0.1 Req. 7.2.5", "CWE-250 (execution with unnecessary privileges)"]
     en:
       title: Each service has a restricted provider key
       description: Reviews the payment provider's API keys and tries an operation outside a key's permissions.
@@ -746,7 +746,7 @@ tests:
     priority: medium
     execution: manual
     tags: [pci-scope]
-    refs: ["PCI DSS 4.0.1 Req. 12.5.2"]
+    refs: ["PCI DSS v4.0.1 Req. 12.5.2"]
     en:
       title: PCI DSS scope confirmation is current
       description: Reviews the latest scope confirmation against the change history of the payment flow.

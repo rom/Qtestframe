@@ -62,7 +62,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [configuration, visibility, masking]
-    refs: ["OWASP ASVS 4.0.3 §14.3 (unintended security disclosure)", "ISO/IEC 27001:2022 A.8.11"]
+    refs: ["OWASP ASVS 5.0 V13.4 (unintended information leakage)", "ISO/IEC 27001:2022 A.8.11"]
     tests: [FLAG-T01, FLAG-T08]
     en:
       title: Effective configuration is visible with secrets masked
@@ -246,7 +246,7 @@ requirements:
     obligation: must
     priority: high
     tags: [feature-flag, authorisation, server-side]
-    refs: ["OWASP ASVS 4.0.3 §4.1.1 (access control enforced on a trusted service layer)", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
+    refs: ["OWASP ASVS 5.0 V8.3.1 (authorization at a trusted service layer)", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     tests: [FLAG-T07]
     en:
       title: Flags that hide functions are also checked on the server

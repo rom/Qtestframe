@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sbom, dependency-inventory]
-    refs: ["OWASP ASVS 4.0 V14.2.5", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
+    refs: ["OWASP ASVS 5.0 V15.1.2 (software bill of materials)", "NIST SP 800-218 PS.3.2", "ISO/IEC 27001:2022 A.5.9", "CycloneDX 1.5", "SPDX 2.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1195.001 (compromise software dependencies and development tools)"]
     tests: [SUP-T01]
     en:
       title: Software bill of materials for each release
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [patching, critical-vulnerabilities]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["PCI DSS v4.0.1 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     tests: [SUP-T03]
     en:
       title: Critical vulnerabilities fixed within 7 days
@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [patching, high-vulnerabilities]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)"]
+    refs: ["PCI DSS v4.0.1 Req. 6.3.3", "ISO/IEC 27001:2022 A.8.8", "NIST SP 800-53 SI-2", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [SUP-T03]
     en:
       title: High vulnerabilities fixed within 30 days
@@ -188,7 +188,7 @@ requirements:
     obligation: should_not
     priority: medium
     tags: [end-of-life, unmaintained]
-    refs: ["OWASP Top 10 2021 A06", "OWASP ASVS 4.0 V14.2.1", "ISO/IEC 27001:2022 A.8.8", "CWE-1104 (use of unmaintained third-party components)"]
+    refs: ["OWASP Top 10 2021 A06", "OWASP ASVS 5.0 V15.2.1 (component update time frames)", "ISO/IEC 27001:2022 A.8.8", "CWE-1104 (use of unmaintained third-party components)"]
     tests: [SUP-T08]
     en:
       title: No end-of-life components
@@ -210,7 +210,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [container-images, base-image]
-    refs: ["NIST SP 800-190 §4.1", "ISO/IEC 27001:2022 A.8.8", "CWE-1395 (dependency on vulnerable third-party component)"]
+    refs: ["NIST SP 800-190 §4.1 (image countermeasures)", "ISO/IEC 27001:2022 A.8.8", "CWE-1395 (dependency on vulnerable third-party component)"]
     tests: [SUP-T09]
     en:
       title: Container images rebuilt every 30 days
@@ -254,7 +254,7 @@ requirements:
     obligation: must
     priority: high
     tags: [provenance, slsa, attestation]
-    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.3.1", "NIST SP 800-204D", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)"]
+    refs: ["SLSA v1.0 Build L2", "NIST SP 800-218 PS.3.2", "NIST SP 800-204D", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(f)", "CWE-494 (download of code without integrity check)", "MITRE ATT&CK T1195.002 (compromise software supply chain)"]
     tests: [SUP-T11]
     en:
       title: Signed build provenance for each release artefact
@@ -424,7 +424,7 @@ tests:
     priority: critical
     execution: manual
     tags: [patching]
-    refs: ["PCI DSS 4.0 Req. 6.3.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
+    refs: ["PCI DSS v4.0.1 Req. 6.3.3", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(a)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2", "IEC 62443-4-1 SUM-5", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(f)", "CWE-1395 (dependency on vulnerable third-party component)", "MITRE ATT&CK T1190 (exploit public-facing application)"]
     en:
       title: Patch times meet the deadlines
       description: Reviews the vulnerability records of the last 12 months against the patch deadlines.
@@ -592,7 +592,7 @@ tests:
     priority: medium
     execution: automated
     tags: [container-images]
-    refs: ["NIST SP 800-190 §4.1", "CWE-1395 (dependency on vulnerable third-party component)"]
+    refs: ["NIST SP 800-190 §4.1 (image countermeasures)", "CWE-1395 (dependency on vulnerable third-party component)"]
     en:
       title: Running images are less than 30 days old
       description: A script reads the build date and base image of every image running in production.

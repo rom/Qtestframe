@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [tenant-context, authorisation]
-    refs: ["OWASP ASVS 4.0.3 §4.1.2", "OWASP Top 10:2021 A01 (broken access control)", "CSA Cloud Controls Matrix v4 DSP-17", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "CWE-639 (authorization bypass through user-controlled key)", "CWE-807 (reliance on untrusted inputs in a security decision)"]
+    refs: ["OWASP ASVS 5.0 V8.4.1 (cross-tenant controls)", "OWASP Top 10:2021 A01 (broken access control)", "CSA Cloud Controls Matrix v4.0 DSP-17", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "CWE-639 (authorization bypass through user-controlled key)", "CWE-807 (reliance on untrusted inputs in a security decision)"]
     tests: [TEN-T01]
     en:
       title: The tenant comes from the authenticated session
@@ -126,7 +126,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [encryption, keys]
-    refs: ["NIST SP 800-57 Part 1 Rev. 5 §6.2", "CSA Cloud Controls Matrix v4 CEK-03", "ISO/IEC 27001:2022 A.8.24"]
+    refs: ["NIST SP 800-57 Part 1 Rev. 5 §6.2", "CSA Cloud Controls Matrix v4.0 CEK-03", "ISO/IEC 27001:2022 A.8.24"]
     tests: [TEN-T05]
     en:
       title: Separate encryption key for each tenant
@@ -242,7 +242,7 @@ requirements:
     obligation: should
     priority: high
     tags: [support-access, approval]
-    refs: ["ISO/IEC 27001:2022 A.8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09", "IEC 62443-2-4:2023 SP.07 (remote access)", "MITRE ATT&CK T1199 (trusted relationship)"]
+    refs: ["ISO/IEC 27001:2022 A.8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4.0 IAM-09", "IEC 62443-2-4:2023 SP.07 (remote access)", "MITRE ATT&CK T1199 (trusted relationship)"]
     tests: [TEN-T08]
     en:
       title: Support access to a tenant needs its approval
@@ -270,7 +270,7 @@ requirements:
     obligation: must
     priority: high
     tags: [data-residency, region]
-    refs: ["CSA Cloud Controls Matrix v4 DSP-19", "ISO/IEC 27018:2025 (geographical location of PII)", "GDPR Art. 44", "ISO/IEC 27001:2022 A.5.34"]
+    refs: ["CSA Cloud Controls Matrix v4.0 DSP-19", "ISO/IEC 27018:2025 (geographical location of PII)", "GDPR Art. 44", "ISO/IEC 27001:2022 A.5.34"]
     tests: [TEN-T10]
     en:
       title: Tenant data stays in the chosen region
@@ -292,7 +292,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [audit-log, tenant-administration]
-    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)", "CSA Cloud Controls Matrix v4 LOG", "ISO/IEC 27001:2022 A.8.15", "MITRE ATT&CK T1078 (valid accounts)"]
+    refs: ["ISO/IEC 27017:2026 (monitoring of cloud services)", "CSA Cloud Controls Matrix v4.0 LOG", "ISO/IEC 27001:2022 A.8.15", "MITRE ATT&CK T1078 (valid accounts)"]
     tests: [TEN-T11]
     en:
       title: Tenant administrators read their own audit log
@@ -658,7 +658,7 @@ tests:
     priority: high
     execution: manual
     tags: [data-residency]
-    refs: ["CSA Cloud Controls Matrix v4 DSP-19"]
+    refs: ["CSA Cloud Controls Matrix v4.0 DSP-19"]
     en:
       title: All copies of a tenant's data are in its region
       description: Creates a tenant in one region and checks where each copy of its data is stored.

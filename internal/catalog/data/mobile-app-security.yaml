@@ -101,7 +101,7 @@ requirements:
     obligation: must
     priority: high
     tags: [biometrics, keystore, local-authentication]
-    refs: ["OWASP MASVS-AUTH-2", "ISO/IEC 27001:2022 A.8.5", "NIST SP 800-63B-4 (biometrics)", "MITRE ATT&CK T1617 (hooking)"]
+    refs: ["OWASP MASVS-AUTH-2", "ISO/IEC 27001:2022 A.8.5", "NIST SP 800-63B-4 §3.2.3 (use of biometrics)", "MITRE ATT&CK T1617 (hooking)"]
     tests: [MOBSEC-T05]
     en:
       title: Biometric unlock bound to a key in the key store
