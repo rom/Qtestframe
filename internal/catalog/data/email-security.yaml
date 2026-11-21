@@ -1,0 +1,517 @@
+area: email-security
+prefix: MAILS
+group: security
+name: {en: Email and messaging security, sv: Säkerhet för e-post och meddelanden}
+description:
+  en: Sender authentication with SPF, DKIM and DMARC, encrypted transport, header injection, the content of outgoing messages, links, bounces, unsubscribe and sending limits.
+  sv: Avsändarautentisering med SPF, DKIM och DMARC, krypterad överföring, injektion i huvuden, innehållet i utgående meddelanden, länkar, studsar, avregistrering och sändningsgränser.
+
+requirements:
+  - id: MAILS-01
+    type: security
+    obligation: must
+    priority: high
+    tags: [spf, dns, spoofing]
+    refs: ["RFC 7208 (SPF)", "M3AAWG Email Authentication Recommended Best Practices"]
+    tests: [MAILS-T01]
+    en:
+      title: SPF record for each sending domain
+      description: Each domain that the system sends email from MUST publish an SPF record that lists only the services sending its mail and ends with "-all".
+      rationale: Without SPF, anyone can send mail that claims to come from the domain, and receivers cannot tell real messages from phishing.
+      criteria:
+        - method: test
+          text: A DNS lookup of each sending domain returns one SPF record ending in -all with at most 10 DNS lookups, and test mail passes SPF at two large mailbox providers.
+    sv:
+      title: SPF-post för varje avsändardomän
+      description: Varje domän som systemet skickar e-post från SKA publicera en SPF-post som bara anger tjänsterna som skickar domänens e-post och slutar med "-all".
+      rationale: Utan SPF kan vem som helst skicka e-post som påstås komma från domänen, och mottagarna kan inte skilja äkta meddelanden från nätfiske.
+      criteria:
+        - method: test
+          text: En DNS-uppslagning av varje avsändardomän ger en SPF-post som slutar med -all och kräver högst 10 DNS-uppslagningar, och testmeddelanden godkänns i SPF hos två stora e-postleverantörer.
+
+  - id: MAILS-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [dkim, signing]
+    refs: ["RFC 6376 (DKIM)", "RFC 8301 (cryptographic algorithm and key usage update to DKIM)"]
+    tests: [MAILS-T01]
+    en:
+      title: DKIM signature with a key of at least 2048 bits
+      description: The system MUST sign each outgoing email with DKIM using an RSA key of at least 2048 bits or an Ed25519 key, aligned with the From domain.
+      rationale: The signature proves that the message comes from the domain and was not changed on the way.
+      criteria:
+        - method: test
+          text: The headers of a received test message show dkim=pass for the From domain, and the published key is at least 2048 bits.
+          threshold: "RSA ≥ 2048 bits"
+    sv:
+      title: DKIM-signatur med en nyckel på minst 2048 bitar
+      description: Systemet SKA signera varje utgående e-postmeddelande med DKIM med en RSA-nyckel på minst 2048 bitar eller en Ed25519-nyckel, i linje med From-domänen.
+      rationale: Signaturen visar att meddelandet kommer från domänen och inte har ändrats på vägen.
+      criteria:
+        - method: test
+          text: Huvudena i ett mottaget testmeddelande visar dkim=pass för From-domänen, och den publicerade nyckeln är minst 2048 bitar.
+          threshold: "RSA ≥ 2048 bitar"
+
+  - id: MAILS-03
+    type: security
+    obligation: should
+    priority: high
+    tags: [dmarc, reporting]
+    refs: ["RFC 7489 (DMARC)", "M3AAWG Email Authentication Recommended Best Practices"]
+    tests: [MAILS-T01]
+    en:
+      title: DMARC policy that rejects or quarantines
+      description: Each sending domain SHOULD publish a DMARC record with the policy reject or quarantine and an address for aggregate reports.
+      rationale: DMARC tells receivers to stop mail that fails SPF and DKIM, and the reports show who sends in the domain's name.
+      criteria:
+        - method: test
+          text: The DMARC record of each sending domain has p=reject or p=quarantine and a rua address, and aggregate reports arrive at that address.
+    sv:
+      title: DMARC-policy som avvisar eller sätter i karantän
+      description: Varje avsändardomän BÖR publicera en DMARC-post med policyn reject eller quarantine och en adress för sammanställda rapporter.
+      rationale: DMARC talar om för mottagarna att stoppa e-post som inte klarar SPF och DKIM, och rapporterna visar vem som skickar i domänens namn.
+      criteria:
+        - method: test
+          text: DMARC-posten för varje avsändardomän har p=reject eller p=quarantine och en rua-adress, och sammanställda rapporter kommer till den adressen.
+
+  - id: MAILS-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [tls, smtp, mta-sts]
+    refs: ["RFC 3207 (SMTP STARTTLS)", "RFC 8461 (MTA-STS)", "RFC 8460 (SMTP TLS reporting)"]
+    tests: [MAILS-T02]
+    en:
+      title: Encrypted transport of email
+      description: The system MUST deliver outgoing email over TLS 1.2 or later to each receiving server that offers STARTTLS, and send no credentials over unencrypted SMTP.
+      rationale: Messages with invitations, notifications and links travel through networks that the organisation does not control.
+      criteria:
+        - method: test
+          text: The received headers of test messages to a server with STARTTLS show TLS 1.2 or later, and the connection to the relay uses TLS before authentication.
+        - method: inspection
+          text: The receiving domains publish an MTA-STS policy in enforce mode.
+    sv:
+      title: Krypterad överföring av e-post
+      description: Systemet SKA leverera utgående e-post över TLS 1.2 eller senare till varje mottagande server som erbjuder STARTTLS och skicka inga inloggningsuppgifter över okrypterad SMTP.
+      rationale: Meddelanden med inbjudningar, aviseringar och länkar passerar nät som organisationen inte styr över.
+      criteria:
+        - method: test
+          text: Received-huvudena i testmeddelanden till en server med STARTTLS visar TLS 1.2 eller senare, och anslutningen till reläservern använder TLS före autentiseringen.
+        - method: inspection
+          text: De mottagande domänerna publicerar en MTA-STS-policy i läget enforce.
+
+  - id: MAILS-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [header-injection, input-validation]
+    refs: ["CWE-93 (CRLF injection)", "OWASP ASVS 4.0.3 §5.2.3 (mail injection)"]
+    tests: [MAILS-T03]
+    en:
+      title: No header injection in outgoing email
+      description: The system MUST reject or remove carriage return and line feed characters in each value placed in an email header, such as subject, recipient and sender name.
+      rationale: A line break in a header value lets an attacker add recipients or headers and use the system to send spam or phishing.
+      criteria:
+        - method: test
+          text: A display name containing a line break followed by a Bcc header produces a message without the extra recipient.
+    sv:
+      title: Ingen injektion i huvuden i utgående e-post
+      description: Systemet SKA avvisa eller ta bort vagnretur- och radmatningstecken i varje värde som placeras i ett e-posthuvud, till exempel ämne, mottagare och avsändarnamn.
+      rationale: En radbrytning i ett huvudvärde låter en angripare lägga till mottagare eller huvuden och använda systemet för att skicka skräppost eller nätfiske.
+      criteria:
+        - method: test
+          text: Ett visningsnamn med en radbrytning följd av ett Bcc-huvud ger ett meddelande utan den extra mottagaren.
+
+  - id: MAILS-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [html-email, xss, output-encoding]
+    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79"]
+    tests: [MAILS-T03]
+    en:
+      title: User content is encoded in HTML email
+      description: The system MUST HTML-encode user-supplied text, such as names, titles and comments, before inserting it into an HTML email.
+      rationale: Unencoded markup lets one user put fake links, forms or images into messages that look as if the system sent them.
+      criteria:
+        - method: test
+          text: A comment containing a link tag and an image tag is shown as literal text in the notification email.
+    sv:
+      title: Användarinnehåll kodas i HTML-e-post
+      description: Systemet SKA HTML-koda text som användare har angett, till exempel namn, rubriker och kommentarer, innan den infogas i ett HTML-e-postmeddelande.
+      rationale: Okodad märkning låter en användare lägga in falska länkar, formulär eller bilder i meddelanden som ser ut att komma från systemet.
+      criteria:
+        - method: test
+          text: En kommentar som innehåller en länktagg och en bildtagg visas som bokstavlig text i aviseringsmeddelandet.
+
+  - id: MAILS-07
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [content, confidentiality]
+    refs: ["OWASP ASVS 4.0.3 §8.3.1", "GDPR Art. 32 (security of processing)"]
+    tests: [MAILS-T04]
+    en:
+      title: No passwords or confidential content in email
+      description: Outgoing email MUST NOT contain passwords or the content of records classified as confidential, and links to the record in the system instead.
+      rationale: Email is stored in many mailboxes, forwarded and indexed outside the organisation's control.
+      criteria:
+        - method: test
+          text: The welcome, password reset and notification emails for a confidential record contain no password and no text of the record, only a link.
+    sv:
+      title: Inga lösenord eller konfidentiellt innehåll i e-post
+      description: Utgående e-post SKA INTE innehålla lösenord eller innehållet i poster som klassats som konfidentiella, utan länka till posten i systemet.
+      rationale: E-post lagras i många brevlådor, vidarebefordras och indexeras utanför organisationens kontroll.
+      criteria:
+        - method: test
+          text: Välkomstmeddelandet, meddelandet om återställning av lösenord och aviseringen för en konfidentiell post innehåller inget lösenord och ingen text ur posten, bara en länk.
+
+  - id: MAILS-08
+    type: security
+    obligation: should
+    priority: medium
+    tags: [invitation, links, expiry]
+    refs: ["OWASP ASVS 4.0.3 §2.5.1", "NIST SP 800-63B §6.1.2 (enrollment codes)"]
+    tests: [MAILS-T05]
+    en:
+      title: Invitation links work once and expire after 7 days
+      description: Invitation links sent by email SHOULD be valid for one use and expire 7 days after they were sent.
+      rationale: Invitations are forwarded and left in mailboxes, and an old link must not let someone else join the organisation.
+      criteria:
+        - method: test
+          text: A used invitation link and an unused link older than 7 days both show a message that the invitation is no longer valid.
+          threshold: "1 use, ≤ 7 days"
+    sv:
+      title: Inbjudningslänkar fungerar en gång och slutar gälla efter 7 dagar
+      description: Inbjudningslänkar som skickas med e-post BÖR gälla för en användning och sluta gälla 7 dagar efter att de skickades.
+      rationale: Inbjudningar vidarebefordras och blir liggande i brevlådor, och en gammal länk ska inte släppa in någon annan i organisationen.
+      criteria:
+        - method: test
+          text: En använd inbjudningslänk och en oanvänd länk som är äldre än 7 dagar visar båda ett meddelande om att inbjudan inte längre gäller.
+          threshold: "1 användning, ≤ 7 dagar"
+
+  - id: MAILS-09
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [bounce, deliverability]
+    refs: ["RFC 3464 (delivery status notifications)", "M3AAWG Sender Best Common Practices"]
+    tests: [MAILS-T06]
+    en:
+      title: Sending stops after repeated hard bounces
+      description: The system SHOULD stop sending email to an address after 3 hard bounces and show the address as undeliverable to the user's administrator.
+      rationale: Repeated mail to dead addresses lowers the sender's reputation, so that mail to real recipients ends up as spam.
+      criteria:
+        - method: test
+          text: After 3 hard bounces from a test address, no further message is sent to it and the user list marks it as undeliverable.
+          threshold: "3 hard bounces"
+    sv:
+      title: Utskicken upphör efter upprepade hårda studsar
+      description: Systemet BÖR sluta skicka e-post till en adress efter 3 hårda studsar och visa adressen som omöjlig att leverera till för användarens administratör.
+      rationale: Upprepade utskick till döda adresser sänker avsändarens rykte, så att e-post till riktiga mottagare hamnar som skräppost.
+      criteria:
+        - method: test
+          text: Efter 3 hårda studsar från en testadress skickas inga fler meddelanden dit och användarlistan markerar adressen som omöjlig att leverera till.
+          threshold: "3 hårda studsar"
+
+  - id: MAILS-10
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [unsubscribe, bulk-email]
+    refs: ["RFC 8058 (one-click unsubscribe)", "ePrivacy Directive 2002/58/EC Art. 13", "Swedish Marketing Act (2008:486) §19"]
+    tests: [MAILS-T07]
+    en:
+      title: One-click unsubscribe from non-transactional email
+      description: Each newsletter and other non-transactional email MUST carry a List-Unsubscribe header with one-click unsubscribe that the system honours within 2 days.
+      rationale: Receivers expect to opt out without signing in, and large mailbox providers reject bulk mail that does not offer it.
+      criteria:
+        - method: test
+          text: A newsletter test message has List-Unsubscribe and List-Unsubscribe-Post headers, and after a one-click request no further newsletter is sent to the address.
+          threshold: "≤ 2 days"
+    sv:
+      title: Avregistrering med ett klick från icke-transaktionell e-post
+      description: Varje nyhetsbrev och annan icke-transaktionell e-post SKA ha ett List-Unsubscribe-huvud med avregistrering med ett klick som systemet verkställer inom 2 dagar.
+      rationale: Mottagare förväntar sig att kunna avregistrera sig utan att logga in, och stora e-postleverantörer avvisar massutskick som inte erbjuder det.
+      criteria:
+        - method: test
+          text: Ett testnyhetsbrev har huvudena List-Unsubscribe och List-Unsubscribe-Post, och efter en begäran med ett klick skickas inga fler nyhetsbrev till adressen.
+          threshold: "≤ 2 dagar"
+
+  - id: MAILS-11
+    type: security
+    obligation: should
+    priority: medium
+    tags: [rate-limit, abuse]
+    refs: ["OWASP Abuse Case Cheat Sheet", "M3AAWG Sender Best Common Practices"]
+    tests: [MAILS-T08]
+    en:
+      title: Limit on email to external addresses per user
+      description: The system SHOULD send at most 50 emails per hour to external addresses as a result of one user's actions, such as invitations and shares.
+      rationale: Invitation and share functions are abused to send spam through a trusted sender, which damages its reputation for every customer.
+      criteria:
+        - method: test
+          text: When a user sends 60 invitations within one hour, the 51st and later are refused with a message, and the administrator is notified.
+          threshold: "≤ 50 per user per hour"
+    sv:
+      title: Gräns för e-post till externa adresser per användare
+      description: Systemet BÖR skicka högst 50 e-postmeddelanden per timme till externa adresser till följd av en användares åtgärder, till exempel inbjudningar och delningar.
+      rationale: Funktioner för inbjudan och delning missbrukas för att skicka skräppost via en betrodd avsändare, vilket skadar dess rykte för alla kunder.
+      criteria:
+        - method: test
+          text: När en användare skickar 60 inbjudningar inom en timme avvisas den 51:a och senare med ett meddelande, och administratören aviseras.
+          threshold: "≤ 50 per användare och timme"
+
+tests:
+  - id: MAILS-T01
+    priority: high
+    execution: automated
+    tags: [spf, dkim, dmarc, dns]
+    refs: ["RFC 7208", "RFC 6376", "RFC 7489"]
+    en:
+      title: SPF, DKIM and DMARC of the sending domains
+      description: Looks up the DNS records of each sending domain and checks the authentication results of a received test message.
+      preconditions: The list of sending domains; test mailboxes at two large mailbox providers; a DNS lookup tool.
+      expected: SPF ends in -all within 10 lookups, DKIM uses a key of at least 2048 bits and passes, and DMARC is reject or quarantine with a report address.
+      steps:
+        - action: Look up the TXT records of each sending domain and evaluate the SPF record.
+          expected: There is exactly one SPF record, it ends with -all and needs at most 10 DNS lookups.
+        - action: Look up the DKIM selector record and read the key length.
+          expected: The key is RSA of at least 2048 bits or Ed25519.
+        - action: Look up the _dmarc record.
+          expected: The policy is p=reject or p=quarantine and there is a rua address.
+        - action: Send a test message to each test mailbox and read the Authentication-Results header.
+          expected: The header shows spf=pass, dkim=pass and dmarc=pass for the From domain.
+    sv:
+      title: SPF, DKIM och DMARC för avsändardomänerna
+      description: Slår upp DNS-posterna för varje avsändardomän och kontrollerar autentiseringsresultatet för ett mottaget testmeddelande.
+      preconditions: Listan över avsändardomäner; testbrevlådor hos två stora e-postleverantörer; ett verktyg för DNS-uppslagning.
+      expected: SPF slutar med -all inom 10 uppslagningar, DKIM använder en nyckel på minst 2048 bitar och godkänns, och DMARC är reject eller quarantine med en rapportadress.
+      steps:
+        - action: Slå upp TXT-posterna för varje avsändardomän och utvärdera SPF-posten.
+          expected: Det finns exakt en SPF-post, den slutar med -all och kräver högst 10 DNS-uppslagningar.
+        - action: Slå upp DKIM-selektorns post och läs nyckellängden.
+          expected: Nyckeln är RSA på minst 2048 bitar eller Ed25519.
+        - action: Slå upp posten _dmarc.
+          expected: Policyn är p=reject eller p=quarantine och det finns en rua-adress.
+        - action: Skicka ett testmeddelande till varje testbrevlåda och läs huvudet Authentication-Results.
+          expected: Huvudet visar spf=pass, dkim=pass och dmarc=pass för From-domänen.
+
+  - id: MAILS-T02
+    priority: high
+    execution: manual
+    tags: [tls, smtp, mta-sts]
+    refs: ["RFC 8461"]
+    en:
+      title: Outgoing email is sent over TLS
+      description: Sends test messages and inspects the transport of each hop and the MTA-STS policy of the receiving domains.
+      preconditions: A test mailbox on a server that offers STARTTLS; access to the relay connection settings; the receiving domains of the organisation.
+      expected: Each hop uses TLS 1.2 or later, authentication to the relay happens after TLS, and MTA-STS is in enforce mode.
+      steps:
+        - action: Send a test message and read the Received headers in the test mailbox.
+          expected: Each hop that the system controls shows TLS 1.2 or later.
+        - action: Capture the connection from the application to the mail relay.
+          expected: The connection is encrypted before the AUTH command is sent.
+        - action: Fetch https://mta-sts.<domain>/.well-known/mta-sts.txt for each receiving domain.
+          expected: The policy has mode enforce and lists the domain's mail servers.
+    sv:
+      title: Utgående e-post skickas över TLS
+      description: Skickar testmeddelanden och granskar överföringen i varje steg och MTA-STS-policyn för de mottagande domänerna.
+      preconditions: En testbrevlåda på en server som erbjuder STARTTLS; åtkomst till inställningarna för anslutningen till reläservern; organisationens mottagande domäner.
+      expected: Varje steg använder TLS 1.2 eller senare, autentiseringen mot reläservern sker efter TLS, och MTA-STS är i läget enforce.
+      steps:
+        - action: Skicka ett testmeddelande och läs Received-huvudena i testbrevlådan.
+          expected: Varje steg som systemet styr visar TLS 1.2 eller senare.
+        - action: Fånga anslutningen från applikationen till reläservern.
+          expected: Anslutningen är krypterad innan kommandot AUTH skickas.
+        - action: Hämta https://mta-sts.<domän>/.well-known/mta-sts.txt för varje mottagande domän.
+          expected: Policyn har läget enforce och anger domänens e-postservrar.
+
+  - id: MAILS-T03
+    priority: high
+    execution: automated
+    tags: [header-injection, html-email]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.7.10 (testing for IMAP/SMTP injection)"]
+    en:
+      title: Header injection and markup in notification email
+      description: Uses a display name with a line break and a comment with HTML tags, and inspects the resulting email.
+      preconditions: A test user whose display name can be changed; a mail catcher that captures all outgoing email in the test environment.
+      expected: The message has no extra header or recipient, and the HTML tags are shown as text.
+      steps:
+        - action: Set the user's display name to a value with a line break followed by a Bcc header, then trigger a notification from that user.
+          expected: The name is rejected, or the captured message has the name on one line and no Bcc header.
+          data: "Alice\\r\\nBcc: victim@example.com"
+        - action: Add a comment with a link tag and an image tag to an item that sends a notification.
+          expected: The captured HTML message shows the tags as literal text and contains no link or image from the comment.
+          data: "<a href=\"https://evil.example\">Click</a><img src=\"https://evil.example/x.png\">"
+    sv:
+      title: Injektion i huvuden och märkning i aviseringar
+      description: Använder ett visningsnamn med en radbrytning och en kommentar med HTML-taggar och granskar det e-postmeddelande som skapas.
+      preconditions: En testanvändare vars visningsnamn kan ändras; en e-postfångare som fångar all utgående e-post i testmiljön.
+      expected: Meddelandet har inget extra huvud eller extra mottagare, och HTML-taggarna visas som text.
+      steps:
+        - action: Sätt användarens visningsnamn till ett värde med en radbrytning följd av ett Bcc-huvud och utlös sedan en avisering från användaren.
+          expected: Namnet avvisas, eller så har det fångade meddelandet namnet på en rad och inget Bcc-huvud.
+          data: "Alice\\r\\nBcc: victim@example.com"
+        - action: Lägg till en kommentar med en länktagg och en bildtagg på en post som skickar en avisering.
+          expected: Det fångade HTML-meddelandet visar taggarna som bokstavlig text och innehåller ingen länk eller bild från kommentaren.
+          data: "<a href=\"https://evil.example\">Click</a><img src=\"https://evil.example/x.png\">"
+
+  - id: MAILS-T04
+    priority: high
+    execution: manual
+    tags: [content, confidentiality]
+    refs: []
+    en:
+      title: Outgoing email contains no passwords or confidential text
+      description: Triggers the welcome, password reset and record notification emails and reads their content.
+      preconditions: A mail catcher in the test environment; a record classified as confidential with a known sentence in its description.
+      expected: No email contains a password or the known sentence, and each links to the system.
+      steps:
+        - action: Create a new user and read the welcome email.
+          expected: It contains a link to set a password and no password.
+        - action: Request a password reset and read the email.
+          expected: It contains a reset link and no current or new password.
+        - action: Change the confidential record so that its watchers are notified, and read the notification.
+          expected: It names the record and links to it, and the known sentence is not in the message.
+          data: "known sentence: The merger is planned for May."
+    sv:
+      title: Utgående e-post innehåller inga lösenord eller konfidentiell text
+      description: Utlöser välkomstmeddelandet, meddelandet om återställning av lösenord och aviseringen om en post och läser innehållet.
+      preconditions: En e-postfångare i testmiljön; en post som klassats som konfidentiell med en känd mening i beskrivningen.
+      expected: Inget meddelande innehåller ett lösenord eller den kända meningen, och varje meddelande länkar till systemet.
+      steps:
+        - action: Skapa en ny användare och läs välkomstmeddelandet.
+          expected: Det innehåller en länk för att välja lösenord och inget lösenord.
+        - action: Begär återställning av lösenord och läs meddelandet.
+          expected: Det innehåller en återställningslänk och inget nuvarande eller nytt lösenord.
+        - action: Ändra den konfidentiella posten så att dess bevakare aviseras, och läs aviseringen.
+          expected: Den namnger posten och länkar till den, och den kända meningen finns inte i meddelandet.
+          data: "känd mening: Sammanslagningen planeras till maj."
+
+  - id: MAILS-T05
+    priority: medium
+    execution: manual
+    tags: [invitation, expiry]
+    refs: []
+    en:
+      title: Invitation links are single-use and expire
+      description: Uses an invitation link twice and opens one that is older than 7 days.
+      preconditions: An administrator who can invite users; two test mailboxes; the test clock can be moved forward.
+      expected: A link works once, and an unused link stops working after 7 days.
+      steps:
+        - action: Invite test user 1 and accept the invitation with the link.
+          expected: The account is created and joins the organisation.
+        - action: Open the same link again in a private browser window.
+          expected: A message says that the invitation is no longer valid.
+        - action: Invite test user 2, move the clock 7 days and 1 minute forward and open the link.
+          expected: A message says that the invitation has expired, and no account is created.
+          data: "sent + 7 d 1 min"
+    sv:
+      title: Inbjudningslänkar gäller en gång och slutar gälla
+      description: Använder en inbjudningslänk två gånger och öppnar en som är äldre än 7 dagar.
+      preconditions: En administratör som kan bjuda in användare; två testbrevlådor; testklockan kan flyttas fram.
+      expected: En länk fungerar en gång, och en oanvänd länk slutar fungera efter 7 dagar.
+      steps:
+        - action: Bjud in testanvändare 1 och godta inbjudan med länken.
+          expected: Kontot skapas och ansluts till organisationen.
+        - action: Öppna samma länk igen i ett privat webbläsarfönster.
+          expected: Ett meddelande säger att inbjudan inte längre gäller.
+        - action: Bjud in testanvändare 2, flytta klockan 7 dagar och 1 minut framåt och öppna länken.
+          expected: Ett meddelande säger att inbjudan har gått ut, och inget konto skapas.
+          data: "skickad + 7 d 1 min"
+
+  - id: MAILS-T06
+    priority: medium
+    execution: automated
+    tags: [bounce]
+    refs: []
+    en:
+      title: Hard bounces stop further email
+      description: Simulates three hard bounces for an address and checks that sending stops and the address is marked.
+      preconditions: A test user whose address returns a permanent failure; the bounce handling of the email provider is connected to the test environment.
+      expected: After the third hard bounce no message is sent, and the address is shown as undeliverable.
+      steps:
+        - action: Trigger three notifications to the test user and let each one bounce with a permanent failure.
+          expected: The system records three hard bounces for the address.
+          data: "SMTP 550 5.1.1 user unknown"
+        - action: Trigger a fourth notification.
+          expected: No message is handed to the email provider for the address.
+        - action: Open the user list as an administrator.
+          expected: The user's address is marked as undeliverable.
+    sv:
+      title: Hårda studsar stoppar fler utskick
+      description: Simulerar tre hårda studsar för en adress och kontrollerar att utskicken upphör och att adressen markeras.
+      preconditions: En testanvändare vars adress ger ett permanent fel; e-postleverantörens hantering av studsar är kopplad till testmiljön.
+      expected: Efter den tredje hårda studsen skickas inga meddelanden, och adressen visas som omöjlig att leverera till.
+      steps:
+        - action: Utlös tre aviseringar till testanvändaren och låt var och en studsa med ett permanent fel.
+          expected: Systemet registrerar tre hårda studsar för adressen.
+          data: "SMTP 550 5.1.1 user unknown"
+        - action: Utlös en fjärde avisering.
+          expected: Inget meddelande lämnas till e-postleverantören för adressen.
+        - action: Öppna användarlistan som administratör.
+          expected: Användarens adress är markerad som omöjlig att leverera till.
+
+  - id: MAILS-T07
+    priority: medium
+    execution: automated
+    tags: [unsubscribe]
+    refs: ["RFC 8058"]
+    en:
+      title: One-click unsubscribe from a newsletter
+      description: Sends a newsletter, reads its headers and sends the one-click unsubscribe request.
+      preconditions: A test subscriber of the newsletter; a mail catcher; a script that can send an HTTPS POST.
+      expected: The headers are present, and after the request no further newsletter reaches the subscriber.
+      steps:
+        - action: Send a newsletter and read the headers of the captured message.
+          expected: List-Unsubscribe has an HTTPS address and List-Unsubscribe-Post is List-Unsubscribe=One-Click.
+        - action: Send a POST to the unsubscribe address with the body List-Unsubscribe=One-Click and no cookies.
+          expected: The response is 200 or 202.
+        - action: Send the next newsletter 2 days later.
+          expected: No message is sent to the test subscriber.
+    sv:
+      title: Avregistrering med ett klick från ett nyhetsbrev
+      description: Skickar ett nyhetsbrev, läser dess huvuden och skickar begäran om avregistrering med ett klick.
+      preconditions: En testprenumerant på nyhetsbrevet; en e-postfångare; ett skript som kan skicka en HTTPS POST.
+      expected: Huvudena finns, och efter begäran når inga fler nyhetsbrev prenumeranten.
+      steps:
+        - action: Skicka ett nyhetsbrev och läs huvudena i det fångade meddelandet.
+          expected: List-Unsubscribe har en HTTPS-adress och List-Unsubscribe-Post är List-Unsubscribe=One-Click.
+        - action: Skicka en POST till avregistreringsadressen med innehållet List-Unsubscribe=One-Click och utan cookies.
+          expected: Svaret är 200 eller 202.
+        - action: Skicka nästa nyhetsbrev 2 dagar senare.
+          expected: Inget meddelande skickas till testprenumeranten.
+
+  - id: MAILS-T08
+    priority: medium
+    execution: automated
+    tags: [rate-limit, abuse]
+    refs: []
+    en:
+      title: Invitation flood is limited
+      description: A script sends 60 invitations to external addresses from one user within an hour.
+      preconditions: A test user who may invite external users; a mail catcher; an administrator mailbox.
+      expected: The first 50 invitations are sent, the rest are refused, and the administrator is notified.
+      steps:
+        - action: Send 60 invitations to different external addresses from the test user within 10 minutes.
+          expected: Invitations 1 to 50 are accepted; invitations 51 to 60 are refused with a message about the hourly limit.
+          data: "60 addresses at example.org"
+        - action: Count the captured invitation emails.
+          expected: Exactly 50 were sent.
+        - action: Open the administrator mailbox.
+          expected: A notification names the user and the limit that was reached.
+    sv:
+      title: En flod av inbjudningar begränsas
+      description: Ett skript skickar 60 inbjudningar till externa adresser från en användare inom en timme.
+      preconditions: En testanvändare som får bjuda in externa användare; en e-postfångare; en brevlåda för administratören.
+      expected: De första 50 inbjudningarna skickas, resten avvisas, och administratören aviseras.
+      steps:
+        - action: Skicka 60 inbjudningar till olika externa adresser från testanvändaren inom 10 minuter.
+          expected: Inbjudningarna 1 till 50 godtas; inbjudningarna 51 till 60 avvisas med ett meddelande om timgränsen.
+          data: "60 adresser på example.org"
+        - action: Räkna de fångade inbjudningsmeddelandena.
+          expected: Exakt 50 skickades.
+        - action: Öppna administratörens brevlåda.
+          expected: En avisering namnger användaren och gränsen som nåddes.

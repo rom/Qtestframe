@@ -1,0 +1,525 @@
+area: secure-development
+prefix: SDL
+group: security
+name: {en: Threat modelling and secure development, sv: Hotmodellering och säker utveckling}
+description:
+  en: Threat models, security requirements in stories, security testing in the pipeline, penetration tests, handling of findings, training, security review and vulnerability disclosure.
+  sv: Hotmodeller, säkerhetskrav i användarberättelser, säkerhetstester i pipelinen, penetrationstester, hantering av fynd, utbildning, säkerhetsgranskning och mottagning av sårbarhetsrapporter.
+
+requirements:
+  - id: SDL-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [threat-model, design]
+    refs: ["NIST SP 800-218 (SSDF) PW.1.1", "OWASP SAMM v2 Design / Threat Assessment", "ISO/IEC 27001:2022 Annex A 8.27 (secure system architecture and engineering principles)"]
+    tests: [SDL-T01]
+    en:
+      title: Threat model before a new component is built
+      description: The team MUST record a threat model with data flows, trust boundaries, threats and planned countermeasures before implementing a new component or external interface.
+      rationale: Design flaws found in the threat model cost a fraction of what they cost after release, and the model shows reviewers where the risks are.
+      criteria:
+        - method: review
+          text: Each component added in the last 12 months has a threat model dated before its first merge.
+        - method: inspection
+          text: Each threat model shows the data flows and trust boundaries and lists threats with a countermeasure or an accepted risk.
+    sv:
+      title: Hotmodell innan en ny komponent byggs
+      description: Teamet SKA dokumentera en hotmodell med dataflöden, förtroendegränser, hot och planerade motåtgärder innan en ny komponent eller ett nytt externt gränssnitt implementeras.
+      rationale: Konstruktionsfel som hittas i hotmodellen kostar en bråkdel av vad de kostar efter release, och modellen visar granskare var riskerna finns.
+      criteria:
+        - method: review
+          text: Varje komponent som lagts till de senaste 12 månaderna har en hotmodell daterad före den första sammanslagningen.
+        - method: inspection
+          text: Varje hotmodell visar dataflöden och förtroendegränser och listar hot med en motåtgärd eller en accepterad risk.
+
+  - id: SDL-02
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [threat-model, change]
+    refs: ["NIST SP 800-218 (SSDF) PW.1.1", "OWASP Threat Modeling Cheat Sheet"]
+    tests: [SDL-T01]
+    en:
+      title: Threat model updated when trust boundaries change
+      description: The team SHOULD update the threat model within 2 weeks of a change that adds a data flow across a trust boundary or a new type of sensitive data.
+      rationale: A threat model that describes last year's design gives false confidence.
+      criteria:
+        - method: review
+          text: For each change in the last 6 months that added an external integration or a new data category, the threat model was updated within 2 weeks.
+          threshold: "≤ 2 weeks after the change"
+    sv:
+      title: Hotmodellen uppdateras när förtroendegränser ändras
+      description: Teamet BÖR uppdatera hotmodellen inom 2 veckor efter en ändring som lägger till ett dataflöde över en förtroendegräns eller en ny typ av känsliga data.
+      rationale: En hotmodell som beskriver förra årets konstruktion ger falsk trygghet.
+      criteria:
+        - method: review
+          text: För varje ändring de senaste 6 månaderna som lade till en extern integration eller en ny datakategori uppdaterades hotmodellen inom 2 veckor.
+          threshold: "≤ 2 veckor efter ändringen"
+
+  - id: SDL-03
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [security-requirements, user-story]
+    refs: ["OWASP ASVS 4.0.3 §1.1 (secure software development lifecycle)", "NIST SP 800-218 (SSDF) PO.1.1"]
+    tests: [SDL-T02]
+    en:
+      title: Security acceptance criteria in user stories
+      description: Each user story that handles personal data, authentication, authorisation or payments SHOULD contain security acceptance criteria before work on it starts.
+      rationale: Criteria written up front are built and tested together with the feature, instead of being found missing in a late review.
+      criteria:
+        - method: review
+          text: In a sample of 20 such stories from the last quarter, at least 18 had security acceptance criteria before they were moved to in progress.
+          threshold: "≥ 90 % of sampled stories"
+    sv:
+      title: Säkerhetskriterier i användarberättelser
+      description: Varje användarberättelse som hanterar personuppgifter, autentisering, behörighet eller betalningar BÖR innehålla acceptanskriterier för säkerhet innan arbetet med den börjar.
+      rationale: Kriterier som skrivs i förväg byggs och testas tillsammans med funktionen, i stället för att upptäckas som saknade vid en sen granskning.
+      criteria:
+        - method: review
+          text: I ett urval av 20 sådana användarberättelser från senaste kvartalet hade minst 18 acceptanskriterier för säkerhet innan de flyttades till pågående.
+          threshold: "≥ 90 % av urvalet"
+
+  - id: SDL-04
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [sast, pipeline, cwe]
+    refs: ["NIST SP 800-218 (SSDF) PW.7.2", "OWASP SAMM v2 Verification / Security Testing", "CWE Top 25 Most Dangerous Software Weaknesses"]
+    tests: [SDL-T03]
+    en:
+      title: Security static analysis on every pull request
+      description: The pipeline MUST run a static application security testing tool with rules for the CWE Top 25 on every pull request and block the merge on a finding of high or critical severity.
+      rationale: Injection, path traversal and unsafe deserialisation are found by tools in minutes while the author still knows the code.
+      criteria:
+        - method: test
+          text: A test branch with a SQL query built by string concatenation from request data fails the pipeline with a high-severity finding.
+    sv:
+      title: Statisk säkerhetsanalys vid varje pull request
+      description: Pipelinen SKA köra ett verktyg för statisk säkerhetstestning med regler för CWE Top 25 vid varje pull request och stoppa sammanslagningen vid ett fynd med hög eller kritisk allvarlighetsgrad.
+      rationale: Injektion, katalogtraversering och osäker deserialisering hittas av verktyg på minuter medan författaren fortfarande har koden i huvudet.
+      criteria:
+        - method: test
+          text: En testgren med en SQL-fråga som byggs genom strängsammanfogning av anropsdata får pipelinen att fallera med ett fynd med hög allvarlighetsgrad.
+
+  - id: SDL-05
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [dast, staging]
+    refs: ["NIST SP 800-218 (SSDF) PW.8.2", "OWASP Web Security Testing Guide v4.2"]
+    tests: [SDL-T04]
+    en:
+      title: Weekly dynamic security scan of staging
+      description: The team SHOULD run an authenticated dynamic application security scan against the staging environment at least once a week.
+      rationale: Dynamic scans find misconfigured headers, exposed endpoints and injection points that only show in the running system.
+      criteria:
+        - method: inspection
+          text: The scan history shows an authenticated scan in each of the last 8 weeks, and each high finding has a ticket.
+          threshold: "≥ 1 scan per week"
+    sv:
+      title: Veckovis dynamisk säkerhetsskanning av staging
+      description: Teamet BÖR köra en autentiserad dynamisk säkerhetsskanning mot stagingmiljön minst en gång i veckan.
+      rationale: Dynamiska skanningar hittar felkonfigurerade huvuden, exponerade ändpunkter och injektionspunkter som bara syns i det körande systemet.
+      criteria:
+        - method: inspection
+          text: Skanningshistoriken visar en autentiserad skanning under var och en av de senaste 8 veckorna, och varje allvarligt fynd har ett ärende.
+          threshold: "≥ 1 skanning per vecka"
+
+  - id: SDL-06
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [penetration-test]
+    refs: ["PCI DSS v4.0 Requirement 11.4 (penetration testing)", "ISO/IEC 27001:2022 Annex A 8.29 (security testing in development and acceptance)"]
+    tests: [SDL-T05]
+    en:
+      title: Independent penetration test every 12 months
+      description: An independent tester MUST perform a penetration test of the system at least every 12 months and after each change to authentication or the hosting platform.
+      rationale: Testers without knowledge of the team's assumptions find weaknesses that internal reviews and tools miss.
+      criteria:
+        - method: inspection
+          text: Reports from the last two penetration tests exist, are less than 12 months apart and were written by testers outside the development team.
+          threshold: "≤ 12 months between tests"
+    sv:
+      title: Oberoende penetrationstest var 12:e månad
+      description: En oberoende testare SKA utföra ett penetrationstest av systemet minst var 12:e månad och efter varje ändring av autentiseringen eller driftplattformen.
+      rationale: Testare som inte känner till teamets antaganden hittar svagheter som interna granskningar och verktyg missar.
+      criteria:
+        - method: inspection
+          text: Rapporter från de två senaste penetrationstesterna finns, ligger mindre än 12 månader isär och är skrivna av testare utanför utvecklingsteamet.
+          threshold: "≤ 12 månader mellan testerna"
+
+  - id: SDL-07
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [findings, remediation, deadlines]
+    refs: ["NIST SP 800-218 (SSDF) RV.2.2", "ISO/IEC 27001:2022 Annex A 8.8 (management of technical vulnerabilities)"]
+    tests: [SDL-T05]
+    en:
+      title: Security findings fixed within deadlines
+      description: The team MUST fix security findings from tests and reviews within 14 days for critical, 30 days for high and 90 days for medium severity.
+      rationale: Known and unfixed weaknesses are what attackers use, and deadlines turn reports into fixes.
+      criteria:
+        - method: inspection
+          text: The finding tracker shows each critical, high and medium finding of the last 12 months closed within its deadline or with an approved risk acceptance.
+          threshold: "critical ≤ 14 d, high ≤ 30 d, medium ≤ 90 d"
+    sv:
+      title: Säkerhetsfynd åtgärdas inom tidsgränser
+      description: Teamet SKA åtgärda säkerhetsfynd från tester och granskningar inom 14 dagar för kritisk, 30 dagar för hög och 90 dagar för medelhög allvarlighetsgrad.
+      rationale: Kända och oåtgärdade svagheter är det angripare använder, och tidsgränser gör rapporter till åtgärder.
+      criteria:
+        - method: inspection
+          text: Ärendesystemet för fynd visar att varje kritiskt, högt och medelhögt fynd de senaste 12 månaderna stängdes inom tidsgränsen eller har ett godkänt riskbeslut.
+          threshold: "kritisk ≤ 14 d, hög ≤ 30 d, medel ≤ 90 d"
+
+  - id: SDL-08
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [training, awareness]
+    refs: ["NIST SP 800-218 (SSDF) PO.2.2", "ISO/IEC 27001:2022 Annex A 6.3 (information security awareness, education and training)"]
+    tests: [SDL-T06]
+    en:
+      title: Yearly secure coding training
+      description: Each developer SHOULD complete secure coding training that covers the OWASP Top 10 at least every 12 months, and new developers within their first 60 days.
+      rationale: Most vulnerabilities are ordinary coding mistakes that developers avoid once they recognise them.
+      criteria:
+        - method: inspection
+          text: The training records show a completion within the last 12 months for at least 95 % of the developers, and within 60 days of start for each new developer.
+          threshold: "≥ 95 % within 12 months"
+    sv:
+      title: Årlig utbildning i säker programmering
+      description: Varje utvecklare BÖR genomgå en utbildning i säker programmering som täcker OWASP Top 10 minst var 12:e månad, och nya utvecklare inom sina första 60 dagar.
+      rationale: De flesta sårbarheter är vanliga programmeringsmisstag som utvecklare undviker när de väl känner igen dem.
+      criteria:
+        - method: inspection
+          text: Utbildningsregistret visar en genomförd utbildning de senaste 12 månaderna för minst 95 % av utvecklarna, och inom 60 dagar från start för varje ny utvecklare.
+          threshold: "≥ 95 % inom 12 månader"
+
+  - id: SDL-09
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [code-review, security-review]
+    refs: ["NIST SP 800-218 (SSDF) PW.7.1", "OWASP Code Review Guide v2"]
+    tests: [SDL-T07]
+    en:
+      title: Security review of sensitive changes
+      description: A change to authentication, authorisation, session handling or cryptography MUST be approved by a reviewer who has completed the secure coding training, in addition to the normal review.
+      rationale: These parts decide whether every other control works, and a reviewer who knows the typical mistakes is far more likely to see them.
+      criteria:
+        - method: test
+          text: A pull request that changes a file in the authentication module cannot be merged with one ordinary approval.
+        - method: inspection
+          text: The repository's ownership rules list trained reviewers for the security-sensitive paths.
+    sv:
+      title: Säkerhetsgranskning av känsliga ändringar
+      description: En ändring av autentisering, behörighetskontroll, sessionshantering eller kryptografi SKA godkännas av en granskare som har genomgått utbildningen i säker programmering, utöver den vanliga granskningen.
+      rationale: Dessa delar avgör om alla andra skydd fungerar, och en granskare som känner till de typiska misstagen ser dem mycket oftare.
+      criteria:
+        - method: test
+          text: En pull request som ändrar en fil i autentiseringsmodulen kan inte slås samman med ett vanligt godkännande.
+        - method: inspection
+          text: Kodförrådets ägarregler anger utbildade granskare för de säkerhetskänsliga sökvägarna.
+
+  - id: SDL-10
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [vulnerability-disclosure, security-txt]
+    refs: ["RFC 9116 (security.txt)", "ISO/IEC 29147:2018 (vulnerability disclosure)", "NIST SP 800-218 (SSDF) RV.1.3"]
+    tests: [SDL-T08]
+    en:
+      title: Published channel for vulnerability reports
+      description: The organisation SHOULD publish a vulnerability disclosure policy and a security.txt file, and acknowledge each report within 3 working days.
+      rationale: Researchers who find a weakness need a known and safe way to report it, or they publish it or stay silent.
+      criteria:
+        - method: test
+          text: /.well-known/security.txt is served over HTTPS with a contact and an expiry date in the future, and a test report is acknowledged within 3 working days.
+          threshold: "acknowledgement ≤ 3 working days"
+    sv:
+      title: Publicerad kanal för sårbarhetsrapporter
+      description: Organisationen BÖR publicera en policy för mottagning av sårbarhetsrapporter och en security.txt-fil, och bekräfta varje rapport inom 3 arbetsdagar.
+      rationale: Forskare som hittar en svaghet behöver ett känt och säkert sätt att rapportera den, annars publicerar de den eller tiger.
+      criteria:
+        - method: test
+          text: /.well-known/security.txt levereras över HTTPS med en kontaktuppgift och ett utgångsdatum i framtiden, och en testrapport bekräftas inom 3 arbetsdagar.
+          threshold: "bekräftelse ≤ 3 arbetsdagar"
+
+  - id: SDL-11
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [regression-test, vulnerability]
+    refs: ["NIST SP 800-218 (SSDF) RV.3.3"]
+    tests: [SDL-T07]
+    en:
+      title: Regression test for each fixed vulnerability
+      description: Each fix of a security vulnerability SHOULD add an automated test that fails on the vulnerable code and passes on the fixed code.
+      rationale: Vulnerabilities come back through refactoring and merges, and a test is the cheapest way to notice.
+      criteria:
+        - method: review
+          text: Each vulnerability fix of the last 12 months has a linked automated test that was shown to fail before the fix.
+    sv:
+      title: Regressionstest för varje åtgärdad sårbarhet
+      description: Varje rättning av en säkerhetssårbarhet BÖR lägga till ett automatiskt test som fallerar mot den sårbara koden och går igenom mot den rättade.
+      rationale: Sårbarheter kommer tillbaka genom omstrukturering och sammanslagningar, och ett test är det billigaste sättet att märka det.
+      criteria:
+        - method: review
+          text: Varje sårbarhetsrättning de senaste 12 månaderna har ett länkat automatiskt test som har visats fallera före rättningen.
+
+tests:
+  - id: SDL-T01
+    priority: high
+    execution: manual
+    tags: [threat-model, review]
+    refs: ["OWASP Threat Modeling Cheat Sheet"]
+    en:
+      title: Review of threat models against components and changes
+      description: Compares the list of components and integration changes with the threat models and their dates.
+      preconditions: The component list and merge history of the last 12 months; the threat model documents with their version history.
+      expected: Each new component has a threat model from before its first merge, and each boundary change led to an update within 2 weeks.
+      steps:
+        - action: List the components added in the last 12 months with the date of their first merge.
+          expected: The list is complete according to the repository.
+        - action: For each component, open its threat model and compare its date with the first merge.
+          expected: The threat model exists and is dated before the first merge.
+        - action: Check that each threat model has a data flow diagram, trust boundaries and threats with countermeasures or accepted risks.
+          expected: All four parts are present.
+        - action: List the changes of the last 6 months that added an external integration or a data category, and find the matching threat model update.
+          expected: Each change has an update dated within 2 weeks after it.
+    sv:
+      title: Granskning av hotmodeller mot komponenter och ändringar
+      description: Jämför listan över komponenter och integrationsändringar med hotmodellerna och deras datum.
+      preconditions: Komponentlistan och historiken över sammanslagningar de senaste 12 månaderna; hotmodellerna med versionshistorik.
+      expected: Varje ny komponent har en hotmodell från före den första sammanslagningen, och varje ändring av förtroendegränser ledde till en uppdatering inom 2 veckor.
+      steps:
+        - action: Lista komponenterna som lagts till de senaste 12 månaderna med datum för deras första sammanslagning.
+          expected: Listan är fullständig enligt kodförrådet.
+        - action: Öppna hotmodellen för varje komponent och jämför dess datum med den första sammanslagningen.
+          expected: Hotmodellen finns och är daterad före den första sammanslagningen.
+        - action: Kontrollera att varje hotmodell har ett dataflödesdiagram, förtroendegränser och hot med motåtgärder eller accepterade risker.
+          expected: Alla fyra delarna finns.
+        - action: Lista ändringarna de senaste 6 månaderna som lade till en extern integration eller en datakategori och leta upp motsvarande uppdatering av hotmodellen.
+          expected: Varje ändring har en uppdatering daterad inom 2 veckor efter den.
+
+  - id: SDL-T02
+    priority: medium
+    execution: manual
+    tags: [security-requirements, user-story]
+    refs: []
+    en:
+      title: Sample of stories with security acceptance criteria
+      description: Draws a sample of user stories that handle sensitive functions and checks their acceptance criteria and history.
+      preconditions: Read access to the backlog tool and the history of story status changes for the last quarter.
+      expected: At least 18 of 20 sampled stories had security acceptance criteria before work started.
+      steps:
+        - action: Filter last quarter's stories on the labels for personal data, authentication, authorisation and payments and pick 20 at random.
+          expected: 20 stories are selected.
+          data: "sample size 20"
+        - action: For each story, compare the time its security acceptance criteria were added with the time it was moved to in progress.
+          expected: At least 18 stories had the criteria first.
+    sv:
+      title: Urval av användarberättelser med säkerhetskriterier
+      description: Tar ett urval av användarberättelser som hanterar känsliga funktioner och kontrollerar deras acceptanskriterier och historik.
+      preconditions: Läsåtkomst till verktyget för backloggen och historiken över statusändringar för användarberättelser under senaste kvartalet.
+      expected: Minst 18 av 20 utvalda användarberättelser hade acceptanskriterier för säkerhet innan arbetet började.
+      steps:
+        - action: Filtrera senaste kvartalets användarberättelser på etiketterna för personuppgifter, autentisering, behörighet och betalningar och välj 20 slumpmässigt.
+          expected: 20 användarberättelser är valda.
+          data: "urvalsstorlek 20"
+        - action: Jämför för varje användarberättelse tiden då säkerhetskriterierna lades till med tiden då den flyttades till pågående.
+          expected: Minst 18 användarberättelser hade kriterierna först.
+
+  - id: SDL-T03
+    priority: high
+    execution: automated
+    tags: [sast, pipeline]
+    refs: []
+    en:
+      title: A planted injection flaw stops the pipeline
+      description: Pushes a test branch with a known injection flaw and checks that the security analysis blocks the merge.
+      preconditions: Permission to push a test branch and open a pull request; the static security analysis runs in the pipeline.
+      expected: The analysis reports a high-severity finding and the pull request cannot be merged.
+      steps:
+        - action: Add a function that builds a SQL query by concatenating a request parameter and open a pull request.
+          expected: The pipeline starts.
+          data: "query = \"SELECT * FROM items WHERE id = \" + request.param(\"id\")"
+        - action: Wait for the security analysis to finish.
+          expected: It reports a SQL injection finding of high severity at the changed line.
+        - action: Try to merge the pull request.
+          expected: The merge is blocked by the failed check.
+        - action: Change the code to a parameterised query and push again.
+          expected: The finding disappears and the check passes.
+    sv:
+      title: En utplacerad injektionsbrist stoppar pipelinen
+      description: Skickar en testgren med en känd injektionsbrist och kontrollerar att säkerhetsanalysen stoppar sammanslagningen.
+      preconditions: Behörighet att skicka en testgren och öppna en pull request; den statiska säkerhetsanalysen körs i pipelinen.
+      expected: Analysen rapporterar ett fynd med hög allvarlighetsgrad och pull requesten kan inte slås samman.
+      steps:
+        - action: Lägg till en funktion som bygger en SQL-fråga genom att sammanfoga en anropsparameter och öppna en pull request.
+          expected: Pipelinen startar.
+          data: "query = \"SELECT * FROM items WHERE id = \" + request.param(\"id\")"
+        - action: Vänta tills säkerhetsanalysen är klar.
+          expected: Den rapporterar ett fynd om SQL-injektion med hög allvarlighetsgrad på den ändrade raden.
+        - action: Försök slå samman pull requesten.
+          expected: Sammanslagningen stoppas av den misslyckade kontrollen.
+        - action: Ändra koden till en parametriserad fråga och skicka igen.
+          expected: Fyndet försvinner och kontrollen går igenom.
+
+  - id: SDL-T04
+    priority: medium
+    execution: manual
+    tags: [dast, staging]
+    refs: []
+    en:
+      title: Dynamic scan history and follow-up
+      description: Checks the history of dynamic scans against staging and the tickets for their findings.
+      preconditions: Read access to the scanner's history and the issue tracker.
+      expected: There is an authenticated scan in each of the last 8 weeks, and each high finding has a ticket.
+      steps:
+        - action: List the scans against staging of the last 8 weeks.
+          expected: Each week has at least one completed scan.
+        - action: Open the latest scan and check that it ran with a signed-in test account.
+          expected: The scan covered pages behind the sign-in.
+        - action: For each high finding of the 8 scans, find the ticket.
+          expected: Each high finding has a ticket that is open with a deadline or closed.
+    sv:
+      title: Historik och uppföljning av dynamiska skanningar
+      description: Kontrollerar historiken över dynamiska skanningar mot staging och ärendena för fynden.
+      preconditions: Läsåtkomst till skannerns historik och ärendesystemet.
+      expected: Det finns en autentiserad skanning under var och en av de senaste 8 veckorna, och varje allvarligt fynd har ett ärende.
+      steps:
+        - action: Lista skanningarna mot staging de senaste 8 veckorna.
+          expected: Varje vecka har minst en genomförd skanning.
+        - action: Öppna den senaste skanningen och kontrollera att den kördes med ett inloggat testkonto.
+          expected: Skanningen täckte sidor bakom inloggningen.
+        - action: Leta upp ärendet för varje allvarligt fynd i de 8 skanningarna.
+          expected: Varje allvarligt fynd har ett ärende som är öppet med tidsgräns eller stängt.
+
+  - id: SDL-T05
+    priority: high
+    execution: manual
+    tags: [penetration-test, findings]
+    refs: []
+    en:
+      title: Penetration test reports and finding deadlines
+      description: Checks the dates and independence of the penetration tests and the time taken to close each finding.
+      preconditions: The reports of the last two penetration tests; the finding tracker with open and close dates.
+      expected: The tests are at most 12 months apart and independent, and each finding was closed within its deadline or has a risk acceptance.
+      steps:
+        - action: Read the dates and authors of the last two penetration test reports.
+          expected: The tests are at most 12 months apart and the testers are not part of the development team.
+        - action: Check whether authentication or the hosting platform changed since the last test.
+          expected: If so, a test was performed after the change.
+        - action: For each critical, high and medium finding of the last 12 months, compute the days from report to fix.
+          expected: Critical findings took at most 14 days, high at most 30 and medium at most 90, or a signed risk acceptance exists.
+          data: "deadlines 14 / 30 / 90 days"
+    sv:
+      title: Rapporter från penetrationstest och tidsgränser för fynd
+      description: Kontrollerar datum och oberoende för penetrationstesterna och tiden det tog att stänga varje fynd.
+      preconditions: Rapporterna från de två senaste penetrationstesterna; ärendesystemet för fynd med öppnings- och stängningsdatum.
+      expected: Testerna ligger högst 12 månader isär och är oberoende, och varje fynd stängdes inom sin tidsgräns eller har ett riskbeslut.
+      steps:
+        - action: Läs datum och författare för de två senaste rapporterna från penetrationstest.
+          expected: Testerna ligger högst 12 månader isär och testarna ingår inte i utvecklingsteamet.
+        - action: Kontrollera om autentiseringen eller driftplattformen har ändrats sedan det senaste testet.
+          expected: Om så är fallet har ett test utförts efter ändringen.
+        - action: Räkna ut antalet dagar från rapport till rättning för varje kritiskt, högt och medelhögt fynd de senaste 12 månaderna.
+          expected: Kritiska fynd tog högst 14 dagar, höga högst 30 och medelhöga högst 90, eller så finns ett undertecknat riskbeslut.
+          data: "tidsgränser 14 / 30 / 90 dagar"
+
+  - id: SDL-T06
+    priority: medium
+    execution: manual
+    tags: [training]
+    refs: []
+    en:
+      title: Training records of the developers
+      description: Compares the list of developers with the training records.
+      preconditions: The current list of developers with start dates; the training records.
+      expected: At least 95 % of developers completed the training within the last 12 months, and each new developer within 60 days.
+      steps:
+        - action: Match each developer with the date of their last completed secure coding training.
+          expected: At least 95 % have a date within the last 12 months.
+          data: "threshold 95 %"
+        - action: For each developer who started in the last 12 months, compare the training date with the start date.
+          expected: Each completed the training within 60 days of starting.
+        - action: Check the training content against the OWASP Top 10 categories.
+          expected: The training covers each category.
+    sv:
+      title: Utvecklarnas utbildningsregister
+      description: Jämför listan över utvecklare med utbildningsregistret.
+      preconditions: Den aktuella listan över utvecklare med startdatum; utbildningsregistret.
+      expected: Minst 95 % av utvecklarna har genomgått utbildningen de senaste 12 månaderna, och varje ny utvecklare inom 60 dagar.
+      steps:
+        - action: Para ihop varje utvecklare med datumet för den senast genomförda utbildningen i säker programmering.
+          expected: Minst 95 % har ett datum inom de senaste 12 månaderna.
+          data: "gränsvärde 95 %"
+        - action: Jämför utbildningsdatumet med startdatumet för varje utvecklare som började de senaste 12 månaderna.
+          expected: Var och en genomgick utbildningen inom 60 dagar från start.
+        - action: Kontrollera utbildningens innehåll mot kategorierna i OWASP Top 10.
+          expected: Utbildningen täcker varje kategori.
+
+  - id: SDL-T07
+    priority: high
+    execution: manual
+    tags: [security-review, regression-test]
+    refs: []
+    en:
+      title: Security review gate and regression tests for fixes
+      description: Opens a pull request in a security-sensitive path and checks the fixes of past vulnerabilities for regression tests.
+      preconditions: Two reviewers, one of them listed as a trained security reviewer; the list of vulnerability fixes of the last 12 months.
+      expected: The pull request needs the trained reviewer, and each past fix has a test that failed before the fix.
+      steps:
+        - action: Open a pull request that changes a file in the authentication module and get one approval from an ordinary reviewer.
+          expected: The merge is still blocked and the trained reviewer is requested.
+        - action: Get the approval of the trained reviewer.
+          expected: The merge is allowed.
+        - action: For each vulnerability fix of the last 12 months, run its linked test against the commit before the fix.
+          expected: Each test fails on the old code and passes on the current code.
+    sv:
+      title: Spärr för säkerhetsgranskning och regressionstester för rättningar
+      description: Öppnar en pull request i en säkerhetskänslig sökväg och kontrollerar att tidigare sårbarhetsrättningar har regressionstester.
+      preconditions: Två granskare, varav en står som utbildad säkerhetsgranskare; listan över sårbarhetsrättningar de senaste 12 månaderna.
+      expected: Pull requesten kräver den utbildade granskaren, och varje tidigare rättning har ett test som fallerade före rättningen.
+      steps:
+        - action: Öppna en pull request som ändrar en fil i autentiseringsmodulen och få ett godkännande från en vanlig granskare.
+          expected: Sammanslagningen är fortfarande spärrad och den utbildade granskaren tillfrågas.
+        - action: Få godkännande från den utbildade granskaren.
+          expected: Sammanslagningen tillåts.
+        - action: Kör det länkade testet för varje sårbarhetsrättning de senaste 12 månaderna mot incheckningen före rättningen.
+          expected: Varje test fallerar mot den gamla koden och går igenom mot den nuvarande.
+
+  - id: SDL-T08
+    priority: medium
+    execution: manual
+    tags: [vulnerability-disclosure, security-txt]
+    refs: ["RFC 9116"]
+    en:
+      title: security.txt and acknowledgement of a test report
+      description: Fetches the security.txt file and sends a test vulnerability report through the published channel.
+      preconditions: The public host name of the system; the security team has agreed to the test report.
+      expected: The file is valid and current, and the report is acknowledged within 3 working days.
+      steps:
+        - action: Fetch https://<host>/.well-known/security.txt.
+          expected: The file is served over HTTPS and contains a Contact field, an Expires date in the future and a link to the disclosure policy.
+        - action: Send a test report marked as a test to the published contact and note the time.
+          expected: The report is delivered.
+        - action: Wait for the acknowledgement.
+          expected: An acknowledgement with a reference number arrives within 3 working days.
+    sv:
+      title: security.txt och bekräftelse av en testrapport
+      description: Hämtar filen security.txt och skickar en testrapport om en sårbarhet via den publicerade kanalen.
+      preconditions: Systemets publika värdnamn; säkerhetsteamet har godkänt testrapporten.
+      expected: Filen är giltig och aktuell, och rapporten bekräftas inom 3 arbetsdagar.
+      steps:
+        - action: Hämta https://<värd>/.well-known/security.txt.
+          expected: Filen levereras över HTTPS och innehåller ett Contact-fält, ett Expires-datum i framtiden och en länk till policyn.
+        - action: Skicka en testrapport märkt som test till den publicerade kontakten och notera tiden.
+          expected: Rapporten levereras.
+        - action: Vänta på bekräftelsen.
+          expected: En bekräftelse med ett referensnummer kommer inom 3 arbetsdagar.
