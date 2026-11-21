@@ -6205,6 +6205,109 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/documents/generate:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Files
+      summary: Generate document
+      operationId: postProjectsByPidDocumentsGenerate
+      description: |-
+        Generates a requirements specification (`requirements_spec`, modelled on ISO/IEC/IEEE 29148) or a test plan with its test specification (`test_plan`, modelled on ISO/IEC/IEEE 29119-3) from the project's requirements and tests, or from a baseline, and saves it in the document archive → 201 File (`kind: document`, tags `generated`, `requirements-specification` or `test-plan` and the version, e.g. `v2.0`). Download it with `GET /files/{id}/content`. See docs/api.md "Generated documents".
+
+        **Permission:** `export, requirement.read` checked by the router; `test.read` for a test plan; `requirement.write` or `test.write` (the upload permission of the archive).
+      x-permission: export, requirement.read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - kind
+              properties:
+                kind:
+                  type: string
+                  enum:
+                  - requirements_spec
+                  - test_plan
+                format:
+                  type: string
+                  enum:
+                  - pdf
+                  - docx
+                  - md
+                  default: pdf
+                name:
+                  type: string
+                  description: file name (default `<KEY>-<kind tag>-v<version>.<format>`)
+                description:
+                  type: string
+                  description: description of the archived file (default title and version)
+                options:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    version:
+                      type: string
+                      description: default one more than the latest generated version of this kind (`1.0` first)
+                    author:
+                      type: string
+                      description: default the caller's name
+                    query:
+                      type: string
+                      description: filter in the query language of the lists; requirements (specification) or tests (test plan)
+                    include_inactive:
+                      type: boolean
+                      description: include rejected and obsolete requirements and deprecated tests
+                    baseline_id:
+                      type: string
+                      description: generate from this baseline's frozen items
+                    group_by:
+                      type: string
+                      enum:
+                      - folder
+                      - category
+                      - type
+                      description: grouping of a specification (a test plan is grouped by folder)
+                    dimension:
+                      type: string
+                      description: category dimension for `group_by` category
+                    fields:
+                      type: array
+                      items:
+                        type: string
+                      description: fields shown of each item; default all but `results`
+                    traceability:
+                      type: boolean
+                      default: true
+                    glossary:
+                      type: boolean
+                      default: true
+                    lang:
+                      type: string
+                      enum:
+                      - en
+                      - sv
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/auth/me/avatar:
     put:
       tags:
