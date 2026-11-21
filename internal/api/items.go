@@ -106,7 +106,7 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	rq := req.Requirement
-	createTest := s.Cfg.Requirements.AutoCreateTest
+	createTest := s.conf().Requirements.AutoCreateTest
 	if req.CreateTest != nil {
 		createTest = *req.CreateTest
 	}

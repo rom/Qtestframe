@@ -240,7 +240,7 @@ func (s *Server) handleGetInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"email": u.Email, "display_name": name, "tenant_name": t.Name, "role": inv.Role, "invited_by": inv.InvitedBy,
-		"expires_at": inv.ExpiresAt, "sso": inv.SSO, "local": s.Cfg.Auth.Local,
+		"expires_at": inv.ExpiresAt, "sso": inv.SSO, "local": s.conf().Auth.Local, "password_min_length": minPassword(s.conf()),
 	})
 }
 
@@ -265,7 +265,7 @@ func (s *Server) handleAcceptInvitation(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	if inv.SSO || !s.Cfg.Auth.Local {
+	if inv.SSO || !s.conf().Auth.Local {
 		s.fail(w, r, badRequest("sign in with your organisation's account to accept this invitation"))
 		return
 	}
@@ -275,12 +275,12 @@ func (s *Server) handleAcceptInvitation(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	pw := req.Password
-	if err := applyUserReq(u, userReq{Password: &pw}); err != nil {
+	if err := applyUserReq(u, userReq{Password: &pw}, minPassword(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	if pw == "" {
-		s.fail(w, r, auth.ErrWeakPassword)
+		s.fail(w, r, auth.ValidatePasswordMin("", minPassword(s.conf())))
 		return
 	}
 	u.DisplayName = name

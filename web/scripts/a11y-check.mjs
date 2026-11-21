@@ -286,6 +286,15 @@ async function discover(request) {
     { name: 'audit', path: '/admin/audit' },
     { name: 'tenants', path: '/admin/tenants' },
     { name: 'users', path: '/admin/users' },
+    // system settings (super admins): every section, the OIDC provider dialog
+    { name: 'system-settings', path: '/admin/system', wait: '.sys-field' },
+    { name: 'system-settings-security', path: '/admin/system?section=security', wait: '.sys-field' },
+    { name: 'system-settings-oidc', path: '/admin/system?section=oidc', wait: '.sys-section .row' },
+    { name: 'system-settings-oidc-dialog', path: '/admin/system?section=oidc', open: '.sys-section button:has(.pi-plus)', wait: '.p-dialog #oidc-provider-form' },
+    { name: 'system-settings-logging', path: '/admin/system?section=logging', wait: '.sys-field' },
+    { name: 'system-settings-email', path: '/admin/system?section=email', wait: '.sys-field' },
+    { name: 'system-settings-runner', path: '/admin/system?section=runner', wait: '.sys-field' },
+    { name: 'system-settings-retention', path: '/admin/system?section=retention', wait: '.info-list' },
   ].filter(Boolean)
   return routes.filter((r) => !ONLY.length || ONLY.includes(r.name))
 }

@@ -620,7 +620,7 @@ func TestServeErrors(t *testing.T) {
 		want string
 	}{
 		"bad config":    {writeConfig(t, "auth: {session_ttl: 0s}"), "session_ttl"},
-		"bad log level": {writeConfig(t, "logging: {level: shouting}"), "logging:"},
+		"bad log level": {writeConfig(t, "logging: {level: shouting}"), "logging.level"},
 		"bad tls key":   {writeConfig(t, fmt.Sprintf("server: {tls_cert: %q, tls_key: %q}", certFile, badKey)), "tls:"},
 		"bad listen":    {writeConfig(t, "server: {listen: not-an-address}"), "listen"},
 		"runner dir":    {writeConfig(t, fmt.Sprintf("runner: {enabled: true, timeout: 1s, work_dir: %q}", filepath.Join(file, "sub"))), "runner work dir"},

@@ -40,6 +40,7 @@ var BackupTables = []string{
 	"metric_snapshots",
 	"trace_rules",
 	"invitations", "report_subscriptions",
+	"system_settings",
 }
 
 // tables that exist but are deliberately not part of a backup.

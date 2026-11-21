@@ -75,7 +75,7 @@ func (s *Server) heartbeat() time.Duration {
 }
 
 func (s *Server) maxParallel() int {
-	if n := s.Cfg.Runner.Web.MaxParallel; n > 0 {
+	if n := s.conf().Runner.Web.MaxParallel; n > 0 {
 		return n
 	}
 	return 2

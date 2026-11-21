@@ -115,12 +115,20 @@ auth:
   # Set the Secure flag on the session cookie. Only disable for plain-HTTP
   # local development.
   cookie_secure: true
+  # Minimum length of local passwords (8-72; letters and a digit or other
+  # character are always required).
+  password_min_length: 10
+  # Failed sign-ins per client address and account within login_lockout
+  # before further attempts are refused until the period has passed.
+  login_max_attempts: 10
+  login_lockout: 5m
 
   # OpenID Connect providers (authorization code flow with PKCE S256, state
   # and nonce). Redirect URI to register at the IdP:
   #   <server.base_url>/api/v1/auth/oidc/<name>/callback
   oidc: []
   #  - name: corp                       # URL-safe identifier
+  #    enabled: true                    # false: keep it, but hide it from the sign-in page
   #    display_name: "Corporate SSO"    # login button label
   #    issuer: "https://idp.example.com/realms/x"   # discovery: <issuer>/.well-known/openid-configuration
   #    client_id: qtf
@@ -273,3 +281,14 @@ bootstrap:
   # File containing the initial password (single line). Delete it after the
   # first start, or use a systemd credential.
   admin_password_file: ""
+
+# Runtime system settings: super administrators can change a set of settings
+# (OIDC providers, logging and syslog, e-mail, sign-in security, the runner)
+# in Administration -> System settings; those values are stored in the
+# database and win over this file. Settings set by a QTF_* environment
+# variable are always read-only there. List keys (or prefixes ending in
+# ".*", or "*" for all) here to keep them read-only, e.g.
+#   locked: ["auth.oidc", "logging.*", "runner.*"]
+# See docs/operations.md, "Runtime system settings".
+system_settings:
+  locked: []

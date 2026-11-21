@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net"
 	"net/mail"
 	"os"
@@ -32,6 +33,48 @@ type Config struct {
 	Bootstrap    Bootstrap    `yaml:"bootstrap"`
 	// Email configures outgoing mail (notifications, invitations, reports).
 	Email Email `yaml:"email"`
+	// SystemSettings controls the settings super administrators can change
+	// at runtime (Administration → System settings, stored in the database).
+	SystemSettings SystemSettings `yaml:"system_settings"`
+
+	// Meta records where values came from (file keys, environment
+	// variables); filled by Load, not part of the YAML.
+	Meta Meta `yaml:"-"`
+}
+
+// SystemSettings controls runtime-editable system settings.
+type SystemSettings struct {
+	// Locked lists setting keys (e.g. "logging.level"), key prefixes ending
+	// in ".*" (e.g. "logging.*") or "*" that cannot be changed in the
+	// administration view; their database overrides are ignored. Settings
+	// set by a QTF_* environment variable are always locked.
+	Locked []string `yaml:"locked"`
+}
+
+// Meta records the origin of loaded values.
+type Meta struct {
+	// File is the configuration file read ("" = none).
+	File string
+	// FileKeys holds the dotted keys present in the file (e.g.
+	// "logging.syslog.address"; lists are recorded by their key, e.g.
+	// "auth.oidc"), plus secrets read from a *_file option.
+	FileKeys map[string]bool
+	// EnvKeys maps dotted keys to the environment variable that set them.
+	EnvKeys map[string]string
+}
+
+// IsLocked reports whether key matches one of the locked patterns.
+func (s SystemSettings) IsLocked(key string) bool {
+	for _, p := range s.Locked {
+		p = strings.TrimSpace(p)
+		switch {
+		case p == "*" || p == key:
+			return true
+		case strings.HasSuffix(p, ".*") && strings.HasPrefix(key, strings.TrimSuffix(p, "*")):
+			return true
+		}
+	}
+	return false
 }
 
 // Email configures the SMTP server used for outgoing mail. Mail is on when
@@ -102,8 +145,15 @@ type Auth struct {
 	Local        bool          `yaml:"local"`
 	SessionTTL   time.Duration `yaml:"session_ttl"`
 	CookieSecure bool          `yaml:"cookie_secure"`
-	OIDC         []OIDC        `yaml:"oidc"`
-	SAML         []SAML        `yaml:"saml"`
+	// PasswordMinLength is the minimum length of local passwords (8-72).
+	PasswordMinLength int `yaml:"password_min_length"`
+	// LoginMaxAttempts sign-in attempts per client address and e-mail
+	// address within LoginLockout; further attempts are refused until the
+	// window has passed.
+	LoginMaxAttempts int           `yaml:"login_max_attempts"`
+	LoginLockout     time.Duration `yaml:"login_lockout"`
+	OIDC             []OIDC        `yaml:"oidc"`
+	SAML             []SAML        `yaml:"saml"`
 }
 
 // Provisioning holds settings shared by external identity providers.
@@ -116,7 +166,10 @@ type Provisioning struct {
 
 // OIDC is an OpenID Connect provider.
 type OIDC struct {
-	Name             string   `yaml:"name"`
+	Name string `yaml:"name"`
+	// Enabled is false to keep a provider configured but hide it from the
+	// sign-in page (nil = enabled).
+	Enabled          *bool    `yaml:"enabled"`
 	DisplayName      string   `yaml:"display_name"`
 	Issuer           string   `yaml:"issuer"`
 	ClientID         string   `yaml:"client_id"`
@@ -127,6 +180,15 @@ type OIDC struct {
 	NameClaim        string   `yaml:"name_claim"`
 	GroupsClaim      string   `yaml:"groups_claim"`
 	Provisioning     `yaml:",inline"`
+}
+
+// On reports whether the provider is enabled.
+func (o OIDC) On() bool { return o.Enabled == nil || *o.Enabled }
+
+// OIDCSecretEnv is the environment variable holding the client secret of
+// the OIDC provider name.
+func OIDCSecretEnv(name string) string {
+	return "QTF_OIDC_" + strings.ToUpper(name) + "_CLIENT_SECRET"
 }
 
 // SAML is a SAML 2.0 identity provider.
@@ -256,7 +318,8 @@ func Default() Config {
 		Logging: Logging{Level: "info", Format: "text", Syslog: Syslog{
 			Network: "udp", Tag: "qtestframe", Facility: "local0", Format: "rfc5424",
 		}},
-		Auth: Auth{Local: true, SessionTTL: 12 * time.Hour, CookieSecure: true},
+		Auth: Auth{Local: true, SessionTTL: 12 * time.Hour, CookieSecure: true,
+			PasswordMinLength: 10, LoginMaxAttempts: 10, LoginLockout: 5 * time.Minute},
 		Runner: Runner{
 			Timeout:        60 * time.Second,
 			WorkDir:        filepath.Join(os.TempDir(), "qtestframe-runner"),
@@ -325,6 +388,8 @@ func LoadWith(path string, o Overrides) (Config, error) {
 		if err := decodeYAML(b, &cfg); err != nil {
 			return cfg, fmt.Errorf("config: parse %s: %w", path, err)
 		}
+		cfg.Meta.File = path
+		cfg.Meta.FileKeys = fileKeys(b)
 	}
 	applyEnv(&cfg)
 	if err := o.Apply(&cfg); err != nil {
@@ -351,16 +416,86 @@ func decodeYAML(b []byte, cfg *Config) error {
 	return nil
 }
 
+// fileKeys returns the dotted keys of the mappings in a YAML document
+// (sequences are recorded by their own key, not descended into).
+func fileKeys(b []byte) map[string]bool {
+	out := map[string]bool{}
+	var root yaml.Node
+	if yaml.Unmarshal(b, &root) != nil || len(root.Content) == 0 {
+		return out
+	}
+	var walk func(n *yaml.Node, prefix string)
+	walk = func(n *yaml.Node, prefix string) {
+		if n.Kind != yaml.MappingNode {
+			return
+		}
+		for i := 0; i+1 < len(n.Content); i += 2 {
+			k := n.Content[i].Value
+			if prefix != "" {
+				k = prefix + "." + k
+			}
+			out[k] = true
+			walk(n.Content[i+1], k)
+		}
+	}
+	walk(root.Content[0], "")
+	return out
+}
+
+// EnvVars maps the environment variables read by Load to the dotted key
+// they set (QTF_OIDC_<NAME>_CLIENT_SECRET is per provider, see
+// OIDCSecretEnv).
+var EnvVars = map[string]string{
+	"QTF_DATABASE_DRIVER":           "database.driver",
+	"QTF_DATABASE_DSN":              "database.dsn",
+	"QTF_SERVER_LISTEN":             "server.listen",
+	"QTF_SERVER_PORT":               "server.listen",
+	"QTF_SERVER_BASE_URL":           "server.base_url",
+	"QTF_LOG_LEVEL":                 "logging.level",
+	"QTF_LOG_FORMAT":                "logging.format",
+	"QTF_BOOTSTRAP_ADMIN_EMAIL":     "bootstrap.admin_email",
+	"QTF_BOOTSTRAP_ADMIN_PASSWORD":  "bootstrap.admin_password",
+	"QTF_EMAIL_HOST":                "email.host",
+	"QTF_EMAIL_USERNAME":            "email.username",
+	"QTF_EMAIL_FROM":                "email.from",
+	"QTF_EMAIL_PORT":                "email.port",
+	"QTF_EMAIL_PASSWORD":            "email.password",
+	"QTF_RUNNER_ENABLED":            "runner.enabled",
+	"QTF_RUNNER_WEB_ENABLED":        "runner.web.enabled",
+	"QTF_RUNNER_WORK_DIR":           "runner.work_dir",
+	"QTF_RUNNER_WEB_NODE":           "runner.web.node",
+	"QTF_RUNNER_WEB_PLAYWRIGHT_DIR": "runner.web.playwright_dir",
+	"QTF_RUNNER_WEB_BROWSERS_PATH":  "runner.web.browsers_path",
+	"QTF_COOKIE_SECURE":             "auth.cookie_secure",
+}
+
+func (c *Config) initMeta() {
+	if c.Meta.EnvKeys == nil {
+		c.Meta.EnvKeys = map[string]string{}
+	}
+	if c.Meta.FileKeys == nil {
+		c.Meta.FileKeys = map[string]bool{}
+	}
+}
+
 func applyEnv(c *Config) {
-	set := func(key string, dst *string) {
-		if v, ok := os.LookupEnv(key); ok {
+	c.initMeta()
+	lookup := func(env string) (string, bool) {
+		v, ok := os.LookupEnv(env)
+		if ok {
+			c.Meta.EnvKeys[EnvVars[env]] = env
+		}
+		return v, ok
+	}
+	set := func(env string, dst *string) {
+		if v, ok := lookup(env); ok {
 			*dst = v
 		}
 	}
 	set("QTF_DATABASE_DRIVER", &c.Database.Driver)
 	set("QTF_DATABASE_DSN", &c.Database.DSN)
 	set("QTF_SERVER_LISTEN", &c.Server.Listen)
-	if v, ok := os.LookupEnv("QTF_SERVER_PORT"); ok {
+	if v, ok := lookup("QTF_SERVER_PORT"); ok {
 		if host, _, err := net.SplitHostPort(c.Server.Listen); err == nil {
 			c.Server.Listen = net.JoinHostPort(host, v)
 		}
@@ -373,13 +508,13 @@ func applyEnv(c *Config) {
 	set("QTF_EMAIL_HOST", &c.Email.Host)
 	set("QTF_EMAIL_USERNAME", &c.Email.Username)
 	set("QTF_EMAIL_FROM", &c.Email.From)
-	if v, ok := os.LookupEnv("QTF_EMAIL_PORT"); ok {
+	if v, ok := lookup("QTF_EMAIL_PORT"); ok {
 		if n, err := strconv.Atoi(v); err == nil {
 			c.Email.Port = n
 		}
 	}
-	setBool := func(key string, dst *bool) {
-		if v, ok := os.LookupEnv(key); ok {
+	setBool := func(env string, dst *bool) {
+		if v, ok := lookup(env); ok {
 			*dst = v == "1" || strings.EqualFold(v, "true")
 		}
 	}
@@ -389,9 +524,7 @@ func applyEnv(c *Config) {
 	set("QTF_RUNNER_WEB_NODE", &c.Runner.Web.Node)
 	set("QTF_RUNNER_WEB_PLAYWRIGHT_DIR", &c.Runner.Web.PlaywrightDir)
 	set("QTF_RUNNER_WEB_BROWSERS_PATH", &c.Runner.Web.BrowsersPath)
-	if v, ok := os.LookupEnv("QTF_COOKIE_SECURE"); ok {
-		c.Auth.CookieSecure = v == "1" || strings.EqualFold(v, "true")
-	}
+	setBool("QTF_COOKIE_SECURE", &c.Auth.CookieSecure)
 }
 
 // readSecret returns the trimmed contents of file. A relative path is
@@ -421,13 +554,16 @@ func (c *Config) resolveSecrets() error {
 			return err
 		}
 	}
+	c.initMeta()
 	if c.Email.PasswordFile != "" {
 		if c.Email.Password, err = readSecret(c.Email.PasswordFile); err != nil {
 			return err
 		}
+		c.Meta.FileKeys["email.password"] = true
 	}
 	if env := os.Getenv("QTF_EMAIL_PASSWORD"); env != "" {
 		c.Email.Password = env
+		c.Meta.EnvKeys["email.password"] = "QTF_EMAIL_PASSWORD"
 	}
 	for i := range c.Auth.OIDC {
 		o := &c.Auth.OIDC[i]
@@ -436,11 +572,19 @@ func (c *Config) resolveSecrets() error {
 				return err
 			}
 		}
-		if env := os.Getenv("QTF_OIDC_" + strings.ToUpper(o.Name) + "_CLIENT_SECRET"); env != "" {
+		if env := os.Getenv(OIDCSecretEnv(o.Name)); env != "" {
 			o.ClientSecret = env
+			c.Meta.EnvKeys["auth.oidc."+o.Name+".client_secret"] = OIDCSecretEnv(o.Name)
 		}
 	}
 	return nil
+}
+
+// ParseLevel parses a log level name (debug, info, warn, error).
+func ParseLevel(s string) (slog.Level, error) {
+	var l slog.Level
+	err := l.UnmarshalText([]byte(strings.ToUpper(strings.TrimSpace(s))))
+	return l, err
 }
 
 // Validate checks semantic constraints.
@@ -464,6 +608,18 @@ func (c *Config) Validate() error {
 	}
 	if c.Auth.SessionTTL <= 0 {
 		errs = append(errs, errors.New("auth.session_ttl must be positive"))
+	}
+	if c.Auth.PasswordMinLength < 8 || c.Auth.PasswordMinLength > 72 {
+		errs = append(errs, errors.New("auth.password_min_length must be between 8 and 72"))
+	}
+	if c.Auth.LoginMaxAttempts < 1 || c.Auth.LoginMaxAttempts > 1000 {
+		errs = append(errs, errors.New("auth.login_max_attempts must be between 1 and 1000"))
+	}
+	if c.Auth.LoginLockout < time.Minute || c.Auth.LoginLockout > 24*time.Hour {
+		errs = append(errs, errors.New("auth.login_lockout must be between 1m and 24h"))
+	}
+	if _, err := ParseLevel(c.Logging.Level); err != nil {
+		errs = append(errs, fmt.Errorf("logging.level %q must be debug, info, warn or error", c.Logging.Level))
 	}
 	names := map[string]bool{}
 	for _, o := range c.Auth.OIDC {

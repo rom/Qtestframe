@@ -215,7 +215,7 @@ func (s *Server) sameOrigin(r *http.Request) bool {
 	if ou.Host == r.Host {
 		return true
 	}
-	if b, err := url.Parse(s.Cfg.Server.BaseURL); err == nil && b.Host != "" && strings.EqualFold(b.Scheme+"://"+b.Host, ou.Scheme+"://"+ou.Host) {
+	if b, err := url.Parse(s.conf().Server.BaseURL); err == nil && b.Host != "" && strings.EqualFold(b.Scheme+"://"+b.Host, ou.Scheme+"://"+ou.Host) {
 		return true
 	}
 	return false
@@ -260,7 +260,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 	tok := auth.RandomToken(32)
 	sess := &model.Session{
 		ID: auth.HashToken(tok), UserID: u.ID, TenantID: tenantID,
-		CSRF: auth.RandomToken(24), ExpiresAt: time.Now().Add(s.Cfg.Auth.SessionTTL),
+		CSRF: auth.RandomToken(24), ExpiresAt: time.Now().Add(s.conf().Auth.SessionTTL),
 		IP: s.clientIP(r), UserAgent: r.UserAgent(),
 	}
 	if err := s.Store.CreateSession(ctx, sess); err != nil {
@@ -268,7 +268,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: tok, Path: "/", HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode,
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode,
 		Expires: sess.ExpiresAt,
 	})
 	return sess, nil
@@ -276,7 +276,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 
 func (s *Server) clearCookie(w http.ResponseWriter, name string) {
 	http.SetCookie(w, &http.Cookie{Name: name, Value: "", Path: "/", MaxAge: -1, HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
 }
 
 type meResponse struct {
@@ -354,15 +354,21 @@ type providerInfo struct {
 }
 
 func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
+	c := s.conf()
 	res := struct {
 		Local bool           `json:"local"`
 		OIDC  []providerInfo `json:"oidc"`
 		SAML  []providerInfo `json:"saml"`
-	}{Local: s.Cfg.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}}
-	for _, o := range s.Cfg.Auth.OIDC {
+		// PasswordMinLength is the minimum length of local passwords.
+		PasswordMinLength int `json:"password_min_length"`
+	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c)}
+	for _, o := range c.Auth.OIDC {
+		if !o.On() {
+			continue
+		}
 		res.OIDC = append(res.OIDC, providerInfo{o.Name, displayName(o.DisplayName, o.Name), "/api/v1/auth/oidc/" + url.PathEscape(o.Name) + "/login"})
 	}
-	for _, sc := range s.Cfg.Auth.SAML {
+	for _, sc := range s.conf().Auth.SAML {
 		res.SAML = append(res.SAML, providerInfo{sc.Name, displayName(sc.DisplayName, sc.Name), "/api/v1/auth/saml/" + url.PathEscape(sc.Name) + "/login"})
 	}
 	writeJSON(w, http.StatusOK, res)
@@ -376,7 +382,7 @@ func displayName(d, n string) string {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	if !s.Cfg.Auth.Local {
+	if !s.conf().Auth.Local {
 		writeError(w, http.StatusForbidden, "forbidden", "local login is disabled")
 		return
 	}
@@ -533,7 +539,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request, p 
 		writeError(w, http.StatusForbidden, "forbidden", "current password is wrong")
 		return
 	}
-	if err := auth.ValidatePassword(req.New); err != nil {
+	if err := auth.ValidatePasswordMin(req.New, minPassword(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -568,7 +574,7 @@ func (s *Server) setState(w http.ResponseWriter, v any) error {
 		return err
 	}
 	http.SetCookie(w, &http.Cookie{Name: stateCookie, Value: val, Path: "/api/v1/auth/", HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode, MaxAge: 600})
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode, MaxAge: 600})
 	return nil
 }
 
@@ -578,7 +584,7 @@ func (s *Server) getState(w http.ResponseWriter, r *http.Request, v any) error {
 		return auth.ErrBadState
 	}
 	http.SetCookie(w, &http.Cookie{Name: stateCookie, Value: "", Path: "/api/v1/auth/", MaxAge: -1, HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
 	return s.signer.Verify(c.Value, v)
 }
 
@@ -588,7 +594,7 @@ func (s *Server) loginError(w http.ResponseWriter, r *http.Request, provider str
 }
 
 func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.OIDC[r.PathValue("name")]
+	p, ok := s.oidcProvider(r.PathValue("name"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "not_found", "unknown provider")
 		return
@@ -606,7 +612,7 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.OIDC[r.PathValue("name")]
+	p, ok := s.oidcProvider(r.PathValue("name"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "not_found", "unknown provider")
 		return

@@ -26,6 +26,7 @@ interface Invitation {
   expires_at: string
   sso: boolean
   local: boolean
+  password_min_length?: number
 }
 
 const route = useRoute()
@@ -135,7 +136,7 @@ async function signOut() {
               <div v-field class="field">
                 <label for="inv-pw">{{ t('email.accept.password') }}</label>
                 <Password v-model="password" input-id="inv-pw" toggle-mask fluid autocomplete="new-password" required :input-props="{ 'aria-describedby': error ? 'inv-error inv-pw-hint' : 'inv-pw-hint' }" />
-                <small id="inv-pw-hint" class="muted">{{ t('email.accept.passwordHint') }}</small>
+                <small id="inv-pw-hint" class="muted">{{ t('email.accept.passwordHint', { min: inv.password_min_length ?? 10 }) }}</small>
               </div>
               <div v-field class="field">
                 <label for="inv-rep">{{ t('email.accept.repeat') }}</label>

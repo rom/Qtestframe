@@ -476,3 +476,79 @@ email:
 		t.Fatal("missing password file")
 	}
 }
+
+func TestLoadRecordsSources(t *testing.T) {
+	clearEnv(t)
+	dir := t.TempDir()
+	pw := writeFile(t, dir, "pw", "mail-pw\n")
+	p := writeFile(t, dir, "c.yaml", `
+logging:
+  level: warn
+  syslog:
+    address: "127.0.0.1:514"
+email:
+  username: u
+  password_file: `+pw+`
+auth:
+  oidc:
+    - name: corp
+      issuer: https://idp
+      client_id: cid
+system_settings:
+  locked: [logging.*, auth.local]
+`)
+	t.Setenv("QTF_EMAIL_HOST", "smtp.example.com")
+	t.Setenv("QTF_EMAIL_FROM", "a@example.com")
+	t.Setenv("QTF_SERVER_BASE_URL", "https://qtf.example.com")
+	t.Setenv("QTF_OIDC_CORP_CLIENT_SECRET", "env-secret")
+	t.Setenv("QTF_COOKIE_SECURE", "false")
+	c, err := Load(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := c.Meta
+	if m.File != p || !m.FileKeys["logging.level"] || !m.FileKeys["logging.syslog.address"] || !m.FileKeys["logging.syslog"] || !m.FileKeys["auth.oidc"] || m.FileKeys["auth.oidc.0"] || !m.FileKeys["email.password"] {
+		t.Errorf("file keys: %v", m.FileKeys)
+	}
+	if m.EnvKeys["email.host"] != "QTF_EMAIL_HOST" || m.EnvKeys["auth.cookie_secure"] != "QTF_COOKIE_SECURE" || m.EnvKeys["auth.oidc.corp.client_secret"] != "QTF_OIDC_CORP_CLIENT_SECRET" || m.EnvKeys["logging.level"] != "" {
+		t.Errorf("env keys: %v", m.EnvKeys)
+	}
+	if c.Email.Password != "mail-pw" || c.Auth.OIDC[0].ClientSecret != "env-secret" || c.Auth.CookieSecure {
+		t.Errorf("values: %+v", c.Email)
+	}
+	if !c.SystemSettings.IsLocked("logging.syslog.tag") || !c.SystemSettings.IsLocked("auth.local") || c.SystemSettings.IsLocked("auth.local_x") || c.SystemSettings.IsLocked("email.host") {
+		t.Error("IsLocked")
+	}
+	if !(SystemSettings{Locked: []string{"*"}}).IsLocked("anything") {
+		t.Error("wildcard")
+	}
+	t.Setenv("QTF_EMAIL_PASSWORD", "env-pw")
+	if c, _ = Load(p); c.Meta.EnvKeys["email.password"] != "QTF_EMAIL_PASSWORD" || c.Email.Password != "env-pw" {
+		t.Error("env password")
+	}
+	if !(OIDC{}).On() || OIDCSecretEnv("corp") != "QTF_OIDC_CORP_CLIENT_SECRET" {
+		t.Error("OIDC helpers")
+	}
+	if len(fileKeys([]byte("[1, 2]"))) != 0 || len(fileKeys(nil)) != 0 {
+		t.Error("fileKeys of a non-mapping")
+	}
+}
+
+func TestValidateSecuritySettings(t *testing.T) {
+	for name, mut := range map[string]func(*Config){
+		"min length": func(c *Config) { c.Auth.PasswordMinLength = 7 },
+		"max length": func(c *Config) { c.Auth.PasswordMinLength = 73 },
+		"attempts":   func(c *Config) { c.Auth.LoginMaxAttempts = 0 },
+		"lockout":    func(c *Config) { c.Auth.LoginLockout = time.Second },
+		"level":      func(c *Config) { c.Logging.Level = "loud" },
+	} {
+		c := Default()
+		mut(&c)
+		if err := c.Validate(); err == nil {
+			t.Errorf("%s accepted", name)
+		}
+	}
+	if l, err := ParseLevel(" Warn "); err != nil || l.String() != "WARN" {
+		t.Errorf("ParseLevel: %v %v", l, err)
+	}
+}

@@ -147,6 +147,7 @@ var ProjectArchiveExcluded = map[string]string{
 	"invitations":          "secret",
 	"scim_tokens":          "secret",
 	"scim_settings":        "organisation",
+	"system_settings":      "server configuration",
 	"scim_users":           "organisation",
 	"scim_groups":          "organisation",
 	"scim_group_members":   "organisation",

@@ -290,6 +290,25 @@ OIDC/SAML login neither creates nor changes that membership, so
 * Authorization is enforced in the API layer (route permissions in
   `internal/api/server.go`, data-dependent checks in handlers) and tenant
   scoping in the store layer.
+* **System settings** (Administration → System settings,
+  `/api/v1/admin/settings*`, `internal/api/systemsettings.go`) change the
+  whole installation (sign-in, SSO, logging, e-mail, runner), so only
+  **super administrators signed in with a session** may read or change them;
+  API tokens (even a super admin's) and tenant admins get 403, and no
+  setting is tenant-scoped. The operator keeps control: settings set by a
+  `QTF_*` environment variable or listed in `system_settings.locked` are
+  read-only and their stored overrides are ignored, and settings that
+  affect the process lock-down (runner, sandbox, file paths, TLS, cookies,
+  HSTS, trusted proxies, the database) cannot be changed at runtime at all —
+  the runner settings that can be changed apply only after a restart, when
+  Landlock is set up again. Local sign-in cannot be turned off while no
+  single sign-on provider is enabled. Every change is audited
+  (`settings.update` with old → new values, secrets redacted) and the test
+  buttons are audited too (`settings.test_*`). The "Test connection" (OIDC
+  discovery), "Send test message" (syslog) and "Send test e-mail" buttons
+  make the server connect to an address the super admin enters; they are
+  limited to super admins for that reason (filter the server's egress if it
+  can reach internal services).
 
 ## 5. Web application protections
 
@@ -383,6 +402,19 @@ Further measures:
   created or rotated. Use tracker tokens with the smallest scope that works
   (GitHub fine-grained token with Issues read/write on one repository; a
   Jira user that can only create and browse issues in the project).
+* **System settings secrets.** The SMTP password and OIDC client secrets
+  entered in Administration → System settings are stored in the database
+  (table `system_settings`) in plain text, like tracker tokens, so that the
+  server can use them; they are **write-only** in the API (`has_secret`,
+  `secret_source`), never logged, never in the audit log (only "set /
+  changed / removed"), and redacted in the configuration export. Secrets of
+  the configuration file or the environment are not copied into the
+  database when providers are edited in the web client, and
+  `QTF_OIDC_<NAME>_CLIENT_SECRET` / `QTF_EMAIL_PASSWORD` always win over a
+  stored value. Backups contain the table (restore applies it at once);
+  project archives do not. Operators who do not want secrets in the
+  database lock the settings (`system_settings.locked: ["email.*",
+  "auth.oidc"]`) and keep using `*_file` options.
 * **Project archives** (*Save project*, `GET /projects/{pid}/archive`)
   contain all project data in plain form (texts, results, files, version
   history, user ids and e-mail addresses in *created by* and similar fields),

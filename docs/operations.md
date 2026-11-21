@@ -160,6 +160,83 @@ Always set `server.base_url` to the URL users type (it is used for SSO
 redirect URIs, SAML entity/ACS URLs and the CSRF origin check). Behind a
 reverse proxy also set `server.trusted_proxies`.
 
+### Runtime system settings (Administration → System settings)
+
+Super administrators can change a defined set of settings in the web client
+(**Administration → System settings**, API `GET/PUT /api/v1/admin/settings`)
+without editing the file. The changes are stored in the database (table
+`system_settings`, migration 0026) and the full rules live in
+`internal/settings/settings.go`.
+
+**Precedence:** database override (changed in the web client) > `QTF_*`
+environment variable / configuration file > built-in default. The page shows
+the source of every value (*Default*, *Configuration file*, *Environment*,
+*Changed here*) and offers **Reset to file value**, which deletes the
+override.
+
+**Locking (the operator always wins):**
+
+* A setting set by a `QTF_*` environment variable is **locked**: it is shown
+  read-only with the variable's name, and a stored override of it is
+  ignored. Use environment variables for values that must not be changed
+  from the web client (in containers: set them in the compose file).
+* `system_settings.locked` in the file locks settings that come from the file
+  or the default. Entries are keys (`logging.level`), prefixes ending in `.*`
+  (`email.*`) or `*` (everything read-only):
+
+  ```yaml
+  system_settings:
+    locked: ["auth.oidc", "logging.*", "runner.*"]
+  ```
+* Settings that are only shown for information (listen address, database,
+  TLS/syslog certificate files, `cookie_secure`, `hsts`, `trusted_proxies`,
+  `runner.sandbox`, paths of the runner) can only be set in the file.
+
+| Section | Settings | Applies |
+|---|---|---|
+| General | `server.base_url`, `files.max_upload_mb`, `requirements.auto_create_test` | at once |
+| Security | `auth.local`, `auth.session_ttl` (new sign-ins), `auth.password_min_length`, `auth.login_max_attempts`, `auth.login_lockout` | at once |
+| Single sign-on | `auth.oidc` (the provider list: add/edit/disable/delete, discovery test) | at once |
+| Logging | `logging.level`, `logging.format`, `logging.syslog.{enabled,network,address,format,facility,tag}` | at once |
+| E-mail | `email.{enabled,host,port,tls,username,password,from,from_name,timeout,digest_hour}` | at once |
+| Runner | `runner.{enabled,timeout,max_output_bytes,deny_network}`, `runner.web.{enabled,browser,headless,timeout,job_timeout,max_parallel,max_evidence_mb,screenshots,trace,video}` | after a restart |
+
+Runtime settings are validated together with the rest of the configuration
+(the same checks as `check-config`) before they are stored; the e-mail
+sender, the OIDC providers (providers whose configuration did not change are
+kept, so sign-ins in progress continue), the logger and the login limits are
+rebuilt at once. Runner settings are read at start-up, **before** the
+process is locked down (Landlock execute paths, work directory): they are
+stored at once and apply at the next `systemctl restart qtestframe`; the page
+shows the value in use until then. If the stored settings are invalid at
+start-up (for example after a change of the file), the server logs an error,
+ignores all of them and shows a warning on the page; fix or reset them there.
+
+Notes:
+
+* Changing the OIDC providers in the web client stores the whole provider
+  list; it then **replaces** `auth.oidc` of the file. Client secrets of
+  providers from the file are not copied: they keep coming from the file
+  (`client_secret_file`) or `QTF_OIDC_<NAME>_CLIENT_SECRET`, which always
+  wins. Reset `auth.oidc` to return to the file's list. SAML providers can
+  only be configured in the file; they read `server.base_url` at start-up.
+* Syslog over TLS uses the `ca_file`/`cert_file`/`key_file` of the file;
+  the files are readable after the lock-down because they are added to the
+  Landlock read-only paths at start-up. A `unix` socket that was not
+  configured at start-up may be refused by the hardening; use `udp`, `tcp`
+  or `tls`, or restart.
+* **Export configuration** (`GET /api/v1/admin/settings/export`) downloads
+  the effective configuration as YAML with secrets replaced by `REDACTED`
+  (the e-mail password is never exported), e.g. to move the values into the
+  file and then reset them in the web client.
+* Every change is written to the audit log (`settings.update`, old → new
+  value, secrets only as "set/changed") and to the server log / syslog.
+  Backups (`qtestframe backup`) include the `system_settings` table with its
+  secrets; project archives do not.
+* New file options for the security section: `auth.password_min_length`
+  (default 10), `auth.login_max_attempts` (10) and `auth.login_lockout`
+  (5m); `auth.oidc[].enabled: false` hides a provider from the sign-in page.
+
 ## 4. Database: SQLite or PostgreSQL
 
 | | SQLite (default) | PostgreSQL |
