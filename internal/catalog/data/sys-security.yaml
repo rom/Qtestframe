@@ -197,7 +197,7 @@ requirements:
     obligation: must
     priority: high
     tags: [security-requirements, suppliers, allocation]
-    refs: ["IEC 62443-2-4 (security program requirements for service providers)", "ISO/IEC 27001:2022 A.5.20"]
+    refs: ["IEC 62443-2-4:2023", "ISO/IEC 27001:2022 A.5.20"]
     tests: [SYSEC-T06]
     en:
       title: Security requirements allocated to subsystems and suppliers
@@ -265,7 +265,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [remote-maintenance, remote-access, mfa]
-    refs: ["IEC 62443-3-3 SR 1.13", "IEC 62443-2-4 (security program requirements for service providers)"]
+    refs: ["IEC 62443-3-3 SR 1.13", "IEC 62443-2-4:2023"]
     tests: [SYSEC-T09]
     en:
       title: Remote maintenance only through a controlled access point

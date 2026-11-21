@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cold, climatic-test]
-    refs: ["IEC 60068-2-1 (test A: cold)"]
+    refs: ["IEC 60068-2-1:2025 (test A: cold)"]
     tests: [HWENV-T02]
     en:
       title: Operation at the minimum operating temperature
@@ -59,7 +59,7 @@ requirements:
     obligation: must
     priority: high
     tags: [dry-heat, climatic-test, thermal]
-    refs: ["IEC 60068-2-2 (test B: dry heat)"]
+    refs: ["IEC 60068-2-2:2025 (test B: dry heat)"]
     tests: [HWENV-T02]
     en:
       title: Operation at the maximum operating temperature
@@ -83,7 +83,7 @@ requirements:
     obligation: must
     priority: high
     tags: [damp-heat, humidity, condensation]
-    refs: ["IEC 60068-2-30 (test Db: damp heat, cyclic)"]
+    refs: ["IEC 60068-2-30:2025 (test Db: damp heat, cyclic)"]
     tests: [HWENV-T03]
     en:
       title: Function after cyclic damp heat
@@ -107,7 +107,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [thermal-cycling, solder-joints]
-    refs: ["IEC 60068-2-14 (test N: change of temperature)"]
+    refs: ["IEC 60068-2-14:2023 (test N: change of temperature)"]
     tests: [HWENV-T04]
     en:
       title: No failure after temperature cycling
@@ -131,7 +131,7 @@ requirements:
     obligation: must
     priority: high
     tags: [vibration, mechanical-test]
-    refs: ["IEC 60068-2-6 (test Fc: vibration, sinusoidal)", "IEC 60068-2-64 (test Fh: vibration, broadband random)"]
+    refs: ["IEC 60068-2-6:2007 (test Fc: vibration, sinusoidal)", "IEC 60068-2-64:2026 (test Fh: vibration, broadband random)"]
     tests: [HWENV-T05]
     en:
       title: Vibration in three axes
@@ -153,7 +153,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [shock, mechanical-test]
-    refs: ["IEC 60068-2-27 (test Ea: shock)"]
+    refs: ["IEC 60068-2-27:2008 (test Ea: shock)"]
     tests: [HWENV-T05]
     en:
       title: Mechanical shock
@@ -177,7 +177,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [free-fall, portable, drop-test]
-    refs: ["IEC 60068-2-31 (test Ec: rough handling shocks)"]
+    refs: ["IEC 60068-2-31:2008 (test Ec: rough handling shocks)"]
     tests: [HWENV-T06]
     en:
       title: Portable product survives a drop from 1 metre
@@ -201,7 +201,7 @@ requirements:
     obligation: must
     priority: high
     tags: [ip-rating, ingress-protection, enclosure]
-    refs: ["IEC 60529 (IP code)"]
+    refs: ["IEC 60529:1989+A2:2013 (IP code)"]
     tests: [HWENV-T07]
     en:
       title: Declared IP rating verified by test
@@ -223,7 +223,7 @@ requirements:
     obligation: should
     priority: low
     tags: [ik-rating, impact, enclosure]
-    refs: ["IEC 62262 (IK code)"]
+    refs: ["IEC 62262:2002+A1:2021 (IK code)"]
     tests: [HWENV-T08]
     en:
       title: Impact protection of the enclosure
@@ -441,7 +441,7 @@ tests:
     priority: high
     execution: manual
     tags: [cold, dry-heat]
-    refs: ["IEC 60068-2-1 (test A: cold)", "IEC 60068-2-2 (test B: dry heat)"]
+    refs: ["IEC 60068-2-1:2025 (test A: cold)", "IEC 60068-2-2:2025 (test B: dry heat)"]
     en:
       title: Functional test at the temperature limits
       description: Runs the functional test on three units at the minimum and at the maximum operating temperature.
@@ -471,7 +471,7 @@ tests:
     priority: high
     execution: manual
     tags: [damp-heat]
-    refs: ["IEC 60068-2-30 (test Db: damp heat, cyclic)"]
+    refs: ["IEC 60068-2-30:2025 (test Db: damp heat, cyclic)"]
     en:
       title: Cyclic damp heat with insulation measurement
       description: Exposes three units to cyclic damp heat and measures insulation resistance afterwards.
@@ -499,7 +499,7 @@ tests:
     priority: medium
     execution: manual
     tags: [thermal-cycling]
-    refs: ["IEC 60068-2-14 (test N: change of temperature)"]
+    refs: ["IEC 60068-2-14:2023 (test N: change of temperature)"]
     en:
       title: Temperature cycling and solder joint inspection
       description: Cycles three units between the storage limits and inspects the solder joints.
@@ -527,7 +527,7 @@ tests:
     priority: high
     execution: manual
     tags: [vibration, shock]
-    refs: ["IEC 60068-2-6 (test Fc: vibration, sinusoidal)", "IEC 60068-2-27 (test Ea: shock)"]
+    refs: ["IEC 60068-2-6:2007 (test Fc: vibration, sinusoidal)", "IEC 60068-2-27:2008 (test Ea: shock)"]
     en:
       title: Vibration and shock in three axes
       description: Vibrates and shocks two monitored units in each axis and inspects them.
@@ -559,7 +559,7 @@ tests:
     priority: medium
     execution: manual
     tags: [drop-test]
-    refs: ["IEC 60068-2-31 (test Ec: rough handling shocks)"]
+    refs: ["IEC 60068-2-31:2008 (test Ec: rough handling shocks)"]
     en:
       title: Drop test of a portable product
       description: Drops two units onto a steel-faced concrete floor on each face, edge and corner.
@@ -585,7 +585,7 @@ tests:
     priority: high
     execution: manual
     tags: [ip-rating]
-    refs: ["IEC 60529 (IP code)"]
+    refs: ["IEC 60529:1989+A2:2013 (IP code)"]
     en:
       title: Dust and water test of the declared IP rating
       description: Runs the IEC 60529 tests of the declared rating on a unit installed as in use.
@@ -619,7 +619,7 @@ tests:
     priority: low
     execution: manual
     tags: [ik-rating]
-    refs: ["IEC 62262 (IK code)"]
+    refs: ["IEC 62262:2002+A1:2021 (IK code)"]
     en:
       title: Impact test of the enclosure
       description: Applies 5 J impacts to the most exposed points of the enclosure.

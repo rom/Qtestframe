@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [scope, management-system]
-    refs: ["ISO/IEC 27001:2022 §4.3", "ISO 9001:2015 §4.3"]
+    refs: ["ISO/IEC 27001:2022 §4.3", "ISO 9001:2026 §4.3"]
     tests: [GVMS-T01]
     en:
       title: Documented scope of the management system
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [policy, top-management]
-    refs: ["ISO/IEC 27001:2022 §5.2", "ISO/IEC 27001:2022 A.5.1", "ISO 9001:2015 §5.2"]
+    refs: ["ISO/IEC 27001:2022 §5.2", "ISO/IEC 27001:2022 A.5.1", "ISO 9001:2026 §5.2"]
     tests: [GVMS-T02]
     en:
       title: Approved policy reviewed every 12 months
@@ -59,7 +59,7 @@ requirements:
     obligation: must
     priority: high
     tags: [roles, raci]
-    refs: ["ISO/IEC 27001:2022 §5.3", "ISO/IEC 27001:2022 A.5.2", "ISO 9001:2015 §5.3", "RACI responsibility assignment matrix"]
+    refs: ["ISO/IEC 27001:2022 §5.3", "ISO/IEC 27001:2022 A.5.2", "ISO 9001:2026 §5.3", "RACI responsibility assignment matrix"]
     tests: [GVMS-T03]
     en:
       title: RACI matrix with one accountable role per process
@@ -103,7 +103,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [objectives]
-    refs: ["ISO/IEC 27001:2022 §6.2", "ISO 9001:2015 §6.2"]
+    refs: ["ISO/IEC 27001:2022 §6.2", "ISO 9001:2026 §6.2"]
     tests: [GVMS-T04]
     en:
       title: Measurable objectives with owner and due date
@@ -125,7 +125,7 @@ requirements:
     obligation: must
     priority: high
     tags: [risk, risk-register]
-    refs: ["ISO/IEC 27001:2022 §6.1.2", "ISO/IEC 27001:2022 §8.2", "ISO 9001:2015 §6.1"]
+    refs: ["ISO/IEC 27001:2022 §6.1.2", "ISO/IEC 27001:2022 §8.2", "ISO 9001:2026 §6.1"]
     tests: [GVMS-T05]
     en:
       title: Risk register reviewed every 6 months
@@ -149,7 +149,7 @@ requirements:
     obligation: must
     priority: high
     tags: [compliance, legal]
-    refs: ["ISO/IEC 27001:2022 §4.2", "ISO/IEC 27001:2022 A.5.31", "ISO 9001:2015 §4.2"]
+    refs: ["ISO/IEC 27001:2022 §4.2", "ISO/IEC 27001:2022 A.5.31", "ISO 9001:2026 §4.2"]
     tests: [GVMS-T06]
     en:
       title: Register of legal and contractual requirements
@@ -195,7 +195,7 @@ requirements:
     obligation: must
     priority: high
     tags: [internal-audit, audit-programme]
-    refs: ["ISO/IEC 27001:2022 §9.2.2", "ISO 9001:2015 §9.2", "ISO 19011:2018 §5.4"]
+    refs: ["ISO/IEC 27001:2022 §9.2.2", "ISO 9001:2026 §9.2", "ISO 19011:2026 §5.4 (establishing the audit programme)"]
     tests: [GVMS-T07]
     en:
       title: Audit programme covering each process within 3 years
@@ -219,7 +219,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [internal-audit, independence]
-    refs: ["ISO 19011:2018 §4", "ISO/IEC 27001:2022 §9.2.2"]
+    refs: ["ISO 19011:2026 §4.6 (independence)", "ISO/IEC 27001:2022 §9.2.2"]
     tests: [GVMS-T07]
     en:
       title: Auditors do not audit their own work
@@ -243,7 +243,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [internal-audit, audit-report]
-    refs: ["ISO 19011:2018 §6.5"]
+    refs: ["ISO 19011:2026 §6.5 (preparing and distributing the audit report)"]
     tests: [GVMS-T08]
     en:
       title: Audit report within 10 working days
@@ -267,7 +267,7 @@ requirements:
     obligation: must
     priority: high
     tags: [nonconformity, corrective-action]
-    refs: ["ISO/IEC 27001:2022 §10.2", "ISO 9001:2015 §10.2", "ISO 19011:2018 §6.7"]
+    refs: ["ISO/IEC 27001:2022 §10.2", "ISO 9001:2026 §10.2", "ISO 19011:2026 §6.7 (conducting the audit follow-up)"]
     tests: [GVMS-T09]
     en:
       title: Corrective action with root cause and effectiveness check
@@ -289,7 +289,7 @@ requirements:
     obligation: must
     priority: high
     tags: [management-review]
-    refs: ["ISO/IEC 27001:2022 §9.3.2", "ISO 9001:2015 §9.3.2"]
+    refs: ["ISO/IEC 27001:2022 §9.3.2", "ISO 9001:2026 §9.3.2"]
     tests: [GVMS-T10]
     en:
       title: Management review every 12 months with defined inputs
@@ -313,7 +313,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [management-review, decisions]
-    refs: ["ISO/IEC 27001:2022 §9.3.3", "ISO 9001:2015 §9.3.3"]
+    refs: ["ISO/IEC 27001:2022 §9.3.3", "ISO 9001:2026 §9.3.3"]
     tests: [GVMS-T10]
     en:
       title: Management review decisions with owners
@@ -335,7 +335,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [kpi, performance-evaluation]
-    refs: ["ISO/IEC 27001:2022 §9.1", "ISO 9001:2015 §9.1.3"]
+    refs: ["ISO/IEC 27001:2022 §9.1", "ISO 9001:2026 §9.1.3"]
     tests: [GVMS-T11]
     en:
       title: Quarterly report of management system indicators
@@ -383,7 +383,7 @@ requirements:
     obligation: should
     priority: low
     tags: [communication]
-    refs: ["ISO/IEC 27001:2022 §7.4", "ISO 9001:2015 §7.4"]
+    refs: ["ISO/IEC 27001:2022 §7.4", "ISO 9001:2026 §7.4"]
     tests: [GVMS-T12]
     en:
       title: Communication plan for the management system
@@ -405,7 +405,7 @@ tests:
     priority: high
     execution: manual
     tags: [scope]
-    refs: ["ISO/IEC 27001:2022 §4.3", "ISO 9001:2015 §4.3"]
+    refs: ["ISO/IEC 27001:2022 §4.3", "ISO 9001:2026 §4.3"]
     en:
       title: Review of the management system scope
       description: Checks that the scope document is complete and matches the organisation's actual sites and services.
@@ -435,7 +435,7 @@ tests:
     priority: high
     execution: manual
     tags: [policy]
-    refs: ["ISO/IEC 27001:2022 §5.2", "ISO 9001:2015 §5.2"]
+    refs: ["ISO/IEC 27001:2022 §5.2", "ISO 9001:2026 §5.2"]
     en:
       title: Review of policy approval and review history
       description: Checks that the policy is approved by top management and has been reviewed within the interval.
@@ -487,7 +487,7 @@ tests:
     priority: medium
     execution: manual
     tags: [objectives]
-    refs: ["ISO/IEC 27001:2022 §6.2", "ISO 9001:2015 §6.2"]
+    refs: ["ISO/IEC 27001:2022 §6.2", "ISO 9001:2026 §6.2"]
     en:
       title: Review of the objectives list
       description: Checks that each objective is measurable and has an owner and a due date.
@@ -567,7 +567,7 @@ tests:
     priority: high
     execution: manual
     tags: [internal-audit]
-    refs: ["ISO/IEC 27001:2022 §9.2.2", "ISO 19011:2018 §5.4", "ISO 19011:2018 §4"]
+    refs: ["ISO/IEC 27001:2022 §9.2.2", "ISO 19011:2026 §5.4 (establishing the audit programme)", "ISO 19011:2026 §4.6 (independence)"]
     en:
       title: Review of the audit programme and auditor independence
       description: Checks that the audit programme covers each process within 3 years and that no auditor audited their own work.
@@ -593,7 +593,7 @@ tests:
     priority: medium
     execution: manual
     tags: [audit-report]
-    refs: ["ISO 19011:2018 §6.5"]
+    refs: ["ISO 19011:2026 §6.5 (preparing and distributing the audit report)"]
     en:
       title: Timeliness of audit reports
       description: Checks the time from closing meeting to distribution of the audit report.
@@ -619,7 +619,7 @@ tests:
     priority: high
     execution: manual
     tags: [corrective-action]
-    refs: ["ISO/IEC 27001:2022 §10.2", "ISO 9001:2015 §10.2"]
+    refs: ["ISO/IEC 27001:2022 §10.2", "ISO 9001:2026 §10.2"]
     en:
       title: Review of closed nonconformities
       description: Checks a sample of closed nonconformities for root cause, action and effectiveness check.
@@ -651,7 +651,7 @@ tests:
     priority: high
     execution: manual
     tags: [management-review]
-    refs: ["ISO/IEC 27001:2022 §9.3.2", "ISO/IEC 27001:2022 §9.3.3", "ISO 9001:2015 §9.3"]
+    refs: ["ISO/IEC 27001:2022 §9.3.2", "ISO/IEC 27001:2022 §9.3.3", "ISO 9001:2026 §9.3"]
     en:
       title: Review of management review minutes
       description: Checks the date, inputs and decisions of the last two management reviews.
@@ -681,7 +681,7 @@ tests:
     priority: medium
     execution: manual
     tags: [kpi]
-    refs: ["ISO/IEC 27001:2022 §9.1", "ISO 9001:2015 §9.1.3"]
+    refs: ["ISO/IEC 27001:2022 §9.1", "ISO 9001:2026 §9.1.3"]
     en:
       title: Review of quarterly indicator reports
       description: Checks that the management system indicators were reported every quarter.

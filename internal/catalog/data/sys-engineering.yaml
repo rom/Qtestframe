@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [life-cycle, decision-gates]
-    refs: ["ISO/IEC/IEEE 15288:2023 §6.2.1 (life cycle model management process)", "ISO/IEC/IEEE 24748-1 (life cycle management guidelines)"]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.2.1 (life cycle model management process)", "ISO/IEC/IEEE 24748-1:2024 (life cycle management guidelines)"]
     tests: [SYENG-T01]
     en:
       title: Life-cycle model with decision gates
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [stakeholders, stakeholder-needs]
-    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.2 (stakeholder needs and requirements definition process)", "ISO/IEC/IEEE 29148:2018 (stakeholder requirements)"]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.2 (stakeholder needs and requirements definition process)", "ISO/IEC/IEEE 29148:2018 §6.3 (stakeholder needs and requirements definition process)"]
     tests: [SYENG-T02]
     en:
       title: Stakeholder register and documented needs
@@ -57,7 +57,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [concept-of-operations, scenarios]
-    refs: ["ISO/IEC/IEEE 29148:2018 (concept of operations)", "ISO/IEC/IEEE 15288:2023 §6.4.1 (business or mission analysis process)"]
+    refs: ["ISO/IEC/IEEE 29148:2018 Annex B (concept of operations)", "ISO/IEC/IEEE 15288:2023 §6.4.1 (business or mission analysis process)"]
     tests: [SYENG-T02]
     en:
       title: Concept of operations with operational scenarios
@@ -79,7 +79,7 @@ requirements:
     obligation: must
     priority: high
     tags: [requirement-attributes, requirements]
-    refs: ["ISO/IEC/IEEE 29148:2018 (requirement attributes)"]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2.8 (requirements attributes)"]
     tests: [SYENG-T03]
     en:
       title: Attributes recorded for each system requirement
@@ -173,7 +173,7 @@ requirements:
     obligation: must
     priority: high
     tags: [requirements-baseline, change-board]
-    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)", "ISO 10007:2017 (change control)"]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)", "ISO 10007:2017 §5.4 (change control)"]
     tests: [SYENG-T05]
     en:
       title: Requirements baselined before design and changed only through the board
@@ -263,7 +263,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration-identification, configuration-items]
-    refs: ["ISO 10007:2017 (configuration identification)", "SAE EIA-649C (configuration management standard)", "ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)"]
+    refs: ["ISO 10007:2017 §5.3 (configuration identification)", "SAE EIA-649C (configuration management standard)", "ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)"]
     tests: [SYENG-T08]
     en:
       title: Configuration items identified with versions
@@ -285,7 +285,7 @@ requirements:
     obligation: must
     priority: high
     tags: [baselines, configuration-management]
-    refs: ["ISO 10007:2017 (configuration baseline)", "SAE EIA-649C (configuration management standard)"]
+    refs: ["ISO 10007:2017 §5.3.3 (configuration baselines)", "SAE EIA-649C (configuration management standard)"]
     tests: [SYENG-T08]
     en:
       title: Functional, allocated and product baselines
@@ -307,7 +307,7 @@ requirements:
     obligation: must
     priority: high
     tags: [change-control, impact-analysis]
-    refs: ["ISO 10007:2017 (change control)", "SAE EIA-649C (configuration management standard)"]
+    refs: ["ISO 10007:2017 §5.4 (change control)", "SAE EIA-649C (configuration management standard)"]
     tests: [SYENG-T05]
     en:
       title: Impact analysis before each change is approved
@@ -329,7 +329,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [status-accounting, configuration-management]
-    refs: ["ISO 10007:2017 (configuration status accounting)"]
+    refs: ["ISO 10007:2017 §5.5 (configuration status accounting)"]
     tests: [SYENG-T09]
     en:
       title: Configuration status report on demand
@@ -351,7 +351,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration-audit, delivery]
-    refs: ["ISO 10007:2017 (configuration audit)", "SAE EIA-649C (configuration management standard)"]
+    refs: ["ISO 10007:2017 §5.6 (configuration audit)", "SAE EIA-649C (configuration management standard)"]
     tests: [SYENG-T10]
     en:
       title: Functional and physical configuration audit before delivery
@@ -423,7 +423,7 @@ tests:
     priority: high
     execution: manual
     tags: [stakeholders, concept-of-operations]
-    refs: ["ISO/IEC/IEEE 29148:2018 (stakeholder requirements)", "ISO/IEC/IEEE 29148:2018 (concept of operations)"]
+    refs: ["ISO/IEC/IEEE 29148:2018 §6.3 (stakeholder needs and requirements definition process)", "ISO/IEC/IEEE 29148:2018 Annex B (concept of operations)"]
     en:
       title: Stakeholder register and concept of operations
       description: Reviews the stakeholder register, the recorded needs and the concept of operations.
@@ -453,7 +453,7 @@ tests:
     priority: high
     execution: manual
     tags: [requirement-attributes, requirement-quality]
-    refs: ["ISO/IEC/IEEE 29148:2018 (requirement attributes)", "ISO/IEC/IEEE 29148:2018 §5.2.5 (characteristics of individual requirements)"]
+    refs: ["ISO/IEC/IEEE 29148:2018 §5.2.8 (requirements attributes)", "ISO/IEC/IEEE 29148:2018 §5.2.5 (characteristics of individual requirements)"]
     en:
       title: Requirement attributes and wording
       description: Checks the attributes of all system requirements and the wording of a sample.
@@ -509,7 +509,7 @@ tests:
     priority: high
     execution: manual
     tags: [requirements-baseline, change-control]
-    refs: ["ISO 10007:2017 (change control)"]
+    refs: ["ISO 10007:2017 §5.4 (change control)"]
     en:
       title: Requirements baseline and change requests
       description: Compares the requirement history after the baseline with the approved change requests.
@@ -591,7 +591,7 @@ tests:
     priority: high
     execution: manual
     tags: [configuration-identification, baselines]
-    refs: ["ISO 10007:2017 (configuration identification)", "ISO 10007:2017 (configuration baseline)"]
+    refs: ["ISO 10007:2017 §5.3 (configuration identification)", "ISO 10007:2017 §5.3.3 (configuration baselines)"]
     en:
       title: Configuration items and baselines
       description: Checks the configuration item list against the repositories and the baselines against the gate approvals.
@@ -621,7 +621,7 @@ tests:
     priority: medium
     execution: manual
     tags: [status-accounting]
-    refs: ["ISO 10007:2017 (configuration status accounting)"]
+    refs: ["ISO 10007:2017 §5.5 (configuration status accounting)"]
     en:
       title: Configuration status report on demand
       description: Requests a status report and checks sampled entries against the repositories.
@@ -647,7 +647,7 @@ tests:
     priority: high
     execution: manual
     tags: [configuration-audit]
-    refs: ["ISO 10007:2017 (configuration audit)"]
+    refs: ["ISO 10007:2017 §5.6 (configuration audit)"]
     en:
       title: Configuration audit reports before delivery
       description: Reviews the functional and physical configuration audit reports of a delivery.

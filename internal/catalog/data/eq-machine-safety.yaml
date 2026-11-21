@@ -125,7 +125,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [guards, interlocking, access]
-    refs: ["ISO 14120:2015 (guards)", "ISO 14119:2013 (interlocking devices associated with guards)", "Regulation (EU) 2023/1230 Annex III §1.4 (guards and protective devices)"]
+    refs: ["ISO 14120:2015 (guards)", "ISO 14119:2024 (interlocking devices associated with guards)", "Regulation (EU) 2023/1230 Annex III §1.4 (guards and protective devices)"]
     tests: [EQSAF-T05]
     en:
       title: Fixed guards need tools and movable guards are interlocked
@@ -147,7 +147,7 @@ requirements:
     obligation: must
     priority: high
     tags: [safety-distances, light-curtain, stopping-time]
-    refs: ["ISO 13857:2019 (safety distances to prevent hazard zones being reached)", "ISO 13855:2010 (positioning of safeguards with respect to approach speeds)"]
+    refs: ["ISO 13857:2019 (safety distances to prevent hazard zones being reached)", "ISO 13855:2024 (positioning of safeguards with respect to the approach of the human body)"]
     tests: [EQSAF-T06]
     en:
       title: Safety distances based on measured stopping time
@@ -521,7 +521,7 @@ tests:
     priority: critical
     execution: manual
     tags: [guards, interlocking]
-    refs: ["ISO 14120:2015 (guards)", "ISO 14119:2013 (interlocking devices associated with guards)"]
+    refs: ["ISO 14120:2015 (guards)", "ISO 14119:2024 (interlocking devices associated with guards)"]
     en:
       title: Fixed and interlocked guards
       description: Tries to remove each fixed guard by hand and opens each interlocked guard during operation.
@@ -547,7 +547,7 @@ tests:
     priority: high
     execution: manual
     tags: [safety-distances, stopping-time]
-    refs: ["ISO 13855:2010 (positioning of safeguards with respect to approach speeds)", "ISO 13857:2019 (safety distances to prevent hazard zones being reached)"]
+    refs: ["ISO 13855:2024 (positioning of safeguards with respect to the approach of the human body)", "ISO 13857:2019 (safety distances to prevent hazard zones being reached)"]
     en:
       title: Stopping time measurement and light curtain distance
       description: Measures the overall stopping time and compares the calculated safety distance with the installed one.
@@ -558,7 +558,7 @@ tests:
           expected: Ten values are recorded and the highest is used.
         - action: Calculate the minimum distance with the highest stopping time and measure the installed distance.
           expected: The installed distance is at least the calculated distance.
-          data: "S = 2000 mm/s × T + 8 × (d − 14 mm)"
+          data: The formula of ISO 13855 for the detection capability and approach direction of the light curtain
         - action: Measure each guard opening and its distance to the hazard.
           expected: Each meets the values of ISO 13857.
     sv:
@@ -571,7 +571,7 @@ tests:
           expected: Tio värden registreras och det högsta används.
         - action: Beräkna minsta avstånd med den högsta stopptiden och mät det monterade avståndet.
           expected: Det monterade avståndet är minst det beräknade.
-          data: "S = 2000 mm/s × T + 8 × (d − 14 mm)"
+          data: Formeln i ISO 13855 för ljusridåns detekteringsförmåga och närmanderiktning
         - action: Mät varje öppning i skydden och dess avstånd till riskområdet.
           expected: Var och en uppfyller värdena i ISO 13857.
 

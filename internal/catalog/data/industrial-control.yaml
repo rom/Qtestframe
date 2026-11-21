@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [remote-access, mfa, jump-host]
-    refs: ["IEC 62443-3-3:2013 SR 1.13", "IEC 62443-3-3:2013 SR 1.1 RE 2", "IEC 62443-2-4:2015 SP.07", "NIST SP 800-82r3 §6"]
+    refs: ["IEC 62443-3-3:2013 SR 1.13", "IEC 62443-3-3:2013 SR 1.1 RE 2", "IEC 62443-2-4:2023 SP.07 (remote access)", "NIST SP 800-82r3 §6"]
     tests: [ICS-T03]
     en:
       title: Remote access only through a jump host with multi-factor authentication
@@ -128,7 +128,7 @@ requirements:
     obligation: must
     priority: high
     tags: [remote-access, session-recording, audit]
-    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 2.12", "IEC 62443-2-4:2015 SP.07"]
+    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 2.12", "IEC 62443-2-4:2023 SP.07 (remote access)"]
     tests: [ICS-T03]
     en:
       title: Remote sessions are recorded
@@ -244,7 +244,7 @@ requirements:
     obligation: must
     priority: high
     tags: [patch-management, vendor-approval, test-bench]
-    refs: ["IEC 62443-2-4:2015 SP.11", "IEC TR 62443-2-3:2015", "IEC 62443-4-1:2018 SUM-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II"]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "IEC TR 62443-2-3:2015", "IEC 62443-4-1:2018 SUM-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II"]
     tests: [ICS-T08]
     en:
       title: Patches approved by the vendor and tested before installation
@@ -272,7 +272,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [backup, restore, controller-configuration]
-    refs: ["IEC 62443-3-3:2013 SR 7.3", "IEC 62443-3-3:2013 SR 7.4", "IEC 62443-2-4:2015 SP.12", "IEC 62443-4-2:2019 CR 7.3"]
+    refs: ["IEC 62443-3-3:2013 SR 7.3", "IEC 62443-3-3:2013 SR 7.4", "IEC 62443-2-4:2023 SP.12 (backup/restore)", "IEC 62443-4-2:2019 CR 7.3"]
     tests: [ICS-T09]
     en:
       title: Controller configurations backed up and restorable
@@ -296,7 +296,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [change-management, logic, integrity]
-    refs: ["IEC 62443-3-3:2013 SR 3.4", "IEC 62443-4-2:2019 CR 3.4", "IEC 62443-2-4:2015 SP.06", "IEC 61511-1:2016 §17"]
+    refs: ["IEC 62443-3-3:2013 SR 3.4", "IEC 62443-4-2:2019 CR 3.4", "IEC 62443-2-4:2023 SP.06 (configuration management)", "IEC 61511-1:2016 §17"]
     tests: [ICS-T10]
     en:
       title: Unapproved logic changes detected
@@ -662,7 +662,7 @@ tests:
     priority: high
     execution: manual
     tags: [patch-management, test-bench]
-    refs: ["IEC 62443-2-4:2015 SP.11"]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)"]
     en:
       title: Patch record shows vendor approval and test bench result
       description: Follows one security update through the process and samples past update records.

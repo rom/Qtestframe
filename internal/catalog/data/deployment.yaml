@@ -102,7 +102,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [zero-downtime, rolling-upgrade]
-    refs: ["The Twelve-Factor App, IX Disposability", "ISO/IEC 25010:2011 §4.2.5.2 (availability)"]
+    refs: ["The Twelve-Factor App, IX Disposability", "ISO/IEC 25010:2023 availability"]
     tests: [DEP-T04]
     en:
       title: Upgrades without failed requests
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: high
     tags: [database-migration, backward-compatibility, zero-downtime]
-    refs: ["ISO/IEC 25010:2011 §4.2.3.1 (co-existence)"]
+    refs: ["ISO/IEC 25010:2023 co-existence"]
     tests: [DEP-T06]
     en:
       title: Schema changes compatible with the previous version

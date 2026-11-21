@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [target-group, information-for-use]
-    refs: ["IEC/IEEE 82079-1:2019 (target audience)"]
+    refs: ["IEC/IEEE 82079-1:2019 §6.2.2 (target audiences)"]
     tests: [DCUM-T01]
     en:
       title: Target groups stated for each manual
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: high
     tags: [operator-manual, operating-modes]
-    refs: ["IEC/IEEE 82079-1:2019 (content of information for use)"]
+    refs: ["IEC/IEEE 82079-1:2019 §7 (content of information for use)"]
     tests: [DCUM-T02]
     en:
       title: Operator manual covers each operating mode
@@ -59,7 +59,7 @@ requirements:
     obligation: may
     priority: low
     tags: [operator-manual, quick-reference]
-    refs: ["IEC/IEEE 82079-1:2019 (content of information for use)"]
+    refs: ["IEC/IEEE 82079-1:2019 §7 (content of information for use)"]
     tests: [DCUM-T02]
     en:
       title: Quick reference card at the operator position
@@ -83,7 +83,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [instructions, task-based]
-    refs: ["IEC/IEEE 82079-1:2019 (instructions)", "ISO/IEC/IEEE 26514:2022"]
+    refs: ["IEC/IEEE 82079-1:2019 §8.3.4 (detailed structure of step-by-step instructions)", "ISO/IEC/IEEE 26514:2022"]
     tests: [DCUM-T03]
     en:
       title: Numbered steps with one action each
@@ -105,7 +105,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [safety, safety-notice]
-    refs: ["IEC/IEEE 82079-1:2019 (safety-related information)", "ISO 3864-2:2016"]
+    refs: ["IEC/IEEE 82079-1:2019 §7.11 (safety-related information)", "ISO 3864-2:2016"]
     tests: [DCUM-T04]
     en:
       title: Safety notices with signal word and consequence
@@ -127,7 +127,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [usability-test, information-for-use]
-    refs: ["IEC/IEEE 82079-1:2019 (quality of information for use)"]
+    refs: ["IEC/IEEE 82079-1:2019 §6.3.3 (reviewing, editing and testing)"]
     tests: [DCUM-T05]
     en:
       title: Manual tested with representatives of the target group
@@ -311,7 +311,7 @@ requirements:
     obligation: must
     priority: high
     tags: [identification, version]
-    refs: ["IEC/IEEE 82079-1:2019 (identification of information for use)"]
+    refs: ["IEC/IEEE 82079-1:2019 §7.2.1 (identification of information for use)"]
     tests: [DCUM-T10]
     en:
       title: Manual identifies the product version it applies to
@@ -379,7 +379,7 @@ tests:
     priority: high
     execution: manual
     tags: [target-group]
-    refs: ["IEC/IEEE 82079-1:2019 (target audience)"]
+    refs: ["IEC/IEEE 82079-1:2019 §6.2.2 (target audiences)"]
     en:
       title: Review of target group statements
       description: Checks that each manual states its target groups and their assumed knowledge.
@@ -405,7 +405,7 @@ tests:
     priority: high
     execution: manual
     tags: [operator-manual, quick-reference]
-    refs: ["IEC/IEEE 82079-1:2019 (content of information for use)"]
+    refs: ["IEC/IEEE 82079-1:2019 §7 (content of information for use)"]
     en:
       title: Review of the operator manual and quick reference card
       description: Checks that the operator manual covers each operating mode and the abnormal situations of the alarm list, and inspects the quick reference card.
@@ -435,7 +435,7 @@ tests:
     priority: medium
     execution: manual
     tags: [instructions]
-    refs: ["IEC/IEEE 82079-1:2019 (instructions)"]
+    refs: ["IEC/IEEE 82079-1:2019 §8.3.4 (detailed structure of step-by-step instructions)"]
     en:
       title: Inspection of procedure steps
       description: Checks the structure of the steps in a sample of procedures.
@@ -463,7 +463,7 @@ tests:
     priority: critical
     execution: manual
     tags: [safety-notice]
-    refs: ["IEC/IEEE 82079-1:2019 (safety-related information)", "ISO 3864-2:2016"]
+    refs: ["IEC/IEEE 82079-1:2019 §7.11 (safety-related information)", "ISO 3864-2:2016"]
     en:
       title: Inspection of safety notices
       description: Checks the content and placement of each safety notice.
@@ -493,7 +493,7 @@ tests:
     priority: medium
     execution: manual
     tags: [usability-test]
-    refs: ["IEC/IEEE 82079-1:2019 (quality of information for use)"]
+    refs: ["IEC/IEEE 82079-1:2019 §6.3.3 (reviewing, editing and testing)"]
     en:
       title: User test of a manual
       description: Tests a manual with representatives of the target group carrying out core tasks with the manual as their only help.
@@ -641,7 +641,7 @@ tests:
     priority: high
     execution: manual
     tags: [identification, contact]
-    refs: ["IEC/IEEE 82079-1:2019 (identification of information for use)", "Regulation (EU) 2024/2847 (CRA) Annex II"]
+    refs: ["IEC/IEEE 82079-1:2019 §7.2.1 (identification of information for use)", "Regulation (EU) 2024/2847 (CRA) Annex II"]
     en:
       title: Title page identification and contact details
       description: Checks the identification on the title page and the contact and reporting details in each manual.

@@ -200,7 +200,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [feature-flag, technical-debt, expiry]
-    refs: ["Martin Fowler: Feature Toggles (managing toggle debt)", "ISO/IEC 25010:2011 §4.2.7.5 (modifiability)"]
+    refs: ["Martin Fowler: Feature Toggles (managing toggle debt)", "ISO/IEC 25010:2023 modifiability"]
     tests: [FLAG-T06]
     en:
       title: Release flags are removed within 90 days of full rollout

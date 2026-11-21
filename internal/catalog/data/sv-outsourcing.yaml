@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: high
     tags: [supplier-access, privileged-access, mfa]
-    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-4 (remote access)"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-2-4:2023 SP.07 (remote access)"]
     tests: [SVOUT-T05]
     en:
       title: Provider staff access customer systems with personal accounts and logging

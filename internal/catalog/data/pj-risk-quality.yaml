@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [risk-criteria, risk-management-plan]
-    refs: ["ISO 31000:2018 §6.3.4", "ISO 21502:2020 (risk management)"]
+    refs: ["ISO 31000:2018 §6.3.4", "ISO 21502:2020 §7.8 (risk management)"]
     tests: [PJRQ-T01]
     en:
       title: Risk criteria approved at initiation
@@ -105,7 +105,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [schedule-risk, monte-carlo, uncertainty]
-    refs: ["ISO 31000:2018 §6.4.3", "PMBOK Guide 7th ed. Uncertainty performance domain"]
+    refs: ["ISO 31000:2018 §6.4.3", "PMBOK Guide 8th ed. Risk performance domain"]
     tests: [PJRQ-T04]
     en:
       title: Quantitative schedule risk analysis with a P80 end date
@@ -127,7 +127,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [contingency, reserve, budget]
-    refs: ["PMBOK Guide 7th ed. Uncertainty performance domain"]
+    refs: ["PMBOK Guide 8th ed. Risk performance domain"]
     tests: [PJRQ-T05]
     en:
       title: Contingency reserve based on the risk analysis
@@ -149,7 +149,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [issue-log, issues]
-    refs: ["ISO 21502:2020 (issue management)", "PRINCE2 Issues"]
+    refs: ["ISO 21502:2020 §7.9 (issues management)", "PRINCE2 Issues"]
     tests: [PJRQ-T06]
     en:
       title: Issue log with owner and due date
@@ -171,7 +171,7 @@ requirements:
     obligation: must
     priority: high
     tags: [quality-plan, quality-criteria]
-    refs: ["ISO 9001:2015 §8.1", "ISO 10006:2017", "PRINCE2 Quality"]
+    refs: ["ISO 9001:2026 §8.1", "ISO 10006:2017", "PRINCE2 Quality"]
     tests: [PJRQ-T07]
     en:
       title: Quality plan with criteria for each deliverable
@@ -193,7 +193,7 @@ requirements:
     obligation: must
     priority: high
     tags: [review, deliverables, release]
-    refs: ["ISO 9001:2015 §8.3.4", "ISO 9001:2015 §8.6"]
+    refs: ["ISO 9001:2026 §8.3.4", "ISO 9001:2026 §8.6"]
     tests: [PJRQ-T07]
     en:
       title: Deliverable released only after a recorded review
@@ -215,7 +215,7 @@ requirements:
     obligation: must
     priority: high
     tags: [nonconformity, corrective-action]
-    refs: ["ISO 9001:2015 §8.7", "ISO 9001:2015 §10.2"]
+    refs: ["ISO 9001:2026 §8.7", "ISO 9001:2026 §10.2"]
     tests: [PJRQ-T08]
     en:
       title: Nonconformities recorded and corrected
@@ -237,7 +237,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [audit, independence, quality-assurance]
-    refs: ["ISO 9001:2015 §9.2"]
+    refs: ["ISO 9001:2026 §9.2"]
     tests: [PJRQ-T09]
     en:
       title: Independent project audit once a year
@@ -261,7 +261,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [document-control, versioning, approval]
-    refs: ["ISO 9001:2015 §7.5.3"]
+    refs: ["ISO 9001:2026 §7.5.3"]
     tests: [PJRQ-T10]
     en:
       title: Project documents versioned, approved and stored in one place
@@ -455,7 +455,7 @@ tests:
     priority: high
     execution: manual
     tags: [quality-plan, review]
-    refs: ["ISO 9001:2015 §8.6"]
+    refs: ["ISO 9001:2026 §8.6"]
     en:
       title: Quality plan and review records of released deliverables
       description: Checks the quality plan and the review records of a sample of released deliverables.
@@ -487,7 +487,7 @@ tests:
     priority: high
     execution: manual
     tags: [nonconformity]
-    refs: ["ISO 9001:2015 §10.2"]
+    refs: ["ISO 9001:2026 §10.2"]
     en:
       title: Review of the nonconformity log
       description: Reviews the nonconformity log for complete entries and root cause analyses of repeats.
@@ -517,7 +517,7 @@ tests:
     priority: medium
     execution: manual
     tags: [audit]
-    refs: ["ISO 9001:2015 §9.2"]
+    refs: ["ISO 9001:2026 §9.2"]
     en:
       title: Independent audit report and responses
       description: Checks the latest project audit report, the independence of the auditor and the responses to the findings.
@@ -547,7 +547,7 @@ tests:
     priority: medium
     execution: manual
     tags: [document-control]
-    refs: ["ISO 9001:2015 §7.5.3"]
+    refs: ["ISO 9001:2026 §7.5.3"]
     en:
       title: Controlled documents in the project repository
       description: Inspects 3 controlled documents in the repository and asks the team which versions they use.

@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [asset-register]
-    refs: ["ISO 55001:2014 §7.5", "ISO/IEC 27001:2022 A.5.9"]
+    refs: ["ISO 55001:2024 §7.6 (data and information)", "ISO/IEC 27001:2022 A.5.9"]
     tests: [GVMT-T01]
     en:
       title: Asset register with owner and criticality
@@ -35,7 +35,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [asset-register, criticality]
-    refs: ["ISO 55001:2014 §6.2", "EN 13306:2017 (criticality)"]
+    refs: ["ISO 55001:2024 §6.2 (asset management objectives and planning)", "EN 13306:2017 (criticality)"]
     tests: [GVMT-T01]
     en:
       title: Criticality classes that steer the maintenance strategy
@@ -59,7 +59,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [asset-register, inventory]
-    refs: ["ISO/IEC 27001:2022 A.5.9", "ISO 55001:2014 §9.1"]
+    refs: ["ISO/IEC 27001:2022 A.5.9", "ISO 55001:2024 §9.1 (monitoring, measurement, analysis and evaluation)"]
     tests: [GVMT-T02]
     en:
       title: Yearly physical inventory against the asset register
@@ -83,7 +83,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration, baseline]
-    refs: ["ISO 10007:2017", "ISO/IEC 27001:2022 A.8.9", "ISO/IEC 20000-1:2018 (configuration management)"]
+    refs: ["ISO 10007:2017 §5.3.3 (configuration baselines)", "ISO/IEC 27001:2022 A.8.9", "ISO/IEC 20000-1:2018 §8.2.6 (configuration management)"]
     tests: [GVMT-T03]
     en:
       title: Configuration baseline for each delivered system
@@ -105,7 +105,7 @@ requirements:
     obligation: must
     priority: high
     tags: [configuration, change]
-    refs: ["ISO 10007:2017", "ITIL 4 Service configuration management"]
+    refs: ["ISO 10007:2017 §5.5 (configuration status accounting)", "ITIL 4 Service configuration management"]
     tests: [GVMT-T03]
     en:
       title: Configuration record updated within 1 working day
@@ -129,7 +129,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [configuration, audit]
-    refs: ["ISO 10007:2017 (configuration audit)"]
+    refs: ["ISO 10007:2017 §5.6 (configuration audit)"]
     tests: [GVMT-T04]
     en:
       title: Yearly configuration audit
@@ -153,7 +153,7 @@ requirements:
     obligation: must
     priority: high
     tags: [maintenance-plan, preventive-maintenance]
-    refs: ["EN 13306:2017 (maintenance types)", "ISO 55001:2014 §8.1", "EN 17007:2017"]
+    refs: ["EN 13306:2017 (maintenance types)", "ISO 55001:2024 §8.1 (operational planning and control)", "EN 17007:2017"]
     tests: [GVMT-T05]
     en:
       title: Maintenance plan with a strategy per asset
@@ -197,7 +197,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [preventive-maintenance, kpi]
-    refs: ["EN 15341:2019", "EN 13306:2017 (preventive maintenance)"]
+    refs: ["EN 15341:2019+A1:2022", "EN 13306:2017 (preventive maintenance)"]
     tests: [GVMT-T06]
     en:
       title: Preventive maintenance done on schedule
@@ -405,7 +405,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [kpi, mtbf, mttr]
-    refs: ["EN 15341:2019"]
+    refs: ["EN 15341:2019+A1:2022"]
     tests: [GVMT-T12]
     en:
       title: Monthly maintenance indicators
@@ -429,7 +429,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [maintenance-history, retention]
-    refs: ["ISO 55001:2014 §7.6", "EN 13460:2009"]
+    refs: ["ISO 55001:2024 §7.5 (documented information)", "EN 13460:2009"]
     tests: [GVMT-T12]
     en:
       title: Maintenance history kept for the asset's lifetime
@@ -453,7 +453,7 @@ tests:
     priority: high
     execution: manual
     tags: [asset-register, criticality]
-    refs: ["ISO 55001:2014 §7.5", "ISO/IEC 27001:2022 A.5.9"]
+    refs: ["ISO 55001:2024 §7.6 (data and information)", "ISO/IEC 27001:2022 A.5.9"]
     en:
       title: Inspection of the asset register
       description: Checks that the asset register is complete and that each asset has a criticality class from the documented scale.
@@ -543,7 +543,7 @@ tests:
     priority: medium
     execution: manual
     tags: [configuration, audit]
-    refs: ["ISO 10007:2017 (configuration audit)"]
+    refs: ["ISO 10007:2017 §5.6 (configuration audit)"]
     en:
       title: Configuration audit of a critical system
       description: Checks the audit history and repeats a configuration audit for one critical system.
@@ -569,7 +569,7 @@ tests:
     priority: high
     execution: manual
     tags: [maintenance-plan]
-    refs: ["EN 13306:2017 (maintenance types)", "ISO 55001:2014 §8.1", "ISO/IEC 27001:2022 A.7.13"]
+    refs: ["EN 13306:2017 (maintenance types)", "ISO 55001:2024 §8.1 (operational planning and control)", "ISO/IEC 27001:2022 A.7.13"]
     en:
       title: Review of the maintenance plan
       description: Checks the maintenance type, tasks and intervals of critical assets against the plan and the manufacturer's instructions.
@@ -595,7 +595,7 @@ tests:
     priority: medium
     execution: manual
     tags: [preventive-maintenance, kpi]
-    refs: ["EN 15341:2019"]
+    refs: ["EN 15341:2019+A1:2022"]
     en:
       title: Preventive maintenance compliance over 6 months
       description: Recalculates the preventive maintenance compliance from the work order data.
@@ -773,7 +773,7 @@ tests:
     priority: medium
     execution: manual
     tags: [kpi, maintenance-history]
-    refs: ["EN 15341:2019", "ISO 55001:2014 §7.6"]
+    refs: ["EN 15341:2019+A1:2022", "ISO 55001:2024 §7.5 (documented information)"]
     en:
       title: Maintenance indicators and retained history
       description: Checks the monthly indicator reports and the availability of the maintenance history of decommissioned assets.

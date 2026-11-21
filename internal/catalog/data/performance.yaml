@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [response-time, read, percentile]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "ISO/IEC 25023:2016 §8.3 (performance efficiency measures)"]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "ISO/IEC 25023:2016 §8.3 (performance efficiency measures)"]
     tests: [PERF-T01]
     en:
       title: Response time of read operations
@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: high
     tags: [response-time, write, percentile]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)"]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
     tests: [PERF-T01]
     en:
       title: Response time of save operations
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [response-time, search, percentile]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "ISTQB CT-PT Performance Testing syllabus §1.2"]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "ISTQB CT-PT Performance Testing syllabus §1.2"]
     tests: [PERF-T02]
     en:
       title: Response time of searches
@@ -84,7 +84,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [response-time, report, export]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)"]
+    refs: ["ISO/IEC 25010:2023 time behaviour"]
     tests: [PERF-T03]
     en:
       title: Generation time of reports and exports
@@ -108,7 +108,7 @@ requirements:
     obligation: should
     priority: high
     tags: [page-load, core-web-vitals, lcp]
-    refs: ["web.dev Core Web Vitals: Largest Contentful Paint", "ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)"]
+    refs: ["web.dev Core Web Vitals: Largest Contentful Paint", "ISO/IEC 25010:2023 time behaviour"]
     tests: [PERF-T04]
     en:
       title: Largest Contentful Paint
@@ -180,7 +180,7 @@ requirements:
     obligation: must
     priority: high
     tags: [throughput, load]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.3 (capacity)", "ISTQB CT-PT Performance Testing syllabus §1.2 (load testing)"]
+    refs: ["ISO/IEC 25010:2023 capacity", "ISTQB CT-PT Performance Testing syllabus §1.2 (load testing)"]
     tests: [PERF-T05]
     en:
       title: Sustained throughput
@@ -204,7 +204,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [resource-use, cpu]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 A.8.6"]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 A.8.6"]
     tests: [PERF-T06]
     en:
       title: Processor utilisation under load
@@ -228,7 +228,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [resource-use, memory, soak]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "ISTQB CT-PT Performance Testing syllabus §1.2 (endurance testing)"]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "ISTQB CT-PT Performance Testing syllabus §1.2 (endurance testing)"]
     tests: [PERF-T07]
     en:
       title: No memory growth over time
@@ -252,7 +252,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [batch, duration]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "ITIL 4 Capacity and performance management"]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "ITIL 4 Capacity and performance management"]
     tests: [PERF-T08]
     en:
       title: Duration of nightly batch jobs

@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [retention-period, configuration]
-    refs: ["GDPR Art. 5(1)(e)", "GDPR Art. 30(1)(f)", "ISO/IEC 27001:2022 A.5.33", "ISO/IEC 27701:2019 §7.4.7"]
+    refs: ["GDPR Art. 5(1)(e)", "GDPR Art. 30(1)(f)", "ISO/IEC 27001:2022 A.5.33", "ISO/IEC 27701:2025 (retention)"]
     tests: [RET-T01]
     en:
       title: Retention period for each data category
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deletion, automation]
-    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-53 SI-12", "ISO/IEC 27701:2019 §7.4.5"]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-53 SI-12", "ISO/IEC 27701:2025 (PII de-identification and deletion at the end of processing)"]
     tests: [RET-T02]
     en:
       title: Automatic deletion after the retention period
@@ -210,7 +210,7 @@ requirements:
     obligation: may
     priority: low
     tags: [deletion, reporting]
-    refs: ["GDPR Art. 5(2)", "ISO/IEC 27701:2019 §7.4.7", "ISO/IEC 27001:2022 A.5.34"]
+    refs: ["GDPR Art. 5(2)", "ISO/IEC 27701:2025 (retention)", "ISO/IEC 27001:2022 A.5.34"]
     tests: [RET-T10]
     en:
       title: Monthly deletion report
@@ -262,7 +262,7 @@ tests:
     priority: high
     execution: automated
     tags: [deletion, automation]
-    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27701:2019 §7.4.5"]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27701:2025 (PII de-identification and deletion at the end of processing)"]
     en:
       title: Retention job deletes expired records only
       description: A script creates records with different ages, runs the retention job and checks the result.

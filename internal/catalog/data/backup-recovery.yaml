@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [backup, frequency]
-    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)", "IEC 62443-3-3 SR 7.3", "IEC 62443-4-2 CR 7.3", "Regulation (EU) 2022/2554 (DORA) Art. 12", "GDPR Art. 32(1)(c)", "ISO/IEC 27019:2024 (backup)"]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "ISO/IEC 27031:2025 (ICT readiness for business continuity)", "IEC 62443-3-3 SR 7.3", "IEC 62443-4-2 CR 7.3", "Regulation (EU) 2022/2554 (DORA) Art. 12", "GDPR Art. 32(1)(c)", "ISO/IEC 27019:2024 (backup)"]
     tests: [BCK-T01]
     en:
       title: Daily full backup
@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [rpo, backup]
-    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery point objective)", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2025 (recovery point objective)", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [BCK-T02]
     en:
       title: Recovery point objective
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [rto, restore]
-    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery time objective)", "ISO/IEC 27001:2022 A.5.30", "IEC 62443-3-3 SR 7.4", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2025 (recovery time objective)", "ISO/IEC 27001:2022 A.5.30", "IEC 62443-3-3 SR 7.4", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [BCK-T02]
     en:
       title: Recovery time objective
@@ -254,7 +254,7 @@ requirements:
     obligation: must
     priority: high
     tags: [disaster-recovery, plan, continuity]
-    refs: ["ISO 22301:2019 §8.4 (business continuity plans and procedures)", "ISO/IEC 27031:2011", "ISO/IEC 27001:2022 A.5.30 (ICT readiness for business continuity)", "IEC 62443-3-3 SR 7.4", "Regulation (EU) 2022/2554 (DORA) Art. 11", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
+    refs: ["ISO 22301:2019 §8.4 (business continuity plans and procedures)", "ISO/IEC 27031:2025", "ISO/IEC 27001:2022 A.5.30 (ICT readiness for business continuity)", "IEC 62443-3-3 SR 7.4", "Regulation (EU) 2022/2554 (DORA) Art. 11", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [BCK-T09]
     en:
       title: Documented and exercised disaster recovery plan
@@ -278,7 +278,7 @@ requirements:
     obligation: may
     priority: low
     tags: [restore, project, soft-delete]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "ISO/IEC 27001:2022 A.8.13"]
+    refs: ["ISO/IEC 25010:2023 recoverability", "ISO/IEC 27001:2022 A.8.13"]
     tests: [BCK-T10]
     en:
       title: Restore of a single deleted project

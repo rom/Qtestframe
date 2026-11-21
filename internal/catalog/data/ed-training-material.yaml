@@ -37,7 +37,7 @@ requirements:
     obligation: must
     priority: high
     tags: [training-material, version, release]
-    refs: ["ISO 9001:2015 §7.5.2"]
+    refs: ["ISO 9001:2026 §7.5.2"]
     tests: [EDTM-T02]
     en:
       title: Material updated within 20 working days of a release
@@ -61,7 +61,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [training-material, review]
-    refs: ["ISO 9001:2015 §7.5.2"]
+    refs: ["ISO 9001:2026 §7.5.2"]
     tests: [EDTM-T02]
     en:
       title: Named owner and yearly review of material
@@ -245,7 +245,7 @@ requirements:
     obligation: must
     priority: high
     tags: [evaluation, kirkpatrick, assessment]
-    refs: ["Kirkpatrick four-level training evaluation model", "ISO 9001:2015 §7.2"]
+    refs: ["Kirkpatrick four-level training evaluation model", "ISO 9001:2026 §7.2"]
     tests: [EDTM-T08]
     en:
       title: Assessment with a pass mark of 80 %
@@ -365,7 +365,7 @@ tests:
     priority: high
     execution: manual
     tags: [version, review]
-    refs: ["ISO 9001:2015 §7.5.2"]
+    refs: ["ISO 9001:2026 §7.5.2"]
     en:
       title: Material follows releases and is reviewed yearly
       description: Checks that material was updated after releases and has an owner and a recent review.

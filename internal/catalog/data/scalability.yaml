@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [concurrent-users, capacity]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.3 (capacity)", "ISTQB CT-PT Performance Testing syllabus §1.2 (concurrency testing)"]
+    refs: ["ISO/IEC 25010:2023 capacity", "ISTQB CT-PT Performance Testing syllabus §1.2 (concurrency testing)"]
     tests: [SCAL-T01]
     en:
       title: Concurrent signed-in users
@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: high
     tags: [data-volume, capacity]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.3 (capacity)", "ISTQB CT-PT Performance Testing syllabus §1.2 (capacity testing)"]
+    refs: ["ISO/IEC 25010:2023 capacity", "ISTQB CT-PT Performance Testing syllabus §1.2 (capacity testing)"]
     tests: [SCAL-T02]
     en:
       title: Data volume per organisation

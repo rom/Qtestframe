@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [multi-tenancy, tenant-isolation]
-    refs: ["OWASP ASVS 4.0 V4.2", "ISO/IEC 27001:2022 A.8.3", "OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1", "GDPR Art. 32(1)(b)"]
+    refs: ["OWASP ASVS 4.0 V4.2", "ISO/IEC 27001:2022 A.8.3", "OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "GDPR Art. 32(1)(b)"]
     tests: [ACC-T08]
     en:
       title: Tenant data is isolated
@@ -464,7 +464,7 @@ tests:
     priority: critical
     execution: automated
     tags: [multi-tenancy, tenant-isolation]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1", "GDPR Art. 32(1)(b)"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "GDPR Art. 32(1)(b)"]
     en:
       title: Cross-tenant access attempts fail
       description: A script signed in to tenant A tries to reach tenant B's data through ids, search, export and reports.

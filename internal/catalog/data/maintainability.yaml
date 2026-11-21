@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [code-review, branch-protection]
-    refs: ["ISO/IEC 27001:2022 A.8.28 (secure coding)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "IEC 62443-4-1 SI-1"]
+    refs: ["ISO/IEC 27001:2022 A.8.28 (secure coding)", "ISO/IEC 25010:2023 analysability", "IEC 62443-4-1 SI-1"]
     tests: [MNT-T01]
     en:
       title: Review of every change
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [coding-standard, linting, ci]
-    refs: ["ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "ISO/IEC 27001:2022 A.8.28 (secure coding)", "ISO/IEC 27002:2022 §8.28", "IEC 62443-4-1 SI-2"]
+    refs: ["ISO/IEC 25010:2023 analysability", "ISO/IEC 27001:2022 A.8.28 (secure coding)", "ISO/IEC 27002:2022 §8.28", "IEC 62443-4-1 SI-2"]
     tests: [MNT-T02]
     en:
       title: Coding standard checked in the pipeline
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [automated-tests, ci]
-    refs: ["ISO/IEC 25010:2011 §4.2.7.5 (testability)", "ISTQB CTFL 4.0 §2.1.4 (DevOps and testing)"]
+    refs: ["ISO/IEC 25010:2023 testability", "ISTQB CTFL 4.0 §2.1.4 (DevOps and testing)"]
     tests: [MNT-T03]
     en:
       title: Automated tests on every change
@@ -106,7 +106,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [coverage, automated-tests]
-    refs: ["ISO/IEC 25010:2011 §4.2.7.5 (testability)", "ISTQB CTFL 4.0 §4.3 (white-box test techniques: statement coverage)"]
+    refs: ["ISO/IEC 25010:2023 testability", "ISTQB CTFL 4.0 §4.3 (white-box test techniques: statement coverage)"]
     tests: [MNT-T04]
     en:
       title: Statement coverage of changed code
@@ -130,7 +130,7 @@ requirements:
     obligation: may
     priority: low
     tags: [coverage, generated-code]
-    refs: ["ISO/IEC 25010:2011 §4.2.7.5 (testability)"]
+    refs: ["ISO/IEC 25010:2023 testability"]
     tests: [MNT-T04]
     en:
       title: Generated code outside the coverage measure
@@ -174,7 +174,7 @@ requirements:
     obligation: should_not
     priority: low
     tags: [complexity, static-analysis]
-    refs: ["ISO/IEC 25010:2011 §4.2.7.4 (modifiability)", "ISO/IEC 25023:2016 §8.8 (maintainability measures)"]
+    refs: ["ISO/IEC 25010:2023 modifiability", "ISO/IEC 25023:2016 §8.8 (maintainability measures)"]
     tests: [MNT-T05]
     en:
       title: Limit on function complexity
@@ -198,7 +198,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [documentation, architecture]
-    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC 25010:2011 §4.2.7.3 (analysability)", "ISO/IEC 27001:2022 A.8.27"]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC 25010:2023 analysability", "ISO/IEC 27001:2022 A.8.27"]
     tests: [MNT-T06]
     en:
       title: Current architecture description
@@ -222,7 +222,7 @@ requirements:
     obligation: must
     priority: high
     tags: [documentation, api, openapi]
-    refs: ["OpenAPI Specification 3.1", "ISO/IEC 25010:2011 §4.2.3.2 (interoperability)"]
+    refs: ["OpenAPI Specification 3.1", "ISO/IEC 25010:2023 interoperability"]
     tests: [MNT-T07]
     en:
       title: API description that matches the implementation
@@ -244,7 +244,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [documentation, operations]
-    refs: ["ITIL 4 Knowledge management", "ISO/IEC 25010:2011 §4.2.8.2 (installability)", "ISO/IEC 27001:2022 A.5.37"]
+    refs: ["ITIL 4 Knowledge management", "ISO/IEC 25010:2023 installability", "ISO/IEC 27001:2022 A.5.37"]
     tests: [MNT-T08]
     en:
       title: Operations manual
@@ -314,7 +314,7 @@ requirements:
     obligation: should
     priority: low
     tags: [technical-debt, backlog]
-    refs: ["ISO/IEC 25010:2011 §4.2.7 (maintainability)"]
+    refs: ["ISO/IEC 25010:2023 maintainability"]
     tests: [MNT-T10]
     en:
       title: Tracked technical debt
@@ -338,7 +338,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [build, onboarding, documentation]
-    refs: ["The Twelve-Factor App, II Dependencies", "ISO/IEC 25010:2011 §4.2.7.4 (modifiability)"]
+    refs: ["The Twelve-Factor App, II Dependencies", "ISO/IEC 25010:2023 modifiability"]
     tests: [MNT-T11]
     en:
       title: Build from a clean checkout

@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [training-needs-analysis, competence]
-    refs: ["ISO 9001:2015 §7.2", "ISO 10015:2019"]
+    refs: ["ISO 9001:2026 §7.2", "ISO 10015:2019"]
     tests: [EDTP-T01]
     en:
       title: Training needs analysis per role
@@ -103,7 +103,7 @@ requirements:
     obligation: must
     priority: high
     tags: [end-users, go-live]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     tests: [EDTP-T03]
     en:
       title: End users trained before go-live
@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [operators, hands-on, abnormal-situations]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     tests: [EDTP-T04]
     en:
       title: Hands-on operator training with abnormal situations
@@ -175,7 +175,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [administrators, practical-assessment]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     tests: [EDTP-T05]
     en:
       title: Practical assessment of administrators
@@ -197,7 +197,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [maintenance-staff, authorisation, safety]
-    refs: ["ISO 9001:2015 §7.2", "EN 50110-1:2023"]
+    refs: ["ISO 9001:2026 §7.2", "EN 50110-1:2023"]
     tests: [EDTP-T06]
     en:
       title: Maintenance work only after passed training
@@ -285,7 +285,7 @@ requirements:
     obligation: must
     priority: high
     tags: [refresher, interval]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     tests: [EDTP-T09]
     en:
       title: Refresher intervals per role
@@ -309,7 +309,7 @@ requirements:
     obligation: must
     priority: high
     tags: [change-training, release]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     tests: [EDTP-T10]
     en:
       title: Training on changes before release
@@ -331,7 +331,7 @@ tests:
     priority: high
     execution: manual
     tags: [training-needs-analysis]
-    refs: ["ISO 9001:2015 §7.2", "ISO 10015:2019"]
+    refs: ["ISO 9001:2026 §7.2", "ISO 10015:2019"]
     en:
       title: Review of the training needs analysis
       description: Checks that the needs analysis covers every role and is updated for releases and new roles.
@@ -385,7 +385,7 @@ tests:
     priority: high
     execution: manual
     tags: [end-users, go-live]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     en:
       title: Training coverage before go-live
       description: Calculates the share of trained end users per roll-out group and checks the course invitations.
@@ -413,7 +413,7 @@ tests:
     priority: critical
     execution: manual
     tags: [operators, hands-on]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     en:
       title: Review of the operator course and attendance
       description: Checks the exercises of the operator course and that each operator took part in them.
@@ -443,7 +443,7 @@ tests:
     priority: medium
     execution: manual
     tags: [administrators]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     en:
       title: Practical assessment of an administrator
       description: Observes a practical assessment and checks the assessment records of administrators.
@@ -469,7 +469,7 @@ tests:
     priority: critical
     execution: manual
     tags: [maintenance-staff, authorisation]
-    refs: ["ISO 9001:2015 §7.2", "EN 50110-1:2023"]
+    refs: ["ISO 9001:2026 §7.2", "EN 50110-1:2023"]
     en:
       title: Technician authorisations match passed training
       description: Compares the authorisation list of technicians with their training records.
@@ -549,7 +549,7 @@ tests:
     priority: high
     execution: manual
     tags: [refresher]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     en:
       title: Refresher intervals and overdue refreshers
       description: Checks the refresher intervals in the plan and finds staff who are past their interval.
@@ -575,7 +575,7 @@ tests:
     priority: high
     execution: manual
     tags: [change-training]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     en:
       title: Change training before releases
       description: Checks that roles affected by a release were trained on the change before go-live.

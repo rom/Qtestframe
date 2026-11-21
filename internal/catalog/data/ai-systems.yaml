@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [model-provider, data-processing, training]
-    refs: ["GDPR Art. 28 (processor)", "ISO/IEC 42001:2023 Annex A.7 (data for AI systems)", "ISO/IEC 27001:2022 A.5.20", "ISO/IEC 27018:2019 (purpose of processing in the public cloud)", "Regulation (EU) 2022/2554 (DORA) Art. 30"]
+    refs: ["GDPR Art. 28 (processor)", "ISO/IEC 42001:2023 Annex A.7 (data for AI systems)", "ISO/IEC 27001:2022 A.5.20", "ISO/IEC 27018:2025 (purpose of processing in the public cloud)", "Regulation (EU) 2022/2554 (DORA) Art. 30"]
     tests: [AIML-T03]
     en:
       title: Customer data is not used to train external models

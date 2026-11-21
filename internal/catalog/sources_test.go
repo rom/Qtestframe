@@ -73,7 +73,7 @@ func TestClauseOf(t *testing.T) {
 		"ISO/IEC 27001:2022 §10.2 (nonconformity)":                  "§10",
 		"IEC 62443-3-3:2013 SR 1.1 RE 2":                            "SR 1",
 		"IEC 62443-4-1 SM-9":                                        "SM",
-		"IEC 62443-2-4:2015 SP.06":                                  "SP 6",
+		"IEC 62443-2-4:2023 SP.06 (configuration management)":       "SP 6",
 		"OWASP ASVS 4.0 V2.1.2":                                     "V2",
 		"OWASP ASVS 4.0.3 §12.1.2":                                  "V12",
 		"PCI DSS 4.0 Req. 3.5":                                      "Req. 3",

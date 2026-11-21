@@ -193,7 +193,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [hardware-integrity, pfh, sff]
-    refs: ["IEC 61508-2:2010 §7.4 (requirements for hardware safety integrity)", "IEC 61508-6:2010 (guidelines on the application of IEC 61508-2 and IEC 61508-3)"]
+    refs: ["IEC 61508-2:2010 §7.4.4 (hardware safety integrity architectural constraints)", "IEC 61508-2:2010 §7.4.5 (requirements for quantifying the effect of random hardware failures)", "IEC 61508-6:2010 (guidelines on the application of IEC 61508-2 and IEC 61508-3)"]
     tests: [SYRAMS-T06]
     en:
       title: Hardware failure measures meet the target SIL
@@ -215,7 +215,7 @@ requirements:
     obligation: must
     priority: high
     tags: [systematic-capability, safety-software]
-    refs: ["IEC 61508-3:2010 §7 (software safety life cycle requirements)"]
+    refs: ["IEC 61508-3:2010 §7 (software safety lifecycle requirements)"]
     tests: [SYRAMS-T07]
     en:
       title: Safety software developed with the techniques for its SIL
@@ -325,7 +325,7 @@ requirements:
     obligation: must
     priority: high
     tags: [proof-test, maintenance, safety-instrumented]
-    refs: ["IEC 61508-2:2010 §7.6 (requirements for hardware safety integrity during operation and maintenance)", "IEC 61511-1:2016 §16.3 (proof testing and inspection)"]
+    refs: ["IEC 61508-2:2010 §7.6 (E/E/PE system operation and maintenance procedures)", "IEC 61511-1:2016 §16.3 (proof testing and inspection)"]
     tests: [SYRAMS-T11]
     en:
       title: Proof tests at the interval assumed in the calculation
@@ -369,7 +369,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [common-cause-failure, redundancy]
-    refs: ["IEC 61508-6:2010 Annex D (common cause failures)", "IEC 61508-2:2010 §7.4 (requirements for hardware safety integrity)"]
+    refs: ["IEC 61508-6:2010 Annex D (common cause failures)", "IEC 61508-2:2010 §7.4.5 (requirements for quantifying the effect of random hardware failures)"]
     tests: [SYRAMS-T06]
     en:
       title: Common cause failures assessed for redundant channels
@@ -537,7 +537,7 @@ tests:
     priority: critical
     execution: manual
     tags: [hardware-integrity, common-cause-failure]
-    refs: ["IEC 61508-2:2010 §7.4 (requirements for hardware safety integrity)", "IEC 61508-6:2010 Annex D (common cause failures)"]
+    refs: ["IEC 61508-2:2010 §7.4.4 (hardware safety integrity architectural constraints)", "IEC 61508-2:2010 §7.4.5 (requirements for quantifying the effect of random hardware failures)", "IEC 61508-6:2010 Annex D (common cause failures)"]
     en:
       title: Hardware integrity figures and common cause assessment
       description: Reviews the hardware integrity report against the SIL limits and the beta factors used.
@@ -565,7 +565,7 @@ tests:
     priority: high
     execution: manual
     tags: [safety-software]
-    refs: ["IEC 61508-3:2010 §7 (software safety life cycle requirements)"]
+    refs: ["IEC 61508-3:2010 §7 (software safety lifecycle requirements)"]
     en:
       title: Software techniques against the SIL tables
       description: Compares the software safety plan with the technique tables of IEC 61508-3 and the evidence.

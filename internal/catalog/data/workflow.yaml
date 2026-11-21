@@ -78,7 +78,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [approval, multiple-approvers]
-    refs: ["ISO 9001:2015 §7.5.2"]
+    refs: ["ISO 9001:2026 §7.5.2"]
     tests: [WFL-T03]
     en:
       title: Required number of approvals
@@ -124,7 +124,7 @@ requirements:
     obligation: must
     priority: high
     tags: [locking, revision]
-    refs: ["ISO 9001:2015 §7.5.3", "21 CFR Part 11 §11.10"]
+    refs: ["ISO 9001:2026 §7.5.3", "21 CFR Part 11 §11.10"]
     tests: [WFL-T04]
     en:
       title: Approved versions locked
@@ -146,7 +146,7 @@ requirements:
     obligation: must
     priority: high
     tags: [approval-record, audit]
-    refs: ["21 CFR Part 11 §11.50", "ISO 9001:2015 §7.5.3"]
+    refs: ["21 CFR Part 11 §11.50", "ISO 9001:2026 §7.5.3"]
     tests: [WFL-T04]
     en:
       title: Record of each approval
@@ -192,7 +192,7 @@ requirements:
     obligation: may
     priority: low
     tags: [reminder, escalation]
-    refs: ["ITIL 4 service request management"]
+    refs: ["ITIL 4 Service request management"]
     tests: [WFL-T05]
     en:
       title: Reminders and escalation of waiting approvals

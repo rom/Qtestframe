@@ -153,7 +153,7 @@ requirements:
     obligation: must
     priority: high
     tags: [emergency-lighting, escape-signs]
-    refs: ["EN 1838", "EN 50172"]
+    refs: ["EN 1838:2024 (escape route lighting)", "EN 50172"]
     tests: [FCFIRE-T05]
     en:
       title: Emergency lighting of 1 lux on escape routes for 1 hour
@@ -411,7 +411,7 @@ tests:
     priority: high
     execution: manual
     tags: [emergency-lighting]
-    refs: ["EN 1838", "EN 50172"]
+    refs: ["EN 1838:2024 (escape route lighting)", "EN 50172"]
     en:
       title: Full-duration test of the emergency lighting
       description: Switches off the normal supply to the emergency lighting and measures the illuminance after 60 minutes.

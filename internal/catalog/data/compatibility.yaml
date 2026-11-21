@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [browser, support]
-    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)", "ISO/IEC 25010:2011 §4.2.3.1 (co-existence)"]
+    refs: ["ISO/IEC 25010:2023 adaptability", "ISO/IEC 25010:2023 co-existence"]
     tests: [CMP-T01]
     en:
       title: Supported browsers
@@ -36,7 +36,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [browser, plug-in]
-    refs: ["ISO/IEC 25010:2011 §4.2.8.2 (installability)"]
+    refs: ["ISO/IEC 25010:2023 installability"]
     tests: [CMP-T01]
     en:
       title: No browser plug-ins or extensions
@@ -58,7 +58,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [operating-system, mobile, support]
-    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)"]
+    refs: ["ISO/IEC 25010:2023 adaptability"]
     tests: [CMP-T02]
     en:
       title: Supported client operating systems
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [server, container, platform]
-    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)", "Open Container Initiative Image Format Specification"]
+    refs: ["ISO/IEC 25010:2023 adaptability", "Open Container Initiative Image Format Specification"]
     tests: [CMP-T03]
     en:
       title: Server platforms
@@ -126,7 +126,7 @@ requirements:
     obligation: should
     priority: low
     tags: [screen-size, responsive]
-    refs: ["ISO/IEC 25010:2011 §4.2.8.1 (adaptability)"]
+    refs: ["ISO/IEC 25010:2023 adaptability"]
     tests: [CMP-T04]
     en:
       title: Layout on wide screens
@@ -174,7 +174,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [api, backward-compatibility, versioning]
-    refs: ["Semantic Versioning 2.0.0", "ISO/IEC 25010:2011 §4.2.3.2 (interoperability)"]
+    refs: ["Semantic Versioning 2.0.0", "ISO/IEC 25010:2023 interoperability"]
     tests: [CMP-T06]
     en:
       title: No breaking changes within a major API version
@@ -196,7 +196,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [api, tolerant-reader, forward-compatibility]
-    refs: ["RFC 9413 (Maintaining Robust Protocols)", "ISO/IEC 25010:2011 §4.2.3.2 (interoperability)"]
+    refs: ["RFC 9413 (Maintaining Robust Protocols)", "ISO/IEC 25010:2023 interoperability"]
     tests: [CMP-T06]
     en:
       title: Unknown request fields are ignored
@@ -242,7 +242,7 @@ requirements:
     obligation: must
     priority: high
     tags: [data-format, backward-compatibility, import]
-    refs: ["ISO/IEC 25010:2011 §4.2.8.3 (replaceability)"]
+    refs: ["ISO/IEC 25010:2023 replaceability"]
     tests: [CMP-T08]
     en:
       title: Import of files from earlier versions

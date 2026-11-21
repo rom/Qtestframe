@@ -60,7 +60,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [right-sizing, utilisation]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "AWS Well-Architected Framework, Sustainability Pillar SUS02"]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "AWS Well-Architected Framework, Sustainability Pillar SUS02"]
     tests: [GRN-T02]
     en:
       title: Average CPU utilisation of at least 40 %

@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [design-review, checklist]
-    refs: ["ISO 9001:2015 §8.3.4 (design and development controls)"]
+    refs: ["ISO 9001:2026 §8.3.4 (design and development controls)"]
     tests: [HWDES-T01]
     en:
       title: Design reviews at schematic, layout and pre-production
@@ -59,7 +59,7 @@ requirements:
     obligation: must
     priority: high
     tags: [thermal, junction-temperature]
-    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)", "IEC 60068-2-2 (test B: dry heat)"]
+    refs: ["IEC 61709:2017 (reference conditions for failure rates and stress models)", "IEC 60068-2-2:2025 (test B: dry heat)"]
     tests: [HWDES-T02]
     en:
       title: Thermal margin of the hottest components
@@ -223,7 +223,7 @@ requirements:
     obligation: must
     priority: high
     tags: [revision-control, traceability, bom]
-    refs: ["ISO 9001:2015 §8.5.2 (identification and traceability)", "ISO 9001:2015 §7.5.3 (control of documented information)"]
+    refs: ["ISO 9001:2026 §8.5.2 (identification and traceability)", "ISO 9001:2026 §7.5.3 (control of documented information)"]
     tests: [HWDES-T07]
     en:
       title: Each built unit traceable to its hardware revision
@@ -293,7 +293,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [accelerated-life-test, halt, reliability-test]
-    refs: ["IEC 62506:2013 (accelerated product testing)", "IEC 61124 (reliability compliance tests for constant failure rate)"]
+    refs: ["IEC 62506:2013 (accelerated product testing)", "IEC 61124:2023 (reliability compliance tests for constant failure rate)"]
     tests: [HWDES-T10]
     en:
       title: Accelerated life test before release
@@ -317,7 +317,7 @@ requirements:
     obligation: must
     priority: high
     tags: [field-failures, returns, reliability-growth]
-    refs: ["IEC 60300-3-2:2004 (collection of dependability data from the field)", "ISO 9001:2015 §10.2 (nonconformity and corrective action)"]
+    refs: ["IEC 60300-3-2:2004 (collection of dependability data from the field)", "ISO 9001:2026 §10.2 (nonconformity and corrective action)"]
     tests: [HWDES-T11]
     en:
       title: Field failures analysed and compared with the prediction
@@ -387,7 +387,7 @@ tests:
     priority: high
     execution: manual
     tags: [design-review]
-    refs: ["ISO 9001:2015 §8.3.4 (design and development controls)"]
+    refs: ["ISO 9001:2026 §8.3.4 (design and development controls)"]
     en:
       title: Review records of the current hardware revision
       description: Checks the three design review records of the current hardware revision.
@@ -561,7 +561,7 @@ tests:
     priority: high
     execution: manual
     tags: [traceability]
-    refs: ["ISO 9001:2015 §8.5.2 (identification and traceability)"]
+    refs: ["ISO 9001:2026 §8.5.2 (identification and traceability)"]
     en:
       title: Serial number traced to revision and component lots
       description: Traces sampled serial numbers back to their hardware revision, files and component lots.

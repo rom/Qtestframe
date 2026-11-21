@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [procurement, tender, requirements]
-    refs: ["ISO/IEC/IEEE 29148:2018", "ISO 21502:2020 (procurement)"]
+    refs: ["ISO/IEC/IEEE 29148:2018", "ISO 21502:2020 §7.17 (procurement)"]
     tests: [PJDEL-T01]
     en:
       title: Each tender requirement has a verification method
@@ -57,7 +57,7 @@ requirements:
     obligation: must
     priority: high
     tags: [supplier-assessment, due-diligence]
-    refs: ["ISO 9001:2015 §8.4.1", "ISO/IEC 27001:2022 A.5.19"]
+    refs: ["ISO 9001:2026 §8.4.1", "ISO/IEC 27001:2022 A.5.19"]
     tests: [PJDEL-T02]
     en:
       title: Supplier assessed before the contract is signed
@@ -79,7 +79,7 @@ requirements:
     obligation: must
     priority: high
     tags: [contract, deliverables, acceptance]
-    refs: ["ISO 9001:2015 §8.4.3", "ISO/IEC 27001:2022 A.5.20"]
+    refs: ["ISO 9001:2026 §8.4.3", "ISO/IEC 27001:2022 A.5.20"]
     tests: [PJDEL-T02]
     en:
       title: Contract with deliverables, milestones and acceptance procedure
@@ -101,7 +101,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [supplier-performance, follow-up, kpi]
-    refs: ["ISO 9001:2015 §8.4.2", "ISO/IEC 27001:2022 A.5.22"]
+    refs: ["ISO 9001:2026 §8.4.2", "ISO/IEC 27001:2022 A.5.22"]
     tests: [PJDEL-T03]
     en:
       title: Monthly supplier follow-up against agreed measures
@@ -123,7 +123,7 @@ requirements:
     obligation: must
     priority: high
     tags: [acceptance-test, test-plan, entry-exit-criteria]
-    refs: ["ISO 9001:2015 §8.6"]
+    refs: ["ISO 9001:2026 §8.6"]
     tests: [PJDEL-T04]
     en:
       title: Acceptance test plan agreed before acceptance testing
@@ -145,7 +145,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [acceptance, sign-off, deviations]
-    refs: ["ISO 9001:2015 §8.6", "PRINCE2 Closing a project"]
+    refs: ["ISO 9001:2026 §8.6", "PRINCE2 Closing a project"]
     tests: [PJDEL-T04]
     en:
       title: Signed acceptance with open deviations and deadlines
@@ -213,7 +213,7 @@ requirements:
     obligation: must
     priority: high
     tags: [closure, closure-report]
-    refs: ["ISO 21502:2020 (project closure)", "PRINCE2 Closing a project"]
+    refs: ["ISO 21502:2020 §6.8 (closing or terminating a project)", "PRINCE2 Closing a project"]
     tests: [PJDEL-T07]
     en:
       title: Closure report approved by the sponsor
@@ -235,7 +235,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [lessons-learned, knowledge]
-    refs: ["PRINCE2 Learn from experience", "ISO 21502:2020 (lessons learned)"]
+    refs: ["PRINCE2 Learn from experience", "ISO 21502:2020 §7.18 (lessons learned)"]
     tests: [PJDEL-T07]
     en:
       title: Lessons learned recorded within 4 weeks of closure
@@ -259,7 +259,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [benefits, benefits-review, business-case]
-    refs: ["ISO 21502:2020 (benefits management)", "PRINCE2 Continued business justification"]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)", "PRINCE2 Continued business justification"]
     tests: [PJDEL-T08]
     en:
       title: Benefits measured 12 months after closure
@@ -313,7 +313,7 @@ tests:
     priority: high
     execution: manual
     tags: [supplier-assessment, contract]
-    refs: ["ISO 9001:2015 §8.4.1"]
+    refs: ["ISO 9001:2026 §8.4.1"]
     en:
       title: Supplier assessment and contract contents
       description: Checks the supplier assessment record and the contents of the signed contract.
@@ -369,7 +369,7 @@ tests:
     priority: critical
     execution: manual
     tags: [acceptance, acceptance-test]
-    refs: ["ISO 9001:2015 §8.6"]
+    refs: ["ISO 9001:2026 §8.6"]
     en:
       title: Acceptance test plan and acceptance certificate
       description: Checks the acceptance test plan against the test log and the acceptance certificate against the defect log.
@@ -485,7 +485,7 @@ tests:
     priority: medium
     execution: manual
     tags: [benefits]
-    refs: ["ISO 21502:2020 (benefits management)"]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
     en:
       title: Benefits report 12 months after closure
       description: Compares the benefits report with the benefits listed in the business case.

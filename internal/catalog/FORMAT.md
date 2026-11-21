@@ -120,20 +120,20 @@ actually check.
 | ISO/IEC 27001 Annex A controls (2022 numbering) | `ISO/IEC 27001:2022 A.8.5` (not "Annex A 8.5") |
 | ISO/IEC 27002 implementation guidance | `ISO/IEC 27002:2022 §8.5` |
 | ISO/IEC 27005 information security risk management | `ISO/IEC 27005:2022 §7 (risk assessment process)` |
-| ISO/IEC 27017 cloud services | `ISO/IEC 27017:2015 CLD.9.5.1` |
-| ISO/IEC 27018 PII in public clouds | `ISO/IEC 27018:2019 (topic)` |
+| ISO/IEC 27017 cloud services | `ISO/IEC 27017:2026 (segregation in virtual computing environments)` |
+| ISO/IEC 27018 PII in public clouds | `ISO/IEC 27018:2025 (topic)` |
 | ISO/IEC 27019 energy utility industry | `ISO/IEC 27019:2024 (topic)` |
-| ISO/IEC 27031 ICT readiness for business continuity | `ISO/IEC 27031:2011` |
+| ISO/IEC 27031 ICT readiness for business continuity | `ISO/IEC 27031:2025` |
 | ISO/IEC 27033 network security | `ISO/IEC 27033-1:2015` |
 | ISO/IEC 27034 application security | `ISO/IEC 27034-1:2011` |
 | ISO/IEC 27035 incident management | `ISO/IEC 27035-1:2023`, `ISO/IEC 27035-2:2023` |
 | ISO/IEC 27036 supplier relationships | `ISO/IEC 27036-3:2023` |
 | ISO/IEC 27040 storage security | `ISO/IEC 27040:2024` |
-| ISO/IEC 27701 privacy information management | `ISO/IEC 27701:2019 §7.3.6` |
+| ISO/IEC 27701 privacy information management | `ISO/IEC 27701:2025 (access, correction or erasure)` |
 | IEC 62443-3-3 system security requirements | `IEC 62443-3-3 SR 1.7` |
 | IEC 62443-4-2 component security requirements | `IEC 62443-4-2 CR 1.7` |
 | IEC 62443-4-1 secure product development lifecycle | `IEC 62443-4-1 SM-9`, `SR-2`, `SI-1`, `SVV-3`, `DM-4`, `SUM-5` … |
-| IEC 62443-2-1 security programme, IEC 62443-2-4 service providers | `IEC 62443-2-1:2024 (topic)`, `IEC 62443-2-4 (topic)` |
+| IEC 62443-2-1 security programme, IEC 62443-2-4 service providers | `IEC 62443-2-1:2024 (topic)`, `IEC 62443-2-4:2023 SP.07 (remote access)` |
 | GDPR (Regulation (EU) 2016/679) | `GDPR Art. 32(1)(a)` |
 | Cyber Resilience Act | `Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)`, `… Annex I Part II §2`, `… Art. 14` |
 | DORA (digital operational resilience, financial sector) | `Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)` |
