@@ -453,10 +453,8 @@ type loginOpts struct {
 	EnrolRequired bool
 }
 
-func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, u *model.User, tenantID, method string) {
-	s.completeLoginOpts(w, r, u, tenantID, method, loginOpts{JSON: method == "local"})
-}
-
+// completeLoginOpts starts the session of a complete sign-in (all factors
+// given), records and audits it.
 func (s *Server) completeLoginOpts(w http.ResponseWriter, r *http.Request, u *model.User, tenantID, method string, o loginOpts) {
 	sess, err := s.startSession(w, r, u, tenantID, o.EnrolRequired)
 	if err != nil {
