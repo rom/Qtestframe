@@ -4123,6 +4123,8 @@ const sv: Messages = {
       resetWhere: 'En användare som har tappat bort telefonen och återställningskoderna: återställ hens tvåstegsverifiering under Medlemmar (eller Användare).',
       updated: 'Ändrad {when} av {who}',
       saved: 'MFA-policyn har sparats',
+    },
+  },
   sysSettings: {
     tab: 'Systeminställningar',
     title: 'Systeminställningar',

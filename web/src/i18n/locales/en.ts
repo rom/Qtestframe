@@ -4124,6 +4124,8 @@ const en = {
       resetWhere: 'A user who lost their phone and recovery codes: reset their multi-factor authentication under Members (or Users).',
       updated: 'Changed {when} by {who}',
       saved: 'MFA policy saved',
+    },
+  },
   sysSettings: {
     tab: 'System settings',
     title: 'System settings',
