@@ -50,7 +50,7 @@ Från vänster till höger:
 | **Sökfältet** | Söker bland krav, testfall och körningar i alla projekt i organisationen. Skriv text eller en [fråga](search-and-filters.md) och tryck <kbd>Enter</kbd>. På mobiler är det en förstoringsglasknapp. |
 | **Hjälp** (?) | Öppnar **Användarhandbok**, **Hjälp för den här sidan**, **Frågespråket**, **Referenser och standarder** och **Starta introduktionsturen igen**. |
 | **Ångra / Gör om / Ångrahistorik** | Ångrar och gör om dina ändringar, se [Ångra och gör om](#ångra-och-gör-om). |
-| **Färgtema** | Väljer ett av de sjutton temana, se [Teman](accessibility-and-languages.md#teman). |
+| **Färgtema** | Väljer ett av de tjugotvå temana, se [Teman](accessibility-and-languages.md#teman). |
 | **Ljust läge / Mörkt läge** | Växlar snabbt mellan ljust och mörkt. |
 | **Användarmeny** | Ditt namn och din roll, **Profil och lösenord**, ljust/mörkt läge, **Språk** och **Logga ut**. |
 

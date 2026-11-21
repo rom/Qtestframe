@@ -60,6 +60,14 @@ const ALL_CONFIGS = [
   { name: 'nordic/en', theme: 'nordic', lang: 'en' },
   { name: 'lavender/sv', theme: 'lavender', lang: 'sv' },
   { name: 'high_contrast/en', theme: 'high_contrast', lang: 'en' },
+  { name: 'high_contrast/sv', theme: 'high_contrast', lang: 'sv' },
+  { name: 'high_contrast_light/en', theme: 'high_contrast_light', lang: 'en' },
+  { name: 'camouflage/en', theme: 'camouflage', lang: 'en' },
+  { name: 'city_camouflage/sv', theme: 'city_camouflage', lang: 'sv' },
+  { name: 'arctic_camouflage/sv', theme: 'arctic_camouflage', lang: 'sv' },
+  { name: 'midnight/en', theme: 'midnight', lang: 'en' },
+  { name: 'amber_terminal/en', theme: 'amber_terminal', lang: 'en' },
+  { name: 'rose/sv', theme: 'rose', lang: 'sv' },
 ]
 
 const VIEWPORTS = pick(ALL_VIEWPORTS, 'QTF_A11Y_VIEWPORTS')
@@ -460,7 +468,7 @@ async function main() {
       for (const vp of VIEWPORTS) {
         const opts = { viewport: { width: vp.width, height: vp.height }, isMobile: vp.mobile, hasTouch: vp.mobile, reducedMotion: 'reduce', locale: cfg.lang === 'sv' ? 'sv-SE' : 'en-GB' }
         const local = ({ lang, theme }) => {
-          const dark = ['dark', 'camouflage', 'city_camouflage', 'navy', 'green_console'].includes(theme)
+          const dark = ['dark', 'camouflage', 'city_camouflage', 'navy', 'midnight', 'green_console', 'amber_terminal', 'forest', 'high_contrast'].includes(theme)
           localStorage.setItem('qtf.lang', lang)
           localStorage.setItem('qtf.theme', dark ? 'dark' : 'light')
           if (theme !== 'light' && theme !== 'dark') localStorage.setItem('qtf.decor', theme)

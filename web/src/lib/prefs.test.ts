@@ -90,8 +90,8 @@ describe('resolveDark', () => {
 
 describe('decorative themes', () => {
   it('accepts every theme value', () => {
-    expect(THEMES).toHaveLength(17)
-    for (const t of ['spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy', 'ocean', 'forest', 'sunset', 'nordic', 'lavender', 'high_contrast']) {
+    expect(THEMES).toHaveLength(22)
+    for (const t of ['spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'arctic_camouflage', 'navy', 'midnight', 'green_console', 'amber_terminal', 'crazy', 'ocean', 'forest', 'sunset', 'nordic', 'lavender', 'rose', 'high_contrast', 'high_contrast_light']) {
       expect(normalizePrefs({ theme: t }).theme).toBe(t)
     }
   })

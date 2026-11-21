@@ -224,7 +224,8 @@ type Preferences struct {
 var (
 	// Themes: light/dark/system plus decorative colour themes.
 	Themes = []string{"light", "dark", "system", "spring", "autumn", "desert", "camouflage",
-		"city_camouflage", "navy", "green_console", "crazy", "ocean", "forest", "sunset", "nordic", "lavender", "high_contrast"}
+		"city_camouflage", "arctic_camouflage", "navy", "midnight", "green_console", "amber_terminal", "crazy",
+		"ocean", "forest", "sunset", "nordic", "lavender", "rose", "high_contrast", "high_contrast_light"}
 	// Languages of the web client ("" = browser language).
 	Languages   = []string{"en", "sv"}
 	StartPages  = []string{"projects", "last_project", "default_project", "search"}

@@ -1026,7 +1026,7 @@ dimensions and values up to 100 characters, names up to 200.
 
 | Key | Values | Effect |
 |---|---|---|
-| `theme` | `light`, `dark`, `system`, `spring`, `autumn`, `desert`, `camouflage`, `city_camouflage`, `navy`, `green_console`, `crazy` | colour theme (applied on every device) |
+| `theme` | `light`, `dark`, `system`, `spring`, `autumn`, `desert`, `camouflage`, `city_camouflage`, `arctic_camouflage`, `navy`, `midnight`, `green_console`, `amber_terminal`, `crazy`, `ocean`, `forest`, `sunset`, `nordic`, `lavender`, `rose`, `high_contrast`, `high_contrast_light` | colour theme (applied on every device) |
 | `language` | `en`, `sv`; empty = browser language | language of the web client |
 | `start_page` | `projects`, `last_project`, `default_project`, `search` | page shown after login / on `/` |
 | `default_project_id` | project id | used by `start_page: default_project` |

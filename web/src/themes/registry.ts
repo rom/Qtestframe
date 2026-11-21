@@ -1,7 +1,7 @@
 // Colour theme registry: plain data only (no PrimeVue import), so lib/prefs
 // and tests can use it. Presets are built from it in ./presets.ts and the
 // matching --qtf-* CSS variables live in styles.css (kept in sync by a test).
-import type { ContrastKind } from './contrast'
+import { blend, parseColor, type ContrastKind } from './contrast'
 
 /** Every value of the `theme` preference. */
 export const THEME_IDS = [
@@ -13,15 +13,20 @@ export const THEME_IDS = [
   'desert',
   'camouflage',
   'city_camouflage',
+  'arctic_camouflage',
   'navy',
+  'midnight',
   'green_console',
+  'amber_terminal',
   'crazy',
   'ocean',
   'forest',
   'sunset',
   'nordic',
   'lavender',
+  'rose',
   'high_contrast',
+  'high_contrast_light',
 ] as const
 export type ThemeId = (typeof THEME_IDS)[number]
 
@@ -29,7 +34,27 @@ export type ThemeId = (typeof THEME_IDS)[number]
 export type ConcreteThemeId = Exclude<ThemeId, 'system'>
 export type Scheme = 'light' | 'dark'
 
-export const DECORATIVE_THEMES = ['spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy', 'ocean', 'forest', 'sunset', 'nordic', 'lavender', 'high_contrast'] as const satisfies readonly ConcreteThemeId[]
+export const DECORATIVE_THEMES = [
+  'spring',
+  'autumn',
+  'desert',
+  'camouflage',
+  'city_camouflage',
+  'arctic_camouflage',
+  'navy',
+  'midnight',
+  'green_console',
+  'amber_terminal',
+  'crazy',
+  'ocean',
+  'forest',
+  'sunset',
+  'nordic',
+  'lavender',
+  'rose',
+  'high_contrast',
+  'high_contrast_light',
+] as const satisfies readonly ConcreteThemeId[]
 export type DecorativeThemeId = (typeof DECORATIVE_THEMES)[number]
 
 export type Shade = 50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 950
@@ -333,7 +358,7 @@ export const THEME_DEFS: Record<ThemeId, ThemeDef> = {
       50: '#e9e9da',
       100: '#d9dac6',
       200: '#c0c2a8',
-      300: '#a5a88a',
+      300: '#b0b394',
       400: '#8a8d70',
       500: '#6f7259',
       600: '#585b46',
@@ -358,8 +383,8 @@ export const THEME_DEFS: Record<ThemeId, ThemeDef> = {
       sidebarActiveBg: '#555c2c',
       sidebarActiveText: '#ffffff',
       topbarBg: '#3a3f2b',
-      sidebarPattern: ['#3d4526', '#463b2a', '#2a3520', '#45472f'],
-      topbarPattern: ['#3f442e', '#433d2e', '#363c29'],
+      sidebarPattern: ['#4b5529', '#54432c', '#1f2817', '#4c4b30'],
+      topbarPattern: ['#475030', '#4e4430', '#2c3121'],
     },
   },
 
@@ -411,8 +436,61 @@ export const THEME_DEFS: Record<ThemeId, ThemeDef> = {
       sidebarActiveBg: '#3d4b5a',
       sidebarActiveText: '#ffffff',
       topbarBg: '#303237',
-      sidebarPattern: ['#36393e', '#24262a', '#303237'],
-      topbarPattern: ['#35373c', '#2d2f34'],
+      sidebarPattern: ['#3f4348', '#1a1b1e', '#35383d'],
+      topbarPattern: ['#3e4146', '#24262a'],
+    },
+  },
+
+  arctic_camouflage: {
+    id: 'arctic_camouflage',
+    scheme: 'light',
+    decorative: true,
+    swatch: { chrome: 'linear-gradient(135deg, #ffffff 0 30%, #c3cfdb 30% 55%, #e8edf2 55% 80%, #8fa1b3 80%)', bg: '#f3f6f9', card: '#ffffff', accent: '#2f5f86' },
+    primary: {
+      50: '#f0f5f9',
+      100: '#dde8f1',
+      200: '#bcd1e3',
+      300: '#92b3cf',
+      400: '#6890b6',
+      500: '#4a749b',
+      600: '#2f5f86',
+      700: '#244b6b',
+      800: '#1f3e58',
+      900: '#1b3449',
+      950: '#10202e',
+    },
+    surface: {
+      0: '#ffffff',
+      50: '#f3f6f9',
+      100: '#e5ebf0',
+      200: '#cdd6df',
+      300: '#b0bdca',
+      400: '#8f9eae',
+      500: '#6f7f90',
+      600: '#5a6977',
+      700: '#485561',
+      800: '#38424c',
+      900: '#2a3239',
+      950: '#1a1f24',
+    },
+    colors: {
+      bg: '#f3f6f9',
+      card: '#ffffff',
+      text: '#1b2733',
+      muted: '#4f5d6b',
+      border: '#d9e1e8',
+      primary: '#2f5f86',
+      primaryHover: '#244b6b',
+      onPrimary: '#ffffff',
+      sidebarBg: '#e8edf2',
+      sidebarText: '#1f2c38',
+      sidebarHeading: '#44515e',
+      sidebarStrong: '#0f1a24',
+      sidebarActiveBg: '#c9d7e4',
+      sidebarActiveText: '#13283d',
+      topbarBg: '#f7f9fb',
+      sidebarPattern: ['#ffffff', '#d5dee7', '#c3cfdb'],
+      topbarPattern: ['#ffffff', '#e4eaf0', '#d6dfe8'],
     },
   },
 
@@ -467,6 +545,58 @@ export const THEME_DEFS: Record<ThemeId, ThemeDef> = {
     },
   },
 
+  midnight: {
+    id: 'midnight',
+    scheme: 'dark',
+    decorative: true,
+    swatch: { chrome: 'linear-gradient(180deg, #080617, #1a1442)', bg: '#0d0b1f', card: '#161333', accent: '#a78bfa' },
+    primary: {
+      50: '#f5f3ff',
+      100: '#ede9fe',
+      200: '#ddd6fe',
+      300: '#c4b5fd',
+      400: '#a78bfa',
+      500: '#8b5cf6',
+      600: '#7c3aed',
+      700: '#6d28d9',
+      800: '#5b21b6',
+      900: '#4c1d95',
+      950: '#2e1065',
+    },
+    surface: {
+      0: '#f4f2ff',
+      50: '#e9e6fb',
+      100: '#d4d0f0',
+      200: '#b5afdc',
+      300: '#948dc4',
+      400: '#766fa8',
+      500: '#5b558a',
+      600: '#47427a',
+      700: '#363163',
+      800: '#26224a',
+      900: '#161333',
+      950: '#0d0b1f',
+    },
+    colors: {
+      bg: '#0d0b1f',
+      card: '#161333',
+      text: '#ece9ff',
+      muted: '#aaa4d8',
+      border: '#2c2757',
+      primary: '#a78bfa',
+      primaryHover: '#c4b5fd',
+      onPrimary: '#120c2e',
+      sidebarBg: '#080617',
+      sidebarText: '#d4d0f5',
+      sidebarHeading: '#9a92d0',
+      sidebarStrong: '#ffffff',
+      sidebarActiveBg: '#2a2163',
+      sidebarActiveText: '#ffffff',
+      topbarBg: '#121029',
+      sidebarPattern: ['#080617', '#1a1442'],
+    },
+  },
+
   green_console: {
     id: 'green_console',
     scheme: 'dark',
@@ -516,6 +646,58 @@ export const THEME_DEFS: Record<ThemeId, ThemeDef> = {
       sidebarActiveBg: '#0d2a16',
       sidebarActiveText: '#66ff8a',
       topbarBg: '#07110a',
+    },
+  },
+
+  amber_terminal: {
+    id: 'amber_terminal',
+    scheme: 'dark',
+    decorative: true,
+    mono: true,
+    swatch: { chrome: '#080501', bg: '#0c0802', card: '#151005', accent: '#ffb000' },
+    primary: {
+      50: '#fff8e6',
+      100: '#ffecc0',
+      200: '#ffd98a',
+      300: '#ffc54d',
+      400: '#ffb000',
+      500: '#e69a00',
+      600: '#b87a00',
+      700: '#8f5e00',
+      800: '#6e4800',
+      900: '#553800',
+      950: '#2e1e00',
+    },
+    surface: {
+      0: '#ffe7c2',
+      50: '#f7dcb0',
+      100: '#e9c891',
+      200: '#d4a965',
+      300: '#b88a48',
+      400: '#9a7038',
+      500: '#7b582b',
+      600: '#5f4321',
+      700: '#463118',
+      800: '#2e200e',
+      900: '#151005',
+      950: '#0c0802',
+    },
+    colors: {
+      bg: '#0c0802',
+      card: '#151005',
+      text: '#ffdca8',
+      muted: '#d29b4c',
+      border: '#463118',
+      primary: '#ffb000',
+      primaryHover: '#ffc54d',
+      onPrimary: '#1a0f00',
+      sidebarBg: '#080501',
+      sidebarText: '#f0c27a',
+      sidebarHeading: '#c08a3a',
+      sidebarStrong: '#ffc54d',
+      sidebarActiveBg: '#2e1f05',
+      sidebarActiveText: '#ffc54d',
+      topbarBg: '#100b03',
     },
   },
 
@@ -831,6 +1013,58 @@ export const THEME_DEFS: Record<ThemeId, ThemeDef> = {
     },
   },
 
+  rose: {
+    id: 'rose',
+    scheme: 'light',
+    decorative: true,
+    swatch: { chrome: 'linear-gradient(180deg, #fbe9ef, #fdeee9)', bg: '#fdf6f8', card: '#ffffff', accent: '#a82c55' },
+    primary: {
+      50: '#fdf2f5',
+      100: '#fbe3ea',
+      200: '#f6c6d5',
+      300: '#ee9db5',
+      400: '#e06f92',
+      500: '#cc4773',
+      600: '#a82c55',
+      700: '#8c2447',
+      800: '#73203f',
+      900: '#5e1c36',
+      950: '#3d0d1f',
+    },
+    surface: {
+      0: '#ffffff',
+      50: '#f7f3f4',
+      100: '#ebe4e6',
+      200: '#d5cacd',
+      300: '#bbadb1',
+      400: '#9e8e93',
+      500: '#807076',
+      600: '#6a5c61',
+      700: '#564a4f',
+      800: '#433a3e',
+      900: '#332c2f',
+      950: '#201b1d',
+    },
+    colors: {
+      bg: '#fdf6f8',
+      card: '#ffffff',
+      text: '#3a1f2b',
+      muted: '#6e4f5c',
+      border: '#f2dbe3',
+      primary: '#a82c55',
+      primaryHover: '#8c2447',
+      onPrimary: '#ffffff',
+      sidebarBg: '#fbe9ef',
+      sidebarText: '#4a2735',
+      sidebarHeading: '#7a4f60',
+      sidebarStrong: '#2e1220',
+      sidebarActiveBg: '#f5cfdc',
+      sidebarActiveText: '#6b1534',
+      topbarBg: '#ffffff',
+      sidebarPattern: ['#fbe9ef', '#fdeee9'],
+    },
+  },
+
   high_contrast: {
     id: 'high_contrast',
     scheme: 'dark',
@@ -881,6 +1115,56 @@ export const THEME_DEFS: Record<ThemeId, ThemeDef> = {
       topbarBg: '#000000',
     },
   },
+  high_contrast_light: {
+    id: 'high_contrast_light',
+    scheme: 'light',
+    decorative: true,
+    swatch: { chrome: '#ffffff', bg: '#ffffff', card: '#ffffff', accent: '#0038b8' },
+    primary: {
+      50: '#eef3ff',
+      100: '#d9e3ff',
+      200: '#b3c6ff',
+      300: '#809fff',
+      400: '#4d76f0',
+      500: '#2456d6',
+      600: '#0038b8',
+      700: '#002d94',
+      800: '#00257a',
+      900: '#001c5e',
+      950: '#00113a',
+    },
+    surface: {
+      0: '#ffffff',
+      50: '#f5f5f5',
+      100: '#e8e8e8',
+      200: '#d1d1d1',
+      300: '#b8b8b8',
+      400: '#8c8c8c',
+      500: '#6b6b6b',
+      600: '#525252',
+      700: '#3d3d3d',
+      800: '#292929',
+      900: '#1a1a1a',
+      950: '#000000',
+    },
+    colors: {
+      bg: '#ffffff',
+      card: '#ffffff',
+      text: '#000000',
+      muted: '#333333',
+      border: '#000000',
+      primary: '#0038b8',
+      primaryHover: '#00257a',
+      onPrimary: '#ffffff',
+      sidebarBg: '#ffffff',
+      sidebarText: '#000000',
+      sidebarHeading: '#0038b8',
+      sidebarStrong: '#000000',
+      sidebarActiveBg: '#000000',
+      sidebarActiveText: '#ffffff',
+      topbarBg: '#ffffff',
+    },
+  },
 }
 
 /** Default English display names (the i18n layer can override them). */
@@ -893,15 +1177,20 @@ export const THEME_LABELS: Record<ThemeId, string> = {
   desert: 'Desert',
   camouflage: 'Camouflage',
   city_camouflage: 'City camouflage',
-  navy: 'Navy',
-  green_console: 'Green console',
+  arctic_camouflage: 'Arctic camouflage',
+  navy: 'Navy blue',
+  midnight: 'Midnight',
+  green_console: 'Green terminal',
+  amber_terminal: 'Amber terminal',
   crazy: 'Crazy',
   ocean: 'Ocean',
   forest: 'Forest',
   sunset: 'Sunset',
   nordic: 'Nordic',
   lavender: 'Lavender',
-  high_contrast: 'High contrast',
+  rose: 'Rose',
+  high_contrast: 'High contrast dark',
+  high_contrast_light: 'High contrast light',
 }
 
 /** Other default English strings used by ThemePicker. */
@@ -961,6 +1250,11 @@ export function contrastPairs(c: ThemeColors): ContrastPair[] {
     { name: 'focus ring on top bar', fg: c.primary, bg: c.topbarBg, kind: 'ui' },
     { name: 'focus ring in the sidebar', fg: c.sidebarStrong, bg: c.sidebarBg, kind: 'ui' },
   ]
+  // project initials (ProjectIcon.vue): primary mixed with 25% text colour, on a 15% primary tint
+  const initials = tint(c.text, c.primary, 0.25)
+  for (const [where, base] of [['background', c.bg], ['card', c.card]] as const) {
+    pairs.push({ name: `project initials on ${where}`, fg: initials, bg: tint(c.primary, base, 0.15), kind: 'text' })
+  }
   for (const p of c.sidebarPattern ?? []) {
     pairs.push({ name: `sidebar text on pattern ${p}`, fg: c.sidebarText, bg: p, kind: 'text' })
     pairs.push({ name: `sidebar heading on pattern ${p}`, fg: c.sidebarHeading, bg: p, kind: 'text' })
@@ -971,4 +1265,10 @@ export function contrastPairs(c: ThemeColors): ContrastPair[] {
     pairs.push({ name: `top bar muted text on pattern ${p}`, fg: c.muted, bg: p, kind: 'text' })
   }
   return pairs
+}
+
+/** `color` mixed into the opaque `base` at `amount` (0–1), as #rrggbb. */
+function tint(color: string, base: string, amount: number): string {
+  const { r, g, b } = blend({ ...parseColor(color), a: amount }, base)
+  return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')
 }

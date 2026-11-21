@@ -383,7 +383,7 @@ func TestProfileAndSessions(t *testing.T) {
 		t.Fatal(u)
 	}
 	// merge + reset with null
-	for _, th := range []string{"spring", "autumn", "desert", "camouflage", "city_camouflage", "navy", "green_console", "crazy", "ocean", "forest", "sunset", "nordic", "lavender", "high_contrast"} {
+	for _, th := range []string{"spring", "autumn", "desert", "camouflage", "city_camouflage", "arctic_camouflage", "navy", "midnight", "green_console", "amber_terminal", "crazy", "ocean", "forest", "sunset", "nordic", "lavender", "rose", "high_contrast", "high_contrast_light"} {
 		a.m("PATCH", "/api/v1/auth/me", map[string]any{"preferences": map[string]any{"theme": th}}, 200)
 	}
 	if me := a.m("PATCH", "/api/v1/auth/me", map[string]any{"preferences": map[string]any{"language": "sv"}}, 200); me["user"].(map[string]any)["preferences"].(map[string]any)["language"] != "sv" {

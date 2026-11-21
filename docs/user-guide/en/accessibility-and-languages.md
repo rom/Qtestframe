@@ -1,6 +1,6 @@
 # Accessibility and languages
 
-Qtestframe is designed to meet **WCAG 2.1 level AA**. It works with the keyboard alone, with screen readers, with browser zoom, on phones and tablets, in English and Swedish and in seventeen colour themes.
+Qtestframe is designed to meet **WCAG 2.1 level AA**. It works with the keyboard alone, with screen readers, with browser zoom, on phones and tablets, in English and Swedish and in twenty-two colour themes.
 
 ## Keyboard
 
@@ -57,9 +57,12 @@ Pick a theme with the **Colour theme** picker in the top bar, or under **Profile
 | **Dark** | dark surfaces, easier on the eyes in dim light |
 | **Follow the operating system** | light or dark, as set on your computer or phone |
 | **Spring**, **Autumn**, **Desert** | light themes with seasonal colours |
-| **Ocean**, **Sunset**, **Nordic**, **Lavender** | light themes: sea blue, warm evening colours, calm grey-blue, soft violet |
-| **Camouflage**, **City camouflage**, **Navy**, **Green console**, **Forest** | dark themes |
-| **High contrast** | black, white and yellow with visible borders and underlined links, for low vision |
+| **Ocean**, **Sunset**, **Nordic**, **Lavender**, **Rose** | light themes: sea blue, warm evening colours, calm grey-blue, soft violet, soft pink |
+| **Camouflage**, **City camouflage** | dark themes with a camouflage pattern in the sidebar and top bar |
+| **Arctic camouflage** | a light theme with a winter camouflage pattern in white, pale grey and blue-grey |
+| **Navy blue**, **Midnight**, **Forest** | dark themes: navy with gold, deep blue-violet, dark green |
+| **Green terminal**, **Amber terminal** | dark themes in a monospace font, like an old computer screen |
+| **High contrast dark**, **High contrast light** | white on black (with yellow) or black on white (with blue), with visible borders and underlined links, for low vision; text meets the stricter AAA contrast of 7:1 |
 | **Crazy** | a playful, colourful theme |
 
 All themes meet the AA contrast requirements for text and controls. Qtestframe also respects your system's **reduced motion** setting.

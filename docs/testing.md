@@ -24,7 +24,7 @@ to run the suites on Linux and macOS.
 | CLI / process | `internal/app` tests | `serve` (HTTP and TLS with certificate reload), `migrate`, admin commands, bootstrap, `healthcheck`, hardening option mapping |
 | OS hardening | child processes of the test binary | no_new_privs, capabilities, Landlock, seccomp, rlimits, `sandbox-exec` |
 | Frontend | Vitest (jsdom) | `web/src/lib`, `web/src/i18n` and `web/src/themes` modules |
-| Accessibility / responsive | Playwright + axe-core (`npm run a11y`) | every main route in five theme/language configurations at phone, tablet and desktop sizes against a running server |
+| Accessibility / responsive | Playwright + axe-core (`npm run a11y`) | every main route in each theme/language configuration of the script at phone, tablet and desktop sizes against a running server |
 | End-to-end | `@playwright/test` (`npm run e2e`, `web/e2e/`) | main user journeys in Chromium against the built binary with a fresh database |
 
 No test needs network access: identity providers, syslog receivers and TLS
@@ -179,8 +179,10 @@ traceability, baselines, settings, export, documents, reports, search,
 profile and the administration pages (members, tokens, audit, role matrix,
 organisations, users, backup):
 
-* in five configurations: light theme in English, dark theme in Swedish and
-  the decorative themes navy, crazy and green_console (the theme and
+* in the theme and language configurations listed in `ALL_CONFIGS`: light
+  theme in English, dark theme in Swedish and the decorative themes (among
+  them navy, midnight, crazy, green_console, amber_terminal, the three
+  camouflage themes, rose and both high contrast themes; the theme and
   language are set as the admin's preferences and restored afterwards);
 * at the viewports 390×844 (phone), 820×1180 (tablet), 1024×768 (tablet
   landscape) and 1440×900 (desktop), with touch emulation on the tablets
