@@ -755,19 +755,40 @@ type DefectLink struct {
 	Title string `json:"title,omitempty"`
 }
 
-// DefectTracker is a project's connection to an external issue tracker.
+// DefectTracker is a project's connection to an external issue tracker. It
+// is used for defects and for issues created from requirements.
 type DefectTracker struct {
-	// Type: "" (none), "jira" or "github".
+	// Type: "" (none), "jira", "github" or "gitlab".
 	Type string `json:"type"`
-	// URL: Jira base URL (https://example.atlassian.net) or the GitHub API
-	// URL (default https://api.github.com).
+	// URL: Jira base URL (https://example.atlassian.net), the GitHub API
+	// URL (default https://api.github.com) or the GitLab instance URL
+	// (default https://gitlab.com; https only).
 	URL string `json:"url"`
-	// ProjectKey: Jira project key; Repo: GitHub owner/repo.
+	// ProjectKey: Jira project key; Repo: GitHub owner/repo; Project:
+	// GitLab project ID or path (group/subgroup/project).
 	ProjectKey string `json:"project_key"`
 	Repo       string `json:"repo"`
-	// IssueType for Jira (default Bug); Labels added to GitHub issues.
+	Project    string `json:"project"`
+	// IssueType for Jira defects (default Bug); Labels: default labels
+	// added to GitHub and GitLab issues (comma-separated).
 	IssueType string `json:"issue_type"`
 	Labels    string `json:"labels"`
+	// Milestone (GitHub and GitLab: number/ID or title) and Assignee
+	// (username or numeric ID) given to new issues; empty for none.
+	Milestone string `json:"milestone"`
+	Assignee  string `json:"assignee"`
+	// RequirementLabels maps requirement fields to labels of the issues
+	// created from requirements: comma-separated templates with the
+	// placeholders {type}, {priority}, {obligation}, {status} and {tags}
+	// (one label per tag); "" uses DefaultRequirementLabels, "none" adds no
+	// mapped labels.
+	RequirementLabels string `json:"requirement_labels"`
+	// RequirementIssueType: Jira issue type of the issues created from
+	// requirements (default Task).
+	RequirementIssueType string `json:"requirement_issue_type"`
+	// CommentOnPass posts a comment on a requirement's issue when a sync
+	// finds that all its linked tests passed.
+	CommentOnPass bool `json:"comment_on_pass"`
 	// User: Jira account e-mail (with an API token) — empty for a bearer token.
 	User string `json:"user"`
 	// Token is write-only: the API reports only HasToken.
@@ -1013,6 +1034,27 @@ type ItemLink struct {
 	TargetKind  string `json:"target_kind,omitempty"`
 	// Direction relative to the item queried: outgoing | incoming.
 	Direction string `json:"direction,omitempty"`
+	// Issue is set on a link to an issue created from a requirement in the
+	// project's tracker.
+	Issue *LinkedIssue `json:"issue,omitempty"`
+}
+
+// DefaultRequirementLabels is the label mapping of issues created from
+// requirements when the tracker settings name none.
+const DefaultRequirementLabels = "requirement, type::{type}, priority::{priority}, {tags}"
+
+// LinkedIssue is the tracker issue an item link points to.
+type LinkedIssue struct {
+	// Tracker: gitlab | github | jira.
+	Tracker string `json:"tracker"`
+	// Key: group/project#12, owner/repo#12 or SHOP-12.
+	Key string `json:"key"`
+	// Status is the tracker's own status; State is open or closed.
+	Status   string     `json:"status"`
+	State    string     `json:"state"`
+	SyncedAt *time.Time `json:"synced_at"`
+	// PassedAt: when the "all tests passed" comment was posted.
+	PassedAt *time.Time `json:"passed_at,omitempty"`
 }
 
 // TestDependency says that TestID may only be executed after DependsOnID

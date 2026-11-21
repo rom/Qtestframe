@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/rom/qtestframe/internal/model"
 )
@@ -398,6 +399,9 @@ func (s *Store) OpenDefectCounts(ctx context.Context, tenantID, projectID string
 var repoRe = regexp.MustCompile(`^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`)
 var jiraKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9_]{0,19}$`)
 
+// gitlabProjectRe: a numeric project ID or a path group/[subgroup/…]project.
+var gitlabProjectRe = regexp.MustCompile(`^(?:[0-9]+|[A-Za-z0-9_.][A-Za-z0-9_.-]*(?:/[A-Za-z0-9_.][A-Za-z0-9_.-]*)+)$`)
+
 // DefectTracker returns a project's tracker settings including the token
 // (for the server's own use; the API masks it).
 func (s *Store) DefectTracker(ctx context.Context, tenantID, projectID string) (*model.DefectTracker, error) {
@@ -449,8 +453,43 @@ func (s *Store) SaveDefectTracker(ctx context.Context, tenantID, projectID strin
 		if !repoRe.MatchString(t.Repo) {
 			return Invalidf("repo must be owner/repository")
 		}
+	case "gitlab":
+		if t.URL == "" {
+			t.URL = "https://gitlab.com"
+		}
+		t.URL = strings.TrimRight(strings.TrimSuffix(t.URL, "/api/v4"), "/")
+		if u, err := url.Parse(t.URL); err != nil || u.Scheme != "https" || u.Host == "" || u.RawQuery != "" || u.User != nil {
+			return Invalidf("the GitLab URL must be an https URL, e.g. https://gitlab.com or https://gitlab.example.com")
+		}
+		p := strings.TrimSpace(t.Project)
+		p = strings.TrimPrefix(p, t.URL+"/") // a pasted project URL
+		t.Project = strings.Trim(p, "/")
+		if !gitlabProjectRe.MatchString(t.Project) || slices.ContainsFunc(strings.Split(t.Project, "/"), func(s string) bool { return strings.Trim(s, ".") == "" }) {
+			return Invalidf("project must be a GitLab project ID or path, e.g. 42 or group/subgroup/project")
+		}
 	default:
-		return Invalidf("type must be jira, github or empty")
+		return Invalidf("type must be jira, github, gitlab or empty")
+	}
+	if t.Type != "gitlab" {
+		t.Project = ""
+	}
+	if t.Type == "jira" {
+		// Jira issues get no milestone or assignee from here
+		t.Milestone, t.Assignee, t.Labels = "", "", ""
+		if t.RequirementIssueType = strings.TrimSpace(t.RequirementIssueType); t.RequirementIssueType == "" {
+			t.RequirementIssueType = "Task"
+		}
+	} else {
+		t.IssueType, t.RequirementIssueType = "", ""
+	}
+	t.Labels = strings.TrimSpace(t.Labels)
+	t.Milestone = strings.TrimSpace(t.Milestone)
+	t.Assignee = strings.TrimSpace(t.Assignee)
+	t.RequirementLabels = strings.TrimSpace(t.RequirementLabels)
+	for name, v := range map[string]string{"labels": t.Labels, "milestone": t.Milestone, "assignee": t.Assignee, "requirement_labels": t.RequirementLabels, "requirement_issue_type": t.RequirementIssueType, "issue_type": t.IssueType} {
+		if utf8.RuneCountInString(v) > 500 {
+			return Invalidf("%s may have at most 500 characters", name)
+		}
 	}
 	if t.Token == "" && !clearToken && t.Type != "" {
 		t.Token = cur.Token

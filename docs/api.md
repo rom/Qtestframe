@@ -38,7 +38,8 @@ is unreachable); all other paths serve the web client.
   `skipped` with a reason are part of a successful answer, so the others
   were saved. Webhooks for the changes are sent only after they are saved.
   Exceptions, because they call outside services: pushing and syncing
-  defects with the tracker (`/defects/push`, `/defects/sync`), webhook
+  defects and requirement issues with the tracker (`/defects/push`,
+  `/defects/sync`, `/requirements/{id}/issue`, `…/requirements/issues`), webhook
   tests and report batches, which save item by item.
 * **Concurrent edits** – `GET` and `PATCH` of a requirement or test answer
   with `ETag: "<version>"`. Send `If-Match: "<version>"` with a `PATCH` to
@@ -802,10 +803,13 @@ the read permission of an internal target's kind).
 
 `ItemLink`: `{id, project_id, source_type, source_id, target_type, target_id,
 url, label, created_by, created_at, source_key, source_title, target_key,
-target_title, target_kind?, direction}` (keys of runs, files and reports are
-their names). Deleting an item removes its links (the trash restores them);
-moving requirements or tests to another project drops their internal links
-and keeps web links.
+target_title, target_kind?, direction, issue?}` (keys of runs, files and
+reports are their names). Deleting an item removes its links (the trash
+restores them); moving requirements or tests to another project drops their
+internal links and keeps web links. A web link to an issue created from a
+requirement (see [Issues from requirements](#issues-from-requirements))
+carries `issue: {tracker, key, status, state: open|closed, synced_at,
+passed_at?}`.
 
 ## Catalogue
 
@@ -1445,11 +1449,13 @@ Statuses: `open`, `in_progress` (open), `resolved`, `closed`, `rejected`.
 Severities: `critical`, `major`, `minor`, `trivial`. Requirements carry
 `open_defects` (query field `defects`).
 
-**Jira and GitHub.** Each project can be connected to one tracker.
+**Jira, GitHub and GitLab.** Each project can be connected to one tracker.
+The same connection is used for defects and for
+[issues created from requirements](#issues-from-requirements).
 
 | Method | Path | Permission | Notes |
 |---|---|---|---|
-| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github, url, project_key, repo, issue_type, labels, user, has_token}`; the token is never returned |
+| GET | `/projects/{pid}/defect-tracker` | project.read | `{type: ""\|jira\|github\|gitlab, url, project_key, repo, project, issue_type, labels, milestone, assignee, requirement_labels, requirement_issue_type, comment_on_pass, user, has_token}`; the token is never returned |
 | PUT | `/projects/{pid}/defect-tracker` | project.update | same fields plus `token` (write-only; empty keeps the saved one) and `clear_token` |
 | POST | `/projects/{pid}/defect-tracker/check` | project.update | 200 or 502 `tracker_error` |
 | POST | `/defects/{id}/push` | run.execute | creates the issue → Defect with `external_key`, `external_url`; 409 when already linked |
@@ -1465,7 +1471,72 @@ auth), or a personal access token when `user` is empty. GitHub uses
 mapping: Jira status categories To Do → `open`, In Progress →
 `in_progress`, Done → `closed` (a resolution such as Won't Do or Duplicate
 → `rejected`); GitHub open → `open`, closed → `closed`, closed as not
-planned → `rejected`.
+planned → `rejected`; GitLab `opened` → `open`, `closed` → `closed`.
+
+GitLab uses REST API v4 at `url` (default `https://gitlab.com`, or a
+self-managed instance; `https` only, a trailing `/api/v4` is removed) and
+`project`, the numeric project ID or its path `group/subgroup/project` (a
+pasted project URL is reduced to the path). The token, a personal, project
+or group access token with the `api` scope, is sent in the `PRIVATE-TOKEN`
+header. `labels` (comma-separated) are added to every new GitHub and GitLab
+issue; `milestone` (GitLab: the number shown as `%3` or the title, also of
+a group milestone; GitHub: number or title) and `assignee` (username or
+numeric ID; GitHub login) are given to new issues. Jira ignores labels,
+milestone and assignee of the settings.
+
+The token is encrypted at rest like the other stored secrets and is write
+only: no answer, error message or audit entry contains it. Requests to the
+tracker use the server's outbound proxy settings (`HTTPS_PROXY`,
+`NO_PROXY`) and the system's trusted CAs, time out after 30 seconds, and
+are retried after the tracker's `Retry-After` when it limits the rate (429,
+or 403 with no requests remaining) and asks for at most 10 seconds;
+otherwise the error says how long to wait. Errors of the tracker answer 502
+`tracker_error` with an explanation of 401 (the token was rejected), 403
+(missing scope or role), 404 (unknown project, repository or issue) and
+422 (the tracker rejected the request) and the tracker's own message.
+
+## Issues from requirements
+
+A requirement can be turned into an issue of the project's tracker
+(GitLab, GitHub or Jira, as configured above). The issue is linked as a
+web [item link](#item-links) of the requirement with `issue` (key and
+state). Reading needs `requirement.read`; creating, updating and syncing
+change the requirement's links and need `requirement.write`. Every create,
+update and sync is written to the audit log (`requirement.issue.create`,
+`requirement.issue.update`, `requirement.issue.sync`).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/requirements/{id}/issue` | `{tracker, link, preview}`: the tracker type (`""` when none), the requirement's issue link in that tracker (or null) and `preview` `{title, description, labels}` of the issue as it would be sent now |
+| POST | `/requirements/{id}/issue` | creates the issue and links it → 201 `{link}`; 409 `issue_exists` with `link` when the requirement already has an issue in the tracker (open or update it instead) |
+| PUT | `/requirements/{id}/issue` | pushes the current title and description into the issue → `{link}`; 404 when it has none |
+| POST | `/requirements/{id}/issue/sync` | reads the issue's state back → `{link, changed, commented}` |
+| POST | `/projects/{pid}/requirements/issues` | `{"ids":[...], "update": false}` (at most 100): creates the issues of those without one; those with one are `skipped`, or `updated` with `"update": true` → `{"created":[{key,issue_key,url,state}],"updated":[...],"skipped":[...],"failed":[{key,error}]}` |
+| POST | `/projects/{pid}/requirements/issues/sync` | the issues of all requirements, or only `{"ids":[...]}` → `{"synced","changed","commented","failed":[{key,error}]}` |
+
+The issue's title is `[KEY] title`. Its description (GitLab and GitHub
+Markdown, Jira wiki markup) holds the requirement's text, rationale,
+acceptance criteria, type, priority, obligation, status, owner, source,
+tags and version, the linked tests with their latest results, and links to
+`/go/{key}` of the requirement and its tests (when `server.base_url` is
+set). In Markdown the generated part is enclosed in
+`<!-- qtestframe:begin -->` and `<!-- qtestframe:end -->`: an update
+replaces only that part and keeps text written in GitLab or GitHub around
+it. A Jira update replaces the whole description.
+
+Labels: the tracker's `labels`, plus `requirement_labels`, comma-separated
+templates with `{type}`, `{priority}`, `{obligation}`, `{status}` and
+`{tags}` (one label per tag); a template whose value is empty is left
+out. Empty uses `requirement, type::{type}, priority::{priority}, {tags}`;
+`none` adds no mapped labels. An update adds the mapped labels and removes
+none. Jira issues get the type `requirement_issue_type` (default Task) and
+the labels with spaces replaced by `_`.
+
+Syncing maps the issue state to `open` or `closed`. With
+`comment_on_pass`, a sync that finds all linked tests passed comments once
+on the open issue; when the tests stop passing, the next pass comments
+again. Syncing runs on demand (there is no schedule). Like the defect push
+and sync, these calls save item by item rather than in one transaction.
 
 ## Risks
 
