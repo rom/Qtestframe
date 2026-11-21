@@ -297,6 +297,126 @@ requirements:
         - method: test
           text: En massändring av 10 objekt, varav 2 är låsta, rapporterar 8 lyckade och listar de 2 låsta objekten med orsaken.
 
+  - id: DATA-14
+    type: functional
+    obligation: must_not
+    priority: high
+    tags: [referential-integrity, deletion, references]
+    refs: ["ISO/IEC 25010:2023 integrity", "ISO/IEC 25012:2008 consistency"]
+    tests: [DATA-T10]
+    en:
+      title: No deletion that leaves broken references
+      description: The system MUST NOT delete an item that other items refer to before it has shown the referring items and the user has confirmed how the references are handled.
+      rationale: Silent deletion leaves links that point nowhere, and the gap is only noticed when someone follows them later.
+      criteria:
+        - method: test
+          text: Deleting a requirement linked to 2 tests shows the 2 tests and requires a choice before anything is deleted.
+          threshold: "0 dangling references"
+    sv:
+      title: Ingen radering som lämnar trasiga referenser
+      description: Systemet SKA INTE radera ett objekt som andra objekt hänvisar till innan det har visat de hänvisande objekten och användaren har bekräftat hur referenserna hanteras.
+      rationale: Tyst radering lämnar länkar som pekar ut i tomma intet, och luckan märks först när någon följer dem senare.
+      criteria:
+        - method: test
+          text: Att radera ett krav som är kopplat till 2 testfall visar de 2 testfallen och kräver ett val innan något raderas.
+          threshold: "0 hängande referenser"
+
+  - id: DATA-15
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [duplicates, merge, history]
+    refs: ["ISO/IEC 25012:2008 consistency", "ISO 8000-8:2015 (information and data quality)"]
+    tests: [DATA-T11]
+    en:
+      title: Merge of duplicate records
+      description: The system SHOULD let a user merge two duplicate items into one that keeps the links, comments and history of both.
+      rationale: Duplicates split the information about one thing in two, and deleting one of them loses what was recorded on it.
+      criteria:
+        - method: test
+          text: Merging two items that each have 2 links and 1 comment leaves one item with 4 links, 2 comments and the history of both.
+          threshold: "0 lost links or comments"
+    sv:
+      title: Sammanslagning av dubbletter
+      description: Systemet BÖR låta en användare slå samman två dubblettobjekt till ett som behåller länkar, kommentarer och historik från båda.
+      rationale: Dubbletter delar informationen om en sak i två delar, och att radera den ena förlorar det som registrerats på den.
+      criteria:
+        - method: test
+          text: Att slå samman två objekt som vart och ett har 2 länkar och 1 kommentar ger ett objekt med 4 länkar, 2 kommentarer och historiken från båda.
+          threshold: "0 förlorade länkar eller kommentarer"
+
+  - id: DATA-16
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [custom-fields, configuration, validation]
+    refs: ["ISO/IEC 25010:2023 adaptability", "ISO/IEC 25010:2023 functional completeness"]
+    tests: [DATA-T12]
+    en:
+      title: Custom fields with types
+      description: The system MUST let an administrator add custom fields of the types text, number, date, single choice and multiple choice to an item type, with a rule that a value is mandatory.
+      rationale: Each organisation records some facts that the standard fields do not hold, and untyped free text fields cannot be filtered or validated.
+      criteria:
+        - method: test
+          text: An administrator adds a field of each of the 5 types; each accepts only values of its type and a mandatory field blocks saving when empty.
+          threshold: "5 field types"
+    sv:
+      title: Egna fält med datatyper
+      description: Systemet SKA låta en administratör lägga till egna fält av typerna text, tal, datum, enkelval och flerval till en objekttyp, med en regel som kräver ett värde.
+      rationale: Varje organisation registrerar uppgifter som standardfälten inte rymmer, och otypade fritextfält går inte att filtrera eller validera.
+      criteria:
+        - method: test
+          text: En administratör lägger till ett fält av var och en av de 5 typerna; varje fält tar bara emot värden av sin typ och ett obligatoriskt fält stoppar sparandet när det är tomt.
+          threshold: "5 fälttyper"
+
+  - id: DATA-17
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [archive, read-only, lifecycle]
+    refs: ["ISO 15489-1:2016 (records management)", "ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [DATA-T13]
+    en:
+      title: Archived items read-only and out of the way
+      description: Archiving an item SHOULD make it read-only, hide it from default lists and keep it findable through search with an archive filter.
+      rationale: Finished work clutters daily lists but still has to be found for audits and reuse, which deletion would prevent.
+      criteria:
+        - method: test
+          text: An archived item cannot be edited, is absent from the default list and appears when the archive filter is chosen.
+          threshold: "0 edits accepted on archived items"
+    sv:
+      title: Arkiverade objekt är skrivskyddade och ur vägen
+      description: Arkivering av ett objekt BÖR göra det skrivskyddat, dölja det i standardlistor och låta det förbli sökbart med ett arkivfilter.
+      rationale: Avslutat arbete skräpar ned de dagliga listorna men behöver ändå hittas vid revisioner och återanvändning, vilket radering skulle förhindra.
+      criteria:
+        - method: test
+          text: Ett arkiverat objekt går inte att redigera, saknas i standardlistan och visas när arkivfiltret väljs.
+          threshold: "0 godtagna ändringar i arkiverade objekt"
+
+  - id: DATA-18
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [data-dictionary, documentation, schema]
+    refs: ["ISO/IEC 25012:2008 understandability", "ISO 8000-110:2021 (master data exchange)"]
+    tests: [DATA-T14]
+    en:
+      title: Data dictionary
+      description: The supplier MUST provide a data dictionary that describes each item type and field with its meaning, data type, permitted values and whether it is mandatory.
+      rationale: Integrations, reports and migrations depend on knowing what each field means, and guessing from labels produces wrong figures.
+      criteria:
+        - method: inspection
+          text: A comparison of the data dictionary with the database schema and the API description finds every field described.
+          threshold: "100 % of fields described"
+    sv:
+      title: Datakatalog
+      description: Leverantören SKA tillhandahålla en datakatalog som för varje objekttyp och fält anger betydelse, datatyp, tillåtna värden och om ett värde krävs.
+      rationale: Integrationer, rapporter och migreringar bygger på att man vet vad varje fält betyder, och att gissa utifrån etiketter ger felaktiga siffror.
+      criteria:
+        - method: inspection
+          text: En jämförelse av datakatalogen med databasschemat och API-beskrivningen visar att varje fält är beskrivet.
+          threshold: "100 % av fälten beskrivna"
+
 tests:
   - id: DATA-T01
     priority: critical
@@ -575,3 +695,161 @@ tests:
           expected: Rapporten anger 8 lyckade och listar de 2 låsta objekten med orsaken "låst".
         - action: Öppna de 2 listade objekten från rapporten.
           expected: Båda objekten har fortfarande sin tidigare status.
+
+  - id: DATA-T10
+    priority: high
+    execution: manual
+    tags: [referential-integrity, deletion]
+    refs: ["ISO/IEC 25010:2023 integrity"]
+    en:
+      title: Deleting a referenced item
+      description: Tries to delete a requirement that two tests are linked to.
+      preconditions: A requirement linked to 2 tests and a user who may delete it.
+      expected: The referring items are shown and nothing is deleted until the user chooses how to handle them.
+      steps:
+        - action: Choose delete on the requirement.
+          expected: A dialog lists the 2 linked tests and asks how to handle the links.
+          data: "links to T-01 and T-02"
+        - action: Cancel the dialog.
+          expected: The requirement and the links remain.
+        - action: Delete again and choose to remove the links.
+          expected: The requirement is deleted and the 2 tests no longer show a link to it.
+    sv:
+      title: Radera ett objekt som andra hänvisar till
+      description: Försöker radera ett krav som två testfall är kopplade till.
+      preconditions: Ett krav kopplat till 2 testfall och en användare som får radera det.
+      expected: De hänvisande objekten visas och inget raderas förrän användaren har valt hur de ska hanteras.
+      steps:
+        - action: Välj radera på kravet.
+          expected: En dialog listar de 2 kopplade testfallen och frågar hur kopplingarna ska hanteras.
+          data: "kopplingar till T-01 och T-02"
+        - action: Avbryt dialogen.
+          expected: Kravet och kopplingarna finns kvar.
+        - action: Radera igen och välj att ta bort kopplingarna.
+          expected: Kravet raderas och de 2 testfallen visar inte längre någon koppling till det.
+
+  - id: DATA-T11
+    priority: medium
+    execution: manual
+    tags: [duplicates, merge]
+    refs: ["ISO/IEC 25012:2008 consistency"]
+    en:
+      title: Merging two duplicates
+      description: Merges two items that both have links and comments.
+      preconditions: Two duplicate items, each with 2 links and 1 comment, and a user who may edit both.
+      expected: One item remains with every link, comment and both histories.
+      steps:
+        - action: Select the two items and choose merge, keeping the first as the surviving item.
+          expected: A preview shows the combined links and comments.
+          data: "items REQ-10 and REQ-11"
+        - action: Confirm the merge.
+          expected: REQ-10 has 4 links and 2 comments; REQ-11 is marked as merged into REQ-10.
+        - action: Open the history of REQ-10.
+          expected: The history includes the earlier changes of both items and the merge.
+    sv:
+      title: Slå samman två dubbletter
+      description: Slår samman två objekt som båda har länkar och kommentarer.
+      preconditions: Två dubblettobjekt med 2 länkar och 1 kommentar vardera och en användare som får redigera båda.
+      expected: Ett objekt återstår med varje länk, kommentar och båda historikerna.
+      steps:
+        - action: Markera de två objekten och välj slå samman, med det första som det objekt som behålls.
+          expected: En förhandsvisning visar de sammanlagda länkarna och kommentarerna.
+          data: "objekten REQ-10 och REQ-11"
+        - action: Bekräfta sammanslagningen.
+          expected: REQ-10 har 4 länkar och 2 kommentarer; REQ-11 är markerat som sammanslaget med REQ-10.
+        - action: Öppna historiken för REQ-10.
+          expected: Historiken innehåller de tidigare ändringarna i båda objekten och sammanslagningen.
+
+  - id: DATA-T12
+    priority: medium
+    execution: manual
+    tags: [custom-fields, validation]
+    refs: ["ISO/IEC 25010:2023 adaptability"]
+    en:
+      title: Custom fields of each type
+      description: Adds custom fields of five types and enters valid and invalid values.
+      preconditions: An administrator account and an item type without custom fields.
+      expected: Each field accepts only values of its type and the mandatory rule is enforced.
+      steps:
+        - action: Add a text, number, date, single choice and multiple choice field; mark the number field as mandatory.
+          expected: The 5 fields appear on the item form.
+        - action: Enter letters in the number field and an impossible date in the date field.
+          expected: Both values are rejected with a message.
+          data: "\"abc\"; 2026-02-30"
+        - action: Leave the number field empty and save.
+          expected: The save is refused because the mandatory field is empty.
+    sv:
+      title: Egna fält av varje typ
+      description: Lägger till egna fält av fem typer och matar in giltiga och ogiltiga värden.
+      preconditions: Ett administratörskonto och en objekttyp utan egna fält.
+      expected: Varje fält tar bara emot värden av sin typ och regeln om obligatoriskt värde efterlevs.
+      steps:
+        - action: Lägg till ett fält för text, tal, datum, enkelval och flerval; markera talfältet som obligatoriskt.
+          expected: De 5 fälten visas i objektformuläret.
+        - action: Skriv bokstäver i talfältet och ett omöjligt datum i datumfältet.
+          expected: Båda värdena avvisas med ett meddelande.
+          data: "\"abc\"; 2026-02-30"
+        - action: Lämna talfältet tomt och spara.
+          expected: Sparandet avvisas eftersom det obligatoriska fältet är tomt.
+
+  - id: DATA-T13
+    priority: medium
+    execution: manual
+    tags: [archive, read-only]
+    refs: ["ISO 15489-1:2016 (records management)"]
+    en:
+      title: Archived item behaviour
+      description: Archives an item and checks editing, lists and search.
+      preconditions: An item that the user may archive.
+      expected: The archived item is read-only, hidden by default and found with the archive filter.
+      steps:
+        - action: Archive the item.
+          expected: The item is marked as archived.
+        - action: Try to edit a field of the item.
+          expected: Editing is not offered and an API update is rejected.
+        - action: Open the default list and then search with the archive filter.
+          expected: The item is absent from the default list and found with the filter.
+    sv:
+      title: Ett arkiverat objekts beteende
+      description: Arkiverar ett objekt och kontrollerar redigering, listor och sökning.
+      preconditions: Ett objekt som användaren får arkivera.
+      expected: Det arkiverade objektet är skrivskyddat, dolt som standard och hittas med arkivfiltret.
+      steps:
+        - action: Arkivera objektet.
+          expected: Objektet markeras som arkiverat.
+        - action: Försök redigera ett fält i objektet.
+          expected: Redigering erbjuds inte och en uppdatering via API:t avvisas.
+        - action: Öppna standardlistan och sök sedan med arkivfiltret.
+          expected: Objektet saknas i standardlistan och hittas med filtret.
+
+  - id: DATA-T14
+    priority: medium
+    execution: manual
+    tags: [data-dictionary, schema]
+    refs: ["ISO/IEC 25012:2008 understandability"]
+    en:
+      title: Data dictionary matches the schema
+      description: Compares the data dictionary with the database schema and the API description.
+      preconditions: The data dictionary of the current version, read access to the schema and the API description.
+      expected: Every field in the schema and the API is described in the dictionary.
+      steps:
+        - action: List the fields of each item type from the schema.
+          expected: The list is produced.
+          data: "tables of the item types"
+        - action: Look up each field in the dictionary.
+          expected: Each has meaning, data type, permitted values and mandatory status.
+        - action: Compare the API description's fields with the dictionary.
+          expected: No API field is missing from the dictionary.
+    sv:
+      title: Datakatalogen stämmer med schemat
+      description: Jämför datakatalogen med databasschemat och API-beskrivningen.
+      preconditions: Datakatalogen för den aktuella versionen, läsbehörighet till schemat och API-beskrivningen.
+      expected: Varje fält i schemat och API:t är beskrivet i katalogen.
+      steps:
+        - action: Lista fälten för varje objekttyp ur schemat.
+          expected: Listan tas fram.
+          data: "tabellerna för objekttyperna"
+        - action: Slå upp varje fält i katalogen.
+          expected: Varje fält har betydelse, datatyp, tillåtna värden och uppgift om obligatoriskt.
+        - action: Jämför fälten i API-beskrivningen med katalogen.
+          expected: Inget fält i API:t saknas i katalogen.

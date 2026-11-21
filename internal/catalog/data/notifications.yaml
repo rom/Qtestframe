@@ -273,6 +273,102 @@ requirements:
         - method: test
           text: Med alla aviseringar avstängda ger var och en av de tre händelserna ändå ett säkerhetsmeddelande till kontoinnehavaren.
 
+  - id: NOTIF-13
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [quiet-hours, push, e-mail]
+    refs: ["ISO 9241-110:2020 suitability for individualisation", "Material Design (notifications)"]
+    tests: [NOTIF-T09]
+    en:
+      title: Quiet hours
+      description: The system SHOULD let a user set quiet hours during which push and e-mail notifications that are not security notices are held and then delivered together.
+      rationale: Notifications at night disturb sleep, and users who cannot pause them turn them off entirely.
+      criteria:
+        - method: test
+          text: A notification triggered at 23:00 with quiet hours 22:00–07:00 is delivered at 07:00, while a security notice is delivered at once.
+          threshold: "held until the end of quiet hours"
+    sv:
+      title: Tysta timmar
+      description: Systemet BÖR låta en användare ställa in tysta timmar då push- och e-postaviseringar som inte är säkerhetsmeddelanden hålls inne och sedan levereras tillsammans.
+      rationale: Aviseringar på natten stör sömnen, och användare som inte kan pausa dem stänger av dem helt.
+      criteria:
+        - method: test
+          text: En avisering som utlöses 23.00 med tysta timmar 22.00–07.00 levereras 07.00, medan ett säkerhetsmeddelande levereras direkt.
+          threshold: "hålls inne till slutet av de tysta timmarna"
+
+  - id: NOTIF-14
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [batching, repeated-changes, noise]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks", "Nielsen heuristic 8"]
+    tests: [NOTIF-T10]
+    en:
+      title: Repeated changes combined
+      description: Changes made to the same item by the same user within 10 minutes MUST be combined into one notification per recipient and channel.
+      rationale: Someone editing an item in small steps would otherwise send a burst of near-identical messages that bury the important ones.
+      criteria:
+        - method: test
+          text: Five edits of one item within 10 minutes give each recipient one e-mail that lists the five changes.
+          threshold: "1 notification per 10-minute window"
+    sv:
+      title: Upprepade ändringar slås ihop
+      description: Ändringar som samma användare gör i samma objekt inom 10 minuter SKA slås ihop till en avisering per mottagare och kanal.
+      rationale: Den som redigerar ett objekt i små steg skulle annars skicka en skur av nästan likadana meddelanden som begraver de viktiga.
+      criteria:
+        - method: test
+          text: Fem redigeringar av ett objekt inom 10 minuter ger varje mottagare ett e-postmeddelande som listar de fem ändringarna.
+          threshold: "1 avisering per tiominutersfönster"
+
+  - id: NOTIF-15
+    type: functional
+    obligation: must
+    priority: low
+    tags: [retention, in-app, cleanup]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 25010:2023 resource utilization"]
+    tests: [NOTIF-T11]
+    en:
+      title: Retention of in-app notifications
+      description: The system MUST remove in-app notifications 90 days after they were created.
+      rationale: Old notifications have no use, grow without limit and keep copies of item content that may since have been deleted.
+      criteria:
+        - method: test
+          text: A notification created 91 days ago is gone, and one created 89 days ago is still listed.
+          threshold: "retention 90 days"
+    sv:
+      title: Lagringstid för aviseringar i appen
+      description: Systemet SKA ta bort aviseringar i appen 90 dagar efter att de skapades.
+      rationale: Gamla aviseringar fyller ingen funktion, växer utan gräns och behåller kopior av innehåll som sedan kan ha raderats.
+      criteria:
+        - method: test
+          text: En avisering som skapades för 91 dagar sedan är borta, och en som skapades för 89 dagar sedan listas fortfarande.
+          threshold: "lagringstid 90 dagar"
+
+  - id: NOTIF-16
+    type: interface
+    obligation: should
+    priority: medium
+    tags: [chat, webhook, channels]
+    refs: ["Standard Webhooks specification", "ISO/IEC 25010:2023 interoperability"]
+    tests: [NOTIF-T12]
+    en:
+      title: Notifications to a chat channel
+      description: The system SHOULD let an administrator send chosen event types of a project to a team chat channel through an incoming webhook address.
+      rationale: Teams follow their work in chat, and posting events there spares each member from setting up personal notifications.
+      criteria:
+        - method: test
+          text: With a webhook configured for status changes, a status change appears in the chat channel within 1 minute with a link to the item.
+          threshold: "≤ 1 min to the channel"
+    sv:
+      title: Aviseringar till en chattkanal
+      description: Systemet BÖR låta en administratör skicka valda händelsetyper i ett projekt till ett teams chattkanal via en inkommande webhookadress.
+      rationale: Team följer sitt arbete i chatten, och att posta händelser där gör att varje medlem slipper ställa in egna aviseringar.
+      criteria:
+        - method: test
+          text: Med en webhook inställd för statusändringar syns en statusändring i chattkanalen inom 1 minut med en länk till objektet.
+          threshold: "≤ 1 min till kanalen"
+
 tests:
   - id: NOTIF-T01
     priority: high
@@ -521,3 +617,117 @@ tests:
           expected: Ett säkerhetsmeddelande om bytet kommer fram till den tidigare adressen.
         - action: Logga in från en ny enhet med ny webbläsaridentitet och IP-adress.
           expected: Ett säkerhetsmeddelande om den nya inloggningen kommer fram med tidpunkt och ungefärlig plats.
+
+  - id: NOTIF-T09
+    priority: medium
+    execution: manual
+    tags: [quiet-hours]
+    refs: ["ISO 9241-110:2020 suitability for individualisation"]
+    en:
+      title: Notifications held during quiet hours
+      description: Triggers an ordinary notification and a security notice during the user's quiet hours.
+      preconditions: A test user with quiet hours 22:00–07:00 and e-mail notifications on; the test clock can be set.
+      expected: The ordinary notification arrives at 07:00 and the security notice at once.
+      steps:
+        - action: At 23:00, trigger a comment notification for the user.
+          expected: No e-mail is sent at 23:00.
+          data: "quiet hours 22:00–07:00"
+        - action: At 23:05, trigger a sign-in from a new device.
+          expected: The security notice is sent at once.
+        - action: Advance the clock to 07:00.
+          expected: The comment notification is delivered.
+    sv:
+      title: Aviseringar hålls inne under tysta timmar
+      description: Utlöser en vanlig avisering och ett säkerhetsmeddelande under användarens tysta timmar.
+      preconditions: En testanvändare med tysta timmar 22.00–07.00 och e-postaviseringar påslagna; testklockan kan ställas.
+      expected: Den vanliga aviseringen kommer 07.00 och säkerhetsmeddelandet direkt.
+      steps:
+        - action: Utlös en avisering om en kommentar till användaren klockan 23.00.
+          expected: Inget e-postmeddelande skickas 23.00.
+          data: "tysta timmar 22.00–07.00"
+        - action: Utlös en inloggning från en ny enhet klockan 23.05.
+          expected: Säkerhetsmeddelandet skickas direkt.
+        - action: Ställ fram klockan till 07.00.
+          expected: Aviseringen om kommentaren levereras.
+
+  - id: NOTIF-T10
+    priority: medium
+    execution: manual
+    tags: [batching, repeated-changes]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    en:
+      title: Five quick edits give one notification
+      description: Edits an item five times within a few minutes and counts the notifications of a follower.
+      preconditions: Two test users; the second follows the item and gets e-mail notifications.
+      expected: The follower receives one e-mail that lists the five changes.
+      steps:
+        - action: As the first user, edit the item five times within 5 minutes.
+          expected: Each edit is saved.
+        - action: Wait 10 minutes and check the follower's inbox.
+          expected: One e-mail arrives that lists the five changes in order.
+    sv:
+      title: Fem snabba ändringar ger en avisering
+      description: Redigerar ett objekt fem gånger inom några minuter och räknar en följares aviseringar.
+      preconditions: Två testanvändare; den andra följer objektet och får aviseringar via e-post.
+      expected: Följaren får ett e-postmeddelande som listar de fem ändringarna.
+      steps:
+        - action: Redigera objektet fem gånger inom 5 minuter som den första användaren.
+          expected: Varje ändring sparas.
+        - action: Vänta 10 minuter och kontrollera följarens inkorg.
+          expected: Ett e-postmeddelande kommer som listar de fem ändringarna i ordning.
+
+  - id: NOTIF-T11
+    priority: low
+    execution: automated
+    tags: [retention, in-app]
+    refs: ["GDPR Art. 5(1)(e)"]
+    en:
+      title: Old in-app notifications removed
+      description: Seeds notifications with different ages and runs the cleanup job.
+      preconditions: A test database where notification creation times can be set, and the cleanup job.
+      expected: Notifications older than 90 days are removed and newer ones are kept.
+      steps:
+        - action: Create notifications aged 89 and 91 days for a user.
+          expected: Both are listed for the user.
+          data: "ages 89 and 91 days"
+        - action: Run the cleanup job and list the notifications again.
+          expected: Only the 89-day-old notification remains.
+    sv:
+      title: Gamla aviseringar i appen tas bort
+      description: Lägger in aviseringar med olika ålder och kör rensningsjobbet.
+      preconditions: En testdatabas där aviseringarnas skapandetid kan ställas in, och rensningsjobbet.
+      expected: Aviseringar äldre än 90 dagar tas bort och nyare behålls.
+      steps:
+        - action: Skapa aviseringar som är 89 och 91 dagar gamla för en användare.
+          expected: Båda listas för användaren.
+          data: "ålder 89 och 91 dagar"
+        - action: Kör rensningsjobbet och lista aviseringarna igen.
+          expected: Bara aviseringen som är 89 dagar gammal finns kvar.
+
+  - id: NOTIF-T12
+    priority: medium
+    execution: manual
+    tags: [chat, webhook]
+    refs: ["Standard Webhooks specification"]
+    en:
+      title: Status change posted to a chat channel
+      description: Configures a chat webhook for a project and changes the status of an item.
+      preconditions: A test chat channel with an incoming webhook address and an administrator account.
+      expected: The status change appears in the channel within 1 minute with a link.
+      steps:
+        - action: Add the webhook address to the project and choose the event type status change.
+          expected: The setting is saved and a test message appears in the channel.
+          data: "incoming webhook of a test channel"
+        - action: Change the status of an item.
+          expected: Within 1 minute the channel shows the item, the new status and a link to it.
+    sv:
+      title: Statusändring postas i en chattkanal
+      description: Ställer in en chattwebhook för ett projekt och ändrar status på ett objekt.
+      preconditions: En testkanal i chatten med en inkommande webhookadress och ett administratörskonto.
+      expected: Statusändringen syns i kanalen inom 1 minut med en länk.
+      steps:
+        - action: Lägg till webhookadressen i projektet och välj händelsetypen statusändring.
+          expected: Inställningen sparas och ett testmeddelande syns i kanalen.
+          data: "inkommande webhook för en testkanal"
+        - action: Ändra status på ett objekt.
+          expected: Inom 1 minut visar kanalen objektet, den nya statusen och en länk till det.

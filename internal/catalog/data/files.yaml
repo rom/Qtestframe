@@ -305,6 +305,102 @@ requirements:
           text: 24 timmar efter att en post med 3 bilagor tagits bort permanent finns ingen av de 3 filerna eller deras versioner kvar i lagringen.
           threshold: ≤ 24 h
 
+  - id: FILE-14
+    type: functional
+    obligation: should
+    priority: low
+    tags: [download, zip, bulk]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [FILE-T11]
+    en:
+      title: All attachments of an item as one archive
+      description: The system SHOULD let a user download all attachments of an item that the user has permission to read as one ZIP file that keeps the original file names.
+      rationale: Downloading twenty attachments one at a time is slow and easy to get wrong when a set has to be handed over.
+      criteria:
+        - method: test
+          text: Downloading the attachments of an item with 5 files gives one ZIP file with the 5 files under their original names.
+          threshold: "1 archive with every readable file"
+    sv:
+      title: Ett objekts alla bilagor som ett arkiv
+      description: Systemet BÖR låta en användare ladda ned alla bilagor till ett objekt som användaren har behörighet att läsa som en ZIP-fil som behåller de ursprungliga filnamnen.
+      rationale: Att ladda ned tjugo bilagor en i taget är långsamt och lätt att göra fel när en uppsättning ska lämnas över.
+      criteria:
+        - method: test
+          text: Att ladda ned bilagorna till ett objekt med 5 filer ger en ZIP-fil med de 5 filerna under sina ursprungliga namn.
+          threshold: "1 arkiv med varje läsbar fil"
+
+  - id: FILE-15
+    type: functional
+    obligation: may
+    priority: low
+    tags: [check-out, locking, editing]
+    refs: ["ISO/IEC 25010:2023 integrity"]
+    tests: [FILE-T12]
+    en:
+      title: Check-out of an attachment
+      description: The system MAY let a user check out an attachment for editing, so that other users see who holds it and cannot upload a new version until it is checked in.
+      rationale: Two people editing the same document offline produce two versions that someone has to merge by hand.
+      criteria:
+        - method: test
+          text: When check-out is offered, a second user sees the lock with the holder's name and cannot upload a new version until check-in.
+          threshold: "1 holder at a time"
+    sv:
+      title: Utcheckning av en bilaga
+      description: Systemet FÅR låta en användare checka ut en bilaga för redigering, så att andra användare ser vem som har den och inte kan ladda upp en ny version förrän den checkas in.
+      rationale: Två personer som redigerar samma dokument offline ger två versioner som någon måste slå ihop för hand.
+      criteria:
+        - method: test
+          text: När utcheckning erbjuds ser en andra användare låset med innehavarens namn och kan inte ladda upp en ny version före incheckning.
+          threshold: "1 innehavare åt gången"
+
+  - id: FILE-16
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [upload, multiple-files, selection]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks", "HTML Living Standard (file upload state)"]
+    tests: [FILE-T13]
+    en:
+      title: Several files in one upload
+      description: The upload function MUST accept up to 50 files selected or dropped in one action and show the progress and result of each file.
+      rationale: Uploading test evidence or a document set file by file wastes time and makes it easy to miss a file.
+      criteria:
+        - method: test
+          text: Selecting 50 files in one action uploads all 50, each with its own progress and result.
+          threshold: "50 files per action"
+    sv:
+      title: Flera filer i en uppladdning
+      description: Uppladdningen SKA ta emot upp till 50 filer som väljs eller släpps i en åtgärd och visa förlopp och resultat för varje fil.
+      rationale: Att ladda upp testbevis eller en dokumentuppsättning fil för fil tar tid och gör det lätt att missa en fil.
+      criteria:
+        - method: test
+          text: Att välja 50 filer i en åtgärd laddar upp alla 50, var och en med eget förlopp och resultat.
+          threshold: "50 filer per åtgärd"
+
+  - id: FILE-17
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [upload, navigation, background]
+    refs: ["ISO 9241-110:2020 controllability", "ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [FILE-T14]
+    en:
+      title: Uploads continue while the user navigates
+      description: An upload in progress MUST continue when the user moves to another page of the application and report its result when it finishes.
+      rationale: Large uploads take minutes, and forcing the user to wait on one page blocks all other work.
+      criteria:
+        - method: test
+          text: An upload of a 100 MB file finishes while the user opens 3 other pages, and a notice reports the result.
+          threshold: "0 aborted uploads on navigation"
+    sv:
+      title: Uppladdningar fortsätter medan användaren navigerar
+      description: En pågående uppladdning SKA fortsätta när användaren går till en annan sida i applikationen och rapportera sitt resultat när den är klar.
+      rationale: Stora uppladdningar tar minuter, och att tvinga användaren att vänta på en sida stoppar allt annat arbete.
+      criteria:
+        - method: test
+          text: En uppladdning av en fil på 100 MB slutförs medan användaren öppnar 3 andra sidor, och ett meddelande rapporterar resultatet.
+          threshold: "0 avbrutna uppladdningar vid navigering"
+
 tests:
   - id: FILE-T01
     priority: high
@@ -625,3 +721,121 @@ tests:
           expected: Posten är borta ur programmet.
         - action: Kör rensningsjobbet eller flytta klockan 24 timmar framåt och slå sedan upp de 5 lagringsnycklarna.
           expected: Inget av de 5 objekten finns.
+
+  - id: FILE-T11
+    priority: low
+    execution: manual
+    tags: [download, zip]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    en:
+      title: Downloading all attachments
+      description: Downloads the attachments of an item as one archive and opens it.
+      preconditions: An item with 5 attachments of different types, one with a non-ASCII file name.
+      expected: The archive contains all 5 files with their original names.
+      steps:
+        - action: Choose to download all attachments of the item.
+          expected: One ZIP file is downloaded.
+          data: "file names include \"Mätprotokoll åtgärd.pdf\""
+        - action: Open the archive with the operating system's built-in tool.
+          expected: It contains the 5 files with their original names and the same checksums as the stored files.
+    sv:
+      title: Ladda ned alla bilagor
+      description: Laddar ned ett objekts bilagor som ett arkiv och öppnar det.
+      preconditions: Ett objekt med 5 bilagor av olika typer, varav en med ett filnamn utanför ASCII.
+      expected: Arkivet innehåller alla 5 filer med sina ursprungliga namn.
+      steps:
+        - action: Välj att ladda ned alla bilagor till objektet.
+          expected: En ZIP-fil laddas ned.
+          data: "filnamnen omfattar \"Mätprotokoll åtgärd.pdf\""
+        - action: Öppna arkivet med operativsystemets inbyggda verktyg.
+          expected: Det innehåller de 5 filerna med sina ursprungliga namn och samma kontrollsummor som de lagrade filerna.
+
+  - id: FILE-T12
+    priority: low
+    execution: manual
+    tags: [check-out, locking]
+    refs: ["ISO/IEC 25010:2023 integrity"]
+    en:
+      title: Checked-out attachment is locked for others
+      description: Checks out an attachment as one user and tries to upload a new version as another.
+      preconditions: Two test users with edit rights on the same item and an attachment, where check-out exists.
+      expected: The second user sees the lock and cannot upload until check-in.
+      steps:
+        - action: As the first user, check out the attachment.
+          expected: The attachment shows as checked out by the first user.
+        - action: As the second user, try to upload a new version.
+          expected: The upload is refused with a message naming the holder.
+        - action: As the first user, check in a new version.
+          expected: The lock is released and the second user can upload.
+    sv:
+      title: Utcheckad bilaga är låst för andra
+      description: Checkar ut en bilaga som en användare och försöker ladda upp en ny version som en annan.
+      preconditions: Två testanvändare med redigeringsrätt till samma objekt och en bilaga, där utcheckning finns.
+      expected: Den andra användaren ser låset och kan inte ladda upp före incheckning.
+      steps:
+        - action: Checka ut bilagan som den första användaren.
+          expected: Bilagan visas som utcheckad av den första användaren.
+        - action: Försök ladda upp en ny version som den andra användaren.
+          expected: Uppladdningen avvisas med ett meddelande som anger innehavaren.
+        - action: Checka in en ny version som den första användaren.
+          expected: Låset släpps och den andra användaren kan ladda upp.
+
+  - id: FILE-T13
+    priority: medium
+    execution: manual
+    tags: [upload, multiple-files]
+    refs: ["ISO 9241-110:2020 suitability for the user's tasks"]
+    en:
+      title: Uploading 50 files at once
+      description: Selects 50 files in the file picker and uploads them in one action.
+      preconditions: A folder with 50 small test files, one of which has a blocked type.
+      expected: The 49 allowed files are uploaded and the blocked one is reported, each with its own status.
+      steps:
+        - action: Select the 50 files in the file picker.
+          expected: 50 files are listed with progress.
+          data: "49 PDF files and 1 executable"
+        - action: Wait until the upload finishes.
+          expected: 49 files show success and the executable shows a clear rejection reason.
+    sv:
+      title: Ladda upp 50 filer på en gång
+      description: Väljer 50 filer i filväljaren och laddar upp dem i en åtgärd.
+      preconditions: En mapp med 50 små testfiler, varav en har en blockerad typ.
+      expected: De 49 tillåtna filerna laddas upp och den blockerade rapporteras, var och en med egen status.
+      steps:
+        - action: Välj de 50 filerna i filväljaren.
+          expected: 50 filer listas med förlopp.
+          data: "49 PDF-filer och 1 körbar fil"
+        - action: Vänta tills uppladdningen är klar.
+          expected: 49 filer visar att de lyckades och den körbara filen visar ett tydligt skäl till avvisningen.
+
+  - id: FILE-T14
+    priority: medium
+    execution: manual
+    tags: [upload, navigation]
+    refs: ["ISO 9241-110:2020 controllability"]
+    en:
+      title: Navigating during an upload
+      description: Starts a large upload and moves around the application before it finishes.
+      preconditions: A 100 MB test file and a connection slow enough for the upload to take at least 1 minute.
+      expected: The upload completes and its result is reported.
+      steps:
+        - action: Start the upload on an item.
+          expected: Progress is shown.
+          data: "100 MB file, bandwidth limited to 10 Mbit/s"
+        - action: Open 3 other pages of the application.
+          expected: A progress indicator for the upload stays visible.
+        - action: Wait until the upload finishes.
+          expected: A notice reports the result and the file is attached to the item.
+    sv:
+      title: Navigera under en uppladdning
+      description: Startar en stor uppladdning och rör sig i applikationen innan den är klar.
+      preconditions: En testfil på 100 MB och en så långsam anslutning att uppladdningen tar minst 1 minut.
+      expected: Uppladdningen slutförs och resultatet rapporteras.
+      steps:
+        - action: Starta uppladdningen på ett objekt.
+          expected: Förloppet visas.
+          data: "fil på 100 MB, bandbredd begränsad till 10 Mbit/s"
+        - action: Öppna 3 andra sidor i applikationen.
+          expected: En förloppsindikator för uppladdningen förblir synlig.
+        - action: Vänta tills uppladdningen är klar.
+          expected: Ett meddelande rapporterar resultatet och filen är bifogad objektet.

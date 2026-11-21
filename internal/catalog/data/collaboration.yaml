@@ -301,6 +301,102 @@ requirements:
         - method: test
           text: Ett projekt med 20 kommentarer i 5 trådar exporterar alla 20 med tråd och metadata, och en import av exporten återställer trådarna.
 
+  - id: COLL-14
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [comments, tasks, assignment]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness", "ISO 9241-110:2020 suitability for the user's tasks"]
+    tests: [COLL-T10]
+    en:
+      title: Comment turned into a task
+      description: The system SHOULD let a user turn a comment into a task with an assignee and a due date that links back to the comment.
+      rationale: Agreements made in a comment thread are forgotten unless they become tracked work with an owner.
+      criteria:
+        - method: test
+          text: Converting a comment creates a task with assignee and due date, and both the task and the comment link to each other.
+          threshold: "1 linked task per conversion"
+    sv:
+      title: Kommentar blir en uppgift
+      description: Systemet BÖR låta en användare göra om en kommentar till en uppgift med ansvarig och förfallodatum som länkar tillbaka till kommentaren.
+      rationale: Överenskommelser i en kommentarstråd glöms bort om de inte blir uppföljt arbete med en ägare.
+      criteria:
+        - method: test
+          text: När en kommentar görs om skapas en uppgift med ansvarig och förfallodatum, och uppgiften och kommentaren länkar till varandra.
+          threshold: "1 länkad uppgift per omvandling"
+
+  - id: COLL-15
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [follow, watch, notifications]
+    refs: ["ISO/IEC 25010:2023 functional completeness", "ISO 9241-110:2020 suitability for individualisation"]
+    tests: [COLL-T11]
+    en:
+      title: Following an item
+      description: The system MUST let a user follow an item and then notify the user of new comments, status changes and edits of that item until the user stops following it.
+      rationale: People who are not owners or mentioned still need to know when an item they depend on changes.
+      criteria:
+        - method: test
+          text: A follower receives a notification for a comment, a status change and an edit, and none after unfollowing.
+          threshold: "3 of 3 event types notified"
+    sv:
+      title: Följa ett objekt
+      description: Systemet SKA låta en användare följa ett objekt och därefter avisera användaren om nya kommentarer, statusändringar och redigeringar av objektet tills användaren slutar följa det.
+      rationale: Personer som varken äger objektet eller har nämnts behöver ändå veta när något de är beroende av ändras.
+      criteria:
+        - method: test
+          text: En följare får en avisering för en kommentar, en statusändring och en redigering, och ingen efter att ha slutat följa.
+          threshold: "3 av 3 händelsetyper aviseras"
+
+  - id: COLL-16
+    type: functional
+    obligation: should
+    priority: low
+    tags: [inline-comments, anchors, review]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    tests: [COLL-T12]
+    en:
+      title: Comments anchored to a text passage
+      description: The system SHOULD let a user attach a comment to a selected passage of a text field and keep it attached to that passage when other parts of the text are edited.
+      rationale: Review comments refer to a particular sentence, and a comment on the whole item makes the reader search for what it means.
+      criteria:
+        - method: test
+          text: A comment on the second sentence stays highlighted on that sentence after the first sentence is rewritten.
+          threshold: "anchor kept after edits elsewhere"
+    sv:
+      title: Kommentarer förankrade i ett textavsnitt
+      description: Systemet BÖR låta en användare knyta en kommentar till ett markerat avsnitt i ett textfält och behålla kopplingen till avsnittet när andra delar av texten redigeras.
+      rationale: Granskningskommentarer gäller en viss mening, och en kommentar på hela objektet får läsaren att leta efter vad den syftar på.
+      criteria:
+        - method: test
+          text: En kommentar på andra meningen förblir markerad på den meningen efter att första meningen har skrivits om.
+          threshold: "förankringen behålls efter ändringar på annat ställe"
+
+  - id: COLL-17
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [mentions, teams, notifications]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    tests: [COLL-T13]
+    en:
+      title: Mention of a team
+      description: Mentioning a team in a comment SHOULD notify each member of the team who has access to the item.
+      rationale: Work is often handed to a team rather than a person, and listing every member by hand misses people and does not follow changes in the team.
+      criteria:
+        - method: test
+          text: Mentioning a team of 4 where 3 members have access notifies those 3 and not the fourth.
+          threshold: "notified = members with access"
+    sv:
+      title: Omnämnande av ett team
+      description: Ett omnämnande av ett team i en kommentar BÖR avisera varje medlem i teamet som har åtkomst till objektet.
+      rationale: Arbete lämnas ofta till ett team snarare än en person, och att räkna upp varje medlem för hand missar personer och följer inte ändringar i teamet.
+      criteria:
+        - method: test
+          text: Ett omnämnande av ett team med 4 medlemmar där 3 har åtkomst aviserar de 3 och inte den fjärde.
+          threshold: "aviserade = medlemmar med åtkomst"
+
 tests:
   - id: COLL-T01
     priority: high
@@ -595,3 +691,121 @@ tests:
           expected: Exporten innehåller 20 kommentarer, var och en med tråd, författare, tid, redigeringsmarkering och löst-status.
         - action: Importera exporten till ett tomt projekt.
           expected: Det nya projektet har 5 trådar med samma 20 kommentarer, 2 lösta trådar och 1 redigerad kommentar.
+
+  - id: COLL-T10
+    priority: medium
+    execution: manual
+    tags: [comments, tasks]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    en:
+      title: Turning a comment into a task
+      description: Converts a comment on an item into a task and follows the links.
+      preconditions: An item with a comment and two test users.
+      expected: The task is created with assignee and due date and links to and from the comment.
+      steps:
+        - action: On the comment, choose to create a task, set the second user as assignee and a due date.
+          expected: A task is created.
+          data: "due date in 7 days"
+        - action: Open the task.
+          expected: It shows the assignee, the due date and a link to the comment.
+        - action: Open the comment.
+          expected: It shows a link to the task and its status.
+    sv:
+      title: Göra om en kommentar till en uppgift
+      description: Gör om en kommentar på ett objekt till en uppgift och följer länkarna.
+      preconditions: Ett objekt med en kommentar och två testanvändare.
+      expected: Uppgiften skapas med ansvarig och förfallodatum och länkar till och från kommentaren.
+      steps:
+        - action: Välj att skapa en uppgift från kommentaren, ange den andra användaren som ansvarig och ett förfallodatum.
+          expected: En uppgift skapas.
+          data: "förfallodatum om 7 dagar"
+        - action: Öppna uppgiften.
+          expected: Den visar ansvarig, förfallodatum och en länk till kommentaren.
+        - action: Öppna kommentaren.
+          expected: Den visar en länk till uppgiften och dess status.
+
+  - id: COLL-T11
+    priority: medium
+    execution: manual
+    tags: [follow, notifications]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    en:
+      title: Notifications for a followed item
+      description: Follows an item, makes three kinds of change and then unfollows.
+      preconditions: Two test users with access to the same item; the first is neither owner nor mentioned.
+      expected: The follower is notified of each change while following and not after.
+      steps:
+        - action: As the first user, follow the item.
+          expected: The item shows that the user follows it.
+        - action: As the second user, add a comment, change the status and edit the description.
+          expected: The first user receives three notifications.
+        - action: As the first user, stop following and repeat a change as the second user.
+          expected: No notification is sent to the first user.
+    sv:
+      title: Aviseringar för ett följt objekt
+      description: Följer ett objekt, gör tre slags ändringar och slutar sedan följa.
+      preconditions: Två testanvändare med åtkomst till samma objekt; den första är varken ägare eller nämnd.
+      expected: Följaren aviseras om varje ändring medan den följer och inte efteråt.
+      steps:
+        - action: Följ objektet som den första användaren.
+          expected: Objektet visar att användaren följer det.
+        - action: Lägg till en kommentar, ändra status och redigera beskrivningen som den andra användaren.
+          expected: Den första användaren får tre aviseringar.
+        - action: Sluta följa som den första användaren och upprepa en ändring som den andra.
+          expected: Ingen avisering skickas till den första användaren.
+
+  - id: COLL-T12
+    priority: low
+    execution: manual
+    tags: [inline-comments, anchors]
+    refs: ["ISO/IEC 25010:2023 functional appropriateness"]
+    en:
+      title: Anchored comment survives an edit
+      description: Comments a sentence in a description and edits another sentence.
+      preconditions: An item whose description has three sentences.
+      expected: The comment stays attached to the commented sentence.
+      steps:
+        - action: Select the second sentence and add a comment.
+          expected: The sentence is highlighted and the comment is shown next to it.
+          data: "\"The lock time is 15 minutes.\""
+        - action: Rewrite the first sentence and save.
+          expected: The highlight remains on the second sentence.
+    sv:
+      title: Förankrad kommentar överlever en redigering
+      description: Kommenterar en mening i en beskrivning och redigerar en annan mening.
+      preconditions: Ett objekt vars beskrivning har tre meningar.
+      expected: Kommentaren förblir knuten till den kommenterade meningen.
+      steps:
+        - action: Markera den andra meningen och lägg till en kommentar.
+          expected: Meningen markeras och kommentaren visas bredvid.
+          data: "\"Spärrtiden är 15 minuter.\""
+        - action: Skriv om den första meningen och spara.
+          expected: Markeringen ligger kvar på den andra meningen.
+
+  - id: COLL-T13
+    priority: medium
+    execution: manual
+    tags: [mentions, teams]
+    refs: ["ISO/IEC 25010:2023 functional completeness"]
+    en:
+      title: Team mention notifies members with access
+      description: Mentions a team whose members have different access.
+      preconditions: A team of 4 users of whom 3 have access to the test item.
+      expected: Only the 3 members with access are notified.
+      steps:
+        - action: Write a comment that mentions the team and save it.
+          expected: The comment shows the team mention.
+          data: "team \"Test team\""
+        - action: Check the notifications of each team member.
+          expected: The 3 members with access have a notification; the fourth has none.
+    sv:
+      title: Omnämnande av team aviserar medlemmar med åtkomst
+      description: Nämner ett team vars medlemmar har olika åtkomst.
+      preconditions: Ett team med 4 användare där 3 har åtkomst till testobjektet.
+      expected: Bara de 3 medlemmarna med åtkomst aviseras.
+      steps:
+        - action: Skriv en kommentar som nämner teamet och spara den.
+          expected: Kommentaren visar omnämnandet av teamet.
+          data: "team \"Testteam\""
+        - action: Kontrollera aviseringarna för varje teammedlem.
+          expected: De 3 medlemmarna med åtkomst har en avisering; den fjärde har ingen.
