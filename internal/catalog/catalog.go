@@ -79,6 +79,8 @@ type Requirement struct {
 	Refs       []string           `yaml:"refs" json:"refs"`
 	Tests      []string           `yaml:"tests" json:"tests"`
 	Text       map[string]ReqText `yaml:",inline" json:"text"`
+	// Sources are the ids of the sources its refs cite (derived).
+	Sources []string `yaml:"-" json:"sources"`
 }
 
 // Step is a test step.
@@ -109,6 +111,8 @@ type Test struct {
 	// Requirements are the catalogue requirements this test verifies
 	// (derived from the requirements' tests lists).
 	Requirements []string `yaml:"-" json:"requirements"`
+	// Sources are the ids of the sources its refs cite (derived).
+	Sources []string `yaml:"-" json:"sources"`
 }
 
 // Area is a topic with its requirements and tests.
@@ -130,6 +134,13 @@ type Catalog struct {
 	Areas        []Area
 	Requirements map[string]*Requirement
 	Tests        map[string]*Test
+	// SourceKinds and Sources are the reference source registry
+	// (sources.yaml).
+	SourceKinds []SourceKind
+	Sources     []Source
+
+	sourceByID map[string]*Source
+	refSource  map[string]string // ref → source id ("" none)
 }
 
 var (
@@ -188,6 +199,17 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 			for _, x := range k.Catalogues {
 				kinds[x.ID] = true
 			}
+			continue
+		}
+		if strings.HasSuffix(n, "/sources.yaml") {
+			var sr struct {
+				Kinds   []SourceKind `yaml:"kinds"`
+				Sources []Source     `yaml:"sources"`
+			}
+			if err := strictYAML(b, &sr); err != nil {
+				return nil, fmt.Errorf("%s: %w", n, err)
+			}
+			c.SourceKinds, c.Sources = sr.Kinds, sr.Sources
 			continue
 		}
 		var a Area
@@ -288,10 +310,12 @@ func Load(fsys fs.FS, dir string) (*Catalog, error) {
 			bad("%s: verifies no requirement (list it in a requirement's tests)", t.ID)
 		}
 	}
+	c.loadSources(bad)
 	if len(errs) > 0 {
 		sort.Strings(errs)
 		return nil, fmt.Errorf("catalogue: %d problem(s):\n  %s", len(errs), strings.Join(errs, "\n  "))
 	}
+	c.resolveRefs()
 	return c, nil
 }
 

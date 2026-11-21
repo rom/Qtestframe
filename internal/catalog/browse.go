@@ -105,9 +105,14 @@ func (c *Catalog) OrderedAreas() []*Area {
 
 // Filter selects catalogue items. Every field is a comma-separated list of
 // accepted values ("" = any); Q is free text whose words must all occur.
+//
+// Source selects items by the reference sources they cite (sources.yaml):
+// a requirement whose refs cite one of them, a test that cites one or
+// verifies such a requirement.
 type Filter struct {
 	Area, Group, Type, Obligation, Priority, Tag, Execution string
 	Catalogue                                               string
+	Source                                                  string
 	Q                                                       string
 }
 
@@ -122,6 +127,7 @@ type ReqSummary struct {
 	Priority    string   `json:"priority"`
 	Tags        []string `json:"tags"`
 	Refs        []string `json:"refs"`
+	Sources     []string `json:"sources"`
 	Tests       []string `json:"tests"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
@@ -137,6 +143,7 @@ type TestSummary struct {
 	Execution    string   `json:"execution"`
 	Tags         []string `json:"tags"`
 	Refs         []string `json:"refs"`
+	Sources      []string `json:"sources"`
 	Requirements []string `json:"requirements"`
 	Steps        int      `json:"steps"`
 	Title        string   `json:"title"`
@@ -158,7 +165,7 @@ func (c *Catalog) SummarizeRequirement(r *Requirement, lang string) ReqSummary {
 		g, k = a.Group, a.Catalogue
 	}
 	return ReqSummary{ID: r.ID, Area: r.Area, Group: g, Catalogue: k, Type: r.Type, Obligation: r.Obligation, Priority: r.Priority,
-		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Tests: nonNil(r.Tests), Title: x.Title, Description: x.Description}
+		Tags: nonNil(r.Tags), Refs: nonNil(r.Refs), Sources: nonNil(r.Sources), Tests: nonNil(r.Tests), Title: x.Title, Description: x.Description}
 }
 
 // SummarizeTest returns t in lang.
@@ -169,7 +176,7 @@ func (c *Catalog) SummarizeTest(t *Test, lang string) TestSummary {
 		g, k = a.Group, a.Catalogue
 	}
 	return TestSummary{ID: t.ID, Area: t.Area, Group: g, Catalogue: k, Priority: t.Priority, Execution: t.Execution,
-		Tags: nonNil(t.Tags), Refs: nonNil(t.Refs), Requirements: nonNil(t.Requirements), Steps: len(x.Steps), Title: x.Title, Description: x.Description}
+		Tags: nonNil(t.Tags), Refs: nonNil(t.Refs), Sources: nonNil(t.Sources), Requirements: nonNil(t.Requirements), Steps: len(x.Steps), Title: x.Title, Description: x.Description}
 }
 
 // set parses a comma-separated filter value (nil = any).
@@ -261,7 +268,7 @@ func lower(ss ...string) string { return strings.ToLower(strings.Join(ss, " ")) 
 func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 	lang = Lang(lang)
 	areas, groups, types, obl, prio, tags := set(f.Area), set(f.Group), set(f.Type), set(f.Obligation), set(f.Priority), set(f.Tag)
-	kinds := set(f.Catalogue)
+	kinds, sources := set(f.Catalogue), set(f.Source)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     ReqSummary
@@ -274,7 +281,7 @@ func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 		}
 		for i := range a.Requirements {
 			r := &a.Requirements[i]
-			if !accepts(types, r.Type) || !accepts(obl, r.Obligation) || !accepts(prio, r.Priority) || !acceptsAny(tags, r.Tags) {
+			if !accepts(types, r.Type) || !accepts(obl, r.Obligation) || !accepts(prio, r.Priority) || !acceptsAny(tags, r.Tags) || !acceptsAny(sources, r.Sources) {
 				continue
 			}
 			x := r.Localized(lang)
@@ -302,7 +309,7 @@ func (c *Catalog) FindRequirements(f Filter, lang string) []ReqSummary {
 func (c *Catalog) FindTests(f Filter, lang string) []TestSummary {
 	lang = Lang(lang)
 	areas, groups, prio, tags, exec := set(f.Area), set(f.Group), set(f.Priority), set(f.Tag), set(f.Execution)
-	kinds := set(f.Catalogue)
+	kinds, sources := set(f.Catalogue), set(f.Source)
 	terms := Terms(f.Q)
 	type hit struct {
 		s     TestSummary
@@ -315,7 +322,7 @@ func (c *Catalog) FindTests(f Filter, lang string) []TestSummary {
 		}
 		for i := range a.Tests {
 			t := &a.Tests[i]
-			if !accepts(prio, t.Priority) || !accepts(exec, t.Execution) || !acceptsAny(tags, t.Tags) {
+			if !accepts(prio, t.Priority) || !accepts(exec, t.Execution) || !acceptsAny(tags, t.Tags) || (sources != nil && !acceptsAny(sources, c.testSources(t))) {
 				continue
 			}
 			x := t.Localized(lang)

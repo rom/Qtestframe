@@ -10,6 +10,7 @@ keyword, analysis, traceability and language rules below are enforced.
 area: authentication            # unique area id: lower case, a-z 0-9 and "-"
 prefix: AUTH                    # id prefix of the area's items: 2-6 capitals
 group: security                 # one of the groups in groups.yaml
+catalogue: software             # optional: a catalogue type of catalogues.yaml (default software)
 name: {en: Authentication, sv: Autentisering}
 description: {en: "…", sv: "…"} # one or two sentences
 
@@ -108,7 +109,8 @@ tests:
 ## Citing standards
 
 Use one spelling per source so that the catalogue search (which looks in
-`refs`) finds every item that cites it. An optional topic in brackets may
+`refs`) finds every item that cites it, and every ref resolves to its
+entry in the source registry (see *Reference sources*). An optional topic in brackets may
 follow the clause, e.g. `"ISO/IEC 27001:2022 A.8.13 (information backup)"`.
 A test cites the standards of the requirements it verifies that its steps
 actually check.
@@ -142,3 +144,61 @@ actually check.
 Cite the RED only for items that make sense for internet-connected radio
 equipment, and IEC 62443 where the item fits an industrial system or
 component.
+
+## Reference sources
+
+`data/sources.yaml` is the registry of the laws, regulations, directives,
+standards, best practices and guidelines the catalogue cites. **Every entry
+of `refs` must match exactly one source**; `go test ./internal/catalog`
+(`TestSourcesCoverEveryRef`) fails with the item id and the ref otherwise.
+The registry lets a team pick "comply with the CRA" in the catalogue
+browser and get every requirement that cites it, and lets the requirement
+analytics measure compliance per source and clause.
+
+```yaml
+kinds:                          # display order of the source kinds
+  - id: law                     # law | directive | standard | practice | guideline
+    name: {en: Laws and regulations, sv: Lagar och förordningar}
+
+sources:
+  - id: cra                     # unique: a-z 0-9 and "-"
+    kind: law                   # one of the kinds above
+    jurisdiction: EU            # optional: two capitals (EU, SE, US, UK, NO …) or international
+    short: CRA                  # optional short name, the same in every language
+    name: {en: "Cyber Resilience Act, Regulation (EU) 2024/2847", sv: "Cyberresiliensförordningen (EU) 2024/2847"}
+    match: ["Regulation (EU) 2024/2847"]   # prefixes a ref starts with (case sensitive)
+    regex: []                   # optional Go regular expressions, e.g. '^OWASP .*Cheat Sheet'
+    clause: ''                  # optional, see below
+    clause_format: ''           # optional, see below
+    url: https://eur-lex.europa.eu/eli/reg/2024/2847/oj   # optional, https only
+```
+
+- **Adding a source** is one entry: when a new item cites a law or
+  standard that no source matches, add an entry with an id, kind, names in
+  English and Swedish and a prefix that the ref starts with. Prefer a
+  prefix that is the spelling of *Citing standards* (`ISO/IEC 27001`,
+  `Directive (EU) 2022/2555`); list several prefixes when a source is
+  cited in more than one way (`"Directive (EU) 2022/2555", "NIS2 Directive"`).
+- **Exactly one.** Two sources whose patterns both match a ref are an
+  error too: make the prefixes longer (`"OWASP Top 10 2021"` and
+  `"OWASP Top 10 for LLM"`, not `"OWASP Top 10"`).
+- **Grain.** A source is what a team would claim compliance with: a law
+  with its implementing acts where they belong together (RED with
+  Delegated Regulation (EU) 2022/30 and EN 18031), one entry per part of a
+  standard series when the parts are used on their own (ISO/IEC 27001,
+  27002, 27701 …; IEC 62443-3-3, 4-1, 4-2 …), one entry for a family of
+  small specifications (IETF RFCs, W3C web standards, open source licences).
+- **Clauses.** The analytics group a source's requirements by clause or
+  article, derived from the ref without the matched prefix. The default
+  patterns, tried in order: `Annex I Part II`, `Art. 32`, `A.8`
+  (ISO/IEC 27001 Annex A), `SR 1`/`CR 2`/`SC 1`/`Req. 10` (the first
+  number), `A01`/`API3`/`LLM02`, `AC`/`SM`/`WSTG-ATHZ` (an upper-case
+  prefix before `-N`), `PO`/`CLD` (before `.N`), `V2`, `ch. 6`, `2 kap.`,
+  `§5`; none gives the source as a whole. A source can set `clause`, a
+  regular expression on the whole ref: the clause is the expansion of
+  `clause_format` (`'Req. $1'`) when set, else its first capture group,
+  else the whole match. The first letter is upper-cased.
+- **Project text.** The compliance analysis also counts project
+  requirements whose `source` field names a source: each part separated by
+  `;` or a line break is matched like a ref, and failing that without
+  regard to case (`gdpr art. 32`).

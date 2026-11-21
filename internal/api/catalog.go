@@ -23,6 +23,7 @@ func (s *Server) routesCatalog(h routeFunc) {
 	h("GET /api/v1/catalog", s.handleCatalogOverview, "project.read")
 	h("GET /api/v1/catalog/requirements", s.handleCatalogRequirements, "requirement.read")
 	h("GET /api/v1/catalog/requirements/{id}", s.handleCatalogRequirement, "requirement.read")
+	h("GET /api/v1/catalog/sources", s.handleCatalogSources, "project.read")
 	h("GET /api/v1/catalog/tests", s.handleCatalogTests, "test.read")
 	h("GET /api/v1/catalog/tests/{id}", s.handleCatalogTest, "test.read")
 	h("GET /api/v1/projects/{pid}/catalog", s.handleProjectCatalog, "project.read")
@@ -73,7 +74,23 @@ func catalogFilter(r *http.Request) catalog.Filter {
 	q := r.URL.Query()
 	return catalog.Filter{Area: q.Get("area"), Group: q.Get("group"), Type: q.Get("type"), Obligation: q.Get("obligation"),
 		Priority: q.Get("priority"), Tag: q.Get("tag"), Execution: q.Get("execution"),
-		Catalogue: q.Get("catalogue"), Q: q.Get("q")}
+		Catalogue: q.Get("catalogue"), Source: q.Get("source"), Q: q.Get("q")}
+}
+
+// handleCatalogSources: GET /catalog/sources?lang=&catalogue=&all= — the
+// reference sources (laws, standards, best practices) the catalogue cites,
+// grouped by kind, with the number of requirements citing each and the
+// tests they bring, counted in the catalogue types of ?catalogue=. Sources
+// no item cites are left out unless all=true.
+func (s *Server) handleCatalogSources(w http.ResponseWriter, r *http.Request, p *Principal) {
+	c, lang, ok := s.catalogRead(w, r)
+	if !ok {
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"lang": lang, "kinds": c.SourceKindsOverview(lang),
+		"sources": c.SourcesOverview(lang, r.URL.Query().Get("catalogue"), boolParam(r, "all", false)),
+	})
 }
 
 // catalogProject returns the items of ?project_id= by catalogue id (nil
