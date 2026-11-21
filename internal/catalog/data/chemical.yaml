@@ -433,6 +433,102 @@ requirements:
           text: En registrerad incident som stoppar leveranser till 2 kunder ger inom 4 timmar ett utkast med de uppräknade fälten ifyllda.
           threshold: ≤ 4 h
 
+  - id: CHEM-19
+    type: functional
+    obligation: must
+    priority: high
+    tags: [proof-testing, sif, due-dates]
+    refs: ["IEC 61511-1:2016 §16.3 (proof testing and inspection)"]
+    tests: [CHEM-T17]
+    en:
+      title: Proof test due dates of safety functions
+      description: The system MUST track the proof test interval of each safety instrumented function and alert the responsible engineer 30 days before a test is due and again when it is overdue.
+      rationale: A safety function that is not proof tested on time may have an undetected fault, and its risk reduction is then no longer what the design assumed.
+      criteria:
+        - method: test
+          text: A function with a test due in 29 days produces an alert, and one past its due date is shown as overdue.
+          threshold: "alert 30 days before"
+    sv:
+      title: Förfallodatum för funktionsprov av säkerhetsfunktioner
+      description: Systemet SKA hålla reda på intervallet för funktionsprov av varje instrumenterad säkerhetsfunktion och larma ansvarig ingenjör 30 dagar innan ett prov förfaller och igen när det är försenat.
+      rationale: En säkerhetsfunktion som inte provas i tid kan ha ett oupptäckt fel, och dess riskreduktion är då inte längre den som konstruktionen förutsatte.
+      criteria:
+        - method: test
+          text: En funktion med ett prov som förfaller om 29 dagar ger ett larm, och en som har passerat förfallodatum visas som försenad.
+          threshold: "larm 30 dagar före"
+
+  - id: CHEM-20
+    type: functional
+    obligation: must
+    priority: medium
+    tags: [yield, mass-balance, batch]
+    refs: ["IEC 61512-1 recipe types", "EU GMP Chapter 5 (production)"]
+    tests: [CHEM-T18]
+    en:
+      title: Yield deviation flagged per batch
+      description: At the end of each batch the system MUST compare the actual yield with the master recipe's expected yield and flag the batch for review when the deviation exceeds 2 %.
+      rationale: An unusual yield points to losses, contamination or a measurement fault that has to be explained before the batch is released.
+      criteria:
+        - method: test
+          text: A batch with a yield 3 % below expected is flagged and cannot be released before review, and one 1 % below is not flagged.
+          threshold: "deviation > 2 %"
+    sv:
+      title: Avvikande utbyte flaggas per sats
+      description: Vid slutet av varje sats SKA systemet jämföra det verkliga utbytet med huvudreceptets förväntade utbyte och flagga satsen för granskning när avvikelsen överstiger 2 %.
+      rationale: Ett ovanligt utbyte tyder på förluster, föroreningar eller ett mätfel som måste förklaras innan satsen frisläpps.
+      criteria:
+        - method: test
+          text: En sats med ett utbyte 3 % under det förväntade flaggas och kan inte frisläppas före granskning, och en med 1 % under flaggas inte.
+          threshold: "avvikelse > 2 %"
+
+  - id: CHEM-21
+    type: functional
+    obligation: must_not
+    priority: high
+    tags: [expiry, raw-materials, dispensing]
+    refs: ["EU GMP Chapter 5 (production)", "ISO 9001:2026 (control of externally provided materials)"]
+    tests: [CHEM-T19]
+    en:
+      title: No dispensing of expired material
+      description: The system MUST NOT allow a raw material lot that is past its expiry or retest date to be dispensed into a batch.
+      rationale: Degraded material can make a batch fail or become hazardous, and manual checks of dates are missed under time pressure.
+      criteria:
+        - method: test
+          text: Scanning a lot one day past its retest date at dispensing is blocked with a message, and a lot within its date is accepted.
+          threshold: "0 expired lots dispensed"
+    sv:
+      title: Ingen invägning av material som har gått ut
+      description: Systemet SKA INTE tillåta att en råvarubatch som har passerat sitt utgångs- eller omprovningsdatum vägs in i en sats.
+      rationale: Nedbrutet material kan göra att en sats misslyckas eller blir farlig, och manuella kontroller av datum missas under tidspress.
+      criteria:
+        - method: test
+          text: Att skanna en råvarubatch en dag efter omprovningsdatum vid invägning spärras med ett meddelande, och en batch inom sitt datum godtas.
+          threshold: "0 utgångna batcher invägda"
+
+  - id: CHEM-22
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [labels, clp, hazard-communication]
+    refs: ["Regulation (EC) No 1272/2008 Art. 17", "Regulation (EC) No 1272/2008 Art. 18"]
+    tests: [CHEM-T20]
+    en:
+      title: CLP label elements on printed labels
+      description: "Labels printed for hazardous substances and mixtures MUST carry the CLP label elements from the master data: product identifier, hazard pictograms, signal word, hazard and precautionary statements and supplier contact."
+      rationale: Labels are the first source of hazard information for everyone who handles a container, and a missing element can lead to wrong handling.
+      criteria:
+        - method: test
+          text: A label printed for a mixture classified as flammable and toxic shows the two pictograms, the signal word "Danger" and the H and P statements of the master data.
+          threshold: "6 label elements"
+    sv:
+      title: CLP-märkningens delar på utskrivna etiketter
+      description: "Etiketter som skrivs ut för farliga ämnen och blandningar SKA bära CLP-märkningens delar från grunddata: produktbeteckning, faropiktogram, signalord, faro- och skyddsangivelser och leverantörens kontaktuppgifter."
+      rationale: Etiketterna är den första källan till information om faror för var och en som hanterar en behållare, och en saknad del kan leda till felaktig hantering.
+      criteria:
+        - method: test
+          text: En etikett som skrivs ut för en blandning klassad som brandfarlig och giftig visar de två piktogrammen, signalordet "Fara" och faro- och skyddsangivelserna i grunddata.
+          threshold: "6 märkningsdelar"
+
 tests:
   - id: CHEM-T01
     priority: high
@@ -939,3 +1035,121 @@ tests:
           data: ≤ 4 h
         - action: Kontrollera fälten i utkastet.
           expected: Starttid, berörda tjänster, 2 berörda användare, förväntad varaktighet och gränsöverskridande effekter är ifyllda.
+
+  - id: CHEM-T17
+    priority: high
+    execution: manual
+    tags: [proof-testing, sif]
+    refs: ["IEC 61511-1:2016 §16.3 (proof testing and inspection)"]
+    en:
+      title: Proof test alerts and overdue status
+      description: Sets up safety functions with different due dates and checks alerts and status.
+      preconditions: Two test safety functions, one due in 29 days and one 1 day overdue, with a responsible engineer.
+      expected: The first gives an alert and the second shows as overdue with an alert.
+      steps:
+        - action: Run the daily due-date check.
+          expected: The engineer receives an alert for the function due in 29 days.
+          data: "SIF-101 due in 29 days"
+        - action: Open the list of safety functions.
+          expected: SIF-102 is shown as overdue and a second alert was sent.
+          data: "SIF-102 one day overdue"
+    sv:
+      title: Larm och försenad status för funktionsprov
+      description: Lägger upp säkerhetsfunktioner med olika förfallodatum och kontrollerar larm och status.
+      preconditions: Två testsäkerhetsfunktioner, en som förfaller om 29 dagar och en som är 1 dag försenad, med en ansvarig ingenjör.
+      expected: Den första ger ett larm och den andra visas som försenad med larm.
+      steps:
+        - action: Kör den dagliga kontrollen av förfallodatum.
+          expected: Ingenjören får ett larm för funktionen som förfaller om 29 dagar.
+          data: "SIF-101 förfaller om 29 dagar"
+        - action: Öppna listan över säkerhetsfunktioner.
+          expected: SIF-102 visas som försenad och ett andra larm har skickats.
+          data: "SIF-102 en dag försenad"
+
+  - id: CHEM-T18
+    priority: medium
+    execution: manual
+    tags: [yield, batch]
+    refs: ["IEC 61512-1 recipe types"]
+    en:
+      title: Yield check at batch end
+      description: Completes two batches with different yields and checks the flags.
+      preconditions: A master recipe with an expected yield of 1 000 kg and a test batch environment.
+      expected: Only the batch outside 2 % is flagged and held for review.
+      steps:
+        - action: Complete a batch with an actual yield of 970 kg.
+          expected: The batch is flagged and its release is blocked until review.
+          data: "970 kg, deviation 3 %"
+        - action: Complete a batch with an actual yield of 990 kg.
+          expected: The batch is not flagged.
+          data: "990 kg, deviation 1 %"
+    sv:
+      title: Kontroll av utbyte vid satsens slut
+      description: Slutför två satser med olika utbyte och kontrollerar flaggorna.
+      preconditions: Ett huvudrecept med ett förväntat utbyte på 1 000 kg och en testmiljö för satser.
+      expected: Bara satsen utanför 2 % flaggas och hålls för granskning.
+      steps:
+        - action: Slutför en sats med ett verkligt utbyte på 970 kg.
+          expected: Satsen flaggas och frisläppningen spärras tills den har granskats.
+          data: "970 kg, avvikelse 3 %"
+        - action: Slutför en sats med ett verkligt utbyte på 990 kg.
+          expected: Satsen flaggas inte.
+          data: "990 kg, avvikelse 1 %"
+
+  - id: CHEM-T19
+    priority: high
+    execution: manual
+    tags: [expiry, dispensing]
+    refs: ["EU GMP Chapter 5 (production)"]
+    en:
+      title: Expired lot blocked at dispensing
+      description: Scans an expired and a valid lot at the dispensing station.
+      preconditions: Two lots of the same raw material, one past its retest date by one day and one within its date, and a batch that needs the material.
+      expected: The expired lot is blocked and the valid lot is accepted.
+      steps:
+        - action: Scan the expired lot for the batch.
+          expected: Dispensing is blocked with a message that the retest date has passed.
+          data: "lot L-2231, retest date yesterday"
+        - action: Scan the valid lot.
+          expected: Dispensing continues.
+          data: "lot L-2240"
+    sv:
+      title: Utgången batch spärras vid invägning
+      description: Skannar en utgången och en giltig råvarubatch vid invägningsstationen.
+      preconditions: Två batcher av samma råvara, en som passerade omprovningsdatum för en dag sedan och en inom sitt datum, och en sats som behöver materialet.
+      expected: Den utgångna batchen spärras och den giltiga godtas.
+      steps:
+        - action: Skanna den utgångna batchen för satsen.
+          expected: Invägningen spärras med ett meddelande om att omprovningsdatum har passerats.
+          data: "batch L-2231, omprovningsdatum i går"
+        - action: Skanna den giltiga batchen.
+          expected: Invägningen fortsätter.
+          data: "batch L-2240"
+
+  - id: CHEM-T20
+    priority: high
+    execution: manual
+    tags: [labels, clp]
+    refs: ["Regulation (EC) No 1272/2008 Art. 17"]
+    en:
+      title: Printed CLP label of a hazardous mixture
+      description: Prints a label for a classified mixture and compares it with the master data.
+      preconditions: A mixture in master data classified as flammable liquid and acutely toxic, with its H and P statements, and a label printer.
+      expected: The label shows each CLP element from the master data.
+      steps:
+        - action: Print a label for a container of the mixture.
+          expected: The label is printed.
+          data: "mixture classified Flam. Liq. 2 and Acute Tox. 3"
+        - action: Compare the label with the master data.
+          expected: Product identifier, the two pictograms, signal word "Danger", each H and P statement and the supplier contact are present.
+    sv:
+      title: Utskriven CLP-etikett för en farlig blandning
+      description: Skriver ut en etikett för en klassad blandning och jämför den med grunddata.
+      preconditions: En blandning i grunddata klassad som brandfarlig vätska och akut toxisk, med sina faro- och skyddsangivelser, och en etikettskrivare.
+      expected: Etiketten visar varje CLP-del från grunddata.
+      steps:
+        - action: Skriv ut en etikett för en behållare med blandningen.
+          expected: Etiketten skrivs ut.
+          data: "blandning klassad Flam. Liq. 2 och Acute Tox. 3"
+        - action: Jämför etiketten med grunddata.
+          expected: Produktbeteckning, de två piktogrammen, signalordet "Fara", varje faro- och skyddsangivelse och leverantörens kontaktuppgifter finns med.

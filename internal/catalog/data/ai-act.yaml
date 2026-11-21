@@ -556,6 +556,126 @@ requirements:
           text: Utbildningsregistret visar varje person med en roll för användning eller tillsyn av AI och en genomförd utbildning daterad före personens första åtkomst.
           threshold: 100 % av rollinnehavarna utbildade
 
+  - id: AIACT-25
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [accuracy, metrics, instructions]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 15(3) (accuracy levels declared in the instructions for use)", "EU AI Act (Regulation (EU) 2024/1689) Art. 13(3) (content of the instructions)"]
+    tests: [AIACT-T15]
+    en:
+      title: Accuracy levels declared
+      description: The instructions for use of each high-risk AI system MUST state its levels of accuracy and the metrics used to measure them, with the test data set they were measured on.
+      rationale: Deployers need the declared accuracy to judge whether the system fits their use and to notice when it performs below it.
+      criteria:
+        - method: inspection
+          text: The instructions state each accuracy metric, its value and the test data set, and the values match the latest evaluation report.
+          threshold: "values match the evaluation report"
+    sv:
+      title: Angivna nivåer för noggrannhet
+      description: Bruksanvisningen för varje AI-system med hög risk SKA ange systemets noggrannhetsnivåer och de mått som används för att mäta dem, med den testdatamängd de mättes på.
+      rationale: Tillhandahållarna behöver den angivna noggrannheten för att bedöma om systemet passar deras användning och för att märka när det presterar sämre.
+      criteria:
+        - method: inspection
+          text: Bruksanvisningen anger varje mått för noggrannhet, dess värde och testdatamängden, och värdena stämmer med den senaste utvärderingsrapporten.
+          threshold: "värdena stämmer med utvärderingsrapporten"
+
+  - id: AIACT-26
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [fundamental-rights, impact-assessment, deployer]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 27 (fundamental rights impact assessment)"]
+    tests: [AIACT-T16]
+    en:
+      title: Fundamental rights impact assessment before first use
+      description: A deployer that is a public body, provides a public service or uses a credit-scoring or insurance-pricing system of Annex III MUST complete a fundamental rights impact assessment before first using the high-risk AI system.
+      rationale: The assessment makes the deployer identify who is affected and how before harm occurs, and the market surveillance authority has to be notified of its results.
+      criteria:
+        - method: inspection
+          text: For each such system the record holds a dated assessment, completed before first use, that covers the affected groups, the risks, the human oversight and the measures if risks materialise.
+          threshold: "1 assessment before first use"
+    sv:
+      title: Konsekvensbedömning avseende grundläggande rättigheter före första användning
+      description: En tillhandahållare som är ett offentligt organ, tillhandahåller en offentlig tjänst eller använder ett system för kreditvärdering eller prissättning av försäkring enligt bilaga III SKA genomföra en konsekvensbedömning avseende grundläggande rättigheter innan AI-systemet med hög risk används första gången.
+      rationale: Bedömningen får tillhandahållaren att identifiera vilka som berörs och hur innan skada uppstår, och marknadskontrollmyndigheten ska underrättas om resultatet.
+      criteria:
+        - method: inspection
+          text: För varje sådant system finns en daterad bedömning, gjord före första användning, som omfattar berörda grupper, risker, mänsklig tillsyn och åtgärder om riskerna inträffar.
+          threshold: "1 bedömning före första användning"
+
+  - id: AIACT-27
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [quality-management, provider, documentation]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 17 (quality management system)", "ISO/IEC 42001:2023 §4.4 (AI management system)"]
+    tests: [AIACT-T17]
+    en:
+      title: Quality management system of the provider
+      description: The provider of a high-risk AI system MUST have a documented quality management system that covers at least compliance strategy, design control, testing, data management, post-market monitoring, incident reporting and accountability.
+      rationale: The AI Act requires the quality management system as the frame that keeps the other obligations working between releases.
+      criteria:
+        - method: inspection
+          text: The quality manual maps each aspect listed in the regulation to a procedure, an owner and a record.
+          threshold: "100 % of listed aspects mapped"
+    sv:
+      title: Tillhandahållarens kvalitetsledningssystem
+      description: Leverantören av ett AI-system med hög risk SKA ha ett dokumenterat kvalitetsledningssystem som omfattar minst strategi för regelefterlevnad, konstruktionsstyrning, testning, datahantering, övervakning efter utsläppande på marknaden, rapportering av incidenter och ansvarsskyldighet.
+      rationale: AI-förordningen kräver kvalitetsledningssystemet som den ram som håller de övriga skyldigheterna levande mellan releaserna.
+      criteria:
+        - method: inspection
+          text: Kvalitetshandboken kopplar varje aspekt som förordningen räknar upp till en rutin, en ägare och en post.
+          threshold: "100 % av uppräknade aspekter kopplade"
+
+  - id: AIACT-28
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [workplace, workers, information]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 26(7) (information to workers' representatives)"]
+    tests: [AIACT-T18]
+    en:
+      title: Workers informed before workplace use
+      description: An employer that deploys a high-risk AI system at the workplace MUST inform the workers' representatives and the affected workers before the system is put into use.
+      rationale: People whose work is assessed or directed by an AI system have a right to know before it affects them.
+      criteria:
+        - method: inspection
+          text: The deployment record holds the dated information to the workers' representatives and the affected workers, before the go-live date.
+          threshold: "information dated before go-live"
+    sv:
+      title: Arbetstagare informeras före användning på arbetsplatsen
+      description: En arbetsgivare som använder ett AI-system med hög risk på arbetsplatsen SKA informera arbetstagarnas företrädare och de berörda arbetstagarna innan systemet tas i bruk.
+      rationale: Personer vars arbete bedöms eller styrs av ett AI-system har rätt att få veta det innan det påverkar dem.
+      criteria:
+        - method: inspection
+          text: Posten för införandet innehåller den daterade informationen till arbetstagarnas företrädare och de berörda arbetstagarna, före datumet för driftstart.
+          threshold: "information daterad före driftstart"
+
+  - id: AIACT-29
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [explanation, affected-persons, decisions]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 86 (right to explanation of individual decision-making)"]
+    tests: [AIACT-T19]
+    en:
+      title: Explanation of a decision on request
+      description: When a decision based on the output of an Annex III high-risk AI system has legal effects on a person or adversely affects the person's health, safety or fundamental rights, the deployer MUST give that person on request a clear explanation of the role of the AI system and the main elements of the decision.
+      rationale: Without an explanation the affected person cannot judge whether to contest the decision.
+      criteria:
+        - method: demonstration
+          text: A request for explanation of a sample decision is answered with the role of the AI system, the main factors and the human involvement, within the deployer's stated response time.
+          threshold: "response within the stated time"
+    sv:
+      title: Förklaring av ett beslut på begäran
+      description: När ett beslut som grundas på utdata från ett AI-system med hög risk enligt bilaga III har rättsliga följder för en person eller påverkar personens hälsa, säkerhet eller grundläggande rättigheter negativt SKA tillhandahållaren på begäran ge personen en tydlig förklaring av AI-systemets roll och beslutets huvuddelar.
+      rationale: Utan en förklaring kan den berörda personen inte bedöma om beslutet bör överklagas.
+      criteria:
+        - method: demonstration
+          text: En begäran om förklaring av ett utvalt beslut besvaras med AI-systemets roll, de viktigaste faktorerna och den mänskliga medverkan, inom tillhandahållarens angivna svarstid.
+          threshold: "svar inom angiven tid"
+
 tests:
   - id: AIACT-T01
     priority: critical
@@ -954,3 +1074,147 @@ tests:
           expected: Varje rollinnehavare har en genomförd utbildning.
         - action: Jämför utbildningsdatum med första åtkomst i åtkomstloggen för 10 rollinnehavare.
           expected: Utbildningsdatum ligger före första åtkomst för var och en av dem.
+
+  - id: AIACT-T15
+    priority: high
+    execution: manual
+    tags: [accuracy, metrics]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 15(3) (accuracy levels declared in the instructions for use)"]
+    en:
+      title: Declared accuracy against the evaluation report
+      description: Compares the accuracy statements in the instructions with the latest evaluation report.
+      preconditions: The instructions for use and the latest evaluation report of a high-risk AI system.
+      expected: Each declared metric, value and data set matches the report.
+      steps:
+        - action: List the accuracy metrics and values in the instructions.
+          expected: Each metric names its value and the test data set.
+          data: "for example F1 0.91 on test set v4"
+        - action: Look up each metric in the evaluation report.
+          expected: The value and data set are the same as in the instructions.
+    sv:
+      title: Angiven noggrannhet mot utvärderingsrapporten
+      description: Jämför uppgifterna om noggrannhet i bruksanvisningen med den senaste utvärderingsrapporten.
+      preconditions: Bruksanvisningen och den senaste utvärderingsrapporten för ett AI-system med hög risk.
+      expected: Varje angivet mått, värde och datamängd stämmer med rapporten.
+      steps:
+        - action: Lista måtten och värdena för noggrannhet i bruksanvisningen.
+          expected: Varje mått anger sitt värde och testdatamängden.
+          data: "till exempel F1 0,91 på testmängd v4"
+        - action: Slå upp varje mått i utvärderingsrapporten.
+          expected: Värdet och datamängden är desamma som i bruksanvisningen.
+
+  - id: AIACT-T16
+    priority: high
+    execution: manual
+    tags: [fundamental-rights, impact-assessment]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 27 (fundamental rights impact assessment)"]
+    en:
+      title: Impact assessment record before go-live
+      description: Checks the assessment for a deployed high-risk AI system that falls under the obligation.
+      preconditions: The list of deployed high-risk AI systems with deployer category and go-live dates.
+      expected: Each system in scope has a complete assessment dated before go-live.
+      steps:
+        - action: Select the systems in scope of the obligation from the list.
+          expected: The systems in scope are identified.
+        - action: Open the assessment of each and compare its date with the go-live date.
+          expected: Each assessment is dated before go-live.
+        - action: Check the content of each assessment.
+          expected: It covers the process, period of use, affected groups, risks, human oversight and measures, and the notification to the authority is recorded.
+    sv:
+      title: Konsekvensbedömning före driftstart
+      description: Kontrollerar bedömningen för ett AI-system med hög risk i drift som omfattas av skyldigheten.
+      preconditions: Listan över AI-system med hög risk i drift med tillhandahållarens kategori och datum för driftstart.
+      expected: Varje system som omfattas har en fullständig bedömning daterad före driftstart.
+      steps:
+        - action: Välj ut de system som omfattas av skyldigheten ur listan.
+          expected: De system som omfattas är identifierade.
+        - action: Öppna bedömningen för vart och ett och jämför dess datum med datumet för driftstart.
+          expected: Varje bedömning är daterad före driftstart.
+        - action: Kontrollera innehållet i varje bedömning.
+          expected: Den omfattar processen, användningsperioden, berörda grupper, risker, mänsklig tillsyn och åtgärder, och underrättelsen till myndigheten är registrerad.
+
+  - id: AIACT-T17
+    priority: high
+    execution: manual
+    tags: [quality-management, provider]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 17 (quality management system)"]
+    en:
+      title: Quality management system covers the listed aspects
+      description: Maps the aspects listed in Art. 17 to the provider's procedures.
+      preconditions: The provider's quality manual and procedures.
+      expected: Each listed aspect has a procedure, owner and record.
+      steps:
+        - action: List the aspects in Art. 17(1).
+          expected: The list is produced.
+          data: "aspects (a) to (m)"
+        - action: Find the procedure, owner and a recent record for each aspect.
+          expected: Each aspect has all three.
+    sv:
+      title: Kvalitetsledningssystemet täcker de uppräknade aspekterna
+      description: Kopplar de aspekter som räknas upp i artikel 17 till leverantörens rutiner.
+      preconditions: Leverantörens kvalitetshandbok och rutiner.
+      expected: Varje uppräknad aspekt har en rutin, en ägare och en post.
+      steps:
+        - action: Lista aspekterna i artikel 17.1.
+          expected: Listan tas fram.
+          data: "aspekterna a–m"
+        - action: Leta upp rutin, ägare och en färsk post för varje aspekt.
+          expected: Varje aspekt har alla tre.
+
+  - id: AIACT-T18
+    priority: medium
+    execution: manual
+    tags: [workplace, workers]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 26(7) (information to workers' representatives)"]
+    en:
+      title: Workers' information dated before go-live
+      description: Checks the information given before a workplace AI system went live.
+      preconditions: The deployment record of a high-risk AI system used at the workplace.
+      expected: Information to representatives and workers is dated before go-live.
+      steps:
+        - action: Find the go-live date in the deployment record.
+          expected: The date is recorded.
+        - action: Find the information sent to the workers' representatives and the affected workers.
+          expected: Both exist and are dated before go-live.
+    sv:
+      title: Information till arbetstagare daterad före driftstart
+      description: Kontrollerar den information som gavs innan ett AI-system på arbetsplatsen togs i drift.
+      preconditions: Posten för införandet av ett AI-system med hög risk som används på arbetsplatsen.
+      expected: Informationen till företrädare och arbetstagare är daterad före driftstart.
+      steps:
+        - action: Leta upp datumet för driftstart i posten för införandet.
+          expected: Datumet är registrerat.
+        - action: Leta upp informationen som skickades till arbetstagarnas företrädare och de berörda arbetstagarna.
+          expected: Båda finns och är daterade före driftstart.
+
+  - id: AIACT-T19
+    priority: high
+    execution: manual
+    tags: [explanation, decisions]
+    refs: ["EU AI Act (Regulation (EU) 2024/1689) Art. 86 (right to explanation of individual decision-making)"]
+    en:
+      title: Answering a request for explanation
+      description: Submits a request for explanation of a decision and checks the answer.
+      preconditions: A test decision made with the support of a high-risk AI system and the deployer's procedure for requests.
+      expected: The answer explains the AI system's role and the main elements within the stated time.
+      steps:
+        - action: Submit a request for explanation of the test decision.
+          expected: The request is registered with a date.
+          data: "decision on a test credit application"
+        - action: Read the answer.
+          expected: It states the AI system's role, the main factors behind the output, and how a person took part in the decision.
+        - action: Compare the answer date with the stated response time.
+          expected: The answer was given within the stated time.
+    sv:
+      title: Besvara en begäran om förklaring
+      description: Skickar en begäran om förklaring av ett beslut och kontrollerar svaret.
+      preconditions: Ett testbeslut fattat med stöd av ett AI-system med hög risk och tillhandahållarens rutin för begäranden.
+      expected: Svaret förklarar AI-systemets roll och huvuddelarna inom angiven tid.
+      steps:
+        - action: Skicka en begäran om förklaring av testbeslutet.
+          expected: Begäran registreras med datum.
+          data: "beslut om en testansökan om kredit"
+        - action: Läs svaret.
+          expected: Det anger AI-systemets roll, de viktigaste faktorerna bakom utdata och hur en person deltog i beslutet.
+        - action: Jämför svarsdatumet med den angivna svarstiden.
+          expected: Svaret gavs inom angiven tid.

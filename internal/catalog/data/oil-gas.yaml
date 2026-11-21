@@ -421,6 +421,102 @@ requirements:
           text: Vid en övning tar operatörer i reservkontrollrummet över och manövrerar en testventil inom 30 minuter, och en server som återställs från den senaste frånkopplade säkerhetskopian startar med data som är högst 24 timmar gamla.
           threshold: ≤ 30 min; kopia ≤ 24 h gammal
 
+  - id: OILG-18
+    type: functional
+    obligation: must
+    priority: high
+    tags: [integrity-operating-windows, corrosion, alerts]
+    refs: ["API RP 584 (integrity operating windows)"]
+    tests: [OILG-T17]
+    en:
+      title: Integrity operating window exceedances
+      description: The system MUST alert the responsible integrity engineer when a process variable leaves its integrity operating window and record the time and size of each exceedance.
+      rationale: Operating outside the windows speeds up corrosion and damage, and the effect only shows months later unless each exceedance is recorded.
+      criteria:
+        - method: test
+          text: Driving a temperature outside its critical limit gives an alert within 5 minutes and an exceedance record with duration and maximum value.
+          threshold: "alert ≤ 5 min"
+    sv:
+      title: Överskridanden av integritetsfönster
+      description: Systemet SKA larma ansvarig integritetsingenjör när en processvariabel lämnar sitt integritetsfönster och registrera tid och storlek för varje överskridande.
+      rationale: Drift utanför fönstren påskyndar korrosion och skador, och effekten syns först månader senare om inte varje överskridande registreras.
+      criteria:
+        - method: test
+          text: Att driva en temperatur utanför sin kritiska gräns ger ett larm inom 5 minuter och en post om överskridandet med varaktighet och högsta värde.
+          threshold: "larm ≤ 5 min"
+
+  - id: OILG-19
+    type: functional
+    obligation: must
+    priority: high
+    tags: [simops, permits, conflicts]
+    refs: ["HSE HSG250 (permit-to-work systems)"]
+    tests: [OILG-T18]
+    en:
+      title: Conflicting permits detected
+      description: The permit system MUST warn before issuing a permit whose work area and time overlap an active permit with a conflicting hazard, such as hot work next to a gas line break.
+      rationale: Simultaneous operations that are safe on their own can together cause an explosion, and the people issuing permits do not always see each other's work.
+      criteria:
+        - method: test
+          text: Requesting a hot work permit in an area with an active line-breaking permit at the same time gives a conflict warning that needs a recorded decision.
+          threshold: "1 warning per conflicting pair"
+    sv:
+      title: Motstridiga arbetstillstånd upptäcks
+      description: Systemet för arbetstillstånd SKA varna innan ett tillstånd utfärdas vars arbetsområde och tid överlappar ett aktivt tillstånd med en motstridig fara, till exempel heta arbeten bredvid öppning av en gasledning.
+      rationale: Samtidiga arbeten som är säkra var för sig kan tillsammans orsaka en explosion, och de som utfärdar tillstånd ser inte alltid varandras arbete.
+      criteria:
+        - method: test
+          text: En begäran om tillstånd för heta arbeten i ett område med ett aktivt tillstånd för ledningsöppning samtidigt ger en konfliktvarning som kräver ett registrerat beslut.
+          threshold: "1 varning per motstridigt par"
+
+  - id: OILG-20
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [control-room, fatigue, shifts]
+    refs: ["API RP 1168 (pipeline control room management)"]
+    tests: [OILG-T19]
+    en:
+      title: Controller hours on shift tracked
+      description: The control room system SHOULD record each pipeline controller's hours on duty and warn the supervisor when a controller passes 12 hours in a shift or 60 hours in 7 days.
+      rationale: Fatigued controllers miss alarms and make wrong decisions, and limits only work when someone tracks them.
+      criteria:
+        - method: test
+          text: A controller signed in for 12 hours and 5 minutes triggers a warning to the supervisor.
+          threshold: "12 h per shift; 60 h per 7 days"
+    sv:
+      title: Operatörernas arbetstid följs
+      description: Systemet i kontrollrummet BÖR registrera varje operatörs arbetstid för rörledningen och varna arbetsledaren när en operatör passerar 12 timmar under ett skift eller 60 timmar på 7 dagar.
+      rationale: Trötta operatörer missar larm och fattar fel beslut, och gränser fungerar bara när någon följer dem.
+      criteria:
+        - method: test
+          text: En operatör som har varit inloggad i 12 timmar och 5 minuter ger en varning till arbetsledaren.
+          threshold: "12 h per skift; 60 h per 7 dagar"
+
+  - id: OILG-21
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [methane, leak-detection, repair]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector) Art. 14 (leak detection and repair)"]
+    tests: [OILG-T20]
+    en:
+      title: Leak detection and repair records
+      description: The system MUST record each leak detection survey with component, method and result, and track each detected leak to its repair date against the repair deadline.
+      rationale: The Methane Regulation sets survey intervals and repair deadlines, and the operator has to show that each leak was repaired in time.
+      criteria:
+        - method: test
+          text: A leak found in a survey gets a repair deadline, appears as overdue when the deadline passes unrepaired, and closes with the repair and re-check dates.
+          threshold: "1 record per leak"
+    sv:
+      title: Poster för läcksökning och reparation
+      description: Systemet SKA registrera varje läcksökning med komponent, metod och resultat, och följa varje upptäckt läcka fram till reparationsdatum mot tidsfristen för reparation.
+      rationale: Metanförordningen sätter intervall för läcksökning och tidsfrister för reparation, och operatören måste visa att varje läcka reparerades i tid.
+      criteria:
+        - method: test
+          text: En läcka som hittas vid en läcksökning får en tidsfrist för reparation, visas som försenad när fristen passerar utan reparation och stängs med datum för reparation och efterkontroll.
+          threshold: "1 post per läcka"
+
 tests:
   - id: OILG-T01
     priority: critical
@@ -903,3 +999,119 @@ tests:
           expected: Ventilen manövreras och den förflutna tiden är högst 30 minuter.
         - action: Återställ en server för operatörsbilder från den senaste frånkopplade säkerhetskopian i den isolerade miljön.
           expected: Servern startar och dess senaste data är högst 24 timmar gamla.
+
+  - id: OILG-T17
+    priority: high
+    execution: manual
+    tags: [integrity-operating-windows, alerts]
+    refs: ["API RP 584 (integrity operating windows)"]
+    en:
+      title: Exceedance of a critical integrity limit
+      description: Simulates a temperature above its integrity window and checks alert and record.
+      preconditions: A test tag with a critical integrity limit, a simulated value source and a responsible engineer.
+      expected: An alert arrives within 5 minutes and the exceedance is recorded.
+      steps:
+        - action: Raise the simulated temperature above the critical limit for 20 minutes.
+          expected: The engineer receives an alert within 5 minutes.
+          data: "limit 400 °C, value 415 °C"
+        - action: Return the value inside the window and open the exceedance record.
+          expected: The record shows start, end, duration and the maximum of 415 °C.
+    sv:
+      title: Överskridande av en kritisk integritetsgräns
+      description: Simulerar en temperatur över sitt integritetsfönster och kontrollerar larm och post.
+      preconditions: En testtagg med en kritisk integritetsgräns, en simulerad värdekälla och en ansvarig ingenjör.
+      expected: Ett larm kommer inom 5 minuter och överskridandet registreras.
+      steps:
+        - action: Höj den simulerade temperaturen över den kritiska gränsen i 20 minuter.
+          expected: Ingenjören får ett larm inom 5 minuter.
+          data: "gräns 400 °C, värde 415 °C"
+        - action: För tillbaka värdet inom fönstret och öppna posten om överskridandet.
+          expected: Posten visar start, slut, varaktighet och högsta värdet 415 °C.
+
+  - id: OILG-T18
+    priority: high
+    execution: manual
+    tags: [simops, permits]
+    refs: ["HSE HSG250 (permit-to-work systems)"]
+    en:
+      title: Hot work next to an active line break
+      description: Requests a hot work permit that overlaps an active line-breaking permit.
+      preconditions: An active line-breaking permit in area B2 for today and an issuer account.
+      expected: The system warns of the conflict and requires a recorded decision.
+      steps:
+        - action: Request a hot work permit in area B2 for an overlapping time.
+          expected: A conflict warning names the active permit and the hazard.
+          data: "area B2, 10:00–14:00"
+        - action: Try to issue the permit without a decision.
+          expected: Issue is refused until the decision and its reason are recorded.
+    sv:
+      title: Heta arbeten bredvid en pågående ledningsöppning
+      description: Begär ett tillstånd för heta arbeten som överlappar ett aktivt tillstånd för ledningsöppning.
+      preconditions: Ett aktivt tillstånd för ledningsöppning i område B2 i dag och ett konto för den som utfärdar.
+      expected: Systemet varnar för konflikten och kräver ett registrerat beslut.
+      steps:
+        - action: Begär ett tillstånd för heta arbeten i område B2 för en överlappande tid.
+          expected: En konfliktvarning anger det aktiva tillståndet och faran.
+          data: "område B2, 10.00–14.00"
+        - action: Försök utfärda tillståndet utan beslut.
+          expected: Utfärdandet avvisas tills beslutet och dess skäl är registrerade.
+
+  - id: OILG-T19
+    priority: medium
+    execution: manual
+    tags: [control-room, fatigue]
+    refs: ["API RP 1168 (pipeline control room management)"]
+    en:
+      title: Warning after 12 hours on duty
+      description: Keeps a test controller signed in past 12 hours and checks the warning.
+      preconditions: A test controller account, a supervisor and a test clock.
+      expected: The supervisor is warned after 12 hours.
+      steps:
+        - action: Sign the controller in and advance the clock 11 hours 55 minutes.
+          expected: No warning is shown.
+          data: "start 06:00"
+        - action: Advance the clock 10 more minutes.
+          expected: The supervisor receives a warning naming the controller and the hours on duty.
+    sv:
+      title: Varning efter 12 timmars arbetstid
+      description: Håller en testoperatör inloggad över 12 timmar och kontrollerar varningen.
+      preconditions: Ett testkonto för en operatör, en arbetsledare och en testklocka.
+      expected: Arbetsledaren varnas efter 12 timmar.
+      steps:
+        - action: Logga in operatören och ställ fram klockan 11 timmar och 55 minuter.
+          expected: Ingen varning visas.
+          data: "start 06.00"
+        - action: Ställ fram klockan 10 minuter till.
+          expected: Arbetsledaren får en varning som anger operatören och arbetstiden.
+
+  - id: OILG-T20
+    priority: high
+    execution: manual
+    tags: [methane, leak-detection]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector) Art. 14 (leak detection and repair)"]
+    en:
+      title: Leak tracked from survey to repair
+      description: Records a survey with a leak, lets the deadline pass and then records the repair.
+      preconditions: A test installation, a survey form and a test clock.
+      expected: The leak is tracked against its deadline and closed with repair and re-check.
+      steps:
+        - action: Record a survey that finds a leak on a valve with optical gas imaging.
+          expected: A leak record is created with a repair deadline.
+          data: "valve V-301, OGI camera"
+        - action: Advance the clock past the deadline.
+          expected: The leak is shown as overdue.
+        - action: Record the repair and the re-check.
+          expected: The leak is closed with both dates.
+    sv:
+      title: Läcka följs från läcksökning till reparation
+      description: Registrerar en läcksökning med en läcka, låter fristen passera och registrerar sedan reparationen.
+      preconditions: En testanläggning, ett formulär för läcksökning och en testklocka.
+      expected: Läckan följs mot sin frist och stängs med reparation och efterkontroll.
+      steps:
+        - action: Registrera en läcksökning som hittar en läcka på en ventil med optisk gasavbildning.
+          expected: En post för läckan skapas med en tidsfrist för reparation.
+          data: "ventil V-301, OGI-kamera"
+        - action: Ställ fram klockan förbi fristen.
+          expected: Läckan visas som försenad.
+        - action: Registrera reparationen och efterkontrollen.
+          expected: Läckan stängs med båda datumen.

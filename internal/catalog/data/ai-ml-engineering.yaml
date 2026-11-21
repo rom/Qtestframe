@@ -470,6 +470,102 @@ requirements:
           text: För 5 frågor utanför kunskapsbasen svarar tillämpningen att ingen källa hittades och gör inget faktapåstående.
           threshold: relevansgräns 0,7
 
+  - id: AIENG-21
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [model-card, documentation, limitations]
+    refs: ["ISO/IEC 42001:2023 Annex A.6.2.7 (AI system technical documentation)", "ISO/IEC 42001:2023 Annex A.8.2 (system documentation and information for users)"]
+    tests: [AIENG-T15]
+    en:
+      title: Model card for each deployed model
+      description: Each deployed model MUST have a model card that states its intended use, training data summary, evaluation results per data slice, known limitations and owner.
+      rationale: Users and reviewers need to know what a model is for and where it fails, and that knowledge is lost when it lives only with the original team.
+      criteria:
+        - method: inspection
+          text: Each model in production has a model card with the five parts, and its evaluation figures match the registry.
+          threshold: "5 parts per card"
+    sv:
+      title: Modellkort för varje driftsatt modell
+      description: Varje driftsatt modell SKA ha ett modellkort som anger avsedd användning, en sammanfattning av träningsdata, utvärderingsresultat per datadel, kända begränsningar och ägare.
+      rationale: Användare och granskare behöver veta vad en modell är till för och var den brister, och den kunskapen går förlorad när den bara finns hos det ursprungliga teamet.
+      criteria:
+        - method: inspection
+          text: Varje modell i produktion har ett modellkort med de fem delarna, och dess utvärderingssiffror stämmer med registret.
+          threshold: "5 delar per kort"
+
+  - id: AIENG-22
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [shadow-deployment, evaluation, rollout]
+    refs: ["ISO/IEC 42001:2023 Annex A.6.2.5 (AI system deployment)", "NIST AI RMF 1.0 MEASURE 2.4 (functionality and behaviour monitored in production)"]
+    tests: [AIENG-T16]
+    en:
+      title: Shadow run before a model goes live
+      description: A new model version SHOULD run in shadow mode on production input for at least 7 days, with its outputs compared with the current model before it serves users.
+      rationale: Offline test sets miss the shifts of real traffic, and a shadow run shows the differences without exposing users to them.
+      criteria:
+        - method: inspection
+          text: The release record of the latest model shows a shadow period of at least 7 days and a comparison report signed off before go-live.
+          threshold: "≥ 7 days in shadow"
+    sv:
+      title: Skuggkörning innan en modell går i drift
+      description: En ny modellversion BÖR köras i skuggläge på produktionsindata i minst 7 dagar, med utdata jämförda mot den nuvarande modellen, innan den betjänar användare.
+      rationale: Testmängder offline missar förskjutningarna i verklig trafik, och en skuggkörning visar skillnaderna utan att utsätta användarna för dem.
+      criteria:
+        - method: inspection
+          text: Releaseposten för den senaste modellen visar en skuggperiod på minst 7 dagar och en godkänd jämförelserapport före driftstart.
+          threshold: "≥ 7 dagar i skuggläge"
+
+  - id: AIENG-23
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [prompts, versioning, evaluation]
+    refs: ["OWASP Top 10 for LLM Applications 2025 LLM01 (prompt injection)", "NIST AI 600-1 (Generative AI Profile)"]
+    tests: [AIENG-T17]
+    en:
+      title: Versioned prompts evaluated before release
+      description: System prompts and prompt templates of an LLM application MUST be kept under version control and pass the fixed evaluation suite before a changed version is released.
+      rationale: A small wording change in a prompt can change behaviour as much as a code change, and without versions and tests nobody can tell which change broke the answers.
+      criteria:
+        - method: test
+          text: A prompt change that lowers the evaluation score below the threshold is stopped by the pipeline, and the released prompts match a tagged version.
+          threshold: "evaluation score ≥ release threshold"
+    sv:
+      title: Versionerade promptar utvärderas före release
+      description: Systemprompter och promptmallar i en LLM-applikation SKA förvaltas med versionshantering och klara den fasta utvärderingssviten innan en ändrad version släpps.
+      rationale: En liten formulering i en prompt kan ändra beteendet lika mycket som en kodändring, och utan versioner och tester kan ingen säga vilken ändring som förstörde svaren.
+      criteria:
+        - method: test
+          text: En promptändring som sänker utvärderingspoängen under gränsen stoppas av pipelinen, och de släppta promptarna stämmer med en taggad version.
+          threshold: "utvärderingspoäng ≥ gräns för release"
+
+  - id: AIENG-24
+    type: security
+    obligation: must
+    priority: high
+    tags: [personal-data, training-data, scanning]
+    refs: ["GDPR Art. 5(1)(c)", "GDPR Art. 25(1)", "ISO/IEC 42001:2023 Annex A.7.4 (quality of data for AI systems)"]
+    tests: [AIENG-T18]
+    en:
+      title: Training data scanned for personal data
+      description: Data sets MUST be scanned for personal identity numbers, e-mail addresses, phone numbers and names before training, and each finding removed or recorded with its legal basis.
+      rationale: Personal data in training sets can be reproduced by the model and is hard to remove once the model is trained.
+      criteria:
+        - method: test
+          text: A data set seeded with 20 personal identifiers is scanned and each identifier is reported before training starts.
+          threshold: "20 of 20 seeded identifiers found"
+    sv:
+      title: Träningsdata söks igenom efter personuppgifter
+      description: Datamängder SKA sökas igenom efter personnummer, e-postadresser, telefonnummer och namn före träning, och varje fynd tas bort eller registreras med sin rättsliga grund.
+      rationale: Personuppgifter i träningsmängder kan återges av modellen och är svåra att ta bort när modellen väl är tränad.
+      criteria:
+        - method: test
+          text: En datamängd med 20 inlagda personidentiteter genomsöks och varje identitet rapporteras innan träningen startar.
+          threshold: "20 av 20 inlagda identiteter hittas"
+
 tests:
   - id: AIENG-T01
     priority: high
@@ -870,3 +966,119 @@ tests:
         - action: Ställ de 5 frågorna utanför området.
           expected: Varje svar anger att ingen källa hittades och gör inget faktapåstående.
           data: "Vad är företagets aktiekurs i dag?"
+
+  - id: AIENG-T15
+    priority: medium
+    execution: manual
+    tags: [model-card, documentation]
+    refs: ["ISO/IEC 42001:2023 Annex A.6.2.7 (AI system technical documentation)"]
+    en:
+      title: Model cards of production models
+      description: Checks the model card of each model in production against the registry.
+      preconditions: The model registry and the list of models in production.
+      expected: Each production model has a complete card that matches the registry.
+      steps:
+        - action: List the models in production.
+          expected: The list is produced from the deployment configuration.
+        - action: Open the model card of each.
+          expected: Each card has intended use, data summary, results per slice, limitations and owner.
+        - action: Compare the evaluation figures with the registry entry.
+          expected: The figures match.
+    sv:
+      title: Modellkort för modeller i produktion
+      description: Kontrollerar modellkortet för varje modell i produktion mot registret.
+      preconditions: Modellregistret och listan över modeller i produktion.
+      expected: Varje modell i produktion har ett fullständigt kort som stämmer med registret.
+      steps:
+        - action: Lista modellerna i produktion.
+          expected: Listan tas fram ur driftsättningskonfigurationen.
+        - action: Öppna modellkortet för var och en.
+          expected: Varje kort har avsedd användning, datasammanfattning, resultat per datadel, begränsningar och ägare.
+        - action: Jämför utvärderingssiffrorna med registerposten.
+          expected: Siffrorna stämmer.
+
+  - id: AIENG-T16
+    priority: medium
+    execution: manual
+    tags: [shadow-deployment, evaluation]
+    refs: ["ISO/IEC 42001:2023 Annex A.6.2.5 (AI system deployment)"]
+    en:
+      title: Shadow period of the latest model release
+      description: Reads the release record of the latest model version.
+      preconditions: The release record and the comparison report of the latest model.
+      expected: The shadow period lasted at least 7 days and the comparison was approved before go-live.
+      steps:
+        - action: Find the start and end of the shadow period.
+          expected: The period is at least 7 days.
+        - action: Open the comparison report.
+          expected: It compares the outputs of new and current model on the same input and is signed off before the go-live date.
+    sv:
+      title: Skuggperiod för senaste modellreleasen
+      description: Läser releaseposten för den senaste modellversionen.
+      preconditions: Releaseposten och jämförelserapporten för den senaste modellen.
+      expected: Skuggperioden varade minst 7 dagar och jämförelsen godkändes före driftstart.
+      steps:
+        - action: Leta upp början och slutet på skuggperioden.
+          expected: Perioden är minst 7 dagar.
+        - action: Öppna jämförelserapporten.
+          expected: Den jämför utdata från den nya och den nuvarande modellen på samma indata och är godkänd före datumet för driftstart.
+
+  - id: AIENG-T17
+    priority: high
+    execution: automated
+    tags: [prompts, evaluation]
+    refs: ["NIST AI 600-1 (Generative AI Profile)"]
+    en:
+      title: Prompt change below the evaluation threshold
+      description: Changes a system prompt so that answers degrade and runs the pipeline.
+      preconditions: The prompt repository, the evaluation suite and the pipeline with its threshold.
+      expected: The degraded prompt is stopped; the released prompt matches a tagged version.
+      steps:
+        - action: Remove the instruction to cite sources from the system prompt and push the change.
+          expected: The evaluation suite runs.
+          data: "evaluation suite of 200 questions"
+        - action: Read the evaluation result.
+          expected: The score falls below the threshold and the pipeline stops the release.
+        - action: Compare the prompt in production with the repository tags.
+          expected: It matches the latest tagged version.
+    sv:
+      title: Promptändring under utvärderingsgränsen
+      description: Ändrar en systemprompt så att svaren försämras och kör pipelinen.
+      preconditions: Kodförrådet för promptar, utvärderingssviten och pipelinen med sin gräns.
+      expected: Den försämrade prompten stoppas; den släppta prompten stämmer med en taggad version.
+      steps:
+        - action: Ta bort instruktionen om att ange källor ur systemprompten och skicka in ändringen.
+          expected: Utvärderingssviten körs.
+          data: "utvärderingssvit med 200 frågor"
+        - action: Läs utvärderingsresultatet.
+          expected: Poängen faller under gränsen och pipelinen stoppar releasen.
+        - action: Jämför prompten i produktion med taggarna i kodförrådet.
+          expected: Den stämmer med den senaste taggade versionen.
+
+  - id: AIENG-T18
+    priority: high
+    execution: automated
+    tags: [personal-data, training-data]
+    refs: ["GDPR Art. 5(1)(c)"]
+    en:
+      title: Seeded personal data found before training
+      description: Seeds a data set with personal identifiers and runs the pre-training scan.
+      preconditions: A copy of a training data set and 20 synthetic personal identifiers of four kinds.
+      expected: Every seeded identifier is reported and training does not start until the findings are handled.
+      steps:
+        - action: Insert 5 synthetic identity numbers, 5 e-mail addresses, 5 phone numbers and 5 names into the data set.
+          expected: The data set holds the 20 seeded identifiers.
+          data: "synthetic values that pass format checks"
+        - action: Run the pre-training scan.
+          expected: The scan reports all 20 with their positions and the training job is blocked.
+    sv:
+      title: Inlagda personuppgifter hittas före träning
+      description: Lägger in personidentiteter i en datamängd och kör genomsökningen före träning.
+      preconditions: En kopia av en träningsmängd och 20 syntetiska personidentiteter av fyra slag.
+      expected: Varje inlagd identitet rapporteras och träningen startar inte förrän fynden är hanterade.
+      steps:
+        - action: Lägg in 5 syntetiska personnummer, 5 e-postadresser, 5 telefonnummer och 5 namn i datamängden.
+          expected: Datamängden innehåller de 20 inlagda identiteterna.
+          data: "syntetiska värden som klarar formatkontroller"
+        - action: Kör genomsökningen före träning.
+          expected: Genomsökningen rapporterar alla 20 med sina positioner och träningsjobbet spärras.

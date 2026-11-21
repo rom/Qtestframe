@@ -1851,3 +1851,15 @@ sources:
     name: {en: "European Accessibility Act, Directive (EU) 2019/882", sv: "Tillgänglighetsdirektivet (EU) 2019/882"}
     match: ["Directive (EU) 2019/882"]
     url: https://eur-lex.europa.eu/eli/dir/2019/882/oj
+  - id: price-indication
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Price Indication Directive 98/6/EC (as amended by Directive (EU) 2019/2161)", sv: "Prisinformationsdirektivet 98/6/EG (ändrat genom direktiv (EU) 2019/2161)"}
+    match: ["Directive 98/6/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/1998/6/oj
+  - id: open-internet
+    kind: law
+    jurisdiction: EU
+    name: {en: "Open Internet Regulation (EU) 2015/2120", sv: "Förordningen om öppen internetanslutning (EU) 2015/2120"}
+    match: ["Regulation (EU) 2015/2120"]
+    url: https://eur-lex.europa.eu/eli/reg/2015/2120/oj
