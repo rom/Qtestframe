@@ -1,0 +1,672 @@
+area: pj-agile-delivery
+prefix: PJAGL
+group: operations
+catalogue: project
+name: {en: Agile delivery and test management, sv: Agil leverans och testledning}
+description:
+  en: Agile delivery at a high level (product backlog, definition of done, sprints, reviews and retrospectives, planning across teams as in SAFe) and test management in projects following ISTQB and ISO/IEC/IEEE 29119 (test plan, risk-based testing, exit criteria, defect reports, regression testing, test environments and the test completion report).
+  sv: Agil leverans på övergripande nivå (produktbacklogg, definition av klart, sprintar, granskningar och retrospektiv, planering över flera team som i SAFe) och testledning i projekt enligt ISTQB och ISO/IEC/IEEE 29119 (testplan, riskbaserad testning, slutkriterier, felrapporter, regressionstest, testmiljöer och testslutrapport).
+
+requirements:
+  - id: PJAGL-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [agile, product-backlog, product-owner]
+    refs: ["Scrum Guide 2020 (Product Owner)", "Scrum Guide 2020 (Product Backlog)"]
+    tests: [PJAGL-T01]
+    en:
+      title: One ordered product backlog with one accountable product owner
+      description: Each product MUST have one ordered product backlog whose order one named product owner is accountable for.
+      rationale: Several backlogs or several owners give the teams conflicting priorities and hide who decides what is built next.
+      criteria:
+        - method: inspection
+          text: The backlog tool has one backlog per product, ordered by rank, and the project organisation names one product owner for it.
+    sv:
+      title: En ordnad produktbacklogg med en ansvarig produktägare
+      description: Varje produkt SKA ha en ordnad produktbacklogg med en namngiven produktägare som ansvarar för ordningen.
+      rationale: Flera backloggar eller flera ägare ger teamen motstridiga prioriteringar och döljer vem som bestämmer vad som byggs härnäst.
+      criteria:
+        - method: inspection
+          text: Backloggverktyget har en backlogg per produkt, ordnad efter rang, och projektorganisationen namnger en produktägare för den.
+
+  - id: PJAGL-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [agile, acceptance-criteria, user-story]
+    refs: ["ISTQB CTFL 4.0 §4.5.2 (acceptance criteria)", "ISO/IEC/IEEE 29148:2018"]
+    tests: [PJAGL-T01]
+    en:
+      title: Acceptance criteria before an item enters a sprint
+      description: A backlog item MUST have at least 1 testable acceptance criterion before the team takes it into a sprint.
+      rationale: Without acceptance criteria the team and the product owner find out at the review that they meant different things.
+      criteria:
+        - method: inspection
+          text: Each item in the current and the 2 previous sprints has at least 1 acceptance criterion dated before the sprint start.
+    sv:
+      title: Acceptanskriterier innan ett ärende tas in i en sprint
+      description: Ett ärende i backloggen SKA ha minst 1 testbart acceptanskriterium innan teamet tar in det i en sprint.
+      rationale: Utan acceptanskriterier upptäcker teamet och produktägaren först vid granskningen att de menade olika saker.
+      criteria:
+        - method: inspection
+          text: Varje ärende i den pågående och de 2 föregående sprintarna har minst 1 acceptanskriterium daterat före sprintstarten.
+
+  - id: PJAGL-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [agile, definition-of-done, quality]
+    refs: ["Scrum Guide 2020 (Increment, Definition of Done)"]
+    tests: [PJAGL-T02]
+    en:
+      title: Written definition of done with tests and documentation
+      description: The project MUST keep a written definition of done that states the tests that are passed, the reviews that are done and the documentation that is updated before an item counts as done.
+      rationale: A shared and written definition stops unfinished work from being reported as done and piling up before the release.
+      criteria:
+        - method: review
+          text: The definition of done lists tests, reviews and documentation, and 5 items marked done in the last sprint meet each part of it.
+    sv:
+      title: Skriftlig definition av klart med test och dokumentation
+      description: Projektet SKA ha en skriftlig definition av klart som anger vilka test som är godkända, vilka granskningar som är gjorda och vilken dokumentation som är uppdaterad innan ett ärende räknas som klart.
+      rationale: En gemensam och skriftlig definition hindrar att halvfärdigt arbete rapporteras som klart och samlas på hög inför releasen.
+      criteria:
+        - method: review
+          text: Definitionen av klart listar test, granskningar och dokumentation, och 5 ärenden som markerades som klara i den senaste sprinten uppfyller varje del av den.
+
+  - id: PJAGL-04
+    type: business
+    obligation: must
+    priority: medium
+    tags: [agile, sprint, cadence]
+    refs: ["Scrum Guide 2020 (The Sprint)"]
+    tests: [PJAGL-T02]
+    en:
+      title: Fixed sprint length of at most 4 weeks
+      description: Each team MUST work in sprints of a fixed length of at most 4 weeks that stays the same within a release.
+      rationale: A fixed and short cadence gives regular feedback and makes the team's throughput comparable from sprint to sprint.
+      criteria:
+        - method: inspection
+          text: The sprint dates in the backlog tool show the same length for each sprint of the release, at most 28 days.
+          threshold: "≤ 4 weeks"
+    sv:
+      title: Fast sprintlängd på högst 4 veckor
+      description: Varje team SKA arbeta i sprintar med en fast längd på högst 4 veckor som är densamma under hela releasen.
+      rationale: En fast och kort rytm ger återkoppling med jämna mellanrum och gör teamets genomflöde jämförbart mellan sprintarna.
+      criteria:
+        - method: inspection
+          text: Sprintdatumen i backloggverktyget visar samma längd för varje sprint i releasen, högst 28 dagar.
+          threshold: "≤ 4 veckor"
+
+  - id: PJAGL-05
+    type: business
+    obligation: must
+    priority: medium
+    tags: [agile, sprint-review, stakeholders]
+    refs: ["Scrum Guide 2020 (Sprint Review)"]
+    tests: [PJAGL-T03]
+    en:
+      title: Sprint review with stakeholders on a running increment
+      description: At the end of each sprint the team MUST demonstrate the increment running in a test environment to at least 1 stakeholder from outside the team, and record the feedback as backlog items.
+      rationale: Feedback on running software catches misunderstandings while they are still cheap to correct.
+      criteria:
+        - method: review
+          text: The review notes of the last 3 sprints name an outside stakeholder, the environment used and the backlog items created from the feedback.
+    sv:
+      title: Sprintgranskning med intressenter på ett körbart inkrement
+      description: I slutet av varje sprint SKA teamet visa inkrementet körande i en testmiljö för minst 1 intressent utanför teamet och registrera återkopplingen som ärenden i backloggen.
+      rationale: Återkoppling på körande programvara fångar missförstånd medan de fortfarande är billiga att rätta.
+      criteria:
+        - method: review
+          text: Anteckningarna från granskningen i de 3 senaste sprintarna namnger en extern intressent, den miljö som användes och de ärenden som skapades från återkopplingen.
+
+  - id: PJAGL-06
+    type: business
+    obligation: should
+    priority: medium
+    tags: [agile, retrospective, improvement]
+    refs: ["Scrum Guide 2020 (Sprint Retrospective)"]
+    tests: [PJAGL-T03]
+    en:
+      title: Retrospective actions with an owner followed up in the next sprint
+      description: Each sprint retrospective SHOULD produce at least 1 improvement action with an owner, and the next retrospective SHOULD start by checking its outcome.
+      rationale: Retrospectives without owned actions repeat the same complaints and do not change how the team works.
+      criteria:
+        - method: review
+          text: The notes of the last 3 retrospectives each have an owned action and a recorded outcome of the action from the previous one.
+    sv:
+      title: Åtgärder från retrospektiv med ägare följs upp i nästa sprint
+      description: Varje retrospektiv BÖR ge minst 1 förbättringsåtgärd med en ägare, vars utfall nästa retrospektiv börjar med att kontrollera.
+      rationale: Retrospektiv utan åtgärder med ägare upprepar samma klagomål och ändrar inte hur teamet arbetar.
+      criteria:
+        - method: review
+          text: Anteckningarna från de 3 senaste retrospektiven har var och en en åtgärd med ägare och ett registrerat utfall av åtgärden från det föregående.
+
+  - id: PJAGL-07
+    type: business
+    obligation: must
+    priority: medium
+    tags: [agile, scaled-agile, planning]
+    refs: ["SAFe 6.0 (PI Planning)"]
+    tests: [PJAGL-T04]
+    en:
+      title: Joint planning of teams every 8 to 12 weeks
+      description: When 3 or more teams deliver to the same solution, the teams MUST plan together at the start of each planning interval of 8 to 12 weeks and record their committed objectives.
+      rationale: Joint planning surfaces dependencies and capacity limits between teams before the work starts instead of during integration.
+      criteria:
+        - method: review
+          text: The planning records show an event at the start of each interval of 8 to 12 weeks with objectives per team.
+          threshold: "interval 8–12 weeks"
+    sv:
+      title: Gemensam planering för teamen var 8:e till 12:e vecka
+      description: När 3 eller fler team levererar till samma lösning SKA teamen planera tillsammans i början av varje planeringsintervall på 8 till 12 veckor och dokumentera sina åtagna mål.
+      rationale: Gemensam planering lyfter fram beroenden och kapacitetsgränser mellan teamen innan arbetet börjar i stället för under integrationen.
+      criteria:
+        - method: review
+          text: Planeringsunderlaget visar ett tillfälle i början av varje intervall på 8 till 12 veckor med mål per team.
+          threshold: "intervall 8–12 veckor"
+
+  - id: PJAGL-08
+    type: business
+    obligation: must
+    priority: medium
+    tags: [agile, dependencies, scaled-agile]
+    refs: ["SAFe 6.0 (PI Planning)"]
+    tests: [PJAGL-T04]
+    en:
+      title: Dependencies between teams with a delivering sprint
+      description: Each dependency between teams MUST be recorded with the delivering team, the receiving team and the sprint in which it is delivered.
+      rationale: A dependency without a delivering sprint is a hope, and the receiving team cannot plan its own work around it.
+      criteria:
+        - method: inspection
+          text: Each open dependency on the planning board names both teams and a delivering sprint.
+    sv:
+      title: Beroenden mellan team med en leveranssprint
+      description: Varje beroende mellan team SKA registreras med levererande team, mottagande team och den sprint då det levereras.
+      rationale: Ett beroende utan leveranssprint är en förhoppning, och det mottagande teamet kan inte planera sitt eget arbete efter det.
+      criteria:
+        - method: inspection
+          text: Varje öppet beroende på planeringstavlan namnger båda teamen och en leveranssprint.
+
+  - id: PJAGL-09
+    type: business
+    obligation: should
+    priority: medium
+    tags: [agile, forecast, throughput]
+    refs: ["Scrum Guide 2020 (Product Backlog)"]
+    tests: [PJAGL-T05]
+    en:
+      title: Release forecast from measured throughput
+      description: The product owner SHOULD update the release forecast after each sprint from the throughput measured in at least the 3 latest sprints and the remaining ordered backlog.
+      rationale: A forecast built on measured throughput shows early whether the release date or the scope has to change.
+      criteria:
+        - method: analysis
+          text: The latest forecast uses the throughput of at least the 3 latest sprints and is dated within the current sprint.
+    sv:
+      title: Prognos för releasen utifrån uppmätt genomflöde
+      description: Produktägaren BÖR uppdatera prognosen för releasen efter varje sprint utifrån genomflödet i minst de 3 senaste sprintarna och den återstående ordnade backloggen.
+      rationale: En prognos som bygger på uppmätt genomflöde visar tidigt om releasedatumet eller omfattningen behöver ändras.
+      criteria:
+        - method: analysis
+          text: Den senaste prognosen använder genomflödet från minst de 3 senaste sprintarna och är daterad inom den pågående sprinten.
+
+  - id: PJAGL-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [test-management, test-plan]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 (test plan)", "ISTQB CTFL 4.0 §5.1.1 (test plan)"]
+    tests: [PJAGL-T06]
+    en:
+      title: Test plan per release
+      description: The project MUST approve a test plan for each release before test execution starts, stating the scope, the test levels, the entry and exit criteria, the test environments and the roles.
+      rationale: A plan agreed in advance makes the test effort and the release decision transparent to the project and the buyer.
+      criteria:
+        - method: review
+          text: The approved test plan is dated before the first test execution and has the 5 listed parts.
+    sv:
+      title: Testplan för varje release
+      description: Projektet SKA godkänna en testplan för varje release innan testkörningen börjar, med omfattning, testnivåer, start- och slutkriterier, testmiljöer och roller.
+      rationale: En plan som har avtalats i förväg gör testinsatsen och beslutet om release genomskinliga för projektet och beställaren.
+      criteria:
+        - method: review
+          text: Den godkända testplanen är daterad före den första testkörningen och har de 5 angivna delarna.
+
+  - id: PJAGL-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [test-management, risk-based-testing]
+    refs: ["ISTQB CTFL 4.0 §5.2 (risk management)", "ISO/IEC/IEEE 29119-2:2021 (risk-based testing)"]
+    tests: [PJAGL-T06]
+    en:
+      title: Test depth set by rated product risks
+      description: The test plan MUST rate each product risk by likelihood and impact and assign a test depth to each risk level, with the highest level tested by at least 2 test techniques.
+      rationale: Rating the risks puts the limited test time where a failure would hurt most.
+      criteria:
+        - method: review
+          text: Each product risk in the plan has a likelihood, an impact and a level, and the test cases for the highest level use at least 2 techniques.
+    sv:
+      title: Testdjup utifrån värderade produktrisker
+      description: Testplanen SKA värdera varje produktrisk efter sannolikhet och konsekvens och ange ett testdjup för varje risknivå, där den högsta nivån testas med minst 2 testtekniker.
+      rationale: När riskerna är värderade läggs den begränsade testtiden där ett fel skulle göra mest skada.
+      criteria:
+        - method: review
+          text: Varje produktrisk i planen har sannolikhet, konsekvens och nivå, och testfallen för den högsta nivån använder minst 2 tekniker.
+
+  - id: PJAGL-12
+    type: business
+    obligation: must_not
+    priority: critical
+    tags: [test-management, exit-criteria, release]
+    refs: ["ISTQB CTFL 4.0 §5.1.3 (entry criteria and exit criteria)"]
+    tests: [PJAGL-T07]
+    en:
+      title: No release with open critical defects or unmet exit criteria
+      description: The project MUST NOT release to production while a critical defect is open or less than 95 % of the planned test cases have passed.
+      rationale: Agreed exit criteria stop a release under schedule pressure that the testing has shown to be unfit.
+      criteria:
+        - method: review
+          text: The release decision record shows 0 open critical defects and a pass rate of at least 95 % at the time of release.
+          threshold: "0 critical open; ≥ 95 % passed"
+    sv:
+      title: Ingen release med öppna kritiska fel eller ouppfyllda slutkriterier
+      description: Projektet SKA INTE driftsätta i produktion så länge ett kritiskt fel är öppet eller mindre än 95 % av de planerade testfallen är godkända.
+      rationale: Avtalade slutkriterier stoppar en release under tidspress som testningen har visat inte håller.
+      criteria:
+        - method: review
+          text: Beslutsunderlaget för releasen visar 0 öppna kritiska fel och minst 95 % godkända testfall vid tidpunkten för releasen.
+          threshold: "0 kritiska öppna; ≥ 95 % godkända"
+
+  - id: PJAGL-13
+    type: business
+    obligation: must
+    priority: high
+    tags: [test-management, defect-report]
+    refs: ["ISTQB CTFL 4.0 §5.5 (defect management)", "ISO/IEC/IEEE 29119-3:2021 (incident report)"]
+    tests: [PJAGL-T08]
+    en:
+      title: Defect reports with steps to reproduce, severity and version
+      description: Each defect report MUST contain the steps to reproduce, the expected and the actual result, the severity, the priority, the tested version and the test environment.
+      rationale: A defect that the developer cannot reproduce or place in a version stays open or is closed without a fix.
+      criteria:
+        - method: inspection
+          text: A sample of 20 defect reports from the last release all have the 6 listed fields filled in.
+    sv:
+      title: Felrapporter med steg för att återskapa, allvarlighetsgrad och version
+      description: Varje felrapport SKA innehålla stegen för att återskapa felet, förväntat och faktiskt resultat, allvarlighetsgrad, prioritet, testad version och testmiljö.
+      rationale: Ett fel som utvecklaren inte kan återskapa eller knyta till en version förblir öppet eller stängs utan rättning.
+      criteria:
+        - method: inspection
+          text: Ett urval av 20 felrapporter från den senaste releasen har de 6 angivna fälten ifyllda.
+
+  - id: PJAGL-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [test-management, regression, automation]
+    refs: ["ISTQB CTFL 4.0 §2.2.3 (confirmation testing and regression testing)", "ISTQB CTFL 4.0 §2.1.4 (DevOps and testing)"]
+    tests: [PJAGL-T09]
+    en:
+      title: Automated regression suite on each merge to the main branch
+      description: The project MUST run its automated regression test suite on each merge to the main branch and report the result to the team within 60 minutes.
+      rationale: Regressions found within the hour are traced to the change that caused them, while those found weeks later need a costly search.
+      criteria:
+        - method: test
+          text: For 10 merges, the pipeline log shows a regression run that started on the merge and reported within 60 minutes.
+          threshold: "≤ 60 minutes"
+    sv:
+      title: Automatiserad regressionstestsvit vid varje sammanslagning till huvudgrenen
+      description: Projektet SKA köra sin automatiserade regressionstestsvit vid varje sammanslagning till huvudgrenen och rapportera resultatet till teamet inom 60 minuter.
+      rationale: Regressioner som hittas inom en timme spåras till den ändring som orsakade dem, medan de som hittas veckor senare kräver ett kostsamt sökande.
+      criteria:
+        - method: test
+          text: För 10 sammanslagningar visar pipelineloggen en regressionskörning som startade vid sammanslagningen och rapporterade inom 60 minuter.
+          threshold: "≤ 60 minuter"
+
+  - id: PJAGL-15
+    type: business
+    obligation: must
+    priority: medium
+    tags: [test-management, test-environment, configuration]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 (test environment requirements)"]
+    tests: [PJAGL-T10]
+    en:
+      title: Test environment differences from production recorded
+      description: The project MUST record each difference between the acceptance test environment and production in software versions, configuration and integrations, together with the risk of each difference in the test plan.
+      rationale: Tests in an environment that differs from production without anyone knowing give a false picture of readiness.
+      criteria:
+        - method: inspection
+          text: A comparison of versions and configuration between the 2 environments finds no difference that is missing from the record.
+    sv:
+      title: Skillnader mellan testmiljön och produktion dokumenteras
+      description: Projektet SKA dokumentera varje skillnad mellan acceptanstestmiljön och produktion i programversioner, konfiguration och integrationer, tillsammans med risken för varje skillnad i testplanen.
+      rationale: Test i en miljö som skiljer sig från produktion utan att någon vet om det ger en falsk bild av hur redo lösningen är.
+      criteria:
+        - method: inspection
+          text: En jämförelse av versioner och konfiguration mellan de 2 miljöerna hittar ingen skillnad som saknas i dokumentationen.
+
+  - id: PJAGL-16
+    type: business
+    obligation: must
+    priority: medium
+    tags: [test-management, test-completion, reporting]
+    refs: ["ISTQB CTFL 4.0 §5.3.2 (test reports)", "ISO/IEC/IEEE 29119-3:2021 (test completion report)"]
+    tests: [PJAGL-T10]
+    en:
+      title: Test completion report before the release decision
+      description: The test manager MUST deliver a test completion report before the release decision, with the tests run and passed, the open defects by severity, the residual risks and any deviations from the test plan.
+      rationale: The release decision needs a single summary of what was tested and what risk remains.
+      criteria:
+        - method: review
+          text: The report is dated before the release decision and has the 4 listed parts.
+    sv:
+      title: Testslutrapport före beslutet om release
+      description: Testledaren SKA leverera en testslutrapport före beslutet om release, med körda och godkända test, öppna fel per allvarlighetsgrad, kvarstående risker och avvikelser från testplanen.
+      rationale: Beslutet om release behöver en samlad bild av vad som har testats och vilken risk som kvarstår.
+      criteria:
+        - method: review
+          text: Rapporten är daterad före beslutet om release och har de 4 angivna delarna.
+
+tests:
+  - id: PJAGL-T01
+    priority: high
+    execution: manual
+    tags: [product-backlog, acceptance-criteria]
+    refs: ["Scrum Guide 2020 (Product Backlog)", "ISTQB CTFL 4.0 §4.5.2 (acceptance criteria)"]
+    en:
+      title: Product backlog ownership and acceptance criteria
+      description: Inspects the product backlog and the items in recent sprints.
+      preconditions: Read access to the backlog tool and the project organisation chart.
+      expected: There is one ordered backlog with one product owner, and each sprint item had acceptance criteria before the sprint started.
+      steps:
+        - action: List the backlogs that hold items for the product.
+          expected: There is exactly 1, ordered by rank.
+        - action: Look up the product owner in the organisation chart.
+          expected: One named person is accountable for the backlog.
+        - action: Open each item of the current and the 2 previous sprints.
+          expected: Each has at least 1 acceptance criterion dated before the sprint start.
+    sv:
+      title: Ägarskap av produktbackloggen och acceptanskriterier
+      description: Inspekterar produktbackloggen och ärendena i de senaste sprintarna.
+      preconditions: Läsbehörighet i backloggverktyget och projektets organisationsschema.
+      expected: Det finns en ordnad backlogg med en produktägare, och varje ärende i sprintarna hade acceptanskriterier före sprintstarten.
+      steps:
+        - action: Lista de backloggar som innehåller ärenden för produkten.
+          expected: Det finns exakt 1, ordnad efter rang.
+        - action: Slå upp produktägaren i organisationsschemat.
+          expected: En namngiven person ansvarar för backloggen.
+        - action: Öppna varje ärende i den pågående och de 2 föregående sprintarna.
+          expected: Varje ärende har minst 1 acceptanskriterium daterat före sprintstarten.
+
+  - id: PJAGL-T02
+    priority: high
+    execution: manual
+    tags: [definition-of-done, sprint]
+    refs: ["Scrum Guide 2020 (Increment, Definition of Done)", "Scrum Guide 2020 (The Sprint)"]
+    en:
+      title: Definition of done and sprint lengths
+      description: Checks done items against the definition of done and the sprint lengths of the release.
+      preconditions: The written definition of done and the sprint history of the current release.
+      expected: Done items meet the definition, and each sprint has the same length of at most 4 weeks.
+      steps:
+        - action: Read the definition of done.
+          expected: It lists the tests, the reviews and the documentation updates.
+        - action: Pick 5 items marked done in the last sprint and look for the evidence of each part.
+          expected: Each item has passed tests, a recorded review and updated documentation.
+        - action: Compute the length of each sprint in the release.
+          expected: Each sprint has the same length, at most 28 days.
+    sv:
+      title: Definition av klart och sprintlängder
+      description: Kontrollerar klara ärenden mot definitionen av klart och sprintlängderna i releasen.
+      preconditions: Den skriftliga definitionen av klart och sprinthistoriken för den aktuella releasen.
+      expected: Klara ärenden uppfyller definitionen, och varje sprint har samma längd på högst 4 veckor.
+      steps:
+        - action: Läs definitionen av klart.
+          expected: Den listar test, granskningar och uppdateringar av dokumentation.
+        - action: Välj 5 ärenden som markerades som klara i den senaste sprinten och sök belägg för varje del.
+          expected: Varje ärende har godkända test, en dokumenterad granskning och uppdaterad dokumentation.
+        - action: Beräkna längden på varje sprint i releasen.
+          expected: Varje sprint har samma längd, högst 28 dagar.
+
+  - id: PJAGL-T03
+    priority: medium
+    execution: manual
+    tags: [sprint-review, retrospective]
+    refs: ["Scrum Guide 2020 (Sprint Review)", "Scrum Guide 2020 (Sprint Retrospective)"]
+    en:
+      title: Notes from sprint reviews and retrospectives
+      description: Reviews the notes of the last 3 sprint reviews and retrospectives.
+      preconditions: The notes of the last 3 sprint reviews and retrospectives and the backlog.
+      expected: Each review showed a running increment to an outside stakeholder, and each retrospective has an owned action that was followed up.
+      steps:
+        - action: Read the notes of each sprint review.
+          expected: They name an outside stakeholder and the test environment used.
+        - action: Look up the backlog items created from the feedback.
+          expected: Each feedback point has a backlog item.
+        - action: Read the notes of each retrospective.
+          expected: Each has an action with an owner and the outcome of the previous action.
+    sv:
+      title: Anteckningar från sprintgranskningar och retrospektiv
+      description: Granskar anteckningarna från de 3 senaste sprintgranskningarna och retrospektiven.
+      preconditions: Anteckningarna från de 3 senaste sprintgranskningarna och retrospektiven samt backloggen.
+      expected: Varje granskning visade ett körande inkrement för en extern intressent, och varje retrospektiv har en åtgärd med ägare som följdes upp.
+      steps:
+        - action: Läs anteckningarna från varje sprintgranskning.
+          expected: De namnger en extern intressent och den testmiljö som användes.
+        - action: Slå upp de ärenden i backloggen som skapades från återkopplingen.
+          expected: Varje punkt i återkopplingen har ett ärende.
+        - action: Läs anteckningarna från varje retrospektiv.
+          expected: Varje retrospektiv har en åtgärd med ägare och utfallet av den föregående åtgärden.
+
+  - id: PJAGL-T04
+    priority: medium
+    execution: manual
+    tags: [scaled-agile, planning, dependencies]
+    refs: ["SAFe 6.0 (PI Planning)"]
+    en:
+      title: Joint planning events and the dependency board
+      description: Checks the planning intervals of the teams and the dependencies recorded between them.
+      preconditions: At least 3 teams delivering to one solution, the planning records and the planning board.
+      expected: Joint planning took place every 8 to 12 weeks, and each dependency names both teams and a sprint.
+      steps:
+        - action: List the dates of the joint planning events of the last 12 months.
+          expected: The gap between 2 events is 8 to 12 weeks.
+        - action: Read the objectives of the latest event.
+          expected: Each team has recorded objectives.
+        - action: Go through the open dependencies on the planning board.
+          expected: Each names the delivering team, the receiving team and a delivering sprint.
+    sv:
+      title: Gemensamma planeringstillfällen och tavlan med beroenden
+      description: Kontrollerar teamens planeringsintervall och de beroenden som är registrerade mellan dem.
+      preconditions: Minst 3 team som levererar till en lösning, planeringsunderlaget och planeringstavlan.
+      expected: Gemensam planering ägde rum var 8:e till 12:e vecka, och varje beroende namnger båda teamen och en sprint.
+      steps:
+        - action: Lista datumen för de gemensamma planeringstillfällena under de senaste 12 månaderna.
+          expected: Avståndet mellan 2 tillfällen är 8 till 12 veckor.
+        - action: Läs målen från det senaste tillfället.
+          expected: Varje team har dokumenterade mål.
+        - action: Gå igenom de öppna beroendena på planeringstavlan.
+          expected: Varje beroende namnger levererande team, mottagande team och en leveranssprint.
+
+  - id: PJAGL-T05
+    priority: low
+    execution: manual
+    tags: [forecast, throughput]
+    refs: ["Scrum Guide 2020 (Product Backlog)"]
+    en:
+      title: Release forecast recalculated from throughput
+      description: Recalculates the release forecast from the throughput data and compares it with the published forecast.
+      preconditions: The throughput of the latest sprints, the ordered backlog and the published forecast.
+      expected: The published forecast is current and matches a recalculation from at least 3 sprints.
+      steps:
+        - action: Read the date and the data basis of the published forecast.
+          expected: It is dated within the current sprint and uses at least the 3 latest sprints.
+        - action: Divide the remaining backlog by the mean throughput of those sprints.
+          expected: The number of sprints left matches the forecast within 1 sprint.
+    sv:
+      title: Prognosen för releasen räknas om från genomflödet
+      description: Räknar om prognosen för releasen från genomflödet och jämför med den publicerade prognosen.
+      preconditions: Genomflödet i de senaste sprintarna, den ordnade backloggen och den publicerade prognosen.
+      expected: Den publicerade prognosen är aktuell och stämmer med en omräkning från minst 3 sprintar.
+      steps:
+        - action: Läs datum och dataunderlag för den publicerade prognosen.
+          expected: Den är daterad inom den pågående sprinten och använder minst de 3 senaste sprintarna.
+        - action: Dela den återstående backloggen med medelgenomflödet i de sprintarna.
+          expected: Antalet återstående sprintar stämmer med prognosen inom 1 sprint.
+
+  - id: PJAGL-T06
+    priority: high
+    execution: manual
+    tags: [test-plan, risk-based-testing]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 (test plan)", "ISTQB CTFL 4.0 §5.2 (risk management)"]
+    en:
+      title: Review of the release test plan and its risk analysis
+      description: Reviews the contents of the test plan and how the product risks steer the test cases.
+      preconditions: The approved test plan, the test execution log and the test case repository.
+      expected: The plan is complete and approved in time, and the highest risks are tested with at least 2 techniques.
+      steps:
+        - action: Compare the approval date of the plan with the first entry in the execution log.
+          expected: The approval is earlier.
+        - action: Check the plan for scope, test levels, entry and exit criteria, environments and roles.
+          expected: Each of the 5 parts is present.
+        - action: Read the product risk table.
+          expected: Each risk has a likelihood, an impact and a level.
+        - action: Look up the test cases for the risks of the highest level.
+          expected: Each such risk is covered by test cases using at least 2 techniques.
+          data: "e.g. boundary value analysis and state transition testing"
+    sv:
+      title: Granskning av testplanen för releasen och dess riskanalys
+      description: Granskar testplanens innehåll och hur produktriskerna styr testfallen.
+      preconditions: Den godkända testplanen, loggen över testkörningar och testfallsförrådet.
+      expected: Planen är komplett och godkänd i tid, och de högsta riskerna testas med minst 2 tekniker.
+      steps:
+        - action: Jämför planens godkännandedatum med den första posten i loggen över körningar.
+          expected: Godkännandet är tidigare.
+        - action: Kontrollera att planen har omfattning, testnivåer, start- och slutkriterier, miljöer och roller.
+          expected: Var och en av de 5 delarna finns.
+        - action: Läs tabellen över produktrisker.
+          expected: Varje risk har sannolikhet, konsekvens och nivå.
+        - action: Slå upp testfallen för riskerna på den högsta nivån.
+          expected: Varje sådan risk täcks av testfall som använder minst 2 tekniker.
+          data: "t.ex. gränsvärdesanalys och tillståndsövergångstestning"
+
+  - id: PJAGL-T07
+    priority: critical
+    execution: manual
+    tags: [exit-criteria, release]
+    refs: ["ISTQB CTFL 4.0 §5.1.3 (entry criteria and exit criteria)"]
+    en:
+      title: Exit criteria at the latest release
+      description: Compares the defect and test status at the time of the latest release with the exit criteria.
+      preconditions: The release decision record and the defect and test history with time stamps.
+      expected: At the release time there were no open critical defects and at least 95 % of planned tests had passed.
+      steps:
+        - action: Read the release time from the release decision record.
+          expected: A date and time are stated.
+        - action: Count the critical defects open at that time in the defect history.
+          expected: The count is 0.
+        - action: Compute the share of planned test cases passed at that time.
+          expected: The share is at least 95 %.
+    sv:
+      title: Slutkriterier vid den senaste releasen
+      description: Jämför status för fel och test vid tidpunkten för den senaste releasen med slutkriterierna.
+      preconditions: Beslutsunderlaget för releasen och historiken för fel och test med tidsstämplar.
+      expected: Vid releasen fanns inga öppna kritiska fel och minst 95 % av de planerade testen var godkända.
+      steps:
+        - action: Läs tidpunkten för releasen i beslutsunderlaget.
+          expected: Datum och klockslag är angivna.
+        - action: Räkna de kritiska fel som var öppna vid den tidpunkten i felhistoriken.
+          expected: Antalet är 0.
+        - action: Beräkna andelen godkända planerade testfall vid den tidpunkten.
+          expected: Andelen är minst 95 %.
+
+  - id: PJAGL-T08
+    priority: high
+    execution: manual
+    tags: [defect-report]
+    refs: ["ISTQB CTFL 4.0 §5.5 (defect management)"]
+    en:
+      title: Completeness of defect reports
+      description: Samples defect reports and checks the mandatory fields.
+      preconditions: The defect tracker with the reports of the last release.
+      expected: Each sampled report has the 6 listed fields filled in.
+      steps:
+        - action: Pick 20 defect reports at random from the last release.
+          expected: 20 reports are selected.
+        - action: Check each report for steps to reproduce, expected and actual result, severity, priority, version and environment.
+          expected: Each report has the 6 fields filled in.
+        - action: Follow the steps of 3 reports in the stated environment and version.
+          expected: The reported behaviour occurs.
+    sv:
+      title: Fullständighet i felrapporter
+      description: Gör ett urval av felrapporter och kontrollerar de obligatoriska fälten.
+      preconditions: Ärendesystemet för fel med rapporterna från den senaste releasen.
+      expected: Varje rapport i urvalet har de 6 angivna fälten ifyllda.
+      steps:
+        - action: Välj slumpvis 20 felrapporter från den senaste releasen.
+          expected: 20 rapporter är valda.
+        - action: Kontrollera att varje rapport har steg för att återskapa, förväntat och faktiskt resultat, allvarlighetsgrad, prioritet, version och miljö.
+          expected: Varje rapport har de 6 fälten ifyllda.
+        - action: Följ stegen i 3 rapporter i angiven miljö och version.
+          expected: Det rapporterade beteendet uppträder.
+
+  - id: PJAGL-T09
+    priority: high
+    execution: automated
+    tags: [regression, automation, pipeline]
+    refs: ["ISTQB CTFL 4.0 §2.2.3 (confirmation testing and regression testing)"]
+    en:
+      title: Regression run on merges to the main branch
+      description: A script reads the pipeline history and checks that each merge started a regression run that reported in time.
+      preconditions: Read access to the pipeline history and the repository's merge log.
+      expected: Each of the 10 latest merges has a regression run that reported within 60 minutes.
+      steps:
+        - action: Read the 10 latest merges to the main branch from the merge log.
+          expected: 10 merges with time stamps are found.
+        - action: Find the regression run started by each merge.
+          expected: Each merge has a run.
+        - action: Compute the time from the merge to the reported result.
+          expected: Each time is at most 60 minutes.
+    sv:
+      title: Regressionskörning vid sammanslagningar till huvudgrenen
+      description: Ett skript läser pipelinehistoriken och kontrollerar att varje sammanslagning startade en regressionskörning som rapporterade i tid.
+      preconditions: Läsbehörighet till pipelinehistoriken och förrådets logg över sammanslagningar.
+      expected: Var och en av de 10 senaste sammanslagningarna har en regressionskörning som rapporterade inom 60 minuter.
+      steps:
+        - action: Läs de 10 senaste sammanslagningarna till huvudgrenen ur loggen.
+          expected: 10 sammanslagningar med tidsstämplar hittas.
+        - action: Hitta den regressionskörning som varje sammanslagning startade.
+          expected: Varje sammanslagning har en körning.
+        - action: Beräkna tiden från sammanslagningen till det rapporterade resultatet.
+          expected: Varje tid är högst 60 minuter.
+
+  - id: PJAGL-T10
+    priority: medium
+    execution: manual
+    tags: [test-environment, test-completion]
+    refs: ["ISO/IEC/IEEE 29119-3:2021 (test environment requirements)", "ISO/IEC/IEEE 29119-3:2021 (test completion report)"]
+    en:
+      title: Environment comparison and test completion report
+      description: Compares the acceptance test environment with production and reviews the test completion report.
+      preconditions: Version and configuration listings of both environments, the record of differences and the test completion report.
+      expected: Each difference is recorded with its risk, and the report is complete and on time.
+      steps:
+        - action: Compare the software versions, configuration and integrations of the 2 environments.
+          expected: Each difference found is in the record.
+        - action: Look up the risk of each recorded difference in the test plan.
+          expected: Each difference has a stated risk.
+        - action: Read the test completion report.
+          expected: It has tests run and passed, open defects by severity, residual risks and deviations, and is dated before the release decision.
+    sv:
+      title: Jämförelse av miljöer och testslutrapporten
+      description: Jämför acceptanstestmiljön med produktion och granskar testslutrapporten.
+      preconditions: Förteckningar över versioner och konfiguration i båda miljöerna, dokumentationen av skillnader och testslutrapporten.
+      expected: Varje skillnad är dokumenterad med sin risk, och rapporten är komplett och kom i tid.
+      steps:
+        - action: Jämför programversioner, konfiguration och integrationer i de 2 miljöerna.
+          expected: Varje skillnad som hittas finns i dokumentationen.
+        - action: Slå upp risken för varje dokumenterad skillnad i testplanen.
+          expected: Varje skillnad har en angiven risk.
+        - action: Läs testslutrapporten.
+          expected: Den har körda och godkända test, öppna fel per allvarlighetsgrad, kvarstående risker och avvikelser, och är daterad före beslutet om release.

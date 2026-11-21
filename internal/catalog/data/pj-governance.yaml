@@ -324,6 +324,118 @@ requirements:
           text: Varje rapport under de senaste 6 månaderna skickades inom 5 arbetsdagar efter månadsskiftet och innehåller de 5 uppräknade delarna.
           threshold: ≤ 5 arbetsdagar efter månadsskiftet
 
+  - id: PJGOV-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [initiation, information-security, risk]
+    refs: ["ISO/IEC 27001:2022 A.5.8"]
+    tests: [PJGOV-T10]
+    en:
+      title: Information security assessment at project initiation
+      description: The project MUST complete an information security risk assessment of the planned solution before the initiation stage gate, and record the resulting security requirements in the requirements baseline.
+      rationale: Security needs found after the design is fixed cost far more to meet and are often traded away under schedule pressure.
+      criteria:
+        - method: review
+          text: The assessment is dated before the initiation gate, and each security requirement it lists has an identifier in the requirements baseline.
+    sv:
+      title: Bedömning av informationssäkerhet när projektet initieras
+      description: Projektet SKA genomföra en riskbedömning av informationssäkerheten i den planerade lösningen före beslutspunkten för initiering, och föra in de säkerhetskrav som bedömningen ger i kravbaslinjen.
+      rationale: Säkerhetsbehov som upptäcks när designen redan är låst kostar mycket mer att uppfylla och prioriteras ofta bort under tidspress.
+      criteria:
+        - method: review
+          text: Bedömningen är daterad före beslutspunkten för initiering, och varje säkerhetskrav den listar har en identitet i kravbaslinjen.
+
+  - id: PJGOV-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [initiation, privacy, dpia]
+    refs: ["GDPR Art. 35(1)", "GDPR Art. 25(1)"]
+    tests: [PJGOV-T10]
+    en:
+      title: Data protection impact screening before the design is approved
+      description: The project MUST screen the planned processing of personal data against the criteria for a data protection impact assessment before the design is approved, and carry out the assessment when the screening shows a high risk.
+      rationale: An impact assessment done after the design is fixed cannot shape the solution, which the law expects it to do.
+      criteria:
+        - method: review
+          text: A dated screening exists before the design approval, and where it shows a high risk an approved impact assessment exists before the design approval.
+    sv:
+      title: Bedömning av behovet av konsekvensbedömning innan designen godkänns
+      description: Projektet SKA pröva den planerade behandlingen av personuppgifter mot kriterierna för en konsekvensbedömning avseende dataskydd innan designen godkänns, och genomföra konsekvensbedömningen när prövningen visar en hög risk.
+      rationale: En konsekvensbedömning som görs när designen redan är låst kan inte påverka lösningen, vilket lagen förutsätter att den gör.
+      criteria:
+        - method: review
+          text: En daterad prövning finns före godkännandet av designen, och där den visar hög risk finns en godkänd konsekvensbedömning före godkännandet.
+
+  - id: PJGOV-17
+    type: business
+    obligation: must
+    priority: medium
+    tags: [decision-log, governance, traceability]
+    refs: ["ISO 21502:2020 §4.3 (project governance)"]
+    tests: [PJGOV-T11]
+    en:
+      title: Decision log with date, decision maker and basis
+      description: The project MUST keep a decision log in which each decision that changes scope, schedule, cost or risk has a date, the name of the decision maker, the basis for the decision and a reference to the affected baseline.
+      rationale: Without a record of who decided what and why, later disputes and audits cannot be resolved and the same questions are decided again.
+      criteria:
+        - method: inspection
+          text: A sample of 10 decisions from the steering group minutes all appear in the log with the 4 fields filled in.
+    sv:
+      title: Beslutslogg med datum, beslutsfattare och underlag
+      description: Projektet SKA föra en beslutslogg där varje beslut som ändrar omfattning, tidplan, kostnad eller risk har datum, beslutsfattarens namn, beslutsunderlaget och en hänvisning till den baslinje som påverkas.
+      rationale: Utan en dokumentation av vem som beslutade vad och varför går senare tvister och revisioner inte att reda ut, och samma frågor beslutas om igen.
+      criteria:
+        - method: inspection
+          text: Ett urval av 10 beslut ur styrgruppens protokoll finns i loggen med de 4 fälten ifyllda.
+
+  - id: PJGOV-18
+    type: business
+    obligation: should
+    priority: medium
+    tags: [tailoring, method, initiation]
+    refs: ["PRINCE2 Tailor to suit the project", "ISO 21502:2020 §4.3 (project governance)"]
+    tests: [PJGOV-T12]
+    en:
+      title: Tailoring of the project method approved at initiation
+      description: The project SHOULD document how it tailors the organisation's project method, listing each omitted or changed process step with its reason, and have the sponsor approve the tailoring at initiation.
+      rationale: An approved tailoring keeps the method proportionate to the project and lets reviewers judge the project against what was agreed.
+      criteria:
+        - method: review
+          text: The project initiation document has a tailoring section with a reason for each omitted or changed step and the sponsor's approval.
+    sv:
+      title: Anpassningen av projektmetoden godkänns vid initieringen
+      description: Projektet BÖR dokumentera hur det anpassar organisationens projektmetod, med varje utelämnat eller ändrat processteg och skälet till det, och låta beställaren godkänna anpassningen vid initieringen.
+      rationale: En godkänd anpassning håller metoden i proportion till projektet och låter granskare bedöma projektet mot det som avtalades.
+      criteria:
+        - method: review
+          text: Projektdirektivet har ett avsnitt om anpassning med ett skäl för varje utelämnat eller ändrat steg och beställarens godkännande.
+
+  - id: PJGOV-19
+    type: business
+    obligation: must
+    priority: medium
+    tags: [dependencies, schedule, programme]
+    refs: ["ISO 21502:2020 (project interdependencies)"]
+    tests: [PJGOV-T13]
+    en:
+      title: Register of external dependencies reviewed each month
+      description: The project MUST keep a register of dependencies on other projects and suppliers, with the delivering party, the needed date and the agreed date, and review each open dependency with the delivering party at least once a month.
+      rationale: Late deliveries from other projects are a frequent cause of slippage, and they are only caught in time when someone checks them regularly.
+      criteria:
+        - method: inspection
+          text: Each open dependency has the 3 fields and a review date less than 31 days old.
+          threshold: "review interval ≤ 1 month"
+    sv:
+      title: Register över externa beroenden som följs upp varje månad
+      description: Projektet SKA föra ett register över beroenden till andra projekt och leverantörer, med levererande part, behövt datum och avtalat datum, och gå igenom varje öppet beroende med den levererande parten minst en gång i månaden.
+      rationale: Sena leveranser från andra projekt är en vanlig orsak till förseningar, och de upptäcks i tid bara när någon kontrollerar dem regelbundet.
+      criteria:
+        - method: inspection
+          text: Varje öppet beroende har de 3 fälten och ett uppföljningsdatum som är högst 31 dagar gammalt.
+          threshold: "uppföljningsintervall ≤ 1 månad"
+
 tests:
   - id: PJGOV-T01
     priority: critical
@@ -594,3 +706,123 @@ tests:
           expected: Det ligger inom de senaste 3 månaderna.
         - action: Jämför utskicksdatumet för varje lägesrapport med månadsskiftet och kontrollera innehållet.
           expected: Varje rapport skickades inom 5 arbetsdagar och innehåller milstolpar, kostnad, de 5 främsta riskerna, öppna ärenden och beslut som behövs.
+
+  - id: PJGOV-T10
+    priority: high
+    execution: manual
+    tags: [initiation, information-security, privacy]
+    refs: ["ISO/IEC 27001:2022 A.5.8", "GDPR Art. 35(1)"]
+    en:
+      title: Security and privacy assessments before the gates
+      description: Checks that the information security assessment and the data protection screening were done before the relevant gates and fed into the requirements.
+      preconditions: The initiation gate minutes, the design approval, the security risk assessment, the screening and any impact assessment.
+      expected: Both assessments predate their gates, and their results are in the requirements baseline.
+      steps:
+        - action: Compare the date of the security risk assessment with the date of the initiation gate.
+          expected: The assessment is earlier.
+        - action: Look up each security requirement from the assessment in the requirements baseline.
+          expected: Each has an identifier in the baseline.
+        - action: Compare the date of the data protection screening with the design approval.
+          expected: The screening is earlier.
+        - action: Where the screening shows a high risk, check the impact assessment.
+          expected: An approved impact assessment exists, dated before the design approval.
+    sv:
+      title: Säkerhets- och dataskyddsbedömningar före beslutspunkterna
+      description: Kontrollerar att bedömningen av informationssäkerhet och prövningen av dataskydd gjordes före respektive beslutspunkt och fördes in i kraven.
+      preconditions: Protokollet från beslutspunkten för initiering, godkännandet av designen, riskbedömningen av säkerheten, prövningen och eventuell konsekvensbedömning.
+      expected: Båda bedömningarna är äldre än sina beslutspunkter, och resultaten finns i kravbaslinjen.
+      steps:
+        - action: Jämför datumet för riskbedömningen av säkerheten med datumet för beslutspunkten för initiering.
+          expected: Bedömningen är tidigare.
+        - action: Slå upp varje säkerhetskrav från bedömningen i kravbaslinjen.
+          expected: Varje krav har en identitet i baslinjen.
+        - action: Jämför datumet för prövningen av dataskydd med godkännandet av designen.
+          expected: Prövningen är tidigare.
+        - action: Där prövningen visar hög risk, kontrollera konsekvensbedömningen.
+          expected: En godkänd konsekvensbedömning finns, daterad före godkännandet av designen.
+
+  - id: PJGOV-T11
+    priority: medium
+    execution: manual
+    tags: [decision-log]
+    refs: ["ISO 21502:2020 §4.3 (project governance)"]
+    en:
+      title: Steering group decisions compared with the decision log
+      description: Samples decisions from the steering group minutes and looks them up in the decision log.
+      preconditions: The steering group minutes of the last 6 months and the decision log.
+      expected: Each sampled decision is in the log with date, decision maker, basis and baseline reference.
+      steps:
+        - action: Pick 10 decisions on scope, schedule, cost or risk from the minutes.
+          expected: Each decision has an entry in the log.
+        - action: Check the fields of each entry.
+          expected: Date, decision maker, basis and baseline reference are filled in.
+    sv:
+      title: Styrgruppens beslut jämförs med beslutsloggen
+      description: Gör ett urval av beslut ur styrgruppens protokoll och slår upp dem i beslutsloggen.
+      preconditions: Styrgruppens protokoll för de senaste 6 månaderna och beslutsloggen.
+      expected: Varje beslut i urvalet finns i loggen med datum, beslutsfattare, underlag och hänvisning till baslinjen.
+      steps:
+        - action: Välj 10 beslut om omfattning, tidplan, kostnad eller risk ur protokollen.
+          expected: Varje beslut har en post i loggen.
+        - action: Kontrollera fälten i varje post.
+          expected: Datum, beslutsfattare, underlag och hänvisning till baslinjen är ifyllda.
+
+  - id: PJGOV-T12
+    priority: low
+    execution: manual
+    tags: [tailoring, method]
+    refs: ["PRINCE2 Tailor to suit the project"]
+    en:
+      title: Tailoring section of the project initiation document
+      description: Compares the project's tailoring with the organisation's project method.
+      preconditions: The organisation's project method and the approved project initiation document.
+      expected: Each departure from the method is listed with a reason and approved by the sponsor.
+      steps:
+        - action: Compare the process steps of the method with those the project plan uses.
+          expected: Each omitted or changed step is listed in the tailoring section.
+        - action: Read the reasons in the tailoring section.
+          expected: Each listed step has a reason.
+        - action: Check the approval of the document.
+          expected: The sponsor has approved it.
+    sv:
+      title: Avsnittet om anpassning i projektdirektivet
+      description: Jämför projektets anpassning med organisationens projektmetod.
+      preconditions: Organisationens projektmetod och det godkända projektdirektivet.
+      expected: Varje avvikelse från metoden är listad med ett skäl och godkänd av beställaren.
+      steps:
+        - action: Jämför metodens processteg med de steg som projektplanen använder.
+          expected: Varje utelämnat eller ändrat steg finns i avsnittet om anpassning.
+        - action: Läs skälen i avsnittet om anpassning.
+          expected: Varje listat steg har ett skäl.
+        - action: Kontrollera godkännandet av dokumentet.
+          expected: Beställaren har godkänt det.
+
+  - id: PJGOV-T13
+    priority: medium
+    execution: manual
+    tags: [dependencies]
+    refs: ["ISO 21502:2020 (project interdependencies)"]
+    en:
+      title: Inspection of the dependency register
+      description: Checks the contents and review dates of the register of external dependencies.
+      preconditions: The dependency register and the project schedule.
+      expected: Each open dependency is complete and was reviewed within the last month.
+      steps:
+        - action: Search the schedule for activities that wait on another project or supplier.
+          expected: Each such activity has an entry in the register.
+        - action: Check the fields of each open entry.
+          expected: Delivering party, needed date and agreed date are filled in.
+        - action: Read the latest review date of each open entry.
+          expected: It is at most 31 days old.
+    sv:
+      title: Inspektion av registret över beroenden
+      description: Kontrollerar innehåll och uppföljningsdatum i registret över externa beroenden.
+      preconditions: Registret över beroenden och projektets tidplan.
+      expected: Varje öppet beroende är komplett och har följts upp under den senaste månaden.
+      steps:
+        - action: Sök i tidplanen efter aktiviteter som väntar på ett annat projekt eller en leverantör.
+          expected: Varje sådan aktivitet har en post i registret.
+        - action: Kontrollera fälten i varje öppen post.
+          expected: Levererande part, behövt datum och avtalat datum är ifyllda.
+        - action: Läs det senaste uppföljningsdatumet för varje öppen post.
+          expected: Det är högst 31 dagar gammalt.

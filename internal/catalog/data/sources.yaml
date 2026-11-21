@@ -1842,3 +1842,26 @@ sources:
     jurisdiction: US
     name: {en: "NIST system and platform security guidance (SP 800-160, 800-193, 800-90B)", sv: "NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)"}
     match: ["NIST SP 800-160", "NIST SP 800-193", "NIST SP 800-90B"]
+
+  # --- Projects, services, facilities, governance, documentation and education ---
+  - id: scrum-guide
+    kind: practice
+    jurisdiction: international
+    short: Scrum Guide
+    name: {en: "The Scrum Guide (Schwaber and Sutherland)", sv: "Scrumguiden (Schwaber och Sutherland)"}
+    match: ["Scrum Guide"]
+    url: https://scrumguides.org/scrum-guide.html
+  - id: safe
+    kind: practice
+    jurisdiction: international
+    short: SAFe
+    name: {en: "Scaled Agile Framework (SAFe)", sv: "Scaled Agile Framework (SAFe), ramverk för skalad agilitet"}
+    match: ["SAFe "]
+    url: https://framework.scaledagile.com/
+  - id: iso-21504
+    kind: standard
+    jurisdiction: international
+    short: ISO 21504
+    name: {en: "ISO 21504 Project, programme and portfolio management: guidance on portfolio management", sv: "ISO 21504 Projekt-, program- och portföljstyrning: vägledning för portföljstyrning"}
+    match: ["ISO 21504"]
+    url: https://www.iso.org/search.html?q=ISO%2021504
