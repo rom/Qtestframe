@@ -19,8 +19,8 @@ import { presetFor, presetKey, presetTokens } from './presets'
 import { applyTheme, bootTheme, currentPresetKey, localTheme, resetThemeState } from './apply'
 import * as index from './index'
 
-const ALL = ['light', 'dark', 'system', 'spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'crazy', 'ocean', 'forest', 'sunset', 'nordic', 'lavender', 'high_contrast']
-const DARK = ['dark', 'camouflage', 'city_camouflage', 'navy', 'green_console', 'forest', 'high_contrast']
+const ALL = ['light', 'dark', 'system', 'spring', 'autumn', 'desert', 'camouflage', 'city_camouflage', 'arctic_camouflage', 'navy', 'midnight', 'green_console', 'amber_terminal', 'crazy', 'ocean', 'forest', 'sunset', 'nordic', 'lavender', 'rose', 'high_contrast', 'high_contrast_light']
+const DARK = ['dark', 'camouflage', 'city_camouflage', 'navy', 'midnight', 'green_console', 'amber_terminal', 'forest', 'high_contrast']
 const PAINTED = THEME_IDS.filter((t) => t !== 'system') as ConcreteThemeId[]
 
 describe('contrast', () => {
@@ -91,6 +91,7 @@ describe('theme registry', () => {
       for (const v of Object.values(d.colors!).flat()) expect(() => parseColor(v as string), `${id} ${v}`).not.toThrow()
     }
     expect(THEME_DEFS.green_console.mono).toBe(true)
+    expect(THEME_DEFS.amber_terminal.mono).toBe(true)
   })
   it('validates ids', () => {
     expect(isThemeId('navy')).toBe(true)
@@ -114,10 +115,35 @@ describe('WCAG AA contrast of every theme', () => {
     })
   }
   it('checks pattern colours too', () => {
-    const names = contrastPairs(THEME_DEFS.camouflage.colors!).map((p) => p.name)
-    expect(names.some((n) => n.startsWith('sidebar text on pattern'))).toBe(true)
-    expect(names.some((n) => n.startsWith('top bar text on pattern'))).toBe(true)
+    for (const id of ['camouflage', 'city_camouflage', 'arctic_camouflage'] as const) {
+      const names = contrastPairs(THEME_DEFS[id].colors!).map((p) => p.name)
+      expect(names.some((n) => n.startsWith('sidebar text on pattern')), id).toBe(true)
+      expect(names.some((n) => n.startsWith('top bar text on pattern')), id).toBe(true)
+    }
   })
+  it('gives camouflage patterns visible spots', () => {
+    // the spots must stand out from the plain background, not only be listed
+    for (const id of ['camouflage', 'city_camouflage', 'arctic_camouflage'] as const) {
+      const c = THEME_DEFS[id].colors!
+      const sidebar = Math.max(...c.sidebarPattern!.map((p) => contrastRatio(p, c.sidebarBg)))
+      const topbar = Math.max(...c.topbarPattern!.map((p) => contrastRatio(p, c.topbarBg)))
+      expect(sidebar, `${id} sidebar`).toBeGreaterThanOrEqual(1.25)
+      expect(topbar, `${id} top bar`).toBeGreaterThanOrEqual(1.15)
+    }
+  })
+})
+
+describe('WCAG AAA contrast of the high contrast themes', () => {
+  for (const id of ['high_contrast', 'high_contrast_light'] as const) {
+    it(id, () => {
+      // 7:1 for text, 4.5:1 for large text and UI components (WCAG 1.4.6 and stricter than 1.4.11)
+      const failures = contrastPairs(THEME_DEFS[id].colors!)
+        .map((p) => ({ ...p, ratio: contrastRatio(p.fg, p.bg) }))
+        .filter((p) => p.ratio < (p.kind === 'text' ? 7 : 4.5))
+        .map((p) => `${p.name}: ${p.fg} on ${p.bg} = ${p.ratio.toFixed(2)}`)
+      expect(failures).toEqual([])
+    })
+  }
 })
 
 describe('styles.css mirrors the palettes', () => {
@@ -159,6 +185,18 @@ describe('styles.css mirrors the palettes', () => {
     }
     expect(value(root, '--qtf-sidebar-active')).toBe(THEME_DEFS.light.colors!.sidebarActiveBg)
     expect(value(dark, '--qtf-sidebar-active')).toBe(THEME_DEFS.dark.colors!.sidebarActiveBg)
+  })
+  it('paints the listed camouflage pattern colours', () => {
+    for (const id of ['camouflage', 'city_camouflage', 'arctic_camouflage'] as const) {
+      const c = THEME_DEFS[id].colors!
+      const rules = (part: string) => {
+        const i = css.indexOf(`:root[data-theme="${id}"] ${part} {`)
+        expect(i, `${id} ${part}`).toBeGreaterThan(-1)
+        return css.slice(i, css.indexOf('}', i))
+      }
+      for (const p of c.sidebarPattern!) expect(rules('.sidebar'), `${id} sidebar ${p}`).toContain(p)
+      for (const p of c.topbarPattern!) if (p !== c.topbarBg) expect(rules('.topbar'), `${id} top bar ${p}`).toContain(p)
+    }
   })
   it('disables theme motion under prefers-reduced-motion', () => {
     expect(css).toContain('@media (prefers-reduced-motion: reduce)')

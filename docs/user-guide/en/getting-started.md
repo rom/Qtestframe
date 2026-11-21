@@ -50,7 +50,7 @@ From left to right:
 | **Search** field | Searches requirements, tests and runs in all projects of the organisation. Type text or a [query](search-and-filters.md) and press <kbd>Enter</kbd>. On phones it is a magnifier button. |
 | **Help** (?) | Opens the **User guide**, **Help for this page**, **Query language**, **References and standards** and **Restart intro tour**. |
 | **Undo / Redo / Undo history** | Undoes and redoes your changes, see [Undo and redo](#undo-and-redo). |
-| **Colour theme** | Picks one of the seventeen themes, see [Themes](accessibility-and-languages.md#themes). |
+| **Colour theme** | Picks one of the twenty-two themes, see [Themes](accessibility-and-languages.md#themes). |
 | **Light mode / Dark mode** | Switches between light and dark quickly. |
 | **User menu** | Your name and role, **Profile & password**, light/dark mode, **Language** and **Sign out**. |
 

@@ -16,15 +16,20 @@ const SERIES: Record<ConcreteThemeId, string[]> = {
   desert: ['#d7a94e', '#c3603c', '#56644f', '#8d6e48', '#e0bf7c', '#9a4f32', '#6f8f7a'],
   camouflage: ['#989042', '#c0b080', '#7d8a4a', '#a98d5f', '#5c6b3a', '#d2c79a', '#8a6f4a'],
   city_camouflage: ['#829fbb', '#b3b8bf', '#6d8aa3', '#9aa4ad', '#c0cad4', '#5f7690', '#8e98a3'],
+  arctic_camouflage: ['#4a749b', '#8f9eae', '#1f3e58', '#6890b6', '#5a6977', '#92b3cf', '#38424c'],
   navy: ['#f2d27a', '#7fa6e0', '#c9a64e', '#9fb9e3', '#e0b85a', '#5b86c9', '#d9e3f3'],
+  midnight: ['#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#c4b5fd', '#22d3ee', '#fb7185'],
   green_console: ['#66ff8a', '#1fd455', '#a0ffb4', '#17a843', '#cfffd9', '#56ae6e', '#33f06a'],
+  amber_terminal: ['#ffc54d', '#e69a00', '#ffd98a', '#b87a00', '#fff0cc', '#d4a965', '#ff8c1a'],
   crazy: ['#ff4fb7', '#22d3ee', '#ffe14d', '#6a2bd9', '#2dd47a', '#ff8a1f', '#c2187a'],
   ocean: ['#0b6680', '#2bb3c9', '#f28c6b', '#5c7cfa', '#1f9d76', '#e0b545', '#94a3b8'],
   forest: ['#8fcf78', '#d9b45a', '#6fb3a8', '#c98a5a', '#a7c96f', '#7d9fd1', '#cfe0c9'],
   sunset: ['#e8743b', '#b23b0a', '#f2b134', '#7a2c43', '#d95d8a', '#6c5b9e', '#f0b08f'],
   nordic: ['#5e81ac', '#bf616a', '#a3be8c', '#d08770', '#b48ead', '#88c0d0', '#ebcb8b'],
   lavender: ['#9b72d6', '#e48bb5', '#6fb7d9', '#c9a0f0', '#7fc8a9', '#f0b77a', '#6a3fab'],
+  rose: ['#e06f92', '#73203f', '#f0a35e', '#8a6fb8', '#4f9d8a', '#cc4773', '#d9a0b4'],
   high_contrast: ['#ffd400', '#00e5ff', '#ff6ec7', '#7cff4f', '#ff9a3c', '#b9a6ff', '#ffffff'],
+  high_contrast_light: ['#000000', '#b30000', '#006b1f', '#7a1fa2', '#a65200', '#005f73', '#525252'],
 }
 
 export interface ChartColors {

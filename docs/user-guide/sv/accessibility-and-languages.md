@@ -1,6 +1,6 @@
 # Tillgänglighet och språk
 
-Qtestframe är utformat för att uppfylla **WCAG 2.1 nivå AA**. Det fungerar med enbart tangentbord, med skärmläsare, med webbläsarens zoom, på mobiler och surfplattor, på engelska och svenska och i sjutton färgteman.
+Qtestframe är utformat för att uppfylla **WCAG 2.1 nivå AA**. Det fungerar med enbart tangentbord, med skärmläsare, med webbläsarens zoom, på mobiler och surfplattor, på engelska och svenska och i tjugotvå färgteman.
 
 ## Tangentbord
 
@@ -57,9 +57,12 @@ Välj tema med **Färgtema** i övre fältet eller under **Profil → Inställni
 | **Mörkt** | mörka ytor, skonsamt för ögonen i svagt ljus |
 | **Följ operativsystemet** | ljust eller mörkt, enligt inställningen i din dator eller mobil |
 | **Vår**, **Höst**, **Öken** | ljusa teman med årstidsfärger |
-| **Hav**, **Solnedgång**, **Nordisk**, **Lavendel** | ljusa teman: havsblått, varma kvällsfärger, lugnt gråblått, mjukt violett |
-| **Kamouflage**, **Stadskamouflage**, **Marinblått**, **Grön konsol**, **Skog** | mörka teman |
-| **Hög kontrast** | svart, vitt och gult med tydliga ramar och understrukna länkar, för nedsatt syn |
+| **Hav**, **Solnedgång**, **Nordisk**, **Lavendel**, **Ros** | ljusa teman: havsblått, varma kvällsfärger, lugnt gråblått, mjukt violett, mjukt rosa |
+| **Kamouflage**, **Stadskamouflage** | mörka teman med kamouflagemönster i sidopanelen och övre fältet |
+| **Arktiskt kamouflage** | ett ljust tema med vinterkamouflage i vitt, ljusgrått och blågrått |
+| **Marinblått**, **Midnatt**, **Skog** | mörka teman: marinblått med guld, djupt blåviolett, mörkgrönt |
+| **Grön terminal**, **Bärnstensterminal** | mörka teman med jämnbreda tecken, som en gammal datorskärm |
+| **Hög kontrast mörkt**, **Hög kontrast ljust** | vitt på svart (med gult) eller svart på vitt (med blått), med tydliga ramar och understrukna länkar, för nedsatt syn; texten uppfyller den strängare AAA-kontrasten 7:1 |
 | **Galet** | ett lekfullt, färgstarkt tema |
 
 Alla teman uppfyller AA-kraven på kontrast för text och kontroller. Qtestframe respekterar också systemets inställning för **minskad rörelse**.

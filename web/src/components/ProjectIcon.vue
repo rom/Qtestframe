@@ -38,7 +38,8 @@ const style = computed(() => ({
   flex: none;
   overflow: hidden;
   background: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
-  color: var(--p-primary-color);
+  /* a little text colour keeps the initials at 4.5:1 on the tint in every theme (themes.test.ts) */
+  color: color-mix(in srgb, var(--p-primary-color) 75%, var(--qtf-text));
   font-weight: 700;
   line-height: 1;
 }
