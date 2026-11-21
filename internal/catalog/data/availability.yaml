@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: high
     tags: [uptime, synthetic-monitoring]
-    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)", "ISO/IEC 25023:2016 §8.6 (reliability measures)"]
+    refs: ["Google SRE book ch. 6 (Monitoring Distributed Systems)", "ISO/IEC 25023:2016 §8.6 (reliability measures)", "ISO/IEC 27001:2022 A.8.16"]
     tests: [AVL-T02]
     en:
       title: External availability probe
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [redundancy, architecture]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.14 (redundancy of information processing facilities)", "ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)"]
+    refs: ["ISO/IEC 27001:2022 A.8.14 (redundancy of information processing facilities)", "ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Regulation (EU) 2022/2554 (DORA) Art. 7", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)"]
     tests: [AVL-T04]
     en:
       title: No single point of failure
@@ -130,7 +130,7 @@ requirements:
     obligation: must
     priority: high
     tags: [failover, zone]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)"]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)", "ISO/IEC 27001:2022 A.8.14", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [AVL-T05]
     en:
       title: Failover after loss of an availability zone
@@ -154,7 +154,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [failover, database, replication]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "Google SRE book ch. 26 (Data Integrity)"]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "Google SRE book ch. 26 (Data Integrity)", "ISO/IEC 27001:2022 A.8.14", "Regulation (EU) 2022/2554 (DORA) Art. 12"]
     tests: [AVL-T06]
     en:
       title: Database failover without loss of committed data
@@ -226,7 +226,7 @@ requirements:
     obligation: must
     priority: high
     tags: [status-page, incident, communication]
-    refs: ["ITIL 4 Incident management", "Google SRE book ch. 14 (Managing Incidents)"]
+    refs: ["ITIL 4 Incident management", "Google SRE book ch. 14 (Managing Incidents)", "Regulation (EU) 2022/2554 (DORA) Art. 14"]
     tests: [AVL-T08]
     en:
       title: Status page updated during incidents
@@ -380,7 +380,7 @@ tests:
     priority: high
     execution: manual
     tags: [redundancy, architecture-review]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.14"]
+    refs: ["ISO/IEC 27001:2022 A.8.14", "Regulation (EU) 2022/2554 (DORA) Art. 7", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)"]
     en:
       title: Architecture review for single points of failure
       description: Walks through the request path and checks redundancy of each component.
@@ -410,7 +410,7 @@ tests:
     priority: high
     execution: manual
     tags: [failover, drill]
-    refs: ["ISO/IEC 27031:2011", "ISO 22301:2019 §8.5 (exercise programme)"]
+    refs: ["ISO/IEC 27031:2011", "ISO 22301:2019 §8.5 (exercise programme)", "ISO/IEC 27001:2022 A.8.14", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     en:
       title: Failover drill for an availability zone
       description: Isolates one availability zone in a production-like environment under load and measures the interruption.
@@ -502,7 +502,7 @@ tests:
     priority: medium
     execution: manual
     tags: [status-page, incident]
-    refs: ["ITIL 4 Incident management"]
+    refs: ["ITIL 4 Incident management", "Regulation (EU) 2022/2554 (DORA) Art. 14"]
     en:
       title: Status page timeliness and independence
       description: Reviews the status page entries against the incident log and checks where the page is hosted.

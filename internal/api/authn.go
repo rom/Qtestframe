@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -32,8 +33,20 @@ type Principal struct {
 	Token   *model.APIToken
 	// perms are the effective permissions in Tenant, resolved from the
 	// tenant's role set (see resolvePerms); nil means the built-in defaults
-	// of Role.
+	// of Role. Inside a project they are the permissions there (see
+	// access.go: scope).
 	perms []string
+	// roles is the tenant's role set; memberRole the user's organisation
+	// role (also for API tokens, whose Role is the token's).
+	roles      rbac.Set
+	memberRole string
+	// orgPerms are the organisation-level permissions (perms before a
+	// project scoped them); tokenPerms the permissions of an API token's role.
+	orgPerms   []string
+	tokenPerms []string
+	// projectID and access: the project the request is about (see scope).
+	projectID string
+	access    *model.ProjectAccessInfo
 }
 
 // Can reports whether the principal holds permission p in its tenant.
@@ -81,6 +94,13 @@ func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRole stri
 		return err
 	}
 	perms := set.PermissionsOf(p.Role)
+	p.roles = set
+	if p.Token == nil {
+		p.memberRole = p.Role
+	} else {
+		p.memberRole = memberRole
+		p.tokenPerms = append([]string{}, perms...)
+	}
 	if p.Token != nil && memberRole != "" {
 		mine := set.PermissionsOf(memberRole)
 		if !rbac.Subset(perms, mine) {
@@ -89,6 +109,7 @@ func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRole stri
 		perms = rbac.Intersect(perms, mine)
 	}
 	p.perms = perms
+	p.orgPerms = perms
 	return nil
 }
 
@@ -123,6 +144,15 @@ func (s *Server) authed(fn handlerFunc, perms ...string) http.Handler {
 		}
 		if p.User.MustChangePassword && p.Token == nil && !strings.HasPrefix(r.URL.Path, "/api/v1/auth/") {
 			writeError(w, http.StatusForbidden, "password_change_required", "you must change your password first")
+			return
+		}
+		// the MFA policy requires a second factor this session has to set up first
+		if p.Session != nil && p.Session.MFAEnrolRequired && !strings.HasPrefix(r.URL.Path, "/api/v1/auth/") {
+			writeError(w, http.StatusForbidden, "mfa_enrolment_required", "you must set up multi-factor authentication first")
+			return
+		}
+		// per-project access: the request's project scopes the permissions
+		if !s.scopeRequest(w, r, p) {
 			return
 		}
 		for _, perm := range perms {
@@ -215,7 +245,7 @@ func (s *Server) sameOrigin(r *http.Request) bool {
 	if ou.Host == r.Host {
 		return true
 	}
-	if b, err := url.Parse(s.Cfg.Server.BaseURL); err == nil && b.Host != "" && strings.EqualFold(b.Scheme+"://"+b.Host, ou.Scheme+"://"+ou.Host) {
+	if b, err := url.Parse(s.conf().Server.BaseURL); err == nil && b.Host != "" && strings.EqualFold(b.Scheme+"://"+b.Host, ou.Scheme+"://"+ou.Host) {
 		return true
 	}
 	return false
@@ -233,7 +263,9 @@ func (s *Server) audit(ctx context.Context, p *Principal, action, entity, id, de
 
 // ---------------------------------------------------------------- sessions
 
-func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.User, tenantID string) (*model.Session, error) {
+// startSession creates a session and its cookie. enrolMFA restricts the
+// session to /api/v1/auth/ until the user has set up a second factor.
+func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.User, tenantID string, enrolMFA bool) (*model.Session, error) {
 	ctx := r.Context()
 	if tenantID == "" {
 		ms, err := s.Store.ListUserMemberships(ctx, u.ID)
@@ -260,15 +292,15 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 	tok := auth.RandomToken(32)
 	sess := &model.Session{
 		ID: auth.HashToken(tok), UserID: u.ID, TenantID: tenantID,
-		CSRF: auth.RandomToken(24), ExpiresAt: time.Now().Add(s.Cfg.Auth.SessionTTL),
-		IP: s.clientIP(r), UserAgent: r.UserAgent(),
+		CSRF: auth.RandomToken(24), ExpiresAt: time.Now().Add(s.conf().Auth.SessionTTL),
+		IP: s.clientIP(r), UserAgent: r.UserAgent(), MFAEnrolRequired: enrolMFA,
 	}
 	if err := s.Store.CreateSession(ctx, sess); err != nil {
 		return nil, err
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: tok, Path: "/", HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode,
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode,
 		Expires: sess.ExpiresAt,
 	})
 	return sess, nil
@@ -276,7 +308,7 @@ func (s *Server) startSession(w http.ResponseWriter, r *http.Request, u *model.U
 
 func (s *Server) clearCookie(w http.ResponseWriter, name string) {
 	http.SetCookie(w, &http.Cookie{Name: name, Value: "", Path: "/", MaxAge: -1, HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
 }
 
 type meResponse struct {
@@ -290,6 +322,8 @@ type meResponse struct {
 	PreviousLogin *model.LoginEvent `json:"previous_login"`
 	FailedSince   int               `json:"failed_logins_since_previous"`
 	FirstLogin    bool              `json:"first_login"`
+	// MFA is the caller's multi-factor state (sessions only).
+	MFA *mfaStatus `json:"mfa,omitempty"`
 }
 
 func (s *Server) me(ctx context.Context, p *Principal) (*meResponse, error) {
@@ -303,6 +337,12 @@ func (s *Server) me(ctx context.Context, p *Principal) (*meResponse, error) {
 		if err := s.loginInfo(ctx, p, res); err != nil {
 			return nil, err
 		}
+		if res.MFA, err = s.mfaStatusOf(ctx, p, ms); err != nil {
+			return nil, err
+		}
+		u := *p.User
+		u.MFAEnabled = res.MFA.Enabled
+		res.User = &u
 	}
 	return res, nil
 }
@@ -354,15 +394,21 @@ type providerInfo struct {
 }
 
 func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
+	c := s.conf()
 	res := struct {
 		Local bool           `json:"local"`
 		OIDC  []providerInfo `json:"oidc"`
 		SAML  []providerInfo `json:"saml"`
-	}{Local: s.Cfg.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}}
-	for _, o := range s.Cfg.Auth.OIDC {
+		// PasswordMinLength is the minimum length of local passwords.
+		PasswordMinLength int `json:"password_min_length"`
+	}{Local: c.Auth.Local, OIDC: []providerInfo{}, SAML: []providerInfo{}, PasswordMinLength: minPassword(c)}
+	for _, o := range c.Auth.OIDC {
+		if !o.On() {
+			continue
+		}
 		res.OIDC = append(res.OIDC, providerInfo{o.Name, displayName(o.DisplayName, o.Name), "/api/v1/auth/oidc/" + url.PathEscape(o.Name) + "/login"})
 	}
-	for _, sc := range s.Cfg.Auth.SAML {
+	for _, sc := range s.conf().Auth.SAML {
 		res.SAML = append(res.SAML, providerInfo{sc.Name, displayName(sc.DisplayName, sc.Name), "/api/v1/auth/saml/" + url.PathEscape(sc.Name) + "/login"})
 	}
 	writeJSON(w, http.StatusOK, res)
@@ -376,7 +422,7 @@ func displayName(d, n string) string {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
-	if !s.Cfg.Auth.Local {
+	if !s.conf().Auth.Local {
 		writeError(w, http.StatusForbidden, "forbidden", "local login is disabled")
 		return
 	}
@@ -408,7 +454,6 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "invalid credentials")
 		return
 	}
-	s.limiter.reset(key)
 	tenantID := ""
 	if req.Tenant != "" {
 		t, err := s.Store.GetTenantBySlug(ctx, req.Tenant)
@@ -422,11 +467,26 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		tenantID = t.ID
 	}
-	s.completeLogin(w, r, u, tenantID, "local")
+	// the rate limit of this address and account is reset once the second
+	// factor (if any) has been given too
+	s.afterFirstFactor(w, r, u, tenantID, firstFactor{Method: "local", LocalMFA: true, JSON: true, LimiterKey: key})
 }
 
-func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, u *model.User, tenantID, method string) {
-	sess, err := s.startSession(w, r, u, tenantID)
+// loginOpts are the options of completeLoginOpts.
+type loginOpts struct {
+	// JSON answers with /auth/me (local and second-factor sign-ins) instead
+	// of redirecting to the start page (identity provider callbacks).
+	JSON bool
+	// Details are added to the audit entry (e.g. "mfa=totp").
+	Details string
+	// EnrolRequired: the session must set up a second factor first.
+	EnrolRequired bool
+}
+
+// completeLoginOpts starts the session of a complete sign-in (all factors
+// given), records and audits it.
+func (s *Server) completeLoginOpts(w http.ResponseWriter, r *http.Request, u *model.User, tenantID, method string, o loginOpts) {
+	sess, err := s.startSession(w, r, u, tenantID, o.EnrolRequired)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -437,10 +497,10 @@ func (s *Server) completeLogin(w http.ResponseWriter, r *http.Request, u *model.
 		s.fail(w, r, err)
 		return
 	}
-	s.audit(r.Context(), p, "login", "user", u.ID, method)
+	s.audit(r.Context(), p, "login", "user", u.ID, strings.TrimSpace(method+" "+o.Details))
 	s.recordLogin(r, u.ID, method, true) // after the session exists: see loginInfo
 	s.acceptOnSignIn(r.Context(), p)
-	if method != "local" {
+	if !o.JSON {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
@@ -478,6 +538,11 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 		_ = s.Store.DeleteSession(r.Context(), auth.HashToken(c.Value))
 	}
 	s.clearCookie(w, sessionCookie)
+	// also cancels a sign-in waiting for its second factor
+	if ch, err := s.pendingChallenge(r); err == nil {
+		_ = s.Store.DeleteMFAChallenge(r.Context(), ch.ID)
+	}
+	s.clearMFACookie(w)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -533,7 +598,7 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request, p 
 		writeError(w, http.StatusForbidden, "forbidden", "current password is wrong")
 		return
 	}
-	if err := auth.ValidatePassword(req.New); err != nil {
+	if err := auth.ValidatePasswordMin(req.New, minPassword(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -568,7 +633,7 @@ func (s *Server) setState(w http.ResponseWriter, v any) error {
 		return err
 	}
 	http.SetCookie(w, &http.Cookie{Name: stateCookie, Value: val, Path: "/api/v1/auth/", HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode, MaxAge: 600})
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode, MaxAge: 600})
 	return nil
 }
 
@@ -578,7 +643,7 @@ func (s *Server) getState(w http.ResponseWriter, r *http.Request, v any) error {
 		return auth.ErrBadState
 	}
 	http.SetCookie(w, &http.Cookie{Name: stateCookie, Value: "", Path: "/api/v1/auth/", MaxAge: -1, HttpOnly: true,
-		Secure: s.Cfg.Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
+		Secure: s.conf().Auth.CookieSecure, SameSite: http.SameSiteLaxMode})
 	return s.signer.Verify(c.Value, v)
 }
 
@@ -588,7 +653,7 @@ func (s *Server) loginError(w http.ResponseWriter, r *http.Request, provider str
 }
 
 func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.OIDC[r.PathValue("name")]
+	p, ok := s.oidcProvider(r.PathValue("name"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "not_found", "unknown provider")
 		return
@@ -606,7 +671,7 @@ func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.OIDC[r.PathValue("name")]
+	p, ok := s.oidcProvider(r.PathValue("name"))
 	if !ok {
 		writeError(w, http.StatusNotFound, "not_found", "unknown provider")
 		return
@@ -625,7 +690,23 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		s.loginError(w, r, p.Cfg.Name, err)
 		return
 	}
-	s.externalLogin(w, r, id, p.Cfg.Provisioning)
+	// the identity provider's MFA counts unless local_mfa says otherwise
+	idpMFA := p.IdPMFA(id)
+	local := false
+	switch p.LocalMFA() {
+	case config.LocalMFAAlways:
+		local = true
+	case config.LocalMFAUnlessIdPMFA:
+		local = !idpMFA
+	}
+	details := fmt.Sprintf("idp_mfa=%t", idpMFA)
+	if len(id.AMR) > 0 {
+		details += " amr=" + strings.Join(id.AMR, ",")
+	}
+	if id.ACR != "" {
+		details += " acr=" + id.ACR
+	}
+	s.externalLoginMFA(w, r, id, p.Cfg.Provisioning, local, details)
 }
 
 func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request) {
@@ -695,12 +776,18 @@ func (s *Server) handleSAMLACS(w http.ResponseWriter, r *http.Request) {
 // externalLogin maps an external identity to a local user (provisioning
 // it when allowed) and starts a session.
 func (s *Server) externalLogin(w http.ResponseWriter, r *http.Request, id *auth.Identity, prov provisioningCfg) {
+	s.externalLoginMFA(w, r, id, prov, false, "")
+}
+
+// externalLoginMFA is externalLogin where Qtestframe's own second factor
+// applies when localMFA is set (OIDC local_mfa).
+func (s *Server) externalLoginMFA(w http.ResponseWriter, r *http.Request, id *auth.Identity, prov provisioningCfg, localMFA bool, details string) {
 	u, tenantID, err := s.provision(r.Context(), id, prov)
 	if err != nil {
 		s.loginError(w, r, id.Provider, err)
 		return
 	}
-	s.completeLogin(w, r, u, tenantID, id.Provider)
+	s.afterFirstFactor(w, r, u, tenantID, firstFactor{Method: id.Provider, Details: details, LocalMFA: localMFA})
 }
 
 type provisioningCfg = config.Provisioning

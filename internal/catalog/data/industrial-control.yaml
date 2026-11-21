@@ -1,0 +1,897 @@
+area: industrial-control
+prefix: ICS
+group: domain
+name: {en: Industrial automation and control systems, sv: Industriella automations- och styrsystem}
+description:
+  en: Software and systems that monitor and control physical processes (PLCs, RTUs, HMIs, SCADA, engineering workstations), covering zones and conduits, target security levels, asset inventory, secure remote access, authenticated industrial protocols, alarm management, HMI design, patching, controller backup and change control, deterministic cycle times, safe state, separation of safety instrumented systems, time synchronisation and OT monitoring.
+  sv: Programvara och system som övervakar och styr fysiska processer (PLC:er, RTU:er, operatörspaneler, SCADA, ingenjörsstationer), med zoner och ledningar, målsäkerhetsnivåer, tillgångsförteckning, säker fjärråtkomst, autentiserade industriprotokoll, larmhantering, utformning av operatörsbilder, programuppdateringar, säkerhetskopiering och ändringsstyrning av styrsystemens logik, deterministiska cykeltider, säkert läge, åtskillnad av säkerhetssystem, tidssynkronisering och övervakning av OT-nätet.
+
+requirements:
+  - id: ICS-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [zones-and-conduits, segmentation, architecture]
+    refs: ["IEC 62443-3-2:2020 ZCR 3", "IEC 62443-3-3:2013 SR 5.1", "NIST SP 800-82r3 §5"]
+    tests: [ICS-T01, ICS-T02]
+    en:
+      title: Every asset belongs to a documented zone
+      description: The control system architecture MUST assign each component to exactly one security zone and MUST route each data flow between zones through a documented conduit that names the permitted protocols, ports and directions.
+      rationale: Zones and conduits limit how far an attacker or a fault can spread and are the basis for choosing security measures per zone.
+      criteria:
+        - method: inspection
+          text: The zone and conduit register lists each component in the asset inventory in one zone, and each flow seen in a 7-day network capture between zones matches a documented conduit.
+          threshold: 0 undocumented inter-zone flows
+    sv:
+      title: Varje tillgång tillhör en dokumenterad zon
+      description: Styrsystemets arkitektur SKA placera varje komponent i exakt en säkerhetszon och leda varje dataflöde mellan zoner genom en dokumenterad ledning som anger tillåtna protokoll, portar och riktningar.
+      rationale: Zoner och ledningar begränsar hur långt en angripare eller ett fel kan sprida sig och är grunden för att välja skyddsåtgärder per zon.
+      criteria:
+        - method: inspection
+          text: Registret över zoner och ledningar placerar varje komponent i tillgångsförteckningen i en zon, och varje flöde mellan zoner i en nätverksinspelning över 7 dygn motsvarar en dokumenterad ledning.
+          threshold: 0 odokumenterade flöden mellan zoner
+
+  - id: ICS-02
+    type: security
+    obligation: must_not
+    priority: critical
+    tags: [segmentation, dmz, firewall]
+    refs: ["IEC 62443-3-3:2013 SR 5.1", "IEC 62443-3-3:2013 SR 5.2", "NIST SP 800-82r3 §5"]
+    tests: [ICS-T01]
+    en:
+      title: No direct traffic from the enterprise network to the control zone
+      description: The zone boundary MUST NOT forward traffic that starts in the enterprise network and ends in a control zone, so that each such exchange passes through a server in the industrial demilitarised zone.
+      rationale: Direct paths from office networks are the most common way that malware reaches controllers.
+      criteria:
+        - method: test
+          text: Connection attempts from an office computer to a PLC, an HMI and an engineering workstation on their service ports are blocked and logged at the boundary.
+    sv:
+      title: Ingen direkt trafik från kontorsnätet till styrzonen
+      description: Zongränsen SKA INTE vidarebefordra trafik som startar i kontorsnätet och slutar i en styrzon, så att varje sådant utbyte går via en server i den industriella demilitariserade zonen.
+      rationale: Direkta vägar från kontorsnät är det vanligaste sättet för skadlig kod att nå styrsystemen.
+      criteria:
+        - method: test
+          text: Anslutningsförsök från en kontorsdator till en PLC, en operatörspanel och en ingenjörsstation på deras tjänsteportar blockeras och loggas vid gränsen.
+
+  - id: ICS-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-level, risk-assessment, zones-and-conduits]
+    refs: ["IEC 62443-3-2:2020 ZCR 5", "IEC 62443-3-2:2020 ZCR 6", "IEC 62443-3-3:2013 Annex B"]
+    tests: [ICS-T02]
+    en:
+      title: Target security level recorded and met per zone
+      description: The zone register MUST record a target security level (SL-T 1 to 4) from the risk assessment for each zone and conduit, and the achieved level of the installed components MUST be recorded next to it with each gap and its compensating measure.
+      rationale: Without a target level there is no agreed measure of how much protection a zone needs, and gaps stay unnoticed.
+      criteria:
+        - method: analysis
+          text: For each zone the register shows SL-T, the achieved level and, where the achieved level is lower, a compensating measure with an owner.
+    sv:
+      title: Målsäkerhetsnivå registreras och uppfylls per zon
+      description: Zonregistret SKA ange en målsäkerhetsnivå (SL-T 1–4) från riskbedömningen för varje zon och ledning, och den uppnådda nivån för de installerade komponenterna SKA anges bredvid med varje gap och dess kompenserande åtgärd.
+      rationale: Utan en målnivå finns inget överenskommet mått på hur mycket skydd en zon behöver, och gap förblir oupptäckta.
+      criteria:
+        - method: analysis
+          text: För varje zon visar registret SL-T, uppnådd nivå och, där den uppnådda nivån är lägre, en kompenserande åtgärd med en ansvarig.
+
+  - id: ICS-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [asset-inventory, plc, rtu, hmi]
+    refs: ["IEC 62443-3-3:2013 SR 7.8", "IEC 62443-4-2:2019 CR 7.8", "IEC 62443-2-1:2024", "NIST SP 800-82r3 §6"]
+    tests: [ICS-T02]
+    en:
+      title: Inventory of controllers, RTUs and HMIs
+      description: The system MUST keep an inventory of each PLC, RTU, HMI, engineering workstation and network device with its zone, location, model, firmware version and owner, and MUST report a device not in the inventory within 24 hours after it first communicates.
+      rationale: Unknown or forgotten devices are not patched or monitored, and an accurate inventory is the starting point of every OT security programme.
+      criteria:
+        - method: test
+          text: A test PLC connected to a control zone appears as an unknown device in the report within 24 hours, and the firmware versions in the inventory match those read from 10 sampled devices.
+          threshold: ≤ 24 h
+    sv:
+      title: Förteckning över styrenheter, RTU:er och operatörspaneler
+      description: Systemet SKA föra en förteckning över varje PLC, RTU, operatörspanel, ingenjörsstation och nätverksenhet med zon, plats, modell, firmwareversion och ansvarig, och rapportera en enhet som saknas i förteckningen inom 24 timmar efter att den först kommunicerar.
+      rationale: Okända eller bortglömda enheter uppdateras inte och övervakas inte, och en korrekt förteckning är utgångspunkten för varje säkerhetsprogram för OT.
+      criteria:
+        - method: test
+          text: En test-PLC som ansluts till en styrzon visas som okänd enhet i rapporten inom 24 timmar, och firmwareversionerna i förteckningen stämmer med dem som läses ut från 10 stickprovsenheter.
+          threshold: ≤ 24 h
+
+  - id: ICS-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [remote-access, mfa, jump-host]
+    refs: ["IEC 62443-3-3:2013 SR 1.13", "IEC 62443-3-3:2013 SR 1.1 RE 2", "IEC 62443-2-4:2015 SP.07", "NIST SP 800-82r3 §6"]
+    tests: [ICS-T03]
+    en:
+      title: Remote access only through a jump host with multi-factor authentication
+      description: Remote access to a control zone MUST go through a jump host in the industrial demilitarised zone that requires multi-factor authentication and an approved access request, and that ends the session after 8 hours.
+      rationale: Vendor and staff remote access is a frequent attack path into control systems, and a single controlled entry point makes it visible and limited.
+      criteria:
+        - method: test
+          text: A remote user without an approved request, or with only a password, cannot reach the control zone, and an approved session is closed after 8 hours.
+          threshold: session ≤ 8 h
+    sv:
+      title: Fjärråtkomst bara via en hoppserver med flerfaktorsautentisering
+      description: Fjärråtkomst till en styrzon SKA gå via en hoppserver i den industriella demilitariserade zonen som kräver flerfaktorsautentisering och en godkänd åtkomstbegäran, och som avslutar sessionen efter 8 timmar.
+      rationale: Fjärråtkomst för leverantörer och personal är en vanlig angreppsväg in i styrsystem, och en enda kontrollerad ingång gör den synlig och begränsad.
+      criteria:
+        - method: test
+          text: En fjärranvändare utan godkänd begäran, eller med bara ett lösenord, når inte styrzonen, och en godkänd session stängs efter 8 timmar.
+          threshold: session ≤ 8 h
+
+  - id: ICS-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [remote-access, session-recording, audit]
+    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 2.12", "IEC 62443-2-4:2015 SP.07"]
+    tests: [ICS-T03]
+    en:
+      title: Remote sessions are recorded
+      description: The jump host MUST record the screen and the commands of each remote session to a control zone, together with the user, the approved request and the start and end times, and MUST keep the recordings for 90 days.
+      rationale: Recordings show exactly what a vendor or an intruder did on the control system and deter misuse.
+      criteria:
+        - method: test
+          text: A completed remote session can be replayed with its user, request number and times, and the recording cannot be deleted by the session user.
+          threshold: kept ≥ 90 days
+    sv:
+      title: Fjärrsessioner spelas in
+      description: Hoppservern SKA spela in skärmen och kommandona i varje fjärrsession till en styrzon, tillsammans med användare, godkänd begäran och start- och sluttid, och spara inspelningarna i 90 dagar.
+      rationale: Inspelningarna visar exakt vad en leverantör eller en inkräktare gjorde i styrsystemet och avskräcker från missbruk.
+      criteria:
+        - method: test
+          text: En avslutad fjärrsession kan spelas upp med användare, begäransnummer och tider, och inspelningen kan inte raderas av sessionens användare.
+          threshold: sparas ≥ 90 dagar
+
+  - id: ICS-07
+    type: security
+    obligation: must
+    priority: critical
+    tags: [opc-ua, protocol-security, integrity]
+    refs: ["IEC 62541-2 (OPC UA security model)", "IEC 62443-3-3:2013 SR 3.1 RE 1", "IEC 62443-4-2:2019 CR 3.1", "IEC 62443-3-3:2013 SR 1.2"]
+    tests: [ICS-T04]
+    en:
+      title: Industrial protocols authenticated and integrity protected
+      description: Each OPC UA server in the control system MUST offer only endpoints with the security mode Sign or SignAndEncrypt and a current security policy, and MUST reject a client certificate that is not in its trust list.
+      rationale: Unauthenticated protocols let anyone on the network read values or write set points and commands.
+      criteria:
+        - method: test
+          text: A connection with security mode None and one with an untrusted client certificate are rejected, and a trusted client connects with SignAndEncrypt.
+    sv:
+      title: Industriprotokoll autentiseras och integritetsskyddas
+      description: Varje OPC UA-server i styrsystemet SKA bara erbjuda ändpunkter med säkerhetsläget Sign eller SignAndEncrypt och en aktuell säkerhetspolicy, och avvisa ett klientcertifikat som inte finns i dess förtroendelista.
+      rationale: Oautentiserade protokoll låter vem som helst i nätet läsa värden eller skriva börvärden och kommandon.
+      criteria:
+        - method: test
+          text: En anslutning med säkerhetsläget None och en med ett klientcertifikat som inte är betrott avvisas, och en betrodd klient ansluter med SignAndEncrypt.
+
+  - id: ICS-08
+    type: performance
+    obligation: should
+    priority: high
+    tags: [alarm-management, alarm-rate, isa-18-2]
+    refs: ["ANSI/ISA-18.2-2016", "IEC 62682", "EEMUA 191"]
+    tests: [ICS-T05]
+    en:
+      title: Alarm rate per operator kept within limits
+      description: The alarm system SHOULD present on average at most 1 alarm per 10 minutes per operator console, measured over 30 days, and SHOULD be in an alarm flood of more than 10 alarms in 10 minutes for less than 1 % of the time.
+      rationale: Operators who receive more alarms than they can handle miss the ones that matter, which has contributed to major industrial accidents.
+      criteria:
+        - method: analysis
+          text: The alarm performance report for 30 days shows the average rate per console and the share of 10-minute intervals in flood.
+          threshold: ≤ 1 alarm per 10 min on average; flood < 1 % of time
+    sv:
+      title: Larmfrekvensen per operatör hålls inom gränser
+      description: Larmsystemet BÖR i genomsnitt visa högst 1 larm per 10 minuter per operatörsplats, mätt över 30 dagar, och BÖR vara i larmflod med fler än 10 larm på 10 minuter mindre än 1 % av tiden.
+      rationale: Operatörer som får fler larm än de hinner hantera missar de larm som spelar roll, vilket har bidragit till stora industriolyckor.
+      criteria:
+        - method: analysis
+          text: Rapporten över larmprestanda för 30 dagar visar genomsnittlig frekvens per operatörsplats och andelen 10-minutersintervall med larmflod.
+          threshold: ≤ 1 larm per 10 min i genomsnitt; larmflod < 1 % av tiden
+
+  - id: ICS-09
+    type: functional
+    obligation: must
+    priority: high
+    tags: [alarm-management, shelving]
+    refs: ["ANSI/ISA-18.2-2016", "IEC 62682"]
+    tests: [ICS-T06]
+    en:
+      title: Shelved alarms return after a time limit
+      description: The alarm system MUST let an authorised operator shelve an alarm for at most 8 hours with a stated reason, MUST return the alarm to the active list when the time runs out and MUST show a list of shelved alarms with user, reason and remaining time.
+      rationale: Shelving removes nuisance alarms, but forgotten shelved alarms hide real process problems.
+      criteria:
+        - method: test
+          text: An alarm shelved for 1 hour is back in the active list after 1 hour, a shelving of 9 hours is refused, and the shelved list shows user, reason and remaining time.
+          threshold: ≤ 8 h
+    sv:
+      title: Undanlagda larm kommer tillbaka efter en tidsgräns
+      description: Larmsystemet SKA låta en behörig operatör lägga undan ett larm i högst 8 timmar med en angiven orsak, återföra larmet till listan över aktiva larm när tiden har gått ut och visa en lista över undanlagda larm med användare, orsak och återstående tid.
+      rationale: Att lägga undan larm tar bort störande larm, men bortglömda undanlagda larm döljer verkliga processproblem.
+      criteria:
+        - method: test
+          text: Ett larm som läggs undan i 1 timme finns i listan över aktiva larm efter 1 timme, en undanläggning på 9 timmar avvisas och listan över undanlagda larm visar användare, orsak och återstående tid.
+          threshold: ≤ 8 h
+
+  - id: ICS-10
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [hmi, isa-101, alarm-colours]
+    refs: ["ANSI/ISA-101.01-2015", "ANSI/ISA-18.2-2016"]
+    tests: [ICS-T07]
+    en:
+      title: HMI colours reserved for abnormal states
+      description: The HMI displays SHOULD show the process in its normal state in neutral grey tones, SHOULD reserve saturated colours for abnormal states and alarms, and SHOULD show alarm priority by colour together with a shape or a text.
+      rationale: When colour only appears for abnormal conditions, operators notice deviations at once, and the shape or text keeps the priority readable for colour-blind operators.
+      criteria:
+        - method: inspection
+          text: A review of 10 overview and detail displays finds no saturated colour for a normal state, and each alarm indicator shows priority by both colour and shape or text.
+    sv:
+      title: Färger i operatörsbilder reserveras för avvikelser
+      description: Operatörsbilderna BÖR visa processen i normalläge i neutrala grå toner, reservera mättade färger för avvikelser och larm samt visa larmprioritet med färg tillsammans med en form eller en text.
+      rationale: När färg bara visas vid avvikelser märker operatören dem direkt, och formen eller texten gör prioriteten läsbar även för färgblinda operatörer.
+      criteria:
+        - method: inspection
+          text: En granskning av 10 översikts- och detaljbilder visar ingen mättad färg för normalläge, och varje larmindikering visar prioritet med både färg och form eller text.
+
+  - id: ICS-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [patch-management, vendor-approval, test-bench]
+    refs: ["IEC 62443-2-4:2015 SP.11", "IEC TR 62443-2-3:2015", "IEC 62443-4-1:2018 SUM-4", "Regulation (EU) 2024/2847 (CRA) Annex I Part II"]
+    tests: [ICS-T08]
+    en:
+      title: Patches approved by the vendor and tested before installation
+      description: A security update for a control system component MUST be installed in production only after the component vendor has approved it for the installed version and after it has passed a test on a test bench with the same versions, and the update record MUST name the approval and the test result.
+      rationale: Untested updates have stopped production processes, while a known process keeps security updates from being postponed indefinitely.
+      criteria:
+        - method: inspection
+          text: For 5 sampled updates installed in the last 12 months the record shows the vendor approval, the test bench result and the installation date.
+        - method: analysis
+          text: Security updates rated critical are installed or have a documented compensating measure within 90 days of release.
+          threshold: ≤ 90 days
+    sv:
+      title: Uppdateringar godkänns av leverantören och testas före installation
+      description: En säkerhetsuppdatering för en komponent i styrsystemet SKA installeras i produktion först när komponentens leverantör har godkänt den för den installerade versionen och den har klarat ett test i en testrigg med samma versioner, och uppdateringsposten SKA ange godkännandet och testresultatet.
+      rationale: Otestade uppdateringar har stoppat produktionsprocesser, medan en känd process hindrar att säkerhetsuppdateringar skjuts upp på obestämd tid.
+      criteria:
+        - method: inspection
+          text: För 5 stickprov bland uppdateringar som installerats de senaste 12 månaderna visar posten leverantörens godkännande, resultatet från testriggen och installationsdatumet.
+        - method: analysis
+          text: Säkerhetsuppdateringar klassade som kritiska installeras, eller har en dokumenterad kompenserande åtgärd, inom 90 dagar från publicering.
+          threshold: ≤ 90 dagar
+
+  - id: ICS-12
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [backup, restore, controller-configuration]
+    refs: ["IEC 62443-3-3:2013 SR 7.3", "IEC 62443-3-3:2013 SR 7.4", "IEC 62443-2-4:2015 SP.12", "IEC 62443-4-2:2019 CR 7.3"]
+    tests: [ICS-T09]
+    en:
+      title: Controller configurations backed up and restorable
+      description: The system MUST back up the program and configuration of each PLC, RTU and HMI daily to storage outside the control zone, and a backup MUST be restorable to a spare controller within 4 hours.
+      rationale: After a hardware failure or a ransomware attack, the time to restart the process depends on having the latest controller programs at hand.
+      criteria:
+        - method: test
+          text: The latest backup of a selected PLC is loaded into a spare controller of the same type, and the spare runs the same program with the same checksum within 4 hours.
+          threshold: backup ≤ 24 h old; restore ≤ 4 h
+    sv:
+      title: Styrenheternas konfiguration säkerhetskopieras och kan återställas
+      description: Systemet SKA dagligen säkerhetskopiera program och konfiguration för varje PLC, RTU och operatörspanel till lagring utanför styrzonen, och en säkerhetskopia SKA kunna återställas till en reservenhet inom 4 timmar.
+      rationale: Efter ett maskinvarufel eller en utpressningsattack beror tiden till omstart av processen på att de senaste programmen för styrenheterna finns till hands.
+      criteria:
+        - method: test
+          text: Den senaste säkerhetskopian av en vald PLC läses in i en reservenhet av samma typ, och reservenheten kör samma program med samma kontrollsumma inom 4 timmar.
+          threshold: kopia ≤ 24 h gammal; återställning ≤ 4 h
+
+  - id: ICS-13
+    type: security
+    obligation: must
+    priority: critical
+    tags: [change-management, logic, integrity]
+    refs: ["IEC 62443-3-3:2013 SR 3.4", "IEC 62443-4-2:2019 CR 3.4", "IEC 62443-2-4:2015 SP.06", "IEC 61511-1:2016 §17"]
+    tests: [ICS-T10]
+    en:
+      title: Unapproved logic changes detected
+      description: The system MUST compare the running program of each controller with the approved version at least every 15 minutes and MUST raise an alarm to the control room when a program or a set of parameters differs from the version linked to an approved change record.
+      rationale: An unauthorised logic change, by mistake or by an attacker, can damage equipment or endanger people while the HMI still shows normal values.
+      criteria:
+        - method: test
+          text: A logic change downloaded without a change record raises an alarm within 15 minutes that names the controller and the changed blocks.
+          threshold: ≤ 15 min
+    sv:
+      title: Logikändringar utan godkännande upptäcks
+      description: Systemet SKA minst var 15:e minut jämföra det program som körs i varje styrenhet med den godkända versionen och ge ett larm till kontrollrummet när ett program eller en uppsättning parametrar skiljer sig från versionen som är kopplad till ett godkänt ändringsärende.
+      rationale: En obehörig logikändring, av misstag eller av en angripare, kan skada utrustning eller utsätta människor för fara medan operatörsbilden fortfarande visar normala värden.
+      criteria:
+        - method: test
+          text: En logikändring som laddas ner utan ändringsärende ger inom 15 minuter ett larm som anger styrenheten och de ändrade blocken.
+          threshold: ≤ 15 min
+
+  - id: ICS-14
+    type: performance
+    obligation: must
+    priority: high
+    tags: [cycle-time, determinism, denial-of-service]
+    refs: ["IEC 61131-3:2013", "IEC 62443-3-3:2013 SR 7.1", "IEC 62443-4-2:2019 CR 7.1"]
+    tests: [ICS-T11]
+    en:
+      title: Deterministic control cycle time under network load
+      description: The controller MUST complete each cycle of a control task configured for 100 ms within 105 ms, also while its network interface receives 10 000 packets per second of unsolicited traffic.
+      rationale: Control loops tuned for a fixed cycle become unstable when the cycle varies, and a network flood must not starve the control task.
+      criteria:
+        - method: test
+          text: Over 1 hour with the traffic load applied, the measured maximum cycle time stays at or below 105 ms and the control outputs keep updating.
+          threshold: ≤ 105 ms for a 100 ms task
+    sv:
+      title: Deterministisk cykeltid under nätverkslast
+      description: Styrenheten SKA slutföra varje cykel i en styruppgift som är inställd på 100 ms inom 105 ms, även när dess nätverksgränssnitt tar emot 10 000 oönskade paket per sekund.
+      rationale: Reglerkretsar som är inställda för en fast cykel blir instabila när cykeln varierar, och en nätverksflod ska inte svälta ut styruppgiften.
+      criteria:
+        - method: test
+          text: Under 1 timme med den pålagda trafiklasten håller sig den uppmätta längsta cykeltiden på högst 105 ms och styrutgångarna fortsätter att uppdateras.
+          threshold: ≤ 105 ms för en uppgift på 100 ms
+
+  - id: ICS-15
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [safe-state, communication-loss, watchdog]
+    refs: ["IEC 61511-1:2016 §11.3", "IEC 61508-2:2010", "IEC 62443-3-3:2013 SR 7.1"]
+    tests: [ICS-T12]
+    en:
+      title: Safe state on loss of communication
+      description: When a controller loses communication with the supervisory system or with a remote I/O station for longer than 2 seconds, it MUST set the affected outputs to their documented safe state and MUST keep them there until an operator acknowledges the recovery.
+      rationale: Outputs that keep their last value after a lost connection can leave pumps, valves or heaters in a dangerous position without supervision.
+      criteria:
+        - method: test
+          text: After the network cable to a remote I/O station is pulled, the outputs reach their safe state within 2 seconds plus the output response time, and stay there after the link returns until an operator acknowledges.
+          threshold: ≤ 2 s timeout
+    sv:
+      title: Säkert läge vid förlorad kommunikation
+      description: När en styrenhet förlorar kommunikationen med det övervakande systemet eller med en fjärr-I/O-station i mer än 2 sekunder SKA den ställa de berörda utgångarna i deras dokumenterade säkra läge och hålla dem där tills en operatör kvitterar återställningen.
+      rationale: Utgångar som behåller sitt senaste värde efter en bruten förbindelse kan lämna pumpar, ventiler eller värmare i ett farligt läge utan övervakning.
+      criteria:
+        - method: test
+          text: När nätverkskabeln till en fjärr-I/O-station dras ut når utgångarna sitt säkra läge inom 2 sekunder plus utgångarnas svarstid och stannar där efter att förbindelsen kommit tillbaka tills en operatör kvitterar.
+          threshold: ≤ 2 s tidsgräns
+
+  - id: ICS-16
+    type: security
+    obligation: must
+    priority: critical
+    tags: [sis, functional-safety, separation]
+    refs: ["IEC 61511-1:2016 §11.2", "IEC 61511-1:2016 §8.2.4", "IEC 61508-1:2010", "IEC 62443-3-3:2013 SR 5.1"]
+    tests: [ICS-T13]
+    en:
+      title: Safety instrumented system separated from basic control
+      description: The safety instrumented system MUST be in its own zone, separate from the basic process control system, and MUST accept writes from outside its zone only through a documented interface that is enabled by a physical key switch at the safety controller.
+      rationale: A fault or an attack in the basic control system must not disable the last automatic layer that protects people from a hazardous event.
+      criteria:
+        - method: test
+          text: With the key switch in the run position, a write from an engineering workstation in the control zone to a safety controller is rejected, and the safety function trips when the basic control system is stopped.
+        - method: inspection
+          text: The network drawings and the safety requirements specification show the separate zone and the documented interface.
+    sv:
+      title: Säkerhetssystemet är åtskilt från processtyrningen
+      description: Det instrumenterade säkerhetssystemet SKA ligga i en egen zon, åtskild från processtyrsystemet, och bara ta emot skrivningar utifrån via ett dokumenterat gränssnitt som aktiveras med en fysisk nyckelbrytare vid säkerhetsstyrenheten.
+      rationale: Ett fel eller en attack i processtyrsystemet ska inte kunna slå ut det sista automatiska skyddslager som skyddar människor mot en farlig händelse.
+      criteria:
+        - method: test
+          text: Med nyckelbrytaren i driftläge avvisas en skrivning från en ingenjörsstation i styrzonen till en säkerhetsstyrenhet, och säkerhetsfunktionen löser ut när processtyrsystemet är stoppat.
+        - method: inspection
+          text: Nätverksritningarna och kravspecifikationen för säkerhetssystemet visar den separata zonen och det dokumenterade gränssnittet.
+
+  - id: ICS-17
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [time-synchronisation, timestamps, sequence-of-events]
+    refs: ["IEC 62443-3-3:2013 SR 2.11", "IEC 62443-4-2:2019 CR 2.11", "IEEE 1588-2019"]
+    tests: [ICS-T14]
+    en:
+      title: Synchronised time in controllers and HMIs
+      description: Each controller, HMI and server in the control system MUST keep its clock within 10 ms of the site time reference, MUST time-stamp alarms and events at the source, and MUST raise an alarm when it loses synchronisation for more than 5 minutes.
+      rationale: The order of events after a trip can only be reconstructed when every device stamps them with the same time.
+      criteria:
+        - method: test
+          text: Measured offsets of 10 sampled devices against the reference are at most 10 ms, and disconnecting the time source from one device raises an alarm within 5 minutes.
+          threshold: ≤ 10 ms offset
+    sv:
+      title: Synkroniserad tid i styrenheter och operatörspaneler
+      description: Varje styrenhet, operatörspanel och server i styrsystemet SKA hålla sin klocka inom 10 ms från anläggningens tidsreferens, tidsstämpla larm och händelser vid källan och ge ett larm när synkroniseringen har varit borta i mer än 5 minuter.
+      rationale: Ordningen mellan händelserna efter ett utlöst skydd kan bara rekonstrueras när varje enhet stämplar dem med samma tid.
+      criteria:
+        - method: test
+          text: Uppmätta avvikelser för 10 stickprovsenheter mot referensen är högst 10 ms, och när tidskällan kopplas bort från en enhet ges ett larm inom 5 minuter.
+          threshold: ≤ 10 ms avvikelse
+
+  - id: ICS-18
+    type: security
+    obligation: must
+    priority: high
+    tags: [ot-monitoring, logging, intrusion-detection]
+    refs: ["IEC 62443-3-3:2013 SR 2.8", "IEC 62443-3-3:2013 SR 6.2", "NIST SP 800-82r3 §6", "Directive (EU) 2022/2555 (NIS2) Art. 21"]
+    tests: [ICS-T15]
+    en:
+      title: Security events from the control system monitored centrally
+      description: The system MUST send controller mode changes, logic and firmware downloads, failed logins and new network connections in the control zones to a central OT monitoring service within 60 seconds, and the service MUST alert the security team of a write or program command from a device that is not an approved engineering workstation.
+      rationale: Attacks on controllers show up as unusual commands and mode changes that ordinary IT monitoring does not understand.
+      criteria:
+        - method: test
+          text: A mode change from RUN to PROGRAM and a write command from a laptop that is not an engineering workstation each appear in the monitoring service within 60 seconds, and the write command raises an alert.
+          threshold: ≤ 60 s
+    sv:
+      title: Säkerhetshändelser från styrsystemet övervakas centralt
+      description: Systemet SKA skicka lägesändringar i styrenheter, nedladdning av logik och firmware, misslyckade inloggningar och nya nätverksanslutningar i styrzonerna till en central övervakningstjänst för OT inom 60 sekunder, och tjänsten SKA larma säkerhetsteamet om ett skriv- eller programmeringskommando från en enhet som inte är en godkänd ingenjörsstation.
+      rationale: Attacker mot styrenheter syns som ovanliga kommandon och lägesändringar som vanlig IT-övervakning inte förstår.
+      criteria:
+        - method: test
+          text: En lägesändring från RUN till PROGRAM och ett skrivkommando från en bärbar dator som inte är ingenjörsstation visas var för sig i övervakningstjänsten inom 60 sekunder, och skrivkommandot ger ett larm.
+          threshold: ≤ 60 s
+
+tests:
+  - id: ICS-T01
+    priority: critical
+    execution: manual
+    tags: [segmentation, firewall]
+    refs: ["IEC 62443-3-3:2013 SR 5.1"]
+    en:
+      title: Traffic between enterprise network and control zone is blocked
+      description: Tries to reach control zone devices from the office network and compares observed inter-zone traffic with the conduit register.
+      preconditions: An office computer in the enterprise network, access to the zone boundary firewall logs and the current zone and conduit register.
+      expected: No direct connection from the enterprise network reaches the control zone, and observed inter-zone flows match documented conduits.
+      steps:
+        - action: From the office computer, try to connect to a PLC on its programming port and to an HMI on its remote desktop port.
+          expected: Both attempts time out or are refused, and the boundary firewall logs each as denied.
+        - action: From the office computer, open the historian replica in the industrial demilitarised zone.
+          expected: The replica answers; the documented conduit allows this flow.
+        - action: Export the firewall's permitted flows for the last 7 days and compare them with the conduit register.
+          expected: Each permitted flow matches a conduit with the same protocol, port and direction.
+    sv:
+      title: Trafik mellan kontorsnätet och styrzonen blockeras
+      description: Försöker nå enheter i styrzonen från kontorsnätet och jämför observerad trafik mellan zoner med registret över ledningar.
+      preconditions: En kontorsdator i kontorsnätet, tillgång till brandväggsloggarna vid zongränsen och det aktuella registret över zoner och ledningar.
+      expected: Ingen direkt anslutning från kontorsnätet når styrzonen, och observerade flöden mellan zoner motsvarar dokumenterade ledningar.
+      steps:
+        - action: Försök från kontorsdatorn ansluta till en PLC på dess programmeringsport och till en operatörspanel på dess port för fjärrskrivbord.
+          expected: Båda försöken når tidsgränsen eller avvisas, och brandväggen vid gränsen loggar vart och ett som nekat.
+        - action: Öppna från kontorsdatorn kopian av processhistoriken i den industriella demilitariserade zonen.
+          expected: Kopian svarar; den dokumenterade ledningen tillåter flödet.
+        - action: Exportera brandväggens tillåtna flöden för de senaste 7 dygnen och jämför dem med registret över ledningar.
+          expected: Varje tillåtet flöde motsvarar en ledning med samma protokoll, port och riktning.
+
+  - id: ICS-T02
+    priority: high
+    execution: manual
+    tags: [asset-inventory, security-level]
+    refs: []
+    en:
+      title: Asset inventory and zone register are complete
+      description: Checks that devices are inventoried with zone and version, that a new device is reported, and that each zone has a target security level.
+      preconditions: Read access to the asset inventory and the zone register, a spare test PLC and a free port in a control zone switch.
+      expected: The inventory matches the devices, an unknown device is reported within 24 hours, and each zone has SL-T and achieved level.
+      steps:
+        - action: Pick 10 devices in the field and read their model and firmware version on the device.
+          expected: Each device is in the inventory with the same zone, model and firmware version.
+        - action: Connect the test PLC to the control zone switch and let it communicate with the network.
+          expected: Within 24 hours the inventory report lists it as an unknown device with its address and switch port.
+        - action: Open the zone register and look at each zone and conduit.
+          expected: Each has an SL-T value, an achieved level and, where the levels differ, a compensating measure with an owner.
+    sv:
+      title: Tillgångsförteckning och zonregister är fullständiga
+      description: Kontrollerar att enheter finns i förteckningen med zon och version, att en ny enhet rapporteras och att varje zon har en målsäkerhetsnivå.
+      preconditions: Läsbehörighet till tillgångsförteckningen och zonregistret, en extra test-PLC och en ledig port i en switch i en styrzon.
+      expected: Förteckningen stämmer med enheterna, en okänd enhet rapporteras inom 24 timmar och varje zon har SL-T och uppnådd nivå.
+      steps:
+        - action: Välj 10 enheter i anläggningen och läs av modell och firmwareversion på enheten.
+          expected: Varje enhet finns i förteckningen med samma zon, modell och firmwareversion.
+        - action: Anslut test-PLC:n till switchen i styrzonen och låt den kommunicera i nätet.
+          expected: Inom 24 timmar listar rapporten den som okänd enhet med adress och switchport.
+        - action: Öppna zonregistret och gå igenom varje zon och ledning.
+          expected: Var och en har ett SL-T-värde, en uppnådd nivå och, där nivåerna skiljer sig, en kompenserande åtgärd med en ansvarig.
+
+  - id: ICS-T03
+    priority: critical
+    execution: manual
+    tags: [remote-access, mfa, session-recording]
+    refs: ["IEC 62443-3-3:2013 SR 1.13"]
+    en:
+      title: Remote access through the jump host
+      description: Tries remote access with and without an approved request and multi-factor authentication, and replays the recording.
+      preconditions: A test vendor account with a registered second factor, the jump host and an access request workflow with an approver.
+      expected: Access is granted only with approval and multi-factor authentication, the session ends after 8 hours and is recorded.
+      steps:
+        - action: Sign in to the jump host with the vendor account and the password only.
+          expected: Access is refused and the second factor is asked for.
+        - action: Complete multi-factor authentication without an approved access request and try to open a session to an HMI.
+          expected: The session is refused with a message that no approved request exists.
+        - action: Have the approver approve a request for 8 hours, open the session and run two commands on the HMI.
+          expected: The session opens; after 8 hours it is closed by the jump host.
+        - action: As an administrator, open the recording of the session.
+          expected: The recording shows the screen and both commands, with user, request number and start and end times, and the vendor account cannot delete it.
+    sv:
+      title: Fjärråtkomst via hoppservern
+      description: Försöker fjärransluta med och utan godkänd begäran och flerfaktorsautentisering och spelar upp inspelningen.
+      preconditions: Ett testkonto för en leverantör med registrerad andra faktor, hoppservern och ett flöde för åtkomstbegäran med en godkännare.
+      expected: Åtkomst ges bara med godkännande och flerfaktorsautentisering, sessionen avslutas efter 8 timmar och spelas in.
+      steps:
+        - action: Logga in på hoppservern med leverantörskontot och bara lösenordet.
+          expected: Åtkomst nekas och den andra faktorn efterfrågas.
+        - action: Slutför flerfaktorsautentiseringen utan godkänd åtkomstbegäran och försök öppna en session till en operatörspanel.
+          expected: Sessionen avvisas med ett meddelande om att ingen godkänd begäran finns.
+        - action: Låt godkännaren godkänna en begäran för 8 timmar, öppna sessionen och kör två kommandon på operatörspanelen.
+          expected: Sessionen öppnas; efter 8 timmar stängs den av hoppservern.
+        - action: Öppna inspelningen av sessionen som administratör.
+          expected: Inspelningen visar skärmen och båda kommandona med användare, begäransnummer och start- och sluttid, och leverantörskontot kan inte radera den.
+
+  - id: ICS-T04
+    priority: critical
+    execution: automated
+    tags: [opc-ua, protocol-security]
+    refs: ["IEC 62541-2"]
+    en:
+      title: OPC UA server rejects unsecured and untrusted clients
+      description: A script connects to each OPC UA server with different security modes and certificates.
+      preconditions: The list of OPC UA endpoints in the control system, a test client certificate in the trust list and a self-signed certificate that is not.
+      expected: Only signed or encrypted sessions with trusted certificates are accepted.
+      steps:
+        - action: Request the endpoint list of each server.
+          expected: No endpoint offers security mode None or a deprecated security policy.
+        - action: Connect with security mode None.
+          expected: The connection is rejected.
+        - action: Connect with SignAndEncrypt and the self-signed untrusted certificate.
+          expected: The connection is rejected and the server logs the rejected certificate.
+        - action: Connect with SignAndEncrypt and the trusted test certificate and read a value.
+          expected: The session opens and the value is read.
+    sv:
+      title: OPC UA-servern avvisar oskyddade och obetrodda klienter
+      description: Ett skript ansluter till varje OPC UA-server med olika säkerhetslägen och certifikat.
+      preconditions: Listan över OPC UA-ändpunkter i styrsystemet, ett testklientcertifikat i förtroendelistan och ett självsignerat certifikat som inte finns där.
+      expected: Bara signerade eller krypterade sessioner med betrodda certifikat godtas.
+      steps:
+        - action: Hämta listan över ändpunkter från varje server.
+          expected: Ingen ändpunkt erbjuder säkerhetsläget None eller en föråldrad säkerhetspolicy.
+        - action: Anslut med säkerhetsläget None.
+          expected: Anslutningen avvisas.
+        - action: Anslut med SignAndEncrypt och det självsignerade obetrodda certifikatet.
+          expected: Anslutningen avvisas och servern loggar det avvisade certifikatet.
+        - action: Anslut med SignAndEncrypt och det betrodda testcertifikatet och läs ett värde.
+          expected: Sessionen öppnas och värdet läses.
+
+  - id: ICS-T05
+    priority: high
+    execution: automated
+    tags: [alarm-management, alarm-rate]
+    refs: ["IEC 62682"]
+    en:
+      title: Alarm rate analysis over 30 days
+      description: A script analyses the alarm and event journal per operator console.
+      preconditions: An export of the alarm journal for the last 30 days with console assignment for each alarm.
+      expected: The average rate and the flood share are within the targets, or the deviation is reported with the top contributors.
+      steps:
+        - action: Count annunciated alarms per console and divide by the number of 10-minute intervals in 30 days.
+          expected: The average is at most 1 alarm per 10 minutes per console.
+          data: "30 days = 4 320 intervals of 10 min"
+        - action: Count the 10-minute intervals with more than 10 alarms for each console.
+          expected: Less than 1 % of the intervals, at most 43, are in flood.
+        - action: List the 10 alarms with the most annunciations.
+          expected: The list is produced for the alarm rationalisation review.
+    sv:
+      title: Analys av larmfrekvens över 30 dagar
+      description: Ett skript analyserar larm- och händelsejournalen per operatörsplats.
+      preconditions: En export av larmjournalen för de senaste 30 dagarna med operatörsplats för varje larm.
+      expected: Genomsnittlig frekvens och andel larmflod ligger inom målen, eller avvikelsen rapporteras med de larm som bidrar mest.
+      steps:
+        - action: Räkna visade larm per operatörsplats och dela med antalet 10-minutersintervall på 30 dagar.
+          expected: Genomsnittet är högst 1 larm per 10 minuter per operatörsplats.
+          data: "30 dagar = 4 320 intervall om 10 min"
+        - action: Räkna 10-minutersintervallen med fler än 10 larm för varje operatörsplats.
+          expected: Mindre än 1 % av intervallen, högst 43, är larmflod.
+        - action: Lista de 10 larm som visats flest gånger.
+          expected: Listan tas fram till genomgången för larmrationalisering.
+
+  - id: ICS-T06
+    priority: high
+    execution: manual
+    tags: [alarm-management, shelving]
+    refs: []
+    en:
+      title: Shelving an alarm with a time limit
+      description: Shelves alarms for different durations and checks that they return.
+      preconditions: An operator account with the shelving permission, a test alarm that can be raised from a simulator and a clock that can be read on the HMI.
+      expected: Shelving is limited to 8 hours, needs a reason and ends automatically.
+      steps:
+        - action: Raise the test alarm and shelve it for 1 hour with the reason "transmitter under repair".
+          expected: The alarm leaves the active list and appears in the shelved list with user, reason and 60 minutes remaining.
+        - action: Try to shelve another alarm for 9 hours.
+          expected: The HMI refuses and states the 8-hour limit.
+        - action: Wait until the hour has passed with the alarm condition still present.
+          expected: The alarm returns to the active list as unacknowledged and the event journal records the unshelving.
+    sv:
+      title: Undanläggning av ett larm med tidsgräns
+      description: Lägger undan larm under olika lång tid och kontrollerar att de kommer tillbaka.
+      preconditions: Ett operatörskonto med behörighet att lägga undan larm, ett testlarm som kan utlösas från en simulator och en klocka som syns i operatörsbilden.
+      expected: Undanläggning begränsas till 8 timmar, kräver en orsak och upphör automatiskt.
+      steps:
+        - action: Utlös testlarmet och lägg undan det i 1 timme med orsaken "givare under reparation".
+          expected: Larmet försvinner från listan över aktiva larm och visas i listan över undanlagda larm med användare, orsak och 60 minuter kvar.
+        - action: Försök lägga undan ett annat larm i 9 timmar.
+          expected: Operatörsbilden avvisar det och anger gränsen på 8 timmar.
+        - action: Vänta tills timmen har gått medan larmorsaken finns kvar.
+          expected: Larmet kommer tillbaka till listan över aktiva larm som okvitterat och händelsejournalen registrerar att undanläggningen upphörde.
+
+  - id: ICS-T07
+    priority: medium
+    execution: manual
+    tags: [hmi, isa-101]
+    refs: ["ANSI/ISA-101.01-2015"]
+    en:
+      title: Review of HMI colours and alarm indicators
+      description: Inspects a sample of displays in the normal state and with active alarms.
+      preconditions: The HMI connected to a simulator with the process in its normal state, and the site's HMI style guide.
+      expected: Colour is used only for abnormal states, and alarm priority is readable without colour.
+      steps:
+        - action: Open 5 overview and 5 detail displays with the process in its normal state.
+          expected: Equipment, lines and values are in grey tones; no saturated colour is shown.
+        - action: Raise one alarm of each priority in the simulator.
+          expected: Each alarm indicator shows its priority by colour and by a distinct shape or a priority number.
+        - action: View the same displays in a greyscale screenshot.
+          expected: The priority of each alarm can still be read.
+    sv:
+      title: Granskning av färger och larmindikeringar i operatörsbilder
+      description: Granskar ett urval bilder i normalläge och med aktiva larm.
+      preconditions: Operatörsgränssnittet anslutet till en simulator med processen i normalläge, och anläggningens stilguide för operatörsbilder.
+      expected: Färg används bara för avvikelser, och larmprioriteten går att läsa utan färg.
+      steps:
+        - action: Öppna 5 översiktsbilder och 5 detaljbilder med processen i normalläge.
+          expected: Utrustning, ledningar och värden visas i grå toner; ingen mättad färg visas.
+        - action: Utlös ett larm av varje prioritet i simulatorn.
+          expected: Varje larmindikering visar prioriteten med färg och med en egen form eller en prioritetssiffra.
+        - action: Titta på samma bilder i en skärmbild i gråskala.
+          expected: Prioriteten för varje larm går fortfarande att läsa.
+
+  - id: ICS-T08
+    priority: high
+    execution: manual
+    tags: [patch-management, test-bench]
+    refs: ["IEC 62443-2-4:2015 SP.11"]
+    en:
+      title: Patch record shows vendor approval and test bench result
+      description: Follows one security update through the process and samples past update records.
+      preconditions: A pending security update for an HMI operating system, the vendor's compatibility list, a test bench with the production versions and the update records of the last 12 months.
+      expected: Updates reach production only with vendor approval and a passed bench test, and critical updates are handled within 90 days.
+      steps:
+        - action: Try to schedule the pending update for production before it has a vendor approval.
+          expected: The change process refuses the update and states that the vendor approval is missing.
+        - action: Record the vendor approval, install the update on the test bench and run the bench test procedure.
+          expected: The test result is recorded and linked to the update.
+        - action: Sample 5 installed updates and compare release date, approval, bench result and installation date.
+          expected: Each record has all four, and critical updates were installed or compensated within 90 days.
+    sv:
+      title: Uppdateringsposten visar leverantörens godkännande och resultat från testriggen
+      description: Följer en säkerhetsuppdatering genom processen och tar stickprov bland tidigare uppdateringsposter.
+      preconditions: En väntande säkerhetsuppdatering för operativsystemet i en operatörspanel, leverantörens kompatibilitetslista, en testrigg med produktionens versioner och uppdateringsposterna för de senaste 12 månaderna.
+      expected: Uppdateringar når produktion bara med leverantörens godkännande och godkänt test i testriggen, och kritiska uppdateringar hanteras inom 90 dagar.
+      steps:
+        - action: Försök schemalägga den väntande uppdateringen för produktion innan den har leverantörens godkännande.
+          expected: Ändringsprocessen avvisar uppdateringen och anger att leverantörens godkännande saknas.
+        - action: Registrera leverantörens godkännande, installera uppdateringen i testriggen och kör testproceduren.
+          expected: Testresultatet registreras och kopplas till uppdateringen.
+        - action: Ta stickprov på 5 installerade uppdateringar och jämför publiceringsdatum, godkännande, testresultat och installationsdatum.
+          expected: Varje post har alla fyra, och kritiska uppdateringar installerades eller kompenserades inom 90 dagar.
+
+  - id: ICS-T09
+    priority: critical
+    execution: manual
+    tags: [backup, restore]
+    refs: ["IEC 62443-3-3:2013 SR 7.4"]
+    en:
+      title: Restore a controller from its backup
+      description: Restores the latest backup of a production PLC to a spare controller and compares the result.
+      preconditions: A spare controller of the same type and firmware as the selected PLC, access to the backup storage and a stopwatch.
+      expected: A backup at most 24 hours old exists and runs on the spare within 4 hours.
+      steps:
+        - action: Open the backup catalogue for the selected PLC.
+          expected: The latest backup is at most 24 hours old and is stored outside the control zone.
+        - action: Start the stopwatch, load the backup into the spare controller with the engineering tool and switch it to RUN.
+          expected: The spare runs the program without errors.
+        - action: Compare the program checksum of the spare with that of the production PLC and stop the stopwatch.
+          expected: The checksums are the same and the elapsed time is at most 4 hours.
+    sv:
+      title: Återställ en styrenhet från dess säkerhetskopia
+      description: Återställer den senaste säkerhetskopian av en PLC i produktion till en reservenhet och jämför resultatet.
+      preconditions: En reservenhet av samma typ och firmware som den valda PLC:n, åtkomst till lagringen för säkerhetskopior och ett tidtagarur.
+      expected: En säkerhetskopia som är högst 24 timmar gammal finns och körs i reservenheten inom 4 timmar.
+      steps:
+        - action: Öppna katalogen över säkerhetskopior för den valda PLC:n.
+          expected: Den senaste kopian är högst 24 timmar gammal och lagras utanför styrzonen.
+        - action: Starta tidtagaruret, läs in kopian i reservenheten med ingenjörsverktyget och växla den till RUN.
+          expected: Reservenheten kör programmet utan fel.
+        - action: Jämför programmets kontrollsumma i reservenheten med den i produktionens PLC och stoppa tidtagaruret.
+          expected: Kontrollsummorna är lika och den förflutna tiden är högst 4 timmar.
+
+  - id: ICS-T10
+    priority: critical
+    execution: manual
+    tags: [change-management, logic]
+    refs: []
+    en:
+      title: Logic download without a change record raises an alarm
+      description: Downloads a harmless logic change to a test controller without and with an approved change record.
+      preconditions: A test controller in the change detection scope, an engineering workstation and a harmless logic change such as a renamed comment block.
+      expected: An unapproved change is alarmed within 15 minutes, and an approved change is accepted as the new baseline.
+      steps:
+        - action: Download the logic change without creating a change record.
+          expected: Within 15 minutes the control room receives an alarm that names the controller and the changed block.
+        - action: Restore the approved program, create and approve a change record and download the same change again.
+          expected: No alarm is raised and the approved version is updated with a link to the change record.
+    sv:
+      title: Nedladdning av logik utan ändringsärende ger larm
+      description: Laddar ner en ofarlig logikändring till en teststyrenhet utan och med godkänt ändringsärende.
+      preconditions: En teststyrenhet som omfattas av ändringsövervakningen, en ingenjörsstation och en ofarlig logikändring, till exempel ett omdöpt kommentarsblock.
+      expected: En ändring utan godkännande larmas inom 15 minuter, och en godkänd ändring godtas som ny referensversion.
+      steps:
+        - action: Ladda ner logikändringen utan att skapa något ändringsärende.
+          expected: Inom 15 minuter får kontrollrummet ett larm som anger styrenheten och det ändrade blocket.
+        - action: Återställ det godkända programmet, skapa och godkänn ett ändringsärende och ladda ner samma ändring igen.
+          expected: Inget larm ges och den godkända versionen uppdateras med en länk till ändringsärendet.
+
+  - id: ICS-T11
+    priority: high
+    execution: automated
+    tags: [cycle-time, denial-of-service]
+    refs: ["IEC 62443-3-3:2013 SR 7.1"]
+    en:
+      title: Cycle time measured under a traffic flood
+      description: A test script loads the controller network port and records the task cycle time.
+      preconditions: A test controller running a 100 ms control task that writes its measured cycle time to a register, and a traffic generator on the same network segment.
+      expected: The maximum cycle time stays at or below 105 ms and outputs keep updating.
+      steps:
+        - action: Record the cycle time for 10 minutes without extra traffic.
+          expected: The maximum cycle time is at most 105 ms.
+        - action: Send 10 000 packets per second of unsolicited traffic to the controller for 1 hour while recording.
+          expected: The maximum cycle time is at most 105 ms and the controller stays in RUN.
+          data: "10 000 packets/s of mixed TCP SYN and UDP"
+        - action: Check the trend of a toggling test output during the load.
+          expected: The output changes state every cycle without gaps.
+    sv:
+      title: Cykeltid mätt under en trafikflod
+      description: Ett testskript belastar styrenhetens nätverksport och registrerar uppgiftens cykeltid.
+      preconditions: En teststyrenhet som kör en styruppgift på 100 ms och skriver sin uppmätta cykeltid till ett register, och en trafikgenerator i samma nätsegment.
+      expected: Den längsta cykeltiden håller sig på högst 105 ms och utgångarna fortsätter att uppdateras.
+      steps:
+        - action: Registrera cykeltiden i 10 minuter utan extra trafik.
+          expected: Den längsta cykeltiden är högst 105 ms.
+        - action: Skicka 10 000 oönskade paket per sekund till styrenheten i 1 timme medan cykeltiden registreras.
+          expected: Den längsta cykeltiden är högst 105 ms och styrenheten stannar i RUN.
+          data: "10 000 paket/s med blandad TCP SYN och UDP"
+        - action: Kontrollera trenden för en testutgång som växlar under belastningen.
+          expected: Utgången byter läge varje cykel utan avbrott.
+
+  - id: ICS-T12
+    priority: critical
+    execution: manual
+    tags: [safe-state, communication-loss]
+    refs: []
+    en:
+      title: Outputs go to safe state when the remote I/O link is lost
+      description: Breaks the link to a remote I/O station on the test system and observes the outputs.
+      preconditions: A test system with a controller, a remote I/O station with a documented safe state for each output, and outputs that can be observed or recorded.
+      expected: The outputs reach their safe state within the time limit and stay there until an operator acknowledges.
+      steps:
+        - action: Set the outputs to values that differ from their safe state and pull the network cable to the remote I/O station.
+          expected: Within 2 seconds plus the output response time each output takes its documented safe state, and the HMI shows a communication alarm.
+        - action: Reconnect the cable.
+          expected: The outputs stay in the safe state and the HMI asks for operator acknowledgement.
+        - action: Acknowledge as operator.
+          expected: The outputs return to control and the event journal records the loss, the recovery and the acknowledgement.
+    sv:
+      title: Utgångar går till säkert läge när förbindelsen till fjärr-I/O bryts
+      description: Bryter förbindelsen till en fjärr-I/O-station i testsystemet och observerar utgångarna.
+      preconditions: Ett testsystem med en styrenhet, en fjärr-I/O-station med ett dokumenterat säkert läge för varje utgång och utgångar som kan observeras eller registreras.
+      expected: Utgångarna når sitt säkra läge inom tidsgränsen och stannar där tills en operatör kvitterar.
+      steps:
+        - action: Ställ utgångarna på värden som skiljer sig från deras säkra läge och dra ut nätverkskabeln till fjärr-I/O-stationen.
+          expected: Inom 2 sekunder plus utgångarnas svarstid intar varje utgång sitt dokumenterade säkra läge, och operatörsbilden visar ett kommunikationslarm.
+        - action: Anslut kabeln igen.
+          expected: Utgångarna stannar i säkert läge och operatörsbilden begär kvittering av operatören.
+        - action: Kvittera som operatör.
+          expected: Utgångarna återgår till styrning och händelsejournalen registrerar avbrottet, återställningen och kvitteringen.
+
+  - id: ICS-T13
+    priority: critical
+    execution: manual
+    tags: [sis, separation]
+    refs: ["IEC 61511-1:2016 §11.2"]
+    en:
+      title: Safety controller rejects writes from the control zone
+      description: Checks the separation of the safety instrumented system on a test or shutdown system, under the site's safety procedures.
+      preconditions: A safety controller on a test system or in a planned shutdown with a work permit, its key switch, an engineering workstation in the control zone and the safety requirements specification.
+      expected: Writes from outside the safety zone are rejected in run position, and the safety function works without the basic control system.
+      steps:
+        - action: With the key switch in run position, write a new trip set point from the engineering workstation in the control zone.
+          expected: The write is rejected and the safety controller logs the attempt.
+        - action: Stop the basic process control system controller and simulate the trip condition at the safety function input.
+          expected: The safety function trips its final element within its specified response time.
+        - action: Compare the network drawings with the safety requirements specification.
+          expected: Both show the safety zone and the single documented write interface.
+    sv:
+      title: Säkerhetsstyrenheten avvisar skrivningar från styrzonen
+      description: Kontrollerar åtskillnaden av det instrumenterade säkerhetssystemet i ett testsystem eller under ett stopp, enligt anläggningens säkerhetsrutiner.
+      preconditions: En säkerhetsstyrenhet i ett testsystem eller under ett planerat stopp med arbetstillstånd, dess nyckelbrytare, en ingenjörsstation i styrzonen och kravspecifikationen för säkerhetssystemet.
+      expected: Skrivningar utanför säkerhetszonen avvisas i driftläge, och säkerhetsfunktionen fungerar utan processtyrsystemet.
+      steps:
+        - action: Skriv ett nytt utlösningsvärde från ingenjörsstationen i styrzonen med nyckelbrytaren i driftläge.
+          expected: Skrivningen avvisas och säkerhetsstyrenheten loggar försöket.
+        - action: Stoppa processtyrsystemets styrenhet och simulera utlösningsvillkoret på säkerhetsfunktionens ingång.
+          expected: Säkerhetsfunktionen löser ut sitt slutelement inom den specificerade svarstiden.
+        - action: Jämför nätverksritningarna med kravspecifikationen för säkerhetssystemet.
+          expected: Båda visar säkerhetszonen och det enda dokumenterade gränssnittet för skrivning.
+
+  - id: ICS-T14
+    priority: high
+    execution: automated
+    tags: [time-synchronisation]
+    refs: ["IEC 62443-3-3:2013 SR 2.11"]
+    en:
+      title: Clock offsets against the site time reference
+      description: A script reads the clocks of sampled devices and tests the loss-of-synchronisation alarm.
+      preconditions: The site time reference, 10 sampled controllers, HMIs and servers that report their clock offset, and a test device whose time source can be disconnected.
+      expected: Offsets are within 10 ms and a lost time source is alarmed within 5 minutes.
+      steps:
+        - action: Read the offset of each sampled device against the reference.
+          expected: Each offset is at most 10 ms.
+        - action: Raise a test alarm on two devices at the same moment and compare their time stamps.
+          expected: The time stamps differ by at most 20 ms.
+        - action: Disconnect the time source of the test device.
+          expected: An alarm for lost synchronisation is raised within 5 minutes.
+    sv:
+      title: Klockavvikelse mot anläggningens tidsreferens
+      description: Ett skript läser klockorna i stickprovsenheter och testar larmet för förlorad synkronisering.
+      preconditions: Anläggningens tidsreferens, 10 utvalda styrenheter, operatörspaneler och servrar som rapporterar sin klockavvikelse, och en testenhet vars tidskälla kan kopplas bort.
+      expected: Avvikelserna ligger inom 10 ms och en förlorad tidskälla larmas inom 5 minuter.
+      steps:
+        - action: Läs avvikelsen mot referensen för varje utvald enhet.
+          expected: Varje avvikelse är högst 10 ms.
+        - action: Utlös ett testlarm i två enheter i samma ögonblick och jämför deras tidsstämplar.
+          expected: Tidsstämplarna skiljer sig med högst 20 ms.
+        - action: Koppla bort testenhetens tidskälla.
+          expected: Ett larm om förlorad synkronisering ges inom 5 minuter.
+
+  - id: ICS-T15
+    priority: high
+    execution: manual
+    tags: [ot-monitoring, logging]
+    refs: ["IEC 62443-3-3:2013 SR 6.2"]
+    en:
+      title: OT monitoring sees mode changes and unexpected writes
+      description: Triggers controller events on a test controller and checks the central OT monitoring service.
+      preconditions: A test controller in a monitored control zone, an approved engineering workstation, a laptop that is not approved and connected to a test port, and read access to the monitoring service.
+      expected: Each event arrives within 60 seconds and the write from the laptop raises an alert.
+      steps:
+        - action: Switch the test controller from RUN to PROGRAM from the approved engineering workstation and back.
+          expected: Both mode changes appear in the monitoring service within 60 seconds with source and time.
+        - action: Enter a wrong password three times at an HMI.
+          expected: Three failed logins appear within 60 seconds.
+        - action: Send a write command to the test controller from the laptop.
+          expected: The command appears within 60 seconds and an alert naming the laptop's address reaches the security team.
+    sv:
+      title: OT-övervakningen ser lägesändringar och oväntade skrivningar
+      description: Utlöser händelser i en teststyrenhet och kontrollerar den centrala övervakningstjänsten för OT.
+      preconditions: En teststyrenhet i en övervakad styrzon, en godkänd ingenjörsstation, en bärbar dator som inte är godkänd och är ansluten till en testport, och läsbehörighet till övervakningstjänsten.
+      expected: Varje händelse kommer fram inom 60 sekunder och skrivningen från den bärbara datorn ger ett larm.
+      steps:
+        - action: Växla teststyrenheten från RUN till PROGRAM och tillbaka från den godkända ingenjörsstationen.
+          expected: Båda lägesändringarna visas i övervakningstjänsten inom 60 sekunder med källa och tid.
+        - action: Ange fel lösenord tre gånger på en operatörspanel.
+          expected: Tre misslyckade inloggningar visas inom 60 sekunder.
+        - action: Skicka ett skrivkommando till teststyrenheten från den bärbara datorn.
+          expected: Kommandot visas inom 60 sekunder och ett larm som anger den bärbara datorns adress når säkerhetsteamet.

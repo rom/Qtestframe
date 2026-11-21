@@ -141,12 +141,12 @@ func (s *Store) DeleteRole(ctx context.Context, tenantID, name string) error {
 	}
 	return s.tx(ctx, func(c conn) error {
 		var n int
-		if err := c.row(ctx, `SELECT (SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND role = ?) + (SELECT COUNT(*) FROM api_tokens WHERE tenant_id = ? AND role = ?)`,
-			tenantID, name, tenantID, name).Scan(&n); err != nil {
+		if err := c.row(ctx, `SELECT (SELECT COUNT(*) FROM memberships WHERE tenant_id = ? AND role = ?) + (SELECT COUNT(*) FROM api_tokens WHERE tenant_id = ? AND role = ?) + (SELECT COUNT(*) FROM project_members WHERE tenant_id = ? AND role = ?)`,
+			tenantID, name, tenantID, name, tenantID, name).Scan(&n); err != nil {
 			return err
 		}
 		if n > 0 {
-			return Conflictf("role %s is still used by %d members or API tokens; give them another role first", name, n)
+			return Conflictf("role %s is still used by %d members, project members or API tokens; give them another role first", name, n)
 		}
 		res, err := c.exec(ctx, `DELETE FROM roles WHERE tenant_id = ? AND name = ?`, tenantID, name)
 		if err != nil {

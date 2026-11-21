@@ -1,5 +1,5 @@
 // Permission helpers mirroring internal/rbac.
-import type { Me } from './types'
+import type { Me, ProjectAccess } from './types'
 
 export const P = {
   tenantManage: 'tenant.manage',
@@ -35,13 +35,33 @@ export const ROLES = ['admin', 'manager', 'test_lead', 'tester', 'reviewer', 'vi
  * Whether the current user holds a permission. Super admins hold every
  * permission. Pass an array to require all of them.
  */
-export function can(me: Me | null | undefined, perm: string | string[]): boolean {
+export function can(me: Me | null | undefined, perm: string | string[], access?: ProjectAccess | null): boolean {
   if (!me) return false
   if (me.user?.super_admin) return true
   const perms = me.permissions ?? []
   const want = Array.isArray(perm) ? perm : [perm]
-  return want.every((p) => perms.includes(p))
+  // inside a project its effective permissions replace the organisation
+  // role's project permissions (project sharing, internal/api/access.go)
+  return want.every((p) => (access && PROJECT_PERMISSIONS.has(p) ? access.permissions : perms).includes(p))
 }
+
+/** Permissions a project role governs (internal/api/access.go projectScoped); the others always come from the organisation role. */
+export const PROJECT_PERMISSIONS: ReadonlySet<string> = new Set<string>([
+  P.projectRead,
+  P.projectUpdate,
+  P.projectDelete,
+  P.requirementRead,
+  P.requirementWrite,
+  P.requirementReview,
+  P.testRead,
+  P.testWrite,
+  P.testReview,
+  P.runRead,
+  P.runWrite,
+  P.runExecute,
+  P.scriptExecute,
+  P.export,
+])
 
 /** Whether any of the permissions is held. */
 export function canAny(me: Me | null | undefined, perms: string[]): boolean {

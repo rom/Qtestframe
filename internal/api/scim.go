@@ -162,7 +162,7 @@ func (s *Server) routesSCIM(m *http.ServeMux) {
 // scimBase returns the SCIM base URL (from server.base_url, else the
 // request).
 func (s *Server) scimBase(r *http.Request) string {
-	if b := strings.TrimSuffix(s.Cfg.Server.BaseURL, "/"); b != "" {
+	if b := strings.TrimSuffix(s.conf().Server.BaseURL, "/"); b != "" {
 		return b + "/scim/v2"
 	}
 	scheme := "http"

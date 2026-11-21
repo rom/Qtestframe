@@ -76,6 +76,13 @@ export const TIPS = {
   'settings.dimension': CATEGORIES,
   'settings.sources': REQ_FIELDS,
   'settings.archive': { page: 'reports-and-export', anchor: { en: 'save-and-load-projects', sv: 'spara-och-läs-in-projekt' } },
+  'system.general': { page: 'administration', anchor: { en: 'system-settings', sv: 'systeminställningar' } },
+  'system.sources': { page: 'administration', anchor: { en: 'where-a-value-comes-from', sv: 'var-ett-värde-kommer-ifrån' } },
+  'system.oidc': { page: 'administration', anchor: { en: 'single-sign-on-oidc', sv: 'enkel-inloggning-oidc' } },
+  'system.logging': { page: 'administration', anchor: { en: 'logging-and-syslog', sv: 'loggning-och-syslog' } },
+  'system.email': { page: 'administration', anchor: { en: 'e-mail-server', sv: 'e-postserver' } },
+  'system.security': { page: 'administration', anchor: { en: 'security', sv: 'säkerhet' } },
+  'system.runner': { page: 'administration', anchor: { en: 'test-runner', sv: 'testkörning' } },
 } satisfies Record<string, TipTarget>
 
 export type TipId = keyof typeof TIPS

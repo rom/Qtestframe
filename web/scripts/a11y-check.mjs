@@ -15,6 +15,7 @@
 // Exits 1 on any serious or critical axe violation, any horizontal overflow
 // or a failed keyboard/focus check, 2 when the server cannot be reached or
 // the login fails.
+import { createHmac } from 'node:crypto'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { chromium } from 'playwright-core'
@@ -99,12 +100,68 @@ async function api(request, method, path, body, csrf) {
 }
 const items = (x) => (Array.isArray(x) ? x : (x?.items ?? []))
 
+// ---- multi-factor authentication: a user with an authenticator app, for the
+// second step of the sign-in page (route login-mfa) ----
+const MFA_EMAIL = 'a11y.mfa@example.com'
+const MFA_PASSWORD = 'A11y-mfa-check-2468'
+
+/** RFC 6238 code (SHA-1, 6 digits, 30 s) of a base32 secret. */
+function totp(secret, t = Date.now()) {
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+  let bits = ''
+  for (const c of secret.replace(/[\s=]/g, '').toUpperCase()) bits += A.indexOf(c).toString(2).padStart(5, '0')
+  const key = Buffer.from(bits.match(/.{8}/g).map((b) => parseInt(b, 2)))
+  const msg = Buffer.alloc(8)
+  msg.writeBigUInt64BE(BigInt(Math.floor(t / 30000)))
+  const h = createHmac('sha1', key).update(msg).digest()
+  const o = h[h.length - 1] & 15
+  return String((h.readUInt32BE(o) & 0x7fffffff) % 1000000).padStart(6, '0')
+}
+
+/** Creates (or resets) the MFA test user and sets up its authenticator. */
+async function setupMfaUser(browser, request, csrf) {
+  let m = items(await api(request, 'GET', '/members')).find((x) => x.email === MFA_EMAIL)
+  if (!m) {
+    await api(request, 'POST', '/members', { email: MFA_EMAIL, role: 'viewer', display_name: 'A11y MFA', password: MFA_PASSWORD }, csrf)
+    m = items(await api(request, 'GET', '/members')).find((x) => x.email === MFA_EMAIL)
+  } else if (m.mfa_enabled) {
+    await api(request, 'POST', `/members/${m.user_id}/mfa/reset`, undefined, csrf)
+  }
+  const ctx = await browser.newContext()
+  try {
+    const me = await api(ctx.request, 'POST', '/auth/login', { email: MFA_EMAIL, password: MFA_PASSWORD })
+    await api(ctx.request, 'PATCH', '/auth/me', { preferences: { intro_done: true } }, me.csrf_token)
+    const setup = await api(ctx.request, 'POST', '/auth/mfa/totp', undefined, me.csrf_token)
+    await api(ctx.request, 'POST', '/auth/mfa/totp/confirm', { code: totp(setup.secret) }, me.csrf_token)
+  } finally {
+    await ctx.close()
+  }
+}
+
+/** Storage state of a sign-in waiting for its second factor (the qtf_mfa
+ * cookie lives 5 minutes; renewed after 4). */
+let mfaPending = null
+async function mfaPendingState(browser) {
+  if (mfaPending && Date.now() - mfaPending.at < 4 * 60 * 1000) return mfaPending.state
+  const ctx = await browser.newContext()
+  try {
+    const res = await api(ctx.request, 'POST', '/auth/login', { email: MFA_EMAIL, password: MFA_PASSWORD })
+    if (!res?.mfa_required) throw new Error('the MFA test user signed in without a second factor')
+    mfaPending = { at: Date.now(), state: await ctx.storageState() }
+    return mfaPending.state
+  } finally {
+    await ctx.close()
+  }
+}
+
 /** Routes to visit, with ids from the seed data. */
 async function discover(request) {
   const projects = items(await api(request, 'GET', '/projects'))
   const project = projects.find((p) => p.key === 'DEMO') ?? projects[0]
   if (!project) throw new Error('no project found – run `qtestframe seed-demo` first')
   const pid = project.id
+  // the restricted project of seed-demo (project sharing), else the main one
+  const vault = projects.find((x) => x.key === 'VAULT') ?? project
   const reqs = items(await api(request, 'GET', `/projects/${pid}/requirements`))
   // a requirement with at least two relations, for the relations tab's bulk removal
   const relCount = new Map()
@@ -245,6 +302,10 @@ async function discover(request) {
     ddEx && { name: 'test-data-paste', path: `${p}/tests?item=${ddEx.test_case_id}`, open: '.p-drawer button:has(.pi-clipboard)', wait: '.p-dialog #td-paste' },
     ddLinks.length > 0 && { name: 'requirement-coverage', path: `${p}/requirements?item=${ddLinks[0].requirement_id}`, wait: '.cov-table' },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
+    // project sharing: the Share dialog, the Sharing tab and its bulk toolbar
+    { name: 'project-share-dialog', path: `${p}/dashboard`, open: 'button.project-share', wait: '.p-dialog .sharing-panel .members-table' },
+    { name: 'settings-sharing', path: `/p/${vault.id}/settings?tab=sharing`, wait: '.sharing-panel .members-table' },
+    { name: 'sharing-members-bulk', path: `/p/${vault.id}/settings?tab=sharing`, open: '.sharing-panel .members-table .p-datatable-tbody .p-checkbox', wait: '.sharing-panel .bulkbar' },
     { name: 'settings-project-load-dialog', path: `${p}/settings?tab=project`, open: 'section.project-archive button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
     // the folder tree is a side panel from 1200 px (a drawer below)
     { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', minWidth: 1200 },
@@ -279,6 +340,12 @@ async function discover(request) {
     { name: 'members-bulk', path: '/admin/members', open: '.p-datatable-tbody tr .p-checkbox', wait: '.bulkbar' },
     { name: 'rbac', path: '/admin/roles' },
     { name: 'execution-settings', path: '/admin/execution', wait: '.setting' },
+    // multi-factor authentication: policy page, set-up dialog in the profile, the sign-in step
+    { name: 'mfa-policy', path: '/admin/mfa', wait: '#h-mfa-server' },
+    { name: 'mfa-policy-roles', path: '/admin/mfa', open: 'label[for="mfa-t-mode-roles"]', wait: 'section[aria-labelledby="h-mfa-tenant"] .p-multiselect' },
+    { name: 'profile-mfa-setup', path: '/profile', open: '#mfa button:has(.pi-mobile)', wait: '.p-dialog svg.qr' },
+    { name: 'login-mfa', path: '/login?mfa=1', anon: true, mfa: true, wait: '#mfa-code' },
+    { name: 'login-mfa-recovery', path: '/login?mfa=1', anon: true, mfa: true, open: '.mfa-login button.link-button', wait: '#mfa-code.recovery' },
     { name: 'backup', path: '/admin/backup' },
     { name: 'tokens', path: '/admin/tokens' },
     { name: 'provisioning', path: '/admin/provisioning', wait: '#h-scim-events' },
@@ -286,6 +353,15 @@ async function discover(request) {
     { name: 'audit', path: '/admin/audit' },
     { name: 'tenants', path: '/admin/tenants' },
     { name: 'users', path: '/admin/users' },
+    // system settings (super admins): every section, the OIDC provider dialog
+    { name: 'system-settings', path: '/admin/system', wait: '.sys-field' },
+    { name: 'system-settings-security', path: '/admin/system?section=security', wait: '.sys-field' },
+    { name: 'system-settings-oidc', path: '/admin/system?section=oidc', wait: '.sys-section .row' },
+    { name: 'system-settings-oidc-dialog', path: '/admin/system?section=oidc', open: '.sys-section button:has(.pi-plus)', wait: '.p-dialog #oidc-provider-form' },
+    { name: 'system-settings-logging', path: '/admin/system?section=logging', wait: '.sys-field' },
+    { name: 'system-settings-email', path: '/admin/system?section=email', wait: '.sys-field' },
+    { name: 'system-settings-runner', path: '/admin/system?section=runner', wait: '.sys-field' },
+    { name: 'system-settings-retention', path: '/admin/system?section=retention', wait: '.info-list' },
   ].filter(Boolean)
   return routes.filter((r) => !ONLY.length || ONLY.includes(r.name))
 }
@@ -461,6 +537,7 @@ async function main() {
     const state = await authCtx.storageState()
     const routes = await discover(authCtx.request)
     const original = me.user?.preferences ?? {}
+    if (routes.some((r) => r.mfa)) await setupMfaUser(browser, authCtx.request, csrf)
 
     for (const cfg of CONFIGS) {
       // the user's preferences decide theme and language once signed in
@@ -483,7 +560,10 @@ async function main() {
           if (r.narrow && vp.width > 1023) continue
           if (r.minWidth && vp.width < r.minWidth) continue
           if (r.maxWidth && vp.width > r.maxWidth) continue
-          const page = await (r.anon ? anon : ctx).newPage()
+          // the second sign-in step: a context with a pending sign-in
+          const mfaCtx = r.mfa ? await browser.newContext({ ...opts, storageState: await mfaPendingState(browser) }) : null
+          if (mfaCtx) await mfaCtx.addInitScript(local, { lang: cfg.lang, theme: cfg.theme })
+          const page = await (mfaCtx ?? (r.anon ? anon : ctx)).newPage()
           const label = `${cfg.name} ${vp.name} ${r.name}`
           const errors = []
           page.on('pageerror', (e) => errors.push(e.message))
@@ -511,6 +591,7 @@ async function main() {
             problems.push(`${label}: ${e.message}`)
           } finally {
             await page.close()
+            if (mfaCtx) await mfaCtx.close()
           }
         }
         await ctx.close()
@@ -526,6 +607,8 @@ async function main() {
       for (const r of results) if (!r.ok) problems.push(`keyboard: ${r.name}: ${r.detail}`)
       console.log(`keyboard checks: ${results.filter((r) => r.ok).length}/${results.length} passed`)
     }
+    // drop the authenticator set-up the profile-mfa-setup route started
+    await api(authCtx.request, 'POST', '/auth/mfa/disable', { code: '' }, csrf).catch(() => undefined)
     // restore the admin's own preferences
     await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: original.theme ?? null, language: original.language ?? null, intro_done: original.intro_done ?? null } }, csrf).catch(() => undefined)
     await authCtx.close()

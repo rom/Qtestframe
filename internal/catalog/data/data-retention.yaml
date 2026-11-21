@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deletion, automation]
-    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-53 SI-12"]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-53 SI-12", "ISO/IEC 27701:2019 §7.4.5"]
     tests: [RET-T02]
     en:
       title: Automatic deletion after the retention period
@@ -56,7 +56,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [inactive-accounts, deletion]
-    refs: ["GDPR Art. 5(1)(e)", "GDPR Art. 5(1)(c)"]
+    refs: ["GDPR Art. 5(1)(e)", "GDPR Art. 5(1)(c)", "ISO/IEC 27001:2022 A.8.10"]
     tests: [RET-T03]
     en:
       title: Deletion of inactive accounts
@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deletion, search-index, cache]
-    refs: ["GDPR Art. 17", "ISO/IEC 27001:2022 A.8.10"]
+    refs: ["GDPR Art. 17", "ISO/IEC 27001:2022 A.8.10", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)"]
     tests: [RET-T04]
     en:
       title: Deletion reaches indexes, caches and replicas
@@ -166,7 +166,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [legal-hold, deletion]
-    refs: ["GDPR Art. 17(3)(e)", "NIST SP 800-53 AU-11(1)"]
+    refs: ["GDPR Art. 17(3)(e)", "NIST SP 800-53 AU-11(1)", "ISO/IEC 27001:2022 A.5.33"]
     tests: [RET-T08]
     en:
       title: Records under legal hold are not deleted
@@ -188,7 +188,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [anonymisation, k-anonymity]
-    refs: ["GDPR Recital 26", "ISO/IEC 20889:2018", "Article 29 Working Party Opinion 05/2014 on Anonymisation Techniques"]
+    refs: ["GDPR Recital 26", "ISO/IEC 20889:2018", "Article 29 Working Party Opinion 05/2014 on Anonymisation Techniques", "ISO/IEC 27001:2022 A.8.11"]
     tests: [RET-T09]
     en:
       title: Anonymised data cannot be linked to a person
@@ -210,7 +210,7 @@ requirements:
     obligation: may
     priority: low
     tags: [deletion, reporting]
-    refs: ["GDPR Art. 5(2)", "ISO/IEC 27701:2019 §7.4.7"]
+    refs: ["GDPR Art. 5(2)", "ISO/IEC 27701:2019 §7.4.7", "ISO/IEC 27001:2022 A.5.34"]
     tests: [RET-T10]
     en:
       title: Monthly deletion report
@@ -262,7 +262,7 @@ tests:
     priority: high
     execution: automated
     tags: [deletion, automation]
-    refs: ["GDPR Art. 5(1)(e)"]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27701:2019 §7.4.5"]
     en:
       title: Retention job deletes expired records only
       description: A script creates records with different ages, runs the retention job and checks the result.
@@ -292,7 +292,7 @@ tests:
     priority: medium
     execution: automated
     tags: [inactive-accounts]
-    refs: ["GDPR Art. 5(1)(e)"]
+    refs: ["GDPR Art. 5(1)(e)", "ISO/IEC 27001:2022 A.8.10"]
     en:
       title: Inactive accounts are warned and then deleted
       description: A script sets last sign-in dates in the past and runs the inactive account job.
@@ -322,7 +322,7 @@ tests:
     priority: high
     execution: manual
     tags: [deletion, search-index, cache]
-    refs: ["GDPR Art. 17"]
+    refs: ["GDPR Art. 17", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(m)"]
     en:
       title: Deleted record disappears from search, cache and warehouse
       description: Deletes a record with a unique marker and searches for it in every secondary store after 24 hours.
@@ -442,7 +442,7 @@ tests:
     priority: critical
     execution: automated
     tags: [legal-hold, deletion]
-    refs: ["GDPR Art. 17(3)(e)"]
+    refs: ["GDPR Art. 17(3)(e)", "ISO/IEC 27001:2022 A.5.33"]
     en:
       title: Records under hold survive every deletion path
       description: A script tries every deletion path against a record under legal hold.
@@ -472,7 +472,7 @@ tests:
     priority: medium
     execution: automated
     tags: [anonymisation, k-anonymity]
-    refs: ["ISO/IEC 20889:2018"]
+    refs: ["ISO/IEC 20889:2018", "ISO/IEC 27001:2022 A.8.11"]
     en:
       title: k-anonymity check of anonymised data
       description: A script measures k-anonymity and searches for direct identifiers in the anonymised data set.
@@ -498,7 +498,7 @@ tests:
     priority: low
     execution: manual
     tags: [deletion, reporting]
-    refs: ["GDPR Art. 5(2)"]
+    refs: ["GDPR Art. 5(2)", "ISO/IEC 27001:2022 A.5.34"]
     en:
       title: Deletion report matches the deletion log
       description: Opens the monthly deletion report and compares it with the deletion log.

@@ -9,19 +9,23 @@ import (
 )
 
 // handlePeople lists who can be @mentioned in a project: the members of
-// the organisation and the other names used as owners and assignees.
+// the organisation who may see it (project sharing) and the other names
+// used as owners and assignees.
 func (s *Server) handlePeople(w http.ResponseWriter, r *http.Request, p *Principal) {
 	pr, ok := s.project(w, r, p)
 	if !ok {
 		return
 	}
-	ms, err := s.Store.ListTenantMembers(r.Context(), p.TenantID())
+	access, ms, err := s.membersIn(r.Context(), p.TenantID(), pr.ID)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
 	users := make([]mention.User, 0, len(ms))
 	for _, m := range ms {
+		if access[m.UserID] == nil {
+			continue
+		}
 		users = append(users, mention.User{ID: m.UserID, Email: m.Email, Name: m.Name, Avatar: m.Avatar})
 	}
 	names, err := s.Store.ProjectPeopleNames(r.Context(), p.TenantID(), pr.ID)

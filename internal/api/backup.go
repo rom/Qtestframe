@@ -76,6 +76,10 @@ func (s *Server) handleRestore(w http.ResponseWriter, r *http.Request, p *Princi
 	for _, n := range counts {
 		total += n
 	}
+	// the restored system settings apply at once
+	if err := s.ReloadSettings(r.Context()); err != nil {
+		s.Log.Warn("restored system settings not applied", "err", err)
+	}
 	// written after the restore, i.e. into the restored data
 	s.audit(r.Context(), p, "admin.restore", "system", "", fmt.Sprintf("%d rows in %d tables from %s", total, len(counts), store.CleanFileName(fhs[0].Filename)))
 	s.clearCookie(w, sessionCookie)

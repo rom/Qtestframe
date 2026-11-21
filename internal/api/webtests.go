@@ -35,7 +35,7 @@ type webTestsResponse struct {
 }
 
 func (s *Server) webTestsResponse(w *model.WebTestSettings) webTestsResponse {
-	return webTestsResponse{WebTestSettings: store.RedactWebTestSettings(w), Enabled: s.Runner.WebEnabled(), Browser: s.Cfg.Runner.Web.Browser}
+	return webTestsResponse{WebTestSettings: store.RedactWebTestSettings(w), Enabled: s.Runner.WebEnabled(), Browser: s.conf().Runner.Web.Browser}
 }
 
 func (s *Server) handleGetWebTests(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -153,5 +153,5 @@ func (s *Server) executionTarget(ctx context.Context, tenantID string, run *mode
 			values = c.Values
 		}
 	}
-	return targetFor(s.Cfg.Runner.Web, set, run.Environment, values)
+	return targetFor(s.conf().Runner.Web, set, run.Environment, values)
 }

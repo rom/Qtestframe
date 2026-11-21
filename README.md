@@ -53,14 +53,14 @@ Qtestframe is a multi-user, multi-tenant tool for managing requirement specifica
 - **Attachments and documents:** attach files to requirements, tests, runs and executions; every project has a document archive with previews, tags and filters.
 - **Reports:** six standard reports (project status, coverage, traceability, run summary, defects, test inventory) and a custom report builder; PDF, Word, Excel or CSV, downloaded or saved in the archive.
 - **Personal touches:** twenty-two colour themes (including three camouflage patterns, green and amber terminals, midnight, rose and dark and light high contrast), avatars for users, icons and colours for projects (presets or uploaded images), a "last signed in" notice with failed attempts, and a first-login intro tour.
-- **Built-in user guide** in English and Swedish with a tutorial, FAQ and a [references](docs/user-guide/en/references.md) page (RFC 2119, RFC 8174, NIST, ISO/IEC/IEEE 29148 and 29119 and more), available under Help in the tool ([docs/user-guide](docs/user-guide/en/index.md)).
+- **Built-in user guide** in English and Swedish with a tutorial, FAQ and a [references](docs/user-guide/en/references.md) page (RFC 2119, RFC 8174, NIST, ISO/IEC/IEEE 29148 and 29119 and more), available under Help in the tool ([docs/user-guide](docs/user-guide/en/index.md)), also as [PDF](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-user-guide-en.pdf) ([svenska](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-user-guide-sv.pdf)) and as one [Markdown file](docs/user-guide/qtestframe-user-guide-en.md) ([svenska](docs/user-guide/qtestframe-user-guide-sv.md)), see [User guide](#user-guide).
 - **Context-sensitive help:** an *i* next to form fields explains the field on mouse-over or keyboard focus and links to the matching section of the guide; <kbd>?</kbd> opens the guide page for the current view.
 - **Classification:** each project defines its own category dimensions. The defaults are Polarity (positive/negative), Interface (external/internal), Medium (file/network based), Execution (manual/automated), Level (unit to acceptance) and Area.
 - **Grouping:** nested folders for requirements and tests. Drag and drop moves items, whole folders, or entire category dimensions, also to another project.
 - **Views:** requirements, tests, operations (test runs and an execution runner), traceability matrix with coverage, dependency graph, tag cloud, dashboard, global search, administration. Table columns can be chosen and reordered (drag the header or use the Columns menu).
 - **Filtering and search on every field** with a [query language](#query-language): field operators, regular expressions, globs, comparisons, `AND`/`OR`/`NOT` and grouping.
 - **Export** of a whole project or selected parts (requirements, criteria, tests, traceability, runs) to **XLSX, CSV, PDF and DOCX**, and of requirements to **ReqIF 1.2** (`.reqif`, or `.reqifz` with attachments) for DOORS, Polarion, ProR and other requirement tools, with folders as headings and relations; an export imports back with all fields.
-- **Security:** local accounts, **OIDC** and **SAML 2.0** single sign-on, **SCIM 2.0** user provisioning from Entra ID, Okta and other identity providers (group → role mapping, deactivation ends access), **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), **save and load single projects** as files (or duplicate them) without secrets, in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
+- **Security:** local accounts, **multi-factor authentication** (authenticator apps with TOTP, single-use recovery codes, policies per server, organisation and role with a grace period, admin reset), **OIDC** and **SAML 2.0** single sign-on, **SCIM 2.0** user provisioning from Entra ID, Okta and other identity providers (group → role mapping, deactivation ends access), **RBAC** (admin, manager, test lead, tester, reviewer, viewer + super admin, editable per organisation, plus custom roles), API tokens, an audit trail with date filters and CSV export, a role matrix, admin password reset with a forced change, backup and restore (also across SQLite/PostgreSQL), **save and load single projects** as files (or duplicate them) without secrets, in-process sandboxing (Landlock, seccomp, capabilities, no_new_privs).
 - **Operations:** structured logs with optional **syslog** shipping (UDP, TCP, TLS, Unix socket), certificate scripts (local CA, self-signed, Let's Encrypt), hardened systemd unit, SELinux and AppArmor profiles, container image.
 
 ## Quick start
@@ -456,6 +456,27 @@ make coverage
 `make coverage` enforces the **85 % floor**: Go across all packages through `scripts/coverage.sh`, and the vitest thresholds of the web client. Set `QTF_TEST_POSTGRES_DSN` to run the store and API tests against PostgreSQL as well. See [docs/testing.md](docs/testing.md).
 
 ## Documentation
+
+### User guide
+
+The user guide explains every view of Qtestframe, with a 30-minute tutorial, a FAQ and screenshots. It is available in four forms, in English and Swedish:
+
+| Form | English | Swedish | Notes |
+|---|---|---|---|
+| **In the tool** | Help → User guide | Hjälp → Användarhandbok | Context help: <kbd>?</kbd> opens the page for the current view; the *i* next to a field links to its section. |
+| **PDF** | [qtestframe-user-guide-en.pdf](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-user-guide-en.pdf) | [qtestframe-user-guide-sv.pdf](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-user-guide-sv.pdf) | A4, one chapter per page break, page numbers and bookmarks; for printing or reading offline. |
+| **Single-file Markdown** | [qtestframe-user-guide-en.md](docs/user-guide/qtestframe-user-guide-en.md) | [qtestframe-user-guide-sv.md](docs/user-guide/qtestframe-user-guide-sv.md) | The whole guide in one file with working links between chapters; renders on GitHub and in any Markdown viewer. A ZIP with the images is on the [release](https://github.com/rom/Qtestframe/releases/download/user-guide/qtestframe-user-guide-markdown.zip). |
+| **Markdown pages** | [docs/user-guide/en](docs/user-guide/en/index.md) | [docs/user-guide/sv](docs/user-guide/sv/index.md) | The sources, one file per chapter, as bundled into the tool. |
+
+The PDF and the Markdown files are rebuilt from the guide pages by the `user-guide` workflow on every change and published on the [user-guide release](https://github.com/rom/Qtestframe/releases/tag/user-guide); pull requests that change the guide get them as a build artifact. To build them yourself:
+
+```bash
+make guide
+```
+
+writes `dist/user-guide/qtestframe-user-guide-<lang>.pdf` and `.md` with an `images/` folder (the PDF needs Chrome or Chromium: Playwright's, a system Chrome, or the executable in `QTF_CHROME`); `make guide-md` writes only the Markdown, `GUIDE_LANGS=sv` limits the languages. After editing the guide, run `make guide-docs` to refresh the single-file Markdown in `docs/user-guide/` (CI checks it is up to date). Details: [docs/user-guide/README.md](docs/user-guide/README.md#pdf-and-single-file-markdown).
+
+### Technical documentation
 
 | Document | Content |
 |---|---|

@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ProgressSpinner from 'primevue/progressspinner'
 import Message from 'primevue/message'
 import ProjectIcon from '@/components/ProjectIcon.vue'
+import Button from 'primevue/button'
+import SharingDialog from '@/components/SharingDialog.vue'
+import { canShare, isRestricted } from '@/lib/sharing'
+import { useAuthStore } from '@/stores/auth'
 import { useProjectStore } from '@/stores/project'
 import { isSoftware } from '@/lib/projectTypes'
 import { usePrefsStore } from '@/stores/prefs'
@@ -17,6 +21,19 @@ const prefs = usePrefsStore()
 const route = useRoute()
 const error = ref('')
 const { t } = useI18n()
+const auth = useAuthStore()
+// permission checks inside a project use its effective permissions (auth.can)
+proj.scoped = true
+onBeforeUnmount(() => (proj.scoped = false))
+const shareOpen = ref(false)
+async function onShared() {
+  try {
+    await proj.refresh()
+  } catch {
+    // no access any more (left a restricted project)
+    error.value = t('sharing.noLongerVisible')
+  }
+}
 
 watch(
   () => props.projectId,
@@ -67,7 +84,11 @@ const isRunsChild = computed(() => route.name === 'run' || route.name === 'execu
       <ProjectIcon :icon="proj.project?.icon" :project-key="proj.project?.key" :color="proj.project?.color" :size="20" />
       <span class="small" style="font-weight: 600" aria-current="page">{{ proj.project?.name }}</span>
       <span class="key">{{ proj.project?.key }}</span>
+      <i v-if="isRestricted(proj.project)" class="pi pi-lock muted small" v-tooltip="t('sharing.restrictedTip')" tabindex="0" role="img" :aria-label="t('sharing.restrictedTip')" />
+      <span class="grow" />
+      <Button v-if="canShare(auth.me, proj.project)" class="project-share" :label="t('sharing.share')" icon="pi pi-share-alt" size="small" severity="secondary" outlined @click="shareOpen = true" />
     </nav>
+    <SharingDialog v-model:visible="shareOpen" :project="proj.project" @changed="onShared" />
     <nav class="tabs-nav" :aria-label="t('nav.projectSections')">
       <RouterLink
         v-for="tab in tabs"

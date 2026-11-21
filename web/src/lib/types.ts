@@ -1,4 +1,5 @@
 // TypeScript mirrors of internal/model/model.go (JSON tags are authoritative).
+import type { MfaStatus } from './mfa'
 import type { FlakyTest, GroupCoverage } from './metrics'
 import type { ScriptJob } from './webTests'
 
@@ -23,6 +24,8 @@ export interface User {
   avatar?: string
   /** set after an administrator reset the password */
   must_change_password?: boolean
+  /** has a confirmed second factor (user lists, /auth/me) */
+  mfa_enabled?: boolean
 }
 
 /** Per-user settings (all optional; empty = default). */
@@ -69,6 +72,10 @@ export interface Membership {
   avatar?: string
   /** provisioned by SCIM: the identity provider manages role and membership */
   scim?: boolean
+  /** has a confirmed second factor (members lists) */
+  mfa_enabled?: boolean
+  /** the MFA policy requires a second factor for this member's role here */
+  mfa_required?: boolean
   /** open e-mail invitation (members list of the tenant) */
   invitation?: InvitationInfo
 }
@@ -137,6 +144,8 @@ export interface Me {
   previous_login?: PreviousLogin | null
   failed_logins_since_previous?: number
   first_login?: boolean
+  /** multi-factor state of the signed-in user (sessions only) */
+  mfa?: MfaStatus
 }
 
 /** GET /auth/logins */
@@ -234,8 +243,58 @@ export interface Project {
   type?: string
   /** technology of a software project, included in prompts */
   tech_context?: string
+  /** organisation (every member) or restricted (project members and organisation admins) */
+  access?: ProjectAccessMode
+  /** the caller's access to the project (effective permissions there) */
+  my_access?: ProjectAccess
   created_at: string
   updated_at: string
+}
+
+export type ProjectAccessMode = 'organisation' | 'restricted'
+
+/** The caller's access to a project (internal/model ProjectAccessInfo). */
+export interface ProjectAccess {
+  /** admin (organisation administrator), member, group or organisation (the organisation role) */
+  source: 'admin' | 'member' | 'group' | 'organisation'
+  /** the project role (member) or the groups' roles (group) */
+  role?: string
+  /** effective permissions in the project */
+  permissions: string[]
+  can_share: boolean
+}
+
+/** A user or SCIM group with a role in a project. */
+export interface ProjectMember {
+  project_id: string
+  type: 'user' | 'group'
+  id: string
+  role: string
+  email?: string
+  display_name?: string
+  avatar?: string
+  org_role?: string
+  added_by?: string
+  created_at: string
+  updated_at: string
+}
+
+/** GET /projects/{pid}/access */
+export interface ProjectSharing {
+  access: ProjectAccessMode
+  members: number
+  my_access: ProjectAccess | null
+  grantable_roles: string[]
+}
+
+/** A user or group that can be added to a project. */
+export interface MemberCandidate {
+  type: 'user' | 'group'
+  id: string
+  email?: string
+  display_name?: string
+  avatar?: string
+  org_role?: string
 }
 
 export type ItemKind = 'requirement' | 'test'

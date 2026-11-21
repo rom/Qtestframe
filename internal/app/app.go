@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -336,6 +337,19 @@ func cmdSeedDemo(args []string, env Env) error {
 		return err
 	}
 	fmt.Fprintf(env.Stdout, "seeded demo project %s in tenant %s\n", p.Key, t.Slug)
+	// the demo users must not take the place of the bootstrap administrator,
+	// who is only created while the database has no users
+	if err := Bootstrap(env.Ctx, st, cfg.Bootstrap, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
+		return err
+	}
+	sp, err := SeedDemoSharing(env.Ctx, st, t.ID)
+	if err != nil {
+		return err
+	}
+	if sp != nil {
+		fmt.Fprintf(env.Stdout, "seeded restricted project %s: shared with %s (viewer); %s is not a member (password of both: %s)\n",
+			sp.Key, DemoMemberEmail, DemoOutsiderEmail, DemoUserPassword)
+	}
 	return nil
 }
 
@@ -541,11 +555,12 @@ func cmdServe(args []string, env Env) error {
 	if err != nil {
 		return err
 	}
-	log, closer, err := logging.New(cfg.Logging, env.Stderr)
+	logs, err := logging.NewManager(cfg.Logging, env.Stderr)
 	if err != nil {
 		return err
 	}
-	defer closer.Close()
+	defer logs.Close()
+	log := logs.Logger()
 	slog.SetDefault(log)
 	ctx, stop := signal.NotifyContext(env.Ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -566,16 +581,31 @@ func cmdServe(args []string, env Env) error {
 	if err := Bootstrap(ctx, st, cfg.Bootstrap, log); err != nil {
 		return err
 	}
+	// system settings stored in the database (Administration → System
+	// settings) apply over the file and the environment; cfg stays the
+	// file/environment configuration, eff is what this process runs with
+	base := cfg
+	eff, err := api.EffectiveConfig(ctx, st, base)
+	if err != nil {
+		log.Error("stored system settings are invalid and were ignored; using the configuration file", "err", err)
+	}
+	if !reflect.DeepEqual(eff.Logging, base.Logging) {
+		if err := logs.Reconfigure(eff.Logging); err != nil {
+			log.Error("stored logging settings not applied", "err", err)
+		}
+	}
+	cfg = eff
 	if cfg.Runner.Enabled {
 		if err := os.MkdirAll(cfg.Runner.WorkDir, 0o700); err != nil {
 			return fmt.Errorf("runner work dir: %w", err)
 		}
 	}
 	api.Version = Version
-	srv, err := api.New(st, cfg, log, runner.New(cfg.Runner), webui.FS())
+	srv, err := api.New(st, base, log, runner.New(cfg.Runner), webui.FS())
 	if err != nil {
 		return err
 	}
+	srv.Logs = logs
 	ln, err := net.Listen("tcp", cfg.Server.Listen)
 	if err != nil {
 		return err

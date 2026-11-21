@@ -25,14 +25,14 @@ func (s *Server) routesEmail(h routeFunc) {
 
 // mailTimeout bounds one delivery.
 func (s *Server) mailTimeout() time.Duration {
-	if t := s.Cfg.Email.Timeout; t > 0 {
+	if t := s.conf().Email.Timeout; t > 0 {
 		return t
 	}
 	return 30 * time.Second
 }
 
 // emailOn reports whether the server can send e-mail.
-func (s *Server) emailOn() bool { return s.Mail != nil }
+func (s *Server) emailOn() bool { return s.mailer() != nil }
 
 // errEmailOff is the answer when a feature needs e-mail that is not set up.
 func errEmailOff() error {
@@ -48,10 +48,10 @@ func (s *Server) now() time.Time {
 }
 
 // baseURL is server.base_url without a trailing slash.
-func (s *Server) baseURL() string { return strings.TrimSuffix(s.Cfg.Server.BaseURL, "/") }
+func (s *Server) baseURL() string { return strings.TrimSuffix(s.conf().Server.BaseURL, "/") }
 
 func (s *Server) from() mail.Address {
-	return mail.Address{Name: s.Cfg.Email.FromName, Email: s.Cfg.Email.From}
+	return mail.Address{Name: s.conf().Email.FromName, Email: s.conf().Email.From}
 }
 
 // message builds an e-mail from content.
@@ -70,7 +70,7 @@ func oneLineText(s string, n int) string {
 // is committed (at once outside a transaction); never when it is rolled
 // back. done, when given, gets the outcome.
 func (s *Server) sendMail(ctx context.Context, m *mail.Message, done func(error)) {
-	if s.Mail == nil {
+	if s.mailer() == nil {
 		return
 	}
 	store.AfterCommit(ctx, func() {
@@ -89,7 +89,11 @@ func (s *Server) sendMail(ctx context.Context, m *mail.Message, done func(error)
 func (s *Server) deliverMail(ctx context.Context, m *mail.Message) error {
 	ctx, cancel := context.WithTimeout(ctx, s.mailTimeout())
 	defer cancel()
-	err := s.Mail.Send(ctx, m)
+	m2 := s.mailer()
+	if m2 == nil {
+		return errEmailOff()
+	}
+	err := m2.Send(ctx, m)
 	if err != nil {
 		s.Log.Warn("e-mail not sent", "to", strings.Join(m.Recipients(), ","), "subject", m.Subject, "err", err)
 	} else {
@@ -187,6 +191,7 @@ func eventLabel(lang, event string) string {
 		"review.requested": {"Review requested", "Granskning begärd"},
 		"review.completed": {"Review completed", "Granskning klar"},
 		"review.reminder":  {"Review reminder", "Påminnelse om granskning"},
+		"project.shared":   {"A project was shared with you", "Ett projekt har delats med dig"},
 	}
 	l, ok := labels[event]
 	if !ok {
@@ -207,7 +212,7 @@ const (
 
 // digestDue returns the most recent scheduled digest time at or before now.
 func (s *Server) digestDue(now time.Time) time.Time {
-	t := time.Date(now.Year(), now.Month(), now.Day(), s.Cfg.Email.DigestHour, 0, 0, 0, time.UTC)
+	t := time.Date(now.Year(), now.Month(), now.Day(), s.conf().Email.DigestHour, 0, 0, 0, time.UTC)
 	if t.After(now) {
 		t = t.AddDate(0, 0, -1)
 	}
@@ -298,11 +303,9 @@ func (s *Server) RunJobs(ctx context.Context) {
 	}
 }
 
-// StartJobs runs RunJobs every minute until ctx ends.
+// StartJobs runs RunJobs every minute until ctx ends (RunJobs does
+// nothing while e-mail is off; it can be turned on in the system settings).
 func (s *Server) StartJobs(ctx context.Context) {
-	if !s.emailOn() {
-		return
-	}
 	go func() {
 		t := time.NewTicker(time.Minute)
 		defer t.Stop()

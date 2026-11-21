@@ -104,7 +104,7 @@ var imageTypes = map[string]bool{"image/png": true, "image/jpeg": true, "image/g
 var inlineTypes = map[string]bool{"image/png": true, "image/jpeg": true, "image/gif": true, "image/webp": true,
 	"application/pdf": true, "text/plain": true}
 
-func (s *Server) maxUpload() int64 { return int64(s.Cfg.Files.MaxUploadMB) << 20 }
+func (s *Server) maxUpload() int64 { return int64(s.conf().Files.MaxUploadMB) << 20 }
 
 // serveFile writes a file's content with defensive headers.
 func (s *Server) serveFile(w http.ResponseWriter, r *http.Request, f *model.FileInfo, inline bool) {

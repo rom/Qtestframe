@@ -28,6 +28,10 @@ Du är inloggad men arbetar inte i någon organisation. Välj en i organisations
 
 Använd organisationsväljaren till vänster i övre fältet (på mobiler byggnadsikonen). Qtestframe öppnar organisationens projektlista. För att alltid börja i en viss organisation anger du **Standardorganisation** i dina inställningar.
 
+### En kollega ser inte ett projekt. Varför?
+
+Projektet är troligen **begränsat** (det visas med ett lås 🔒): bara dess projektmedlemmar och organisationens administratörer ser det. Någon som får ändra projektet lägger till din kollega med **Dela** i projektets sidhuvud; se [Delning av projekt](administration.md#delning-av-projekt). Projektrollen kan också vara lägre än organisationsrollen, så en kollega kan se ett projekt men inte få ändra i det.
+
 ## Redigering
 
 ### Hur hänvisar jag till en kollega i ett krav eller en kommentar?

@@ -77,7 +77,7 @@ tags:
 - name: Files
   description: Files, attachments, documents, avatars
 - name: Reports and export
-  description: Reports, export (CSV, XLSX, PDF, DOCX, ReqIF) and search
+  description: Reports, export (CSV, XLSX, PDF, DOCX, Markdown, ReqIF) and search
 - name: Import
   description: Requirement import
 - name: Catalogue
@@ -193,7 +193,7 @@ paths:
       summary: Login
       operationId: postAuthLogin
       description: |-
-        `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled — `Me` + `qtf_session` cookie
+        `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled — `Me` + `qtf_session` cookie. When the account has a second factor (and the device is not remembered) the answer is instead `{"mfa_required": true, "methods", "remember_days", "expires_at"}` with a short-lived `qtf_mfa` cookie: finish with `POST /auth/mfa/verify`. A session whose MFA policy requires a second factor that is not set up yet answers 403 `mfa_enrolment_required` outside `/api/v1/auth/` until it is.
 
         **Permission:** none (public).
       x-permission: none
@@ -1136,7 +1136,7 @@ paths:
       summary: Audit
       operationId: getAudit
       description: |-
-        audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user
+        audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user. `format=csv` or `format=md` (alias `markdown`) downloads the entries as a CSV file or a Markdown document instead
 
         **Permission:** `audit.read`.
       x-permission: audit.read
@@ -1148,10 +1148,26 @@ paths:
         schema:
           type: integer
       - $ref: '#/components/parameters/q'
+      - name: format
+        in: query
+        required: false
+        description: download the entries as a file instead of JSON
+        schema:
+          type: string
+          enum:
+          - csv
+          - md
+          - markdown
       responses:
         '200':
           description: Audit log, newest first
           content:
+            text/csv:
+              schema:
+                type: string
+            text/markdown:
+              schema:
+                type: string
             application/json:
               schema:
                 type: object
@@ -1177,8 +1193,11 @@ paths:
       - Projects
       summary: List projects
       operationId: getProjects
-      description: '**Permission:** `project.read`.'
-      x-permission: project.read
+      description: |-
+        The projects the caller may read: organisation-wide projects (with `project.read` in the organisation role or a project role) and restricted projects the caller is a member of (organisation administrators see every project). Each project carries `my_access`, the caller's effective permissions there.
+
+        **Permission:** signed in.
+      x-permission: authenticated
       responses:
         '200':
           description: Projects of the current tenant
@@ -4752,8 +4771,11 @@ paths:
       - Reports and export
       summary: Search
       operationId: getSearch
-      description: '**Permission:** `project.read`.'
-      x-permission: project.read
+      description: |-
+        Searches the projects the caller may read, each kind of item with its read permission in the project.
+
+        **Permission:** signed in.
+      x-permission: authenticated
       parameters:
       - name: q
         in: query
@@ -4811,7 +4833,7 @@ paths:
       summary: Export
       operationId: getProjectsByPidExport
       description: |-
-        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx` (aliases `excel`, `word`) export the chosen `aspects`; `reqif` and `reqifz` export the requirements as ReqIF 1.2 (aspects do not apply): `.reqif` is the XML document, `.reqifz` a ZIP with the document and the requirements' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
+        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx`, `md` (aliases `excel`, `word`, `markdown`) export the chosen `aspects` (`md`: one GitHub-flavoured Markdown document, `text/markdown`); `reqif` and `reqifz` export the requirements as ReqIF 1.2 (aspects do not apply): `.reqif` is the XML document, `.reqifz` a ZIP with the document and the requirements' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
 
         **Permission:** `export`.
       x-permission: export
@@ -4827,8 +4849,10 @@ paths:
           - csv
           - pdf
           - docx
+          - md
           - excel
           - word
+          - markdown
           - reqif
           - reqifz
       - name: aspects
@@ -4848,6 +4872,9 @@ paths:
                 type: string
                 format: binary
             text/csv:
+              schema:
+                type: string
+            text/markdown:
               schema:
                 type: string
             application/zip:
@@ -5960,7 +5987,7 @@ paths:
       parameters:
       - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{template?, params?, custom?, format: pdf|docx|xlsx|csv, archive?: bool, name?, lang?: en|sv}` (`lang`: the language of the report's texts, see "Report language" in docs/api.md); without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
+        `{template?, params?, custom?, format: pdf|docx|xlsx|csv|md, archive?: bool, name?, lang?: en|sv}` (`lang`: the language of the report's texts, see "Report language" in docs/api.md); without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
 
         **Permission:** `export`.
       x-permission: export
@@ -5986,6 +6013,7 @@ paths:
                   - docx
                   - xlsx
                   - csv
+                  - md
                 archive:
                   type: boolean
                 name:
@@ -10314,6 +10342,538 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/access:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get project sharing
+      operationId: getProjectsByPidAccess
+      description: |-
+        The project's access mode (`organisation`: every member of the organisation; `restricted`: project members and organisation administrators only), the number of project members, the caller's access (`my_access`: source, project role, effective permissions, `can_share`) and the roles the caller may give (`grantable_roles`).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Projects
+      summary: Set project access mode
+      operationId: putProjectsByPidAccess
+      description: |-
+        `{"access": "organisation"|"restricted"}`. Restricting a project keeps the caller in it: a caller who is neither an organisation administrator nor a project member becomes a member with their organisation role. Audited (`project.access`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List project members
+      operationId: getProjectsByPidMembers
+      description: |-
+        Users (with e-mail, name and organisation role) and SCIM groups with a project role.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Projects
+      summary: Add project member
+      operationId: postProjectsByPidMembers
+      description: |-
+        `{"user_id" | "email" | "group_id", "role"}`: an existing member of the organisation (by id or e-mail) or a SCIM group, with a project role (built-in or custom). Nobody can give a role with project permissions they do not hold in the project (403). An existing member gets the new role (200). An added user is notified (in the app; by e-mail per their preferences). Audited (`project.member.add`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members/candidates:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Project member candidates
+      operationId: getProjectsByPidMembersCandidates
+      description: |-
+        Members of the organisation and SCIM groups that are not project members yet, for the member picker; `?q=` filters by e-mail or name (at most 50).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members/bulk:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Bulk change project members
+      operationId: postProjectsByPidMembersBulk
+      description: |-
+        `{"ids": [user or group ids], "action": "role"|"remove", "role"?}`, all or nothing. Skipped: `not_found`, `unchanged`, `forbidden` (a role the caller could not give). Returns `{changed, skipped}`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members/{mid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: mid
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      tags:
+      - Projects
+      summary: Change project member role
+      operationId: patchProjectsByPidMembersByMid
+      description: |-
+        `{"role"}` for the user or group `{mid}`. The caller must be able to give both the old and the new role. Audited (`project.member.role`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Remove project member
+      operationId: deleteProjectsByPidMembersByMid
+      description: |-
+        Removes the user or group `{mid}`. Members may always leave a project themselves; removing someone else needs `project.update` in the project and a role at least as strong as theirs. Audited (`project.member.remove`).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings:
+    get:
+      tags:
+      - Administration
+      summary: System settings
+      operationId: getAdminSettings
+      description: |-
+        The runtime-editable system settings (Administration → System settings): per setting its type, when it applies (`runtime`, `restart`, `readonly`), the effective `value`, the `file_value` without the database override and its `file_source` (`default`, `file`, `environment`), the effective `source` (adds `database`), `locked` with `lock_reason` (`environment`, `config` = system_settings.locked, `readonly`), `running_value`/`pending_restart` for restart settings. Secrets are never returned (`has_secret`). `oidc` lists the OIDC providers (`has_secret`, `secret_source`, `callback_url`). Only super administrators (sessions, not API tokens): the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Administration
+      summary: Change system settings
+      operationId: putAdminSettings
+      description: |-
+        `{"values": {"logging.level": "debug", "email.password": "…", "email.host": null}}`: stores database overrides (validated together with the configuration validation; `null` resets a key to its file value; an empty secret removes the stored secret). Runtime settings apply at once, restart settings at the next start. Locked settings answer 409 `locked`. Every change is audit-logged (`settings.update`, old → new, secrets redacted). Returns the settings as GET does. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/export:
+    get:
+      tags:
+      - Administration
+      summary: Export effective configuration
+      operationId: getAdminSettingsExport
+      description: |-
+        The effective configuration (file, environment and database overrides) as a YAML configuration file (`application/yaml`, attachment); secrets are redacted and the e-mail password is never included. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/{key}:
+    parameters:
+    - name: key
+      in: path
+      required: true
+      schema:
+        type: string
+    delete:
+      tags:
+      - Administration
+      summary: Reset a system setting
+      operationId: deleteAdminSettingsByKey
+      description: |-
+        Removes the database override of `key` (e.g. `logging.level`, `auth.oidc`): the file, environment or default value applies again. Returns the settings as GET does. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/oidc:
+    post:
+      tags:
+      - Administration
+      summary: Add an OIDC provider
+      operationId: postAdminSettingsOidc
+      description: |-
+        `{name, display_name, enabled, issuer, client_id, client_secret, scopes, email_claim, name_claim, groups_claim, auto_provision, default_tenant, default_role, role_mapping, local_mfa, mfa_amr_values, mfa_acr_values}` (`local_mfa`: `off`, `unless_idp_mfa` or `always`, see multi-factor authentication). The provider list is then stored in the database (key `auth.oidc`) and replaces the providers of the file; secrets of file providers stay in the file. Applies at once. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/oidc/{name}:
+    parameters:
+    - name: name
+      in: path
+      required: true
+      schema:
+        type: string
+    put:
+      tags:
+      - Administration
+      summary: Change an OIDC provider
+      operationId: putAdminSettingsOidcByName
+      description: |-
+        Fields as for POST; the name cannot change. An omitted or empty `client_secret` keeps the secret, `clear_secret: true` removes the stored one. Applies at once (sign-ins in progress at an unchanged provider continue). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Administration
+      summary: Delete an OIDC provider
+      operationId: deleteAdminSettingsOidcByName
+      description: |-
+        Removes the provider from the stored provider list. Returns the settings as GET does. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/oidc:
+    post:
+      tags:
+      - Administration
+      summary: Test OIDC discovery
+      operationId: postAdminSettingsTestOidc
+      description: |-
+        `{"issuer": "https://idp.example.com/realms/x"}`: fetches `<issuer>/.well-known/openid-configuration` from the server and reports `{ok, message, error, details}` (endpoints found, issuer match). Always 200 unless the request is invalid. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/syslog:
+    post:
+      tags:
+      - Administration
+      summary: Send a syslog test message
+      operationId: postAdminSettingsTestSyslog
+      description: |-
+        `{"values": {"logging.syslog.address": "…"}}` (optional unsaved values of the logging section): sends one test message with that syslog configuration and reports `{ok, message, error}`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/email:
+    post:
+      tags:
+      - Administration
+      summary: Send a test e-mail with the settings
+      operationId: postAdminSettingsTestEmail
+      description: |-
+        `{"values": {"email.host": "…"}}` (optional unsaved values of the e-mail section; the stored password is used unless one is given): sends a test e-mail to the caller and reports `{ok, message, error}`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/web-tests:
     parameters:
     - $ref: '#/components/parameters/pid'
@@ -10485,6 +11045,360 @@ paths:
 
         **Permission:** `script.execute`.
       x-permission: script.execute
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/challenge:
+    get:
+      tags:
+      - Auth
+      summary: Pending second factor
+      operationId: getAuthMfaChallenge
+      description: |-
+        Describes the sign-in that waits for its second factor (the `qtf_mfa` cookie set by `POST /auth/login` or an OIDC callback): `{"mfa_required": true, "methods": ["totp","recovery_code"], "remember_days", "expires_at"}`. 401 `mfa_expired` when none is pending.
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/verify:
+    post:
+      tags:
+      - Auth
+      summary: Give the second factor
+      operationId: postAuthMfaVerify
+      description: |-
+        `{"code", "remember"?}`: a 6-digit TOTP code (each code is accepted once) or a recovery code (single use). On success the session starts and the answer is `/auth/me`; with `remember` and a server policy with `remember_days` > 0 the device is remembered (`qtf_mfa_device` cookie). Wrong codes: 401 `mfa_invalid`, recorded as failed sign-ins (method `mfa`); after 5 wrong codes the pending sign-in is dropped (401 `mfa_expired`); attempts share the sign-in rate limit (429).
+
+        **Permission:** none (public).
+      x-permission: none
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa:
+    get:
+      tags:
+      - Auth
+      summary: Own MFA status
+      operationId: getAuthMfa
+      description: |-
+        `{"enabled", "enabled_at", "pending", "recovery_codes_left", "recovery_codes_total", "trusted_devices", "required", "enrolment_deadline", "enrolment_required", "remember_days"}`. The TOTP secret is never returned.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/totp:
+    post:
+      tags:
+      - Auth
+      summary: Start setting up an authenticator app
+      operationId: postAuthMfaTotp
+      description: |-
+        Creates a new TOTP secret (RFC 6238: SHA-1, 6 digits, 30 s) that is active only after `POST /auth/mfa/totp/confirm`: `{"secret", "otpauth_uri", "issuer", "account", "digits", "period", "algorithm"}`. This is the only time the secret is returned. 409 when an authenticator is already active. Browser sessions only (403 for API tokens).
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/totp/confirm:
+    post:
+      tags:
+      - Auth
+      summary: Activate the authenticator app
+      operationId: postAuthMfaTotpConfirm
+      description: |-
+        `{"code"}`: a current code of the new authenticator activates it and returns `{"recovery_codes": [...]}` (10 single-use codes, shown once, stored hashed). A session that had to enrol (`mfa_enrolment_required`) is unlocked. 400 `mfa_invalid` for a wrong code.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/disable:
+    post:
+      tags:
+      - Auth
+      summary: Turn MFA off
+      operationId: postAuthMfaDisable
+      description: |-
+        `{"code"}` (a current TOTP code or a recovery code) removes the authenticator, the recovery codes and remembered devices — 204. 403 `mfa_required` when a policy requires MFA for the caller. The user is told by e-mail.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/recovery-codes:
+    post:
+      tags:
+      - Auth
+      summary: New recovery codes
+      operationId: postAuthMfaRecoveryCodes
+      description: |-
+        `{"code"}` (a current TOTP code or a recovery code) replaces all recovery codes: `{"recovery_codes": [...]}`. The old codes stop working.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/auth/mfa/trusted-devices:
+    delete:
+      tags:
+      - Auth
+      summary: Forget remembered devices
+      operationId: deleteAuthMfaTrustedDevices
+      description: |-
+        Forgets every device remembered with "remember this device": `{"forgotten": n}`.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/mfa:
+    get:
+      tags:
+      - Administration
+      summary: MFA policies
+      operationId: getAdminMfa
+      description: |-
+        `{"server": policy, "tenant": policy|null, "can_edit_server", "members", "members_enrolled", "server_roles", "users"?, "users_enrolled"?}`. A policy is `{"scope", "mode": "optional"|"all"|"roles", "roles", "grace_days", "remember_days", "required_since", "updated_by", "updated_at"}`.
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/mfa/server:
+    put:
+      tags:
+      - Administration
+      summary: Set the server MFA policy
+      operationId: putAdminMfaServer
+      description: |-
+        Super administrators only. `{"mode", "roles", "grace_days", "remember_days"}`; roles are built-in role names and `super_admin`. It applies to every user (a role counts in any tenant). `remember_days` > 0 offers "remember this device" for that many days.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/mfa/tenant:
+    put:
+      tags:
+      - Administration
+      summary: Set the tenant MFA policy
+      operationId: putAdminMfaTenant
+      description: |-
+        `{"mode", "roles", "grace_days"}` for the current tenant (roles of the tenant). A tenant policy adds to the server policy; it cannot lift it.
+
+        **Permission:** `tenant.manage`.
+      x-permission: tenant.manage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/members/{uid}/mfa/reset:
+    parameters:
+    - name: uid
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      tags:
+      - Members
+      summary: Reset a member's MFA
+      operationId: postMembersByUidMfaReset
+      description: |-
+        Removes the member's authenticator, recovery codes and remembered devices and signs them out — 204 (409 when they have none). Like a password reset, a tenant administrator cannot reset super administrators or users of other tenants. Audited (`member.reset_mfa`); the user is notified in the app and by e-mail.
+
+        **Permission:** `member.manage`.
+      x-permission: member.manage
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/users/{id}/mfa/reset:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    post:
+      tags:
+      - Administration
+      summary: Reset a user's MFA
+      operationId: postUsersByIdMfaReset
+      description: |-
+        Super administrators only; as `POST /members/{uid}/mfa/reset` for any user (audited as `user.reset_mfa`).
+
+        **Permission:** signed in.
+      x-permission: authenticated
       responses:
         '200':
           description: OK
@@ -11563,6 +12477,33 @@ components:
           - business
         tech_context:
           type: string
+        access:
+          type: string
+          description: organisation (every member of the organisation) or restricted (project members and organisation administrators only)
+          enum:
+          - organisation
+          - restricted
+        my_access:
+          type: object
+          description: The caller's access to the project (GET /projects, GET /projects/{pid}).
+          properties:
+            source:
+              type: string
+              enum:
+              - admin
+              - member
+              - group
+              - organisation
+            role:
+              type: string
+              description: the project role (member) or the groups' roles (group)
+            permissions:
+              type: array
+              description: effective permissions in the project
+              items:
+                type: string
+            can_share:
+              type: boolean
         created_at:
           type: string
           format: date-time

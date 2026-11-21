@@ -97,7 +97,9 @@ for (const lang of wanted) {
   const guide = g.compileGuide(pages, { lang, images })
   const base = join(opts.out, `qtestframe-user-guide-${lang}`)
   writeFileSync(base + '.md', guide.markdown)
-  for (const name of guide.images) copyFileSync(join(docs, 'images', name), join(opts.out, 'images', name))
+  // writing into docs/user-guide itself: the images are already there
+  if (resolve(join(docs, 'images')) !== resolve(join(opts.out, 'images')))
+    for (const name of guide.images) copyFileSync(join(docs, 'images', name), join(opts.out, 'images', name))
   console.log(`${base}.md (${pages.length} pages, ${guide.images.length} images)`)
   built.push({ lang, guide, base })
 }

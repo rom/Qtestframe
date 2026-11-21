@@ -13,6 +13,7 @@ import Column from 'primevue/column'
 import UserAvatar from '@/components/UserAvatar.vue'
 import AvatarPicker from '@/components/AvatarPicker.vue'
 import ThemePicker from '@/components/ThemePicker.vue'
+import MfaSettings from '@/components/MfaSettings.vue'
 import { isThemeId, type ThemeId } from '@/themes/registry'
 import { useConfirm } from 'primevue/useconfirm'
 import { api, asItems, errorMessage } from '@/lib/api'
@@ -307,7 +308,7 @@ async function loadLogins() {
   }
 }
 const loginRows = computed(() => logins.value.map((l) => ({ ...l, ua: parseUserAgent(l.user_agent) })))
-const methodLabel = (m: string) => (m && ['password', 'oidc', 'saml', 'local', 'invitation'].includes(m) ? t(`profile.method.${m}`) : m || '—')
+const methodLabel = (m: string) => (m && ['password', 'oidc', 'saml', 'local', 'invitation', 'mfa'].includes(m) ? t(`profile.method.${m}`) : m || '—')
 
 // ---------- e-mail notifications ----------
 const meta = useMetaStore()
@@ -337,6 +338,8 @@ onMounted(() => {
   void meta.load()
   // the link in notification e-mails (/profile#email)
   if (route.hash === '#email') requestAnimationFrame(() => document.getElementById('email')?.scrollIntoView({ block: 'start' }))
+  // the link in MFA security e-mails (/profile#mfa)
+  if (route.hash === '#mfa') setTimeout(() => document.getElementById('mfa')?.scrollIntoView({ block: 'start' }), 300)
   loadProjects()
   loadRbac()
   loadSessions()
@@ -485,6 +488,9 @@ onMounted(() => {
         </p>
       </template>
     </section>
+
+    <!-- multi-factor authentication -->
+    <MfaSettings />
 
     <!-- security -->
     <section class="card" aria-labelledby="h-security" style="grid-column: 1 / -1">

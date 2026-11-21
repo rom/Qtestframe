@@ -278,7 +278,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [access-control]
-    refs: ["OWASP ASVS 4.0.3 V4.2.1", "OWASP Top 10 2021 A01"]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     tests: [SRCH-T09]
     en:
       title: No unauthorised items in results
@@ -536,7 +536,7 @@ tests:
     priority: critical
     execution: automated
     tags: [access-control, api]
-    refs: ["OWASP ASVS 4.0.3 V4.2.1"]
+    refs: ["OWASP ASVS 4.0.3 V4.2.1", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     en:
       title: Search respects read permissions
       description: An API test searches as a user without access to one project and checks results, counts and suggestions.

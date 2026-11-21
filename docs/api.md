@@ -62,13 +62,13 @@ is unreachable); all other paths serve the web client.
 | Method | Path | Body / Notes | Response |
 |---|---|---|---|
 | GET | `/auth/providers` | public | `{"local":true,"oidc":[{"name","display_name","login_url"}],"saml":[{"name","display_name","login_url"}]}` |
-| POST | `/auth/login` | `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled | `Me` + `qtf_session` cookie |
+| POST | `/auth/login` | `{"email","password","tenant"?}` (tenant = slug); 401 on bad credentials, 429 after 10 attempts in 5 min per IP + e-mail, 403 if local login is disabled | `Me` + `qtf_session` cookie, or `{"mfa_required": true, …}` + `qtf_mfa` cookie when a second factor is needed (see [Multi-factor authentication](#multi-factor-authentication)) |
 | POST | `/auth/logout` | deletes the session | 204 |
 | GET | `/auth/me` | | `Me` |
 | POST | `/auth/switch-tenant` | `{"tenant_id"}` | `Me` |
 | POST | `/auth/password` | `{"current_password","new_password"}` (local accounts only) | 204 |
 | GET | `/auth/oidc/{name}/login` | browser redirect | 302 |
-| GET | `/auth/oidc/{name}/callback` | browser redirect | 302 → `/` |
+| GET | `/auth/oidc/{name}/callback` | browser redirect | 302 → `/`, or → `/login?mfa=1` when the provider's `local_mfa` asks for Qtestframe's second factor |
 | GET | `/auth/saml/{name}/metadata` | SP metadata XML | XML |
 | GET | `/auth/saml/{name}/login` | browser redirect | 302 |
 | POST | `/auth/saml/{name}/acs` | IdP POST binding | 302 → `/` |
@@ -81,9 +81,85 @@ is unreachable); all other paths serve the web client.
   "role": "admin|manager|test_lead|tester|reviewer|viewer|<custom>|",
   "permissions": ["project.read", ...],
   "memberships": [Membership],
-  "csrf_token": "..."
+  "csrf_token": "...",
+  "mfa": MFAStatus
 }
 ```
+
+`User` and `Membership` carry `"mfa_enabled"` (a confirmed second factor);
+in `GET /users` and `GET /members` it is filled for every row, and members
+also have `"mfa_required"` (the server or tenant policy requires MFA for
+their role here).
+
+## Multi-factor authentication
+
+A second factor (TOTP authenticator app, RFC 6238: SHA-1, 6 digits, 30 s,
+±1 step; each code is accepted once) plus 10 single-use recovery codes.
+API tokens are not affected. Design and protections: [security.md](security.md#multi-factor-authentication).
+
+**Sign-in.** When the password is right and the account has a second
+factor (and the device is not remembered), `POST /auth/login` answers
+
+```json
+{"mfa_required": true, "methods": ["totp", "recovery_code"], "remember_days": 0, "expires_at": "…"}
+```
+
+and sets the `qtf_mfa` cookie (5 minutes, `Path=/api/v1/auth/`); there is
+no session yet. Then:
+
+| Method | Path | Body / Notes | Response |
+|---|---|---|---|
+| GET | `/auth/mfa/challenge` | public; the pending sign-in (after an OIDC redirect to `/login?mfa=1`) | as above; 401 `mfa_expired` |
+| POST | `/auth/mfa/verify` | public; `{"code", "remember"?}` – a 6-digit code or a recovery code; `remember` (when the server policy has `remember_days` > 0) sets the `qtf_mfa_device` cookie | `Me` + `qtf_session`; 401 `mfa_invalid` (wrong or reused code, recorded as a failed sign-in with method `mfa`), 401 `mfa_expired` (none pending, expired, or 5 wrong codes), 429 `rate_limited` |
+
+A session whose policy requires a second factor that is not set up yet
+(grace period over) gets **403 `mfa_enrolment_required`** from every
+endpoint outside `/api/v1/auth/` until the authenticator is confirmed.
+
+**Own second factor** (browser sessions only; API tokens get 403):
+
+| Method | Path | Body / Notes | Response |
+|---|---|---|---|
+| GET | `/auth/mfa` | | `MFAStatus` |
+| POST | `/auth/mfa/totp` | starts the set-up; the secret is returned only here | `{"secret", "otpauth_uri", "issuer", "account", "digits", "period", "algorithm"}`; 409 when already on |
+| POST | `/auth/mfa/totp/confirm` | `{"code"}` | `{"recovery_codes": [10 codes]}` (shown once); 400 `mfa_invalid` |
+| POST | `/auth/mfa/recovery-codes` | `{"code"}` (TOTP or recovery code) | `{"recovery_codes": [...]}`; old codes stop working |
+| POST | `/auth/mfa/disable` | `{"code"}` (TOTP or recovery code); a pending set-up needs none | 204; 403 `mfa_required` when a policy requires MFA |
+| DELETE | `/auth/mfa/trusted-devices` | forgets remembered devices | `{"forgotten": n}` |
+
+`MFAStatus`:
+
+```json
+{
+  "enabled": true, "enabled_at": "…", "pending": false,
+  "recovery_codes_left": 9, "recovery_codes_total": 10,
+  "trusted_devices": 0, "remember_days": 0,
+  "required": true, "enrolment_deadline": null, "enrolment_required": false
+}
+```
+
+`enrolment_deadline` is set while a required second factor is missing (the
+end of the grace period); `enrolment_required` is true for a session that
+must set it up first.
+
+**Policy and resets:**
+
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | `/admin/mfa` | tenant.manage | `{"server": MFAPolicy, "tenant": MFAPolicy\|null, "can_edit_server", "members", "members_enrolled", "server_roles", "users"?, "users_enrolled"?}` |
+| PUT | `/admin/mfa/server` | super admin | `{"mode", "roles", "grace_days", "remember_days"}` → MFAPolicy; roles are built-in roles or `super_admin` and count in any tenant |
+| PUT | `/admin/mfa/tenant` | tenant.manage | `{"mode", "roles", "grace_days"}` for the current tenant (its roles); adds to the server policy |
+| POST | `/members/{user_id}/mfa/reset` | member.manage | removes authenticator, recovery codes and remembered devices, signs the user out, notifies them (in-app and e-mail) → 204; 409 when they have none; 403 for super administrators and users of other tenants (as for password resets) |
+| POST | `/users/{id}/mfa/reset` | super admin | the same for any user |
+
+`MFAPolicy`: `{"scope": ""|tenant id, "mode": "optional"|"all"|"roles",
+"roles": [...], "grace_days": 0-365, "remember_days": 0-365 (server only),
+"required_since", "updated_by", "updated_at"}`. The grace period counts
+from `required_since` (set when the policy starts to require MFA for more
+people) or the user's creation, whichever is later. Policy changes and
+resets are audited (`mfa.policy`, `member.reset_mfa`, `user.reset_mfa`), as
+are `mfa.enable`, `mfa.disable`, `mfa.recovery_codes`,
+`mfa.recovery_code_used` and `mfa.forget_devices`.
 
 ## Administration
 
@@ -138,7 +214,7 @@ default):
 
 | Method | Path | Permission |
 |---|---|---|
-| GET | `/projects` | project.read |
+| GET | `/projects` | signed in – the projects the caller may read (see [Project sharing](#project-sharing-per-project-access)), each with `access` and `my_access` |
 | POST | `/projects` | project.create – `{"key","name","description","color"?,"type"?,"tech_context"?,"seed_categories":true}` |
 | GET | `/projects/{pid}` | project.read |
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
@@ -161,6 +237,68 @@ them). `type` is one of `/meta` `project_types` (`general` by default,
 `software`, `hardware`, `system`, `business`); `tech_context` (at most 8000
 characters) describes the technology of a software project and is included
 in prompts.
+
+`access` is `organisation` or `restricted` (see below); `my_access`
+(`GET /projects`, `GET /projects/{pid}`, `POST /projects`) is the caller's
+access to the project: `{"source": "admin"|"member"|"group"|"organisation",
+"role", "permissions": [...], "can_share": bool}` – `permissions` are the
+effective permissions in the project, which clients use to show or hide
+actions inside it.
+
+### Project sharing (per-project access)
+
+A project is **organisation-wide** (`access: "organisation"`, the default:
+every member of the organisation sees it with their organisation role) or
+**restricted** (`access: "restricted"`: only its project members and the
+organisation's administrators see it; everyone else gets **404** for the
+project and for every resource in it, also when addressed by its own id,
+e.g. `/requirements/{id}`, `/runs/{id}`, `/executions/{id}`, `/files/{id}`).
+
+A project member is a user of the organisation or a SCIM group, with a
+**project role** – any role of the organisation (built-in or custom). The
+effective permissions of a caller in a project:
+
+* organisation administrators (role `admin`) and super administrators keep
+  their organisation permissions in every project;
+* a project member gets the project permissions of the project role
+  (`project.*` except `project.create`, `requirement.*`, `test.*`, `run.*`,
+  `script.execute`, `export`) **instead of** those of the organisation role
+  – in organisation-wide projects too, so a project role raises or lowers a
+  user's rights in one project. A direct membership wins over group
+  memberships; several groups give the union of their roles;
+* anyone else has their organisation role in an organisation-wide project
+  and no access to a restricted one.
+
+Organisation-level permissions (`member.*`, `role.manage`,
+`settings.manage`, `tenant.manage`, `token.manage`, `audit.read`,
+`project.create`) always come from the organisation role. An API token
+never exceeds its own role, inside a project too. Lists across projects
+(`/projects`, `/search`, `/reviews`, `/reviews/in-review`,
+`/notifications`, the catalogue's `?project_id=`) leave out what the caller
+may not see; moving folders or items into another project needs write
+access there; notifications, @mentions, report recipients and review
+requests only reach people who may see the project.
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/projects/{pid}/access` | project.read – `{"access", "members": n, "my_access", "grantable_roles": [...]}` |
+| PUT | `/projects/{pid}/access` | project.update – `{"access": "organisation"\|"restricted"}`; restricting keeps the caller in the project (a caller who is neither an administrator nor a member becomes a member with their organisation role) |
+| GET | `/projects/{pid}/members` | project.read – `ProjectMember`: `{"type": "user"\|"group", "id", "role", "email", "display_name", "avatar", "org_role", "added_by", "created_at", "updated_at"}` |
+| GET | `/projects/{pid}/members/candidates` | project.update – `?q=`: organisation members and SCIM groups that are not project members yet (at most 50) |
+| POST | `/projects/{pid}/members` | project.update – `{"user_id" \| "email" \| "group_id", "role"}` → 201 (200 when the member existed: the role is changed); the user must already be a member of the organisation (400 otherwise) |
+| PATCH | `/projects/{pid}/members/{mid}` | project.update – `{"role"}` |
+| DELETE | `/projects/{pid}/members/{mid}` | project.update, or the member themselves (leaving) → 204 |
+| POST | `/projects/{pid}/members/bulk` | project.update – `{"ids": [...], "action": "role"\|"remove", "role"?}`, all or nothing → `{"changed": [...], "skipped": [{"id","label","reason": "not_found"\|"unchanged"\|"forbidden"}]}` |
+
+Nobody can give, take or remove a project role whose project permissions
+they do not hold in the project themselves (403; administrators may give
+any role). An added user is notified (`project.shared`, in the app and by
+e-mail per their preferences). Changes are audited: `project.access`,
+`project.member.add`, `project.member.role`, `project.member.remove`.
+Removing someone from the organisation or deleting a SCIM group removes
+their project memberships; a custom role used by a project member cannot
+be deleted (409). A duplicated project keeps the original's members; a
+loaded or duplicated restricted project keeps the caller in it.
 
 ### Project archives (save, load, duplicate)
 
@@ -638,7 +776,8 @@ development (security, privacy, performance, reliability, operations,
 usability, accessibility, common functionality, domain-specific functionality
 such as checkout and billing), in English and Swedish.
 The texts are written for Qtestframe and cite the standards they are based
-on (OWASP ASVS, WCAG, ISO/IEC 25010, NIST SP 800-63B …) in `refs` by name
+on (OWASP ASVS, WCAG, ISO/IEC 25010, NIST SP 800-63B, ISO/IEC 27001, IEC 62443,
+GDPR, CRA, DORA …) in `refs` by name
 and section, without copying them. The content lives in
 `internal/catalog/data` (format: `internal/catalog/FORMAT.md`) and ships
 with the binary.
@@ -1407,12 +1546,97 @@ Project icon files are served by `/files/{id}/content?inline=1`.
 |---|---|---|---|
 | POST | `/members/{uid}/reset-password` | member.manage | resets a local user's password to a random temporary one → `{"temporary_password"}` (shown once); sets `must_change_password` and ends the user's sessions. Refused (403) for super admins and for users who are members of other tenants, unless the caller is a super admin |
 | PATCH | `/users/{id}` | super admin | also accepts `{"must_change_password": bool}` |
-| GET | `/audit?q=&from=&to=&limit=&format=csv` | audit.read | `from`/`to` are RFC 3339 or `YYYY-MM-DD`; `format=csv` downloads |
+| GET | `/audit?q=&from=&to=&limit=&format=csv\|md` | audit.read | `from`/`to` are RFC 3339 or `YYYY-MM-DD`; `format=csv` downloads a CSV file, `format=md` (alias `markdown`) a [Markdown document](#markdown-documents) with the range and filter; other formats → 400 |
 | GET | `/admin/backup` | super admin | ZIP: `manifest.json` + one `<table>.jsonl` per table (all tenants, files included; sessions excluded) |
 | POST | `/admin/restore` | super admin | multipart `backup` (ZIP) + field `confirm=RESTORE`; the schema version must match; replaces **all** data in one transaction and signs everyone out → `{"restored": {table: rows}}` |
 
 CLI equivalents: `qtestframe backup --out FILE.zip`,
 `qtestframe restore --in FILE.zip --yes`.
+
+### System settings
+
+Runtime-editable server configuration (Administration → System settings).
+All endpoints need a **super administrator signed in with a session**
+(API tokens get 403). Precedence and locking: see
+[operations.md §3](operations.md#runtime-system-settings-administration--system-settings).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/admin/settings` | → `{sections, settings: [...], oidc: {providers, source, stored, locked}, locked_patterns, config_file, restart_pending, load_error, trash_retention_days, logging_runtime}` |
+| PUT | `/admin/settings` | `{"values": {key: value \| null}}`; returns the GET document |
+| DELETE | `/admin/settings/{key}` | reset `key` (e.g. `logging.level`, `auth.oidc`) to the file value |
+| GET | `/admin/settings/export` | effective configuration as YAML (attachment), secrets `REDACTED` |
+| POST | `/admin/settings/oidc` | add an OIDC provider |
+| PUT | `/admin/settings/oidc/{name}` | change a provider (the name cannot change) |
+| DELETE | `/admin/settings/oidc/{name}` | delete a provider |
+| POST | `/admin/settings/test/oidc` | `{"issuer"}` → discovery result |
+| POST | `/admin/settings/test/syslog` | `{"values": {...}}` (unsaved logging values) → sends a test message |
+| POST | `/admin/settings/test/email` | `{"values": {...}}` (unsaved e-mail values) → sends a test e-mail to the caller |
+
+A setting in `settings`:
+
+```json
+{"key": "logging.level", "section": "logging", "type": "enum", "apply": "runtime",
+ "options": ["debug", "info", "warn", "error"],
+ "value": "debug", "file_value": "info", "file_source": "file", "source": "database",
+ "stored": true, "ignored": false, "locked": false,
+ "updated_by": "admin@example.com", "updated_at": "2026-11-21T09:00:00Z"}
+```
+
+* `type`: `string`, `int` (with `min`/`max`), `bool`, `duration` (Go
+  duration strings such as `"12h"`, `"90s"`), `enum` (`options`), `secret`,
+  `list` (read-only).
+* `apply`: `runtime` (applies at once), `restart` (stored now, applies at
+  the next start; `running_value` and `pending_restart` show the value in
+  use), `readonly` (configuration file only).
+* `source`: `default`, `file`, `environment` or `database`; `file_value` /
+  `file_source` are the value without the database override.
+* `locked` with `lock_reason`: `environment` (set by the variable `env`;
+  the environment always wins), `config` (`system_settings.locked`) or
+  `readonly`. Changing a locked setting answers 409 `locked`.
+* `ignored`: a stored override exists but is not applied (locked or
+  invalid).
+* Secrets (`email.password`) are **write-only**: `value` is always `null`,
+  `has_secret` / `file_has_secret` say whether one is set. In PUT a string
+  sets the secret, `""` or `null` removes the stored one.
+
+PUT validates all values together with the configuration validation of the
+server (as `check-config`) and stores them only when valid (400 otherwise,
+naming the key). Unknown keys answer 400. Every change is audited as
+`settings.update` (`old → new`, secrets as `set/changed`). `auth.oidc`
+cannot be set with PUT; use the provider endpoints:
+
+```json
+POST /api/v1/admin/settings/oidc
+{"name": "corp", "display_name": "Corporate SSO", "enabled": true,
+ "issuer": "https://idp.example.com/realms/x", "client_id": "qtf", "client_secret": "…",
+ "scopes": ["openid", "email", "profile"], "email_claim": "email", "name_claim": "name",
+ "groups_claim": "groups", "auto_provision": true, "default_tenant": "", "default_role": "viewer",
+ "role_mapping": {"qa": "test_lead"}, "local_mfa": "unless_idp_mfa",
+ "mfa_amr_values": ["mfa", "otp"], "mfa_acr_values": []}
+```
+
+`local_mfa` decides whether Qtestframe asks for its own second factor after
+a sign-in through the provider: `off` (default), `unless_idp_mfa` (unless the
+ID token's `amr`/`acr` claims contain one of `mfa_amr_values` (default
+`mfa`) / `mfa_acr_values`) or `always`.
+
+`name` is 1–40 characters of `a-z`, `0-9`, `-`, `_`. In PUT an omitted or
+empty `client_secret` keeps the secret, `"clear_secret": true` removes the
+stored one (a secret of the file or `QTF_OIDC_<NAME>_CLIENT_SECRET` then
+applies). Providers in GET carry `has_secret`, `secret_source` (`file`,
+`environment`, `database` or `""`), `in_file` and `callback_url`, never the
+secret. The first change stores the whole list (it then replaces the
+providers of the file); `DELETE /admin/settings/auth.oidc` returns to the
+file's providers.
+
+Test results are always 200 with `{"ok": bool, "message", "error",
+"details"}`; e.g. a discovery test returns the endpoints found in
+`details` and an error such as `the document names the issuer "…", not
+"…" (they must match exactly)`.
+
+`GET /auth/providers` (public) also returns `password_min_length`, and
+`GET /invitations/{token}` returns `password_min_length`.
 
 ## SCIM 2.0 provisioning
 
@@ -1526,7 +1750,7 @@ Admin changes are audited as `scim.token.create`, `scim.token.delete`,
 ## Reports
 
 Standard reports (`GET /reports/templates` → `[{id, name, description,
-params, formats}]`):
+params, formats}]`; `formats` is `pdf`, `docx`, `xlsx`, `csv`, `md`):
 
 | id | Content | Params |
 |---|---|---|
@@ -1564,7 +1788,7 @@ e-mailed report is in the report's language.
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/projects/{pid}/reports/fields?entity=` | export | available columns `[{id, label}]` |
-| POST | `/projects/{pid}/reports/generate?lang=` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv, archive?: bool, name?, lang?: en\|sv}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
+| POST | `/projects/{pid}/reports/generate?lang=` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv\|md, archive?: bool, name?, lang?: en\|sv}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
 | GET | `/projects/{pid}/reports/definitions` | export | saved custom reports |
 | POST | `/projects/{pid}/reports/definitions` | requirement.write or test.write | `{name, description, config}` |
 | GET / PATCH / DELETE | `/reports/definitions/{id}` | export / write | |
@@ -1623,7 +1847,9 @@ Audit actions: `invitation.send`, `invitation.resend`, `invitation.revoke`,
 ## Search
 
 `GET /search?q=<expr>&types=requirement,test,run&project_id=&limit=` –
-searches all projects of the current tenant (permission `project.read`).
+searches the projects of the current tenant the caller may read (each kind
+of item with its read permission in the project; see
+[Project sharing](#project-sharing-per-project-access)).
 `limit` defaults to 200 (max 1000); `total` counts all hits. Besides the
 requirement, test and run fields, `project` (key or name) and `kind` can be
 queried. Response:
@@ -1633,13 +1859,14 @@ queried. Response:
 
 ## Export
 
-`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
+`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|md|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
 (permission `export`)
 
-* `format` also accepts `excel` and `word`. `aspects` defaults to all;
+* `format` also accepts `excel`, `word` and `markdown`. `aspects` defaults to all;
   unknown aspects are a 400. `q` is applied to requirements if it is a valid
   requirement query and to tests if it is a valid test query.
 * CSV with more than one aspect is delivered as a ZIP of CSV files.
+* `md` is one [Markdown document](#markdown-documents) with every aspect.
 * `reqif` and `reqifz` export the (filtered) requirements as
   [ReqIF 1.2](#reqif-export); `aspects` does not apply. `reqif` is the XML
   document (`application/xml`), `reqifz` a ZIP (`application/zip`) with the
@@ -1652,6 +1879,29 @@ queried. Response:
 * Response has `Content-Disposition: attachment;
   filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
   neutralised in CSV; see [design.md §11](design.md#11-export-formats).
+
+### Markdown documents
+
+`format=md` (alias `markdown`; `text/markdown; charset=utf-8`, extension
+`.md`) is available wherever a file is generated from a table: the project
+export, every report template, custom and saved reports, report batches
+(a ZIP of `.md` files), e-mailed and scheduled reports and the audit log
+export. The document is GitHub-flavoured Markdown:
+
+* `# <title>`, then the subtitle (project, filter) and a list of metadata
+  (`**Generated:**` date, and where they apply the aspects, filter or date
+  range), then a contents list of the sections when there are several;
+* one `## <section>` per section with a GFM table; `|` is escaped as `\|`,
+  line breaks in a cell become `<br>`, Markdown and HTML characters are
+  backslash-escaped, so cell texts show literally;
+* cells that are http(s) URLs become links; when `server.base_url` is
+  configured, requirement, test case and defect keys of the project link
+  to `<base_url>/go/<key>`;
+* empty sections show *(no data)* / *(no rows)*. Reports have no charts,
+  so the document has no images.
+
+In reports the texts the document adds follow the report language
+(e.g. `**Skapad:**`, `Innehåll` in Swedish).
 
 ### ReqIF export
 

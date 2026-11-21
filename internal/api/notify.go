@@ -41,7 +41,19 @@ func (s *Server) routesNotifications(h routeFunc) {
 
 func (s *Server) handleListNotifications(w http.ResponseWriter, r *http.Request, p *Principal) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	list, unread, err := s.Store.ListNotifications(r.Context(), p.TenantID(), p.User.ID, r.URL.Query().Get("unread") != "", limit)
+	// notifications about projects the caller may no longer see stay hidden
+	vis, err := s.visibleProjects(r.Context(), p)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	hidden, err := s.Store.TenantProjectIDs(r.Context(), p.TenantID())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	hidden = slices.DeleteFunc(hidden, func(id string) bool { return vis[id] != nil })
+	list, unread, err := s.Store.ListNotifications(r.Context(), p.TenantID(), p.User.ID, r.URL.Query().Get("unread") != "", limit, hidden...)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -138,9 +150,16 @@ func (s *Server) notifyUsers(ctx context.Context, p *Principal, users []string, 
 	}
 	list := make([]model.Notification, 0, len(users))
 	for _, u := range users {
+		// nobody hears about a project they may not see (project sharing)
+		if !s.userCanSee(ctx, p.TenantID(), n.ProjectID, u, "") {
+			continue
+		}
 		c := n
 		c.UserID = u
 		list = append(list, c)
+	}
+	if len(list) == 0 {
+		return
 	}
 	if err := s.Store.AddNotifications(ctx, p.TenantID(), list); err != nil {
 		s.Log.Warn("notifications", "event", n.Event, "err", err)

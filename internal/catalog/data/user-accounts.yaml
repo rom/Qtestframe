@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [invitation]
-    refs: ["OWASP ASVS 4.0.3 V2.3", "ISO/IEC 27001:2022 Annex A 5.16"]
+    refs: ["OWASP ASVS 4.0.3 V2.3", "ISO/IEC 27001:2022 A.5.16", "IEC 62443-3-3 SR 1.3"]
     tests: [ACCT-T01]
     en:
       title: Invitation of users by an administrator
@@ -58,7 +58,7 @@ requirements:
     obligation: may
     priority: low
     tags: [registration, settings]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18"]
     tests: [ACCT-T02]
     en:
       title: Self-registration controlled by a setting
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: high
     tags: [e-mail-verification, registration]
-    refs: ["OWASP ASVS 4.0.3 V2.1", "NIST SP 800-63A §5.1"]
+    refs: ["OWASP ASVS 4.0.3 V2.1", "NIST SP 800-63A §5.1", "ISO/IEC 27001:2022 A.5.16"]
     tests: [ACCT-T02]
     en:
       title: E-mail address verified before activation
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [e-mail-verification, profile]
-    refs: ["OWASP ASVS 4.0.3 V2.2.3"]
+    refs: ["OWASP ASVS 4.0.3 V2.2.3", "ISO/IEC 27001:2022 A.5.16"]
     tests: [ACCT-T03]
     en:
       title: Changed e-mail address verified before use
@@ -148,7 +148,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [deactivation, sessions]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.18", "OWASP ASVS 4.0.3 V3.3"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "OWASP ASVS 4.0.3 V3.3", "IEC 62443-3-3 SR 1.3"]
     tests: [ACCT-T04]
     en:
       title: Deactivation ends access within one minute
@@ -172,7 +172,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [deactivation, reactivation]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18"]
     tests: [ACCT-T04]
     en:
       title: Reactivation restores previous roles
@@ -218,7 +218,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [administration, roles]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.15"]
+    refs: ["ISO/IEC 27001:2022 A.5.15"]
     tests: [ACCT-T06]
     en:
       title: Last administrator cannot be removed
@@ -240,7 +240,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [administration, user-list]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3"]
     tests: [ACCT-T07]
     en:
       title: User list for administrators
@@ -262,7 +262,7 @@ requirements:
     obligation: must
     priority: high
     tags: [audit-log, administration]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.15", "OWASP ASVS 4.0.3 V7.2"]
+    refs: ["ISO/IEC 27001:2022 A.8.15", "OWASP ASVS 4.0.3 V7.2", "IEC 62443-3-3 SR 2.8"]
     tests: [ACCT-T08]
     en:
       title: Account changes recorded in the audit log
@@ -284,7 +284,7 @@ tests:
     priority: high
     execution: automated
     tags: [invitation, api]
-    refs: ["OWASP ASVS 4.0.3 V2.3"]
+    refs: ["OWASP ASVS 4.0.3 V2.3", "IEC 62443-3-3 SR 1.3"]
     en:
       title: Invitation link validity, single use and revocation
       description: An API test creates invitations, moves the test clock and checks when the links are accepted.
@@ -324,7 +324,7 @@ tests:
     priority: high
     execution: manual
     tags: [registration, e-mail-verification]
-    refs: ["OWASP ASVS 4.0.3 V2.1"]
+    refs: ["OWASP ASVS 4.0.3 V2.1", "ISO/IEC 27001:2022 A.5.16"]
     en:
       title: Self-registration and e-mail verification
       description: Checks the self-registration setting and that a new account is activated only through a valid verification link.
@@ -360,7 +360,7 @@ tests:
     priority: medium
     execution: manual
     tags: [profile, e-mail-verification]
-    refs: ["GDPR Art. 16"]
+    refs: ["GDPR Art. 16", "ISO/IEC 27001:2022 A.5.16"]
     en:
       title: Profile editing and change of e-mail address
       description: Checks that a user can edit the own profile and that a new e-mail address is used only after verification.
@@ -392,7 +392,7 @@ tests:
     priority: critical
     execution: automated
     tags: [deactivation, reactivation, sessions]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3"]
     en:
       title: Deactivation ends sessions and reactivation restores roles
       description: An integration test deactivates an account with an open session and an API token, then reactivates it.
@@ -454,7 +454,7 @@ tests:
     priority: high
     execution: automated
     tags: [administration, roles, api]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.15"]
+    refs: ["ISO/IEC 27001:2022 A.5.15"]
     en:
       title: Protection of the last administrator
       description: An API test tries to deactivate, delete and demote the only administrator of an organisation.
@@ -480,7 +480,7 @@ tests:
     priority: medium
     execution: manual
     tags: [administration, user-list]
-    refs: ["ISO/IEC 27001:2022 Annex A 5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3"]
     en:
       title: User list with status, roles and filters
       description: Checks the content of the administrator's user list and its filters.
@@ -510,7 +510,7 @@ tests:
     priority: high
     execution: automated
     tags: [audit-log]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.15"]
+    refs: ["ISO/IEC 27001:2022 A.8.15", "IEC 62443-3-3 SR 2.8"]
     en:
       title: Audit entries for account changes
       description: An integration test performs each kind of account change and reads the audit log.

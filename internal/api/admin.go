@@ -39,8 +39,8 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"roles":                roles,
 		"runner_enabled":       s.Runner.Enabled(),
 		"web_tests_enabled":    s.Runner.WebEnabled(),
-		"auto_create_test":     s.Cfg.Requirements.AutoCreateTest,
-		"max_upload_mb":        s.Cfg.Files.MaxUploadMB,
+		"auto_create_test":     s.conf().Requirements.AutoCreateTest,
+		"max_upload_mb":        s.conf().Files.MaxUploadMB,
 		"analysis_languages":   reqlang.Languages(),
 		"themes":               model.Themes,
 		"project_types":        model.ProjectTypes,
@@ -48,7 +48,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"test_types":           prompt.TestTypes,
 		"languages":            model.Languages,
 		"email_enabled":        s.emailOn(),
-		"email_digest_hour":    s.Cfg.Email.DigestHour,
+		"email_digest_hour":    s.conf().Email.DigestHour,
 		"version":              Version,
 	})
 }
@@ -179,6 +179,14 @@ func (s *Server) handleListUsers(w http.ResponseWriter, r *http.Request, p *Prin
 		s.fail(w, r, err)
 		return
 	}
+	on, err := s.Store.MFAEnabledUsers(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	for i := range us {
+		us[i].MFAEnabled = on[us[i].ID]
+	}
 	writeJSON(w, http.StatusOK, listOf(us))
 }
 
@@ -202,7 +210,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	u := &model.User{Email: req.Email}
-	if err := applyUserReq(u, req); err != nil {
+	if err := applyUserReq(u, req, minPassword(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -214,7 +222,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Pri
 	writeJSON(w, http.StatusCreated, u)
 }
 
-func applyUserReq(u *model.User, req userReq) error {
+func applyUserReq(u *model.User, req userReq, minPassword int) error {
 	if req.DisplayName != nil {
 		u.DisplayName = strings.TrimSpace(*req.DisplayName)
 	}
@@ -228,7 +236,7 @@ func applyUserReq(u *model.User, req userReq) error {
 		u.MustChangePassword = *req.MustChangePassword
 	}
 	if req.Password != nil && *req.Password != "" {
-		if err := auth.ValidatePassword(*req.Password); err != nil {
+		if err := auth.ValidatePasswordMin(*req.Password, minPassword); err != nil {
 			return err
 		}
 		h, err := auth.HashPassword(*req.Password)
@@ -259,7 +267,7 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, p *Pri
 		writeError(w, http.StatusConflict, "conflict", "you cannot demote or disable yourself")
 		return
 	}
-	if err := applyUserReq(u, req); err != nil {
+	if err := applyUserReq(u, req, minPassword(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -280,6 +288,9 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, p *Pri
 type memberView struct {
 	model.Membership
 	Invitation *invitationView `json:"invitation,omitempty"`
+	// MFARequired: the server or tenant MFA policy requires a second factor
+	// for the member's role in this tenant (or for everyone).
+	MFARequired bool `json:"mfa_required"`
 }
 
 func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -293,12 +304,19 @@ func (s *Server) handleListMembers(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, err)
 		return
 	}
+	pols, err := s.Store.MFAPolicies(r.Context())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	server, tenant := pols[""], pols[p.TenantID()]
 	out := make([]memberView, len(ms))
 	for i, m := range ms {
 		out[i].Membership = m
 		if inv, ok := invs[m.UserID]; ok {
 			out[i].Invitation = s.viewInvitation(&inv)
 		}
+		out[i].MFARequired = (server != nil && (server.Requires("") || server.Requires(m.Role))) || (tenant != nil && tenant.Requires(m.Role))
 	}
 	writeJSON(w, http.StatusOK, listOf(out))
 }
@@ -343,7 +361,7 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 		u = &model.User{Email: req.Email, DisplayName: req.DisplayName}
 		if req.Password != "" {
 			pw := req.Password
-			if err := applyUserReq(u, userReq{Password: &pw}); err != nil {
+			if err := applyUserReq(u, userReq{Password: &pw}, minPassword(s.conf())); err != nil {
 				s.fail(w, r, err)
 				return
 			}
@@ -581,15 +599,28 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request, p *Principa
 			out = append(out, e)
 		}
 	}
-	if r.URL.Query().Get("format") == "csv" {
-		ds := export.Dataset{Title: "Audit trail", Sections: []export.Section{{Name: "audit",
+	if format := r.URL.Query().Get("format"); format != "" && format != "json" {
+		f, err := export.ParseFormat(format)
+		if err != nil || (f != export.CSV && f != export.MD) {
+			s.fail(w, r, badRequest("unsupported audit export format %q (want csv or md)", format))
+			return
+		}
+		ds := export.Dataset{Title: "Audit trail", GeneratedAt: time.Now().UTC(), Sections: []export.Section{{Name: "audit", Title: "Entries",
 			Columns: []string{"Time (UTC)", "User", "Action", "Entity", "Entity ID", "Details"}}}}
+		day := func(t *time.Time) string {
+			if t == nil {
+				return ""
+			}
+			return t.UTC().Format("2006-01-02 15:04:05")
+		}
+		ds.Meta = []export.Item{{Label: "From", Value: day(from)}, {Label: "To", Value: day(to)}, {Label: "Filter", Value: r.URL.Query().Get("q")},
+			{Label: "Entries", Value: itoa(len(out))}}
 		for _, e := range out {
 			ds.Sections[0].Rows = append(ds.Sections[0].Rows, []string{ts(e.CreatedAt), e.UserEmail, e.Action, e.EntityType, e.EntityID, e.Details})
 		}
-		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-		w.Header().Set("Content-Disposition", `attachment; filename="audit-`+time.Now().UTC().Format("20060102-150405")+`.csv"`)
-		if err := export.WriteCSV(w, ds); err != nil {
+		w.Header().Set("Content-Type", f.ContentType())
+		w.Header().Set("Content-Disposition", `attachment; filename="audit-`+time.Now().UTC().Format("20060102-150405")+"."+f.Extension(false)+`"`)
+		if err := export.Write(w, f, ds); err != nil {
 			s.Log.Error("audit export failed", "err", err)
 		}
 		s.audit(r.Context(), p, "audit.export", "audit", "", itoa(len(out)))

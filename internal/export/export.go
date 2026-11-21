@@ -1,5 +1,5 @@
 // Package export renders a neutral tabular Dataset into CSV (or a ZIP of
-// CSVs), XLSX, PDF and DOCX documents.
+// CSVs), XLSX, PDF, DOCX and Markdown documents.
 package export
 
 import (
@@ -27,14 +27,22 @@ type Dataset struct {
 	// Lang is the language of the texts the writers add ("Generated",
 	// page numbers, …): en (default) or sv.
 	Lang string
+	// Meta are further metadata lines (filters, scope, …) shown under the
+	// title by the Markdown writer.
+	Meta []Item
+	// Link, when set, maps a table cell value (e.g. an item key) to the URL
+	// of that item; the Markdown writer turns such cells into links.
+	Link func(value string) string `json:"-"`
 }
 
 // labels are the texts the writers add, per language.
 var labels = map[string]map[string]string{
 	"en": {"generated": "Generated", "page": "Page %d/%s", "section": "Section %d", "sectionCol": "Section", "rows": "Rows",
-		"noData": "(no data)", "noRows": "(no rows)", "summary": "Summary", "docLang": "en-US"},
+		"noData": "(no data)", "noRows": "(no rows)", "summary": "Summary", "docLang": "en-US",
+		"contents": "Contents", "oneRow": "1 row", "nRows": "%d rows"},
 	"sv": {"generated": "Skapad", "page": "Sida %d/%s", "section": "Avsnitt %d", "sectionCol": "Avsnitt", "rows": "Rader",
-		"noData": "(inga data)", "noRows": "(inga rader)", "summary": "Sammanfattning", "docLang": "sv-SE"},
+		"noData": "(inga data)", "noRows": "(inga rader)", "summary": "Sammanfattning", "docLang": "sv-SE",
+		"contents": "Innehåll", "oneRow": "1 rad", "nRows": "%d rader"},
 }
 
 // label returns a writer text in the dataset's language (English when the
@@ -61,10 +69,14 @@ const (
 	XLSX Format = "xlsx"
 	PDF  Format = "pdf"
 	DOCX Format = "docx"
+	MD   Format = "md"
 )
 
+// MarkdownContentType is the MIME type of Markdown files.
+const MarkdownContentType = "text/markdown; charset=utf-8"
+
 // ParseFormat parses a format name (case-insensitive, optional leading dot;
-// "excel" and "word" are accepted as aliases).
+// "excel", "word" and "markdown" are accepted as aliases).
 func ParseFormat(s string) (Format, error) {
 	switch strings.TrimPrefix(strings.ToLower(strings.TrimSpace(s)), ".") {
 	case "csv":
@@ -75,8 +87,10 @@ func ParseFormat(s string) (Format, error) {
 		return PDF, nil
 	case "docx", "word":
 		return DOCX, nil
+	case "md", "markdown":
+		return MD, nil
 	}
-	return "", fmt.Errorf("export: unsupported format %q (want csv, xlsx, pdf or docx)", s)
+	return "", fmt.Errorf("export: unsupported format %q (want csv, xlsx, pdf, docx or md)", s)
 }
 
 // ContentType returns the MIME type of a single-file export in format f.
@@ -90,6 +104,8 @@ func (f Format) ContentType() string {
 		return "application/pdf"
 	case DOCX:
 		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	case MD:
+		return MarkdownContentType
 	}
 	return "application/octet-stream"
 }
@@ -123,6 +139,8 @@ func Write(w io.Writer, f Format, ds Dataset) error {
 		return WritePDF(w, ds)
 	case DOCX:
 		return WriteDOCX(w, ds)
+	case MD:
+		return WriteMarkdown(w, ds)
 	}
 	return fmt.Errorf("export: unsupported format %q", string(f))
 }

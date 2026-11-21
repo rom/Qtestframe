@@ -1,0 +1,905 @@
+area: oil-gas
+prefix: OILG
+group: domain
+name: {en: Oil and gas, sv: Olja och gas}
+description:
+  en: Software and systems for oil and gas production, processing and pipelines, covering emergency shutdown and safety instrumented functions, fire and gas systems, permit to work, pipeline leak detection, custody transfer metering, production data historians, remote operation of unmanned installations, OT cybersecurity, alarm management, methane emission monitoring and reporting, and control room disaster recovery.
+  sv: Programvara och system för produktion, bearbetning och transport av olja och gas i rörledningar, med nödstopp och instrumenterade säkerhetsfunktioner, brand- och gassystem, arbetstillstånd, läckagedetektering i rörledningar, mätning för försäljning (custody transfer), processhistorik för produktionsdata, fjärrdrift av obemannade anläggningar, cybersäkerhet för OT, larmhantering, övervakning och rapportering av metanutsläpp samt katastrofåterställning för kontrollrum.
+
+requirements:
+  - id: OILG-01
+    type: performance
+    obligation: must
+    priority: critical
+    tags: [esd, emergency-shutdown, response-time, sil]
+    refs: ["IEC 61511-1:2016 §10.3", "IEC 61511-1:2016 §11", "ISO 13702:2015"]
+    tests: [OILG-T01]
+    en:
+      title: Emergency shutdown logic responds within 500 ms
+      description: The emergency shutdown logic solver MUST set its outputs to the shutdown valves within 500 ms after a confirmed initiating signal at its input, so that the total response time of the safety function stays within the process safety time stated in the safety requirements specification.
+      rationale: The emergency shutdown has to isolate inventory before a release or overpressure escalates, and the logic solver uses part of the time budget of the whole safety function.
+      criteria:
+        - method: test
+          text: For 5 initiating inputs, the time from input change to output change at the logic solver, measured with a time-stamping recorder, is at most 500 ms.
+          threshold: ≤ 500 ms
+        - method: analysis
+          text: The response time calculation for each safety function, including sensors, logic solver and valve stroke time, is shorter than its process safety time.
+    sv:
+      title: Nödstoppslogiken svarar inom 500 ms
+      description: Logikenheten för nödstopp SKA ställa sina utgångar till nödstoppsventilerna inom 500 ms efter en bekräftad utlösande signal på ingången, så att säkerhetsfunktionens totala svarstid håller sig inom den processäkerhetstid som anges i kravspecifikationen för säkerhetssystemet.
+      rationale: Nödstoppet måste isolera processvolymen innan ett utsläpp eller ett övertryck förvärras, och logikenheten använder en del av tidsbudgeten för hela säkerhetsfunktionen.
+      criteria:
+        - method: test
+          text: För 5 utlösande ingångar är tiden från ändrad ingång till ändrad utgång i logikenheten, mätt med en tidsstämplande registrator, högst 500 ms.
+          threshold: ≤ 500 ms
+        - method: analysis
+          text: Beräkningen av svarstiden för varje säkerhetsfunktion, inklusive givare, logikenhet och ventilernas gångtid, är kortare än dess processäkerhetstid.
+
+  - id: OILG-02
+    type: functional
+    obligation: must
+    priority: high
+    tags: [esd, sequence-of-events, first-out]
+    refs: ["IEC 61511-1:2016 §11", "IEC 61511-1:2016 §16"]
+    tests: [OILG-T01]
+    en:
+      title: Shutdown events recorded with first-out indication
+      description: The safety system MUST record each trip, input change and output change with a resolution of 1 ms, and MUST show the operator which input caused a shutdown first.
+      rationale: The investigation of a shutdown, and the decision to restart, depend on knowing the first cause and the order of events.
+      criteria:
+        - method: test
+          text: Two inputs activated 5 ms apart are recorded in the correct order with time stamps 5 ms apart, and the first-out display shows the earlier one.
+          threshold: 1 ms resolution
+    sv:
+      title: Nödstoppshändelser registreras med visning av första orsak
+      description: Säkerhetssystemet SKA registrera varje utlösning, ändrad ingång och ändrad utgång med en upplösning på 1 ms, och visa operatören vilken ingång som först orsakade ett nödstopp.
+      rationale: Utredningen av ett nödstopp, och beslutet att starta om, bygger på att den första orsaken och händelseordningen är kända.
+      criteria:
+        - method: test
+          text: Två ingångar som aktiveras med 5 ms mellanrum registreras i rätt ordning med tidsstämplar som skiljer 5 ms, och visningen av första orsak anger den tidigare.
+          threshold: upplösning 1 ms
+
+  - id: OILG-03
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [sif, bypass, override]
+    refs: ["IEC 61511-1:2016 §16", "IEC 61511-1:2016 §11.3"]
+    tests: [OILG-T02]
+    en:
+      title: Bypass of a safety function is authorised, shown and time-limited
+      description: The safety system MUST accept a bypass of a safety function input only with an authorised permit number, MUST show each active bypass on the operator display and in the shift log, and MUST alarm the control room when a bypass has been active for 8 hours.
+      rationale: Bypasses are needed for maintenance, but a forgotten bypass removes protection without anyone knowing.
+      criteria:
+        - method: test
+          text: A bypass without a permit number is refused, an accepted bypass is listed on the display and in the shift log, and an alarm is raised after 8 hours.
+          threshold: alarm after 8 h
+    sv:
+      title: Förbikoppling av en säkerhetsfunktion godkänns, visas och tidsbegränsas
+      description: Säkerhetssystemet SKA godta en förbikoppling av en ingång till en säkerhetsfunktion bara med ett godkänt tillståndsnummer, visa varje aktiv förbikoppling i operatörsbilden och i skiftloggen och larma kontrollrummet när en förbikoppling har varit aktiv i 8 timmar.
+      rationale: Förbikopplingar behövs vid underhåll, men en bortglömd förbikoppling tar bort skyddet utan att någon vet om det.
+      criteria:
+        - method: test
+          text: En förbikoppling utan tillståndsnummer avvisas, en godtagen förbikoppling listas i operatörsbilden och i skiftloggen, och ett larm ges efter 8 timmar.
+          threshold: larm efter 8 h
+
+  - id: OILG-04
+    type: security
+    obligation: must
+    priority: critical
+    tags: [fire-and-gas, separation, sis]
+    refs: ["ISO 13702:2015", "NORSOK S-001", "IEC 61511-1:2016 §11.2", "IEC 62443-3-3:2013 SR 5.1"]
+    tests: [OILG-T03]
+    en:
+      title: Fire and gas system independent of process control
+      description: The fire and gas system MUST detect gas and fire, raise its alarms and start its executive actions with its own controllers, power supply and network, also when the process control system is stopped or disconnected.
+      rationale: Gas detection and deluge must keep working during the process upsets and control system failures when they are needed most.
+      criteria:
+        - method: test
+          text: With the process control system stopped, a test gas applied to a detector raises the alarm on the fire and gas panel and starts the configured executive action.
+        - method: inspection
+          text: The system drawings show separate controllers, power supply and network for the fire and gas system.
+    sv:
+      title: Brand- och gassystemet är oberoende av processtyrningen
+      description: Brand- och gassystemet SKA upptäcka gas och brand, ge sina larm och starta sina åtgärder med egna styrenheter, egen kraftförsörjning och eget nät, även när processtyrsystemet är stoppat eller frånkopplat.
+      rationale: Gasdetektering och sprinkling måste fungera vid de processtörningar och fel i styrsystemet då de behövs som mest.
+      criteria:
+        - method: test
+          text: Med processtyrsystemet stoppat ger en testgas mot en detektor larm på brand- och gaspanelen och startar den inställda åtgärden.
+        - method: inspection
+          text: Systemritningarna visar separata styrenheter, kraftförsörjning och nät för brand- och gassystemet.
+
+  - id: OILG-05
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [permit-to-work, hot-work, hazardous-area, atex]
+    refs: ["HSE HSG250 (permit-to-work systems)", "Directive 1999/92/EC Annex II", "IEC 60079-10-1:2020"]
+    tests: [OILG-T04]
+    en:
+      title: Hot work permits checked against gas detection
+      description: The permit-to-work system MUST refuse to issue or revalidate a hot work permit in a hazardous area when a gas detector in that area reads 10 % LEL or more, or is in fault or inhibited, and MUST show each active permit on the control room display.
+      rationale: Hot work in an area with gas or with blind detectors is a known cause of explosions, and the control room needs to know where work is ongoing.
+      criteria:
+        - method: test
+          text: With a detector in the work area at 10 % LEL or inhibited, issuing a hot work permit is refused with the detector named; with the detector healthy below 10 % LEL the permit is issued and shown in the control room.
+          threshold: < 10 % LEL
+    sv:
+      title: Tillstånd för heta arbeten kontrolleras mot gasdetekteringen
+      description: Systemet för arbetstillstånd SKA vägra utfärda eller förnya ett tillstånd för heta arbeten i ett explosionsfarligt område när en gasdetektor i området visar 10 % LEL eller mer, eller är felaktig eller blockerad, och visa varje aktivt tillstånd i kontrollrummets bild.
+      rationale: Heta arbeten i ett område med gas eller med blinda detektorer är en känd orsak till explosioner, och kontrollrummet behöver veta var arbete pågår.
+      criteria:
+        - method: test
+          text: Med en detektor i arbetsområdet på 10 % LEL eller blockerad avvisas utfärdandet av ett tillstånd för heta arbeten med detektorn angiven; med detektorn felfri under 10 % LEL utfärdas tillståndet och visas i kontrollrummet.
+          threshold: < 10 % LEL
+
+  - id: OILG-06
+    type: performance
+    obligation: must
+    priority: critical
+    tags: [leak-detection, pipeline, cpm]
+    refs: ["API RP 1130", "API RP 1175", "API Std 1149"]
+    tests: [OILG-T05]
+    en:
+      title: Pipeline leak detected within 10 minutes
+      description: The computational pipeline monitoring system MUST raise a leak alarm within 10 minutes for a leak of 2 % of the nominal flow during steady flow, and MUST estimate the leak location within 2 km.
+      rationale: Detection time and leak size together set how much product is released before the pipeline is shut in.
+      criteria:
+        - method: test
+          text: In a fluid withdrawal test or a validated simulation, a withdrawal of 2 % of nominal flow raises a leak alarm within 10 minutes with an estimated location within 2 km of the withdrawal point.
+          threshold: 2 % of nominal flow; ≤ 10 min; ≤ 2 km
+    sv:
+      title: Läckage i rörledningen upptäcks inom 10 minuter
+      description: Systemet för beräkningsbaserad läckagedetektering SKA ge ett läckagelarm inom 10 minuter för ett läckage på 2 % av det nominella flödet vid stationärt flöde, och uppskatta läckagets läge inom 2 km.
+      rationale: Detekteringstiden och läckagets storlek avgör tillsammans hur mycket produkt som släpps ut innan rörledningen stängs av.
+      criteria:
+        - method: test
+          text: Vid ett uttagsprov med vätska eller en validerad simulering ger ett uttag på 2 % av det nominella flödet ett läckagelarm inom 10 minuter med ett uppskattat läge inom 2 km från uttagspunkten.
+          threshold: 2 % av nominellt flöde; ≤ 10 min; ≤ 2 km
+
+  - id: OILG-07
+    type: functional
+    obligation: should
+    priority: high
+    tags: [leak-detection, false-alarms, transients]
+    refs: ["API RP 1130", "API RP 1175", "API RP 1167"]
+    tests: [OILG-T06]
+    en:
+      title: Few false leak alarms and visible reduced sensitivity
+      description: The leak detection system SHOULD raise at most 1 false leak alarm per pipeline segment per month, and SHOULD show the controller when its sensitivity is reduced during transients such as pump starts or batch changes.
+      rationale: Frequent false leak alarms teach controllers to ignore them, and an unannounced loss of sensitivity gives a false sense of protection.
+      criteria:
+        - method: analysis
+          text: The leak alarm log for 6 months shows at most 1 false alarm per segment per month on average.
+          threshold: ≤ 1 false alarm per segment per month
+        - method: test
+          text: During a pump start the controller display shows the reduced sensitivity status until steady flow returns.
+    sv:
+      title: Få falska läckagelarm och synlig sänkt känslighet
+      description: Läckagedetekteringen BÖR ge högst 1 falskt läckagelarm per rörledningsavsnitt och månad, och visa operatören när känsligheten är sänkt under transienter som pumpstarter eller byte av batch.
+      rationale: Täta falska läckagelarm lär operatörerna att strunta i dem, och en känslighetsförlust som inte meddelas ger en falsk känsla av skydd.
+      criteria:
+        - method: analysis
+          text: Loggen över läckagelarm för 6 månader visar i genomsnitt högst 1 falskt larm per avsnitt och månad.
+          threshold: ≤ 1 falskt larm per avsnitt och månad
+        - method: test
+          text: Vid en pumpstart visar operatörsbilden att känsligheten är sänkt tills stationärt flöde återkommer.
+
+  - id: OILG-08
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [custody-transfer, metering, flow-computer]
+    refs: ["API MPMS Chapter 21.1", "API MPMS Chapter 21.2", "API MPMS Chapter 12", "Directive 2014/32/EU (MID)"]
+    tests: [OILG-T07]
+    en:
+      title: Flow computer quantities match the reference calculation
+      description: The custody transfer flow computer MUST calculate corrected volume, mass and energy with a deviation of at most 0.01 % from a reference calculation using the same inputs and the calculation methods of API MPMS.
+      rationale: Small calculation errors in custody transfer add up to large financial differences between buyer and seller.
+      criteria:
+        - method: test
+          text: For 10 test cases covering the flow, pressure, temperature and density range, the flow computer results differ from the reference calculation by at most 0.01 %.
+          threshold: ≤ 0.01 %
+    sv:
+      title: Flödesdatorns kvantiteter stämmer med referensberäkningen
+      description: Flödesdatorn för försäljningsmätning SKA beräkna korrigerad volym, massa och energi med en avvikelse på högst 0,01 % från en referensberäkning med samma indata och beräkningsmetoderna i API MPMS.
+      rationale: Små beräkningsfel i försäljningsmätning blir till stora ekonomiska skillnader mellan köpare och säljare.
+      criteria:
+        - method: test
+          text: För 10 testfall som täcker flödes-, tryck-, temperatur- och densitetsområdet skiljer sig flödesdatorns resultat från referensberäkningen med högst 0,01 %.
+          threshold: ≤ 0,01 %
+
+  - id: OILG-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [custody-transfer, audit-trail, metering]
+    refs: ["API MPMS Chapter 21.1", "API MPMS Chapter 21.2", "Directive 2014/32/EU (MID)"]
+    tests: [OILG-T08]
+    en:
+      title: Audit trail of metering configuration changes
+      description: The metering system MUST log each change to a meter factor, K-factor, density, composition or other configuration parameter with old and new value, user and time, and MUST keep quantity transaction records and the audit log unchangeable for 5 years.
+      rationale: Buyers, sellers and authorities need to verify how each billed quantity was produced and that no one adjusted it afterwards.
+      criteria:
+        - method: test
+          text: A changed meter factor appears in the audit log with old and new value, user and time, and an attempt to edit a stored transaction record is refused and logged.
+          threshold: kept 5 years
+    sv:
+      title: Spårbarhet för ändrad konfiguration i mätsystemet
+      description: Mätsystemet SKA logga varje ändring av mätarfaktor, K-faktor, densitet, sammansättning eller annan konfigurationsparameter med gammalt och nytt värde, användare och tid, och hålla kvantitetsposter och ändringsloggen oföränderliga i 5 år.
+      rationale: Köpare, säljare och myndigheter behöver kunna kontrollera hur varje fakturerad kvantitet togs fram och att ingen justerade den i efterhand.
+      criteria:
+        - method: test
+          text: En ändrad mätarfaktor visas i ändringsloggen med gammalt och nytt värde, användare och tid, och ett försök att redigera en sparad kvantitetspost avvisas och loggas.
+          threshold: sparas 5 år
+
+  - id: OILG-10
+    type: functional
+    obligation: must
+    priority: high
+    tags: [historian, data-quality, timestamps]
+    refs: ["ISO 8000-8:2015", "IEC 62541-8 (OPC UA data access)", "ISO 14224:2016"]
+    tests: [OILG-T09]
+    en:
+      title: Historian values stored with source time and quality
+      description: The production data historian MUST store each value with the time stamp from its source in UTC with millisecond resolution and with a quality of good, uncertain, bad or substituted, and MUST show that quality in trends, reports and exports.
+      rationale: Production allocation, well tests and incident investigations give wrong answers when bad or substituted values look the same as measured ones.
+      criteria:
+        - method: test
+          text: A value sent with bad quality and a manually substituted value are stored with their quality, shown differently in a trend and exported with a quality column.
+    sv:
+      title: Processhistoriken lagrar värden med källtid och kvalitet
+      description: Processhistoriken för produktionsdata SKA lagra varje värde med tidsstämpeln från källan i UTC med millisekundupplösning och med kvaliteten god, osäker, dålig eller ersatt, och visa kvaliteten i trender, rapporter och exporter.
+      rationale: Produktionsallokering, brunnstester och utredningar av händelser ger fel svar när dåliga eller ersatta värden ser likadana ut som uppmätta.
+      criteria:
+        - method: test
+          text: Ett värde som skickas med dålig kvalitet och ett manuellt ersatt värde lagras med sin kvalitet, visas olika i en trend och exporteras med en kvalitetskolumn.
+
+  - id: OILG-11
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [historian, store-and-forward, remote-site]
+    refs: ["IEC 62443-3-3:2013 SR 7.2", "ISO/IEC 25010:2023 recoverability"]
+    tests: [OILG-T10]
+    en:
+      title: Site data buffered during link loss and backfilled
+      description: The historian collector at a well site or offshore installation MUST buffer at least 7 days of data when the link to the central historian is lost, and MUST backfill the central historian after the link returns without gaps or duplicate values.
+      rationale: Links to remote sites fail, and production and emission records must still be complete.
+      criteria:
+        - method: test
+          text: After a 48-hour link outage, the central historian has every value of 10 sampled tags for the outage period with original time stamps and no duplicates.
+          threshold: buffer ≥ 7 days
+    sv:
+      title: Platsens data buffras vid avbrott och fylls på i efterhand
+      description: Insamlaren för processhistorik vid en brunnsplats eller en havsanläggning SKA buffra minst 7 dygns data när förbindelsen till den centrala processhistoriken bryts, och fylla på den centrala processhistoriken efter att förbindelsen kommit tillbaka utan luckor eller dubbla värden.
+      rationale: Förbindelser till avlägsna platser bryts, och produktions- och utsläppsdata ska ändå vara fullständiga.
+      criteria:
+        - method: test
+          text: Efter ett avbrott i förbindelsen på 48 timmar har den centrala processhistoriken varje värde för 10 utvalda taggar under avbrottet med ursprungliga tidsstämplar och inga dubbletter.
+          threshold: buffert ≥ 7 dygn
+
+  - id: OILG-12
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [unmanned-installation, remote-operations, safe-state]
+    refs: ["IEC 61511-1:2016 §11.3", "NORSOK S-001", "IEC 62443-3-3:2013 SR 7.1"]
+    tests: [OILG-T11]
+    en:
+      title: Unmanned installation shuts in safely on link loss
+      description: An unmanned installation MUST run its local process shutdown sequence to the documented shut-in state when the communication link to the remote control room has been lost for 30 minutes, and its local safety and fire and gas functions MUST keep working without the link.
+      rationale: Nobody on board can respond to a process upset, so the installation has to protect itself when the control room can no longer see or act.
+      criteria:
+        - method: test
+          text: On the test system with the link interrupted, the installation reaches the shut-in state 30 minutes later, and a simulated gas detection during the interruption still starts its executive action.
+          threshold: shut-in after 30 min link loss
+    sv:
+      title: Obemannad anläggning stänger av säkert vid förlorad förbindelse
+      description: En obemannad anläggning SKA köra sin lokala sekvens för processavstängning till det dokumenterade avstängda läget när förbindelsen till kontrollrummet på distans har varit borta i 30 minuter, och dess lokala säkerhets- och brand- och gasfunktioner SKA fungera utan förbindelsen.
+      rationale: Ingen ombord kan hantera en processtörning, så anläggningen måste skydda sig själv när kontrollrummet inte längre kan se eller agera.
+      criteria:
+        - method: test
+          text: I testsystemet med förbindelsen bruten når anläggningen det avstängda läget 30 minuter senare, och en simulerad gasdetektering under avbrottet startar fortfarande sin åtgärd.
+          threshold: avstängning efter 30 min utan förbindelse
+
+  - id: OILG-13
+    type: security
+    obligation: must
+    priority: critical
+    tags: [ot-security, remote-operations, conduit]
+    refs: ["IEC 62443-3-3:2013 SR 3.1", "IEC 62443-3-3:2013 SR 5.2", "DNV-RP-G108", "IOGP Report 621"]
+    tests: [OILG-T12]
+    en:
+      title: Control link to remote installations authenticated and encrypted
+      description: The conduit between the onshore control room and each remote installation MUST authenticate both ends with certificates and encrypt and integrity-protect the traffic, and the installation's control zone MUST accept connections only from the documented conduits, not from the internet or from the enterprise network.
+      rationale: Remote operation moves the control room off the installation, so the link becomes the main attack path to the process.
+      criteria:
+        - method: test
+          text: A capture on the link shows only encrypted traffic, a tunnel attempt with an untrusted certificate is refused, and connection attempts from the enterprise network to the installation's controllers are blocked.
+    sv:
+      title: Styrförbindelsen till avlägsna anläggningar autentiseras och krypteras
+      description: Ledningen mellan kontrollrummet på land och varje avlägsen anläggning SKA autentisera båda ändar med certifikat samt kryptera och integritetsskydda trafiken, och anläggningens styrzon SKA ta emot anslutningar bara från de dokumenterade ledningarna, inte från internet eller kontorsnätet.
+      rationale: Fjärrdrift flyttar kontrollrummet från anläggningen, så förbindelsen blir den viktigaste angreppsvägen till processen.
+      criteria:
+        - method: test
+          text: En inspelning på förbindelsen visar bara krypterad trafik, ett tunnelförsök med ett obetrott certifikat avvisas, och anslutningsförsök från kontorsnätet till anläggningens styrenheter blockeras.
+
+  - id: OILG-14
+    type: functional
+    obligation: must
+    priority: high
+    tags: [alarm-management, master-alarm-database, pipeline-control-room]
+    refs: ["API RP 1167", "ANSI/ISA-18.2-2016", "IEC 62682", "API RP 1165"]
+    tests: [OILG-T13]
+    en:
+      title: Every configured alarm documented in the master alarm database
+      description: The control system MUST raise only alarms that are in the master alarm database with priority, cause, consequence, operator response and time to respond, and MUST report each difference between the configured alarms and the database weekly.
+      rationale: An alarm without a defined response forces the controller to guess, and configuration drift brings undocumented nuisance alarms back.
+      criteria:
+        - method: inspection
+          text: Twenty sampled alarms each have priority, cause, consequence, response and time to respond in the database.
+        - method: test
+          text: An alarm added in the control system without a database entry appears in the next weekly difference report.
+    sv:
+      title: Varje konfigurerat larm dokumenteras i larmdatabasen
+      description: Styrsystemet SKA bara ge larm som finns i den gemensamma larmdatabasen med prioritet, orsak, konsekvens, operatörsåtgärd och tid för åtgärd, och varje vecka rapportera varje skillnad mellan konfigurerade larm och databasen.
+      rationale: Ett larm utan definierad åtgärd tvingar operatören att gissa, och avvikelser i konfigurationen för tillbaka odokumenterade störande larm.
+      criteria:
+        - method: inspection
+          text: Tjugo stickprov bland larmen har vart och ett prioritet, orsak, konsekvens, åtgärd och tid för åtgärd i databasen.
+        - method: test
+          text: Ett larm som läggs till i styrsystemet utan post i databasen visas i nästa veckorapport över skillnader.
+
+  - id: OILG-15
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [methane, emissions, reporting]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector)", "OGMP 2.0 reporting framework", "ISO 14064-1:2018"]
+    tests: [OILG-T14]
+    en:
+      title: Source-level methane emission report per installation
+      description: The emission monitoring system MUST calculate the methane emissions of each installation per source for a reporting year and MUST link each reported value to its measurements, or to its emission factor and activity data, together with the method and the stated uncertainty.
+      rationale: Methane rules and voluntary frameworks require source-level quantification, and auditors check each value back to its data.
+      criteria:
+        - method: test
+          text: The annual report for a test installation lists each source with quantity, method and uncertainty, and selecting a value shows the measurements or factor and activity data behind it.
+    sv:
+      title: Rapport över metanutsläpp per källa och anläggning
+      description: Systemet för utsläppsövervakning SKA beräkna metanutsläppen för varje anläggning per källa för ett rapporteringsår och koppla varje rapporterat värde till dess mätningar, eller till dess emissionsfaktor och aktivitetsdata, tillsammans med metod och angiven osäkerhet.
+      rationale: Regler för metan och frivilliga ramverk kräver kvantifiering per källa, och granskare kontrollerar varje värde tillbaka till dess data.
+      criteria:
+        - method: test
+          text: Årsrapporten för en testanläggning listar varje källa med mängd, metod och osäkerhet, och när ett värde väljs visas mätningarna eller faktorn och aktivitetsdata bakom det.
+
+  - id: OILG-16
+    type: functional
+    obligation: must
+    priority: high
+    tags: [venting, flaring, emissions]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector)", "Commission Implementing Regulation (EU) 2018/2066"]
+    tests: [OILG-T15]
+    en:
+      title: Venting and flaring events recorded
+      description: The system MUST record each venting and flaring event with start and end time, estimated gas volume, cause and responsible person, and MUST flag an event that lasts longer than the configured limit of 8 hours for review by the environmental officer.
+      rationale: Venting and flaring are restricted and reported to authorities, and each event has to be justified afterwards.
+      criteria:
+        - method: test
+          text: A simulated flaring event of 9 hours is stored with all fields and appears in the environmental officer's review list; an event of 2 hours is stored without a flag.
+          threshold: flag > 8 h
+    sv:
+      title: Händelser med avblåsning och fackling registreras
+      description: Systemet SKA registrera varje händelse med avblåsning eller fackling med start- och sluttid, uppskattad gasvolym, orsak och ansvarig person, och flagga en händelse som varar längre än den inställda gränsen på 8 timmar för granskning av miljöansvarig.
+      rationale: Avblåsning och fackling är begränsade och rapporteras till myndigheter, och varje händelse måste kunna motiveras i efterhand.
+      criteria:
+        - method: test
+          text: En simulerad facklingshändelse på 9 timmar sparas med varje fält och visas i miljöansvarigs granskningslista; en händelse på 2 timmar sparas utan flagga.
+          threshold: flagga > 8 h
+
+  - id: OILG-17
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [disaster-recovery, control-room, backup]
+    refs: ["IEC 62443-3-3:2013 SR 7.3", "IEC 62443-3-3:2013 SR 7.4", "ISO 22301:2019", "Directive (EU) 2022/2557 (CER) Art. 13"]
+    tests: [OILG-T16]
+    en:
+      title: Alternative control room takes over within 30 minutes
+      description: The control system MUST let operators take over monitoring and control from an alternative control room within 30 minutes after the main control room is lost, and MUST keep offline backups of servers, historian and configurations that are at most 24 hours old.
+      rationale: Losing the control room by fire, flooding or a cyberattack must not leave installations and pipelines without supervision.
+      criteria:
+        - method: test
+          text: In an exercise, operators in the alternative control room take over and operate a test valve within 30 minutes, and a server restored from the latest offline backup starts with data at most 24 hours old.
+          threshold: ≤ 30 min; backup ≤ 24 h old
+    sv:
+      title: Reservkontrollrummet tar över inom 30 minuter
+      description: Styrsystemet SKA låta operatörerna ta över övervakning och styrning från ett reservkontrollrum inom 30 minuter efter att huvudkontrollrummet gått förlorat, och hålla frånkopplade säkerhetskopior av servrar, processhistorik och konfigurationer som är högst 24 timmar gamla.
+      rationale: Att förlora kontrollrummet genom brand, översvämning eller en cyberattack ska inte lämna anläggningar och rörledningar utan övervakning.
+      criteria:
+        - method: test
+          text: Vid en övning tar operatörer i reservkontrollrummet över och manövrerar en testventil inom 30 minuter, och en server som återställs från den senaste frånkopplade säkerhetskopian startar med data som är högst 24 timmar gamla.
+          threshold: ≤ 30 min; kopia ≤ 24 h gammal
+
+tests:
+  - id: OILG-T01
+    priority: critical
+    execution: manual
+    tags: [esd, response-time, sequence-of-events]
+    refs: ["IEC 61511-1:2016 §16.3"]
+    en:
+      title: Emergency shutdown response time and first-out recording
+      description: Measures the logic solver response time and checks the event recording during a planned proof test.
+      preconditions: A planned proof test with a work permit, the logic solver isolated from the final elements or the process shut down, a time-stamping recorder on inputs and outputs, and the safety requirements specification.
+      expected: The logic solver responds within 500 ms, and events are recorded in order with 1 ms resolution and first-out indication.
+      steps:
+        - action: Activate each of 5 initiating inputs in turn and record input and output times.
+          expected: Each output changes within 500 ms after its input.
+        - action: Reset, then activate two inputs 5 ms apart.
+          expected: The sequence-of-events record shows both in the correct order with time stamps 5 ms apart.
+          data: "input A at t, input B at t + 5 ms"
+        - action: Look at the first-out display.
+          expected: The first input is marked as the first cause.
+    sv:
+      title: Nödstoppets svarstid och registrering av första orsak
+      description: Mäter logikenhetens svarstid och kontrollerar händelseregistreringen vid ett planerat funktionsprov.
+      preconditions: Ett planerat funktionsprov med arbetstillstånd, logikenheten frånskild från slutelementen eller processen avställd, en tidsstämplande registrator på in- och utgångar och kravspecifikationen för säkerhetssystemet.
+      expected: Logikenheten svarar inom 500 ms, och händelser registreras i ordning med 1 ms upplösning och visning av första orsak.
+      steps:
+        - action: Aktivera var och en av 5 utlösande ingångar i tur och ordning och registrera tiderna för in- och utgång.
+          expected: Varje utgång ändras inom 500 ms efter sin ingång.
+        - action: Återställ och aktivera sedan två ingångar med 5 ms mellanrum.
+          expected: Händelseregistreringen visar båda i rätt ordning med tidsstämplar som skiljer 5 ms.
+          data: "ingång A vid t, ingång B vid t + 5 ms"
+        - action: Titta på visningen av första orsak.
+          expected: Den första ingången är markerad som första orsak.
+
+  - id: OILG-T02
+    priority: critical
+    execution: manual
+    tags: [bypass, sif]
+    refs: []
+    en:
+      title: Bypass needs a permit and is alarmed after 8 hours
+      description: Applies bypasses to a safety function input on the test system with and without a permit.
+      preconditions: The safety system on a test system or simulator, an operator account, a valid test permit number and a controllable clock.
+      expected: Bypasses need a permit, are visible in the display and shift log, and are alarmed after 8 hours.
+      steps:
+        - action: Try to bypass a pressure trip input without a permit number.
+          expected: The bypass is refused.
+        - action: Bypass the input with the test permit number.
+          expected: The bypass is accepted and listed in the display and in the shift log with permit number, user and time.
+        - action: Move the clock 8 hours forward.
+          expected: The control room receives an alarm naming the bypassed input.
+    sv:
+      title: Förbikoppling kräver tillstånd och larmas efter 8 timmar
+      description: Förbikopplar en ingång till en säkerhetsfunktion i testsystemet med och utan tillstånd.
+      preconditions: Säkerhetssystemet i ett testsystem eller en simulator, ett operatörskonto, ett giltigt testtillståndsnummer och en styrbar klocka.
+      expected: Förbikopplingar kräver tillstånd, syns i operatörsbilden och skiftloggen och larmas efter 8 timmar.
+      steps:
+        - action: Försök förbikoppla en ingång för trycklösning utan tillståndsnummer.
+          expected: Förbikopplingen avvisas.
+        - action: Förbikoppla ingången med testtillståndsnumret.
+          expected: Förbikopplingen godtas och listas i operatörsbilden och i skiftloggen med tillståndsnummer, användare och tid.
+        - action: Flytta klockan 8 timmar framåt.
+          expected: Kontrollrummet får ett larm som anger den förbikopplade ingången.
+
+  - id: OILG-T03
+    priority: critical
+    execution: manual
+    tags: [fire-and-gas, separation]
+    refs: ["ISO 13702:2015"]
+    en:
+      title: Fire and gas detection works with process control stopped
+      description: Stops the process control system on a test system and applies test gas to a detector.
+      preconditions: A fire and gas system on a test system or at a planned function test, a calibration gas for the detector, the system drawings and permission to stop the process control system controller.
+      expected: The fire and gas system raises its alarm and starts its action without the process control system.
+      steps:
+        - action: Stop the process control system controller.
+          expected: The process control HMI shows the controller as stopped.
+        - action: Apply calibration gas to a gas detector.
+          expected: The fire and gas panel raises the gas alarm and the configured executive action starts.
+          data: "calibration gas at 50 % LEL"
+        - action: Compare the system drawings with the installation.
+          expected: The fire and gas system has its own controllers, power supply and network.
+    sv:
+      title: Brand- och gasdetektering fungerar med processtyrningen stoppad
+      description: Stoppar processtyrsystemet i ett testsystem och för på testgas mot en detektor.
+      preconditions: Ett brand- och gassystem i ett testsystem eller vid ett planerat funktionsprov, en kalibreringsgas för detektorn, systemritningarna och tillstånd att stoppa processtyrsystemets styrenhet.
+      expected: Brand- och gassystemet ger sitt larm och startar sin åtgärd utan processtyrsystemet.
+      steps:
+        - action: Stoppa processtyrsystemets styrenhet.
+          expected: Processtyrningens operatörsbild visar styrenheten som stoppad.
+        - action: För på kalibreringsgas mot en gasdetektor.
+          expected: Brand- och gaspanelen ger gaslarm och den inställda åtgärden startar.
+          data: "kalibreringsgas vid 50 % LEL"
+        - action: Jämför systemritningarna med installationen.
+          expected: Brand- och gassystemet har egna styrenheter, egen kraftförsörjning och eget nät.
+
+  - id: OILG-T04
+    priority: critical
+    execution: manual
+    tags: [permit-to-work, hot-work]
+    refs: ["HSE HSG250 (permit-to-work systems)"]
+    en:
+      title: Hot work permit blocked by gas or an inhibited detector
+      description: Tries to issue hot work permits in the permit-to-work test system with simulated detector states.
+      preconditions: A permit-to-work test system connected to a fire and gas simulator, a work area in a hazardous zone with one gas detector, and a permit issuer account.
+      expected: A permit is issued only when the detector is healthy and below 10 % LEL, and issued permits are shown in the control room.
+      steps:
+        - action: Set the detector to 12 % LEL and try to issue a hot work permit for the area.
+          expected: The permit is refused with the detector and its reading named.
+        - action: Set the detector to 0 % LEL but inhibited and try again.
+          expected: The permit is refused because the detector is inhibited.
+        - action: Set the detector to 0 % LEL and healthy and issue the permit.
+          expected: The permit is issued and shown on the control room display with area and time.
+    sv:
+      title: Tillstånd för heta arbeten blockeras av gas eller en blockerad detektor
+      description: Försöker utfärda tillstånd för heta arbeten i testmiljön för arbetstillstånd med simulerade detektorlägen.
+      preconditions: Ett system för arbetstillstånd i testmiljö anslutet till en simulator för brand och gas, ett arbetsområde i en explosionsfarlig zon med en gasdetektor och ett konto för den som utfärdar tillstånd.
+      expected: Ett tillstånd utfärdas bara när detektorn är felfri och under 10 % LEL, och utfärdade tillstånd visas i kontrollrummet.
+      steps:
+        - action: Ställ detektorn på 12 % LEL och försök utfärda ett tillstånd för heta arbeten i området.
+          expected: Tillståndet avvisas med detektorn och dess värde angivna.
+        - action: Ställ detektorn på 0 % LEL men blockerad och försök igen.
+          expected: Tillståndet avvisas eftersom detektorn är blockerad.
+        - action: Ställ detektorn på 0 % LEL och felfri och utfärda tillståndet.
+          expected: Tillståndet utfärdas och visas i kontrollrummets bild med område och tid.
+
+  - id: OILG-T05
+    priority: critical
+    execution: manual
+    tags: [leak-detection, pipeline]
+    refs: ["API RP 1130"]
+    en:
+      title: Leak detection by fluid withdrawal or simulation
+      description: Withdraws a known flow from the pipeline, or injects it in a validated simulation, and times the leak alarm.
+      preconditions: Steady flow in the pipeline segment, a withdrawal point with a calibrated meter and an approved test procedure, or a validated hydraulic simulation of the segment.
+      expected: The leak alarm comes within 10 minutes with a location within 2 km.
+      steps:
+        - action: Start a withdrawal of 2 % of the nominal flow and start the clock.
+          expected: A leak alarm is raised within 10 minutes.
+          data: "nominal flow 1 000 m³/h, withdrawal 20 m³/h"
+        - action: Read the estimated leak location.
+          expected: It is within 2 km of the withdrawal point.
+        - action: Stop the withdrawal.
+          expected: The alarm can be reset after steady flow returns, and the test is recorded in the leak detection log.
+    sv:
+      title: Läckagedetektering med vätskeuttag eller simulering
+      description: Tar ut ett känt flöde från rörledningen, eller lägger in det i en validerad simulering, och tar tid på läckagelarmet.
+      preconditions: Stationärt flöde i rörledningsavsnittet, en uttagspunkt med kalibrerad mätare och en godkänd testprocedur, eller en validerad hydraulisk simulering av avsnittet.
+      expected: Läckagelarmet kommer inom 10 minuter med ett läge inom 2 km.
+      steps:
+        - action: Starta ett uttag på 2 % av det nominella flödet och starta tidtagningen.
+          expected: Ett läckagelarm ges inom 10 minuter.
+          data: "nominellt flöde 1 000 m³/h, uttag 20 m³/h"
+        - action: Läs av läckagets uppskattade läge.
+          expected: Det ligger inom 2 km från uttagspunkten.
+        - action: Stoppa uttaget.
+          expected: Larmet kan återställas när stationärt flöde återkommit, och testet registreras i läckagedetekteringens logg.
+
+  - id: OILG-T06
+    priority: high
+    execution: manual
+    tags: [leak-detection, false-alarms]
+    refs: ["API RP 1175"]
+    en:
+      title: False leak alarm rate and reduced sensitivity status
+      description: Analyses the leak alarm history and observes the system during a pump start.
+      preconditions: The leak alarm log for the last 6 months with the cause recorded for each alarm, and a planned pump start on the segment.
+      expected: False alarms are at most 1 per segment per month on average, and reduced sensitivity is shown during the transient.
+      steps:
+        - action: Count the leak alarms classified as false per segment over 6 months.
+          expected: The average is at most 1 per segment per month.
+        - action: Watch the controller display during the pump start.
+          expected: The display shows reduced sensitivity for the segment from the start until steady flow.
+    sv:
+      title: Andel falska läckagelarm och status för sänkt känslighet
+      description: Analyserar historiken över läckagelarm och observerar systemet vid en pumpstart.
+      preconditions: Loggen över läckagelarm för de senaste 6 månaderna med orsak angiven för varje larm, och en planerad pumpstart på avsnittet.
+      expected: Falska larm är i genomsnitt högst 1 per avsnitt och månad, och sänkt känslighet visas under transienten.
+      steps:
+        - action: Räkna läckagelarmen som klassats som falska per avsnitt under 6 månader.
+          expected: Genomsnittet är högst 1 per avsnitt och månad.
+        - action: Följ operatörsbilden under pumpstarten.
+          expected: Bilden visar sänkt känslighet för avsnittet från starten tills flödet är stationärt.
+
+  - id: OILG-T07
+    priority: critical
+    execution: automated
+    tags: [custody-transfer, flow-computer]
+    refs: ["API MPMS Chapter 21.1"]
+    en:
+      title: Flow computer results against reference calculation
+      description: A script feeds test inputs to the flow computer and compares its results with an independent reference calculation.
+      preconditions: A flow computer in test mode that accepts simulated inputs, 10 test cases covering the operating range, and a reference calculation tool that implements the same API MPMS methods.
+      expected: Each result differs from the reference by at most 0.01 %.
+      steps:
+        - action: Apply each test case to the flow computer and read corrected volume, mass and energy.
+          expected: The flow computer produces a result for each case.
+          data: "10 cases: flow 10–100 %, 5–80 bar, 0–60 °C"
+        - action: Compute the same quantities with the reference tool.
+          expected: Each flow computer result differs from the reference by at most 0.01 %.
+    sv:
+      title: Flödesdatorns resultat mot referensberäkning
+      description: Ett skript matar flödesdatorn med testindata och jämför resultaten med en oberoende referensberäkning.
+      preconditions: En flödesdator i testläge som tar emot simulerade indata, 10 testfall som täcker driftområdet och ett verktyg för referensberäkning med samma metoder enligt API MPMS.
+      expected: Varje resultat skiljer sig från referensen med högst 0,01 %.
+      steps:
+        - action: Lägg på varje testfall i flödesdatorn och läs av korrigerad volym, massa och energi.
+          expected: Flödesdatorn ger ett resultat för varje fall.
+          data: "10 fall: flöde 10–100 %, 5–80 bar, 0–60 °C"
+        - action: Beräkna samma storheter med referensverktyget.
+          expected: Varje resultat från flödesdatorn skiljer sig från referensen med högst 0,01 %.
+
+  - id: OILG-T08
+    priority: high
+    execution: manual
+    tags: [custody-transfer, audit-trail]
+    refs: []
+    en:
+      title: Metering configuration change and record tampering attempt
+      description: Changes a meter factor and tries to edit a stored quantity record.
+      preconditions: A metering test system with a metering engineer account, a stored daily quantity record and the audit log.
+      expected: The change is fully logged and stored records cannot be edited.
+      steps:
+        - action: As metering engineer, change the meter factor of a test meter.
+          expected: The audit log shows the old and new factor, the user and the time.
+          data: "meter factor 1.0012 → 1.0009"
+        - action: Try to edit the stored daily quantity record.
+          expected: The edit is refused and the attempt is logged.
+        - action: Search the audit log for the oldest entries.
+          expected: Entries are kept for 5 years, or since commissioning if the system is younger.
+    sv:
+      title: Ändrad mätkonfiguration och försök att manipulera en post
+      description: Ändrar en mätarfaktor och försöker redigera en sparad kvantitetspost.
+      preconditions: Ett mätsystem i testmiljö med ett konto för mätingenjör, en sparad dygnspost och ändringsloggen.
+      expected: Ändringen loggas fullständigt och sparade poster går inte att redigera.
+      steps:
+        - action: Ändra mätarfaktorn för en testmätare som mätingenjör.
+          expected: Ändringsloggen visar gammal och ny faktor, användare och tid.
+          data: "mätarfaktor 1,0012 → 1,0009"
+        - action: Försök redigera den sparade dygnsposten.
+          expected: Redigeringen avvisas och försöket loggas.
+        - action: Sök fram de äldsta posterna i ändringsloggen.
+          expected: Posterna sparas i 5 år, eller sedan driftsättningen om systemet är yngre.
+
+  - id: OILG-T09
+    priority: high
+    execution: manual
+    tags: [historian, data-quality]
+    refs: []
+    en:
+      title: Quality flags in historian trends and exports
+      description: Sends values with different quality to the historian and checks storage, trends and export.
+      preconditions: A historian test system with a test tag, a data source that can send values with a chosen quality and source time stamp, and a user allowed to substitute values.
+      expected: Each value keeps its source time and quality in storage, trends and export.
+      steps:
+        - action: Send a good value and then a bad value with source time stamps that include milliseconds.
+          expected: Both are stored with their source time stamp in UTC to the millisecond and their quality.
+        - action: Substitute a value manually for a 10-minute period.
+          expected: The value is stored with the quality substituted and the user who entered it.
+        - action: Open a trend of the tag and export the period to a file.
+          expected: Bad and substituted values are marked differently in the trend, and the export has a quality column.
+    sv:
+      title: Kvalitetsflaggor i trender och exporter från processhistoriken
+      description: Skickar värden med olika kvalitet till processhistoriken och kontrollerar lagring, trender och export.
+      preconditions: En processhistorik i testmiljö med en testtagg, en datakälla som kan skicka värden med vald kvalitet och tidsstämpel från källan, och en användare som har behörighet att ersätta värden.
+      expected: Varje värde behåller sin källtid och kvalitet i lagring, trender och export.
+      steps:
+        - action: Skicka ett gott värde och sedan ett dåligt värde med källtidsstämplar som innehåller millisekunder.
+          expected: Båda lagras med sin källtidsstämpel i UTC på millisekunden och sin kvalitet.
+        - action: Ersätt ett värde manuellt för en period på 10 minuter.
+          expected: Värdet lagras med kvaliteten ersatt och användaren som angav det.
+        - action: Öppna en trend för taggen och exportera perioden till en fil.
+          expected: Dåliga och ersatta värden markeras olika i trenden, och exporten har en kvalitetskolumn.
+
+  - id: OILG-T10
+    priority: high
+    execution: manual
+    tags: [historian, store-and-forward]
+    refs: []
+    en:
+      title: Backfill after a 48-hour link outage
+      description: Interrupts the link between a site collector and the central historian and checks the data after the link returns.
+      preconditions: A site collector in a test environment with a buffer configured for 7 days, 10 test tags changing every second, and a way to interrupt the link.
+      expected: The central historian is complete for the outage period, without duplicates.
+      steps:
+        - action: Interrupt the link for 48 hours.
+          expected: The collector status shows buffering and the buffer fill level.
+        - action: Restore the link.
+          expected: The collector backfills the central historian and reports when it is done.
+        - action: Compare the 10 tags in the central historian with the collector's local data for the outage period.
+          expected: Each value is present once with its original time stamp.
+    sv:
+      title: Påfyllning efter ett avbrott i förbindelsen på 48 timmar
+      description: Bryter förbindelsen mellan en platsinsamlare och den centrala processhistoriken och kontrollerar data efter att förbindelsen kommit tillbaka.
+      preconditions: En platsinsamlare i testmiljö med en buffert inställd på 7 dygn, 10 testtaggar som ändras varje sekund och ett sätt att bryta förbindelsen.
+      expected: Den centrala processhistoriken är fullständig för avbrottsperioden, utan dubbletter.
+      steps:
+        - action: Bryt förbindelsen i 48 timmar.
+          expected: Insamlarens status visar buffring och buffertens fyllnadsgrad.
+        - action: Återställ förbindelsen.
+          expected: Insamlaren fyller på den centrala processhistoriken och rapporterar när den är klar.
+        - action: Jämför de 10 taggarna i den centrala processhistoriken med insamlarens lokala data för avbrottsperioden.
+          expected: Varje värde finns en gång med sin ursprungliga tidsstämpel.
+
+  - id: OILG-T11
+    priority: critical
+    execution: manual
+    tags: [unmanned-installation, safe-state]
+    refs: []
+    en:
+      title: Unmanned installation behaviour on loss of the control link
+      description: Interrupts the link between the remote control room and the installation on the test system or a digital twin.
+      preconditions: The control and safety systems of the unmanned installation on a test system or digital twin, the documented shut-in state, and a fire and gas simulator.
+      expected: The installation shuts in after 30 minutes without link, and the local fire and gas function works throughout.
+      steps:
+        - action: Interrupt the control link and start the clock.
+          expected: The installation keeps running and its local log records the link loss.
+        - action: After 10 minutes, simulate a gas detection on the installation.
+          expected: The local fire and gas function raises the alarm and starts its executive action without the link.
+        - action: Reset the gas detection and wait until 30 minutes have passed since the link loss.
+          expected: The local shutdown sequence runs and the installation reaches the documented shut-in state.
+    sv:
+      title: Den obemannade anläggningens beteende när styrförbindelsen bryts
+      description: Bryter förbindelsen mellan kontrollrummet på distans och anläggningen i testsystemet eller en digital tvilling.
+      preconditions: Styr- och säkerhetssystemen för den obemannade anläggningen i ett testsystem eller en digital tvilling, det dokumenterade avstängda läget och en simulator för brand och gas.
+      expected: Anläggningen stängs av efter 30 minuter utan förbindelse, och den lokala brand- och gasfunktionen fungerar hela tiden.
+      steps:
+        - action: Bryt styrförbindelsen och starta tidtagningen.
+          expected: Anläggningen fortsätter att gå och dess lokala logg registrerar avbrottet.
+        - action: Simulera en gasdetektering på anläggningen efter 10 minuter.
+          expected: Den lokala brand- och gasfunktionen ger larm och startar sin åtgärd utan förbindelsen.
+        - action: Återställ gasdetekteringen och vänta tills 30 minuter har gått sedan avbrottet.
+          expected: Den lokala avstängningssekvensen körs och anläggningen når det dokumenterade avstängda läget.
+
+  - id: OILG-T12
+    priority: critical
+    execution: manual
+    tags: [ot-security, conduit]
+    refs: ["DNV-RP-G108"]
+    en:
+      title: Control link encryption and access from other networks
+      description: Inspects the traffic on the control link and tries connections that are not allowed.
+      preconditions: A test or maintenance window agreed with operations, a capture point on the control link, a test client with an untrusted certificate, and a computer in the enterprise network.
+      expected: The link carries only encrypted traffic, and untrusted ends and the enterprise network are refused.
+      steps:
+        - action: Capture traffic on the control link for 10 minutes.
+          expected: Only the encrypted tunnel protocol is seen; no process values or commands are readable.
+        - action: Try to set up a tunnel to the installation with the untrusted certificate.
+          expected: The tunnel is refused and the attempt is logged.
+        - action: From the enterprise network computer, try to connect to a controller on the installation.
+          expected: The connection is blocked and logged at the zone boundary.
+    sv:
+      title: Kryptering av styrförbindelsen och åtkomst från andra nät
+      description: Granskar trafiken på styrförbindelsen och försöker göra anslutningar som inte är tillåtna.
+      preconditions: Ett test- eller underhållsfönster som avtalats med driften, en mätpunkt på styrförbindelsen, en testklient med ett obetrott certifikat och en dator i kontorsnätet.
+      expected: Förbindelsen bär bara krypterad trafik, och obetrodda ändar och kontorsnätet avvisas.
+      steps:
+        - action: Spela in trafiken på styrförbindelsen i 10 minuter.
+          expected: Bara det krypterade tunnelprotokollet syns; inga processvärden eller kommandon går att läsa.
+        - action: Försök sätta upp en tunnel till anläggningen med det obetrodda certifikatet.
+          expected: Tunneln avvisas och försöket loggas.
+        - action: Försök ansluta till en styrenhet på anläggningen från datorn i kontorsnätet.
+          expected: Anslutningen blockeras och loggas vid zongränsen.
+
+  - id: OILG-T13
+    priority: high
+    execution: manual
+    tags: [alarm-management, master-alarm-database]
+    refs: ["API RP 1167"]
+    en:
+      title: Master alarm database content and difference report
+      description: Samples alarm documentation and adds an undocumented alarm on the test system.
+      preconditions: Read access to the master alarm database, a test system with the same alarm configuration as production, and the weekly difference report job.
+      expected: Sampled alarms are fully documented and an undocumented alarm is reported.
+      steps:
+        - action: Pick 20 configured alarms and look them up in the master alarm database.
+          expected: Each has priority, cause, consequence, operator response and time to respond.
+        - action: Add an alarm on the test system without a database entry and run the difference report.
+          expected: The report lists the new alarm as missing from the database.
+    sv:
+      title: Innehåll i larmdatabasen och rapport över skillnader
+      description: Tar stickprov på larmdokumentationen och lägger till ett odokumenterat larm i testsystemet.
+      preconditions: Läsbehörighet till larmdatabasen, ett testsystem med samma larmkonfiguration som produktionen och jobbet för veckorapporten över skillnader.
+      expected: Larmen i stickprovet är fullständigt dokumenterade och ett odokumenterat larm rapporteras.
+      steps:
+        - action: Välj 20 konfigurerade larm och slå upp dem i larmdatabasen.
+          expected: Var och ett har prioritet, orsak, konsekvens, operatörsåtgärd och tid för åtgärd.
+        - action: Lägg till ett larm i testsystemet utan post i databasen och kör rapporten över skillnader.
+          expected: Rapporten listar det nya larmet som saknat i databasen.
+
+  - id: OILG-T14
+    priority: high
+    execution: manual
+    tags: [methane, emissions, reporting]
+    refs: ["Regulation (EU) 2024/1787 (methane emissions in the energy sector)"]
+    en:
+      title: Annual methane report traced to source data
+      description: Produces the annual methane report for a test installation and follows values back to their data.
+      preconditions: A test installation in the emission monitoring system with a year of data, including measured sources and sources calculated from emission factors.
+      expected: Each source is reported with quantity, method and uncertainty, and each value is traceable.
+      steps:
+        - action: Produce the annual methane report for the test installation.
+          expected: The report lists each source with quantity, method and uncertainty.
+        - action: Select the value of a measured source.
+          expected: The measurements behind the value are shown with dates and instruments.
+        - action: Select the value of a source calculated from an emission factor.
+          expected: The factor, its origin and the activity data are shown.
+    sv:
+      title: Årlig metanrapport spårad till källdata
+      description: Tar fram den årliga metanrapporten för en testanläggning och följer värden tillbaka till deras data.
+      preconditions: En testanläggning i systemet för utsläppsövervakning med ett års data, med både uppmätta källor och källor beräknade från emissionsfaktorer.
+      expected: Varje källa rapporteras med mängd, metod och osäkerhet, och varje värde är spårbart.
+      steps:
+        - action: Ta fram den årliga metanrapporten för testanläggningen.
+          expected: Rapporten listar varje källa med mängd, metod och osäkerhet.
+        - action: Välj värdet för en uppmätt källa.
+          expected: Mätningarna bakom värdet visas med datum och instrument.
+        - action: Välj värdet för en källa som beräknats från en emissionsfaktor.
+          expected: Faktorn, dess ursprung och aktivitetsdata visas.
+
+  - id: OILG-T15
+    priority: medium
+    execution: manual
+    tags: [venting, flaring]
+    refs: []
+    en:
+      title: Venting and flaring events with duration flag
+      description: Records simulated flaring events of different durations and checks the review list.
+      preconditions: The emission monitoring test system with the duration limit set to 8 hours and an environmental officer account.
+      expected: Each event is stored with all fields, and only the long event is flagged for review.
+      steps:
+        - action: Record a flaring event of 2 hours with volume, cause and responsible person.
+          expected: The event is stored with all fields and no flag.
+          data: "2 h, 15 000 Sm³, compressor trip"
+        - action: Record a flaring event of 9 hours.
+          expected: The event is stored and flagged.
+          data: "9 h, 60 000 Sm³, planned maintenance"
+        - action: Open the review list as environmental officer.
+          expected: Only the 9-hour event is listed.
+    sv:
+      title: Händelser med avblåsning och fackling och flagga för varaktighet
+      description: Registrerar simulerade facklingshändelser med olika varaktighet och kontrollerar granskningslistan.
+      preconditions: Testsystemet för utsläppsövervakning med gränsen för varaktighet satt till 8 timmar och ett konto för miljöansvarig.
+      expected: Varje händelse sparas med samtliga fält, och bara den långa händelsen flaggas för granskning.
+      steps:
+        - action: Registrera en facklingshändelse på 2 timmar med volym, orsak och ansvarig person.
+          expected: Händelsen sparas med samtliga fält och utan flagga.
+          data: "2 h, 15 000 Sm³, kompressorstopp"
+        - action: Registrera en facklingshändelse på 9 timmar.
+          expected: Händelsen sparas och flaggas.
+          data: "9 h, 60 000 Sm³, planerat underhåll"
+        - action: Öppna granskningslistan som miljöansvarig.
+          expected: Bara händelsen på 9 timmar listas.
+
+  - id: OILG-T16
+    priority: critical
+    execution: manual
+    tags: [disaster-recovery, control-room]
+    refs: ["ISO 22301:2019"]
+    en:
+      title: Exercise of a move to the alternative control room
+      description: Moves operation to the alternative control room in a planned exercise and restores a server from backup.
+      preconditions: A planned exercise agreed with operations, the alternative control room ready, a test valve that may be operated, and an isolated environment for a restore.
+      expected: Operators take over within 30 minutes, and the restored server has data at most 24 hours old.
+      steps:
+        - action: Declare the main control room lost and start the clock.
+          expected: The takeover procedure starts.
+        - action: Sign in at the alternative control room, check that live values are shown and operate the test valve.
+          expected: The valve operates and the elapsed time is at most 30 minutes.
+        - action: Restore an HMI server from the latest offline backup in the isolated environment.
+          expected: The server starts and its newest data is at most 24 hours old.
+    sv:
+      title: Övning av flytt till reservkontrollrummet
+      description: Flyttar driften till reservkontrollrummet i en planerad övning och återställer en server från säkerhetskopia.
+      preconditions: En planerad övning som avtalats med driften, reservkontrollrummet klart, en testventil som får manövreras och en isolerad miljö för återställning.
+      expected: Operatörerna tar över inom 30 minuter, och den återställda servern har data som är högst 24 timmar gamla.
+      steps:
+        - action: Förklara huvudkontrollrummet förlorat och starta tidtagningen.
+          expected: Rutinen för övertagande startar.
+        - action: Logga in i reservkontrollrummet, kontrollera att aktuella värden visas och manövrera testventilen.
+          expected: Ventilen manövreras och den förflutna tiden är högst 30 minuter.
+        - action: Återställ en server för operatörsbilder från den senaste frånkopplade säkerhetskopian i den isolerade miljön.
+          expected: Servern startar och dess senaste data är högst 24 timmar gamla.

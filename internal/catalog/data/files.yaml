@@ -58,7 +58,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [file-type, content-inspection]
-    refs: ["OWASP ASVS 5.0 V5 file handling", "OWASP File Upload Cheat Sheet"]
+    refs: ["OWASP ASVS 5.0 V5 file handling", "OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     tests: [FILE-T03]
     en:
       title: File type checked from the content
@@ -80,7 +80,7 @@ requirements:
     obligation: must
     priority: high
     tags: [malware, quarantine]
-    refs: ["OWASP ASVS 5.0 V5 file handling", "ISO/IEC 27001:2022 Annex A 8.7"]
+    refs: ["OWASP ASVS 5.0 V5 file handling", "ISO/IEC 27001:2022 A.8.7", "IEC 62443-3-3 SR 3.2"]
     tests: [FILE-T04]
     en:
       title: Malware scan before a file is available
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [download, access-control, signed-url]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "OWASP Top 10 2021 A01"]
+    refs: ["OWASP ASVS 5.0 V8 authorization", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     tests: [FILE-T05]
     en:
       title: Downloads checked against permissions
@@ -172,7 +172,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [checksum, integrity]
-    refs: ["NIST FIPS 180-4", "ISO/IEC 25010:2023 integrity"]
+    refs: ["NIST FIPS 180-4", "ISO/IEC 25010:2023 integrity", "IEC 62443-3-3 SR 3.4"]
     tests: [FILE-T06]
     en:
       title: Checksum of each file shown
@@ -286,7 +286,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [deletion, storage, retention]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.10", "GDPR Art. 5(1)(e)"]
+    refs: ["ISO/IEC 27001:2022 A.8.10", "GDPR Art. 5(1)(e)"]
     tests: [FILE-T10]
     en:
       title: Attachments removed with their item
@@ -376,7 +376,7 @@ tests:
     priority: critical
     execution: automated
     tags: [file-type]
-    refs: ["OWASP File Upload Cheat Sheet"]
+    refs: ["OWASP File Upload Cheat Sheet", "ISO/IEC 27001:2022 A.8.28", "IEC 62443-3-3 SR 3.5"]
     en:
       title: Disguised files rejected
       description: An API test uploads files whose names or declared types do not match their content.
@@ -410,7 +410,7 @@ tests:
     priority: high
     execution: manual
     tags: [malware]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.7"]
+    refs: ["ISO/IEC 27001:2022 A.8.7", "IEC 62443-3-3 SR 3.2"]
     en:
       title: EICAR test file quarantined
       description: Uploads the harmless EICAR anti-malware test file and a clean file.
@@ -442,7 +442,7 @@ tests:
     priority: critical
     execution: automated
     tags: [download, headers, access-control]
-    refs: ["OWASP ASVS 5.0 V8 authorization", "RFC 6266"]
+    refs: ["OWASP ASVS 5.0 V8 authorization", "RFC 6266", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     en:
       title: Download permission, address expiry and response headers
       description: An API test downloads attachments as a member and a non-member and inspects the responses.
@@ -474,7 +474,7 @@ tests:
     priority: medium
     execution: automated
     tags: [file-name, checksum]
-    refs: ["NIST FIPS 180-4"]
+    refs: ["NIST FIPS 180-4", "IEC 62443-3-3 SR 3.4"]
     en:
       title: File names and checksums
       description: An integration test uploads files with special names and compares checksums.
@@ -600,7 +600,7 @@ tests:
     priority: medium
     execution: automated
     tags: [deletion, storage]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.10"]
+    refs: ["ISO/IEC 27001:2022 A.8.10"]
     en:
       title: Attachments removed after permanent deletion
       description: An integration test deletes an item permanently and inspects the file storage after the clean-up job.

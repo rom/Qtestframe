@@ -28,10 +28,30 @@ const MinPasswordLength = 10
 // ErrWeakPassword is returned for passwords violating the policy.
 var ErrWeakPassword = errors.New("password must be at least 10 characters and contain letters and digits or symbols")
 
+// weakPassword is ErrWeakPassword for another minimum length.
+type weakPassword struct{ min int }
+
+func (e weakPassword) Error() string {
+	return fmt.Sprintf("password must be at least %d characters and contain letters and digits or symbols", e.min)
+}
+
+func (e weakPassword) Is(target error) bool { return target == ErrWeakPassword }
+
 // ValidatePassword enforces a basic password policy.
-func ValidatePassword(p string) error {
-	if len(p) < MinPasswordLength || len(p) > 72 {
-		return ErrWeakPassword
+func ValidatePassword(p string) error { return ValidatePasswordMin(p, MinPasswordLength) }
+
+// ValidatePasswordMin enforces the policy with a minimum length of min
+// (auth.password_min_length; bcrypt limits passwords to 72 bytes). Its
+// errors match ErrWeakPassword with errors.Is.
+func ValidatePasswordMin(p string, min int) error {
+	if min < 1 {
+		min = MinPasswordLength
+	}
+	if len(p) < min || len(p) > 72 {
+		if min == MinPasswordLength {
+			return ErrWeakPassword
+		}
+		return weakPassword{min}
 	}
 	var letter, other bool
 	for _, r := range p {
@@ -42,7 +62,10 @@ func ValidatePassword(p string) error {
 		}
 	}
 	if !letter || !other {
-		return ErrWeakPassword
+		if min == MinPasswordLength {
+			return ErrWeakPassword
+		}
+		return weakPassword{min}
 	}
 	return nil
 }
@@ -177,6 +200,10 @@ type Identity struct {
 	Email    string   // e-mail address
 	Name     string   // display name
 	Groups   []string // group memberships for role mapping
+	// AMR and ACR are the authentication methods and context class the
+	// identity provider reported (OIDC amr/acr claims; empty for SAML).
+	AMR []string
+	ACR string
 }
 
 // MapRole returns the most privileged role granted by groups through

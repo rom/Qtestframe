@@ -106,7 +106,7 @@ func (s *Server) handleCreateRequirement(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	rq := req.Requirement
-	createTest := s.Cfg.Requirements.AutoCreateTest
+	createTest := s.conf().Requirements.AutoCreateTest
 	if req.CreateTest != nil {
 		createTest = *req.CreateTest
 	}
@@ -390,6 +390,13 @@ func (s *Server) handleMoveItems(kind string) handlerFunc {
 		pos := -1
 		if req.Position != nil {
 			pos = *req.Position
+		}
+		// moving into another project needs write access there too
+		if req.ProjectID != "" && req.ProjectID != pr.ID {
+			if err := s.canIn(r.Context(), p, req.ProjectID, kindPerm(kind)); err != nil {
+				s.fail(w, r, err)
+				return
+			}
 		}
 		for _, id := range uniqStrings(req.IDs) {
 			s.ensureInitialRevision(r.Context(), p, kind, id)

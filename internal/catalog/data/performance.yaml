@@ -204,7 +204,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [resource-use, cpu]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "ITIL 4 Capacity and performance management"]
+    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "ITIL 4 Capacity and performance management", "ISO/IEC 27001:2022 A.8.6"]
     tests: [PERF-T06]
     en:
       title: Processor utilisation under load

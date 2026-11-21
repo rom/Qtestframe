@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -349,6 +350,7 @@ func (s *Server) render(r *http.Request, p *Principal, pr *model.Project, job re
 			return nil, reportError(err)
 		}
 	}
+	ds.Link = s.itemLink(pr)
 	multi := len(ds.Sections) > 1
 	ext := f.Extension(multi)
 	name := strings.TrimSpace(job.name)
@@ -394,6 +396,23 @@ func (s *Server) generate(w http.ResponseWriter, r *http.Request, p *Principal, 
 		return
 	}
 	writeJSON(w, http.StatusCreated, fi)
+}
+
+// itemLink maps the key of a requirement, test case or defect of pr to its
+// /go/{key} link (Markdown documents link the keys). It is nil when
+// server.base_url is not configured.
+func (s *Server) itemLink(pr *model.Project) func(string) string {
+	base := s.baseURL()
+	if base == "" {
+		return nil
+	}
+	re := regexp.MustCompile(`^` + regexp.QuoteMeta(pr.Key) + `-(?:REQ|TC|BUG)-\d+$`)
+	return func(v string) string {
+		if !re.MatchString(v) {
+			return ""
+		}
+		return base + "/go/" + url.PathEscape(v)
+	}
 }
 
 // contentDisposition builds an attachment header with an ASCII fallback

@@ -43,15 +43,22 @@ func (s *Store) AddNotifications(ctx context.Context, tenantID string, list []mo
 
 // ListNotifications returns a user's newest notifications and the number
 // that are unread.
-func (s *Store) ListNotifications(ctx context.Context, tenantID, userID string, unreadOnly bool, limit int) ([]model.Notification, int, error) {
+// Notifications of the hidden projects are left out (and not counted).
+func (s *Store) ListNotifications(ctx context.Context, tenantID, userID string, unreadOnly bool, limit int, hidden ...string) ([]model.Notification, int, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	where := `WHERE tenant_id = ? AND user_id = ?`
+	base := `WHERE tenant_id = ? AND user_id = ?`
+	args := []any{tenantID, userID}
+	if len(hidden) > 0 {
+		base += ` AND project_id NOT IN (` + placeholders(len(hidden)) + `)`
+		args = append(args, anySlice(hidden)...)
+	}
+	where := base
 	if unreadOnly {
 		where += ` AND read_at IS NULL`
 	}
-	rows, err := s.c(ctx).query(ctx, `SELECT id, user_id, project_id, event, title, body, entity_type, entity_id, actor, read_at, created_at FROM notifications `+where+` ORDER BY created_at DESC, id LIMIT ?`, tenantID, userID, limit)
+	rows, err := s.c(ctx).query(ctx, `SELECT id, user_id, project_id, event, title, body, entity_type, entity_id, actor, read_at, created_at FROM notifications `+where+` ORDER BY created_at DESC, id LIMIT ?`, append(append([]any{}, args...), limit)...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -71,7 +78,7 @@ func (s *Store) ListNotifications(ctx context.Context, tenantID, userID string, 
 		return nil, 0, err
 	}
 	var unread int
-	err = s.c(ctx).row(ctx, `SELECT COUNT(*) FROM notifications WHERE tenant_id = ? AND user_id = ? AND read_at IS NULL`, tenantID, userID).Scan(&unread)
+	err = s.c(ctx).row(ctx, `SELECT COUNT(*) FROM notifications `+base+` AND read_at IS NULL`, args...).Scan(&unread)
 	return out, unread, err
 }
 

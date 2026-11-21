@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import Divider from 'primevue/divider'
+import Checkbox from 'primevue/checkbox'
+import MfaCodeInput from '@/components/MfaCodeInput.vue'
+import { codeComplete, isChallenge, mfaErrorKind, normalizeCode, type MfaChallenge } from '@/lib/mfa'
 import { api, errorMessage } from '@/lib/api'
 import type { AuthProvider, Providers } from '@/lib/types'
 import { useAuthStore } from '@/stores/auth'
@@ -30,8 +33,81 @@ const busy = ref(false)
 const providers = ref<Providers>({ local: true, oidc: [], saml: [] })
 const sso = ref<(AuthProvider & { kind: string })[]>([])
 
+// ---------- second factor ----------
+const challenge = ref<MfaChallenge | null>(null)
+const code = ref('')
+const useRecovery = ref(false)
+const remember = ref(false)
+const codeError = ref('')
+const codeInput = ref<InstanceType<typeof MfaCodeInput> | null>(null)
+async function toSecondFactor(ch: MfaChallenge) {
+  challenge.value = ch
+  code.value = ''
+  codeError.value = ''
+  useRecovery.value = false
+  await nextTick()
+  codeInput.value?.focus()
+}
+function mfaError(e: unknown): string {
+  const kind = mfaErrorKind(e)
+  return kind ? t(`mfa.error.${kind}`) : errorMessage(e)
+}
+async function submitCode() {
+  codeError.value = ''
+  if (!codeComplete(code.value, useRecovery.value)) {
+    codeError.value = useRecovery.value ? t('mfa.error.recoveryFormat') : t('mfa.error.format')
+    return
+  }
+  busy.value = true
+  try {
+    await auth.verifyMfa(normalizeCode(code.value), remember.value)
+    done()
+  } catch (e) {
+    if (mfaErrorKind(e) === 'expired') {
+      // start again with the password
+      challenge.value = null
+      password.value = ''
+      error.value = mfaError(e)
+      return
+    }
+    codeError.value = mfaError(e)
+    code.value = ''
+    codeInput.value?.focus()
+  } finally {
+    busy.value = false
+  }
+}
+async function switchMethod() {
+  useRecovery.value = !useRecovery.value
+  code.value = ''
+  codeError.value = ''
+  await nextTick()
+  codeInput.value?.focus()
+}
+async function cancelSecondFactor() {
+  // drops the pending sign-in on the server
+  await api.post('/auth/logout', undefined, { noAuthRedirect: true }).catch(() => undefined)
+  challenge.value = null
+  password.value = ''
+  router.replace({ name: 'login', query: { ...route.query, mfa: undefined } })
+}
+function done() {
+  // without an explicit redirect, '/' leads to the preferred start page
+  const target = (route.query.redirect as string) || '/'
+  router.replace(target.startsWith('/') && !target.startsWith('//') ? target : '/')
+}
+
 onMounted(async () => {
   if (route.query.error) error.value = String(route.query.error)
+  // an identity provider sign-in that needs the second factor (/login?mfa=1)
+  if (route.query.mfa) {
+    try {
+      const ch = await api.get<MfaChallenge>('/auth/mfa/challenge', undefined, { noAuthRedirect: true })
+      if (isChallenge(ch)) void toSecondFactor(ch)
+    } catch (e) {
+      error.value = mfaError(e)
+    }
+  }
   try {
     providers.value = await api.get<Providers>('/auth/providers', undefined, { noAuthRedirect: true })
     sso.value = [
@@ -47,10 +123,12 @@ async function submit() {
   error.value = ''
   busy.value = true
   try {
-    await auth.login(email.value.trim(), password.value, tenant.value.trim())
-    // without an explicit redirect, '/' leads to the preferred start page
-    const target = (route.query.redirect as string) || '/'
-    router.replace(target.startsWith('/') && !target.startsWith('//') ? target : '/')
+    const res = await auth.login(email.value.trim(), password.value, tenant.value.trim())
+    if (isChallenge(res)) {
+      void toSecondFactor(res)
+      return
+    }
+    done()
   } catch (e) {
     error.value = errorMessage(e)
   } finally {
@@ -96,6 +174,21 @@ async function submit() {
             {{ LANGUAGE_NAMES[l] }}
           </button>
         </div>
+        <template v-if="challenge">
+          <h1 id="mfa-heading" tabindex="-1" style="margin: 0 0 4px; font-size: 1.5em">{{ t('mfa.loginTitle') }}</h1>
+          <p class="muted" style="margin: 0 0 20px">{{ useRecovery ? t('mfa.loginRecoveryText') : t('mfa.loginText') }}</p>
+          <form class="grid mfa-login" style="gap: 14px" @submit.prevent="submitCode">
+            <MfaCodeInput id="mfa-code" ref="codeInput" v-model="code" :recovery="useRecovery" :error="codeError" autofocus />
+            <div v-if="challenge.remember_days > 0" class="row nowrap small">
+              <Checkbox v-model="remember" input-id="mfa-remember" binary />
+              <label for="mfa-remember">{{ t('mfa.remember', { n: challenge.remember_days }, challenge.remember_days) }}</label>
+            </div>
+            <Button type="submit" :label="t('mfa.verify')" icon="pi pi-sign-in" :loading="busy" :disabled="!code.trim()" />
+            <button type="button" class="link-button small login-link" @click="switchMethod">{{ useRecovery ? t('mfa.useApp') : t('mfa.useRecovery') }}</button>
+            <button type="button" class="link-button small login-link" @click="cancelSecondFactor">{{ t('mfa.cancelSignIn') }}</button>
+          </form>
+        </template>
+        <template v-else>
         <h1 style="margin: 0 0 4px; font-size: 1.5em">{{ t('auth.signIn') }}</h1>
         <p class="muted" style="margin: 0 0 20px">{{ t('auth.welcome') }}</p>
         <Message v-if="error" id="login-error" severity="error" :closable="false" style="margin-bottom: 14px">{{ error }}</Message>
@@ -130,6 +223,7 @@ async function submit() {
               class="w-full"
             />
           </div>
+        </template>
         </template>
       </div>
     </main>

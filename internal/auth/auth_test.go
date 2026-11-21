@@ -15,6 +15,18 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func TestValidatePasswordMin(t *testing.T) {
+	if err := ValidatePasswordMin("abcdefgh-12", 12); !errors.Is(err, ErrWeakPassword) || !strings.Contains(err.Error(), "at least 12") {
+		t.Errorf("short: %v", err)
+	}
+	if err := ValidatePasswordMin("abcdefghijklm", 12); !errors.Is(err, ErrWeakPassword) {
+		t.Errorf("letters only: %v", err)
+	}
+	if ValidatePasswordMin("abcdefgh-12", 0) != nil || ValidatePasswordMin("abcdefghij-12", 12) != nil || ValidatePasswordMin("short1", 0) != ErrWeakPassword {
+		t.Error("valid passwords")
+	}
+}
+
 func TestValidatePassword(t *testing.T) {
 	cases := map[string]bool{
 		"":                             false,

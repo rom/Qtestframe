@@ -234,7 +234,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [export, csv-injection]
-    refs: ["OWASP CSV Injection", "CWE-1236"]
+    refs: ["OWASP CSV Injection", "CWE-1236", "ISO/IEC 27001:2022 A.8.28"]
     tests: [IMEX-T08]
     en:
       title: No formula injection in exports
@@ -468,7 +468,7 @@ tests:
     priority: high
     execution: automated
     tags: [csv-injection, security]
-    refs: ["OWASP CSV Injection", "CWE-1236"]
+    refs: ["OWASP CSV Injection", "CWE-1236", "ISO/IEC 27001:2022 A.8.28"]
     en:
       title: Formula characters neutralised in exports
       description: A security test exports items whose titles start with formula characters and inspects the exported cells.

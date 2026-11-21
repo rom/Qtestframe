@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [backup, frequency]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)"]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)", "IEC 62443-3-3 SR 7.3", "IEC 62443-4-2 CR 7.3", "Regulation (EU) 2022/2554 (DORA) Art. 12", "GDPR Art. 32(1)(c)", "ISO/IEC 27019:2024 (backup)"]
     tests: [BCK-T01]
     en:
       title: Daily full backup
@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [rpo, backup]
-    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery point objective)"]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery point objective)", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [BCK-T02]
     en:
       title: Recovery point objective
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [rto, restore]
-    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery time objective)"]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO/IEC 27031:2011 (recovery time objective)", "ISO/IEC 27001:2022 A.5.30", "IEC 62443-3-3 SR 7.4", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [BCK-T02]
     en:
       title: Recovery time objective
@@ -84,7 +84,7 @@ requirements:
     obligation: must
     priority: high
     tags: [restore-test, drill]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "ISO 22301:2019 §8.5 (exercise programme)"]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "ISO 22301:2019 §8.5 (exercise programme)", "IEC 62443-3-3 SR 7.3", "Regulation (EU) 2022/2554 (DORA) Art. 12", "GDPR Art. 32(1)(d)"]
     tests: [BCK-T02]
     en:
       title: Quarterly full restore drill
@@ -108,7 +108,7 @@ requirements:
     obligation: should
     priority: high
     tags: [backup, verification]
-    refs: ["Google SRE book ch. 26 (Data Integrity)"]
+    refs: ["Google SRE book ch. 26 (Data Integrity)", "ISO/IEC 27001:2022 A.8.13", "IEC 62443-3-3 SR 7.3"]
     tests: [BCK-T03]
     en:
       title: Automated verification of backups
@@ -132,7 +132,7 @@ requirements:
     obligation: must
     priority: high
     tags: [off-site, backup]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "NIST SP 800-34 Rev. 1 §3.4 (recovery strategies)"]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "NIST SP 800-34 Rev. 1 §3.4 (recovery strategies)", "Regulation (EU) 2022/2554 (DORA) Art. 12"]
     tests: [BCK-T04]
     en:
       title: Copy in another region
@@ -156,7 +156,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [immutable, ransomware, backup]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "NIST SP 800-209 (security guidelines for storage infrastructure)"]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "NIST SP 800-209 (security guidelines for storage infrastructure)", "ISO/IEC 27040:2024", "Regulation (EU) 2022/2554 (DORA) Art. 12"]
     tests: [BCK-T05]
     en:
       title: Backups protected against deletion
@@ -180,7 +180,7 @@ requirements:
     obligation: must
     priority: high
     tags: [encryption, backup, key-management]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.24 (use of cryptography)", "OWASP ASVS 4.0 V6.2 (algorithms)"]
+    refs: ["ISO/IEC 27001:2022 A.8.24 (use of cryptography)", "OWASP ASVS 4.0 V6.2 (algorithms)", "ISO/IEC 27040:2024", "GDPR Art. 32(1)(a)"]
     tests: [BCK-T06]
     en:
       title: Encrypted backups
@@ -206,7 +206,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [retention, backup]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.13 (information backup)", "GDPR Art. 5(1)(e) (storage limitation)"]
+    refs: ["ISO/IEC 27001:2022 A.8.13 (information backup)", "GDPR Art. 5(1)(e) (storage limitation)"]
     tests: [BCK-T07]
     en:
       title: Retention of backups
@@ -230,7 +230,7 @@ requirements:
     obligation: must
     priority: high
     tags: [alerting, backup]
-    refs: ["ITIL 4 Monitoring and event management"]
+    refs: ["ITIL 4 Monitoring and event management", "ISO/IEC 27001:2022 A.8.13", "ISO/IEC 27001:2022 A.8.16"]
     tests: [BCK-T08]
     en:
       title: Alert on failed or missing backup
@@ -254,7 +254,7 @@ requirements:
     obligation: must
     priority: high
     tags: [disaster-recovery, plan, continuity]
-    refs: ["ISO 22301:2019 §8.4 (business continuity plans and procedures)", "ISO/IEC 27031:2011", "ISO/IEC 27001:2022 Annex A 5.30 (ICT readiness for business continuity)"]
+    refs: ["ISO 22301:2019 §8.4 (business continuity plans and procedures)", "ISO/IEC 27031:2011", "ISO/IEC 27001:2022 A.5.30 (ICT readiness for business continuity)", "IEC 62443-3-3 SR 7.4", "Regulation (EU) 2022/2554 (DORA) Art. 11", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [BCK-T09]
     en:
       title: Documented and exercised disaster recovery plan
@@ -278,7 +278,7 @@ requirements:
     obligation: may
     priority: low
     tags: [restore, project, soft-delete]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)"]
+    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "ISO/IEC 27001:2022 A.8.13"]
     tests: [BCK-T10]
     en:
       title: Restore of a single deleted project
@@ -328,7 +328,7 @@ tests:
     priority: critical
     execution: manual
     tags: [restore-test, rpo, rto, drill]
-    refs: ["ISO 22301:2019 §8.5"]
+    refs: ["ISO 22301:2019 §8.5", "Regulation (EU) 2022/2554 (DORA) Art. 12", "ISO/IEC 27001:2022 A.5.30", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)", "IEC 62443-3-3 SR 7.4", "IEC 62443-3-3 SR 7.3", "GDPR Art. 32(1)(d)"]
     en:
       title: Full restore drill with RPO and RTO measurement
       description: Simulates the loss of the production database and restores it from backup into a separate environment.
@@ -392,7 +392,7 @@ tests:
     priority: high
     execution: manual
     tags: [off-site, review]
-    refs: ["ISO/IEC 27001:2022 Annex A 8.13"]
+    refs: ["ISO/IEC 27001:2022 A.8.13", "Regulation (EU) 2022/2554 (DORA) Art. 12"]
     en:
       title: Location of the off-site copies
       description: Reviews where the backup copies are stored and checks that the latest backup is present there.
@@ -530,7 +530,7 @@ tests:
     priority: high
     execution: manual
     tags: [disaster-recovery, exercise]
-    refs: ["ISO 22301:2019 §8.4", "ISO 22301:2019 §8.5"]
+    refs: ["ISO 22301:2019 §8.4", "ISO 22301:2019 §8.5", "IEC 62443-3-3 SR 7.4", "Regulation (EU) 2022/2554 (DORA) Art. 11", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     en:
       title: Review and tabletop exercise of the disaster recovery plan
       description: Reviews the content of the plan and runs a tabletop exercise with the people named in it.

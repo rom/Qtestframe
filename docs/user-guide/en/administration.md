@@ -8,10 +8,12 @@
 | **Role matrix** (roles and permissions) | everyone |
 | **API tokens** | Tester and up (your own tokens) |
 | **Provisioning (SCIM)** | Admins |
+| **Multi-factor authentication** | Admins (the organisation policy); super admins also set the server policy |
 | **Audit log** | Manager and up |
 | **Organisations** | Super admins |
 | **Users** | Super admins |
 | **Backup** | Super admins |
+| **System settings** | Super admins |
 
 ## Organisations and roles
 
@@ -89,6 +91,45 @@ If the person already has an account, they are added at once and get an e-mail t
 *(Admin, for local accounts)*: select **Reset password** in the member's row. Qtestframe generates a **temporary password** and shows it **once**; copy it and give it to the person through a safe channel. The person is signed out everywhere and must choose a new password at the next sign-in.
 
 Admins can only reset passwords of people who belong to their organisation alone; for super admins and people who are members of other organisations too, a super admin must do it. Accounts that sign in through single sign-on have no password in Qtestframe.
+
+### Reset multi-factor authentication
+
+The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or **Missing** when the [MFA policy](#multi-factor-authentication) requires it for the member but they have not set it up yet.
+
+*(Admin)* When someone has lost both their phone and their recovery codes, select **Reset MFA** (the shield) in their row and confirm. Their authenticator app, recovery codes and remembered devices are removed, they are signed out everywhere and told by a notification and an e-mail. They then sign in with their password alone, or, if MFA is required for them, set up a new authenticator app at the next sign-in. Make sure the request really comes from that person before you reset. As for passwords, admins can only reset people who belong to their organisation alone; super admins can reset anyone, also under [Users](#users). Every reset is recorded in the [audit log](#audit-log).
+
+## Multi-factor authentication
+
+**Administration → Multi-factor authentication** decides who must use a second factor (an authenticator app, see [your profile](getting-started.md#multi-factor-authentication)) when signing in with a password. The page shows how many members already use it.
+
+- **Policy of the organisation** *(Admin)*: **Optional** (the default: everyone may, nobody must), **Required for everyone** or **Required for some roles**, for example only for admins. It applies to the members by their role in this organisation.
+- **Server policy** *(Super admin)*: the same choices for every user of the installation; a role counts in any organisation, and *Super admin* can be chosen as a role. An organisation can require more than the server, never less.
+- **Grace period**: people the policy newly covers may keep signing in without a second factor for this many days; they see a reminder with the date. Afterwards they must set it up at their next sign-in before they can do anything else. **0** means at the next sign-in.
+- **Remember this device** *(Super admin, server policy)*: the number of days a browser may skip the code after the user chose *Remember this device*; **0** (the default) turns the option off.
+
+API tokens are not affected. People who sign in with single sign-on normally get their second factor from the identity provider; whether Qtestframe asks for its own code as well is set per provider in the server configuration (`local_mfa`). Every policy change is recorded in the [audit log](#audit-log).
+
+## Project sharing
+
+By default every member of the organisation sees every project, with their organisation role. **Sharing** changes that per project: you can restrict a project to the people who work on it, and give people a different role in one project than in the organisation.
+
+Open it with **Share** in the project header (or the share button of a project on the **Projects** page), or under **Categories & settings → Sharing**. You need `project.update` in the project *(Manager, or a project role that has it)*.
+
+**Access** has two choices:
+
+- **Everyone in the organisation** (the default): every member sees the project with their organisation role. Project members get their project role instead.
+- **Restricted to project members**: only the project members (and the organisation's admins) see the project. For everyone else it does not exist: it is missing from the project list, search, reviews and notifications, and links to it show *not found*. Restricted projects show a lock (🔒) in the project list and the header.
+
+**Project members** are people of the organisation or groups from your [identity provider (SCIM)](#provisioning-with-scim), each with a **project role**: any role of the organisation, also your own. Inside the project the project role **replaces** the organisation role, so it can raise or lower someone's rights there: a Tester of the organisation can be Manager in one project, a Manager only Viewer in another. A person's own membership wins over a group's; several groups add up. Admins of the organisation always have full access to every project.
+
+- **Add**: search for a person or group by name or e-mail, choose the project role and select **Add**. Only members of the organisation can be added (add new people under [Members](#members) first). The person gets a notification (and an e-mail if they want e-mail notifications).
+- **Change a role**: pick another role in the member's row.
+- **Remove** removes someone from the project; members can also leave a project themselves. **Several members at once**: tick them, then choose **Set project role** or **Remove**.
+- You can only give, change or remove roles whose project permissions you have in the project yourself, so nobody can give more than they have.
+- When you restrict a project that you see through your organisation role, you are added as a project member with that role, so you do not lock yourself out.
+- Organisation-wide permissions – members, roles, API tokens, the audit log, creating projects – always follow the organisation role. API tokens never exceed their own role, also in a project.
+
+Every change of the access or the members is recorded in the [audit log](#audit-log). Removing someone from the organisation removes their project memberships too. A duplicated project keeps the members of the original.
 
 ## E-mail
 
@@ -205,7 +246,7 @@ How it works:
 - Filter by user, action, entity or details with a query, for example `user:anna action:delete` or `entity:requirement created_at>=2026-09-01`.
 - Limit the time range with **From date** and **To date**.
 - **Number of entries** sets how many are shown (up to 5000).
-- **Export CSV** downloads the filtered log for an auditor.
+- **Export CSV** downloads the filtered log for an auditor; **Export Markdown** downloads it as a Markdown document with the date range and filter.
 
 ## Organisations
 
@@ -237,7 +278,64 @@ Users who sign in with OIDC or SAML single sign-on can be created automatically 
 - **Download backup** creates a ZIP file with all organisations, projects, items, history, comments and files (sessions are not included). Store it somewhere safe; it contains all data, including password hashes.
 - **Restore**: choose the backup file, type `RESTORE` to confirm and select **Restore backup**. This **replaces all data** of the installation with the content of the file, in one step. The backup must come from the same version of the database schema. Everyone, including you, is signed out afterwards.
 
-Restore is meant for disaster recovery and moving to a new server. To recover a single item, use its [history](requirements.md#history-and-restore) instead.
+Restore is meant for disaster recovery and moving to a new server. To recover a single item, use its [history](requirements.md#history-and-restore) instead. A backup also contains the system settings (below), including the secrets stored there; they apply as soon as the restore is done.
+
+## System settings
+
+*(Super admin)* **Administration → System settings** changes the configuration of the server while it runs: single sign-on, logging and syslog, the e-mail server, sign-in security and the test runner. Organisation admins do not see this page: every setting applies to the whole installation.
+
+Choose a section in the list on the left (on a phone: at the top). Each section has its own **Save** button; only the values you changed are sent. **Export configuration** downloads the effective configuration as a YAML file, with every secret replaced by `REDACTED`, for example to copy it into the server's configuration file.
+
+### Where a value comes from
+
+Every setting shows a badge with the source of its current value:
+
+- **Default** – the built-in value.
+- **Configuration file** – set in the server's configuration file.
+- **Environment** – set by a `QTF_…` environment variable of the server.
+- **Changed here** – changed on this page (stored in the database).
+
+A value changed here wins over the configuration file and the default. **Reset to file value** removes your change, and the value of the configuration file (or the default) applies again.
+
+Some settings cannot be changed here. They show a lock and say why:
+
+- **Set by the environment** – an environment variable always wins; ask the server administrator to change it.
+- **Locked by the server administrator** – the configuration file lists the setting under `system_settings.locked`.
+- **Configuration file only** – shown for information (for example the listen address or the database), because they can only change with a restart of the server.
+
+Most settings apply at once. Settings with the badge **Applies after restart** (the test runner) are saved now and take effect the next time the server starts; until then the page shows the value in use. If the stored settings ever become invalid (for example after a change of the configuration file), the server ignores them at start-up and the page shows a warning.
+
+Every change is recorded in the [audit log](#audit-log) with the old and the new value; passwords and client secrets are never written there, only that they were set or changed.
+
+### Single sign-on (OIDC)
+
+The **Single sign-on (OIDC)** section lists the OpenID Connect providers that appear as buttons on the sign-in page.
+
+- **Add provider** asks for a name (lower-case letters, digits, `-` and `_`; it is part of the callback address), the **Button label**, the **Issuer** URL, the **Client ID** and the **Client secret**, the **Scopes**, the claims that hold the e-mail address, the name and the groups, and how users are provisioned: **Create users on first sign-in**, the **Default role** and organisation, and a **Group → role** mapping.
+- **Test connection** fetches the issuer's discovery document (`/.well-known/openid-configuration`) from the server and tells you whether it was found and lists its endpoints. A failure shows the reason, for example that the server cannot reach the address or that the issuer in the document does not match.
+- Register the **Callback URL** shown for the provider in your identity provider.
+- The client secret is write-only: it is never shown again. Leave the field empty to keep it; **Remove the stored secret** deletes it.
+- The switch in the list turns a provider off without deleting it. Changes apply at once; people who are signing in at an unchanged provider are not interrupted.
+
+Once you change the providers here, this list replaces the providers of the configuration file. Secrets of providers from the file stay in the file and are not copied. **Reset to file value** brings back the providers of the configuration file.
+
+### Logging and syslog
+
+Choose the **Log level** and **Log format** of the server log, and whether the log (including the audit trail) is also sent to a central **syslog** server: network (`udp`, `tcp`, `tls` or a local socket), address, message format, facility and tag. **Send test message** sends one message with the values in the form, before you save them; the result is shown and read out next to the button. Changes apply at once. Certificates for syslog over TLS are set in the configuration file.
+
+### E-mail server
+
+The SMTP server for notifications, invitations and reports: host, port, encryption (`starttls`, `tls` or `none`), user name, password, sender address and name, timeout and the hour of the daily digest. The password is write-only. **Send test e-mail** sends a message to your own address with the values in the form (and the stored password, unless you typed a new one). Turning e-mail off stops all outgoing mail.
+
+### Security
+
+The **session lifetime** (how long a sign-in lasts; applies to new sign-ins), the **minimum password length** of local accounts, the number of **failed sign-ins** after which further attempts from the same address for the same account are refused, and for how long. **Local sign-in** (e-mail and password) can only be turned off while at least one single sign-on provider is enabled.
+
+### Test runner
+
+Whether automated scripts and web tests may run on the server, their timeouts and limits, and what web tests record as evidence. These settings **apply after a restart** of the server, because the runner and its sandbox are prepared when the server starts. Turning the runner on lets members with the right permission run code on the server; read the security notes of the operations guide first.
+
+Retention: deleted items stay in the [trash](requirements.md#history-and-restore) for 30 days; this is not configurable. For backups, see [Backup and restore](#backup-and-restore). Multi-factor authentication has its own page, linked from the system settings.
 
 The server administrator can do the same on the command line:
 

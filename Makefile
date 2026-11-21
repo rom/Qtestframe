@@ -9,7 +9,7 @@ GUIDE_LANGS ?=
 GUIDE_ARGS = --out $(GUIDE_OUT) $(if $(GUIDE_LANGS),--lang $(GUIDE_LANGS))
 
 .PHONY: all build web web-deps go test test-go test-web coverage coverage-go coverage-web \
-        lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf
+        lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf guide-docs
 
 all: build
 
@@ -73,6 +73,12 @@ guide-md: web/node_modules/.package-lock.json
 # writes the Markdown too: the PDF is printed from it
 guide-pdf: web/node_modules/.package-lock.json
 	node web/scripts/guide-export.mjs $(GUIDE_ARGS)
+
+# the single-file Markdown guides kept in the repository
+# (docs/user-guide/qtestframe-user-guide-<lang>.md, next to the images they
+# use); CI fails when they are out of date with the guide pages
+guide-docs: web/node_modules/.package-lock.json
+	node web/scripts/guide-export.mjs --no-pdf --out docs/user-guide
 
 web/node_modules/.package-lock.json: web/package-lock.json
 	cd web && npm ci

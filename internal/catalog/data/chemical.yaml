@@ -1,0 +1,941 @@
+area: chemical
+prefix: CHEM
+group: domain
+name: {en: Chemical industry, sv: Kemisk industri}
+description:
+  en: Batch control with ISA-88 recipes and phases, recipe approval, electronic batch records, safety instrumented systems and bypasses, hazardous substances and safety data sheets, Seveso III data, management of change, alarm management, LIMS samples, emissions, permit-to-work, data integrity, OT security and critical entities.
+  sv: Batchstyrning med recept och faser enligt ISA-88, godkännande av recept, elektroniska batchprotokoll, säkerhetsfunktioner och förbikopplingar, farliga ämnen och säkerhetsdatablad, uppgifter enligt Seveso III, ändringshantering, larmhantering, prover i LIMS, utsläpp, arbetstillstånd, dataintegritet, OT-säkerhet och kritiska verksamhetsutövare.
+
+requirements:
+  - id: CHEM-01
+    type: functional
+    obligation: must
+    priority: high
+    tags: [batch-control, isa-88, recipe]
+    refs: ["IEC 61512-1 recipe types", "IEC 61512-1 procedural control model", "ANSI/ISA-88.00.01-2010"]
+    tests: [CHEM-T01]
+    en:
+      title: Control recipe created from a released master recipe
+      description: The batch control system MUST create the control recipe of a batch only from a released master recipe, structured as procedure, unit procedures, operations and phases, and MUST reject a parameter value outside the limits that the master recipe sets.
+      rationale: A batch built from an unreleased recipe or with a parameter outside its validated range can give an off-spec or unsafe product.
+      criteria:
+        - method: test
+          text: A batch cannot be created from a master recipe in draft, a batch from the released recipe shows the four levels, and a reactor temperature of 86 °C is rejected when the recipe limit is 60–85 °C.
+    sv:
+      title: Styrrecept skapas från ett frisläppt grundrecept
+      description: Batchstyrsystemet SKA skapa styrreceptet för en batch endast från ett frisläppt grundrecept, uppbyggt av procedur, enhetsprocedurer, operationer och faser, och avvisa ett parametervärde utanför de gränser som grundreceptet anger.
+      rationale: En batch från ett recept som inte är frisläppt, eller med en parameter utanför det validerade intervallet, kan ge en produkt som inte uppfyller specifikationen eller är farlig.
+      criteria:
+        - method: test
+          text: En batch går inte att skapa från ett grundrecept i utkast, en batch från det frisläppta receptet visar de fyra nivåerna och en reaktortemperatur på 86 °C avvisas när receptets gräns är 60–85 °C.
+
+  - id: CHEM-02
+    type: functional
+    obligation: must
+    priority: high
+    tags: [batch-control, isa-88, state-model, phase]
+    refs: ["IEC 61512-1 procedural element states", "ANSI/ISA-88.00.01-2010"]
+    tests: [CHEM-T02]
+    en:
+      title: Phases follow the ISA-88 state model
+      description: The batch control system MUST accept a command to a phase only when the ISA-88 state model allows it from the phase's current state, such as hold only from running and restart only from held, and MUST record each state change with time and user.
+      rationale: A command outside the state model, such as restarting a phase that was never held, can start equipment in an unknown condition.
+      criteria:
+        - method: test
+          text: A restart command to a running phase is rejected, hold and restart from held are accepted, and the batch record lists each state change with time and user.
+    sv:
+      title: Faser följer tillståndsmodellen i ISA-88
+      description: Batchstyrsystemet SKA ta emot ett kommando till en fas endast när tillståndsmodellen i ISA-88 tillåter det från fasens aktuella tillstånd, till exempel paus endast från körs och återstart endast från pausad, och registrera varje tillståndsändring med tid och användare.
+      rationale: Ett kommando utanför tillståndsmodellen, till exempel återstart av en fas som aldrig pausats, kan starta utrustning i ett okänt läge.
+      criteria:
+        - method: test
+          text: Ett återstartskommando till en fas som körs avvisas, paus och återstart från pausad godtas, och batchprotokollet visar varje tillståndsändring med tid och användare.
+
+  - id: CHEM-03
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [recipe-management, approval, version-control, electronic-signature]
+    refs: ["21 CFR Part 11 §11.50", "21 CFR Part 11 §11.200", "EU GMP Annex 11 §14", "IEC 61512-1 recipe management"]
+    tests: [CHEM-T03]
+    en:
+      title: Master recipe released after two electronic signatures
+      description: The system MUST release a new master recipe version only after electronic signatures from a process engineer and from quality assurance, each showing the signer's name, time and meaning, and MUST keep each released version unchanged.
+      rationale: A second qualified check stops recipe errors before production, and unchanged versions show exactly which recipe a batch used.
+      criteria:
+        - method: test
+          text: A recipe signed only by the process engineer stays in review, after the quality signature it is released with both signatures shown, and an edit to the released version creates a new draft version.
+    sv:
+      title: Grundrecept frisläpps efter två elektroniska underskrifter
+      description: Systemet SKA frisläppa en ny version av ett grundrecept endast efter elektroniska underskrifter av en processingenjör och av kvalitetssäkring, var och en med undertecknarens namn, tid och innebörd, och behålla varje frisläppt version oförändrad.
+      rationale: En andra kvalificerad kontroll stoppar fel i recept före tillverkningen, och oförändrade versioner visar exakt vilket recept en batch använde.
+      criteria:
+        - method: test
+          text: Ett recept som bara undertecknats av processingenjören stannar i granskning, efter kvalitetens underskrift frisläpps det med båda underskrifterna synliga, och en ändring i den frisläppta versionen skapar en ny version i utkast.
+
+  - id: CHEM-04
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [electronic-batch-record, ebr, batch-control]
+    refs: ["ANSI/ISA-88.00.04-2006", "EU GMP Chapter 4", "EU GMP Annex 11 §8"]
+    tests: [CHEM-T04]
+    en:
+      title: Complete electronic batch record
+      description: The system MUST produce an electronic batch record for each batch within 1 minute after the batch ends, with the recipe version, start and end of each phase, actual parameter values, material lots and quantities, operator actions, alarms and deviations.
+      rationale: The batch record is the evidence used to release the batch and to investigate complaints years later.
+      criteria:
+        - method: test
+          text: For a test batch with 4 phases, 3 material additions, 1 operator intervention and 1 alarm, the record is available within 1 minute and contains each of these items with time stamps.
+          threshold: ≤ 1 min
+    sv:
+      title: Fullständigt elektroniskt batchprotokoll
+      description: Systemet SKA ta fram ett elektroniskt batchprotokoll för varje batch inom 1 minut efter att batchen avslutats, med receptversion, start och slut för varje fas, verkliga parametervärden, materialpartier och mängder, operatörens åtgärder, larm och avvikelser.
+      rationale: Batchprotokollet är beviset som används för att frisläppa batchen och för att utreda reklamationer flera år senare.
+      criteria:
+        - method: test
+          text: För en testbatch med 4 faser, 3 materialtillsatser, 1 operatörsingrepp och 1 larm finns protokollet inom 1 minut och innehåller var och en av dessa uppgifter med tidsstämplar.
+          threshold: ≤ 1 min
+
+  - id: CHEM-05
+    type: constraint
+    obligation: must_not
+    priority: critical
+    tags: [process-safety, sis, iec-61511, separation]
+    refs: ["IEC 61511-1:2016 §11", "IEC 61511-1:2016 §11.2", "IEC 62443-3-3 SR 5.1"]
+    tests: [CHEM-T05]
+    en:
+      title: No write access from batch control to the safety system
+      description: The batch control, MES and historian systems MUST NOT write to the logic, setpoints or outputs of the safety instrumented system, and read its status only through a read-only interface.
+      rationale: The safety instrumented system protects against fire, explosion and toxic release, and a write path from a less trusted system can disable that protection.
+      criteria:
+        - method: test
+          text: A write attempt from each connected system to a test tag in the safety controller is refused, and the status values are still read.
+        - method: inspection
+          text: The network design and the controller configuration show only read access from these systems.
+    sv:
+      title: Ingen skrivåtkomst från batchstyrningen till säkerhetssystemet
+      description: Batchstyrningen, MES och historiksystemet SKA INTE skriva till logik, börvärden eller utgångar i det säkerhetstekniska systemet, och läser dess status endast via ett gränssnitt med enbart läsrätt.
+      rationale: Det säkerhetstekniska systemet skyddar mot brand, explosion och giftiga utsläpp, och en skrivväg från ett mindre betrott system kan slå ut skyddet.
+      criteria:
+        - method: test
+          text: Ett skrivförsök från vart och ett av de anslutna systemen till en testtagg i säkerhetsstyrsystemet vägras, och statusvärdena läses fortfarande.
+        - method: inspection
+          text: Nätritningen och styrsystemets konfiguration visar endast läsåtkomst från dessa system.
+
+  - id: CHEM-06
+    type: security
+    obligation: must
+    priority: critical
+    tags: [process-safety, bypass, interlock, authorisation]
+    refs: ["IEC 61511-1:2016 §16.2", "IEC 61511-1:2016 §11.7"]
+    tests: [CHEM-T06]
+    en:
+      title: Authorised bypass of a safety function with expiry
+      description: The system MUST activate a bypass of an interlock or safety instrumented function only after approval by the shift manager and a second authorised person with the reason and compensating measures recorded, and MUST end the bypass and raise an alarm when the approved duration of at most 12 hours has passed.
+      rationale: Bypasses that are forgotten leave the plant without protection, and an investigation of many process accidents has found a safety function left in bypass.
+      criteria:
+        - method: test
+          text: A bypass request with one approval stays inactive, with two approvals it activates and is shown on the operator screens, and it ends with an alarm when its 12 hours expire.
+          threshold: ≤ 12 h
+    sv:
+      title: Behörig förbikoppling av en säkerhetsfunktion med utgångstid
+      description: Systemet SKA aktivera en förbikoppling av en förregling eller en säkerhetsfunktion först efter godkännande av skiftledaren och ytterligare en behörig person, med orsak och kompenserande åtgärder registrerade, och avsluta förbikopplingen och larma när den godkända tiden på högst 12 timmar har gått.
+      rationale: Förbikopplingar som glöms bort lämnar anläggningen utan skydd, och utredningar av processolyckor har gång på gång funnit en säkerhetsfunktion som lämnats förbikopplad.
+      criteria:
+        - method: test
+          text: En begäran om förbikoppling med ett godkännande förblir inaktiv, med två godkännanden aktiveras den och visas på operatörsskärmarna, och den avslutas med ett larm när dess 12 timmar har gått.
+          threshold: ≤ 12 h
+
+  - id: CHEM-07
+    type: functional
+    obligation: must
+    priority: high
+    tags: [hazardous-substances, inventory, clp]
+    refs: ["Regulation (EC) No 1272/2008 Art. 17", "Regulation (EC) No 1272/2008 Annex III", "Directive 2012/18/EU Annex I"]
+    tests: [CHEM-T07]
+    en:
+      title: Inventory of hazardous substances per storage location
+      description: The system MUST show for each storage location the current quantity of each hazardous substance with its CLP hazard classes and hazard statements, updated within 15 minutes after a receipt, transfer or consumption.
+      rationale: Emergency services, permits and Seveso calculations depend on knowing where hazardous substances are and in what quantities.
+      criteria:
+        - method: test
+          text: After receipt of 2 000 kg of a flammable liquid into tank farm B, the inventory for tank farm B shows the new quantity with hazard class and hazard statements within 15 minutes.
+          threshold: ≤ 15 min
+    sv:
+      title: Förteckning över farliga ämnen per lagerplats
+      description: Systemet SKA visa aktuell mängd av varje farligt ämne på varje lagerplats med faroklasser och faroangivelser enligt CLP, uppdaterad inom 15 minuter efter en inleverans, förflyttning eller förbrukning.
+      rationale: Räddningstjänst, tillstånd och beräkningar enligt Seveso bygger på att man vet var de farliga ämnena finns och i vilka mängder.
+      criteria:
+        - method: test
+          text: Efter inleverans av 2 000 kg brandfarlig vätska till tankpark B visar förteckningen för tankpark B den nya mängden med faroklass och faroangivelser inom 15 minuter.
+          threshold: ≤ 15 min
+
+  - id: CHEM-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [sds, safety-data-sheet, reach]
+    refs: ["Regulation (EC) No 1907/2006 Art. 31", "Regulation (EC) No 1907/2006 Annex II"]
+    tests: [CHEM-T08]
+    en:
+      title: Current safety data sheet for each substance on site
+      description: The system MUST block the receipt of a hazardous substance that has no safety data sheet in the language of the site, and MUST flag a safety data sheet that the supplier has replaced with a newer revision within 5 working days after the new revision is received.
+      rationale: Workers and emergency services rely on the safety data sheet for handling and first aid, and an outdated sheet can give wrong instructions.
+      criteria:
+        - method: test
+          text: A receipt of a substance without a Swedish safety data sheet at a Swedish site is blocked, and loading a newer revision from the supplier marks the old one as replaced and lists the change for review.
+          threshold: ≤ 5 working days
+    sv:
+      title: Aktuellt säkerhetsdatablad för varje ämne på anläggningen
+      description: Systemet SKA stoppa inleverans av ett farligt ämne som saknar säkerhetsdatablad på anläggningens språk, och markera ett säkerhetsdatablad som leverantören har ersatt med en nyare revision inom 5 arbetsdagar efter att den nya revisionen tagits emot.
+      rationale: Arbetstagare och räddningstjänst förlitar sig på säkerhetsdatabladet för hantering och första hjälpen, och ett inaktuellt blad kan ge fel instruktioner.
+      criteria:
+        - method: test
+          text: En inleverans av ett ämne utan svenskt säkerhetsdatablad till en svensk anläggning stoppas, och när en nyare revision från leverantören läses in markeras den gamla som ersatt och ändringen listas för granskning.
+          threshold: ≤ 5 arbetsdagar
+
+  - id: CHEM-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [seveso, major-accident, thresholds, reporting]
+    refs: ["Directive 2012/18/EU Art. 7", "Directive 2012/18/EU Annex I"]
+    tests: [CHEM-T07]
+    en:
+      title: Site total compared with the Seveso III thresholds
+      description: The system MUST calculate the maximum quantity present on the site per Seveso III Annex I category and named substance, including the summation rule, and MUST alert the site safety manager when a planned receipt would take the site to 80 % of a lower-tier or upper-tier threshold.
+      rationale: Crossing a Seveso threshold changes the site's legal duties, and the notification to the authority needs the quantities per category.
+      criteria:
+        - method: test
+          text: With a lower-tier threshold of 5 000 t for a category and 3 900 t on site, a planned receipt of 200 t raises the alert, and the report lists the quantity per category and the summation result.
+          threshold: 80 % of a threshold
+    sv:
+      title: Anläggningens totala mängd jämförs med tröskelvärdena i Seveso III
+      description: Systemet SKA beräkna största mängd som finns på anläggningen per kategori och namngivet ämne enligt bilaga I till Seveso III, inklusive summeringsregeln, och varna anläggningens säkerhetsansvarige när en planerad inleverans skulle ta anläggningen till 80 % av ett tröskelvärde för den lägre eller den högre kravnivån.
+      rationale: När ett tröskelvärde i Seveso passeras ändras anläggningens skyldigheter enligt lag, och anmälan till myndigheten behöver mängderna per kategori.
+      criteria:
+        - method: test
+          text: Med tröskelvärdet 5 000 t för den lägre kravnivån för en kategori och 3 900 t på anläggningen ger en planerad inleverans på 200 t en varning, och rapporten visar mängden per kategori och resultatet av summeringen.
+          threshold: 80 % av ett tröskelvärde
+
+  - id: CHEM-10
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [management-of-change, moc, hazard-review]
+    refs: ["IEC 61511-1:2016 §17", "Directive 2012/18/EU Annex III", "OSHA 29 CFR 1910.119(l)"]
+    tests: [CHEM-T09]
+    en:
+      title: Management of change before activation
+      description: The system MUST block the activation of a change to a recipe, an interlock setpoint, an alarm limit or a piece of process equipment until the linked change case has a completed hazard review and approvals from operations, process safety and maintenance.
+      rationale: Changes made without a hazard review are a recurring cause of major accidents in the process industry.
+      criteria:
+        - method: test
+          text: A new high-pressure trip setpoint cannot be downloaded while its change case lacks the hazard review, and can be downloaded after the review and the three approvals.
+    sv:
+      title: Ändringshantering före aktivering
+      description: Systemet SKA stoppa aktiveringen av en ändring av ett recept, ett börvärde för förregling, en larmgräns eller en processutrustning tills det kopplade ändringsärendet har en avslutad riskanalys och godkännanden från drift, processäkerhet och underhåll.
+      rationale: Ändringar som görs utan riskanalys är en återkommande orsak till allvarliga olyckor i processindustrin.
+      criteria:
+        - method: test
+          text: Ett nytt börvärde för högtrycksutlösning går inte att ladda ner så länge ändringsärendet saknar riskanalys, och går att ladda ner efter riskanalysen och de tre godkännandena.
+
+  - id: CHEM-11
+    type: performance
+    obligation: should
+    priority: high
+    tags: [alarm-management, alarm-flood, isa-18-2]
+    refs: ["ANSI/ISA-18.2-2016", "IEC 62682:2022", "EEMUA 191"]
+    tests: [CHEM-T10]
+    en:
+      title: Alarm rate per operator and flood detection
+      description: The alarm management function SHOULD report the number of alarms per operator console in each 10-minute period and SHOULD mark a period with more than 10 alarms as an alarm flood, with the 10 most frequent alarms listed.
+      rationale: Operators cannot respond correctly to alarms that arrive faster than they can read them, and flood statistics show where the alarm system needs rationalisation.
+      criteria:
+        - method: test
+          text: Replaying 25 alarms in 10 minutes on one console marks the period as a flood with the top 10 alarms, and 8 alarms in the next period do not.
+          threshold: "> 10 alarms per 10 min"
+    sv:
+      title: Larmfrekvens per operatör och upptäckt av larmlavin
+      description: Funktionen för larmhantering BÖR redovisa antalet larm per operatörsplats för varje period om 10 minuter och markera en period med mer än 10 larm som en larmlavin, med de 10 vanligaste larmen listade.
+      rationale: Operatörer kan inte hantera larm korrekt när de kommer tätare än de hinner läsas, och statistik över larmlaviner visar var larmsystemet behöver rensas.
+      criteria:
+        - method: test
+          text: När 25 larm spelas upp under 10 minuter på en operatörsplats markeras perioden som larmlavin med de 10 vanligaste larmen, och 8 larm under nästa period ger ingen markering.
+          threshold: "> 10 larm per 10 min"
+
+  - id: CHEM-12
+    type: interface
+    obligation: must
+    priority: high
+    tags: [lims, sample-traceability, batch-release]
+    refs: ["ISO/IEC 17025:2017 §7.4", "ISO/IEC 17025:2017 §7.5", "EU GMP Chapter 6"]
+    tests: [CHEM-T11]
+    en:
+      title: Samples traced to the batch and results from LIMS
+      description: The system MUST give each sample a unique identity linked to the batch, phase, sampling point and sampling time, MUST store the LIMS result against that sample, and MUST block the release of a batch while a result is missing or outside its specification.
+      rationale: A result that cannot be traced to its sample and batch cannot support the release, and a batch released with a failed result can reach a customer.
+      criteria:
+        - method: test
+          text: A batch with one pending and one out-of-specification result cannot be released, and after a passed retest it can, with each result traced to its sample identity.
+    sv:
+      title: Prover spåras till batchen och resultat hämtas från LIMS
+      description: Systemet SKA ge varje prov en unik identitet kopplad till batch, fas, provpunkt och provtid, spara resultatet från LIMS mot det provet och stoppa frisläppningen av en batch så länge ett resultat saknas eller ligger utanför sin specifikation.
+      rationale: Ett resultat som inte går att spåra till sitt prov och sin batch kan inte ligga till grund för frisläppning, och en batch som frisläpps med ett underkänt resultat kan nå en kund.
+      criteria:
+        - method: test
+          text: En batch med ett väntande resultat och ett resultat utanför specifikationen går inte att frisläppa, och efter en godkänd omanalys går det, med varje resultat spårat till sin providentitet.
+
+  - id: CHEM-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [emissions, monitoring, permit-limits]
+    refs: ["Directive 2010/75/EU Art. 14", "Directive 2010/75/EU Art. 16", "EN 14181", "EN 17255-1"]
+    tests: [CHEM-T12]
+    en:
+      title: Emission values compared with the permit limits
+      description: The emission monitoring system MUST calculate validated half-hour and daily averages for each continuously measured pollutant and MUST alert the shift manager within 5 minutes after a half-hour average exceeds the limit in the environmental permit.
+      rationale: The environmental permit sets limits that the operator has to meet and prove, and an early alarm lets the operator reduce the emission before a daily limit is also broken.
+      criteria:
+        - method: test
+          text: Simulated NOx readings that take a half-hour average to 210 mg/Nm³ with a limit of 200 mg/Nm³ alert the shift manager within 5 minutes, and the daily average is calculated from validated half-hour values only.
+          threshold: ≤ 5 min
+    sv:
+      title: Utsläppsvärden jämförs med gränserna i tillståndet
+      description: Systemet för utsläppsövervakning SKA beräkna validerade halvtimmes- och dygnsmedelvärden för varje kontinuerligt mätt förorening och larma skiftledaren inom 5 minuter efter att ett halvtimmesmedelvärde överskrider gränsen i miljötillståndet.
+      rationale: Miljötillståndet anger gränser som verksamhetsutövaren ska hålla och kunna visa, och ett tidigt larm låter driften minska utsläppet innan även en dygnsgräns överskrids.
+      criteria:
+        - method: test
+          text: Simulerade NOx-värden som ger ett halvtimmesmedelvärde på 210 mg/Nm³ med gränsen 200 mg/Nm³ larmar skiftledaren inom 5 minuter, och dygnsmedelvärdet beräknas bara från validerade halvtimmesvärden.
+          threshold: ≤ 5 min
+
+  - id: CHEM-14
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [emissions, reporting, environmental-report]
+    refs: ["Regulation (EC) No 166/2006 Art. 5", "Directive 2010/75/EU Art. 14"]
+    tests: [CHEM-T12]
+    en:
+      title: Annual emission totals for the environmental report
+      description: The system SHOULD export the annual emitted mass of each reported pollutant per emission point, with the calculation method and the share of valid measurement hours, in a file that the environmental report and the pollutant release register can import.
+      rationale: Annual reporting by hand from raw data is error-prone, and authorities check the method and the data availability behind each total.
+      criteria:
+        - method: test
+          text: For a test year of measurement data, the exported total for NOx equals a reference calculation within 0.5 %, and the file lists the method and the valid hours.
+          threshold: ≤ 0.5 % difference
+    sv:
+      title: Årliga utsläppssummor för miljörapporten
+      description: Systemet BÖR exportera den årliga utsläppta mängden av varje rapporterad förorening per utsläppspunkt, med beräkningsmetod och andel giltiga mättimmar, i en fil som miljörapporten och registret över utsläpp av föroreningar kan läsa in.
+      rationale: Årlig rapportering för hand från rådata blir lätt fel, och myndigheterna kontrollerar metoden och datatillgängligheten bakom varje summa.
+      criteria:
+        - method: test
+          text: För ett testår med mätdata stämmer den exporterade summan för NOx med en referensberäkning inom 0,5 %, och filen anger metod och giltiga timmar.
+          threshold: ≤ 0,5 % skillnad
+
+  - id: CHEM-15
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [permit-to-work, isolation, maintenance]
+    refs: ["HSE HSG250", "ISO 45001:2018 §8.1.2"]
+    tests: [CHEM-T13]
+    en:
+      title: Permit-to-work linked to equipment isolation
+      description: The system MUST issue a work permit for process equipment only after the linked isolation points are confirmed as isolated, MUST block the start of that equipment from the batch control system while the permit is open, and MUST close the permit at the end of the shift in which it is not extended.
+      rationale: Starting equipment while people work on it is one of the most serious hazards in a process plant.
+      criteria:
+        - method: test
+          text: A permit cannot be issued while one of 3 isolation points is unconfirmed, a start command to the equipment is refused while the permit is open, and an unextended permit is closed at shift end.
+    sv:
+      title: Arbetstillstånd kopplat till frånskiljning av utrustning
+      description: Systemet SKA utfärda ett arbetstillstånd för processutrustning först när de kopplade frånskiljningspunkterna är bekräftat frånskilda, stoppa start av utrustningen från batchstyrningen så länge tillståndet är öppet och stänga tillståndet vid slutet av det skift då det inte förlängs.
+      rationale: Att starta utrustning medan någon arbetar i den är en av de allvarligaste riskerna i en processanläggning.
+      criteria:
+        - method: test
+          text: Ett tillstånd går inte att utfärda medan en av 3 frånskiljningspunkter är obekräftad, ett startkommando till utrustningen vägras medan tillståndet är öppet, och ett tillstånd som inte förlängts stängs vid skiftets slut.
+
+  - id: CHEM-16
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [data-integrity, alcoa, audit-trail, gmp]
+    refs: ["21 CFR Part 11 §11.10(e)", "EU GMP Annex 11 §9", "PIC/S PI 041-1"]
+    tests: [CHEM-T14]
+    en:
+      title: Audit trail for GMP records following ALCOA+
+      description: For pharmaceutical and fine chemical production, the system MUST record in a computer-generated audit trail each creation, change and deletion of a GMP record with user, time, old value, new value and reason, and MUST keep the audit trail switched on for every user role.
+      rationale: The ALCOA+ principles require records that are attributable, contemporaneous, original and complete, and inspectors read the audit trail to judge whether data can be trusted.
+      criteria:
+        - method: test
+          text: Changing a recorded charge weight from 120.0 kg to 121.5 kg asks for a reason, and the audit trail shows user, time, both values and the reason.
+        - method: inspection
+          text: No user role, the administrator included, has a setting or function that switches off or edits the audit trail.
+    sv:
+      title: Ändringslogg för GMP-poster enligt ALCOA+
+      description: För tillverkning av läkemedel och finkemikalier SKA systemet registrera varje skapande, ändring och borttagning av en GMP-post i en datorgenererad ändringslogg med användare, tid, gammalt värde, nytt värde och orsak, och hålla ändringsloggen påslagen för varje användarroll.
+      rationale: Principerna i ALCOA+ kräver poster som går att knyta till en person, görs i samband med händelsen, är original och fullständiga, och inspektörer läser ändringsloggen för att bedöma om data går att lita på.
+      criteria:
+        - method: test
+          text: När en registrerad satsningsvikt ändras från 120,0 kg till 121,5 kg frågar systemet efter en orsak, och ändringsloggen visar användare, tid, båda värdena och orsaken.
+        - method: inspection
+          text: Ingen användarroll, inte heller administratören, har en inställning eller funktion som stänger av eller redigerar ändringsloggen.
+
+  - id: CHEM-17
+    type: security
+    obligation: must
+    priority: critical
+    tags: [ot-security, iec-62443, zones, remote-access]
+    refs: ["IEC 62443-3-2", "IEC 62443-3-3 SR 1.13", "IEC 62443-3-3 SR 5.1"]
+    tests: [CHEM-T15]
+    en:
+      title: Process control network in zones with controlled remote access
+      description: The process control systems MUST be placed in security zones with conduits that allow only the listed traffic, and remote access to them MUST pass through a jump host in a demilitarised zone with multi-factor authentication and session recording.
+      rationale: A direct path from the office network or the internet to process control lets malware or an attacker reach equipment that handles hazardous substances.
+      criteria:
+        - method: test
+          text: A connection from the office network straight to a controller is blocked, and a remote session through the jump host requires a second factor and is recorded.
+        - method: inspection
+          text: The firewall rules between zones match the conduit list, with no rule that allows any service between any addresses.
+    sv:
+      title: Processtyrnätet indelat i zoner med kontrollerad fjärråtkomst
+      description: Processtyrsystemen SKA placeras i säkerhetszoner med kommunikationskanaler som bara tillåter den listade trafiken, och fjärråtkomst till dem SKA gå via en hoppserver i en demilitariserad zon med flerfaktorsautentisering och inspelning av sessionen.
+      rationale: En direkt väg från kontorsnätet eller internet till processtyrningen låter skadlig kod eller en angripare nå utrustning som hanterar farliga ämnen.
+      criteria:
+        - method: test
+          text: En anslutning från kontorsnätet direkt till ett styrsystem blockeras, och en fjärrsession via hoppservern kräver en andra faktor och spelas in.
+        - method: inspection
+          text: Brandväggsreglerna mellan zonerna stämmer med listan över kommunikationskanaler, utan någon regel som tillåter valfri tjänst mellan valfria adresser.
+
+  - id: CHEM-18
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [critical-entity, cer, incident-notification]
+    refs: ["Directive (EU) 2022/2557 Art. 13", "Directive (EU) 2022/2557 Art. 15"]
+    tests: [CHEM-T16]
+    en:
+      title: Incident data for a critical entity notification
+      description: When the site is designated as a critical entity, the system MUST record each disruptive incident with start time, affected services, number of affected users, expected duration and cross-border effects, and MUST produce an initial notification draft within 4 hours after the incident is registered.
+      rationale: A critical entity notifies the competent authority of a significant disruption within 24 hours, and having the data ready leaves time for review.
+      criteria:
+        - method: test
+          text: A registered incident that stops deliveries to 2 customers produces within 4 hours a draft with the listed fields filled in.
+          threshold: ≤ 4 h
+    sv:
+      title: Uppgifter om incidenter för anmälan som kritisk verksamhetsutövare
+      description: När anläggningen är utsedd till kritisk verksamhetsutövare SKA systemet registrera varje störande incident med starttid, berörda tjänster, antal berörda användare, förväntad varaktighet och gränsöverskridande effekter, och ta fram ett utkast till första anmälan inom 4 timmar efter att incidenten registrerats.
+      rationale: En kritisk verksamhetsutövare anmäler en betydande störning till den behöriga myndigheten inom 24 timmar, och färdiga uppgifter ger tid för granskning.
+      criteria:
+        - method: test
+          text: En registrerad incident som stoppar leveranser till 2 kunder ger inom 4 timmar ett utkast med de uppräknade fälten ifyllda.
+          threshold: ≤ 4 h
+
+tests:
+  - id: CHEM-T01
+    priority: high
+    execution: manual
+    tags: [batch-control, recipe]
+    refs: ["IEC 61512-1 recipe types"]
+    en:
+      title: Batch created from draft and released master recipes
+      description: Tries to create batches from master recipes in different states and enters parameter values at the limits.
+      preconditions: A master recipe for a test product in version 2 draft and version 1 released, with a reactor temperature limit of 60–85 °C, and a user with the batch operator role.
+      expected: Only the released version gives a batch, and only values within the limits are accepted.
+      steps:
+        - action: Try to create a batch from version 2 in draft.
+          expected: The batch is not created and the message states that the recipe is not released.
+        - action: Create a batch from version 1 and open its control recipe.
+          expected: The control recipe shows the procedure, unit procedures, operations and phases of the master recipe.
+        - action: Enter a reactor temperature of 85 °C, then 86 °C.
+          expected: 85 °C is accepted and 86 °C is rejected with the limit shown.
+          data: 85 °C, 86 °C
+    sv:
+      title: Batch skapas från grundrecept i utkast och frisläppta grundrecept
+      description: Försöker skapa batcher från grundrecept i olika tillstånd och anger parametervärden vid gränserna.
+      preconditions: Ett grundrecept för en testprodukt i version 2 i utkast och version 1 frisläppt, med gränsen 60–85 °C för reaktortemperaturen, och en användare med rollen batchoperatör.
+      expected: Bara den frisläppta versionen ger en batch, och bara värden inom gränserna godtas.
+      steps:
+        - action: Försök skapa en batch från version 2 i utkast.
+          expected: Batchen skapas inte och meddelandet anger att receptet inte är frisläppt.
+        - action: Skapa en batch från version 1 och öppna dess styrrecept.
+          expected: Styrreceptet visar grundreceptets procedur, enhetsprocedurer, operationer och faser.
+        - action: Ange reaktortemperaturen 85 °C och sedan 86 °C.
+          expected: 85 °C godtas och 86 °C avvisas med gränsen angiven.
+          data: 85 °C, 86 °C
+
+  - id: CHEM-T02
+    priority: high
+    execution: automated
+    tags: [batch-control, state-model]
+    refs: ["IEC 61512-1 procedural element states"]
+    en:
+      title: Phase commands against the state model
+      description: A script sends commands to a phase on a simulated unit and checks which are accepted.
+      preconditions: A batch running on a simulated reactor unit with a heating phase in the state running.
+      expected: Only commands allowed by the state model are accepted, and each state change is recorded.
+      steps:
+        - action: Send restart to the running phase.
+          expected: The command is rejected and the phase stays running.
+        - action: Send hold, wait for the state held, then send restart.
+          expected: The phase moves to holding, held, restarting and running.
+        - action: Read the batch record for the phase.
+          expected: Each state change is listed with time stamp and user.
+    sv:
+      title: Kommandon till en fas mot tillståndsmodellen
+      description: Ett skript skickar kommandon till en fas i en simulerad enhet och kontrollerar vilka som godtas.
+      preconditions: En batch som körs i en simulerad reaktorenhet med en uppvärmningsfas i tillståndet körs.
+      expected: Bara kommandon som tillståndsmodellen tillåter godtas, och varje tillståndsändring registreras.
+      steps:
+        - action: Skicka återstart till fasen som körs.
+          expected: Kommandot avvisas och fasen fortsätter att köras.
+        - action: Skicka paus, vänta på tillståndet pausad och skicka sedan återstart.
+          expected: Fasen går till pausar, pausad, återstartar och körs.
+        - action: Läs batchprotokollet för fasen.
+          expected: Varje tillståndsändring visas med tidsstämpel och användare.
+
+  - id: CHEM-T03
+    priority: critical
+    execution: manual
+    tags: [recipe-management, electronic-signature]
+    refs: ["21 CFR Part 11 §11.50"]
+    en:
+      title: Two-signature release of a master recipe
+      description: Takes a recipe version through review and release and then tries to change the released version.
+      preconditions: A master recipe version in review, a user with the process engineer role and a user with the quality assurance role.
+      expected: Release needs both signatures, which are shown with meaning, and the released version cannot be changed.
+      steps:
+        - action: Sign the recipe as process engineer with user name and password and the meaning "reviewed".
+          expected: The recipe stays in review and shows one signature with name, time and meaning.
+        - action: Sign the recipe as quality assurance with the meaning "approved".
+          expected: The recipe is released and shows both signatures.
+        - action: Open the released version and change a parameter.
+          expected: The change creates a new version in draft and the released version is unchanged.
+    sv:
+      title: Frisläppning av ett grundrecept med två underskrifter
+      description: Tar en receptversion genom granskning och frisläppning och försöker sedan ändra den frisläppta versionen.
+      preconditions: En version av ett grundrecept i granskning, en användare med rollen processingenjör och en användare med rollen kvalitetssäkring.
+      expected: Frisläppningen kräver båda underskrifterna, som visas med innebörd, och den frisläppta versionen går inte att ändra.
+      steps:
+        - action: Underteckna receptet som processingenjör med användarnamn och lösenord och innebörden "granskad".
+          expected: Receptet stannar i granskning och visar en underskrift med namn, tid och innebörd.
+        - action: Underteckna receptet som kvalitetssäkring med innebörden "godkänd".
+          expected: Receptet frisläpps och visar båda underskrifterna.
+        - action: Öppna den frisläppta versionen och ändra en parameter.
+          expected: Ändringen skapar en ny version i utkast och den frisläppta versionen är oförändrad.
+
+  - id: CHEM-T04
+    priority: critical
+    execution: manual
+    tags: [electronic-batch-record]
+    refs: ["ANSI/ISA-88.00.04-2006"]
+    en:
+      title: Content of the electronic batch record
+      description: Runs a test batch with known events and checks the batch record against them.
+      preconditions: A simulated plant, a released test recipe with 4 phases and 3 material additions, and a list of the planned events.
+      expected: The record is ready within 1 minute after the batch ends and contains every planned event.
+      steps:
+        - action: Run the batch, add the 3 materials with lot numbers, change one parameter as operator and let one high-temperature alarm occur.
+          expected: The batch completes.
+          data: lots L-101, L-102, L-103
+        - action: Open the batch record within 1 minute after the end.
+          expected: The record is available and shows the recipe version.
+        - action: Compare the record with the list of planned events.
+          expected: The 4 phases with start and end, the 3 lots with quantities, the operator change and the alarm are present with time stamps.
+    sv:
+      title: Innehållet i det elektroniska batchprotokollet
+      description: Kör en testbatch med kända händelser och jämför batchprotokollet med dem.
+      preconditions: En simulerad anläggning, ett frisläppt testrecept med 4 faser och 3 materialtillsatser, och en lista över de planerade händelserna.
+      expected: Protokollet finns inom 1 minut efter att batchen avslutats och innehåller varje planerad händelse.
+      steps:
+        - action: Kör batchen, tillsätt de 3 materialen med partinummer, ändra en parameter som operatör och låt ett larm för hög temperatur uppstå.
+          expected: Batchen blir klar.
+          data: partier L-101, L-102, L-103
+        - action: Öppna batchprotokollet inom 1 minut efter slutet.
+          expected: Protokollet finns och visar receptversionen.
+        - action: Jämför protokollet med listan över planerade händelser.
+          expected: De 4 faserna med start och slut, de 3 partierna med mängder, operatörens ändring och larmet finns med tidsstämplar.
+
+  - id: CHEM-T05
+    priority: critical
+    execution: manual
+    tags: [process-safety, sis, separation]
+    refs: ["IEC 61511-1:2016 §11.2"]
+    en:
+      title: Write attempts to the safety controller are refused
+      description: Tries to write to a safety controller test tag from each connected system and inspects the configuration.
+      preconditions: A test or factory acceptance setup with the safety controller, the batch control, MES and historian systems connected as in production, and a test tag in the safety controller.
+      expected: No connected system can write to the safety controller, and status reading still works.
+      steps:
+        - action: From the batch control system, write a value to the test tag.
+          expected: The write is refused and the tag is unchanged.
+        - action: Repeat from the MES and the historian.
+          expected: Both writes are refused and the tag is unchanged.
+        - action: Read the trip status from each system, and inspect the firewall and controller configuration.
+          expected: The status is read, and the configuration shows read-only access for the three systems.
+    sv:
+      title: Skrivförsök till säkerhetsstyrsystemet vägras
+      description: Försöker skriva till en testtagg i säkerhetsstyrsystemet från varje anslutet system och granskar konfigurationen.
+      preconditions: En test- eller leveranstestuppställning med säkerhetsstyrsystemet och batchstyrningen, MES och historiksystemet anslutna som i produktion, och en testtagg i säkerhetsstyrsystemet.
+      expected: Inget anslutet system kan skriva till säkerhetsstyrsystemet, och statusläsningen fungerar fortfarande.
+      steps:
+        - action: Skriv ett värde till testtaggen från batchstyrningen.
+          expected: Skrivningen vägras och taggen är oförändrad.
+        - action: Upprepa från MES och från historiksystemet.
+          expected: Båda skrivningarna vägras och taggen är oförändrad.
+        - action: Läs utlösningsstatus från varje system och granska brandväggens och styrsystemets konfiguration.
+          expected: Statusen läses, och konfigurationen visar enbart läsåtkomst för de tre systemen.
+
+  - id: CHEM-T06
+    priority: critical
+    execution: manual
+    tags: [bypass, interlock, authorisation]
+    refs: ["IEC 61511-1:2016 §16.2"]
+    en:
+      title: Bypass approval, display and expiry
+      description: Requests a bypass of a test interlock, approves it in two steps and lets it expire.
+      preconditions: A test interlock, a shift manager, a second authorised person, an operator screen and a controllable clock.
+      expected: The bypass activates only with two approvals, is shown to operators and ends with an alarm after 12 hours.
+      steps:
+        - action: Request a bypass for 12 hours with reason and compensating measures, and approve it as shift manager only.
+          expected: The bypass is not active.
+          data: 12 h
+        - action: Approve it as the second authorised person.
+          expected: The bypass is active and the operator screen shows the bypassed interlock and its end time.
+        - action: Move the clock forward 12 hours.
+          expected: The bypass ends, the interlock is active again and an alarm reports the expiry.
+    sv:
+      title: Godkännande, visning och utgång av en förbikoppling
+      description: Begär en förbikoppling av en testförregling, godkänner den i två steg och låter den gå ut.
+      preconditions: En testförregling, en skiftledare, ytterligare en behörig person, en operatörsskärm och en styrbar klocka.
+      expected: Förbikopplingen aktiveras bara med två godkännanden, visas för operatörerna och avslutas med ett larm efter 12 timmar.
+      steps:
+        - action: Begär en förbikoppling på 12 timmar med orsak och kompenserande åtgärder och godkänn den bara som skiftledare.
+          expected: Förbikopplingen är inte aktiv.
+          data: 12 h
+        - action: Godkänn den som den andra behöriga personen.
+          expected: Förbikopplingen är aktiv och operatörsskärmen visar den förbikopplade förreglingen och dess sluttid.
+        - action: Flytta klockan 12 timmar framåt.
+          expected: Förbikopplingen avslutas, förreglingen är aktiv igen och ett larm meddelar att tiden gått ut.
+
+  - id: CHEM-T07
+    priority: high
+    execution: manual
+    tags: [hazardous-substances, seveso, inventory]
+    refs: ["Directive 2012/18/EU Annex I"]
+    en:
+      title: Hazardous substance inventory and Seveso threshold alert
+      description: Registers receipts of a flammable liquid and checks the inventory and the Seveso calculation.
+      preconditions: A test site with 3 900 t of a substance category whose lower-tier threshold is set to 5 000 t, tank farm B, and a site safety manager with a test e-mail address.
+      expected: The inventory updates within 15 minutes and a planned receipt above 80 % of the threshold gives an alert.
+      steps:
+        - action: Register a receipt of 2 000 kg of a flammable liquid into tank farm B.
+          expected: Within 15 minutes, the inventory of tank farm B shows the new quantity with hazard class and hazard statements.
+          data: 2 000 kg
+        - action: Plan a receipt of 200 t of the category.
+          expected: The site safety manager gets an alert that the site would reach 82 % of the lower-tier threshold.
+          data: 3 900 t + 200 t of 5 000 t
+        - action: Open the Seveso report.
+          expected: The report lists the maximum quantity per category and named substance and the summation result.
+    sv:
+      title: Förteckning över farliga ämnen och varning för tröskelvärde i Seveso
+      description: Registrerar inleveranser av en brandfarlig vätska och kontrollerar förteckningen och Seveso-beräkningen.
+      preconditions: En testanläggning med 3 900 t av en ämneskategori vars tröskelvärde för den lägre kravnivån är satt till 5 000 t, tankpark B och en säkerhetsansvarig med en e-postadress för test.
+      expected: Förteckningen uppdateras inom 15 minuter och en planerad inleverans över 80 % av tröskelvärdet ger en varning.
+      steps:
+        - action: Registrera en inleverans av 2 000 kg brandfarlig vätska till tankpark B.
+          expected: Inom 15 minuter visar förteckningen för tankpark B den nya mängden med faroklass och faroangivelser.
+          data: 2 000 kg
+        - action: Planera en inleverans av 200 t av kategorin.
+          expected: Den säkerhetsansvarige får en varning om att anläggningen skulle nå 82 % av tröskelvärdet för den lägre kravnivån.
+          data: 3 900 t + 200 t av 5 000 t
+        - action: Öppna Seveso-rapporten.
+          expected: Rapporten visar största mängd per kategori och namngivet ämne och resultatet av summeringen.
+
+  - id: CHEM-T08
+    priority: high
+    execution: manual
+    tags: [sds, reach]
+    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    en:
+      title: Receipt without a safety data sheet and a new revision
+      description: Tries to receive a substance without a safety data sheet in the site language and loads a newer revision for another substance.
+      preconditions: A Swedish test site, substance A with only an English safety data sheet, substance B with a Swedish sheet in revision 3, and revision 4 of that sheet.
+      expected: The receipt of A is blocked, and revision 3 of B is marked as replaced with the change listed for review.
+      steps:
+        - action: Register a receipt of substance A at the Swedish site.
+          expected: The receipt is blocked with a message that a Swedish safety data sheet is missing.
+        - action: Load revision 4 of the safety data sheet for substance B.
+          expected: Revision 3 is marked as replaced and revision 4 is shown as current.
+          data: revision 3 → 4
+        - action: Open the review list.
+          expected: The list contains substance B with the changed sections of the sheet.
+    sv:
+      title: Inleverans utan säkerhetsdatablad och en ny revision
+      description: Försöker ta emot ett ämne utan säkerhetsdatablad på anläggningens språk och läser in en nyare revision för ett annat ämne.
+      preconditions: En svensk testanläggning, ämne A med bara ett engelskt säkerhetsdatablad, ämne B med ett svenskt blad i revision 3 och revision 4 av det bladet.
+      expected: Inleveransen av A stoppas, och revision 3 för B markeras som ersatt med ändringen listad för granskning.
+      steps:
+        - action: Registrera en inleverans av ämne A till den svenska anläggningen.
+          expected: Inleveransen stoppas med ett meddelande om att ett svenskt säkerhetsdatablad saknas.
+        - action: Läs in revision 4 av säkerhetsdatabladet för ämne B.
+          expected: Revision 3 markeras som ersatt och revision 4 visas som aktuell.
+          data: revision 3 → 4
+        - action: Öppna granskningslistan.
+          expected: Listan innehåller ämne B med de ändrade avsnitten i bladet.
+
+  - id: CHEM-T09
+    priority: critical
+    execution: manual
+    tags: [management-of-change, moc]
+    refs: ["IEC 61511-1:2016 §17"]
+    en:
+      title: Setpoint change blocked until the change case is complete
+      description: Prepares a new trip setpoint under a change case and tries to download it at each stage of the case.
+      preconditions: A test interlock with a high-pressure trip at 8.0 bar, a change case for a new setpoint of 7.5 bar, and users for operations, process safety and maintenance.
+      expected: The setpoint can only be downloaded after the hazard review and all three approvals.
+      steps:
+        - action: Try to download the new setpoint while the change case has no hazard review.
+          expected: The download is blocked with a reference to the open change case.
+          data: 8.0 bar → 7.5 bar
+        - action: Complete the hazard review and approve as operations and process safety, then try again.
+          expected: The download is still blocked because the maintenance approval is missing.
+        - action: Approve as maintenance and download the setpoint.
+          expected: The download succeeds and the change case links to the new configuration version.
+    sv:
+      title: Ändring av börvärde stoppas tills ändringsärendet är klart
+      description: Förbereder ett nytt börvärde för utlösning i ett ändringsärende och försöker ladda ner det i varje steg av ärendet.
+      preconditions: En testförregling med högtrycksutlösning vid 8,0 bar, ett ändringsärende för ett nytt börvärde på 7,5 bar och användare för drift, processäkerhet och underhåll.
+      expected: Börvärdet går bara att ladda ner efter riskanalysen och alla tre godkännandena.
+      steps:
+        - action: Försök ladda ner det nya börvärdet medan ändringsärendet saknar riskanalys.
+          expected: Nedladdningen stoppas med en hänvisning till det öppna ändringsärendet.
+          data: 8,0 bar → 7,5 bar
+        - action: Slutför riskanalysen och godkänn som drift och processäkerhet, och försök igen.
+          expected: Nedladdningen stoppas fortfarande eftersom underhållets godkännande saknas.
+        - action: Godkänn som underhåll och ladda ner börvärdet.
+          expected: Nedladdningen lyckas och ändringsärendet länkar till den nya konfigurationsversionen.
+
+  - id: CHEM-T10
+    priority: high
+    execution: automated
+    tags: [alarm-management, alarm-flood]
+    refs: ["ANSI/ISA-18.2-2016"]
+    en:
+      title: Alarm flood detection on replayed alarms
+      description: Replays recorded alarm sequences to one operator console and checks the alarm rate report.
+      preconditions: An alarm replay tool, one operator console and the alarm management report.
+      expected: The period with 25 alarms is marked as a flood with the top 10, and the period with 8 is not.
+      steps:
+        - action: Replay 25 alarms on the console within one 10-minute period.
+          expected: The report shows 25 alarms for the period and marks it as a flood.
+          data: 25 alarms in 10 min
+        - action: Open the flood details.
+          expected: The 10 most frequent alarms of the period are listed with their counts.
+        - action: Replay 8 alarms in the next 10-minute period.
+          expected: The report shows 8 alarms and no flood mark.
+          data: 8 alarms in 10 min
+    sv:
+      title: Upptäckt av larmlavin med uppspelade larm
+      description: Spelar upp inspelade larmsekvenser på en operatörsplats och kontrollerar rapporten över larmfrekvens.
+      preconditions: Ett verktyg för uppspelning av larm, en operatörsplats och rapporten från larmhanteringen.
+      expected: Perioden med 25 larm markeras som larmlavin med de 10 vanligaste, och perioden med 8 larm markeras inte.
+      steps:
+        - action: Spela upp 25 larm på operatörsplatsen inom en period om 10 minuter.
+          expected: Rapporten visar 25 larm för perioden och markerar den som larmlavin.
+          data: 25 larm på 10 min
+        - action: Öppna detaljerna för larmlavinen.
+          expected: De 10 vanligaste larmen under perioden listas med antal.
+        - action: Spela upp 8 larm under nästa period om 10 minuter.
+          expected: Rapporten visar 8 larm och ingen markering för larmlavin.
+          data: 8 larm på 10 min
+
+  - id: CHEM-T11
+    priority: high
+    execution: manual
+    tags: [lims, sample-traceability, batch-release]
+    refs: ["ISO/IEC 17025:2017 §7.4"]
+    en:
+      title: Batch release blocked by missing and failed results
+      description: Takes samples of a test batch, returns results from a LIMS test instance and tries to release the batch.
+      preconditions: A completed test batch, a LIMS test instance connected to the system and a user with the batch release role.
+      expected: The batch can only be released when every result is within specification, and every result traces to its sample.
+      steps:
+        - action: Register 2 samples at the end of the reaction phase and check their labels.
+          expected: Each sample has a unique identity linked to the batch, phase, sampling point and time.
+        - action: Return a result for sample 1 that is outside specification, leave sample 2 pending, and try to release.
+          expected: The release is blocked and the message names both samples.
+          data: purity 97.8 % with specification ≥ 98.5 %
+        - action: Return a passed retest for sample 1 and a passed result for sample 2, and release.
+          expected: The release succeeds and the batch record lists each result with its sample identity, including the failed original result.
+    sv:
+      title: Frisläppning stoppas av saknade och underkända resultat
+      description: Tar prover på en testbatch, returnerar resultat från en testinstans av LIMS och försöker frisläppa batchen.
+      preconditions: En avslutad testbatch, en testinstans av LIMS ansluten till systemet och en användare med rollen för frisläppning av batcher.
+      expected: Batchen går bara att frisläppa när varje resultat ligger inom specifikationen, och varje resultat går att spåra till sitt prov.
+      steps:
+        - action: Registrera 2 prover i slutet av reaktionsfasen och kontrollera deras etiketter.
+          expected: Varje prov har en unik identitet kopplad till batch, fas, provpunkt och tid.
+        - action: Returnera ett resultat för prov 1 utanför specifikationen, låt prov 2 vänta och försök frisläppa.
+          expected: Frisläppningen stoppas och meddelandet anger båda proverna.
+          data: renhet 97,8 % med specifikationen ≥ 98,5 %
+        - action: Returnera en godkänd omanalys för prov 1 och ett godkänt resultat för prov 2 och frisläpp.
+          expected: Frisläppningen lyckas och batchprotokollet visar varje resultat med sin providentitet, även det ursprungliga underkända resultatet.
+
+  - id: CHEM-T12
+    priority: high
+    execution: automated
+    tags: [emissions, monitoring, reporting]
+    refs: ["EN 14181", "Regulation (EC) No 166/2006 Art. 5"]
+    en:
+      title: Emission limit alarm and annual totals
+      description: Feeds simulated NOx readings to the emission monitoring system and compares its averages and annual total with a reference calculation.
+      preconditions: An emission point with a NOx half-hour limit of 200 mg/Nm³, a simulator for analyser readings, a test year of measurement data and a reference spreadsheet.
+      expected: The exceedance alerts within 5 minutes, averages use only validated values and the annual total is within 0.5 % of the reference.
+      steps:
+        - action: Feed readings that give a half-hour average of 210 mg/Nm³.
+          expected: The shift manager is alerted within 5 minutes with the value and the limit.
+          data: 210 mg/Nm³ against 200 mg/Nm³
+        - action: Mark 3 half-hours as invalid due to analyser calibration and calculate the daily average.
+          expected: The daily average uses only the valid half-hours, and the number of valid half-hours is shown.
+        - action: Export the annual totals for the test year.
+          expected: The NOx total is within 0.5 % of the reference, and the file states the method and the valid hours.
+    sv:
+      title: Larm vid utsläppsgräns och årliga summor
+      description: Matar in simulerade NOx-värden i systemet för utsläppsövervakning och jämför dess medelvärden och årssumma med en referensberäkning.
+      preconditions: En utsläppspunkt med halvtimmesgränsen 200 mg/Nm³ för NOx, en simulator för analysatorvärden, ett testår med mätdata och ett referenskalkylark.
+      expected: Överskridandet larmar inom 5 minuter, medelvärdena använder bara validerade värden och årssumman ligger inom 0,5 % från referensen.
+      steps:
+        - action: Mata in värden som ger ett halvtimmesmedelvärde på 210 mg/Nm³.
+          expected: Skiftledaren larmas inom 5 minuter med värdet och gränsen.
+          data: 210 mg/Nm³ mot 200 mg/Nm³
+        - action: Markera 3 halvtimmar som ogiltiga på grund av kalibrering av analysatorn och beräkna dygnsmedelvärdet.
+          expected: Dygnsmedelvärdet använder bara de giltiga halvtimmarna, och antalet giltiga halvtimmar visas.
+        - action: Exportera årssummorna för teståret.
+          expected: Summan för NOx ligger inom 0,5 % från referensen, och filen anger metod och giltiga timmar.
+
+  - id: CHEM-T13
+    priority: critical
+    execution: manual
+    tags: [permit-to-work, isolation]
+    refs: ["HSE HSG250"]
+    en:
+      title: Work permit, isolation and start block
+      description: Issues a work permit for a test pump with three isolation points and tries to start the pump.
+      preconditions: A test pump with 3 isolation points, a permit issuer, an operator and a controllable clock at the start of a shift.
+      expected: The permit needs all isolations, blocks the start while open and closes at shift end.
+      steps:
+        - action: Confirm 2 of the 3 isolation points and try to issue the permit.
+          expected: The permit is not issued and the unconfirmed point is named.
+        - action: Confirm the third point, issue the permit and send a start command to the pump from the batch control system.
+          expected: The permit is issued and the start command is refused with a reference to the open permit.
+        - action: Move the clock to the end of the shift without extending the permit.
+          expected: The permit is closed and the pump stays blocked until the isolations are removed and confirmed.
+    sv:
+      title: Arbetstillstånd, frånskiljning och startspärr
+      description: Utfärdar ett arbetstillstånd för en testpump med tre frånskiljningspunkter och försöker starta pumpen.
+      preconditions: En testpump med 3 frånskiljningspunkter, en utfärdare av tillstånd, en operatör och en styrbar klocka i början av ett skift.
+      expected: Tillståndet kräver alla frånskiljningar, spärrar start medan det är öppet och stängs vid skiftets slut.
+      steps:
+        - action: Bekräfta 2 av de 3 frånskiljningspunkterna och försök utfärda tillståndet.
+          expected: Tillståndet utfärdas inte och den obekräftade punkten anges.
+        - action: Bekräfta den tredje punkten, utfärda tillståndet och skicka ett startkommando till pumpen från batchstyrningen.
+          expected: Tillståndet utfärdas och startkommandot vägras med en hänvisning till det öppna tillståndet.
+        - action: Flytta klockan till skiftets slut utan att förlänga tillståndet.
+          expected: Tillståndet stängs och pumpen förblir spärrad tills frånskiljningarna har tagits bort och bekräftats.
+
+  - id: CHEM-T14
+    priority: critical
+    execution: manual
+    tags: [data-integrity, audit-trail]
+    refs: ["EU GMP Annex 11 §9"]
+    en:
+      title: Audit trail of a changed GMP value
+      description: Changes a recorded value in a batch record and inspects the audit trail and the role settings.
+      preconditions: A completed test batch with a recorded charge weight of 120.0 kg, an operator user and an administrator user.
+      expected: The change asks for a reason and is fully recorded, and no role can switch the audit trail off.
+      steps:
+        - action: As the operator, change the charge weight to 121.5 kg.
+          expected: The system asks for a reason and does not save the change without one.
+          data: 120.0 kg → 121.5 kg
+        - action: Enter the reason and open the audit trail of the record.
+          expected: The audit trail shows the user, time, 120.0 kg, 121.5 kg and the reason.
+        - action: As the administrator, look through the settings and functions for the audit trail.
+          expected: There is no way to switch off, edit or delete audit trail entries.
+    sv:
+      title: Ändringslogg för ett ändrat GMP-värde
+      description: Ändrar ett registrerat värde i ett batchprotokoll och granskar ändringsloggen och rollernas inställningar.
+      preconditions: En avslutad testbatch med den registrerade satsningsvikten 120,0 kg, en operatörsanvändare och en administratörsanvändare.
+      expected: Ändringen kräver en orsak och registreras fullständigt, och ingen roll kan stänga av ändringsloggen.
+      steps:
+        - action: Ändra satsningsvikten till 121,5 kg som operatör.
+          expected: Systemet frågar efter en orsak och sparar inte ändringen utan den.
+          data: 120,0 kg → 121,5 kg
+        - action: Ange orsaken och öppna postens ändringslogg.
+          expected: Ändringsloggen visar användare, tid, 120,0 kg, 121,5 kg och orsaken.
+        - action: Gå igenom inställningar och funktioner för ändringsloggen som administratör.
+          expected: Det finns inget sätt att stänga av, redigera eller ta bort poster i ändringsloggen.
+
+  - id: CHEM-T15
+    priority: critical
+    execution: manual
+    tags: [ot-security, zones, remote-access]
+    refs: ["IEC 62443-3-3 SR 1.13"]
+    en:
+      title: Zone boundaries and remote access through the jump host
+      description: Tries to reach a controller directly from the office network and through the jump host, and reviews the firewall rules.
+      preconditions: A test laptop on the office network, a remote access account with a second factor and the conduit list for the process control zones.
+      expected: Direct access is blocked, remote access needs a second factor and is recorded, and the rules match the conduit list.
+      steps:
+        - action: From the office laptop, connect to a controller's engineering port.
+          expected: The connection is blocked by the zone firewall.
+        - action: Connect through the jump host in the demilitarised zone.
+          expected: The jump host asks for the second factor, and after it the session reaches the controller and is recorded.
+        - action: Compare the firewall rules between the zones with the conduit list.
+          expected: Each rule matches a conduit, and no rule allows any service between any addresses.
+    sv:
+      title: Zongränser och fjärråtkomst via hoppservern
+      description: Försöker nå ett styrsystem direkt från kontorsnätet och via hoppservern, och granskar brandväggsreglerna.
+      preconditions: En testdator på kontorsnätet, ett konto för fjärråtkomst med en andra faktor och listan över kommunikationskanaler för processtyrningens zoner.
+      expected: Direkt åtkomst blockeras, fjärråtkomst kräver en andra faktor och spelas in, och reglerna stämmer med listan.
+      steps:
+        - action: Anslut från kontorsdatorn till ett styrsystems konfigurationsport.
+          expected: Anslutningen blockeras av zonbrandväggen.
+        - action: Anslut via hoppservern i den demilitariserade zonen.
+          expected: Hoppservern frågar efter den andra faktorn, och därefter når sessionen styrsystemet och spelas in.
+        - action: Jämför brandväggsreglerna mellan zonerna med listan över kommunikationskanaler.
+          expected: Varje regel motsvarar en kanal, och ingen regel tillåter valfri tjänst mellan valfria adresser.
+
+  - id: CHEM-T16
+    priority: high
+    execution: manual
+    tags: [critical-entity, incident-notification]
+    refs: ["Directive (EU) 2022/2557 Art. 15"]
+    en:
+      title: Notification draft for a disruptive incident
+      description: Registers a test incident that stops deliveries and checks the notification draft.
+      preconditions: A site marked as a critical entity in the system, 2 test customers supplied from the site and a controllable clock.
+      expected: A draft with every listed field is ready within 4 hours.
+      steps:
+        - action: Register an incident that stops deliveries of a product to the 2 test customers.
+          expected: The incident is registered with its start time.
+        - action: Open the notification draft within 4 hours.
+          expected: The draft is available.
+          data: ≤ 4 h
+        - action: Check the fields of the draft.
+          expected: Start time, affected services, 2 affected users, expected duration and cross-border effects are filled in.
+    sv:
+      title: Utkast till anmälan för en störande incident
+      description: Registrerar en testincident som stoppar leveranser och kontrollerar utkastet till anmälan.
+      preconditions: En anläggning som är markerad som kritisk verksamhetsutövare i systemet, 2 testkunder som får leveranser från anläggningen och en styrbar klocka.
+      expected: Ett utkast med varje uppräknat fält finns inom 4 timmar.
+      steps:
+        - action: Registrera en incident som stoppar leveranserna av en produkt till de 2 testkunderna.
+          expected: Incidenten registreras med starttid.
+        - action: Öppna utkastet till anmälan inom 4 timmar.
+          expected: Utkastet finns.
+          data: ≤ 4 h
+        - action: Kontrollera fälten i utkastet.
+          expected: Starttid, berörda tjänster, 2 berörda användare, förväntad varaktighet och gränsöverskridande effekter är ifyllda.

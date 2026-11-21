@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: high
     tags: [licence-policy, allow-list]
-    refs: ["OpenChain ISO/IEC 5230:2020 §3.1 (program foundation)", "SPDX License List"]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.1 (program foundation)", "SPDX License List", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T01]
     en:
       title: Licence policy with allowed, conditional and forbidden licences
@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: high
     tags: [licence-check, pipeline]
-    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (open source content review and approval)", "NTIA Minimum Elements for an SBOM (2021)"]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3 (open source content review and approval)", "NTIA Minimum Elements for an SBOM (2021)", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T02]
     en:
       title: Forbidden licences stop the build
@@ -56,7 +56,7 @@ requirements:
     obligation: must
     priority: high
     tags: [attribution, notices]
-    refs: ["MIT License (notice condition)", "Apache License 2.0 §4(d) (NOTICE file)", "BSD 3-Clause License (notice condition)"]
+    refs: ["MIT License (notice condition)", "Apache License 2.0 §4(d) (NOTICE file)", "BSD 3-Clause License (notice condition)", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T03]
     en:
       title: Attribution notices ship with each release
@@ -78,7 +78,7 @@ requirements:
     obligation: must
     priority: high
     tags: [copyleft, source-offer, gpl]
-    refs: ["GNU GPL v3 §6 (conveying non-source forms)", "GNU LGPL v2.1 §6", "Mozilla Public License 2.0 §3.2"]
+    refs: ["GNU GPL v3 §6 (conveying non-source forms)", "GNU LGPL v2.1 §6", "Mozilla Public License 2.0 §3.2", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T04, LIC-T08]
     en:
       title: Source code is offered for distributed copyleft components
@@ -102,7 +102,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [network-copyleft, agpl, saas]
-    refs: ["GNU AGPL v3 §13 (remote network interaction)", "Server Side Public License v1 §13"]
+    refs: ["GNU AGPL v3 §13 (remote network interaction)", "Server Side Public License v1 §13", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T02]
     en:
       title: Network copyleft licences are reviewed before use
@@ -124,7 +124,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [own-licence, metadata, spdx]
-    refs: ["REUSE Specification 3.2", "SPDX Specification 2.3 Annex E (SPDX-License-Identifier)"]
+    refs: ["REUSE Specification 3.2", "SPDX Specification 2.3 Annex E (SPDX-License-Identifier)", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T05]
     en:
       title: The product's own licence is declared in each source file
@@ -146,7 +146,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [copied-code, snippets]
-    refs: ["OpenChain ISO/IEC 5230:2020 §3.3", "Creative Commons Attribution-ShareAlike 4.0 (Stack Overflow contributions)"]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.3", "Creative Commons Attribution-ShareAlike 4.0 (Stack Overflow contributions)", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T06]
     en:
       title: Copied code snippets are recorded with their source
@@ -170,7 +170,7 @@ requirements:
     obligation: should
     priority: low
     tags: [contributions, upstream]
-    refs: ["OpenChain ISO/IEC 5230:2020 §3.5 (community engagement)"]
+    refs: ["OpenChain ISO/IEC 5230:2020 §3.5 (community engagement)", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T06]
     en:
       title: Contributions to external projects are approved
@@ -192,7 +192,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [fonts, images, assets]
-    refs: ["SIL Open Font License 1.1", "Creative Commons licences 4.0 (attribution conditions)"]
+    refs: ["SIL Open Font License 1.1", "Creative Commons licences 4.0 (attribution conditions)", "ISO/IEC 27001:2022 A.5.32"]
     tests: [LIC-T07]
     en:
       title: Licences of fonts, icons and images are recorded
@@ -214,7 +214,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [sbom, licence-data]
-    refs: ["SPDX Specification 2.3 §7 (package information)", "CycloneDX 1.6 (licence data)"]
+    refs: ["SPDX Specification 2.3 §7 (package information)", "CycloneDX 1.6 (licence data)", "ISO/IEC 27001:2022 A.5.32", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
     tests: [LIC-T03]
     en:
       title: The SBOM lists the concluded licence of each component
@@ -236,7 +236,7 @@ tests:
     priority: high
     execution: manual
     tags: [licence-policy, review]
-    refs: ["OpenChain ISO/IEC 5230:2020"]
+    refs: ["OpenChain ISO/IEC 5230:2020", "ISO/IEC 27001:2022 A.5.32"]
     en:
       title: Review of the licence policy against the dependencies
       description: Compares the licences found in the product's dependencies with the classes in the licence policy.
@@ -302,7 +302,7 @@ tests:
     priority: high
     execution: automated
     tags: [attribution, sbom]
-    refs: ["SPDX Specification 2.3"]
+    refs: ["SPDX Specification 2.3", "ISO/IEC 27001:2022 A.5.32", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §1"]
     en:
       title: Notices file and SBOM licence data of a release
       description: Compares the notices file with the SBOM of the latest release and validates the licence expressions.
@@ -366,7 +366,7 @@ tests:
     priority: medium
     execution: automated
     tags: [spdx, reuse]
-    refs: ["REUSE Specification 3.2"]
+    refs: ["REUSE Specification 3.2", "ISO/IEC 27001:2022 A.5.32"]
     en:
       title: REUSE compliance check of the repository
       description: Runs a REUSE compliance check of the repository in the pipeline.

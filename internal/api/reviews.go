@@ -58,27 +58,53 @@ func (s *Server) handleListReviews(w http.ResponseWriter, r *http.Request, p *Pr
 		if f.ReviewerID == "me" {
 			f.ReviewerID = p.User.ID
 		}
-		list, err := s.Store.ListReviewRequests(r.Context(), p.TenantID(), f)
-		if err != nil {
-			s.fail(w, r, err)
-			return
-		}
-		writeJSON(w, http.StatusOK, listOf(list))
+		s.writeVisibleReviews(w, r, p, f)
 		return
 	}
 	if f.ReviewerID == "me" || (f.ProjectID == "" && f.EntityID == "") {
 		f.ReviewerID = p.User.ID
 	}
-	if f.ReviewerID != p.User.ID && !p.Can(readPermOf(f.EntityType)) {
+	if f.ProjectID != "" {
+		perm := readPermOf(f.EntityType)
+		if f.ReviewerID == p.User.ID {
+			perm = "" // one's own requests: seeing the project is enough
+		}
+		if err := s.canIn(r.Context(), p, f.ProjectID, perm); err != nil {
+			s.fail(w, r, err)
+			return
+		}
+	} else if f.ReviewerID != p.User.ID && !p.Can(readPermOf(f.EntityType)) {
 		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(readPermOf(f.EntityType))+" required")
 		return
 	}
+	s.writeVisibleReviews(w, r, p, f)
+}
+
+// writeVisibleReviews answers the review requests of a filter in the
+// projects the caller may see: their own requests there, and the others
+// with the read permission of the item's kind in the project.
+func (s *Server) writeVisibleReviews(w http.ResponseWriter, r *http.Request, p *Principal, f store.ReviewFilter) {
 	list, err := s.Store.ListReviewRequests(r.Context(), p.TenantID(), f)
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, listOf(list))
+	vis, err := s.visibleProjects(r.Context(), p)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	out := list[:0]
+	for _, v := range list {
+		perm := readPermOf(v.EntityType)
+		if v.ReviewerID == p.User.ID || v.RequestedBy == p.User.Email {
+			perm = ""
+		}
+		if visibleIn(vis, p, v.ProjectID, perm) {
+			out = append(out, v)
+		}
+	}
+	writeJSON(w, http.StatusOK, listOf(out))
 }
 
 // handleCreateReviews: {"entity_type", "entity_id", "reviewers": [user id,
@@ -101,11 +127,17 @@ func (s *Server) handleCreateReviews(w http.ResponseWriter, r *http.Request, p *
 		s.fail(w, r, badRequest("entity_type must be requirement or test"))
 		return
 	}
-	if !p.Can(writePermOf(req.EntityType)) {
-		writeError(w, http.StatusForbidden, "forbidden", "permission "+string(writePermOf(req.EntityType))+" required")
+	ctx := r.Context()
+	// the item's project: write permission there, and reviewers who see it
+	table := map[string]string{model.KindRequirement: "requirements", model.KindTest: "tests"}[req.EntityType]
+	pid, err := s.Store.ProjectOf(ctx, resourceProjects[table], req.EntityID, p.TenantID())
+	if err == nil {
+		err = s.canIn(ctx, p, pid, writePermOf(req.EntityType))
+	}
+	if err != nil {
+		s.fail(w, r, err)
 		return
 	}
-	ctx := r.Context()
 	if req.Checklist == nil {
 		for _, t := range model.DefaultReviewChecklists[req.EntityType] {
 			req.Checklist = append(req.Checklist, model.ChecklistItem{Text: t})
@@ -118,6 +150,12 @@ func (s *Server) handleCreateReviews(w http.ResponseWriter, r *http.Request, p *
 	if len(ids) < len(req.Reviewers) {
 		s.fail(w, r, badRequest("every reviewer must be a member of the organisation"))
 		return
+	}
+	for _, id := range ids {
+		if !s.userCanSee(ctx, p.TenantID(), pid, id, readPermOf(req.EntityType)) {
+			s.fail(w, r, badRequest("every reviewer must have access to the project (see its sharing)"))
+			return
+		}
 	}
 	created, err := s.Store.CreateReviewRequests(ctx, p.TenantID(), model.ReviewRequest{EntityType: req.EntityType, EntityID: req.EntityID,
 		RequestedBy: p.User.Email, Message: req.Message, Checklist: req.Checklist, DueDate: req.DueDate}, ids)
@@ -392,16 +430,22 @@ func (s *Server) handleBulkReviewRequests(w http.ResponseWriter, r *http.Request
 	}
 	updated, skipped := []item{}, []item{}
 	var mine []model.ReviewRequest
+	vis, err := s.visibleProjects(ctx, p)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	for _, id := range ids {
 		v, err := s.Store.GetReviewRequest(ctx, p.TenantID(), id)
 		if err != nil {
 			s.fail(w, r, err)
 			return
 		}
+		can := func(perm rbac.Permission) bool { return visibleIn(vis, p, v.ProjectID, perm) }
 		own := v.ReviewerID == p.User.ID
-		manage := v.RequestedBy == p.User.Email || p.Can(writePermOf(v.EntityType))
+		manage := v.RequestedBy == p.User.Email || can(writePermOf(v.EntityType))
 		switch {
-		case !own && !manage && !p.Can(readPermOf(v.EntityType)):
+		case !can("") || (!own && !manage && !can(readPermOf(v.EntityType))):
 			s.fail(w, r, fmt.Errorf("review request %s: %w", id, store.ErrNotFound))
 			return
 		case v.Status != "pending":
@@ -491,9 +535,14 @@ func (s *Server) handleInReview(w http.ResponseWriter, r *http.Request, p *Princ
 		name = strings.ToLower(strings.TrimSpace(name))
 		return name != "" && (people[name] == p.User.ID || name == strings.ToLower(p.User.Email))
 	}
+	vis, err := s.visibleProjects(ctx, p)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	out := []inReviewItem{}
 	for _, it := range items {
-		if !p.Can(readPermOf(it.EntityType)) {
+		if !visibleIn(vis, p, it.ProjectID, readPermOf(it.EntityType)) {
 			continue
 		}
 		x := inReviewItem{InReviewItem: it, Reasons: []string{}}
@@ -506,7 +555,7 @@ func (s *Server) handleInReview(w http.ResponseWriter, r *http.Request, p *Princ
 		if id, ok := requested[it.EntityType+":"+it.EntityID]; ok {
 			x.Reasons, x.RequestID = append(x.Reasons, "requested"), id
 		}
-		if p.Can(reviewPerm(it.EntityType)) {
+		if visibleIn(vis, p, it.ProjectID, reviewPerm(it.EntityType)) {
 			x.Reasons = append(x.Reasons, "reviewer")
 		}
 		if len(x.Reasons) > 0 {

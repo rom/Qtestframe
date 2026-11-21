@@ -1,0 +1,907 @@
+area: manufacturing
+prefix: MFG
+group: domain
+name: {en: Industrial manufacturing, sv: Industriell tillverkning}
+description:
+  en: MES functions per ISA-95 (manufacturing orders, dispatching, production tracking, genealogy and recall), OEE per ISO 22400, quality with SPC and non-conformances, machine connectivity over OPC UA and MQTT, predictive maintenance, work instructions, labelling, material handling, machinery safety interfaces, OT security and the Cyber Resilience Act.
+  sv: MES-funktioner enligt ISA-95 (tillverkningsorder, fördelning av arbete, produktionsuppföljning, spårbarhet och återkallelse), OEE enligt ISO 22400, kvalitet med SPC och kvalitetsavvikelser, maskinanslutning via OPC UA och MQTT, förebyggande underhåll, arbetsinstruktioner, märkning, materialhantering, gränssnitt mot maskinsäkerhet, OT-säkerhet och cyberresiliensförordningen.
+
+requirements:
+  - id: MFG-01
+    type: interface
+    obligation: must
+    priority: high
+    tags: [mes, isa-95, manufacturing-order, erp-integration]
+    refs: ["IEC 62264-1", "IEC 62264-2", "IEC 62264-3 production operations management", "ANSI/ISA-95.00.02"]
+    tests: [MFG-T01]
+    en:
+      title: Manufacturing orders received from ERP per ISA-95
+      description: The MES MUST receive manufacturing orders from the ERP system with product, quantity, due date, bill of materials and routing in the ISA-95 object model, and MUST report the acceptance or the rejection with a reason back to the ERP within 60 seconds.
+      rationale: A standard object model at the ERP–MES boundary avoids custom mappings and shows planners at once when an order cannot be produced.
+      criteria:
+        - method: test
+          text: A valid order is accepted and acknowledged within 60 seconds, and an order with an unknown routing is rejected with the reason "unknown routing" sent back to the ERP.
+          threshold: ≤ 60 s
+    sv:
+      title: Tillverkningsorder tas emot från affärssystemet enligt ISA-95
+      description: MES SKA ta emot tillverkningsorder från affärssystemet med produkt, antal, leveransdatum, struktur och operationsföljd i objektmodellen i ISA-95, och meddela godkännande eller avvisning med orsak tillbaka till affärssystemet inom 60 sekunder.
+      rationale: En standardiserad objektmodell mellan affärssystem och MES undviker särskilda mappningar och visar planerarna direkt när en order inte går att tillverka.
+      criteria:
+        - method: test
+          text: En giltig order godkänns och bekräftas inom 60 sekunder, och en order med okänd operationsföljd avvisas med orsaken "okänd operationsföljd" tillbaka till affärssystemet.
+          threshold: ≤ 60 s
+
+  - id: MFG-02
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [dispatching, work-centre, mes]
+    refs: ["IEC 62264-3 production dispatching"]
+    tests: [MFG-T01]
+    en:
+      title: Dispatch list per work centre in sequence
+      description: The MES SHOULD show the operator at a work centre only the operations dispatched to that work centre, in the dispatched sequence, with the next 5 operations visible.
+      rationale: A clear queue at the station reduces set-up changes and stops operators from starting orders the planner did not intend.
+      criteria:
+        - method: test
+          text: After 7 operations are dispatched to work centre 20 and 3 to work centre 30, the station at work centre 20 shows its 7 operations in order with 5 visible, and none of work centre 30's.
+    sv:
+      title: Arbetslista per arbetsstation i ordningsföljd
+      description: MES BÖR visa operatören vid en arbetsstation endast de operationer som fördelats till den arbetsstationen, i den fördelade ordningen, med de 5 nästa operationerna synliga.
+      rationale: En tydlig kö vid stationen minskar antalet omställningar och hindrar operatörer från att starta order som planeraren inte avsåg.
+      criteria:
+        - method: test
+          text: När 7 operationer fördelats till arbetsstation 20 och 3 till arbetsstation 30 visar stationen vid arbetsstation 20 sina 7 operationer i ordning med 5 synliga, och ingen av arbetsstation 30:s.
+
+  - id: MFG-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [production-tracking, reporting, scrap]
+    refs: ["IEC 62264-3 production tracking", "ISO 22400-2:2014"]
+    tests: [MFG-T02]
+    en:
+      title: Completed quantities reported within 60 seconds
+      description: The MES MUST record each completed operation with good quantity, scrap quantity with scrap reason, work centre, operator and time, and MUST make the totals visible on the order within 60 seconds after the report.
+      rationale: Planners, ERP and OEE calculations depend on current quantities, and scrap without a reason cannot be acted upon.
+      criteria:
+        - method: test
+          text: Reporting 95 good and 5 scrap with the reason "dimension" on an order of 100 shows 95 and 5 on the order within 60 seconds, and a scrap report without a reason is rejected.
+          threshold: ≤ 60 s
+    sv:
+      title: Färdiga antal rapporteras inom 60 sekunder
+      description: MES SKA registrera varje avslutad operation med godkänt antal, kasserat antal med kassationsorsak, arbetsstation, operatör och tid, och visa summorna på ordern inom 60 sekunder efter rapporteringen.
+      rationale: Planerare, affärssystem och OEE-beräkningar bygger på aktuella antal, och kassation utan orsak går inte att åtgärda.
+      criteria:
+        - method: test
+          text: När 95 godkända och 5 kasserade med orsaken "mått" rapporteras på en order om 100 visas 95 och 5 på ordern inom 60 sekunder, och en kassationsrapport utan orsak avvisas.
+          threshold: ≤ 60 s
+
+  - id: MFG-04
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [genealogy, traceability, serial-number, lot]
+    refs: ["ISO 9001:2015 §8.5.2", "IEC 62264-3 production tracking"]
+    tests: [MFG-T03]
+    en:
+      title: Genealogy of each serial number and lot
+      description: The MES MUST link each produced serial number or lot to the lots and serial numbers of the components consumed, the machines and tools used, the operators, the recipe or program version and the measured process values.
+      rationale: Without a complete genealogy, a defect found in the field cannot be traced to its cause or to the other products that share it.
+      criteria:
+        - method: test
+          text: For a test product built from 3 component lots and 1 serialised sub-assembly, the genealogy of its serial number shows all 4, the machine, the operator, the program version and the recorded torque values.
+    sv:
+      title: Spårbarhet för varje serienummer och parti
+      description: MES SKA koppla varje tillverkat serienummer eller parti till partierna och serienumren för de förbrukade komponenterna, de maskiner och verktyg som använts, operatörerna, recept- eller programversionen och de uppmätta processvärdena.
+      rationale: Utan fullständig spårbarhet går ett fel som upptäcks hos kund inte att spåra till sin orsak eller till andra produkter med samma fel.
+      criteria:
+        - method: test
+          text: För en testprodukt byggd av 3 komponentpartier och 1 serienumrerad delmontering visar spårbarheten för dess serienummer alla 4, maskinen, operatören, programversionen och de registrerade åtdragningsmomenten.
+
+  - id: MFG-05
+    type: performance
+    obligation: must
+    priority: critical
+    tags: [recall, traceability, where-used]
+    refs: ["ISO 9001:2015 §8.5.2", "ISO 9001:2015 §8.7"]
+    tests: [MFG-T04]
+    en:
+      title: Recall trace of a lot within 15 minutes
+      description: The MES MUST return, within 15 minutes after a quality engineer enters a component lot number, every finished serial number and lot that contains the component with its current location or customer shipment.
+      rationale: In a recall, the time to find the affected products decides how many reach end users and how wide the recall has to be.
+      criteria:
+        - method: test
+          text: For a seeded component lot used in 240 finished products across 3 shipments and 1 warehouse, the forward trace lists all 240 with location or shipment within 15 minutes.
+          threshold: ≤ 15 min
+    sv:
+      title: Spårning av ett parti för återkallelse inom 15 minuter
+      description: MES SKA inom 15 minuter efter att en kvalitetsingenjör angett ett partinummer för en komponent returnera varje färdigt serienummer och parti som innehåller komponenten med aktuell plats eller kundleverans.
+      rationale: Vid en återkallelse avgör tiden det tar att hitta de berörda produkterna hur många som når slutanvändare och hur bred återkallelsen behöver bli.
+      criteria:
+        - method: test
+          text: För ett förberett komponentparti som använts i 240 färdiga produkter i 3 leveranser och 1 lager listar spårningen framåt alla 240 med plats eller leverans inom 15 minuter.
+          threshold: ≤ 15 min
+
+  - id: MFG-06
+    type: functional
+    obligation: must
+    priority: high
+    tags: [oee, kpi, iso-22400]
+    refs: ["ISO 22400-2:2014 OEE index", "ISO 22400-2:2014 availability", "ISO 22400-2:2014 effectiveness", "ISO 22400-2:2014 quality ratio"]
+    tests: [MFG-T05]
+    en:
+      title: OEE calculated from ISO 22400 times and quantities
+      description: The system MUST calculate OEE per work unit and shift as availability × effectiveness × quality ratio, using the planned busy time, actual production time, planned run time per unit, produced quantity and good quantity defined in ISO 22400-2.
+      rationale: OEE figures that use different definitions cannot be compared between lines or plants and lead to wrong improvement priorities.
+      criteria:
+        - method: test
+          text: For a shift with 480 min planned busy time, 400 min actual production time, 0.5 min planned run time per unit, 720 produced and 690 good, the system shows availability 83.3 %, effectiveness 90.0 %, quality ratio 95.8 % and OEE 71.9 %.
+          threshold: ± 0.1 percentage points
+    sv:
+      title: OEE beräknas från tider och antal enligt ISO 22400
+      description: Systemet SKA beräkna OEE per arbetsenhet och skift som tillgänglighet × effektivitet × kvalitetsgrad, utifrån planerad beläggningstid, faktisk produktionstid, planerad cykeltid per enhet, tillverkat antal och godkänt antal enligt definitionerna i ISO 22400-2.
+      rationale: OEE-värden med olika definitioner går inte att jämföra mellan linjer eller fabriker och leder till fel prioriteringar av förbättringar.
+      criteria:
+        - method: test
+          text: För ett skift med 480 min planerad beläggningstid, 400 min faktisk produktionstid, 0,5 min planerad cykeltid per enhet, 720 tillverkade och 690 godkända visar systemet tillgänglighet 83,3 %, effektivitet 90,0 %, kvalitetsgrad 95,8 % och OEE 71,9 %.
+          threshold: ± 0,1 procentenheter
+
+  - id: MFG-07
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [spc, control-chart, quality]
+    refs: ["ISO 7870-2:2023", "ISO 22514-2"]
+    tests: [MFG-T06]
+    en:
+      title: SPC alarm on out-of-control measurements
+      description: The quality module SHOULD plot each critical characteristic on a control chart with limits calculated from at least 25 subgroups, and SHOULD alert the line's quality technician within 1 minute after a point falls outside the control limits or 7 consecutive points fall on one side of the centre line.
+      rationale: Detecting a process shift before parts go out of tolerance prevents scrap and stops defects at the source.
+      criteria:
+        - method: test
+          text: A seeded measurement series with one point beyond the upper control limit and a later run of 7 points below the centre line produces two alerts, each within 1 minute.
+          threshold: ≤ 1 min
+    sv:
+      title: SPC-larm vid mätvärden utanför statistisk styrning
+      description: Kvalitetsmodulen BÖR visa varje kritisk egenskap i ett styrdiagram med gränser beräknade från minst 25 delgrupper, och larma linjens kvalitetstekniker inom 1 minut efter att en punkt hamnat utanför styrgränserna eller 7 punkter i följd hamnat på samma sida om mittlinjen.
+      rationale: Att upptäcka en processförskjutning innan detaljerna hamnar utanför toleransen förhindrar kassation och stoppar fel vid källan.
+      criteria:
+        - method: test
+          text: En förberedd mätserie med en punkt över den övre styrgränsen och senare 7 punkter i följd under mittlinjen ger två larm, vart och ett inom 1 minut.
+          threshold: ≤ 1 min
+
+  - id: MFG-08
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [non-conformance, quality, hold, iso-9001]
+    refs: ["ISO 9001:2015 §8.7", "ISO 9001:2015 §10.2"]
+    tests: [MFG-T07]
+    en:
+      title: Non-conforming material held until disposition
+      description: When a non-conformance is registered against a lot or serial number, the system MUST block that material from consumption and shipment until a user with the quality role records a disposition of use as is, rework, return to supplier or scrap, with the reason.
+      rationale: Non-conforming material that keeps moving reaches customers, and ISO 9001 expects it to be identified and controlled until a decision is made.
+      criteria:
+        - method: test
+          text: A lot with an open non-conformance cannot be picked for an order or shipped, an operator cannot set a disposition, and after the quality user records rework the lot can only go to the rework operation.
+    sv:
+      title: Material med kvalitetsavvikelse spärras tills beslut fattats
+      description: När en kvalitetsavvikelse registreras mot ett parti eller ett serienummer SKA systemet spärra materialet från förbrukning och leverans tills en användare med kvalitetsrollen registrerar ett beslut om användning i befintligt skick, omarbetning, retur till leverantör eller kassation, med orsak.
+      rationale: Material med avvikelse som fortsätter genom flödet når kunderna, och ISO 9001 förutsätter att det identifieras och hålls under kontroll tills ett beslut fattats.
+      criteria:
+        - method: test
+          text: Ett parti med en öppen kvalitetsavvikelse går inte att plocka till en order eller leverera, en operatör kan inte ange ett beslut, och när kvalitetsanvändaren beslutar om omarbetning kan partiet bara gå till omarbetningsoperationen.
+
+  - id: MFG-09
+    type: security
+    obligation: must
+    priority: critical
+    tags: [opc-ua, machine-connectivity, encryption, certificates]
+    refs: ["IEC 62541-2", "IEC 62541-4", "IEC 62443-3-3 SR 3.1"]
+    tests: [MFG-T08]
+    en:
+      title: OPC UA connections signed and encrypted
+      description: The OPC UA client and server components of the system MUST use the security mode SignAndEncrypt with the policy Basic256Sha256 or a stronger one, and MUST reject a connection with security mode None or with a certificate that is not in the trust list.
+      rationale: Unprotected OPC UA lets anyone on the plant network read production data and write setpoints to machines.
+      criteria:
+        - method: test
+          text: A test client connecting with mode None, with mode Sign only and with an untrusted certificate is rejected each time, and a client with SignAndEncrypt and a trusted certificate connects.
+    sv:
+      title: OPC UA-anslutningar signeras och krypteras
+      description: Systemets klient- och serverkomponenter för OPC UA SKA använda säkerhetsläget SignAndEncrypt med policyn Basic256Sha256 eller en starkare, och avvisa en anslutning med säkerhetsläget None eller med ett certifikat som inte finns i förtroendelistan.
+      rationale: Oskyddad OPC UA låter vem som helst på fabriksnätet läsa produktionsdata och skriva börvärden till maskiner.
+      criteria:
+        - method: test
+          text: En testklient som ansluter med läget None, med läget enbart Sign och med ett certifikat som inte är betrott avvisas varje gång, och en klient med SignAndEncrypt och ett betrott certifikat ansluts.
+
+  - id: MFG-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [mqtt, tls, iot, machine-connectivity]
+    refs: ["OASIS MQTT Version 5.0 §5", "IEC 62443-4-2 CR 1.2", "ETSI EN 303 645 provision 5.5-1"]
+    tests: [MFG-T09]
+    en:
+      title: MQTT only over TLS with per-device identity
+      description: The MQTT broker of the system MUST accept connections only over TLS 1.2 or later with a client certificate or credentials unique to each device, and MUST limit each device to publishing in its own topic tree.
+      rationale: An open broker lets one compromised or rogue device read and spoof the data of every other machine on the line.
+      criteria:
+        - method: test
+          text: A plain TCP connection, a TLS 1.1 connection and an anonymous connection are refused, and a device that publishes to another device's topic is denied.
+    sv:
+      title: MQTT bara över TLS med egen identitet per enhet
+      description: Systemets MQTT-mäklare SKA ta emot anslutningar endast över TLS 1.2 eller senare med ett klientcertifikat eller inloggningsuppgifter som är unika för varje enhet, och begränsa varje enhet till att publicera i sitt eget ämnesträd.
+      rationale: En öppen mäklare låter en kapad eller främmande enhet läsa och förfalska data från varje annan maskin på linjen.
+      criteria:
+        - method: test
+          text: En okrypterad TCP-anslutning, en anslutning med TLS 1.1 och en anonym anslutning vägras, och en enhet som publicerar i en annan enhets ämne nekas.
+
+  - id: MFG-11
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [predictive-maintenance, condition-monitoring, alerts]
+    refs: ["ISO 13374-1", "ISO 17359:2018"]
+    tests: [MFG-T10]
+    en:
+      title: Maintenance notification before a predicted limit
+      description: The condition monitoring function SHOULD create a maintenance notification with the asset, the measured trend and the predicted date when the trend of a monitored value is predicted to reach its alarm limit within 7 days.
+      rationale: A planned stop for replacement costs far less than an unplanned breakdown of a production machine.
+      criteria:
+        - method: test
+          text: A seeded vibration trend that reaches the 7.1 mm/s alarm limit in 5 days creates a notification with the predicted date, and a trend that reaches it in 10 days does not.
+          threshold: 7 days ahead
+    sv:
+      title: Underhållsanmälan före en förutsagd gräns
+      description: Funktionen för tillståndsövervakning BÖR skapa en underhållsanmälan med utrustning, uppmätt trend och förutsagt datum när trenden för ett övervakat värde förutsägs nå sin larmgräns inom 7 dagar.
+      rationale: Ett planerat stopp för byte kostar mycket mindre än ett oplanerat haveri i en produktionsmaskin.
+      criteria:
+        - method: test
+          text: En förberedd vibrationstrend som når larmgränsen 7,1 mm/s om 5 dagar skapar en anmälan med förutsagt datum, och en trend som når den om 10 dagar gör det inte.
+          threshold: 7 dagar i förväg
+
+  - id: MFG-12
+    type: functional
+    obligation: must
+    priority: high
+    tags: [work-instructions, revision-control, operator]
+    refs: ["ISO 9001:2015 §7.5.3", "ISO 9001:2015 §8.5.1"]
+    tests: [MFG-T11]
+    en:
+      title: Work instruction revision matches the order
+      description: The station MUST show the released work instruction revision that matches the product variant and revision of the current order, and MUST record the operator's acknowledgement of a new revision before the first operation on it.
+      rationale: An operator working from an outdated instruction builds the product to an outdated design.
+      criteria:
+        - method: test
+          text: Orders for variant A rev C and variant B rev D show their own instruction revisions, a superseded revision cannot be opened from the station, and the first operation after a new revision waits for the acknowledgement.
+    sv:
+      title: Arbetsinstruktionens revision stämmer med ordern
+      description: Stationen SKA visa den frisläppta revision av arbetsinstruktionen som stämmer med produktvariant och revision för den aktuella ordern, och registrera operatörens kvittens av en ny revision före den första operationen enligt den.
+      rationale: En operatör som arbetar efter en gammal instruktion bygger produkten enligt en gammal konstruktion.
+      criteria:
+        - method: test
+          text: Order för variant A rev C och variant B rev D visar var sin instruktionsrevision, en ersatt revision går inte att öppna från stationen, och den första operationen efter en ny revision väntar på kvittensen.
+
+  - id: MFG-13
+    type: functional
+    obligation: must
+    priority: high
+    tags: [labelling, barcode, gs1]
+    refs: ["GS1 General Specifications §2", "ISO/IEC 15415", "ISO/IEC 15416"]
+    tests: [MFG-T12]
+    en:
+      title: Labels from master data verified by scanning
+      description: The system MUST print product and package labels with content taken from the master data and the order, encoded as GS1-128 or GS1 DataMatrix with GTIN, lot or serial number and date, and MUST verify each printed label by scanning it before the product leaves the station.
+      rationale: A wrong or unreadable label breaks traceability and leads to returns, wrong shipments or a failed recall.
+      criteria:
+        - method: test
+          text: Each printed label decodes to the GTIN, lot and date of the order, and a label with a covered barcode stops the line with a message at the station.
+    sv:
+      title: Etiketter från grunddata kontrolleras genom skanning
+      description: Systemet SKA skriva ut produkt- och förpackningsetiketter med innehåll från grunddata och ordern, kodat som GS1-128 eller GS1 DataMatrix med GTIN, parti- eller serienummer och datum, och kontrollera varje utskriven etikett genom att skanna den innan produkten lämnar stationen.
+      rationale: En felaktig eller oläslig etikett bryter spårbarheten och leder till returer, felleveranser eller en misslyckad återkallelse.
+      criteria:
+        - method: test
+          text: Varje utskriven etikett avkodas till orderns GTIN, parti och datum, och en etikett med övertäckt streckkod stoppar linjen med ett meddelande vid stationen.
+
+  - id: MFG-14
+    type: functional
+    obligation: must
+    priority: high
+    tags: [material-handling, inventory, bom, expiry]
+    refs: ["IEC 62264-3 inventory operations management", "ISO 9001:2015 §8.5.4"]
+    tests: [MFG-T13]
+    en:
+      title: Consumed material checked against the bill of materials
+      description: The MES MUST check each scanned material against the bill of materials of the operation and MUST reject a wrong part number, a blocked lot or a lot past its expiry date before it is consumed.
+      rationale: Mounting the wrong or expired material is caught at the scan instead of in the finished product.
+      criteria:
+        - method: test
+          text: Scanning a correct lot is accepted and booked, while a wrong part number, a lot on quality hold and a lot that expired yesterday are each rejected with the reason.
+    sv:
+      title: Förbrukat material kontrolleras mot strukturen
+      description: MES SKA kontrollera varje skannat material mot operationens struktur och avvisa ett fel artikelnummer, ett spärrat parti eller ett parti efter dess sista förbrukningsdag innan det förbrukas.
+      rationale: Fel eller för gammalt material fångas vid skanningen i stället för i den färdiga produkten.
+      criteria:
+        - method: test
+          text: Skanning av ett korrekt parti godtas och bokförs, medan ett fel artikelnummer, ett parti med kvalitetsspärr och ett parti vars sista förbrukningsdag var i går avvisas var för sig med orsak.
+
+  - id: MFG-15
+    type: constraint
+    obligation: must_not
+    priority: critical
+    tags: [machinery-safety, safety-functions, separation]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.2.1", "ISO 13849-1:2023", "IEC 62061:2021"]
+    tests: [MFG-T14]
+    en:
+      title: Production software never overrides machine safety functions
+      description: The MES, the connectivity layer and the maintenance software MUST NOT bypass, mute or reset a safety function of a machine, such as an emergency stop, a light curtain or a safety door, and only read and display its status.
+      rationale: Safety functions are designed and validated to ISO 13849 or IEC 62061 as part of the machine, and a software path around them can expose people to moving parts.
+      criteria:
+        - method: test
+          text: With the safety door open, a start command from the MES does not start the machine, and no function in the software resets the emergency stop or mutes the light curtain.
+        - method: inspection
+          text: The interface specification and the PLC program show that the software has no write access to safety-related signals.
+    sv:
+      title: Produktionsprogramvaran åsidosätter aldrig maskinens säkerhetsfunktioner
+      description: MES, anslutningsskiktet och underhållsprogramvaran SKA INTE förbikoppla, blockera eller återställa en säkerhetsfunktion i en maskin, till exempel ett nödstopp, en ljusridå eller en skyddsdörr, och läser och visar bara dess status.
+      rationale: Säkerhetsfunktionerna är konstruerade och validerade enligt ISO 13849 eller IEC 62061 som en del av maskinen, och en programväg förbi dem kan utsätta människor för rörliga delar.
+      criteria:
+        - method: test
+          text: Med skyddsdörren öppen startar inte maskinen av ett startkommando från MES, och ingen funktion i programvaran återställer nödstoppet eller blockerar ljusridån.
+        - method: inspection
+          text: Gränssnittsspecifikationen och PLC-programmet visar att programvaran saknar skrivåtkomst till säkerhetsrelaterade signaler.
+
+  - id: MFG-16
+    type: security
+    obligation: must
+    priority: critical
+    tags: [ot-security, iec-62443, zones, patching]
+    refs: ["IEC 62443-3-2", "IEC 62443-3-3 SR 5.1", "IEC 62443-2-3"]
+    tests: [MFG-T15]
+    en:
+      title: Shop-floor network segmented into zones
+      description: The production network MUST be divided into security zones per line or cell with conduits that allow only the listed protocols and addresses, and the office network MUST reach the machines only through a demilitarised zone.
+      rationale: Segmentation stops ransomware on an office computer from spreading to the machines and halting production.
+      criteria:
+        - method: test
+          text: A connection from the office network straight to a machine controller is blocked, and a scan from cell 1 reaches nothing in cell 2 outside the listed conduits.
+        - method: inspection
+          text: The firewall rules match the zone and conduit list.
+    sv:
+      title: Verkstadsnätet indelat i zoner
+      description: Produktionsnätet SKA delas in i säkerhetszoner per linje eller cell med kommunikationskanaler som bara tillåter de listade protokollen och adresserna, och kontorsnätet SKA nå maskinerna endast via en demilitariserad zon.
+      rationale: Segmentering hindrar utpressningsprogram på en kontorsdator från att sprida sig till maskinerna och stoppa produktionen.
+      criteria:
+        - method: test
+          text: En anslutning från kontorsnätet direkt till en maskins styrsystem blockeras, och en skanning från cell 1 når inget i cell 2 utanför de listade kanalerna.
+        - method: inspection
+          text: Brandväggsreglerna stämmer med listan över zoner och kommunikationskanaler.
+
+  - id: MFG-17
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [cyber-resilience-act, vulnerability-reporting, products-with-digital-elements]
+    refs: ["Regulation (EU) 2024/2847 Art. 13", "Regulation (EU) 2024/2847 Art. 14", "Regulation (EU) 2024/2847 Annex I Part II"]
+    tests: [MFG-T16]
+    en:
+      title: Vulnerability handling for products with digital elements
+      description: For each product with digital elements that the manufacturer places on the EU market, the manufacturer MUST keep a software bill of materials, MUST provide security updates during the declared support period, and MUST send an early warning of an actively exploited vulnerability to the CSIRT and ENISA within 24 hours after becoming aware of it.
+      rationale: The Cyber Resilience Act makes the manufacturer of a connected machine or device responsible for its vulnerabilities for the whole support period.
+      criteria:
+        - method: review
+          text: For a sample product, the SBOM matches the shipped firmware, the support period is stated in the product information, and the drill record of a simulated exploited vulnerability shows an early warning prepared within 24 hours.
+          threshold: ≤ 24 h
+    sv:
+      title: Hantering av sårbarheter i produkter med digitala element
+      description: För varje produkt med digitala element som tillverkaren släpper ut på EU-marknaden SKA tillverkaren hålla en programvaruförteckning, leverera säkerhetsuppdateringar under den angivna supportperioden och skicka en tidig varning om en aktivt utnyttjad sårbarhet till CSIRT och Enisa inom 24 timmar efter att ha fått kännedom om den.
+      rationale: Cyberresiliensförordningen gör tillverkaren av en uppkopplad maskin eller enhet ansvarig för dess sårbarheter under hela supportperioden.
+      criteria:
+        - method: review
+          text: För en produkt som tas som stickprov stämmer programvaruförteckningen med den levererade firmwaren, supportperioden anges i produktinformationen, och protokollet från en övning med en simulerad utnyttjad sårbarhet visar en tidig varning framtagen inom 24 timmar.
+          threshold: ≤ 24 h
+
+tests:
+  - id: MFG-T01
+    priority: high
+    execution: automated
+    tags: [mes, manufacturing-order, dispatching]
+    refs: ["IEC 62264-2"]
+    en:
+      title: Order from ERP, acknowledgement and dispatch list
+      description: An integration test sends manufacturing orders from an ERP simulator to the MES and checks the replies and the station's dispatch list.
+      preconditions: An ERP simulator, a test product with a valid routing over work centres 20 and 30, and a station client for work centre 20.
+      expected: Valid orders are acknowledged within 60 seconds, the invalid order is rejected with its reason, and the station shows only its own operations in sequence.
+      steps:
+        - action: Send a valid order for 100 units and an order with an unknown routing.
+          expected: The valid order is acknowledged and the other is rejected with "unknown routing", both within 60 seconds.
+          data: routing R-999
+        - action: Dispatch 7 operations to work centre 20 and 3 to work centre 30.
+          expected: The dispatch is accepted.
+        - action: Open the station client for work centre 20.
+          expected: It shows its 7 operations in the dispatched order with the next 5 visible, and none of work centre 30's.
+    sv:
+      title: Order från affärssystemet, bekräftelse och arbetslista
+      description: Ett integrationstest skickar tillverkningsorder från en simulator för affärssystemet till MES och kontrollerar svaren och stationens arbetslista.
+      preconditions: En simulator för affärssystemet, en testprodukt med giltig operationsföljd över arbetsstation 20 och 30, och en stationsklient för arbetsstation 20.
+      expected: Giltiga order bekräftas inom 60 sekunder, den ogiltiga ordern avvisas med orsak, och stationen visar bara sina egna operationer i ordning.
+      steps:
+        - action: Skicka en giltig order på 100 enheter och en order med okänd operationsföljd.
+          expected: Den giltiga ordern bekräftas och den andra avvisas med "okänd operationsföljd", båda inom 60 sekunder.
+          data: operationsföljd R-999
+        - action: Fördela 7 operationer till arbetsstation 20 och 3 till arbetsstation 30.
+          expected: Fördelningen godtas.
+        - action: Öppna stationsklienten för arbetsstation 20.
+          expected: Den visar sina 7 operationer i den fördelade ordningen med de 5 nästa synliga, och ingen av arbetsstation 30:s.
+
+  - id: MFG-T02
+    priority: high
+    execution: manual
+    tags: [production-tracking, scrap]
+    refs: []
+    en:
+      title: Reporting good and scrap quantities on an order
+      description: Reports quantities at a station and checks the order totals.
+      preconditions: A released order of 100 units at work centre 20 and an operator signed in at the station.
+      expected: Quantities appear on the order within 60 seconds, and scrap needs a reason.
+      steps:
+        - action: Report 5 scrap without choosing a reason.
+          expected: The report is rejected and asks for a scrap reason.
+        - action: Report 95 good and 5 scrap with the reason "dimension".
+          expected: The report is accepted.
+          data: 95 good, 5 scrap
+        - action: Open the order in the MES.
+          expected: Within 60 seconds it shows 95 good and 5 scrap with the reason, work centre, operator and time.
+    sv:
+      title: Rapportering av godkända och kasserade antal på en order
+      description: Rapporterar antal vid en station och kontrollerar orderns summor.
+      preconditions: En frisläppt order på 100 enheter vid arbetsstation 20 och en operatör inloggad vid stationen.
+      expected: Antalen syns på ordern inom 60 sekunder, och kassation kräver en orsak.
+      steps:
+        - action: Rapportera 5 kasserade utan att välja orsak.
+          expected: Rapporten avvisas och frågar efter en kassationsorsak.
+        - action: Rapportera 95 godkända och 5 kasserade med orsaken "mått".
+          expected: Rapporten godtas.
+          data: 95 godkända, 5 kasserade
+        - action: Öppna ordern i MES.
+          expected: Inom 60 sekunder visar den 95 godkända och 5 kasserade med orsak, arbetsstation, operatör och tid.
+
+  - id: MFG-T03
+    priority: critical
+    execution: manual
+    tags: [genealogy, traceability]
+    refs: ["ISO 9001:2015 §8.5.2"]
+    en:
+      title: Genealogy of a built test product
+      description: Builds one serialised test product with known components and checks its genealogy.
+      preconditions: Component lots A1, B1 and C1, a serialised sub-assembly, a station with a connected torque tool and a released program version.
+      expected: The genealogy shows every component, the machine, operator, program version and process values.
+      steps:
+        - action: Build the product, scanning the 3 lots and the sub-assembly serial number, and tighten the 4 screws.
+          expected: The product gets a serial number and the build completes.
+          data: lots A1, B1, C1
+        - action: Open the genealogy of the product's serial number.
+          expected: It lists the 3 lots and the sub-assembly serial number.
+        - action: Look at the process details.
+          expected: The machine, operator, program version and the 4 torque values are shown.
+    sv:
+      title: Spårbarhet för en byggd testprodukt
+      description: Bygger en serienumrerad testprodukt med kända komponenter och kontrollerar dess spårbarhet.
+      preconditions: Komponentpartierna A1, B1 och C1, en serienumrerad delmontering, en station med ett anslutet momentverktyg och en frisläppt programversion.
+      expected: Spårbarheten visar varje komponent, maskin, operatör, programversion och processvärden.
+      steps:
+        - action: Bygg produkten, skanna de 3 partierna och delmonteringens serienummer och dra åt de 4 skruvarna.
+          expected: Produkten får ett serienummer och bygget blir klart.
+          data: partier A1, B1, C1
+        - action: Öppna spårbarheten för produktens serienummer.
+          expected: Den visar de 3 partierna och delmonteringens serienummer.
+        - action: Titta på processdetaljerna.
+          expected: Maskin, operatör, programversion och de 4 åtdragningsmomenten visas.
+
+  - id: MFG-T04
+    priority: critical
+    execution: automated
+    tags: [recall, traceability]
+    refs: ["ISO 9001:2015 §8.5.2"]
+    en:
+      title: Forward trace of a seeded component lot
+      description: Seeds a component lot into production history and times the forward trace.
+      preconditions: A test database with at least 12 months of production history and a seeded component lot used in 240 finished products, of which 200 are in 3 customer shipments and 40 in a warehouse.
+      expected: All 240 products are listed with location or shipment within 15 minutes.
+      steps:
+        - action: Start the forward trace for the seeded lot as a quality engineer and note the time.
+          expected: The trace starts.
+          data: 240 products
+        - action: Wait for the result.
+          expected: The result is complete within 15 minutes.
+        - action: Compare the result with the seeded list.
+          expected: All 240 serial numbers are present, 200 with their shipment and customer and 40 with their warehouse location.
+    sv:
+      title: Spårning framåt av ett förberett komponentparti
+      description: Lägger in ett komponentparti i produktionshistoriken och tar tid på spårningen framåt.
+      preconditions: En testdatabas med minst 12 månaders produktionshistorik och ett förberett komponentparti som använts i 240 färdiga produkter, varav 200 i 3 kundleveranser och 40 i ett lager.
+      expected: Alla 240 produkter listas med plats eller leverans inom 15 minuter.
+      steps:
+        - action: Starta spårningen framåt för det förberedda partiet som kvalitetsingenjör och anteckna tiden.
+          expected: Spårningen startar.
+          data: 240 produkter
+        - action: Vänta på resultatet.
+          expected: Resultatet är klart inom 15 minuter.
+        - action: Jämför resultatet med den förberedda listan.
+          expected: Alla 240 serienummer finns, 200 med leverans och kund och 40 med lagerplats.
+
+  - id: MFG-T05
+    priority: high
+    execution: automated
+    tags: [oee, kpi]
+    refs: ["ISO 22400-2:2014"]
+    en:
+      title: OEE for a shift with known times and quantities
+      description: A unit test feeds the OEE calculation with a shift of known values and compares the results with hand-calculated values.
+      preconditions: The OEE calculation function and the shift values in the step data.
+      expected: Each ratio and the OEE match the reference within 0.1 percentage points.
+      steps:
+        - action: Calculate availability from the planned busy time and the actual production time.
+          expected: Availability is 83.3 %.
+          data: 400 / 480 min
+        - action: Calculate effectiveness and quality ratio from the planned run time per unit and the quantities.
+          expected: Effectiveness is 90.0 % and quality ratio 95.8 %.
+          data: 720 × 0.5 min / 400 min; 690 / 720
+        - action: Calculate the OEE.
+          expected: OEE is 71.9 %.
+    sv:
+      title: OEE för ett skift med kända tider och antal
+      description: Ett enhetstest matar OEE-beräkningen med ett skift med kända värden och jämför resultaten med handräknade värden.
+      preconditions: Funktionen för OEE-beräkning och skiftets värden i stegens testdata.
+      expected: Varje kvot och OEE stämmer med referensen inom 0,1 procentenheter.
+      steps:
+        - action: Beräkna tillgängligheten från planerad beläggningstid och faktisk produktionstid.
+          expected: Tillgängligheten är 83,3 %.
+          data: 400 / 480 min
+        - action: Beräkna effektivitet och kvalitetsgrad från planerad cykeltid per enhet och antalen.
+          expected: Effektiviteten är 90,0 % och kvalitetsgraden 95,8 %.
+          data: 720 × 0,5 min / 400 min; 690 / 720
+        - action: Beräkna OEE.
+          expected: OEE är 71,9 %.
+
+  - id: MFG-T06
+    priority: medium
+    execution: automated
+    tags: [spc, control-chart]
+    refs: ["ISO 7870-2:2023"]
+    en:
+      title: SPC alerts on a seeded measurement series
+      description: Feeds a measurement series with known out-of-control patterns into the quality module.
+      preconditions: A characteristic with control limits calculated from 25 subgroups, a measurement simulator and a quality technician with a test e-mail address.
+      expected: Each pattern gives one alert within 1 minute, and in-control data give none.
+      steps:
+        - action: Feed 20 subgroups within the control limits.
+          expected: No alert is raised.
+        - action: Feed one subgroup mean above the upper control limit.
+          expected: An alert reaches the quality technician within 1 minute.
+        - action: Feed 7 consecutive subgroup means below the centre line but within the limits.
+          expected: A second alert for a run of 7 is raised within 1 minute.
+          data: 7 points
+    sv:
+      title: SPC-larm för en förberedd mätserie
+      description: Matar in en mätserie med kända mönster utanför statistisk styrning i kvalitetsmodulen.
+      preconditions: En egenskap med styrgränser beräknade från 25 delgrupper, en mätsimulator och en kvalitetstekniker med en e-postadress för test.
+      expected: Varje mönster ger ett larm inom 1 minut, och data inom styrning ger inget larm.
+      steps:
+        - action: Mata in 20 delgrupper inom styrgränserna.
+          expected: Inget larm uppstår.
+        - action: Mata in ett delgruppsmedelvärde över den övre styrgränsen.
+          expected: Ett larm når kvalitetsteknikern inom 1 minut.
+        - action: Mata in 7 delgruppsmedelvärden i följd under mittlinjen men inom gränserna.
+          expected: Ett andra larm för 7 i följd uppstår inom 1 minut.
+          data: 7 punkter
+
+  - id: MFG-T07
+    priority: critical
+    execution: manual
+    tags: [non-conformance, quality, hold]
+    refs: ["ISO 9001:2015 §8.7"]
+    en:
+      title: Lot on hold until a quality disposition
+      description: Registers a non-conformance on a lot and tries to use, ship and disposition it with different roles.
+      preconditions: A lot in stock, an order that needs it, an operator user and a user with the quality role.
+      expected: The lot is blocked until the quality user decides, and then follows the decision.
+      steps:
+        - action: Register a non-conformance on the lot and try to pick it for the order and to ship it.
+          expected: Both are blocked with a reference to the non-conformance.
+        - action: As the operator, try to set a disposition.
+          expected: The function is not available to the operator.
+        - action: As the quality user, record the disposition rework with a reason, then try to pick the lot for the order.
+          expected: The lot can only be moved to the rework operation, and the order pick is still blocked.
+    sv:
+      title: Parti spärrat tills kvaliteten fattat beslut
+      description: Registrerar en kvalitetsavvikelse på ett parti och försöker använda, leverera och besluta om det med olika roller.
+      preconditions: Ett parti i lager, en order som behöver det, en operatörsanvändare och en användare med kvalitetsrollen.
+      expected: Partiet är spärrat tills kvalitetsanvändaren beslutar och följer därefter beslutet.
+      steps:
+        - action: Registrera en kvalitetsavvikelse på partiet och försök plocka det till ordern och leverera det.
+          expected: Båda stoppas med en hänvisning till kvalitetsavvikelsen.
+        - action: Försök ange ett beslut som operatör.
+          expected: Funktionen är inte tillgänglig för operatören.
+        - action: Registrera beslutet omarbetning med orsak som kvalitetsanvändare och försök sedan plocka partiet till ordern.
+          expected: Partiet kan bara flyttas till omarbetningsoperationen, och plockningen till ordern stoppas fortfarande.
+
+  - id: MFG-T08
+    priority: critical
+    execution: automated
+    tags: [opc-ua, encryption, certificates]
+    refs: ["IEC 62541-2"]
+    en:
+      title: OPC UA security modes and trust list
+      description: A test client connects to the system's OPC UA server with different security settings.
+      preconditions: The system's OPC UA server, a test client with one certificate in the server's trust list and one that is not.
+      expected: Only SignAndEncrypt with a trusted certificate connects.
+      steps:
+        - action: Connect with security mode None.
+          expected: The connection is rejected.
+        - action: Connect with security mode Sign and the trusted certificate.
+          expected: The connection is rejected.
+        - action: Connect with SignAndEncrypt and Basic256Sha256, first with the untrusted certificate and then with the trusted one.
+          expected: The untrusted certificate is rejected and recorded, and the trusted one connects.
+    sv:
+      title: Säkerhetslägen och förtroendelista i OPC UA
+      description: En testklient ansluter till systemets OPC UA-server med olika säkerhetsinställningar.
+      preconditions: Systemets OPC UA-server, en testklient med ett certifikat som finns i serverns förtroendelista och ett som inte gör det.
+      expected: Bara SignAndEncrypt med ett betrott certifikat ansluts.
+      steps:
+        - action: Anslut med säkerhetsläget None.
+          expected: Anslutningen avvisas.
+        - action: Anslut med säkerhetsläget Sign och det betrodda certifikatet.
+          expected: Anslutningen avvisas.
+        - action: Anslut med SignAndEncrypt och Basic256Sha256, först med det obetrodda certifikatet och sedan med det betrodda.
+          expected: Det obetrodda certifikatet avvisas och registreras, och det betrodda ansluts.
+
+  - id: MFG-T09
+    priority: high
+    execution: automated
+    tags: [mqtt, tls]
+    refs: ["OASIS MQTT Version 5.0 §5"]
+    en:
+      title: MQTT broker transport and topic restrictions
+      description: A test script connects to the MQTT broker in different ways and publishes to its own and another device's topics.
+      preconditions: The system's MQTT broker and test identities for device 1 and device 2.
+      expected: Unencrypted, outdated and anonymous connections are refused, and a device can publish only in its own topic tree.
+      steps:
+        - action: Connect over plain TCP on port 1883, then over TLS 1.1.
+          expected: Both connections are refused.
+          data: port 1883, TLS 1.1
+        - action: Connect over TLS 1.2 without credentials.
+          expected: The connection is refused.
+        - action: Connect as device 1 over TLS 1.2 and publish to its own topic tree and to device 2's.
+          expected: The message in its own tree is accepted and the one in device 2's is denied.
+    sv:
+      title: Transport- och ämnesbegränsningar i MQTT-mäklaren
+      description: Ett testskript ansluter till MQTT-mäklaren på olika sätt och publicerar i sina egna och en annan enhets ämnen.
+      preconditions: Systemets MQTT-mäklare och testidentiteter för enhet 1 och enhet 2.
+      expected: Okrypterade, föråldrade och anonyma anslutningar vägras, och en enhet kan bara publicera i sitt eget ämnesträd.
+      steps:
+        - action: Anslut med okrypterad TCP på port 1883 och sedan med TLS 1.1.
+          expected: Båda anslutningarna vägras.
+          data: port 1883, TLS 1.1
+        - action: Anslut med TLS 1.2 utan inloggningsuppgifter.
+          expected: Anslutningen vägras.
+        - action: Anslut som enhet 1 med TLS 1.2 och publicera i dess eget ämnesträd och i enhet 2:s.
+          expected: Meddelandet i det egna trädet godtas och det i enhet 2:s nekas.
+
+  - id: MFG-T10
+    priority: medium
+    execution: automated
+    tags: [predictive-maintenance, condition-monitoring]
+    refs: ["ISO 13374-1"]
+    en:
+      title: Maintenance notifications from vibration trends
+      description: Feeds two seeded vibration trends into the condition monitoring function.
+      preconditions: A monitored motor with a vibration alarm limit of 7.1 mm/s and two trend series that reach the limit in 5 and in 10 days.
+      expected: Only the 5-day trend creates a notification, with the predicted date.
+      steps:
+        - action: Feed the trend that reaches 7.1 mm/s in 5 days.
+          expected: A maintenance notification is created with the motor, the trend and a predicted date 5 days ahead.
+          data: 5 days
+        - action: Feed the trend that reaches the limit in 10 days to a second motor.
+          expected: No notification is created for the second motor.
+          data: 10 days
+    sv:
+      title: Underhållsanmälningar från vibrationstrender
+      description: Matar in två förberedda vibrationstrender i funktionen för tillståndsövervakning.
+      preconditions: En övervakad motor med larmgränsen 7,1 mm/s för vibrationer och två trendserier som når gränsen om 5 respektive 10 dagar.
+      expected: Bara trenden på 5 dagar skapar en anmälan, med förutsagt datum.
+      steps:
+        - action: Mata in trenden som når 7,1 mm/s om 5 dagar.
+          expected: En underhållsanmälan skapas med motorn, trenden och ett förutsagt datum 5 dagar framåt.
+          data: 5 dagar
+        - action: Mata in trenden som når gränsen om 10 dagar för en andra motor.
+          expected: Ingen anmälan skapas för den andra motorn.
+          data: 10 dagar
+
+  - id: MFG-T11
+    priority: high
+    execution: manual
+    tags: [work-instructions, revision-control]
+    refs: ["ISO 9001:2015 §7.5.3"]
+    en:
+      title: Work instruction revisions at the station
+      description: Runs orders for two variants and releases a new instruction revision during production.
+      preconditions: Released instructions for variant A rev C and variant B rev D, a superseded rev B for variant A and an operator at the station.
+      expected: Each order shows its own revision, superseded revisions are not available and a new revision needs acknowledgement.
+      steps:
+        - action: Start an order for variant A rev C, then one for variant B rev D.
+          expected: The station shows the instruction for A rev C and then for B rev D.
+        - action: Try to open the superseded rev B for variant A from the station.
+          expected: The revision cannot be opened.
+        - action: Release a new instruction revision for variant A and start the next operation on an A order.
+          expected: The operation waits until the operator acknowledges the new revision, and the acknowledgement is recorded with name and time.
+    sv:
+      title: Revisioner av arbetsinstruktioner vid stationen
+      description: Kör order för två varianter och frisläpper en ny instruktionsrevision under produktionen.
+      preconditions: Frisläppta instruktioner för variant A rev C och variant B rev D, en ersatt rev B för variant A och en operatör vid stationen.
+      expected: Varje order visar sin egen revision, ersatta revisioner är inte tillgängliga och en ny revision kräver kvittens.
+      steps:
+        - action: Starta en order för variant A rev C och sedan en för variant B rev D.
+          expected: Stationen visar instruktionen för A rev C och sedan för B rev D.
+        - action: Försök öppna den ersatta rev B för variant A från stationen.
+          expected: Revisionen går inte att öppna.
+        - action: Frisläpp en ny instruktionsrevision för variant A och starta nästa operation på en A-order.
+          expected: Operationen väntar tills operatören kvitterar den nya revisionen, och kvittensen registreras med namn och tid.
+
+  - id: MFG-T12
+    priority: high
+    execution: manual
+    tags: [labelling, barcode, gs1]
+    refs: ["GS1 General Specifications §2"]
+    en:
+      title: Printed labels decoded and verified
+      description: Prints labels for an order, decodes them and covers one barcode to test the verification.
+      preconditions: An order with GTIN, lot and date in the master data, a label printer with an inline scanner and a handheld barcode verifier.
+      expected: The labels contain the order data, and an unreadable label stops the line.
+      steps:
+        - action: Print 3 labels for the order and decode them with the handheld verifier.
+          expected: Each label decodes to the order's GTIN, lot and date in GS1 element strings.
+          data: a GTIN-14 from the test master data
+        - action: Cover the barcode of the next label before it passes the inline scanner.
+          expected: The line stops and the station shows that the label could not be verified.
+        - action: Reprint the label.
+          expected: The reprint is verified and the line can be restarted.
+    sv:
+      title: Utskrivna etiketter avkodas och kontrolleras
+      description: Skriver ut etiketter för en order, avkodar dem och täcker över en streckkod för att prova kontrollen.
+      preconditions: En order med GTIN, parti och datum i grunddata, en etikettskrivare med en inbyggd skanner och en handhållen streckkodsverifierare.
+      expected: Etiketterna innehåller orderns uppgifter, och en oläslig etikett stoppar linjen.
+      steps:
+        - action: Skriv ut 3 etiketter för ordern och avkoda dem med den handhållna verifieraren.
+          expected: Varje etikett avkodas till orderns GTIN, parti och datum i GS1-elementsträngar.
+          data: ett GTIN-14 från testets grunddata
+        - action: Täck över streckkoden på nästa etikett innan den passerar den inbyggda skannern.
+          expected: Linjen stannar och stationen visar att etiketten inte gick att kontrollera.
+        - action: Skriv ut etiketten på nytt.
+          expected: Den nya etiketten godkänns och linjen kan startas igen.
+
+  - id: MFG-T13
+    priority: high
+    execution: manual
+    tags: [material-handling, bom]
+    refs: []
+    en:
+      title: Material scans against the bill of materials
+      description: Scans correct and incorrect materials at an operation that consumes one component.
+      preconditions: An operation whose bill of materials lists part P-100, and four labelled materials - a valid lot of P-100, a lot of P-200, a lot of P-100 on quality hold and a lot of P-100 that expired yesterday.
+      expected: Only the valid lot is consumed, and each rejection states its reason.
+      steps:
+        - action: Scan the valid lot of P-100.
+          expected: The lot is accepted and booked to the order.
+        - action: Scan the lot of P-200.
+          expected: It is rejected as a wrong part number.
+          data: P-200
+        - action: Scan the lot on hold, then the expired lot.
+          expected: They are rejected as blocked and as expired.
+    sv:
+      title: Skanning av material mot strukturen
+      description: Skannar korrekta och felaktiga material vid en operation som förbrukar en komponent.
+      preconditions: En operation vars struktur anger artikel P-100, och fyra märkta material - ett giltigt parti av P-100, ett parti av P-200, ett parti av P-100 med kvalitetsspärr och ett parti av P-100 vars sista förbrukningsdag var i går.
+      expected: Bara det giltiga partiet förbrukas, och varje avvisning anger sin orsak.
+      steps:
+        - action: Skanna det giltiga partiet av P-100.
+          expected: Partiet godtas och bokförs på ordern.
+        - action: Skanna partiet av P-200.
+          expected: Det avvisas som fel artikelnummer.
+          data: P-200
+        - action: Skanna det spärrade partiet och sedan det utgångna.
+          expected: De avvisas som spärrat respektive utgånget.
+
+  - id: MFG-T14
+    priority: critical
+    execution: manual
+    tags: [machinery-safety, safety-functions]
+    refs: ["ISO 13849-1:2023"]
+    en:
+      title: Software commands with an active safety function
+      description: Sends start and reset commands from the production software while a safety function is active, and inspects the interface.
+      preconditions: A machine in a test cell with a safety door, an emergency stop and a light curtain, the MES and maintenance software connected, and the interface specification and PLC program.
+      expected: No command from the software overrides a safety function, and the software has no write access to safety signals.
+      steps:
+        - action: Open the safety door and send a start command from the MES.
+          expected: The machine does not start, and the MES shows the safety door as open.
+        - action: Press the emergency stop and look in the MES and the maintenance software for a reset or mute function.
+          expected: Neither software offers a function that resets the emergency stop or mutes the light curtain.
+        - action: Inspect the interface specification and the PLC program for writes from the software to safety-related signals.
+          expected: No such write exists.
+    sv:
+      title: Kommandon från programvaran när en säkerhetsfunktion är aktiv
+      description: Skickar start- och återställningskommandon från produktionsprogramvaran medan en säkerhetsfunktion är aktiv, och granskar gränssnittet.
+      preconditions: En maskin i en testcell med skyddsdörr, nödstopp och ljusridå, MES och underhållsprogramvaran anslutna, och gränssnittsspecifikationen och PLC-programmet.
+      expected: Inget kommando från programvaran åsidosätter en säkerhetsfunktion, och programvaran saknar skrivåtkomst till säkerhetssignaler.
+      steps:
+        - action: Öppna skyddsdörren och skicka ett startkommando från MES.
+          expected: Maskinen startar inte, och MES visar skyddsdörren som öppen.
+        - action: Tryck på nödstoppet och leta i MES och underhållsprogramvaran efter en funktion för återställning eller blockering.
+          expected: Ingen av programvarorna har en funktion som återställer nödstoppet eller blockerar ljusridån.
+        - action: Granska gränssnittsspecifikationen och PLC-programmet efter skrivningar från programvaran till säkerhetsrelaterade signaler.
+          expected: Ingen sådan skrivning finns.
+
+  - id: MFG-T15
+    priority: critical
+    execution: manual
+    tags: [ot-security, zones]
+    refs: ["IEC 62443-3-2"]
+    en:
+      title: Zone separation between office, cells and machines
+      description: Tries to reach machines from the office network and from another cell, and compares the firewall rules with the zone list.
+      preconditions: A test laptop on the office network, a test laptop in cell 1, a machine controller in cell 2 and the zone and conduit list.
+      expected: Nothing outside the listed conduits is reachable, and the rules match the list.
+      steps:
+        - action: From the office laptop, connect to the machine controller in cell 2.
+          expected: The connection is blocked.
+        - action: From the laptop in cell 1, run a port scan of the addresses in cell 2.
+          expected: Only the services listed in the conduits between cell 1 and cell 2 answer.
+        - action: Compare the firewall rules with the zone and conduit list.
+          expected: Each rule matches an entry in the list.
+    sv:
+      title: Zonseparering mellan kontor, celler och maskiner
+      description: Försöker nå maskiner från kontorsnätet och från en annan cell och jämför brandväggsreglerna med zonlistan.
+      preconditions: En testdator på kontorsnätet, en testdator i cell 1, en maskins styrsystem i cell 2 och listan över zoner och kommunikationskanaler.
+      expected: Inget utanför de listade kanalerna går att nå, och reglerna stämmer med listan.
+      steps:
+        - action: Anslut från kontorsdatorn till maskinens styrsystem i cell 2.
+          expected: Anslutningen blockeras.
+        - action: Kör en portskanning av adresserna i cell 2 från datorn i cell 1.
+          expected: Bara tjänsterna som listas i kanalerna mellan cell 1 och cell 2 svarar.
+        - action: Jämför brandväggsreglerna med listan över zoner och kommunikationskanaler.
+          expected: Varje regel motsvarar en post i listan.
+
+  - id: MFG-T16
+    priority: critical
+    execution: manual
+    tags: [cyber-resilience-act, vulnerability-reporting]
+    refs: ["Regulation (EU) 2024/2847 Art. 14"]
+    en:
+      title: Review of CRA vulnerability handling for a product
+      description: Reviews the SBOM, support period and a reporting drill for one product with digital elements.
+      preconditions: A shipped product with its firmware image, its SBOM, its product information and the record of a reporting drill with a simulated actively exploited vulnerability.
+      expected: The SBOM matches the firmware, the support period is stated and the early warning was prepared within 24 hours.
+      steps:
+        - action: Compare the SBOM with the components found in the shipped firmware image.
+          expected: Each component found in the firmware is listed in the SBOM with the same version.
+        - action: Look for the support period in the product information.
+          expected: The end date of security updates is stated.
+        - action: Read the drill record from awareness to the prepared early warning.
+          expected: The early warning to the CSIRT and ENISA was ready within 24 hours.
+          data: ≤ 24 h
+    sv:
+      title: Granskning av hantering av sårbarheter enligt CRA för en produkt
+      description: Granskar programvaruförteckning, supportperiod och en rapporteringsövning för en produkt med digitala element.
+      preconditions: En levererad produkt med firmwareavbild, programvaruförteckning, produktinformation och protokollet från en rapporteringsövning med en simulerad aktivt utnyttjad sårbarhet.
+      expected: Programvaruförteckningen stämmer med firmwaren, supportperioden anges och den tidiga varningen togs fram inom 24 timmar.
+      steps:
+        - action: Jämför programvaruförteckningen med komponenterna som finns i den levererade firmwareavbilden.
+          expected: Varje komponent som finns i firmwaren anges i programvaruförteckningen med samma version.
+        - action: Leta efter supportperioden i produktinformationen.
+          expected: Slutdatum för säkerhetsuppdateringar anges.
+        - action: Läs övningsprotokollet från kännedom till framtagen tidig varning.
+          expected: Den tidiga varningen till CSIRT och Enisa var klar inom 24 timmar.
+          data: ≤ 24 h

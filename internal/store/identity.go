@@ -106,6 +106,14 @@ func (s *Store) DeleteTenant(ctx context.Context, id string) error {
 				return err
 			}
 		}
+		// the tenant's MFA policy (its scope is the tenant id) and pending
+		// sign-ins into it
+		if _, err := c.exec(ctx, `DELETE FROM mfa_policies WHERE scope = ?`, id); err != nil {
+			return err
+		}
+		if _, err := c.exec(ctx, `DELETE FROM mfa_challenges WHERE tenant_id = ?`, id); err != nil {
+			return err
+		}
 		res, err := c.exec(ctx, `DELETE FROM tenants WHERE id = ?`, id)
 		if err != nil {
 			return err
@@ -255,6 +263,11 @@ func (s *Store) RemoveMembership(ctx context.Context, tenantID, userID string) e
 		return mapErr(sql.ErrNoRows, "membership")
 	}
 	_, err = s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE tenant_id = ? AND user_id = ?`, tenantID, userID)
+	if err != nil {
+		return err
+	}
+	// the user's project memberships in the tenant go with it
+	_, err = s.c(ctx).exec(ctx, `DELETE FROM project_members WHERE tenant_id = ? AND member_type = 'user' AND member_id = ?`, tenantID, userID)
 	return err
 }
 
@@ -277,9 +290,10 @@ func (s *Store) CountTenantAdmins(ctx context.Context, tenantID string) (int, er
 
 func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]model.Membership, error) {
 	rows, err := s.c(ctx).query(ctx, `SELECT m.tenant_id, t.slug, t.name, m.user_id, u.email, u.display_name, u.avatar, m.role, m.created_at,
-		CASE WHEN su.user_id IS NULL THEN 0 ELSE 1 END
+		CASE WHEN su.user_id IS NULL THEN 0 ELSE 1 END, CASE WHEN mf.enabled_at IS NULL THEN 0 ELSE 1 END
 		FROM memberships m JOIN tenants t ON t.id = m.tenant_id JOIN users u ON u.id = m.user_id
-		LEFT JOIN scim_users su ON su.tenant_id = m.tenant_id AND su.user_id = m.user_id `+where, arg)
+		LEFT JOIN scim_users su ON su.tenant_id = m.tenant_id AND su.user_id = m.user_id
+		LEFT JOIN user_mfa mf ON mf.user_id = m.user_id `+where, arg)
 	if err != nil {
 		return nil, err
 	}
@@ -287,11 +301,11 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 	out := []model.Membership{}
 	for rows.Next() {
 		var m model.Membership
-		var scim int
-		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &m.CreatedAt, &scim); err != nil {
+		var scim, mfa int
+		if err := rows.Scan(&m.TenantID, &m.TenantSlug, &m.TenantName, &m.UserID, &m.Email, &m.Name, &m.Avatar, &m.Role, &m.CreatedAt, &scim, &mfa); err != nil {
 			return nil, err
 		}
-		m.SCIM = scim == 1
+		m.SCIM, m.MFAEnabled = scim == 1, mfa == 1
 		out = append(out, m)
 	}
 	return out, rows.Err()
@@ -303,8 +317,8 @@ func (s *Store) listMemberships(ctx context.Context, where string, arg any) ([]m
 func (s *Store) CreateSession(ctx context.Context, sess *model.Session) error {
 	sess.CreatedAt = s.now()
 	sess.LastSeen = &sess.CreatedAt
-	_, err := s.c(ctx).exec(ctx, `INSERT INTO sessions (id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		sess.ID, sess.UserID, sess.TenantID, sess.CSRF, sess.CreatedAt, sess.ExpiresAt.UTC(), sess.IP, truncate(sess.UserAgent, 512), sess.CreatedAt)
+	_, err := s.c(ctx).exec(ctx, `INSERT INTO sessions (id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen, mfa_enrol_required) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		sess.ID, sess.UserID, sess.TenantID, sess.CSRF, sess.CreatedAt, sess.ExpiresAt.UTC(), sess.IP, truncate(sess.UserAgent, 512), sess.CreatedAt, sess.MFAEnrolRequired)
 	return mapErr(err, "session")
 }
 
@@ -312,8 +326,8 @@ func (s *Store) CreateSession(ctx context.Context, sess *model.Session) error {
 func (s *Store) GetSession(ctx context.Context, id string) (*model.Session, error) {
 	var sess model.Session
 	var seen sql.NullTime
-	err := s.c(ctx).row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen FROM sessions WHERE id = ?`, id).
-		Scan(&sess.ID, &sess.UserID, &sess.TenantID, &sess.CSRF, &sess.CreatedAt, &sess.ExpiresAt, &sess.IP, &sess.UserAgent, &seen)
+	err := s.c(ctx).row(ctx, `SELECT id, user_id, tenant_id, csrf, created_at, expires_at, ip, user_agent, last_seen, mfa_enrol_required FROM sessions WHERE id = ?`, id).
+		Scan(&sess.ID, &sess.UserID, &sess.TenantID, &sess.CSRF, &sess.CreatedAt, &sess.ExpiresAt, &sess.IP, &sess.UserAgent, &seen, &sess.MFAEnrolRequired)
 	sess.LastSeen = timePtr(seen)
 	if err != nil {
 		return nil, mapErr(err, "session")
@@ -398,13 +412,16 @@ func (s *Store) DeleteOtherSessions(ctx context.Context, userID, keep string) (i
 	return int(n), nil
 }
 
-// PurgeExpiredSessions deletes expired sessions and returns the count.
+// PurgeExpiredSessions deletes expired sessions (and expired pending MFA
+// sign-ins and remembered devices) and returns the count.
 func (s *Store) PurgeExpiredSessions(ctx context.Context) (int64, error) {
 	res, err := s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE expires_at <= ?`, s.now())
 	if err != nil {
 		return 0, err
 	}
-	return res.RowsAffected()
+	n, _ := res.RowsAffected()
+	m, err := s.PurgeExpiredMFA(ctx)
+	return n + m, err
 }
 
 // ---------------------------------------------------------------- tokens

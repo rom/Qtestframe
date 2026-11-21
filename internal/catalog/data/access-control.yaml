@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [authorisation, deny-by-default]
-    refs: ["OWASP ASVS 4.0 V4.1", "OWASP Top 10 2021 A01", "NIST SP 800-53 AC-3"]
+    refs: ["OWASP ASVS 4.0 V4.1", "OWASP Top 10 2021 A01", "NIST SP 800-53 AC-3", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     tests: [ACC-T01]
     en:
       title: Access is denied by default
@@ -38,7 +38,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [authorisation, idor, object-level]
-    refs: ["OWASP ASVS 4.0 V4.2.1", "OWASP Top 10 2021 A01", "OWASP API Security Top 10 2023 API1"]
+    refs: ["OWASP ASVS 4.0 V4.2.1", "OWASP Top 10 2021 A01", "OWASP API Security Top 10 2023 API1", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     tests: [ACC-T02]
     en:
       title: Object-level authorisation on every request
@@ -60,7 +60,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [authorisation, client-side]
-    refs: ["OWASP ASVS 4.0 V4.1.2", "OWASP Top 10 2021 A01"]
+    refs: ["OWASP ASVS 4.0 V4.1.2", "OWASP Top 10 2021 A01", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     tests: [ACC-T03]
     en:
       title: Roles sent by the client are not trusted
@@ -82,7 +82,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [rbac, roles]
-    refs: ["NIST SP 800-53 AC-2", "NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.5.15"]
+    refs: ["NIST SP 800-53 AC-2", "NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.5.15", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)"]
     tests: [ACC-T04]
     en:
       title: Permissions are granted through roles
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [least-privilege, provisioning]
-    refs: ["NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.8.2", "OWASP ASVS 4.0 V4.1.3"]
+    refs: ["NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.8.2", "OWASP ASVS 4.0 V4.1.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)"]
     tests: [ACC-T05]
     en:
       title: New accounts start with the least privileged role
@@ -126,7 +126,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [administrator, privileged-functions]
-    refs: ["OWASP ASVS 4.0 V4.3.1", "NIST SP 800-53 AC-6(9)", "ISO/IEC 27001:2022 A.8.2"]
+    refs: ["OWASP ASVS 4.0 V4.3.1", "NIST SP 800-53 AC-6(9)", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1"]
     tests: [ACC-T06]
     en:
       title: Administration functions need the administrator role
@@ -148,7 +148,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [segregation-of-duties, approval]
-    refs: ["NIST SP 800-53 AC-5", "ISO/IEC 27001:2022 A.5.3"]
+    refs: ["NIST SP 800-53 AC-5", "ISO/IEC 27001:2022 A.5.3", "IEC 62443-3-3 SR 2.1"]
     tests: [ACC-T07]
     en:
       title: Segregation of duties for approvals
@@ -170,7 +170,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [multi-tenancy, tenant-isolation]
-    refs: ["OWASP ASVS 4.0 V4.2", "ISO/IEC 27001:2022 A.8.3", "OWASP Multi-Tenant Security Cheat Sheet"]
+    refs: ["OWASP ASVS 4.0 V4.2", "ISO/IEC 27001:2022 A.8.3", "OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1", "GDPR Art. 32(1)(b)"]
     tests: [ACC-T08]
     en:
       title: Tenant data is isolated
@@ -192,7 +192,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [access-review, reporting]
-    refs: ["ISO/IEC 27001:2022 A.5.18", "NIST SP 800-53 AC-2(3)", "PCI DSS 4.0 Req. 7.2.4"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "NIST SP 800-53 AC-2(3)", "PCI DSS 4.0 Req. 7.2.4", "IEC 62443-3-3 SR 1.3", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)"]
     tests: [ACC-T09]
     en:
       title: Report for periodic access reviews
@@ -214,7 +214,7 @@ requirements:
     obligation: must
     priority: high
     tags: [revocation, roles]
-    refs: ["NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18"]
+    refs: ["NIST SP 800-53 AC-2", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3"]
     tests: [ACC-T10]
     en:
       title: Revoked permissions take effect within one minute
@@ -236,7 +236,7 @@ requirements:
     obligation: may
     priority: low
     tags: [just-in-time, elevation]
-    refs: ["NIST SP 800-53 AC-2(2)", "NIST SP 800-53 AC-6"]
+    refs: ["NIST SP 800-53 AC-2(2)", "NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 2.1"]
     tests: [ACC-T11]
     en:
       title: Time-limited elevated access
@@ -258,7 +258,7 @@ tests:
     priority: critical
     execution: automated
     tags: [authorisation, deny-by-default]
-    refs: ["OWASP ASVS 4.0 V4.1"]
+    refs: ["OWASP ASVS 4.0 V4.1", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     en:
       title: Every endpoint refuses callers without permission
       description: A script calls every route from the API description without a session and with a user who has no role.
@@ -288,7 +288,7 @@ tests:
     priority: critical
     execution: automated
     tags: [idor, object-level]
-    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-04"]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-04", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2024/2847 (CRA) Annex I Part I §2(d)"]
     en:
       title: Records of another user cannot be reached by changing ids
       description: A script requests, updates and deletes records owned by user B while signed in as user A.
@@ -318,7 +318,7 @@ tests:
     priority: critical
     execution: manual
     tags: [authorisation, client-side]
-    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-03"]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-03", "ISO/IEC 27001:2022 A.8.3", "IEC 62443-3-3 SR 2.1"]
     en:
       title: Tampered role values do not grant rights
       description: Uses an intercepting proxy to add or change role values in requests from an ordinary user.
@@ -352,7 +352,7 @@ tests:
     priority: medium
     execution: manual
     tags: [rbac, roles]
-    refs: ["NIST SP 800-53 AC-6"]
+    refs: ["NIST SP 800-53 AC-6", "ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)"]
     en:
       title: Every user permission comes from a role
       description: Reviews the user administration and the permission data model.
@@ -378,7 +378,7 @@ tests:
     priority: high
     execution: manual
     tags: [least-privilege, provisioning]
-    refs: ["NIST SP 800-53 AC-6"]
+    refs: ["NIST SP 800-53 AC-6", "IEC 62443-3-3 SR 2.1", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)"]
     en:
       title: New accounts receive only the least privileged role
       description: Creates accounts through each supported channel and checks their role.
@@ -408,7 +408,7 @@ tests:
     priority: critical
     execution: automated
     tags: [administrator, privileged-functions]
-    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-03"]
+    refs: ["OWASP Web Security Testing Guide WSTG-ATHZ-03", "IEC 62443-3-3 SR 2.1", "IEC 62443-4-2 CR 2.1"]
     en:
       title: Ordinary users cannot call administration functions
       description: A script calls every administration endpoint as an ordinary user and as an administrator.
@@ -434,7 +434,7 @@ tests:
     priority: high
     execution: manual
     tags: [segregation-of-duties, approval]
-    refs: ["NIST SP 800-53 AC-5"]
+    refs: ["NIST SP 800-53 AC-5", "IEC 62443-3-3 SR 2.1"]
     en:
       title: The creator of an item cannot approve it
       description: Checks the four-eyes principle on an item that needs approval.
@@ -464,7 +464,7 @@ tests:
     priority: critical
     execution: automated
     tags: [multi-tenancy, tenant-isolation]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1", "GDPR Art. 32(1)(b)"]
     en:
       title: Cross-tenant access attempts fail
       description: A script signed in to tenant A tries to reach tenant B's data through ids, search, export and reports.
@@ -496,7 +496,7 @@ tests:
     priority: medium
     execution: manual
     tags: [access-review, reporting]
-    refs: ["ISO/IEC 27001:2022 A.5.18"]
+    refs: ["ISO/IEC 27001:2022 A.5.18", "IEC 62443-3-3 SR 1.3", "Regulation (EU) 2022/2554 (DORA) Art. 9(4)(c)"]
     en:
       title: Access review report lists accounts, roles and last sign-in
       description: Exports the access review report and compares it with the user administration.
@@ -522,7 +522,7 @@ tests:
     priority: high
     execution: manual
     tags: [revocation, roles]
-    refs: ["NIST SP 800-53 AC-2"]
+    refs: ["NIST SP 800-53 AC-2", "IEC 62443-3-3 SR 1.3"]
     en:
       title: Removing a role affects an active session
       description: Removes a role and disables an account while the users are signed in.
@@ -548,7 +548,7 @@ tests:
     priority: low
     execution: automated
     tags: [just-in-time, elevation]
-    refs: ["NIST SP 800-53 AC-2(2)"]
+    refs: ["NIST SP 800-53 AC-2(2)", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 2.1"]
     en:
       title: Temporary elevated role is removed automatically
       description: A script grants a temporary role, advances the clock and checks that the role is gone.

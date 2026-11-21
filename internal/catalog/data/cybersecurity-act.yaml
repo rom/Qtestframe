@@ -1,0 +1,743 @@
+area: cybersecurity-act
+prefix: CSL
+group: privacy
+name: {en: Cybersecurity Act (Sweden, NIS2), sv: Cybersäkerhetslagen (NIS2)}
+description:
+  en: Obligations of essential and important entities under the Swedish Cybersecurity Act, which implements the NIS2 directive, covering scope and registration, management accountability and training, risk analysis, incident reporting deadlines, supply chain security, vulnerability handling, cryptography, asset management, multi-factor authentication, business continuity and assessment of the measures.
+  sv: Skyldigheter för väsentliga och viktiga verksamhetsutövare enligt cybersäkerhetslagen, som genomför NIS2-direktivet, med omfattning och anmälan, ledningens ansvar och utbildning, riskanalys, tidsfrister för incidentrapportering, säkerhet i leverantörskedjan, sårbarhetshantering, kryptering, hantering av tillgångar, flerfaktorsautentisering, kontinuitet och utvärdering av åtgärderna.
+
+requirements:
+  - id: CSL-01
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [scope, nis2]
+    refs: ["Cybersäkerhetslag (Swedish NIS2 act)", "Directive (EU) 2022/2555 (NIS2) Art. 2, Art. 3 (scope, essential and important entities)"]
+    tests: [CSL-T01]
+    en:
+      title: Documented assessment of whether the Act applies
+      description: The organisation MUST document whether it is an essential entity, an important entity or outside the scope of the Cybersecurity Act, with the sector, the service and the size figures the assessment is based on, and repeat the assessment at least every 12 months.
+      rationale: The obligations, the supervision and the fines depend on the category, and a company grows into the scope through a new service or an acquisition without anyone noticing.
+      criteria:
+        - method: review
+          text: The assessment names the sector and service, the number of employees and the annual turnover used, the resulting category, and is dated within the last 12 months.
+          threshold: "assessment ≤ 12 months old"
+    sv:
+      title: Dokumenterad bedömning av om lagen gäller
+      description: Organisationen SKA dokumentera om den är en väsentlig verksamhetsutövare, en viktig verksamhetsutövare eller utanför cybersäkerhetslagens tillämpningsområde, med den sektor, den tjänst och de storleksuppgifter som bedömningen bygger på, och göra om bedömningen minst var 12:e månad.
+      rationale: Skyldigheterna, tillsynen och sanktionsavgifterna beror på kategorin, och ett företag växer in i lagens tillämpningsområde genom en ny tjänst eller ett förvärv utan att någon märker det.
+      criteria:
+        - method: review
+          text: Bedömningen anger sektor och tjänst, antal anställda och årsomsättning som har använts, den kategori som blev resultatet, och är daterad inom de senaste 12 månaderna.
+          threshold: "bedömning ≤ 12 månader gammal"
+
+  - id: CSL-02
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [registration, supervisory-authority]
+    refs: ["Cybersäkerhetslag (Swedish NIS2 act)", "Directive (EU) 2022/2555 (NIS2) Art. 3(4)"]
+    tests: [CSL-T01]
+    en:
+      title: Registration with the supervisory authority kept current
+      description: An organisation within the scope of the Cybersecurity Act MUST register with its supervisory authority and report each change of its name, address, contact details, sectors or member states of operation to the authority within 2 weeks of the change.
+      rationale: The authority uses the register to supervise the entity and to reach it during a national incident, and outdated contact details mean that warnings do not arrive.
+      criteria:
+        - method: review
+          text: The registration receipt exists, the registered details match the current ones, and each change of the last 12 months was reported within 2 weeks.
+          threshold: "≤ 2 weeks after a change"
+    sv:
+      title: Anmälan till tillsynsmyndigheten hålls aktuell
+      description: En organisation som omfattas av cybersäkerhetslagen SKA anmäla sig till sin tillsynsmyndighet och meddela myndigheten varje ändring av namn, adress, kontaktuppgifter, sektorer eller medlemsstater där den är verksam inom 2 veckor från ändringen.
+      rationale: Myndigheten använder förteckningen för att utöva tillsyn och för att nå verksamhetsutövaren vid en nationell incident, och inaktuella kontaktuppgifter gör att varningar inte kommer fram.
+      criteria:
+        - method: review
+          text: Kvittot på anmälan finns, de anmälda uppgifterna stämmer med de aktuella, och varje ändring under de senaste 12 månaderna meddelades inom 2 veckor.
+          threshold: "≤ 2 veckor efter en ändring"
+
+  - id: CSL-03
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [governance, management-accountability]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(1)", "Cybersäkerhetslag (Swedish NIS2 act)"]
+    tests: [CSL-T02]
+    en:
+      title: Management body approves the risk management measures
+      description: The management body MUST approve the organisation's cybersecurity risk management measures and their action plan at least every 12 months, with the decision recorded in the minutes of the meeting.
+      rationale: The Act makes the management accountable for the measures, and an approval in the minutes shows that the decision was taken by the people who answer for it.
+      criteria:
+        - method: review
+          text: Minutes from the last 12 months record the management body's approval of the measures and the action plan, with the version of the documents approved.
+          threshold: "approval ≤ 12 months ago"
+    sv:
+      title: Ledningsorganet godkänner riskhanteringsåtgärderna
+      description: Ledningsorganet SKA godkänna organisationens åtgärder för hantering av cybersäkerhetsrisker och handlingsplanen för dem minst var 12:e månad, med beslutet protokollfört.
+      rationale: Lagen gör ledningen ansvarig för åtgärderna, och ett protokollfört godkännande visar att beslutet fattades av dem som svarar för det.
+      criteria:
+        - method: review
+          text: Protokoll från de senaste 12 månaderna visar ledningsorganets godkännande av åtgärderna och handlingsplanen, med versionen av de godkända dokumenten.
+          threshold: "godkännande ≤ 12 månader sedan"
+
+  - id: CSL-04
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [training, management-accountability]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(2)", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)"]
+    tests: [CSL-T02]
+    en:
+      title: Yearly cybersecurity training of the management body
+      description: Each member of the management body MUST complete a cybersecurity training of at least 3 hours on risk assessment and risk management practices at least every 12 months.
+      rationale: Members who approve the measures have to understand the risks well enough to question them, and the Act places a training duty on them personally.
+      criteria:
+        - method: review
+          text: Training records show that each current member completed at least 3 hours of training within the last 12 months, and new members within 3 months of taking office.
+          threshold: "≥ 3 hours every 12 months"
+    sv:
+      title: Årlig cybersäkerhetsutbildning för ledningsorganet
+      description: Varje ledamot i ledningsorganet SKA genomgå en cybersäkerhetsutbildning på minst 3 timmar om riskbedömning och riskhantering minst var 12:e månad.
+      rationale: Ledamöter som godkänner åtgärderna måste förstå riskerna tillräckligt för att ifrågasätta dem, och lagen lägger utbildningsskyldigheten på dem personligen.
+      criteria:
+        - method: review
+          text: Utbildningsregistret visar att varje nuvarande ledamot har genomgått minst 3 timmars utbildning de senaste 12 månaderna, och nya ledamöter inom 3 månader från tillträdet.
+          threshold: "≥ 3 timmar var 12:e månad"
+
+  - id: CSL-05
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [risk-analysis, all-hazards]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(1), Art. 21(2)(a)", "Implementing Regulation (EU) 2024/2690 Annex §2 (risk management policy)"]
+    tests: [CSL-T03]
+    en:
+      title: Risk analysis of the network and information systems
+      description: The organisation MUST keep a risk analysis of the network and information systems behind its regulated services that covers technical, physical and human threats, and update it at least every 12 months and within 1 month after each incident reported under the Cybersecurity Act.
+      rationale: The measures of the Act are to be proportionate to the risks, which is only possible when the risks are known, current and include more than cyber attacks.
+      criteria:
+        - method: review
+          text: The analysis lists the systems of the regulated services with their threats, likelihood, consequence and measures, is dated within 12 months, and was updated within 1 month after each reported incident.
+          threshold: "≤ 12 months; ≤ 1 month after a reported incident"
+    sv:
+      title: Riskanalys av nätverks- och informationssystemen
+      description: Organisationen SKA ha en riskanalys av de nätverks- och informationssystem som de reglerade tjänsterna bygger på, som omfattar tekniska, fysiska och mänskliga hot, och uppdatera den minst var 12:e månad och inom 1 månad efter varje incident som har rapporterats enligt cybersäkerhetslagen.
+      rationale: Lagens åtgärder ska stå i proportion till riskerna, vilket bara går när riskerna är kända, aktuella och omfattar mer än cyberangrepp.
+      criteria:
+        - method: review
+          text: Analysen listar systemen för de reglerade tjänsterna med hot, sannolikhet, konsekvens och åtgärder, är daterad inom 12 månader och uppdaterades inom 1 månad efter varje rapporterad incident.
+          threshold: "≤ 12 månader; ≤ 1 månad efter en rapporterad incident"
+
+  - id: CSL-06
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [incident-reporting, nis2, deadlines]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23(4)", "Cybersäkerhetslag (Swedish NIS2 act)"]
+    tests: [CSL-T04]
+    en:
+      title: Early warning in 24 hours, notification in 72 hours, final report in one month
+      description: For each incident that is reportable under the Cybersecurity Act, the organisation MUST send an early warning within 24 hours, an incident notification within 72 hours and a final report within one month of becoming aware of the incident.
+      rationale: These are the deadlines of the Act for a significant incident, and an organisation that first learns them during the incident misses the first one.
+      criteria:
+        - method: demonstration
+          text: In an exercise, the early warning, the notification and an outline of the final report are produced in time, with the content each stage calls for.
+          threshold: "≤ 24 h, ≤ 72 h, ≤ 1 month"
+        - method: review
+          text: For each reported incident of the last 12 months, the times of the three reports are recorded and within the deadlines.
+    sv:
+      title: Tidig varning inom 24 timmar, incidentanmälan inom 72 timmar, slutrapport inom en månad
+      description: För varje incident som är rapporteringspliktig enligt cybersäkerhetslagen SKA organisationen skicka en tidig varning inom 24 timmar, en incidentanmälan inom 72 timmar och en slutrapport inom en månad från att den fick kännedom om incidenten.
+      rationale: Detta är lagens tidsfrister för en betydande incident, och en organisation som lär sig dem först under incidenten missar den första.
+      criteria:
+        - method: demonstration
+          text: I en övning tas den tidiga varningen, incidentanmälan och ett utkast till slutrapport fram i tid, med det innehåll som varje steg kräver.
+          threshold: "≤ 24 h, ≤ 72 h, ≤ 1 månad"
+        - method: review
+          text: För varje rapporterad incident de senaste 12 månaderna är tidpunkterna för de tre rapporterna dokumenterade och inom tidsfristerna.
+
+  - id: CSL-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [incident-reporting, classification]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23(3)", "Implementing Regulation (EU) 2024/2690 Art. 3 (significant incidents)"]
+    tests: [CSL-T05]
+    en:
+      title: Written criteria for when an incident is reportable
+      description: The incident process MUST contain written criteria for when an incident is reportable under the Cybersecurity Act, with a threshold value for service downtime, number of affected users, financial loss and compromise of data.
+      rationale: The 24-hour clock starts when the organisation becomes aware of a significant incident, so the on-call staff need criteria they can apply at night without a meeting.
+      criteria:
+        - method: inspection
+          text: The process names a threshold value for each of the four factors and the role that decides on reporting.
+        - method: test
+          text: Two people from the on-call rotation, given the same five invented incidents, classify all five as reportable or not in the same way as the process owner.
+    sv:
+      title: Skriftliga kriterier för när en incident ska rapporteras
+      description: Incidentprocessen SKA innehålla skriftliga kriterier för när en incident är rapporteringspliktig enligt cybersäkerhetslagen, med ett gränsvärde för avbrottstid i tjänsten, antal berörda användare, ekonomisk förlust och röjande eller förvanskning av data.
+      rationale: Klockan på 24 timmar startar när organisationen får kännedom om en betydande incident, så jourpersonalen behöver kriterier som går att tillämpa på natten utan ett möte.
+      criteria:
+        - method: inspection
+          text: Processen anger ett gränsvärde för var och en av de fyra faktorerna och den roll som beslutar om rapportering.
+        - method: test
+          text: Två personer från jourschemat som får samma fem påhittade incidenter bedömer alla fem som rapporteringspliktiga eller inte på samma sätt som processägaren.
+
+  - id: CSL-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [supply-chain, suppliers]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d), Art. 21(3)", "Implementing Regulation (EU) 2024/2690 Annex §5 (supply chain security)"]
+    tests: [CSL-T06]
+    en:
+      title: Security assessment and contract terms for critical ICT suppliers
+      description: The organisation MUST assess the cybersecurity of each ICT supplier that it has ranked as critical before signing the contract and at least every 12 months, and include in the contract security requirements, incident notification to the organisation within 24 hours and a right to audit.
+      rationale: Attacks through suppliers bypass the organisation's own protection, and without contract terms the organisation learns about a supplier's incident from the news.
+      criteria:
+        - method: review
+          text: Each critical ICT supplier has an assessment from before the contract and one within the last 12 months, and its contract contains the three terms.
+          threshold: "≤ 12 months; notification ≤ 24 h"
+    sv:
+      title: Säkerhetsbedömning och avtalsvillkor för kritiska IKT-leverantörer
+      description: Organisationen SKA bedöma cybersäkerheten hos varje IKT-leverantör som den har klassat som kritisk innan avtalet undertecknas och minst var 12:e månad, och ta in säkerhetskrav, underrättelse till organisationen om incidenter inom 24 timmar och rätt till revision i avtalet.
+      rationale: Angrepp via leverantörer går förbi organisationens eget skydd, och utan avtalsvillkor får organisationen veta om en leverantörs incident genom nyheterna.
+      criteria:
+        - method: review
+          text: Varje kritisk IKT-leverantör har en bedömning från före avtalet och en från de senaste 12 månaderna, och dess avtal innehåller de tre villkoren.
+          threshold: "≤ 12 månader; underrättelse ≤ 24 h"
+
+  - id: CSL-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [vulnerability-handling, vulnerability-disclosure]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(e), Art. 12 (coordinated vulnerability disclosure)", "Implementing Regulation (EU) 2024/2690 Annex §6 (security in acquisition, development and maintenance)", "ISO/IEC 30111:2019", "ISO/IEC 29147:2018"]
+    tests: [CSL-T07, VULH-T01, VDP-T01]
+    en:
+      title: Documented vulnerability handling and disclosure
+      description: The organisation MUST handle vulnerabilities in its network and information systems through a documented process with a published reporting channel, triage within 5 working days of a report, remediation deadlines by severity and coordination with the national CSIRT (CERT-SE) when other organisations are affected.
+      rationale: The Act lists vulnerability handling and disclosure among the minimum measures, and the national CSIRT acts as coordinator when a vulnerability concerns more than one party.
+      criteria:
+        - method: inspection
+          text: The process document contains the four parts, and the reporting channel is reachable from the organisation's public website.
+        - method: review
+          text: Each vulnerability report of the last 12 months was triaged within 5 working days and has a severity and a deadline.
+          threshold: "triage ≤ 5 working days"
+    sv:
+      title: Dokumenterad hantering och offentliggörande av sårbarheter
+      description: Organisationen SKA hantera sårbarheter i sina nätverks- och informationssystem genom en dokumenterad process med en publicerad kanal för rapporter, sortering inom 5 arbetsdagar från en rapport, tidsgränser för åtgärd efter allvarlighetsgrad och samordning med den nationella CSIRT-enheten (CERT-SE) när andra organisationer berörs.
+      rationale: Lagen räknar sårbarhetshantering och offentliggörande av sårbarheter till miniminivån av åtgärder, och den nationella CSIRT-enheten samordnar när en sårbarhet berör fler än en part.
+      criteria:
+        - method: inspection
+          text: Processdokumentet innehåller de fyra delarna, och kanalen för rapporter går att nå från organisationens publika webbplats.
+        - method: review
+          text: Varje sårbarhetsrapport de senaste 12 månaderna sorterades inom 5 arbetsdagar och har en allvarlighetsgrad och en tidsgräns.
+          threshold: "sortering ≤ 5 arbetsdagar"
+
+  - id: CSL-10
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [cryptography, policy, tls]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(h)", "Implementing Regulation (EU) 2024/2690 Annex §9 (cryptography)"]
+    tests: [CSL-T08]
+    en:
+      title: Cryptography policy that the systems follow
+      description: The organisation MUST keep a cryptography policy that names the permitted algorithms and protocol versions, the minimum key lengths, the key lifetimes and the roles that manage keys, review it at least every 12 months and configure its externally reachable services to accept only the protocols the policy permits.
+      rationale: Cryptography protects data only while the algorithms are current and used consistently, and a policy that the services do not follow gives no protection.
+      criteria:
+        - method: inspection
+          text: The policy contains the four parts and is dated within the last 12 months.
+        - method: test
+          text: A scan of each externally reachable service finds no protocol version or cipher that the policy does not permit.
+    sv:
+      title: Krypteringspolicy som systemen följer
+      description: Organisationen SKA ha en krypteringspolicy som anger tillåtna algoritmer och protokollversioner, minsta nyckellängder, nycklarnas livslängd och de roller som hanterar nycklar, granska den minst var 12:e månad och konfigurera sina externt nåbara tjänster så att de bara godtar de protokoll som policyn tillåter.
+      rationale: Kryptering skyddar data bara så länge algoritmerna är aktuella och används konsekvent, och en policy som tjänsterna inte följer ger inget skydd.
+      criteria:
+        - method: inspection
+          text: Policyn innehåller de fyra delarna och är daterad inom de senaste 12 månaderna.
+        - method: test
+          text: En skanning av varje externt nåbar tjänst hittar ingen protokollversion eller chiffersvit som policyn inte tillåter.
+
+  - id: CSL-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [asset-management, inventory]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(i)", "Implementing Regulation (EU) 2024/2690 Annex §12 (asset management)"]
+    tests: [CSL-T09]
+    en:
+      title: Asset inventory reconciled every 3 months
+      description: The organisation MUST keep an inventory of the hardware, software, data and external services that support its regulated services, with a named owner for each item, and reconcile it with an automated network discovery at least every 3 months.
+      rationale: Systems that are not in the inventory are not patched, monitored or covered by the risk analysis, and they are a common way in for attackers.
+      criteria:
+        - method: test
+          text: A network discovery finds no active device or service in the networks of the regulated services that is missing from the inventory.
+        - method: review
+          text: Each item has an owner, and the records show a reconciliation in each of the last 4 quarters.
+          threshold: "every 3 months"
+    sv:
+      title: Förteckning över tillgångar som stäms av var 3:e månad
+      description: Organisationen SKA ha en förteckning över den maskinvara, programvara, data och de externa tjänster som de reglerade tjänsterna bygger på, med en namngiven ägare för varje post, och stämma av den mot en automatisk nätverksinventering minst var 3:e månad.
+      rationale: System som inte finns i förteckningen uppdateras, övervakas och riskbedöms inte, och de är en vanlig väg in för angripare.
+      criteria:
+        - method: test
+          text: En nätverksinventering hittar ingen aktiv enhet eller tjänst i de reglerade tjänsternas nät som saknas i förteckningen.
+        - method: review
+          text: Varje post har en ägare, och dokumentationen visar en avstämning i vart och ett av de senaste 4 kvartalen.
+          threshold: "var 3:e månad"
+
+  - id: CSL-12
+    type: security
+    obligation: must
+    priority: critical
+    tags: [mfa, remote-access, administrators]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(j)", "Implementing Regulation (EU) 2024/2690 Annex §11 (access control)"]
+    tests: [CSL-T10]
+    en:
+      title: Multi-factor authentication for administrators and remote access
+      description: The organisation MUST require multi-factor authentication for each sign-in to an administrative account and for each remote access to the internal network of its regulated services.
+      rationale: Stolen passwords are the most common way into administrative accounts, and a second factor stops the attack even when the password is known.
+      criteria:
+        - method: test
+          text: A sign-in to an administrative account and a remote access connection with a correct password and no second factor are both refused.
+        - method: inspection
+          text: The identity provider's configuration lists no administrative account or remote access group excluded from multi-factor authentication.
+    sv:
+      title: Flerfaktorsautentisering för administratörer och fjärråtkomst
+      description: Organisationen SKA kräva flerfaktorsautentisering vid varje inloggning på ett administratörskonto och vid varje fjärråtkomst till det interna nätet för de reglerade tjänsterna.
+      rationale: Stulna lösenord är den vanligaste vägen in i administratörskonton, och en andra faktor stoppar angreppet även när lösenordet är känt.
+      criteria:
+        - method: test
+          text: En inloggning på ett administratörskonto och en fjärranslutning med rätt lösenord men utan andra faktor nekas båda.
+        - method: inspection
+          text: Identitetstjänstens konfiguration listar inget administratörskonto eller ingen grupp för fjärråtkomst som är undantagen från flerfaktorsautentisering.
+
+  - id: CSL-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [business-continuity, backup, restore]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(c)", "Implementing Regulation (EU) 2024/2690 Annex §4 (business continuity and crisis management)"]
+    tests: [CSL-T11]
+    en:
+      title: Continuity plan and tested restore every 6 months
+      description: The organisation MUST keep a business continuity and disaster recovery plan for the systems of its regulated services and restore the backup of each critical system in a test at least every 6 months, within the recovery time stated in the plan.
+      rationale: A plan and backups that have never been tried tend to fail during the crisis they were made for.
+      criteria:
+        - method: review
+          text: The plan names recovery time and recovery point for each critical system, and the records show a restore test of each within the last 6 months.
+          threshold: "restore test every 6 months"
+        - method: demonstration
+          text: A restore of one critical system chosen by the assessor completes within the plan's recovery time.
+    sv:
+      title: Kontinuitetsplan och testad återställning var 6:e månad
+      description: Organisationen SKA ha en plan för kontinuitet och katastrofåterställning för de reglerade tjänsternas system och i ett test återställa säkerhetskopian av varje kritiskt system minst var 6:e månad, inom den återställningstid som planen anger.
+      rationale: En plan och säkerhetskopior som aldrig har prövats brukar fallera under den kris de gjordes för.
+      criteria:
+        - method: review
+          text: Planen anger återställningstid och återställningspunkt för varje kritiskt system, och dokumentationen visar ett återställningstest av vart och ett de senaste 6 månaderna.
+          threshold: "återställningstest var 6:e månad"
+        - method: demonstration
+          text: En återställning av ett kritiskt system som granskaren väljer blir klar inom planens återställningstid.
+
+  - id: CSL-14
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [effectiveness, audit]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 21(2)(f)", "Implementing Regulation (EU) 2024/2690 Annex §7 (assessing the effectiveness of measures)"]
+    tests: [CSL-T12]
+    en:
+      title: Yearly assessment of the effectiveness of the measures
+      description: The organisation MUST assess the effectiveness of its cybersecurity risk management measures at least every 12 months through an internal or external audit, and give each finding an owner and a deadline that is followed up until the finding is closed.
+      rationale: Measures that exist on paper do not show whether they work, and an assessment without follow-up finds the same gaps every year.
+      criteria:
+        - method: review
+          text: An audit report from the last 12 months exists, each finding has an owner and a deadline, and no finding is open past its deadline without a decision by the management body.
+          threshold: "audit ≤ 12 months ago"
+    sv:
+      title: Årlig utvärdering av åtgärdernas effektivitet
+      description: Organisationen SKA utvärdera effektiviteten i sina åtgärder för hantering av cybersäkerhetsrisker minst var 12:e månad genom en intern eller extern revision, och ge varje iakttagelse en ägare och en tidsgräns som följs upp tills iakttagelsen är stängd.
+      rationale: Åtgärder som finns på papper visar inte om de fungerar, och en utvärdering utan uppföljning hittar samma brister varje år.
+      criteria:
+        - method: review
+          text: En revisionsrapport från de senaste 12 månaderna finns, varje iakttagelse har en ägare och en tidsgräns, och ingen iakttagelse är öppen efter sin tidsgräns utan ett beslut av ledningsorganet.
+          threshold: "revision ≤ 12 månader sedan"
+
+tests:
+  - id: CSL-T01
+    priority: high
+    execution: manual
+    tags: [scope, registration]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 3"]
+    en:
+      title: Scope assessment and registration match the current organisation
+      description: Reviews the scope assessment and the registration with the supervisory authority against the organisation's current facts.
+      preconditions: The latest scope assessment; the registration receipt and the registered details; the latest annual report; the list of changes to name, address, contacts and services in the last 12 months.
+      expected: The assessment is current and correct, the registration matches and each change was reported within 2 weeks.
+      steps:
+        - action: Compare the employee count, turnover, sector and services in the assessment with the latest annual report and the service list.
+          expected: The figures and services match, and the assessment is dated within the last 12 months.
+        - action: Compare the registered details with the organisation's current name, address, contact details, sectors and member states.
+          expected: All registered details are current.
+        - action: For each change of the last 12 months, compare the date of the change with the date it was reported to the authority.
+          expected: Each change was reported within 2 weeks.
+    sv:
+      title: Bedömningen av tillämpningsområdet och anmälan stämmer med organisationen i dag
+      description: Granskar bedömningen av tillämpningsområdet och anmälan till tillsynsmyndigheten mot organisationens aktuella förhållanden.
+      preconditions: Den senaste bedömningen av tillämpningsområdet; kvittot på anmälan och de anmälda uppgifterna; den senaste årsredovisningen; listan över ändringar av namn, adress, kontakter och tjänster de senaste 12 månaderna.
+      expected: Bedömningen är aktuell och riktig, anmälan stämmer och varje ändring meddelades inom 2 veckor.
+      steps:
+        - action: Jämför antal anställda, omsättning, sektor och tjänster i bedömningen med den senaste årsredovisningen och tjänstelistan.
+          expected: Uppgifterna och tjänsterna stämmer, och bedömningen är daterad inom de senaste 12 månaderna.
+        - action: Jämför de anmälda uppgifterna med organisationens aktuella namn, adress, kontaktuppgifter, sektorer och medlemsstater.
+          expected: Alla anmälda uppgifter är aktuella.
+        - action: Jämför för varje ändring de senaste 12 månaderna datumet för ändringen med datumet då den meddelades myndigheten.
+          expected: Varje ändring meddelades inom 2 veckor.
+
+  - id: CSL-T02
+    priority: high
+    execution: manual
+    tags: [governance, training]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20"]
+    en:
+      title: Management approval and training records
+      description: Reviews the minutes and training records of the management body.
+      preconditions: The minutes of the management body for the last 12 months; the list of current members with their start dates; the training records.
+      expected: The measures were approved within 12 months and each member has the training.
+      steps:
+        - action: Find the decision approving the risk management measures and the action plan in the minutes.
+          expected: The decision is dated within the last 12 months and names the versions of the documents.
+        - action: Compare the approved versions with the versions in force.
+          expected: The versions in force are the approved ones or later versions that were also approved.
+        - action: For each current member, find the training completed in the last 12 months and its length.
+          expected: Each member has at least 3 hours of training, and each member who joined more than 3 months ago completed it within 3 months of joining.
+    sv:
+      title: Ledningens godkännande och utbildningsregister
+      description: Granskar ledningsorganets protokoll och utbildningsregister.
+      preconditions: Ledningsorganets protokoll för de senaste 12 månaderna; listan över nuvarande ledamöter med datum för tillträde; utbildningsregistret.
+      expected: Åtgärderna godkändes inom 12 månader och varje ledamot har utbildningen.
+      steps:
+        - action: Leta upp beslutet som godkänner riskhanteringsåtgärderna och handlingsplanen i protokollen.
+          expected: Beslutet är daterat inom de senaste 12 månaderna och anger dokumentens versioner.
+        - action: Jämför de godkända versionerna med de versioner som gäller.
+          expected: De gällande versionerna är de godkända eller senare versioner som också har godkänts.
+        - action: Leta för varje nuvarande ledamot upp utbildningen de senaste 12 månaderna och dess längd.
+          expected: Varje ledamot har minst 3 timmars utbildning, och ledamöter som tillträdde för mer än 3 månader sedan har genomgått den inom 3 månader från tillträdet.
+
+  - id: CSL-T03
+    priority: high
+    execution: manual
+    tags: [risk-analysis, review]
+    refs: []
+    en:
+      title: Risk analysis covers the systems and is updated after incidents
+      description: Compares the risk analysis with the system inventory and the list of reported incidents.
+      preconditions: The current risk analysis with its version history; the inventory of systems behind the regulated services; the list of incidents reported under the Act in the last 12 months.
+      expected: Each system is in the analysis, the analysis is current and it was updated after each reported incident.
+      steps:
+        - action: For each system in the inventory, find it in the risk analysis.
+          expected: Each system is listed with threats, likelihood, consequence and measures.
+        - action: Check that the threats include at least one technical, one physical and one human threat.
+          expected: All three kinds are present.
+        - action: Compare the dates of the analysis versions with the dates of the reported incidents.
+          expected: The latest version is within 12 months, and a version exists within 1 month after each reported incident.
+    sv:
+      title: Riskanalysen omfattar systemen och uppdateras efter incidenter
+      description: Jämför riskanalysen med förteckningen över system och listan över rapporterade incidenter.
+      preconditions: Den gällande riskanalysen med versionshistorik; förteckningen över de system som de reglerade tjänsterna bygger på; listan över incidenter som rapporterats enligt lagen de senaste 12 månaderna.
+      expected: Varje system finns i analysen, analysen är aktuell och den uppdaterades efter varje rapporterad incident.
+      steps:
+        - action: Leta upp varje system i förteckningen i riskanalysen.
+          expected: Varje system finns med hot, sannolikhet, konsekvens och åtgärder.
+        - action: Kontrollera att hoten omfattar minst ett tekniskt, ett fysiskt och ett mänskligt hot.
+          expected: Alla tre slagen finns med.
+        - action: Jämför datumen för analysens versioner med datumen för de rapporterade incidenterna.
+          expected: Den senaste versionen är från de senaste 12 månaderna, och det finns en version inom 1 månad efter varje rapporterad incident.
+
+  - id: CSL-T04
+    priority: critical
+    execution: manual
+    tags: [incident-reporting, exercise, deadlines]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 23(4)"]
+    en:
+      title: Exercise of the three reporting stages
+      description: A tabletop exercise of a reportable incident with simulated time, producing the early warning, the notification and the final report outline.
+      preconditions: The incident team and the person who decides on reporting are available; an invented scenario in which ransomware stops a regulated service for 6 hours; the reporting forms of the receiving authority.
+      expected: Each report is ready within its deadline in simulated time and has the content of its stage.
+      steps:
+        - action: Present the scenario and set the simulated time of awareness.
+          expected: The team decides within 1 simulated hour that the incident is reportable and records the time.
+        - action: Let the team prepare the early warning.
+          expected: It is ready within 24 simulated hours and states whether the incident is suspected to be caused by unlawful or malicious acts and whether it can affect other member states.
+        - action: Advance the scenario and let the team prepare the incident notification.
+          expected: It is ready within 72 simulated hours and contains an initial assessment of severity and impact and the indicators of compromise known so far.
+        - action: Advance to the end of the incident and let the team outline the final report.
+          expected: The outline is ready within one simulated month and covers a detailed description, the root cause, the mitigation measures and any cross-border impact.
+    sv:
+      title: Övning av rapporteringens tre steg
+      description: En skrivbordsövning av en rapporteringspliktig incident med simulerad tid, där den tidiga varningen, incidentanmälan och utkastet till slutrapport tas fram.
+      preconditions: Incidentteamet och den person som beslutar om rapportering är tillgängliga; ett påhittat scenario där utpressningsprogram stoppar en reglerad tjänst i 6 timmar; den mottagande myndighetens formulär för rapportering.
+      expected: Varje rapport är klar inom sin tidsfrist i simulerad tid och har innehållet för sitt steg.
+      steps:
+        - action: Presentera scenariot och sätt den simulerade tidpunkten för kännedom.
+          expected: Teamet beslutar inom 1 simulerad timme att incidenten är rapporteringspliktig och noterar tiden.
+        - action: Låt teamet förbereda den tidiga varningen.
+          expected: Den är klar inom 24 simulerade timmar och anger om incidenten misstänks vara orsakad av olagliga eller skadliga handlingar och om den kan påverka andra medlemsstater.
+        - action: För scenariot framåt och låt teamet förbereda incidentanmälan.
+          expected: Den är klar inom 72 simulerade timmar och innehåller en första bedömning av allvar och påverkan och de indikatorer på intrång som är kända hittills.
+        - action: För scenariot fram till incidentens slut och låt teamet göra ett utkast till slutrapport.
+          expected: Utkastet är klart inom en simulerad månad och omfattar en utförlig beskrivning, grundorsaken, de begränsande åtgärderna och eventuell gränsöverskridande påverkan.
+
+  - id: CSL-T05
+    priority: high
+    execution: manual
+    tags: [incident-reporting, classification]
+    refs: ["Implementing Regulation (EU) 2024/2690 Art. 3"]
+    en:
+      title: On-call staff classify invented incidents with the criteria
+      description: Gives two people from the on-call rotation five invented incidents and compares their classification with the process owner's.
+      preconditions: The incident process with the reporting criteria; two people from the on-call rotation who did not write the criteria; five invented incidents prepared by the process owner with the owner's classification.
+      expected: Both people classify all five incidents in the same way as the process owner.
+      steps:
+        - action: Check the criteria in the process.
+          expected: There is a threshold value for downtime, affected users, financial loss and compromise of data, and a named role that decides.
+        - action: Give each person the five incidents separately and let each classify them as reportable or not using only the process.
+          expected: Each person finishes within 30 minutes and names the criterion used for each incident.
+          data: "For example: a 4-hour outage of a regulated service; a leak of 200 customer records; a failed phishing attempt"
+        - action: Compare the results with the process owner's classification.
+          expected: All ten classifications match.
+    sv:
+      title: Jourpersonal bedömer påhittade incidenter med kriterierna
+      description: Ger två personer från jourschemat fem påhittade incidenter och jämför deras bedömning med processägarens.
+      preconditions: Incidentprocessen med kriterierna för rapportering; två personer från jourschemat som inte har skrivit kriterierna; fem påhittade incidenter som processägaren har tagit fram med sin egen bedömning.
+      expected: Båda personerna bedömer alla fem incidenterna på samma sätt som processägaren.
+      steps:
+        - action: Kontrollera kriterierna i processen.
+          expected: Det finns ett gränsvärde för avbrottstid, berörda användare, ekonomisk förlust och röjande eller förvanskning av data, och en namngiven roll som beslutar.
+        - action: Ge var och en av personerna de fem incidenterna var för sig och låt dem bedöma om de är rapporteringspliktiga med enbart processen som stöd.
+          expected: Var och en blir klar inom 30 minuter och anger vilket kriterium som användes för varje incident.
+          data: "Till exempel: ett avbrott på 4 timmar i en reglerad tjänst; ett läckage av 200 kundposter; ett misslyckat nätfiskeförsök"
+        - action: Jämför resultaten med processägarens bedömning.
+          expected: Alla tio bedömningarna stämmer.
+
+  - id: CSL-T06
+    priority: high
+    execution: manual
+    tags: [supply-chain, suppliers, contracts]
+    refs: []
+    en:
+      title: Critical ICT suppliers have assessments and contract terms
+      description: Reviews the assessments and contracts of the suppliers ranked as critical.
+      preconditions: The supplier register with the ranking of each ICT supplier; the security assessments; the contracts of the critical suppliers.
+      expected: Each critical supplier has both assessments and the three contract terms.
+      steps:
+        - action: List the ICT suppliers ranked as critical.
+          expected: The list includes each supplier that hosts, operates or develops a system of the regulated services.
+        - action: For each critical supplier, find the assessment from before the contract and the latest one.
+          expected: Both exist, and the latest is dated within the last 12 months.
+        - action: In each contract, find the security requirements, the incident notification term and the audit right.
+          expected: All three are present, and the notification term is at most 24 hours.
+    sv:
+      title: Kritiska IKT-leverantörer har bedömningar och avtalsvillkor
+      description: Granskar bedömningarna och avtalen för de leverantörer som har klassats som kritiska.
+      preconditions: Leverantörsregistret med klassningen av varje IKT-leverantör; säkerhetsbedömningarna; avtalen med de kritiska leverantörerna.
+      expected: Varje kritisk leverantör har båda bedömningarna och de tre avtalsvillkoren.
+      steps:
+        - action: Lista de IKT-leverantörer som har klassats som kritiska.
+          expected: Listan omfattar varje leverantör som är värd för, driver eller utvecklar ett system för de reglerade tjänsterna.
+        - action: Leta för varje kritisk leverantör upp bedömningen från före avtalet och den senaste bedömningen.
+          expected: Båda finns, och den senaste är daterad inom de senaste 12 månaderna.
+        - action: Leta i varje avtal upp säkerhetskraven, villkoret om underrättelse vid incidenter och revisionsrätten.
+          expected: Alla tre finns, och tiden för underrättelse är högst 24 timmar.
+
+  - id: CSL-T07
+    priority: high
+    execution: manual
+    tags: [vulnerability-handling, vulnerability-disclosure]
+    refs: ["ISO/IEC 30111:2019"]
+    en:
+      title: Vulnerability process and triage times
+      description: Reviews the vulnerability handling process and the triage times of the reports of the last 12 months.
+      preconditions: The vulnerability handling process; the organisation's public website; the vulnerability tracker with the reports of the last 12 months.
+      expected: The process has all four parts, the channel is published and each report was triaged within 5 working days.
+      steps:
+        - action: Read the process and look for the reporting channel, the triage time, the remediation deadlines by severity and the rule for involving CERT-SE.
+          expected: All four parts are present.
+        - action: Find the reporting channel starting from the home page of the public website.
+          expected: The channel is reached in at most 3 clicks or through the security.txt file.
+        - action: For each report in the tracker, compute the working days from receipt to triage decision.
+          expected: Each report was triaged within 5 working days and has a severity and a deadline.
+    sv:
+      title: Sårbarhetsprocess och tider för sortering
+      description: Granskar processen för sårbarhetshantering och sorteringstiderna för rapporterna de senaste 12 månaderna.
+      preconditions: Processen för sårbarhetshantering; organisationens publika webbplats; ärendesystemet för sårbarheter med rapporterna de senaste 12 månaderna.
+      expected: Processen har alla fyra delarna, kanalen är publicerad och varje rapport sorterades inom 5 arbetsdagar.
+      steps:
+        - action: Läs processen och leta efter kanalen för rapporter, tiden för sortering, tidsgränserna för åtgärd efter allvarlighetsgrad och regeln för när CERT-SE ska involveras.
+          expected: Alla fyra delarna finns.
+        - action: Leta upp kanalen för rapporter med början på startsidan för den publika webbplatsen.
+          expected: Kanalen nås med högst 3 klick eller via filen security.txt.
+        - action: Beräkna för varje rapport i ärendesystemet antalet arbetsdagar från mottagande till beslut om sortering.
+          expected: Varje rapport sorterades inom 5 arbetsdagar och har en allvarlighetsgrad och en tidsgräns.
+
+  - id: CSL-T08
+    priority: high
+    execution: automated
+    tags: [cryptography, tls, scanning]
+    refs: []
+    en:
+      title: External services offer only permitted protocols and ciphers
+      description: A script scans the TLS configuration of each externally reachable service and compares it with the cryptography policy.
+      preconditions: The cryptography policy with its list of permitted protocol versions and ciphers; the list of externally reachable host names and ports; a TLS scanning tool.
+      expected: No service offers a protocol version or cipher that the policy does not permit.
+      steps:
+        - action: Check the policy for permitted algorithms and protocols, minimum key lengths, key lifetimes, key management roles and its review date.
+          expected: All four parts are present and the review date is within the last 12 months.
+        - action: Run the TLS scan against each host name and port.
+          expected: The scan completes for each service.
+        - action: Compare the offered protocol versions, ciphers and certificate key lengths with the policy.
+          expected: Each offered item is permitted, and services offering TLS 1.0 or 1.1 are reported as failures.
+          data: "Example policy: TLS 1.2 and 1.3 only; RSA keys ≥ 3072 bits or ECDSA P-256 or stronger"
+    sv:
+      title: Externa tjänster erbjuder bara tillåtna protokoll och chiffersviter
+      description: Ett skript skannar TLS-konfigurationen för varje externt nåbar tjänst och jämför den med krypteringspolicyn.
+      preconditions: Krypteringspolicyn med listan över tillåtna protokollversioner och chiffersviter; listan över externt nåbara värdnamn och portar; ett verktyg för TLS-skanning.
+      expected: Ingen tjänst erbjuder en protokollversion eller chiffersvit som policyn inte tillåter.
+      steps:
+        - action: Kontrollera att policyn anger tillåtna algoritmer och protokoll, minsta nyckellängder, nycklarnas livslängd, roller för nyckelhantering och datum för granskning.
+          expected: Alla fyra delarna finns och granskningsdatumet ligger inom de senaste 12 månaderna.
+        - action: Kör TLS-skanningen mot varje värdnamn och port.
+          expected: Skanningen blir klar för varje tjänst.
+        - action: Jämför erbjudna protokollversioner, chiffersviter och certifikatens nyckellängder med policyn.
+          expected: Varje erbjuden del är tillåten, och tjänster som erbjuder TLS 1.0 eller 1.1 rapporteras som fel.
+          data: "Exempel på policy: endast TLS 1.2 och 1.3; RSA-nycklar ≥ 3072 bitar eller ECDSA P-256 eller starkare"
+
+  - id: CSL-T09
+    priority: high
+    execution: manual
+    tags: [asset-management, inventory]
+    refs: []
+    en:
+      title: Network discovery against the asset inventory
+      description: Runs a network discovery in the networks of the regulated services and compares the result with the asset inventory.
+      preconditions: The asset inventory; permission to run a discovery scan in the networks of the regulated services; the records of earlier reconciliations.
+      expected: Each discovered device and service is in the inventory with an owner, and reconciliations were done every quarter.
+      steps:
+        - action: Run the discovery scan in each network of the regulated services.
+          expected: The scan lists active devices and open services.
+        - action: Compare each discovered device and service with the inventory.
+          expected: Each one is in the inventory and has a named owner.
+        - action: Check the records of the last 4 quarters.
+          expected: There is one reconciliation per quarter, and each difference found was resolved.
+    sv:
+      title: Nätverksinventering mot förteckningen över tillgångar
+      description: Kör en nätverksinventering i de reglerade tjänsternas nät och jämför resultatet med förteckningen över tillgångar.
+      preconditions: Förteckningen över tillgångar; tillstånd att köra en inventeringsskanning i de reglerade tjänsternas nät; dokumentationen från tidigare avstämningar.
+      expected: Varje upptäckt enhet och tjänst finns i förteckningen med en ägare, och avstämningar gjordes varje kvartal.
+      steps:
+        - action: Kör inventeringsskanningen i varje nät för de reglerade tjänsterna.
+          expected: Skanningen listar aktiva enheter och öppna tjänster.
+        - action: Jämför varje upptäckt enhet och tjänst med förteckningen.
+          expected: Var och en finns i förteckningen och har en namngiven ägare.
+        - action: Kontrollera dokumentationen för de senaste 4 kvartalen.
+          expected: Det finns en avstämning per kvartal, och varje skillnad som hittades har åtgärdats.
+
+  - id: CSL-T10
+    priority: critical
+    execution: manual
+    tags: [mfa, remote-access]
+    refs: []
+    en:
+      title: Administrative sign-in and remote access without a second factor are refused
+      description: Tries to sign in to an administrative account and to connect remotely with only a password, and inspects the exclusions of the identity provider.
+      preconditions: A test administrative account and a test remote access account, each with a known test password and an enrolled second factor; read access to the identity provider's configuration.
+      expected: Both attempts without a second factor are refused and no exclusion exists.
+      steps:
+        - action: Sign in to the administrative account with the correct password and cancel the second-factor prompt.
+          expected: The sign-in is refused.
+        - action: Open a remote access connection with the correct password and no second factor.
+          expected: The connection is refused.
+        - action: Repeat both with the second factor.
+          expected: Both succeed.
+        - action: In the identity provider, list the policies that exclude accounts or groups from multi-factor authentication.
+          expected: No administrative account and no remote access group is excluded.
+    sv:
+      title: Administrativ inloggning och fjärråtkomst utan andra faktor nekas
+      description: Försöker logga in på ett administratörskonto och ansluta på distans med bara lösenord, och granskar undantagen i identitetstjänsten.
+      preconditions: Ett administratörskonto och ett konto för fjärråtkomst för test, båda med ett känt testlösenord och en registrerad andra faktor; läsbehörighet till identitetstjänstens konfiguration.
+      expected: Båda försöken utan andra faktor nekas och inget undantag finns.
+      steps:
+        - action: Logga in på administratörskontot med rätt lösenord och avbryt frågan om andra faktor.
+          expected: Inloggningen nekas.
+        - action: Öppna en fjärranslutning med rätt lösenord och utan andra faktor.
+          expected: Anslutningen nekas.
+        - action: Upprepa båda med den andra faktorn.
+          expected: Båda lyckas.
+        - action: Lista de policyer i identitetstjänsten som undantar konton eller grupper från flerfaktorsautentisering.
+          expected: Inget administratörskonto och ingen grupp för fjärråtkomst är undantagen.
+
+  - id: CSL-T11
+    priority: high
+    execution: manual
+    tags: [business-continuity, restore]
+    refs: []
+    en:
+      title: Restore of a critical system within the recovery time
+      description: Reviews the continuity plan and the restore records, then restores one critical system chosen by the assessor.
+      preconditions: The continuity and disaster recovery plan; the restore test records of the last 6 months; an isolated environment for the restore.
+      expected: Each critical system was restore-tested in the last 6 months and the chosen one is restored within its recovery time.
+      steps:
+        - action: For each critical system in the plan, find its recovery time, recovery point and latest restore test.
+          expected: Each has both values and a restore test within the last 6 months.
+        - action: Choose one critical system and restore its latest backup in the isolated environment, measuring the time.
+          expected: The restore completes within the plan's recovery time.
+        - action: Check the restored data against the recovery point.
+          expected: The newest restored data is no older than the plan's recovery point allows.
+    sv:
+      title: Återställning av ett kritiskt system inom återställningstiden
+      description: Granskar kontinuitetsplanen och dokumentationen från återställningstester och återställer sedan ett kritiskt system som granskaren väljer.
+      preconditions: Planen för kontinuitet och katastrofåterställning; dokumentationen från återställningstester de senaste 6 månaderna; en isolerad miljö för återställningen.
+      expected: Varje kritiskt system har återställningstestats de senaste 6 månaderna och det valda återställs inom sin återställningstid.
+      steps:
+        - action: Leta för varje kritiskt system i planen upp dess återställningstid, återställningspunkt och senaste återställningstest.
+          expected: Vart och ett har båda värdena och ett återställningstest från de senaste 6 månaderna.
+        - action: Välj ett kritiskt system och återställ dess senaste säkerhetskopia i den isolerade miljön, och mät tiden.
+          expected: Återställningen blir klar inom planens återställningstid.
+        - action: Kontrollera återställda data mot återställningspunkten.
+          expected: De senaste återställda uppgifterna är inte äldre än planens återställningspunkt tillåter.
+
+  - id: CSL-T12
+    priority: medium
+    execution: manual
+    tags: [effectiveness, audit]
+    refs: []
+    en:
+      title: Audit of the measures and follow-up of findings
+      description: Reviews the latest audit of the risk management measures and the status of its findings.
+      preconditions: The audit reports of the last 24 months; the action list with owners, deadlines and status; the minutes of the management body.
+      expected: An audit exists from the last 12 months and each finding is closed, on time or decided on by the management body.
+      steps:
+        - action: Find the latest audit report and its date.
+          expected: The report is dated within the last 12 months and covers the risk management measures.
+        - action: For each finding, find its owner, deadline and status.
+          expected: Each finding has an owner and a deadline.
+        - action: For each finding open past its deadline, look for a decision in the minutes.
+          expected: Each such finding has a decision by the management body with a new deadline.
+        - action: Compare the findings with those of the previous audit.
+          expected: No finding from the previous audit is repeated without a recorded reason.
+    sv:
+      title: Revision av åtgärderna och uppföljning av iakttagelser
+      description: Granskar den senaste revisionen av riskhanteringsåtgärderna och läget för dess iakttagelser.
+      preconditions: Revisionsrapporterna för de senaste 24 månaderna; åtgärdslistan med ägare, tidsgränser och status; ledningsorganets protokoll.
+      expected: En revision från de senaste 12 månaderna finns och varje iakttagelse är stängd, i tid eller beslutad av ledningsorganet.
+      steps:
+        - action: Leta upp den senaste revisionsrapporten och dess datum.
+          expected: Rapporten är daterad inom de senaste 12 månaderna och omfattar riskhanteringsåtgärderna.
+        - action: Leta för varje iakttagelse upp dess ägare, tidsgräns och status.
+          expected: Varje iakttagelse har en ägare och en tidsgräns.
+        - action: Leta för varje iakttagelse som är öppen efter sin tidsgräns efter ett beslut i protokollen.
+          expected: Varje sådan iakttagelse har ett beslut av ledningsorganet med en ny tidsgräns.
+        - action: Jämför iakttagelserna med dem från den föregående revisionen.
+          expected: Ingen iakttagelse från den föregående revisionen upprepas utan en dokumenterad orsak.

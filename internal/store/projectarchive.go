@@ -137,6 +137,7 @@ var ProjectArchiveExcluded = map[string]string{
 	"tenants":              "organisation",
 	"users":                "accounts (references such as created_by are kept as values)",
 	"memberships":          "access rights",
+	"project_members":      "access rights (a loaded project gets its own sharing)",
 	"api_tokens":           "secret",
 	"audit_log":            "organisation audit trail",
 	"login_events":         "account history",
@@ -147,10 +148,14 @@ var ProjectArchiveExcluded = map[string]string{
 	"invitations":          "secret",
 	"scim_tokens":          "secret",
 	"scim_settings":        "organisation",
+	"system_settings":      "server configuration",
 	"scim_users":           "organisation",
 	"scim_groups":          "organisation",
 	"scim_group_members":   "organisation",
 	"file_blobs":           "stored as files/<id>",
+	"user_mfa":             "secret (second factors)",
+	"mfa_recovery_codes":   "secret (second factors)",
+	"mfa_policies":         "organisation",
 }
 
 // ProjectArchiveTableNames returns the names of the archived tables in order.
