@@ -63,6 +63,7 @@ export interface CatalogSource {
   jurisdiction?: string
   short?: string
   name: string
+  /** the official or publisher page */
   url?: string
   /** requirements citing it */
   requirements: number
@@ -141,10 +142,31 @@ export interface CatalogStep {
   data?: string
 }
 
+/** A ref with its source and the link to the cited text (catalogue item details). */
+export interface CatalogRefTarget {
+  ref: string
+  source?: string
+  /** the source's name */
+  name?: string
+  /** the cited document, else the source */
+  url?: string
+}
+
+/** The refs of an item with their sources, linked where the registry knows the text (https links only). */
+export function refLinks(refs: readonly string[], targets: readonly CatalogRefTarget[] | null | undefined): CatalogRefTarget[] {
+  const byRef = new Map((targets ?? []).map((x) => [x.ref, x]))
+  return refs.map((ref) => {
+    const x = byRef.get(ref)
+    const url = x?.url && /^https:\/\/\S+$/.test(x.url) ? x.url : undefined
+    return { ref, source: x?.source, name: x?.name, url }
+  })
+}
+
 export interface CatalogRequirementDetail extends CatalogRequirement {
   area_name: string
   rationale: string
   criteria: CatalogCriterion[]
+  ref_targets?: CatalogRefTarget[]
   linked_tests: CatalogLinked[]
 }
 
@@ -153,6 +175,7 @@ export interface CatalogTestDetail extends CatalogTest {
   preconditions: string
   expected: string
   step_list: CatalogStep[]
+  ref_targets?: CatalogRefTarget[]
   linked_requirements: CatalogLinked[]
 }
 
