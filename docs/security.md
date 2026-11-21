@@ -459,6 +459,41 @@ OIDC/SAML login neither creates nor changes that membership, so
   limited to super admins for that reason (filter the server's egress if it
   can reach internal services).
 
+### Autocomplete history (personal data)
+
+Free-text fields suggest what the user typed in them before
+(`internal/api/suggest.go`, `internal/suggest`, [api.md](api.md#autocomplete)).
+
+* **What is stored.** Table `suggest_history` (migration 0028): per user,
+  organisation, field key (for example `test.step.expected`) and project,
+  each distinct value the user saved (trimmed, at most 1000 characters),
+  with a use count and the time of the last use. At most 200 values per
+  user, field and organisation are kept; the least recently used go. The
+  web client records values only after a form was saved successfully, and
+  only values that changed, never while typing. Nothing is recorded for
+  passwords, tokens, secrets, e-mail addresses or invitation fields: only
+  the field keys listed in `suggestFields` are accepted (400 otherwise).
+* **Who sees it.** Only the user: every query filters by the caller's user
+  id and organisation. A value saved in a project is suggested only while
+  the user may still read that project with the field's read permission
+  (restricted projects, project roles and API token caps included), so
+  losing access to a project also hides what one typed there. Project
+  values (the distinct sources and owners of a project) are suggested only
+  to users who may read the project. Requests need read access to
+  `project_id` (404 otherwise) and are limited to 300 a minute per user.
+* **Turning it off.** The personal preference **Autocomplete suggestions**
+  (`preferences.autocomplete`): *Off* shows no suggestions, makes no
+  requests and records nothing; *Only values used in the project* records
+  nothing either. The server enforces the preference as well.
+* **Deleting it.** **Clear my autocomplete history** on the profile
+  (`DELETE /api/v1/suggest/history`, audited as
+  `profile.autocomplete_clear`) deletes the user's history in every
+  organisation. Removing a member (also through SCIM) deletes their history
+  in that organisation; deleting a user or an organisation deletes it
+  through foreign keys. The table is deliberately **not part of a backup**
+  (`store.notBackedUp`): it is a personal convenience, not project data, so
+  a restore starts with empty histories.
+
 ## 5. Web application protections
 
 Response headers set on every response:

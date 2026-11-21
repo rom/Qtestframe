@@ -327,6 +327,8 @@ async function discover(request) {
     { name: 'requirement-attachments', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     run && { name: 'run-attachments', path: `${p}/runs/${run.id}`, open: '[role="tab"]:has(.pi-paperclip)', wait: '.dropzone' },
     { name: 'search', path: '/search?q=login' },
+    // the autocomplete list of a text field (recent searches, seeded below): ArrowDown in the empty field
+    { name: 'search-suggestions', path: '/search', press: ['.query-input input', 'ArrowDown'], wait: '.suggest-list' },
     { name: 'help', path: '/help' },
     { name: 'profile', path: '/profile' },
     { name: 'relations-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-sitemap)'], wait: '.p-dialog [role="status"]' },
@@ -541,11 +543,13 @@ async function main() {
     const state = await authCtx.storageState()
     const routes = await discover(authCtx.request)
     const original = me.user?.preferences ?? {}
+    // recent searches for the search-suggestions route
+    await api(authCtx.request, 'POST', '/suggest/history', { entries: [{ field: 'search', value: 'status:approved' }, { field: 'search', value: 'login' }] }, csrf).catch(() => undefined)
     if (routes.some((r) => r.mfa)) await setupMfaUser(browser, authCtx.request, csrf)
 
     for (const cfg of CONFIGS) {
       // the user's preferences decide theme and language once signed in
-      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: cfg.theme, language: cfg.lang, intro_done: true } }, csrf)
+      await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: cfg.theme, language: cfg.lang, intro_done: true, autocomplete: null } }, csrf)
       for (const vp of VIEWPORTS) {
         const opts = { viewport: { width: vp.width, height: vp.height }, isMobile: vp.mobile, hasTouch: vp.mobile, reducedMotion: 'reduce', locale: cfg.lang === 'sv' ? 'sv-SE' : 'en-GB' }
         const local = ({ lang, theme }) => {
@@ -577,6 +581,11 @@ async function main() {
             for (const sel of r.open ? [].concat(r.open) : []) {
               await settle(page)
               await page.locator(sel).first().click()
+            }
+            // press: [selector, key] — a key pressed in a field (opens an autocomplete list)
+            if (r.press) {
+              await settle(page)
+              await page.locator(r.press[0]).first().press(r.press[1])
             }
             await settle(page, r.wait)
             if (!r.anon && page.url().includes('/login')) throw new Error('redirected to login')
@@ -614,7 +623,7 @@ async function main() {
     // drop the authenticator set-up the profile-mfa-setup route started
     await api(authCtx.request, 'POST', '/auth/mfa/disable', { code: '' }, csrf).catch(() => undefined)
     // restore the admin's own preferences
-    await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: original.theme ?? null, language: original.language ?? null, intro_done: original.intro_done ?? null } }, csrf).catch(() => undefined)
+    await api(authCtx.request, 'PATCH', '/auth/me', { preferences: { theme: original.theme ?? null, language: original.language ?? null, intro_done: original.intro_done ?? null, autocomplete: original.autocomplete ?? null } }, csrf).catch(() => undefined)
     await authCtx.close()
   } finally {
     await browser.close()
