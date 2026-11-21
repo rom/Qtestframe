@@ -336,6 +336,19 @@ func cmdSeedDemo(args []string, env Env) error {
 		return err
 	}
 	fmt.Fprintf(env.Stdout, "seeded demo project %s in tenant %s\n", p.Key, t.Slug)
+	// the demo users must not take the place of the bootstrap administrator,
+	// who is only created while the database has no users
+	if err := Bootstrap(env.Ctx, st, cfg.Bootstrap, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
+		return err
+	}
+	sp, err := SeedDemoSharing(env.Ctx, st, t.ID)
+	if err != nil {
+		return err
+	}
+	if sp != nil {
+		fmt.Fprintf(env.Stdout, "seeded restricted project %s: shared with %s (viewer); %s is not a member (password of both: %s)\n",
+			sp.Key, DemoMemberEmail, DemoOutsiderEmail, DemoUserPassword)
+	}
 	return nil
 }
 

@@ -87,6 +87,10 @@ func (s *Server) handleLoadProject(w http.ResponseWriter, r *http.Request, p *Pr
 		writeJSON(w, http.StatusOK, res)
 		return
 	}
+	if err := s.keepSharing(r.Context(), p, res.Project.ID, ""); err != nil {
+		s.fail(w, r, err)
+		return
+	}
 	s.audit(r.Context(), p, "project.load", "project", res.Project.ID, fmt.Sprintf("%s from %s (%s): %d rows, %d files",
 		res.Project.Key, res.Manifest.Project.Key, store.CleanFileName(fhs[0].Filename), sumCounts(res.Imported), res.Files))
 	writeJSON(w, http.StatusCreated, res)
@@ -132,6 +136,10 @@ func (s *Server) handleDuplicateProject(w http.ResponseWriter, r *http.Request, 
 	}
 	res, err := s.Store.ImportProject(ctx, p.TenantID(), tmp, size, store.ProjectImport{Key: req.Key, Name: req.Name})
 	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	if err := s.keepSharing(ctx, p, res.Project.ID, pr.ID); err != nil {
 		s.fail(w, r, err)
 		return
 	}

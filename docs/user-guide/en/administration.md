@@ -108,6 +108,28 @@ The **MFA** column shows who uses multi-factor authentication: **On**, *Off*, or
 
 API tokens are not affected. People who sign in with single sign-on normally get their second factor from the identity provider; whether Qtestframe asks for its own code as well is set per provider in the server configuration (`local_mfa`). Every policy change is recorded in the [audit log](#audit-log).
 
+## Project sharing
+
+By default every member of the organisation sees every project, with their organisation role. **Sharing** changes that per project: you can restrict a project to the people who work on it, and give people a different role in one project than in the organisation.
+
+Open it with **Share** in the project header (or the share button of a project on the **Projects** page), or under **Categories & settings → Sharing**. You need `project.update` in the project *(Manager, or a project role that has it)*.
+
+**Access** has two choices:
+
+- **Everyone in the organisation** (the default): every member sees the project with their organisation role. Project members get their project role instead.
+- **Restricted to project members**: only the project members (and the organisation's admins) see the project. For everyone else it does not exist: it is missing from the project list, search, reviews and notifications, and links to it show *not found*. Restricted projects show a lock (🔒) in the project list and the header.
+
+**Project members** are people of the organisation or groups from your [identity provider (SCIM)](#provisioning-with-scim), each with a **project role**: any role of the organisation, also your own. Inside the project the project role **replaces** the organisation role, so it can raise or lower someone's rights there: a Tester of the organisation can be Manager in one project, a Manager only Viewer in another. A person's own membership wins over a group's; several groups add up. Admins of the organisation always have full access to every project.
+
+- **Add**: search for a person or group by name or e-mail, choose the project role and select **Add**. Only members of the organisation can be added (add new people under [Members](#members) first). The person gets a notification (and an e-mail if they want e-mail notifications).
+- **Change a role**: pick another role in the member's row.
+- **Remove** removes someone from the project; members can also leave a project themselves. **Several members at once**: tick them, then choose **Set project role** or **Remove**.
+- You can only give, change or remove roles whose project permissions you have in the project yourself, so nobody can give more than they have.
+- When you restrict a project that you see through your organisation role, you are added as a project member with that role, so you do not lock yourself out.
+- Organisation-wide permissions – members, roles, API tokens, the audit log, creating projects – always follow the organisation role. API tokens never exceed their own role, also in a project.
+
+Every change of the access or the members is recorded in the [audit log](#audit-log). Removing someone from the organisation removes their project memberships too. A duplicated project keeps the members of the original.
+
 ## E-mail
 
 Notification e-mails, invitations and [reports by e-mail](reports-and-export.md#send-a-report-by-e-mail) need an outgoing mail server, which the server administrator sets up in the `email` section of the configuration file. Without it, these features are hidden and the profile explains that notifications are only shown in the app.

@@ -187,6 +187,7 @@ func eventLabel(lang, event string) string {
 		"review.requested": {"Review requested", "Granskning begärd"},
 		"review.completed": {"Review completed", "Granskning klar"},
 		"review.reminder":  {"Review reminder", "Påminnelse om granskning"},
+		"project.shared":   {"A project was shared with you", "Ett projekt har delats med dig"},
 	}
 	l, ok := labels[event]
 	if !ok {

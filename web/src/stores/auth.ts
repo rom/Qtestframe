@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { api, ApiError, setCsrfToken } from '@/lib/api'
 import { can } from '@/lib/permissions'
+import { useProjectStore } from '@/stores/project'
 import type { Me } from '@/lib/types'
 import { isChallenge, type MfaChallenge } from '@/lib/mfa'
 
@@ -12,8 +13,10 @@ export const useAuthStore = defineStore('auth', {
     isSuperAdmin: (s) => !!s.me?.user?.super_admin,
   },
   actions: {
+    /** Whether the user holds perm; inside a project (ProjectLayout) with the project's effective permissions. */
     can(perm: string | string[]): boolean {
-      return can(this.me, perm)
+      const proj = useProjectStore()
+      return can(this.me, perm, proj.scoped ? proj.project?.my_access : null)
     },
     set(me: Me | null) {
       this.me = me

@@ -27,7 +27,7 @@ Handboken riktar sig till alla som arbetar i Qtestframe: kravförfattare, testar
 | [Sökning och filter](search-and-filters.md) | Frågespråket med många exempel |
 | [Rapporter och export](reports-and-export.md) | Standardrapporter, den egna rapportbyggaren, exportformat och dokumentarkivet |
 | [Dokument](documents.md) | Projektets dokumentarkiv: uppladdning, förhandsvisning och länkar |
-| [Administration](administration.md) | Organisationer, användare, medlemmar och roller, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
+| [Administration](administration.md) | Organisationer, användare, medlemmar och roller, delning av projekt, återställning av lösenord, API-nycklar, händelseloggen, säkerhetskopiering och återställning |
 | [Tillgänglighet och språk](accessibility-and-languages.md) | Tangentbord, skärmläsare, teman, engelska och svenska, mobiler och surfplattor |
 | [Vanliga frågor](faq.md) | Svar på vanliga frågor |
 | [Referenser](references.md) | RFC 2119, RFC 8174 och andra RFC:er, NIST-publikationer samt standarder för krav och test |

@@ -82,6 +82,9 @@ func (s *Server) catalogProject(r *http.Request, p *Principal, kind string) (map
 	if id == "" {
 		return nil, nil
 	}
+	if err := s.canIn(r.Context(), p, id, readPermOf(kind)); err != nil {
+		return nil, err
+	}
 	pr, err := s.Store.GetProject(r.Context(), p.TenantID(), id)
 	if err != nil {
 		return nil, err

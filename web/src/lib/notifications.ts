@@ -33,6 +33,7 @@ export function notificationIcon(event: string): string {
   const [group, action] = event.split('.')
   if (group === 'review') return action === 'completed' ? 'pi pi-verified' : 'pi pi-eye'
   if (event.startsWith('defect.')) return 'pi pi-exclamation-circle'
+  if (event === 'project.shared') return 'pi pi-share-alt'
   return 'pi pi-bell'
 }
 

@@ -10,23 +10,47 @@ import (
 	"github.com/rom/qtestframe/internal/store"
 )
 
-// project loads the {pid} project of the principal's tenant.
+// project loads the {pid} project of the principal's tenant, with the
+// caller's access there (authed has scoped the principal to it).
 func (s *Server) project(w http.ResponseWriter, r *http.Request, p *Principal) (*model.Project, bool) {
-	pr, err := s.Store.GetProject(r.Context(), p.TenantID(), r.PathValue("pid"))
+	pid := r.PathValue("pid")
+	pr, err := s.Store.GetProject(r.Context(), p.TenantID(), pid)
+	if err == nil && p.projectID != pid {
+		// defence in depth: a principal that was not scoped to the project
+		err = s.canIn(r.Context(), p, pid, "")
+	}
 	if err != nil {
 		s.fail(w, r, err)
 		return nil, false
 	}
+	pr.MyAccess = p.access
 	return pr, true
 }
 
+// handleListProjects lists the projects the caller may read (see
+// access.go), each with the caller's access there.
 func (s *Server) handleListProjects(w http.ResponseWriter, r *http.Request, p *Principal) {
+	if !requireOrg(w, p) {
+		return
+	}
 	ps, err := s.Store.ListProjects(r.Context(), p.TenantID())
 	if err != nil {
 		s.fail(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, listOf(ps))
+	vis, err := s.visibleProjects(r.Context(), p)
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	out := make([]model.Project, 0, len(ps))
+	for i := range ps {
+		if visibleIn(vis, p, ps[i].ID, rbac.ProjectRead) {
+			ps[i].MyAccess = vis[ps[i].ID]
+			out = append(out, ps[i])
+		}
+	}
+	writeJSON(w, http.StatusOK, listOf(out))
 }
 
 func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request, p *Principal) {
@@ -50,6 +74,9 @@ func (s *Server) handleCreateProject(w http.ResponseWriter, r *http.Request, p *
 		return
 	}
 	s.audit(r.Context(), p, "project.create", "project", pr.ID, pr.Key)
+	if acc, err := s.projectAccess(r.Context(), p, pr.ID); err == nil {
+		pr.MyAccess = acc
+	}
 	writeJSON(w, http.StatusCreated, pr)
 }
 
@@ -324,6 +351,13 @@ func (s *Server) handleMoveFolder(w http.ResponseWriter, r *http.Request, p *Pri
 	pos := -1
 	if req.Position != nil {
 		pos = *req.Position
+	}
+	// moving into another project needs write access there too
+	if req.ProjectID != "" && req.ProjectID != f.ProjectID {
+		if err := s.canIn(r.Context(), p, req.ProjectID, kindPerm(f.Kind)); err != nil {
+			s.fail(w, r, err)
+			return
+		}
 	}
 	if err := s.Store.MoveFolder(r.Context(), p.TenantID(), f.ID, req.ParentID, pos, req.ProjectID); err != nil {
 		s.fail(w, r, err)
@@ -613,6 +647,12 @@ func (s *Server) handleBulkFolders(w http.ResponseWriter, r *http.Request, p *Pr
 		}
 	}
 	if req.Action == "move" {
+		if req.ProjectID != "" && req.ProjectID != pr.ID {
+			if err := s.canIn(ctx, p, req.ProjectID, kindPerm(kind)); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+		}
 		parent := req.ParentID
 		if parent != nil && *parent == "" {
 			parent = nil

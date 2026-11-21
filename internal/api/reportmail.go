@@ -71,20 +71,18 @@ type reportRecipient struct {
 }
 
 // readers returns the members of the tenant holding perms, by user ID.
-func (s *Server) readers(ctx context.Context, tenantID string, perms []rbac.Permission) (map[string]reportRecipient, error) {
-	ms, err := s.Store.ListTenantMembers(ctx, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	set, err := s.Store.RoleSet(ctx, tenantID)
+func (s *Server) readers(ctx context.Context, tenantID, projectID string, perms []rbac.Permission) (map[string]reportRecipient, error) {
+	// the members' permissions in the project (project sharing: access.go)
+	access, ms, err := s.membersIn(ctx, tenantID, projectID)
 	if err != nil {
 		return nil, err
 	}
 	out := map[string]reportRecipient{}
 	for _, m := range ms {
-		ok := true
+		acc := access[m.UserID]
+		ok := acc != nil
 		for _, perm := range perms {
-			ok = ok && set.Can(m.Role, perm)
+			ok = ok && slices.Contains(acc.Permissions, string(perm))
 		}
 		if ok {
 			out[m.UserID] = reportRecipient{UserID: m.UserID, Email: m.Email, DisplayName: m.Name, Role: m.Role}
@@ -100,7 +98,7 @@ func (s *Server) handleReportRecipients(w http.ResponseWriter, r *http.Request, 
 	if _, ok := s.project(w, r, p); !ok {
 		return
 	}
-	rs, err := s.readers(r.Context(), p.TenantID(), []rbac.Permission{rbac.ProjectRead})
+	rs, err := s.readers(r.Context(), p.TenantID(), r.PathValue("pid"), []rbac.Permission{rbac.ProjectRead})
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -138,8 +136,8 @@ type skippedRecipient struct {
 
 // resolveRecipients turns member IDs and addresses into mail addresses:
 // members who may not read the report or are disabled are skipped.
-func (s *Server) resolveRecipients(ctx context.Context, tenantID string, job reportJob, ids, addresses []string) ([]mail.Address, []skippedRecipient, error) {
-	rs, err := s.readers(ctx, tenantID, reportReadPerms(job))
+func (s *Server) resolveRecipients(ctx context.Context, tenantID, projectID string, job reportJob, ids, addresses []string) ([]mail.Address, []skippedRecipient, error) {
+	rs, err := s.readers(ctx, tenantID, projectID, reportReadPerms(job))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -302,7 +300,7 @@ func (s *Server) handleEmailReport(w http.ResponseWriter, r *http.Request, p *Pr
 		s.fail(w, r, err)
 		return
 	}
-	to, skipped, err := s.resolveRecipients(r.Context(), p.TenantID(), job, req.Recipients, addresses)
+	to, skipped, err := s.resolveRecipients(r.Context(), p.TenantID(), pr.ID, job, req.Recipients, addresses)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -411,7 +409,7 @@ func (s *Server) checkSubscription(r *http.Request, p *Principal, x *model.Repor
 	if addressesChanged && len(x.Addresses) > 0 && !p.Can(rbac.ProjectUpdate) {
 		return fmt.Errorf("%w: permission project.update required to send to addresses outside the organisation's members", errForbidden)
 	}
-	rs, err := s.readers(r.Context(), p.TenantID(), []rbac.Permission{rbac.ProjectRead})
+	rs, err := s.readers(r.Context(), p.TenantID(), x.ProjectID, []rbac.Permission{rbac.ProjectRead})
 	if err != nil {
 		return err
 	}
@@ -478,7 +476,7 @@ func (s *Server) handleCreateSubscription(w http.ResponseWriter, r *http.Request
 		s.fail(w, r, err)
 		return
 	}
-	x := &model.ReportSubscription{DefinitionID: d.ID, OwnerID: p.User.ID, OwnerEmail: p.User.Email, Frequency: model.FrequencyWeekly,
+	x := &model.ReportSubscription{DefinitionID: d.ID, ProjectID: d.ProjectID, OwnerID: p.User.ID, OwnerEmail: p.User.Email, Frequency: model.FrequencyWeekly,
 		Weekday: 1, DayOfMonth: 1, TimeOfDay: "07:00", Timezone: "UTC", Format: "pdf", Enabled: true}
 	req.apply(r, x)
 	if err := s.checkSubscription(r, p, x, true); err != nil {
@@ -601,29 +599,21 @@ func orOK(msg string) string {
 }
 
 // ownerPrincipal is the owner of a subscription as a principal of the
-// tenant, with their current permissions.
-func (s *Server) ownerPrincipal(ctx context.Context, tenantID, userID string) (*Principal, error) {
-	u, err := s.Store.GetUser(ctx, userID)
+// tenant, with their current permissions in the project.
+func (s *Server) ownerPrincipal(ctx context.Context, tenantID, userID, projectID string) (*Principal, error) {
+	p, err := s.principalFor(ctx, tenantID, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("the owner: %w", err)
 	}
-	if u.Disabled {
-		return nil, errors.New("the owner's account is disabled")
-	}
-	t, err := s.Store.GetTenant(ctx, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	p := &Principal{User: u, Tenant: t}
-	if m, err := s.Store.GetMembership(ctx, tenantID, userID); err == nil {
-		p.Role = m.Role
-	} else if u.SuperAdmin {
-		p.Role = rbac.RoleAdmin
-	} else {
-		return nil, errors.New("the owner is no longer a member of the organisation")
-	}
-	if err := s.resolvePerms(ctx, p, ""); err != nil {
-		return nil, err
+	if projectID != "" {
+		acc, err := s.projectAccess(ctx, p, projectID)
+		if err != nil {
+			return nil, err
+		}
+		if acc == nil {
+			return nil, errors.New("the owner may no longer see the project")
+		}
+		p.scope(projectID, acc)
 	}
 	if !p.Can(rbac.Export) {
 		return nil, errors.New("the owner may no longer export reports")
@@ -633,7 +623,7 @@ func (s *Server) ownerPrincipal(ctx context.Context, tenantID, userID string) (*
 
 // sendSubscription renders the saved report as its owner and e-mails it.
 func (s *Server) sendSubscription(ctx context.Context, tenantID string, x *model.ReportSubscription) error {
-	p, err := s.ownerPrincipal(ctx, tenantID, x.OwnerID)
+	p, err := s.ownerPrincipal(ctx, tenantID, x.OwnerID, x.ProjectID)
 	if err != nil {
 		return err
 	}
@@ -654,7 +644,7 @@ func (s *Server) sendSubscription(ctx context.Context, tenantID string, x *model
 	if len(addresses) > 0 && !p.Can(rbac.ProjectUpdate) {
 		addresses = nil // the owner lost the right to send outside the members
 	}
-	to, _, err := s.resolveRecipients(ctx, tenantID, job, x.Recipients, addresses)
+	to, _, err := s.resolveRecipients(ctx, tenantID, x.ProjectID, job, x.Recipients, addresses)
 	if err != nil {
 		return err
 	}

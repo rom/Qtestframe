@@ -160,6 +160,8 @@ async function discover(request) {
   const project = projects.find((p) => p.key === 'DEMO') ?? projects[0]
   if (!project) throw new Error('no project found – run `qtestframe seed-demo` first')
   const pid = project.id
+  // the restricted project of seed-demo (project sharing), else the main one
+  const vault = projects.find((x) => x.key === 'VAULT') ?? project
   const reqs = items(await api(request, 'GET', `/projects/${pid}/requirements`))
   // a requirement with at least two relations, for the relations tab's bulk removal
   const relCount = new Map()
@@ -300,6 +302,10 @@ async function discover(request) {
     ddEx && { name: 'test-data-paste', path: `${p}/tests?item=${ddEx.test_case_id}`, open: '.p-drawer button:has(.pi-clipboard)', wait: '.p-dialog #td-paste' },
     ddLinks.length > 0 && { name: 'requirement-coverage', path: `${p}/requirements?item=${ddLinks[0].requirement_id}`, wait: '.cov-table' },
     { name: 'settings-project', path: `${p}/settings?tab=project`, wait: '#h-tracker' },
+    // project sharing: the Share dialog, the Sharing tab and its bulk toolbar
+    { name: 'project-share-dialog', path: `${p}/dashboard`, open: 'button.project-share', wait: '.p-dialog .sharing-panel .members-table' },
+    { name: 'settings-sharing', path: `/p/${vault.id}/settings?tab=sharing`, wait: '.sharing-panel .members-table' },
+    { name: 'sharing-members-bulk', path: `/p/${vault.id}/settings?tab=sharing`, open: '.sharing-panel .members-table .p-datatable-tbody .p-checkbox', wait: '.sharing-panel .bulkbar' },
     { name: 'settings-project-load-dialog', path: `${p}/settings?tab=project`, open: 'section.project-archive button:has(.pi-upload)', wait: '.p-dialog #project-load-form' },
     // the folder tree is a side panel from 1200 px (a drawer below)
     { name: 'folders-bulk', path: `${p}/requirements`, open: ['button.p-button:has(.pi-check-square)', '.p-tree .p-checkbox'], wait: '.folder-bulk', minWidth: 1200 },

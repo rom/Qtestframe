@@ -15,12 +15,12 @@ var projectKeyRe = regexp.MustCompile(`^[A-Z][A-Z0-9]{1,15}$`)
 
 // ---------------------------------------------------------------- projects
 
-const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, color, requirement_sources, type, tech_context, created_at, updated_at`
+const projectCols = `id, tenant_id, key, name, description, defect_url_template, icon, color, requirement_sources, type, tech_context, access, created_at, updated_at`
 
 func scanProject(r interface{ Scan(...any) error }) (*model.Project, error) {
 	var p model.Project
 	var sources string
-	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.Color, &sources, &p.Type, &p.TechContext, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := r.Scan(&p.ID, &p.TenantID, &p.Key, &p.Name, &p.Description, &p.DefectURLTemplate, &p.Icon, &p.Color, &sources, &p.Type, &p.TechContext, &p.Access, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
 	p.RequirementSources = decodeTags(sources)
@@ -114,6 +114,7 @@ func (s *Store) CreateProject(ctx context.Context, tenantID string, p *model.Pro
 	}
 	defer effectiveSources(p)
 	p.ID, p.TenantID = newID(), tenantID
+	p.Access = model.ProjectAccessOrganisation
 	p.CreatedAt = s.now()
 	p.UpdatedAt = p.CreatedAt
 	return s.tx(ctx, func(c conn) error {

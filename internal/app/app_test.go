@@ -19,6 +19,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -31,6 +32,7 @@ import (
 	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/config"
 	"github.com/rom/qtestframe/internal/db"
+	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/store"
 )
 
@@ -286,7 +288,8 @@ func TestUserTenantMember(t *testing.T) {
 func TestSeedDemo(t *testing.T) {
 	cfg := writeConfig(t, "")
 	r := run(t, "", "seed-demo", "--config", cfg)
-	if r.code != 0 || r.stdout != "seeded demo project DEMO in tenant default\n" {
+	shared := "seeded restricted project VAULT: shared with dana@example.com (viewer); erik@example.com is not a member (password of both: Demo-user-1234)\n"
+	if r.code != 0 || r.stdout != "seeded demo project DEMO in tenant default\n"+shared {
 		t.Fatalf("seed 1: %+v", r)
 	}
 	r = run(t, "", "seed-demo", "--config", cfg)
@@ -294,7 +297,7 @@ func TestSeedDemo(t *testing.T) {
 		t.Fatalf("seed 2: %+v", r)
 	}
 	r = run(t, "", "seed-demo", "--config", cfg, "--tenant", "other")
-	if r.code != 0 || r.stdout != "seeded demo project DEMO in tenant other\n" {
+	if r.code != 0 || r.stdout != "seeded demo project DEMO in tenant other\n"+shared {
 		t.Fatalf("seed other: %+v", r)
 	}
 	if r := run(t, "", "seed-demo", "--config", cfg, "--tenant", "X!"); r.code != 1 {
@@ -306,9 +309,27 @@ func TestSeedDemo(t *testing.T) {
 		t.Fatal(err)
 	}
 	ps, err := st.ListProjects(context.Background(), tn.ID)
-	if err != nil || len(ps) != 2 {
+	if err != nil || len(ps) != 3 {
 		t.Errorf("projects %v %v", ps, err)
 	}
+	// the restricted project, shared with Dana as a viewer
+	var vault *model.Project
+	for i := range ps {
+		if ps[i].Key == "VAULT" {
+			vault = &ps[i]
+		}
+	}
+	if vault == nil || vault.Access != model.ProjectAccessRestricted {
+		t.Fatalf("vault %+v", vault)
+	}
+	dana, err := st.GetUserByEmail(context.Background(), DemoMemberEmail)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if g, err := st.ProjectGrantOf(context.Background(), tn.ID, vault.ID, dana.ID); err != nil || g.UserRole != "viewer" {
+		t.Errorf("grant %+v %v", g, err)
+	}
+	ps = slices.DeleteFunc(ps, func(p model.Project) bool { return p.Key == "VAULT" })
 	// the web test against the server itself
 	set, err := st.WebTestSettings(context.Background(), tn.ID, ps[0].ID)
 	if err != nil || len(set.Variables) != 1 {
@@ -323,6 +344,15 @@ func TestSeedDemo(t *testing.T) {
 	}
 	if web != 1 {
 		t.Errorf("%d web tests", web)
+	}
+	// with bootstrap credentials the administrator is created before the
+	// demo users (who would otherwise stop the bootstrap of the first start)
+	bcfg := writeConfig(t, "bootstrap: {admin_email: boss@example.com, admin_password: "+strongPassword+"}")
+	if r := run(t, "", "seed-demo", "--config", bcfg); r.code != 0 {
+		t.Fatalf("seed with bootstrap: %+v", r)
+	}
+	if u, err := openTestStore(t, bcfg).GetUserByEmail(context.Background(), "boss@example.com"); err != nil || !u.SuperAdmin {
+		t.Errorf("bootstrap admin %+v %v", u, err)
 	}
 	if itoa(0) != "0" || itoa(123) != "123" {
 		t.Errorf("itoa: %q %q", itoa(0), itoa(123))

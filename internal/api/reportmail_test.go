@@ -215,17 +215,17 @@ func TestReportSubscriptions(t *testing.T) {
 		t.Fatal(ms)
 	}
 	// owner removed from the tenant, or disabled
-	if _, err := e.srv.ownerPrincipal(ctx, e.tenant.ID, "missing"); err == nil {
+	if _, err := e.srv.ownerPrincipal(ctx, e.tenant.ID, "missing", ""); err == nil {
 		t.Fatal("missing owner")
 	}
 	u, _ := e.st.GetUser(ctx, tess.ID)
 	u.Disabled = true
 	_ = e.st.UpdateUser(ctx, u)
-	if _, err := e.srv.ownerPrincipal(ctx, e.tenant.ID, tess.ID); err == nil {
+	if _, err := e.srv.ownerPrincipal(ctx, e.tenant.ID, tess.ID, ""); err == nil {
 		t.Fatal("disabled owner")
 	}
 	stranger := mkUser(t, e.st, "stranger@example.com", false)
-	if _, err := e.srv.ownerPrincipal(ctx, e.tenant.ID, stranger.ID); err == nil {
+	if _, err := e.srv.ownerPrincipal(ctx, e.tenant.ID, stranger.ID, ""); err == nil {
 		t.Fatal("non-member owner")
 	}
 	// disable, then delete
