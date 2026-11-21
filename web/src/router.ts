@@ -76,6 +76,8 @@ const routes: RouteRecordRaw[] = [
           { path: 'execution', name: 'executionSettings', component: () => import('./views/admin/ExecutionSettingsView.vue'), meta: { perm: P.settingsManage } },
           { path: 'mfa', name: 'mfaPolicy', component: () => import('./views/admin/MfaPolicyView.vue'), meta: { perm: P.tenantManage } },
           { path: 'backup', name: 'backup', component: () => import('./views/admin/BackupView.vue'), meta: { superAdmin: true } },
+          // runtime server configuration (OIDC, syslog, SMTP, security, runner); links the MFA page (route mfaPolicy)
+          { path: 'system', name: 'systemSettings', component: () => import('./views/admin/SystemSettingsView.vue'), meta: { superAdmin: true } },
         ],
       },
       { path: 'profile', name: 'profile', component: () => import('./views/ProfileView.vue') },

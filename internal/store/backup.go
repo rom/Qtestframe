@@ -42,6 +42,7 @@ var BackupTables = []string{
 	"invitations", "report_subscriptions",
 	"user_mfa", "mfa_recovery_codes", "mfa_policies",
 	"project_members",
+	"system_settings",
 }
 
 // tables that exist but are deliberately not part of a backup.

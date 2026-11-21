@@ -128,3 +128,14 @@ bootstrap:
   tenant_name: "Default"
   admin_email: "admin@example.com"
   admin_password: "Change-me-1234"
+
+# Runtime system settings: super administrators can change a set of settings
+# (OIDC providers, logging and syslog, e-mail, sign-in security, the runner)
+# in Administration -> System settings; those values are stored in the
+# database and win over this file. Settings set by a QTF_* environment
+# variable are always read-only there. List keys (or prefixes ending in
+# ".*", or "*" for all) here to keep them read-only, e.g.
+#   locked: ["auth.oidc", "logging.*", "runner.*"]
+# See docs/operations.md, "Runtime system settings".
+system_settings:
+  locked: []

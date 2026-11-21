@@ -10582,6 +10582,298 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/admin/settings:
+    get:
+      tags:
+      - Administration
+      summary: System settings
+      operationId: getAdminSettings
+      description: |-
+        The runtime-editable system settings (Administration → System settings): per setting its type, when it applies (`runtime`, `restart`, `readonly`), the effective `value`, the `file_value` without the database override and its `file_source` (`default`, `file`, `environment`), the effective `source` (adds `database`), `locked` with `lock_reason` (`environment`, `config` = system_settings.locked, `readonly`), `running_value`/`pending_restart` for restart settings. Secrets are never returned (`has_secret`). `oidc` lists the OIDC providers (`has_secret`, `secret_source`, `callback_url`). Only super administrators (sessions, not API tokens): the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Administration
+      summary: Change system settings
+      operationId: putAdminSettings
+      description: |-
+        `{"values": {"logging.level": "debug", "email.password": "…", "email.host": null}}`: stores database overrides (validated together with the configuration validation; `null` resets a key to its file value; an empty secret removes the stored secret). Runtime settings apply at once, restart settings at the next start. Locked settings answer 409 `locked`. Every change is audit-logged (`settings.update`, old → new, secrets redacted). Returns the settings as GET does. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/export:
+    get:
+      tags:
+      - Administration
+      summary: Export effective configuration
+      operationId: getAdminSettingsExport
+      description: |-
+        The effective configuration (file, environment and database overrides) as a YAML configuration file (`application/yaml`, attachment); secrets are redacted and the e-mail password is never included. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/{key}:
+    parameters:
+    - name: key
+      in: path
+      required: true
+      schema:
+        type: string
+    delete:
+      tags:
+      - Administration
+      summary: Reset a system setting
+      operationId: deleteAdminSettingsByKey
+      description: |-
+        Removes the database override of `key` (e.g. `logging.level`, `auth.oidc`): the file, environment or default value applies again. Returns the settings as GET does. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/oidc:
+    post:
+      tags:
+      - Administration
+      summary: Add an OIDC provider
+      operationId: postAdminSettingsOidc
+      description: |-
+        `{name, display_name, enabled, issuer, client_id, client_secret, scopes, email_claim, name_claim, groups_claim, auto_provision, default_tenant, default_role, role_mapping, local_mfa, mfa_amr_values, mfa_acr_values}` (`local_mfa`: `off`, `unless_idp_mfa` or `always`, see multi-factor authentication). The provider list is then stored in the database (key `auth.oidc`) and replaces the providers of the file; secrets of file providers stay in the file. Applies at once. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/oidc/{name}:
+    parameters:
+    - name: name
+      in: path
+      required: true
+      schema:
+        type: string
+    put:
+      tags:
+      - Administration
+      summary: Change an OIDC provider
+      operationId: putAdminSettingsOidcByName
+      description: |-
+        Fields as for POST; the name cannot change. An omitted or empty `client_secret` keeps the secret, `clear_secret: true` removes the stored one. Applies at once (sign-ins in progress at an unchanged provider continue). Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Administration
+      summary: Delete an OIDC provider
+      operationId: deleteAdminSettingsOidcByName
+      description: |-
+        Removes the provider from the stored provider list. Returns the settings as GET does. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/oidc:
+    post:
+      tags:
+      - Administration
+      summary: Test OIDC discovery
+      operationId: postAdminSettingsTestOidc
+      description: |-
+        `{"issuer": "https://idp.example.com/realms/x"}`: fetches `<issuer>/.well-known/openid-configuration` from the server and reports `{ok, message, error, details}` (endpoints found, issuer match). Always 200 unless the request is invalid. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/syslog:
+    post:
+      tags:
+      - Administration
+      summary: Send a syslog test message
+      operationId: postAdminSettingsTestSyslog
+      description: |-
+        `{"values": {"logging.syslog.address": "…"}}` (optional unsaved values of the logging section): sends one test message with that syslog configuration and reports `{ok, message, error}`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/admin/settings/test/email:
+    post:
+      tags:
+      - Administration
+      summary: Send a test e-mail with the settings
+      operationId: postAdminSettingsTestEmail
+      description: |-
+        `{"values": {"email.host": "…"}}` (optional unsaved values of the e-mail section; the stored password is used unless one is given): sends a test e-mail to the caller and reports `{ok, message, error}`. Super administrators only: the handler checks.
+
+        **Permission:** signed in.
+      x-permission: authenticated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/Error'
   /api/v1/projects/{pid}/web-tests:
     parameters:
     - $ref: '#/components/parameters/pid'

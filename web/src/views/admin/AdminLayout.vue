@@ -19,6 +19,7 @@ const tabs = computed(() =>
     { to: 'tenants', label: t('admin.tenants'), icon: 'pi pi-building', show: auth.isSuperAdmin },
     { to: 'users', label: t('admin.users'), icon: 'pi pi-id-card', show: auth.isSuperAdmin },
     { to: 'backup', label: t('admin.backup'), icon: 'pi pi-database', show: auth.isSuperAdmin },
+    { to: 'systemSettings', label: t('sysSettings.tab'), icon: 'pi pi-cog', show: auth.isSuperAdmin },
   ].filter((t) => t.show),
 )
 </script>

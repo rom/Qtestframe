@@ -39,8 +39,8 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"roles":                roles,
 		"runner_enabled":       s.Runner.Enabled(),
 		"web_tests_enabled":    s.Runner.WebEnabled(),
-		"auto_create_test":     s.Cfg.Requirements.AutoCreateTest,
-		"max_upload_mb":        s.Cfg.Files.MaxUploadMB,
+		"auto_create_test":     s.conf().Requirements.AutoCreateTest,
+		"max_upload_mb":        s.conf().Files.MaxUploadMB,
 		"analysis_languages":   reqlang.Languages(),
 		"themes":               model.Themes,
 		"project_types":        model.ProjectTypes,
@@ -48,7 +48,7 @@ func (s *Server) handleMeta(w http.ResponseWriter, r *http.Request, p *Principal
 		"test_types":           prompt.TestTypes,
 		"languages":            model.Languages,
 		"email_enabled":        s.emailOn(),
-		"email_digest_hour":    s.Cfg.Email.DigestHour,
+		"email_digest_hour":    s.conf().Email.DigestHour,
 		"version":              Version,
 	})
 }
@@ -210,7 +210,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Pri
 		return
 	}
 	u := &model.User{Email: req.Email}
-	if err := applyUserReq(u, req); err != nil {
+	if err := applyUserReq(u, req, minPassword(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -222,7 +222,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, p *Pri
 	writeJSON(w, http.StatusCreated, u)
 }
 
-func applyUserReq(u *model.User, req userReq) error {
+func applyUserReq(u *model.User, req userReq, minPassword int) error {
 	if req.DisplayName != nil {
 		u.DisplayName = strings.TrimSpace(*req.DisplayName)
 	}
@@ -236,7 +236,7 @@ func applyUserReq(u *model.User, req userReq) error {
 		u.MustChangePassword = *req.MustChangePassword
 	}
 	if req.Password != nil && *req.Password != "" {
-		if err := auth.ValidatePassword(*req.Password); err != nil {
+		if err := auth.ValidatePasswordMin(*req.Password, minPassword); err != nil {
 			return err
 		}
 		h, err := auth.HashPassword(*req.Password)
@@ -267,7 +267,7 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, p *Pri
 		writeError(w, http.StatusConflict, "conflict", "you cannot demote or disable yourself")
 		return
 	}
-	if err := applyUserReq(u, req); err != nil {
+	if err := applyUserReq(u, req, minPassword(s.conf())); err != nil {
 		s.fail(w, r, err)
 		return
 	}
@@ -361,7 +361,7 @@ func (s *Server) handleAddMember(w http.ResponseWriter, r *http.Request, p *Prin
 		u = &model.User{Email: req.Email, DisplayName: req.DisplayName}
 		if req.Password != "" {
 			pw := req.Password
-			if err := applyUserReq(u, userReq{Password: &pw}); err != nil {
+			if err := applyUserReq(u, userReq{Password: &pw}, minPassword(s.conf())); err != nil {
 				s.fail(w, r, err)
 				return
 			}

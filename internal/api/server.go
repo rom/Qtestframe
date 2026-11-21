@@ -22,6 +22,7 @@ import (
 	"github.com/rom/qtestframe/internal/auth"
 	"github.com/rom/qtestframe/internal/catalog"
 	"github.com/rom/qtestframe/internal/config"
+	"github.com/rom/qtestframe/internal/logging"
 	"github.com/rom/qtestframe/internal/mail"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
@@ -80,9 +81,18 @@ type Server struct {
 	// JobHeartbeat is its heartbeat interval (tests; 0 = 15s).
 	jobs         *jobManager
 	JobHeartbeat time.Duration
+
+	// Logs, when set, applies logging changes of the system settings at
+	// runtime (nil: they are stored and apply at the next start).
+	Logs *logging.Manager
+	// system settings (systemsettings.go): live is the effective
+	// configuration (nil = Cfg, no overrides), boot the one at start-up.
+	sys sysState
 }
 
-// New creates a server and its identity providers.
+// New creates a server and its identity providers. cfg is the
+// configuration of the file and the environment; the system settings
+// stored in the database are applied over it (see systemsettings.go).
 func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner, ui fs.FS) (*Server, error) {
 	s := &Server{
 		Store: st, Cfg: cfg, Log: log, Runner: r, UI: ui,
@@ -99,13 +109,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		mailLimiter: newRateLimiter(30, 10*time.Minute),
 		jobs:        newJobManager(),
 	}
-	if e := cfg.Email; e.On() {
-		s.Mail = mail.NewSMTP(mail.SMTPConfig{Host: e.Host, Port: e.Port, Username: e.Username, Password: e.Password, TLS: e.TLS, Timeout: e.Timeout})
-	}
+	// e-mail, OIDC providers and login limits follow the system settings
+	s.initSettings(context.Background())
 	base := strings.TrimSuffix(cfg.Server.BaseURL, "/")
-	for _, o := range cfg.Auth.OIDC {
-		s.OIDC[o.Name] = auth.NewOIDCProvider(o, base+"/api/v1/auth/oidc/"+url.PathEscape(o.Name)+"/callback")
-	}
 	for _, sc := range cfg.Auth.SAML {
 		p, err := auth.NewSAMLProvider(sc, base+"/api/v1/auth/saml/"+url.PathEscape(sc.Name))
 		if err != nil {
@@ -333,6 +339,8 @@ func (s *Server) routes() {
 	s.routesProjectArchive(h)
 	s.routesMFA(h)
 	s.routesSharing(h)
+	// Administration → System settings (systemsettings.go)
+	s.routesSystemSettings(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")
@@ -422,7 +430,7 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
 		h.Set("Cross-Origin-Opener-Policy", "same-origin")
 		h.Set("Cross-Origin-Resource-Policy", "same-origin")
-		if s.Cfg.Server.HSTS && r.TLS != nil {
+		if s.conf().Server.HSTS && r.TLS != nil {
 			h.Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
 		}
 		if strings.HasPrefix(r.URL.Path, "/api/") {
@@ -488,7 +496,7 @@ func (s *Server) clientIP(r *http.Request) string {
 
 func (s *Server) trustedProxy(ip string) bool {
 	addr := net.ParseIP(ip)
-	for _, p := range s.Cfg.Server.TrustedProxies {
+	for _, p := range s.conf().Server.TrustedProxies {
 		if _, n, err := net.ParseCIDR(p); err == nil && addr != nil && n.Contains(addr) {
 			return true
 		}
@@ -612,6 +620,18 @@ type rateLimiter struct {
 
 func newRateLimiter(max int, window time.Duration) *rateLimiter {
 	return &rateLimiter{max: max, window: window, hits: map[string][]time.Time{}}
+}
+
+// setLimits changes the limits (system settings); 0 keeps a value.
+func (l *rateLimiter) setLimits(max int, window time.Duration) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if max > 0 {
+		l.max = max
+	}
+	if window > 0 {
+		l.window = window
+	}
 }
 
 // allow records an attempt for key and reports whether it is permitted.

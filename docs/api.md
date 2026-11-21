@@ -1553,6 +1553,91 @@ Project icon files are served by `/files/{id}/content?inline=1`.
 CLI equivalents: `qtestframe backup --out FILE.zip`,
 `qtestframe restore --in FILE.zip --yes`.
 
+### System settings
+
+Runtime-editable server configuration (Administration → System settings).
+All endpoints need a **super administrator signed in with a session**
+(API tokens get 403). Precedence and locking: see
+[operations.md §3](operations.md#runtime-system-settings-administration--system-settings).
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/admin/settings` | → `{sections, settings: [...], oidc: {providers, source, stored, locked}, locked_patterns, config_file, restart_pending, load_error, trash_retention_days, logging_runtime}` |
+| PUT | `/admin/settings` | `{"values": {key: value \| null}}`; returns the GET document |
+| DELETE | `/admin/settings/{key}` | reset `key` (e.g. `logging.level`, `auth.oidc`) to the file value |
+| GET | `/admin/settings/export` | effective configuration as YAML (attachment), secrets `REDACTED` |
+| POST | `/admin/settings/oidc` | add an OIDC provider |
+| PUT | `/admin/settings/oidc/{name}` | change a provider (the name cannot change) |
+| DELETE | `/admin/settings/oidc/{name}` | delete a provider |
+| POST | `/admin/settings/test/oidc` | `{"issuer"}` → discovery result |
+| POST | `/admin/settings/test/syslog` | `{"values": {...}}` (unsaved logging values) → sends a test message |
+| POST | `/admin/settings/test/email` | `{"values": {...}}` (unsaved e-mail values) → sends a test e-mail to the caller |
+
+A setting in `settings`:
+
+```json
+{"key": "logging.level", "section": "logging", "type": "enum", "apply": "runtime",
+ "options": ["debug", "info", "warn", "error"],
+ "value": "debug", "file_value": "info", "file_source": "file", "source": "database",
+ "stored": true, "ignored": false, "locked": false,
+ "updated_by": "admin@example.com", "updated_at": "2026-11-21T09:00:00Z"}
+```
+
+* `type`: `string`, `int` (with `min`/`max`), `bool`, `duration` (Go
+  duration strings such as `"12h"`, `"90s"`), `enum` (`options`), `secret`,
+  `list` (read-only).
+* `apply`: `runtime` (applies at once), `restart` (stored now, applies at
+  the next start; `running_value` and `pending_restart` show the value in
+  use), `readonly` (configuration file only).
+* `source`: `default`, `file`, `environment` or `database`; `file_value` /
+  `file_source` are the value without the database override.
+* `locked` with `lock_reason`: `environment` (set by the variable `env`;
+  the environment always wins), `config` (`system_settings.locked`) or
+  `readonly`. Changing a locked setting answers 409 `locked`.
+* `ignored`: a stored override exists but is not applied (locked or
+  invalid).
+* Secrets (`email.password`) are **write-only**: `value` is always `null`,
+  `has_secret` / `file_has_secret` say whether one is set. In PUT a string
+  sets the secret, `""` or `null` removes the stored one.
+
+PUT validates all values together with the configuration validation of the
+server (as `check-config`) and stores them only when valid (400 otherwise,
+naming the key). Unknown keys answer 400. Every change is audited as
+`settings.update` (`old → new`, secrets as `set/changed`). `auth.oidc`
+cannot be set with PUT; use the provider endpoints:
+
+```json
+POST /api/v1/admin/settings/oidc
+{"name": "corp", "display_name": "Corporate SSO", "enabled": true,
+ "issuer": "https://idp.example.com/realms/x", "client_id": "qtf", "client_secret": "…",
+ "scopes": ["openid", "email", "profile"], "email_claim": "email", "name_claim": "name",
+ "groups_claim": "groups", "auto_provision": true, "default_tenant": "", "default_role": "viewer",
+ "role_mapping": {"qa": "test_lead"}, "local_mfa": "unless_idp_mfa",
+ "mfa_amr_values": ["mfa", "otp"], "mfa_acr_values": []}
+```
+
+`local_mfa` decides whether Qtestframe asks for its own second factor after
+a sign-in through the provider: `off` (default), `unless_idp_mfa` (unless the
+ID token's `amr`/`acr` claims contain one of `mfa_amr_values` (default
+`mfa`) / `mfa_acr_values`) or `always`.
+
+`name` is 1–40 characters of `a-z`, `0-9`, `-`, `_`. In PUT an omitted or
+empty `client_secret` keeps the secret, `"clear_secret": true` removes the
+stored one (a secret of the file or `QTF_OIDC_<NAME>_CLIENT_SECRET` then
+applies). Providers in GET carry `has_secret`, `secret_source` (`file`,
+`environment`, `database` or `""`), `in_file` and `callback_url`, never the
+secret. The first change stores the whole list (it then replaces the
+providers of the file); `DELETE /admin/settings/auth.oidc` returns to the
+file's providers.
+
+Test results are always 200 with `{"ok": bool, "message", "error",
+"details"}`; e.g. a discovery test returns the endpoints found in
+`details` and an error such as `the document names the issuer "…", not
+"…" (they must match exactly)`.
+
+`GET /auth/providers` (public) also returns `password_min_length`, and
+`GET /invitations/{token}` returns `password_min_length`.
+
 ## SCIM 2.0 provisioning
 
 Identity providers (Microsoft Entra ID, Okta, OneLogin, JumpCloud …)
