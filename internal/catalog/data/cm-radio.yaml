@@ -288,6 +288,144 @@ requirements:
           text: När en dämpsats på 12 dB kopplas in i en testlänk larmar systemet inom 45 minuter, och nivåhistoriken visar värden var 15:e minut.
           threshold: larm vid 10 dB under plan i 30 min
 
+  - id: CMRAD-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [wi-fi, protected-management-frames, wpa3]
+    refs: ["IEEE 802.11-2024 (protected management frames)"]
+    tests: [CMRAD-T11]
+    en:
+      title: Protected management frames on the staff wireless network
+      description: The staff wireless network MUST require protected management frames, so that clients without them cannot associate.
+      rationale: Unprotected management frames let an attacker disconnect users at will and force them onto a rogue access point.
+      criteria:
+        - method: test
+          text: A client with protected management frames disabled cannot associate, and forged deauthentication frames do not disconnect a connected client.
+    sv:
+      title: Skyddade förvaltningsramar i personalens trådlösa nät
+      description: Personalens trådlösa nät SKA kräva skyddade förvaltningsramar, så att klienter utan dem inte kan ansluta.
+      rationale: Oskyddade förvaltningsramar låter en angripare koppla bort användare när som helst och tvinga dem till en falsk åtkomstpunkt.
+      criteria:
+        - method: test
+          text: En klient med skyddade förvaltningsramar avstängda kan inte ansluta, och förfalskade ramar för frånkoppling kopplar inte bort en ansluten klient.
+
+  - id: CMRAD-14
+    type: performance
+    obligation: must
+    priority: high
+    tags: [wi-fi, roaming, voice]
+    refs: ["IEEE 802.11-2024 (fast BSS transition)"]
+    tests: [CMRAD-T11]
+    en:
+      title: Roaming between access points within 50 ms for voice clients
+      description: A voice client moving between access points of the staff network MUST complete the transition with the 802.11r transition protocol in at most 50 ms from the last frame on the old access point to the first frame on the new one.
+      rationale: Gaps above 50 ms are heard as clicks or drop-outs in a call, and a full 802.1X re-authentication takes far longer.
+      criteria:
+        - method: test
+          text: A capture during 20 roams of a voice test client shows each transition at most 50 ms.
+          threshold: ≤ 50 ms
+    sv:
+      title: Växling mellan åtkomstpunkter inom 50 ms för röstklienter
+      description: En röstklient som flyttar mellan åtkomstpunkter i personalnätet SKA slutföra växlingen med övergångsprotokollet i 802.11r på högst 50 ms från den sista ramen på den gamla åtkomstpunkten till den första ramen på den nya.
+      rationale: Avbrott över 50 ms hörs som klick eller tystnad i ett samtal, och en fullständig återautentisering med 802.1X tar mycket längre tid.
+      criteria:
+        - method: test
+          text: En inspelning under 20 växlingar för en röstklient för test visar varje övergång på högst 50 ms.
+          threshold: ≤ 50 ms
+
+  - id: CMRAD-15
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [wi-fi, data-rates, airtime]
+    refs: ["IEEE 802.11-2024 (basic rate set)"]
+    tests: [CMRAD-T11]
+    en:
+      title: Legacy low data rates disabled
+      description: The wireless networks SHOULD use a lowest basic data rate of 12 Mbit/s or higher, with the 1, 2, 5.5, 6 and 9 Mbit/s rates disabled.
+      rationale: Frames sent at legacy low rates take many times more airtime and reduce the capacity of the whole cell.
+      criteria:
+        - method: inspection
+          text: The controller configuration of each network shows 12 Mbit/s as the lowest basic rate and the listed rates disabled.
+          threshold: ≥ 12 Mbit/s
+    sv:
+      title: Äldre låga datahastigheter avstängda
+      description: De trådlösa näten BÖR använda en lägsta grundhastighet på 12 Mbit/s eller högre, med hastigheterna 1, 2, 5,5, 6 och 9 Mbit/s avstängda.
+      rationale: Ramar som skickas med äldre låga hastigheter tar mångdubbelt mer sändningstid och minskar kapaciteten i hela cellen.
+      criteria:
+        - method: inspection
+          text: Kontrollerns konfiguration för varje nät visar 12 Mbit/s som lägsta grundhastighet och de angivna hastigheterna avstängda.
+          threshold: ≥ 12 Mbit/s
+
+  - id: CMRAD-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [private-5g, spectrum, licence]
+    refs: ["Directive (EU) 2018/1972 Art. 46 (authorisation of use of radio spectrum)"]
+    tests: [CMRAD-T12]
+    en:
+      title: Private mobile network only on licensed local spectrum
+      description: A private 4G or 5G network MUST transmit only on frequencies, power levels and within the geographic area of a valid local licence from the national regulator.
+      rationale: Transmitting outside the licence interferes with public networks and other licensees and can lead to fines and shutdown.
+      criteria:
+        - method: test
+          text: Spectrum measurements at the site border show transmissions only within the licensed band and below the licensed field strength limit.
+    sv:
+      title: Privat mobilnät endast på licensierat lokalt spektrum
+      description: Ett privat 4G- eller 5G-nät SKA sända endast på de frekvenser, med de effektnivåer och inom det geografiska område som ett giltigt lokalt tillstånd från den nationella tillsynsmyndigheten anger.
+      rationale: Sändning utanför tillståndet stör publika nät och andra tillståndshavare och kan leda till böter och avstängning.
+      criteria:
+        - method: test
+          text: Spektrummätningar vid områdets gräns visar sändning endast inom det tillståndsgivna bandet och under den tillåtna fältstyrkan.
+
+  - id: CMRAD-17
+    type: security
+    obligation: must
+    priority: high
+    tags: [private-5g, sim, authentication]
+    refs: ["3GPP TS 33.501 (5G authentication and key agreement)"]
+    tests: [CMRAD-T12]
+    en:
+      title: Devices on the private mobile network authenticated with SIM credentials
+      description: Each device on a private 4G or 5G network MUST authenticate with SIM or eSIM credentials issued for that network, using the standard authentication and key agreement procedures.
+      rationale: SIM-based mutual authentication keeps unknown devices off the network and protects the radio link with keys bound to each subscription.
+      criteria:
+        - method: test
+          text: A device with a SIM from another network is rejected, and a device with a valid SIM attaches with standard authentication shown in the core network log.
+    sv:
+      title: Enheter i det privata mobilnätet autentiseras med SIM-uppgifter
+      description: Varje enhet i ett privat 4G- eller 5G-nät SKA autentisera sig med SIM- eller eSIM-uppgifter som utfärdats för det nätet, med standardförfarandena för autentisering och nyckelöverenskommelse.
+      rationale: Ömsesidig autentisering med SIM håller okända enheter borta från nätet och skyddar radiolänken med nycklar som är knutna till varje abonnemang.
+      criteria:
+        - method: test
+          text: En enhet med ett SIM från ett annat nät avvisas, och en enhet med ett giltigt SIM ansluter med standardautentisering som syns i kärnnätets logg.
+
+  - id: CMRAD-18
+    type: performance
+    obligation: must
+    priority: high
+    tags: [private-5g, qos, critical-traffic]
+    refs: ["3GPP TS 23.501 (QoS model)"]
+    tests: [CMRAD-T12]
+    en:
+      title: Critical machine traffic in a dedicated QoS flow
+      description: Traffic marked as critical on a private mobile network MUST run in a dedicated QoS flow with a guaranteed bit rate, so that its one-way delay stays below 20 ms when the cell is loaded to 100 % with traffic that has no guaranteed bit rate.
+      rationale: Control traffic sharing a best-effort flow with video uploads misses its deadlines when the cell gets busy.
+      criteria:
+        - method: test
+          text: With the cell loaded by best-effort traffic, the critical test flow keeps its delay below 20 ms for 99 % of packets.
+          threshold: < 20 ms for 99 % of packets
+    sv:
+      title: Kritisk maskintrafik i ett eget QoS-flöde
+      description: Trafik som markerats som kritisk i ett privat mobilnät SKA gå i ett eget QoS-flöde med garanterad bithastighet, så att dess fördröjning i en riktning ligger under 20 ms när cellen är belastad till 100 % med trafik utan garantier.
+      rationale: Styrtrafik som delar ett flöde utan garantier med videouppladdningar missar sina tidsgränser när cellen blir belastad.
+      criteria:
+        - method: test
+          text: Med cellen belastad av trafik utan garantier håller det kritiska testflödet fördröjningen under 20 ms för 99 % av paketen.
+          threshold: < 20 ms för 99 % av paketen
+
 tests:
   - id: CMRAD-T01
     priority: high
@@ -594,3 +732,73 @@ tests:
           data: Dämpsats 12 dB
         - action: Vänta och följ larmen.
           expected: Ett larm om låg nivå för länken visas inom 45 minuter.
+
+  - id: CMRAD-T11
+    priority: high
+    execution: manual
+    tags: [wi-fi]
+    refs: ["IEEE 802.11-2024 (protected management frames)", "IEEE 802.11-2024 (fast BSS transition)", "IEEE 802.11-2024 (basic rate set)"]
+    en:
+      title: Protected management frames, fast roaming and basic rates
+      description: Checks protected management frames, measures fast roaming of a voice client and reads the basic rate configuration.
+      preconditions: Two test clients, one with protected management frames disabled, a voice test client with fast BSS transition, a wireless capture tool on the test channels and read access to the controller.
+      expected: Unprotected clients are refused, roaming takes at most 50 ms and low rates are disabled.
+      steps:
+        - action: Try to associate the client with protected management frames disabled.
+          expected: The association is refused.
+        - action: Send forged deauthentication frames to a connected client.
+          expected: The client stays connected.
+        - action: Walk the voice client between two access points 20 times during a call while capturing.
+          expected: Each transition takes at most 50 ms.
+        - action: Read the basic rate configuration of each network on the controller.
+          expected: The lowest basic rate is 12 Mbit/s and the listed legacy rates are disabled.
+    sv:
+      title: Skyddade förvaltningsramar, snabb växling och grundhastigheter
+      description: Kontrollerar skyddade förvaltningsramar, mäter snabb växling för en röstklient och läser konfigurationen av grundhastigheter.
+      preconditions: Två testklienter, varav en med skyddade förvaltningsramar avstängda, en röstklient för test med snabb BSS-övergång, ett verktyg för trådlös inspelning på testkanalerna och läsåtkomst till kontrollern.
+      expected: Oskyddade klienter nekas, växling tar högst 50 ms och låga hastigheter är avstängda.
+      steps:
+        - action: Försök ansluta klienten med skyddade förvaltningsramar avstängda.
+          expected: Anslutningen nekas.
+        - action: Skicka förfalskade ramar för frånkoppling till en ansluten klient.
+          expected: Klienten förblir ansluten.
+        - action: Gå med röstklienten mellan två åtkomstpunkter 20 gånger under ett samtal medan inspelningen pågår.
+          expected: Varje övergång tar högst 50 ms.
+        - action: Läs konfigurationen av grundhastigheter för varje nät i kontrollern.
+          expected: Den lägsta grundhastigheten är 12 Mbit/s och de angivna äldre hastigheterna är avstängda.
+
+  - id: CMRAD-T12
+    priority: high
+    execution: manual
+    tags: [private-5g]
+    refs: ["Directive (EU) 2018/1972 Art. 46 (authorisation of use of radio spectrum)", "3GPP TS 33.501 (5G authentication and key agreement)", "3GPP TS 23.501 (QoS model)"]
+    en:
+      title: Private mobile network licence, SIM authentication and critical flow
+      description: Measures transmissions at the site border, checks device authentication and measures the delay of a critical flow in a loaded cell.
+      preconditions: The local licence, a spectrum analyser with antenna, a device with a SIM from another network, a device with a valid SIM, traffic generators and access to the core network log.
+      expected: Transmissions are within the licence, only valid SIMs attach and the critical flow stays below 20 ms.
+      steps:
+        - action: Measure the spectrum at three points on the site border.
+          expected: Transmissions are only within the licensed band and below the licensed limit.
+        - action: Try to attach the device with the foreign SIM.
+          expected: The attach is rejected.
+        - action: Attach the device with the valid SIM and read the core network log.
+          expected: The device attaches with standard authentication and key agreement.
+        - action: Load the cell to 100 % with best-effort traffic and measure the critical test flow.
+          expected: 99 % of packets have a one-way delay below 20 ms.
+          data: 10 Mbit/s critical flow, 1-hour test
+    sv:
+      title: Tillstånd, SIM-autentisering och kritiskt flöde i det privata mobilnätet
+      description: Mäter sändningar vid områdets gräns, kontrollerar autentiseringen av enheter och mäter fördröjningen för ett kritiskt flöde i en belastad cell.
+      preconditions: Det lokala tillståndet, en spektrumanalysator med antenn, en enhet med ett SIM från ett annat nät, en enhet med ett giltigt SIM, trafikgeneratorer och åtkomst till kärnnätets logg.
+      expected: Sändningarna ligger inom tillståndet, bara giltiga SIM ansluter och det kritiska flödet ligger under 20 ms.
+      steps:
+        - action: Mät spektrumet i tre punkter längs områdets gräns.
+          expected: Sändningarna ligger endast inom det tillståndsgivna bandet och under den tillåtna gränsen.
+        - action: Försök ansluta enheten med det främmande SIM-kortet.
+          expected: Anslutningen avvisas.
+        - action: Anslut enheten med det giltiga SIM-kortet och läs kärnnätets logg.
+          expected: Enheten ansluter med standardförfarandet för autentisering och nyckelöverenskommelse.
+        - action: Belasta cellen till 100 % med trafik utan garantier och mät det kritiska testflödet.
+          expected: 99 % av paketen har en fördröjning i en riktning under 20 ms.
+          data: kritiskt flöde på 10 Mbit/s, test i 1 timme

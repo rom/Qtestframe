@@ -332,6 +332,146 @@ requirements:
           text: En återställningsövning på ett testsystem återställer varje delsystem från frånkopplade säkerhetskopior till den godkända konfigurationen inom måltiden, verifierat genom jämförelse av kontrollsummor.
           threshold: ≤ 24 h som standardvärde
 
+  - id: SYSEC-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [risk-acceptance, residual-risk, go-live]
+    refs: ["ISO/IEC 27005:2022 (risk acceptance)"]
+    tests: [SYSEC-T12]
+    en:
+      title: Residual security risks accepted by the risk owner before go-live
+      description: Before the system goes live, the named risk owner MUST accept in writing each residual security risk above the acceptance criteria, with the planned treatment and a review date within 12 months.
+      rationale: Going live with known risks is sometimes necessary, but someone accountable has to decide it knowingly and follow it up.
+      criteria:
+        - method: inspection
+          text: Each residual risk above the criteria in the risk register has a signed acceptance dated before go-live with a treatment and a review date.
+          threshold: review ≤ 12 months
+    sv:
+      title: Kvarvarande säkerhetsrisker godtas av riskägaren före driftstart
+      description: Innan systemet tas i drift SKA den namngivna riskägaren skriftligen godta varje kvarvarande säkerhetsrisk över acceptanskriterierna, med den planerade hanteringen och ett datum för omprövning inom 12 månader.
+      rationale: Att ta ett system i drift med kända risker är ibland nödvändigt, men någon med ansvar behöver fatta beslutet medvetet och följa upp det.
+      criteria:
+        - method: inspection
+          text: Varje kvarvarande risk över kriterierna i riskregistret har ett undertecknat godtagande daterat före driftstart med en hantering och ett omprövningsdatum.
+          threshold: omprövning ≤ 12 månader
+
+  - id: SYSEC-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [hardening, baseline, compliance-scan]
+    refs: ["ISO/IEC 27001:2022 A.8.9"]
+    tests: [SYSEC-T13]
+    en:
+      title: Hardening baseline for each component type checked every month
+      description: The monthly compliance scan of the system MUST show at least 95 % of the checks of the documented hardening baseline for its component type passed on each component.
+      rationale: Configurations drift from their secure state through changes and fixes, and only regular checking finds the drift.
+      criteria:
+        - method: test
+          text: The last three monthly scan reports cover each component and show at least 95 % passed checks on each.
+          threshold: ≥ 95 %
+    sv:
+      title: Härdningsbaslinje för varje komponenttyp som kontrolleras varje månad
+      description: Den månatliga skanningen av systemets efterlevnad SKA visa att minst 95 % av kontrollerna i den dokumenterade härdningsbaslinjen för komponenttypen är godkända på varje komponent.
+      rationale: Konfigurationer glider från sitt säkra läge genom ändringar och rättningar, och bara regelbunden kontroll hittar avvikelserna.
+      criteria:
+        - method: test
+          text: De tre senaste månatliga skanningsrapporterna omfattar varje komponent och visar minst 95 % godkända kontroller på var och en.
+          threshold: ≥ 95 %
+
+  - id: SYSEC-17
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [cryptography, inventory, deprecated-algorithms]
+    refs: ["NIST SP 800-131A Rev. 2 (transitioning the use of cryptographic algorithms and key lengths)", "ISO/IEC 27001:2022 A.8.24"]
+    tests: [SYSEC-T13]
+    en:
+      title: No deprecated algorithm in the cryptographic inventory
+      description: The cryptographic inventory of the system, listing the algorithms, key lengths and certificates used by each component, MUST NOT contain an algorithm or key length marked as disallowed in the organisation's cryptography policy.
+      rationale: An inventory shows where weak cryptography is used and is the starting point for moving to new algorithms when old ones are broken.
+      criteria:
+        - method: inspection
+          text: The inventory covers each component, and a scan of the external and internal interfaces finds no disallowed algorithm or key length.
+    sv:
+      title: Ingen utfasad algoritm i förteckningen över kryptografi
+      description: Systemets förteckning över kryptografi, som anger de algoritmer, nyckellängder och certifikat som varje komponent använder, SKA INTE innehålla någon algoritm eller nyckellängd som markerats som otillåten i organisationens kryptografipolicy.
+      rationale: En förteckning visar var svag kryptografi används och är utgångspunkten för att byta till nya algoritmer när gamla knäcks.
+      criteria:
+        - method: inspection
+          text: Förteckningen omfattar varje komponent, och en skanning av de externa och interna gränssnitten hittar ingen otillåten algoritm eller nyckellängd.
+
+  - id: SYSEC-18
+    type: security
+    obligation: must
+    priority: medium
+    tags: [detection, use-cases, monitoring]
+    refs: ["ISO/IEC 27001:2022 A.8.16"]
+    tests: [SYSEC-T14]
+    en:
+      title: Each detection rule triggered by a test event every year
+      description: The security operations team MUST trigger each detection rule for the system with a harmless test event at least once a year and record that the expected alert was raised within 15 minutes.
+      rationale: Detection rules stop working silently when log sources or formats change, and only a test shows that they still fire.
+      criteria:
+        - method: test
+          text: The test log of the last 12 months has a test event for each rule with an alert time within 15 minutes.
+          threshold: ≤ 15 min
+    sv:
+      title: Varje detekteringsregel utlöses av en testhändelse varje år
+      description: Säkerhetsövervakningen SKA utlösa varje detekteringsregel för systemet med en ofarlig testhändelse minst en gång per år och registrera att det väntade larmet gavs inom 15 minuter.
+      rationale: Detekteringsregler slutar tyst att fungera när loggkällor eller format ändras, och bara ett test visar att de fortfarande utlöses.
+      criteria:
+        - method: test
+          text: Testloggen för de senaste 12 månaderna har en testhändelse för varje regel med en larmtid inom 15 minuter.
+          threshold: ≤ 15 min
+
+  - id: SYSEC-19
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [environment-separation, test-data]
+    refs: ["ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33"]
+    tests: [SYSEC-T14]
+    en:
+      title: No production personal data in development and test environments
+      description: The development and test environments of the system MUST NOT hold personal data copied from production that has not been masked or replaced with synthetic data.
+      rationale: Test environments have weaker controls and more users than production, and copied personal data there is exposed to people with no need to see it.
+      criteria:
+        - method: test
+          text: A scan of the test databases with the production data patterns finds no unmasked personal identity numbers, names or contact details.
+    sv:
+      title: Inga personuppgifter från produktion i utvecklings- och testmiljöer
+      description: Systemets utvecklings- och testmiljöer SKA INTE innehålla personuppgifter som kopierats från produktion och som inte har maskerats eller ersatts med syntetiska data.
+      rationale: Testmiljöer har svagare skydd och fler användare än produktion, och kopierade personuppgifter där exponeras för personer som inte behöver se dem.
+      criteria:
+        - method: test
+          text: En skanning av testdatabaserna med mönstren för produktionsdata hittar inga omaskerade personnummer, namn eller kontaktuppgifter.
+
+  - id: SYSEC-20
+    type: security
+    obligation: must
+    priority: high
+    tags: [decommissioning, key-revocation, sanitisation]
+    refs: ["ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)", "NIST SP 800-88 Rev. 2"]
+    tests: [SYSEC-T12]
+    en:
+      title: Credentials revoked and data sanitised at decommissioning
+      description: When the system or one of its components is decommissioned, the operator MUST revoke its accounts, certificates and keys and sanitise its storage within 10 working days, with a record for each item.
+      rationale: Forgotten accounts and keys of retired components remain valid ways into the rest of the system.
+      criteria:
+        - method: inspection
+          text: The decommissioning record of the last retired component lists each account, certificate and key as revoked and each storage device as sanitised within 10 working days.
+          threshold: ≤ 10 working days
+    sv:
+      title: Behörigheter spärras och data saneras vid avveckling
+      description: När systemet eller en av dess komponenter avvecklas SKA driftorganisationen spärra dess konton, certifikat och nycklar och sanera dess lagring inom 10 arbetsdagar, med en registrering för varje post.
+      rationale: Bortglömda konton och nycklar för avvecklade komponenter förblir giltiga vägar in i resten av systemet.
+      criteria:
+        - method: inspection
+          text: Avvecklingsprotokollet för den senast avvecklade komponenten anger varje konto, certifikat och nyckel som spärrad och varje lagringsenhet som sanerad inom 10 arbetsdagar.
+          threshold: ≤ 10 arbetsdagar
+
 tests:
   - id: SYSEC-T01
     priority: high
@@ -642,3 +782,101 @@ tests:
           data: "måltid 24 h som standardvärde"
         - action: Jämför kontrollsummorna för logik, konfigurationer och inloggningsuppgifter med de godkända värdena.
           expected: Varje kontrollsumma stämmer.
+
+  - id: SYSEC-T12
+    priority: high
+    execution: manual
+    tags: [risk-acceptance, decommissioning]
+    refs: ["ISO/IEC 27005:2022 (risk acceptance)", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)", "NIST SP 800-88 Rev. 2"]
+    en:
+      title: Risk acceptances before go-live and decommissioning records
+      description: Checks the acceptance of residual risks before go-live and the revocation and sanitisation records of a retired component.
+      preconditions: The security risk register with acceptance criteria, the go-live date and the decommissioning record of the last retired component.
+      expected: Each residual risk above the criteria is accepted in time, and the retired component left no valid credentials or data.
+      steps:
+        - action: List the residual risks above the acceptance criteria.
+          expected: A list of risks is produced.
+        - action: Read the acceptance of each risk.
+          expected: Each is signed by the named owner before go-live with a treatment and a review date within 12 months.
+        - action: Check the certificates of the retired component in the certificate authority and its accounts in the directory.
+          expected: Each certificate is revoked and each account is disabled or removed.
+        - action: Read the sanitisation entries of the record.
+          expected: Each storage device has a sanitisation entry dated within 10 working days of retirement.
+    sv:
+      title: Riskgodtaganden före driftstart och avvecklingsprotokoll
+      description: Kontrollerar godtagandet av kvarvarande risker före driftstart och protokollen över spärrning och sanering för en avvecklad komponent.
+      preconditions: Säkerhetsriskregistret med acceptanskriterier, datumet för driftstart och avvecklingsprotokollet för den senast avvecklade komponenten.
+      expected: Varje kvarvarande risk över kriterierna godtas i tid, och den avvecklade komponenten lämnade inga giltiga behörigheter eller data.
+      steps:
+        - action: Lista de kvarvarande riskerna över acceptanskriterierna.
+          expected: En lista över risker tas fram.
+        - action: Läs godtagandet av varje risk.
+          expected: Varje godtagande är undertecknat av den namngivna ägaren före driftstart med en hantering och ett omprövningsdatum inom 12 månader.
+        - action: Kontrollera den avvecklade komponentens certifikat hos certifikatutfärdaren och dess konton i katalogtjänsten.
+          expected: Varje certifikat är spärrat och varje konto är inaktiverat eller borttaget.
+        - action: Läs saneringsposterna i protokollet.
+          expected: Varje lagringsenhet har en saneringspost daterad inom 10 arbetsdagar från avvecklingen.
+
+  - id: SYSEC-T13
+    priority: high
+    execution: automated
+    tags: [hardening, cryptography]
+    refs: ["ISO/IEC 27001:2022 A.8.9", "NIST SP 800-131A Rev. 2 (transitioning the use of cryptographic algorithms and key lengths)", "ISO/IEC 27001:2022 A.8.24"]
+    en:
+      title: Hardening compliance scan and cryptographic scan
+      description: A script runs the compliance scan against the hardening baselines and a scan of the interfaces for disallowed cryptography.
+      preconditions: The hardening baselines, the scanner with credentials for each component, the cryptographic inventory and the list of disallowed algorithms in the policy.
+      expected: Each component passes at least 95 % of its checks and no disallowed algorithm is found.
+      steps:
+        - action: Run the compliance scan on each component.
+          expected: Each component passes at least 95 % of the checks of its baseline.
+        - action: Compare the components in the inventory with the system's component list.
+          expected: Each component is in the inventory.
+        - action: Scan each external and internal interface for offered algorithms and key lengths.
+          expected: No disallowed algorithm or key length is offered.
+          data: TLS 1.0, 3DES, RSA 1024
+    sv:
+      title: Skanning av härdningsefterlevnad och kryptografi
+      description: Ett skript kör skanningen av efterlevnad mot härdningsbaslinjerna och en skanning av gränssnitten efter otillåten kryptografi.
+      preconditions: Härdningsbaslinjerna, skannern med behörighet till varje komponent, förteckningen över kryptografi och listan över otillåtna algoritmer i policyn.
+      expected: Varje komponent klarar minst 95 % av sina kontroller och ingen otillåten algoritm hittas.
+      steps:
+        - action: Kör skanningen av efterlevnad på varje komponent.
+          expected: Varje komponent klarar minst 95 % av kontrollerna i sin baslinje.
+        - action: Jämför komponenterna i förteckningen med systemets komponentlista.
+          expected: Varje komponent finns i förteckningen.
+        - action: Skanna varje externt och internt gränssnitt efter erbjudna algoritmer och nyckellängder.
+          expected: Ingen otillåten algoritm eller nyckellängd erbjuds.
+          data: TLS 1.0, 3DES, RSA 1024
+
+  - id: SYSEC-T14
+    priority: medium
+    execution: manual
+    tags: [detection, test-data]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27001:2022 A.8.31", "ISO/IEC 27001:2022 A.8.33"]
+    en:
+      title: Detection rule test events and scan of test databases
+      description: Triggers a sample detection rule, checks the yearly test log and scans the test databases for personal data.
+      preconditions: The list of detection rules for the system, the yearly test log, a test account and a data discovery tool with the patterns for production personal data.
+      expected: The rule raises its alert within 15 minutes, each rule was tested in the last year, and no unmasked personal data is found in test.
+      steps:
+        - action: Generate a harmless test event for one rule, such as 10 failed sign-ins with the test account.
+          expected: The expected alert is raised within 15 minutes.
+          data: 10 failed sign-ins within 2 minutes
+        - action: Compare the rule list with the test log of the last 12 months.
+          expected: Each rule has a test entry with an alert time.
+        - action: Run the data discovery tool on each test database.
+          expected: No unmasked personal identity number, name or contact detail is found.
+    sv:
+      title: Testhändelser för detekteringsregler och skanning av testdatabaser
+      description: Utlöser en utvald detekteringsregel, kontrollerar den årliga testloggen och skannar testdatabaserna efter personuppgifter.
+      preconditions: Listan över detekteringsregler för systemet, den årliga testloggen, ett testkonto och ett verktyg för att hitta data med mönstren för personuppgifter från produktion.
+      expected: Regeln ger sitt larm inom 15 minuter, varje regel har testats under det senaste året och inga omaskerade personuppgifter hittas i testmiljön.
+      steps:
+        - action: Skapa en ofarlig testhändelse för en regel, till exempel 10 misslyckade inloggningar med testkontot.
+          expected: Det väntade larmet ges inom 15 minuter.
+          data: 10 misslyckade inloggningar inom 2 minuter
+        - action: Jämför regellistan med testloggen för de senaste 12 månaderna.
+          expected: Varje regel har en testpost med en larmtid.
+        - action: Kör verktyget för att hitta data på varje testdatabas.
+          expected: Inget omaskerat personnummer, namn eller kontaktuppgift hittas.

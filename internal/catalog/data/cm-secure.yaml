@@ -284,6 +284,142 @@ requirements:
         - method: test
           text: Anslutningar från en kontorsdator till 10 adresser i styrzonen misslyckas, och routingtabellerna visar ingen väg mellan de två zonerna som går förbi den demilitariserade zonen.
 
+  - id: CMSEC-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [sip-trunk, session-border-controller, topology-hiding]
+    refs: ["RFC 5853", "RFC 3261"]
+    tests: [CMSEC-T12]
+    en:
+      title: SIP trunks terminated on a session border controller
+      description: Each SIP trunk to an external carrier or partner MUST terminate on a session border controller that hides the internal addresses and topology, and accepts signalling only from the carrier's listed addresses.
+      rationale: A SIP trunk open to the internet is scanned within hours and used for toll fraud and denial of service.
+      criteria:
+        - method: test
+          text: A capture on the carrier side shows no internal address in SIP headers or SDP, and SIP requests from an unlisted source address get no answer.
+    sv:
+      title: SIP-trunkar termineras i en sessionsgränskontroll
+      description: Varje SIP-trunk till en extern operatör eller partner SKA termineras i en sessionsgränskontroll som döljer de interna adresserna och topologin och som endast godtar signalering från operatörens angivna adresser.
+      rationale: En SIP-trunk som är öppen mot internet skannas inom några timmar och används för samtalsbedrägerier och överbelastningsattacker.
+      criteria:
+        - method: test
+          text: En inspelning på operatörssidan visar ingen intern adress i SIP-huvuden eller SDP, och SIP-förfrågningar från en adress som inte finns i listan får inget svar.
+
+  - id: CMSEC-14
+    type: security
+    obligation: must
+    priority: medium
+    tags: [federation, unified-communications, external-domains]
+    refs: ["ISO/IEC 27001:2022 A.8.20"]
+    tests: [CMSEC-T12]
+    en:
+      title: Federation of chat and presence only with listed external domains
+      description: The unified communications platform MUST allow federation of chat, presence and calls only with external domains on an approved list, and block each other domain.
+      rationale: Open federation lets anyone contact staff from look-alike domains for phishing and social engineering.
+      criteria:
+        - method: test
+          text: A chat request from a test account in a domain not on the list is blocked, and one from a listed domain is delivered.
+    sv:
+      title: Federering av chatt och närvaro endast med angivna externa domäner
+      description: Plattformen för samordnad kommunikation SKA tillåta federering av chatt, närvaro och samtal endast med externa domäner på en godkänd lista och blockera varje annan domän.
+      rationale: Öppen federering låter vem som helst kontakta personal från domäner som liknar betrodda för nätfiske och social manipulation.
+      criteria:
+        - method: test
+          text: En chattförfrågan från ett testkonto i en domän som inte finns i listan blockeras, och en från en domän i listan levereras.
+
+  - id: CMSEC-15
+    type: security
+    obligation: must
+    priority: medium
+    tags: [meetings, lobby, external-participants]
+    refs: ["ISO/IEC 27001:2022 A.5.14 (information transfer)"]
+    tests: [CMSEC-T13]
+    en:
+      title: External meeting participants wait in a lobby
+      description: The meeting service MUST place participants who are not signed in with an organisation account in a lobby until the organiser or a presenter admits them.
+      rationale: Meetings without a lobby can be joined by anyone with the link, and links get forwarded.
+      criteria:
+        - method: test
+          text: An anonymous participant joining with the meeting link waits in the lobby until admitted and sees no meeting content before that.
+    sv:
+      title: Externa mötesdeltagare väntar i en lobby
+      description: Mötestjänsten SKA placera deltagare som inte är inloggade med ett konto i organisationen i en lobby tills organisatören eller en presentatör släpper in dem.
+      rationale: Möten utan lobby kan nås av vem som helst med länken, och länkar vidarebefordras.
+      criteria:
+        - method: test
+          text: En anonym deltagare som ansluter med möteslänken väntar i lobbyn tills den släpps in och ser inget mötesinnehåll dessförinnan.
+
+  - id: CMSEC-16
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [video-endpoints, auto-answer, eavesdropping]
+    refs: ["ISO/IEC 27001:2022 A.8.9"]
+    tests: [CMSEC-T13]
+    en:
+      title: No automatic answer on room video endpoints
+      description: Room video endpoints MUST NOT answer incoming calls automatically with camera and microphone active.
+      rationale: An endpoint that answers by itself can be called by an outsider to watch and listen to a meeting room.
+      criteria:
+        - method: test
+          text: A call to each room endpoint model rings and stays unanswered until someone accepts it in the room.
+    sv:
+      title: Inget automatiskt svar på videoutrustning i mötesrum
+      description: Videoutrustning i mötesrum SKA INTE svara automatiskt på inkommande samtal med kamera och mikrofon aktiva.
+      rationale: Utrustning som svarar av sig själv kan ringas upp av en utomstående som vill se och höra vad som sker i ett mötesrum.
+      criteria:
+        - method: test
+          text: Ett samtal till varje modell av mötesrumsutrustning ringer och förblir obesvarat tills någon i rummet godtar det.
+
+  - id: CMSEC-17
+    type: security
+    obligation: must
+    priority: high
+    tags: [intrusion-detection, zone-boundaries, alerting]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27033-1:2015"]
+    tests: [CMSEC-T14]
+    en:
+      title: Intrusion detection at the zone boundaries with alerts within 5 minutes
+      description: Each boundary between security zones MUST be covered by network intrusion detection that raises an alert in the security monitoring system within 5 minutes of a detected attack pattern.
+      rationale: Firewalls allow the traffic that their rules permit, and attacks inside allowed traffic are only seen by inspection.
+      criteria:
+        - method: test
+          text: A harmless test signature sent across each zone boundary raises an alert within 5 minutes.
+          threshold: ≤ 5 min
+    sv:
+      title: Intrångsdetektering vid zongränserna med larm inom 5 minuter
+      description: Varje gräns mellan säkerhetszoner SKA övervakas av intrångsdetektering i nätet som ger ett larm i säkerhetsövervakningen inom 5 minuter efter ett upptäckt angreppsmönster.
+      rationale: Brandväggar släpper igenom den trafik som reglerna tillåter, och angrepp i tillåten trafik syns bara vid granskning av innehållet.
+      criteria:
+        - method: test
+          text: En ofarlig testsignatur som skickas över varje zongräns ger ett larm inom 5 minuter.
+          threshold: ≤ 5 min
+
+  - id: CMSEC-18
+    type: security
+    obligation: should
+    priority: medium
+    tags: [protective-dns, malware, outbound]
+    refs: ["CISA Protective Domain Name System Resolver Service"]
+    tests: [CMSEC-T14]
+    en:
+      title: Protective DNS filtering of outbound name lookups
+      description: The internal DNS resolvers SHOULD block lookups of domains on a threat intelligence list updated at least daily, and log each blocked lookup with the client address.
+      rationale: Malware and phishing depend on name lookups, and blocking known bad domains stops many infections before a connection is made.
+      criteria:
+        - method: test
+          text: A lookup of a test domain on the block list returns a block answer and the client address is in the log, and the list is less than 24 hours old.
+          threshold: update ≤ 24 h
+    sv:
+      title: Skyddande DNS-filtrering av utgående namnuppslag
+      description: De interna DNS-resolvrarna BÖR blockera uppslag av domäner på en lista med hotinformation som uppdateras minst dagligen, och logga varje blockerat uppslag med klientens adress.
+      rationale: Skadlig kod och nätfiske är beroende av namnuppslag, och när kända skadliga domäner blockeras stoppas många infektioner innan en anslutning görs.
+      criteria:
+        - method: test
+          text: Ett uppslag av en testdomän i blockeringslistan ger ett blockeringssvar och klientens adress finns i loggen, och listan är mindre än 24 timmar gammal.
+          threshold: uppdatering ≤ 24 h
+
 tests:
   - id: CMSEC-T01
     priority: critical
@@ -606,3 +742,97 @@ tests:
           data: Till exempel TCP 502 och 44818
         - action: Läs routingtabellerna i routrar och brandväggar mellan zonerna.
           expected: Varje väg mellan kontorszonen och styrzonen slutar i den demilitariserade zonen.
+
+  - id: CMSEC-T12
+    priority: high
+    execution: manual
+    tags: [session-border-controller, federation]
+    refs: ["RFC 5853", "RFC 3261", "ISO/IEC 27001:2022 A.8.20"]
+    en:
+      title: Session border controller exposure and federation allow list
+      description: Captures trunk signalling at the carrier side, sends SIP from an unlisted address and tests federation with listed and unlisted domains.
+      preconditions: A test call over the SIP trunk, a capture point on the carrier side of the session border controller, a test host on the internet and test accounts in a listed and an unlisted external domain.
+      expected: No internal address is exposed, unlisted sources get no answer, and only listed domains federate.
+      steps:
+        - action: Make a test call over the trunk and capture the signalling on the carrier side.
+          expected: No internal address appears in SIP headers or SDP.
+        - action: Send a SIP OPTIONS request to the trunk address from the internet test host.
+          expected: No answer is received.
+        - action: Send a chat request to a staff account from the unlisted domain account.
+          expected: The request is blocked.
+        - action: Send a chat request from the listed domain account.
+          expected: The request is delivered.
+    sv:
+      title: Exponering av sessionsgränskontrollen och listan över tillåtna federeringar
+      description: Spelar in trunksignaleringen på operatörssidan, skickar SIP från en adress utanför listan och provar federering med domäner i och utanför listan.
+      preconditions: Ett testsamtal över SIP-trunken, en inspelningspunkt på operatörssidan av sessionsgränskontrollen, en testvärd på internet och testkonton i en extern domän i listan och en utanför listan.
+      expected: Ingen intern adress exponeras, källor utanför listan får inget svar och bara domäner i listan federeras.
+      steps:
+        - action: Ring ett testsamtal över trunken och spela in signaleringen på operatörssidan.
+          expected: Ingen intern adress syns i SIP-huvuden eller SDP.
+        - action: Skicka en SIP OPTIONS-förfrågan till trunkens adress från testvärden på internet.
+          expected: Inget svar tas emot.
+        - action: Skicka en chattförfrågan till ett personalkonto från kontot i domänen utanför listan.
+          expected: Förfrågan blockeras.
+        - action: Skicka en chattförfrågan från kontot i domänen i listan.
+          expected: Förfrågan levereras.
+
+  - id: CMSEC-T13
+    priority: medium
+    execution: manual
+    tags: [meetings, video-endpoints]
+    refs: ["ISO/IEC 27001:2022 A.5.14 (information transfer)", "ISO/IEC 27001:2022 A.8.9"]
+    en:
+      title: Meeting lobby and room endpoint answering
+      description: Joins a meeting anonymously and calls each room endpoint model.
+      preconditions: A scheduled test meeting with an organiser, a browser without an organisation sign-in, the list of room endpoint models and a test caller.
+      expected: The anonymous participant waits in the lobby and no endpoint answers by itself.
+      steps:
+        - action: Join the test meeting with the link from the browser without sign-in.
+          expected: The participant is placed in the lobby and sees no content.
+        - action: Admit the participant as organiser.
+          expected: The participant joins the meeting.
+        - action: Call each room endpoint model from the test caller and wait 60 seconds.
+          expected: Each endpoint rings and none answers by itself.
+    sv:
+      title: Möteslobby och svar på mötesrumsutrustning
+      description: Ansluter anonymt till ett möte och ringer upp varje modell av mötesrumsutrustning.
+      preconditions: Ett planerat testmöte med en organisatör, en webbläsare utan inloggning i organisationen, listan över modeller av mötesrumsutrustning och en testuppringare.
+      expected: Den anonyma deltagaren väntar i lobbyn och ingen utrustning svarar av sig själv.
+      steps:
+        - action: Anslut till testmötet med länken från webbläsaren utan inloggning.
+          expected: Deltagaren placeras i lobbyn och ser inget innehåll.
+        - action: Släpp in deltagaren som organisatör.
+          expected: Deltagaren ansluter till mötet.
+        - action: Ring varje modell av mötesrumsutrustning från testuppringaren och vänta 60 sekunder.
+          expected: Varje utrustning ringer och ingen svarar av sig själv.
+
+  - id: CMSEC-T14
+    priority: high
+    execution: manual
+    tags: [intrusion-detection, protective-dns]
+    refs: ["ISO/IEC 27001:2022 A.8.16", "ISO/IEC 27033-1:2015", "CISA Protective Domain Name System Resolver Service"]
+    en:
+      title: Intrusion detection test signatures and protective DNS block
+      description: Sends a harmless test signature across each zone boundary and looks up a blocked test domain.
+      preconditions: A test host in each zone, a harmless test signature recognised by the detection rules, a test domain added to the block list and access to the security monitoring system and resolver logs.
+      expected: Each boundary raises an alert within 5 minutes and the test domain is blocked and logged.
+      steps:
+        - action: Send the test signature from a host in each zone to a host in the neighbouring zone.
+          expected: An alert for each boundary appears in the monitoring system within 5 minutes.
+        - action: Look up the test domain from a client.
+          expected: The resolver returns a block answer.
+        - action: Read the resolver log and the block list update time.
+          expected: The lookup is logged with the client address and the list was updated less than 24 hours ago.
+    sv:
+      title: Testsignaturer för intrångsdetektering och blockering i skyddande DNS
+      description: Skickar en ofarlig testsignatur över varje zongräns och gör ett uppslag av en blockerad testdomän.
+      preconditions: En testvärd i varje zon, en ofarlig testsignatur som detekteringsreglerna känner igen, en testdomän som lagts till i blockeringslistan och åtkomst till säkerhetsövervakningen och resolverloggarna.
+      expected: Varje gräns ger ett larm inom 5 minuter och testdomänen blockeras och loggas.
+      steps:
+        - action: Skicka testsignaturen från en värd i varje zon till en värd i grannzonen.
+          expected: Ett larm för varje gräns visas i övervakningen inom 5 minuter.
+        - action: Gör ett uppslag av testdomänen från en klient.
+          expected: Resolvern ger ett blockeringssvar.
+        - action: Läs resolverloggen och tiden för den senaste uppdateringen av blockeringslistan.
+          expected: Uppslaget är loggat med klientens adress och listan uppdaterades för mindre än 24 timmar sedan.

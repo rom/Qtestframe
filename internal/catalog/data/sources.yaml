@@ -2528,3 +2528,118 @@ sources:
     name: {en: "Technical product documentation: title blocks and drawing principles (ISO 7200, ISO 128)", sv: "Teknisk produktdokumentation: namnrutor och ritningsprinciper (ISO 7200, ISO 128)"}
     match: ["ISO 7200", "ISO 128-"]
     url: https://www.iso.org/search.html?q=ISO%207200
+
+  # --- Sources added for the hardware, equipment, system and communications catalogues ---
+  - id: iec-lithium-batteries
+    kind: standard
+    jurisdiction: international
+    name: {en: "IEC standards for secondary lithium cells and batteries (IEC 62133, 61960, 62619)", sv: "IEC-standarder för sekundära litiumceller och litiumbatterier (IEC 62133, 61960, 62619)"}
+    match: ["IEC 62133", "IEC 61960", "IEC 62619"]
+    url: https://webstore.iec.ch/en/publication/32662
+  - id: un-manual-tests-criteria
+    kind: guideline
+    jurisdiction: international
+    name: {en: "UN Recommendations on the Transport of Dangerous Goods, Manual of Tests and Criteria", sv: "FN:s rekommendationer om transport av farligt gods, handbok för provning och kriterier"}
+    match: ["UN Manual of Tests and Criteria"]
+    url: https://unece.org/transport/dangerous-goods/un-manual-tests-and-criteria
+  - id: espr
+    kind: law
+    jurisdiction: EU
+    short: ESPR
+    name: {en: "Ecodesign for Sustainable Products Regulation, Regulation (EU) 2024/1781", sv: "Förordningen om ekodesign för hållbara produkter (EU) 2024/1781"}
+    match: ["Regulation (EU) 2024/1781"]
+    url: https://eur-lex.europa.eu/eli/reg/2024/1781/oj
+  - id: ecodesign-standby
+    kind: law
+    jurisdiction: EU
+    name: {en: "Commission Regulation (EU) 2023/826, ecodesign requirements for off mode, standby mode and networked standby", sv: "Kommissionens förordning (EU) 2023/826 om ekodesignkrav för frånläge, standbyläge och nätverksanslutet standbyläge"}
+    match: ["Commission Regulation (EU) 2023/826"]
+    url: https://eur-lex.europa.eu/eli/reg/2023/826/oj
+  - id: ecodesign-eps
+    kind: law
+    jurisdiction: EU
+    name: {en: "Commission Regulation (EU) 2019/1782, ecodesign requirements for external power supplies", sv: "Kommissionens förordning (EU) 2019/1782 om ekodesignkrav för externa nätaggregat"}
+    match: ["Commission Regulation (EU) 2019/1782"]
+    url: https://eur-lex.europa.eu/eli/reg/2019/1782/oj
+  - id: common-charger
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Common charger, Directive (EU) 2022/2380 amending the Radio Equipment Directive", sv: "Gemensam laddare, direktiv (EU) 2022/2380 om ändring av radioutrustningsdirektivet"}
+    match: ["Directive (EU) 2022/2380"]
+    url: https://eur-lex.europa.eu/eli/dir/2022/2380/oj
+  - id: iec-61340
+    kind: standard
+    jurisdiction: international
+    short: IEC 61340
+    name: {en: "IEC 61340 Electrostatics, protection of electronic devices from electrostatic phenomena", sv: "IEC 61340 Elektrostatik, skydd av elektroniska komponenter mot elektrostatiska fenomen"}
+    match: ["IEC 61340"]
+    url: https://www.iec.ch/
+  - id: fcc-47-cfr
+    kind: law
+    jurisdiction: US
+    short: FCC 47 CFR
+    name: {en: "US Code of Federal Regulations Title 47 (FCC), Parts 2 and 15", sv: "USA:s Code of Federal Regulations avdelning 47 (FCC), del 2 och 15"}
+    match: ["47 CFR Part 15", "47 CFR Part 2 "]
+    url: https://www.ecfr.gov/current/title-47
+  - id: ped
+    kind: directive
+    jurisdiction: EU
+    short: PED
+    name: {en: "Pressure Equipment Directive 2014/68/EU", sv: "Direktivet om tryckbärande anordningar 2014/68/EU"}
+    match: ["Directive 2014/68/EU"]
+    url: https://eur-lex.europa.eu/eli/dir/2014/68/oj
+  - id: noise-at-work
+    kind: directive
+    jurisdiction: EU
+    name: {en: "Noise at work, Directive 2003/10/EC on exposure of workers to the risks arising from noise", sv: "Buller i arbetet, direktiv 2003/10/EG om arbetstagares exponering för risker som har samband med buller"}
+    match: ["Directive 2003/10/EC"]
+    url: https://eur-lex.europa.eu/eli/dir/2003/10/oj
+  - id: iso-4126
+    kind: standard
+    jurisdiction: international
+    short: ISO 4126
+    name: {en: "ISO 4126 Safety devices for protection against excessive pressure", sv: "ISO 4126 Säkerhetsanordningar för skydd mot för högt tryck"}
+    match: ["ISO 4126"]
+    url: https://www.iso.org/standard/50826.html
+  - id: iso-11064
+    kind: standard
+    jurisdiction: international
+    short: ISO 11064
+    name: {en: "ISO 11064 Ergonomic design of control centres", sv: "ISO 11064 Ergonomisk utformning av kontrollcentraler"}
+    match: ["ISO 11064"]
+    url: https://www.iso.org/standard/19042.html
+  - id: iso-10075
+    kind: standard
+    jurisdiction: international
+    short: ISO 10075
+    name: {en: "ISO 10075 Ergonomic principles related to mental workload", sv: "ISO 10075 Ergonomiska principer för mental belastning"}
+    match: ["ISO 10075"]
+    url: https://www.iso.org/standard/76686.html
+  - id: gsn
+    kind: practice
+    jurisdiction: international
+    short: GSN
+    name: {en: "Goal Structuring Notation (GSN) Community Standard, Safety-Critical Systems Club", sv: "Goal Structuring Notation (GSN) Community Standard, Safety-Critical Systems Club"}
+    match: ["GSN Community Standard"]
+    url: https://scsc.uk/gsn
+  - id: lorawan
+    kind: standard
+    jurisdiction: international
+    short: LoRaWAN
+    name: {en: "LoRa Alliance LoRaWAN specifications (link layer, regional parameters, application layer)", sv: "LoRa Alliance LoRaWAN-specifikationer (länklager, regionala parametrar, applikationslager)"}
+    match: ["LoRaWAN"]
+    url: https://resources.lora-alliance.org/technical-specifications
+  - id: etsi-en-300-220
+    kind: standard
+    jurisdiction: EU
+    short: ETSI EN 300 220
+    name: {en: "ETSI EN 300 220 Short Range Devices operating in the frequency range 25 MHz to 1 000 MHz", sv: "ETSI EN 300 220 Kortdistansutrustning i frekvensområdet 25 MHz till 1 000 MHz"}
+    match: ["ETSI EN 300 220"]
+    url: https://www.etsi.org/deliver/etsi_en/300200_300299/30022002/
+  - id: ieee-802-11
+    kind: standard
+    jurisdiction: international
+    short: IEEE 802.11
+    name: {en: "IEEE 802.11 Wireless LAN medium access control and physical layer specifications", sv: "IEEE 802.11 Specifikationer för åtkomstkontroll och fysiskt lager i trådlösa lokala nät"}
+    match: ["IEEE 802.11"]
+    url: https://standards.ieee.org/ieee/802.11/10548/

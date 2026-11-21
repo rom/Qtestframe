@@ -396,6 +396,142 @@ requirements:
           text: Uppmätt höjd och djup för varje ofta använt manöverdon och varje nödstopp ligger inom den angivna zonen.
           threshold: 600–1 700 mm högt, ≤ 500 mm djupt
 
+  - id: EQSAF-18
+    type: security
+    obligation: must
+    priority: high
+    tags: [corruption, cybersecurity, machinery-regulation]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.1.9 (protection against corruption)", "IEC 62443-3-3 SR 3.4"]
+    tests: [EQSAF-T13]
+    en:
+      title: Safety functions protected against corruption through connections
+      description: The machine MUST be designed so that a connection to it, by a device or remotely, cannot change the software or parameters of a safety function without a recorded, authorised action.
+      rationale: Machinery is now networked, and a change made through a connection can disable a safety function without anyone at the machine noticing.
+      criteria:
+        - method: test
+          text: An attempt through each external interface to change safety parameters without authorisation is refused and logged.
+    sv:
+      title: Säkerhetsfunktioner skyddade mot manipulering via anslutningar
+      description: Maskinen SKA vara konstruerad så att en anslutning till den, från en enhet eller på distans, inte kan ändra programvaran eller parametrarna för en säkerhetsfunktion utan en registrerad och behörig åtgärd.
+      rationale: Maskiner är numera uppkopplade, och en ändring som görs via en anslutning kan koppla bort en säkerhetsfunktion utan att någon vid maskinen märker det.
+      criteria:
+        - method: test
+          text: Ett försök via varje externt gränssnitt att ändra säkerhetsparametrar utan behörighet nekas och loggas.
+
+  - id: EQSAF-19
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [safety-software, traceability, log]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.2.1 (safety and reliability of control systems)"]
+    tests: [EQSAF-T13]
+    en:
+      title: Record of interventions and safety software versions for 5 years
+      description: The control system MUST record each intervention on safety-related software or parameters, with time, user and software version, and keep the records for at least 5 years.
+      rationale: The record shows which safety software was running at any time and who changed it, which is needed after an accident and for market surveillance.
+      criteria:
+        - method: test
+          text: A change of a safety parameter appears in the record with time, user and new version, and the oldest entry is at least 5 years old or dates from commissioning.
+          threshold: ≥ 5 years
+    sv:
+      title: Register över ingrepp och versioner av säkerhetsprogramvara i 5 år
+      description: Styrsystemet SKA registrera varje ingrepp i säkerhetsrelaterad programvara eller parametrar, med tid, användare och programversion, och spara registreringarna i minst 5 år.
+      rationale: Registret visar vilken säkerhetsprogramvara som kördes vid varje tidpunkt och vem som ändrade den, vilket behövs efter en olycka och vid marknadskontroll.
+      criteria:
+        - method: test
+          text: En ändring av en säkerhetsparameter syns i registret med tid, användare och ny version, och den äldsta posten är minst 5 år gammal eller från idrifttagningen.
+          threshold: ≥ 5 år
+
+  - id: EQSAF-20
+    type: functional
+    obligation: must_not
+    priority: critical
+    tags: [guards, interlocking, restart]
+    refs: ["ISO 14119:2024 (interlocking devices associated with guards)", "Regulation (EU) 2023/1230 Annex III §1.4 (guards and protective devices)"]
+    tests: [EQSAF-T14]
+    en:
+      title: No restart when an interlocked guard is closed
+      description: Closing an interlocked movable guard MUST NOT start hazardous machine functions, which start only after a separate start command from outside the danger zone.
+      rationale: An operator who closes a guard on a colleague inside the machine would otherwise start it on that person.
+      criteria:
+        - method: test
+          text: Opening and then closing each interlocked guard during a cycle leaves the machine stopped until the start command is given.
+    sv:
+      title: Ingen återstart när en förreglad skyddsanordning stängs
+      description: Att stänga en förreglad rörlig skyddsanordning SKA INTE starta farliga maskinfunktioner, som startar först efter ett separat startkommando utanför riskområdet.
+      rationale: En operatör som stänger en skyddsanordning medan en kollega är inne i maskinen skulle annars starta den mot den personen.
+      criteria:
+        - method: test
+          text: När varje förreglad skyddsanordning öppnas och sedan stängs under en cykel förblir maskinen stoppad tills startkommandot ges.
+
+  - id: EQSAF-21
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [noise, instructions, emission]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.4 (instructions)"]
+    tests: [EQSAF-T15]
+    en:
+      title: Noise emission values stated in the instructions
+      description: The instructions MUST state the A-weighted emission sound pressure level at the workstations and, where it exceeds 80 dB(A), the A-weighted sound power level of the machine, with the measurement method and uncertainty.
+      rationale: Buyers need declared noise values to compare machines and to plan protection of the workers who will use them.
+      criteria:
+        - method: inspection
+          text: The instructions give the emission values, the measurement method and the uncertainty, and a check measurement agrees within the stated uncertainty.
+    sv:
+      title: Bulleremissionsvärden anges i bruksanvisningen
+      description: Bruksanvisningen SKA ange den A-vägda emissionsljudtrycksnivån vid arbetsplatserna och, när den överstiger 80 dB(A), maskinens A-vägda ljudeffektnivå, med mätmetod och osäkerhet.
+      rationale: Köpare behöver angivna bullervärden för att jämföra maskiner och planera skyddet för de arbetstagare som ska använda dem.
+      criteria:
+        - method: inspection
+          text: Bruksanvisningen anger emissionsvärdena, mätmetoden och osäkerheten, och en kontrollmätning stämmer inom den angivna osäkerheten.
+
+  - id: EQSAF-22
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [instructions, digital-format]
+    refs: ["Regulation (EU) 2023/1230 Art. 10(7) (instructions in digital format)"]
+    tests: [EQSAF-T15]
+    en:
+      title: Digital instructions with a free paper copy on request
+      description: When the instructions are supplied in digital form, the manufacturer MUST state on the machine or its packaging how to access them, keep them downloadable for at least 10 years and send a paper copy free of charge when the buyer asks for one at the time of purchase.
+      rationale: Digital instructions are easier to keep current, but users without access to them still need the safety information.
+      criteria:
+        - method: inspection
+          text: The machine shows the access method, the link works, and the order process offers a free paper copy.
+          threshold: ≥ 10 years online
+    sv:
+      title: Digital bruksanvisning med kostnadsfri papperskopia på begäran
+      description: När bruksanvisningen levereras i digital form SKA tillverkaren ange på maskinen eller förpackningen hur den nås, hålla den nedladdningsbar i minst 10 år och skicka en papperskopia utan kostnad när köparen begär det vid köpet.
+      rationale: En digital bruksanvisning är lättare att hålla aktuell, men användare som saknar tillgång till den behöver ändå säkerhetsinformationen.
+      criteria:
+        - method: inspection
+          text: Maskinen visar hur bruksanvisningen nås, länken fungerar och beställningsprocessen erbjuder en kostnadsfri papperskopia.
+          threshold: ≥ 10 år på nätet
+
+  - id: EQSAF-23
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [safety-plc, checksum, change-control]
+    refs: ["IEC 62061:2021", "ISO 13849-2:2012 (validation)"]
+    tests: [EQSAF-T14]
+    en:
+      title: Safety program checksum verified after each change
+      description: After each change to the program or parameters of a safety controller, the maintenance team MUST compare the controller's program checksum with the checksum of the validated version and repeat the validation of the affected safety functions.
+      rationale: An unvalidated version in a safety controller removes the evidence that the safety functions still meet their required level.
+      criteria:
+        - method: inspection
+          text: Each safety controller change in the last 12 months has a checksum record matching a validated version and a validation record for the affected functions.
+    sv:
+      title: Kontrollsumma för säkerhetsprogrammet verifieras efter varje ändring
+      description: Efter varje ändring av programmet eller parametrarna i ett säkerhetsstyrsystem SKA underhållsteamet jämföra styrsystemets programkontrollsumma med kontrollsumman för den validerade versionen och upprepa valideringen av de berörda säkerhetsfunktionerna.
+      rationale: En ovaliderad version i ett säkerhetsstyrsystem tar bort beviset för att säkerhetsfunktionerna fortfarande når sin krävda nivå.
+      criteria:
+        - method: inspection
+          text: Varje ändring av ett säkerhetsstyrsystem under de senaste 12 månaderna har en registrerad kontrollsumma som stämmer med en validerad version och ett valideringsprotokoll för de berörda funktionerna.
+
 tests:
   - id: EQSAF-T01
     priority: critical
@@ -742,3 +878,103 @@ tests:
           expected: Tecknen är minst 3 mm, kontrasten minst 4,5:1 och varje text byter språk.
         - action: Mät höjd och djup för varje ofta använt manöverdon och varje nödstopp.
           expected: Var och en ligger mellan 600 mm och 1 700 mm högt och inom 500 mm från framkanten.
+
+  - id: EQSAF-T13
+    priority: high
+    execution: manual
+    tags: [corruption, safety-software]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.1.9 (protection against corruption)", "IEC 62443-3-3 SR 3.4", "Regulation (EU) 2023/1230 Annex III §1.2.1 (safety and reliability of control systems)"]
+    en:
+      title: Unauthorised change through each interface and the intervention record
+      description: Tries to change safety parameters through each external interface without authorisation and checks the record of an authorised change.
+      preconditions: The machine in a test state, a laptop with the engineering tool, a test account without safety rights, a test account with safety rights and the list of external interfaces.
+      expected: Unauthorised changes are refused and logged, and an authorised change is recorded with time, user and version.
+      steps:
+        - action: Connect to each external interface with the account without safety rights and try to change a safety parameter.
+          expected: Each attempt is refused and an entry is written to the log.
+          data: stopping distance parameter of the light curtain
+        - action: Make an authorised change of the same parameter with the account with safety rights, then restore it.
+          expected: Both changes appear in the record with time, user and software version.
+        - action: Read the oldest entry in the record.
+          expected: The entry is at least 5 years old or dates from commissioning.
+    sv:
+      title: Obehörig ändring via varje gränssnitt och registret över ingrepp
+      description: Försöker ändra säkerhetsparametrar via varje externt gränssnitt utan behörighet och kontrollerar registreringen av en behörig ändring.
+      preconditions: Maskinen i ett testläge, en bärbar dator med konfigurationsverktyget, ett testkonto utan säkerhetsbehörighet, ett testkonto med säkerhetsbehörighet och listan över externa gränssnitt.
+      expected: Obehöriga ändringar nekas och loggas, och en behörig ändring registreras med tid, användare och version.
+      steps:
+        - action: Anslut till varje externt gränssnitt med kontot utan säkerhetsbehörighet och försök ändra en säkerhetsparameter.
+          expected: Varje försök nekas och en post skrivs i loggen.
+          data: ljusridåns parameter för stoppavstånd
+        - action: Gör en behörig ändring av samma parameter med kontot med säkerhetsbehörighet och återställ den sedan.
+          expected: Båda ändringarna syns i registret med tid, användare och programversion.
+        - action: Läs den äldsta posten i registret.
+          expected: Posten är minst 5 år gammal eller från idrifttagningen.
+
+  - id: EQSAF-T14
+    priority: critical
+    execution: manual
+    tags: [guards, interlocking, safety-plc]
+    refs: ["ISO 14119:2024 (interlocking devices associated with guards)", "Regulation (EU) 2023/1230 Annex III §1.4 (guards and protective devices)", "IEC 62061:2021", "ISO 13849-2:2012 (validation)"]
+    en:
+      title: Guard closing without restart and safety program checksum
+      description: Opens and closes each interlocked guard during a cycle and compares the safety program checksum with the validated version.
+      preconditions: The machine in production mode with a trained operator, the list of interlocked guards and the checksum of the validated safety program.
+      expected: The machine stays stopped after each guard is closed and the checksum matches the validated version.
+      steps:
+        - action: Start a cycle and open the first interlocked guard.
+          expected: The hazardous motion stops.
+        - action: Close the guard and wait 10 seconds.
+          expected: The machine stays stopped.
+        - action: Give the start command from the operator position.
+          expected: The machine starts.
+        - action: Repeat for each interlocked guard, then read the program checksum in the safety controller.
+          expected: Each guard behaves the same and the checksum matches the validated version.
+    sv:
+      title: Stängning av skyddsanordning utan återstart och kontrollsumma för säkerhetsprogrammet
+      description: Öppnar och stänger varje förreglad skyddsanordning under en cykel och jämför säkerhetsprogrammets kontrollsumma med den validerade versionen.
+      preconditions: Maskinen i produktionsläge med en utbildad operatör, listan över förreglade skyddsanordningar och kontrollsumman för det validerade säkerhetsprogrammet.
+      expected: Maskinen förblir stoppad efter att varje skyddsanordning stängts och kontrollsumman stämmer med den validerade versionen.
+      steps:
+        - action: Starta en cykel och öppna den första förreglade skyddsanordningen.
+          expected: Den farliga rörelsen stannar.
+        - action: Stäng skyddsanordningen och vänta 10 sekunder.
+          expected: Maskinen förblir stoppad.
+        - action: Ge startkommandot från operatörsplatsen.
+          expected: Maskinen startar.
+        - action: Upprepa för varje förreglad skyddsanordning och läs sedan programkontrollsumman i säkerhetsstyrsystemet.
+          expected: Varje skyddsanordning beter sig likadant och kontrollsumman stämmer med den validerade versionen.
+
+  - id: EQSAF-T15
+    priority: medium
+    execution: manual
+    tags: [instructions, noise]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.4 (instructions)", "Regulation (EU) 2023/1230 Art. 10(7) (instructions in digital format)"]
+    en:
+      title: Noise declaration and access to digital instructions
+      description: Checks the noise values in the instructions with a check measurement and the access to the digital instructions.
+      preconditions: The machine running at its declared operating condition, a calibrated class 1 sound level meter, the instructions and the packaging.
+      expected: The declared noise values agree with the check measurement and the instructions are reachable with a free paper copy offered.
+      steps:
+        - action: Read the declared emission sound pressure level, method and uncertainty in the instructions.
+          expected: The values, the method and the uncertainty are stated.
+        - action: Measure the sound pressure level at the main workstation.
+          expected: The result is within the declared value plus the uncertainty.
+        - action: Follow the access information on the machine or packaging.
+          expected: The instructions for the machine's model and serial range open for download.
+        - action: Read the order terms.
+          expected: A free paper copy is offered at the time of purchase.
+    sv:
+      title: Bullerdeklaration och tillgång till den digitala bruksanvisningen
+      description: Kontrollerar bullervärdena i bruksanvisningen med en kontrollmätning och tillgången till den digitala bruksanvisningen.
+      preconditions: Maskinen i drift vid sitt angivna driftförhållande, en kalibrerad ljudnivåmätare av klass 1, bruksanvisningen och förpackningen.
+      expected: De angivna bullervärdena stämmer med kontrollmätningen och bruksanvisningen går att nå med en kostnadsfri papperskopia erbjuden.
+      steps:
+        - action: Läs den angivna emissionsljudtrycksnivån, metoden och osäkerheten i bruksanvisningen.
+          expected: Värdena, metoden och osäkerheten är angivna.
+        - action: Mät ljudtrycksnivån vid den huvudsakliga arbetsplatsen.
+          expected: Resultatet ligger inom det angivna värdet plus osäkerheten.
+        - action: Följ informationen om åtkomst på maskinen eller förpackningen.
+          expected: Bruksanvisningen för maskinens modell och serienummerintervall kan laddas ned.
+        - action: Läs beställningsvillkoren.
+          expected: En kostnadsfri papperskopia erbjuds vid köpet.

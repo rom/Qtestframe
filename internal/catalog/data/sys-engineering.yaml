@@ -392,6 +392,140 @@ requirements:
           text: Rapporten över måtten visar minst 3 mått med mål, gränsvärde och en uppskattning som uppdaterats vid var och en av de 2 senaste konstruktionsgranskningarna.
           threshold: ≥ 3 mått
 
+  - id: SYENG-18
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [architecture, viewpoints, concerns]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)"]
+    tests: [SYENG-T12]
+    en:
+      title: Each stakeholder concern framed by an architecture view
+      description: The architecture description MUST list the concerns of each stakeholder group and show, for each concern, the view that addresses it.
+      rationale: A concern that no view addresses is a question about the system that nobody has answered, and it shows up late as a surprise.
+      criteria:
+        - method: inspection
+          text: The concern-to-view table of the architecture description has no concern without a view, and each view names the concerns it frames.
+    sv:
+      title: Varje intressentintresse hanteras av en arkitekturvy
+      description: Arkitekturbeskrivningen SKA ange intressena för varje intressentgrupp och visa, för varje intresse, den vy som hanterar det.
+      rationale: Ett intresse som ingen vy hanterar är en fråga om systemet som ingen har besvarat, och den dyker upp sent som en överraskning.
+      criteria:
+        - method: inspection
+          text: Tabellen över intressen och vyer i arkitekturbeskrivningen har inget intresse utan vy, och varje vy anger de intressen den hanterar.
+
+  - id: SYENG-19
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [requirements-volatility, measurement]
+    refs: ["ISO/IEC/IEEE 15939:2017 (measurement process)"]
+    tests: [SYENG-T13]
+    en:
+      title: Requirements volatility measured each month
+      description: The project SHOULD measure each month the share of baselined system requirements added, changed or deleted, and raise a risk when it exceeds 5 % in a month after the design baseline.
+      rationale: High volatility late in development drives rework and schedule slips, and measuring it makes the trend visible early.
+      criteria:
+        - method: inspection
+          text: The measurement report shows a monthly volatility value for each month since the baseline and a risk entry for each month above 5 %.
+          threshold: 5 % per month
+    sv:
+      title: Kravens volatilitet mäts varje månad
+      description: Projektet BÖR varje månad mäta andelen baslinjelagda systemkrav som lagts till, ändrats eller tagits bort, och ta upp en risk när andelen överstiger 5 % under en månad efter konstruktionsbaslinjen.
+      rationale: Hög volatilitet sent i utvecklingen ger omarbete och förseningar, och mätningen gör trenden synlig i tid.
+      criteria:
+        - method: inspection
+          text: Mätrapporten visar ett volatilitetsvärde för varje månad sedan baslinjen och en riskpost för varje månad över 5 %.
+          threshold: 5 % per månad
+
+  - id: SYENG-20
+    type: business
+    obligation: must
+    priority: high
+    tags: [technical-reviews, entry-criteria, exit-criteria]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.2 (project assessment and control process)"]
+    tests: [SYENG-T14]
+    en:
+      title: Technical reviews with entry and exit criteria
+      description: The project MUST hold the system requirements review, the preliminary design review and the critical design review against entry and exit criteria agreed in the systems engineering plan, and record the decision and open actions of each.
+      rationale: Reviews without criteria turn into presentations, and the project moves on with unresolved design issues.
+      criteria:
+        - method: inspection
+          text: Each held review has a record showing each entry criterion as met or waived with a reason, each exit criterion assessed and the actions with owners.
+    sv:
+      title: Tekniska granskningar med ingångs- och utgångskriterier
+      description: Projektet SKA hålla granskning av systemkrav, preliminär konstruktionsgranskning och kritisk konstruktionsgranskning mot ingångs- och utgångskriterier som överenskommits i planen för systemutveckling, och registrera beslutet och de öppna åtgärderna från varje granskning.
+      rationale: Granskningar utan kriterier blir presentationer, och projektet går vidare med olösta konstruktionsfrågor.
+      criteria:
+        - method: inspection
+          text: Varje hållen granskning har ett protokoll som visar varje ingångskriterium som uppfyllt eller undantaget med ett skäl, varje utgångskriterium bedömt och åtgärderna med ansvariga.
+
+  - id: SYENG-21
+    type: business
+    obligation: must
+    priority: high
+    tags: [stakeholder-validation, requirements-baseline]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.2 (stakeholder needs and requirements definition process)"]
+    tests: [SYENG-T14]
+    en:
+      title: Requirements set validated by stakeholder representatives before baseline
+      description: A named representative of each stakeholder group in the stakeholder register MUST confirm in writing that the stakeholder requirements reflect the group's needs before the requirements are baselined.
+      rationale: A baseline that a stakeholder group has never confirmed is likely to be challenged, and changes after the baseline cost more.
+      criteria:
+        - method: inspection
+          text: The baseline record holds a dated confirmation from each stakeholder group in the register, each dated before the baseline date.
+    sv:
+      title: Kravmängden valideras av intressentrepresentanter före baslinjen
+      description: En namngiven representant för varje intressentgrupp i intressentregistret SKA skriftligen bekräfta att intressentkraven speglar gruppens behov innan kraven baslinjeläggs.
+      rationale: En baslinje som en intressentgrupp aldrig har bekräftat kommer troligen att ifrågasättas, och ändringar efter baslinjen kostar mer.
+      criteria:
+        - method: inspection
+          text: Baslinjeprotokollet har en daterad bekräftelse från varje intressentgrupp i registret, var och en daterad före baslinjedatumet.
+
+  - id: SYENG-22
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [interoperability, standards-profile, interfaces]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.4 (system architecture definition process)"]
+    tests: [SYENG-T12]
+    en:
+      title: Standards profile for the external interfaces
+      description: The architecture description MUST include a standards profile that names, for each external interface, the standard, its version or edition, and the options or profile of it that the system implements.
+      rationale: Two systems that both claim the same standard can still fail to work together when they use different versions or options.
+      criteria:
+        - method: inspection
+          text: Each external interface in the interface register appears in the standards profile with a standard, a version and the implemented options.
+    sv:
+      title: Standardprofil för de externa gränssnitten
+      description: Arkitekturbeskrivningen SKA innehålla en standardprofil som för varje externt gränssnitt anger standarden, dess version eller utgåva och de alternativ eller den profil av den som systemet implementerar.
+      rationale: Två system som båda hävdar samma standard kan ändå inte fungera tillsammans när de använder olika versioner eller alternativ.
+      criteria:
+        - method: inspection
+          text: Varje externt gränssnitt i gränssnittsregistret finns i standardprofilen med en standard, en version och de implementerade alternativen.
+
+  - id: SYENG-23
+    type: business
+    obligation: should
+    priority: low
+    tags: [lessons-learned, knowledge-management]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.2.6 (knowledge management process)"]
+    tests: [SYENG-T13]
+    en:
+      title: Lessons learned recorded at each decision gate
+      description: The project SHOULD record lessons learned at each decision gate in the organisation's knowledge base, each with the context, what happened and a recommendation.
+      rationale: Lessons that are not written down at the time are lost when staff move on, and the next project repeats the mistakes.
+      criteria:
+        - method: inspection
+          text: The knowledge base has at least one lesson from each passed gate of the project, each with context and a recommendation.
+    sv:
+      title: Erfarenheter registreras vid varje beslutspunkt
+      description: Projektet BÖR registrera erfarenheter vid varje beslutspunkt i organisationens kunskapsbas, var och en med sammanhang, vad som hände och en rekommendation.
+      rationale: Erfarenheter som inte skrivs ned när de uppstår går förlorade när personal byter uppdrag, och nästa projekt upprepar misstagen.
+      criteria:
+        - method: inspection
+          text: Kunskapsbasen har minst en erfarenhet från varje passerad beslutspunkt i projektet, var och en med sammanhang och en rekommendation.
+
 tests:
   - id: SYENG-T01
     priority: high
@@ -694,3 +828,95 @@ tests:
           expected: Minst 3 mått har båda.
         - action: Jämför uppdateringsdatumen för uppskattningarna med granskningsdatumen.
           expected: Varje uppskattning uppdaterades vid var och en av de 2 senaste granskningarna.
+
+  - id: SYENG-T12
+    priority: medium
+    execution: manual
+    tags: [architecture, standards-profile]
+    refs: ["ISO/IEC/IEEE 42010:2022 (architecture description)", "ISO/IEC/IEEE 15288:2023 §6.4.4 (system architecture definition process)"]
+    en:
+      title: Concern coverage and standards profile of the architecture
+      description: Checks that each stakeholder concern has a view and each external interface has an entry in the standards profile.
+      preconditions: The architecture description with its concern-to-view table and standards profile, the stakeholder register and the interface register.
+      expected: No concern is left without a view and no external interface is missing from the profile.
+      steps:
+        - action: Compare the concerns in the table with the stakeholder register.
+          expected: Each stakeholder group has its concerns listed.
+        - action: Check that each concern has at least one view.
+          expected: No concern is without a view.
+        - action: Compare the external interfaces in the interface register with the standards profile.
+          expected: Each interface has a standard, a version and the implemented options.
+    sv:
+      title: Täckning av intressen och standardprofil i arkitekturen
+      description: Kontrollerar att varje intressentintresse har en vy och att varje externt gränssnitt finns i standardprofilen.
+      preconditions: Arkitekturbeskrivningen med tabellen över intressen och vyer och standardprofilen, intressentregistret och gränssnittsregistret.
+      expected: Inget intresse saknar vy och inget externt gränssnitt saknas i profilen.
+      steps:
+        - action: Jämför intressena i tabellen med intressentregistret.
+          expected: Varje intressentgrupp har sina intressen angivna.
+        - action: Kontrollera att varje intresse har minst en vy.
+          expected: Inget intresse saknar vy.
+        - action: Jämför de externa gränssnitten i gränssnittsregistret med standardprofilen.
+          expected: Varje gränssnitt har en standard, en version och de implementerade alternativen.
+
+  - id: SYENG-T13
+    priority: low
+    execution: manual
+    tags: [measurement, lessons-learned]
+    refs: ["ISO/IEC/IEEE 15939:2017 (measurement process)", "ISO/IEC/IEEE 15288:2023 §6.2.6 (knowledge management process)"]
+    en:
+      title: Volatility measurement and lessons learned records
+      description: Recalculates the requirements volatility of a month and checks the lessons learned of passed gates.
+      preconditions: The requirements tool with history, the measurement report, the gate records and the knowledge base.
+      expected: The reported volatility matches the history, months above the limit have a risk, and each gate has lessons.
+      steps:
+        - action: Count the requirements added, changed and deleted in a chosen month and divide by the baseline size.
+          expected: The result matches the reported value.
+          data: 12 changes out of 400 requirements = 3 %
+        - action: Find the months above 5 % in the report.
+          expected: Each has a risk entry in the risk register.
+        - action: Compare the passed gates with the lessons in the knowledge base.
+          expected: Each gate has at least one lesson with context and a recommendation.
+    sv:
+      title: Mätning av volatilitet och registrerade erfarenheter
+      description: Räknar om kravvolatiliteten för en månad och kontrollerar erfarenheterna från passerade beslutspunkter.
+      preconditions: Kravverktyget med historik, mätrapporten, protokollen från beslutspunkterna och kunskapsbasen.
+      expected: Den rapporterade volatiliteten stämmer med historiken, månader över gränsen har en risk och varje beslutspunkt har erfarenheter.
+      steps:
+        - action: Räkna kraven som lagts till, ändrats och tagits bort under en vald månad och dela med baslinjens storlek.
+          expected: Resultatet stämmer med det rapporterade värdet.
+          data: 12 ändringar av 400 krav = 3 %
+        - action: Hitta månaderna över 5 % i rapporten.
+          expected: Var och en har en riskpost i riskregistret.
+        - action: Jämför de passerade beslutspunkterna med erfarenheterna i kunskapsbasen.
+          expected: Varje beslutspunkt har minst en erfarenhet med sammanhang och en rekommendation.
+
+  - id: SYENG-T14
+    priority: high
+    execution: manual
+    tags: [technical-reviews, stakeholder-validation]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.3.2 (project assessment and control process)", "ISO/IEC/IEEE 15288:2023 §6.4.2 (stakeholder needs and requirements definition process)"]
+    en:
+      title: Technical review records and stakeholder confirmations
+      description: Checks the records of held technical reviews and the stakeholder confirmations of the requirements baseline.
+      preconditions: The systems engineering plan with review criteria, the review records, the stakeholder register and the requirements baseline record.
+      expected: Reviews are held against their criteria and each stakeholder group confirmed the requirements before the baseline.
+      steps:
+        - action: Compare the entry criteria in each review record with the plan.
+          expected: Each criterion is marked as met or waived with a reason.
+        - action: Read the exit criteria assessment and the action list of each review.
+          expected: Each exit criterion is assessed and each action has an owner.
+        - action: Compare the confirmations in the baseline record with the stakeholder register.
+          expected: Each group has a dated confirmation before the baseline date.
+    sv:
+      title: Granskningsprotokoll och intressenternas bekräftelser
+      description: Kontrollerar protokollen från hållna tekniska granskningar och intressenternas bekräftelser av kravbaslinjen.
+      preconditions: Planen för systemutveckling med granskningskriterier, granskningsprotokollen, intressentregistret och protokollet för kravbaslinjen.
+      expected: Granskningarna hålls mot sina kriterier och varje intressentgrupp har bekräftat kraven före baslinjen.
+      steps:
+        - action: Jämför ingångskriterierna i varje granskningsprotokoll med planen.
+          expected: Varje kriterium är markerat som uppfyllt eller undantaget med ett skäl.
+        - action: Läs bedömningen av utgångskriterierna och åtgärdslistan för varje granskning.
+          expected: Varje utgångskriterium är bedömt och varje åtgärd har en ansvarig.
+        - action: Jämför bekräftelserna i baslinjeprotokollet med intressentregistret.
+          expected: Varje grupp har en daterad bekräftelse före baslinjedatumet.

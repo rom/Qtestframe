@@ -344,6 +344,142 @@ requirements:
           text: Varje ändring under det senaste kvartalet som påverkade trafiken gjordes inom ett servicefönster och aviserades minst 5 arbetsdagar före.
           threshold: ≥ 5 arbetsdagars varsel
 
+  - id: CMNET-15
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [automation, source-of-truth, configuration]
+    refs: ["RFC 6241", "ITIL 4 Change enablement"]
+    tests: [CMNET-T14]
+    en:
+      title: Network configuration generated from a version-controlled source of truth
+      description: The configuration of each managed network element MUST be generated from templates and data held in a version-controlled source of truth, and deployed only through the automation pipeline.
+      rationale: Hand-typed changes drift from the intended design and cannot be reviewed or rolled back, while generated configuration can.
+      criteria:
+        - method: test
+          text: A diff between the running configuration of each element and the configuration generated from the source of truth shows no difference.
+    sv:
+      title: Nätkonfiguration genereras från en versionshanterad referenskälla
+      description: Konfigurationen för varje hanterat nätelement SKA genereras från mallar och data i en versionshanterad referenskälla och driftsättas endast via automationsflödet.
+      rationale: Ändringar som skrivs för hand glider från den avsedda utformningen och kan inte granskas eller rullas tillbaka, vilket genererad konfiguration kan.
+      criteria:
+        - method: test
+          text: En jämförelse mellan den körande konfigurationen i varje element och den konfiguration som genereras från referenskällan visar ingen skillnad.
+
+  - id: CMNET-16
+    type: functional
+    obligation: must
+    priority: high
+    tags: [automation, pre-change-validation, rollback]
+    refs: ["RFC 6241 §8.4 (confirmed commit)"]
+    tests: [CMNET-T14]
+    en:
+      title: Automated validation and automatic rollback of each change
+      description: The automation pipeline MUST validate each change in a dry run before deployment and deploy it with a confirmed commit that rolls back by itself when connectivity checks fail within 5 minutes.
+      rationale: A change that cuts off the management connection cannot be undone remotely unless the element rolls back by itself.
+      criteria:
+        - method: test
+          text: A change that blocks the management address is deployed, the connectivity check fails, and the element returns to the previous configuration within 5 minutes.
+          threshold: ≤ 5 min
+    sv:
+      title: Automatisk validering och automatisk återställning av varje ändring
+      description: Automationsflödet SKA validera varje ändring i en provkörning före driftsättning och driftsätta den med en bekräftad incheckning som återställs av sig själv när anslutningskontroller misslyckas inom 5 minuter.
+      rationale: En ändring som bryter förvaltningsanslutningen går inte att ångra på distans om inte elementet återställs av sig självt.
+      criteria:
+        - method: test
+          text: En ändring som blockerar förvaltningsadressen driftsätts, anslutningskontrollen misslyckas och elementet återgår till föregående konfiguration inom 5 minuter.
+          threshold: ≤ 5 min
+
+  - id: CMNET-17
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [telemetry, streaming, monitoring]
+    refs: ["RFC 8641"]
+    tests: [CMNET-T15]
+    en:
+      title: Interface counters streamed at least every 30 seconds
+      description: Core and distribution network elements SHOULD stream interface counters and error statistics to the monitoring system at intervals of 30 seconds or less.
+      rationale: Polling every 5 minutes averages away short bursts of congestion and errors that users notice.
+      criteria:
+        - method: test
+          text: The monitoring system shows counter samples at most 30 seconds apart for each core and distribution element over one hour.
+          threshold: ≤ 30 s
+    sv:
+      title: Gränssnittsräknare strömmas minst var 30:e sekund
+      description: Nätelement i kärna och distribution BÖR strömma gränssnittsräknare och felstatistik till övervakningssystemet med intervall på 30 sekunder eller kortare.
+      rationale: Avfrågning var 5:e minut jämnar ut korta toppar av överbelastning och fel som användarna märker.
+      criteria:
+        - method: test
+          text: Övervakningssystemet visar räknarvärden med högst 30 sekunders mellanrum för varje element i kärna och distribution under en timme.
+          threshold: ≤ 30 s
+
+  - id: CMNET-18
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [ipam, addressing, documentation]
+    refs: ["ISO/IEC 27001:2022 A.8.9"]
+    tests: [CMNET-T15]
+    en:
+      title: Each IP address and prefix assigned from a single address register
+      description: Each IP prefix and each static IP address used in the network MUST be assigned in a single address management register with its owner, purpose and site before it is configured.
+      rationale: Addresses assigned outside a register end up duplicated, and the conflicts cause outages that are hard to trace.
+      criteria:
+        - method: test
+          text: A discovery scan of the network finds no prefix or static address in use that is missing from the register, and no address assigned twice.
+    sv:
+      title: Varje IP-adress och prefix tilldelas från ett enda adressregister
+      description: Varje IP-prefix och varje statisk IP-adress som används i nätet SKA tilldelas i ett enda register för adresshantering med ägare, syfte och plats innan den konfigureras.
+      rationale: Adresser som tilldelas utanför ett register blir dubblerade, och konflikterna ger avbrott som är svåra att spåra.
+      criteria:
+        - method: test
+          text: En skanning av nätet hittar inget prefix eller statisk adress i bruk som saknas i registret, och ingen adress som tilldelats två gånger.
+
+  - id: CMNET-19
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [out-of-band, management, resilience]
+    refs: ["ISO/IEC 27033-2:2012 (network security design)"]
+    tests: [CMNET-T16]
+    en:
+      title: Out-of-band management access to each core site
+      description: Each core site MUST have an out-of-band management path, independent of the production network, that gives console access to each core network element.
+      rationale: When the production network fails or is misconfigured, the out-of-band path is the only way to reach the elements and repair them remotely.
+      criteria:
+        - method: test
+          text: With the production uplinks of a core site disconnected, an engineer reaches the console of each core element over the out-of-band path.
+    sv:
+      title: Förvaltningsåtkomst utanför bandet till varje kärnplats
+      description: Varje kärnplats SKA ha en förvaltningsväg utanför bandet, oberoende av produktionsnätet, som ger konsolåtkomst till varje kärnnätelement.
+      rationale: När produktionsnätet fallerar eller är felkonfigurerat är vägen utanför bandet det enda sättet att nå elementen och reparera dem på distans.
+      criteria:
+        - method: test
+          text: Med kärnplatsens upplänkar i produktionsnätet bortkopplade når en tekniker konsolen på varje kärnelement via vägen utanför bandet.
+
+  - id: CMNET-20
+    type: business
+    obligation: must
+    priority: medium
+    tags: [lifecycle, software-support, network-elements]
+    refs: ["ISO/IEC 27001:2022 A.8.8", "IEC 62402:2019 (obsolescence management)"]
+    tests: [CMNET-T16]
+    en:
+      title: Network element software within vendor support
+      description: Each network element MUST run a software release that is within its vendor's support, with a planned replacement or upgrade for each element whose hardware or software reaches end of support within 12 months.
+      rationale: Elements without vendor support get no security fixes and no help when they fail.
+      criteria:
+        - method: inspection
+          text: The inventory compared with vendor support lists shows each release in support, and each item with end of support within 12 months has a planned change.
+    sv:
+      title: Programvara i nätelement inom leverantörens support
+      description: Varje nätelement SKA köra en programversion som leverantören stöder, där varje element vars hårdvara eller programvara når slutet på supporten inom 12 månader har ett planerat utbyte eller en planerad uppgradering.
+      rationale: Element utan leverantörssupport får inga säkerhetsrättningar och ingen hjälp när de går sönder.
+      criteria:
+        - method: inspection
+          text: Inventeringen jämförd med leverantörernas supportlistor visar att varje version stöds, och varje enhet med slut på support inom 12 månader har en planerad ändring.
+
 tests:
   - id: CMNET-T01
     priority: critical
@@ -730,3 +866,93 @@ tests:
           expected: Varje ändring ligger inom ett servicefönster.
         - action: Hitta aviseringen för varje ändring och räkna arbetsdagarna mellan avisering och ändring.
           expected: Varje avisering skickades minst 5 arbetsdagar före ändringen.
+
+  - id: CMNET-T14
+    priority: high
+    execution: automated
+    tags: [automation, configuration]
+    refs: ["RFC 6241", "ITIL 4 Change enablement", "RFC 6241 §8.4 (confirmed commit)"]
+    en:
+      title: Drift check and automatic rollback of a breaking change
+      description: A script compares running configurations with the generated ones and deploys a breaking change to a lab element to check the automatic rollback.
+      preconditions: Read access to the network elements, the source of truth and pipeline, and a lab element managed by the same pipeline.
+      expected: No drift is found and the breaking change rolls back within 5 minutes.
+      steps:
+        - action: Generate the configuration of each element from the source of truth and compare it with the running configuration.
+          expected: No difference is found.
+        - action: Deploy through the pipeline a change to the lab element that blocks its management address.
+          expected: The dry run passes the syntax check and the change is committed with confirmation.
+        - action: Wait for the connectivity check.
+          expected: The check fails and the element is back on the previous configuration within 5 minutes.
+    sv:
+      title: Kontroll av avvikelser och automatisk återställning av en brytande ändring
+      description: Ett skript jämför körande konfigurationer med de genererade och driftsätter en brytande ändring på ett labbelement för att kontrollera den automatiska återställningen.
+      preconditions: Läsåtkomst till nätelementen, referenskällan och automationsflödet, och ett labbelement som hanteras av samma flöde.
+      expected: Inga avvikelser hittas och den brytande ändringen återställs inom 5 minuter.
+      steps:
+        - action: Generera konfigurationen för varje element från referenskällan och jämför den med den körande konfigurationen.
+          expected: Ingen skillnad hittas.
+        - action: Driftsätt via flödet en ändring på labbelementet som blockerar dess förvaltningsadress.
+          expected: Provkörningen klarar syntaxkontrollen och ändringen checkas in med bekräftelse.
+        - action: Vänta på anslutningskontrollen.
+          expected: Kontrollen misslyckas och elementet har föregående konfiguration inom 5 minuter.
+
+  - id: CMNET-T15
+    priority: medium
+    execution: automated
+    tags: [telemetry, ipam]
+    refs: ["RFC 8641", "ISO/IEC 27001:2022 A.8.9"]
+    en:
+      title: Telemetry intervals and address register against a discovery scan
+      description: A script checks the sample intervals in the monitoring system and compares a discovery scan with the address register.
+      preconditions: API access to the monitoring system and the address register, and a discovery scanner with access to each network segment.
+      expected: Samples are at most 30 seconds apart and the register covers each address in use exactly once.
+      steps:
+        - action: Read one hour of counter samples for each core and distribution element.
+          expected: The largest gap between samples is at most 30 seconds.
+        - action: Run the discovery scan and list the prefixes and static addresses in use.
+          expected: A list is produced.
+        - action: Compare the list with the register.
+          expected: Each prefix and static address in use is in the register, and no address is assigned twice.
+    sv:
+      title: Intervall för telemetri och adressregistret jämfört med en skanning
+      description: Ett skript kontrollerar mätintervallen i övervakningssystemet och jämför en skanning av nätet med adressregistret.
+      preconditions: API-åtkomst till övervakningssystemet och adressregistret, och en skanner med åtkomst till varje nätsegment.
+      expected: Mätvärdena har högst 30 sekunders mellanrum och registret omfattar varje adress i bruk exakt en gång.
+      steps:
+        - action: Läs en timmes räknarvärden för varje element i kärna och distribution.
+          expected: Det största glappet mellan mätvärden är högst 30 sekunder.
+        - action: Kör skanningen och lista de prefix och statiska adresser som används.
+          expected: En lista tas fram.
+        - action: Jämför listan med registret.
+          expected: Varje prefix och statisk adress i bruk finns i registret, och ingen adress är tilldelad två gånger.
+
+  - id: CMNET-T16
+    priority: high
+    execution: manual
+    tags: [out-of-band, lifecycle]
+    refs: ["ISO/IEC 27033-2:2012 (network security design)", "ISO/IEC 27001:2022 A.8.8", "IEC 62402:2019 (obsolescence management)"]
+    en:
+      title: Out-of-band console access and software support status
+      description: Disconnects the production uplinks of a core site, reaches the consoles out of band and checks the support status of the element software.
+      preconditions: A core site in a planned maintenance window, out-of-band access credentials, the network inventory and the vendors' support lists.
+      expected: Each core element console is reached out of band and each software release is in support.
+      steps:
+        - action: Disconnect the production uplinks of the core site.
+          expected: The site's elements are unreachable over the production network.
+        - action: Connect to the console of each core element over the out-of-band path.
+          expected: Each console answers and accepts a sign-in.
+        - action: Compare the software release of each element in the inventory with the vendor support lists.
+          expected: Each release is in support, and items with end of support within 12 months have a planned change.
+    sv:
+      title: Konsolåtkomst utanför bandet och supportstatus för programvaran
+      description: Kopplar bort produktionsupplänkarna på en kärnplats, når konsolerna utanför bandet och kontrollerar supportstatus för elementens programvara.
+      preconditions: En kärnplats i ett planerat servicefönster, behörighet för åtkomst utanför bandet, nätinventeringen och leverantörernas supportlistor.
+      expected: Konsolen för varje kärnelement nås utanför bandet och varje programversion stöds.
+      steps:
+        - action: Koppla bort kärnplatsens upplänkar i produktionsnätet.
+          expected: Platsens element går inte att nå via produktionsnätet.
+        - action: Anslut till konsolen för varje kärnelement via vägen utanför bandet.
+          expected: Varje konsol svarar och godtar en inloggning.
+        - action: Jämför programversionen för varje element i inventeringen med leverantörernas supportlistor.
+          expected: Varje version stöds, och enheter med slut på support inom 12 månader har en planerad ändring.
