@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -12,6 +13,18 @@ import (
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/secrets"
 )
+
+func TestHardeningAllowsTheTPM(t *testing.T) {
+	cfg := config.Default()
+	cfg.Secrets.Provider = config.SecretsTPM
+	if o := hardeningOptions(cfg); !slices.Contains(o.ReadWritePaths, "/dev/tpmrm0") {
+		t.Fatal(o.ReadWritePaths)
+	}
+	cfg.Secrets.Provider = config.SecretsLocal
+	if o := hardeningOptions(cfg); slices.Contains(o.ReadWritePaths, "/dev/tpmrm0") {
+		t.Fatal(o.ReadWritePaths)
+	}
+}
 
 func TestSecretsCommands(t *testing.T) {
 	ctx := context.Background()
