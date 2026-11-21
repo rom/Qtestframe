@@ -1,14 +1,16 @@
 <script setup lang="ts">
 // Dependency graph of a project (GET /projects/{pid}/graph): requirement
 // relations, or test dependencies and shared-step calls. Layered layout
-// (lib/graphLayout.ts), filters by relation type, search, zoom, and a list
-// view that shows the same relations as text.
+// (lib/graphLayout.ts), left to right or rotated top to bottom, filters by
+// relation type, search, zoom, a list view that shows the same relations as
+// text, and print / save as SVG, PNG or Markdown (lib/graphExport.ts).
 import ItemRef from '../components/ItemRef.vue'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import InputText from 'primevue/inputtext'
+import Menu from 'primevue/menu'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import SelectButton from 'primevue/selectbutton'
@@ -17,7 +19,10 @@ import HelpLink from '@/guide/HelpLink.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { api, errorMessage } from '@/lib/api'
 import { COVERAGE_COLORS, RESULT_COLORS } from '@/lib/colors'
-import { layoutGraph, neighbours, SYMMETRIC, type GraphEdgeIn } from '@/lib/graphLayout'
+import { flow, layoutGraph, neighbours, SYMMETRIC, type Direction, type GraphEdgeIn } from '@/lib/graphLayout'
+import { graphMarkdown, printSvg, standaloneSvg, svgToPng } from '@/lib/graphExport'
+import { saveBlob } from '@/lib/download'
+import { useNotify } from '@/composables/notify'
 import { useProjectStore } from '@/stores/project'
 import { useI18n } from 'vue-i18n'
 import { enumLabel, relationText } from '@/i18n/labels'
@@ -52,6 +57,27 @@ const search = ref('')
 const zoom = ref(1)
 const showAll = ref(false)
 const selected = ref<string | null>(null)
+// direction: left to right (default) or rotated 90° (top to bottom); kept in the URL and per browser
+const DIR_KEY = 'qtf.graph.direction'
+function storedDirection(): Direction | null {
+  try {
+    const v = localStorage.getItem(DIR_KEY)
+    return v === 'vertical' || v === 'horizontal' ? v : null
+  } catch {
+    return null
+  }
+}
+const direction = ref<Direction>(route.query.dir === 'vertical' ? 'vertical' : route.query.dir === 'horizontal' ? 'horizontal' : (storedDirection() ?? 'horizontal'))
+watch(direction, (d) => {
+  try {
+    localStorage.setItem(DIR_KEY, d)
+  } catch {
+    /* private mode */
+  }
+  void router.replace({ query: { ...route.query, dir: d === 'vertical' ? 'vertical' : undefined } })
+  void nextTick(fit)
+})
+const vertical = computed(() => direction.value === 'vertical')
 
 /** colour and dash pattern per relation type (contrast ≥ 3:1 in light and dark themes) */
 const STYLE: Record<string, { color: string; dash?: string }> = {
@@ -124,10 +150,11 @@ const connected = computed(() => {
 })
 const shownNodes = computed(() => (data.value?.nodes ?? []).filter((n) => showAll.value || connected.value.has(n.id)))
 const hiddenCount = computed(() => (data.value?.nodes.length ?? 0) - shownNodes.value.length)
-const layout = computed(() => layoutGraph(shownNodes.value.map((n) => n.id), edges.value, { nodeWidth: W, nodeHeight: H }))
+const layout = computed(() => layoutGraph(shownNodes.value.map((n) => n.id), edges.value, { nodeWidth: W, nodeHeight: H, direction: direction.value }))
 const PAD = 24
-const EXTRA = 120 // room for arcs between items of the same column
-const svgWidth = computed(() => layout.value.width + PAD * 2 + EXTRA)
+const EXTRA = 120 // room for arcs between items of the same column (or row, when rotated)
+const svgWidth = computed(() => layout.value.width + PAD * 2 + (vertical.value ? 0 : EXTRA))
+const svgHeight = computed(() => layout.value.height + PAD * 2 + (vertical.value ? EXTRA - 30 : 0))
 const scroller = ref<HTMLElement>()
 /** zoom so that the whole graph fits the width (not above 100 %) */
 function fit() {
@@ -201,6 +228,55 @@ function select(id: string) {
   selected.value = selected.value === id ? null : id
 }
 const listNodes = computed(() => [...shownNodes.value].sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true })))
+
+// ---------- print and save ----------
+const notify = useNotify()
+const svgEl = ref<SVGSVGElement>()
+const exportMenu = ref<InstanceType<typeof Menu>>()
+const graphTitle = computed(() => `${proj.project?.key ?? ''} ${kind.value === 'requirement' ? t('graph.requirements') : t('graph.tests')} – ${t('graph.title')}`.trim())
+const fileBase = computed(() => `${(proj.project?.key ?? 'project').toLowerCase()}-${kind.value === 'requirement' ? 'requirements' : 'tests'}-graph`)
+function svgText(): string | null {
+  if (!svgEl.value) return null
+  const bg = scroller.value ? getComputedStyle(scroller.value).backgroundColor : '#ffffff'
+  return standaloneSvg(svgEl.value, { title: graphTitle.value, background: bg || '#ffffff', baseUrl: location.origin })
+}
+async function exportAs(what: 'print' | 'svg' | 'png' | 'md') {
+  try {
+    if (what === 'md') {
+      const md = graphMarkdown({
+        title: graphTitle.value,
+        meta: [t('graph.mdProject', { name: proj.project?.name ?? '' }), t('graph.mdGenerated', { date: new Date().toLocaleString() }), t('graph.mdCounts', { nodes: shownNodes.value.length, edges: edges.value.length })],
+        direction: direction.value,
+        nodes: listNodes.value.map((n) => ({ id: n.id, key: n.key, title: n.title, state: resultLabel(n) })),
+        edges: edges.value.map((e) => {
+          const f = flow(e)
+          return { source: e.source, target: e.target, label: relationText(e.type, 'outgoing'), from: f ? f[0] : e.source, to: f ? f[1] : e.target, directed: !!f }
+        }),
+        headers: { key: t('common.key'), title: t('common.title'), state: t('common.status'), relations: t('workspace.colRelations') },
+        relationsOf: (id) => relationsOf(id).map((g) => `${g.label} ${g.ids.map((x) => byId.value.get(x)?.key ?? '').join(', ')}`).join('; '),
+      })
+      saveBlob(new Blob([md], { type: 'text/markdown;charset=utf-8' }), `${fileBase.value}.md`)
+      return
+    }
+    if (view.value !== 'graph') {
+      view.value = 'graph'
+      await nextTick()
+    }
+    const text = svgText()
+    if (!text) return
+    if (what === 'print') printSvg(text, graphTitle.value)
+    else if (what === 'svg') saveBlob(new Blob([text], { type: 'image/svg+xml;charset=utf-8' }), `${fileBase.value}.svg`)
+    else saveBlob(await svgToPng(text, 2), `${fileBase.value}.png`)
+  } catch (e) {
+    notify.fail(e, t('graph.exportFailed'))
+  }
+}
+const exportItems = computed(() => [
+  { label: t('graph.print'), icon: 'pi pi-print', command: () => exportAs('print') },
+  { label: t('graph.saveSvg'), icon: 'pi pi-image', command: () => exportAs('svg') },
+  { label: t('graph.savePng'), icon: 'pi pi-image', command: () => exportAs('png') },
+  { label: t('graph.saveMd'), icon: 'pi pi-file', command: () => exportAs('md') },
+])
 </script>
 
 <template>
@@ -237,7 +313,30 @@ const listNodes = computed(() => [...shownNodes.value].sort((a, b) => a.key.loca
         <span class="small muted" aria-live="polite" style="min-width: 3em; text-align: center">{{ Math.round(zoom * 100) }} %</span>
         <Button icon="pi pi-search-plus" text rounded severity="secondary" :aria-label="t('graph.zoomIn')" v-tooltip="t('graph.zoomIn')" :disabled="zoom >= 2" @click="zoom = Math.min(2, +(zoom + 0.2).toFixed(1))" />
         <Button icon="pi pi-arrows-h" text rounded severity="secondary" :aria-label="t('graph.fit')" v-tooltip="t('graph.fit')" @click="fit" />
+        <Button
+          icon="pi pi-replay"
+          text
+          rounded
+          severity="secondary"
+          class="rotate-button"
+          :class="{ on: vertical }"
+          :aria-label="t('graph.rotate')"
+          :aria-pressed="vertical"
+          v-tooltip="vertical ? t('graph.rotateBack') : t('graph.rotate')"
+          @click="direction = vertical ? 'horizontal' : 'vertical'"
+        />
       </span>
+      <Button
+        :label="t('graph.printSave')"
+        icon="pi pi-download"
+        severity="secondary"
+        outlined
+        size="small"
+        aria-haspopup="menu"
+        :disabled="!shownNodes.length"
+        @click="(e: Event) => exportMenu?.toggle(e)"
+      />
+      <Menu ref="exportMenu" :model="exportItems" popup :aria-label="t('graph.printSave')" />
     </div>
 
     <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -255,9 +354,10 @@ const listNodes = computed(() => [...shownNodes.value].sort((a, b) => a.key.loca
 
       <div v-if="view === 'graph'" ref="scroller" class="graph-scroll" tabindex="0" role="region" :aria-label="t('graph.title')">
         <svg
+          ref="svgEl"
           :width="svgWidth * zoom"
-          :height="(layout.height + PAD * 2) * zoom"
-          :viewBox="`${-PAD} ${-PAD} ${svgWidth} ${layout.height + PAD * 2}`"
+          :height="svgHeight * zoom"
+          :viewBox="`${-PAD} ${-PAD} ${svgWidth} ${svgHeight}`"
           role="group"
           :aria-label="t('graph.svgLabel', { nodes: shownNodes.length, edges: edges.length })"
         >
@@ -304,7 +404,7 @@ const listNodes = computed(() => [...shownNodes.value].sort((a, b) => a.key.loca
           </g>
         </svg>
       </div>
-      <p v-if="view === 'graph'" class="small muted" style="margin: 8px 0 0">{{ t('graph.hint') }}</p>
+      <p v-if="view === 'graph'" class="small muted" style="margin: 8px 0 0">{{ vertical ? t('graph.hintVertical') : t('graph.hint') }}</p>
 
       <div v-else class="table-scroll">
         <table class="graph-list">
@@ -347,6 +447,12 @@ const listNodes = computed(() => [...shownNodes.value].sort((a, b) => a.key.loca
   border: 1px solid var(--qtf-border);
   border-radius: 8px;
   background: var(--qtf-bg);
+}
+.rotate-button .pi {
+  transform: rotate(90deg);
+}
+.rotate-button.on {
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
 }
 .graph-node {
   cursor: pointer;

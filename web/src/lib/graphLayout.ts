@@ -1,5 +1,6 @@
 // Layered ("Sugiyama-style") layout of a dependency graph, left to right:
-// prerequisites and parents on the left, what builds on them to the right.
+// prerequisites and parents on the left, what builds on them to the right
+// (or, rotated, top to bottom: prerequisites at the top).
 // Only "flow" edges (dependencies, refinements, derivations, calls) decide
 // the layers; symmetric relations (relates to, conflicts with, duplicates)
 // are drawn between the placed nodes. Cycles are broken by ignoring the
@@ -19,7 +20,11 @@ export interface LayoutOptions {
   gapY?: number
   /** barycenter sweeps to reduce crossings */
   sweeps?: number
+  /** horizontal: layers are columns (left → right); vertical: layers are rows (top → bottom) */
+  direction?: Direction
 }
+
+export type Direction = 'horizontal' | 'vertical'
 
 export interface PlacedNode {
   id: string
@@ -60,8 +65,10 @@ export function flow(e: Pick<GraphEdgeIn, 'source' | 'target' | 'type'>): [strin
 export function layoutGraph(nodeIds: readonly string[], edges: readonly GraphEdgeIn[], opts: LayoutOptions = {}): Layout {
   const W = opts.nodeWidth ?? 200
   const H = opts.nodeHeight ?? 52
-  const GX = opts.gapX ?? 90
-  const GY = opts.gapY ?? 22
+  const vertical = opts.direction === 'vertical'
+  // gaps between layers (room for the curves) and between nodes of a layer
+  const GX = opts.gapX ?? (vertical ? 28 : 90)
+  const GY = opts.gapY ?? (vertical ? 70 : 22)
   const sweeps = opts.sweeps ?? 6
   const ids = [...new Set(nodeIds)]
   const known = new Set(ids)
@@ -151,24 +158,36 @@ export function layoutGraph(nodeIds: readonly string[], edges: readonly GraphEdg
     }
   }
 
-  // coordinates: layers are columns, centred vertically
-  const tallest = Math.max(1, ...layers.map((ls) => ls?.length ?? 0))
-  const height = tallest * H + (tallest - 1) * GY
-  const placed = new Map<string, PlacedNode>()
-  layers.forEach((ls, l) => {
-    const colH = ls.length * H + (ls.length - 1) * GY
-    const top = (height - colH) / 2
-    ls.forEach((id, i) => placed.set(id, { id, layer: l, order: i, x: l * (W + GX), y: top + i * (H + GY) }))
-  })
+  // coordinates: layers are columns centred vertically, or rows centred horizontally
+  const widest = Math.max(1, ...layers.map((ls) => ls?.length ?? 0))
   const nLayers = layers.length
-  const width = nLayers ? nLayers * W + (nLayers - 1) * GX : 0
+  const placed = new Map<string, PlacedNode>()
+  let width: number
+  let height: number
+  if (vertical) {
+    width = nLayers ? widest * W + (widest - 1) * GX : 0
+    height = nLayers ? nLayers * H + (nLayers - 1) * GY : 0
+    layers.forEach((ls, l) => {
+      const rowW = ls.length * W + (ls.length - 1) * GX
+      const left = (width - rowW) / 2
+      ls.forEach((id, i) => placed.set(id, { id, layer: l, order: i, x: left + i * (W + GX), y: l * (H + GY) }))
+    })
+  } else {
+    height = widest * H + (widest - 1) * GY
+    width = nLayers ? nLayers * W + (nLayers - 1) * GX : 0
+    layers.forEach((ls, l) => {
+      const colH = ls.length * H + (ls.length - 1) * GY
+      const top = (height - colH) / 2
+      ls.forEach((id, i) => placed.set(id, { id, layer: l, order: i, x: l * (W + GX), y: top + i * (H + GY) }))
+    })
+  }
 
   const placedEdges: PlacedEdge[] = usable.map((e) => {
     const f = flow(e)
     const isFlow = !!f && accepted.has(`${f[0]}\u0000${f[1]}`)
     // draw from upstream to downstream (or source → target when symmetric)
     const [a, b] = f ?? [e.source, e.target]
-    return { ...e, flow: isFlow, path: edgePath(placed.get(a)!, placed.get(b)!, W, H) }
+    return { ...e, flow: isFlow, path: (vertical ? edgePathVertical : edgePath)(placed.get(a)!, placed.get(b)!, W, H) }
   })
   return { nodes: ids.map((id) => placed.get(id)!), edges: placedEdges, width, height, layers: nLayers }
 }
@@ -191,6 +210,26 @@ export function edgePath(a: { x: number; y: number }, b: { x: number; y: number 
   const y2 = b.y + h / 2
   const dx = (x2 - x1) / 2
   return `M ${r(x1)} ${r(y1)} C ${r(x1 + dx)} ${r(y1)}, ${r(x2 - dx)} ${r(y2)}, ${r(x2)} ${r(y2)}`
+}
+
+/** The rotated path: bottom side → top side, or an arc below a row. */
+export function edgePathVertical(a: { x: number; y: number }, b: { x: number; y: number }, w: number, h: number): string {
+  const r = (n: number) => Math.round(n * 10) / 10
+  if (a.y === b.y) {
+    // same layer: bow out below
+    const y = a.y + h
+    const x1 = a.x + w / 2
+    const x2 = b.x + w / 2
+    const bow = 30 + Math.min(60, Math.abs(x2 - x1) / 4)
+    return `M ${r(x1)} ${r(y)} C ${r(x1)} ${r(y + bow)}, ${r(x2)} ${r(y + bow)}, ${r(x2)} ${r(y)}`
+  }
+  const down = a.y < b.y
+  const y1 = down ? a.y + h : a.y
+  const y2 = down ? b.y : b.y + h
+  const x1 = a.x + w / 2
+  const x2 = b.x + w / 2
+  const dy = (y2 - y1) / 2
+  return `M ${r(x1)} ${r(y1)} C ${r(x1)} ${r(y1 + dy)}, ${r(x2)} ${r(y2 - dy)}, ${r(x2)} ${r(y2)}`
 }
 
 /** Ids of the nodes connected to `id` (both directions, any edge type). */

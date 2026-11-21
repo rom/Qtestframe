@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { edgePath, flow, layoutGraph, neighbours } from './graphLayout'
+import { edgePath, edgePathVertical, flow, layoutGraph, neighbours } from './graphLayout'
 
 const e = (source: string, target: string, type = 'depends_on', id = `${source}-${target}`) => ({ id, source, target, type })
 
@@ -62,5 +62,30 @@ describe('helpers', () => {
   })
   it('finds neighbours', () => {
     expect([...neighbours('B', [e('A', 'B'), e('B', 'C'), e('D', 'E')])].sort()).toEqual(['A', 'C'])
+  })
+})
+
+describe('vertical layout', () => {
+  const edges = [
+    { id: 'e1', source: 'b', target: 'a', type: 'depends_on' },
+    { id: 'e2', source: 'c', target: 'a', type: 'depends_on' },
+    { id: 'e3', source: 'b', target: 'c', type: 'relates_to' },
+  ]
+  it('puts layers in rows, top to bottom, centred horizontally', () => {
+    const l = layoutGraph(['a', 'b', 'c'], edges, { nodeWidth: 100, nodeHeight: 40, direction: 'vertical' })
+    const at = (id: string) => l.nodes.find((n) => n.id === id)!
+    expect(at('a').y).toBe(0)
+    expect(at('b').y).toBe(at('c').y)
+    expect(at('b').y).toBeGreaterThan(40)
+    expect(l.width).toBe(2 * 100 + 28)
+    expect(at('a').x).toBe((l.width - 100) / 2)
+    expect(l.height).toBe(2 * 40 + 70)
+    // flow edges go from the bottom of a box to the top of the next; same-row arcs bow below
+    expect(l.edges.find((e) => e.id === 'e1')!.path).toMatch(/^M [\d.]+ 40 C/)
+    expect(edgePathVertical({ x: 0, y: 0 }, { x: 200, y: 0 }, 100, 40)).toMatch(/^M 50 40 C 50 [\d.]+, 250 [\d.]+, 250 40$/)
+    expect(edgePathVertical({ x: 0, y: 100 }, { x: 0, y: 0 }, 100, 40)).toMatch(/^M 50 100 C/)
+  })
+  it('is empty without nodes', () => {
+    expect(layoutGraph([], [], { direction: 'vertical' })).toMatchObject({ width: 0, height: 0, layers: 0 })
   })
 })

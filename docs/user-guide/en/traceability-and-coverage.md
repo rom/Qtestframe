@@ -169,6 +169,8 @@ The graph is read from left to right: prerequisites, parent requirements and sou
 - Type in **Highlight items…** to highlight matching items.
 - Right-click an item (or focus it and press <kbd>Space</kbd>) to highlight its neighbours; **Show all** ends this.
 - Select an item (or press <kbd>Enter</kbd>) to open it. Zoom with the magnifier buttons; scroll to move around.
+- **Rotate 90°** (the turning-arrow button next to the zoom) lays the graph out from top to bottom instead of left to right: prerequisites and parents are then at the top. The choice is kept in the address (`dir=vertical`) and in your browser.
+- **Print or save** prints the graph on its own page (landscape when it is wide) or saves it as an **SVG** image (sharp at any size, keeps the links to the items), a **PNG** image, or **Markdown** with a Mermaid diagram (drawn by GitHub, GitLab and many editors) and a table of the items and their relations. The saved files show what is currently on screen: the chosen relation types, direction and items.
 - **List** shows the same relations as a table, one item per row, which is easier to read with a screen reader or to print.
 
 Cycles (for example two requirements that depend on each other) are drawn, but one of their lines is shown without an arrow.
