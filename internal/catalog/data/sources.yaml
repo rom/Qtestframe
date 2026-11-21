@@ -1842,3 +1842,18 @@ sources:
     jurisdiction: US
     name: {en: "NIST system and platform security guidance (SP 800-160, 800-193, 800-90B)", sv: "NIST-vägledning för system- och plattformssäkerhet (SP 800-160, 800-193, 800-90B)"}
     match: ["NIST SP 800-160", "NIST SP 800-193", "NIST SP 800-90B"]
+
+  # Software catalogue: security and privacy groups
+  - id: w3c-clear-site-data
+    kind: standard
+    jurisdiction: international
+    name: {en: "W3C Clear Site Data", sv: "W3C Clear Site Data (rensning av webbplatsdata)"}
+    match: ["W3C Clear Site Data"]
+    url: https://www.w3.org/TR/clear-site-data/
+  - id: nist-800-63c
+    kind: guideline
+    jurisdiction: US
+    short: NIST SP 800-63C
+    name: {en: "NIST SP 800-63C Digital Identity Guidelines: Federation and Assertions", sv: "NIST SP 800-63C Riktlinjer för digital identitet: federation och intyg"}
+    match: ["NIST SP 800-63C"]
+    url: https://pages.nist.gov/800-63-4/sp800-63c.html
