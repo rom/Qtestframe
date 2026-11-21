@@ -334,6 +334,98 @@ requirements:
           text: Varje provfråga som mer än 30 % av deltagarna missade och varje ämne som kritiserats i mer än 3 utvärderingar har ett ändringsbegärande med beslut inom 30 dagar.
           threshold: "≤ 30 dagar"
 
+  - id: EDTM-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [simulator, scenario, assessment-criteria]
+    refs: ["ISO 29993:2017", "ADDIE instructional design model"]
+    tests: [EDTM-T11]
+    en:
+      title: Scenario description with expected actions and assessment criteria
+      description: Each simulator or practical exercise scenario MUST have a written description with the initial state, the events injected, the expected operator actions with time limits and the criteria for a pass.
+      rationale: Without written expected actions, assessments depend on the instructor of the day and cannot be compared between operators.
+      criteria:
+        - method: inspection
+          text: Each scenario in the scenario library has the 4 listed parts, and each expected action has a time limit.
+    sv:
+      title: Scenariobeskrivning med förväntade åtgärder och bedömningskriterier
+      description: Varje scenario för simulator- eller praktisk övning SKA ha en skriftlig beskrivning med utgångsläge, de händelser som läggs in, de förväntade åtgärderna från operatören med tidsgränser och kriterierna för godkänt.
+      rationale: Utan skrivna förväntade åtgärder beror bedömningen på dagens instruktör och går inte att jämföra mellan operatörer.
+      criteria:
+        - method: inspection
+          text: Varje scenario i scenariobiblioteket har de 4 angivna delarna, och varje förväntad åtgärd har en tidsgräns.
+
+  - id: EDTM-16
+    type: business
+    obligation: should
+    priority: medium
+    tags: [simulator, scenario, incidents]
+    refs: ["ISO 10015:2019", "Kirkpatrick four-level training evaluation model"]
+    tests: [EDTM-T11]
+    en:
+      title: New scenario from each major operational incident within 6 months
+      description: For each operational incident classified as major, the training owner SHOULD add or update a simulator or practical scenario based on it within 6 months of the incident review.
+      rationale: Real incidents show which situations operators actually meet and where they struggled, which makes the training relevant.
+      criteria:
+        - method: review
+          text: Each major incident of the last 18 months older than 6 months has a linked scenario dated within 6 months of the incident review.
+          threshold: "≤ 6 months"
+    sv:
+      title: Nytt scenario från varje allvarlig driftincident inom 6 månader
+      description: För varje driftincident som klassas som allvarlig BÖR utbildningsägaren lägga till eller uppdatera ett simulator- eller övningsscenario som bygger på den inom 6 månader från genomgången av incidenten.
+      rationale: Verkliga incidenter visar vilka situationer operatörerna faktiskt möter och var de hade svårt, vilket gör utbildningen relevant.
+      criteria:
+        - method: review
+          text: Varje allvarlig incident under de senaste 18 månaderna som är äldre än 6 månader har ett kopplat scenario daterat inom 6 månader från genomgången av incidenten.
+          threshold: "≤ 6 månader"
+
+  - id: EDTM-17
+    type: business
+    obligation: must
+    priority: medium
+    tags: [instructor-guide, delivery, consistency]
+    refs: ["ISO 29993:2017", "ADDIE instructional design model"]
+    tests: [EDTM-T12]
+    en:
+      title: Instructor guide with timing, setup and learning objectives
+      description: Each instructor-led course MUST have an instructor guide with the learning objectives, the timing of each part, the setup of the room and the training environment and the answers to the exercises.
+      rationale: An instructor guide lets a new trainer deliver the course to the same standard and keeps the course within its time frame.
+      criteria:
+        - method: review
+          text: The guide of each instructor-led course has the 4 listed parts, and a trainer new to the course delivers a pilot session within the planned time plus 10 %.
+    sv:
+      title: Instruktörshandledning med tidsplan, förberedelser och lärandemål
+      description: Varje lärarledd kurs SKA ha en instruktörshandledning med lärandemålen, tidsplanen för varje del, förberedelserna av lokalen och utbildningsmiljön och svaren på övningarna.
+      rationale: En instruktörshandledning gör att en ny utbildare kan hålla kursen med samma kvalitet och inom tidsramen.
+      criteria:
+        - method: review
+          text: Handledningen för varje lärarledd kurs har de 4 angivna delarna, och en utbildare som inte har hållit kursen tidigare genomför ett pilotpass inom planerad tid plus 10 %.
+
+  - id: EDTM-18
+    type: business
+    obligation: should
+    priority: low
+    tags: [microlearning, security-awareness, e-learning]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "ISO 29993:2017"]
+    tests: [EDTM-T12]
+    en:
+      title: Awareness content as modules of at most 10 minutes
+      description: Security awareness e-learning SHOULD be split into modules of at most 10 minutes each, each with 1 learning objective and at least 3 assessment questions.
+      rationale: Short modules fit into the working day and give higher completion than long courses that users postpone.
+      criteria:
+        - method: inspection
+          text: The platform shows a median duration of at most 10 minutes for each awareness module, and each has 1 objective and 3 or more questions.
+          threshold: "≤ 10 minutes per module"
+    sv:
+      title: Innehåll om säkerhetsmedvetenhet i moduler på högst 10 minuter
+      description: E-utbildning i säkerhetsmedvetenhet BÖR delas upp i moduler på högst 10 minuter vardera, var och en med 1 lärandemål och minst 3 kontrollfrågor.
+      rationale: Korta moduler får plats i arbetsdagen och genomförs i högre grad än långa kurser som användarna skjuter upp.
+      criteria:
+        - method: inspection
+          text: Plattformen visar en mediantid på högst 10 minuter för varje modul om säkerhetsmedvetenhet, och varje modul har 1 mål och 3 eller fler frågor.
+          threshold: "≤ 10 minuter per modul"
+
 tests:
   - id: EDTM-T01
     priority: high
@@ -626,3 +718,65 @@ tests:
           expected: Det finns en lista över ämnen.
         - action: Leta upp ändringsbegärandet för varje fråga och ämne i listorna och jämför datumet för beslutet med registreringsdatumet.
           expected: Varje punkt har ett ändringsbegärande med beslut inom 30 dagar.
+
+  - id: EDTM-T11
+    priority: high
+    execution: manual
+    tags: [simulator, scenario]
+    refs: ["ISO 29993:2017", "ISO 10015:2019"]
+    en:
+      title: Scenario library and scenarios from incidents
+      description: Inspects the scenario descriptions and checks that major incidents have led to scenarios.
+      preconditions: The scenario library, the list of major operational incidents of the last 18 months and their review dates.
+      expected: Each scenario is complete with time limits, and each eligible incident has a scenario within 6 months.
+      steps:
+        - action: Open each scenario in the library.
+          expected: Initial state, injected events, expected actions and pass criteria are described.
+        - action: Read the expected actions of each scenario.
+          expected: Each action has a time limit.
+          data: "e.g. isolate the feeder within 5 minutes of the alarm"
+        - action: For each major incident with a review more than 6 months ago, find the linked scenario.
+          expected: A scenario exists, dated within 6 months of the review.
+    sv:
+      title: Scenariobiblioteket och scenarier från incidenter
+      description: Inspekterar scenariobeskrivningarna och kontrollerar att allvarliga incidenter har lett till scenarier.
+      preconditions: Scenariobiblioteket, listan över allvarliga driftincidenter under de senaste 18 månaderna och datumen för deras genomgångar.
+      expected: Varje scenario är komplett med tidsgränser, och varje berörd incident har ett scenario inom 6 månader.
+      steps:
+        - action: Öppna varje scenario i biblioteket.
+          expected: Utgångsläge, inlagda händelser, förväntade åtgärder och kriterier för godkänt är beskrivna.
+        - action: Läs de förväntade åtgärderna i varje scenario.
+          expected: Varje åtgärd har en tidsgräns.
+          data: "t.ex. koppla bort matningen inom 5 minuter från larmet"
+        - action: Hitta det kopplade scenariot för varje allvarlig incident vars genomgång ligger mer än 6 månader bakåt.
+          expected: Ett scenario finns, daterat inom 6 månader från genomgången.
+
+  - id: EDTM-T12
+    priority: medium
+    execution: manual
+    tags: [instructor-guide, microlearning]
+    refs: ["ISO 29993:2017"]
+    en:
+      title: Instructor guides and the length of awareness modules
+      description: Reviews the instructor guides, runs a pilot session with a new trainer and reads the module statistics of the learning platform.
+      preconditions: The instructor guides, a trainer new to 1 course, and the learning platform statistics for the awareness modules.
+      expected: Each guide is complete, the pilot keeps to the time, and each awareness module is at most 10 minutes with 1 objective and 3 questions.
+      steps:
+        - action: Check each instructor guide for objectives, timing, setup and answers.
+          expected: The 4 parts are present.
+        - action: Let the new trainer deliver a pilot session using only the guide and measure the time.
+          expected: The session ends within the planned time plus 10 %.
+        - action: Read the median duration, the objective and the number of questions of each awareness module.
+          expected: Each is at most 10 minutes, has 1 objective and at least 3 questions.
+    sv:
+      title: Instruktörshandledningar och längden på moduler om säkerhetsmedvetenhet
+      description: Granskar instruktörshandledningarna, genomför ett pilotpass med en ny utbildare och läser lärplattformens statistik för modulerna.
+      preconditions: Instruktörshandledningarna, en utbildare som inte har hållit 1 av kurserna och lärplattformens statistik för modulerna om säkerhetsmedvetenhet.
+      expected: Varje handledning är komplett, pilotpasset håller tiden, och varje modul är högst 10 minuter med 1 mål och 3 frågor.
+      steps:
+        - action: Kontrollera att varje instruktörshandledning har mål, tidsplan, förberedelser och svar.
+          expected: De 4 delarna finns.
+        - action: Låt den nya utbildaren hålla ett pilotpass med bara handledningen som stöd och mät tiden.
+          expected: Passet slutar inom planerad tid plus 10 %.
+        - action: Läs mediantid, mål och antal frågor för varje modul om säkerhetsmedvetenhet.
+          expected: Varje modul är högst 10 minuter och har 1 mål och minst 3 frågor.

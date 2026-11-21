@@ -369,7 +369,7 @@ requirements:
     tests: [FCDC-T13]
     en:
       title: Aisle containment and blanking panels in each rack row
-      description: Each rack row SHOULD have hot or cold aisle containment, and each empty rack unit in a populated rack SHOULD be closed with a blanking panel.
+      description: Each rack row SHOULD have hot or cold aisle containment, with each empty rack unit in a populated rack closed by a blanking panel.
       rationale: Mixing of hot and cold air forces lower supply temperatures and higher fan speeds, which wastes cooling energy and creates hot spots.
       criteria:
         - method: inspection

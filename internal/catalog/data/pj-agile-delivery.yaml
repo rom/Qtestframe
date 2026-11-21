@@ -129,7 +129,7 @@ requirements:
     tests: [PJAGL-T03]
     en:
       title: Retrospective actions with an owner followed up in the next sprint
-      description: Each sprint retrospective SHOULD produce at least 1 improvement action with an owner, and the next retrospective SHOULD start by checking its outcome.
+      description: Each sprint retrospective SHOULD produce at least 1 improvement action with an owner, whose outcome the next retrospective checks at its start.
       rationale: Retrospectives without owned actions repeat the same complaints and do not change how the team works.
       criteria:
         - method: review
