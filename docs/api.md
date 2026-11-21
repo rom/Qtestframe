@@ -1407,7 +1407,7 @@ Project icon files are served by `/files/{id}/content?inline=1`.
 |---|---|---|---|
 | POST | `/members/{uid}/reset-password` | member.manage | resets a local user's password to a random temporary one → `{"temporary_password"}` (shown once); sets `must_change_password` and ends the user's sessions. Refused (403) for super admins and for users who are members of other tenants, unless the caller is a super admin |
 | PATCH | `/users/{id}` | super admin | also accepts `{"must_change_password": bool}` |
-| GET | `/audit?q=&from=&to=&limit=&format=csv` | audit.read | `from`/`to` are RFC 3339 or `YYYY-MM-DD`; `format=csv` downloads |
+| GET | `/audit?q=&from=&to=&limit=&format=csv\|md` | audit.read | `from`/`to` are RFC 3339 or `YYYY-MM-DD`; `format=csv` downloads a CSV file, `format=md` (alias `markdown`) a [Markdown document](#markdown-documents) with the range and filter; other formats → 400 |
 | GET | `/admin/backup` | super admin | ZIP: `manifest.json` + one `<table>.jsonl` per table (all tenants, files included; sessions excluded) |
 | POST | `/admin/restore` | super admin | multipart `backup` (ZIP) + field `confirm=RESTORE`; the schema version must match; replaces **all** data in one transaction and signs everyone out → `{"restored": {table: rows}}` |
 
@@ -1526,7 +1526,7 @@ Admin changes are audited as `scim.token.create`, `scim.token.delete`,
 ## Reports
 
 Standard reports (`GET /reports/templates` → `[{id, name, description,
-params, formats}]`):
+params, formats}]`; `formats` is `pdf`, `docx`, `xlsx`, `csv`, `md`):
 
 | id | Content | Params |
 |---|---|---|
@@ -1564,7 +1564,7 @@ e-mailed report is in the report's language.
 | Method | Path | Permission | Notes |
 |---|---|---|---|
 | GET | `/projects/{pid}/reports/fields?entity=` | export | available columns `[{id, label}]` |
-| POST | `/projects/{pid}/reports/generate?lang=` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv, archive?: bool, name?, lang?: en\|sv}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
+| POST | `/projects/{pid}/reports/generate?lang=` | export | `{template?, params?, custom?, format: pdf\|docx\|xlsx\|csv\|md, archive?: bool, name?, lang?: en\|sv}`; without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File |
 | GET | `/projects/{pid}/reports/definitions` | export | saved custom reports |
 | POST | `/projects/{pid}/reports/definitions` | requirement.write or test.write | `{name, description, config}` |
 | GET / PATCH / DELETE | `/reports/definitions/{id}` | export / write | |
@@ -1633,13 +1633,14 @@ queried. Response:
 
 ## Export
 
-`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
+`GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|md|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
 (permission `export`)
 
-* `format` also accepts `excel` and `word`. `aspects` defaults to all;
+* `format` also accepts `excel`, `word` and `markdown`. `aspects` defaults to all;
   unknown aspects are a 400. `q` is applied to requirements if it is a valid
   requirement query and to tests if it is a valid test query.
 * CSV with more than one aspect is delivered as a ZIP of CSV files.
+* `md` is one [Markdown document](#markdown-documents) with every aspect.
 * `reqif` and `reqifz` export the (filtered) requirements as
   [ReqIF 1.2](#reqif-export); `aspects` does not apply. `reqif` is the XML
   document (`application/xml`), `reqifz` a ZIP (`application/zip`) with the
@@ -1652,6 +1653,29 @@ queried. Response:
 * Response has `Content-Disposition: attachment;
   filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
   neutralised in CSV; see [design.md §11](design.md#11-export-formats).
+
+### Markdown documents
+
+`format=md` (alias `markdown`; `text/markdown; charset=utf-8`, extension
+`.md`) is available wherever a file is generated from a table: the project
+export, every report template, custom and saved reports, report batches
+(a ZIP of `.md` files), e-mailed and scheduled reports and the audit log
+export. The document is GitHub-flavoured Markdown:
+
+* `# <title>`, then the subtitle (project, filter) and a list of metadata
+  (`**Generated:**` date, and where they apply the aspects, filter or date
+  range), then a contents list of the sections when there are several;
+* one `## <section>` per section with a GFM table; `|` is escaped as `\|`,
+  line breaks in a cell become `<br>`, Markdown and HTML characters are
+  backslash-escaped, so cell texts show literally;
+* cells that are http(s) URLs become links; when `server.base_url` is
+  configured, requirement, test case and defect keys of the project link
+  to `<base_url>/go/<key>`;
+* empty sections show *(no data)* / *(no rows)*. Reports have no charts,
+  so the document has no images.
+
+In reports the texts the document adds follow the report language
+(e.g. `**Skapad:**`, `Innehåll` in Swedish).
 
 ### ReqIF export
 

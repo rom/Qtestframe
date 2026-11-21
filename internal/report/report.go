@@ -1,5 +1,6 @@
 // Package report builds standard and custom reports as format-neutral
-// export.Datasets (rendered to PDF, DOCX, XLSX or CSV by package export).
+// export.Datasets (rendered to PDF, DOCX, XLSX, CSV or Markdown by package
+// export).
 //
 // The package is independent of HTTP and storage: callers load and
 // decorate the project data (derived fields such as coverage and last
@@ -28,7 +29,7 @@ func invalidf(format string, a ...any) error {
 }
 
 // Formats lists the output formats of every report.
-var Formats = []string{string(export.PDF), string(export.DOCX), string(export.XLSX), string(export.CSV)}
+var Formats = []string{string(export.PDF), string(export.DOCX), string(export.XLSX), string(export.CSV), string(export.MD)}
 
 // Param describes a template parameter.
 type Param struct {

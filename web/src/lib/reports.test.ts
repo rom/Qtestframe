@@ -35,7 +35,7 @@ describe('normalizeTemplate', () => {
   it('uses defaults for known templates and all formats', () => {
     const t = normalizeTemplate({ id: 'requirements_coverage' })!
     expect(t.params).toEqual([{ name: 'query', required: false }])
-    expect(t.formats).toEqual(['pdf', 'docx', 'xlsx', 'csv'])
+    expect(t.formats).toEqual(['pdf', 'docx', 'xlsx', 'csv', 'md'])
     expect(t.name).toBe('requirements_coverage')
     expect(normalizeTemplate({ id: 'defects', name: 'Defects', description: 'd', formats: ['csv', 'bogus'] })).toEqual({ id: 'defects', name: 'Defects', description: 'd', params: [], formats: ['csv'] })
   })
@@ -106,9 +106,9 @@ describe('generate', () => {
 })
 
 describe('report batch', () => {
-  const row = (kind: 'template' | 'definition', id: string, formats: ReportFormat[] = ['pdf', 'docx', 'xlsx', 'csv'], required: string[] = []) => ({ kind, id, name: id, description: '', formats, required })
+  const row = (kind: 'template' | 'definition', id: string, formats: ReportFormat[] = ['pdf', 'docx', 'xlsx', 'csv', 'md'], required: string[] = []) => ({ kind, id, name: id, description: '', formats, required })
   it('formats are those every selected report supports', () => {
-    expect(batchFormats([])).toEqual(['pdf', 'docx', 'xlsx', 'csv'])
+    expect(batchFormats([])).toEqual(['pdf', 'docx', 'xlsx', 'csv', 'md'])
     expect(batchFormats([row('template', 'a', ['pdf', 'csv']), row('definition', 'b')])).toEqual(['pdf', 'csv'])
   })
   it('builds the request and finds missing parameters', () => {

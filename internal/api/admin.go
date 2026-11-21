@@ -581,15 +581,28 @@ func (s *Server) handleAudit(w http.ResponseWriter, r *http.Request, p *Principa
 			out = append(out, e)
 		}
 	}
-	if r.URL.Query().Get("format") == "csv" {
-		ds := export.Dataset{Title: "Audit trail", Sections: []export.Section{{Name: "audit",
+	if format := r.URL.Query().Get("format"); format != "" && format != "json" {
+		f, err := export.ParseFormat(format)
+		if err != nil || (f != export.CSV && f != export.MD) {
+			s.fail(w, r, badRequest("unsupported audit export format %q (want csv or md)", format))
+			return
+		}
+		ds := export.Dataset{Title: "Audit trail", GeneratedAt: time.Now().UTC(), Sections: []export.Section{{Name: "audit", Title: "Entries",
 			Columns: []string{"Time (UTC)", "User", "Action", "Entity", "Entity ID", "Details"}}}}
+		day := func(t *time.Time) string {
+			if t == nil {
+				return ""
+			}
+			return t.UTC().Format("2006-01-02 15:04:05")
+		}
+		ds.Meta = []export.Item{{Label: "From", Value: day(from)}, {Label: "To", Value: day(to)}, {Label: "Filter", Value: r.URL.Query().Get("q")},
+			{Label: "Entries", Value: itoa(len(out))}}
 		for _, e := range out {
 			ds.Sections[0].Rows = append(ds.Sections[0].Rows, []string{ts(e.CreatedAt), e.UserEmail, e.Action, e.EntityType, e.EntityID, e.Details})
 		}
-		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-		w.Header().Set("Content-Disposition", `attachment; filename="audit-`+time.Now().UTC().Format("20060102-150405")+`.csv"`)
-		if err := export.WriteCSV(w, ds); err != nil {
+		w.Header().Set("Content-Type", f.ContentType())
+		w.Header().Set("Content-Disposition", `attachment; filename="audit-`+time.Now().UTC().Format("20060102-150405")+"."+f.Extension(false)+`"`)
+		if err := export.Write(w, f, ds); err != nil {
 			s.Log.Error("audit export failed", "err", err)
 		}
 		s.audit(r.Context(), p, "audit.export", "audit", "", itoa(len(out)))

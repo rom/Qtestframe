@@ -77,7 +77,7 @@ tags:
 - name: Files
   description: Files, attachments, documents, avatars
 - name: Reports and export
-  description: Reports, export (CSV, XLSX, PDF, DOCX, ReqIF) and search
+  description: Reports, export (CSV, XLSX, PDF, DOCX, Markdown, ReqIF) and search
 - name: Import
   description: Requirement import
 - name: Catalogue
@@ -1136,7 +1136,7 @@ paths:
       summary: Audit
       operationId: getAudit
       description: |-
-        audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user
+        audit log of tenant, newest first (`limit` default 500, max 5000; query fields `action, entity, entity_id, user, details, created_at`); entries include `user_name` and `user_avatar` of the acting user. `format=csv` or `format=md` (alias `markdown`) downloads the entries as a CSV file or a Markdown document instead
 
         **Permission:** `audit.read`.
       x-permission: audit.read
@@ -1148,10 +1148,26 @@ paths:
         schema:
           type: integer
       - $ref: '#/components/parameters/q'
+      - name: format
+        in: query
+        required: false
+        description: download the entries as a file instead of JSON
+        schema:
+          type: string
+          enum:
+          - csv
+          - md
+          - markdown
       responses:
         '200':
           description: Audit log, newest first
           content:
+            text/csv:
+              schema:
+                type: string
+            text/markdown:
+              schema:
+                type: string
             application/json:
               schema:
                 type: object
@@ -4811,7 +4827,7 @@ paths:
       summary: Export
       operationId: getProjectsByPidExport
       description: |-
-        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx` (aliases `excel`, `word`) export the chosen `aspects`; `reqif` and `reqifz` export the requirements as ReqIF 1.2 (aspects do not apply): `.reqif` is the XML document, `.reqifz` a ZIP with the document and the requirements' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
+        Downloads project data. `format` `xlsx`, `csv`, `pdf`, `docx`, `md` (aliases `excel`, `word`, `markdown`) export the chosen `aspects` (`md`: one GitHub-flavoured Markdown document, `text/markdown`); `reqif` and `reqifz` export the requirements as ReqIF 1.2 (aspects do not apply): `.reqif` is the XML document, `.reqifz` a ZIP with the document and the requirements' attachments below `files/<key>/`. `q` is applied to requirements if it is a valid requirement query and to tests if it is a valid test query. The response has `Content-Disposition: attachment; filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`.
 
         **Permission:** `export`.
       x-permission: export
@@ -4827,8 +4843,10 @@ paths:
           - csv
           - pdf
           - docx
+          - md
           - excel
           - word
+          - markdown
           - reqif
           - reqifz
       - name: aspects
@@ -4848,6 +4866,9 @@ paths:
                 type: string
                 format: binary
             text/csv:
+              schema:
+                type: string
+            text/markdown:
               schema:
                 type: string
             application/zip:
@@ -5960,7 +5981,7 @@ paths:
       parameters:
       - $ref: '#/components/parameters/reportLang'
       description: |-
-        `{template?, params?, custom?, format: pdf|docx|xlsx|csv, archive?: bool, name?, lang?: en|sv}` (`lang`: the language of the report's texts, see "Report language" in docs/api.md); without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
+        `{template?, params?, custom?, format: pdf|docx|xlsx|csv|md, archive?: bool, name?, lang?: en|sv}` (`lang`: the language of the report's texts, see "Report language" in docs/api.md); without `archive` the file is downloaded, with `archive: true` it is stored in the document archive (`kind: report`) → 201 File
 
         **Permission:** `export`.
       x-permission: export
@@ -5986,6 +6007,7 @@ paths:
                   - docx
                   - xlsx
                   - csv
+                  - md
                 archive:
                   type: boolean
                 name:

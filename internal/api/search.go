@@ -197,6 +197,8 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request, p *Princip
 		s.fail(w, r, err)
 		return
 	}
+	ds.Meta = []export.Item{{Label: "Aspects", Value: strings.Join(aspects, ", ")}, {Label: "Filter", Value: r.URL.Query().Get("q")}}
+	ds.Link = s.itemLink(pr)
 	multi := len(ds.Sections) > 1
 	name := fmt.Sprintf("%s-%s.%s", pr.Key, time.Now().UTC().Format("20060102-150405"), f.Extension(multi))
 	w.Header().Set("Content-Type", f.ContentTypeFor(multi))
