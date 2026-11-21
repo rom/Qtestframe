@@ -346,7 +346,7 @@ tests:
   - id: EQPED-T01
     priority: high
     execution: manual
-    tags: [register, in-service-inspection, instructions]
+    tags: [register]
     refs: ["Directive 2014/68/EU (PED) Art. 13 (classification of pressure equipment)"]
     en:
       title: Pressure equipment register against a plant walk-down
@@ -466,7 +466,7 @@ tests:
   - id: EQPED-T05
     priority: high
     execution: manual
-    tags: [welding, non-destructive-testing, materials]
+    tags: [welding, non-destructive-testing]
     refs: ["Directive 2014/68/EU (PED) Annex I §3.1.2 (permanent joining)", "Directive 2014/68/EU (PED) Annex I §3.1.3 (non-destructive tests)"]
     en:
       title: Welding and testing records of a sampled vessel
@@ -492,7 +492,7 @@ tests:
   - id: EQPED-T06
     priority: critical
     execution: manual
-    tags: [proof-test, marking]
+    tags: [proof-test]
     refs: ["Directive 2014/68/EU (PED) Annex I §3.2.2 (proof test)", "Directive 2014/68/EU (PED) Annex I §7.4 (hydrostatic test pressure)"]
     en:
       title: Proof test record of a finished vessel
@@ -520,7 +520,7 @@ tests:
   - id: EQPED-T07
     priority: high
     execution: manual
-    tags: [register, in-service-inspection, instructions]
+    tags: [instructions]
     refs: ["Directive 2014/68/EU (PED) Annex I §3.4 (operating instructions)"]
     en:
       title: Instructions of sampled pressure equipment
@@ -530,6 +530,8 @@ tests:
       steps:
         - action: Open the instructions of 3 items.
           expected: Each is in the national language and covers mounting, putting into service, use, maintenance, inspection and the operating limits.
+        - action: Compare the operating limits in each instruction with the data plate of the item.
+          expected: The pressure, temperature and fluid limits match the plate.
     sv:
       title: Anvisningar för utvalda tryckbärande anordningar
       description: Kontrollerar att anvisningarna för utvalda anordningar är på det nationella språket och omfattar varje fas i användningen.
@@ -538,11 +540,13 @@ tests:
       steps:
         - action: Öppna anvisningarna för 3 anordningar.
           expected: Var och en är på det nationella språket och omfattar montering, idrifttagning, användning, underhåll, kontroll och driftgränserna.
+        - action: Jämför driftgränserna i varje anvisning med anordningens typskylt.
+          expected: Gränserna för tryck, temperatur och fluid stämmer med skylten.
 
   - id: EQPED-T08
     priority: high
     execution: manual
-    tags: [register, in-service-inspection, instructions]
+    tags: [in-service-inspection]
     refs: ["Directive 2009/104/EC Art. 5(1) (inspection of work equipment)", "Directive 2009/104/EC Art. 5(2) (periodic inspection)"]
     en:
       title: Installation and periodic inspection dates
@@ -552,6 +556,8 @@ tests:
       steps:
         - action: Compare the inspection dates with today's date and the first use dates.
           expected: Each item had an installation inspection before first use and none in service is overdue.
+        - action: Open the last periodic inspection report of 3 items.
+          expected: Each report is issued by a competent body and sets the next date at the interval of the item's class.
     sv:
       title: Datum för installationskontroll och återkommande kontroll
       description: Jämför kontrolldatumen i registret med datumen för första användning och med dagens datum.
@@ -560,11 +566,13 @@ tests:
       steps:
         - action: Jämför kontrolldatumen med dagens datum och datumen för första användning.
           expected: Varje anordning hade en installationskontroll före första användning och ingen anordning i drift är försenad.
+        - action: Öppna den senaste rapporten från återkommande kontroll för 3 anordningar.
+          expected: Varje rapport är utfärdad av ett kompetent organ och sätter nästa datum enligt intervallet för anordningens klass.
 
   - id: EQPED-T09
     priority: critical
     execution: manual
-    tags: [proof-test, marking]
+    tags: [marking, data-plate]
     refs: ["Directive 2014/68/EU (PED) Annex I §3.3 (marking and labelling)"]
     en:
       title: Data plate of a finished vessel
@@ -574,6 +582,8 @@ tests:
       steps:
         - action: Read the data plate and compare it with the declaration.
           expected: Name and address, year, identification, PS, TS, volume, CE marking and notified body number are present and match.
+        - action: Check how the plate is fixed and whether the text can be read.
+          expected: The plate is riveted or welded to the item and each marking is legible.
     sv:
       title: Typskylt på ett färdigt kärl
       description: Jämför märkningen på typskylten på ett färdigt kärl med dess försäkran om överensstämmelse.
@@ -582,11 +592,13 @@ tests:
       steps:
         - action: Läs typskylten och jämför den med försäkran.
           expected: Namn och adress, år, identifiering, PS, TS, volym, CE-märkning och det anmälda organets nummer finns och stämmer.
+        - action: Kontrollera hur skylten sitter fast och om texten går att läsa.
+          expected: Skylten är nitad eller svetsad på anordningen och varje märkning är läsbar.
 
   - id: EQPED-T10
     priority: high
     execution: manual
-    tags: [welding, non-destructive-testing, materials]
+    tags: [materials, traceability]
     refs: ["Directive 2014/68/EU (PED) Annex I §4.3 (material documentation)"]
     en:
       title: Material traceability of the main pressure-bearing parts
@@ -596,6 +608,8 @@ tests:
       steps:
         - action: Read the heat numbers on three main parts of the vessel and find their inspection documents.
           expected: Each heat number has an inspection document with specific test results.
+        - action: Compare the material grade and the test results in each document with the design specification.
+          expected: The grade matches and the results meet the specified values.
     sv:
       title: Materialspårbarhet för de huvudsakliga tryckbärande delarna
       description: Följer chargenumren på huvuddelarna i ett utvalt kärl till materialintygen.
@@ -604,3 +618,5 @@ tests:
       steps:
         - action: Läs chargenumren på tre huvuddelar i kärlet och hitta deras kontrollintyg.
           expected: Varje chargenummer har ett kontrollintyg med specifika provningsresultat.
+        - action: Jämför materialsort och provningsresultat i varje intyg med konstruktionsspecifikationen.
+          expected: Materialsorten stämmer och resultaten uppfyller de specificerade värdena.
