@@ -1177,8 +1177,11 @@ paths:
       - Projects
       summary: List projects
       operationId: getProjects
-      description: '**Permission:** `project.read`.'
-      x-permission: project.read
+      description: |-
+        The projects the caller may read: organisation-wide projects (with `project.read` in the organisation role or a project role) and restricted projects the caller is a member of (organisation administrators see every project). Each project carries `my_access`, the caller's effective permissions there.
+
+        **Permission:** signed in.
+      x-permission: authenticated
       responses:
         '200':
           description: Projects of the current tenant
@@ -4752,8 +4755,11 @@ paths:
       - Reports and export
       summary: Search
       operationId: getSearch
-      description: '**Permission:** `project.read`.'
-      x-permission: project.read
+      description: |-
+        Searches the projects the caller may read, each kind of item with its read permission in the project.
+
+        **Permission:** signed in.
+      x-permission: authenticated
       parameters:
       - name: q
         in: query
@@ -10500,6 +10506,246 @@ paths:
           $ref: '#/components/responses/NotFound'
         default:
           $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/access:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Get project sharing
+      operationId: getProjectsByPidAccess
+      description: |-
+        The project's access mode (`organisation`: every member of the organisation; `restricted`: project members and organisation administrators only), the number of project members, the caller's access (`my_access`: source, project role, effective permissions, `can_share`) and the roles the caller may give (`grantable_roles`).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags:
+      - Projects
+      summary: Set project access mode
+      operationId: putProjectsByPidAccess
+      description: |-
+        `{"access": "organisation"|"restricted"}`. Restricting a project keeps the caller in it: a caller who is neither an organisation administrator nor a project member becomes a member with their organisation role. Audited (`project.access`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: List project members
+      operationId: getProjectsByPidMembers
+      description: |-
+        Users (with e-mail, name and organisation role) and SCIM groups with a project role.
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags:
+      - Projects
+      summary: Add project member
+      operationId: postProjectsByPidMembers
+      description: |-
+        `{"user_id" | "email" | "group_id", "role"}`: an existing member of the organisation (by id or e-mail) or a SCIM group, with a project role (built-in or custom). Nobody can give a role with project permissions they do not hold in the project (403). An existing member gets the new role (200). An added user is notified (in the app; by e-mail per their preferences). Audited (`project.member.add`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members/candidates:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    get:
+      tags:
+      - Projects
+      summary: Project member candidates
+      operationId: getProjectsByPidMembersCandidates
+      description: |-
+        Members of the organisation and SCIM groups that are not project members yet, for the member picker; `?q=` filters by e-mail or name (at most 50).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members/bulk:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    post:
+      tags:
+      - Projects
+      summary: Bulk change project members
+      operationId: postProjectsByPidMembersBulk
+      description: |-
+        `{"ids": [user or group ids], "action": "role"|"remove", "role"?}`, all or nothing. Skipped: `not_found`, `unchanged`, `forbidden` (a role the caller could not give). Returns `{changed, skipped}`.
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+  /api/v1/projects/{pid}/members/{mid}:
+    parameters:
+    - $ref: '#/components/parameters/pid'
+    - name: mid
+      in: path
+      required: true
+      schema:
+        type: string
+    patch:
+      tags:
+      - Projects
+      summary: Change project member role
+      operationId: patchProjectsByPidMembersByMid
+      description: |-
+        `{"role"}` for the user or group `{mid}`. The caller must be able to give both the old and the new role. Audited (`project.member.role`).
+
+        **Permission:** `project.update`.
+      x-permission: project.update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags:
+      - Projects
+      summary: Remove project member
+      operationId: deleteProjectsByPidMembersByMid
+      description: |-
+        Removes the user or group `{mid}`. Members may always leave a project themselves; removing someone else needs `project.update` in the project and a role at least as strong as theirs. Audited (`project.member.remove`).
+
+        **Permission:** `project.read`.
+      x-permission: project.read
+      responses:
+        '204':
+          description: No content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -11563,6 +11809,33 @@ components:
           - business
         tech_context:
           type: string
+        access:
+          type: string
+          description: organisation (every member of the organisation) or restricted (project members and organisation administrators only)
+          enum:
+          - organisation
+          - restricted
+        my_access:
+          type: object
+          description: The caller's access to the project (GET /projects, GET /projects/{pid}).
+          properties:
+            source:
+              type: string
+              enum:
+              - admin
+              - member
+              - group
+              - organisation
+            role:
+              type: string
+              description: the project role (member) or the groups' roles (group)
+            permissions:
+              type: array
+              description: effective permissions in the project
+              items:
+                type: string
+            can_share:
+              type: boolean
         created_at:
           type: string
           format: date-time

@@ -11,6 +11,7 @@ import (
 	"github.com/rom/qtestframe/internal/export"
 	"github.com/rom/qtestframe/internal/model"
 	"github.com/rom/qtestframe/internal/query"
+	"github.com/rom/qtestframe/internal/rbac"
 )
 
 // SearchHit is one search result.
@@ -45,6 +46,9 @@ var searchSchema = func() *query.Schema {
 }()
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Principal) {
+	if !requireOrg(w, p) {
+		return
+	}
 	expr := strings.TrimSpace(r.URL.Query().Get("q"))
 	if expr == "" {
 		writeJSON(w, http.StatusOK, listOf([]SearchHit{}))
@@ -68,6 +72,12 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 	}
 	ctx := r.Context()
 	projects, err := s.Store.ListProjects(ctx, p.TenantID())
+	if err != nil {
+		s.fail(w, r, err)
+		return
+	}
+	// only projects the caller may see, each kind with its read permission there
+	vis, err := s.visibleProjects(ctx, p)
 	if err != nil {
 		s.fail(w, r, err)
 		return
@@ -97,9 +107,10 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 	only := r.URL.Query().Get("project_id")
 	for i := range projects {
 		pr := &projects[i]
-		if only != "" && pr.ID != only {
+		if (only != "" && pr.ID != only) || !visibleIn(vis, p, pr.ID, "project.read") {
 			continue
 		}
+		in := func(perm string) bool { return visibleIn(vis, p, pr.ID, rbac.Permission(perm)) }
 		pc, err := s.loadContext(ctx, p.TenantID(), pr)
 		if err != nil {
 			s.fail(w, r, err)
@@ -110,7 +121,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 			rec["kind"] = []string{kind}
 			return rec
 		}
-		if types["requirement"] {
+		if types["requirement"] && in("requirement.read") {
 			reqs, err := s.Store.ListRequirements(ctx, p.TenantID(), pr.ID)
 			if err != nil {
 				s.fail(w, r, err)
@@ -121,7 +132,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 				add(meta(pc.requirementRecord(&reqs[j]), "requirement"), SearchHit{Type: "requirement", ID: reqs[j].ID, ProjectID: pr.ID, ProjectKey: pr.Key, Key: reqs[j].Key, Title: reqs[j].Title})
 			}
 		}
-		if types["test"] {
+		if types["test"] && in("test.read") {
 			tests, err := s.Store.ListTests(ctx, p.TenantID(), pr.ID)
 			if err != nil {
 				s.fail(w, r, err)
@@ -132,7 +143,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request, p *Princip
 				add(meta(pc.testRecord(&tests[j]), "test"), SearchHit{Type: "test", ID: tests[j].ID, ProjectID: pr.ID, ProjectKey: pr.Key, Key: tests[j].Key, Title: tests[j].Title})
 			}
 		}
-		if types["run"] {
+		if types["run"] && in("run.read") {
 			runs, err := s.Store.ListRuns(ctx, p.TenantID(), pr.ID)
 			if err != nil {
 				s.fail(w, r, err)

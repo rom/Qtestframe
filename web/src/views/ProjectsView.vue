@@ -19,6 +19,8 @@ import Message from 'primevue/message'
 import ProjectIcon from '@/components/ProjectIcon.vue'
 import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
 import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
+import SharingDialog from '@/components/SharingDialog.vue'
+import { canInProject, canShare, isRestricted } from '@/lib/sharing'
 import { totalRows, type ProjectLoadResult } from '@/lib/projectArchive'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { P } from '@/lib/permissions'
@@ -127,9 +129,17 @@ function open(p: Project) {
   router.push({ name: 'dashboard', params: { projectId: p.id } })
 }
 
+// permissions in each project (its effective permissions: project sharing)
+const canIn = (p: Project, perm: string | string[]) => canInProject(auth.me, p, perm)
+const shareOpen = ref(false)
+const sharing = ref<Project | null>(null)
+function openShare(p: Project) {
+  sharing.value = p
+  shareOpen.value = true
+}
 // save, load and duplicate (project archives)
-const canSave = computed(() => auth.can([P.projectUpdate, P.export]))
-const canDuplicate = computed(() => auth.can([P.projectCreate, P.projectUpdate, P.export]))
+const canSave = (p: Project) => canIn(p, [P.projectUpdate, P.export])
+const canDuplicate = (p: Project) => auth.can(P.projectCreate) && canIn(p, [P.projectUpdate, P.export])
 const takenKeys = computed(() => projects.value.map((p) => p.key))
 const loadDialog = ref(false)
 const duplicateDialog = ref(false)
@@ -210,14 +220,16 @@ function loadedDetail(p: Project, res: ProjectLoadResult) {
           <RouterLink :to="{ name: 'dashboard', params: { projectId: p.id } }" class="project-link ellipsis" @click.stop>{{ p.name }}</RouterLink>
           <div class="row nowrap" style="gap: 6px">
             <span class="key">{{ p.key }}</span>
+            <span v-if="isRestricted(p)" class="type-badge small restricted-badge" v-tooltip="t('sharing.restrictedTip')"><i class="pi pi-lock" aria-hidden="true" />{{ t('sharing.restricted') }}</span>
             <span v-if="p.type && p.type !== 'general'" class="type-badge small"><i :class="PROJECT_TYPE_ICONS[p.type as ProjectType]" aria-hidden="true" />{{ t(`projectType.${p.type}`) }}</span>
           </div>
         </div>
         <div class="row nowrap" @click.stop>
-          <Button v-if="canSave" icon="pi pi-download" text rounded severity="secondary" :loading="savingId === p.id" :aria-label="t('projectArchive.saveNamed', { name: p.name })" v-tooltip="t('projectArchive.save')" @click="saveArchive(p)" />
-          <Button v-if="canDuplicate" icon="pi pi-copy" text rounded severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: p.name })" v-tooltip="t('projectArchive.duplicate')" @click="openDuplicate(p)" />
-          <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: p.name })" v-tooltip="t('common.edit')" @click="openEdit(p)" />
-          <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: p.name })" v-tooltip="t('common.delete')" @click="remove(p)" />
+          <Button v-if="canSave(p)" icon="pi pi-download" text rounded severity="secondary" :loading="savingId === p.id" :aria-label="t('projectArchive.saveNamed', { name: p.name })" v-tooltip="t('projectArchive.save')" @click="saveArchive(p)" />
+          <Button v-if="canDuplicate(p)" icon="pi pi-copy" text rounded severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: p.name })" v-tooltip="t('projectArchive.duplicate')" @click="openDuplicate(p)" />
+          <Button v-if="canShare(auth.me, p)" icon="pi pi-share-alt" text rounded severity="secondary" :aria-label="t('sharing.shareNamed', { name: p.name })" v-tooltip="t('sharing.share')" @click="openShare(p)" />
+          <Button v-if="canIn(p, P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: p.name })" v-tooltip="t('common.edit')" @click="openEdit(p)" />
+          <Button v-if="canIn(p, P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: p.name })" v-tooltip="t('common.delete')" @click="remove(p)" />
         </div>
       </div>
       <div class="muted" style="min-height: 38px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">
@@ -230,23 +242,25 @@ function loadedDetail(p: Project, res: ProjectLoadResult) {
     <DataTable v-stack :value="filtered" data-key="id" sort-field="key" :sort-order="1" row-hover @row-click="open($event.data)" class="clickable">
       <Column field="key" :header="t('common.key')" sortable><template #body="{ data }"><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="key-link" tabindex="-1" @click.stop><span class="key">{{ data.key }}</span></RouterLink></template></Column>
       <Column field="name" :header="t('common.name')" sortable body-class="stack-main">
-        <template #body="{ data }"><span class="row nowrap" style="min-width: 0"><ProjectIcon :icon="data.icon" :project-key="data.key" :color="data.color" :size="24" /><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink></span></template>
+        <template #body="{ data }"><span class="row nowrap" style="min-width: 0"><ProjectIcon :icon="data.icon" :project-key="data.key" :color="data.color" :size="24" /><RouterLink :to="{ name: 'dashboard', params: { projectId: data.id } }" class="project-link" @click.stop>{{ data.name }}</RouterLink><i v-if="isRestricted(data)" class="pi pi-lock muted small" v-tooltip="t('sharing.restrictedTip')" tabindex="0" role="img" :aria-label="t('sharing.restrictedTip')" /></span></template>
       </Column>
       <Column field="description" :header="t('common.description')" />
       <Column field="created_at" :header="t('common.created')" sortable><template #body="{ data }">{{ formatDate(data.created_at) }}</template></Column>
       <Column header="" style="width: 180px">
         <template #body="{ data }">
           <div class="row nowrap" @click.stop>
-            <Button v-if="canSave" icon="pi pi-download" text rounded severity="secondary" :loading="savingId === data.id" :aria-label="t('projectArchive.saveNamed', { name: data.name })" @click="saveArchive(data)" />
-            <Button v-if="canDuplicate" icon="pi pi-copy" text rounded severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: data.name })" @click="openDuplicate(data)" />
-            <Button v-if="auth.can(P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: data.name })" @click="openEdit(data)" />
-            <Button v-if="auth.can(P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: data.name })" @click="remove(data)" />
+            <Button v-if="canSave(data)" icon="pi pi-download" text rounded severity="secondary" :loading="savingId === data.id" :aria-label="t('projectArchive.saveNamed', { name: data.name })" @click="saveArchive(data)" />
+            <Button v-if="canDuplicate(data)" icon="pi pi-copy" text rounded severity="secondary" :aria-label="t('projectArchive.duplicateNamed', { name: data.name })" @click="openDuplicate(data)" />
+            <Button v-if="canShare(auth.me, data)" icon="pi pi-share-alt" text rounded severity="secondary" :aria-label="t('sharing.shareNamed', { name: data.name })" @click="openShare(data)" />
+            <Button v-if="canIn(data, P.projectUpdate)" icon="pi pi-pencil" text rounded severity="secondary" :aria-label="t('projects.editNamed', { name: data.name })" @click="openEdit(data)" />
+            <Button v-if="canIn(data, P.projectDelete)" icon="pi pi-trash" text rounded severity="danger" :aria-label="t('projects.deleteNamed', { name: data.name })" @click="remove(data)" />
           </div>
         </template>
       </Column>
     </DataTable>
   </div>
 
+  <SharingDialog v-model:visible="shareOpen" :project="sharing" @changed="load" />
   <ProjectLoadDialog v-model:visible="loadDialog" :taken-keys="takenKeys" @loaded="onLoaded" />
   <ProjectDuplicateDialog v-model:visible="duplicateDialog" :project="duplicating" :taken-keys="takenKeys" @duplicated="onDuplicated" />
 

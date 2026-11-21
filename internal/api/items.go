@@ -391,6 +391,13 @@ func (s *Server) handleMoveItems(kind string) handlerFunc {
 		if req.Position != nil {
 			pos = *req.Position
 		}
+		// moving into another project needs write access there too
+		if req.ProjectID != "" && req.ProjectID != pr.ID {
+			if err := s.canIn(r.Context(), p, req.ProjectID, kindPerm(kind)); err != nil {
+				s.fail(w, r, err)
+				return
+			}
+		}
 		for _, id := range uniqStrings(req.IDs) {
 			s.ensureInitialRevision(r.Context(), p, kind, id)
 		}

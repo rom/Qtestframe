@@ -137,6 +137,7 @@ var ProjectArchiveExcluded = map[string]string{
 	"tenants":              "organisation",
 	"users":                "accounts (references such as created_by are kept as values)",
 	"memberships":          "access rights",
+	"project_members":      "access rights (a loaded project gets its own sharing)",
 	"api_tokens":           "secret",
 	"audit_log":            "organisation audit trail",
 	"login_events":         "account history",

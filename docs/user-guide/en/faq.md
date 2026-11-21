@@ -28,6 +28,10 @@ You are signed in but not working in an organisation. Choose one in the organisa
 
 Use the organisation switch at the left of the top bar (on phones, the building icon). Qtestframe opens that organisation's project list. To start in a particular organisation every time, set **Default organisation** in your preferences.
 
+### A colleague cannot see a project. Why?
+
+The project is probably **restricted** (it shows a lock 🔒): only its project members and the organisation's admins see it. Someone who may change the project adds your colleague with **Share** in the project header; see [Project sharing](administration.md#project-sharing). The project role can also be lower than the organisation role, so a colleague may see a project but not be allowed to edit it.
+
 ## Editing
 
 ### How do I refer to a colleague in a requirement or comment?

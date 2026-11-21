@@ -255,6 +255,11 @@ func (s *Store) RemoveMembership(ctx context.Context, tenantID, userID string) e
 		return mapErr(sql.ErrNoRows, "membership")
 	}
 	_, err = s.c(ctx).exec(ctx, `DELETE FROM sessions WHERE tenant_id = ? AND user_id = ?`, tenantID, userID)
+	if err != nil {
+		return err
+	}
+	// the user's project memberships in the tenant go with it
+	_, err = s.c(ctx).exec(ctx, `DELETE FROM project_members WHERE tenant_id = ? AND member_type = 'user' AND member_id = ?`, tenantID, userID)
 	return err
 }
 

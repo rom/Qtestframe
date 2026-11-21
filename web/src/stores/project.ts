@@ -8,6 +8,8 @@ export const useProjectStore = defineStore('project', {
     folders: { requirement: [] as Folder[], test: [] as Folder[] } as Record<ItemKind, Folder[]>,
     categories: [] as Category[],
     loading: false,
+    /** set while a project page is shown: permission checks then use the project's (see auth.can) */
+    scoped: false,
   }),
   getters: {
     pid: (s) => s.project?.id ?? '',
@@ -27,6 +29,11 @@ export const useProjectStore = defineStore('project', {
     },
     reset() {
       this.project = null
+    },
+    /** Reloads the open project (e.g. after its sharing changed). */
+    async refresh() {
+      if (!this.project) return
+      this.project = await api.get<Project>(`/projects/${this.project.id}`)
     },
     async loadFolders(kind: ItemKind) {
       if (!this.project) return

@@ -565,6 +565,13 @@ Defaults from `internal/rbac/rbac.go`. Each user has one role per tenant.
 Every tenant can change the permissions of all built-in roles except
 `admin` and create its own roles (table `roles`, [ADR 0014](adr/0014-tenant-configurable-roles.md));
 `GET /api/v1/roles` and `GET /api/v1/rbac` return the effective matrix.
+Inside a project, a **project role** (project sharing, table
+`project_members`, migration 0024) replaces the project permissions
+(`project.read/update/delete`, `requirement.*`, `test.*`, `run.*`,
+`script.execute`, `export`) of the organisation role, and a restricted
+project is invisible to non-members; see
+[api.md](api.md#project-sharing-per-project-access) and
+[security.md §4](security.md#4-authorization-and-tenant-isolation).
 
 | Permission | viewer | reviewer | tester | test_lead | manager | admin | Used by |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|---|

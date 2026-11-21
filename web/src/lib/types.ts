@@ -234,8 +234,58 @@ export interface Project {
   type?: string
   /** technology of a software project, included in prompts */
   tech_context?: string
+  /** organisation (every member) or restricted (project members and organisation admins) */
+  access?: ProjectAccessMode
+  /** the caller's access to the project (effective permissions there) */
+  my_access?: ProjectAccess
   created_at: string
   updated_at: string
+}
+
+export type ProjectAccessMode = 'organisation' | 'restricted'
+
+/** The caller's access to a project (internal/model ProjectAccessInfo). */
+export interface ProjectAccess {
+  /** admin (organisation administrator), member, group or organisation (the organisation role) */
+  source: 'admin' | 'member' | 'group' | 'organisation'
+  /** the project role (member) or the groups' roles (group) */
+  role?: string
+  /** effective permissions in the project */
+  permissions: string[]
+  can_share: boolean
+}
+
+/** A user or SCIM group with a role in a project. */
+export interface ProjectMember {
+  project_id: string
+  type: 'user' | 'group'
+  id: string
+  role: string
+  email?: string
+  display_name?: string
+  avatar?: string
+  org_role?: string
+  added_by?: string
+  created_at: string
+  updated_at: string
+}
+
+/** GET /projects/{pid}/access */
+export interface ProjectSharing {
+  access: ProjectAccessMode
+  members: number
+  my_access: ProjectAccess | null
+  grantable_roles: string[]
+}
+
+/** A user or group that can be added to a project. */
+export interface MemberCandidate {
+  type: 'user' | 'group'
+  id: string
+  email?: string
+  display_name?: string
+  avatar?: string
+  org_role?: string
 }
 
 export type ItemKind = 'requirement' | 'test'

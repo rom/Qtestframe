@@ -138,7 +138,7 @@ default):
 
 | Method | Path | Permission |
 |---|---|---|
-| GET | `/projects` | project.read |
+| GET | `/projects` | signed in – the projects the caller may read (see [Project sharing](#project-sharing-per-project-access)), each with `access` and `my_access` |
 | POST | `/projects` | project.create – `{"key","name","description","color"?,"type"?,"tech_context"?,"seed_categories":true}` |
 | GET | `/projects/{pid}` | project.read |
 | PATCH | `/projects/{pid}` | project.update – `{"name","description","color","requirement_sources","type","tech_context"}` |
@@ -161,6 +161,68 @@ them). `type` is one of `/meta` `project_types` (`general` by default,
 `software`, `hardware`, `system`, `business`); `tech_context` (at most 8000
 characters) describes the technology of a software project and is included
 in prompts.
+
+`access` is `organisation` or `restricted` (see below); `my_access`
+(`GET /projects`, `GET /projects/{pid}`, `POST /projects`) is the caller's
+access to the project: `{"source": "admin"|"member"|"group"|"organisation",
+"role", "permissions": [...], "can_share": bool}` – `permissions` are the
+effective permissions in the project, which clients use to show or hide
+actions inside it.
+
+### Project sharing (per-project access)
+
+A project is **organisation-wide** (`access: "organisation"`, the default:
+every member of the organisation sees it with their organisation role) or
+**restricted** (`access: "restricted"`: only its project members and the
+organisation's administrators see it; everyone else gets **404** for the
+project and for every resource in it, also when addressed by its own id,
+e.g. `/requirements/{id}`, `/runs/{id}`, `/executions/{id}`, `/files/{id}`).
+
+A project member is a user of the organisation or a SCIM group, with a
+**project role** – any role of the organisation (built-in or custom). The
+effective permissions of a caller in a project:
+
+* organisation administrators (role `admin`) and super administrators keep
+  their organisation permissions in every project;
+* a project member gets the project permissions of the project role
+  (`project.*` except `project.create`, `requirement.*`, `test.*`, `run.*`,
+  `script.execute`, `export`) **instead of** those of the organisation role
+  – in organisation-wide projects too, so a project role raises or lowers a
+  user's rights in one project. A direct membership wins over group
+  memberships; several groups give the union of their roles;
+* anyone else has their organisation role in an organisation-wide project
+  and no access to a restricted one.
+
+Organisation-level permissions (`member.*`, `role.manage`,
+`settings.manage`, `tenant.manage`, `token.manage`, `audit.read`,
+`project.create`) always come from the organisation role. An API token
+never exceeds its own role, inside a project too. Lists across projects
+(`/projects`, `/search`, `/reviews`, `/reviews/in-review`,
+`/notifications`, the catalogue's `?project_id=`) leave out what the caller
+may not see; moving folders or items into another project needs write
+access there; notifications, @mentions, report recipients and review
+requests only reach people who may see the project.
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/projects/{pid}/access` | project.read – `{"access", "members": n, "my_access", "grantable_roles": [...]}` |
+| PUT | `/projects/{pid}/access` | project.update – `{"access": "organisation"\|"restricted"}`; restricting keeps the caller in the project (a caller who is neither an administrator nor a member becomes a member with their organisation role) |
+| GET | `/projects/{pid}/members` | project.read – `ProjectMember`: `{"type": "user"\|"group", "id", "role", "email", "display_name", "avatar", "org_role", "added_by", "created_at", "updated_at"}` |
+| GET | `/projects/{pid}/members/candidates` | project.update – `?q=`: organisation members and SCIM groups that are not project members yet (at most 50) |
+| POST | `/projects/{pid}/members` | project.update – `{"user_id" \| "email" \| "group_id", "role"}` → 201 (200 when the member existed: the role is changed); the user must already be a member of the organisation (400 otherwise) |
+| PATCH | `/projects/{pid}/members/{mid}` | project.update – `{"role"}` |
+| DELETE | `/projects/{pid}/members/{mid}` | project.update, or the member themselves (leaving) → 204 |
+| POST | `/projects/{pid}/members/bulk` | project.update – `{"ids": [...], "action": "role"\|"remove", "role"?}`, all or nothing → `{"changed": [...], "skipped": [{"id","label","reason": "not_found"\|"unchanged"\|"forbidden"}]}` |
+
+Nobody can give, take or remove a project role whose project permissions
+they do not hold in the project themselves (403; administrators may give
+any role). An added user is notified (`project.shared`, in the app and by
+e-mail per their preferences). Changes are audited: `project.access`,
+`project.member.add`, `project.member.role`, `project.member.remove`.
+Removing someone from the organisation or deleting a SCIM group removes
+their project memberships; a custom role used by a project member cannot
+be deleted (409). A duplicated project keeps the original's members; a
+loaded or duplicated restricted project keeps the caller in it.
 
 ### Project archives (save, load, duplicate)
 
@@ -1623,7 +1685,9 @@ Audit actions: `invitation.send`, `invitation.resend`, `invitation.revoke`,
 ## Search
 
 `GET /search?q=<expr>&types=requirement,test,run&project_id=&limit=` –
-searches all projects of the current tenant (permission `project.read`).
+searches the projects of the current tenant the caller may read (each kind
+of item with its read permission in the project; see
+[Project sharing](#project-sharing-per-project-access)).
 `limit` defaults to 200 (max 1000); `total` counts all hits. Besides the
 requirement, test and run fields, `project` (key or name) and `kind` can be
 queried. Response:

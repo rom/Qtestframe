@@ -370,6 +370,9 @@ func (s *Store) DeleteSCIMGroup(ctx context.Context, tenantID, id string) error 
 		if _, err := c.exec(ctx, `DELETE FROM scim_group_members WHERE group_id = ? AND tenant_id = ?`, id, tenantID); err != nil {
 			return err
 		}
+		if _, err := c.exec(ctx, `DELETE FROM project_members WHERE tenant_id = ? AND member_type = 'group' AND member_id = ?`, tenantID, id); err != nil {
+			return err
+		}
 		res, err := c.exec(ctx, `DELETE FROM scim_groups WHERE id = ? AND tenant_id = ?`, id, tenantID)
 		if err != nil {
 			return err

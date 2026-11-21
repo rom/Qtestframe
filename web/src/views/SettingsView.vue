@@ -23,6 +23,7 @@ import DefectTrackerSettings from '@/components/DefectTrackerSettings.vue'
 import WebhooksCard from '@/components/WebhooksCard.vue'
 import ConfigurationsSettings from '@/components/ConfigurationsSettings.vue'
 import WebTestSettings from '@/components/WebTestSettings.vue'
+import SharingPanel from '@/components/SharingPanel.vue'
 import ProjectLoadDialog from '@/components/ProjectLoadDialog.vue'
 import ProjectDuplicateDialog from '@/components/ProjectDuplicateDialog.vue'
 import { totalRows, type ProjectLoadResult } from '@/lib/projectArchive'
@@ -38,13 +39,20 @@ import { useI18n } from 'vue-i18n'
 
 const proj = useProjectStore()
 const auth = useAuthStore()
+async function onSharingChanged() {
+  try {
+    await proj.refresh()
+  } catch {
+    router.push({ name: 'projects' })
+  }
+}
 // kept in script: vue-tsc 3 mis-parses a literal {id} inside a static attribute
 const defectPlaceholder = 'https://jira.example.com/browse/{id}'
 const router = useRouter()
 const notify = useNotify()
 const { t } = useI18n()
 const route = useRoute()
-const tab = ref<string>(['requirement', 'test', 'configurations', 'webtests', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
+const tab = ref<string>(['requirement', 'test', 'configurations', 'webtests', 'sharing', 'project'].includes(route.query.tab as string) ? (route.query.tab as string) : 'requirement')
 
 function canEdit(scope: ItemKind) {
   return auth.can(scope === 'requirement' ? P.requirementWrite : P.testWrite) || auth.can(P.projectUpdate)
@@ -297,6 +305,7 @@ function deleteProject() {
       <Tab value="test"><i class="pi pi-check-square" /> {{ t('settings.testCategories') }}</Tab>
       <Tab value="configurations"><i class="pi pi-sliders-h" /> {{ t('configurations.tab') }}</Tab>
       <Tab value="webtests"><i class="pi pi-globe" /> {{ t('webTests.tab') }}</Tab>
+      <Tab value="sharing"><i class="pi pi-share-alt" /> {{ t('sharing.title') }}</Tab>
       <Tab value="project"><i class="pi pi-cog" /> {{ t('settings.project') }}</Tab>
     </TabList>
     <TabPanels style="padding: 16px 0; background: transparent">
@@ -360,6 +369,13 @@ function deleteProject() {
       </TabPanel>
       <TabPanel value="webtests">
         <WebTestSettings v-if="proj.pid && tab === 'webtests'" :project-id="proj.pid" :can-edit="auth.can(P.projectUpdate)" />
+      </TabPanel>
+      <TabPanel value="sharing">
+        <section v-if="proj.project && tab === 'sharing'" class="card" style="max-width: 860px" aria-labelledby="h-sharing">
+          <h2 id="h-sharing" class="plain-heading" style="margin-top: 0">{{ t('sharing.title') }}</h2>
+          <p class="small muted" style="margin-top: 0">{{ t('sharing.intro') }}</p>
+          <SharingPanel :project="proj.project" :heading-level="3" @changed="onSharingChanged" />
+        </section>
       </TabPanel>
       <TabPanel value="project">
         <div class="card" style="max-width: 640px">

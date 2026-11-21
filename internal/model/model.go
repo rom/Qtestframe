@@ -311,9 +311,55 @@ type Project struct {
 	Type string `json:"type"`
 	// TechContext describes the technology of a software project (languages,
 	// frameworks, architecture, conventions); generated prompts include it.
-	TechContext string    `json:"tech_context"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	TechContext string `json:"tech_context"`
+	// Access is ProjectAccessOrganisation (every member of the
+	// organisation) or ProjectAccessRestricted (project members and
+	// organisation administrators only).
+	Access    string    `json:"access"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	// MyAccess is the caller's access to the project (set by the API).
+	MyAccess *ProjectAccessInfo `json:"my_access,omitempty"`
+}
+
+// Project access modes.
+const (
+	ProjectAccessOrganisation = "organisation"
+	ProjectAccessRestricted   = "restricted"
+)
+
+// ProjectAccessInfo is a caller's access to a project.
+type ProjectAccessInfo struct {
+	// Source is "admin" (organisation administrator), "member" (a project
+	// member: Role is the project role), "group" (through a SCIM group:
+	// Role lists the groups' roles) or "organisation" (the organisation
+	// role of an organisation-wide project).
+	Source string `json:"source"`
+	// Role is the project role ("" for admin and organisation).
+	Role string `json:"role,omitempty"`
+	// Permissions are the effective permissions in the project.
+	Permissions []string `json:"permissions"`
+	// CanShare reports whether the caller may change the project's access
+	// and members.
+	CanShare bool `json:"can_share"`
+}
+
+// ProjectMember is a user or SCIM group with a role in a project.
+type ProjectMember struct {
+	ProjectID string `json:"project_id"`
+	// Type is "user" or "group".
+	Type string `json:"type"`
+	// ID is the user id or the SCIM group id.
+	ID     string `json:"id"`
+	Role   string `json:"role"`
+	Email  string `json:"email,omitempty"`
+	Name   string `json:"display_name,omitempty"`
+	Avatar string `json:"avatar,omitempty"`
+	// OrgRole is the user's organisation role ("" for groups).
+	OrgRole   string    `json:"org_role,omitempty"`
+	AddedBy   string    `json:"added_by,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // ProjectTypes are the kinds of project. Software projects get extra

@@ -176,7 +176,7 @@ func (s *Server) routes() {
 	h("GET /api/v1/audit", s.handleAudit, "audit.read")
 
 	// projects
-	h("GET /api/v1/projects", s.handleListProjects, "project.read")
+	h("GET /api/v1/projects", s.handleListProjects) // the projects the caller may read: see access.go
 	h("POST /api/v1/projects", s.handleCreateProject, "project.create")
 	h("GET /api/v1/projects/{pid}", s.handleGetProject, "project.read")
 	h("PATCH /api/v1/projects/{pid}", s.handleUpdateProject, "project.update")
@@ -297,7 +297,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/executions/{id}/run-script", s.handleRunScript, "script.execute")
 
 	// search & export
-	h("GET /api/v1/search", s.handleSearch, "project.read")
+	h("GET /api/v1/search", s.handleSearch) // in the projects the caller may read: see access.go
 	h("GET /api/v1/projects/{pid}/export", s.handleExport, "export")
 
 	// files, attachments, archive, avatars (files.go)
@@ -324,6 +324,7 @@ func (s *Server) routes() {
 	s.routesCatalog(h)
 	s.routesWebTests(h)
 	s.routesProjectArchive(h)
+	s.routesSharing(h)
 
 	m.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint")

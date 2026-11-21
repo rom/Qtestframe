@@ -287,9 +287,47 @@ OIDC/SAML login neither creates nor changes that membership, so
   parent was loaded with the tenant predicate. Operations spanning projects
   (moving items or folders to another project, links, adding tests to a run)
   verify that both ends belong to the principal's tenant.
+* **Per-project access (project sharing)**: a project is organisation-wide
+  (`access = organisation`, the default and the behaviour of earlier
+  versions) or restricted (`access = restricted`). Project members are
+  users or SCIM groups with a project role (`project_members`, migration
+  0024). Effective permissions in a project: organisation administrators
+  (and super admins) keep theirs; a project member gets the
+  *project-scoped* permissions of the project role in place of the
+  organisation role's (`project.read/update/delete`, `requirement.*`,
+  `test.*`, `run.*`, `script.execute`, `export`), in both modes; others get
+  their organisation role in an organisation-wide project and **no access
+  (404, indistinguishable from a missing project)** to a restricted one.
+  Organisation-level permissions always come from the organisation role,
+  and an API token is capped by its own role inside a project as well.
+  Nobody can give or take a project role with project permissions they do
+  not hold there (no escalation through sharing); changes are audited.
+* **Where it is enforced:** centrally, in `authed`
+  (`internal/api/authn.go`, `access.go`): before the route permission is
+  checked, the request's project is resolved – `{pid}`, or the project of
+  the `{id}` resource from a table of resource → project queries
+  (requirements, tests, runs, executions, step results, folders, categories,
+  relations, baselines, links, item links, trash, releases, defects, risks,
+  webhooks, trace rules, configurations, dependencies, report definitions
+  and subscriptions, reviews, files, comments) – and the principal's
+  permissions are replaced by those in the project, so every `p.Can` in the
+  handlers is project-aware. A test walks every registered route
+  (`TestProjectAccessRouteWalk`) and fails for an `{id}` resource missing
+  from the table and for any route that does not answer 404/403 to a
+  non-member, with a session and with an API token. Handlers that reach a
+  second project (moves into another project, the catalogue's
+  `project_id`) check it with `canIn`; lists across projects (projects,
+  search, reviews, notifications) filter with `visibleProjects`;
+  notifications, @mentions, report recipients and reviewers are limited to
+  people who may see the project; scheduled reports run with the owner's
+  current access to the project.
+* What sharing does **not** hide: the organisation audit log (`audit.read`)
+  records actions in every project, organisation-wide e-mail digests may
+  list notifications created while the recipient still had access, and
+  backups contain every project.
 * Authorization is enforced in the API layer (route permissions in
-  `internal/api/server.go`, data-dependent checks in handlers) and tenant
-  scoping in the store layer.
+  `internal/api/server.go`, the project scope in `access.go`,
+  data-dependent checks in handlers) and tenant scoping in the store layer.
 
 ## 5. Web application protections
 

@@ -32,8 +32,20 @@ type Principal struct {
 	Token   *model.APIToken
 	// perms are the effective permissions in Tenant, resolved from the
 	// tenant's role set (see resolvePerms); nil means the built-in defaults
-	// of Role.
+	// of Role. Inside a project they are the permissions there (see
+	// access.go: scope).
 	perms []string
+	// roles is the tenant's role set; memberRole the user's organisation
+	// role (also for API tokens, whose Role is the token's).
+	roles      rbac.Set
+	memberRole string
+	// orgPerms are the organisation-level permissions (perms before a
+	// project scoped them); tokenPerms the permissions of an API token's role.
+	orgPerms   []string
+	tokenPerms []string
+	// projectID and access: the project the request is about (see scope).
+	projectID string
+	access    *model.ProjectAccessInfo
 }
 
 // Can reports whether the principal holds permission p in its tenant.
@@ -81,6 +93,13 @@ func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRole stri
 		return err
 	}
 	perms := set.PermissionsOf(p.Role)
+	p.roles = set
+	if p.Token == nil {
+		p.memberRole = p.Role
+	} else {
+		p.memberRole = memberRole
+		p.tokenPerms = append([]string{}, perms...)
+	}
 	if p.Token != nil && memberRole != "" {
 		mine := set.PermissionsOf(memberRole)
 		if !rbac.Subset(perms, mine) {
@@ -89,6 +108,7 @@ func (s *Server) resolvePerms(ctx context.Context, p *Principal, memberRole stri
 		perms = rbac.Intersect(perms, mine)
 	}
 	p.perms = perms
+	p.orgPerms = perms
 	return nil
 }
 
@@ -123,6 +143,10 @@ func (s *Server) authed(fn handlerFunc, perms ...string) http.Handler {
 		}
 		if p.User.MustChangePassword && p.Token == nil && !strings.HasPrefix(r.URL.Path, "/api/v1/auth/") {
 			writeError(w, http.StatusForbidden, "password_change_required", "you must change your password first")
+			return
+		}
+		// per-project access: the request's project scopes the permissions
+		if !s.scopeRequest(w, r, p) {
 			return
 		}
 		for _, perm := range perms {

@@ -27,7 +27,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Search and filters](search-and-filters.md) | The query language with many examples |
 | [Reports and export](reports-and-export.md) | Standard reports, the custom report builder, export formats and the document archive |
 | [Documents](documents.md) | The project's document archive: uploads, previews and links |
-| [Administration](administration.md) | Organisations, users, members and roles, password resets, API tokens, the audit log, backup and restore |
+| [Administration](administration.md) | Organisations, users, members and roles, project sharing, password resets, API tokens, the audit log, backup and restore |
 | [Accessibility and languages](accessibility-and-languages.md) | Keyboard use, screen readers, themes, English and Swedish, phones and tablets |
 | [FAQ](faq.md) | Answers to common questions |
 | [References](references.md) | RFC 2119, RFC 8174 and other RFCs, NIST publications, and standards for requirements and testing |
