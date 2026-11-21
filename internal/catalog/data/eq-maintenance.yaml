@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [measuring-equipment, register, calibration]
-    refs: ["ISO 10012:2003 §7.1 (metrological confirmation)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    refs: ["ISO 10012:2003 §7.1 (metrological confirmation)", "ISO 9001:2026 §7.1.5 (monitoring and measuring resources)"]
     tests: [EQMNT-T01]
     en:
       title: Register of measuring equipment
@@ -37,7 +37,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [traceability, accredited-laboratory, calibration]
-    refs: ["ISO/IEC 17025:2017 §6.5 (metrological traceability)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    refs: ["ISO/IEC 17025:2017 §6.5 (metrological traceability)", "ISO 9001:2026 §7.1.5 (monitoring and measuring resources)"]
     tests: [EQMNT-T01]
     en:
       title: Calibration traceable to SI units
@@ -83,7 +83,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [calibration-status, overdue, blocking]
-    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO 9001:2026 §7.1.5 (monitoring and measuring resources)"]
     tests: [EQMNT-T03]
     en:
       title: No use of an instrument with overdue calibration
@@ -105,7 +105,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [out-of-tolerance, impact-assessment, product-recall]
-    refs: ["ISO 9001:2015 §7.1.5 (monitoring and measuring resources)", "ISO 10012:2003 §8.3 (control of nonconforming measurement management systems)"]
+    refs: ["ISO 9001:2026 §7.1.5 (monitoring and measuring resources)", "ISO 10012:2003 §8.3 (control of nonconforming measurement management systems)"]
     tests: [EQMNT-T04]
     en:
       title: Impact assessed when an instrument is found out of tolerance
@@ -267,7 +267,7 @@ requirements:
     obligation: must
     priority: high
     tags: [maintainability, mttr, repair-time]
-    refs: ["IEC 60300-3-10 (maintainability)", "IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
+    refs: ["IEC 60300-3-10:2025 (maintainability)", "IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
     tests: [EQMNT-T08]
     en:
       title: Replaceable units changed within two hours
@@ -337,7 +337,7 @@ requirements:
     obligation: should
     priority: low
     tags: [maintenance-kpi, availability, mtbf, mttr]
-    refs: ["EN 15341:2019 (maintenance key performance indicators)", "IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
+    refs: ["EN 15341:2019+A1:2022 (maintenance key performance indicators)", "IEC 61703:2016 (mathematical expressions for reliability, availability, maintainability and maintenance support terms)"]
     tests: [EQMNT-T10]
     en:
       title: Monthly maintenance key figures
@@ -443,7 +443,7 @@ tests:
     priority: critical
     execution: manual
     tags: [out-of-tolerance]
-    refs: ["ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    refs: ["ISO 9001:2026 §7.1.5 (monitoring and measuring resources)"]
     en:
       title: Out-of-tolerance findings and their assessments
       description: Reviews each out-of-tolerance finding of the last 12 months and its follow-up.
@@ -551,7 +551,7 @@ tests:
     priority: high
     execution: manual
     tags: [maintainability]
-    refs: ["IEC 60300-3-10 (maintainability)", "Regulation (EU) 2023/1230 Annex III §1.6.1 (machinery maintenance)"]
+    refs: ["IEC 60300-3-10:2025 (maintainability)", "Regulation (EU) 2023/1230 Annex III §1.6.1 (machinery maintenance)"]
     en:
       title: Timed replacement of five replaceable units
       description: A trained technician replaces 5 units chosen by the buyer while the time and the access route are recorded.
@@ -611,7 +611,7 @@ tests:
     priority: low
     execution: manual
     tags: [maintenance-kpi]
-    refs: ["EN 15341:2019 (maintenance key performance indicators)"]
+    refs: ["EN 15341:2019+A1:2022 (maintenance key performance indicators)"]
     en:
       title: Maintenance key figures recalculated from work orders
       description: Reviews the monthly key figure reports and recalculates one figure.

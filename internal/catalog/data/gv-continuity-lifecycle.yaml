@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [supplier, supplier-register]
-    refs: ["ISO 9001:2015 §8.4.1", "ISO/IEC 27001:2022 A.5.19", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d)"]
+    refs: ["ISO 9001:2026 §8.4.1", "ISO/IEC 27001:2022 A.5.19", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d)"]
     tests: [GVLC-T01]
     en:
       title: Supplier register with criticality and contract owner
@@ -59,7 +59,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [supplier, supplier-review]
-    refs: ["ISO/IEC 27001:2022 A.5.22", "ISO 9001:2015 §8.4.1", "ITIL 4 Supplier management"]
+    refs: ["ISO/IEC 27001:2022 A.5.22", "ISO 9001:2026 §8.4.1", "ITIL 4 Supplier management"]
     tests: [GVLC-T02]
     en:
       title: Quarterly review of critical suppliers
@@ -295,7 +295,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [life-cycle, replacement]
-    refs: ["ISO 55001:2014 §6.2"]
+    refs: ["ISO 55001:2024 §6.2 (asset management objectives and planning)"]
     tests: [GVLC-T08]
     en:
       title: Planned replacement year for critical assets
@@ -317,7 +317,7 @@ requirements:
     obligation: must
     priority: high
     tags: [decommissioning]
-    refs: ["ISO 55001:2014 §8.2", "ISO/IEC 27001:2022 A.8.32"]
+    refs: ["ISO 55001:2024 §8.2 (control of change)", "ISO/IEC 27001:2022 A.8.32"]
     tests: [GVLC-T09]
     en:
       title: Approved decommissioning plan
@@ -363,7 +363,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [decommissioning, sanitisation]
-    refs: ["ISO/IEC 27001:2022 A.7.14", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-88"]
+    refs: ["ISO/IEC 27001:2022 A.7.14", "ISO/IEC 27001:2022 A.8.10", "NIST SP 800-88 Rev. 2"]
     tests: [GVLC-T10]
     en:
       title: Storage media sanitised with a certificate
@@ -627,7 +627,7 @@ tests:
     priority: medium
     execution: manual
     tags: [life-cycle]
-    refs: ["ISO 55001:2014 §6.2"]
+    refs: ["ISO 55001:2024 §6.2 (asset management objectives and planning)"]
     en:
       title: Inspection of planned replacement years
       description: Checks that each critical asset has a planned replacement year and cost.
@@ -653,7 +653,7 @@ tests:
     priority: high
     execution: manual
     tags: [decommissioning, archive]
-    refs: ["ISO 55001:2014 §8.2", "ISO/IEC 27001:2022 A.5.33"]
+    refs: ["ISO 55001:2024 §8.2 (control of change)", "ISO/IEC 27001:2022 A.5.33"]
     en:
       title: Review of decommissioning plans and archiving
       description: Checks the decommissioning plans and the archiving of records for systems decommissioned in the last 12 months.
@@ -679,7 +679,7 @@ tests:
     priority: critical
     execution: manual
     tags: [sanitisation, disposal]
-    refs: ["ISO/IEC 27001:2022 A.7.14", "NIST SP 800-88", "Directive 2012/19/EU (WEEE)"]
+    refs: ["ISO/IEC 27001:2022 A.7.14", "NIST SP 800-88 Rev. 2", "Directive 2012/19/EU (WEEE)"]
     en:
       title: Certificates for media sanitisation and equipment disposal
       description: Checks the sanitisation certificates of storage media and the disposal receipts of discarded equipment.

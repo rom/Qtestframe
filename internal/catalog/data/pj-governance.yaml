@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [business-case, justification, initiation]
-    refs: ["ISO 21502:2020 (business case)", "PRINCE2 Continued business justification"]
+    refs: ["ISO 21502:2020 §4.3.2 (business case)", "PRINCE2 Continued business justification"]
     tests: [PJGOV-T01]
     en:
       title: Approved business case before the project starts
@@ -59,7 +59,7 @@ requirements:
     obligation: must
     priority: high
     tags: [roles, governance, steering-group]
-    refs: ["ISO 21502:2020 (governance and roles)", "PMBOK Guide 7th ed. Team performance domain"]
+    refs: ["ISO 21502:2020 §4.5 (project organization and roles)", "PMBOK Guide 8th ed. Governance performance domain"]
     tests: [PJGOV-T02]
     en:
       title: Named project roles with documented responsibilities
@@ -81,7 +81,7 @@ requirements:
     obligation: must
     priority: high
     tags: [stage-gate, decision, steering-group]
-    refs: ["ISO 21502:2020 (governance and roles)", "PRINCE2 Manage by stages"]
+    refs: ["ISO 21502:2020 §4.3 (project governance)", "PRINCE2 Manage by stages"]
     tests: [PJGOV-T02]
     en:
       title: Recorded steering group decision at each stage gate
@@ -127,7 +127,7 @@ requirements:
     obligation: must
     priority: high
     tags: [schedule, baseline, wbs, critical-path]
-    refs: ["ISO 21511:2018", "PMBOK Guide 7th ed. Planning performance domain"]
+    refs: ["ISO 21511:2018", "PMBOK Guide 8th ed. Schedule performance domain"]
     tests: [PJGOV-T04]
     en:
       title: Baselined schedule built from the work breakdown structure
@@ -149,7 +149,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cost, budget, baseline]
-    refs: ["ISO 21502:2020 (cost management)"]
+    refs: ["ISO 21502:2020 §7.7 (cost management)"]
     tests: [PJGOV-T05]
     en:
       title: Actual cost compared with the budget each month
@@ -171,7 +171,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [earned-value, cpi, spi]
-    refs: ["ISO 21508:2018", "PMBOK Guide 7th ed. Measurement performance domain"]
+    refs: ["ISO 21508:2018", "PMBOK Guide 8th ed. Finance performance domain"]
     tests: [PJGOV-T05]
     en:
       title: Earned value indices reported each month
@@ -193,7 +193,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [resources, allocation, capacity]
-    refs: ["ISO 21502:2020 (resource management)"]
+    refs: ["ISO 21502:2020 §7.5 (resources management)"]
     tests: [PJGOV-T06]
     en:
       title: Named resources for the next 3 months without overallocation
@@ -217,7 +217,7 @@ requirements:
     obligation: must
     priority: high
     tags: [scope, requirements, baseline]
-    refs: ["ISO/IEC/IEEE 29148:2018", "ISO 21502:2020 (scope management)"]
+    refs: ["ISO/IEC/IEEE 29148:2018", "ISO 21502:2020 §7.4 (scope management)"]
     tests: [PJGOV-T07]
     en:
       title: Baselined requirements with source and acceptance criteria
@@ -239,7 +239,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [change-control, change-request, scope]
-    refs: ["ISO 21502:2020 (change control)", "PRINCE2 Issues"]
+    refs: ["ISO 21502:2020 §7.10 (change control)", "PRINCE2 Issues"]
     tests: [PJGOV-T08]
     en:
       title: Changes to the baseline approved before work starts
@@ -283,7 +283,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [stakeholders, communication-plan]
-    refs: ["ISO 21502:2020 (stakeholder engagement)", "PMBOK Guide 7th ed. Stakeholder performance domain"]
+    refs: ["ISO 21502:2020 §7.12 (stakeholder engagement)", "PMBOK Guide 8th ed. Stakeholders performance domain"]
     tests: [PJGOV-T09]
     en:
       title: Stakeholder register with a communication plan
@@ -305,7 +305,7 @@ requirements:
     obligation: must
     priority: high
     tags: [status-report, reporting, steering-group]
-    refs: ["PRINCE2 Progress", "ISO 21502:2020 (reporting)"]
+    refs: ["PRINCE2 Progress", "ISO 21502:2020 §7.15 (reporting)"]
     tests: [PJGOV-T09]
     en:
       title: Monthly status report to the steering group
@@ -537,7 +537,7 @@ tests:
     priority: critical
     execution: manual
     tags: [change-control, change-request]
-    refs: ["ISO 21502:2020 (change control)"]
+    refs: ["ISO 21502:2020 §7.10 (change control)"]
     en:
       title: Sample of changes to the baselines
       description: Traces a sample of baseline changes back to their change requests and approvals.

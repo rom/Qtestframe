@@ -107,7 +107,7 @@ requirements:
     obligation: must
     priority: high
     tags: [accessibility, lift]
-    refs: ["EN 81-70", "BFS 2024:12 (byggnaders tillgänglighet och användbarhet)"]
+    refs: ["EN 81-70:2021+A1:2022 (car type 2)", "BFS 2024:12 (byggnaders tillgänglighet och användbarhet)"]
     tests: [FCOPS-T01]
     en:
       title: Lift to each floor with a car of at least 1.1 × 1.4 m
@@ -201,7 +201,7 @@ requirements:
     obligation: should
     priority: low
     tags: [waste, environment, recycling]
-    refs: ["ISO 14001:2015 §6.1.2"]
+    refs: ["ISO 14001:2026 §6.1.2 (environmental aspects)"]
     tests: [FCOPS-T05]
     en:
       title: Waste sorted in 6 fractions with yearly quantities

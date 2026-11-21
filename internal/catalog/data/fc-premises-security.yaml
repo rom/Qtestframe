@@ -309,7 +309,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [building-automation, patching, firmware]
-    refs: ["IEC 62443-2-4 (patch management)"]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)"]
     tests: [FCSEC-T10]
     en:
       title: Building automation software updates assessed every quarter

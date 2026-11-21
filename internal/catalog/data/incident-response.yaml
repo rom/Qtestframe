@@ -36,7 +36,7 @@ requirements:
     obligation: must
     priority: high
     tags: [severity, response-time]
-    refs: ["NIST SP 800-61 Rev. 2 §3.2.6 (incident prioritization)", "ITIL 4 Incident management practice", "ISO/IEC 27001:2022 A.5.25", "Regulation (EU) 2022/2554 (DORA) Art. 18", "ISO/IEC 27035-1:2023"]
+    refs: ["NIST SP 800-61 Rev. 2 §3.2.6 (incident prioritization)", "ITIL 4 Incident management", "ISO/IEC 27001:2022 A.5.25", "Regulation (EU) 2022/2554 (DORA) Art. 18", "ISO/IEC 27035-1:2023"]
     tests: [INC-T02]
     en:
       title: Severity levels with response times
@@ -116,7 +116,7 @@ requirements:
     obligation: should
     priority: high
     tags: [customer-communication]
-    refs: ["ISO/IEC 27001:2022 A.5.26", "ITIL 4 Incident management practice (communication)", "Regulation (EU) 2022/2554 (DORA) Art. 19(3)", "Regulation (EU) 2024/2847 (CRA) Art. 14(8)"]
+    refs: ["ISO/IEC 27001:2022 A.5.26", "ITIL 4 Incident management (communication)", "Regulation (EU) 2022/2554 (DORA) Art. 19(3)", "Regulation (EU) 2024/2847 (CRA) Art. 14(8)"]
     tests: [INC-T03]
     en:
       title: Affected customers are told within 60 minutes
@@ -140,7 +140,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [personal-data-breach, gdpr, supervisory-authority]
-    refs: ["GDPR Art. 33 (notification to the supervisory authority)", "GDPR Art. 34 (communication to the data subject)", "EDPB Guidelines 9/2022 on personal data breach notification", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2019 (notification of a data breach)", "ISO/IEC 27001:2022 A.5.5"]
+    refs: ["GDPR Art. 33 (notification to the supervisory authority)", "GDPR Art. 34 (communication to the data subject)", "EDPB Guidelines 9/2022 on personal data breach notification", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2025 (notification of a data breach)", "ISO/IEC 27001:2022 A.5.5"]
     tests: [INC-T04]
     en:
       title: Personal data breaches reported within 72 hours
@@ -408,7 +408,7 @@ tests:
     priority: critical
     execution: manual
     tags: [personal-data-breach, nis2, tabletop]
-    refs: ["GDPR Art. 33", "Directive (EU) 2022/2555 (NIS2) Art. 23", "ISO/IEC 27001:2022 A.5.5", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2019 (notification of a data breach)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14"]
+    refs: ["GDPR Art. 33", "Directive (EU) 2022/2555 (NIS2) Art. 23", "ISO/IEC 27001:2022 A.5.5", "ISO/IEC 27001:2022 A.5.26", "ISO/IEC 27018:2025 (notification of a data breach)", "Directive (EU) 2022/2557 (CER) Art. 15(1)", "Regulation (EU) 2022/2554 (DORA) Art. 19", "Regulation (EU) 2024/2847 (CRA) Art. 14"]
     en:
       title: Tabletop exercise for a personal data breach
       description: Simulates the discovery of a breach on a Friday afternoon and measures the time to the notification decisions.

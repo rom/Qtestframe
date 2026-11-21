@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [operational-acceptance, transition]
-    refs: ["ISO/IEC 20000-1:2018 (service transition)", "ITIL 4 Service validation and testing"]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.2 (service design and transition)", "ITIL 4 Service validation and testing"]
     tests: [GVOP-T01]
     en:
       title: Operational acceptance before taking over operation
@@ -269,7 +269,7 @@ requirements:
     obligation: must
     priority: high
     tags: [change-window, change-management]
-    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.32", "ISO/IEC 20000-1:2018 (change management)"]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.8.32", "ISO/IEC 20000-1:2018 §8.5.1 (change management)"]
     tests: [GVOP-T09]
     en:
       title: Normal changes only in agreed change windows
@@ -339,7 +339,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [kpi, service-reporting]
-    refs: ["ITIL 4 Measurement and reporting", "ISO/IEC 20000-1:2018 (service reporting)"]
+    refs: ["ITIL 4 Measurement and reporting", "ISO/IEC 20000-1:2018 §9.4 (service reporting)"]
     tests: [GVOP-T11]
     en:
       title: Monthly operational indicators
@@ -409,7 +409,7 @@ tests:
     priority: high
     execution: manual
     tags: [operational-acceptance]
-    refs: ["ISO/IEC 20000-1:2018 (service transition)"]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.2 (service design and transition)"]
     en:
       title: Review of operational acceptance records
       description: Checks that systems taken into operation have a signed operational acceptance.

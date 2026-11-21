@@ -203,7 +203,7 @@ requirements:
     obligation: must
     priority: high
     tags: [gas-extinguishing, room-integrity, hold-time]
-    refs: ["EN 15004-1"]
+    refs: ["EN 15004-1:2024 (hold time)"]
     tests: [FCDC-T07]
     en:
       title: Gas extinguishing room holds the concentration for 10 minutes
@@ -517,7 +517,7 @@ tests:
     priority: high
     execution: manual
     tags: [gas-extinguishing, room-integrity]
-    refs: ["EN 15004-1"]
+    refs: ["EN 15004-1:2024 (hold time)"]
     en:
       title: Review of the room integrity test
       description: Reviews the latest door fan test report for each room protected by gas extinguishing.

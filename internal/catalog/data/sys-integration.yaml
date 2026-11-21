@@ -59,7 +59,7 @@ requirements:
     obligation: must
     priority: high
     tags: [interface-agreement, change-control]
-    refs: ["ISO 10007:2017 (change control)", "ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)"]
+    refs: ["ISO 10007:2017 §5.4 (change control)", "ISO/IEC/IEEE 15288:2023 §6.3.5 (configuration management process)"]
     tests: [SYINT-T01]
     en:
       title: Interface documents agreed by both sides before implementation
@@ -147,7 +147,7 @@ requirements:
     obligation: must
     priority: high
     tags: [interface-loss, degraded-mode, fault-handling]
-    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.5 (design definition process)", "IEC 61508-2:2010 §7.4 (requirements for hardware safety integrity)"]
+    refs: ["ISO/IEC/IEEE 15288:2023 §6.4.5 (design definition process)", "IEC 61508-2:2010 §7.4.8 (requirements for system behaviour on detection of a fault)"]
     tests: [SYINT-T04]
     en:
       title: Defined behaviour on loss of an external interface
@@ -217,7 +217,7 @@ requirements:
     obligation: must
     priority: high
     tags: [test-equipment, calibration]
-    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO 9001:2015 §7.1.5 (monitoring and measuring resources)"]
+    refs: ["ISO/IEC 17025:2017 §6.4 (equipment)", "ISO 9001:2026 §7.1.5 (monitoring and measuring resources)"]
     tests: [SYINT-T06]
     en:
       title: Calibrated equipment for verification measurements

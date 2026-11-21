@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [push-to-talk, access-time, mcptt]
-    refs: ["3GPP TS 22.179 (MCPTT performance)"]
+    refs: ["3GPP TS 22.179 §6.15.3.2 (KPI 1, MCPTT access time)"]
     tests: [CMMC-T01]
     en:
       title: Talk permission within 300 ms in a group call
@@ -37,7 +37,7 @@ requirements:
     obligation: must
     priority: high
     tags: [voice-delay, mouth-to-ear, mcptt]
-    refs: ["3GPP TS 22.179 (MCPTT performance)"]
+    refs: ["3GPP TS 22.179 §6.15.3.2 (KPI 3, mouth-to-ear latency)"]
     tests: [CMMC-T01]
     en:
       title: Voice delay from speaker to listener at most 300 ms
@@ -133,7 +133,7 @@ requirements:
     obligation: must
     priority: high
     tags: [direct-mode, off-network, resilience]
-    refs: ["3GPP TS 22.179 (off-network)", "ETSI EN 300 396"]
+    refs: ["3GPP TS 22.179 §7 (off-network use)", "ETSI EN 300 396"]
     tests: [CMMC-T05]
     en:
       title: Group calls in direct mode without the network
@@ -311,7 +311,7 @@ tests:
     priority: critical
     execution: manual
     tags: [push-to-talk, access-time, voice-delay]
-    refs: ["3GPP TS 22.179 (MCPTT performance)"]
+    refs: ["3GPP TS 22.179 §6.15.3.2 (KPI 1, MCPTT access time)", "3GPP TS 22.179 §6.15.3.2 (KPI 3, mouth-to-ear latency)"]
     en:
       title: Talk permission time and voice delay in a group call
       description: Measures the time to talk permission and the mouth-to-ear delay between test terminals in one group.

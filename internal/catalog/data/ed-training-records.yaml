@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [training-records, competence-evidence]
-    refs: ["ISO 9001:2015 §7.2", "ISO/IEC 27001:2022 §7.2"]
+    refs: ["ISO 9001:2026 §7.2", "ISO/IEC 27001:2022 §7.2"]
     tests: [EDTR-T01]
     en:
       title: Training record for each person
@@ -37,7 +37,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [training-records, retention]
-    refs: ["ISO 9001:2015 §7.5.3.2", "GDPR Art. 5(1)(e)"]
+    refs: ["ISO 9001:2026 §7.5.3 (control of documented information)", "GDPR Art. 5(1)(e)"]
     tests: [EDTR-T01]
     en:
       title: Retention of training records
@@ -61,7 +61,7 @@ requirements:
     obligation: must
     priority: high
     tags: [competence-matrix]
-    refs: ["ISO 9001:2015 §7.2", "ISO 10015:2019"]
+    refs: ["ISO 9001:2026 §7.2", "ISO 10015:2019"]
     tests: [EDTR-T02]
     en:
       title: Competence matrix per role
@@ -83,7 +83,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [competence-matrix, audit-evidence, export]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     tests: [EDTR-T02]
     en:
       title: Completion report per role for audits
@@ -149,7 +149,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [expiry, reminder]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     tests: [EDTR-T05]
     en:
       title: Notice 60 days before a competence expires
@@ -315,7 +315,7 @@ tests:
     priority: high
     execution: manual
     tags: [training-records, retention]
-    refs: ["ISO 9001:2015 §7.2", "GDPR Art. 5(1)(e)"]
+    refs: ["ISO 9001:2026 §7.2", "GDPR Art. 5(1)(e)"]
     en:
       title: Inspection of training records and their retention
       description: Checks the content of a sample of training records and the deletion of records after the retention period.
@@ -347,7 +347,7 @@ tests:
     priority: high
     execution: manual
     tags: [competence-matrix, audit-evidence]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     en:
       title: Competence matrix and completion report
       description: Compares the competence matrix with the staff list and the training records, and checks the completion report.
@@ -441,7 +441,7 @@ tests:
     priority: medium
     execution: manual
     tags: [expiry]
-    refs: ["ISO 9001:2015 §7.2"]
+    refs: ["ISO 9001:2026 §7.2"]
     en:
       title: Notice before a competence expires
       description: Tests the notice to the person and the manager 60 days before a course result expires.

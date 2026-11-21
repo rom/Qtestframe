@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [genealogy, traceability, serial-number, lot]
-    refs: ["ISO 9001:2015 §8.5.2", "IEC 62264-3 production tracking"]
+    refs: ["ISO 9001:2026 §8.5.2", "IEC 62264-3 production tracking"]
     tests: [MFG-T03]
     en:
       title: Genealogy of each serial number and lot
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [recall, traceability, where-used]
-    refs: ["ISO 9001:2015 §8.5.2", "ISO 9001:2015 §8.7"]
+    refs: ["ISO 9001:2026 §8.5.2", "ISO 9001:2026 §8.7"]
     tests: [MFG-T04]
     en:
       title: Recall trace of a lot within 15 minutes
@@ -176,7 +176,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [non-conformance, quality, hold, iso-9001]
-    refs: ["ISO 9001:2015 §8.7", "ISO 9001:2015 §10.2"]
+    refs: ["ISO 9001:2026 §8.7", "ISO 9001:2026 §10.2"]
     tests: [MFG-T07]
     en:
       title: Non-conforming material held until disposition
@@ -266,7 +266,7 @@ requirements:
     obligation: must
     priority: high
     tags: [work-instructions, revision-control, operator]
-    refs: ["ISO 9001:2015 §7.5.3", "ISO 9001:2015 §8.5.1"]
+    refs: ["ISO 9001:2026 §7.5.3", "ISO 9001:2026 §8.5.1"]
     tests: [MFG-T11]
     en:
       title: Work instruction revision matches the order
@@ -310,7 +310,7 @@ requirements:
     obligation: must
     priority: high
     tags: [material-handling, inventory, bom, expiry]
-    refs: ["IEC 62264-3 inventory operations management", "ISO 9001:2015 §8.5.4"]
+    refs: ["IEC 62264-3 inventory operations management", "ISO 9001:2026 §8.5.4"]
     tests: [MFG-T13]
     en:
       title: Consumed material checked against the bill of materials
@@ -358,7 +358,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [ot-security, iec-62443, zones, patching]
-    refs: ["IEC 62443-3-2", "IEC 62443-3-3 SR 5.1", "IEC 62443-2-3"]
+    refs: ["IEC 62443-3-2", "IEC 62443-3-3 SR 5.1", "IEC 62443-3-2:2020 ZCR 3"]
     tests: [MFG-T15]
     en:
       title: Shop-floor network segmented into zones
@@ -472,7 +472,7 @@ tests:
     priority: critical
     execution: manual
     tags: [genealogy, traceability]
-    refs: ["ISO 9001:2015 §8.5.2"]
+    refs: ["ISO 9001:2026 §8.5.2"]
     en:
       title: Genealogy of a built test product
       description: Builds one serialised test product with known components and checks its genealogy.
@@ -504,7 +504,7 @@ tests:
     priority: critical
     execution: automated
     tags: [recall, traceability]
-    refs: ["ISO 9001:2015 §8.5.2"]
+    refs: ["ISO 9001:2026 §8.5.2"]
     en:
       title: Forward trace of a seeded component lot
       description: Seeds a component lot into production history and times the forward trace.
@@ -602,7 +602,7 @@ tests:
     priority: critical
     execution: manual
     tags: [non-conformance, quality, hold]
-    refs: ["ISO 9001:2015 §8.7"]
+    refs: ["ISO 9001:2026 §8.7"]
     en:
       title: Lot on hold until a quality disposition
       description: Registers a non-conformance on a lot and tries to use, ship and disposition it with different roles.
@@ -724,7 +724,7 @@ tests:
     priority: high
     execution: manual
     tags: [work-instructions, revision-control]
-    refs: ["ISO 9001:2015 §7.5.3"]
+    refs: ["ISO 9001:2026 §7.5.3"]
     en:
       title: Work instruction revisions at the station
       description: Runs orders for two variants and releases a new instruction revision during production.

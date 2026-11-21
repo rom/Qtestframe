@@ -34,7 +34,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [data-layer, row-level-security]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2015 CLD.9.5.1 (segregation in virtual computing environments)", "ISO/IEC 27001:2022 A.8.3"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27017:2026 (segregation in virtual computing environments)", "ISO/IEC 27001:2022 A.8.3"]
     tests: [TEN-T02]
     en:
       title: Tenant filter enforced in the data layer
@@ -60,7 +60,7 @@ requirements:
     obligation: must
     priority: high
     tags: [cache, isolation]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet (shared resources)", "CWE-524 (use of cache containing sensitive information)", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2015 CLD.9.5.1"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet (shared resources)", "CWE-524 (use of cache containing sensitive information)", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2026 (segregation in virtual computing environments)"]
     tests: [TEN-T03]
     en:
       title: Cache entries are separated per tenant
@@ -82,7 +82,7 @@ requirements:
     obligation: must
     priority: high
     tags: [search, isolation]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2015 CLD.9.5.1"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2026 (segregation in virtual computing environments)"]
     tests: [TEN-T03]
     en:
       title: Search results contain only the tenant's documents
@@ -104,7 +104,7 @@ requirements:
     obligation: must
     priority: high
     tags: [background-jobs, tenant-context]
-    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2015 CLD.9.5.1"]
+    refs: ["OWASP Multi-Tenant Security Cheat Sheet", "ISO/IEC 27001:2022 A.8.3", "ISO/IEC 27017:2026 (segregation in virtual computing environments)"]
     tests: [TEN-T04]
     en:
       title: Background jobs run in the tenant that queued them
@@ -148,7 +148,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [quota, noisy-neighbour, rate-limit]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.2 (resource utilisation)", "AWS Well-Architected SaaS Lens (noisy neighbour)", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2"]
+    refs: ["ISO/IEC 25010:2023 resource utilization", "AWS Well-Architected SaaS Lens (noisy neighbour)", "ISO/IEC 27001:2022 A.8.6", "IEC 62443-3-3 SR 7.2"]
     tests: [TEN-T06]
     en:
       title: Resource quota per tenant
@@ -196,7 +196,7 @@ requirements:
     obligation: must
     priority: high
     tags: [deletion, offboarding]
-    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 A.8.10 (information deletion)", "ISO/IEC 27017:2015 CLD.8.1.5", "ISO/IEC 27018:2019 (return, transfer and disposal of PII)"]
+    refs: ["GDPR Art. 28(3)(g) (deletion at the end of processing)", "ISO/IEC 27001:2022 A.8.10 (information deletion)", "ISO/IEC 27017:2026 (removal of cloud service customer assets)", "ISO/IEC 27018:2025 (return, transfer and disposal of PII)"]
     tests: [TEN-T07, TEN-T09]
     en:
       title: Deletion of a tenant after the contract ends
@@ -242,7 +242,7 @@ requirements:
     obligation: should
     priority: high
     tags: [support-access, approval]
-    refs: ["ISO/IEC 27001:2022 A.8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09", "IEC 62443-2-4 (remote access by the service provider)"]
+    refs: ["ISO/IEC 27001:2022 A.8.2 (privileged access rights)", "CSA Cloud Controls Matrix v4 IAM-09", "IEC 62443-2-4:2023 SP.07 (remote access)"]
     tests: [TEN-T08]
     en:
       title: Support access to a tenant needs its approval

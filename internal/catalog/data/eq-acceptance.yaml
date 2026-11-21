@@ -13,7 +13,7 @@ requirements:
     obligation: must
     priority: high
     tags: [purchase-specification, procurement]
-    refs: ["ISO 9001:2015 §8.4.3 (information for external providers)"]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)"]
     tests: [EQACC-T01]
     en:
       title: Purchase specification with measurable acceptance criteria
@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [supplier-evaluation, procurement]
-    refs: ["ISO 9001:2015 §8.4.1 (control of externally provided processes, products and services)"]
+    refs: ["ISO 9001:2026 §8.4.1 (control of externally provided processes, products and services)"]
     tests: [EQACC-T01]
     en:
       title: Supplier evaluated before the order
@@ -57,7 +57,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [design-review, supplier-documents]
-    refs: ["ISO 9001:2015 §8.4.2 (type and extent of control)"]
+    refs: ["ISO 9001:2026 §8.4.2 (type and extent of control)"]
     tests: [EQACC-T01]
     en:
       title: Supplier design documents reviewed before manufacture
@@ -79,7 +79,7 @@ requirements:
     obligation: must
     priority: high
     tags: [fat, test-protocol]
-    refs: ["IEC 62381 (FAT, FIT and SAT for automation systems)"]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
     tests: [EQACC-T02]
     en:
       title: FAT protocol approved before the factory acceptance test
@@ -103,7 +103,7 @@ requirements:
     obligation: must_not
     priority: critical
     tags: [fat, deviations, shipping-release]
-    refs: ["IEC 62381 (FAT, FIT and SAT for automation systems)"]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
     tests: [EQACC-T02]
     en:
       title: No shipment with open critical FAT deviations
@@ -127,7 +127,7 @@ requirements:
     obligation: must
     priority: medium
     tags: [delivery-inspection, transport-damage]
-    refs: ["ISO 9001:2015 §8.6 (release of products and services)"]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
     tests: [EQACC-T03]
     en:
       title: Delivery inspected within two working days
@@ -151,7 +151,7 @@ requirements:
     obligation: must
     priority: high
     tags: [installation, site-prerequisites, commissioning]
-    refs: ["IEC 62337 (commissioning of electrical, instrumentation and control systems)"]
+    refs: ["IEC 62337:2012 (commissioning of electrical, instrumentation and control systems)"]
     tests: [EQACC-T04]
     en:
       title: Site prerequisites and installation checked against a checklist
@@ -195,7 +195,7 @@ requirements:
     obligation: must
     priority: high
     tags: [sat, site-acceptance]
-    refs: ["IEC 62381 (FAT, FIT and SAT for automation systems)"]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
     tests: [EQACC-T05]
     en:
       title: Site acceptance test with production materials
@@ -217,7 +217,7 @@ requirements:
     obligation: must
     priority: high
     tags: [performance-run, capacity, availability]
-    refs: ["IEC 62381 (FAT, FIT and SAT for automation systems)", "EN 15341:2019 (maintenance key performance indicators)"]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)", "EN 15341:2019+A1:2022 (maintenance key performance indicators)"]
     tests: [EQACC-T05]
     en:
       title: Performance run at rated capacity
@@ -241,7 +241,7 @@ requirements:
     obligation: must
     priority: high
     tags: [documentation-handover, as-built, instructions]
-    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.4 (instructions)", "ISO 9001:2015 §7.5.3 (control of documented information)"]
+    refs: ["Regulation (EU) 2023/1230 Annex III §1.7.4 (instructions)", "ISO 9001:2026 §7.5.3 (control of documented information)"]
     tests: [EQACC-T06]
     en:
       title: Documentation handed over before acceptance
@@ -309,7 +309,7 @@ requirements:
     obligation: must
     priority: high
     tags: [final-acceptance, punch-list, warranty]
-    refs: ["ISO 9001:2015 §8.6 (release of products and services)"]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
     tests: [EQACC-T08]
     en:
       title: Final acceptance certificate after the punch list is closed
@@ -353,7 +353,7 @@ requirements:
     obligation: must
     priority: high
     tags: [data-sanitisation, storage-media, decommissioning]
-    refs: ["NIST SP 800-88 Rev. 1 (guidelines for media sanitization)", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)"]
+    refs: ["NIST SP 800-88 Rev. 2", "ISO/IEC 27001:2022 A.7.14 (secure disposal or re-use of equipment)"]
     tests: [EQACC-T10]
     en:
       title: Storage media sanitised with a certificate
@@ -399,7 +399,7 @@ tests:
     priority: high
     execution: manual
     tags: [purchase-specification, supplier-evaluation]
-    refs: ["ISO 9001:2015 §8.4.3 (information for external providers)", "ISO 9001:2015 §8.4.1 (control of externally provided processes, products and services)"]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)", "ISO 9001:2026 §8.4.1 (control of externally provided processes, products and services)"]
     en:
       title: Specification, supplier evaluation and design review of an order
       description: Reviews the documents of one recent equipment order from specification to design approval.
@@ -429,7 +429,7 @@ tests:
     priority: critical
     execution: manual
     tags: [fat]
-    refs: ["IEC 62381 (FAT, FIT and SAT for automation systems)"]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
     en:
       title: FAT protocol, execution and shipping release
       description: Checks the FAT protocol approval, its traceability and the shipping release of one delivery.
@@ -459,7 +459,7 @@ tests:
     priority: medium
     execution: manual
     tags: [delivery-inspection]
-    refs: ["ISO 9001:2015 §8.6 (release of products and services)"]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
     en:
       title: Delivery inspection record and damage reports
       description: Checks the delivery inspection record of one delivery against its arrival date.
@@ -489,7 +489,7 @@ tests:
     priority: critical
     execution: manual
     tags: [installation, electrical-installation]
-    refs: ["IEC 62337 (commissioning of electrical, instrumentation and control systems)", "IEC 60364-6:2016 (verification of low-voltage electrical installations)"]
+    refs: ["IEC 62337:2012 (commissioning of electrical, instrumentation and control systems)", "IEC 60364-6:2016 (verification of low-voltage electrical installations)"]
     en:
       title: Installation checklist and electrical verification before energisation
       description: Checks the installation checklist and the electrical verification record against the first energisation date.
@@ -521,7 +521,7 @@ tests:
     priority: high
     execution: manual
     tags: [sat, performance-run]
-    refs: ["IEC 62381 (FAT, FIT and SAT for automation systems)"]
+    refs: ["IEC 62381:2024 (FAT, FIT and SAT for automation systems)"]
     en:
       title: SAT coverage and 72-hour performance run
       description: Reviews the SAT report and the log of the performance run.
@@ -599,7 +599,7 @@ tests:
     priority: high
     execution: manual
     tags: [final-acceptance]
-    refs: ["ISO 9001:2015 §8.6 (release of products and services)"]
+    refs: ["ISO 9001:2026 §8.6 (release of products and services)"]
     en:
       title: Final acceptance certificate and punch list
       description: Compares the final acceptance certificate with the punch list on the day of signature.
@@ -655,7 +655,7 @@ tests:
     priority: high
     execution: manual
     tags: [data-sanitisation]
-    refs: ["NIST SP 800-88 Rev. 1 (guidelines for media sanitization)"]
+    refs: ["NIST SP 800-88 Rev. 2"]
     en:
       title: Sanitisation certificates and read attempt
       description: Matches the storage media of a decommissioned item with certificates and tries to read one medium.

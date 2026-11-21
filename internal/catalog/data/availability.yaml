@@ -12,7 +12,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [uptime, slo]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.2 (availability)", "Google SRE book ch. 4 (Service Level Objectives)", "ITIL 4 Availability management"]
+    refs: ["ISO/IEC 25010:2023 availability", "Google SRE book ch. 4 (Service Level Objectives)", "ITIL 4 Availability management"]
     tests: [AVL-T01, AVL-T02]
     en:
       title: Monthly availability target
@@ -108,7 +108,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [redundancy, architecture]
-    refs: ["ISO/IEC 27001:2022 A.8.14 (redundancy of information processing facilities)", "ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)", "Regulation (EU) 2022/2554 (DORA) Art. 7", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)"]
+    refs: ["ISO/IEC 27001:2022 A.8.14 (redundancy of information processing facilities)", "ISO/IEC 25010:2023 fault tolerance", "Regulation (EU) 2022/2554 (DORA) Art. 7", "Directive (EU) 2022/2557 (CER) Art. 13(1)(c)"]
     tests: [AVL-T04]
     en:
       title: No single point of failure
@@ -130,7 +130,7 @@ requirements:
     obligation: must
     priority: high
     tags: [failover, zone]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "ISO/IEC 27031:2011 (ICT readiness for business continuity)", "ISO/IEC 27001:2022 A.8.14", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
+    refs: ["ISO/IEC 25010:2023 recoverability", "ISO/IEC 27031:2025 (ICT readiness for business continuity)", "ISO/IEC 27001:2022 A.8.14", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     tests: [AVL-T05]
     en:
       title: Failover after loss of an availability zone
@@ -154,7 +154,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [failover, database, replication]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.4 (recoverability)", "Google SRE book ch. 26 (Data Integrity)", "ISO/IEC 27001:2022 A.8.14", "Regulation (EU) 2022/2554 (DORA) Art. 12"]
+    refs: ["ISO/IEC 25010:2023 recoverability", "Google SRE book ch. 26 (Data Integrity)", "ISO/IEC 27001:2022 A.8.14", "Regulation (EU) 2022/2554 (DORA) Art. 12"]
     tests: [AVL-T06]
     en:
       title: Database failover without loss of committed data
@@ -272,7 +272,7 @@ requirements:
     obligation: may
     priority: low
     tags: [maintenance, read-only]
-    refs: ["ISO/IEC 25010:2011 §4.2.5.3 (fault tolerance)"]
+    refs: ["ISO/IEC 25010:2023 fault tolerance"]
     tests: [AVL-T09]
     en:
       title: Read-only mode during maintenance
@@ -410,7 +410,7 @@ tests:
     priority: high
     execution: manual
     tags: [failover, drill]
-    refs: ["ISO/IEC 27031:2011", "ISO 22301:2019 §8.5 (exercise programme)", "ISO/IEC 27001:2022 A.8.14", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
+    refs: ["ISO/IEC 27031:2025", "ISO 22301:2019 §8.5 (exercise programme)", "ISO/IEC 27001:2022 A.8.14", "ISO/IEC 27001:2022 A.5.30", "Regulation (EU) 2022/2554 (DORA) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(d)"]
     en:
       title: Failover drill for an availability zone
       description: Isolates one availability zone in a production-like environment under load and measures the interruption.

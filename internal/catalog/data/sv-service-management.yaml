@@ -267,7 +267,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [service-continuity, rto, rpo, exercise]
-    refs: ["ISO/IEC 20000-1:2018 §8.7.3", "ISO 22301:2019 §8.4", "ITIL 4 Service continuity management"]
+    refs: ["ISO/IEC 20000-1:2018 §8.7.2", "ISO 22301:2019 §8.4", "ITIL 4 Service continuity management"]
     tests: [SVSM-T08]
     en:
       title: Continuity plan per service tested each year

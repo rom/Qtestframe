@@ -258,7 +258,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [audit-trail, search, performance]
-    refs: ["ISO/IEC 25010:2011 §4.2.2.1 (time behaviour)", "EU GMP Annex 11 §9 (audit trails available and convertible)"]
+    refs: ["ISO/IEC 25010:2023 time behaviour", "EU GMP Annex 11 §9 (audit trails available and convertible)"]
     tests: [AUD-T12]
     en:
       title: Search of the audit trail within 5 seconds

@@ -87,7 +87,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [capacity, forecast, planning]
-    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 20000-1:2018 §8.7.1"]
+    refs: ["ITIL 4 Capacity and performance management", "ISO/IEC 20000-1:2018 §8.4.3"]
     tests: [CMNET-T04]
     en:
       title: Capacity forecast every 6 months

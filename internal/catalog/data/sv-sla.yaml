@@ -35,7 +35,7 @@ requirements:
     obligation: must
     priority: critical
     tags: [availability, sla]
-    refs: ["ITIL 4 Availability management", "ISO/IEC 20000-1:2018 §8.7.2"]
+    refs: ["ITIL 4 Availability management", "ISO/IEC 20000-1:2018 §8.7.1"]
     tests: [SVSLA-T02]
     en:
       title: Monthly availability of at least 99.8 % in service hours
@@ -129,7 +129,7 @@ requirements:
     obligation: must
     priority: high
     tags: [service-report, reporting]
-    refs: ["ISO/IEC 20000-1:2018 §8.3.3", "ITIL 4 Measurement and reporting"]
+    refs: ["ISO/IEC 20000-1:2018 §9.4", "ITIL 4 Measurement and reporting"]
     tests: [SVSLA-T04]
     en:
       title: Monthly service report within 10 working days
@@ -223,7 +223,7 @@ requirements:
     obligation: should
     priority: medium
     tags: [customer-satisfaction, survey]
-    refs: ["ISO 10004:2018", "ISO 9001:2015 §9.1.2"]
+    refs: ["ISO 10004:2018", "ISO 9001:2026 §9.1.2"]
     tests: [SVSLA-T07]
     en:
       title: Satisfaction survey after each closed ticket
