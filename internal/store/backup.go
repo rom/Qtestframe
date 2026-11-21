@@ -461,7 +461,7 @@ func (s *Store) Restore(ctx context.Context, r io.ReaderAt, size int64) (map[str
 		return nil, err
 	}
 	if kr != nil {
-		s.keys = kr
+		s.keys.Replace(kr)
 		// secrets of a backup taken before they were encrypted
 		if _, err := s.MigrateSecrets(ctx); err != nil {
 			return out, fmt.Errorf("restore: encrypt the restored secrets: %w", err)

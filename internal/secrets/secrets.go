@@ -157,7 +157,28 @@ func NewKeyring(p Provider) *Keyring {
 }
 
 // Provider returns the key provider.
-func (k *Keyring) Provider() Provider { return k.provider }
+func (k *Keyring) Provider() Provider {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+	return k.provider
+}
+
+// Replace gives k the provider and keys of o (after a restore or a
+// re-wrap), so every holder of k sees them at once.
+func (k *Keyring) Replace(o *Keyring) {
+	if k == o {
+		return
+	}
+	o.mu.RLock()
+	p, keys, active := o.provider, make(map[string][]byte, len(o.keys)), o.active
+	for id, v := range o.keys {
+		keys[id] = v
+	}
+	o.mu.RUnlock()
+	k.mu.Lock()
+	k.provider, k.keys, k.active = p, keys, active
+	k.mu.Unlock()
+}
 
 // Add adds an unwrapped data-encryption key; active makes it the key new
 // values are encrypted with.

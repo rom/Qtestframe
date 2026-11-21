@@ -8,7 +8,7 @@ GUIDE_OUT ?= dist/user-guide
 GUIDE_LANGS ?=
 GUIDE_ARGS = --out $(GUIDE_OUT) $(if $(GUIDE_LANGS),--lang $(GUIDE_LANGS))
 
-.PHONY: all build web web-deps go test test-go test-web coverage coverage-go coverage-web \
+.PHONY: all build web web-deps go go-pkcs11 test-pkcs11 test-tpm test test-go test-web coverage coverage-go coverage-web \
         lint vet fmt run dev clean release certs-dev guide guide-md guide-pdf guide-docs
 
 all: build
@@ -23,6 +23,21 @@ go:
 	CGO_ENABLED=0 go build $(GOFLAGS_BUILD) -o $(BIN) ./cmd/qtestframe
 
 build: web go
+
+# With HSM support (secrets.provider: pkcs11). PKCS#11 modules are C
+# libraries, so this binary needs cgo and is linked dynamically against
+# libc (the default build stays static, CGO_ENABLED=0).
+go-pkcs11:
+	CGO_ENABLED=1 go build -tags pkcs11 $(GOFLAGS_BUILD) -o $(BIN) ./cmd/qtestframe
+
+# The HSM provider against SoftHSM2 (apt-get install softhsm2) and the TPM
+# provider against swtpm (apt-get install swtpm); both fail instead of
+# skipping when the tool is missing.
+test-pkcs11:
+	QTF_TEST_SOFTHSM=require CGO_ENABLED=1 go test -count=1 -tags pkcs11 ./internal/secrets
+
+test-tpm:
+	QTF_TEST_SWTPM=require CGO_ENABLED=0 go test -count=1 -run TPM ./internal/secrets
 
 # Static binaries (cross compiled; works from macOS).
 release: web

@@ -80,12 +80,12 @@ func OpenKeyFile(path string, create bool) (l *Local, created bool, err error) {
 func writeKeyFile(path string, k []byte) error {
 	if dir := filepath.Dir(path); dir != "." {
 		if err := os.MkdirAll(dir, 0o700); err != nil {
-			return fmt.Errorf("secrets: create the directory of the key file: %w", err)
+			return fmt.Errorf("secrets: create the directory of the key file (set secrets.local.key_file to a writable path, or the key in QTF_SECRETS_KEY): %w", err)
 		}
 	}
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
-		return fmt.Errorf("secrets: create key file: %w", err)
+		return fmt.Errorf("secrets: create the key file (set secrets.local.key_file to a writable path, or the key in QTF_SECRETS_KEY): %w", err)
 	}
 	if _, err := f.WriteString(FormatKey(k)); err != nil {
 		f.Close()

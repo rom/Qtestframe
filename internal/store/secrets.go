@@ -211,13 +211,23 @@ func (s *Store) SetupSecrets(ctx context.Context, p secrets.Provider) error {
 	if err != nil {
 		// two processes created the first key at the same time: read theirs
 		if kr2, err2 := loadKeyring(ctx, s.c(ctx), s.now(), p, false); err2 == nil && kr2.Active() != "" {
-			s.keys = kr2
+			s.useKeys(kr2)
 			return nil
 		}
 		return err
 	}
-	s.keys = kr
+	s.useKeys(kr)
 	return nil
+}
+
+// useKeys installs a key ring (replacing the keys of the current one, so
+// stores sharing it — WithClock — see the change).
+func (s *Store) useKeys(kr *secrets.Keyring) {
+	if s.keys == nil {
+		s.keys = kr
+	} else {
+		s.keys.Replace(kr)
+	}
 }
 
 // ReloadSecretKeys reads keys created by another process (secrets rotate,
@@ -290,7 +300,7 @@ func (s *Store) RewrapSecretKeys(ctx context.Context, from, to secrets.Provider)
 	if err != nil {
 		return 0, err
 	}
-	s.keys = kr
+	s.useKeys(kr)
 	return n, nil
 }
 
