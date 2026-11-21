@@ -328,6 +328,11 @@ func (s *Server) handleUpdateRequirement(w http.ResponseWriter, r *http.Request,
 	}
 	s.recordRequirement(ctx, p, rq.ID, "update")
 	s.afterContentChange(ctx, p, model.KindRequirement, rq.ID, rq.Key, rq.ProjectID, before)
+	if inBatch(ctx) {
+		// a step of a batch update (batch.go): the stored item is enough
+		writeJSON(w, http.StatusOK, rq)
+		return
+	}
 	out, err := s.decoratedRequirement(r, p, rq.ID)
 	if err != nil {
 		s.fail(w, r, err)
@@ -634,6 +639,10 @@ func (s *Server) handleUpdateTest(w http.ResponseWriter, r *http.Request, p *Pri
 	}
 	s.recordTest(ctx, p, t.ID, "update")
 	s.afterContentChange(ctx, p, model.KindTest, t.ID, t.Key, t.ProjectID, before)
+	if inBatch(ctx) {
+		writeJSON(w, http.StatusOK, t)
+		return
+	}
 	out, err := s.decoratedTest(r, p, t.ID)
 	if err != nil {
 		s.fail(w, r, err)

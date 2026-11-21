@@ -233,6 +233,15 @@ async function discover(request) {
     { name: 'requirements', path: `${p}/requirements` },
     { name: 'requirement-editor', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, wait: '.p-drawer' },
     { name: 'tests', path: `${p}/tests` },
+    // the spreadsheet view: grid, an open cell editor, a refused value, row selection, keyboard help
+    { name: 'requirements-sheet', path: `${p}/requirements?view=sheet`, wait: '[role="grid"] [role="gridcell"]' },
+    { name: 'tests-sheet', path: `${p}/tests?view=sheet`, wait: '[role="grid"] [role="gridcell"]' },
+    { name: 'requirements-sheet-edit', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="5"]', keys: ['F2'], wait: '.cell-editor' },
+    { name: 'tests-sheet-edit-text', path: `${p}/tests?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="4"]', keys: ['F2'], wait: 'textarea.cell-editor' },
+    { name: 'requirements-sheet-error', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: ['F2', 'Control+a', 'Backspace', 'Enter'], wait: '.cell-error' },
+    // a row ticked with Space (the pointer then moves away, so nothing is hovered when the toolbar pushes the grid down)
+    { name: 'requirements-sheet-bulk', path: `${p}/requirements?view=sheet`, open: '.sheet-body [role="gridcell"][aria-colindex="3"]', keys: [' '], wait: '.bulkbar' },
+    { name: 'tests-sheet-keys', path: `${p}/tests?view=sheet`, open: '.sheet-keys summary', wait: '.sheet-keys[open] dl' },
     { name: 'runs', path: `${p}/runs` },
     { name: 'runs-bulk', path: `${p}/runs`, open: '.p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     // open states: dialogs and the off-canvas navigation
@@ -433,6 +442,28 @@ async function keyboardChecks(browser, state, routes) {
       const back = await active(page)
       check('closing the editor drawer returns focus to its opener', back?.cls.includes('item-title'), JSON.stringify(back))
     }
+    // spreadsheet: the grid keeps focus, arrows move the active cell, F2 edits, Escape returns to the grid
+    if (route('requirements-sheet')) {
+      await page.goto(BASE + route('requirements-sheet').path)
+      await settle(page, route('requirements-sheet').wait)
+      const grid = page.locator('[role="grid"]').first()
+      await grid.focus()
+      const first = await grid.getAttribute('aria-activedescendant')
+      await page.keyboard.press('ArrowDown')
+      await page.keyboard.press('ArrowRight')
+      const moved = await grid.getAttribute('aria-activedescendant')
+      check('spreadsheet arrows move the active cell', first && moved && first !== moved && /-r1-c1$/.test(moved), `${first} → ${moved}`)
+      await page.keyboard.press('F2')
+      const editor = await active(page)
+      check('spreadsheet F2 opens the cell editor', editor?.cls.includes('cell-editor'), JSON.stringify(editor))
+      await page.keyboard.press('Escape')
+      const back = await page.evaluate(() => document.activeElement?.getAttribute('role'))
+      check('spreadsheet Escape returns focus to the grid', back === 'grid', String(back))
+      await page.keyboard.press('Control+End')
+      const end = await grid.getAttribute('aria-activedescendant')
+      const rows = Number(await grid.getAttribute('aria-rowcount'))
+      check('spreadsheet Ctrl+End goes to the last cell', end && new RegExp(`-r${rows - 2}-c\\d+$`).test(end), `${end} of ${rows}`)
+    }
     // runner: shortcuts do not fire while typing
     if (route('execute')) {
       await page.goto(BASE + route('execute').path)
@@ -560,6 +591,9 @@ async function main() {
           localStorage.setItem('qtf.theme', dark ? 'dark' : 'light')
           if (theme !== 'light' && theme !== 'dark') localStorage.setItem('qtf.decor', theme)
           else localStorage.removeItem('qtf.decor')
+          // every route starts in the list layout unless its address asks for the spreadsheet
+          localStorage.removeItem('qtf.layout.requirement')
+          localStorage.removeItem('qtf.layout.test')
         }
         const pages = [{ name: 'login', path: '/login', anon: true }, ...routes].filter((r) => !ONLY.length || ONLY.includes(r.name))
         const ctx = await browser.newContext({ ...opts, storageState: state })
@@ -589,6 +623,9 @@ async function main() {
               await settle(page)
               await page.locator(r.press[0]).first().press(r.press[1])
             }
+            // keys: keys pressed after that (e.g. F2 to edit a spreadsheet cell)
+            for (const key of r.keys ?? []) await page.keyboard.press(key)
+            if (r.keys) await page.mouse.move(1, 1)
             await settle(page, r.wait)
             if (!r.anon && page.url().includes('/login')) throw new Error('redirected to login')
             checks++

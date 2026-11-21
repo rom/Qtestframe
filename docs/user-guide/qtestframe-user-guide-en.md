@@ -464,6 +464,7 @@ Reading requirements needs the role **Viewer**; creating and changing them needs
 - **Filter bar**: a [query](#search-and-filters) field plus quick filters for **Status**, **Obligation**, **Priority**, **Coverage** and **Category**. The quick filters are combined into a query that is shown under the bar (`q = …`). **Clear** resets all filters.
 - **Columns**: choose which columns the table shows: obligation, status, priority, type, coverage, linked tests, categories, folder, owner, source, tags, **relations**, relation count, criteria, version, comments, created by, created and updated date. The **Relations** column lists the related items grouped by relation, in both directions, for example *depends on SHOP-REQ-2*, *provided by SHOP-REQ-3* and *verified by SHOP-TC-1*; select a key to open the item. Move columns by dragging their header, or with the arrow buttons in **Columns**; **Reset** restores the default columns. Your choice is remembered in this browser, also for the run, executions and document tables.
 - **Table**: sort by clicking a column header; select a row (or its title) to open the editor. The ID (for example `SHOP-REQ-12`) is assigned automatically.
+- **List** / **Spreadsheet**: switch between the table and the [spreadsheet view](#spreadsheet-view), where you edit many requirements in place like in Excel.
 
 The current folder, filter and open requirement are part of the page address, so you can bookmark or share a filtered view.
 
@@ -671,6 +672,26 @@ Tick the checkboxes of several requirements (or the header checkbox for the whol
 ![The bulk edit toolbar above the table with several requirements selected](images/en-requirements-bulk.png)
 
 Every bulk change is recorded in each requirement's history.
+
+## Spreadsheet view
+
+Choose **Spreadsheet** next to the refresh button to see the requirements as a spreadsheet: one row per requirement and one column per field (**Key**, **Title**, **Description**, **Type**, **Priority**, **Status**, **Obligation**, **Categories**, **Tags**, **Owner**, **Source**, **Folder**, and the read-only **Coverage**, **Tests** and **Version**). The choice is remembered in this browser and is part of the page address (`?view=sheet`), so a shared link opens the spreadsheet. The folder tree, the filters and the bulk toolbar work as in the list.
+
+- **Columns**: show, hide and order the columns with **Columns**; drag the edge of a column header to make it wider or narrower (or press **Alt+Shift+←/→**). Widths and columns are remembered in this browser. The key column and the header row stay in place while you scroll.
+- **Sort**: click a column header, or choose the column under **Sort** and the direction next to it.
+- **Move around**: arrow keys, **Tab** and **Shift+Tab**, **Home** and **End** (first and last column), **Ctrl+Home** and **Ctrl+End** (first and last cell), **Page Up** and **Page Down**. The active cell has an outline.
+- **Select**: **Shift** with the arrows or a click selects a range, **Ctrl+A** (**Cmd+A** on a Mac) selects every cell. **Space** ticks the row of the active cell and **Shift+Space** the rows of the range; ticked rows use the bulk toolbar above the sheet.
+- **Edit**: press **F2** or **Enter**, or just start typing, to edit the active cell. **Enter** saves and moves down, **Tab** saves and moves right, **Escape** cancels. Lists such as **Status** and **Priority** open a list of their values; **Tags** and **Categories** take several values separated by commas (categories as *Dimension/Name*); multi-line fields such as **Description** take a line break with **Alt+Enter** or **Shift+Enter**. Grey cells with a lock in the header (key, computed values) cannot be edited, and neither can cells you lack the permission for: without write permission only a reviewer's status decisions can be made.
+- **Copy and paste**: **Ctrl+C** copies the selected cells as tab-separated text that pastes into Excel or LibreOffice; tick **Copy with header row** to include the column names. **Ctrl+V** pastes a block copied from a spreadsheet at the active cell (a single value fills the whole selection; a first row that repeats the column names is left out). Every pasted value is checked first: when one is not valid, for example a priority that does not exist, nothing is saved and a message names the cell and the allowed values. **Ctrl+X** cuts.
+- **Fill down and clear**: **Ctrl+D** copies the top value of the selection to the cells below it; **Delete** or **Backspace** empties the selected cells that can be empty.
+- **New requirements**: type a title into the last row (**Type a title to add a requirement**) and press **Enter**; the requirement is created in the selected folder and the next empty row is ready for the next one. Values you type into the other cells of that row first are used too.
+- **Open a requirement**: double-click its key or press **Ctrl+Enter** to open it in the editor.
+
+Each change is saved at once, all cells of a paste or fill-down in one step: a cell shows a spinner while it is saved, a check mark when it is saved and a red frame with the reason when it was not. If someone else changed a requirement since you loaded the sheet, nothing is saved, the row is marked, and **Reload the row** shows their version so you can enter your change again. One edit, paste, fill-down or clear is one step for **Undo** (**Ctrl+Z**). Screen readers announce saved changes and errors.
+
+**Export view** saves exactly what the sheet shows, with its columns in their order, sorted and filtered, as **Excel (XLSX)**, **CSV** or **Markdown** (needs the export permission).
+
+On a phone the sheet scrolls sideways inside its frame; the list is easier to read there.
 
 ## Move requirements and folders
 
@@ -960,6 +981,10 @@ The same page holds the project's **Name**, **Description**, the **Defect tracke
 Holders of `test.review` can mark many tests *Ready* in one step: tick the tests and choose **Mark ready…**, or choose **Bulk review** above the list with nothing ticked. As for requirements (see [Approve many requirements at once](#approve-many-requirements-at-once)), you choose the tests (selected, shown in the list, or all), the statuses they may come from (by default *Review*; add *Draft* to include drafts) and an optional comment, and a preview shows what changes.
 
 Besides the checks for requirements (the latest review asked for changes, open review requests, suspect links), a test is skipped when it cannot be run as written: a **manual test without steps** or an **automated test without a script**. Choose the check under **Include anyway, despite** to mark them ready anyway.
+
+## Spreadsheet view
+
+Choose **Spreadsheet** to edit tests like in a spreadsheet; it works as for [requirements](#spreadsheet-view) (keyboard, copy and paste from Excel, fill down, new rows, saving, conflicts, undo and **Export view**). The columns are **Key**, **Title**, **Description**, **Priority**, **Status**, **Execution**, **Preconditions**, **Expected result**, **Estimate (min)**, **Categories**, **Tags**, **Folder** and the read-only **Steps** (the number of steps), **Last result**, **Requirements**, **Created by** and **Version**. Steps, scripts and test data are edited in the editor (double-click the key or press **Ctrl+Enter**). Setting a test to *Ready* is a review decision and needs `test.review`, in the sheet as in the editor.
 
 ## Copy a test
 
