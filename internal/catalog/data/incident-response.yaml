@@ -1,0 +1,507 @@
+area: incident-response
+prefix: INC
+group: operations
+name: {en: Incident response, sv: Incidenthantering}
+description:
+  en: Response plan, severity levels, on-call, roles during an incident, communication with customers and authorities, evidence, timelines, post-incident reviews and exercises.
+  sv: Plan för incidenthantering, allvarlighetsnivåer, jour, roller under en incident, kommunikation med kunder och myndigheter, bevis, tidslinjer, uppföljning efter incidenter och övningar.
+
+requirements:
+  - id: INC-01
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [plan, roles, documentation]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.24 (information security incident management planning and preparation)", "NIST SP 800-61 Rev. 2 §2.3 (incident response policy, plan and procedure)", "ISO/IEC 27035-1:2023"]
+    tests: [INC-T01]
+    en:
+      title: Documented and reviewed incident response plan
+      description: The organisation MUST keep an incident response plan with roles, severity levels, contact lists and escalation paths, and review it at least every 12 months.
+      rationale: During an incident there is no time to decide who does what, and an outdated contact list delays every step.
+      criteria:
+        - method: review
+          text: The plan contains all four parts, was reviewed within the last 12 months, and each phone number in the contact list was verified at the review.
+          threshold: "review ≤ 12 months ago"
+    sv:
+      title: Dokumenterad och granskad plan för incidenthantering
+      description: Organisationen SKA ha en plan för incidenthantering med roller, allvarlighetsnivåer, kontaktlistor och eskaleringsvägar och granska den minst var 12:e månad.
+      rationale: Under en incident finns ingen tid att bestämma vem som gör vad, och en inaktuell kontaktlista försenar varje steg.
+      criteria:
+        - method: review
+          text: Planen innehåller alla fyra delarna, granskades under de senaste 12 månaderna, och varje telefonnummer i kontaktlistan kontrollerades vid granskningen.
+          threshold: "granskning ≤ 12 månader sedan"
+
+  - id: INC-02
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [severity, response-time]
+    refs: ["NIST SP 800-61 Rev. 2 §3.2.6 (incident prioritization)", "ITIL 4 Incident management practice"]
+    tests: [INC-T02]
+    en:
+      title: Severity levels with response times
+      description: The incident process MUST define at least three severity levels with criteria and response times, including acknowledgement of a severity 1 incident within 15 minutes at any hour.
+      rationale: Shared criteria stop teams from arguing about how serious an incident is and make the response time predictable.
+      criteria:
+        - method: inspection
+          text: The process document lists the severity levels with criteria, acknowledgement time and update interval for each.
+        - method: test
+          text: In the last 10 severity 1 alerts, the median time to acknowledgement is at most 15 minutes and none took longer than 30 minutes.
+          threshold: "median ≤ 15 min, max ≤ 30 min"
+    sv:
+      title: Allvarlighetsnivåer med svarstider
+      description: Incidentprocessen SKA definiera minst tre allvarlighetsnivåer med kriterier och svarstider, däribland bekräftelse av en incident med allvarlighetsnivå 1 inom 15 minuter dygnet runt.
+      rationale: Gemensamma kriterier gör att teamen slipper diskutera hur allvarlig en incident är och gör svarstiden förutsägbar.
+      criteria:
+        - method: inspection
+          text: Processdokumentet anger allvarlighetsnivåerna med kriterier, tid till bekräftelse och uppdateringsintervall för var och en.
+        - method: test
+          text: För de senaste 10 larmen med allvarlighetsnivå 1 är mediantiden till bekräftelse högst 15 minuter och inget tog längre än 30 minuter.
+          threshold: "median ≤ 15 min, max ≤ 30 min"
+
+  - id: INC-03
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [on-call, escalation]
+    refs: ["Google SRE Book ch. 11 (being on-call)", "ISO/IEC 27001:2022 Annex A 5.26 (response to information security incidents)"]
+    tests: [INC-T02]
+    en:
+      title: On-call rotation around the clock
+      description: The organisation MUST staff an on-call rotation that covers all hours of the year, with automatic escalation to a second person when an alert is not acknowledged within 15 minutes.
+      rationale: Incidents do not keep office hours, and a single missed page should not leave the service down until morning.
+      criteria:
+        - method: inspection
+          text: The on-call schedule of the next 4 weeks has a primary and a secondary for each hour.
+        - method: test
+          text: A test page that the primary does not acknowledge reaches the secondary after 15 minutes.
+          threshold: "escalation after 15 min"
+    sv:
+      title: Jour dygnet runt
+      description: Organisationen SKA bemanna ett jourschema som täcker årets alla timmar, med automatisk eskalering till en andra person när ett larm inte bekräftas inom 15 minuter.
+      rationale: Incidenter håller inte kontorstider, och ett enda missat larm ska inte lämna tjänsten nere till morgonen.
+      criteria:
+        - method: inspection
+          text: Jourschemat för de kommande 4 veckorna har en primär och en sekundär person för varje timme.
+        - method: test
+          text: Ett testlarm som den primära personen inte bekräftar når den sekundära efter 15 minuter.
+          threshold: "eskalering efter 15 min"
+
+  - id: INC-04
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [incident-commander, coordination]
+    refs: ["FEMA Incident Command System (ICS) principles", "Google SRE Book ch. 14 (managing incidents)"]
+    tests: [INC-T03]
+    en:
+      title: Incident commander and incident channel
+      description: Each severity 1 and severity 2 incident SHOULD have a named incident commander and a dedicated communication channel opened within 15 minutes of acknowledgement.
+      rationale: One person who coordinates, and one place where everything is said, prevent duplicate work and lost information.
+      criteria:
+        - method: review
+          text: The records of the last 10 severity 1 and 2 incidents name an incident commander and a channel created within 15 minutes of acknowledgement.
+          threshold: "≤ 15 min"
+    sv:
+      title: Incidentledare och incidentkanal
+      description: Varje incident med allvarlighetsnivå 1 eller 2 BÖR få en namngiven incidentledare och en egen kommunikationskanal som öppnas inom 15 minuter från bekräftelsen.
+      rationale: En person som samordnar och ett ställe där allt sägs förhindrar dubbelarbete och förlorad information.
+      criteria:
+        - method: review
+          text: Posterna för de senaste 10 incidenterna med allvarlighetsnivå 1 och 2 namnger en incidentledare och en kanal som skapades inom 15 minuter från bekräftelsen.
+          threshold: "≤ 15 min"
+
+  - id: INC-05
+    type: business
+    obligation: should
+    priority: high
+    tags: [customer-communication]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.26", "ITIL 4 Incident management practice (communication)"]
+    tests: [INC-T03]
+    en:
+      title: Affected customers are told within 60 minutes
+      description: The incident team SHOULD send a first notice to the contacts of affected organisations within 60 minutes of declaring a severity 1 incident, and an update at least every 60 minutes until it is resolved.
+      rationale: Customers who hear nothing open support tickets, escalate through their managers and lose trust faster than from the outage itself.
+      criteria:
+        - method: review
+          text: For the last 5 severity 1 incidents, the first notice went out within 60 minutes and no gap between updates exceeded 60 minutes.
+          threshold: "first notice ≤ 60 min; updates every ≤ 60 min"
+    sv:
+      title: Berörda kunder informeras inom 60 minuter
+      description: Incidentteamet BÖR skicka ett första besked till kontaktpersonerna hos berörda organisationer inom 60 minuter från att en incident med allvarlighetsnivå 1 utlysts, och en uppdatering minst var 60:e minut tills den är löst.
+      rationale: Kunder som inte hör något öppnar supportärenden, eskalerar via sina chefer och tappar förtroendet snabbare än av själva avbrottet.
+      criteria:
+        - method: review
+          text: För de senaste 5 incidenterna med allvarlighetsnivå 1 skickades det första beskedet inom 60 minuter och inget uppehåll mellan uppdateringarna översteg 60 minuter.
+          threshold: "första besked ≤ 60 min; uppdatering var ≤ 60 min"
+
+  - id: INC-06
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [personal-data-breach, gdpr, supervisory-authority]
+    refs: ["GDPR Art. 33 (notification to the supervisory authority)", "GDPR Art. 34 (communication to the data subject)", "EDPB Guidelines 9/2022 on personal data breach notification"]
+    tests: [INC-T04]
+    en:
+      title: Personal data breaches reported within 72 hours
+      description: The organisation MUST notify the supervisory authority of a personal data breach that risks the rights of individuals within 72 hours of becoming aware of it.
+      rationale: The deadline is set by law, and the 72 hours include weekends, so the decision path has to be prepared.
+      criteria:
+        - method: demonstration
+          text: In a tabletop exercise the team decides on notification and completes the authority's form within 72 hours of the simulated discovery.
+          threshold: "≤ 72 h"
+        - method: inspection
+          text: The breach register lists each breach of the last 12 months with discovery time, decision, and notification time or the reason for not notifying.
+    sv:
+      title: Personuppgiftsincidenter anmäls inom 72 timmar
+      description: Organisationen SKA anmäla en personuppgiftsincident som innebär en risk för enskildas rättigheter till tillsynsmyndigheten inom 72 timmar från att den fick kännedom om den.
+      rationale: Tidsgränsen är satt i lag, och de 72 timmarna inkluderar helger, så beslutsvägen behöver vara förberedd.
+      criteria:
+        - method: demonstration
+          text: Vid en skrivbordsövning beslutar teamet om anmälan och fyller i myndighetens formulär inom 72 timmar från den simulerade upptäckten.
+          threshold: "≤ 72 h"
+        - method: inspection
+          text: Incidentregistret anger varje incident de senaste 12 månaderna med tid för upptäckt, beslut och tid för anmälan eller skälet till att inte anmäla.
+
+  - id: INC-07
+    type: regulatory
+    obligation: should
+    priority: high
+    tags: [nis2, early-warning, csirt]
+    refs: ["NIS2 Directive (EU) 2022/2555 Art. 23 (reporting obligations)"]
+    tests: [INC-T04]
+    en:
+      title: Early warning of reportable incidents within 24 hours
+      description: An organisation covered by NIS2 SHOULD send an early warning to the national CSIRT within 24 hours and an incident notification within 72 hours of becoming aware of an incident that meets the NIS2 reporting criteria.
+      rationale: The national reporting rules for essential and important entities set these deadlines, and missing them leads to supervisory action.
+      criteria:
+        - method: demonstration
+          text: In a tabletop exercise the team identifies the incident as significant and prepares the early warning within 24 hours and the notification within 72 hours.
+          threshold: "early warning ≤ 24 h; notification ≤ 72 h"
+    sv:
+      title: Tidig varning om rapporteringspliktiga incidenter inom 24 timmar
+      description: En organisation som omfattas av NIS2 BÖR skicka en tidig varning till den nationella CSIRT-enheten inom 24 timmar och en incidentanmälan inom 72 timmar från att den fick kännedom om en incident som uppfyller rapporteringskriterierna i NIS2.
+      rationale: De nationella rapporteringsreglerna för väsentliga och viktiga verksamhetsutövare sätter dessa tidsgränser, och den som missar dem riskerar tillsynsåtgärder.
+      criteria:
+        - method: demonstration
+          text: Vid en skrivbordsövning identifierar teamet incidenten som betydande och tar fram den tidiga varningen inom 24 timmar och anmälan inom 72 timmar.
+          threshold: "tidig varning ≤ 24 h; anmälan ≤ 72 h"
+
+  - id: INC-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [evidence, forensics]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.28 (collection of evidence)", "ISO/IEC 27037:2012 (identification, collection, acquisition and preservation of digital evidence)"]
+    tests: [INC-T05]
+    en:
+      title: Evidence is preserved before systems are cleaned
+      description: For each security incident the team MUST secure logs, memory and disk images of the affected systems, with checksums, before they are rebuilt or cleaned.
+      rationale: Without evidence the cause and extent of an attack cannot be established, and legal action or insurance claims fail.
+      criteria:
+        - method: demonstration
+          text: In an exercise the team takes a disk image and a memory dump of a compromised test server, records their checksums and chain of custody, and only then rebuilds it.
+    sv:
+      title: Bevis säkras innan system rensas
+      description: Vid varje säkerhetsincident SKA teamet säkra loggar, minnes- och diskavbilder från de berörda systemen, med kontrollsummor, innan de byggs om eller rensas.
+      rationale: Utan bevis går det inte att fastställa orsaken till och omfattningen av ett angrepp, och rättsliga åtgärder eller försäkringsanspråk faller.
+      criteria:
+        - method: demonstration
+          text: Vid en övning tar teamet en diskavbild och en minnesdump av en komprometterad testserver, registrerar kontrollsummor och beviskedja och bygger först därefter om den.
+
+  - id: INC-09
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [timeline, record]
+    refs: ["NIST SP 800-61 Rev. 2 §3.2.5 (incident documentation)"]
+    tests: [INC-T05]
+    en:
+      title: Timeline recorded during the incident
+      description: The incident commander SHOULD record a timeline with timestamps of detection, each decision, each action and resolution while the incident is ongoing.
+      rationale: Memories fade and conflict within hours, and the review needs an accurate order of events.
+      criteria:
+        - method: review
+          text: Each severity 1 and 2 incident record of the last quarter has a timeline with entries for detection, decisions, actions and resolution.
+    sv:
+      title: Tidslinje förs under incidenten
+      description: Incidentledaren BÖR föra en tidslinje med tidsstämplar för upptäckt, varje beslut, varje åtgärd och lösning medan incidenten pågår.
+      rationale: Minnen bleknar och går isär inom timmar, och uppföljningen behöver en korrekt ordning på händelserna.
+      criteria:
+        - method: review
+          text: Varje incidentpost med allvarlighetsnivå 1 och 2 under senaste kvartalet har en tidslinje med poster för upptäckt, beslut, åtgärder och lösning.
+
+  - id: INC-10
+    type: constraint
+    obligation: must
+    priority: high
+    tags: [post-incident-review, learning]
+    refs: ["ISO/IEC 27001:2022 Annex A 5.27 (learning from information security incidents)", "Google SRE Book ch. 15 (postmortem culture)"]
+    tests: [INC-T06]
+    en:
+      title: Post-incident review within 5 working days
+      description: The team MUST hold a blameless post-incident review within 5 working days after each severity 1 and severity 2 incident and record the causes and actions.
+      rationale: Without a review the same incident returns, and blame makes people hide the facts that would prevent it.
+      criteria:
+        - method: review
+          text: Each severity 1 and 2 incident of the last 6 months has a review document dated within 5 working days, with causes, impact and actions with owners.
+          threshold: "≤ 5 working days"
+    sv:
+      title: Uppföljning inom 5 arbetsdagar efter en incident
+      description: Teamet SKA hålla en uppföljning utan skuldbeläggning inom 5 arbetsdagar efter varje incident med allvarlighetsnivå 1 eller 2 och dokumentera orsaker och åtgärder.
+      rationale: Utan uppföljning kommer samma incident tillbaka, och skuldbeläggning får människor att dölja de fakta som skulle förhindra den.
+      criteria:
+        - method: review
+          text: Varje incident med allvarlighetsnivå 1 och 2 de senaste 6 månaderna har ett uppföljningsdokument daterat inom 5 arbetsdagar, med orsaker, påverkan och åtgärder med ansvariga.
+          threshold: "≤ 5 arbetsdagar"
+
+  - id: INC-11
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [action-items, follow-up]
+    refs: ["ISO/IEC 27001:2022 §10.2 (nonconformity and corrective action)"]
+    tests: [INC-T06]
+    en:
+      title: Actions from reviews are closed within 30 days
+      description: Each action from a post-incident review SHOULD have an owner and a due date and be closed within 30 days, or be rescheduled with a recorded reason.
+      rationale: Reviews whose actions are never done give the illusion of learning.
+      criteria:
+        - method: inspection
+          text: Of the actions from reviews of the last 6 months, at least 90 % were closed within 30 days and the rest have a recorded reason and a new date.
+          threshold: "≥ 90 % within 30 days"
+    sv:
+      title: Åtgärder från uppföljningar stängs inom 30 dagar
+      description: Varje åtgärd från en uppföljning efter en incident BÖR ha en ansvarig och ett slutdatum och stängas inom 30 dagar, eller planeras om med ett dokumenterat skäl.
+      rationale: Uppföljningar vars åtgärder aldrig blir gjorda ger bara ett sken av lärande.
+      criteria:
+        - method: inspection
+          text: Av åtgärderna från uppföljningar de senaste 6 månaderna stängdes minst 90 % inom 30 dagar och resten har ett dokumenterat skäl och ett nytt datum.
+          threshold: "≥ 90 % inom 30 dagar"
+
+  - id: INC-12
+    type: constraint
+    obligation: should
+    priority: medium
+    tags: [exercise, tabletop]
+    refs: ["NIST SP 800-84 (guide to test, training and exercise programs)", "ISO/IEC 27001:2022 Annex A 5.24"]
+    tests: [INC-T03]
+    en:
+      title: Incident exercises twice a year
+      description: The organisation SHOULD run an incident response exercise at least every 6 months, alternating between a service outage and a security breach scenario.
+      rationale: Plans that have never been exercised fail on details such as access rights, phone numbers and who may decide.
+      criteria:
+        - method: inspection
+          text: Exercise reports exist for the last two 6-month periods, one for each scenario type, with findings and actions.
+          threshold: "≥ 1 exercise per 6 months"
+    sv:
+      title: Incidentövningar två gånger om året
+      description: Organisationen BÖR genomföra en övning i incidenthantering minst var 6:e månad, växelvis med ett scenario för driftavbrott och ett för säkerhetsintrång.
+      rationale: Planer som aldrig har övats faller på detaljer som behörigheter, telefonnummer och vem som får besluta.
+      criteria:
+        - method: inspection
+          text: Övningsrapporter finns för de två senaste halvårsperioderna, en för varje typ av scenario, med iakttagelser och åtgärder.
+          threshold: "≥ 1 övning per 6 månader"
+
+tests:
+  - id: INC-T01
+    priority: high
+    execution: manual
+    tags: [plan, review]
+    refs: ["NIST SP 800-61 Rev. 2 §2.3"]
+    en:
+      title: Review of the incident response plan and contact list
+      description: Reads the plan, checks its review date and verifies the contact list.
+      preconditions: The current incident response plan with its version history.
+      expected: The plan has roles, severity levels, contacts and escalation paths, was reviewed within 12 months, and the contacts are current.
+      steps:
+        - action: Check that the plan describes roles, severity levels, contact lists and escalation paths.
+          expected: All four parts are present.
+        - action: Read the date of the latest review.
+          expected: It is at most 12 months ago.
+        - action: Call or message five randomly chosen contacts from the list.
+          expected: Each contact is reached at the listed number or address and still holds the listed role.
+          data: "5 contacts, chosen at random"
+    sv:
+      title: Granskning av incidentplanen och kontaktlistan
+      description: Läser planen, kontrollerar granskningsdatumet och verifierar kontaktlistan.
+      preconditions: Den aktuella planen för incidenthantering med versionshistorik.
+      expected: Planen har roller, allvarlighetsnivåer, kontakter och eskaleringsvägar, granskades inom 12 månader och kontakterna är aktuella.
+      steps:
+        - action: Kontrollera att planen beskriver roller, allvarlighetsnivåer, kontaktlistor och eskaleringsvägar.
+          expected: Alla fyra delarna finns.
+        - action: Läs datumet för den senaste granskningen.
+          expected: Det är högst 12 månader sedan.
+        - action: Ring eller skicka meddelande till fem slumpvis valda kontakter i listan.
+          expected: Varje kontakt nås på angivet nummer eller adress och har fortfarande den angivna rollen.
+          data: "5 kontakter, slumpvis valda"
+
+  - id: INC-T02
+    priority: high
+    execution: manual
+    tags: [severity, on-call, escalation]
+    refs: []
+    en:
+      title: Acknowledgement times and escalation of a test page
+      description: Reads the acknowledgement times of recent severity 1 alerts, checks the on-call schedule and sends a test page that is not acknowledged.
+      preconditions: Read access to the alerting tool; agreement with the on-call engineers about a test page; the severity definitions.
+      expected: The process defines the levels, acknowledgement meets the targets, the schedule has no gaps, and escalation happens after 15 minutes.
+      steps:
+        - action: Read the severity definitions.
+          expected: At least three levels are defined with criteria, acknowledgement time and update interval.
+        - action: Export the acknowledgement times of the last 10 severity 1 alerts.
+          expected: The median is at most 15 minutes and no value exceeds 30 minutes.
+        - action: Check the on-call schedule for the next 4 weeks.
+          expected: Each hour has a primary and a secondary.
+        - action: Send a severity 1 test page and ask the primary not to acknowledge it.
+          expected: The secondary is paged 15 minutes after the first page.
+    sv:
+      title: Tid till bekräftelse och eskalering av ett testlarm
+      description: Läser tiderna till bekräftelse för de senaste larmen med allvarlighetsnivå 1, kontrollerar jourschemat och skickar ett testlarm som inte bekräftas.
+      preconditions: Läsåtkomst till larmverktyget; överenskommelse med jourhavande om ett testlarm; definitionerna av allvarlighetsnivåer.
+      expected: Processen definierar nivåerna, bekräftelserna når målen, schemat har inga luckor och eskaleringen sker efter 15 minuter.
+      steps:
+        - action: Läs definitionerna av allvarlighetsnivåer.
+          expected: Minst tre nivåer är definierade med kriterier, tid till bekräftelse och uppdateringsintervall.
+        - action: Exportera tiderna till bekräftelse för de senaste 10 larmen med allvarlighetsnivå 1.
+          expected: Medianen är högst 15 minuter och inget värde överstiger 30 minuter.
+        - action: Kontrollera jourschemat för de kommande 4 veckorna.
+          expected: Varje timme har en primär och en sekundär person.
+        - action: Skicka ett testlarm med allvarlighetsnivå 1 och be den primära personen att inte bekräfta det.
+          expected: Den sekundära personen larmas 15 minuter efter det första larmet.
+
+  - id: INC-T03
+    priority: high
+    execution: manual
+    tags: [exercise, communication, incident-commander]
+    refs: ["NIST SP 800-84"]
+    en:
+      title: Outage exercise with customer communication
+      description: Runs a simulated severity 1 outage and measures the time to commander, channel and customer notices, then checks the exercise history.
+      preconditions: An exercise scenario agreed with the team; a test customer contact list; an observer with a stopwatch; the reports of earlier exercises.
+      expected: A commander and a channel are in place within 15 minutes, customers are told within 60 minutes and updated at least hourly, and exercises take place every 6 months.
+      steps:
+        - action: Start the scenario by raising a simulated severity 1 alert and note the time of acknowledgement.
+          expected: The alert is acknowledged.
+        - action: Record when an incident commander is named and the incident channel is created.
+          expected: Both happen within 15 minutes of acknowledgement.
+        - action: Record when the first notice reaches the test customer contacts, and the times of the following updates.
+          expected: The first notice arrives within 60 minutes and no gap between updates exceeds 60 minutes.
+        - action: List the exercise reports of the last 12 months.
+          expected: There is at least one exercise in each 6-month period, covering both an outage and a security breach.
+    sv:
+      title: Övning med driftavbrott och kundkommunikation
+      description: Genomför ett simulerat avbrott med allvarlighetsnivå 1 och mäter tiden till incidentledare, kanal och kundbesked, och kontrollerar sedan övningshistoriken.
+      preconditions: Ett övningsscenario som har stämts av med teamet; en kontaktlista för testkunder; en observatör med tidtagarur; rapporterna från tidigare övningar.
+      expected: En incidentledare och en kanal finns på plats inom 15 minuter, kunderna informeras inom 60 minuter och uppdateras minst varje timme, och övningar genomförs var 6:e månad.
+      steps:
+        - action: Starta scenariot genom att utlösa ett simulerat larm med allvarlighetsnivå 1 och notera tiden för bekräftelsen.
+          expected: Larmet bekräftas.
+        - action: Registrera när en incidentledare utses och när incidentkanalen skapas.
+          expected: Båda sker inom 15 minuter från bekräftelsen.
+        - action: Registrera när det första beskedet når testkundernas kontaktpersoner och tiderna för de följande uppdateringarna.
+          expected: Det första beskedet kommer inom 60 minuter och inget uppehåll mellan uppdateringarna överstiger 60 minuter.
+        - action: Lista övningsrapporterna de senaste 12 månaderna.
+          expected: Det finns minst en övning under varje halvårsperiod, som täcker både driftavbrott och säkerhetsintrång.
+
+  - id: INC-T04
+    priority: critical
+    execution: manual
+    tags: [personal-data-breach, nis2, tabletop]
+    refs: ["GDPR Art. 33", "NIS2 Directive (EU) 2022/2555 Art. 23"]
+    en:
+      title: Tabletop exercise for a personal data breach
+      description: Simulates the discovery of a breach on a Friday afternoon and measures the time to the notification decisions.
+      preconditions: The breach procedure; the data protection officer and the person who decides on notifications take part; templates of the supervisory authority's and the CSIRT's forms.
+      expected: The authority notification is ready within 72 hours, and where NIS2 applies the early warning within 24 hours.
+      steps:
+        - action: Present the scenario of an exposed database with customer records discovered on Friday at 16:00 and start the clock.
+          expected: The team opens a breach record with the discovery time.
+          data: "discovery Friday 16:00"
+        - action: Let the team assess the risk to individuals and decide whether the breach is significant under NIS2.
+          expected: The decision and its reasons are recorded.
+        - action: Let the team complete the early warning and the authority notification.
+          expected: The early warning is ready within 24 hours and the authority notification within 72 hours of the discovery time.
+        - action: Check the breach register for the last 12 months.
+          expected: Each entry has discovery time, decision and notification time or the reason for not notifying.
+    sv:
+      title: Skrivbordsövning för en personuppgiftsincident
+      description: Simulerar upptäckten av en incident en fredag eftermiddag och mäter tiden fram till besluten om anmälan.
+      preconditions: Rutinen för personuppgiftsincidenter; dataskyddsombudet och den som beslutar om anmälningar deltar; mallar för tillsynsmyndighetens och CSIRT-enhetens formulär.
+      expected: Anmälan till myndigheten är klar inom 72 timmar, och där NIS2 gäller är den tidiga varningen klar inom 24 timmar.
+      steps:
+        - action: Presentera scenariot med en exponerad databas med kunduppgifter som upptäcks på fredagen klockan 16.00 och starta klockan.
+          expected: Teamet öppnar en incidentpost med tiden för upptäckten.
+          data: "upptäckt fredag 16.00"
+        - action: Låt teamet bedöma risken för de enskilda och besluta om incidenten är betydande enligt NIS2.
+          expected: Beslutet och skälen dokumenteras.
+        - action: Låt teamet fylla i den tidiga varningen och anmälan till myndigheten.
+          expected: Den tidiga varningen är klar inom 24 timmar och anmälan till myndigheten inom 72 timmar från tiden för upptäckten.
+        - action: Kontrollera incidentregistret för de senaste 12 månaderna.
+          expected: Varje post har tid för upptäckt, beslut och tid för anmälan eller skälet till att inte anmäla.
+
+  - id: INC-T05
+    priority: high
+    execution: manual
+    tags: [evidence, timeline]
+    refs: ["ISO/IEC 27037:2012"]
+    en:
+      title: Evidence collection and timeline in a security exercise
+      description: The team handles a planted compromise of a test server, secures evidence before rebuilding, and keeps a timeline.
+      preconditions: A test server with a planted indicator of compromise; forensic tools for disk and memory capture; the incident record template.
+      expected: Disk and memory images with checksums and chain of custody exist before the rebuild, and the record has a complete timeline.
+      steps:
+        - action: Report the indicator of compromise to the on-call engineer.
+          expected: The incident is declared and a timeline is started.
+        - action: Let the team capture a memory dump and a disk image of the test server.
+          expected: Both images exist with SHA-256 checksums and a chain of custody record.
+        - action: Compare the time of capture with the time of rebuild.
+          expected: The images were taken before the server was rebuilt.
+        - action: Read the timeline in the incident record.
+          expected: It has timestamped entries for detection, each decision, each action and resolution.
+    sv:
+      title: Säkring av bevis och tidslinje vid en säkerhetsövning
+      description: Teamet hanterar en utplacerad kompromettering av en testserver, säkrar bevis före ombyggnad och för en tidslinje.
+      preconditions: En testserver med en utplacerad indikator på kompromettering; forensiska verktyg för disk- och minnesavbilder; mallen för incidentposter.
+      expected: Disk- och minnesavbilder med kontrollsummor och beviskedja finns före ombyggnaden, och posten har en fullständig tidslinje.
+      steps:
+        - action: Rapportera indikatorn på kompromettering till jourhavande tekniker.
+          expected: Incidenten utlyses och en tidslinje startas.
+        - action: Låt teamet ta en minnesdump och en diskavbild av testservern.
+          expected: Båda avbilderna finns med SHA-256-kontrollsummor och en post för beviskedjan.
+        - action: Jämför tiden för avbilderna med tiden för ombyggnaden.
+          expected: Avbilderna togs innan servern byggdes om.
+        - action: Läs tidslinjen i incidentposten.
+          expected: Den har tidsstämplade poster för upptäckt, varje beslut, varje åtgärd och lösning.
+
+  - id: INC-T06
+    priority: high
+    execution: manual
+    tags: [post-incident-review, action-items]
+    refs: []
+    en:
+      title: Post-incident reviews and their actions
+      description: Compares the incident list with the review documents and checks the state of their actions.
+      preconditions: The list of severity 1 and 2 incidents of the last 6 months; the review documents; the action tracker.
+      expected: Each incident has a timely blameless review, and at least 90 % of the actions were closed within 30 days.
+      steps:
+        - action: For each incident, find the review document and compare its date with the resolution date.
+          expected: Each review is dated within 5 working days of resolution.
+        - action: Read each review for causes, impact, actions with owners, and wording that blames people.
+          expected: Each review has causes, impact and owned actions, and describes system and process failures rather than personal blame.
+        - action: Compute the share of actions closed within 30 days.
+          expected: At least 90 % were closed within 30 days, and each other action has a recorded reason and a new date.
+          data: "threshold 90 %"
+    sv:
+      title: Uppföljningar efter incidenter och deras åtgärder
+      description: Jämför incidentlistan med uppföljningsdokumenten och kontrollerar läget för åtgärderna.
+      preconditions: Listan över incidenter med allvarlighetsnivå 1 och 2 de senaste 6 månaderna; uppföljningsdokumenten; åtgärdslistan.
+      expected: Varje incident har en uppföljning utan skuldbeläggning i tid, och minst 90 % av åtgärderna stängdes inom 30 dagar.
+      steps:
+        - action: Leta upp uppföljningsdokumentet för varje incident och jämför dess datum med datumet då incidenten löstes.
+          expected: Varje uppföljning är daterad inom 5 arbetsdagar från lösningen.
+        - action: Läs varje uppföljning med avseende på orsaker, påverkan, åtgärder med ansvariga och formuleringar som lägger skulden på personer.
+          expected: Varje uppföljning har orsaker, påverkan och åtgärder med ansvariga och beskriver brister i system och processer snarare än personlig skuld.
+        - action: Räkna ut andelen åtgärder som stängdes inom 30 dagar.
+          expected: Minst 90 % stängdes inom 30 dagar, och varje övrig åtgärd har ett dokumenterat skäl och ett nytt datum.
+          data: "gränsvärde 90 %"
