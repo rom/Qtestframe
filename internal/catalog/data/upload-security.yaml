@@ -1,0 +1,547 @@
+area: upload-security
+prefix: UPLS
+group: security
+name: {en: File upload and storage security, sv: Säker filuppladdning och fillagring}
+description:
+  en: Checks of uploaded file types and content, malware scanning, safe storage and delivery of user files, archives, image metadata and download links.
+  sv: Kontroll av filtyp och innehåll i uppladdade filer, skanning efter skadlig kod, säker lagring och leverans av användarnas filer, arkiv, bildmetadata och nedladdningslänkar.
+
+requirements:
+  - id: UPLS-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [file-type, allow-list, content-sniffing]
+    refs: ["OWASP ASVS 4.0.3 §12.2 (file integrity)", "OWASP File Upload Cheat Sheet", "CWE-434 (unrestricted upload of file with dangerous type)"]
+    tests: [UPLS-T01]
+    en:
+      title: Allow-list of file types checked against the content
+      description: The system MUST accept an uploaded file only when the type detected from its content is on the allow-list of the upload field.
+      rationale: The file name and the declared content type are chosen by the sender, so only the content shows what the file really is.
+      criteria:
+        - method: test
+          text: A PDF, a PNG and a JPEG are accepted in a field that allows them, and an executable renamed to report.pdf is rejected.
+    sv:
+      title: Tillåtna filtyper kontrolleras mot innehållet
+      description: Systemet SKA ta emot en uppladdad fil enbart när den filtyp som avläses ur innehållet finns i uppladdningsfältets lista över tillåtna typer.
+      rationale: Filnamnet och den angivna innehållstypen väljs av avsändaren, så bara innehållet visar vad filen verkligen är.
+      criteria:
+        - method: test
+          text: En PDF, en PNG och en JPEG godtas i ett fält som tillåter dem, och en körbar fil som döpts om till report.pdf avvisas.
+
+  - id: UPLS-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [file-type, extension]
+    refs: ["OWASP File Upload Cheat Sheet (extension validation)", "CWE-434"]
+    tests: [UPLS-T01]
+    en:
+      title: File extension matches the detected type
+      description: The system MUST reject an uploaded file whose extension does not belong to the type detected from its content.
+      rationale: A mismatch is a sign of an attempt to make a browser or another program treat the file as something else.
+      criteria:
+        - method: test
+          text: A PNG image named picture.html and a PDF named document.svg are both rejected with a message about the file type.
+    sv:
+      title: Filändelsen stämmer med den avlästa typen
+      description: Systemet SKA avvisa en uppladdad fil vars filändelse inte hör till den typ som avläses ur innehållet.
+      rationale: En avvikelse tyder på ett försök att få en webbläsare eller ett annat program att behandla filen som något annat.
+      criteria:
+        - method: test
+          text: En PNG-bild med namnet picture.html och en PDF med namnet document.svg avvisas båda med ett meddelande om filtypen.
+
+  - id: UPLS-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [malware, scanning]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.7 (protection against malware)", "OWASP File Upload Cheat Sheet (file content validation)"]
+    tests: [UPLS-T02]
+    en:
+      title: Malware scan before a file is shared
+      description: The system MUST scan each uploaded file with an up-to-date malware scanner before another user can download or open it.
+      rationale: A shared workspace spreads infected attachments to every member who opens them.
+      criteria:
+        - method: test
+          text: The industry-standard anti-malware test file is detected and never offered for download to a second user.
+        - method: inspection
+          text: The scanner's signature database is less than 24 hours old.
+          threshold: "signatures ≤ 24 h old"
+    sv:
+      title: Skanning efter skadlig kod innan en fil delas
+      description: Systemet SKA skanna varje uppladdad fil med en uppdaterad skanner för skadlig kod innan en annan användare kan ladda ner eller öppna den.
+      rationale: En gemensam arbetsyta sprider smittade bilagor till varje medlem som öppnar dem.
+      criteria:
+        - method: test
+          text: Branschens standardtestfil för antivirusprogram upptäcks och erbjuds aldrig för nedladdning till en annan användare.
+        - method: inspection
+          text: Skannerns signaturdatabas är mindre än 24 timmar gammal.
+          threshold: "signaturer ≤ 24 h gamla"
+
+  - id: UPLS-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [malware, quarantine, notification]
+    refs: ["ISO/IEC 27001:2022 Annex A 8.7 (protection against malware)"]
+    tests: [UPLS-T02]
+    en:
+      title: Infected files are quarantined and the uploader is told
+      description: When the scanner flags a file, the system MUST move it to quarantine and tell the uploader within 1 minute which file was refused.
+      rationale: The uploader needs to know that the file did not arrive, and the security team needs the sample for analysis.
+      criteria:
+        - method: test
+          text: After uploading the anti-malware test file the uploader sees a message naming the file within 1 minute, and the file is in quarantine.
+          threshold: "≤ 1 min"
+    sv:
+      title: Smittade filer sätts i karantän och den som laddade upp informeras
+      description: När skannern flaggar en fil SKA systemet flytta den till karantän och inom 1 minut tala om för den som laddade upp vilken fil som avvisades.
+      rationale: Den som laddade upp behöver veta att filen inte kom fram, och säkerhetsteamet behöver provet för analys.
+      criteria:
+        - method: test
+          text: Efter uppladdning av antivirustestfilen ser användaren inom 1 minut ett meddelande som namnger filen, och filen ligger i karantän.
+          threshold: "≤ 1 min"
+
+  - id: UPLS-05
+    type: security
+    obligation: must
+    priority: critical
+    tags: [storage, file-name, path-traversal]
+    refs: ["OWASP ASVS 4.0.3 §12.3 (file execution)", "CWE-22 (path traversal)"]
+    tests: [UPLS-T03]
+    en:
+      title: Files are stored under generated names outside the web root
+      description: The system MUST store uploaded files under a server-generated random name in storage that the web server does not serve directly.
+      rationale: A user-chosen name can overwrite other files or point outside the upload directory, and a file in the web root can be executed by the server.
+      criteria:
+        - method: test
+          text: Uploading a file named ../../config.yaml stores it under a generated name, and no file outside the upload storage changes.
+        - method: inspection
+          text: The storage location is not below any directory that the web server publishes.
+    sv:
+      title: Filer lagras under genererade namn utanför webbroten
+      description: Systemet SKA lagra uppladdade filer under ett slumpmässigt namn som servern genererar, i en lagring som webbservern inte publicerar direkt.
+      rationale: Ett namn som användaren väljer kan skriva över andra filer eller peka utanför uppladdningskatalogen, och en fil i webbroten kan köras av servern.
+      criteria:
+        - method: test
+          text: En fil med namnet ../../config.yaml lagras under ett genererat namn, och ingen fil utanför uppladdningslagringen ändras.
+        - method: inspection
+          text: Lagringsplatsen ligger inte under någon katalog som webbservern publicerar.
+
+  - id: UPLS-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [download, headers, xss]
+    refs: ["OWASP ASVS 4.0.3 §12.5.2", "OWASP HTTP Headers Cheat Sheet (X-Content-Type-Options)"]
+    tests: [UPLS-T04]
+    en:
+      title: User files are delivered as downloads
+      description: The system MUST deliver user-uploaded files with "Content-Disposition attachment", the stored content type and "X-Content-Type-Options nosniff".
+      rationale: Without these headers a browser can render an uploaded HTML or SVG file as a page of the application and run its scripts.
+      criteria:
+        - method: test
+          text: The response for an uploaded SVG file carries all three headers, and the browser saves the file instead of rendering it.
+    sv:
+      title: Användarnas filer levereras som nedladdningar
+      description: Systemet SKA leverera filer som användare laddat upp med "Content-Disposition attachment", den lagrade innehållstypen och "X-Content-Type-Options nosniff".
+      rationale: Utan dessa huvuden kan en webbläsare visa en uppladdad HTML- eller SVG-fil som en sida i applikationen och köra dess skript.
+      criteria:
+        - method: test
+          text: Svaret för en uppladdad SVG-fil har alla tre huvudena, och webbläsaren sparar filen i stället för att visa den.
+
+  - id: UPLS-07
+    type: security
+    obligation: should
+    priority: medium
+    tags: [download, domain-isolation, cookies]
+    refs: ["OWASP File Upload Cheat Sheet (file storage location)", "Google Web Fundamentals: sandboxed domains for user content"]
+    tests: [UPLS-T04]
+    en:
+      title: Previews are served from a separate domain
+      description: The system SHOULD serve inline previews of user files from a separate domain that receives no cookies or tokens of the application.
+      rationale: A script hidden in a previewed file can then reach neither the session nor the application's pages.
+      criteria:
+        - method: test
+          text: Preview requests go to the separate domain and carry no session cookie or authorization header of the application.
+    sv:
+      title: Förhandsvisningar levereras från en egen domän
+      description: Systemet BÖR leverera förhandsvisningar av användarnas filer från en egen domän dit applikationens cookies och token inte skickas.
+      rationale: Ett skript som gömts i en förhandsvisad fil kommer då varken åt sessionen eller applikationens sidor.
+      criteria:
+        - method: test
+          text: Anrop för förhandsvisning går till den egna domänen och har ingen sessionscookie eller autentiseringshuvud från applikationen.
+
+  - id: UPLS-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [archive, zip-bomb, denial-of-service]
+    refs: ["OWASP ASVS 4.0.3 §12.1.2 (compressed files)", "CWE-409 (improper handling of highly compressed data)"]
+    tests: [UPLS-T05]
+    en:
+      title: Limits on unpacked archives
+      description: The system MUST stop unpacking an uploaded archive when its content exceeds 1 GB, 100 times the archive size or 10 000 entries.
+      rationale: A few kilobytes of crafted archive can expand to terabytes and fill the disk or memory of the server.
+      criteria:
+        - method: test
+          text: A crafted archive of 50 kB that expands to 5 GB is rejected, and disk use on the server grows by less than 1 GB.
+          threshold: "≤ 1 GB, ≤ 100 × archive size, ≤ 10 000 entries"
+    sv:
+      title: Gränser för uppackade arkiv
+      description: Systemet SKA avbryta uppackningen av ett uppladdat arkiv när innehållet överstiger 1 GB, 100 gånger arkivets storlek eller 10 000 poster.
+      rationale: Ett preparerat arkiv på några kilobyte kan packas upp till terabyte och fylla serverns disk eller minne.
+      criteria:
+        - method: test
+          text: Ett preparerat arkiv på 50 kB som packas upp till 5 GB avvisas, och serverns diskanvändning ökar med mindre än 1 GB.
+          threshold: "≤ 1 GB, ≤ 100 × arkivets storlek, ≤ 10 000 poster"
+
+  - id: UPLS-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [archive, path-traversal, zip-slip]
+    refs: ["CWE-22 (path traversal)", "OWASP File Upload Cheat Sheet"]
+    tests: [UPLS-T05]
+    en:
+      title: Archive entries stay in the target directory
+      description: The system MUST reject an uploaded archive that contains an entry with an absolute path, a ".." segment or a symbolic link.
+      rationale: Such entries write files outside the target directory when the archive is unpacked and can replace program files.
+      criteria:
+        - method: test
+          text: An archive with an entry named ../../etc/cron.d/job is rejected, and no file is written outside the target directory.
+    sv:
+      title: Poster i arkiv stannar i målkatalogen
+      description: Systemet SKA avvisa ett uppladdat arkiv som innehåller en post med absolut sökväg, ett ".."-segment eller en symbolisk länk.
+      rationale: Sådana poster skriver filer utanför målkatalogen när arkivet packas upp och kan ersätta programfiler.
+      criteria:
+        - method: test
+          text: Ett arkiv med en post som heter ../../etc/cron.d/job avvisas, och ingen fil skrivs utanför målkatalogen.
+
+  - id: UPLS-10
+    type: security
+    obligation: should
+    priority: medium
+    tags: [image, metadata, privacy]
+    refs: ["GDPR Art. 5(1)(c) (data minimisation)", "OWASP File Upload Cheat Sheet (image rewriting)"]
+    tests: [UPLS-T06]
+    en:
+      title: Location and device data are removed from images
+      description: The system SHOULD remove EXIF and XMP metadata, including GPS position and device serial number, from uploaded images before storing them.
+      rationale: Photos taken with phones reveal where and with which device they were taken, which users seldom intend to share.
+      criteria:
+        - method: test
+          text: A JPEG with GPS coordinates and a camera serial number is downloaded again without either value.
+    sv:
+      title: Plats- och enhetsdata tas bort från bilder
+      description: Systemet BÖR ta bort EXIF- och XMP-metadata, däribland GPS-position och enhetens serienummer, från uppladdade bilder innan de lagras.
+      rationale: Bilder tagna med mobiltelefon avslöjar var och med vilken enhet de togs, vilket användare sällan avser att dela.
+      criteria:
+        - method: test
+          text: En JPEG med GPS-koordinater och kamerans serienummer laddas ner igen utan något av värdena.
+
+  - id: UPLS-11
+    type: security
+    obligation: must
+    priority: high
+    tags: [download, authorisation, signed-url]
+    refs: ["OWASP ASVS 4.0.3 §4.2.1 (operation level access control)", "OWASP Top 10:2021 A01 (broken access control)"]
+    tests: [UPLS-T07]
+    en:
+      title: Download links are checked and expire after 15 minutes
+      description: The system MUST check the user's access to a file on each download request and issue direct storage links that expire within 15 minutes.
+      rationale: Long-lived or unchecked links keep working after the user has lost access and are shared further by mistake.
+      criteria:
+        - method: test
+          text: A user removed from a project gets 403 for the project's files, and a direct storage link fails 15 minutes after it was issued.
+          threshold: "link lifetime ≤ 15 min"
+    sv:
+      title: Nedladdningslänkar kontrolleras och slutar gälla efter 15 minuter
+      description: Systemet SKA kontrollera användarens behörighet till en fil vid varje nedladdning och utfärda direktlänkar till lagringen som slutar gälla inom 15 minuter.
+      rationale: Långlivade eller okontrollerade länkar fortsätter att fungera när användaren har förlorat behörigheten och delas vidare av misstag.
+      criteria:
+        - method: test
+          text: En användare som tagits bort från ett projekt får 403 för projektets filer, och en direktlänk till lagringen slutar fungera 15 minuter efter att den utfärdades.
+          threshold: "länkens livslängd ≤ 15 min"
+
+  - id: UPLS-12
+    type: security
+    obligation: must
+    priority: medium
+    tags: [file-name, xss, display]
+    refs: ["OWASP ASVS 4.0.3 §5.3.1 (output encoding)", "CWE-79 (cross-site scripting)"]
+    tests: [UPLS-T08]
+    en:
+      title: Original file names are shown as plain text
+      description: The system MUST display the original name of an uploaded file as encoded text, with control characters and path separators removed.
+      rationale: File names are user input and can carry markup, right-to-left override characters or paths that mislead other users.
+      criteria:
+        - method: test
+          text: A file named with a script tag, a right-to-left override character and a slash is listed with the characters shown as text or removed.
+    sv:
+      title: Ursprungliga filnamn visas som ren text
+      description: Systemet SKA visa en uppladdad fils ursprungliga namn som kodad text, med styrtecken och sökvägsavgränsare borttagna.
+      rationale: Filnamn är indata från användaren och kan innehålla märkning, tecken för höger-till-vänster-skrift eller sökvägar som vilseleder andra användare.
+      criteria:
+        - method: test
+          text: En fil vars namn innehåller en skripttagg, ett tecken för höger-till-vänster-skrift och ett snedstreck listas med tecknen visade som text eller borttagna.
+
+tests:
+  - id: UPLS-T01
+    priority: critical
+    execution: automated
+    tags: [file-type, upload]
+    refs: ["OWASP Web Security Testing Guide v4.2 §4.10.9 (test upload of malicious files)"]
+    en:
+      title: Uploads are checked by content and extension
+      description: Uploads valid files and files whose name or content type has been changed, and checks which are accepted.
+      preconditions: An upload field that allows PDF, PNG and JPEG; a set of test files prepared by the tester.
+      expected: Only files whose content and extension both match an allowed type are accepted.
+      steps:
+        - action: Upload a valid PDF, PNG and JPEG file.
+          expected: All three files are accepted.
+        - action: Upload an executable renamed to report.pdf with the content type application/pdf.
+          expected: The file is rejected with a message that the file type is not allowed.
+        - action: Upload a PNG named picture.html and a PDF named document.svg.
+          expected: Both files are rejected with a message about the file type.
+          data: "picture.html (PNG content), document.svg (PDF content)"
+    sv:
+      title: Uppladdningar kontrolleras mot innehåll och filändelse
+      description: Laddar upp giltiga filer och filer vars namn eller innehållstyp har ändrats och kontrollerar vilka som godtas.
+      preconditions: Ett uppladdningsfält som tillåter PDF, PNG och JPEG; en uppsättning testfiler som testaren har förberett.
+      expected: Bara filer där både innehåll och filändelse stämmer med en tillåten typ godtas.
+      steps:
+        - action: Ladda upp en giltig PDF-, PNG- och JPEG-fil.
+          expected: Alla tre filerna godtas.
+        - action: Ladda upp en körbar fil som döpts om till report.pdf med innehållstypen application/pdf.
+          expected: Filen avvisas med ett meddelande om att filtypen inte är tillåten.
+        - action: Ladda upp en PNG med namnet picture.html och en PDF med namnet document.svg.
+          expected: Båda filerna avvisas med ett meddelande om filtypen.
+          data: "picture.html (PNG-innehåll), document.svg (PDF-innehåll)"
+
+  - id: UPLS-T02
+    priority: critical
+    execution: manual
+    tags: [malware, quarantine]
+    refs: []
+    en:
+      title: The anti-malware test file is stopped and quarantined
+      description: Uploads the standard anti-malware test file and checks that no other user can get it and that it is quarantined.
+      preconditions: Two users A and B in the same project; the standard anti-malware test file, which is harmless and detected by every scanner.
+      expected: The file is detected, quarantined and never available to user B, and user A is told within 1 minute.
+      steps:
+        - action: As user A, upload the anti-malware test file to a shared project.
+          expected: Within 1 minute user A sees a message that the file was refused because malware was found.
+        - action: As user B, open the project's file list and search for the file.
+          expected: The file is not listed and a direct request for it returns 404.
+        - action: As an administrator, open the quarantine list.
+          expected: The file is listed with time, uploader and the scanner's finding.
+        - action: Read the date of the scanner's signature database.
+          expected: The signatures are less than 24 hours old.
+    sv:
+      title: Testfilen för antivirusprogram stoppas och sätts i karantän
+      description: Laddar upp standardtestfilen för antivirusprogram och kontrollerar att ingen annan användare kan få den och att den sätts i karantän.
+      preconditions: Två användare A och B i samma projekt; standardtestfilen för antivirusprogram, som är ofarlig och upptäcks av alla skannrar.
+      expected: Filen upptäcks, sätts i karantän och blir aldrig tillgänglig för användare B, och användare A informeras inom 1 minut.
+      steps:
+        - action: Ladda upp testfilen för antivirusprogram till ett gemensamt projekt som användare A.
+          expected: Inom 1 minut ser användare A ett meddelande om att filen avvisades eftersom skadlig kod hittades.
+        - action: Öppna projektets fillista som användare B och sök efter filen.
+          expected: Filen finns inte i listan och ett direktanrop efter den ger 404.
+        - action: Öppna karantänlistan som administratör.
+          expected: Filen finns i listan med tid, uppladdare och skannerns fynd.
+        - action: Läs datumet för skannerns signaturdatabas.
+          expected: Signaturerna är mindre än 24 timmar gamla.
+
+  - id: UPLS-T03
+    priority: critical
+    execution: automated
+    tags: [storage, path-traversal]
+    refs: []
+    en:
+      title: Uploaded files get generated names outside the web root
+      description: Uploads a file with a path in its name and checks how and where it is stored.
+      preconditions: Read access to the upload storage and the web server configuration of the test environment.
+      expected: The file is stored under a generated name in storage that the web server does not publish, and no other file changes.
+      steps:
+        - action: Record checksums of the application's configuration and program files, then upload a file named ../../config.yaml.
+          expected: The upload is accepted or rejected without a server error.
+          data: "file name: ../../config.yaml"
+        - action: Find the stored object for the upload.
+          expected: Its name is a generated random identifier and not derived from the original name.
+        - action: Compare the checksums with those recorded before the upload.
+          expected: No file has changed.
+        - action: Request the stored object's path directly from the web server.
+          expected: The web server returns 404.
+    sv:
+      title: Uppladdade filer får genererade namn utanför webbroten
+      description: Laddar upp en fil med en sökväg i namnet och kontrollerar hur och var den lagras.
+      preconditions: Läsåtkomst till uppladdningslagringen och webbserverns konfiguration i testmiljön.
+      expected: Filen lagras under ett genererat namn i en lagring som webbservern inte publicerar, och ingen annan fil ändras.
+      steps:
+        - action: Registrera kontrollsummor för applikationens konfigurations- och programfiler och ladda sedan upp en fil med namnet ../../config.yaml.
+          expected: Uppladdningen godtas eller avvisas utan serverfel.
+          data: "filnamn: ../../config.yaml"
+        - action: Leta upp det lagrade objektet för uppladdningen.
+          expected: Namnet är en genererad slumpmässig identifierare och inte härlett ur det ursprungliga namnet.
+        - action: Jämför kontrollsummorna med dem som registrerades före uppladdningen.
+          expected: Ingen fil har ändrats.
+        - action: Begär det lagrade objektets sökväg direkt från webbservern.
+          expected: Webbservern svarar 404.
+
+  - id: UPLS-T04
+    priority: high
+    execution: automated
+    tags: [download, headers, domain-isolation]
+    refs: []
+    en:
+      title: Downloads and previews of an SVG file with a script
+      description: Uploads an SVG file that contains a script and checks the download headers and the preview domain.
+      preconditions: A signed-in user; an SVG test file whose script would show an alert box when run.
+      expected: The download carries the three headers and is saved, and the preview comes from a separate domain without application cookies.
+      steps:
+        - action: Upload the SVG file and download it.
+          expected: The response has Content-Disposition attachment, the stored content type and X-Content-Type-Options nosniff, and the browser saves the file.
+        - action: Open the file's preview.
+          expected: The preview is loaded from the separate content domain and no alert box appears on the application's domain.
+        - action: Inspect the preview request in the browser's network panel.
+          expected: It carries no session cookie and no authorization header of the application.
+    sv:
+      title: Nedladdning och förhandsvisning av en SVG-fil med skript
+      description: Laddar upp en SVG-fil som innehåller ett skript och kontrollerar nedladdningens huvuden och förhandsvisningens domän.
+      preconditions: En inloggad användare; en SVG-testfil vars skript visar en varningsruta när det körs.
+      expected: Nedladdningen har de tre huvudena och sparas, och förhandsvisningen kommer från en egen domän utan applikationens cookies.
+      steps:
+        - action: Ladda upp SVG-filen och ladda ner den.
+          expected: Svaret har Content-Disposition attachment, den lagrade innehållstypen och X-Content-Type-Options nosniff, och webbläsaren sparar filen.
+        - action: Öppna filens förhandsvisning.
+          expected: Förhandsvisningen hämtas från den egna innehållsdomänen och ingen varningsruta visas på applikationens domän.
+        - action: Granska anropet för förhandsvisningen i webbläsarens nätverkspanel.
+          expected: Det har ingen sessionscookie och inget autentiseringshuvud från applikationen.
+
+  - id: UPLS-T05
+    priority: high
+    execution: automated
+    tags: [archive, zip-bomb, zip-slip]
+    refs: []
+    en:
+      title: Crafted archives are rejected
+      description: Uploads an archive that expands far beyond its size and an archive with entries that point outside the target directory.
+      preconditions: An upload field that accepts ZIP archives; disk use of the test server can be monitored.
+      expected: Both archives are rejected, disk use grows by less than 1 GB and no file is written outside the target directory.
+      steps:
+        - action: Upload a 50 kB archive that expands to 5 GB.
+          expected: The upload is rejected with a message about the archive's size, and disk use grows by less than 1 GB.
+          data: "50 kB archive, 5 GB unpacked"
+        - action: Upload an archive with 20 000 empty entries.
+          expected: The upload is rejected with a message about the number of entries.
+        - action: Upload an archive with the entries ../../etc/cron.d/job, /tmp/abs.txt and a symbolic link.
+          expected: The upload is rejected, and none of the paths exists on the server afterwards.
+    sv:
+      title: Preparerade arkiv avvisas
+      description: Laddar upp ett arkiv som packas upp till mycket mer än sin storlek och ett arkiv med poster som pekar utanför målkatalogen.
+      preconditions: Ett uppladdningsfält som tar emot ZIP-arkiv; testserverns diskanvändning kan övervakas.
+      expected: Båda arkiven avvisas, diskanvändningen ökar med mindre än 1 GB och ingen fil skrivs utanför målkatalogen.
+      steps:
+        - action: Ladda upp ett arkiv på 50 kB som packas upp till 5 GB.
+          expected: Uppladdningen avvisas med ett meddelande om arkivets storlek, och diskanvändningen ökar med mindre än 1 GB.
+          data: "arkiv på 50 kB, 5 GB uppackat"
+        - action: Ladda upp ett arkiv med 20 000 tomma poster.
+          expected: Uppladdningen avvisas med ett meddelande om antalet poster.
+        - action: Ladda upp ett arkiv med posterna ../../etc/cron.d/job, /tmp/abs.txt och en symbolisk länk.
+          expected: Uppladdningen avvisas, och ingen av sökvägarna finns på servern efteråt.
+
+  - id: UPLS-T06
+    priority: medium
+    execution: automated
+    tags: [image, metadata]
+    refs: []
+    en:
+      title: Image metadata is removed on upload
+      description: Uploads a photo with location and device metadata and reads the metadata of the stored copy.
+      preconditions: A JPEG test photo with GPS coordinates, a camera serial number and a capture date in its EXIF data; a metadata reader such as exiftool.
+      expected: The downloaded copy contains no GPS position and no serial number.
+      steps:
+        - action: Read the metadata of the original test photo.
+          expected: GPS coordinates and the serial number are present.
+        - action: Upload the photo and download the stored copy.
+          expected: The image is displayed and has the same pixel size.
+        - action: Read the metadata of the downloaded copy.
+          expected: No GPS tag and no serial number tag are present.
+    sv:
+      title: Bildmetadata tas bort vid uppladdning
+      description: Laddar upp ett foto med plats- och enhetsmetadata och läser metadata i den lagrade kopian.
+      preconditions: Ett testfoto i JPEG med GPS-koordinater, kamerans serienummer och tagningsdatum i EXIF-data; ett verktyg för att läsa metadata, till exempel exiftool.
+      expected: Den nedladdade kopian innehåller ingen GPS-position och inget serienummer.
+      steps:
+        - action: Läs metadata i det ursprungliga testfotot.
+          expected: GPS-koordinater och serienummer finns.
+        - action: Ladda upp fotot och ladda ner den lagrade kopian.
+          expected: Bilden visas och har samma storlek i pixlar.
+        - action: Läs metadata i den nedladdade kopian.
+          expected: Ingen GPS-tagg och ingen serienummertagg finns.
+
+  - id: UPLS-T07
+    priority: high
+    execution: automated
+    tags: [download, authorisation, signed-url]
+    refs: []
+    en:
+      title: Download access is checked each time and direct links expire
+      description: Removes a user from a project after a download and checks access to the file and the lifetime of a direct storage link.
+      preconditions: A user who is a member of a project with an uploaded file; the clock of the test can be read precisely.
+      expected: The removed user gets 403, and the direct link stops working 15 minutes after it was issued.
+      steps:
+        - action: As the member, download the file and record the direct storage link that the system issues.
+          expected: The download succeeds.
+        - action: Remove the user from the project and request the file again through the application.
+          expected: The request is refused with 403.
+        - action: Request the direct storage link 14 minutes and 16 minutes after it was issued.
+          expected: The first request succeeds or is refused, and the second is refused.
+          data: "t + 14 min, t + 16 min"
+    sv:
+      title: Behörighet kontrolleras vid varje nedladdning och direktlänkar slutar gälla
+      description: Tar bort en användare från ett projekt efter en nedladdning och kontrollerar åtkomsten till filen och livslängden för en direktlänk till lagringen.
+      preconditions: En användare som är medlem i ett projekt med en uppladdad fil; testets klocka kan läsas av exakt.
+      expected: Den borttagna användaren får 403, och direktlänken slutar fungera 15 minuter efter att den utfärdades.
+      steps:
+        - action: Ladda ner filen som medlem och registrera direktlänken till lagringen som systemet utfärdar.
+          expected: Nedladdningen lyckas.
+        - action: Ta bort användaren från projektet och begär filen igen via applikationen.
+          expected: Anropet nekas med 403.
+        - action: Begär direktlänken 14 minuter och 16 minuter efter att den utfärdades.
+          expected: Det första anropet lyckas eller nekas, och det andra nekas.
+          data: "t + 14 min, t + 16 min"
+
+  - id: UPLS-T08
+    priority: medium
+    execution: manual
+    tags: [file-name, xss]
+    refs: []
+    en:
+      title: A file name with markup and control characters is shown safely
+      description: Uploads a file whose name contains a script tag, a right-to-left override character and a slash, and looks at every place where the name is shown.
+      preconditions: A signed-in user; a test file whose name is prepared with a script tag, the Unicode right-to-left override character and a slash.
+      expected: No script runs, the control character is removed and the name contains no path separator.
+      steps:
+        - action: Upload the file.
+          expected: The upload is accepted.
+          data: "<script>alert(1)</script>[U+202E]fdp.exe/x.pdf"
+        - action: Open the file list, the item the file is attached to and the notification about the upload.
+          expected: The name is shown as text, no alert box appears and the right-to-left override character is not present.
+        - action: Download the file and read the suggested file name.
+          expected: The name contains no slash or backslash.
+    sv:
+      title: Ett filnamn med märkning och styrtecken visas säkert
+      description: Laddar upp en fil vars namn innehåller en skripttagg, ett tecken för höger-till-vänster-skrift och ett snedstreck, och granskar varje ställe där namnet visas.
+      preconditions: En inloggad användare; en testfil vars namn har förberetts med en skripttagg, Unicode-tecknet för höger-till-vänster-skrift och ett snedstreck.
+      expected: Inget skript körs, styrtecknet tas bort och namnet innehåller ingen sökvägsavgränsare.
+      steps:
+        - action: Ladda upp filen.
+          expected: Uppladdningen godtas.
+          data: "<script>alert(1)</script>[U+202E]fdp.exe/x.pdf"
+        - action: Öppna fillistan, posten som filen är bifogad till och aviseringen om uppladdningen.
+          expected: Namnet visas som text, ingen varningsruta visas och tecknet för höger-till-vänster-skrift finns inte kvar.
+        - action: Ladda ner filen och läs det föreslagna filnamnet.
+          expected: Namnet innehåller inget snedstreck eller omvänt snedstreck.
