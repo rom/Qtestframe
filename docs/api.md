@@ -28,7 +28,7 @@ is unreachable); all other paths serve the web client.
   `{"error": "<message>", "code": "<machine_code>"}`. Codes: `bad_request`
   (400), `unauthorized` (401), `forbidden` (403), `not_found` (404),
   `conflict` (409, also for duplicates and a disabled runner), `stale`
-  (412, see *Concurrent edits*),
+  (412, see *Concurrent edits*; 409 for a [batch update](#batch-update-spreadsheet-view)),
   `invalid_query` (400), `rate_limited` (429, login), `unavailable` (503,
   `/readyz`), `internal` (500).
 * **Bulk requests are all or nothing** – every bulk endpoint (the `…/bulk`
@@ -550,6 +550,7 @@ missing permission). Decisions are audited as `requirement.review` /
 | POST | `/projects/{pid}/requirements/move` | `{"ids":[...],"folder_id": id\|null, "position"?: n, "project_id"?: id}`; another `project_id` re-keys the items, remaps categories by dimension/name and drops their links ([design.md §5](design.md#5-move-semantics)) |
 | POST | `/projects/{pid}/requirements/bulk` | `{"ids":[...], "set": {"status"?, "priority"?, "obligation"?, "add_category_ids"?, "remove_category_ids"?, "add_tags"?, "remove_tags"?}}` (tag removal ignores case) |
 | DELETE | `/projects/{pid}/requirements/bulk` | `{"ids":[...]}` → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/requirements/batch` | [batch update](#batch-update-spreadsheet-view): different fields per item, all or nothing |
 | POST | `/projects/{pid}/requirements/review` | bulk review, see below |
 | GET | `/requirements/{id}/links` | `[TraceLink]` with test keys |
 | POST | `/reqlang/analyze` | `{"text", "language"?}` → `Analysis` (below). `language` is a pack code from `/meta` `analysis_languages` (`en`, `sv`); empty or `auto` detects it from the text; anything else → 400 |
@@ -736,6 +737,7 @@ Reading needs `test.read`, writing `test.write`.
 | POST | `/projects/{pid}/tests/move` | like requirements |
 | POST | `/projects/{pid}/tests/bulk` | like requirements (`status`, `priority`, `execution_type`, categories) |
 | DELETE | `/projects/{pid}/tests/bulk` | → `{"deleted": n, "trash_id"}` |
+| POST | `/projects/{pid}/tests/batch` | [batch update](#batch-update-spreadsheet-view), like requirements |
 | POST | `/projects/{pid}/tests/review` | bulk review: mark tests ready (see [Bulk review](#bulk-review)) |
 | GET | `/tests/{id}/links` | `[TraceLink]` |
 | GET | `/tests/{id}/dependencies` | `[TestDependency]` both directions: `direction` = `outgoing` (this test depends on the other) or `incoming`; `other_last_result` is the latest result of the other test |
@@ -1960,6 +1962,37 @@ queried. Response:
 {"items":[{"type":"requirement","id","project_id","project_key","key","title","snippet","matched_fields":["description"]}],"total":n}
 ```
 
+## Batch update (spreadsheet view)
+
+`POST /projects/{pid}/requirements/batch` and `POST /projects/{pid}/tests/batch`
+save different field values for several items in one transaction (the
+spreadsheet view saves an edit, a paste or a fill-down with one call):
+
+```json
+{"items": [
+  {"id": "…", "version": 3, "set": {"title": "Login", "priority": "high"}},
+  {"id": "…", "version": 1, "set": {"tags": ["auth"], "status": "review"}}
+]}
+```
+
+* 1–5000 items, each id once; `set` holds the fields to change, exactly as a
+  `PATCH` of the item, and each item goes through the same checks:
+  validation, the write permission (a review decision also needs the review
+  permission; a reviewer may change `status` alone), history (action
+  `update`), audit, suspect links, notifications and webhooks.
+* All or nothing: when an item fails, nothing is saved and the answer is that
+  item's error with its position: `{"error", "code", "index", "id"}` (e.g.
+  400 for an invalid value, 403, 404 for an item that is not in the
+  project).
+* `version` (optional) is the version the change is based on. Versions are
+  checked before anything is written: when any item was saved by someone
+  else since, nothing is saved and the answer is **409** with code `stale`
+  and every outdated item: `{"error", "code": "stale", "conflicts": [{"id",
+  "key", "version", "current": <the saved item>}]}`. Without `version` the
+  change is saved as it is (undo and redo do this).
+* → `{"updated": n, "items": [{"id", "version", "updated_at"}]}` with the new
+  versions.
+
 ## Export
 
 `GET /projects/{pid}/export?format=xlsx|csv|pdf|docx|md|reqif|reqifz&aspects=requirements,criteria,tests,test_data,traceability,runs&q=`
@@ -1982,6 +2015,27 @@ queried. Response:
 * Response has `Content-Disposition: attachment;
   filename="<KEY>-<YYYYMMDD-HHMMSS>.<ext>"`. Formula injection is
   neutralised in CSV; see [design.md §11](design.md#11-export-formats).
+
+### Export a view
+
+`POST /projects/{pid}/export/view` (permission `export`) renders a table the
+client shows, such as the spreadsheet view of requirements or tests with its
+visible columns, their order, the sort and the filters, with the same
+writers as the project export:
+
+```json
+{"format": "xlsx", "name": "requirements", "title": "Requirements", "lang": "en",
+ "filter": "status = draft", "columns": ["Key", "Title", "Status"],
+ "rows": [["DEMO-1", "Login", "Draft"]]}
+```
+
+* `format` is `xlsx`, `csv`, `md`, `pdf` or `docx` (aliases as above);
+  `columns` 1–200 headers; each row at most as many cells as there are
+  columns; at most 2,000,000 cells. `lang` (`en`, `sv`) is the language of
+  the texts the writers add; `filter` is shown under the title in Markdown.
+* The file is `<KEY>-<name>-<YYYYMMDD-HHMMSS>.<ext>` (`name` reduced to
+  `a-z`, `0-9` and `-`). Formula injection is neutralised in CSV as in the
+  project export. Audited as `project.export`.
 
 ### Markdown documents
 

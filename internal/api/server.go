@@ -221,6 +221,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/requirements", s.handleCreateRequirement, "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/move", s.handleMoveItems(model.KindRequirement), "requirement.write")
 	h("POST /api/v1/projects/{pid}/requirements/bulk", s.atomic(s.handleBulk(model.KindRequirement)), "requirement.read")
+	h("POST /api/v1/projects/{pid}/requirements/batch", s.atomic(s.handleBatchUpdate(model.KindRequirement)), "requirement.read") // write or review per item: see batch.go
 	h("POST /api/v1/projects/{pid}/requirements/review", s.atomic(s.handleBulkReview(model.KindRequirement)), "requirement.read")
 	h("DELETE /api/v1/projects/{pid}/requirements/bulk", s.atomic(s.handleBulkDelete(model.KindRequirement)), "requirement.write")
 	h("GET /api/v1/requirements/{id}", s.handleGetRequirement, "requirement.read")
@@ -255,6 +256,7 @@ func (s *Server) routes() {
 	h("POST /api/v1/projects/{pid}/tests", s.handleCreateTest, "test.write")
 	h("POST /api/v1/projects/{pid}/tests/move", s.handleMoveItems(model.KindTest), "test.write")
 	h("POST /api/v1/projects/{pid}/tests/bulk", s.atomic(s.handleBulk(model.KindTest)), "test.read")
+	h("POST /api/v1/projects/{pid}/tests/batch", s.atomic(s.handleBatchUpdate(model.KindTest)), "test.read")
 	h("POST /api/v1/projects/{pid}/tests/review", s.atomic(s.handleBulkReview(model.KindTest)), "test.read")
 	h("DELETE /api/v1/projects/{pid}/tests/bulk", s.atomic(s.handleBulkDelete(model.KindTest)), "test.write")
 	h("GET /api/v1/tests/{id}", s.handleGetTest, "test.read")
@@ -313,6 +315,7 @@ func (s *Server) routes() {
 	// search & export
 	h("GET /api/v1/search", s.handleSearch) // in the projects the caller may read: see access.go
 	h("GET /api/v1/projects/{pid}/export", s.handleExport, "export")
+	h("POST /api/v1/projects/{pid}/export/view", s.handleExportView, "export")
 
 	// files, attachments, archive, avatars (files.go)
 	s.routesFiles(h)
