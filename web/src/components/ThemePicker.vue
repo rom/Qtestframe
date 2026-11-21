@@ -85,6 +85,8 @@ function onChange(v: Value | null) {
     :input-id="inputId"
     :aria-label="pickerLabel"
     :class="['theme-picker', { 'theme-picker-compact': compact }]"
+    scroll-height="min(75vh, 46rem)"
+    overlay-class="theme-picker-overlay"
     @update:model-value="onChange"
   >
     <template #value="{ value }">
@@ -111,6 +113,36 @@ function onChange(v: Value | null) {
     </template>
   </Select>
 </template>
+
+<style>
+/* The overlay is teleported to <body>, so these rules are not scoped. The
+   list is tall enough for most themes at once, and its scrollbar stays
+   visible: overlay scrollbars (macOS, some Linux desktops) hide until you
+   scroll, so the themes below the fold looked missing. */
+.theme-picker-overlay .p-select-list-container {
+  overflow-y: scroll;
+}
+/* Chrome ignores ::-webkit-scrollbar once scrollbar-color/-width is set,
+   so the standard properties are only for browsers without it (Firefox). */
+@supports not selector(::-webkit-scrollbar) {
+  .theme-picker-overlay .p-select-list-container {
+    scrollbar-width: auto;
+    scrollbar-color: var(--p-text-muted-color, #888) transparent;
+  }
+}
+.theme-picker-overlay .p-select-list-container::-webkit-scrollbar {
+  width: 10px;
+}
+.theme-picker-overlay .p-select-list-container::-webkit-scrollbar-thumb {
+  background: var(--p-text-muted-color, #888);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.theme-picker-overlay .p-select-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+</style>
 
 <style scoped>
 .theme-picker-item {
