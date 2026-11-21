@@ -43,7 +43,7 @@ var BackupTables = []string{
 }
 
 // tables that exist but are deliberately not part of a backup.
-var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true}
+var notBackedUp = map[string]bool{"sessions": true, "schema_migrations": true, "job_runs": true, "script_jobs": true}
 
 // boolColumns are stored as INTEGER 0/1 on SQLite and BOOLEAN on PostgreSQL.
 var boolColumns = map[string]bool{

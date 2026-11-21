@@ -28,6 +28,9 @@ import (
 // ErrDisabled is returned when script execution is turned off.
 var ErrDisabled = errors.New("runner: script execution is disabled")
 
+// ErrWebDisabled is returned when web tests (Playwright) are turned off.
+var ErrWebDisabled = errors.New("runner: web tests are not enabled on this server (runner.web.enabled)")
+
 // Result is the outcome of one script run.
 type Result struct {
 	ExitCode  int           `json:"exit_code"`
@@ -206,8 +209,18 @@ type SandboxConfig struct {
 	WorkDir string
 	CPU     uint64
 	NoNet   bool
-	Argv    []string
+	// Web: a web test (browser): no seccomp filter, network allowed,
+	// higher file limits; ReadOnly and ReadWrite add Landlock paths.
+	Web       bool
+	ReadOnly  []string
+	ReadWrite []string
+	Argv      []string
 }
+
+type listFlag []string
+
+func (l *listFlag) String() string     { return strings.Join(*l, ",") }
+func (l *listFlag) Set(v string) error { *l = append(*l, v); return nil }
 
 // ParseSandboxArgs parses `sandbox-exec [flags] -- interpreter script`.
 func ParseSandboxArgs(args []string, stderr io.Writer) (*SandboxConfig, error) {
@@ -217,6 +230,9 @@ func ParseSandboxArgs(args []string, stderr io.Writer) (*SandboxConfig, error) {
 	fs.StringVar(&c.WorkDir, "workdir", "", "writable working directory")
 	fs.Uint64Var(&c.CPU, "cpu", 120, "CPU time limit in seconds")
 	fs.BoolVar(&c.NoNet, "no-network", false, "deny socket creation")
+	fs.BoolVar(&c.Web, "web", false, "web test: browser-friendly limits, no seccomp filter")
+	fs.Var((*listFlag)(&c.ReadOnly), "ro", "additional read-only (and executable) directory (repeatable)")
+	fs.Var((*listFlag)(&c.ReadWrite), "rw", "additional writable directory (repeatable)")
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
@@ -224,11 +240,28 @@ func ParseSandboxArgs(args []string, stderr io.Writer) (*SandboxConfig, error) {
 	if c.WorkDir == "" || len(c.Argv) == 0 {
 		return nil, errors.New("sandbox-exec: --workdir and a command are required")
 	}
+	if c.Web && c.NoNet {
+		return nil, errors.New("sandbox-exec: web tests need the network (--web excludes --no-network)")
+	}
 	return c, nil
 }
 
 // SandboxOptions returns the hardening options for a sandboxed script.
+// A web test keeps no_new_privs, dropped capabilities and Landlock (writes
+// only to its job directory) but has no seccomp filter and full network
+// access: browsers need many system calls and reach the system under test.
 func SandboxOptions(c *SandboxConfig) hardening.Options {
+	if c.Web {
+		ro := append([]string{"/etc", "/usr", "/lib", "/lib64", "/bin", "/sbin", "/opt", "/proc", "/sys"}, c.ReadOnly...)
+		return hardening.Options{
+			NoNewPrivs:       true,
+			DropCapabilities: true,
+			Landlock:         true,
+			ReadOnlyPaths:    ro,
+			ReadWritePaths:   append([]string{c.WorkDir, "/dev/shm"}, c.ReadWrite...),
+			ExecPaths:        ro,
+		}
+	}
 	return hardening.Options{
 		NoNewPrivs:       true,
 		DropCapabilities: true,
@@ -246,6 +279,10 @@ func SandboxOptions(c *SandboxConfig) hardening.Options {
 func SandboxExec(c *SandboxConfig) error {
 	l := hardening.DefaultLimits
 	l.CPUSeconds = c.CPU
+	if c.Web {
+		// a browser opens many files and writes traces and videos
+		l.OpenFiles, l.FileSize = 8192, 1<<30
+	}
 	if err := hardening.SetResourceLimits(l); err != nil {
 		return fmt.Errorf("sandbox-exec: rlimits: %w", err)
 	}

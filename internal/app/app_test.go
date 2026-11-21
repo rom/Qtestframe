@@ -309,6 +309,21 @@ func TestSeedDemo(t *testing.T) {
 	if err != nil || len(ps) != 2 {
 		t.Errorf("projects %v %v", ps, err)
 	}
+	// the web test against the server itself
+	set, err := st.WebTestSettings(context.Background(), tn.ID, ps[0].ID)
+	if err != nil || len(set.Variables) != 1 {
+		t.Errorf("web settings %+v %v", set, err)
+	}
+	tests, _ := st.ListTests(context.Background(), tn.ID, ps[0].ID)
+	web := 0
+	for _, tc := range tests {
+		if tc.ScriptLanguage == "playwright" && strings.Contains(tc.Script, "page.goto('/login')") {
+			web++
+		}
+	}
+	if web != 1 {
+		t.Errorf("%d web tests", web)
+	}
 	if itoa(0) != "0" || itoa(123) != "123" {
 		t.Errorf("itoa: %q %q", itoa(0), itoa(123))
 	}
@@ -437,6 +452,20 @@ func TestHardeningOptions(t *testing.T) {
 			t.Errorf("exec missing %s: %v", p, o.ExecPaths)
 		}
 	}
+	// web tests: Node, Playwright and the browsers
+	cfg.Runner.Web = config.WebRunner{Enabled: true, Node: "/opt/node/bin/node", PlaywrightDir: "/srv/pw", BrowsersPath: "/srv/browsers",
+		ExecutablePath: "/srv/chrome/chrome", Command: "/srv/bin/playwright test"}
+	ow := hardeningOptions(cfg)
+	for _, p := range []string{"/opt/node/bin", "/srv/pw", "/srv/browsers", "/srv/chrome", "/srv/bin"} {
+		if !has(ow.ExecPaths, p) {
+			t.Errorf("web exec missing %s: %v", p, ow.ExecPaths)
+		}
+	}
+	if !has(ow.ReadWritePaths, "/dev/shm") || !has(ow.ReadOnlyPaths, "/proc") {
+		t.Errorf("web paths %v %v", ow.ReadWritePaths, ow.ReadOnlyPaths)
+	}
+	cfg.Runner.Web = config.Default().Runner.Web
+
 	// Input slices are not aliased.
 	o.ReadOnlyPaths[0] = "changed"
 	if cfg.Hardening.ReadOnlyPaths[0] != "/srv/ro" {

@@ -144,6 +144,18 @@ async function discover(request) {
   const hasDefinitions = items(await api(request, 'GET', `/projects/${pid}/reports/definitions`).catch(() => [])).length > 0
   // the first catalogue requirement, for the preview
   const catalogReq = items(await api(request, 'GET', '/catalog/requirements').catch(() => []))[0]
+  // web tests (Playwright): a run with background jobs and the execution of a web test
+  let jobsRun = null
+  for (const r of runs) {
+    const j = await api(request, 'GET', `/runs/${r.id}/jobs`).catch(() => null)
+    if (j?.counts?.total) {
+      jobsRun = r
+      break
+    }
+  }
+  const webTest = tests.find((t) => t.script_language === 'playwright')
+  const webRun = runs.find((r) => r.name === 'Web smoke')
+  const webEx = webRun ? items(await api(request, 'GET', `/runs/${webRun.id}/executions`)).find((e) => e.test_case_id === webTest?.id) : null
   const p = `/p/${pid}`
   const routes = [
     { name: 'projects', path: '/projects' },
@@ -208,6 +220,10 @@ async function discover(request) {
     { name: 'requirement-defects', path: `${p}/requirements?item=${reqs[0]?.id ?? ''}`, open: '.p-drawer [role="tab"]:has(.pi-exclamation-circle)', wait: '.p-drawer [role="tabpanel"]' },
     { name: 'settings', path: `${p}/settings` },
     { name: 'configurations', path: `${p}/settings?tab=configurations`, wait: '#h-configs' },
+    { name: 'web-tests-settings', path: `${p}/settings?tab=webtests`, wait: '#h-web-tests' },
+    webTest && { name: 'web-test-editor', path: `${p}/tests?item=${webTest.id}`, wait: '.p-drawer' },
+    webRun && webEx && { name: 'execute-web', path: `${p}/runs/${webRun.id}/exec/${webEx.id}`, wait: '.web-evidence' },
+    jobsRun && { name: 'run-jobs', path: `${p}/runs/${jobsRun.id}`, open: '.run-jobs button[aria-controls="run-jobs-list"]', wait: '#run-jobs-list' },
     { name: 'configurations-bulk', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] .p-datatable-tbody .p-checkbox', wait: '.bulkbar' },
     { name: 'configuration-dialog', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-plus)', wait: '.p-dialog #cfg-form' },
     { name: 'configurations-generate', path: `${p}/settings?tab=configurations`, open: 'section[aria-labelledby="h-configs"] button:has(.pi-th-large)', wait: '.p-dialog .preview' },

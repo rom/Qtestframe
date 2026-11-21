@@ -304,3 +304,48 @@ func itoa(n int) string {
 	}
 	return itoa(n/10) + string(rune('0'+n%10))
 }
+
+// DemoWebTest is the script of the demo's web test (Playwright): it opens
+// the login page of the server itself.
+const DemoWebTest = `// the base URL is the project's (Settings → Web tests)
+await page.goto('/login');
+await expect(page).toHaveTitle(/Qtestframe/i);
+await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Sign in|Logga in/);
+`
+
+// SeedDemoWeb adds a web test that runs against baseURL (the demo server
+// itself, server.base_url) and a run "Web smoke" with it, and sets the
+// project's web test base URL and an example variable.
+func SeedDemoWeb(ctx context.Context, st *store.Store, tenantID string, p *model.Project, baseURL string) error {
+	f := &model.Folder{ProjectID: p.ID, Kind: model.KindTest, Name: "Web"}
+	if err := st.CreateFolder(ctx, tenantID, f); err != nil {
+		return err
+	}
+	t := &model.TestCase{ProjectID: p.ID, FolderID: &f.ID, Title: "Login page shows the sign-in form", ExecutionType: model.ExecAutomated,
+		ScriptLanguage: "playwright", Script: DemoWebTest, Status: "ready", CreatedBy: "seed", Tags: []string{model.ExecAutomated, "web"},
+		Description: "Web test (Playwright) against the server itself: press Run script in the execution runner."}
+	if err := st.CreateTest(ctx, tenantID, t); err != nil {
+		return err
+	}
+	reqs, err := st.ListRequirements(ctx, tenantID, p.ID)
+	if err != nil {
+		return err
+	}
+	for _, r := range reqs {
+		if r.Title == "Password login" {
+			if err := st.CreateLink(ctx, tenantID, &model.TraceLink{RequirementID: r.ID, TestCaseID: t.ID}); err != nil {
+				return err
+			}
+		}
+	}
+	set := &model.WebTestSettings{BaseURL: strings.TrimRight(baseURL, "/"),
+		Variables: []model.TestVariable{{Name: "USERNAME", Value: "admin@example.com"}}}
+	if set.BaseURL != "" && !store.ValidBaseURL(set.BaseURL) {
+		set.BaseURL = ""
+	}
+	if err := st.SaveWebTestSettings(ctx, tenantID, p.ID, set); err != nil {
+		return err
+	}
+	run := &model.TestRun{ProjectID: p.ID, Name: "Web smoke", Environment: "local", CreatedBy: "seed"}
+	return st.CreateRun(ctx, tenantID, run, []string{t.ID})
+}

@@ -594,6 +594,83 @@ already contains the `runner` child profile. Only managers and admins
 `MemoryDenyWriteExecute` (see security.md §9). Read the security
 considerations in security.md §9 before enabling.
 
+### Web tests (Playwright)
+
+Web tests (script language *Web test (Playwright)*) need Node.js 18+ and
+Playwright with at least one browser on the server:
+
+```sh
+sudo mkdir -p /opt/qtestframe-playwright && cd /opt/qtestframe-playwright
+sudo npm init -y && sudo npm i @playwright/test
+sudo PLAYWRIGHT_BROWSERS_PATH=/opt/qtestframe-playwright/browsers \
+     npx playwright install --with-deps chromium     # add firefox webkit if needed
+```
+
+```yaml
+runner:
+  enabled: true
+  web:
+    enabled: true
+    node: /usr/bin/node
+    playwright_dir: /opt/qtestframe-playwright        # contains node_modules/@playwright/test
+    browsers_path: /opt/qtestframe-playwright/browsers
+    # command: "/opt/qtestframe-playwright/node_modules/.bin/playwright"  # instead of node + playwright_dir
+    browser: chromium            # default; a configuration's Browser dimension picks another
+    # channel: chrome            # installed Google Chrome instead of the bundled Chromium
+    # browser_channels: true     # configurations "Chrome"/"Edge" use channel chrome/msedge
+    # executable_path: /opt/chromium/chrome   # launch option for Chromium
+    headless: true
+    timeout: 60s                 # per test
+    job_timeout: 10m             # whole Playwright process
+    screenshots: on_failure      # on_failure | always | off
+    trace: on_failure            # on_failure | always | off
+    video: "off"                 # off | on_failure | always
+    max_parallel: 2              # jobs running at the same time (per server process)
+    max_evidence_mb: 25          # larger screenshots/traces/videos are left out
+```
+
+Environment variables: `QTF_RUNNER_ENABLED`, `QTF_RUNNER_WEB_ENABLED`,
+`QTF_RUNNER_WORK_DIR`, `QTF_RUNNER_WEB_NODE`,
+`QTF_RUNNER_WEB_PLAYWRIGHT_DIR`, `QTF_RUNNER_WEB_BROWSERS_PATH`.
+
+For each web test the server writes the spec and a generated
+`playwright.config.js` (testDir = the job directory, `use.baseURL`,
+browser/channel, headless, screenshot/trace/video modes, a JSON reporter
+plus `list`, `outputDir` in the job directory, the per-test timeout, one
+worker, no retries) into a job directory below `runner.work_dir` and runs
+`<node> <playwright_dir>/node_modules/@playwright/test/cli.js test --config
+<file>` there (`NODE_PATH` points at `playwright_dir`, so specs resolve
+`@playwright/test` from it; `npx` is not used, nothing is downloaded). The
+result comes from Playwright's JSON report, not the exit code. Keep
+`runner.work_dir` short: Chromium keeps a socket in `TMPDIR`, whose path
+must stay below 108 bytes (longer job directories get a temporary directory
+below `$TMPDIR` instead).
+
+Web tests run as **background jobs**, never inside a request; a worker pool
+per server process runs `max_parallel` of them at a time. Jobs do not
+survive a restart: at start-up (SQLite) or when the heartbeat of the
+instance that queued them is a minute old (PostgreSQL with several
+instances), unfinished jobs are marked *interrupted* and their executions
+get their earlier result back with a note in the output. On shutdown the
+server stops running jobs the same way. `server.base_url` must be the
+address the server is reachable at for the demo web test of `seed-demo`.
+
+Under systemd, the JIT of Node.js and the browsers requires
+`MemoryDenyWriteExecute=no`, and `ExecPaths=` must include the Playwright
+and browser directories (a drop-in, e.g.
+`ExecPaths=/opt/qtestframe-playwright`, `ReadWritePaths=/dev/shm`); on
+SELinux enable `qtestframe_run_scripts` and `qtestframe_runner_execmem`,
+and allow outgoing connections to the systems under test. The server adds
+the Playwright, browser and Node.js directories, `/proc`, `/sys` and
+`/dev/shm` to its own Landlock rules when web tests are enabled. Read the
+security considerations in security.md §9 (web tests have no seccomp
+filter and always network access).
+
+**Container image**: build with `--build-arg WITH_PLAYWRIGHT=true` to get
+an image with Node.js, Playwright and Chromium (much larger; the default
+image stays a static distroless one) and set
+`QTF_RUNNER_ENABLED=true QTF_RUNNER_WEB_ENABLED=true`.
+
 ## 11. Backup and restore
 
 What to back up: the database, `/etc/qtestframe` (config, keys, secrets —

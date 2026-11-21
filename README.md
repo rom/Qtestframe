@@ -140,6 +140,7 @@ The most important settings:
 | `auth.oidc`, `auth.saml` | single sign-on providers (examples in the production template and [docs/operations.md](docs/operations.md)) |
 | `requirements.auto_create_test` | create a linked test with every new requirement (default `true`) |
 | `runner.enabled` | allow server-side execution of automated test scripts (default `false`) |
+| `runner.web` | web tests in a real browser with Playwright: `enabled`, `node`, `playwright_dir`, `browsers_path`, `browser`, `headless`, `timeout`, `screenshots`, `trace`, `video`, `max_parallel` (see [docs/operations.md](docs/operations.md#web-tests-playwright)) |
 | `logging.syslog` | ship logs to a central syslog server |
 | `bootstrap.admin_email`, `bootstrap.admin_password` | first administrator, created only when the database has no users |
 | `email.host`, `email.port`, `email.tls`, `email.from` | outgoing e-mail (SMTP) for notification e-mails, invitations and reports by e-mail; off while `host` is empty |
@@ -208,6 +209,7 @@ In the run, **Execute** walks through the tests one by one:
 
 - **Manual tests** show each step. Mark it passed, failed, blocked or skipped (keyboard shortcuts P, F, B, S) and note the actual result. The overall result is derived from the steps.
 - **Automated tests** have a **Run script** button that executes the script on the server (requires `runner.enabled: true`) and stores output and duration.
+- **Web tests** (script language *Web test (Playwright)*) run in a real browser on the server as background jobs; screenshots, the Playwright trace and videos are attached to the execution. **Run automated tests** on the run page queues all automated tests of a run (prerequisites first). Install Playwright next to the server (`npm i @playwright/test`, `npx playwright install --with-deps chromium`) and enable `runner.web` — see [docs/operations.md](docs/operations.md#web-tests-playwright).
 
 ### 5. Check coverage
 
