@@ -214,13 +214,14 @@ func (s *Server) mirrorFolder(ctx context.Context, tenantID, projectID string, r
 	for _, f := range reqFolders {
 		byID[f.ID] = f
 	}
-	var names []string
+	var names, colors []string
 	for id := reqFolder; id != nil && len(names) < 64; {
 		f, ok := byID[*id]
 		if !ok {
 			break
 		}
 		names = append([]string{f.Name}, names...)
+		colors = append([]string{f.Color}, colors...)
 		id = f.ParentID
 	}
 	testFolders, err := s.Store.ListFolders(ctx, tenantID, projectID, model.KindTest)
@@ -228,17 +229,18 @@ func (s *Server) mirrorFolder(ctx context.Context, tenantID, projectID string, r
 		return nil, err
 	}
 	var parent *string
-	for _, name := range names {
+	for i, name := range names {
 		var found *string
-		for i := range testFolders {
-			f := testFolders[i]
+		for j := range testFolders {
+			f := testFolders[j]
 			if f.Name == name && ((parent == nil && f.ParentID == nil) || (parent != nil && f.ParentID != nil && *f.ParentID == *parent)) {
-				found = &testFolders[i].ID
+				found = &testFolders[j].ID
 				break
 			}
 		}
 		if found == nil {
-			nf := &model.Folder{ProjectID: projectID, Kind: model.KindTest, Name: name, ParentID: parent}
+			// a new mirror folder takes the requirement folder's colour
+			nf := &model.Folder{ProjectID: projectID, Kind: model.KindTest, Name: name, ParentID: parent, Color: colors[i]}
 			if err := s.Store.CreateFolder(ctx, tenantID, nf); err != nil {
 				return nil, err
 			}

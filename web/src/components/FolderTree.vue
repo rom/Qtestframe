@@ -5,6 +5,7 @@ import Tree from 'primevue/tree'
 import ContextMenu from 'primevue/contextmenu'
 import Menu from 'primevue/menu'
 import FolderPickerDialog from './FolderPickerDialog.vue'
+import ProjectColorPicker from './ProjectColorPicker.vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -12,7 +13,7 @@ import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Message from 'primevue/message'
 import { api, asItems, errorMessage } from '@/lib/api'
-import { allKeys, ancestorKeys, buildTree, canMoveFolder, checkedIds, descendantIds, folderPath, topMostFolders, type FolderNode } from '@/lib/tree'
+import { allKeys, ancestorKeys, buildTree, canMoveFolder, checkedIds, descendantIds, folderColors, folderPath, topMostFolders, type FolderNode } from '@/lib/tree'
 import type { Folder, ItemKind, Project } from '@/lib/types'
 import { useNotify } from '@/composables/notify'
 import { decodeIds, FOLDER_MIME, ITEMS_MIME } from '@/lib/dnd'
@@ -26,6 +27,7 @@ const notify = useNotify()
 const { t } = useI18n()
 
 const nodes = computed(() => buildTree(props.folders))
+const colors = computed(() => folderColors(props.folders))
 const expanded = ref<Record<string, boolean>>({})
 let initialised = false
 watch(
@@ -164,19 +166,19 @@ function openActions(e: Event) {
 
 const nameDialog = ref(false)
 const nameMode = ref<'create' | 'rename'>('create')
-const nameForm = ref({ name: '', description: '', parent: null as string | null, id: '' })
+const nameForm = ref({ name: '', description: '', color: '', parent: null as string | null, id: '' })
 const busy = ref(false)
 const dialogError = ref('')
 
 function openCreate(parent: string | null) {
   nameMode.value = 'create'
-  nameForm.value = { name: '', description: '', parent, id: '' }
+  nameForm.value = { name: '', description: '', color: '', parent, id: '' }
   dialogError.value = ''
   nameDialog.value = true
 }
 function openRename(f: Folder) {
   nameMode.value = 'rename'
-  nameForm.value = { name: f.name, description: f.description, parent: f.parent_id, id: f.id }
+  nameForm.value = { name: f.name, description: f.description, color: f.color ?? '', parent: f.parent_id, id: f.id }
   dialogError.value = ''
   nameDialog.value = true
 }
@@ -185,7 +187,7 @@ async function saveName() {
   dialogError.value = ''
   try {
     if (nameMode.value === 'create') {
-      const body = { kind: props.kind, name: nameForm.value.name, description: nameForm.value.description, parent_id: nameForm.value.parent }
+      const body = { kind: props.kind, name: nameForm.value.name, description: nameForm.value.description, color: nameForm.value.color, parent_id: nameForm.value.parent }
       const path = `/projects/${props.projectId}/folders`
       const f = await api.post<Folder>(path, body)
       if (f?.id)
@@ -202,9 +204,9 @@ async function saveName() {
       if (f?.id) selected.value = f.id
     } else {
       const old = props.folders.find((x) => x.id === nameForm.value.id)
-      const after = { name: nameForm.value.name, description: nameForm.value.description }
+      const after = { name: nameForm.value.name, description: nameForm.value.description, color: nameForm.value.color }
       await api.patch(`/folders/${nameForm.value.id}`, after)
-      if (old) recordUndo(patchEntry(t('undo.a.folderRename', { name: old.name }), `/folders/${old.id}`, { name: old.name, description: old.description }, after))
+      if (old) recordUndo(patchEntry(t('undo.a.folderRename', { name: old.name }), `/folders/${old.id}`, { name: old.name, description: old.description, color: old.color ?? '' }, after))
     }
     nameDialog.value = false
     emit('changed')
@@ -415,6 +417,7 @@ defineExpose({ openCreate })
           @drop="onDrop($event, String(node.key))"
           @contextmenu.prevent="onContext($event, node as FolderNode)"
         >
+          <span v-if="colors.get(String(node.key))" class="folder-dot" :class="{ inherited: !(node as FolderNode).data.color }" :style="{ background: colors.get(String(node.key)) }" aria-hidden="true" />
           <span class="ellipsis grow">{{ node.label }}</span>
         </span>
       </template>
@@ -467,6 +470,11 @@ defineExpose({ openCreate })
         </div>
         <div v-field class="field"><label>{{ t('common.name') }}</label><InputText v-model="nameForm.name" autofocus required /></div>
         <div v-field class="field"><label>{{ t('common.description') }}</label><Textarea v-model="nameForm.description" rows="2" auto-resize /></div>
+        <div class="field">
+          <span class="field-label">{{ t('folders.color') }}</span>
+          <ProjectColorPicker v-model="nameForm.color" :label="t('folders.color')" :none-label="t('folders.noColor')" />
+          <small class="muted">{{ t('folders.colorHint') }}</small>
+        </div>
         <div class="row" style="justify-content: flex-end">
           <Button :label="t('common.cancel')" text severity="secondary" @click="nameDialog = false" />
           <Button type="submit" :label="t('common.save')" icon="pi pi-check" :loading="busy" :disabled="!nameForm.name.trim()" />
@@ -508,6 +516,17 @@ defineExpose({ openCreate })
 </template>
 
 <style scoped>
+.folder-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--qtf-border);
+}
+.folder-dot.inherited {
+  width: 6px;
+  opacity: 0.7;
+}
 .folder-bulk {
   padding: 6px 8px;
   gap: 6px;

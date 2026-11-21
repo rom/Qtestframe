@@ -274,8 +274,8 @@ Reading needs `project.read`. Writing folders needs `requirement.write` or
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/projects/{pid}/folders?kind=requirement\|test` | flat list (client builds tree via `parent_id`) |
-| POST | `/projects/{pid}/folders` | `{"kind","name","description","parent_id"}` |
-| PATCH | `/folders/{id}` | `{"name","description"}` |
+| POST | `/projects/{pid}/folders` | `{"kind","name","description","parent_id","color"}` |
+| PATCH | `/folders/{id}` | `{"name","description","color"}` – `color` is `#rrggbb` or `""` (none). Items show the colour of their folder or of the nearest coloured parent folder; a test folder mirrored from a requirement folder takes its colour. |
 | POST | `/folders/{id}/move` | `{"parent_id": id\|null, "position": n, "project_id"?: id}` – moving to another project moves contained items too. Cycles are rejected (409). |
 | POST | `/projects/{pid}/folders/bulk` | `{"ids":[...], "action": "move\|delete", "parent_id"?, "project_id"?, "cascade"?}` – folders of one kind (write permission of that kind). Folders inside another selected folder go with it; a move into a selected folder is refused (409) before anything moves → `{"moved": n}` / `{"deleted": n}` |
 | DELETE | `/folders/{id}?cascade=true` | without cascade children/items are moved to the parent |

@@ -9,6 +9,7 @@ Select **Traceability** in the project sidebar.
 ![The traceability matrix: requirements in rows, tests in columns, coverage per requirement and last result per test](../images/en-traceability.png)
 
 - Requirements are the **rows**, tests the **columns**. A marked (pressed) cell means *linked*.
+- Each mark is coloured by the linked test's latest result and has its own symbol: ✓ passed (green), ✕ failed (red), ⊘ blocked (amber), » skipped (purple), clock in progress (blue), – not run (grey). A suspect link has an amber frame and a warning triangle. The **Marks** legend explains them; screen readers announce the result with each cell. The **List** view colours the linked tests the same way.
 - The coloured bar at the start of each row shows the requirement's coverage; the **Coverage legend** explains the colours. Point at a test's column header to see its key, title and last result.
 - The summary says how many requirements are linked, for example *14/20 requirements linked (70 %)*.
 - **Filter requirements** and **Filter tests** take [queries](search-and-filters.md), for example `folder:Checkout` and `type=automated`.

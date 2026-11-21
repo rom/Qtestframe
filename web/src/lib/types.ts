@@ -244,6 +244,8 @@ export interface Folder {
   kind: ItemKind
   name: string
   description: string
+  /** '' or #rrggbb; subfolders without their own colour inherit it */
+  color?: string
   position: number
   created_at: string
 }

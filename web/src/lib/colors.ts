@@ -84,6 +84,22 @@ export const RESULT_COLORS: Record<string, string> = {
   not_run: '#94a3b8',
 }
 
+/** Icons for result statuses, so a colour-coded mark never relies on colour alone. */
+export const RESULT_ICONS: Record<string, string> = {
+  passed: 'pi pi-check',
+  failed: 'pi pi-times',
+  blocked: 'pi pi-ban',
+  skipped: 'pi pi-forward',
+  in_progress: 'pi pi-clock',
+  not_run: 'pi pi-minus',
+}
+
+/** Colour and icon of a traceability mark: the linked test's latest result (not run without one). */
+export function traceMark(result: string | null | undefined): { result: string; color: string; icon: string } {
+  const r = result && RESULT_ICONS[result] ? result : 'not_run'
+  return { result: r, color: RESULT_COLORS[r]!, icon: RESULT_ICONS[r]! }
+}
+
 export const COVERAGE_COLORS: Record<string, string> = {
   passed: '#22c55e',
   failed: '#ef4444',

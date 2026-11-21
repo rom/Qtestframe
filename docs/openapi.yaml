@@ -1447,7 +1447,7 @@ paths:
       summary: Update folder
       operationId: patchFoldersById
       description: |-
-        `{"name","description"}`
+        `{"name","description","color"}` (color: #rrggbb or "" to clear)
 
         **Permission:** any authenticated user; the handler checks: `requirement.write` or `test.write` according to the folder's kind.
       x-permission: authenticated
@@ -11255,6 +11255,9 @@ components:
           type: string
         description:
           type: string
+        color:
+          type: string
+          description: '#rrggbb or empty; items in the folder and in subfolders without a colour of their own are shown in it'
         position:
           type: integer
         created_at:

@@ -327,14 +327,17 @@ var DefaultRequirementSources = []string{"Customer", "Contract", "Standard", "Re
 
 // Folder is a node in the requirement or test hierarchy ("group").
 type Folder struct {
-	ID          string    `json:"id"`
-	ProjectID   string    `json:"project_id"`
-	ParentID    *string   `json:"parent_id"`
-	Kind        string    `json:"kind"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Position    int       `json:"position"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          string  `json:"id"`
+	ProjectID   string  `json:"project_id"`
+	ParentID    *string `json:"parent_id"`
+	Kind        string  `json:"kind"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	// Color is '' or #rrggbb; items in the folder (and in subfolders
+	// without a colour of their own) are shown in it.
+	Color     string    `json:"color"`
+	Position  int       `json:"position"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Category is a classification value inside a dimension, e.g.

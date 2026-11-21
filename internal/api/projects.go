@@ -284,6 +284,7 @@ func (s *Server) handleUpdateFolder(w http.ResponseWriter, r *http.Request, p *P
 	var req struct {
 		Name        *string `json:"name"`
 		Description *string `json:"description"`
+		Color       *string `json:"color"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -291,6 +292,9 @@ func (s *Server) handleUpdateFolder(w http.ResponseWriter, r *http.Request, p *P
 	}
 	if req.Name != nil {
 		f.Name = *req.Name
+	}
+	if req.Color != nil {
+		f.Color = *req.Color
 	}
 	if req.Description != nil {
 		f.Description = *req.Description
