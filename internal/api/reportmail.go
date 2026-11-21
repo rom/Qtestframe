@@ -171,9 +171,10 @@ func (s *Server) resolveRecipients(ctx context.Context, tenantID string, job rep
 	return to, skipped, nil
 }
 
-// reportMail builds the e-mail of a rendered report.
+// reportMail builds the e-mail of a rendered report (in the report's
+// language).
 func (s *Server) reportMail(p *Principal, pr *model.Project, rep *renderedReport, format, message string, scheduled bool) *mail.Message {
-	lang := p.User.Preferences.Language
+	lang := rep.lang
 	title := rep.title
 	if title == "" {
 		title = rep.name
@@ -209,6 +210,7 @@ type reportMailReq struct {
 	Recipients   []string          `json:"recipients"`
 	Addresses    []string          `json:"addresses"`
 	Message      string            `json:"message"`
+	Lang         string            `json:"lang"`
 }
 
 // jobOf turns a request into a report job (exactly one source).
@@ -224,7 +226,7 @@ func (s *Server) jobOf(r *http.Request, p *Principal, pr *model.Project, req rep
 	if n != 1 {
 		return reportJob{}, badRequest("exactly one of template, custom or definition_id is required")
 	}
-	job := reportJob{template: req.Template, params: req.Params, format: req.Format, stem: req.Template}
+	job := reportJob{template: req.Template, params: req.Params, format: req.Format, stem: req.Template, lang: reportLang(r, p, req.Lang)}
 	if job.params == nil {
 		job.params = map[string]string{}
 	}
@@ -320,8 +322,7 @@ func (s *Server) handleEmailReport(w http.ResponseWriter, r *http.Request, p *Pr
 	}
 	m := s.reportMail(p, pr, rep, req.Format, req.Message, false)
 	m.To = to
-	tenantID, user, title := p.TenantID(), p.User.ID, rep.title
-	lang := p.User.Preferences.Language
+	tenantID, user, title, lang := p.TenantID(), p.User.ID, rep.title, rep.lang
 	s.sendMail(r.Context(), m, func(err error) {
 		if err == nil {
 			return
@@ -352,9 +353,14 @@ type subscriptionReq struct {
 	Addresses    *[]string `json:"addresses"`
 	Message      *string   `json:"message"`
 	Enabled      *bool     `json:"enabled"`
+	// Lang is the language the report is sent in (the requester's UI
+	// language); "" (or an unsupported language) keeps the stored one.
+	Lang *string `json:"lang"`
 }
 
-func (req subscriptionReq) apply(x *model.ReportSubscription) {
+// apply sets the given fields on x. The language is the body's "lang", else
+// the "lang" query parameter (unsupported or missing: unchanged).
+func (req subscriptionReq) apply(r *http.Request, x *model.ReportSubscription) {
 	set := func(dst *string, v *string) {
 		if v != nil {
 			*dst = strings.TrimSpace(*v)
@@ -379,6 +385,13 @@ func (req subscriptionReq) apply(x *model.ReportSubscription) {
 	}
 	if req.Enabled != nil {
 		x.Enabled = *req.Enabled
+	}
+	lang := r.URL.Query().Get("lang")
+	if req.Lang != nil && report.NormalizeLang(*req.Lang) != "" {
+		lang = *req.Lang
+	}
+	if l := report.NormalizeLang(lang); l != "" {
+		x.Language = l
 	}
 }
 
@@ -467,7 +480,7 @@ func (s *Server) handleCreateSubscription(w http.ResponseWriter, r *http.Request
 	}
 	x := &model.ReportSubscription{DefinitionID: d.ID, OwnerID: p.User.ID, OwnerEmail: p.User.Email, Frequency: model.FrequencyWeekly,
 		Weekday: 1, DayOfMonth: 1, TimeOfDay: "07:00", Timezone: "UTC", Format: "pdf", Enabled: true}
-	req.apply(x)
+	req.apply(r, x)
 	if err := s.checkSubscription(r, p, x, true); err != nil {
 		s.fail(w, r, err)
 		return
@@ -513,7 +526,7 @@ func (s *Server) handleUpdateSubscription(w http.ResponseWriter, r *http.Request
 		return
 	}
 	before := slices.Clone(x.Addresses)
-	req.apply(x)
+	req.apply(r, x)
 	added := false
 	for _, a := range x.Addresses {
 		added = added || !slices.Contains(before, store.NormalizeEmail(a))
@@ -632,7 +645,8 @@ func (s *Server) sendSubscription(ctx context.Context, tenantID string, x *model
 	if err != nil {
 		return err
 	}
-	job, err := s.jobOf(r, p, pr, reportMailReq{DefinitionID: x.DefinitionID, Format: x.Format})
+	// the language stored with the subscription, else the owner's preference
+	job, err := s.jobOf(r, p, pr, reportMailReq{DefinitionID: x.DefinitionID, Format: x.Format, Lang: x.Language})
 	if err != nil {
 		return err
 	}

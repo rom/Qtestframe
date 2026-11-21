@@ -92,6 +92,8 @@ describe('email helpers', () => {
       message: 'hi',
     })
     expect(reportMailBody({ definition_id: 'd' }, { ...f, recipients: ['u'], addresses: 'x@y.se' }, false)).toEqual({ definition_id: 'd', format: 'pdf', recipients: ['u'] })
+    // the report and its e-mail in the UI language
+    expect(reportMailBody({ definition_id: 'd' }, { ...f, recipients: ['u'] }, false, 'sv')).toEqual({ definition_id: 'd', format: 'pdf', recipients: ['u'], lang: 'sv' })
   })
 
   it('handles subscription forms', () => {
@@ -114,6 +116,9 @@ describe('email helpers', () => {
     const body = subscriptionBody({ ...b, recipients: ['u', 'u'], addresses: 'X@y.se', message: ' m ' }, true)
     expect(body).toMatchObject({ definition_id: 'd1', recipients: ['u'], addresses: ['x@y.se'], message: 'm' })
     expect('definition_id' in subscriptionBody(b, false)).toBe(false)
+    expect('lang' in body).toBe(false)
+    expect(subscriptionBody(b, false, 'sv').lang).toBe('sv')
+    expect(subscriptionBody(b, true, 'en')).toMatchObject({ definition_id: 'd1', lang: 'en' })
     const sub: ReportSubscription = {
       id: 's',
       project_id: 'p',

@@ -12,7 +12,6 @@ import (
 const (
 	maxSheetName = 31
 	maxCellChars = 32767
-	summarySheet = "Summary"
 )
 
 // sheetNamer produces valid, unique (case-insensitive) sheet names.
@@ -51,6 +50,7 @@ func xlsxText(s string) string {
 // autofilter.
 func WriteXLSX(w io.Writer, ds Dataset) error {
 	f := excelize.NewFile()
+	summarySheet := ds.label("summary")
 	defer f.Close()
 
 	if err := f.SetSheetName("Sheet1", summarySheet); err != nil {
@@ -85,24 +85,24 @@ func WriteXLSX(w io.Writer, ds Dataset) error {
 	set(summarySheet, "A1", xlsxText(ds.Title))
 	_ = f.SetCellStyle(summarySheet, "A1", "A1", titleStyle)
 	set(summarySheet, "A2", xlsxText(ds.Subtitle))
-	set(summarySheet, "A3", "Generated")
+	set(summarySheet, "A3", ds.label("generated"))
 	set(summarySheet, "B3", generatedAt(ds).Format("2006-01-02 15:04:05 MST"))
-	set(summarySheet, "A5", "Section")
-	set(summarySheet, "B5", "Rows")
+	set(summarySheet, "A5", ds.label("sectionCol"))
+	set(summarySheet, "B5", ds.label("rows"))
 	_ = f.SetCellStyle(summarySheet, "A5", "B5", header)
 	_ = f.SetColWidth(summarySheet, "A", "A", 40)
 	_ = f.SetColWidth(summarySheet, "B", "B", 12)
 
 	for i, s := range ds.Sections {
 		want := s.Name
-		if want == "" {
-			want = s.Title
+		if want == "" || (!ds.english() && s.Title != "") {
+			want = s.Title // translated reports name the sheets by their (translated) titles
 		}
 		sheet := namer.name(want, i)
 		if _, err := f.NewSheet(sheet); err != nil {
 			return err
 		}
-		set(summarySheet, fmt.Sprintf("A%d", 6+i), xlsxText(sectionTitle(s, i)))
+		set(summarySheet, fmt.Sprintf("A%d", 6+i), xlsxText(ds.sectionTitle(s, i)))
 		set(summarySheet, fmt.Sprintf("B%d", 6+i), len(s.Rows))
 		if err := writeSheet(f, sheet, s, header, wrap); err != nil {
 			return err

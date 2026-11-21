@@ -75,6 +75,8 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 3. Choose the **Format**: **PDF**, **Word** (DOCX), **Excel** (XLSX) or **CSV**.
 4. Select **Download**, or **Save to archive**. A saved report becomes a document of kind *report* in **Documents**, where the whole team can find, preview and download it later.
 
+Reports are produced in the language you currently use in Qtestframe (**User menu → Language**, see [Languages](accessibility-and-languages.md#languages)). With the Swedish interface, the report's title, section names, column headers, key figures and values such as statuses, results, coverage and obligation (for example *Godkänt*, *Underkänd*, *MUST (SKA)*) are in Swedish, with the same words as in the app. Your own content, such as titles, names, descriptions, tags and notes, is never translated. This applies to downloads, reports saved to the archive, custom reports, several reports at once and reports sent by e-mail.
+
 ## Custom reports
 
 Under **Custom report** you design a report yourself:
@@ -115,7 +117,7 @@ When the server can send e-mail, every standard report has an envelope button (*
 - **Other addresses**, separated by commas: people outside the organisation. This needs the permission to update the project, so that Qtestframe cannot be used to send e-mail to anyone.
 - an optional **Message** and the **Format**.
 
-The report is created with your permissions and attached to the e-mail. If it cannot be delivered, you get a [notification](reviews-and-notifications.md#notifications).
+The report is created with your permissions and attached to the e-mail; the report and the e-mail text are in your current interface language. If it cannot be delivered, you get a [notification](reviews-and-notifications.md#notifications).
 
 ## Scheduled reports
 
@@ -126,6 +128,7 @@ The list shows each schedule with its recipients, when it was **Last sent** (or 
 Good to know:
 
 - The report is created with the permissions of the person who scheduled it, at the time it is sent. If that person is no longer a member or may no longer export, the schedule shows an error instead of sending.
+- The report and its e-mail are in the interface language of the person who scheduled the report or last edited the schedule. Switch the language and save the schedule again to change it.
 - Members who may no longer read the report are left out.
 - If the server was down when a report was due, it is sent once when the server is back, not once for every missed time.
 - Deleting the saved report also deletes its schedules.

@@ -81,6 +81,7 @@ const guideSv: GuideMessages = {
     token_expires: "När nyckeln slutar fungera. Kortlivade nycklar begränsar skadan om en nyckel läcker.",
     member_role: "Läsare läser, Testare kör och redigerar också testfall, Ansvarig skriver även krav och projekt, Administratör hanterar medlemmar och nycklar.",
     member_initialPassword: "Det första lösenordet för ett nytt lokalt konto. Lämna det till personen på ett säkert sätt och be hen byta det efter första inloggningen.",
+    report_format: "PDF, Word, Excel eller CSV. Rapporten tas fram på det språk du använder nu: rubriker, kolumnrubriker och värden som status följer gränssnittet, dina egna texter står kvar som de skrevs.",
     report_groupBy: "Grupperar raderna efter ett fält, med antal per grupp, till exempel krav per status.",
     report_columns: "Välj rapportens kolumner och dra dem i den ordning du vill ha.",
     export_aspects: "De delar av projektet som exporteras. En valfri fråga nedanför begränsar kraven och testfallen.",

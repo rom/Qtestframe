@@ -112,6 +112,8 @@ type client struct {
 	hc     *http.Client
 	csrf   string
 	bearer string
+	// headers are added to every request
+	headers map[string]string
 }
 
 func (e *env) anon() *client {
@@ -147,6 +149,9 @@ func (c *client) raw(method, path string, body any) *http.Response {
 	req.Header.Set("Content-Type", "application/json")
 	if c.csrf != "" {
 		req.Header.Set("X-CSRF-Token", c.csrf)
+	}
+	for k, v := range c.headers {
+		req.Header.Set(k, v)
 	}
 	if c.bearer != "" {
 		req.Header.Set("Authorization", "Bearer "+c.bearer)

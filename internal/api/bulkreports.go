@@ -41,6 +41,7 @@ func (s *Server) handleReportBatch(w http.ResponseWriter, r *http.Request, p *Pr
 		Definitions []string `json:"definitions"`
 		Format      string   `json:"format"`
 		Archive     bool     `json:"archive"`
+		Lang        string   `json:"lang"`
 	}
 	if err := decode(r, &req); err != nil {
 		s.fail(w, r, err)
@@ -58,6 +59,7 @@ func (s *Server) handleReportBatch(w http.ResponseWriter, r *http.Request, p *Pr
 	if req.Archive && !canWriteReports(w, p) {
 		return
 	}
+	lang := reportLang(r, p, req.Lang)
 	var jobs []reportJob
 	for _, t := range req.Templates {
 		params := t.Params
@@ -65,7 +67,7 @@ func (s *Server) handleReportBatch(w http.ResponseWriter, r *http.Request, p *Pr
 			params = map[string]string{}
 		}
 		name := strings.TrimSpace(t.Template)
-		jobs = append(jobs, reportJob{template: name, params: params, format: req.Format, stem: name})
+		jobs = append(jobs, reportJob{template: name, params: params, format: req.Format, stem: name, lang: lang})
 	}
 	for _, id := range uniqStrings(req.Definitions) {
 		d, err := s.Store.GetReportDefinition(r.Context(), p.TenantID(), id)
@@ -85,7 +87,7 @@ func (s *Server) handleReportBatch(w http.ResponseWriter, r *http.Request, p *Pr
 		if c.Title == "" {
 			c.Title = d.Name
 		}
-		jobs = append(jobs, reportJob{custom: c, format: req.Format, stem: d.Name})
+		jobs = append(jobs, reportJob{custom: c, format: req.Format, stem: d.Name, lang: lang})
 	}
 
 	if req.Archive {

@@ -120,7 +120,12 @@ type Data struct {
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time
+	// Lang is the language of the report's own texts (en, sv; "" and
+	// unknown languages give English).
+	Lang string
 }
+
+func (d *Data) loc() loc { return newLoc(d.Lang) }
 
 // Build renders template id with params over d.
 func Build(id string, d *Data, params map[string]string) (*export.Dataset, error) {
@@ -137,7 +142,9 @@ func Build(id string, d *Data, params map[string]string) (*export.Dataset, error
 	if err != nil {
 		return nil, err
 	}
-	ds.Title = t.Name
+	l := d.loc()
+	ds.Title = l.templateName(t)
+	ds.Lang = l.lang
 	if ds.Subtitle == "" {
 		ds.Subtitle = d.subtitle()
 	}
@@ -155,7 +162,7 @@ func (d *Data) now() time.Time {
 func (d *Data) subtitle() string {
 	s := d.Project.Key + " – " + d.Project.Name
 	if q := strings.TrimSpace(d.Query); q != "" {
-		s += " · Filter: " + q
+		s += d.loc().t(" · Filter: ") + q
 	}
 	return s
 }
@@ -190,18 +197,20 @@ func pct(a, b int) string {
 type kv struct{ k, v string }
 
 // kpiSection is a two-column metric/value table.
-func kpiSection(name, title string, rows ...kv) export.Section {
-	s := export.Section{Name: name, Title: title, Columns: []string{"Metric", "Value"}}
+// Titles and metric names are English and translated here.
+func (l loc) kpiSection(name, title string, rows ...kv) export.Section {
+	s := export.Section{Name: name, Title: l.t(title), Columns: []string{l.t("Metric"), l.t("Value")}}
 	for _, r := range rows {
-		s.Rows = append(s.Rows, []string{r.k, r.v})
+		s.Rows = append(s.Rows, []string{l.t(r.k), r.v})
 	}
 	return s
 }
 
 // countSection tabulates counts in the given order (unknown keys follow in
-// alphabetical order; zero counts of known keys are shown).
-func countSection(name, title, label string, counts map[string]int, order []string, labels map[string]string) export.Section {
-	s := export.Section{Name: name, Title: title, Columns: []string{label, "Count", "Share"}}
+// alphabetical order; zero counts of known keys are shown). title and label
+// are English and translated here; labels are already translated.
+func (l loc) countSection(name, title, label string, counts map[string]int, order []string, labels map[string]string) export.Section {
+	s := export.Section{Name: name, Title: l.t(title), Columns: []string{l.t(label), l.t("Count"), l.t("Share")}}
 	total := 0
 	for _, n := range counts {
 		total += n
@@ -220,13 +229,13 @@ func countSection(name, title, label string, counts map[string]int, order []stri
 	sort.Strings(extra)
 	keys = append(keys, extra...)
 	for _, k := range keys {
-		l := k
+		lbl := k
 		if v, ok := labels[k]; ok {
-			l = v
+			lbl = v
 		}
-		s.Rows = append(s.Rows, []string{l, itoa(counts[k]), pct(counts[k], total)})
+		s.Rows = append(s.Rows, []string{lbl, itoa(counts[k]), l.pct(counts[k], total)})
 	}
-	s.Rows = append(s.Rows, []string{"Total", itoa(total), pct(total, total)})
+	s.Rows = append(s.Rows, []string{l.t("Total"), itoa(total), l.pct(total, total)})
 	return s
 }
 
@@ -238,14 +247,6 @@ func humanize(s string) string {
 	}
 	s = strings.ReplaceAll(s, "_", " ")
 	return strings.ToUpper(s[:1]) + s[1:]
-}
-
-func humanLabels(vals []string) map[string]string {
-	m := map[string]string{}
-	for _, v := range vals {
-		m[v] = humanize(v)
-	}
-	return m
 }
 
 func (d *Data) categoryNames(ids []string) string {

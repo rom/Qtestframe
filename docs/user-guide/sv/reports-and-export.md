@@ -77,6 +77,8 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 3. Välj **Format**: **PDF**, **Word** (DOCX), **Excel** (XLSX) eller **CSV**.
 4. Välj **Ladda ner**, eller **Spara i arkivet**. En sparad rapport blir ett dokument av typen *rapport* under **Dokument**, där hela teamet kan hitta, förhandsvisa och ladda ned den senare.
 
+Rapporter tas fram på det språk du just nu använder i Qtestframe (**Användarmeny → Språk**, se [Språk](accessibility-and-languages.md#språk)). Med det svenska gränssnittet är rapportens rubrik, avsnitt, kolumnrubriker, nyckeltal och värden som status, utfall, täckning och kravnivå (till exempel *Godkänt*, *Underkänd*, *MUST (SKA)*) på svenska, med samma ord som i appen. Ditt eget innehåll, som titlar, namn, beskrivningar, taggar och anteckningar, översätts aldrig. Det gäller nedladdningar, rapporter som sparas i arkivet, egna rapporter, flera rapporter på en gång och rapporter som skickas med e-post.
+
 ## Egna rapporter
 
 Under **Anpassad rapport** utformar du en rapport själv:
@@ -117,7 +119,7 @@ När servern kan skicka e-post har varje standardrapport en kuvertknapp (**Skick
 - **Andra adresser**, åtskilda med kommatecken: personer utanför organisationen. Det kräver behörighet att ändra projektet, så att Qtestframe inte kan användas för att skicka e-post till vem som helst.
 - ett **Meddelande** om du vill och **Format**.
 
-Rapporten tas fram med dina behörigheter och bifogas e-postmeddelandet. Om det inte kan levereras får du en [notis](reviews-and-notifications.md#notiser).
+Rapporten tas fram med dina behörigheter och bifogas e-postmeddelandet; rapporten och e-posttexten är på ditt nuvarande gränssnittsspråk. Om det inte kan levereras får du en [notis](reviews-and-notifications.md#notiser).
 
 ## Schemalagda rapporter
 
@@ -128,6 +130,7 @@ Listan visar varje schema med dess mottagare, när det **Senast skickades** (ell
 Bra att veta:
 
 - Rapporten tas fram med behörigheterna hos den som schemalade den, vid den tidpunkt den skickas. Om personen inte längre är medlem eller inte längre får exportera visar schemat ett fel i stället för att skicka.
+- Rapporten och e-postmeddelandet är på gränssnittsspråket hos den som schemalade rapporten eller senast ändrade schemat. Byt språk och spara schemat igen för att ändra det.
 - Medlemmar som inte längre får läsa rapporten hoppas över.
 - Om servern var nere när en rapport skulle skickas skickas den en gång när servern är igång igen, inte en gång för varje missat tillfälle.
 - När den sparade rapporten tas bort försvinner även dess scheman.
