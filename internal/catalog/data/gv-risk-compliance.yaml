@@ -1,0 +1,570 @@
+area: gv-risk-compliance
+prefix: GVRC
+group: privacy
+catalogue: governance
+name: {en: "Risk, compliance and archives", sv: "Risk, regelefterlevnad och arkiv"}
+description:
+  en: Enterprise risk management following ISO 31000 (risk appetite, common risk criteria, escalation, key risk indicators, framework evaluation), compliance management following ISO 37301 (compliance risk assessment, compliance function, legal watch, noncompliance reporting), whistleblowing channels, and public records and archives under the Swedish Archives Act and the Public Access to Information and Secrecy Act.
+  sv: Riskhantering för hela organisationen enligt ISO 31000 (riskaptit, gemensamma riskkriterier, eskalering, nyckelriskindikatorer, utvärdering av ramverket), styrning av regelefterlevnad enligt ISO 37301 (bedömning av efterlevnadsrisker, compliancefunktion, bevakning av regler, rapportering av brister), visselblåsarkanaler samt allmänna handlingar och arkiv enligt arkivlagen och offentlighets- och sekretesslagen.
+
+requirements:
+  - id: GVRC-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-management, risk-appetite, top-management]
+    refs: ["ISO 31000:2018 §5.2 (leadership and commitment)", "ISO 31000:2018 §5.4 (design)"]
+    tests: [GVRC-T01]
+    en:
+      title: Risk appetite approved by top management for each risk category
+      description: Top management MUST approve a risk appetite statement that sets, for each risk category, the highest risk level the organisation accepts, and review it at least once every 12 months.
+      rationale: Without a stated appetite, each manager decides alone which risks are acceptable, and the total exposure is unknown.
+      criteria:
+        - method: review
+          text: The statement covers each category of the risk register with a highest accepted level, and the latest approval by top management is less than 12 months old.
+    sv:
+      title: Riskaptit som högsta ledningen har godkänt för varje riskkategori
+      description: Högsta ledningen SKA godkänna en riskaptit som för varje riskkategori anger den högsta risknivå som organisationen accepterar, och se över den minst en gång var 12:e månad.
+      rationale: Utan en angiven riskaptit avgör varje chef ensam vilka risker som kan accepteras, och den samlade exponeringen är okänd.
+      criteria:
+        - method: review
+          text: Riskaptiten omfattar varje kategori i riskregistret med en högsta accepterad nivå, och det senaste godkännandet av högsta ledningen är mindre än 12 månader gammalt.
+
+  - id: GVRC-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [risk-management, risk-criteria, consistency]
+    refs: ["ISO 31000:2018 §6.3.4"]
+    tests: [GVRC-T01]
+    en:
+      title: Common likelihood and consequence scales across units
+      description: Each unit MUST rate its risks on the organisation's common likelihood and consequence scales, each with at least 4 defined levels.
+      rationale: Risks rated on different scales cannot be compared or added up into a view of the whole organisation.
+      criteria:
+        - method: inspection
+          text: The risk registers of 3 sampled units use the same scales as the organisation's risk criteria, and each scale has at least 4 defined levels.
+    sv:
+      title: Gemensamma skalor för sannolikhet och konsekvens i alla enheter
+      description: Varje enhet SKA värdera sina risker på organisationens gemensamma skalor för sannolikhet och konsekvens, som var och en har minst 4 definierade nivåer.
+      rationale: Risker som värderas på olika skalor går inte att jämföra eller lägga samman till en bild av hela organisationen.
+      criteria:
+        - method: inspection
+          text: Riskregistren i 3 utvalda enheter använder samma skalor som organisationens riskkriterier, och varje skala har minst 4 definierade nivåer.
+
+  - id: GVRC-03
+    type: business
+    obligation: must
+    priority: critical
+    tags: [risk-management, escalation, risk-appetite]
+    refs: ["ISO 31000:2018 §6.5", "ISO 31000:2018 §6.7"]
+    tests: [GVRC-T02]
+    en:
+      title: Risks above appetite reported to top management within 10 working days
+      description: The risk owner MUST report each risk rated above the risk appetite to top management within 10 working days of the rating, with a treatment proposal or a request for a recorded acceptance.
+      rationale: Risks beyond the accepted level need a decision at the level that set the appetite, not a quiet entry in a register.
+      criteria:
+        - method: review
+          text: Each risk above appetite in the registers of the last 6 months has a report to top management within 10 working days and a recorded decision.
+          threshold: "≤ 10 working days"
+    sv:
+      title: Risker över riskaptiten rapporteras till högsta ledningen inom 10 arbetsdagar
+      description: Riskägaren SKA rapportera varje risk som värderas över riskaptiten till högsta ledningen inom 10 arbetsdagar från värderingen, med ett förslag till åtgärd eller en begäran om ett dokumenterat accepterande.
+      rationale: Risker utöver den accepterade nivån behöver ett beslut på den nivå som satte riskaptiten, inte en tyst post i ett register.
+      criteria:
+        - method: review
+          text: Varje risk över riskaptiten i registren under de senaste 6 månaderna har en rapport till högsta ledningen inom 10 arbetsdagar och ett dokumenterat beslut.
+          threshold: "≤ 10 arbetsdagar"
+
+  - id: GVRC-04
+    type: business
+    obligation: should
+    priority: medium
+    tags: [risk-management, key-risk-indicators, monitoring]
+    refs: ["ISO 31000:2018 §6.6"]
+    tests: [GVRC-T02]
+    en:
+      title: Key risk indicators with thresholds for the top risks
+      description: Each of the 10 highest-rated risks of the organisation SHOULD have at least 1 key risk indicator with a warning threshold, measured each month and reported to the risk owner when the threshold is crossed.
+      rationale: Indicators give early warning that a risk is growing, before it turns into an incident.
+      criteria:
+        - method: inspection
+          text: Each of the 10 highest risks has an indicator with a threshold and monthly values for the last 6 months, and each crossing has a notice to the owner.
+    sv:
+      title: Nyckelriskindikatorer med tröskelvärden för de största riskerna
+      description: Var och en av organisationens 10 högst värderade risker BÖR ha minst 1 nyckelriskindikator med ett varningsvärde som mäts varje månad och rapporteras till riskägaren när värdet passeras.
+      rationale: Indikatorer ger en tidig varning om att en risk växer, innan den blir en incident.
+      criteria:
+        - method: inspection
+          text: Var och en av de 10 högsta riskerna har en indikator med tröskelvärde och månadsvärden för de senaste 6 månaderna, och varje passage har ett meddelande till ägaren.
+
+  - id: GVRC-05
+    type: business
+    obligation: must
+    priority: medium
+    tags: [risk-management, framework, evaluation]
+    refs: ["ISO 31000:2018 §5.6 (evaluation)", "ISO 31000:2018 §5.7 (improvement)"]
+    tests: [GVRC-T03]
+    en:
+      title: Yearly evaluation of the risk management framework
+      description: The organisation MUST evaluate the effectiveness of its risk management framework at least once every 12 months against stated indicators, such as the share of incidents from unregistered risks, and record improvement actions.
+      rationale: A framework that is never evaluated keeps producing registers without showing that it reduces losses.
+      criteria:
+        - method: review
+          text: An evaluation report less than 12 months old exists with the indicators used, their values and improvement actions with owners.
+    sv:
+      title: Årlig utvärdering av ramverket för riskhantering
+      description: Organisationen SKA minst en gång var 12:e månad utvärdera hur väl ramverket för riskhantering fungerar mot angivna indikatorer, till exempel andelen incidenter från oregistrerade risker, och dokumentera förbättringsåtgärder.
+      rationale: Ett ramverk som aldrig utvärderas fortsätter att producera register utan att visa att det minskar förlusterna.
+      criteria:
+        - method: review
+          text: En utvärderingsrapport som är mindre än 12 månader gammal finns med de indikatorer som använts, deras värden och förbättringsåtgärder med ägare.
+
+  - id: GVRC-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [compliance, compliance-risk, obligations]
+    refs: ["ISO 37301:2021 §4.6 (compliance risk assessment)"]
+    tests: [GVRC-T04]
+    en:
+      title: Compliance risk assessed for each compliance obligation
+      description: The organisation MUST assess, for each compliance obligation in its register, the likelihood and consequence of failing to meet it, and review the assessment when the obligation or the activity changes.
+      rationale: A list of obligations alone does not show where the organisation is most likely to break the rules, so effort goes to the wrong places.
+      criteria:
+        - method: inspection
+          text: Each obligation in the register has a likelihood, a consequence and an assessment date later than the latest change of the obligation.
+    sv:
+      title: Efterlevnadsrisken bedöms för varje förpliktelse
+      description: Organisationen SKA för varje förpliktelse i sitt register bedöma sannolikheten för och konsekvensen av att den inte uppfylls, och se över bedömningen när förpliktelsen eller verksamheten ändras.
+      rationale: En lista över förpliktelser visar inte ensam var organisationen troligast bryter mot reglerna, så insatserna hamnar på fel ställe.
+      criteria:
+        - method: inspection
+          text: Varje förpliktelse i registret har sannolikhet, konsekvens och ett bedömningsdatum som är senare än den senaste ändringen av förpliktelsen.
+
+  - id: GVRC-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [compliance, legal-watch, obligations]
+    refs: ["ISO 37301:2021 §4.5 (compliance obligations)"]
+    tests: [GVRC-T04]
+    en:
+      title: New or changed obligations assessed within 60 days
+      description: The compliance function MUST check sources of new and changed laws, regulations and contract terms at least once a month, and enter each new or changed obligation that applies with an owner and an assessment within 60 days of its publication.
+      rationale: Obligations that enter the register late leave too little time to adapt before they apply.
+      criteria:
+        - method: review
+          text: The legal watch log has an entry for each month, and each obligation added in the last 12 months was entered within 60 days of publication.
+          threshold: "≤ 60 days"
+    sv:
+      title: Nya eller ändrade förpliktelser bedöms inom 60 dagar
+      description: Compliancefunktionen SKA minst en gång i månaden bevaka källor till nya och ändrade lagar, föreskrifter och avtalsvillkor, och föra in varje ny eller ändrad förpliktelse som gäller organisationen med ägare och bedömning inom 60 dagar från publiceringen.
+      rationale: Förpliktelser som kommer in sent i registret lämnar för lite tid att anpassa sig innan de börjar gälla.
+      criteria:
+        - method: review
+          text: Bevakningsloggen har en post för varje månad, och varje förpliktelse som lagts till under de senaste 12 månaderna fördes in inom 60 dagar från publiceringen.
+          threshold: "≤ 60 dagar"
+
+  - id: GVRC-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [compliance, compliance-function, independence]
+    refs: ["ISO 37301:2021 §5.3 (roles, responsibilities and authorities)"]
+    tests: [GVRC-T05]
+    en:
+      title: Compliance function with direct access to the governing body
+      description: The compliance function MUST be independent of the operations it oversees and report directly to the governing body at least once each quarter.
+      rationale: A compliance function that reports through the managers it oversees can be silenced when its findings are inconvenient.
+      criteria:
+        - method: review
+          text: The organisation chart places the function outside the operations it oversees, and the governing body's minutes show a compliance report in each of the last 4 quarters.
+    sv:
+      title: Compliancefunktion med direkt tillgång till styrelsen
+      description: Compliancefunktionen SKA vara oberoende av den verksamhet den övervakar och rapportera direkt till styrelsen minst en gång per kvartal.
+      rationale: En compliancefunktion som rapporterar genom de chefer den övervakar kan tystas när dess iakttagelser är obekväma.
+      criteria:
+        - method: review
+          text: Organisationsschemat placerar funktionen utanför den verksamhet den övervakar, och styrelsens protokoll visar en compliancerapport under vart och ett av de 4 senaste kvartalen.
+
+  - id: GVRC-09
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [compliance, noncompliance, reporting]
+    refs: ["ISO 37301:2021 §10.2 (nonconformity and corrective action)", "ISO 37301:2021 §9.1 (monitoring, measurement, analysis and evaluation)"]
+    tests: [GVRC-T05]
+    en:
+      title: Noncompliance recorded with cause and reported each quarter
+      description: The compliance function MUST record each detected noncompliance with its cause and corrective action, and report the noncompliance cases of the quarter to the governing body.
+      rationale: Recording and reporting each case shows whether noncompliance is isolated or systemic and keeps the governing body accountable.
+      criteria:
+        - method: review
+          text: Each case in the noncompliance log has a cause and an action, and the quarterly report lists each case logged in that quarter.
+    sv:
+      title: Brister i regelefterlevnad dokumenteras med orsak och rapporteras varje kvartal
+      description: Compliancefunktionen SKA dokumentera varje upptäckt brist i regelefterlevnaden med orsak och korrigerande åtgärd, och rapportera kvartalets fall till styrelsen.
+      rationale: När varje fall dokumenteras och rapporteras syns det om bristerna är enstaka eller systematiska, och styrelsen hålls ansvarig.
+      criteria:
+        - method: review
+          text: Varje fall i loggen över brister har orsak och åtgärd, och kvartalsrapporten listar varje fall som loggats under kvartalet.
+
+  - id: GVRC-10
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [whistleblowing, reporting-channel, feedback]
+    refs: ["Directive (EU) 2019/1937 Art. 9(1)", "Lag (2021:890) om skydd för personer som rapporterar om missförhållanden"]
+    tests: [GVRC-T06]
+    en:
+      title: Whistleblowing reports acknowledged in 7 days and answered in 3 months
+      description: The internal whistleblowing channel MUST confirm receipt of each report to the reporting person within 7 days and give feedback on the actions taken within 3 months of the confirmation.
+      rationale: Reporting persons who hear nothing lose trust in the internal channel and go outside it, or stay silent.
+      criteria:
+        - method: review
+          text: For each report of the last 12 months, the case log shows a receipt within 7 days and feedback within 3 months.
+          threshold: "receipt ≤ 7 days; feedback ≤ 3 months"
+    sv:
+      title: Visselblåsarrapporter bekräftas inom 7 dagar och besvaras inom 3 månader
+      description: Den interna visselblåsarkanalen SKA bekräfta mottagandet av varje rapport till den rapporterande personen inom 7 dagar och återkoppla om vilka åtgärder som vidtagits inom 3 månader från bekräftelsen.
+      rationale: Rapporterande personer som inte hör något förlorar förtroendet för den interna kanalen och går utanför den, eller tiger.
+      criteria:
+        - method: review
+          text: För varje rapport under de senaste 12 månaderna visar ärendeloggen en bekräftelse inom 7 dagar och återkoppling inom 3 månader.
+          threshold: "bekräftelse ≤ 7 dagar; återkoppling ≤ 3 månader"
+
+  - id: GVRC-11
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [archives, archive-description, public-authority]
+    refs: ["Arkivlag (1990:782) 6 §"]
+    tests: [GVRC-T07]
+    en:
+      title: Archive description and archive list kept up to date
+      description: A public authority MUST keep a description of its archive and a systematic list of the archive, and update them within 3 months of a change in its organisation or its information systems.
+      rationale: The description and the list let the public, researchers and the authority itself find the public records the archive holds.
+      criteria:
+        - method: review
+          text: Both documents exist, and their revision dates are within 3 months after the latest organisational change and the latest new information system.
+          threshold: "≤ 3 months after a change"
+    sv:
+      title: Arkivbeskrivning och arkivförteckning hålls aktuella
+      description: En myndighet SKA ha en beskrivning av sitt arkiv och en systematisk förteckning över arkivet, och uppdatera dem inom 3 månader efter en ändring i organisationen eller i informationssystemen.
+      rationale: Beskrivningen och förteckningen gör att allmänheten, forskare och myndigheten själv hittar de allmänna handlingar som arkivet innehåller.
+      criteria:
+        - method: review
+          text: Båda dokumenten finns, och deras revisionsdatum ligger inom 3 månader efter den senaste organisationsändringen och det senaste nya informationssystemet.
+          threshold: "≤ 3 månader efter en ändring"
+
+  - id: GVRC-12
+    type: regulatory
+    obligation: must_not
+    priority: critical
+    tags: [archives, disposal, retention]
+    refs: ["Arkivlag (1990:782) 10 §"]
+    tests: [GVRC-T07]
+    en:
+      title: No disposal of public records without a disposal decision
+      description: A public authority MUST NOT dispose of a public record without both a disposal regulation or decision that covers the record type and a log entry with the record type, the period and the decision.
+      rationale: Public records that are destroyed without legal support break the public's right of access and cannot be recovered.
+      criteria:
+        - method: review
+          text: Each entry in the disposal log of the last 12 months refers to a decision that covers the record type.
+    sv:
+      title: Ingen gallring av allmänna handlingar utan gallringsbeslut
+      description: En myndighet SKA INTE gallra en allmän handling utan både stöd i en gallringsföreskrift eller ett gallringsbeslut som omfattar handlingstypen och en post i gallringsloggen med handlingstyp, period och beslut.
+      rationale: Allmänna handlingar som förstörs utan rättsligt stöd bryter mot allmänhetens rätt till insyn och kan inte återskapas.
+      criteria:
+        - method: review
+          text: Varje post i gallringsloggen under de senaste 12 månaderna hänvisar till ett beslut som omfattar handlingstypen.
+
+  - id: GVRC-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [public-records, registration, public-access]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 §"]
+    tests: [GVRC-T08]
+    en:
+      title: Public records registered no later than the working day after receipt
+      description: A public authority MUST register each received or drawn up public record that is subject to registration no later than the working day after it was received or drawn up.
+      rationale: Registration is how the public learns which records exist, and a delay hides them from requests for access.
+      criteria:
+        - method: analysis
+          text: For 20 sampled records, the registration date is at most 1 working day after the date of receipt or drawing up.
+          threshold: "≤ 1 working day"
+    sv:
+      title: Allmänna handlingar registreras senast arbetsdagen efter att de kommit in
+      description: En myndighet SKA registrera varje allmän handling som har kommit in eller upprättats och som omfattas av registreringsskyldigheten senast arbetsdagen efter att den kom in eller upprättades.
+      rationale: Registreringen är det sätt på vilket allmänheten får veta vilka handlingar som finns, och en fördröjning döljer dem för den som begär ut handlingar.
+      criteria:
+        - method: analysis
+          text: För 20 utvalda handlingar ligger registreringsdatumet högst 1 arbetsdag efter datumet då handlingen kom in eller upprättades.
+          threshold: "≤ 1 arbetsdag"
+
+  - id: GVRC-14
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [archives, digital-preservation, fixity]
+    refs: ["ISO 14721 (open archival information system)", "ISO 15489-1:2016"]
+    tests: [GVRC-T08]
+    en:
+      title: Checksums of archived electronic records verified each year
+      description: The electronic archive MUST store a checksum for each archived file at ingest, verify each checksum at least once every 12 months and restore a file that fails from a second copy kept at another site.
+      rationale: Silent corruption of storage media destroys records over decades without anyone noticing until they are needed.
+      criteria:
+        - method: test
+          text: The verification log shows a full run less than 12 months old, and a test file altered on purpose is detected and restored from the second copy.
+          threshold: "full verification ≤ 12 months"
+    sv:
+      title: Kontrollsummor för arkiverade elektroniska handlingar verifieras varje år
+      description: E-arkivet SKA lagra en kontrollsumma för varje arkiverad fil vid leveransen till arkivet, verifiera varje kontrollsumma minst en gång var 12:e månad och återställa en fil som inte stämmer från en andra kopia på en annan plats.
+      rationale: Tyst förstörelse av lagringsmedier förstör handlingar under decennier utan att någon märker det förrän de behövs.
+      criteria:
+        - method: test
+          text: Verifieringsloggen visar en fullständig körning som är mindre än 12 månader gammal, och en testfil som avsiktligt ändrats upptäcks och återställs från den andra kopian.
+          threshold: "fullständig verifiering ≤ 12 månader"
+
+tests:
+  - id: GVRC-T01
+    priority: high
+    execution: manual
+    tags: [risk-appetite, risk-criteria]
+    refs: ["ISO 31000:2018 §5.4 (design)", "ISO 31000:2018 §6.3.4"]
+    en:
+      title: Risk appetite statement and the scales used by units
+      description: Reviews the risk appetite statement and compares the scales in sampled unit registers with the organisation's risk criteria.
+      preconditions: The approved risk appetite statement, the organisation's risk criteria and the risk registers of 3 units.
+      expected: The appetite covers each category and is current, and each unit uses the common scales.
+      steps:
+        - action: Compare the categories of the appetite statement with the categories in the registers.
+          expected: Each register category has a highest accepted level.
+        - action: Read the approval date of the statement.
+          expected: It is less than 12 months old and the approver is top management.
+        - action: Compare the likelihood and consequence scales of each unit register with the risk criteria.
+          expected: They are the same and each has at least 4 defined levels.
+    sv:
+      title: Riskaptiten och de skalor som enheterna använder
+      description: Granskar riskaptiten och jämför skalorna i utvalda enheters register med organisationens riskkriterier.
+      preconditions: Den godkända riskaptiten, organisationens riskkriterier och riskregistren för 3 enheter.
+      expected: Riskaptiten omfattar varje kategori och är aktuell, och varje enhet använder de gemensamma skalorna.
+      steps:
+        - action: Jämför kategorierna i riskaptiten med kategorierna i registren.
+          expected: Varje kategori i registren har en högsta accepterad nivå.
+        - action: Läs godkännandedatumet för riskaptiten.
+          expected: Det är mindre än 12 månader gammalt och den som godkänt är högsta ledningen.
+        - action: Jämför skalorna för sannolikhet och konsekvens i varje enhets register med riskkriterierna.
+          expected: De är desamma och har vardera minst 4 definierade nivåer.
+
+  - id: GVRC-T02
+    priority: critical
+    execution: manual
+    tags: [escalation, key-risk-indicators]
+    refs: ["ISO 31000:2018 §6.5", "ISO 31000:2018 §6.6"]
+    en:
+      title: Escalation of risks above appetite and key risk indicators
+      description: Checks the escalation of risks rated above the appetite and the monitoring of key risk indicators for the top risks.
+      preconditions: The risk registers with history for the last 6 months, the reports to top management and the indicator data.
+      expected: Each risk above appetite was reported within 10 working days with a decision, and each top risk has a monitored indicator.
+      steps:
+        - action: Filter the register history on ratings above the appetite.
+          expected: A list of risks with rating dates.
+        - action: Find the report to top management for each risk.
+          expected: It is within 10 working days of the rating and has a recorded decision.
+        - action: For each of the 10 highest risks, read its indicator data.
+          expected: A threshold and monthly values for 6 months exist, and each crossing has a notice to the owner.
+    sv:
+      title: Eskalering av risker över riskaptiten och nyckelriskindikatorer
+      description: Kontrollerar eskaleringen av risker som värderats över riskaptiten och uppföljningen av nyckelriskindikatorer för de största riskerna.
+      preconditions: Riskregistren med historik för de senaste 6 månaderna, rapporterna till högsta ledningen och indikatordata.
+      expected: Varje risk över riskaptiten rapporterades inom 10 arbetsdagar med ett beslut, och varje stor risk har en indikator som följs upp.
+      steps:
+        - action: Filtrera registerhistoriken på värderingar över riskaptiten.
+          expected: En lista med risker och datum för värderingen.
+        - action: Hitta rapporten till högsta ledningen för varje risk.
+          expected: Den ligger inom 10 arbetsdagar från värderingen och har ett dokumenterat beslut.
+        - action: Läs indikatordata för var och en av de 10 högsta riskerna.
+          expected: Ett tröskelvärde och månadsvärden för 6 månader finns, och varje passage har ett meddelande till ägaren.
+
+  - id: GVRC-T03
+    priority: medium
+    execution: manual
+    tags: [framework, evaluation]
+    refs: ["ISO 31000:2018 §5.6 (evaluation)"]
+    en:
+      title: Evaluation report of the risk management framework
+      description: Reviews the latest evaluation of the risk management framework.
+      preconditions: The latest evaluation report and the incident register of the same period.
+      expected: The report is current, uses stated indicators and has owned improvement actions.
+      steps:
+        - action: Read the date of the evaluation report.
+          expected: It is less than 12 months old.
+        - action: Recalculate the share of incidents from unregistered risks from the incident register.
+          expected: The value matches the report.
+        - action: Read the improvement actions.
+          expected: Each has an owner.
+    sv:
+      title: Utvärderingsrapporten för ramverket för riskhantering
+      description: Granskar den senaste utvärderingen av ramverket för riskhantering.
+      preconditions: Den senaste utvärderingsrapporten och incidentregistret för samma period.
+      expected: Rapporten är aktuell, använder angivna indikatorer och har förbättringsåtgärder med ägare.
+      steps:
+        - action: Läs datumet för utvärderingsrapporten.
+          expected: Den är mindre än 12 månader gammal.
+        - action: Räkna om andelen incidenter från oregistrerade risker ur incidentregistret.
+          expected: Värdet stämmer med rapporten.
+        - action: Läs förbättringsåtgärderna.
+          expected: Varje åtgärd har en ägare.
+
+  - id: GVRC-T04
+    priority: high
+    execution: manual
+    tags: [compliance, obligations, legal-watch]
+    refs: ["ISO 37301:2021 §4.5 (compliance obligations)", "ISO 37301:2021 §4.6 (compliance risk assessment)"]
+    en:
+      title: Compliance risk assessments and the legal watch log
+      description: Inspects the register of compliance obligations and the legal watch log.
+      preconditions: The register of compliance obligations with change history and the legal watch log of the last 12 months.
+      expected: Each obligation has a current risk assessment, the watch ran each month, and new obligations were entered within 60 days.
+      steps:
+        - action: Check each obligation in the register for likelihood, consequence and assessment date.
+          expected: Each is filled in, and the assessment date is later than the latest change of the obligation.
+        - action: Count the months with an entry in the legal watch log.
+          expected: Each of the 12 months has an entry.
+        - action: For each obligation added in the last 12 months, compare the entry date with the publication date.
+          expected: The entry is within 60 days of publication.
+    sv:
+      title: Bedömningar av efterlevnadsrisk och loggen över regelbevakning
+      description: Inspekterar registret över förpliktelser och loggen över regelbevakning.
+      preconditions: Registret över förpliktelser med ändringshistorik och bevakningsloggen för de senaste 12 månaderna.
+      expected: Varje förpliktelse har en aktuell riskbedömning, bevakningen gjordes varje månad, och nya förpliktelser fördes in inom 60 dagar.
+      steps:
+        - action: Kontrollera sannolikhet, konsekvens och bedömningsdatum för varje förpliktelse i registret.
+          expected: Varje fält är ifyllt, och bedömningsdatumet är senare än den senaste ändringen av förpliktelsen.
+        - action: Räkna de månader som har en post i bevakningsloggen.
+          expected: Var och en av de 12 månaderna har en post.
+        - action: Jämför för varje förpliktelse som lagts till under de senaste 12 månaderna införandedatumet med publiceringsdatumet.
+          expected: Införandet ligger inom 60 dagar från publiceringen.
+
+  - id: GVRC-T05
+    priority: high
+    execution: manual
+    tags: [compliance-function, noncompliance]
+    refs: ["ISO 37301:2021 §5.3 (roles, responsibilities and authorities)", "ISO 37301:2021 §10.2 (nonconformity and corrective action)"]
+    en:
+      title: Position and reporting of the compliance function
+      description: Checks the placement of the compliance function and its quarterly reporting of noncompliance.
+      preconditions: The organisation chart, the governing body's minutes for the last 4 quarters and the noncompliance log.
+      expected: The function is independent and reports each quarter with each logged case.
+      steps:
+        - action: Find the compliance function in the organisation chart.
+          expected: It does not report to a manager of the operations it oversees.
+        - action: Read the governing body's minutes for each quarter.
+          expected: Each has a compliance report presented by the function.
+        - action: Compare the cases in each quarterly report with the noncompliance log.
+          expected: Each logged case is in the report and has a cause and an action.
+    sv:
+      title: Compliancefunktionens placering och rapportering
+      description: Kontrollerar compliancefunktionens placering och dess kvartalsvisa rapportering av brister.
+      preconditions: Organisationsschemat, styrelsens protokoll för de senaste 4 kvartalen och loggen över brister.
+      expected: Funktionen är oberoende och rapporterar varje kvartal med varje loggat fall.
+      steps:
+        - action: Hitta compliancefunktionen i organisationsschemat.
+          expected: Den rapporterar inte till en chef för den verksamhet den övervakar.
+        - action: Läs styrelsens protokoll för varje kvartal.
+          expected: Varje protokoll har en compliancerapport som funktionen har lagt fram.
+        - action: Jämför fallen i varje kvartalsrapport med loggen över brister.
+          expected: Varje loggat fall finns i rapporten och har orsak och åtgärd.
+
+  - id: GVRC-T06
+    priority: critical
+    execution: manual
+    tags: [whistleblowing]
+    refs: ["Directive (EU) 2019/1937 Art. 9(1)"]
+    en:
+      title: Handling times in the whistleblowing channel
+      description: Checks the receipt and feedback times of whistleblowing reports and submits a test report.
+      preconditions: Access for the auditor to the anonymised case log of the last 12 months, and agreement with the channel owner to submit a marked test report.
+      expected: Each report was acknowledged within 7 days and given feedback within 3 months, and the test report is acknowledged.
+      steps:
+        - action: For each case, compute the days from receipt to the confirmation sent to the reporting person.
+          expected: Each is at most 7 days.
+        - action: Compute the time from confirmation to feedback.
+          expected: Each is at most 3 months.
+        - action: Submit the marked test report through the channel.
+          expected: A confirmation of receipt arrives within 7 days.
+    sv:
+      title: Handläggningstider i visselblåsarkanalen
+      description: Kontrollerar tiderna för bekräftelse och återkoppling på visselblåsarrapporter och lämnar en testrapport.
+      preconditions: Granskarens åtkomst till den avidentifierade ärendeloggen för de senaste 12 månaderna, och överenskommelse med kanalens ägare om att lämna en märkt testrapport.
+      expected: Varje rapport bekräftades inom 7 dagar och fick återkoppling inom 3 månader, och testrapporten bekräftas.
+      steps:
+        - action: Beräkna för varje ärende dagarna från mottagandet till bekräftelsen till den rapporterande personen.
+          expected: Varje värde är högst 7 dagar.
+        - action: Beräkna tiden från bekräftelse till återkoppling.
+          expected: Varje värde är högst 3 månader.
+        - action: Lämna den märkta testrapporten genom kanalen.
+          expected: En bekräftelse på mottagandet kommer inom 7 dagar.
+
+  - id: GVRC-T07
+    priority: high
+    execution: manual
+    tags: [archives, disposal]
+    refs: ["Arkivlag (1990:782) 6 §", "Arkivlag (1990:782) 10 §"]
+    en:
+      title: Archive description, archive list and disposal log
+      description: Reviews the archive documents of the authority and the decisions behind recent disposals.
+      preconditions: The archive description, the archive list, the dates of recent organisational and system changes, the disposal log and the disposal decisions.
+      expected: The archive documents are current, and each disposal has a decision that covers it.
+      steps:
+        - action: Compare the revision dates of the archive description and the archive list with the latest changes.
+          expected: Each revision is within 3 months after the change.
+        - action: Go through the entries of the disposal log for the last 12 months.
+          expected: Each entry names the record type, the period and a decision.
+        - action: Read each referred decision.
+          expected: It covers the record type of the entry.
+    sv:
+      title: Arkivbeskrivning, arkivförteckning och gallringslogg
+      description: Granskar myndighetens arkivdokument och besluten bakom nyligen gjorda gallringar.
+      preconditions: Arkivbeskrivningen, arkivförteckningen, datum för de senaste organisations- och systemändringarna, gallringsloggen och gallringsbesluten.
+      expected: Arkivdokumenten är aktuella, och varje gallring har ett beslut som omfattar den.
+      steps:
+        - action: Jämför revisionsdatumen för arkivbeskrivningen och arkivförteckningen med de senaste ändringarna.
+          expected: Varje revision ligger inom 3 månader efter ändringen.
+        - action: Gå igenom posterna i gallringsloggen för de senaste 12 månaderna.
+          expected: Varje post anger handlingstyp, period och ett beslut.
+        - action: Läs varje beslut som det hänvisas till.
+          expected: Det omfattar postens handlingstyp.
+
+  - id: GVRC-T08
+    priority: high
+    execution: manual
+    tags: [registration, digital-preservation]
+    refs: ["Offentlighets- och sekretesslag (2009:400) 5 kap. 1 §", "ISO 14721 (open archival information system)"]
+    en:
+      title: Registration delay and checksum verification in the e-archive
+      description: Samples registered records for their registration delay and tests the fixity check of the electronic archive.
+      preconditions: The registry with dates of receipt and registration, and a test package in the e-archive that may be altered.
+      expected: Records are registered within 1 working day, and an altered file is detected and restored.
+      steps:
+        - action: Pick 20 received or drawn up records and compare their dates with the registration date.
+          expected: Each is registered at most 1 working day later.
+        - action: Read the date of the latest full checksum run in the verification log.
+          expected: It is less than 12 months old.
+        - action: Change 1 byte in the stored copy of a file in the test package and start a verification run.
+          expected: The run reports the file, and the file is restored from the second copy with the original checksum.
+    sv:
+      title: Registreringstid och verifiering av kontrollsummor i e-arkivet
+      description: Gör ett urval av registrerade handlingar med avseende på registreringstid och testar kontrollen av kontrollsummor i e-arkivet.
+      preconditions: Diariet med datum för inkommande och registrering, och ett testpaket i e-arkivet som får ändras.
+      expected: Handlingar registreras inom 1 arbetsdag, och en ändrad fil upptäcks och återställs.
+      steps:
+        - action: Välj 20 inkomna eller upprättade handlingar och jämför deras datum med registreringsdatumet.
+          expected: Varje handling är registrerad högst 1 arbetsdag senare.
+        - action: Läs datumet för den senaste fullständiga körningen av kontrollsummor i verifieringsloggen.
+          expected: Det är mindre än 12 månader gammalt.
+        - action: Ändra 1 byte i den lagrade kopian av en fil i testpaketet och starta en verifieringskörning.
+          expected: Körningen rapporterar filen, och filen återställs från den andra kopian med den ursprungliga kontrollsumman.

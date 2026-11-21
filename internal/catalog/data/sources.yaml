@@ -2363,3 +2363,168 @@ sources:
       - {label: "NIST SP 800-160 Vol. 1 Rev. 1", url: "https://doi.org/10.6028/NIST.SP.800-160v1r1"}
       - {label: "NIST SP 800-193", url: "https://doi.org/10.6028/NIST.SP.800-193"}
       - {label: "NIST SP 800-90B", url: "https://doi.org/10.6028/NIST.SP.800-90B"}
+
+  # --- Projects, services, facilities, governance, documentation and education ---
+  - id: scrum-guide
+    kind: practice
+    jurisdiction: international
+    short: Scrum Guide
+    name: {en: "The Scrum Guide (Schwaber and Sutherland)", sv: "Scrumguiden (Schwaber och Sutherland)"}
+    match: ["Scrum Guide"]
+    url: https://scrumguides.org/scrum-guide.html
+  - id: safe
+    kind: practice
+    jurisdiction: international
+    short: SAFe
+    name: {en: "Scaled Agile Framework (SAFe)", sv: "Scaled Agile Framework (SAFe), ramverk för skalad agilitet"}
+    match: ["SAFe "]
+    url: https://framework.scaledagile.com/
+  - id: iso-21504
+    kind: standard
+    jurisdiction: international
+    short: ISO 21504
+    name: {en: "ISO 21504 Project, programme and portfolio management: guidance on portfolio management", sv: "ISO 21504 Projekt-, program- och portföljstyrning: vägledning för portföljstyrning"}
+    match: ["ISO 21504"]
+    url: https://www.iso.org/search.html?q=ISO%2021504
+  - id: se-elsakerhetslag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Electrical Safety Act (Elsäkerhetslag 2016:732)", sv: "Elsäkerhetslag (2016:732)"}
+    match: ["Elsäkerhetslag"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/elsakerhetslag-2016732_sfs-2016-732/
+  - id: ss-436-40-00
+    kind: standard
+    jurisdiction: SE
+    short: SS 436 40 00
+    name: {en: "SS 436 40 00 Electrical low-voltage installations: rules for design and erection", sv: "SS 436 40 00 Elinstallationer för lågspänning: utförande av elinstallationer"}
+    match: ["SS 436 40 00"]
+    url: https://www.elstandard.se/
+  - id: en-16798
+    kind: standard
+    jurisdiction: EU
+    short: EN 16798-1
+    name: {en: "EN 16798-1 Energy performance of buildings: indoor environmental input parameters", sv: "EN 16798-1 Byggnaders energiprestanda: indata för inomhusmiljön"}
+    match: ["EN 16798"]
+    url: https://standards.cencenelec.eu/
+  - id: cen-tr-16355
+    kind: guideline
+    jurisdiction: EU
+    short: CEN/TR 16355
+    name: {en: "CEN/TR 16355 Recommendations for prevention of Legionella growth in installations inside buildings conveying water for human consumption", sv: "CEN/TR 16355 Rekommendationer för att förhindra tillväxt av legionella i dricksvatteninstallationer i byggnader"}
+    match: ["CEN/TR 16355"]
+    url: https://standards.cencenelec.eu/
+  - id: en-1717
+    kind: standard
+    jurisdiction: EU
+    short: EN 1717
+    name: {en: "EN 1717 Protection against pollution of potable water in water installations (backflow)", sv: "EN 1717 Skydd mot förorening av dricksvatten i vatteninstallationer (återströmning)"}
+    match: ["EN 1717"]
+    url: https://standards.cencenelec.eu/
+  - id: lift-escalator-safety
+    kind: standard
+    jurisdiction: EU
+    name: {en: "Safety rules for lifts and escalators (EN 81-20, EN 81-28, EN 115-1)", sv: "Säkerhetsregler för hissar och rulltrappor (EN 81-20, EN 81-28, EN 115-1)"}
+    match: ["EN 81-20", "EN 81-28", "EN 115-"]
+    url: https://standards.cencenelec.eu/
+  - id: se-afs
+    kind: law
+    jurisdiction: SE
+    short: AFS
+    name: {en: "Swedish Work Environment Authority regulations (AFS 2023:1–2023:15)", sv: "Arbetsmiljöverkets föreskrifter (AFS 2023:1–2023:15)"}
+    match: ["AFS 2023:"]
+    clause: '^(AFS \d{4}:\d+)'
+    url: https://www.av.se/arbetsmiljoarbete-och-inspektioner/publikationer/foreskrifter/
+  - id: en-12464
+    kind: standard
+    jurisdiction: EU
+    short: EN 12464-1
+    name: {en: "EN 12464-1 Light and lighting: lighting of indoor work places", sv: "EN 12464-1 Ljus och belysning: belysning av arbetsplatser inomhus"}
+    match: ["EN 12464"]
+    url: https://standards.cencenelec.eu/
+  - id: iso-3382
+    kind: standard
+    jurisdiction: international
+    short: ISO 3382-3
+    name: {en: "ISO 3382-3 Acoustics: measurement of room acoustic parameters in open plan offices", sv: "ISO 3382-3 Akustik: mätning av rumsakustiska parametrar i kontorslandskap"}
+    match: ["ISO 3382"]
+    url: https://www.iso.org/search.html?q=ISO%203382-3
+  - id: en-12845
+    kind: standard
+    jurisdiction: EU
+    short: EN 12845
+    name: {en: "EN 12845 Fixed firefighting systems: automatic sprinkler systems", sv: "EN 12845 Fasta släcksystem: automatiska sprinklersystem"}
+    match: ["EN 12845"]
+    url: https://standards.cencenelec.eu/
+  - id: en-3
+    kind: standard
+    jurisdiction: EU
+    short: EN 3
+    name: {en: "EN 3 Portable fire extinguishers", sv: "EN 3 Handbrandsläckare"}
+    match: ["EN 3-"]
+    url: https://standards.cencenelec.eu/
+  - id: en-50518
+    kind: standard
+    jurisdiction: EU
+    short: EN 50518
+    name: {en: "EN 50518 Monitoring and alarm receiving centre", sv: "EN 50518 Larmcentraler för övervakning och larmmottagning"}
+    match: ["EN 50518"]
+    url: https://standards.cencenelec.eu/
+  - id: se-flammable-goods
+    kind: law
+    jurisdiction: SE
+    name: {en: "Act on flammable and explosive goods (Lag 2010:1011)", sv: "Lag (2010:1011) om brandfarliga och explosiva varor"}
+    match: ["Lag (2010:1011)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-20101011-om-brandfarliga-och-explosiva_sfs-2010-1011/
+  - id: iso-37301
+    kind: standard
+    jurisdiction: international
+    short: ISO 37301
+    name: {en: "ISO 37301 Compliance management systems: requirements with guidance for use", sv: "ISO 37301 Ledningssystem för regelefterlevnad: krav med vägledning"}
+    match: ["ISO 37301"]
+    url: https://www.iso.org/standard/75080.html
+  - id: se-arkivlag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Archives Act (Arkivlag 1990:782)", sv: "Arkivlag (1990:782)"}
+    match: ["Arkivlag (1990:782)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arkivlag-1990782_sfs-1990-782/
+  - id: se-osl
+    kind: law
+    jurisdiction: SE
+    short: OSL
+    name: {en: "Public Access to Information and Secrecy Act (Offentlighets- och sekretesslag 2009:400)", sv: "Offentlighets- och sekretesslag (2009:400)"}
+    match: ["Offentlighets- och sekretesslag (2009:400)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/offentlighets-och-sekretesslag-2009400_sfs-2009-400/
+  - id: whistleblower-directive
+    kind: directive
+    jurisdiction: EU
+    short: Whistleblower Directive
+    name: {en: "Whistleblower Protection Directive (EU) 2019/1937", sv: "Visselblåsardirektivet (EU) 2019/1937"}
+    match: ["Directive (EU) 2019/1937"]
+    url: https://eur-lex.europa.eu/eli/dir/2019/1937/oj
+  - id: se-visselblasarlag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Swedish Whistleblower Act (Lag 2021:890)", sv: "Lag (2021:890) om skydd för personer som rapporterar om missförhållanden"}
+    match: ["Lag (2021:890)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2021890-om-skydd-for-personer-som_sfs-2021-890/
+  - id: iso-14721
+    kind: standard
+    jurisdiction: international
+    short: ISO 14721
+    name: {en: "ISO 14721 Open archival information system (OAIS) reference model", sv: "ISO 14721 Referensmodell för öppna arkivinformationssystem (OAIS)"}
+    match: ["ISO 14721"]
+    url: https://www.iso.org/search.html?q=ISO%2014721
+  - id: iec-62740
+    kind: standard
+    jurisdiction: international
+    short: IEC 62740
+    name: {en: "IEC 62740 Root cause analysis (RCA)", sv: "IEC 62740 Grundorsaksanalys (RCA)"}
+    match: ["IEC 62740"]
+    url: https://webstore.iec.ch/
+  - id: technical-drawings
+    kind: standard
+    jurisdiction: international
+    name: {en: "Technical product documentation: title blocks and drawing principles (ISO 7200, ISO 128)", sv: "Teknisk produktdokumentation: namnrutor och ritningsprinciper (ISO 7200, ISO 128)"}
+    match: ["ISO 7200", "ISO 128-"]
+    url: https://www.iso.org/search.html?q=ISO%207200

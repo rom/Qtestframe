@@ -143,11 +143,11 @@ requirements:
           threshold: "≤ 12 months between reviews"
     sv:
       title: Konsekvensanalys som granskas var 12:e månad
-      description: Organisationen SKA ha en konsekvensanalys som ger varje kritisk verksamhet en längsta acceptabla avbrottstid och ett mål för återställningstid och granska den var 12:e månad.
+      description: Organisationen SKA ha en konsekvensanalys som ger varje kritisk verksamhet en längsta tolererbara avbrottstid och ett mål för återställningstid och granska den var 12:e månad.
       rationale: Kontinuitetsplanering utan överenskomna mål för återställning lägger kraft på fel verksamheter och lämnar de livsviktiga oskyddade.
       criteria:
         - method: review
-          text: Analysen är yngre än 12 månader, och varje kritisk verksamhet i den har en längsta acceptabla avbrottstid och ett kortare mål för återställningstid.
+          text: Analysen är yngre än 12 månader, och varje kritisk verksamhet i den har en längsta tolererbara avbrottstid och ett kortare mål för återställningstid.
           threshold: "≤ 12 månader mellan granskningarna"
 
   - id: GVLC-07
@@ -426,6 +426,98 @@ requirements:
           text: För varje avvecklat system visar identitetshanteringen och certifikatregistret att vart och ett av dess konton, nycklar och certifikat spärrades inom 5 arbetsdagar efter avstängningen.
           threshold: "≤ 5 arbetsdagar"
 
+  - id: GVLC-19
+    type: business
+    obligation: must
+    priority: high
+    tags: [business-impact-analysis, rto, mtpd]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)"]
+    tests: [GVLC-T12]
+    en:
+      title: Recovery time objective shorter than the maximum tolerable disruption
+      description: The business impact analysis MUST set for each critical activity a maximum tolerable period of disruption and a recovery time objective that is shorter than that period.
+      rationale: A recovery objective equal to or longer than the tolerable disruption leaves no margin for the delays that always occur in a real recovery.
+      criteria:
+        - method: review
+          text: Each critical activity in the analysis has both values, and each recovery time objective is shorter than its maximum tolerable period.
+    sv:
+      title: Mål för återställningstid kortare än längsta tolererbara avbrott
+      description: Konsekvensanalysen SKA för varje kritisk aktivitet ange en längsta tolererbar avbrottstid och ett mål för återställningstid som är kortare än den tiden.
+      rationale: Ett återställningsmål som är lika långt eller längre än det tolererbara avbrottet lämnar ingen marginal för de förseningar som alltid uppstår vid en verklig återställning.
+      criteria:
+        - method: review
+          text: Varje kritisk aktivitet i analysen har båda värdena, och varje mål för återställningstid är kortare än den längsta tolererbara avbrottstiden.
+
+  - id: GVLC-20
+    type: business
+    obligation: must
+    priority: high
+    tags: [crisis-communication, templates, contacts]
+    refs: ["ISO 22301:2019 §8.4.3 (warning and communication)"]
+    tests: [GVLC-T12]
+    en:
+      title: Crisis communication with approved message templates and tested contact lists
+      description: The crisis organisation MUST keep approved message templates for staff, customers, media and authorities, and test the contact lists for these groups at least once every 6 months.
+      rationale: In the first hour of a crisis there is no time to write and approve messages from scratch or to search for phone numbers.
+      criteria:
+        - method: review
+          text: Templates exist for the 4 groups with an approval date, and a contact test less than 6 months old reached at least 90 % of the listed contacts.
+          threshold: "test ≤ 6 months; reach ≥ 90 %"
+    sv:
+      title: Kriskommunikation med godkända meddelandemallar och provade kontaktlistor
+      description: Krisorganisationen SKA ha godkända meddelandemallar för personal, kunder, medier och myndigheter, och prova kontaktlistorna för dessa grupper minst en gång var 6:e månad.
+      rationale: Den första timmen i en kris finns ingen tid att skriva och godkänna meddelanden från grunden eller att leta efter telefonnummer.
+      criteria:
+        - method: review
+          text: Mallar finns för de 4 grupperna med ett godkännandedatum, och ett kontaktprov som är mindre än 6 månader gammalt nådde minst 90 % av de listade kontakterna.
+          threshold: "prov ≤ 6 månader; nådda ≥ 90 %"
+
+  - id: GVLC-21
+    type: business
+    obligation: must
+    priority: medium
+    tags: [post-incident-review, continuity, lessons-learned]
+    refs: ["ISO 22301:2019 §8.6 (evaluation of business continuity documentation and capabilities)"]
+    tests: [GVLC-T13]
+    en:
+      title: Review within 30 days after each activation of a continuity plan
+      description: After each real activation of a continuity plan, the plan owner MUST hold a review within 30 days that compares the actual recovery times with the objectives and records the changes to the plan.
+      rationale: A real activation is the best test of a plan, and its lessons are lost if nobody records them while memories are fresh.
+      criteria:
+        - method: review
+          text: Each activation in the incident log of the last 12 months has a review record within 30 days with actual against target times and plan changes.
+          threshold: "≤ 30 days"
+    sv:
+      title: Genomgång inom 30 dagar efter varje aktivering av en kontinuitetsplan
+      description: Efter varje verklig aktivering av en kontinuitetsplan SKA planens ägare hålla en genomgång inom 30 dagar som jämför de faktiska återställningstiderna med målen och dokumenterar ändringarna av planen.
+      rationale: En verklig aktivering är det bästa provet av en plan, och lärdomarna går förlorade om ingen dokumenterar dem medan minnet är färskt.
+      criteria:
+        - method: review
+          text: Varje aktivering i incidentloggen under de senaste 12 månaderna har en dokumenterad genomgång inom 30 dagar med faktiska tider mot målen och ändringar av planen.
+          threshold: "≤ 30 dagar"
+
+  - id: GVLC-22
+    type: business
+    obligation: should
+    priority: medium
+    tags: [life-cycle-cost, investment, replacement]
+    refs: ["IEC 60300-3-3:2017 (life cycle costing)", "ISO 55001:2024 §6.2 (asset management objectives and planning)"]
+    tests: [GVLC-T13]
+    en:
+      title: Life cycle cost in each investment and replacement decision
+      description: Each decision on investing in or replacing an asset above the agreed value limit SHOULD be based on a life cycle cost estimate that includes acquisition, operation, maintenance and disposal over the planned life.
+      rationale: The purchase price is often a minor part of the total cost, and decisions on price alone lead to higher costs over the life of the asset.
+      criteria:
+        - method: review
+          text: Each investment decision above the limit in the last 12 months has a life cycle cost estimate with the 4 cost elements and the planned life.
+    sv:
+      title: Livscykelkostnad i varje beslut om investering och utbyte
+      description: Varje beslut om att investera i eller byta ut en tillgång över den avtalade beloppsgränsen BÖR grundas på en uppskattning av livscykelkostnaden som omfattar anskaffning, drift, underhåll och avveckling under den planerade livslängden.
+      rationale: Inköpspriset är ofta en mindre del av den totala kostnaden, och beslut som bara utgår från priset leder till högre kostnader under tillgångens livslängd.
+      criteria:
+        - method: review
+          text: Varje investeringsbeslut över gränsen under de senaste 12 månaderna har en uppskattning av livscykelkostnaden med de 4 kostnadsposterna och den planerade livslängden.
+
 tests:
   - id: GVLC-T01
     priority: high
@@ -533,7 +625,7 @@ tests:
       expected: Analysen är yngre än 12 månader med mål för varje kritisk verksamhet, och varje lösning når sitt mål för återställningstid.
       steps:
         - action: Kontrollera analysens datum och målen för varje kritisk verksamhet.
-          expected: Analysen är yngre än 12 månader, och varje verksamhet har en längsta acceptabla avbrottstid och ett kortare mål för återställningstid.
+          expected: Analysen är yngre än 12 månader, och varje verksamhet har en längsta tolererbara avbrottstid och ett kortare mål för återställningstid.
         - action: Jämför för varje kritisk verksamhet den dokumenterade återställningstiden för lösningen i planen med målet för återställningstid.
           expected: Varje lösning har en återställningstid som är lika med eller kortare än målet.
 
@@ -726,3 +818,65 @@ tests:
           expected: Varje konto är spärrat med ett datum inom 5 arbetsdagar efter avstängningen.
         - action: Lista de nycklar och certifikat som har utfärdats till varje system i certifikatregistret.
           expected: Var och en är spärrad med ett datum inom 5 arbetsdagar efter avstängningen.
+
+  - id: GVLC-T12
+    priority: high
+    execution: manual
+    tags: [business-impact-analysis, crisis-communication]
+    refs: ["ISO 22301:2019 §8.2.2 (business impact analysis)", "ISO 22301:2019 §8.4.3 (warning and communication)"]
+    en:
+      title: Recovery objectives in the impact analysis and crisis communication readiness
+      description: Compares the recovery objectives with the tolerable disruption and checks the message templates and the latest contact test.
+      preconditions: The current business impact analysis, the crisis communication plan with templates and the latest contact test report.
+      expected: Each recovery objective is shorter than its tolerable disruption, templates exist for the 4 groups and the latest test reached 90 % of the contacts.
+      steps:
+        - action: For each critical activity, compare the recovery time objective with the maximum tolerable period of disruption.
+          expected: The objective is shorter.
+          data: "MTPD 24 h, RTO 8 h"
+        - action: Look up the message templates.
+          expected: Approved templates exist for staff, customers, media and authorities.
+        - action: Read the latest contact test report.
+          expected: It is less than 6 months old and reached at least 90 % of the contacts.
+    sv:
+      title: Återställningsmål i konsekvensanalysen och beredskap för kriskommunikation
+      description: Jämför återställningsmålen med den tolererbara avbrottstiden och kontrollerar meddelandemallarna och det senaste kontaktprovet.
+      preconditions: Den gällande konsekvensanalysen, planen för kriskommunikation med mallar och rapporten från det senaste kontaktprovet.
+      expected: Varje återställningsmål är kortare än sin tolererbara avbrottstid, mallar finns för de 4 grupperna och det senaste provet nådde 90 % av kontakterna.
+      steps:
+        - action: Jämför för varje kritisk aktivitet målet för återställningstid med den längsta tolererbara avbrottstiden.
+          expected: Målet är kortare.
+          data: "Längsta tolererbara avbrott 24 h, återställningsmål 8 h"
+        - action: Slå upp meddelandemallarna.
+          expected: Godkända mallar finns för personal, kunder, medier och myndigheter.
+        - action: Läs rapporten från det senaste kontaktprovet.
+          expected: Den är mindre än 6 månader gammal och provet nådde minst 90 % av kontakterna.
+
+  - id: GVLC-T13
+    priority: medium
+    execution: manual
+    tags: [post-incident-review, life-cycle-cost]
+    refs: ["ISO 22301:2019 §8.6 (evaluation of business continuity documentation and capabilities)", "IEC 60300-3-3:2017 (life cycle costing)"]
+    en:
+      title: Reviews after plan activations and life cycle cost estimates
+      description: Checks the reviews after real activations of continuity plans and the life cycle cost basis of recent investment decisions.
+      preconditions: The incident log of the last 12 months, the review records, and the investment decisions above the value limit with their basis.
+      expected: Each activation was reviewed within 30 days, and each investment decision has a life cycle cost estimate.
+      steps:
+        - action: Find the plan activations in the incident log and their review records.
+          expected: Each activation has a review within 30 days.
+        - action: Read each review.
+          expected: It compares actual recovery times with the objectives and lists plan changes.
+        - action: Read the basis of each investment decision above the limit.
+          expected: It has a life cycle cost estimate with acquisition, operation, maintenance, disposal and the planned life.
+    sv:
+      title: Genomgångar efter aktivering av planer och uppskattningar av livscykelkostnad
+      description: Kontrollerar genomgångarna efter verkliga aktiveringar av kontinuitetsplaner och livscykelkostnaden i underlaget för de senaste investeringsbesluten.
+      preconditions: Incidentloggen för de senaste 12 månaderna, dokumentationen från genomgångarna och investeringsbesluten över beloppsgränsen med underlag.
+      expected: Varje aktivering gicks igenom inom 30 dagar, och varje investeringsbeslut har en uppskattning av livscykelkostnaden.
+      steps:
+        - action: Hitta aktiveringarna av planer i incidentloggen och dokumentationen från deras genomgångar.
+          expected: Varje aktivering har en genomgång inom 30 dagar.
+        - action: Läs varje genomgång.
+          expected: Den jämför faktiska återställningstider med målen och listar ändringar av planen.
+        - action: Läs underlaget för varje investeringsbeslut över gränsen.
+          expected: Det har en uppskattning av livscykelkostnaden med anskaffning, drift, underhåll, avveckling och planerad livslängd.

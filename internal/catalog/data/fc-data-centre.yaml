@@ -336,6 +336,124 @@ requirements:
         - method: review
           text: Den installerade IT-effekten är dokumenterad, och en bekräftelse på den senaste årliga rapporten till den europeiska databasen finns arkiverad.
 
+  - id: FCDC-15
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [ups, battery, discharge-test]
+    refs: ["EN 50600-2-2 (power distribution)"]
+    tests: [FCDC-T12]
+    en:
+      title: Yearly discharge test of the UPS batteries
+      description: The operator MUST run a discharge test of each UPS battery string at least every 12 months and replace a string whose measured autonomy is below 80 % of the design autonomy.
+      rationale: Batteries lose capacity with age and temperature without any visible sign, and the loss is only found by a discharge test.
+      criteria:
+        - method: review
+          text: Each string has a test report less than 12 months old, and each string below 80 % of the design autonomy was replaced or has a dated replacement order.
+          threshold: "replace below 80 % of design autonomy"
+    sv:
+      title: Årligt urladdningsprov av UPS-batterierna
+      description: Driftansvarig SKA genomföra ett urladdningsprov av varje batteristräng i UPS-systemet minst var 12:e månad och byta en sträng vars uppmätta drifttid understiger 80 % av den dimensionerade drifttiden.
+      rationale: Batterier tappar kapacitet med ålder och temperatur utan synliga tecken, och förlusten upptäcks bara vid ett urladdningsprov.
+      criteria:
+        - method: review
+          text: Varje sträng har en provningsrapport som är mindre än 12 månader gammal, och varje sträng under 80 % av den dimensionerade drifttiden har bytts eller har en daterad beställning av byte.
+          threshold: "byte under 80 % av dimensionerad drifttid"
+
+  - id: FCDC-16
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [cooling, containment, air-management]
+    refs: ["EN 50600-2-3 (environmental control)"]
+    tests: [FCDC-T13]
+    en:
+      title: Aisle containment and blanking panels in each rack row
+      description: Each rack row SHOULD have hot or cold aisle containment, with each empty rack unit in a populated rack closed by a blanking panel.
+      rationale: Mixing of hot and cold air forces lower supply temperatures and higher fan speeds, which wastes cooling energy and creates hot spots.
+      criteria:
+        - method: inspection
+          text: A walk-through of each data hall finds containment on each row and no open rack unit in populated racks.
+    sv:
+      title: Inneslutning av gångar och blindpaneler i varje rackrad
+      description: Varje rackrad BÖR ha inneslutning av den varma eller den kalla gången, med varje tom rackenhet i ett använt rack stängd med en blindpanel.
+      rationale: När varm och kall luft blandas krävs lägre tilluftstemperatur och högre fläkthastighet, vilket slösar kylenergi och ger varma punkter.
+      criteria:
+        - method: inspection
+          text: En rundvandring i varje datahall hittar inneslutning på varje rad och ingen öppen rackenhet i använda rack.
+
+  - id: FCDC-17
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [humidity, dew-point, environment]
+    refs: ["ASHRAE TC 9.9 Thermal Guidelines for Data Processing Environments", "EN 50600-2-3 (environmental control)"]
+    tests: [FCDC-T13]
+    en:
+      title: Dew point in the data hall between −9 and 15 °C
+      description: The environmental control MUST keep the dew point of the air at the rack inlets between −9 and 15 °C and raise an alarm within 15 minutes when it leaves that range.
+      rationale: Too dry air raises the risk of electrostatic discharge and too humid air the risk of condensation and corrosion.
+      criteria:
+        - method: analysis
+          text: The logged dew point for the last 3 months stays within the range, and a simulated reading outside it gives an alarm within 15 minutes.
+          threshold: "−9 to 15 °C dew point"
+    sv:
+      title: Daggpunkt i datahallen mellan −9 och 15 °C
+      description: Klimatstyrningen SKA hålla luftens daggpunkt vid rackens luftintag mellan −9 och 15 °C och larma inom 15 minuter när den hamnar utanför intervallet.
+      rationale: För torr luft ökar risken för elektrostatiska urladdningar och för fuktig luft risken för kondens och korrosion.
+      criteria:
+        - method: analysis
+          text: Den loggade daggpunkten för de senaste 3 månaderna håller sig inom intervallet, och ett simulerat värde utanför det ger larm inom 15 minuter.
+          threshold: "daggpunkt −9 till 15 °C"
+
+  - id: FCDC-18
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [waste-heat, energy-efficiency, data-centre]
+    refs: ["Directive (EU) 2023/1791 Art. 26 (heating and cooling supply)"]
+    tests: [FCDC-T14]
+    en:
+      title: Cost-benefit analysis of waste heat use for a data centre of 1 MW or more
+      description: Before a new or substantially refurbished data centre with a total rated energy input of 1 MW or more is commissioned, the operator MUST carry out a cost-benefit analysis of using its waste heat, for example in a district heating network.
+      rationale: Data centres turn almost all their electricity into heat, and using it elsewhere can replace other heat production.
+      criteria:
+        - method: review
+          text: A dated cost-benefit analysis exists before the commissioning date and covers at least 1 heat recipient option.
+          threshold: "≥ 1 MW rated input"
+    sv:
+      title: Kostnads-nyttoanalys av spillvärme för ett datacenter på 1 MW eller mer
+      description: Innan ett nytt eller väsentligt renoverat datacenter med en total nominell tillförd effekt på 1 MW eller mer tas i drift SKA driftansvarig göra en kostnads-nyttoanalys av att använda dess spillvärme, till exempel i ett fjärrvärmenät.
+      rationale: Datacenter omvandlar nästan all sin el till värme, och om den används någon annanstans kan den ersätta annan värmeproduktion.
+      criteria:
+        - method: review
+          text: En daterad kostnads-nyttoanalys finns före datumet för driftsättning och omfattar minst 1 alternativ för mottagare av värmen.
+          threshold: "≥ 1 MW nominell tillförd effekt"
+
+  - id: FCDC-19
+    type: business
+    obligation: must
+    priority: high
+    tags: [change-control, method-statement, critical-infrastructure]
+    refs: ["EN 50600-2-6 (management and operational information)"]
+    tests: [FCDC-T14]
+    en:
+      title: Approved method statement before work on power or cooling
+      description: Each planned work on the power or cooling infrastructure of a data hall MUST have a method statement with steps, a risk assessment and a back-out plan, approved by the facility manager at least 2 working days before the work.
+      rationale: Many data centre outages are caused by human error during maintenance, and a reviewed step-by-step plan prevents them.
+      criteria:
+        - method: review
+          text: Each work on power or cooling in the work order system of the last 3 months has an approved method statement with the 3 parts dated at least 2 working days before the work.
+          threshold: "approval ≥ 2 working days ahead"
+    sv:
+      title: Godkänd arbetsinstruktion före arbete på kraft eller kyla
+      description: Varje planerat arbete på kraft- eller kylinfrastrukturen i en datahall SKA ha en arbetsinstruktion med steg, riskbedömning och reträttplan som fastighetsansvarig har godkänt minst 2 arbetsdagar före arbetet.
+      rationale: Många avbrott i datacenter orsakas av mänskliga fel under underhåll, och en granskad plan steg för steg förhindrar dem.
+      criteria:
+        - method: review
+          text: Varje arbete på kraft eller kyla i arbetsordersystemet under de senaste 3 månaderna har en godkänd arbetsinstruktion med de 3 delarna daterad minst 2 arbetsdagar före arbetet.
+          threshold: "godkännande ≥ 2 arbetsdagar i förväg"
+
 tests:
   - id: FCDC-T01
     priority: critical
@@ -652,3 +770,99 @@ tests:
           data: PUE = total energi / IT-energi
         - action: Läs den installerade IT-effekten och, om den är 500 kW eller mer, hitta bekräftelsen på den senaste årliga rapporten.
           expected: Bekräftelsen finns arkiverad och är daterad inom de senaste 12 månaderna.
+
+  - id: FCDC-T12
+    priority: high
+    execution: manual
+    tags: [ups, battery]
+    refs: ["EN 50600-2-2 (power distribution)"]
+    en:
+      title: UPS battery discharge test reports
+      description: Checks the discharge test reports of each battery string and the handling of weak strings.
+      preconditions: The list of UPS battery strings, the design autonomy and the discharge test reports.
+      expected: Each string was tested within 12 months, and each string below 80 % was replaced or ordered.
+      steps:
+        - action: Find the latest discharge test report of each string.
+          expected: Each report is less than 12 months old.
+        - action: Divide each measured autonomy by the design autonomy.
+          expected: A share per string.
+          data: "Design 10 minutes, measured 7.5 minutes: 75 %"
+        - action: For each string below 80 %, look for the replacement.
+          expected: The string was replaced or has a dated replacement order.
+    sv:
+      title: Rapporter från urladdningsprov av UPS-batterier
+      description: Kontrollerar rapporterna från urladdningsproven av varje batteristräng och hanteringen av svaga strängar.
+      preconditions: Listan över batteristrängar i UPS-systemet, den dimensionerade drifttiden och provningsrapporterna.
+      expected: Varje sträng provades inom 12 månader, och varje sträng under 80 % har bytts eller beställts.
+      steps:
+        - action: Hitta den senaste provningsrapporten för varje sträng.
+          expected: Varje rapport är mindre än 12 månader gammal.
+        - action: Dela varje uppmätt drifttid med den dimensionerade drifttiden.
+          expected: En andel per sträng.
+          data: "Dimensionerad 10 minuter, uppmätt 7,5 minuter: 75 %"
+        - action: Leta efter bytet för varje sträng under 80 %.
+          expected: Strängen har bytts eller har en daterad beställning av byte.
+
+  - id: FCDC-T13
+    priority: medium
+    execution: manual
+    tags: [containment, humidity]
+    refs: ["EN 50600-2-3 (environmental control)", "ASHRAE TC 9.9 Thermal Guidelines for Data Processing Environments"]
+    en:
+      title: Air management walk-through and dew point alarm
+      description: Walks through the data halls for containment and blanking panels and tests the dew point alarm.
+      preconditions: Access to each data hall, 3 months of dew point logs and a way to inject a simulated sensor value.
+      expected: Rows are contained, racks have no open units, the dew point stayed in range and the alarm works.
+      steps:
+        - action: Walk along each rack row.
+          expected: Each row has hot or cold aisle containment.
+        - action: Look at the front of each populated rack.
+          expected: Each empty unit is closed with a blanking panel.
+        - action: Read the minimum and maximum dew point in the logs.
+          expected: Both lie between −9 and 15 °C.
+        - action: Inject a simulated dew point of 17 °C on 1 sensor.
+          expected: An alarm is raised within 15 minutes.
+    sv:
+      title: Rundvandring för luftstyrning och larm för daggpunkt
+      description: Går igenom datahallarna med avseende på inneslutning och blindpaneler och provar larmet för daggpunkt.
+      preconditions: Tillgång till varje datahall, 3 månaders loggar för daggpunkt och ett sätt att mata in ett simulerat givarvärde.
+      expected: Raderna är inneslutna, racken har inga öppna enheter, daggpunkten höll sig inom intervallet och larmet fungerar.
+      steps:
+        - action: Gå längs varje rackrad.
+          expected: Varje rad har inneslutning av den varma eller kalla gången.
+        - action: Titta på framsidan av varje använt rack.
+          expected: Varje tom enhet är stängd med en blindpanel.
+        - action: Läs lägsta och högsta daggpunkt i loggarna.
+          expected: Båda ligger mellan −9 och 15 °C.
+        - action: Mata in en simulerad daggpunkt på 17 °C för 1 givare.
+          expected: Ett larm ges inom 15 minuter.
+
+  - id: FCDC-T14
+    priority: medium
+    execution: manual
+    tags: [waste-heat, method-statement]
+    refs: ["Directive (EU) 2023/1791 Art. 26 (heating and cooling supply)", "EN 50600-2-6 (management and operational information)"]
+    en:
+      title: Waste heat analysis and method statements for critical work
+      description: Checks the waste heat analysis for a large data centre and the method statements of recent work on power and cooling.
+      preconditions: The rated energy input and commissioning date of the data centre, the waste heat analysis and the work orders of the last 3 months.
+      expected: The analysis predates commissioning, and each critical work had an approved method statement in time.
+      steps:
+        - action: Read the rated energy input and, at 1 MW or more, the date of the cost-benefit analysis.
+          expected: The analysis is dated before commissioning and covers at least 1 heat recipient.
+        - action: Filter the work orders on power and cooling work.
+          expected: Each has a method statement attached.
+        - action: Check each method statement for steps, risk assessment, back-out plan and approval date.
+          expected: The 3 parts are present and the approval is at least 2 working days before the work.
+    sv:
+      title: Analys av spillvärme och arbetsinstruktioner för kritiskt arbete
+      description: Kontrollerar analysen av spillvärme för ett stort datacenter och arbetsinstruktionerna för nyligen utförda arbeten på kraft och kyla.
+      preconditions: Datacentrets nominella tillförda effekt och datum för driftsättning, analysen av spillvärme och arbetsordrarna för de senaste 3 månaderna.
+      expected: Analysen är äldre än driftsättningen, och varje kritiskt arbete hade en godkänd arbetsinstruktion i tid.
+      steps:
+        - action: Läs den nominella tillförda effekten och, vid 1 MW eller mer, datumet för kostnads-nyttoanalysen.
+          expected: Analysen är daterad före driftsättningen och omfattar minst 1 mottagare av värme.
+        - action: Filtrera arbetsordrarna på arbeten på kraft och kyla.
+          expected: Varje arbetsorder har en bifogad arbetsinstruktion.
+        - action: Kontrollera att varje arbetsinstruktion har steg, riskbedömning, reträttplan och godkännandedatum.
+          expected: De 3 delarna finns och godkännandet ligger minst 2 arbetsdagar före arbetet.

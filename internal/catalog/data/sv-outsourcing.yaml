@@ -288,6 +288,140 @@ requirements:
           text: Avtalet innehåller skyldigheten att fortsätta och bistå i upp till 6 månader till de avtalade priserna.
           threshold: ≤ 6 månader
 
+  - id: SVOUT-13
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [outsourcing, register, criticality]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(3)", "ISO/IEC 27001:2022 A.5.19"]
+    tests: [SVOUT-T09]
+    en:
+      title: Register of outsourced services with criticality
+      description: The customer MUST keep a register of each outsourced service with the provider, the contract reference, the supported business function, whether that function is critical and the countries where the service is performed.
+      rationale: The register is the basis for risk assessment, supervision and exit planning, and supervisors in regulated sectors ask for it.
+      criteria:
+        - method: inspection
+          text: Each active service contract in the contract system is in the register with the 5 listed fields filled in.
+    sv:
+      title: Register över utlagda tjänster med kritikalitet
+      description: Kunden SKA föra ett register över varje utlagd tjänst med leverantör, avtalsreferens, den verksamhetsfunktion som stöds, om funktionen är kritisk och i vilka länder tjänsten utförs.
+      rationale: Registret är grunden för riskbedömning, tillsyn och planering av avslut, och tillsynsmyndigheter i reglerade sektorer begär det.
+      criteria:
+        - method: inspection
+          text: Varje aktivt tjänsteavtal i avtalssystemet finns i registret med de 5 angivna fälten ifyllda.
+
+  - id: SVOUT-14
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [outsourcing, concentration-risk, risk-assessment]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 29"]
+    tests: [SVOUT-T09]
+    en:
+      title: Concentration risk assessed before outsourcing a critical function
+      description: Before contracting a provider for a critical function, the customer MUST assess the concentration risk, including the other critical functions already placed with the same provider and how replaceable the provider is.
+      rationale: Placing several critical functions with one provider that cannot be replaced creates a single point of failure for the whole organisation.
+      criteria:
+        - method: review
+          text: Each contract for a critical function has a concentration risk assessment dated before signature that lists the other functions with the same provider and the replaceability.
+    sv:
+      title: Koncentrationsrisken bedöms innan en kritisk funktion läggs ut
+      description: Innan en leverantör anlitas för en kritisk funktion SKA kunden bedöma koncentrationsrisken, inklusive de andra kritiska funktioner som redan finns hos samma leverantör och hur ersättningsbar leverantören är.
+      rationale: Att lägga flera kritiska funktioner hos en leverantör som inte går att ersätta skapar en enskild felpunkt för hela organisationen.
+      criteria:
+        - method: review
+          text: Varje avtal för en kritisk funktion har en bedömning av koncentrationsrisken daterad före undertecknandet som listar de andra funktionerna hos samma leverantör och ersättningsbarheten.
+
+  - id: SVOUT-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [outsourcing, screening, privileged-access]
+    refs: ["ISO/IEC 27001:2022 A.6.1", "ISO/IEC 27001:2022 A.5.20"]
+    tests: [SVOUT-T10]
+    en:
+      title: Background checks of provider staff with privileged access
+      description: The contract MUST oblige the provider to complete a background check of each of its staff before that person gets privileged access to the customer's systems or data, at the level stated in the contract.
+      rationale: Privileged staff at a provider can do the same harm as the customer's own administrators and need the same vetting.
+      criteria:
+        - method: review
+          text: The contract has the clause, and the provider's records for 5 sampled privileged staff show a completed check dated before access was granted.
+    sv:
+      title: Bakgrundskontroll av leverantörens personal med privilegierad behörighet
+      description: Avtalet SKA förplikta leverantören att genomföra en bakgrundskontroll av varje person i sin personal på den nivå som avtalet anger innan personen ges privilegierad åtkomst till kundens system eller data.
+      rationale: Privilegierad personal hos en leverantör kan göra samma skada som kundens egna administratörer och behöver samma kontroll.
+      criteria:
+        - method: review
+          text: Avtalet har klausulen, och leverantörens underlag för 5 utvalda personer med privilegierad behörighet visar en genomförd kontroll daterad innan åtkomsten gavs.
+
+  - id: SVOUT-16
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [outsourcing, termination, contract]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(7)"]
+    tests: [SVOUT-T11]
+    en:
+      title: Termination rights for breach and supervisory instruction
+      description: The contract for a critical function MUST give the customer the right to terminate it for a material breach of law or contract, for a weakness found in the provider's risk management, and when a supervisory authority instructs it.
+      rationale: Without these rights the customer can be bound to a provider that puts it in breach of its own obligations.
+      criteria:
+        - method: review
+          text: The termination clause of each contract for a critical function covers the 3 listed grounds.
+    sv:
+      title: Rätt att säga upp avtalet vid avtalsbrott och föreläggande från tillsynsmyndighet
+      description: Avtalet för en kritisk funktion SKA ge kunden rätt att säga upp det vid ett väsentligt brott mot lag eller avtal, vid en brist som upptäcks i leverantörens riskhantering och när en tillsynsmyndighet förelägger kunden att göra det.
+      rationale: Utan dessa rättigheter kan kunden vara bunden till en leverantör som gör att kunden själv bryter mot sina skyldigheter.
+      criteria:
+        - method: review
+          text: Uppsägningsklausulen i varje avtal för en kritisk funktion omfattar de 3 angivna grunderna.
+
+  - id: SVOUT-17
+    type: security
+    obligation: must
+    priority: medium
+    tags: [outsourcing, subcontractors, supply-chain]
+    refs: ["ISO/IEC 27001:2022 A.5.21", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(d)"]
+    tests: [SVOUT-T11]
+    en:
+      title: Security requirements passed on to subcontractors
+      description: The contract MUST oblige the provider to pass on the security requirements of the contract to each subcontractor that takes part in the service, and to show this to the customer on request within 10 working days.
+      rationale: The security of the service is only as strong as the weakest subcontractor, who has no contract with the customer.
+      criteria:
+        - method: review
+          text: The contract has the clause, and the provider produced the relevant clauses of 2 subcontracts within 10 working days of a request.
+          threshold: "≤ 10 working days"
+    sv:
+      title: Säkerhetskraven förs vidare till underleverantörer
+      description: Avtalet SKA förplikta leverantören att föra vidare avtalets säkerhetskrav till varje underleverantör som deltar i tjänsten och att visa detta för kunden inom 10 arbetsdagar efter en begäran.
+      rationale: Tjänstens säkerhet är aldrig starkare än den svagaste underleverantören, som inte har något avtal med kunden.
+      criteria:
+        - method: review
+          text: Avtalet har klausulen, och leverantören visade de aktuella klausulerna i 2 underleverantörsavtal inom 10 arbetsdagar efter en begäran.
+          threshold: "≤ 10 arbetsdagar"
+
+  - id: SVOUT-18
+    type: business
+    obligation: should
+    priority: medium
+    tags: [outsourcing, continuity, exercise]
+    refs: ["ISO 22301:2019 §8.5 (exercise programme)", "ISO/IEC 27001:2022 A.5.30"]
+    tests: [SVOUT-T12]
+    en:
+      title: Provider takes part in the customer's continuity exercise
+      description: The provider of a critical service SHOULD take part in at least 1 of the customer's continuity exercises each year that involves the service, and deliver its own findings within 15 working days.
+      rationale: A continuity plan that relies on a provider is not proven until the provider has played its part in an exercise.
+      criteria:
+        - method: review
+          text: The exercise report of the last 12 months names the provider's participants, and the provider's findings are dated within 15 working days of the exercise.
+    sv:
+      title: Leverantören deltar i kundens kontinuitetsövning
+      description: Leverantören av en kritisk tjänst BÖR delta i minst 1 av kundens kontinuitetsövningar per år som omfattar tjänsten och lämna sina egna iakttagelser inom 15 arbetsdagar.
+      rationale: En kontinuitetsplan som bygger på en leverantör är inte prövad förrän leverantören har spelat sin roll i en övning.
+      criteria:
+        - method: review
+          text: Övningsrapporten från de senaste 12 månaderna namnger leverantörens deltagare, och leverantörens iakttagelser är daterade inom 15 arbetsdagar efter övningen.
+
 tests:
   - id: SVOUT-T01
     priority: critical
@@ -526,3 +660,119 @@ tests:
           data: 100 poster
         - action: Läs intyget om radering och jämför dess datum med kundens bekräftelse.
           expected: Det är undertecknat, daterat högst 30 dagar senare och omfattar produktions-, säkerhets- och arkivkopior.
+
+  - id: SVOUT-T09
+    priority: high
+    execution: manual
+    tags: [register, concentration-risk]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(3)", "Regulation (EU) 2022/2554 (DORA) Art. 29"]
+    en:
+      title: Register of outsourced services and concentration assessments
+      description: Compares the register with the contract system and checks the concentration risk assessments of critical contracts.
+      preconditions: The register of outsourced services, an export of active service contracts and the assessments for critical functions.
+      expected: The register is complete, and each critical contract was preceded by a concentration risk assessment.
+      steps:
+        - action: Match the active service contracts against the register.
+          expected: Each contract is in the register.
+        - action: Check the fields of each register entry.
+          expected: Provider, contract reference, function, criticality and countries are filled in.
+        - action: For each contract for a critical function, compare the assessment date with the signature date.
+          expected: The assessment is earlier and lists the other functions with the provider and its replaceability.
+    sv:
+      title: Register över utlagda tjänster och bedömningar av koncentrationsrisk
+      description: Jämför registret med avtalssystemet och kontrollerar bedömningarna av koncentrationsrisk för kritiska avtal.
+      preconditions: Registret över utlagda tjänster, en export av aktiva tjänsteavtal och bedömningarna för kritiska funktioner.
+      expected: Registret är komplett, och varje kritiskt avtal föregicks av en bedömning av koncentrationsrisken.
+      steps:
+        - action: Matcha de aktiva tjänsteavtalen mot registret.
+          expected: Varje avtal finns i registret.
+        - action: Kontrollera fälten i varje post i registret.
+          expected: Leverantör, avtalsreferens, funktion, kritikalitet och länder är ifyllda.
+        - action: Jämför för varje avtal för en kritisk funktion bedömningens datum med undertecknandedatumet.
+          expected: Bedömningen är tidigare och listar de andra funktionerna hos leverantören och dess ersättningsbarhet.
+
+  - id: SVOUT-T10
+    priority: high
+    execution: manual
+    tags: [screening, privileged-access]
+    refs: ["ISO/IEC 27001:2022 A.6.1"]
+    en:
+      title: Background checks of privileged provider staff
+      description: Samples provider staff with privileged access and checks their background check records against the access dates.
+      preconditions: The list of provider accounts with privileged access, their grant dates and the provider's screening records.
+      expected: Each sampled person was checked at the contracted level before access was granted.
+      steps:
+        - action: Pick 5 provider staff with privileged access.
+          expected: Each has a screening record from the provider.
+        - action: Compare the screening level with the level in the contract.
+          expected: The levels match.
+        - action: Compare the screening date with the date the access was granted.
+          expected: The screening is earlier.
+    sv:
+      title: Bakgrundskontroller av leverantörens privilegierade personal
+      description: Gör ett urval av leverantörens personal med privilegierad behörighet och jämför deras kontroller med datumen för åtkomst.
+      preconditions: Listan över leverantörskonton med privilegierad behörighet, datum då de gavs och leverantörens underlag om kontroller.
+      expected: Varje person i urvalet kontrollerades på avtalad nivå innan åtkomsten gavs.
+      steps:
+        - action: Välj 5 personer hos leverantören med privilegierad behörighet.
+          expected: Varje person har ett underlag om kontroll från leverantören.
+        - action: Jämför kontrollens nivå med nivån i avtalet.
+          expected: Nivåerna stämmer.
+        - action: Jämför datumet för kontrollen med datumet då åtkomsten gavs.
+          expected: Kontrollen är tidigare.
+
+  - id: SVOUT-T11
+    priority: medium
+    execution: manual
+    tags: [termination, subcontractors]
+    refs: ["Regulation (EU) 2022/2554 (DORA) Art. 28(7)", "ISO/IEC 27001:2022 A.5.21"]
+    en:
+      title: Termination grounds and flow-down to subcontractors
+      description: Reviews the termination clause and asks the provider to show the security clauses of its subcontracts.
+      preconditions: The contract for a critical function and the provider's list of subcontractors.
+      expected: The contract has the 3 termination grounds, and the provider shows the flow-down within 10 working days.
+      steps:
+        - action: Read the termination clause of the contract.
+          expected: It covers material breach, a weakness in risk management and a supervisory instruction.
+        - action: Ask the provider in writing for the security clauses of 2 named subcontracts.
+          expected: The provider delivers them within 10 working days.
+        - action: Compare the delivered clauses with the security requirements of the main contract.
+          expected: Each requirement appears in both subcontracts.
+    sv:
+      title: Uppsägningsgrunder och vidareföring till underleverantörer
+      description: Granskar uppsägningsklausulen och ber leverantören visa säkerhetsklausulerna i sina underleverantörsavtal.
+      preconditions: Avtalet för en kritisk funktion och leverantörens lista över underleverantörer.
+      expected: Avtalet har de 3 uppsägningsgrunderna, och leverantören visar vidareföringen inom 10 arbetsdagar.
+      steps:
+        - action: Läs avtalets uppsägningsklausul.
+          expected: Den omfattar väsentligt avtalsbrott, brist i riskhanteringen och föreläggande från tillsynsmyndighet.
+        - action: Begär skriftligt säkerhetsklausulerna i 2 namngivna underleverantörsavtal från leverantören.
+          expected: Leverantören lämnar dem inom 10 arbetsdagar.
+        - action: Jämför de mottagna klausulerna med säkerhetskraven i huvudavtalet.
+          expected: Varje krav finns i båda underleverantörsavtalen.
+
+  - id: SVOUT-T12
+    priority: medium
+    execution: manual
+    tags: [continuity, exercise]
+    refs: ["ISO 22301:2019 §8.5 (exercise programme)"]
+    en:
+      title: Provider participation in a continuity exercise
+      description: Checks the provider's part in the latest continuity exercise that involved the service.
+      preconditions: The exercise report of the last 12 months and the provider's findings.
+      expected: The provider took part and delivered its findings within 15 working days.
+      steps:
+        - action: Read the participant list of the exercise report.
+          expected: Staff of the provider are named.
+        - action: Compare the date of the provider's findings with the exercise date.
+          expected: The findings came within 15 working days.
+    sv:
+      title: Leverantörens deltagande i en kontinuitetsövning
+      description: Kontrollerar leverantörens del i den senaste kontinuitetsövningen som omfattade tjänsten.
+      preconditions: Övningsrapporten från de senaste 12 månaderna och leverantörens iakttagelser.
+      expected: Leverantören deltog och lämnade sina iakttagelser inom 15 arbetsdagar.
+      steps:
+        - action: Läs deltagarlistan i övningsrapporten.
+          expected: Personal från leverantören är namngiven.
+        - action: Jämför datumet för leverantörens iakttagelser med övningsdatumet.
+          expected: Iakttagelserna kom inom 15 arbetsdagar.

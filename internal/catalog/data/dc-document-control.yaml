@@ -396,6 +396,94 @@ requirements:
         - method: inspection
           text: Varje produkt i produktförteckningen har en post med lagstiftning, förfarande och en länk till den tekniska dokumentationen som går att öppna.
 
+  - id: DCDC-18
+    type: business
+    obligation: must
+    priority: high
+    tags: [records, integrity, corrections]
+    refs: ["ISO 9001:2026 §7.5.3 (control of documented information)", "ISO 15489-1:2016"]
+    tests: [DCDC-T12]
+    en:
+      title: Corrections to records keep the original entry visible
+      description: A correction to an operating, test or training record MUST keep the original entry readable and add the corrected value, the date, the name of the person correcting and the reason.
+      rationale: Records are evidence, and an entry that can be overwritten without a trace cannot be trusted at an audit or an investigation.
+      criteria:
+        - method: test
+          text: Correcting a test entry in the record system keeps the original value in the history with the date, the name and the reason of the correction.
+    sv:
+      title: Rättelser i dokumentation behåller den ursprungliga posten synlig
+      description: En rättelse i en drift-, test- eller utbildningsdokumentation SKA behålla den ursprungliga posten läsbar och lägga till det rättade värdet, datum, namnet på den som rättar och skälet.
+      rationale: Dokumentationen är bevis, och en post som kan skrivas över utan spår går inte att lita på vid en revision eller utredning.
+      criteria:
+        - method: test
+          text: När en testpost rättas i systemet för dokumentation finns det ursprungliga värdet kvar i historiken med datum, namn och skäl för rättelsen.
+
+  - id: DCDC-19
+    type: business
+    obligation: must
+    priority: medium
+    tags: [operating-records, logbook, retention]
+    refs: ["ISO 9001:2026 §7.5.3 (control of documented information)", "ISO 55001:2024 §7.5 (documented information)"]
+    tests: [DCDC-T12]
+    en:
+      title: Operating logbooks with a defined set of fields and retention
+      description: Each operating logbook MUST state the fields that each entry contains, at least the time, the person, the asset and the event, and the retention period of the entries.
+      rationale: Logbooks with free text only are hard to search and compare, and without a retention period they are either lost too early or kept forever.
+      criteria:
+        - method: inspection
+          text: The logbook template lists the 4 fields and a retention period, and 20 sampled entries have each field filled in.
+    sv:
+      title: Driftjournaler med bestämda fält och bevarandetid
+      description: Varje driftjournal SKA ange vilka fält varje post innehåller, minst tid, person, tillgång och händelse, och hur länge posterna bevaras.
+      rationale: Journaler med bara fritext är svåra att söka i och jämföra, och utan bevarandetid försvinner de antingen för tidigt eller sparas för evigt.
+      criteria:
+        - method: inspection
+          text: Mallen för journalen listar de 4 fälten och en bevarandetid, och 20 utvalda poster har varje fält ifyllt.
+
+  - id: DCDC-20
+    type: business
+    obligation: must
+    priority: medium
+    tags: [external-documents, standards, version-watch]
+    refs: ["ISO 9001:2026 §7.5.3 (control of documented information)"]
+    tests: [DCDC-T13]
+    en:
+      title: Register of external documents with a check for new editions
+      description: The organisation MUST keep a register of the external documents it relies on, such as standards, regulations and supplier manuals, with the edition in use, and check for new editions at least once every 12 months.
+      rationale: Work done against a withdrawn edition of a standard or regulation can fail an acceptance or break the law.
+      criteria:
+        - method: review
+          text: The register lists each external document with edition and the date of the latest check, and no check is older than 12 months.
+    sv:
+      title: Förteckning över externa dokument med kontroll av nya utgåvor
+      description: Organisationen SKA föra en förteckning över de externa dokument den använder, till exempel standarder, föreskrifter och leverantörers manualer, med den utgåva som används, och kontrollera om nya utgåvor finns minst en gång var 12:e månad.
+      rationale: Arbete som görs mot en indragen utgåva av en standard eller föreskrift kan underkännas vid godkännande eller bryta mot lagen.
+      criteria:
+        - method: review
+          text: Förteckningen listar varje externt dokument med utgåva och datum för den senaste kontrollen, och ingen kontroll är äldre än 12 månader.
+
+  - id: DCDC-21
+    type: business
+    obligation: should
+    priority: low
+    tags: [templates, document-control]
+    refs: ["ISO 9001:2026 §7.5.2"]
+    tests: [DCDC-T13]
+    en:
+      title: Controlled templates for recurring document types
+      description: Each recurring document type, such as test reports, work instructions and meeting minutes, SHOULD have a controlled template with an owner and a version, from whose current version new documents are created.
+      rationale: Templates give the same structure and mandatory fields across authors, which makes documents complete and easier to review.
+      criteria:
+        - method: inspection
+          text: The template library has an owner and a version per template, and 10 documents created in the last 3 months use the current template version.
+    sv:
+      title: Styrda mallar för återkommande dokumenttyper
+      description: Varje återkommande dokumenttyp, till exempel testrapporter, arbetsinstruktioner och mötesprotokoll, BÖR ha en styrd mall med ägare och version som nya dokument skapas från i sin aktuella version.
+      rationale: Mallar ger samma struktur och obligatoriska fält oavsett vem som skriver, vilket gör dokumenten fullständiga och lättare att granska.
+      criteria:
+        - method: inspection
+          text: Mallbiblioteket har ägare och version per mall, och 10 dokument som skapats under de senaste 3 månaderna använder den aktuella mallversionen.
+
 tests:
   - id: DCDC-T01
     priority: high
@@ -714,3 +802,67 @@ tests:
           expected: Varje produkt har en post med lagstiftning och förfarande för bedömning av överensstämmelse.
         - action: Öppna länken till dokumentationen i varje post.
           expected: Varje länk öppnar produktens tekniska dokumentation.
+
+  - id: DCDC-T12
+    priority: high
+    execution: manual
+    tags: [records, logbook]
+    refs: ["ISO 9001:2026 §7.5.3 (control of documented information)"]
+    en:
+      title: Correction of a record and contents of the operating logbook
+      description: Corrects a test entry and inspects the template and entries of an operating logbook.
+      preconditions: A test user in the record system, a test record that may be corrected and an operating logbook with entries of the last month.
+      expected: The correction keeps the original visible with date, name and reason, and the logbook entries are complete.
+      steps:
+        - action: Change the value of the test record and give a reason.
+          expected: The new value is saved.
+        - action: Open the history of the record.
+          expected: The original value, the date, the name and the reason are shown.
+        - action: Read the logbook template.
+          expected: It lists time, person, asset and event and a retention period.
+        - action: Pick 20 logbook entries.
+          expected: Each has the 4 fields filled in.
+    sv:
+      title: Rättelse av en post och innehållet i driftjournalen
+      description: Rättar en testpost och inspekterar mallen och posterna i en driftjournal.
+      preconditions: En testanvändare i systemet för dokumentation, en testpost som får rättas och en driftjournal med poster från den senaste månaden.
+      expected: Rättelsen behåller originalet synligt med datum, namn och skäl, och journalposterna är fullständiga.
+      steps:
+        - action: Ändra värdet i testposten och ange ett skäl.
+          expected: Det nya värdet sparas.
+        - action: Öppna postens historik.
+          expected: Det ursprungliga värdet, datum, namn och skäl visas.
+        - action: Läs mallen för journalen.
+          expected: Den listar tid, person, tillgång och händelse och en bevarandetid.
+        - action: Välj 20 poster i journalen.
+          expected: Varje post har de 4 fälten ifyllda.
+
+  - id: DCDC-T13
+    priority: medium
+    execution: manual
+    tags: [external-documents, templates]
+    refs: ["ISO 9001:2026 §7.5.3 (control of documented information)", "ISO 9001:2026 §7.5.2"]
+    en:
+      title: Register of external documents and use of templates
+      description: Reviews the register of external documents and checks the template versions of recent documents.
+      preconditions: The register of external documents, the template library and 10 documents created in the last 3 months.
+      expected: Each external document was checked within 12 months, and recent documents use current templates.
+      steps:
+        - action: Read the date of the latest check for each external document.
+          expected: None is older than 12 months.
+        - action: Look up 3 of the listed standards at the publisher.
+          expected: The edition in the register is the current one, or a planned change is recorded.
+        - action: Compare the template version of each of the 10 documents with the library.
+          expected: Each uses the current version.
+    sv:
+      title: Förteckning över externa dokument och användning av mallar
+      description: Granskar förteckningen över externa dokument och kontrollerar mallversionerna i nyligen skapade dokument.
+      preconditions: Förteckningen över externa dokument, mallbiblioteket och 10 dokument som skapats under de senaste 3 månaderna.
+      expected: Varje externt dokument har kontrollerats inom 12 månader, och nya dokument använder aktuella mallar.
+      steps:
+        - action: Läs datumet för den senaste kontrollen av varje externt dokument.
+          expected: Inget är äldre än 12 månader.
+        - action: Slå upp 3 av de listade standarderna hos utgivaren.
+          expected: Utgåvan i förteckningen är den aktuella, eller så finns en planerad ändring dokumenterad.
+        - action: Jämför mallversionen i vart och ett av de 10 dokumenten med biblioteket.
+          expected: Varje dokument använder den aktuella versionen.

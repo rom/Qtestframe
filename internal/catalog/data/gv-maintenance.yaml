@@ -448,6 +448,96 @@ requirements:
           text: För 3 tillgångar som har avvecklats under de senaste 2 åren kan den fullständiga historiken av arbetsorder fortfarande hämtas.
           threshold: "≥ 2 år efter avvecklingen"
 
+  - id: GVMT-20
+    type: business
+    obligation: should
+    priority: medium
+    tags: [reliability-centred-maintenance, critical-assets, strategy]
+    refs: ["IEC 60300-3-11:2009 (reliability centred maintenance)"]
+    tests: [GVMT-T13]
+    en:
+      title: Reliability-centred maintenance analysis for critical assets
+      description: The maintenance organisation SHOULD base the maintenance tasks of each asset in the highest criticality class on a reliability-centred maintenance analysis that links each task to a failure mode and its consequence, reviewed at least every 5 years.
+      rationale: Tasks derived from failure modes remove maintenance that adds no value and add tasks where a failure would be serious.
+      criteria:
+        - method: review
+          text: For 3 sampled critical assets, each task in the maintenance plan refers to a failure mode in an analysis less than 5 years old.
+    sv:
+      title: Driftsäkerhetsinriktat underhåll för kritiska tillgångar
+      description: Underhållsorganisationen BÖR grunda underhållsåtgärderna för varje tillgång i den högsta kritikalitetsklassen på en analys för driftsäkerhetsinriktat underhåll som kopplar varje åtgärd till ett felsätt och dess konsekvens, och som ses över minst vart 5:e år.
+      rationale: Åtgärder som härleds från felsätt tar bort underhåll som inte tillför något och lägger till åtgärder där ett fel skulle bli allvarligt.
+      criteria:
+        - method: review
+          text: För 3 utvalda kritiska tillgångar hänvisar varje åtgärd i underhållsplanen till ett felsätt i en analys som är mindre än 5 år gammal.
+
+  - id: GVMT-21
+    type: business
+    obligation: must
+    priority: high
+    tags: [root-cause-analysis, repeated-failure, corrective]
+    refs: ["IEC 62740:2015 (root cause analysis)", "ISO 55001:2024 §10.2 (nonconformity and corrective action)"]
+    tests: [GVMT-T13]
+    en:
+      title: Root cause analysis after 3 failures of the same asset in 12 months
+      description: When the same asset has 3 or more corrective work orders for the same failure mode within 12 months, the maintenance organisation MUST complete a root cause analysis within 20 working days and record the actions in the maintenance plan.
+      rationale: Repeated repairs of the same failure treat the symptom and cost more over time than removing the cause.
+      criteria:
+        - method: analysis
+          text: Each asset with 3 or more failures of the same mode in the work order history has a root cause analysis within 20 working days of the third failure.
+          threshold: "3 failures in 12 months; analysis ≤ 20 working days"
+    sv:
+      title: Grundorsaksanalys efter 3 fel på samma tillgång inom 12 månader
+      description: När samma tillgång har 3 eller fler arbetsordrar för avhjälpande underhåll för samma felsätt inom 12 månader SKA underhållsorganisationen genomföra en grundorsaksanalys inom 20 arbetsdagar och föra in åtgärderna i underhållsplanen.
+      rationale: Upprepade reparationer av samma fel behandlar symptomet och kostar mer på sikt än att ta bort orsaken.
+      criteria:
+        - method: analysis
+          text: Varje tillgång med 3 eller fler fel av samma felsätt i arbetsorderhistoriken har en grundorsaksanalys inom 20 arbetsdagar efter det tredje felet.
+          threshold: "3 fel på 12 månader; analys ≤ 20 arbetsdagar"
+
+  - id: GVMT-22
+    type: business
+    obligation: must
+    priority: medium
+    tags: [maintenance-cost, work-order, indicators]
+    refs: ["EN 15341:2019+A1:2022"]
+    tests: [GVMT-T14]
+    en:
+      title: Labour, parts and contractor cost recorded on each work order
+      description: Each closed work order MUST record the labour hours, the cost of spare parts and the cost of external contractors, so that the maintenance cost per asset can be reported.
+      rationale: Maintenance cost per asset is the basis for deciding whether to keep repairing or replace an asset.
+      criteria:
+        - method: inspection
+          text: A sample of 20 closed work orders all have labour hours, parts cost and contractor cost filled in, with zero where none applied.
+    sv:
+      title: Arbetstid, reservdelar och entreprenörskostnad registreras på varje arbetsorder
+      description: Varje avslutad arbetsorder SKA innehålla arbetstimmar, kostnad för reservdelar och kostnad för externa entreprenörer, så att underhållskostnaden per tillgång går att rapportera.
+      rationale: Underhållskostnaden per tillgång är grunden för att avgöra om tillgången ska fortsätta repareras eller bytas ut.
+      criteria:
+        - method: inspection
+          text: Ett urval av 20 avslutade arbetsordrar har arbetstimmar, reservdelskostnad och entreprenörskostnad ifyllda, med noll där inget förekom.
+
+  - id: GVMT-23
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [permit-to-work, contractors, safety]
+    refs: ["ISO 45001:2018 §8.1.4.2 (contractors)", "ISO 45001:2018 §8.1.2"]
+    tests: [GVMT-T14]
+    en:
+      title: Permit to work for hazardous maintenance by contractors
+      description: A contractor MUST NOT start hazardous maintenance work, such as hot work, work at height, work in confined spaces or work on energised systems, without a written permit that lists the isolations and safety measures and is signed by the site's permit issuer.
+      rationale: Contractors do not know the site's hazards, and the permit makes sure isolations and safety measures are in place before they start.
+      criteria:
+        - method: review
+          text: Each hazardous contractor job in the last 3 months has a signed permit with isolations and measures, issued before the start time.
+    sv:
+      title: Arbetstillstånd för riskfyllt underhåll som utförs av entreprenörer
+      description: En entreprenör SKA INTE påbörja riskfyllt underhållsarbete, till exempel heta arbeten, arbete på höjd, arbete i slutna utrymmen eller arbete på spänningsförande system, utan ett skriftligt tillstånd som listar frånkopplingar och skyddsåtgärder och är undertecknat av anläggningens tillståndsutfärdare.
+      rationale: Entreprenörer känner inte anläggningens risker, och tillståndet ser till att frånkopplingar och skyddsåtgärder är på plats innan de börjar.
+      criteria:
+        - method: review
+          text: Varje riskfyllt entreprenörsarbete under de senaste 3 månaderna har ett undertecknat tillstånd med frånkopplingar och åtgärder, utfärdat före starttiden.
+
 tests:
   - id: GVMT-T01
     priority: high
@@ -794,3 +884,63 @@ tests:
           expected: Varje rapport visar andel utfört förebyggande underhåll, medeltid mellan fel, medeltid för reparation och balans av arbetsorder med målvärden.
         - action: Välj 3 avvecklade tillgångar och hämta deras historik av arbetsorder.
           expected: Den fullständiga historiken för varje tillgång hämtas, från driftsättning till avveckling.
+
+  - id: GVMT-T13
+    priority: medium
+    execution: manual
+    tags: [reliability-centred-maintenance, root-cause-analysis]
+    refs: ["IEC 60300-3-11:2009 (reliability centred maintenance)", "IEC 62740:2015 (root cause analysis)"]
+    en:
+      title: RCM analyses of critical assets and root cause analyses of repeated failures
+      description: Checks that tasks of critical assets come from a current analysis and that repeated failures led to a root cause analysis.
+      preconditions: The maintenance plans and RCM analyses of 3 critical assets, and the work order history of the last 12 months.
+      expected: Each task links to a failure mode in a current analysis, and each repeated failure has a root cause analysis in time.
+      steps:
+        - action: For each of the 3 assets, look up each planned task in the RCM analysis.
+          expected: Each task refers to a failure mode.
+        - action: Read the date of each analysis.
+          expected: It is less than 5 years old.
+        - action: Group the corrective work orders by asset and failure mode and find groups of 3 or more in 12 months.
+          expected: Each such group has a root cause analysis within 20 working days of the third failure.
+    sv:
+      title: Analyser för driftsäkerhetsinriktat underhåll och grundorsaksanalyser av upprepade fel
+      description: Kontrollerar att åtgärderna för kritiska tillgångar kommer från en aktuell analys och att upprepade fel ledde till en grundorsaksanalys.
+      preconditions: Underhållsplanerna och analyserna för 3 kritiska tillgångar och arbetsorderhistoriken för de senaste 12 månaderna.
+      expected: Varje åtgärd är kopplad till ett felsätt i en aktuell analys, och varje upprepat fel har en grundorsaksanalys i tid.
+      steps:
+        - action: Slå upp varje planerad åtgärd för var och en av de 3 tillgångarna i analysen.
+          expected: Varje åtgärd hänvisar till ett felsätt.
+        - action: Läs datumet för varje analys.
+          expected: Den är mindre än 5 år gammal.
+        - action: Gruppera arbetsordrarna för avhjälpande underhåll per tillgång och felsätt och hitta grupper med 3 eller fler inom 12 månader.
+          expected: Varje sådan grupp har en grundorsaksanalys inom 20 arbetsdagar efter det tredje felet.
+
+  - id: GVMT-T14
+    priority: high
+    execution: manual
+    tags: [maintenance-cost, permit-to-work]
+    refs: ["EN 15341:2019+A1:2022", "ISO 45001:2018 §8.1.4.2 (contractors)"]
+    en:
+      title: Cost fields of work orders and permits for contractor work
+      description: Samples closed work orders for their cost fields and checks the permits of hazardous contractor jobs.
+      preconditions: The work order system and the permit register for the last 3 months.
+      expected: Each sampled work order has the 3 cost fields, and each hazardous contractor job had a signed permit before start.
+      steps:
+        - action: Pick 20 closed work orders.
+          expected: Each has labour hours, parts cost and contractor cost filled in.
+        - action: Filter the work orders on hazardous work done by contractors.
+          expected: A list of jobs with start times.
+        - action: Look up the permit for each job.
+          expected: It lists isolations and safety measures, is signed by the permit issuer and is issued before the start time.
+    sv:
+      title: Kostnadsfält på arbetsordrar och tillstånd för entreprenörsarbete
+      description: Gör ett urval av avslutade arbetsordrar med avseende på kostnadsfälten och kontrollerar tillstånden för riskfyllda entreprenörsarbeten.
+      preconditions: Arbetsordersystemet och registret över arbetstillstånd för de senaste 3 månaderna.
+      expected: Varje arbetsorder i urvalet har de 3 kostnadsfälten, och varje riskfyllt entreprenörsarbete hade ett undertecknat tillstånd före start.
+      steps:
+        - action: Välj 20 avslutade arbetsordrar.
+          expected: Varje arbetsorder har arbetstimmar, reservdelskostnad och entreprenörskostnad ifyllda.
+        - action: Filtrera arbetsordrarna på riskfyllt arbete som utförts av entreprenörer.
+          expected: En lista med arbeten och starttider.
+        - action: Slå upp tillståndet för varje arbete.
+          expected: Det listar frånkopplingar och skyddsåtgärder, är undertecknat av tillståndsutfärdaren och är utfärdat före starttiden.

@@ -308,6 +308,124 @@ requirements:
           text: Felanmälningarna för de senaste 3 månaderna visar en bekräftelse med förväntat datum för reparationen inom 1 arbetsdag för minst 95 % av dem.
           threshold: ≤ 1 arbetsdag för ≥ 95 %
 
+  - id: FCOPS-14
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [work-environment, risk-assessment, premises]
+    refs: ["AFS 2023:1 (systematic work environment management)", "AFS 2023:12 (design of workplaces)"]
+    tests: [FCOPS-T09]
+    en:
+      title: Yearly work environment risk assessment of the premises
+      description: The employer MUST assess the work environment risks of the premises at least once every 12 months, including lighting, indoor climate, noise and workstation ergonomics, and keep an action plan with an owner and a date for each risk found.
+      rationale: Many work-related disorders come from the premises themselves, and a regular assessment with owned actions is what gets them fixed.
+      criteria:
+        - method: review
+          text: The latest assessment is less than 12 months old, covers the 4 listed topics, and each risk has an action with owner and date.
+    sv:
+      title: Årlig riskbedömning av arbetsmiljön i lokalerna
+      description: Arbetsgivaren SKA bedöma arbetsmiljöriskerna i lokalerna minst en gång var 12:e månad, inklusive belysning, inomhusklimat, buller och ergonomi vid arbetsplatserna, och föra en handlingsplan med ägare och datum för varje risk som hittas.
+      rationale: Många arbetsrelaterade besvär kommer från själva lokalerna, och en regelbunden bedömning med åtgärder som har ägare är det som får dem åtgärdade.
+      criteria:
+        - method: review
+          text: Den senaste bedömningen är mindre än 12 månader gammal, omfattar de 4 angivna områdena, och varje risk har en åtgärd med ägare och datum.
+
+  - id: FCOPS-15
+    type: non_functional
+    obligation: must
+    priority: medium
+    tags: [lighting, workstation, ergonomics]
+    refs: ["EN 12464-1:2021 (lighting of indoor work places)", "AFS 2023:12 (design of workplaces)"]
+    tests: [FCOPS-T10]
+    en:
+      title: Maintained illuminance of at least 500 lux at desk workstations
+      description: The lighting MUST give a maintained illuminance of at least 500 lux on the task area of each desk workstation for writing, reading and screen work.
+      rationale: Too little light causes eye strain and poor posture, as people lean in to see.
+      criteria:
+        - method: test
+          text: Measurements with a calibrated lux meter on the task area of 10 sampled workstations are each at least 500 lux with the daylight screened off.
+          threshold: "≥ 500 lux"
+    sv:
+      title: Underhållen belysningsstyrka på minst 500 lux vid skrivbordsarbetsplatser
+      description: Belysningen SKA ge en underhållen belysningsstyrka på minst 500 lux på arbetsytan vid varje skrivbordsarbetsplats för skrivning, läsning och bildskärmsarbete.
+      rationale: För lite ljus ger trötta ögon och dålig arbetsställning när man lutar sig fram för att se.
+      criteria:
+        - method: test
+          text: Mätningar med en kalibrerad luxmätare på arbetsytan vid 10 utvalda arbetsplatser ger var och en minst 500 lux med dagsljuset avskärmat.
+          threshold: "≥ 500 lux"
+
+  - id: FCOPS-16
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [ergonomics, workstation, furniture]
+    refs: ["AFS 2023:12 (design of workplaces)", "ISO 9241-5 (workstation layout and postural requirements)"]
+    tests: [FCOPS-T10]
+    en:
+      title: Height-adjustable desk and adjustable chair at each fixed workstation
+      description: Each fixed desk workstation SHOULD have a desk adjustable in height from 65 to 125 cm and a chair with adjustable seat height and back support.
+      rationale: Adjustable furniture lets each person vary posture and fit the workstation to their body, which lowers neck and back problems.
+      criteria:
+        - method: inspection
+          text: 10 sampled workstations each have a desk that moves at least from 65 to 125 cm and a chair with the 2 adjustments.
+          threshold: "desk range 65–125 cm"
+    sv:
+      title: Höj- och sänkbart skrivbord och inställbar stol vid varje fast arbetsplats
+      description: Varje fast skrivbordsarbetsplats BÖR ha ett skrivbord som kan ställas in i höjd från 65 till 125 cm och en stol med inställbar sitthöjd och ryggstöd.
+      rationale: Inställbara möbler gör att var och en kan variera arbetsställningen och anpassa arbetsplatsen efter sin kropp, vilket minskar besvär i nacke och rygg.
+      criteria:
+        - method: inspection
+          text: 10 utvalda arbetsplatser har vardera ett skrivbord som går minst från 65 till 125 cm och en stol med de 2 inställningarna.
+          threshold: "skrivbordets intervall 65–125 cm"
+
+  - id: FCOPS-17
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [acoustics, open-plan, noise]
+    refs: ["ISO 3382-3:2022 (open plan offices)"]
+    tests: [FCOPS-T11]
+    en:
+      title: Spatial decay of speech of at least 7 dB in open-plan offices
+      description: Each open-plan office area SHOULD have a spatial decay rate of A-weighted speech sound pressure level of at least 7 dB per doubling of distance.
+      rationale: Speech that carries across an open-plan area is the main source of distraction and lost concentration there.
+      criteria:
+        - method: test
+          text: A measurement following ISO 3382-3 along a line of workstations in each open-plan area gives a spatial decay rate of at least 7 dB.
+          threshold: "D2,S ≥ 7 dB"
+    sv:
+      title: Rumslig avklingning av tal på minst 7 dB i kontorslandskap
+      description: Varje kontorslandskap BÖR ha en rumslig avklingning av den A-vägda ljudtrycksnivån för tal på minst 7 dB per avståndsfördubbling.
+      rationale: Tal som hörs över hela kontorslandskapet är den främsta orsaken till störningar och förlorad koncentration där.
+      criteria:
+        - method: test
+          text: En mätning enligt ISO 3382-3 längs en rad arbetsplatser i varje kontorslandskap ger en rumslig avklingning på minst 7 dB.
+          threshold: "D2,S ≥ 7 dB"
+
+  - id: FCOPS-18
+    type: business
+    obligation: must
+    priority: medium
+    tags: [indoor-environment, complaints, investigation]
+    refs: ["AFS 2023:1 (systematic work environment management)"]
+    tests: [FCOPS-T12]
+    en:
+      title: Indoor environment complaints investigated within 10 working days
+      description: The facility manager MUST start an investigation of each indoor environment complaint, such as draught, heat, smell or noise, within 10 working days and report the result to the complainant.
+      rationale: Unanswered complaints about the indoor environment grow into sick leave and loss of trust in the employer.
+      criteria:
+        - method: review
+          text: Each indoor environment complaint of the last 6 months has an investigation started within 10 working days and a recorded reply to the complainant.
+          threshold: "≤ 10 working days"
+    sv:
+      title: Klagomål på inomhusmiljön utreds inom 10 arbetsdagar
+      description: Fastighetsförvaltaren SKA påbörja en utredning av varje klagomål på inomhusmiljön, till exempel drag, värme, lukt eller buller, inom 10 arbetsdagar och redovisa resultatet för den som klagat.
+      rationale: Obesvarade klagomål på inomhusmiljön växer till sjukfrånvaro och förlorat förtroende för arbetsgivaren.
+      criteria:
+        - method: review
+          text: Varje klagomål på inomhusmiljön under de senaste 6 månaderna har en utredning som påbörjades inom 10 arbetsdagar och ett dokumenterat svar till den som klagat.
+          threshold: "≤ 10 arbetsdagar"
+
 tests:
   - id: FCOPS-T01
     priority: high
@@ -544,3 +662,123 @@ tests:
         - action: Beräkna andelen som bekräftats inom 1 arbetsdag med förväntat datum för reparationen.
           expected: Andelen är minst 95 %.
           data: Gräns 1 arbetsdag
+
+  - id: FCOPS-T09
+    priority: high
+    execution: manual
+    tags: [work-environment, risk-assessment]
+    refs: ["AFS 2023:1 (systematic work environment management)"]
+    en:
+      title: Review of the work environment risk assessment of the premises
+      description: Reviews the latest risk assessment and its action plan.
+      preconditions: The latest work environment risk assessment of the premises and the action plan.
+      expected: The assessment is current, covers the 4 topics and has an owned action for each risk.
+      steps:
+        - action: Read the date of the latest assessment.
+          expected: It is less than 12 months old.
+        - action: Check the assessment for lighting, indoor climate, noise and workstation ergonomics.
+          expected: Each topic is assessed.
+        - action: Compare the risks found with the action plan.
+          expected: Each risk has an action with an owner and a date.
+    sv:
+      title: Granskning av riskbedömningen av arbetsmiljön i lokalerna
+      description: Granskar den senaste riskbedömningen och dess handlingsplan.
+      preconditions: Den senaste riskbedömningen av arbetsmiljön i lokalerna och handlingsplanen.
+      expected: Bedömningen är aktuell, omfattar de 4 områdena och har en åtgärd med ägare för varje risk.
+      steps:
+        - action: Läs datumet för den senaste bedömningen.
+          expected: Den är mindre än 12 månader gammal.
+        - action: Kontrollera att bedömningen omfattar belysning, inomhusklimat, buller och ergonomi vid arbetsplatserna.
+          expected: Varje område är bedömt.
+        - action: Jämför de risker som hittats med handlingsplanen.
+          expected: Varje risk har en åtgärd med ägare och datum.
+
+  - id: FCOPS-T10
+    priority: medium
+    execution: manual
+    tags: [lighting, ergonomics]
+    refs: ["EN 12464-1:2021 (lighting of indoor work places)", "AFS 2023:12 (design of workplaces)"]
+    en:
+      title: Illuminance and furniture at sampled workstations
+      description: Measures the illuminance and checks the furniture adjustments at 10 sampled workstations.
+      preconditions: A calibrated lux meter, a tape measure and 10 desk workstations chosen across the floors, measured after dark or with blinds closed.
+      expected: Each workstation has at least 500 lux on the task area and adjustable desk and chair.
+      steps:
+        - action: Measure the illuminance at the centre of the task area of each workstation.
+          expected: Each reading is at least 500 lux.
+        - action: Move each desk to its lowest and highest position and measure the height.
+          expected: The range covers at least 65 to 125 cm.
+        - action: Check the seat height and back support adjustment of each chair.
+          expected: Both can be adjusted.
+    sv:
+      title: Belysningsstyrka och möbler vid utvalda arbetsplatser
+      description: Mäter belysningsstyrkan och kontrollerar möblernas inställningar vid 10 utvalda arbetsplatser.
+      preconditions: En kalibrerad luxmätare, ett måttband och 10 skrivbordsarbetsplatser valda på olika våningar, mätt efter mörkrets inbrott eller med neddragna persienner.
+      expected: Varje arbetsplats har minst 500 lux på arbetsytan och inställbart skrivbord och stol.
+      steps:
+        - action: Mät belysningsstyrkan mitt på arbetsytan vid varje arbetsplats.
+          expected: Varje avläsning är minst 500 lux.
+        - action: Ställ varje skrivbord i lägsta och högsta läge och mät höjden.
+          expected: Intervallet omfattar minst 65 till 125 cm.
+        - action: Kontrollera inställningen av sitthöjd och ryggstöd på varje stol.
+          expected: Båda går att ställa in.
+
+  - id: FCOPS-T11
+    priority: low
+    execution: manual
+    tags: [acoustics, open-plan]
+    refs: ["ISO 3382-3:2022 (open plan offices)"]
+    en:
+      title: Spatial decay rate measurement in an open-plan office
+      description: An acoustician measures the spatial decay rate of speech along a line of workstations.
+      preconditions: An acoustician with a calibrated sound source and meter, and the open-plan area unoccupied with ventilation in normal operation.
+      expected: The spatial decay rate is at least 7 dB per doubling of distance.
+      steps:
+        - action: Choose a measurement line through at least 4 workstations from 2 to 16 m from the source.
+          expected: The positions are marked.
+        - action: Measure the A-weighted speech level at each position.
+          expected: A level per position is recorded.
+        - action: Calculate the spatial decay rate from the levels.
+          expected: The result is at least 7 dB.
+    sv:
+      title: Mätning av rumslig avklingning i ett kontorslandskap
+      description: En akustiker mäter den rumsliga avklingningen av tal längs en rad arbetsplatser.
+      preconditions: En akustiker med kalibrerad ljudkälla och mätare, och kontorslandskapet tomt med ventilationen i normal drift.
+      expected: Den rumsliga avklingningen är minst 7 dB per avståndsfördubbling.
+      steps:
+        - action: Välj en mätlinje genom minst 4 arbetsplatser från 2 till 16 m från källan.
+          expected: Positionerna är markerade.
+        - action: Mät den A-vägda talnivån vid varje position.
+          expected: En nivå per position är noterad.
+        - action: Beräkna den rumsliga avklingningen från nivåerna.
+          expected: Resultatet är minst 7 dB.
+
+  - id: FCOPS-T12
+    priority: medium
+    execution: manual
+    tags: [indoor-environment, complaints]
+    refs: ["AFS 2023:1 (systematic work environment management)"]
+    en:
+      title: Handling times of indoor environment complaints
+      description: Checks the investigation start and the reply for each indoor environment complaint.
+      preconditions: The fault report system with the indoor environment complaints of the last 6 months.
+      expected: Each complaint was investigated within 10 working days and answered.
+      steps:
+        - action: Filter the fault reports on the indoor environment category.
+          expected: A list of complaints with dates.
+        - action: Count the working days from each complaint to the start of the investigation.
+          expected: Each count is at most 10.
+        - action: Look for the reply to each complainant.
+          expected: Each complaint has a recorded reply with the result.
+    sv:
+      title: Handläggningstider för klagomål på inomhusmiljön
+      description: Kontrollerar när utredningen började och svaret för varje klagomål på inomhusmiljön.
+      preconditions: Felanmälningssystemet med klagomålen på inomhusmiljön under de senaste 6 månaderna.
+      expected: Varje klagomål utreddes inom 10 arbetsdagar och besvarades.
+      steps:
+        - action: Filtrera felanmälningarna på kategorin inomhusmiljö.
+          expected: En lista med klagomål och datum.
+        - action: Räkna arbetsdagarna från varje klagomål till att utredningen började.
+          expected: Varje antal är högst 10.
+        - action: Leta efter svaret till varje person som klagat.
+          expected: Varje klagomål har ett dokumenterat svar med resultatet.

@@ -1,0 +1,568 @@
+area: pj-portfolio-benefits
+prefix: PJPFB
+group: operations
+catalogue: project
+name: {en: Portfolio governance and benefits realisation, sv: Portföljstyrning och nyttorealisering}
+description:
+  en: Governance of a portfolio of projects and programmes following ISO 21504 (inventory, prioritisation criteria, quarterly reviews, capacity, balance and stopping components) and benefits realisation (benefits register, benefit owners, baselines, dis-benefits, tracking after closure and corrective action on shortfalls).
+  sv: Styrning av en portfölj av projekt och program enligt ISO 21504 (förteckning, prioriteringskriterier, kvartalsvisa genomgångar, kapacitet, balans och avbrytande av komponenter) och nyttorealisering (nyttoregister, nyttoägare, utgångsvärden, negativa effekter, uppföljning efter avslut och åtgärder vid uteblivna nyttor).
+
+requirements:
+  - id: PJPFB-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [portfolio, inventory]
+    refs: ["ISO 21504:2022 (portfolio components)"]
+    tests: [PJPFB-T01]
+    en:
+      title: Portfolio inventory with sponsor, budget and objective
+      description: The organisation MUST keep an inventory of each project and programme in the portfolio, with its sponsor, approved budget, current phase and the strategic objective it supports.
+      rationale: The portfolio cannot be steered when nobody has a complete list of the work that consumes its money and people.
+      criteria:
+        - method: inspection
+          text: Each project in the finance system with costs in the current year is in the inventory with the 4 fields filled in.
+    sv:
+      title: Portföljförteckning med beställare, budget och mål
+      description: Organisationen SKA föra en förteckning över varje projekt och program i portföljen, med beställare, godkänd budget, aktuell fas och det strategiska mål som det stöder.
+      rationale: Portföljen går inte att styra när ingen har en fullständig lista över det arbete som tar dess pengar och personal i anspråk.
+      criteria:
+        - method: inspection
+          text: Varje projekt i ekonomisystemet med kostnader under innevarande år finns i förteckningen med de 4 fälten ifyllda.
+
+  - id: PJPFB-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [portfolio, prioritisation, criteria]
+    refs: ["ISO 21504:2022 (prioritisation of portfolio components)"]
+    tests: [PJPFB-T02]
+    en:
+      title: Approved prioritisation criteria with weights
+      description: The portfolio board MUST approve written prioritisation criteria with a weight for each criterion, and review them at least once every 12 months.
+      rationale: Written and weighted criteria make the ranking of proposals repeatable and open to challenge, instead of favouring whoever argues loudest.
+      criteria:
+        - method: review
+          text: The criteria document has a weight per criterion, the weights add up to 100 %, and the latest approval is less than 12 months old.
+    sv:
+      title: Godkända prioriteringskriterier med vikter
+      description: Portföljrådet SKA godkänna skriftliga prioriteringskriterier med en vikt för varje kriterium och se över dem minst en gång var 12:e månad.
+      rationale: Skriftliga och viktade kriterier gör rangordningen av förslag upprepbar och möjlig att ifrågasätta, i stället för att gynna den som argumenterar högst.
+      criteria:
+        - method: review
+          text: Kriteriedokumentet har en vikt per kriterium, vikterna summeras till 100 %, och det senaste godkännandet är mindre än 12 månader gammalt.
+
+  - id: PJPFB-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [portfolio, prioritisation, proposal]
+    refs: ["ISO 21504:2022 (prioritisation of portfolio components)"]
+    tests: [PJPFB-T02]
+    en:
+      title: Each proposal scored before it is approved
+      description: The portfolio office MUST score each new project proposal against the approved prioritisation criteria and present the score and the resulting rank to the board before the board decides on the proposal.
+      rationale: A proposal approved without a score bypasses the agreed priorities and displaces work that ranks higher.
+      criteria:
+        - method: review
+          text: Each proposal approved in the last 12 months has a score sheet dated before the board decision, and the minutes record the rank.
+    sv:
+      title: Varje förslag poängsätts innan det godkänns
+      description: Portföljkontoret SKA poängsätta varje nytt projektförslag mot de godkända prioriteringskriterierna och redovisa poängen och den rang den ger för rådet innan rådet beslutar om förslaget.
+      rationale: Ett förslag som godkänns utan poängsättning går förbi de avtalade prioriteringarna och tränger undan arbete som rankas högre.
+      criteria:
+        - method: review
+          text: Varje förslag som godkänts under de senaste 12 månaderna har ett poängblad daterat före rådets beslut, och protokollet anger rangen.
+
+  - id: PJPFB-04
+    type: business
+    obligation: must
+    priority: high
+    tags: [portfolio, review, decision]
+    refs: ["ISO 21504:2022 (portfolio review)"]
+    tests: [PJPFB-T03]
+    en:
+      title: Quarterly portfolio review with a decision per component
+      description: The portfolio board MUST review the portfolio at least once each quarter and record for each component a decision to continue, change, pause or stop.
+      rationale: Without a regular decision per component, projects that no longer pay off continue by default.
+      criteria:
+        - method: review
+          text: The minutes of the last 4 quarters each list every component of the inventory with one of the 4 decisions.
+          threshold: "≤ 3 months between reviews"
+    sv:
+      title: Kvartalsvis genomgång av portföljen med ett beslut per komponent
+      description: Portföljrådet SKA gå igenom portföljen minst en gång per kvartal och dokumentera ett beslut för varje komponent om att fortsätta, ändra, pausa eller avbryta.
+      rationale: Utan ett regelbundet beslut per komponent fortsätter projekt som inte längre lönar sig av ren tröghet.
+      criteria:
+        - method: review
+          text: Protokollen från de senaste 4 kvartalen listar var och ett varje komponent i förteckningen med ett av de 4 besluten.
+          threshold: "≤ 3 månader mellan genomgångarna"
+
+  - id: PJPFB-05
+    type: business
+    obligation: should
+    priority: medium
+    tags: [portfolio, termination, business-case]
+    refs: ["ISO 21504:2022 (portfolio review)", "PRINCE2 Continued business justification"]
+    tests: [PJPFB-T03]
+    en:
+      title: Stop criteria for portfolio components
+      description: The portfolio board SHOULD stop a component whose forecast benefits have fallen below its remaining cost, or that no longer supports a current strategic objective, within 1 quarter of this being reported.
+      rationale: Money spent on a component that no longer pays off is taken from components that do.
+      criteria:
+        - method: review
+          text: For each component reported as below its remaining cost or without an objective, a stop decision or a recorded exception exists within 1 quarter.
+    sv:
+      title: Kriterier för att avbryta komponenter i portföljen
+      description: Portföljrådet BÖR avbryta en komponent vars prognostiserade nyttor har sjunkit under den återstående kostnaden, eller som inte längre stöder ett aktuellt strategiskt mål, inom 1 kvartal från att detta rapporterades.
+      rationale: Pengar som läggs på en komponent som inte längre lönar sig tas från komponenter som gör det.
+      criteria:
+        - method: review
+          text: För varje komponent som rapporterats under sin återstående kostnad eller utan mål finns ett beslut om avbrott eller ett dokumenterat undantag inom 1 kvartal.
+
+  - id: PJPFB-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [portfolio, capacity, resources]
+    refs: ["ISO 21504:2022 (portfolio capacity)", "ISO 21502:2020 §7.5 (resources management)"]
+    tests: [PJPFB-T04]
+    en:
+      title: Demand on key roles within capacity for the next 6 months
+      description: Before approving a new component, the portfolio board MUST check that the total planned demand on each key role for the next 6 months does not exceed 100 % of the available capacity of that role.
+      rationale: Approving more work than the key staff can carry delays every component that needs them.
+      criteria:
+        - method: analysis
+          text: The capacity view attached to each approval shows a demand of at most 100 % per key role for each of the 6 coming months.
+          threshold: "≤ 100 % of capacity per key role"
+    sv:
+      title: Efterfrågan på nyckelroller inom kapaciteten för de närmaste 6 månaderna
+      description: Innan en ny komponent godkänns SKA portföljrådet kontrollera att den samlade planerade efterfrågan på varje nyckelroll under de närmaste 6 månaderna inte överstiger 100 % av rollens tillgängliga kapacitet.
+      rationale: Att godkänna mer arbete än nyckelpersonerna klarar försenar varje komponent som behöver dem.
+      criteria:
+        - method: analysis
+          text: Kapacitetsbilden som bifogas varje godkännande visar en efterfrågan på högst 100 % per nyckelroll för var och en av de 6 kommande månaderna.
+          threshold: "≤ 100 % av kapaciteten per nyckelroll"
+
+  - id: PJPFB-07
+    type: business
+    obligation: should
+    priority: medium
+    tags: [portfolio, balance, investment-category]
+    refs: ["ISO 21504:2022 (portfolio balancing)"]
+    tests: [PJPFB-T04]
+    en:
+      title: Portfolio balance against target ranges
+      description: The quarterly portfolio report SHOULD show the share of the budget in each investment category against the target range approved by the board.
+      rationale: A portfolio that drifts towards one category, such as maintenance, slowly starves the change the strategy calls for.
+      criteria:
+        - method: review
+          text: The latest quarterly report shows the budget share and the target range for each category, and shares outside the range are flagged.
+    sv:
+      title: Portföljens balans mot målintervall
+      description: Den kvartalsvisa portföljrapporten BÖR visa budgetandelen i varje investeringskategori mot det målintervall som rådet har godkänt.
+      rationale: En portfölj som glider mot en kategori, till exempel underhåll, svälter långsamt den förändring som strategin kräver.
+      criteria:
+        - method: review
+          text: Den senaste kvartalsrapporten visar budgetandel och målintervall för varje kategori, och andelar utanför intervallet är markerade.
+
+  - id: PJPFB-08
+    type: business
+    obligation: must
+    priority: medium
+    tags: [portfolio, reporting]
+    refs: ["ISO 21504:2022 (portfolio reporting)"]
+    tests: [PJPFB-T05]
+    en:
+      title: Quarterly portfolio report to top management
+      description: The portfolio office MUST send top management a portfolio report each quarter with the cost, schedule and benefit status of each component and the decisions of the latest portfolio review.
+      rationale: Top management sets the strategy that the portfolio serves and needs a regular view of whether it is being delivered.
+      criteria:
+        - method: review
+          text: A report exists for each of the last 4 quarters, sent within 15 working days of the quarter end, with the 3 statuses per component.
+          threshold: "≤ 15 working days after quarter end"
+    sv:
+      title: Kvartalsvis portföljrapport till högsta ledningen
+      description: Portföljkontoret SKA skicka en portföljrapport till högsta ledningen varje kvartal med status för kostnad, tid och nytta för varje komponent och besluten från den senaste portföljgenomgången.
+      rationale: Högsta ledningen sätter den strategi som portföljen tjänar och behöver en regelbunden bild av om den genomförs.
+      criteria:
+        - method: review
+          text: En rapport finns för vart och ett av de senaste 4 kvartalen, skickad inom 15 arbetsdagar efter kvartalets slut, med de 3 statusvärdena per komponent.
+          threshold: "≤ 15 arbetsdagar efter kvartalets slut"
+
+  - id: PJPFB-09
+    type: business
+    obligation: must
+    priority: high
+    tags: [benefits, benefits-register]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    tests: [PJPFB-T06]
+    en:
+      title: Benefits register with measure, baseline, target and date
+      description: Each approved component MUST have a benefits register in which each benefit has a measure, a baseline value, a target value, a target date and a benefit owner.
+      rationale: A benefit without a measure and a target cannot be shown to have been realised or missed.
+      criteria:
+        - method: inspection
+          text: Each benefit in the registers of 3 sampled components has the 5 listed fields filled in.
+    sv:
+      title: Nyttoregister med mått, utgångsvärde, målvärde och datum
+      description: Varje godkänd komponent SKA ha ett nyttoregister där varje nytta har ett mått, ett utgångsvärde, ett målvärde, ett måldatum och en nyttoägare.
+      rationale: En nytta utan mått och mål går inte att visa som realiserad eller utebliven.
+      criteria:
+        - method: inspection
+          text: Varje nytta i registren för 3 utvalda komponenter har de 5 angivna fälten ifyllda.
+
+  - id: PJPFB-10
+    type: business
+    obligation: must
+    priority: high
+    tags: [benefits, benefit-owner, line-organisation]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    tests: [PJPFB-T06]
+    en:
+      title: Benefit owner in the receiving business unit
+      description: The benefit owner of each benefit MUST be a named manager in the business unit that realises the benefit, from outside the project team.
+      rationale: Benefits are realised in the line after the project has closed, so the owner has to be someone who stays and can change how the work is done.
+      criteria:
+        - method: inspection
+          text: Each benefit owner in the sampled registers is a manager in the receiving unit and is not listed in the project organisation.
+    sv:
+      title: Nyttoägaren finns i den mottagande verksamheten
+      description: Nyttoägaren för varje nytta SKA vara en namngiven chef i den verksamhet som realiserar nyttan och inte en medlem i projektgruppen.
+      rationale: Nyttor realiseras i linjen när projektet har avslutats, så ägaren behöver vara någon som stannar kvar och kan ändra hur arbetet utförs.
+      criteria:
+        - method: inspection
+          text: Varje nyttoägare i de utvalda registren är chef i den mottagande enheten och finns inte med i projektorganisationen.
+
+  - id: PJPFB-11
+    type: business
+    obligation: must
+    priority: high
+    tags: [benefits, baseline, measurement]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    tests: [PJPFB-T07]
+    en:
+      title: Baseline measured before the change goes live
+      description: The benefit owner MUST measure the baseline value of each benefit at least 1 month before the change goes live, by the same method as the later measurements of the result.
+      rationale: A baseline estimated afterwards or measured another way makes the realised benefit impossible to prove.
+      criteria:
+        - method: review
+          text: Each baseline in the sampled registers has a measurement date at least 1 month before go-live and refers to the same method as the later measurements.
+          threshold: "≥ 1 month before go-live"
+    sv:
+      title: Utgångsvärdet mäts innan förändringen tas i drift
+      description: Nyttoägaren SKA mäta utgångsvärdet för varje nytta minst 1 månad innan förändringen tas i drift, med samma metod som sedan används för att mäta resultatet.
+      rationale: Ett utgångsvärde som uppskattas i efterhand eller mäts på ett annat sätt gör den realiserade nyttan omöjlig att belägga.
+      criteria:
+        - method: review
+          text: Varje utgångsvärde i de utvalda registren har ett mätdatum minst 1 månad före driftstart och hänvisar till samma metod som de senare mätningarna.
+          threshold: "≥ 1 månad före driftstart"
+
+  - id: PJPFB-12
+    type: business
+    obligation: must
+    priority: medium
+    tags: [benefits, dis-benefits]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    tests: [PJPFB-T07]
+    en:
+      title: Dis-benefits recorded and tracked like benefits
+      description: The benefits register MUST record each expected negative effect of the change, such as added work in another unit, with a measure, an owner and a limit that triggers action.
+      rationale: Negative effects that nobody tracks are discovered late and can cancel out the benefits the project was approved for.
+      criteria:
+        - method: inspection
+          text: The register has an entry type for dis-benefits, and each entry has a measure, an owner and a limit.
+    sv:
+      title: Negativa effekter registreras och följs upp som nyttor
+      description: Nyttoregistret SKA innehålla varje förväntad negativ effekt av förändringen, till exempel merarbete i en annan enhet, med ett mått, en ägare och en gräns som utlöser åtgärder.
+      rationale: Negativa effekter som ingen följer upp upptäcks sent och kan äta upp de nyttor som projektet godkändes för.
+      criteria:
+        - method: inspection
+          text: Registret har en posttyp för negativa effekter, och varje post har mått, ägare och gräns.
+
+  - id: PJPFB-13
+    type: business
+    obligation: must
+    priority: medium
+    tags: [benefits, closure, handover]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)", "ISO 21502:2020 §6.8 (closing or terminating a project)"]
+    tests: [PJPFB-T08]
+    en:
+      title: Benefit tracking handed to the line at project closure
+      description: At project closure the sponsor MUST hand the benefits register to the benefit owners with a measurement schedule that has at least 1 measurement date for each benefit after closure.
+      rationale: Most benefits appear after the project has closed, and they are not measured if nobody holds the register then.
+      criteria:
+        - method: review
+          text: The closure record has a signed handover of the register, and each open benefit has a measurement date after closure.
+    sv:
+      title: Uppföljningen av nyttor lämnas över till linjen när projektet avslutas
+      description: När projektet avslutas SKA beställaren lämna över nyttoregistret till nyttoägarna med ett mätschema som har minst 1 mätdatum för varje nytta efter avslutet.
+      rationale: De flesta nyttor visar sig efter att projektet har avslutats, och de mäts inte om ingen har ansvaret för registret då.
+      criteria:
+        - method: review
+          text: Avslutsdokumentationen har en signerad överlämning av registret, och varje öppen nytta har ett mätdatum efter avslutet.
+
+  - id: PJPFB-14
+    type: business
+    obligation: must
+    priority: high
+    tags: [benefits, shortfall, corrective-action]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)", "ISO 21504:2022 (portfolio review)"]
+    tests: [PJPFB-T08]
+    en:
+      title: Corrective action on a benefit shortfall of more than 20 %
+      description: When a measured benefit falls more than 20 % short of its target on the target date, the benefit owner MUST report the cause and a corrective action plan to the portfolio board within 30 days.
+      rationale: A shortfall that is reported with a cause lets the organisation recover the benefit or learn why the estimate was wrong.
+      criteria:
+        - method: review
+          text: Each measurement more than 20 % below target has a report to the board within 30 days with a cause and actions.
+          threshold: "> 20 % shortfall; report ≤ 30 days"
+    sv:
+      title: Åtgärder när en nytta blir mer än 20 % lägre än målet
+      description: När en uppmätt nytta på måldatumet är mer än 20 % lägre än målet SKA nyttoägaren rapportera orsaken och en åtgärdsplan till portföljrådet inom 30 dagar.
+      rationale: En utebliven nytta som rapporteras med orsak gör att organisationen kan ta igen nyttan eller lära sig varför uppskattningen var fel.
+      criteria:
+        - method: review
+          text: Varje mätning som ligger mer än 20 % under målet har en rapport till rådet inom 30 dagar med orsak och åtgärder.
+          threshold: "> 20 % under målet; rapport ≤ 30 dagar"
+
+tests:
+  - id: PJPFB-T01
+    priority: high
+    execution: manual
+    tags: [portfolio, inventory]
+    refs: ["ISO 21504:2022 (portfolio components)"]
+    en:
+      title: Portfolio inventory compared with the finance system
+      description: Compares the projects that have costs in the finance system with the portfolio inventory.
+      preconditions: An export of projects with costs in the current year from the finance system and the portfolio inventory.
+      expected: Each project with costs is in the inventory with sponsor, budget, phase and objective.
+      steps:
+        - action: Match the project numbers of the finance export against the inventory.
+          expected: Each project number is in the inventory.
+          data: "Finance export of projects with costs year to date"
+        - action: Check the fields of each inventory entry.
+          expected: Sponsor, approved budget, current phase and strategic objective are filled in.
+    sv:
+      title: Portföljförteckningen jämförs med ekonomisystemet
+      description: Jämför de projekt som har kostnader i ekonomisystemet med portföljförteckningen.
+      preconditions: En export av projekt med kostnader under innevarande år från ekonomisystemet och portföljförteckningen.
+      expected: Varje projekt med kostnader finns i förteckningen med beställare, budget, fas och mål.
+      steps:
+        - action: Matcha projektnumren i exporten mot förteckningen.
+          expected: Varje projektnummer finns i förteckningen.
+          data: "Export ur ekonomisystemet av projekt med kostnader hittills i år"
+        - action: Kontrollera fälten i varje post i förteckningen.
+          expected: Beställare, godkänd budget, aktuell fas och strategiskt mål är ifyllda.
+
+  - id: PJPFB-T02
+    priority: high
+    execution: manual
+    tags: [prioritisation, proposal]
+    refs: ["ISO 21504:2022 (prioritisation of portfolio components)"]
+    en:
+      title: Prioritisation criteria and score sheets of approved proposals
+      description: Reviews the prioritisation criteria and checks that approved proposals were scored before the decision.
+      preconditions: The approved criteria document, the proposals approved in the last 12 months and the board minutes.
+      expected: The criteria are weighted and current, and each approved proposal was scored and ranked before approval.
+      steps:
+        - action: Read the criteria document and its approval date.
+          expected: Each criterion has a weight, the weights total 100 % and the approval is less than 12 months old.
+        - action: For each approved proposal, compare the date of the score sheet with the board decision.
+          expected: The score sheet is earlier.
+        - action: Read the minutes of each decision.
+          expected: The rank of the proposal is recorded.
+    sv:
+      title: Prioriteringskriterier och poängblad för godkända förslag
+      description: Granskar prioriteringskriterierna och kontrollerar att godkända förslag poängsattes före beslutet.
+      preconditions: Det godkända kriteriedokumentet, de förslag som godkänts under de senaste 12 månaderna och rådets protokoll.
+      expected: Kriterierna är viktade och aktuella, och varje godkänt förslag poängsattes och rangordnades före godkännandet.
+      steps:
+        - action: Läs kriteriedokumentet och dess godkännandedatum.
+          expected: Varje kriterium har en vikt, vikterna summeras till 100 % och godkännandet är mindre än 12 månader gammalt.
+        - action: Jämför för varje godkänt förslag datumet på poängbladet med rådets beslut.
+          expected: Poängbladet är tidigare.
+        - action: Läs protokollet för varje beslut.
+          expected: Förslagets rang är dokumenterad.
+
+  - id: PJPFB-T03
+    priority: high
+    execution: manual
+    tags: [portfolio-review, termination]
+    refs: ["ISO 21504:2022 (portfolio review)"]
+    en:
+      title: Quarterly portfolio review minutes and stop decisions
+      description: Checks that each quarterly review decided on each component, and how components below their remaining cost were handled.
+      preconditions: The board minutes of the last 4 quarters, the inventory and the quarterly reports.
+      expected: Each review has a decision per component, and components below their remaining cost or without an objective were stopped or have a recorded exception.
+      steps:
+        - action: Compare the dates of the last 4 reviews.
+          expected: No gap between 2 reviews is longer than 3 months.
+        - action: Compare the components in each set of minutes with the inventory of that date.
+          expected: Each component has one of the decisions continue, change, pause or stop.
+        - action: Find the components reported as below their remaining cost or without an objective.
+          expected: Each has a stop decision or a recorded exception within 1 quarter.
+    sv:
+      title: Protokoll från kvartalsgenomgångar och beslut om avbrott
+      description: Kontrollerar att varje kvartalsgenomgång beslutade om varje komponent och hur komponenter under sin återstående kostnad hanterades.
+      preconditions: Rådets protokoll från de senaste 4 kvartalen, förteckningen och kvartalsrapporterna.
+      expected: Varje genomgång har ett beslut per komponent, och komponenter under sin återstående kostnad eller utan mål avbröts eller har ett dokumenterat undantag.
+      steps:
+        - action: Jämför datumen för de 4 senaste genomgångarna.
+          expected: Inget avstånd mellan 2 genomgångar är längre än 3 månader.
+        - action: Jämför komponenterna i varje protokoll med förteckningen från samma datum.
+          expected: Varje komponent har ett av besluten fortsätta, ändra, pausa eller avbryta.
+        - action: Hitta de komponenter som rapporterats under sin återstående kostnad eller utan mål.
+          expected: Varje sådan komponent har ett beslut om avbrott eller ett dokumenterat undantag inom 1 kvartal.
+
+  - id: PJPFB-T04
+    priority: medium
+    execution: manual
+    tags: [capacity, balance]
+    refs: ["ISO 21504:2022 (portfolio capacity)", "ISO 21504:2022 (portfolio balancing)"]
+    en:
+      title: Capacity check at approval and portfolio balance
+      description: Checks the capacity view attached to recent approvals and the balance shown in the latest quarterly report.
+      preconditions: The capacity views of the components approved in the last 6 months and the latest quarterly report.
+      expected: No approval overloaded a key role, and the report shows category shares against their target ranges.
+      steps:
+        - action: Read the capacity view of each approval.
+          expected: The demand per key role is at most 100 % in each of the 6 coming months.
+        - action: Read the balance section of the quarterly report.
+          expected: Each investment category has a budget share and a target range.
+        - action: Find the categories whose share lies outside the target range.
+          expected: Each is flagged in the report.
+    sv:
+      title: Kapacitetskontroll vid godkännande och portföljens balans
+      description: Kontrollerar kapacitetsbilden som bifogats nyligen godkända komponenter och balansen i den senaste kvartalsrapporten.
+      preconditions: Kapacitetsbilderna för de komponenter som godkänts under de senaste 6 månaderna och den senaste kvartalsrapporten.
+      expected: Inget godkännande överbelastade en nyckelroll, och rapporten visar kategoriernas andelar mot målintervallen.
+      steps:
+        - action: Läs kapacitetsbilden för varje godkännande.
+          expected: Efterfrågan per nyckelroll är högst 100 % under var och en av de 6 kommande månaderna.
+        - action: Läs avsnittet om balans i kvartalsrapporten.
+          expected: Varje investeringskategori har en budgetandel och ett målintervall.
+        - action: Hitta de kategorier vars andel ligger utanför målintervallet.
+          expected: Varje sådan kategori är markerad i rapporten.
+
+  - id: PJPFB-T05
+    priority: medium
+    execution: manual
+    tags: [portfolio, reporting]
+    refs: ["ISO 21504:2022 (portfolio reporting)"]
+    en:
+      title: Quarterly portfolio reports to top management
+      description: Checks the timing and contents of the quarterly portfolio reports.
+      preconditions: The portfolio reports of the last 4 quarters with their sending dates.
+      expected: Each report was sent within 15 working days and has the cost, schedule and benefit status per component.
+      steps:
+        - action: Count the working days from each quarter end to the sending date of its report.
+          expected: Each count is at most 15.
+        - action: Check each report for the status of cost, schedule and benefits per component.
+          expected: Each component has the 3 statuses.
+        - action: Compare the decisions in each report with the minutes of the review.
+          expected: They match.
+    sv:
+      title: Kvartalsvisa portföljrapporter till högsta ledningen
+      description: Kontrollerar när de kvartalsvisa portföljrapporterna skickades och vad de innehåller.
+      preconditions: Portföljrapporterna för de senaste 4 kvartalen med datum för utskick.
+      expected: Varje rapport skickades inom 15 arbetsdagar och har status för kostnad, tid och nytta per komponent.
+      steps:
+        - action: Räkna arbetsdagarna från varje kvartals slut till utskicksdatumet för dess rapport.
+          expected: Varje antal är högst 15.
+        - action: Kontrollera att varje rapport har status för kostnad, tid och nytta per komponent.
+          expected: Varje komponent har de 3 statusvärdena.
+        - action: Jämför besluten i varje rapport med protokollet från genomgången.
+          expected: De stämmer.
+
+  - id: PJPFB-T06
+    priority: high
+    execution: manual
+    tags: [benefits-register, benefit-owner]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    en:
+      title: Benefits registers and benefit owners of sampled components
+      description: Inspects the benefits registers of 3 components and the placement of their benefit owners.
+      preconditions: The benefits registers of 3 components chosen at random, the project organisations and the line organisation chart.
+      expected: Each benefit is complete, and each owner is a manager in the receiving unit outside the project team.
+      steps:
+        - action: Check each benefit in the 3 registers.
+          expected: Measure, baseline, target, target date and owner are filled in.
+        - action: Look up each benefit owner in the line organisation chart.
+          expected: The owner is a manager in the unit that realises the benefit.
+        - action: Look up each benefit owner in the project organisation.
+          expected: The owner is not a member of the project team.
+    sv:
+      title: Nyttoregister och nyttoägare för utvalda komponenter
+      description: Inspekterar nyttoregistren för 3 komponenter och var nyttoägarna finns i organisationen.
+      preconditions: Nyttoregistren för 3 slumpvis valda komponenter, projektorganisationerna och linjeorganisationens schema.
+      expected: Varje nytta är komplett, och varje ägare är chef i den mottagande enheten utanför projektgruppen.
+      steps:
+        - action: Kontrollera varje nytta i de 3 registren.
+          expected: Mått, utgångsvärde, målvärde, måldatum och ägare är ifyllda.
+        - action: Slå upp varje nyttoägare i linjeorganisationens schema.
+          expected: Ägaren är chef i den enhet som realiserar nyttan.
+        - action: Slå upp varje nyttoägare i projektorganisationen.
+          expected: Ägaren är inte medlem i projektgruppen.
+
+  - id: PJPFB-T07
+    priority: medium
+    execution: manual
+    tags: [baseline, dis-benefits]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    en:
+      title: Baseline dates, methods and dis-benefits
+      description: Checks when and how baselines were measured and how negative effects are recorded.
+      preconditions: The sampled benefits registers, the measurement records and the go-live dates.
+      expected: Each baseline was measured at least 1 month before go-live by the later method, and dis-benefits are recorded with measure, owner and limit.
+      steps:
+        - action: Compare the measurement date of each baseline with the go-live date.
+          expected: The baseline is at least 1 month earlier.
+        - action: Compare the method of each baseline with the method of the later measurements.
+          expected: The methods are the same.
+        - action: Filter the registers on dis-benefits.
+          expected: Each entry has a measure, an owner and a limit that triggers action.
+    sv:
+      title: Datum och metod för utgångsvärden samt negativa effekter
+      description: Kontrollerar när och hur utgångsvärdena mättes och hur negativa effekter registreras.
+      preconditions: De utvalda nyttoregistren, mätunderlagen och datumen för driftstart.
+      expected: Varje utgångsvärde mättes minst 1 månad före driftstart med den senare metoden, och negativa effekter är registrerade med mått, ägare och gräns.
+      steps:
+        - action: Jämför mätdatumet för varje utgångsvärde med datumet för driftstart.
+          expected: Utgångsvärdet är minst 1 månad tidigare.
+        - action: Jämför metoden för varje utgångsvärde med metoden för de senare mätningarna.
+          expected: Metoderna är desamma.
+        - action: Filtrera registren på negativa effekter.
+          expected: Varje post har mått, ägare och en gräns som utlöser åtgärder.
+
+  - id: PJPFB-T08
+    priority: high
+    execution: manual
+    tags: [benefits, closure, shortfall]
+    refs: ["ISO 21502:2020 §7.3 (benefit management)"]
+    en:
+      title: Handover of benefits and handling of shortfalls
+      description: Checks the handover of the benefits register at closure and the reports on benefits that fell short.
+      preconditions: The closure records of projects closed in the last 2 years, the benefit measurements and the board minutes.
+      expected: Each register was handed over with measurement dates, and each shortfall over 20 % was reported within 30 days.
+      steps:
+        - action: Read the closure record of each project.
+          expected: A signed handover of the benefits register to the benefit owners is included.
+        - action: Check the measurement schedule in each handed-over register.
+          expected: Each open benefit has a measurement date after closure.
+        - action: Find the measurements more than 20 % below target and look up the reports to the board.
+          expected: Each has a report with cause and actions within 30 days.
+          data: "Target 1 000 hours saved, measured 750 hours: 25 % short"
+    sv:
+      title: Överlämning av nyttor och hantering av uteblivna nyttor
+      description: Kontrollerar överlämningen av nyttoregistret vid avslut och rapporterna om nyttor som blev lägre än målet.
+      preconditions: Avslutsdokumentationen för projekt som avslutats under de senaste 2 åren, nyttomätningarna och rådets protokoll.
+      expected: Varje register lämnades över med mätdatum, och varje utebliven nytta över 20 % rapporterades inom 30 dagar.
+      steps:
+        - action: Läs avslutsdokumentationen för varje projekt.
+          expected: En signerad överlämning av nyttoregistret till nyttoägarna ingår.
+        - action: Kontrollera mätschemat i varje överlämnat register.
+          expected: Varje öppen nytta har ett mätdatum efter avslutet.
+        - action: Hitta mätningarna som ligger mer än 20 % under målet och slå upp rapporterna till rådet.
+          expected: Varje mätning har en rapport med orsak och åtgärder inom 30 dagar.
+          data: "Mål 1 000 sparade timmar, uppmätt 750 timmar: 25 % under målet"

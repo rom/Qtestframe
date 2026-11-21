@@ -370,6 +370,162 @@ requirements:
         - method: inspection
           text: Ordlistan finns, och varje förkortning som används i ett urval av 5 dokument är definierad i den.
 
+  - id: DCTD-17
+    type: interface
+    obligation: must
+    priority: high
+    tags: [api-documentation, developer-guide, getting-started]
+    refs: ["ISO/IEC/IEEE 26514:2022", "OpenAPI Specification 3.1"]
+    tests: [DCTD-T11]
+    en:
+      title: Developer guide with a getting-started section for each public API
+      description: The supplier MUST deliver a developer guide for each public API with authentication, a getting-started section that leads to a first successful call, rate limits and a reference to the machine-readable API description.
+      rationale: Reference material alone leaves developers guessing how to start, which raises integration cost and support load.
+      criteria:
+        - method: demonstration
+          text: A developer new to the API makes a first successful call by following only the getting-started section within 30 minutes.
+          threshold: "first call ≤ 30 minutes"
+    sv:
+      title: Utvecklarguide med ett kom igång-avsnitt för varje publikt API
+      description: Leverantören SKA leverera en utvecklarguide för varje publikt API med autentisering, ett kom igång-avsnitt som leder fram till ett första lyckat anrop, anropsgränser och en hänvisning till den maskinläsbara API-beskrivningen.
+      rationale: Enbart referensmaterial lämnar utvecklare att gissa hur de ska börja, vilket höjer kostnaden för integration och belastningen på supporten.
+      criteria:
+        - method: demonstration
+          text: En utvecklare som inte känner API:et gör ett första lyckat anrop inom 30 minuter genom att bara följa kom igång-avsnittet.
+          threshold: "första anrop ≤ 30 minuter"
+
+  - id: DCTD-18
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [api-documentation, code-examples, automated-test]
+    refs: ["ISO/IEC/IEEE 26514:2022"]
+    tests: [DCTD-T11]
+    en:
+      title: Code examples in the API documentation run in the build
+      description: Each code example in the API documentation MUST be executed against a test environment in the documentation build, with the build failing when an example returns an error.
+      rationale: Examples that no longer work are worse than none, since developers copy them first.
+      criteria:
+        - method: test
+          text: The build log runs each example, and changing the path in 1 example to a non-existent one makes the build fail.
+    sv:
+      title: Kodexempel i API-dokumentationen körs i bygget
+      description: Varje kodexempel i API-dokumentationen SKA köras mot en testmiljö när dokumentationen byggs, och ett exempel som returnerar ett fel stoppar bygget.
+      rationale: Exempel som inte längre fungerar är sämre än inga, eftersom utvecklare kopierar dem först.
+      criteria:
+        - method: test
+          text: Byggloggen kör varje exempel, och om sökvägen i 1 exempel ändras till en som inte finns misslyckas bygget.
+
+  - id: DCTD-19
+    type: interface
+    obligation: must
+    priority: high
+    tags: [api-documentation, changelog, deprecation]
+    refs: ["Keep a Changelog 1.1.0", "Semantic Versioning 2.0.0"]
+    tests: [DCTD-T12]
+    en:
+      title: API changelog with deprecation and removal dates
+      description: The supplier MUST publish a changelog for each API version that lists added, changed, deprecated and removed operations, and states for each deprecated operation the date from which it is removed.
+      rationale: Integrators plan their changes from the changelog, and a missing removal date leads to surprise breakages.
+      criteria:
+        - method: review
+          text: The changelog has an entry per released version in the 4 categories, and each deprecated operation has a removal date.
+    sv:
+      title: Ändringslogg för API:et med datum för utfasning och borttagning
+      description: Leverantören SKA publicera en ändringslogg för varje API-version som listar tillagda, ändrade, utfasade och borttagna operationer och anger för varje utfasad operation från vilket datum den tas bort.
+      rationale: Integratörer planerar sina ändringar utifrån ändringsloggen, och ett saknat datum för borttagning leder till oväntade avbrott.
+      criteria:
+        - method: review
+          text: Ändringsloggen har en post per släppt version i de 4 kategorierna, och varje utfasad operation har ett datum för borttagning.
+
+  - id: DCTD-20
+    type: interface
+    obligation: must
+    priority: medium
+    tags: [api-documentation, error-codes]
+    refs: ["RFC 9457 (problem details for HTTP APIs)", "ISO/IEC/IEEE 26514:2022"]
+    tests: [DCTD-T12]
+    en:
+      title: Reference of each error code with cause and remedy
+      description: The API documentation MUST list each error code that the API can return, with its HTTP status, its cause and the action the client takes to correct it.
+      rationale: Clients that cannot tell a validation error from a temporary fault either give up too early or retry requests that never succeed.
+      criteria:
+        - method: inspection
+          text: Each error code found in the API source or the API description appears in the reference with status, cause and remedy.
+    sv:
+      title: Förteckning över varje felkod med orsak och åtgärd
+      description: API-dokumentationen SKA lista varje felkod som API:et kan returnera, med HTTP-status, orsak och den åtgärd klienten vidtar för att rätta felet.
+      rationale: Klienter som inte kan skilja ett valideringsfel från ett tillfälligt fel ger antingen upp för tidigt eller upprepar anrop som aldrig lyckas.
+      criteria:
+        - method: inspection
+          text: Varje felkod som finns i API:ets källkod eller API-beskrivningen finns i förteckningen med status, orsak och åtgärd.
+
+  - id: DCTD-21
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [drawings, title-block, cad]
+    refs: ["ISO 7200:2004 (title blocks)", "IEC 81346-1:2022"]
+    tests: [DCTD-T13]
+    en:
+      title: Title block with identification, revision and approval on each drawing
+      description: Each delivered drawing MUST have a title block with the owner, the drawing number, the title, the revision, the date of issue, the creator and the approver.
+      rationale: The title block is what lets a reader see at a glance whether a drawing is the right one and the current revision.
+      criteria:
+        - method: inspection
+          text: 10 sampled drawings each have the 7 listed fields filled in, and the revision matches the document register.
+    sv:
+      title: Namnruta med identitet, revision och godkännande på varje ritning
+      description: Varje levererad ritning SKA ha en namnruta med ägare, ritningsnummer, titel, revision, utgivningsdatum, upprättare och godkännare.
+      rationale: Namnrutan är det som låter läsaren se direkt om ritningen är den rätta och har den aktuella revisionen.
+      criteria:
+        - method: inspection
+          text: 10 utvalda ritningar har var och en de 7 angivna fälten ifyllda, och revisionen stämmer med dokumentförteckningen.
+
+  - id: DCTD-22
+    type: constraint
+    obligation: must
+    priority: medium
+    tags: [drawings, cad, native-format]
+    refs: ["ISO 128-1:2020 (general principles of technical drawings)", "ISO/IEC/IEEE 15289:2019 (information items)"]
+    tests: [DCTD-T13]
+    en:
+      title: Drawings in native CAD format and as PDF of the same revision
+      description: The supplier MUST deliver each drawing both in its native CAD format, with the external references it needs, and as a PDF of the same revision.
+      rationale: The PDF serves readers on site, while the native file is needed to make the next change without redrawing.
+      criteria:
+        - method: inspection
+          text: For 10 sampled drawings both files exist with the same revision, and the native file opens without missing references.
+    sv:
+      title: Ritningar i CAD-format och som PDF med samma revision
+      description: Leverantören SKA leverera varje ritning både i sitt ursprungliga CAD-format, med de externa referenser den behöver, och som PDF av samma revision.
+      rationale: PDF-filen används av läsare på plats, medan originalfilen behövs för att göra nästa ändring utan att rita om.
+      criteria:
+        - method: inspection
+          text: För 10 utvalda ritningar finns båda filerna med samma revision, och originalfilen öppnas utan saknade referenser.
+
+  - id: DCTD-23
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [safety-data-sheet, reach, hazardous-substances]
+    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    tests: [DCTD-T14]
+    en:
+      title: Safety data sheet in Swedish at or before the first delivery
+      description: The supplier MUST provide a safety data sheet in Swedish for each hazardous substance or mixture in the delivery, at the latest on the date of the first delivery.
+      rationale: Users need the hazards, protective measures and first aid information before they handle the product, in a language they read.
+      criteria:
+        - method: review
+          text: For each hazardous product on the delivery note, a Swedish safety data sheet is dated on or before the first delivery date.
+    sv:
+      title: Säkerhetsdatablad på svenska senast vid den första leveransen
+      description: Leverantören SKA lämna ett säkerhetsdatablad på svenska för varje farligt ämne eller farlig blandning i leveransen, senast den dag då den första leveransen sker.
+      rationale: Användarna behöver information om faror, skyddsåtgärder och första hjälpen innan de hanterar produkten, på ett språk de läser.
+      criteria:
+        - method: review
+          text: För varje farlig produkt på följesedeln finns ett säkerhetsdatablad på svenska daterat senast den första leveransdagen.
+
 tests:
   - id: DCTD-T01
     priority: high
@@ -656,3 +812,123 @@ tests:
           expected: Det finns en lista över förkortningar.
         - action: Slå upp varje förkortning i ordlistan.
           expected: Varje förkortning är definierad.
+
+  - id: DCTD-T11
+    priority: high
+    execution: manual
+    tags: [api-documentation, developer-guide, code-examples]
+    refs: ["ISO/IEC/IEEE 26514:2022"]
+    en:
+      title: First call by a new developer and executed code examples
+      description: Lets a developer new to the API follow the getting-started section and checks that the documentation build runs the examples.
+      preconditions: A developer who has not used the API, test credentials for a test environment, and access to the documentation build.
+      expected: The developer makes a first call within 30 minutes, and a broken example fails the build.
+      steps:
+        - action: Give the developer the developer guide and the test credentials and start a timer.
+          expected: The guide covers authentication, getting started, rate limits and the API description.
+        - action: Let the developer follow only the getting-started section.
+          expected: A first successful call is made within 30 minutes.
+        - action: Change the path in 1 code example to a non-existent one and run the documentation build.
+          expected: The build fails and names the example.
+    sv:
+      title: Första anrop av en ny utvecklare och körda kodexempel
+      description: Låter en utvecklare som inte känner API:et följa kom igång-avsnittet och kontrollerar att dokumentationsbygget kör exemplen.
+      preconditions: En utvecklare som inte har använt API:et, testinloggning till en testmiljö och åtkomst till dokumentationsbygget.
+      expected: Utvecklaren gör ett första anrop inom 30 minuter, och ett trasigt exempel stoppar bygget.
+      steps:
+        - action: Ge utvecklaren utvecklarguiden och testinloggningen och starta en tidtagning.
+          expected: Guiden omfattar autentisering, kom igång, anropsgränser och API-beskrivningen.
+        - action: Låt utvecklaren följa bara kom igång-avsnittet.
+          expected: Ett första lyckat anrop görs inom 30 minuter.
+        - action: Ändra sökvägen i 1 kodexempel till en som inte finns och kör dokumentationsbygget.
+          expected: Bygget misslyckas och namnger exemplet.
+
+  - id: DCTD-T12
+    priority: medium
+    execution: manual
+    tags: [changelog, error-codes]
+    refs: ["Keep a Changelog 1.1.0", "RFC 9457 (problem details for HTTP APIs)"]
+    en:
+      title: API changelog and error code reference
+      description: Reviews the API changelog and compares the error codes in the code with the reference.
+      preconditions: The published changelog, the list of released API versions and read access to the API source or description.
+      expected: Each version has a complete changelog entry with removal dates, and each error code is documented.
+      steps:
+        - action: Compare the released versions with the changelog entries.
+          expected: Each version has an entry with added, changed, deprecated and removed operations.
+        - action: Read each deprecated operation.
+          expected: Each has a removal date.
+        - action: List the error codes in the API source or description and look each up in the reference.
+          expected: Each code has HTTP status, cause and remedy.
+    sv:
+      title: Ändringslogg och förteckning över felkoder för API:et
+      description: Granskar API:ets ändringslogg och jämför felkoderna i koden med förteckningen.
+      preconditions: Den publicerade ändringsloggen, listan över släppta API-versioner och läsbehörighet till API:ets källkod eller beskrivning.
+      expected: Varje version har en fullständig post i ändringsloggen med datum för borttagning, och varje felkod är dokumenterad.
+      steps:
+        - action: Jämför de släppta versionerna med posterna i ändringsloggen.
+          expected: Varje version har en post med tillagda, ändrade, utfasade och borttagna operationer.
+        - action: Läs varje utfasad operation.
+          expected: Varje operation har ett datum för borttagning.
+        - action: Lista felkoderna i API:ets källkod eller beskrivning och slå upp var och en i förteckningen.
+          expected: Varje kod har HTTP-status, orsak och åtgärd.
+
+  - id: DCTD-T13
+    priority: medium
+    execution: manual
+    tags: [drawings, cad]
+    refs: ["ISO 7200:2004 (title blocks)", "ISO 128-1:2020 (general principles of technical drawings)"]
+    en:
+      title: Title blocks and file formats of delivered drawings
+      description: Samples delivered drawings and checks their title blocks and both file formats.
+      preconditions: The delivered drawing set, the document register and a CAD viewer for the native format.
+      expected: Each sampled drawing has a complete title block and both files of the same revision.
+      steps:
+        - action: Pick 10 drawings from the document register.
+          expected: Both a native file and a PDF exist for each.
+        - action: Read the title block of each PDF.
+          expected: Owner, number, title, revision, date of issue, creator and approver are filled in, and the revision matches the register.
+        - action: Open each native file in the CAD viewer.
+          expected: It opens without missing references and shows the same revision.
+    sv:
+      title: Namnrutor och filformat för levererade ritningar
+      description: Gör ett urval av levererade ritningar och kontrollerar namnrutorna och båda filformaten.
+      preconditions: Den levererade ritningsuppsättningen, dokumentförteckningen och en CAD-visare för originalformatet.
+      expected: Varje ritning i urvalet har en fullständig namnruta och båda filerna med samma revision.
+      steps:
+        - action: Välj 10 ritningar ur dokumentförteckningen.
+          expected: Både en originalfil och en PDF finns för varje ritning.
+        - action: Läs namnrutan i varje PDF.
+          expected: Ägare, nummer, titel, revision, utgivningsdatum, upprättare och godkännare är ifyllda, och revisionen stämmer med förteckningen.
+        - action: Öppna varje originalfil i CAD-visaren.
+          expected: Den öppnas utan saknade referenser och visar samma revision.
+
+  - id: DCTD-T14
+    priority: high
+    execution: manual
+    tags: [safety-data-sheet]
+    refs: ["Regulation (EC) No 1907/2006 Art. 31"]
+    en:
+      title: Safety data sheets for the hazardous products of a delivery
+      description: Compares the hazardous products on the delivery notes with the safety data sheets received.
+      preconditions: The delivery notes with the first delivery dates and the safety data sheets received from the supplier.
+      expected: Each hazardous product has a Swedish safety data sheet dated no later than its first delivery.
+      steps:
+        - action: List the products on the delivery notes that carry a hazard label.
+          expected: A list of hazardous products with first delivery dates.
+        - action: Find the safety data sheet of each product.
+          expected: Each product has a sheet in Swedish.
+        - action: Compare the date the sheet was received with the first delivery date.
+          expected: The sheet was received on or before that date.
+    sv:
+      title: Säkerhetsdatablad för de farliga produkterna i en leverans
+      description: Jämför de farliga produkterna på följesedlarna med de säkerhetsdatablad som har tagits emot.
+      preconditions: Följesedlarna med datum för första leverans och de säkerhetsdatablad som leverantören har lämnat.
+      expected: Varje farlig produkt har ett säkerhetsdatablad på svenska som är daterat senast vid den första leveransen.
+      steps:
+        - action: Lista de produkter på följesedlarna som har en faromärkning.
+          expected: En lista över farliga produkter med datum för första leverans.
+        - action: Hitta säkerhetsdatabladet för varje produkt.
+          expected: Varje produkt har ett blad på svenska.
+        - action: Jämför datumet då bladet togs emot med datumet för första leverans.
+          expected: Bladet togs emot senast det datumet.

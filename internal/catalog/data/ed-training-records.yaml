@@ -310,6 +310,100 @@ requirements:
         - method: analysis
           text: För varje konto för extern personal som har skapats under de senaste 6 månaderna ligger datumet för genomförd utbildning före kontots första inloggning.
 
+  - id: EDTR-14
+    type: security
+    obligation: must
+    priority: medium
+    tags: [phishing, targeted-training, awareness]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "Directive (EU) 2022/2555 (NIS2) Art. 21(2)(g)"]
+    tests: [EDTR-T11]
+    en:
+      title: Targeted training after 2 failed phishing simulations in 12 months
+      description: A user who fails 2 phishing simulations within 12 months MUST complete a targeted awareness module within 30 days of the second failure.
+      rationale: Repeated failures show a specific need, and a short targeted module is more effective than repeating the general course.
+      criteria:
+        - method: analysis
+          text: Each user with 2 failures in the simulation results of the last 12 months has a completed module within 30 days of the second failure.
+          threshold: "≤ 30 days"
+    sv:
+      title: Riktad utbildning efter 2 misslyckade nätfiskeövningar inom 12 månader
+      description: En användare som misslyckas i 2 nätfiskeövningar inom 12 månader SKA genomföra en riktad modul i säkerhetsmedvetenhet inom 30 dagar efter det andra misslyckandet.
+      rationale: Upprepade misslyckanden visar ett särskilt behov, och en kort riktad modul ger mer än att upprepa den allmänna utbildningen.
+      criteria:
+        - method: analysis
+          text: Varje användare med 2 misslyckanden i övningsresultaten under de senaste 12 månaderna har en genomförd modul inom 30 dagar efter det andra misslyckandet.
+          threshold: "≤ 30 dagar"
+
+  - id: EDTR-15
+    type: security
+    obligation: should
+    priority: medium
+    tags: [phishing, reporting-rate, indicator]
+    refs: ["ISO/IEC 27001:2022 A.6.8", "ISO/IEC 27001:2022 A.6.3"]
+    tests: [EDTR-T11]
+    en:
+      title: At least 60 % of users report a simulated phishing message
+      description: In each phishing simulation, at least 60 % of the users who received the message SHOULD report it through the reporting function within 24 hours.
+      rationale: The share of users who report, and not only the share who click, shows whether staff act as a detection layer.
+      criteria:
+        - method: analysis
+          text: The results of the last 4 simulations show a reporting rate within 24 hours of at least 60 % in each.
+          threshold: "≥ 60 % within 24 h"
+    sv:
+      title: Minst 60 % av användarna rapporterar ett simulerat nätfiskemeddelande
+      description: I varje nätfiskeövning BÖR minst 60 % av de användare som fick meddelandet rapportera det via rapportfunktionen inom 24 timmar.
+      rationale: Andelen användare som rapporterar, och inte bara andelen som klickar, visar om personalen fungerar som ett lager av detektering.
+      criteria:
+        - method: analysis
+          text: Resultaten från de 4 senaste övningarna visar en andel rapporter inom 24 timmar på minst 60 % i var och en.
+          threshold: "≥ 60 % inom 24 h"
+
+  - id: EDTR-16
+    type: business
+    obligation: must
+    priority: high
+    tags: [certificates, verification, competence-evidence]
+    refs: ["ISO 9001:2026 §7.2", "ISO/IEC 27001:2022 §7.2"]
+    tests: [EDTR-T12]
+    en:
+      title: External certificates checked with the issuer before they are recorded
+      description: Before recording an external certificate that a role requires, such as an electrical safety authorisation or a vendor certification, the training administrator MUST check its validity with the issuer and record the date of the check.
+      rationale: Forged or expired certificates give people access to tasks they are not qualified for.
+      criteria:
+        - method: review
+          text: 10 sampled certificate records each have a check date with the issuer that is on or before the record date.
+    sv:
+      title: Externa certifikat kontrolleras hos utfärdaren innan de registreras
+      description: Innan ett externt certifikat som en roll kräver registreras, till exempel en elsäkerhetsbehörighet eller en leverantörscertifiering, SKA utbildningsadministratören kontrollera att det är giltigt hos utfärdaren och dokumentera datumet för kontrollen.
+      rationale: Förfalskade eller utgångna certifikat ger personer tillgång till uppgifter de inte är kvalificerade för.
+      criteria:
+        - method: review
+          text: 10 utvalda registrerade certifikat har var och en ett datum för kontroll hos utfärdaren som ligger på eller före registreringsdatumet.
+
+  - id: EDTR-17
+    type: business
+    obligation: must
+    priority: high
+    tags: [competence-matrix, key-person-risk, critical-tasks]
+    refs: ["ISO 9001:2026 §7.2", "ISO 22301:2019 §8.3"]
+    tests: [EDTR-T12]
+    en:
+      title: At least 2 qualified persons for each critical task
+      description: The competence matrix MUST show at least 2 currently qualified persons for each critical task, with a training plan that dates when the next person qualifies for each task with fewer.
+      rationale: A critical task that only one person can do stops when that person is ill, on leave or leaves.
+      criteria:
+        - method: inspection
+          text: Each critical task in the matrix has 2 or more qualified persons, or a training plan with a named trainee and a date.
+          threshold: "≥ 2 qualified persons per critical task"
+    sv:
+      title: Minst 2 kvalificerade personer för varje kritisk uppgift
+      description: Kompetensmatrisen SKA visa minst 2 personer med giltig kvalifikation för varje kritisk uppgift, där varje uppgift med färre har en utbildningsplan med datum för när nästa person blir kvalificerad.
+      rationale: En kritisk uppgift som bara en person kan utföra stannar när den personen är sjuk, ledig eller slutar.
+      criteria:
+        - method: inspection
+          text: Varje kritisk uppgift i matrisen har 2 eller fler kvalificerade personer, eller en utbildningsplan med en namngiven deltagare och ett datum.
+          threshold: "≥ 2 kvalificerade personer per kritisk uppgift"
+
 tests:
   - id: EDTR-T01
     priority: high
@@ -602,3 +696,63 @@ tests:
           expected: Det finns en lista över konton och datum.
         - action: Leta upp datumet för genomförd utbildning i säkerhetsmedvetenhet för varje person och jämför det med den första inloggningen.
           expected: Varje datum för genomförande ligger före den första inloggningen.
+
+  - id: EDTR-T11
+    priority: medium
+    execution: automated
+    tags: [phishing, awareness]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "ISO/IEC 27001:2022 A.6.8"]
+    en:
+      title: Follow-up of phishing simulation results
+      description: A script reads the results of the phishing simulations and the training records and checks targeted training and reporting rates.
+      preconditions: Export of the results of the simulations of the last 12 months and of the training records.
+      expected: Each user with 2 failures did the targeted module within 30 days, and each of the last 4 simulations has a reporting rate of at least 60 %.
+      steps:
+        - action: Count the failures per user over the last 12 months.
+          expected: A list of users with 2 or more failures and the date of the second.
+        - action: Look up the targeted module for each such user in the training records.
+          expected: Each completed it within 30 days of the second failure.
+        - action: Compute the share of recipients who reported within 24 hours for each of the last 4 simulations.
+          expected: Each share is at least 60 %.
+    sv:
+      title: Uppföljning av resultaten från nätfiskeövningar
+      description: Ett skript läser resultaten från nätfiskeövningarna och utbildningsregistret och kontrollerar riktad utbildning och andel rapporter.
+      preconditions: Export av resultaten från övningarna under de senaste 12 månaderna och av utbildningsregistret.
+      expected: Varje användare med 2 misslyckanden genomförde den riktade modulen inom 30 dagar, och var och en av de 4 senaste övningarna har en andel rapporter på minst 60 %.
+      steps:
+        - action: Räkna misslyckandena per användare under de senaste 12 månaderna.
+          expected: En lista över användare med 2 eller fler misslyckanden och datum för det andra.
+        - action: Slå upp den riktade modulen för varje sådan användare i utbildningsregistret.
+          expected: Var och en genomförde den inom 30 dagar efter det andra misslyckandet.
+        - action: Beräkna andelen mottagare som rapporterade inom 24 timmar för var och en av de 4 senaste övningarna.
+          expected: Varje andel är minst 60 %.
+
+  - id: EDTR-T12
+    priority: high
+    execution: manual
+    tags: [certificates, competence-matrix]
+    refs: ["ISO 9001:2026 §7.2"]
+    en:
+      title: Certificate checks and coverage of critical tasks
+      description: Checks the issuer verification of recorded certificates and the number of qualified persons per critical task.
+      preconditions: The training records with certificates and check dates, and the competence matrix with critical tasks marked.
+      expected: Each sampled certificate was checked with the issuer first, and each critical task has 2 qualified persons or a training plan.
+      steps:
+        - action: Pick 10 recorded certificates.
+          expected: Each has a check date with the issuer on or before the record date.
+        - action: Count the currently qualified persons for each critical task in the matrix.
+          expected: Each task has at least 2, or the next step applies.
+        - action: For each task with fewer than 2, read the training plan.
+          expected: It names a trainee and a date.
+    sv:
+      title: Kontroll av certifikat och täckning av kritiska uppgifter
+      description: Kontrollerar verifieringen hos utfärdaren av registrerade certifikat och antalet kvalificerade personer per kritisk uppgift.
+      preconditions: Utbildningsregistret med certifikat och datum för kontroll, och kompetensmatrisen med kritiska uppgifter markerade.
+      expected: Varje certifikat i urvalet kontrollerades först hos utfärdaren, och varje kritisk uppgift har 2 kvalificerade personer eller en utbildningsplan.
+      steps:
+        - action: Välj 10 registrerade certifikat.
+          expected: Vart och ett har ett datum för kontroll hos utfärdaren på eller före registreringsdatumet.
+        - action: Räkna personerna med giltig kvalifikation för varje kritisk uppgift i matrisen.
+          expected: Varje uppgift har minst 2, annars gäller nästa steg.
+        - action: Läs utbildningsplanen för varje uppgift med färre än 2.
+          expected: Den namnger en deltagare och ett datum.

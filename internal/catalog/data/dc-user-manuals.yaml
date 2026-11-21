@@ -374,6 +374,96 @@ requirements:
           text: Nedladdningssidan erbjuder varje handboksversion för varje produktversion som har levererats under de senaste 10 åren.
           threshold: "≥ 10 år"
 
+  - id: DCUM-17
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [accessibility, pdf, headings, bookmarks]
+    refs: ["EN 301 549 V3.2.1 clause 10", "WCAG 2.2 SC 2.4.5", "ISO 14289-1:2014 (PDF/UA-1)"]
+    tests: [DCUM-T12]
+    en:
+      title: Tagged headings and bookmarks in manuals of more than 20 pages
+      description: Each manual in PDF of more than 20 pages MUST have tagged headings in a logical hierarchy and a bookmark for each heading of the 2 top levels.
+      rationale: Screen reader users and others navigate long documents by headings and bookmarks instead of reading page by page.
+      criteria:
+        - method: inspection
+          text: In 3 sampled manuals the tag tree has headings without skipped levels, and the bookmark panel lists each heading of the 2 top levels.
+    sv:
+      title: Taggade rubriker och bokmärken i manualer på mer än 20 sidor
+      description: Varje manual i PDF med mer än 20 sidor SKA ha taggade rubriker i en logisk hierarki och ett bokmärke för varje rubrik på de 2 översta nivåerna.
+      rationale: Användare av skärmläsare och andra navigerar i långa dokument med rubriker och bokmärken i stället för att läsa sida för sida.
+      criteria:
+        - method: inspection
+          text: I 3 utvalda manualer har taggträdet rubriker utan överhoppade nivåer, och bokmärkespanelen listar varje rubrik på de 2 översta nivåerna.
+
+  - id: DCUM-18
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [accessibility, tables, reading-order]
+    refs: ["EN 301 549 V3.2.1 clause 10", "WCAG 2.2 SC 1.3.1", "WCAG 2.2 SC 1.3.2"]
+    tests: [DCUM-T12]
+    en:
+      title: Tables with header cells and a correct reading order
+      description: Each data table in a manual MUST have its header cells marked as headers, within a tagged reading order of each page that follows the visual order of the content.
+      rationale: Without header cells a screen reader reads a table as an unrelated stream of values, and a wrong reading order scrambles instructions.
+      criteria:
+        - method: test
+          text: Reading 5 sampled pages with tables using a screen reader announces the column header with each cell and reads the content in the visual order.
+    sv:
+      title: Tabeller med rubrikceller och en korrekt läsordning
+      description: Varje datatabell i en manual SKA ha sina rubrikceller märkta som rubriker, i en taggad läsordning på varje sida som följer innehållets visuella ordning.
+      rationale: Utan rubrikceller läser en skärmläsare upp en tabell som en ström av värden utan samband, och en felaktig läsordning blandar ihop instruktioner.
+      criteria:
+        - method: test
+          text: När 5 utvalda sidor med tabeller läses med en skärmläsare anges kolumnrubriken för varje cell och innehållet läses i den visuella ordningen.
+
+  - id: DCUM-19
+    type: usability
+    obligation: should
+    priority: medium
+    tags: [accessibility, html, alternative-format]
+    refs: ["EN 301 549 V3.2.1 clause 9", "Lag (2018:1937) om tillgänglighet till digital offentlig service"]
+    tests: [DCUM-T13]
+    en:
+      title: Manuals also published as accessible web pages
+      description: The supplier SHOULD publish each manual also as web pages that conform to WCAG 2.2 level AA, with the same content and version as the PDF.
+      rationale: Web pages reflow on small screens and work better with assistive technology than most PDF files.
+      criteria:
+        - method: test
+          text: The web version of 2 sampled manuals has the same version number as the PDF and no failures in an automated WCAG 2.2 AA check of 10 pages.
+    sv:
+      title: Manualer publiceras även som tillgängliga webbsidor
+      description: Leverantören BÖR publicera varje manual även som webbsidor som uppfyller WCAG 2.2 nivå AA, med samma innehåll och version som PDF-filen.
+      rationale: Webbsidor anpassar sig till små skärmar och fungerar bättre med hjälpmedel än de flesta PDF-filer.
+      criteria:
+        - method: test
+          text: Webbversionen av 2 utvalda manualer har samma versionsnummer som PDF-filen och inga fel vid en automatisk kontroll mot WCAG 2.2 AA av 10 sidor.
+
+  - id: DCUM-20
+    type: usability
+    obligation: must
+    priority: medium
+    tags: [accessibility, alternative-format, request]
+    refs: ["EN 301 549 V3.2.1 clause 10", "Directive (EU) 2016/2102 Art. 7 (accessibility statement and feedback)"]
+    tests: [DCUM-T13]
+    en:
+      title: Accessible alternative delivered within 10 working days of a request
+      description: When a user reports that a manual is not accessible to them, the supplier MUST deliver the content in an accessible alternative format within 10 working days of the request.
+      rationale: Some barriers are only found by the people who meet them, and a set response time makes sure they still get the information.
+      criteria:
+        - method: test
+          text: A test request for an accessible version of a sampled manual is answered with a usable alternative within 10 working days.
+          threshold: "≤ 10 working days"
+    sv:
+      title: Tillgängligt alternativ levereras inom 10 arbetsdagar efter en begäran
+      description: När en användare anmäler att en manual inte är tillgänglig för hen SKA leverantören leverera innehållet i ett tillgängligt alternativt format inom 10 arbetsdagar efter begäran.
+      rationale: Vissa hinder upptäcks bara av dem som möter dem, och en bestämd svarstid ser till att de ändå får informationen.
+      criteria:
+        - method: test
+          text: En provbegäran om en tillgänglig version av en utvald manual besvaras med ett användbart alternativ inom 10 arbetsdagar.
+          threshold: "≤ 10 arbetsdagar"
+
 tests:
   - id: DCUM-T01
     priority: high
@@ -692,3 +782,65 @@ tests:
           expected: 3 produktversioner är valda.
         - action: Ladda ned handböckerna för varje vald version från nedladdningssidan.
           expected: Varje handbok laddas ned och öppnas, och dess titelsida anger den valda produktversionen.
+
+  - id: DCUM-T12
+    priority: medium
+    execution: manual
+    tags: [accessibility, pdf]
+    refs: ["EN 301 549 V3.2.1 clause 10", "ISO 14289-1:2014 (PDF/UA-1)"]
+    en:
+      title: Headings, bookmarks, tables and reading order in PDF manuals
+      description: Inspects the structure of sampled PDF manuals with a PDF accessibility checker and a screen reader.
+      preconditions: 3 delivered manuals in PDF of more than 20 pages, a PDF accessibility checker and a screen reader.
+      expected: Headings and bookmarks are complete, table headers are announced and the reading order follows the layout.
+      steps:
+        - action: Open the tag tree of each manual in the checker.
+          expected: Headings are tagged in a hierarchy without skipped levels.
+        - action: Compare the bookmark panel with the headings of the 2 top levels.
+          expected: Each such heading has a bookmark.
+        - action: Read 5 pages with tables using the screen reader.
+          expected: The column header is announced with each cell, and the text is read in the visual order.
+    sv:
+      title: Rubriker, bokmärken, tabeller och läsordning i manualer i PDF
+      description: Inspekterar strukturen i utvalda manualer i PDF med ett verktyg för tillgänglighetskontroll och en skärmläsare.
+      preconditions: 3 levererade manualer i PDF med mer än 20 sidor, ett verktyg för tillgänglighetskontroll av PDF och en skärmläsare.
+      expected: Rubriker och bokmärken är fullständiga, tabellrubriker läses upp och läsordningen följer layouten.
+      steps:
+        - action: Öppna taggträdet för varje manual i verktyget.
+          expected: Rubrikerna är taggade i en hierarki utan överhoppade nivåer.
+        - action: Jämför bokmärkespanelen med rubrikerna på de 2 översta nivåerna.
+          expected: Varje sådan rubrik har ett bokmärke.
+        - action: Läs 5 sidor med tabeller med skärmläsaren.
+          expected: Kolumnrubriken läses upp med varje cell, och texten läses i den visuella ordningen.
+
+  - id: DCUM-T13
+    priority: medium
+    execution: manual
+    tags: [accessibility, html, alternative-format]
+    refs: ["EN 301 549 V3.2.1 clause 9", "Directive (EU) 2016/2102 Art. 7 (accessibility statement and feedback)"]
+    en:
+      title: Web version of manuals and a request for an accessible alternative
+      description: Checks the web version of 2 manuals and sends a test request for an accessible alternative.
+      preconditions: 2 manuals with a web version, an automated WCAG checker and the supplier's channel for accessibility feedback.
+      expected: The web versions match the PDF and pass the check, and the alternative arrives within 10 working days.
+      steps:
+        - action: Compare the version number of each web version with its PDF.
+          expected: They are the same.
+        - action: Run the automated check against WCAG 2.2 AA on 10 pages of each web version.
+          expected: No failures are reported.
+        - action: Send a request for an accessible version of a named manual through the feedback channel.
+          expected: A usable alternative is delivered within 10 working days.
+          data: "Request a version that works with a screen reader for the operator manual"
+    sv:
+      title: Webbversion av manualer och en begäran om tillgängligt alternativ
+      description: Kontrollerar webbversionen av 2 manualer och skickar en provbegäran om ett tillgängligt alternativ.
+      preconditions: 2 manualer med webbversion, ett verktyg för automatisk kontroll mot WCAG och leverantörens kanal för synpunkter på tillgänglighet.
+      expected: Webbversionerna stämmer med PDF-filerna och klarar kontrollen, och alternativet kommer inom 10 arbetsdagar.
+      steps:
+        - action: Jämför versionsnumret för varje webbversion med dess PDF.
+          expected: De är desamma.
+        - action: Kör den automatiska kontrollen mot WCAG 2.2 AA på 10 sidor i varje webbversion.
+          expected: Inga fel rapporteras.
+        - action: Skicka en begäran om en tillgänglig version av en namngiven manual genom kanalen för synpunkter.
+          expected: Ett användbart alternativ levereras inom 10 arbetsdagar.
+          data: "Begär en version som fungerar med skärmläsare av operatörsmanualen"

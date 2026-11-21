@@ -326,6 +326,146 @@ requirements:
         - method: review
           text: För varje release under de senaste 12 månaderna som ändrade uppgifter visar utbildningsregistret att de berörda rollerna fick utbildning om ändringen före driftstarten.
 
+  - id: EDTP-15
+    type: business
+    obligation: must
+    priority: high
+    tags: [onboarding, new-employee, checklist]
+    refs: ["ISO 9001:2026 §7.2", "ISO 10015:2019"]
+    tests: [EDTP-T11]
+    en:
+      title: Onboarding programme completed within the first 4 weeks
+      description: Each new employee MUST complete an onboarding programme with a checklist of the role's introductory items within 4 weeks of the start date, signed off by the manager.
+      rationale: A structured start shortens the time to full productivity and makes sure that safety and security instructions are not forgotten.
+      criteria:
+        - method: review
+          text: For 10 employees who started in the last 6 months, the checklist is complete and signed within 4 weeks of the start date.
+          threshold: "≤ 4 weeks"
+    sv:
+      title: Introduktionsprogrammet genomförs inom de första 4 veckorna
+      description: Varje nyanställd SKA genomföra ett introduktionsprogram med en checklista över rollens introduktionspunkter inom 4 veckor från anställningens start, signerad av chefen.
+      rationale: En strukturerad start förkortar tiden tills den anställde är fullt produktiv och ser till att säkerhetsinstruktioner inte glöms bort.
+      criteria:
+        - method: review
+          text: För 10 anställda som började under de senaste 6 månaderna är checklistan komplett och signerad inom 4 veckor från anställningens start.
+          threshold: "≤ 4 veckor"
+
+  - id: EDTP-16
+    type: business
+    obligation: should
+    priority: medium
+    tags: [onboarding, mentor]
+    refs: ["ISO 10015:2019"]
+    tests: [EDTP-T11]
+    en:
+      title: Named mentor for the first 3 months
+      description: Each new employee in an operational role SHOULD have a named experienced colleague as mentor for the first 3 months, with at least 1 recorded follow-up meeting a month.
+      rationale: A mentor passes on the unwritten knowledge of the workplace and catches misunderstandings early.
+      criteria:
+        - method: review
+          text: For the operational starters of the last 6 months, a mentor is named and 3 monthly follow-ups are recorded.
+    sv:
+      title: Namngiven mentor de första 3 månaderna
+      description: Varje nyanställd i en operativ roll BÖR ha en namngiven erfaren kollega som mentor under de första 3 månaderna, med minst 1 dokumenterat uppföljningsmöte per månad.
+      rationale: En mentor för vidare arbetsplatsens oskrivna kunskap och fångar missförstånd tidigt.
+      criteria:
+        - method: review
+          text: För de operativa nyanställda under de senaste 6 månaderna finns en namngiven mentor och 3 dokumenterade månatliga uppföljningar.
+
+  - id: EDTP-17
+    type: business
+    obligation: must
+    priority: critical
+    tags: [critical-systems, supervised-operation, authorisation]
+    refs: ["ISO 9001:2026 §7.2", "IEC 61511-1:2016 §5.2.2 (competence)"]
+    tests: [EDTP-T12]
+    en:
+      title: Supervised shifts before operating a critical system alone
+      description: An operator of a critical system MUST complete at least 10 shifts under the supervision of an authorised operator and pass a practical assessment before being authorised to operate the system alone.
+      rationale: Training alone does not show how a person acts under real conditions, which matters most where an error can cause harm.
+      criteria:
+        - method: review
+          text: Each operator authorised in the last 12 months has records of at least 10 supervised shifts and a passed assessment dated before the authorisation.
+          threshold: "≥ 10 supervised shifts"
+    sv:
+      title: Handledda skift innan ett kritiskt system körs på egen hand
+      description: En operatör av ett kritiskt system SKA genomföra minst 10 skift under handledning av en behörig operatör och klara en praktisk bedömning innan operatören ges behörighet att köra systemet på egen hand.
+      rationale: Utbildning visar inte hur en person agerar under verkliga förhållanden, vilket är viktigast där ett fel kan orsaka skada.
+      criteria:
+        - method: review
+          text: Varje operatör som fått behörighet under de senaste 12 månaderna har dokumentation av minst 10 handledda skift och en godkänd bedömning daterad före behörigheten.
+          threshold: "≥ 10 handledda skift"
+
+  - id: EDTP-18
+    type: business
+    obligation: must
+    priority: high
+    tags: [simulator, recurrent-training, emergency]
+    refs: ["ISO 10015:2019", "IEC 61511-1:2016 §5.2.2 (competence)"]
+    tests: [EDTP-T12]
+    en:
+      title: Yearly simulator session with at least 2 emergency scenarios
+      description: Each authorised operator of a critical system MUST complete a simulator or practical training session at least every 12 months that includes at least 2 emergency scenarios, with the performance assessed against stated criteria.
+      rationale: Emergencies are rare, so the skills to handle them fade unless they are practised on purpose.
+      criteria:
+        - method: review
+          text: Each authorised operator has a session record less than 12 months old with 2 emergency scenarios and an assessment against the criteria.
+          threshold: "≤ 12 months; ≥ 2 emergency scenarios"
+    sv:
+      title: Årligt simulatorpass med minst 2 nödlägesscenarier
+      description: Varje behörig operatör av ett kritiskt system SKA minst var 12:e månad genomföra ett simulator- eller övningspass som omfattar minst 2 nödlägesscenarier, där prestationen bedöms mot angivna kriterier.
+      rationale: Nödlägen är sällsynta, så förmågan att hantera dem tynar bort om den inte övas medvetet.
+      criteria:
+        - method: review
+          text: Varje behörig operatör har en dokumentation av ett pass som är mindre än 12 månader gammal med 2 nödlägesscenarier och en bedömning mot kriterierna.
+          threshold: "≤ 12 månader; ≥ 2 nödlägesscenarier"
+
+  - id: EDTP-19
+    type: business
+    obligation: must
+    priority: medium
+    tags: [simulator, configuration, fidelity]
+    refs: ["ISO 10015:2019"]
+    tests: [EDTP-T13]
+    en:
+      title: Training simulator at most 1 release behind production
+      description: The training simulator or training system MUST run a software and configuration version that is at most 1 release behind the production system.
+      rationale: Training on an outdated version teaches screens and behaviour that the operator will not meet in production.
+      criteria:
+        - method: inspection
+          text: The version shown in the simulator is the production version or the one before it.
+          threshold: "≤ 1 release behind"
+    sv:
+      title: Utbildningssimulatorn ligger högst 1 release efter produktion
+      description: Utbildningssimulatorn eller utbildningssystemet SKA köra en program- och konfigurationsversion som ligger högst 1 release efter produktionssystemet.
+      rationale: Utbildning i en gammal version lär ut skärmbilder och beteenden som operatören inte möter i produktion.
+      criteria:
+        - method: inspection
+          text: Den version som simulatorn visar är produktionsversionen eller den närmast föregående.
+          threshold: "≤ 1 release efter"
+
+  - id: EDTP-20
+    type: business
+    obligation: should
+    priority: medium
+    tags: [critical-systems, emergency-drill, shift-team]
+    refs: ["ISO 22301:2019 §8.5 (exercise programme)"]
+    tests: [EDTP-T13]
+    en:
+      title: Emergency procedure drill for each shift team twice a year
+      description: Each shift team operating a critical system SHOULD carry out a drill of at least 1 emergency operating procedure twice a year, with the time to complete the procedure recorded.
+      rationale: Drills as a team test the handovers and roles that individual training does not cover.
+      criteria:
+        - method: review
+          text: Each shift team has 2 drill records in the last 12 months, each with the procedure and the measured completion time.
+    sv:
+      title: Övning av nödrutiner för varje skiftlag två gånger per år
+      description: Varje skiftlag som kör ett kritiskt system BÖR öva minst 1 nödrutin två gånger per år, med tiden för att genomföra rutinen dokumenterad.
+      rationale: Övningar i lag provar överlämningar och roller som den enskilda utbildningen inte täcker.
+      criteria:
+        - method: review
+          text: Varje skiftlag har 2 dokumenterade övningar under de senaste 12 månaderna, var och en med rutinen och den uppmätta tiden.
+
 tests:
   - id: EDTP-T01
     priority: high
@@ -596,3 +736,93 @@ tests:
           expected: Det finns en lista över releaser och berörda roller.
         - action: Leta för varje release och roll upp utbildningen om ändringen i registret och jämför dess datum med datumet för driftstart.
           expected: Varje utbildning är daterad före driftstarten.
+
+  - id: EDTP-T11
+    priority: high
+    execution: manual
+    tags: [onboarding, mentor]
+    refs: ["ISO 10015:2019"]
+    en:
+      title: Onboarding checklists and mentor follow-ups of recent starters
+      description: Checks the onboarding of employees who started in the last 6 months.
+      preconditions: The list of starters of the last 6 months with start dates and roles, their checklists and the mentor records.
+      expected: Each checklist was signed within 4 weeks, and each operational starter has a mentor with monthly follow-ups.
+      steps:
+        - action: Pick 10 starters and read their onboarding checklists.
+          expected: Each checklist is complete.
+        - action: Compare the sign-off date with the start date.
+          expected: The sign-off is within 4 weeks.
+        - action: For each operational starter, read the mentor record.
+          expected: A mentor is named and a follow-up is recorded for each of the first 3 months.
+    sv:
+      title: Introduktionschecklistor och mentorsuppföljningar för nyanställda
+      description: Kontrollerar introduktionen för anställda som började under de senaste 6 månaderna.
+      preconditions: Listan över nyanställda under de senaste 6 månaderna med startdatum och roller, deras checklistor och dokumentationen från mentorerna.
+      expected: Varje checklista signerades inom 4 veckor, och varje operativ nyanställd har en mentor med månatliga uppföljningar.
+      steps:
+        - action: Välj 10 nyanställda och läs deras introduktionschecklistor.
+          expected: Varje checklista är komplett.
+        - action: Jämför signeringsdatumet med startdatumet.
+          expected: Signeringen ligger inom 4 veckor.
+        - action: Läs mentorsdokumentationen för varje operativ nyanställd.
+          expected: En mentor är namngiven och en uppföljning är dokumenterad för var och en av de 3 första månaderna.
+
+  - id: EDTP-T12
+    priority: critical
+    execution: manual
+    tags: [critical-systems, supervised-operation, simulator]
+    refs: ["IEC 61511-1:2016 §5.2.2 (competence)"]
+    en:
+      title: Authorisation and recurrent simulator training of critical system operators
+      description: Checks the supervised shifts behind each recent authorisation and the latest simulator session of each authorised operator.
+      preconditions: The register of operator authorisations, the shift records and the simulator session records.
+      expected: Each authorisation followed 10 supervised shifts and a passed assessment, and each operator has a current session with 2 emergency scenarios.
+      steps:
+        - action: For each operator authorised in the last 12 months, count the supervised shifts before the authorisation.
+          expected: There are at least 10.
+        - action: Read the practical assessment of each of those operators.
+          expected: It is passed and dated before the authorisation.
+        - action: Read the latest simulator session of each authorised operator.
+          expected: It is less than 12 months old, has 2 emergency scenarios and an assessment against the criteria.
+    sv:
+      title: Behörighet och återkommande simulatorutbildning för operatörer av kritiska system
+      description: Kontrollerar de handledda skiften bakom varje ny behörighet och det senaste simulatorpasset för varje behörig operatör.
+      preconditions: Registret över operatörsbehörigheter, skiftdokumentationen och dokumentationen av simulatorpass.
+      expected: Varje behörighet föregicks av 10 handledda skift och en godkänd bedömning, och varje operatör har ett aktuellt pass med 2 nödlägesscenarier.
+      steps:
+        - action: Räkna för varje operatör som fått behörighet under de senaste 12 månaderna de handledda skiften före behörigheten.
+          expected: De är minst 10.
+        - action: Läs den praktiska bedömningen för var och en av dessa operatörer.
+          expected: Den är godkänd och daterad före behörigheten.
+        - action: Läs det senaste simulatorpasset för varje behörig operatör.
+          expected: Det är mindre än 12 månader gammalt, har 2 nödlägesscenarier och en bedömning mot kriterierna.
+
+  - id: EDTP-T13
+    priority: medium
+    execution: manual
+    tags: [simulator, emergency-drill]
+    refs: ["ISO 10015:2019", "ISO 22301:2019 §8.5 (exercise programme)"]
+    en:
+      title: Simulator version and shift team drills
+      description: Compares the simulator version with production and checks the drill records of each shift team.
+      preconditions: Access to the simulator and the production version information, and the drill records of the last 12 months.
+      expected: The simulator is at most 1 release behind, and each shift team drilled twice with recorded times.
+      steps:
+        - action: Read the version in the simulator and in production.
+          expected: The simulator runs the production version or the one before it.
+        - action: Count the drills of each shift team in the last 12 months.
+          expected: Each team has 2.
+        - action: Read each drill record.
+          expected: It names the procedure and the measured completion time.
+    sv:
+      title: Simulatorns version och skiftlagens övningar
+      description: Jämför simulatorns version med produktion och kontrollerar dokumentationen av varje skiftlags övningar.
+      preconditions: Åtkomst till simulatorn och versionsinformationen för produktion, och dokumentationen av övningar under de senaste 12 månaderna.
+      expected: Simulatorn ligger högst 1 release efter, och varje skiftlag har övat två gånger med dokumenterade tider.
+      steps:
+        - action: Läs versionen i simulatorn och i produktion.
+          expected: Simulatorn kör produktionsversionen eller den närmast föregående.
+        - action: Räkna övningarna för varje skiftlag under de senaste 12 månaderna.
+          expected: Varje lag har 2.
+        - action: Läs dokumentationen av varje övning.
+          expected: Den anger rutinen och den uppmätta tiden.

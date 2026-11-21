@@ -278,6 +278,142 @@ requirements:
           text: En nyttorapport daterad 12 månader efter avslutet, med en tolerans på 1 månad, visar varje nytta i projektmotivet med mått, mål och verkligt värde.
           threshold: 12 månader ± 1 månad
 
+  - id: PJDEL-13
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [procurement, market-consultation, equal-treatment]
+    refs: ["Directive 2014/24/EU Art. 40 (preliminary market consultations)", "Directive 2014/24/EU Art. 41 (prior involvement of candidates or tenderers)"]
+    tests: [PJDEL-T09]
+    en:
+      title: Market consultation recorded and shared with each tenderer
+      description: Before a public procurement, the buyer MUST record each market consultation meeting with the participants and the information exchanged, and include that information in the tender documents.
+      rationale: A supplier that took part in the preparation gains an advantage over the others when what it learned is not shared with them.
+      criteria:
+        - method: review
+          text: Each consultation meeting has a dated record, and the information given in it appears in the tender documents.
+    sv:
+      title: Marknadsdialogen dokumenteras och delas med varje anbudsgivare
+      description: Före en offentlig upphandling SKA beställaren dokumentera varje möte i marknadsdialogen med deltagarna och den information som utbyttes, och ta med den informationen i förfrågningsunderlaget.
+      rationale: En leverantör som deltog i förberedelserna får ett försprång framför de andra när det den fick veta inte delas med dem.
+      criteria:
+        - method: review
+          text: Varje möte i dialogen har ett daterat protokoll, och informationen från mötet finns i förfrågningsunderlaget.
+
+  - id: PJDEL-14
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [procurement, conflict-of-interest, evaluation]
+    refs: ["Directive 2014/24/EU Art. 24 (conflicts of interest)"]
+    tests: [PJDEL-T09]
+    en:
+      title: Conflict of interest declaration from each evaluator
+      description: Each person who takes part in evaluating tenders MUST sign a declaration on conflicts of interest with the named tenderers before the tenders are opened.
+      rationale: An undisclosed tie between an evaluator and a tenderer makes the award open to challenge and damages trust in the procurement.
+      criteria:
+        - method: inspection
+          text: Each evaluator listed in the evaluation report has a signed declaration dated before the opening of the tenders.
+    sv:
+      title: Jävsdeklaration från varje utvärderare
+      description: Varje person som deltar i utvärderingen av anbud SKA underteckna en jävsdeklaration avseende de namngivna anbudsgivarna innan anbuden öppnas.
+      rationale: En dold koppling mellan en utvärderare och en anbudsgivare gör tilldelningen angripbar och skadar förtroendet för upphandlingen.
+      criteria:
+        - method: inspection
+          text: Varje utvärderare i utvärderingsrapporten har en undertecknad deklaration daterad före anbudsöppningen.
+
+  - id: PJDEL-15
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [procurement, award-decision, transparency]
+    refs: ["Directive 2014/24/EU Art. 55 (informing candidates and tenderers)", "Lag (2016:1145) om offentlig upphandling (LOU) 12 kap. 12 § (underrättelse om beslut)"]
+    tests: [PJDEL-T10]
+    en:
+      title: Award decision with reasons sent to each tenderer
+      description: The buyer MUST send the award decision to each tenderer on the same day, with the name of the winning tenderer and the reasons for the decision.
+      rationale: Tenderers need the reasons to judge whether to accept the decision or ask for a review, and the standstill period counts from the notice.
+      criteria:
+        - method: review
+          text: The sending log shows the same date for each tenderer, and the notice names the winner and states the reasons.
+    sv:
+      title: Tilldelningsbeslut med skäl skickas till varje anbudsgivare
+      description: Beställaren SKA skicka tilldelningsbeslutet till varje anbudsgivare samma dag, med namnet på den vinnande anbudsgivaren och skälen för beslutet.
+      rationale: Anbudsgivarna behöver skälen för att bedöma om de godtar beslutet eller begär överprövning, och avtalsspärren räknas från underrättelsen.
+      criteria:
+        - method: review
+          text: Utskickslistan visar samma datum för varje anbudsgivare, och underrättelsen namnger vinnaren och anger skälen.
+
+  - id: PJDEL-16
+    type: regulatory
+    obligation: must_not
+    priority: high
+    tags: [procurement, standstill, contract]
+    refs: ["Lag (2016:1145) om offentlig upphandling (LOU) 20 kap. 1 § (avtalsspärr)"]
+    tests: [PJDEL-T10]
+    en:
+      title: No contract signed during the standstill period
+      description: The buyer MUST NOT sign the contract until 10 days have passed since the award decision was sent electronically to the tenderers.
+      rationale: A contract signed during the standstill period removes the tenderers' right to a review and can be declared invalid.
+      criteria:
+        - method: review
+          text: The contract signature date is at least 11 days after the sending date of the award decision.
+          threshold: "≥ 10 full days between notice and signature"
+    sv:
+      title: Inget avtal tecknas under avtalsspärren
+      description: Beställaren SKA INTE teckna avtalet förrän 10 dagar har gått sedan tilldelningsbeslutet skickades elektroniskt till anbudsgivarna.
+      rationale: Ett avtal som tecknas under avtalsspärren tar bort anbudsgivarnas rätt till överprövning och kan förklaras ogiltigt.
+      criteria:
+        - method: review
+          text: Avtalets undertecknandedatum ligger minst 11 dagar efter datumet då tilldelningsbeslutet skickades.
+          threshold: "≥ 10 hela dagar mellan underrättelse och undertecknande"
+
+  - id: PJDEL-17
+    type: regulatory
+    obligation: must
+    priority: medium
+    tags: [procurement, contract-change]
+    refs: ["Directive 2014/24/EU Art. 72 (modification of contracts during their term)", "Lag (2016:1145) om offentlig upphandling (LOU) 17 kap. (ändring av kontrakt)"]
+    tests: [PJDEL-T11]
+    en:
+      title: Contract changes assessed against the procurement rules
+      description: Before agreeing a change to a publicly procured contract, the buyer MUST record an assessment of the change against the permitted grounds for modification, with its value as a share of the original contract value.
+      rationale: A change beyond the permitted grounds is an unlawful direct award and can lead to a procurement fine.
+      criteria:
+        - method: review
+          text: Each signed contract change has a dated assessment that names the ground used and the value share in per cent.
+    sv:
+      title: Ändringar av avtalet prövas mot upphandlingsreglerna
+      description: Innan en ändring av ett offentligt upphandlat kontrakt avtalas SKA beställaren dokumentera en prövning av ändringen mot de tillåtna grunderna för ändring, med ändringens värde som andel av det ursprungliga kontraktsvärdet.
+      rationale: En ändring utanför de tillåtna grunderna är en otillåten direktupphandling och kan leda till upphandlingsskadeavgift.
+      criteria:
+        - method: review
+          text: Varje undertecknad avtalsändring har en daterad prövning som anger vilken grund som används och värdeandelen i procent.
+
+  - id: PJDEL-18
+    type: business
+    obligation: must
+    priority: medium
+    tags: [handover, operations, knowledge-transfer]
+    refs: ["ISO 21502:2020 §6.8 (closing or terminating a project)", "ITIL 4 Service validation and testing"]
+    tests: [PJDEL-T12]
+    en:
+      title: Early life support period after go-live
+      description: The project MUST keep named staff available to the operations organisation for at least 4 weeks after go-live, with exit criteria for ending the period agreed in the handover.
+      rationale: Most defects and questions surface in the first weeks of use, when the operations staff do not yet know the solution.
+      criteria:
+        - method: review
+          text: The handover names the support staff, sets a period of at least 4 weeks and lists the exit criteria, and the end of the period is signed against them.
+          threshold: "≥ 4 weeks"
+    sv:
+      title: Förstärkt stöd under en period efter driftstart
+      description: Projektet SKA hålla namngiven personal tillgänglig för förvaltnings- och driftorganisationen i minst 4 veckor efter driftstart, med kriterier för att avsluta perioden som har avtalats i överlämningen.
+      rationale: De flesta fel och frågor dyker upp de första veckorna i drift, när driftpersonalen ännu inte känner lösningen.
+      criteria:
+        - method: review
+          text: Överlämningen namnger stödpersonalen, anger en period på minst 4 veckor och listar avslutskriterierna, och periodens slut är signerat mot dem.
+          threshold: "≥ 4 veckor"
+
 tests:
   - id: PJDEL-T01
     priority: high
@@ -506,3 +642,125 @@ tests:
           expected: Skillnaden är mellan 11 och 13 månader.
         - action: Para ihop varje nytta i projektmotivet med rapporten.
           expected: Varje nytta har sitt mått, mål och verkliga värde.
+
+  - id: PJDEL-T09
+    priority: medium
+    execution: manual
+    tags: [procurement, market-consultation, conflict-of-interest]
+    refs: ["Directive 2014/24/EU Art. 40 (preliminary market consultations)", "Directive 2014/24/EU Art. 24 (conflicts of interest)"]
+    en:
+      title: Market consultation records and evaluator declarations
+      description: Checks that the market consultation is recorded and shared, and that each evaluator declared conflicts of interest in time.
+      preconditions: The procurement file with the consultation records, the tender documents, the evaluation report and the declarations.
+      expected: The consultation information reached each tenderer, and each evaluator signed a declaration before the tenders were opened.
+      steps:
+        - action: List the market consultation meetings and read their records.
+          expected: Each meeting has a date, the participants and the information exchanged.
+        - action: Search the tender documents for the information from each meeting.
+          expected: Each item of information is in the tender documents.
+        - action: Compare the evaluators in the evaluation report with the signed declarations.
+          expected: Each evaluator has a declaration dated before the opening of the tenders.
+    sv:
+      title: Protokoll från marknadsdialogen och utvärderarnas deklarationer
+      description: Kontrollerar att marknadsdialogen är dokumenterad och delad och att varje utvärderare har lämnat jävsdeklaration i tid.
+      preconditions: Upphandlingsakten med protokoll från dialogen, förfrågningsunderlaget, utvärderingsrapporten och deklarationerna.
+      expected: Informationen från dialogen nådde varje anbudsgivare, och varje utvärderare undertecknade en deklaration innan anbuden öppnades.
+      steps:
+        - action: Lista mötena i marknadsdialogen och läs protokollen.
+          expected: Varje möte har datum, deltagare och den information som utbyttes.
+        - action: Sök i förfrågningsunderlaget efter informationen från varje möte.
+          expected: Varje uppgift finns i förfrågningsunderlaget.
+        - action: Jämför utvärderarna i utvärderingsrapporten med de undertecknade deklarationerna.
+          expected: Varje utvärderare har en deklaration daterad före anbudsöppningen.
+
+  - id: PJDEL-T10
+    priority: high
+    execution: manual
+    tags: [procurement, award-decision, standstill]
+    refs: ["Directive 2014/24/EU Art. 55 (informing candidates and tenderers)", "Lag (2016:1145) om offentlig upphandling (LOU) 20 kap. 1 § (avtalsspärr)"]
+    en:
+      title: Award notice and standstill before signature
+      description: Checks the contents and sending of the award decision and the time until the contract was signed.
+      preconditions: The award decision, the sending log and the signed contract.
+      expected: Each tenderer got the reasoned decision the same day, and the contract was signed after the standstill period.
+      steps:
+        - action: Read the award decision.
+          expected: It names the winning tenderer and states the reasons.
+        - action: Compare the sending date for each tenderer in the log.
+          expected: The date is the same for each tenderer.
+        - action: Count the days from the sending date to the contract signature date.
+          expected: At least 10 full days have passed.
+          data: "Sent 3 March, signed 14 March or later"
+    sv:
+      title: Underrättelse om tilldelning och avtalsspärr före undertecknande
+      description: Kontrollerar innehållet i och utskicket av tilldelningsbeslutet och tiden fram till att avtalet tecknades.
+      preconditions: Tilldelningsbeslutet, utskickslistan och det undertecknade avtalet.
+      expected: Varje anbudsgivare fick det motiverade beslutet samma dag, och avtalet tecknades efter avtalsspärren.
+      steps:
+        - action: Läs tilldelningsbeslutet.
+          expected: Det namnger den vinnande anbudsgivaren och anger skälen.
+        - action: Jämför utskicksdatumet för varje anbudsgivare i listan.
+          expected: Datumet är detsamma för varje anbudsgivare.
+        - action: Räkna dagarna från utskicksdatumet till avtalets undertecknandedatum.
+          expected: Minst 10 hela dagar har gått.
+          data: "Skickat 3 mars, undertecknat 14 mars eller senare"
+
+  - id: PJDEL-T11
+    priority: medium
+    execution: manual
+    tags: [procurement, contract-change]
+    refs: ["Directive 2014/24/EU Art. 72 (modification of contracts during their term)"]
+    en:
+      title: Assessment of signed contract changes
+      description: Samples contract changes and checks that each was assessed against the permitted grounds before it was signed.
+      preconditions: The register of contract changes for a publicly procured contract and the original contract value.
+      expected: Each sampled change has a prior assessment with the ground and the value share.
+      steps:
+        - action: Pick 5 signed contract changes from the register.
+          expected: Each change has an assessment record.
+        - action: Compare the date of each assessment with the signature date of the change.
+          expected: The assessment is earlier.
+        - action: Recalculate the value share of each change from the original contract value.
+          expected: The share matches the assessment, and the named ground covers it.
+    sv:
+      title: Prövning av undertecknade avtalsändringar
+      description: Gör ett urval av avtalsändringar och kontrollerar att varje ändring prövades mot de tillåtna grunderna innan den undertecknades.
+      preconditions: Registret över avtalsändringar för ett offentligt upphandlat kontrakt och det ursprungliga kontraktsvärdet.
+      expected: Varje ändring i urvalet har en föregående prövning med grund och värdeandel.
+      steps:
+        - action: Välj 5 undertecknade avtalsändringar ur registret.
+          expected: Varje ändring har en dokumenterad prövning.
+        - action: Jämför datumet för varje prövning med ändringens undertecknandedatum.
+          expected: Prövningen är tidigare.
+        - action: Räkna om värdeandelen för varje ändring utifrån det ursprungliga kontraktsvärdet.
+          expected: Andelen stämmer med prövningen, och den angivna grunden täcker den.
+
+  - id: PJDEL-T12
+    priority: medium
+    execution: manual
+    tags: [handover, operations]
+    refs: ["ISO 21502:2020 §6.8 (closing or terminating a project)"]
+    en:
+      title: Early life support period and its exit
+      description: Checks that the project supported operations after go-live for the agreed period and ended it against the exit criteria.
+      preconditions: The handover document, the go-live date and the sign-off of the support period.
+      expected: Named staff supported operations for at least 4 weeks, and the period ended when the exit criteria were met.
+      steps:
+        - action: Read the support section of the handover document.
+          expected: It names the staff, a period of at least 4 weeks and the exit criteria.
+        - action: Compare the go-live date with the date of the sign-off.
+          expected: At least 4 weeks lie between them.
+        - action: Check each exit criterion in the sign-off.
+          expected: Each criterion is marked as met with evidence.
+    sv:
+      title: Period med förstärkt stöd och dess avslut
+      description: Kontrollerar att projektet stöttade driften efter driftstart under den avtalade perioden och avslutade den mot avslutskriterierna.
+      preconditions: Överlämningsdokumentet, datum för driftstart och signeringen av stödperiodens slut.
+      expected: Namngiven personal stöttade driften i minst 4 veckor, och perioden avslutades när avslutskriterierna var uppfyllda.
+      steps:
+        - action: Läs avsnittet om stöd i överlämningsdokumentet.
+          expected: Det namnger personalen, en period på minst 4 veckor och avslutskriterierna.
+        - action: Jämför datumet för driftstart med datumet för signeringen.
+          expected: Det är minst 4 veckor mellan dem.
+        - action: Kontrollera varje avslutskriterium i signeringen.
+          expected: Varje kriterium är markerat som uppfyllt med belägg.

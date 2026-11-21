@@ -404,6 +404,120 @@ requirements:
           text: Bemanningsplanen för de kommande 4 veckorna har ingen timme inom servicetiden utan en namngiven person vars utbildningsregister omfattar tjänsten.
           threshold: "0 timmar utan bemanning"
 
+  - id: GVOP-18
+    type: business
+    obligation: must
+    priority: high
+    tags: [change-advisory-board, high-risk-change, approval]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 20000-1:2018 §8.5.1 (change management)"]
+    tests: [GVOP-T13]
+    en:
+      title: High-risk changes approved by a change board with security present
+      description: Each change classified as high risk MUST be approved at a change board meeting where the service owner and a representative of information security are present, before it is scheduled.
+      rationale: High-risk changes need the views of those who carry the business and security consequences, not only of the team that makes the change.
+      criteria:
+        - method: review
+          text: Each high-risk change of the last 3 months has board minutes dated before scheduling, with the service owner and a security representative listed as present.
+    sv:
+      title: Ändringar med hög risk godkänns av en ändringsnämnd där säkerhet deltar
+      description: Varje ändring som klassas som högrisk SKA godkännas vid ett möte i ändringsnämnden där tjänsteägaren och en företrädare för informationssäkerhet deltar, innan den schemaläggs.
+      rationale: Ändringar med hög risk behöver synpunkter från dem som bär de verksamhets- och säkerhetsmässiga konsekvenserna, inte bara från teamet som gör ändringen.
+      criteria:
+        - method: review
+          text: Varje högriskändring under de senaste 3 månaderna har ett protokoll från nämnden daterat före schemaläggningen, där tjänsteägaren och en säkerhetsföreträdare finns med som närvarande.
+
+  - id: GVOP-19
+    type: security
+    obligation: must_not
+    priority: high
+    tags: [segregation-of-duties, change, approval]
+    refs: ["ISO/IEC 27001:2022 A.5.3", "ISO/IEC 27001:2022 A.8.32"]
+    tests: [GVOP-T13]
+    en:
+      title: Approver of a change is not its implementer
+      description: The person who approves a production change MUST NOT be the person who implements it.
+      rationale: Separating approval from implementation stops a single person from making an unreviewed change to production, by mistake or on purpose.
+      criteria:
+        - method: analysis
+          text: In the change records of the last 3 months, no change has the same person as approver and implementer.
+    sv:
+      title: Den som godkänner en ändring genomför den inte
+      description: Den som godkänner en ändring i produktion SKA INTE vara samma person som genomför den.
+      rationale: När godkännande och genomförande skiljs åt kan ingen enskild person göra en ogranskad ändring i produktion, av misstag eller avsiktligt.
+      criteria:
+        - method: analysis
+          text: I ändringsposterna under de senaste 3 månaderna har ingen ändring samma person som godkännare och genomförare.
+
+  - id: GVOP-20
+    type: business
+    obligation: must
+    priority: medium
+    tags: [failed-change, post-implementation-review]
+    refs: ["ITIL 4 Change enablement", "DORA State of DevOps (change failure rate)"]
+    tests: [GVOP-T14]
+    en:
+      title: Review of each failed change within 5 working days
+      description: The change manager MUST hold a review of each change that was backed out or caused an incident within 5 working days, and record the cause and the actions in the change record.
+      rationale: Failed changes show where testing, planning or the change process itself is weak, and the lessons fade within days.
+      criteria:
+        - method: review
+          text: Each failed change of the last 3 months has a review record within 5 working days with a cause and actions.
+          threshold: "≤ 5 working days"
+    sv:
+      title: Genomgång av varje misslyckad ändring inom 5 arbetsdagar
+      description: Ändringsansvarig SKA hålla en genomgång av varje ändring som backades eller orsakade en incident inom 5 arbetsdagar och dokumentera orsaken och åtgärderna i ändringsposten.
+      rationale: Misslyckade ändringar visar var test, planering eller själva ändringsprocessen är svag, och lärdomarna bleknar inom några dagar.
+      criteria:
+        - method: review
+          text: Varje misslyckad ändring under de senaste 3 månaderna har en dokumenterad genomgång inom 5 arbetsdagar med orsak och åtgärder.
+          threshold: "≤ 5 arbetsdagar"
+
+  - id: GVOP-21
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [change-failure-rate, indicator]
+    refs: ["DORA State of DevOps (change failure rate)"]
+    tests: [GVOP-T14]
+    en:
+      title: Change failure rate below 15 % reported each month
+      description: The share of production changes that are backed out or cause an incident SHOULD stay below 15 % over each calendar month, reported as part of the monthly operational indicators.
+      rationale: The change failure rate is a direct measure of how safely the organisation changes its services.
+      criteria:
+        - method: analysis
+          text: The monthly indicator reports of the last 6 months show the change failure rate, and each value is below 15 %.
+          threshold: "< 15 % per month"
+    sv:
+      title: Andel misslyckade ändringar under 15 % rapporteras varje månad
+      description: Andelen ändringar i produktion som backas eller orsakar en incident BÖR ligga under 15 % per kalendermånad och ingå i de månatliga driftindikatorerna.
+      rationale: Andelen misslyckade ändringar är ett direkt mått på hur säkert organisationen ändrar sina tjänster.
+      criteria:
+        - method: analysis
+          text: De månatliga indikatorrapporterna för de senaste 6 månaderna visar andelen misslyckade ändringar, och varje värde är under 15 %.
+          threshold: "< 15 % per månad"
+
+  - id: GVOP-22
+    type: business
+    obligation: must
+    priority: high
+    tags: [release, go-no-go, checklist]
+    refs: ["ITIL 4 Release management", "ISO/IEC 20000-1:2018 §8.5.3 (release and deployment management)"]
+    tests: [GVOP-T15]
+    en:
+      title: Go or no-go decision against a release checklist
+      description: Before each release to production, the release manager MUST record a go or no-go decision against a checklist that covers test results, the back-out plan, the operations handover and the user communication.
+      rationale: A short checklist at the last moment catches missing steps that are easy to skip under schedule pressure.
+      criteria:
+        - method: review
+          text: Each release of the last 3 months has a decision record dated before deployment with each of the 4 checklist items marked.
+    sv:
+      title: Beslut om go eller no-go mot en checklista för release
+      description: Före varje release till produktion SKA releaseansvarig dokumentera ett beslut om go eller no-go mot en checklista som omfattar testresultat, reträttplan, överlämning till drift och information till användarna.
+      rationale: En kort checklista i sista stund fångar steg som saknas och som är lätta att hoppa över under tidspress.
+      criteria:
+        - method: review
+          text: Varje release under de senaste 3 månaderna har ett beslutsunderlag daterat före driftsättningen med var och en av de 4 punkterna i checklistan markerad.
+
 tests:
   - id: GVOP-T01
     priority: high
@@ -740,3 +854,95 @@ tests:
           expected: Ingen timme inom servicetiden saknar en namngiven person.
         - action: Kontrollera utbildningsregistret för tjänsten för varje namngiven person.
           expected: Varje person har genomgått utbildningen för tjänsten.
+
+  - id: GVOP-T13
+    priority: high
+    execution: automated
+    tags: [change-advisory-board, segregation-of-duties]
+    refs: ["ITIL 4 Change enablement", "ISO/IEC 27001:2022 A.5.3"]
+    en:
+      title: Change board approvals and separation of approver and implementer
+      description: A script reads the change records of the last 3 months and checks the board approvals and the people involved.
+      preconditions: Read access to the change management system and the change board minutes.
+      expected: Each high-risk change was approved by a board with the service owner and security present, and no change has the same approver and implementer.
+      steps:
+        - action: Export the change records of the last 3 months with risk class, approver, implementer and dates.
+          expected: The export holds each change of the period.
+        - action: For each high-risk change, match the board minutes and read the attendance.
+          expected: The minutes are dated before scheduling and list the service owner and a security representative.
+        - action: Compare the approver and the implementer of each change.
+          expected: They differ for each change.
+    sv:
+      title: Ändringsnämndens godkännanden och åtskillnad mellan godkännare och genomförare
+      description: Ett skript läser ändringsposterna för de senaste 3 månaderna och kontrollerar nämndens godkännanden och de personer som deltagit.
+      preconditions: Läsbehörighet till systemet för ändringshantering och ändringsnämndens protokoll.
+      expected: Varje högriskändring godkändes av en nämnd där tjänsteägaren och säkerhet deltog, och ingen ändring har samma godkännare och genomförare.
+      steps:
+        - action: Exportera ändringsposterna för de senaste 3 månaderna med riskklass, godkännare, genomförare och datum.
+          expected: Exporten innehåller varje ändring under perioden.
+        - action: Matcha nämndens protokoll för varje högriskändring och läs närvaron.
+          expected: Protokollet är daterat före schemaläggningen och listar tjänsteägaren och en säkerhetsföreträdare.
+        - action: Jämför godkännare och genomförare för varje ändring.
+          expected: De skiljer sig åt för varje ändring.
+
+  - id: GVOP-T14
+    priority: medium
+    execution: manual
+    tags: [failed-change, change-failure-rate]
+    refs: ["ITIL 4 Change enablement", "DORA State of DevOps (change failure rate)"]
+    en:
+      title: Reviews of failed changes and the change failure rate
+      description: Checks the reviews of failed changes and recalculates the monthly change failure rate.
+      preconditions: The change records and incident links of the last 6 months and the monthly indicator reports.
+      expected: Each failed change was reviewed within 5 working days, and the reported rates are correct and below 15 %.
+      steps:
+        - action: Filter the change records on changes backed out or linked to an incident.
+          expected: A list of failed changes.
+        - action: For each failed change in the last 3 months, find the review record.
+          expected: It is within 5 working days and has a cause and actions.
+        - action: Divide the failed changes by all production changes for each month.
+          expected: The result matches the indicator report and is below 15 %.
+          data: "6 failed of 80 changes: 7.5 %"
+    sv:
+      title: Genomgångar av misslyckade ändringar och andelen misslyckade ändringar
+      description: Kontrollerar genomgångarna av misslyckade ändringar och räknar om den månatliga andelen misslyckade ändringar.
+      preconditions: Ändringsposterna och kopplingarna till incidenter för de senaste 6 månaderna samt de månatliga indikatorrapporterna.
+      expected: Varje misslyckad ändring gicks igenom inom 5 arbetsdagar, och de rapporterade andelarna är riktiga och under 15 %.
+      steps:
+        - action: Filtrera ändringsposterna på ändringar som backats eller kopplats till en incident.
+          expected: En lista över misslyckade ändringar.
+        - action: Hitta den dokumenterade genomgången för varje misslyckad ändring under de senaste 3 månaderna.
+          expected: Den ligger inom 5 arbetsdagar och har orsak och åtgärder.
+        - action: Dela antalet misslyckade ändringar med alla ändringar i produktion för varje månad.
+          expected: Resultatet stämmer med indikatorrapporten och är under 15 %.
+          data: "6 misslyckade av 80 ändringar: 7,5 %"
+
+  - id: GVOP-T15
+    priority: high
+    execution: manual
+    tags: [release, go-no-go]
+    refs: ["ITIL 4 Release management"]
+    en:
+      title: Go or no-go records of recent releases
+      description: Compares the release decision records with the deployment log.
+      preconditions: The deployment log and the release decision records of the last 3 months.
+      expected: Each release has a decision record before deployment with the 4 checklist items marked.
+      steps:
+        - action: Match each deployment in the log with a decision record.
+          expected: Each deployment has a record.
+        - action: Compare the time of each decision with the deployment time.
+          expected: The decision is earlier.
+        - action: Read the checklist of each record.
+          expected: Test results, back-out plan, operations handover and user communication are each marked.
+    sv:
+      title: Beslut om go eller no-go för de senaste releaserna
+      description: Jämför beslutsunderlagen för releaser med driftsättningsloggen.
+      preconditions: Driftsättningsloggen och beslutsunderlagen för releaser under de senaste 3 månaderna.
+      expected: Varje release har ett beslutsunderlag före driftsättningen med de 4 punkterna i checklistan markerade.
+      steps:
+        - action: Matcha varje driftsättning i loggen med ett beslutsunderlag.
+          expected: Varje driftsättning har ett underlag.
+        - action: Jämför tidpunkten för varje beslut med tidpunkten för driftsättningen.
+          expected: Beslutet är tidigare.
+        - action: Läs checklistan i varje underlag.
+          expected: Testresultat, reträttplan, överlämning till drift och information till användarna är var och en markerade.
