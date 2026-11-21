@@ -1,0 +1,682 @@
+area: zero-trust
+prefix: ZTA
+group: security
+catalogue: software
+name: {en: Zero trust architecture, sv: Nollförtroendearkitektur}
+description:
+  en: Access decided per request from identity, device and context instead of network location, with workload identities, segmentation, central policy decisions and continuous evaluation.
+  sv: Åtkomst som avgörs per anrop utifrån identitet, enhet och sammanhang i stället för nätverksplats, med arbetslastidentiteter, segmentering, centrala policybeslut och fortlöpande utvärdering.
+
+requirements:
+  - id: ZTA-01
+    type: security
+    obligation: must
+    priority: critical
+    tags: [implicit-trust, internal-services, authentication]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "CISA Zero Trust Maturity Model 2.0 (applications and workloads)", "ISO/IEC 27001:2022 A.5.15", "IEC 62443-3-3 SR 1.2"]
+    tests: [ZTA-T01]
+    en:
+      title: No access granted for being on the internal network
+      description: Each internal service MUST authenticate and authorise every request it receives, including requests from other services in the same network segment.
+      rationale: An attacker who gets one foothold inside the network otherwise reaches every service that trusts the network, which is how most breaches spread.
+      criteria:
+        - method: test
+          text: An unauthenticated request from a host inside the production network to each internal service is refused with 401 or 403.
+    sv:
+      title: Ingen åtkomst bara för att anropet kommer från det interna nätet
+      description: Varje intern tjänst SKA autentisera och auktorisera varje anrop den tar emot, även anrop från andra tjänster i samma nätverkssegment.
+      rationale: En angripare som får fäste någonstans i nätet når annars varje tjänst som litar på nätet, vilket är hur de flesta intrång sprids.
+      criteria:
+        - method: test
+          text: Ett oautentiserat anrop från en värd i produktionsnätet till varje intern tjänst avvisas med 401 eller 403.
+
+  - id: ZTA-02
+    type: security
+    obligation: must
+    priority: high
+    tags: [mutual-tls, workload-identity, service-to-service]
+    refs: ["NIST SP 800-207A (service identity)", "NIST SP 800-207 §3.1.1 (enhanced identity governance)", "IEC 62443-3-3 SR 1.2", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [ZTA-T02]
+    en:
+      title: Services prove their identity with short-lived certificates
+      description: The system MUST authenticate each service-to-service connection with mutual TLS using workload certificates that are valid for at most 24 hours and name the calling service.
+      rationale: Shared network secrets and long-lived service passwords do not tell the receiver which service is calling, and they stay useful to a thief for a long time.
+      criteria:
+        - method: test
+          text: A connection without a client certificate, or with a certificate of an unlisted service, is refused, and every issued workload certificate has a lifetime of 24 hours or less.
+          threshold: "≤ 24 h certificate lifetime"
+    sv:
+      title: Tjänster visar sin identitet med kortlivade certifikat
+      description: Systemet SKA autentisera varje förbindelse mellan tjänster med ömsesidig TLS och arbetslastcertifikat som gäller högst 24 timmar och anger den anropande tjänsten.
+      rationale: Delade nätverkshemligheter och långlivade tjänstelösenord talar inte om för mottagaren vilken tjänst som anropar, och de förblir användbara för en tjuv länge.
+      criteria:
+        - method: test
+          text: En förbindelse utan klientcertifikat, eller med ett certifikat för en tjänst som inte är listad, avvisas, och varje utfärdat arbetslastcertifikat har en giltighetstid på högst 24 timmar.
+          threshold: "≤ 24 h giltighetstid"
+
+  - id: ZTA-03
+    type: security
+    obligation: must
+    priority: high
+    tags: [micro-segmentation, network-policy, default-deny]
+    refs: ["NIST SP 800-207 §3.1.2 (micro-segmentation)", "IEC 62443-3-3 SR 5.1", "ISO/IEC 27001:2022 A.8.22", "NIST SP 800-53 SC-7"]
+    tests: [ZTA-T03]
+    en:
+      title: Workloads accept connections only from listed callers
+      description: The system MUST apply a default-deny network policy to each workload and allow inbound connections only from the services and ports listed for it.
+      rationale: Segmentation limits how far an attacker can move from a compromised workload and how much a single flaw can expose.
+      criteria:
+        - method: test
+          text: A connection from an unlisted workload to a database port is dropped, while the listed application service connects.
+        - method: inspection
+          text: Each namespace or segment has a default-deny rule, and each allow rule names its source, destination and port.
+    sv:
+      title: Arbetslaster tar bara emot förbindelser från listade anropare
+      description: Systemet SKA tillämpa en nätverkspolicy som nekar som standard på varje arbetslast och tillåta inkommande förbindelser enbart från de tjänster och portar som listats för den.
+      rationale: Segmentering begränsar hur långt en angripare kan röra sig från en komprometterad arbetslast och hur mycket ett enskilt fel kan exponera.
+      criteria:
+        - method: test
+          text: En förbindelse från en arbetslast som inte är listad till en databasport stoppas, medan den listade applikationstjänsten kan ansluta.
+        - method: inspection
+          text: Varje namnrymd eller segment har en regel som nekar som standard, och varje tillåtande regel anger källa, mål och port.
+
+  - id: ZTA-04
+    type: security
+    obligation: must
+    priority: high
+    tags: [policy-decision-point, policy-as-code]
+    refs: ["NIST SP 800-207 §3 (logical components)", "NIST SP 800-207A (policy as code)", "ISO/IEC 27001:2022 A.5.15"]
+    tests: [ZTA-T04]
+    en:
+      title: Access policies kept as reviewed code
+      description: The system MUST evaluate access decisions for its services against policies that are kept in version control, reviewed by a second person before each change and deployed by the pipeline.
+      rationale: Rules scattered in each service drift apart and cannot be reviewed as a whole; central, versioned policies show who may do what and who changed it.
+      criteria:
+        - method: inspection
+          text: The policy repository has a history in which each change has an approved review, and the deployed policy version matches the latest merged commit.
+    sv:
+      title: Åtkomstpolicyer förvaltas som granskad kod
+      description: Systemet SKA fatta åtkomstbeslut för sina tjänster mot policyer som förvaras i versionshantering, granskas av en andra person före varje ändring och driftsätts av pipelinen.
+      rationale: Regler utspridda i varje tjänst glider isär och kan inte granskas som helhet; centrala, versionshanterade policyer visar vem som får göra vad och vem som ändrade det.
+      criteria:
+        - method: inspection
+          text: Policyförrådet har en historik där varje ändring har en godkänd granskning, och den driftsatta policyversionen motsvarar den senast sammanslagna commiten.
+
+  - id: ZTA-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [fail-closed, policy-decision-point, availability]
+    refs: ["NIST SP 800-207 §5.2 (denial-of-service or network disruption)", "NIST SP 800-53 AC-3", "ISO/IEC 27001:2022 A.8.3"]
+    tests: [ZTA-T05]
+    en:
+      title: Access denied when the policy decision point is unreachable
+      description: Each policy enforcement point MUST deny a request when it cannot get a decision from the policy decision point within 500 milliseconds and has no cached decision younger than 5 minutes.
+      rationale: Allowing traffic when the policy engine fails turns an outage, or an attack on the engine, into open access.
+      criteria:
+        - method: test
+          text: With the decision point stopped, a request with no cached decision is denied, and one with a cached decision 4 minutes old is allowed.
+          threshold: "timeout 500 ms, cache ≤ 5 min"
+    sv:
+      title: Åtkomst nekas när policybeslutspunkten inte nås
+      description: Varje policyverkställande punkt SKA neka ett anrop när den inte erhåller ett beslut från policybeslutspunkten inom 500 millisekunder och saknar ett cachat beslut som är yngre än 5 minuter.
+      rationale: Att släppa igenom trafik när policymotorn fallerar gör ett avbrott, eller ett angrepp mot motorn, till fri åtkomst.
+      criteria:
+        - method: test
+          text: Med beslutspunkten stoppad nekas ett anrop utan cachat beslut, och ett anrop med ett 4 minuter gammalt cachat beslut tillåts.
+          threshold: "tidsgräns 500 ms, cache ≤ 5 min"
+
+  - id: ZTA-06
+    type: security
+    obligation: should
+    priority: high
+    tags: [device-posture, managed-devices, administration]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "CISA Zero Trust Maturity Model 2.0 (devices)", "ISO/IEC 27001:2022 A.8.1", "NIST SP 800-53 IA-3"]
+    tests: [ZTA-T06]
+    en:
+      title: Administration only from compliant managed devices
+      description: The system SHOULD allow access to administration functions only from devices that are registered in device management and report disk encryption, a supported operating system and security updates no older than 30 days.
+      rationale: An administrator's stolen credentials, or an infected private laptop, should not be enough to reach the most powerful functions.
+      criteria:
+        - method: test
+          text: An administrator on an unregistered device, or on a registered device with updates 31 days old, is refused, and the same account on a compliant device gets in.
+          threshold: "updates ≤ 30 days old"
+    sv:
+      title: Administration endast från godkända hanterade enheter
+      description: Systemet BÖR tillåta åtkomst till administrationsfunktioner endast från enheter som är registrerade i enhetshanteringen och rapporterar diskkryptering, ett operativsystem som stöds och säkerhetsuppdateringar som inte är äldre än 30 dagar.
+      rationale: En administratörs stulna inloggningsuppgifter, eller en infekterad privat dator, ska inte räcka för att nå de mest kraftfulla funktionerna.
+      criteria:
+        - method: test
+          text: En administratör på en oregistrerad enhet, eller på en registrerad enhet med 31 dagar gamla uppdateringar, nekas, och samma konto på en godkänd enhet kommer in.
+          threshold: "uppdateringar ≤ 30 dagar gamla"
+
+  - id: ZTA-07
+    type: security
+    obligation: must
+    priority: high
+    tags: [continuous-evaluation, risk-signals, revocation]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "CISA Zero Trust Maturity Model 2.0 (identity)", "ISO/IEC 27001:2022 A.5.18"]
+    tests: [ZTA-T07]
+    en:
+      title: Sessions re-evaluated when a risk signal arrives
+      description: The system MUST re-evaluate the access of a user within 5 minutes after it receives a risk signal for the user or the device, such as a compromised device report or a password reset at the identity provider, and end the sessions that no longer pass.
+      rationale: A decision made at sign-in becomes wrong when the device is infected or the account is taken over an hour later.
+      criteria:
+        - method: test
+          text: A test risk signal marking the user's device as compromised ends the user's session on that device within 5 minutes, while a session on another compliant device continues.
+          threshold: "≤ 5 min"
+    sv:
+      title: Sessioner omprövas när en risksignal kommer in
+      description: Systemet SKA ompröva en användares åtkomst inom 5 minuter efter att det tagit emot en risksignal för användaren eller enheten, till exempel en rapport om komprometterad enhet eller ett lösenordsbyte hos identitetsleverantören, och avsluta de sessioner som inte längre godkänns.
+      rationale: Ett beslut som fattades vid inloggningen blir fel när enheten infekteras eller kontot tas över en timme senare.
+      criteria:
+        - method: test
+          text: En risksignal för test som markerar användarens enhet som komprometterad avslutar användarens session på den enheten inom 5 minuter, medan en session på en annan godkänd enhet fortsätter.
+          threshold: "≤ 5 min"
+
+  - id: ZTA-08
+    type: security
+    obligation: should
+    priority: medium
+    tags: [identity-aware-proxy, vpn, remote-access]
+    refs: ["NIST SP 800-207 §3.1.3 (network infrastructure and software defined perimeters)", "CISA Zero Trust Maturity Model 2.0 (networks)", "ISO/IEC 27001:2022 A.8.20"]
+    tests: [ZTA-T08]
+    en:
+      title: Remote access per application instead of network-wide VPN
+      description: The system SHOULD give remote staff access to each internal application through an identity-aware proxy that checks user and device for that application, and not through a VPN that opens the whole internal network.
+      rationale: A VPN connection gives network reach to every internal host, while a per-application proxy only exposes what the person needs.
+      criteria:
+        - method: test
+          text: A remote user granted one internal application reaches it through the proxy and cannot open a network connection to any other internal host.
+    sv:
+      title: Fjärråtkomst per applikation i stället för VPN till hela nätet
+      description: Systemet BÖR ge distansarbetande personal åtkomst till varje intern applikation genom en identitetsmedveten proxy som kontrollerar användare och enhet för just den applikationen, och inte genom ett VPN som öppnar hela det interna nätet.
+      rationale: En VPN-anslutning ger nätverksåtkomst till varje intern värd, medan en proxy per applikation bara exponerar det som personen behöver.
+      criteria:
+        - method: test
+          text: En distansanvändare som fått tillgång till en intern applikation når den via proxyn och kan inte öppna en nätverksförbindelse till någon annan intern värd.
+
+  - id: ZTA-09
+    type: security
+    obligation: must
+    priority: medium
+    tags: [workload-registry, asset-inventory, credentials]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "NIST SP 800-207A (service identity)", "ISO/IEC 27001:2022 A.5.9"]
+    tests: [ZTA-T09]
+    en:
+      title: Only registered workloads get an identity
+      description: The system MUST issue workload identities and credentials only to services that are registered in the service inventory with an owner and a purpose.
+      rationale: An unknown workload that can still obtain credentials is invisible to monitoring and is exactly what an attacker would deploy.
+      criteria:
+        - method: test
+          text: A test workload that is not in the inventory starts but receives no workload certificate or token, and the refusal is logged.
+    sv:
+      title: Endast registrerade arbetslaster får en identitet
+      description: Systemet SKA utfärda arbetslastidentiteter och autentiseringsuppgifter endast till tjänster som är registrerade i tjänsteförteckningen med ägare och syfte.
+      rationale: En okänd arbetslast som ändå kan få autentiseringsuppgifter syns inte i bevakningen och är precis vad en angripare skulle driftsätta.
+      criteria:
+        - method: test
+          text: En testarbetslast som inte finns i förteckningen startar men får inget arbetslastcertifikat eller token, och avslaget loggas.
+
+  - id: ZTA-10
+    type: security
+    obligation: must
+    priority: medium
+    tags: [decision-logging, observability]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)", "NIST SP 800-53 AU-2", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [ZTA-T10]
+    en:
+      title: Access decisions logged with their inputs
+      description: The policy decision point MUST log each denied decision and each decision on an administration function with the subject, device, resource, action, policy version and the result.
+      rationale: The decision log shows why access was granted or refused, which is needed both to investigate attacks and to fix policies that block legitimate work.
+      criteria:
+        - method: test
+          text: A denied request and an allowed administration request each give a log record with the six fields.
+    sv:
+      title: Åtkomstbeslut loggas med sina indata
+      description: Policybeslutspunkten SKA logga varje nekat beslut och varje beslut om en administrationsfunktion med subjekt, enhet, resurs, åtgärd, policyversion och resultat.
+      rationale: Beslutsloggen visar varför åtkomst gavs eller nekades, vilket behövs både för att utreda angrepp och för att rätta policyer som stoppar legitimt arbete.
+      criteria:
+        - method: test
+          text: Ett nekat anrop och ett tillåtet administrationsanrop ger var sin loggpost med de sex fälten.
+
+  - id: ZTA-11
+    type: security
+    obligation: should
+    priority: medium
+    tags: [step-up, risk-based-authentication]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)", "NIST SP 800-63B-4 (reauthentication)", "ISO/IEC 27001:2022 A.8.5"]
+    tests: [ZTA-T11]
+    en:
+      title: Step-up authentication on higher risk
+      description: The system SHOULD ask for a phishing-resistant second factor when a sign-in comes from a device, country or network that the account has not used in the last 90 days, even when the session would otherwise be valid.
+      rationale: Context changes are the most common sign of a stolen session or password, and a step-up stops most of them at little cost to normal use.
+      criteria:
+        - method: test
+          text: A sign-in from a new country prompts for the second factor, and a sign-in from the usual device and network does not.
+    sv:
+      title: Skärpt autentisering vid högre risk
+      description: Systemet BÖR be om en nätfiskeresistent andra faktor när en inloggning kommer från en enhet, ett land eller ett nät som kontot inte har använt de senaste 90 dagarna, även när sessionen annars skulle vara giltig.
+      rationale: Ändrat sammanhang är det vanligaste tecknet på en stulen session eller ett stulet lösenord, och en skärpt kontroll stoppar de flesta av dem till liten kostnad för normal användning.
+      criteria:
+        - method: test
+          text: En inloggning från ett nytt land ber om den andra faktorn, och en inloggning från den vanliga enheten och det vanliga nätet gör det inte.
+
+  - id: ZTA-12
+    type: security
+    obligation: should
+    priority: medium
+    tags: [ssh-certificates, privileged-access, short-lived-credentials]
+    refs: ["NIST SP 800-207 §3.1.1 (enhanced identity governance)", "NIST SP 800-53 IA-5", "ISO/IEC 27001:2022 A.8.2", "IEC 62443-3-3 SR 1.5"]
+    tests: [ZTA-T12]
+    en:
+      title: Short-lived certificates for administrator shell access
+      description: The system SHOULD give administrators shell access to servers only with SSH certificates issued after single sign-on and valid for at most 8 hours, and accept no static authorised keys.
+      rationale: Static SSH keys are copied, never expire and are rarely removed when people leave, while short certificates end on their own.
+      criteria:
+        - method: test
+          text: A static key added to a server is refused, and a certificate issued 9 hours ago is refused while a new one is accepted.
+          threshold: "≤ 8 h"
+    sv:
+      title: Kortlivade certifikat för administratörers skalåtkomst
+      description: Systemet BÖR ge administratörer skalåtkomst till servrar enbart med SSH-certifikat som utfärdas efter single sign-on och gäller högst 8 timmar, och avvisa statiska behöriga nycklar.
+      rationale: Statiska SSH-nycklar kopieras, går aldrig ut och tas sällan bort när personer slutar, medan korta certifikat upphör av sig själva.
+      criteria:
+        - method: test
+          text: En statisk nyckel som lagts till på en server avvisas, och ett certifikat som utfärdades för 9 timmar sedan avvisas medan ett nytt godtas.
+          threshold: "≤ 8 h"
+
+  - id: ZTA-13
+    type: business
+    obligation: should
+    priority: low
+    tags: [maturity-assessment, roadmap]
+    refs: ["CISA Zero Trust Maturity Model 2.0", "NIST SP 800-207 §7 (migrating to a zero trust architecture)"]
+    tests: [ZTA-T13]
+    en:
+      title: Yearly zero trust maturity assessment
+      description: The supplier SHOULD assess the system against the five pillars of a published zero trust maturity model every 12 months and keep a plan with a target level and date for each pillar.
+      rationale: Zero trust is reached step by step, and a yearly assessment shows where the weakest pillar is and whether the plan moves.
+      criteria:
+        - method: review
+          text: The latest assessment is less than 12 months old and gives a current level, a target level and a date for identity, devices, networks, applications and data.
+          threshold: "≤ 12 months"
+    sv:
+      title: Årlig bedömning av mognad för nollförtroende
+      description: Leverantören BÖR bedöma systemet mot de fem pelarna i en publicerad mognadsmodell för nollförtroende var 12:e månad och ha en plan med målnivå och datum för varje pelare.
+      rationale: Nollförtroende nås steg för steg, och en årlig bedömning visar var den svagaste pelaren finns och om planen går framåt.
+      criteria:
+        - method: review
+          text: Den senaste bedömningen är yngre än 12 månader och anger aktuell nivå, målnivå och datum för identitet, enheter, nätverk, applikationer och data.
+          threshold: "≤ 12 månader"
+
+tests:
+  - id: ZTA-T01
+    priority: critical
+    execution: automated
+    tags: [implicit-trust, internal-services]
+    refs: ["NIST SP 800-207 §2.1 (tenets of zero trust)"]
+    en:
+      title: Internal services refuse unauthenticated requests from inside
+      description: A script inside the production network calls each internal service without credentials.
+      preconditions: A test host in the production network segment and the list of internal service endpoints.
+      expected: Each service refuses the request.
+      steps:
+        - action: From the test host, call a read endpoint of each internal service without any token or client certificate.
+          expected: Each call is refused with 401 or 403, or the connection is refused.
+        - action: Repeat the calls with a valid token of an ordinary user who lacks the service's permission.
+          expected: Each call is refused with 403.
+    sv:
+      title: Interna tjänster avvisar oautentiserade anrop inifrån
+      description: Ett skript i produktionsnätet anropar varje intern tjänst utan autentiseringsuppgifter.
+      preconditions: En testvärd i produktionsnätets segment och listan över interna tjänsteändpunkter.
+      expected: Varje tjänst avvisar anropet.
+      steps:
+        - action: Anropa från testvärden en läsändpunkt i varje intern tjänst utan token eller klientcertifikat.
+          expected: Varje anrop avvisas med 401 eller 403, eller så nekas förbindelsen.
+        - action: Upprepa anropen med en giltig token för en vanlig användare som saknar tjänstens behörighet.
+          expected: Varje anrop avvisas med 403.
+
+  - id: ZTA-T02
+    priority: high
+    execution: automated
+    tags: [mutual-tls, workload-identity]
+    refs: ["NIST SP 800-207A (service identity)"]
+    en:
+      title: Service connections need a valid workload certificate
+      description: A script connects to an internal service with no certificate, a foreign certificate and a valid one, and reads the issued certificate lifetimes.
+      preconditions: A test workload with a valid identity, a self-signed test certificate and access to the certificate issuer's records.
+      expected: Only the valid workload certificate is accepted and all issued certificates live 24 hours or less.
+      steps:
+        - action: Connect to the service without a client certificate.
+          expected: The TLS handshake fails.
+        - action: Connect with the self-signed certificate.
+          expected: The TLS handshake fails.
+        - action: Connect with the test workload's certificate.
+          expected: The connection succeeds and the service logs the caller's identity.
+        - action: List the validity periods of the certificates issued in the last 24 hours.
+          expected: None is longer than 24 hours.
+    sv:
+      title: Förbindelser mellan tjänster kräver ett giltigt arbetslastcertifikat
+      description: Ett skript ansluter till en intern tjänst utan certifikat, med ett främmande certifikat och med ett giltigt, och läser de utfärdade certifikatens livslängd.
+      preconditions: En testarbetslast med giltig identitet, ett självsignerat testcertifikat och åtkomst till certifikatutfärdarens register.
+      expected: Endast det giltiga arbetslastcertifikatet godtas och alla utfärdade certifikat gäller högst 24 timmar.
+      steps:
+        - action: Anslut till tjänsten utan klientcertifikat.
+          expected: TLS-handskakningen misslyckas.
+        - action: Anslut med det självsignerade certifikatet.
+          expected: TLS-handskakningen misslyckas.
+        - action: Anslut med testarbetslastens certifikat.
+          expected: Förbindelsen lyckas och tjänsten loggar den anropandes identitet.
+        - action: Lista giltighetstiderna för de certifikat som utfärdats de senaste 24 timmarna.
+          expected: Inget är längre än 24 timmar.
+
+  - id: ZTA-T03
+    priority: high
+    execution: automated
+    tags: [micro-segmentation]
+    refs: ["NIST SP 800-207 §3.1.2 (micro-segmentation)", "IEC 62443-3-3 SR 5.1"]
+    en:
+      title: Unlisted workloads cannot reach the database
+      description: Starts a test workload that is not on the database's allow list and tries to connect.
+      preconditions: A test environment with network policies as in production and permission to start a test workload in the application namespace.
+      expected: Only the listed service reaches the database port.
+      steps:
+        - action: From the test workload, open a connection to the database port.
+          expected: The connection times out or is refused.
+        - action: From the application service, open the same connection.
+          expected: The connection succeeds.
+        - action: List the network policies of each namespace.
+          expected: Each namespace has a default-deny policy.
+    sv:
+      title: Arbetslaster som inte är listade når inte databasen
+      description: Startar en testarbetslast som inte finns på databasens tillåtelselista och försöker ansluta.
+      preconditions: En testmiljö med nätverkspolicyer som i produktion och behörighet att starta en testarbetslast i applikationens namnrymd.
+      expected: Endast den listade tjänsten når databasporten.
+      steps:
+        - action: Öppna en förbindelse från testarbetslasten till databasporten.
+          expected: Förbindelsen får tidsgräns eller nekas.
+        - action: Öppna samma förbindelse från applikationstjänsten.
+          expected: Förbindelsen lyckas.
+        - action: Lista nätverkspolicyerna för varje namnrymd.
+          expected: Varje namnrymd har en policy som nekar som standard.
+
+  - id: ZTA-T04
+    priority: high
+    execution: manual
+    tags: [policy-as-code]
+    refs: ["NIST SP 800-207A (policy as code)"]
+    en:
+      title: Policy changes are reviewed and match the deployment
+      description: Reviews the history of the policy repository and compares it with the deployed policy.
+      preconditions: Read access to the policy repository and to the policy decision point's version endpoint.
+      expected: Each change was reviewed and the deployed version is the latest merged one.
+      steps:
+        - action: List the merged changes of the last 3 months with their reviews.
+          expected: Each change has an approval by someone other than its author.
+        - action: Read the policy version reported by the decision point.
+          expected: It matches the latest merged commit.
+    sv:
+      title: Policyändringar granskas och stämmer med driftsättningen
+      description: Granskar historiken i policyförrådet och jämför den med den driftsatta policyn.
+      preconditions: Läsbehörighet till policyförrådet och till policybeslutspunktens versionsändpunkt.
+      expected: Varje ändring har granskats och den driftsatta versionen är den senast sammanslagna.
+      steps:
+        - action: Lista de sammanslagna ändringarna de senaste 3 månaderna med deras granskningar.
+          expected: Varje ändring har ett godkännande av någon annan än författaren.
+        - action: Läs den policyversion som beslutspunkten rapporterar.
+          expected: Den motsvarar den senast sammanslagna commiten.
+
+  - id: ZTA-T05
+    priority: high
+    execution: automated
+    tags: [fail-closed]
+    refs: ["NIST SP 800-53 AC-3"]
+    en:
+      title: Enforcement points deny when the decision point is down
+      description: Stops the policy decision point and sends requests with and without a cached decision.
+      preconditions: A test environment where the decision point can be stopped, and two resources, one requested 4 minutes earlier and one never requested.
+      expected: Only the request with a recent cached decision is allowed.
+      steps:
+        - action: Request resource A, wait 4 minutes and stop the decision point.
+          expected: The first request was allowed and the decision point is down.
+        - action: Request resource A again.
+          expected: The request is allowed from the cached decision.
+        - action: Request resource B.
+          expected: The request is denied after at most 500 ms.
+    sv:
+      title: Verkställande punkter nekar när beslutspunkten ligger nere
+      description: Stoppar policybeslutspunkten och skickar anrop med och utan cachat beslut.
+      preconditions: En testmiljö där beslutspunkten kan stoppas, och två resurser, en som begärdes 4 minuter tidigare och en som aldrig har begärts.
+      expected: Endast anropet med ett nytt cachat beslut tillåts.
+      steps:
+        - action: Begär resurs A, vänta 4 minuter och stoppa beslutspunkten.
+          expected: Det första anropet tilläts och beslutspunkten ligger nere.
+        - action: Begär resurs A igen.
+          expected: Anropet tillåts utifrån det cachade beslutet.
+        - action: Begär resurs B.
+          expected: Anropet nekas efter högst 500 ms.
+
+  - id: ZTA-T06
+    priority: high
+    execution: manual
+    tags: [device-posture]
+    refs: ["CISA Zero Trust Maturity Model 2.0 (devices)"]
+    en:
+      title: Administration refused from non-compliant devices
+      description: Signs in as administrator from an unmanaged device, an out-of-date managed device and a compliant one.
+      preconditions: An administrator account, an unregistered laptop, a registered laptop with updates held back for 31 days and a compliant registered laptop.
+      expected: Only the compliant device reaches the administration functions.
+      steps:
+        - action: Open the administration pages from the unregistered laptop.
+          expected: Access is refused with a message about the device.
+        - action: Open them from the registered laptop with old updates.
+          expected: Access is refused and names the missing updates.
+        - action: Open them from the compliant laptop.
+          expected: The administration pages open.
+    sv:
+      title: Administration nekas från enheter som inte uppfyller kraven
+      description: Loggar in som administratör från en ohanterad enhet, en hanterad enhet med gamla uppdateringar och en godkänd enhet.
+      preconditions: Ett administratörskonto, en oregistrerad bärbar dator, en registrerad dator med uppdateringar som hållits tillbaka i 31 dagar och en godkänd registrerad dator.
+      expected: Endast den godkända enheten når administrationsfunktionerna.
+      steps:
+        - action: Öppna administrationssidorna från den oregistrerade datorn.
+          expected: Åtkomsten nekas med ett meddelande om enheten.
+        - action: Öppna dem från den registrerade datorn med gamla uppdateringar.
+          expected: Åtkomsten nekas och de saknade uppdateringarna anges.
+        - action: Öppna dem från den godkända datorn.
+          expected: Administrationssidorna öppnas.
+
+  - id: ZTA-T07
+    priority: high
+    execution: manual
+    tags: [continuous-evaluation]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)"]
+    en:
+      title: A compromised-device signal ends the session on that device
+      description: Sends a test risk signal for one of the user's devices and watches both sessions.
+      preconditions: A test user signed in on two compliant devices, and a device management test console that can mark a device as compromised.
+      expected: The session on the marked device ends within 5 minutes and the other continues.
+      steps:
+        - action: Mark device 1 as compromised in the device management console and note the time.
+          expected: The signal is sent to the system.
+        - action: Reload a page on each device every 30 seconds for 6 minutes.
+          expected: Device 1 is sent to sign-in within 5 minutes of the noted time; device 2 keeps working.
+    sv:
+      title: En signal om komprometterad enhet avslutar sessionen på enheten
+      description: Skickar en risksignal för test för en av användarens enheter och följer båda sessionerna.
+      preconditions: En testanvändare inloggad på två godkända enheter, och en testkonsol för enhetshantering som kan markera en enhet som komprometterad.
+      expected: Sessionen på den markerade enheten avslutas inom 5 minuter och den andra fortsätter.
+      steps:
+        - action: Markera enhet 1 som komprometterad i konsolen för enhetshantering och anteckna tiden.
+          expected: Signalen skickas till systemet.
+        - action: Ladda om en sida på varje enhet var 30:e sekund i 6 minuter.
+          expected: Enhet 1 skickas till inloggningen inom 5 minuter efter den antecknade tiden; enhet 2 fortsätter att fungera.
+
+  - id: ZTA-T08
+    priority: medium
+    execution: manual
+    tags: [identity-aware-proxy]
+    refs: ["NIST SP 800-207 §3.1.3 (network infrastructure and software defined perimeters)"]
+    en:
+      title: Remote user reaches one application and nothing else
+      description: Connects as a remote user with access to one internal application and probes other internal hosts.
+      preconditions: A remote test user granted one internal application, a laptop outside the office network and the address of a second internal host.
+      expected: The granted application opens; no other internal host is reachable.
+      steps:
+        - action: Open the granted application from the laptop.
+          expected: The proxy asks for sign-in and device check, and the application opens.
+        - action: Try to open a TCP connection to the second internal host on ports 22, 443 and 3389.
+          expected: Each connection fails.
+    sv:
+      title: En distansanvändare når en applikation och inget annat
+      description: Ansluter som distansanvändare med åtkomst till en intern applikation och provar att nå andra interna värdar.
+      preconditions: En testanvändare på distans med tillgång till en intern applikation, en bärbar dator utanför kontorsnätet och adressen till en andra intern värd.
+      expected: Den tilldelade applikationen öppnas; ingen annan intern värd går att nå.
+      steps:
+        - action: Öppna den tilldelade applikationen från datorn.
+          expected: Proxyn ber om inloggning och enhetskontroll, och applikationen öppnas.
+        - action: Försök öppna en TCP-förbindelse till den andra interna värden på portarna 22, 443 och 3389.
+          expected: Varje förbindelse misslyckas.
+
+  - id: ZTA-T09
+    priority: medium
+    execution: automated
+    tags: [workload-registry]
+    refs: ["NIST SP 800-207A (service identity)"]
+    en:
+      title: Unregistered workload gets no credentials
+      description: Starts a workload that is missing from the service inventory and checks what identity it receives.
+      preconditions: A test environment with the identity issuer as in production and permission to start a workload.
+      expected: The workload receives no certificate or token and the refusal is logged.
+      steps:
+        - action: Start a test workload with a name not in the service inventory.
+          expected: The workload starts.
+        - action: From inside the workload, request a workload certificate and a token.
+          expected: Both requests are refused.
+        - action: Search the issuer's log for the workload.
+          expected: The refusal is logged with the workload's name.
+    sv:
+      title: En oregistrerad arbetslast får inga autentiseringsuppgifter
+      description: Startar en arbetslast som saknas i tjänsteförteckningen och kontrollerar vilken identitet den får.
+      preconditions: En testmiljö med identitetsutfärdaren som i produktion och behörighet att starta en arbetslast.
+      expected: Arbetslasten får inget certifikat eller token och avslaget loggas.
+      steps:
+        - action: Starta en testarbetslast med ett namn som inte finns i tjänsteförteckningen.
+          expected: Arbetslasten startar.
+        - action: Begär ett arbetslastcertifikat och en token inifrån arbetslasten.
+          expected: Båda begärandena avvisas.
+        - action: Sök efter arbetslasten i utfärdarens logg.
+          expected: Avslaget är loggat med arbetslastens namn.
+
+  - id: ZTA-T10
+    priority: medium
+    execution: automated
+    tags: [decision-logging]
+    refs: ["NIST SP 800-53 AU-2"]
+    en:
+      title: Decision log records carry subject, device and policy version
+      description: Sends a denied request and an allowed administration request and reads the decision log.
+      preconditions: A test user without access to resource X, an administrator account and search access to the decision log.
+      expected: Both decisions are logged with the six fields.
+      steps:
+        - action: As the test user, request resource X.
+          expected: The request is denied.
+        - action: As administrator, open an administration function.
+          expected: The request is allowed.
+        - action: Search the decision log for both requests.
+          expected: Each record shows subject, device, resource, action, policy version and result.
+    sv:
+      title: Beslutsloggens poster har subjekt, enhet och policyversion
+      description: Skickar ett nekat anrop och ett tillåtet administrationsanrop och läser beslutsloggen.
+      preconditions: En testanvändare utan åtkomst till resurs X, ett administratörskonto och sökbehörighet till beslutsloggen.
+      expected: Båda besluten loggas med de sex fälten.
+      steps:
+        - action: Begär resurs X som testanvändaren.
+          expected: Anropet nekas.
+        - action: Öppna en administrationsfunktion som administratör.
+          expected: Anropet tillåts.
+        - action: Sök efter båda anropen i beslutsloggen.
+          expected: Varje post visar subjekt, enhet, resurs, åtgärd, policyversion och resultat.
+
+  - id: ZTA-T11
+    priority: medium
+    execution: manual
+    tags: [step-up]
+    refs: ["NIST SP 800-207 §3.3 (trust algorithm)"]
+    en:
+      title: Sign-in from a new country asks for the second factor
+      description: Signs in from the usual context and from a new country.
+      preconditions: A test account used for 90 days from one device and network, a passkey on the account and a VPN exit in another country for the test.
+      expected: Only the new context asks for the second factor.
+      steps:
+        - action: Sign in from the usual device and network.
+          expected: Sign-in completes without a second factor prompt.
+        - action: Sign in through the exit in the other country.
+          expected: The system asks for the passkey before the session starts.
+    sv:
+      title: Inloggning från ett nytt land ber om andra faktorn
+      description: Loggar in från det vanliga sammanhanget och från ett nytt land.
+      preconditions: Ett testkonto som använts i 90 dagar från en enhet och ett nät, en passkey på kontot och en VPN-utgång i ett annat land för testet.
+      expected: Endast det nya sammanhanget ber om andra faktorn.
+      steps:
+        - action: Logga in från den vanliga enheten och det vanliga nätet.
+          expected: Inloggningen slutförs utan fråga om andra faktor.
+        - action: Logga in via utgången i det andra landet.
+          expected: Systemet ber om passkey innan sessionen startar.
+
+  - id: ZTA-T12
+    priority: medium
+    execution: manual
+    tags: [ssh-certificates]
+    refs: ["NIST SP 800-53 IA-5"]
+    en:
+      title: Static SSH keys and expired certificates are refused
+      description: Tries shell access with a static key, an expired certificate and a fresh certificate.
+      preconditions: An administrator account, a test server, a static key pair and a certificate issued 9 hours ago.
+      expected: Only the fresh certificate gives access.
+      steps:
+        - action: Add the static public key to the administrator's authorised keys on the test server and connect with it.
+          expected: The connection is refused.
+        - action: Connect with the certificate issued 9 hours ago.
+          expected: The connection is refused as expired.
+        - action: Sign in through single sign-on, obtain a new certificate and connect.
+          expected: The connection succeeds and the certificate is valid for at most 8 hours.
+    sv:
+      title: Statiska SSH-nycklar och utgångna certifikat avvisas
+      description: Försöker få skalåtkomst med en statisk nyckel, ett utgånget certifikat och ett nytt certifikat.
+      preconditions: Ett administratörskonto, en testserver, ett statiskt nyckelpar och ett certifikat som utfärdades för 9 timmar sedan.
+      expected: Endast det nya certifikatet ger åtkomst.
+      steps:
+        - action: Lägg till den statiska publika nyckeln bland administratörens behöriga nycklar på testservern och anslut med den.
+          expected: Förbindelsen avvisas.
+        - action: Anslut med certifikatet som utfärdades för 9 timmar sedan.
+          expected: Förbindelsen avvisas som utgången.
+        - action: Logga in via single sign-on, hämta ett nytt certifikat och anslut.
+          expected: Förbindelsen lyckas och certifikatet gäller högst 8 timmar.
+
+  - id: ZTA-T13
+    priority: low
+    execution: manual
+    tags: [maturity-assessment]
+    refs: ["CISA Zero Trust Maturity Model 2.0"]
+    en:
+      title: Maturity assessment covers all five pillars
+      description: Reviews the latest zero trust maturity assessment and plan.
+      preconditions: The latest maturity assessment and the improvement plan.
+      expected: The assessment is current and the plan has a target for each pillar.
+      steps:
+        - action: Check the date of the assessment.
+          expected: It is less than 12 months old.
+        - action: Check each of the five pillars in the assessment and the plan.
+          expected: Each has a current level, a target level and a date.
+    sv:
+      title: Mognadsbedömningen täcker alla fem pelarna
+      description: Granskar den senaste bedömningen av mognad för nollförtroende och planen.
+      preconditions: Den senaste mognadsbedömningen och förbättringsplanen.
+      expected: Bedömningen är aktuell och planen har ett mål för varje pelare.
+      steps:
+        - action: Kontrollera bedömningens datum.
+          expected: Den är yngre än 12 månader.
+        - action: Kontrollera var och en av de fem pelarna i bedömningen och planen.
+          expected: Var och en har aktuell nivå, målnivå och datum.
