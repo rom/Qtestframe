@@ -286,6 +286,146 @@ requirements:
           text: Varje tjänst har en plan med mål för återställningstid och återställningspunkt, och en testrapport från de senaste 12 månaderna visar uppnådda tider mot målen.
           threshold: test var 12:e månad
 
+  - id: SVSM-13
+    type: business
+    obligation: must
+    priority: high
+    tags: [service-catalogue, service-owner]
+    refs: ["ISO/IEC 20000-1:2018 §8.2.4 (service catalogue management)", "ITIL 4 Service catalogue management"]
+    tests: [SVSM-T09]
+    en:
+      title: Published service catalogue with owner, hours and request types
+      description: The provider MUST publish a service catalogue to the customer's users in which each service has a description, a service owner, the service hours, the service levels and the request types that can be ordered.
+      rationale: Users can only order and judge what they can see, and a catalogue makes the agreed scope of each service explicit.
+      criteria:
+        - method: inspection
+          text: Each service in the service level agreement is in the published catalogue with the 5 listed parts.
+    sv:
+      title: Publicerad tjänstekatalog med ägare, servicetider och beställningstyper
+      description: Leverantören SKA publicera en tjänstekatalog för kundens användare där varje tjänst har en beskrivning, en tjänsteägare, servicetider, servicenivåer och de beställningstyper som går att beställa.
+      rationale: Användarna kan bara beställa och bedöma det de ser, och en katalog gör den avtalade omfattningen av varje tjänst tydlig.
+      criteria:
+        - method: inspection
+          text: Varje tjänst i servicenivåavtalet finns i den publicerade katalogen med de 5 angivna delarna.
+
+  - id: SVSM-14
+    type: business
+    obligation: must
+    priority: medium
+    tags: [release, release-notes, communication]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.3 (release and deployment management)", "ITIL 4 Release management"]
+    tests: [SVSM-T10]
+    en:
+      title: Release notes sent 5 working days before deployment
+      description: The provider MUST send release notes for each release that changes the behaviour seen by users to the customer at least 5 working days before deployment, listing the changes, the known errors and the planned service interruption.
+      rationale: Advance notice lets the customer prepare users and support staff and object to a release at a bad time.
+      criteria:
+        - method: review
+          text: For the releases of the last 6 months, each set of release notes is dated at least 5 working days before the deployment date and has the 3 listed parts.
+          threshold: "≥ 5 working days"
+    sv:
+      title: Releaseinformation skickas 5 arbetsdagar före driftsättning
+      description: Leverantören SKA skicka releaseinformation för varje release som ändrar det beteende användarna ser till kunden minst 5 arbetsdagar före driftsättningen, med ändringarna, kända fel och det planerade avbrottet i tjänsten.
+      rationale: Besked i förväg gör att kunden kan förbereda användare och supportpersonal och invända mot en release vid en olämplig tidpunkt.
+      criteria:
+        - method: review
+          text: För releaserna under de senaste 6 månaderna är varje releaseinformation daterad minst 5 arbetsdagar före driftsättningsdatumet och har de 3 angivna delarna.
+          threshold: "≥ 5 arbetsdagar"
+
+  - id: SVSM-15
+    type: business
+    obligation: should
+    priority: medium
+    tags: [knowledge-management, service-desk]
+    refs: ["ITIL 4 Knowledge management"]
+    tests: [SVSM-T11]
+    en:
+      title: Knowledge articles for the 20 most frequent incident categories
+      description: The service desk SHOULD have a reviewed knowledge article for each of the 20 most frequent incident categories of the last quarter, with each article reviewed at least once every 12 months.
+      rationale: Current articles for frequent issues let first-line staff resolve them without escalation and give consistent answers.
+      criteria:
+        - method: inspection
+          text: Each of the 20 most frequent categories has a linked article with a review date less than 12 months old.
+    sv:
+      title: Kunskapsartiklar för de 20 vanligaste incidentkategorierna
+      description: Servicedesken BÖR ha en granskad kunskapsartikel för var och en av de 20 vanligaste incidentkategorierna under det senaste kvartalet, och varje artikel granskas minst en gång var 12:e månad.
+      rationale: Aktuella artiklar för vanliga problem gör att första linjen kan lösa dem utan eskalering och ger samma svar varje gång.
+      criteria:
+        - method: inspection
+          text: Var och en av de 20 vanligaste kategorierna har en kopplad artikel med ett granskningsdatum som är mindre än 12 månader gammalt.
+
+  - id: SVSM-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-incident, escalation, service-desk]
+    refs: ["ISO/IEC 20000-1:2018 §8.7.3 (information security management)", "ISO/IEC 27001:2022 A.5.25"]
+    tests: [SVSM-T12]
+    en:
+      title: Suspected security incidents passed to the security function within 1 hour
+      description: The service desk MUST pass each ticket classified as a suspected information security incident to the security function within 1 hour of classification.
+      rationale: Security incidents need specialist handling and evidence preservation from the start, and delays widen the damage.
+      criteria:
+        - method: test
+          text: For the security-classified tickets of the last 3 months, the time from classification to assignment to the security function is at most 1 hour in each case.
+          threshold: "≤ 1 hour"
+    sv:
+      title: Misstänkta säkerhetsincidenter lämnas till säkerhetsfunktionen inom 1 timme
+      description: Servicedesken SKA lämna över varje ärende som klassas som en misstänkt informationssäkerhetsincident till säkerhetsfunktionen inom 1 timme från klassningen.
+      rationale: Säkerhetsincidenter behöver hanteras av specialister och bevis säkras från början, och fördröjningar ökar skadan.
+      criteria:
+        - method: test
+          text: För de säkerhetsklassade ärendena under de senaste 3 månaderna är tiden från klassning till tilldelning till säkerhetsfunktionen högst 1 timme i varje fall.
+          threshold: "≤ 1 timme"
+
+  - id: SVSM-17
+    type: performance
+    obligation: must
+    priority: medium
+    tags: [capacity-management, forecast]
+    refs: ["ISO/IEC 20000-1:2018 §8.7.2 (capacity management)", "ITIL 4 Capacity and performance management"]
+    tests: [SVSM-T13]
+    en:
+      title: Monthly capacity report with a 12-month forecast
+      description: The provider MUST deliver a monthly capacity report with the use of each critical resource, a forecast for the next 12 months and an action for each resource forecast to exceed 80 % of its capacity.
+      rationale: Capacity bought after the limit is reached comes too late, since procurement and installation take months.
+      criteria:
+        - method: review
+          text: The latest report lists each critical resource with its use and forecast, and each resource forecast above 80 % has an action with a date.
+          threshold: "action at > 80 % forecast use"
+    sv:
+      title: Månatlig kapacitetsrapport med prognos för 12 månader
+      description: Leverantören SKA leverera en månatlig kapacitetsrapport med användningen av varje kritisk resurs, en prognos för de närmaste 12 månaderna och en åtgärd för varje resurs som enligt prognosen överstiger 80 % av sin kapacitet.
+      rationale: Kapacitet som köps in när gränsen redan är nådd kommer för sent, eftersom upphandling och installation tar månader.
+      criteria:
+        - method: review
+          text: Den senaste rapporten listar varje kritisk resurs med användning och prognos, och varje resurs med en prognos över 80 % har en daterad åtgärd.
+          threshold: "åtgärd vid prognos > 80 %"
+
+  - id: SVSM-18
+    type: functional
+    obligation: must
+    priority: high
+    tags: [monitoring, event-management, incident]
+    refs: ["ITIL 4 Monitoring and event management", "ISO/IEC 20000-1:2018 §8.6.1"]
+    tests: [SVSM-T12]
+    en:
+      title: Critical monitoring events create an incident ticket
+      description: The monitoring system MUST create an incident ticket with the affected configuration item within 5 minutes of each event classified as critical.
+      rationale: An alert that depends on someone watching a screen is missed at night and leaves no record for the service level report.
+      criteria:
+        - method: test
+          text: A simulated critical event creates a ticket with the configuration item within 5 minutes.
+          threshold: "≤ 5 minutes"
+    sv:
+      title: Kritiska händelser i övervakningen skapar ett incidentärende
+      description: Övervakningssystemet SKA skapa ett incidentärende med den berörda konfigurationsposten inom 5 minuter från varje händelse som klassas som kritisk.
+      rationale: Ett larm som förutsätter att någon tittar på en skärm missas på natten och lämnar inget underlag för servicenivårapporten.
+      criteria:
+        - method: test
+          text: En simulerad kritisk händelse skapar ett ärende med konfigurationsposten inom 5 minuter.
+          threshold: "≤ 5 minuter"
+
 tests:
   - id: SVSM-T01
     priority: high
@@ -524,3 +664,155 @@ tests:
           expected: Var och en är högst 12 månader gammal och anger uppnådd återställningstid och återställningspunkt.
         - action: Jämför de uppnådda tiderna med målen.
           expected: Varje mål nås, eller så har rapporten en åtgärd med datum för varje miss.
+
+  - id: SVSM-T09
+    priority: high
+    execution: manual
+    tags: [service-catalogue]
+    refs: ["ISO/IEC 20000-1:2018 §8.2.4 (service catalogue management)"]
+    en:
+      title: Service catalogue compared with the service level agreement
+      description: Compares the services in the published catalogue with those in the service level agreement.
+      preconditions: Access to the published service catalogue as an ordinary user and the current service level agreement.
+      expected: Each agreed service is in the catalogue with description, owner, hours, service levels and request types.
+      steps:
+        - action: Sign in as an ordinary user and open the service catalogue.
+          expected: The catalogue is shown.
+        - action: Look up each service of the agreement in the catalogue.
+          expected: Each service is listed.
+        - action: Open each service entry.
+          expected: Description, service owner, service hours, service levels and request types are shown.
+    sv:
+      title: Tjänstekatalogen jämförs med servicenivåavtalet
+      description: Jämför tjänsterna i den publicerade katalogen med dem i servicenivåavtalet.
+      preconditions: Åtkomst till den publicerade tjänstekatalogen som vanlig användare och det gällande servicenivåavtalet.
+      expected: Varje avtalad tjänst finns i katalogen med beskrivning, ägare, servicetider, servicenivåer och beställningstyper.
+      steps:
+        - action: Logga in som vanlig användare och öppna tjänstekatalogen.
+          expected: Katalogen visas.
+        - action: Slå upp varje tjänst i avtalet i katalogen.
+          expected: Varje tjänst finns med.
+        - action: Öppna posten för varje tjänst.
+          expected: Beskrivning, tjänsteägare, servicetider, servicenivåer och beställningstyper visas.
+
+  - id: SVSM-T10
+    priority: medium
+    execution: manual
+    tags: [release-notes]
+    refs: ["ISO/IEC 20000-1:2018 §8.5.3 (release and deployment management)"]
+    en:
+      title: Timing and contents of release notes
+      description: Compares the release notes of the last 6 months with the deployment log.
+      preconditions: The release notes sent to the customer and the deployment log of the last 6 months.
+      expected: Each release that changed user-visible behaviour had notes at least 5 working days ahead with changes, known errors and interruption.
+      steps:
+        - action: List the deployments that changed user-visible behaviour.
+          expected: Each has a set of release notes.
+        - action: Count the working days from each note to its deployment.
+          expected: Each count is at least 5.
+        - action: Read each set of notes.
+          expected: Each lists the changes, the known errors and the planned interruption.
+    sv:
+      title: Tidpunkt och innehåll för releaseinformation
+      description: Jämför releaseinformationen under de senaste 6 månaderna med driftsättningsloggen.
+      preconditions: Den releaseinformation som skickats till kunden och driftsättningsloggen för de senaste 6 månaderna.
+      expected: Varje release som ändrade beteendet för användarna hade information minst 5 arbetsdagar i förväg med ändringar, kända fel och avbrott.
+      steps:
+        - action: Lista de driftsättningar som ändrade beteendet för användarna.
+          expected: Varje driftsättning har releaseinformation.
+        - action: Räkna arbetsdagarna från varje information till dess driftsättning.
+          expected: Varje antal är minst 5.
+        - action: Läs varje releaseinformation.
+          expected: Var och en listar ändringarna, kända fel och det planerade avbrottet.
+
+  - id: SVSM-T11
+    priority: medium
+    execution: manual
+    tags: [knowledge-management]
+    refs: ["ITIL 4 Knowledge management"]
+    en:
+      title: Knowledge articles for frequent incident categories
+      description: Checks that the most frequent incident categories have current knowledge articles.
+      preconditions: An incident report by category for the last quarter and the knowledge base.
+      expected: Each of the 20 most frequent categories has an article reviewed within 12 months.
+      steps:
+        - action: Sort the incident categories of the last quarter by count and take the 20 highest.
+          expected: A list of 20 categories.
+        - action: Look up the linked article for each category.
+          expected: Each category has an article.
+        - action: Read the review date of each article.
+          expected: Each review date is less than 12 months old.
+    sv:
+      title: Kunskapsartiklar för vanliga incidentkategorier
+      description: Kontrollerar att de vanligaste incidentkategorierna har aktuella kunskapsartiklar.
+      preconditions: En incidentrapport per kategori för det senaste kvartalet och kunskapsdatabasen.
+      expected: Var och en av de 20 vanligaste kategorierna har en artikel som granskats inom 12 månader.
+      steps:
+        - action: Sortera incidentkategorierna för det senaste kvartalet efter antal och ta de 20 högsta.
+          expected: En lista med 20 kategorier.
+        - action: Slå upp den kopplade artikeln för varje kategori.
+          expected: Varje kategori har en artikel.
+        - action: Läs granskningsdatumet för varje artikel.
+          expected: Varje granskningsdatum är mindre än 12 månader gammalt.
+
+  - id: SVSM-T12
+    priority: high
+    execution: manual
+    tags: [security-incident, monitoring]
+    refs: ["ISO/IEC 27001:2022 A.5.25", "ITIL 4 Monitoring and event management"]
+    en:
+      title: Security escalation times and tickets from monitoring events
+      description: Checks the hand-over of security tickets and triggers a critical monitoring event in a test.
+      preconditions: Ticket history of the last 3 months and a test configuration item whose monitoring can be triggered safely.
+      expected: Security tickets reached the security function within 1 hour, and a critical event creates a ticket within 5 minutes.
+      steps:
+        - action: List the tickets classified as suspected security incidents in the last 3 months.
+          expected: Each has a classification time and an assignment time.
+        - action: Compute the time from classification to assignment to the security function.
+          expected: Each time is at most 1 hour.
+        - action: Trigger a critical event on the test configuration item and note the time.
+          expected: An incident ticket naming the item is created within 5 minutes.
+          data: "Stop the monitored test service on the test host"
+    sv:
+      title: Tider för eskalering av säkerhetsärenden och ärenden från övervakningshändelser
+      description: Kontrollerar överlämningen av säkerhetsärenden och utlöser en kritisk övervakningshändelse i ett test.
+      preconditions: Ärendehistorik för de senaste 3 månaderna och en testkonfigurationspost vars övervakning kan utlösas utan risk.
+      expected: Säkerhetsärenden nådde säkerhetsfunktionen inom 1 timme, och en kritisk händelse skapar ett ärende inom 5 minuter.
+      steps:
+        - action: Lista de ärenden som klassats som misstänkta säkerhetsincidenter under de senaste 3 månaderna.
+          expected: Varje ärende har en tid för klassning och en tid för tilldelning.
+        - action: Beräkna tiden från klassning till tilldelning till säkerhetsfunktionen.
+          expected: Varje tid är högst 1 timme.
+        - action: Utlös en kritisk händelse på testkonfigurationsposten och notera tiden.
+          expected: Ett incidentärende som namnger posten skapas inom 5 minuter.
+          data: "Stoppa den övervakade testtjänsten på testvärden"
+
+  - id: SVSM-T13
+    priority: medium
+    execution: manual
+    tags: [capacity-management]
+    refs: ["ISO/IEC 20000-1:2018 §8.7.2 (capacity management)"]
+    en:
+      title: Review of the latest capacity report
+      description: Reviews the contents of the monthly capacity report and the actions for resources near their limit.
+      preconditions: The latest capacity report and the list of critical resources in the configuration database.
+      expected: Each critical resource has use and a 12-month forecast, and each forecast above 80 % has a dated action.
+      steps:
+        - action: Compare the resources in the report with the list of critical resources.
+          expected: Each critical resource is in the report.
+        - action: Check each resource for current use and a 12-month forecast.
+          expected: Both are shown.
+        - action: Find the resources forecast above 80 % of capacity.
+          expected: Each has an action with a date.
+    sv:
+      title: Granskning av den senaste kapacitetsrapporten
+      description: Granskar innehållet i den månatliga kapacitetsrapporten och åtgärderna för resurser nära sin gräns.
+      preconditions: Den senaste kapacitetsrapporten och listan över kritiska resurser i konfigurationsdatabasen.
+      expected: Varje kritisk resurs har användning och en prognos för 12 månader, och varje prognos över 80 % har en daterad åtgärd.
+      steps:
+        - action: Jämför resurserna i rapporten med listan över kritiska resurser.
+          expected: Varje kritisk resurs finns i rapporten.
+        - action: Kontrollera att varje resurs har aktuell användning och en prognos för 12 månader.
+          expected: Båda visas.
+        - action: Hitta de resurser som har en prognos över 80 % av kapaciteten.
+          expected: Varje sådan resurs har en daterad åtgärd.

@@ -1,0 +1,574 @@
+area: sv-support-contracts
+prefix: SVSUP
+group: operations
+catalogue: services
+name: {en: "Support, maintenance and consulting services", sv: "Support, underhåll och konsulttjänster"}
+description:
+  en: Support and maintenance contracts (support lines, support period, security updates, scope of the fee, remote support and escrow), consulting and staffing assignments (named consultants, statement of work, time reports, confidentiality and knowledge transfer) and customer complaints and satisfaction following ISO 10002 and ISO 10004.
+  sv: Avtal om support och underhåll (supportnivåer, supportperiod, säkerhetsuppdateringar, vad avgiften omfattar, fjärrsupport och deposition av källkod), konsult- och bemanningsuppdrag (namngivna konsulter, uppdragsbeskrivning, tidrapporter, sekretess och kunskapsöverföring) samt kundklagomål och kundnöjdhet enligt ISO 10002 och ISO 10004.
+
+requirements:
+  - id: SVSUP-01
+    type: business
+    obligation: must
+    priority: high
+    tags: [support, support-lines, handover]
+    refs: ["ISO/IEC 20000-1:2018 §8.6.1", "ITIL 4 Service desk"]
+    tests: [SVSUP-T01]
+    en:
+      title: Support lines with responsibilities and handover criteria
+      description: The support contract MUST define each support line of the customer and the supplier, its responsibilities and the information a ticket has to contain before it is handed to the next line.
+      rationale: Unclear borders between support lines make tickets bounce back and forth while the user waits.
+      criteria:
+        - method: review
+          text: The contract describes each line with responsibilities and a list of mandatory ticket information for each handover.
+    sv:
+      title: Supportnivåer med ansvar och kriterier för överlämning
+      description: Supportavtalet SKA definiera varje supportnivå hos kunden och leverantören, dess ansvar och den information ett ärende behöver innehålla innan det lämnas över till nästa nivå.
+      rationale: Otydliga gränser mellan supportnivåerna gör att ärenden skickas fram och tillbaka medan användaren väntar.
+      criteria:
+        - method: review
+          text: Avtalet beskriver varje nivå med ansvar och en lista över obligatorisk information i ärendet för varje överlämning.
+
+  - id: SVSUP-02
+    type: business
+    obligation: must
+    priority: high
+    tags: [support-period, end-of-support, lifecycle]
+    refs: ["Regulation (EU) 2024/2847 (CRA) Art. 13(8)", "ISO/IEC 27036-3:2023"]
+    tests: [SVSUP-T01]
+    en:
+      title: Support for at least 5 years with 12 months' notice of its end
+      description: The supplier MUST support each delivered component for at least 5 years after acceptance and announce the end of support of a component at least 12 months before it takes effect.
+      rationale: A short or unknown support period forces an unplanned replacement and leaves the customer with unpatched components.
+      criteria:
+        - method: review
+          text: The contract states a support period of at least 5 years per component and a notice period of at least 12 months for the end of support.
+          threshold: "≥ 5 years; notice ≥ 12 months"
+    sv:
+      title: Support i minst 5 år och 12 månaders varsel om att den upphör
+      description: Leverantören SKA ge support för varje levererad komponent i minst 5 år efter godkännandet och meddela att supporten för en komponent upphör minst 12 månader innan det sker.
+      rationale: En kort eller okänd supportperiod tvingar fram ett oplanerat byte och lämnar kunden med komponenter utan säkerhetsuppdateringar.
+      criteria:
+        - method: review
+          text: Avtalet anger en supportperiod på minst 5 år per komponent och ett varsel på minst 12 månader innan supporten upphör.
+          threshold: "≥ 5 år; varsel ≥ 12 månader"
+
+  - id: SVSUP-03
+    type: security
+    obligation: must
+    priority: critical
+    tags: [maintenance, security-updates, patch]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)", "Regulation (EU) 2024/2847 (CRA) Annex I Part II §2"]
+    tests: [SVSUP-T02]
+    en:
+      title: Security updates for high-severity vulnerabilities within 30 days
+      description: The maintenance contract MUST oblige the supplier to deliver a tested security update or a documented mitigation within 30 days of a vulnerability with a CVSS base score of 7.0 or higher becoming known in a delivered component.
+      rationale: Known high-severity vulnerabilities are exploited within weeks, and a maintenance fee without a deadline gives no protection.
+      criteria:
+        - method: review
+          text: For each such vulnerability in the last 12 months, the supplier's update or mitigation was delivered within 30 days of publication.
+          threshold: "≤ 30 days for CVSS ≥ 7.0"
+    sv:
+      title: Säkerhetsuppdateringar för allvarliga sårbarheter inom 30 dagar
+      description: Underhållsavtalet SKA förplikta leverantören att leverera en testad säkerhetsuppdatering eller en dokumenterad skyddsåtgärd inom 30 dagar efter att en sårbarhet med ett CVSS-grundvärde på 7,0 eller högre har blivit känd i en levererad komponent.
+      rationale: Kända allvarliga sårbarheter utnyttjas inom några veckor, och en underhållsavgift utan tidsgräns ger inget skydd.
+      criteria:
+        - method: review
+          text: För varje sådan sårbarhet under de senaste 12 månaderna levererades leverantörens uppdatering eller skyddsåtgärd inom 30 dagar från publiceringen.
+          threshold: "≤ 30 dagar för CVSS ≥ 7,0"
+
+  - id: SVSUP-04
+    type: business
+    obligation: must
+    priority: medium
+    tags: [maintenance, fee, scope]
+    refs: ["ISO/IEC 27036-3:2023"]
+    tests: [SVSUP-T02]
+    en:
+      title: Work included in the maintenance fee listed
+      description: The maintenance contract MUST list the work that the fixed fee covers and the work that is charged separately, with the hourly rates for the latter.
+      rationale: An open scope leads to disputes over each invoice and to work being held back until a price is agreed.
+      criteria:
+        - method: review
+          text: The contract has the 2 lists and the rates, and each separately charged item on the invoices of the last 6 months is on the list of charged work.
+    sv:
+      title: Arbete som ingår i underhållsavgiften listas
+      description: Underhållsavtalet SKA lista det arbete som den fasta avgiften omfattar och det arbete som debiteras separat, med timpriserna för det senare.
+      rationale: En öppen omfattning leder till tvister om varje faktura och till att arbete hålls inne tills ett pris är överenskommet.
+      criteria:
+        - method: review
+          text: Avtalet har de 2 listorna och priserna, och varje separat debiterad post på fakturorna under de senaste 6 månaderna finns på listan över debiterbart arbete.
+
+  - id: SVSUP-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [remote-support, access, logging]
+    refs: ["IEC 62443-2-4:2023 SP.07 (remote access)", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [SVSUP-T03]
+    en:
+      title: Each remote support session approved by the customer and logged
+      description: The supplier MUST start a remote support session only after the customer has approved that session, and log each session with the person, the time and the systems reached.
+      rationale: Standing remote access by a supplier is a frequent entry point for attackers into the customer's systems.
+      criteria:
+        - method: test
+          text: A session attempt without approval is refused, and an approved session appears in the log with person, time and systems.
+    sv:
+      title: Varje fjärrsupportsession godkänns av kunden och loggas
+      description: Leverantören SKA starta en fjärrsupportsession först när kunden har godkänt just den sessionen, och sessionen loggas med person, tid och de system som nåtts.
+      rationale: Stående fjärråtkomst för en leverantör är en vanlig väg för angripare in i kundens system.
+      criteria:
+        - method: test
+          text: Ett försök till session utan godkännande avvisas, och en godkänd session finns i loggen med person, tid och system.
+
+  - id: SVSUP-06
+    type: business
+    obligation: should
+    priority: medium
+    tags: [escrow, source-code, continuity]
+    refs: ["ISO/IEC 27036-3:2023", "ISO 22301:2019 §8.3"]
+    tests: [SVSUP-T03]
+    en:
+      title: Source code escrow for critical custom software
+      description: For custom software that supports a critical function, the contract SHOULD place the source code and build instructions in escrow, updated within 30 days of each release, with release to the customer if the supplier stops trading or stops supporting the software.
+      rationale: Without the code the customer cannot keep a critical system running if the supplier goes out of business.
+      criteria:
+        - method: review
+          text: The escrow agreement names the release conditions, and the agent's latest deposit receipt is within 30 days of the latest release.
+          threshold: "deposit ≤ 30 days after release"
+    sv:
+      title: Deposition av källkod för kritisk kundanpassad programvara
+      description: För kundanpassad programvara som stöder en kritisk funktion BÖR avtalet föreskriva deposition av källkod och bygginstruktioner, uppdaterad inom 30 dagar efter varje release, som lämnas ut till kunden om leverantören upphör med sin verksamhet eller med supporten av programvaran.
+      rationale: Utan koden kan kunden inte hålla ett kritiskt system i drift om leverantören går i konkurs.
+      criteria:
+        - method: review
+          text: Depositionsavtalet anger villkoren för utlämnande, och depositariens senaste kvitto ligger inom 30 dagar efter den senaste releasen.
+          threshold: "deposition ≤ 30 dagar efter release"
+
+  - id: SVSUP-07
+    type: business
+    obligation: must
+    priority: high
+    tags: [consulting, named-consultant, replacement]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)"]
+    tests: [SVSUP-T04]
+    en:
+      title: Named consultants replaced only with approval and an overlap
+      description: The supplier MUST replace a named consultant only with the customer's written approval of a successor with the same competence level, and with an overlap of at least 10 working days at the supplier's cost.
+      rationale: An unplanned change of consultant costs the customer the knowledge built up in the assignment.
+      criteria:
+        - method: review
+          text: Each replacement in the last 12 months has a written approval and time reports that show at least 10 overlapping working days not invoiced.
+          threshold: "overlap ≥ 10 working days"
+    sv:
+      title: Namngivna konsulter byts bara ut med godkännande och överlappning
+      description: Leverantören SKA byta ut en namngiven konsult bara efter kundens skriftliga godkännande av en efterträdare med samma kompetensnivå och med en överlappning på minst 10 arbetsdagar på leverantörens bekostnad.
+      rationale: Ett oplanerat byte av konsult kostar kunden den kunskap som har byggts upp i uppdraget.
+      criteria:
+        - method: review
+          text: Varje byte under de senaste 12 månaderna har ett skriftligt godkännande och tidrapporter som visar minst 10 överlappande arbetsdagar som inte har fakturerats.
+          threshold: "överlappning ≥ 10 arbetsdagar"
+
+  - id: SVSUP-08
+    type: business
+    obligation: must
+    priority: high
+    tags: [consulting, statement-of-work, acceptance]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)"]
+    tests: [SVSUP-T04]
+    en:
+      title: Statement of work with deliverables and acceptance criteria
+      description: Each consulting assignment MUST have a signed statement of work with the deliverables, the acceptance criteria for each deliverable, the time frame and the cost ceiling before work starts.
+      rationale: Assignments without agreed deliverables turn into open-ended time and material work that nobody can accept or reject.
+      criteria:
+        - method: review
+          text: Each active assignment has a statement of work signed before the first time report, with the 4 listed parts.
+    sv:
+      title: Uppdragsbeskrivning med leveranser och acceptanskriterier
+      description: Varje konsultuppdrag SKA ha en undertecknad uppdragsbeskrivning med leveranserna, acceptanskriterierna för varje leverans, tidsramen och kostnadstaket innan arbetet börjar.
+      rationale: Uppdrag utan avtalade leveranser blir löpande räkning utan slut som ingen kan godkänna eller underkänna.
+      criteria:
+        - method: review
+          text: Varje pågående uppdrag har en uppdragsbeskrivning som undertecknades före den första tidrapporten, med de 4 angivna delarna.
+
+  - id: SVSUP-09
+    type: business
+    obligation: must
+    priority: medium
+    tags: [consulting, time-reports, invoicing]
+    refs: ["ISO 9001:2026 §8.4.2 (type and extent of control)"]
+    tests: [SVSUP-T05]
+    en:
+      title: Time reports approved by the customer before invoicing
+      description: The supplier MUST submit time reports each week per consultant and activity, and invoice only hours that the customer's assignment owner has approved.
+      rationale: Weekly approval catches errors while the work is fresh in mind and keeps the cost ceiling under control.
+      criteria:
+        - method: analysis
+          text: The invoiced hours of the last 3 months equal the approved hours in the time reporting system for each consultant.
+    sv:
+      title: Tidrapporter godkänns av kunden före fakturering
+      description: Leverantören SKA lämna tidrapporter varje vecka per konsult och aktivitet och fakturera bara timmar som kundens uppdragsägare har godkänt.
+      rationale: Godkännande varje vecka fångar fel medan arbetet är färskt i minnet och håller kostnadstaket under kontroll.
+      criteria:
+        - method: analysis
+          text: De fakturerade timmarna under de senaste 3 månaderna är lika med de godkända timmarna i tidrapporteringssystemet för varje konsult.
+
+  - id: SVSUP-10
+    type: security
+    obligation: must
+    priority: high
+    tags: [consulting, confidentiality, security-instruction]
+    refs: ["ISO/IEC 27001:2022 A.6.6", "ISO/IEC 27001:2022 A.6.3"]
+    tests: [SVSUP-T05]
+    en:
+      title: Confidentiality undertaking and security instruction before access
+      description: Each consultant MUST sign the customer's confidentiality undertaking and complete the customer's security instruction before getting access to the customer's systems or premises.
+      rationale: Consultants handle the same information as employees and need the same commitments and instruction.
+      criteria:
+        - method: inspection
+          text: For 5 sampled consultants, the signed undertaking and the completed instruction are dated before the first access in the access log.
+    sv:
+      title: Sekretessförbindelse och säkerhetsgenomgång före åtkomst
+      description: Varje konsult SKA underteckna kundens sekretessförbindelse och genomgå kundens säkerhetsgenomgång innan konsulten ges åtkomst till kundens system eller lokaler.
+      rationale: Konsulter hanterar samma information som anställda och behöver samma åtaganden och genomgång.
+      criteria:
+        - method: inspection
+          text: För 5 utvalda konsulter är den undertecknade förbindelsen och den genomförda genomgången daterade före den första åtkomsten i behörighetsloggen.
+
+  - id: SVSUP-11
+    type: business
+    obligation: must
+    priority: medium
+    tags: [consulting, knowledge-transfer, documentation]
+    refs: ["ISO 9001:2026 §7.1.6 (organizational knowledge)"]
+    tests: [SVSUP-T06]
+    en:
+      title: Knowledge transfer completed before a consultant leaves
+      description: At least 20 working days before a consultant leaves an assignment, the supplier MUST deliver a knowledge transfer plan naming the receiving persons and the documents to be handed over, and complete it before the last day.
+      rationale: Knowledge that stays in the consultant's head leaves with the consultant and has to be bought back.
+      criteria:
+        - method: review
+          text: For each consultant who left in the last 12 months, a plan dated at least 20 working days ahead exists, and the receivers have signed it as completed.
+          threshold: "plan ≥ 20 working days before leaving"
+    sv:
+      title: Kunskapsöverföringen genomförs innan en konsult slutar
+      description: Minst 20 arbetsdagar innan en konsult lämnar ett uppdrag SKA leverantören lämna en plan för kunskapsöverföring som namnger mottagarna och de dokument som lämnas över, och genomföra den före sista dagen.
+      rationale: Kunskap som stannar i konsultens huvud försvinner med konsulten och måste köpas tillbaka.
+      criteria:
+        - method: review
+          text: För varje konsult som har slutat under de senaste 12 månaderna finns en plan daterad minst 20 arbetsdagar i förväg, och mottagarna har signerat den som genomförd.
+          threshold: "plan ≥ 20 arbetsdagar innan konsulten slutar"
+
+  - id: SVSUP-12
+    type: business
+    obligation: must
+    priority: medium
+    tags: [complaints, analysis, root-cause]
+    refs: ["ISO 10002:2018 (analysis and evaluation of complaints)"]
+    tests: [SVSUP-T07]
+    en:
+      title: Quarterly complaint analysis with causes of the 3 largest categories
+      description: The supplier MUST analyse its complaints each quarter by category and report the root cause and an improvement action for each of the 3 categories with the most complaints.
+      rationale: Handling single complaints fixes symptoms, while trend analysis removes the causes that keep producing them.
+      criteria:
+        - method: review
+          text: Each of the last 4 quarterly reports has counts per category and a cause and action for the 3 largest.
+    sv:
+      title: Kvartalsvis analys av klagomål med orsaker för de 3 största kategorierna
+      description: Leverantören SKA analysera sina klagomål varje kvartal per kategori och rapportera grundorsaken och en förbättringsåtgärd för var och en av de 3 kategorier som har flest klagomål.
+      rationale: Att hantera enskilda klagomål åtgärdar symptom, medan en analys av trender tar bort orsakerna som fortsätter att ge upphov till dem.
+      criteria:
+        - method: review
+          text: Var och en av de 4 senaste kvartalsrapporterna har antal per kategori och en orsak och åtgärd för de 3 största.
+
+  - id: SVSUP-13
+    type: business
+    obligation: must
+    priority: medium
+    tags: [complaints, escalation, closure]
+    refs: ["ISO 10002:2018 (closing the complaint)"]
+    tests: [SVSUP-T07]
+    en:
+      title: Complainant told the outcome and how to have it reviewed
+      description: When closing a complaint, the supplier MUST tell the complainant in writing the outcome, the reasons and how to have the decision reviewed by a person who did not handle the complaint.
+      rationale: A route to an independent review keeps the complainant's trust when the first answer is a refusal.
+      criteria:
+        - method: inspection
+          text: A sample of 10 closing letters each states the outcome, the reasons and the review route with a named role.
+    sv:
+      title: Den som klagar får veta utfallet och hur det kan omprövas
+      description: När ett klagomål avslutas SKA leverantören skriftligt meddela den som klagat utfallet, skälen och hur beslutet kan omprövas av en person som inte har handlagt klagomålet.
+      rationale: En väg till en oberoende omprövning behåller förtroendet hos den som klagat när det första svaret är ett avslag.
+      criteria:
+        - method: inspection
+          text: Ett urval av 10 avslutsbrev anger vart och ett utfallet, skälen och vägen till omprövning med en namngiven roll.
+
+  - id: SVSUP-14
+    type: business
+    obligation: should
+    priority: medium
+    tags: [customer-satisfaction, survey, improvement]
+    refs: ["ISO 10004:2018"]
+    tests: [SVSUP-T08]
+    en:
+      title: Yearly customer satisfaction survey with an action plan
+      description: The supplier SHOULD survey the satisfaction of the customer's service owner and key users once a year on at least 5 named service aspects, and present an action plan for each aspect scoring below the agreed target within 30 days.
+      rationale: A yearly survey of the relationship shows dissatisfaction that ticket surveys miss, such as poor planning or communication.
+      criteria:
+        - method: review
+          text: The latest survey is less than 12 months old, covers 5 aspects, and each aspect below target has an action plan dated within 30 days.
+    sv:
+      title: Årlig kundnöjdhetsundersökning med åtgärdsplan
+      description: Leverantören BÖR en gång per år undersöka hur nöjda kundens tjänsteägare och nyckelanvändare är med minst 5 namngivna aspekter av tjänsten, och inom 30 dagar presentera en åtgärdsplan för varje aspekt som hamnar under det avtalade målet.
+      rationale: En årlig undersökning av samarbetet visar missnöje som enkäter efter ärenden missar, till exempel dålig planering eller kommunikation.
+      criteria:
+        - method: review
+          text: Den senaste undersökningen är mindre än 12 månader gammal, omfattar 5 aspekter, och varje aspekt under målet har en åtgärdsplan daterad inom 30 dagar.
+
+tests:
+  - id: SVSUP-T01
+    priority: high
+    execution: manual
+    tags: [support-lines, support-period]
+    refs: ["ITIL 4 Service desk", "Regulation (EU) 2024/2847 (CRA) Art. 13(8)"]
+    en:
+      title: Review of support lines and the support period in the contract
+      description: Reviews the support contract for the support lines and the committed support period.
+      preconditions: The signed support contract and the list of delivered components with acceptance dates.
+      expected: Each line has responsibilities and handover information, and each component has at least 5 years of support with 12 months' notice.
+      steps:
+        - action: Read the description of each support line.
+          expected: Each line has responsibilities and a list of mandatory ticket information for handover.
+        - action: Look up the support period of each delivered component.
+          expected: Each period ends at least 5 years after the acceptance date.
+        - action: Read the end-of-support clause.
+          expected: It requires at least 12 months' notice.
+    sv:
+      title: Granskning av supportnivåer och supportperiod i avtalet
+      description: Granskar supportavtalets supportnivåer och den utlovade supportperioden.
+      preconditions: Det undertecknade supportavtalet och listan över levererade komponenter med datum för godkännande.
+      expected: Varje nivå har ansvar och information för överlämning, och varje komponent har minst 5 års support med 12 månaders varsel.
+      steps:
+        - action: Läs beskrivningen av varje supportnivå.
+          expected: Varje nivå har ansvar och en lista över obligatorisk information i ärendet vid överlämning.
+        - action: Slå upp supportperioden för varje levererad komponent.
+          expected: Varje period slutar minst 5 år efter datumet för godkännandet.
+        - action: Läs klausulen om att supporten upphör.
+          expected: Den kräver minst 12 månaders varsel.
+
+  - id: SVSUP-T02
+    priority: critical
+    execution: manual
+    tags: [security-updates, maintenance-fee]
+    refs: ["IEC 62443-2-4:2023 SP.11 (patch management)"]
+    en:
+      title: Security update times and separately charged work
+      description: Compares the publication dates of high-severity vulnerabilities with the supplier's deliveries, and the invoices with the scope of the fee.
+      preconditions: The list of vulnerabilities with CVSS 7.0 or higher in delivered components in the last 12 months, the supplier's release notes and the invoices of the last 6 months.
+      expected: Each vulnerability was addressed within 30 days, and each separately charged item lies outside the fixed fee.
+      steps:
+        - action: For each vulnerability, find the supplier's update or mitigation.
+          expected: Each vulnerability has one.
+        - action: Count the days from publication to delivery.
+          expected: Each count is at most 30.
+          data: "e.g. CVSS 8.1 published 2 May, update delivered by 1 June"
+        - action: Compare each separately charged item on the invoices with the contract's lists.
+          expected: Each item is on the list of charged work, at the contracted rate.
+    sv:
+      title: Tider för säkerhetsuppdateringar och separat debiterat arbete
+      description: Jämför publiceringsdatum för allvarliga sårbarheter med leverantörens leveranser, och fakturorna med vad avgiften omfattar.
+      preconditions: Listan över sårbarheter med CVSS 7,0 eller högre i levererade komponenter under de senaste 12 månaderna, leverantörens releaseinformation och fakturorna för de senaste 6 månaderna.
+      expected: Varje sårbarhet åtgärdades inom 30 dagar, och varje separat debiterad post ligger utanför den fasta avgiften.
+      steps:
+        - action: Hitta leverantörens uppdatering eller skyddsåtgärd för varje sårbarhet.
+          expected: Varje sårbarhet har en.
+        - action: Räkna dagarna från publicering till leverans.
+          expected: Varje antal är högst 30.
+          data: "t.ex. CVSS 8,1 publicerad 2 maj, uppdatering levererad senast 1 juni"
+        - action: Jämför varje separat debiterad post på fakturorna med avtalets listor.
+          expected: Varje post finns på listan över debiterbart arbete, till avtalat pris.
+
+  - id: SVSUP-T03
+    priority: high
+    execution: manual
+    tags: [remote-support, escrow]
+    refs: ["IEC 62443-2-4:2023 SP.07 (remote access)", "ISO/IEC 27036-3:2023"]
+    en:
+      title: Remote support approval and escrow deposits
+      description: Tests the approval of remote support sessions and checks the escrow deposits for critical custom software.
+      preconditions: The remote access gateway in normal operation, a supplier test account, the escrow agreement and the release history.
+      expected: Unapproved sessions are refused, approved ones are logged, and the escrow deposit is current.
+      steps:
+        - action: Let the supplier try to open a session with the test account without approval.
+          expected: The gateway refuses the session.
+        - action: Approve one session and let the supplier connect to a test system.
+          expected: The session is opened.
+        - action: Read the gateway log.
+          expected: The session is logged with person, start and end time and the systems reached.
+        - action: Compare the latest deposit receipt with the latest release date.
+          expected: The deposit is within 30 days of the release.
+    sv:
+      title: Godkännande av fjärrsupport och deposition av källkod
+      description: Testar godkännandet av fjärrsupportsessioner och kontrollerar depositionerna av kritisk kundanpassad programvara.
+      preconditions: Fjärråtkomstgatewayen i normal drift, ett testkonto för leverantören, depositionsavtalet och releasehistoriken.
+      expected: Sessioner utan godkännande avvisas, godkända loggas, och depositionen är aktuell.
+      steps:
+        - action: Låt leverantören försöka öppna en session med testkontot utan godkännande.
+          expected: Gatewayen avvisar sessionen.
+        - action: Godkänn en session och låt leverantören ansluta till ett testsystem.
+          expected: Sessionen öppnas.
+        - action: Läs gatewayens logg.
+          expected: Sessionen är loggad med person, start- och sluttid och de system som nåtts.
+        - action: Jämför det senaste depositionskvittot med datumet för den senaste releasen.
+          expected: Depositionen ligger inom 30 dagar efter releasen.
+
+  - id: SVSUP-T04
+    priority: high
+    execution: manual
+    tags: [consulting, statement-of-work, replacement]
+    refs: ["ISO 9001:2026 §8.4.3 (information for external providers)"]
+    en:
+      title: Statements of work and consultant replacements
+      description: Reviews the statements of work of active assignments and the replacements of named consultants.
+      preconditions: The active consulting assignments, their statements of work, time reports and the replacement approvals of the last 12 months.
+      expected: Each assignment has a complete statement of work signed in time, and each replacement was approved with a 10-day unpaid overlap.
+      steps:
+        - action: Compare the signature date of each statement of work with the first time report.
+          expected: The signature is earlier.
+        - action: Check each statement of work for deliverables, acceptance criteria, time frame and cost ceiling.
+          expected: The 4 parts are present.
+        - action: For each replacement, read the approval and the time reports of both consultants.
+          expected: A written approval exists, and at least 10 overlapping working days were not invoiced.
+    sv:
+      title: Uppdragsbeskrivningar och byten av konsulter
+      description: Granskar uppdragsbeskrivningarna för pågående uppdrag och bytena av namngivna konsulter.
+      preconditions: De pågående konsultuppdragen, deras uppdragsbeskrivningar och tidrapporter samt godkännandena av byten under de senaste 12 månaderna.
+      expected: Varje uppdrag har en komplett uppdragsbeskrivning som undertecknades i tid, och varje byte godkändes med 10 dagars överlappning utan kostnad.
+      steps:
+        - action: Jämför undertecknandedatumet för varje uppdragsbeskrivning med den första tidrapporten.
+          expected: Undertecknandet är tidigare.
+        - action: Kontrollera att varje uppdragsbeskrivning har leveranser, acceptanskriterier, tidsram och kostnadstak.
+          expected: De 4 delarna finns.
+        - action: Läs godkännandet och båda konsulternas tidrapporter för varje byte.
+          expected: Ett skriftligt godkännande finns, och minst 10 överlappande arbetsdagar fakturerades inte.
+
+  - id: SVSUP-T05
+    priority: high
+    execution: manual
+    tags: [time-reports, confidentiality]
+    refs: ["ISO/IEC 27001:2022 A.6.6", "ISO 9001:2026 §8.4.2 (type and extent of control)"]
+    en:
+      title: Invoiced hours and consultants' security undertakings
+      description: Reconciles invoiced hours with approved time reports and checks the confidentiality undertakings of sampled consultants.
+      preconditions: The invoices and the time reporting system for the last 3 months, the access log and the signed undertakings.
+      expected: Invoiced hours equal approved hours, and each sampled consultant signed and was instructed before first access.
+      steps:
+        - action: Sum the invoiced hours per consultant for the last 3 months.
+          expected: Each sum equals the approved hours in the time reporting system.
+        - action: Pick 5 consultants and find their signed undertaking and instruction record.
+          expected: Both exist for each consultant.
+        - action: Compare those dates with the first access in the access log.
+          expected: Both are earlier than the first access.
+    sv:
+      title: Fakturerade timmar och konsulternas säkerhetsåtaganden
+      description: Stämmer av fakturerade timmar mot godkända tidrapporter och kontrollerar sekretessförbindelserna för utvalda konsulter.
+      preconditions: Fakturorna och tidrapporteringssystemet för de senaste 3 månaderna, behörighetsloggen och de undertecknade förbindelserna.
+      expected: Fakturerade timmar är lika med godkända timmar, och varje utvald konsult undertecknade och fick genomgången före första åtkomsten.
+      steps:
+        - action: Summera de fakturerade timmarna per konsult för de senaste 3 månaderna.
+          expected: Varje summa är lika med de godkända timmarna i tidrapporteringssystemet.
+        - action: Välj 5 konsulter och hitta deras undertecknade förbindelse och intyg om genomgång.
+          expected: Båda finns för varje konsult.
+        - action: Jämför datumen med den första åtkomsten i behörighetsloggen.
+          expected: Båda är tidigare än den första åtkomsten.
+
+  - id: SVSUP-T06
+    priority: medium
+    execution: manual
+    tags: [knowledge-transfer]
+    refs: ["ISO 9001:2026 §7.1.6 (organizational knowledge)"]
+    en:
+      title: Knowledge transfer plans of departed consultants
+      description: Checks the knowledge transfer for consultants who left an assignment in the last 12 months.
+      preconditions: The list of consultants who left, their last days, the transfer plans and the sign-offs.
+      expected: Each departure had a plan at least 20 working days ahead that the receivers signed as completed.
+      steps:
+        - action: Count the working days from the date of each plan to the consultant's last day.
+          expected: Each count is at least 20.
+        - action: Read each plan.
+          expected: It names the receiving persons and the documents to hand over.
+        - action: Read the sign-off of each plan.
+          expected: The receivers have signed it as completed by the last day.
+    sv:
+      title: Planer för kunskapsöverföring för konsulter som har slutat
+      description: Kontrollerar kunskapsöverföringen för konsulter som har lämnat ett uppdrag under de senaste 12 månaderna.
+      preconditions: Listan över konsulter som har slutat, deras sista dagar, planerna för överföring och signeringarna.
+      expected: Varje avslut hade en plan minst 20 arbetsdagar i förväg som mottagarna signerade som genomförd.
+      steps:
+        - action: Räkna arbetsdagarna från datumet för varje plan till konsultens sista dag.
+          expected: Varje antal är minst 20.
+        - action: Läs varje plan.
+          expected: Den namnger mottagarna och de dokument som ska lämnas över.
+        - action: Läs signeringen av varje plan.
+          expected: Mottagarna har signerat den som genomförd senast sista dagen.
+
+  - id: SVSUP-T07
+    priority: medium
+    execution: manual
+    tags: [complaints]
+    refs: ["ISO 10002:2018 (analysis and evaluation of complaints)", "ISO 10002:2018 (closing the complaint)"]
+    en:
+      title: Complaint analyses and closing letters
+      description: Reviews the quarterly complaint analyses and a sample of closing letters.
+      preconditions: The complaint register, the quarterly analyses of the last 4 quarters and the closing letters.
+      expected: Each analysis covers the 3 largest categories with cause and action, and each closing letter states the outcome, reasons and review route.
+      steps:
+        - action: Count the complaints per category in the register for the latest quarter.
+          expected: The 3 largest categories are the same as in the analysis.
+        - action: Read each quarterly analysis.
+          expected: Each of the 3 largest categories has a root cause and an action.
+        - action: Pick 10 closing letters and read them.
+          expected: Each states the outcome, the reasons and how to have it reviewed by a named role.
+    sv:
+      title: Analyser av klagomål och avslutsbrev
+      description: Granskar de kvartalsvisa analyserna av klagomål och ett urval av avslutsbrev.
+      preconditions: Registret över klagomål, de kvartalsvisa analyserna för de senaste 4 kvartalen och avslutsbreven.
+      expected: Varje analys omfattar de 3 största kategorierna med orsak och åtgärd, och varje avslutsbrev anger utfall, skäl och väg till omprövning.
+      steps:
+        - action: Räkna klagomålen per kategori i registret för det senaste kvartalet.
+          expected: De 3 största kategorierna är desamma som i analysen.
+        - action: Läs varje kvartalsanalys.
+          expected: Var och en av de 3 största kategorierna har en grundorsak och en åtgärd.
+        - action: Välj 10 avslutsbrev och läs dem.
+          expected: Varje brev anger utfallet, skälen och hur beslutet kan omprövas av en namngiven roll.
+
+  - id: SVSUP-T08
+    priority: medium
+    execution: manual
+    tags: [customer-satisfaction]
+    refs: ["ISO 10004:2018"]
+    en:
+      title: Yearly satisfaction survey and its action plans
+      description: Reviews the latest yearly satisfaction survey and the action plans for aspects below target.
+      preconditions: The latest survey report, the agreed targets per aspect and the action plans.
+      expected: The survey is current and covers 5 aspects, and each aspect below target has an action plan within 30 days.
+      steps:
+        - action: Read the date and the aspects of the latest survey.
+          expected: It is less than 12 months old and covers at least 5 named aspects.
+        - action: Compare each aspect's score with its target.
+          expected: The aspects below target are identified.
+        - action: Look up the action plan for each aspect below target.
+          expected: Each has a plan dated within 30 days of the survey report.
+    sv:
+      title: Den årliga kundnöjdhetsundersökningen och dess åtgärdsplaner
+      description: Granskar den senaste årliga kundnöjdhetsundersökningen och åtgärdsplanerna för aspekter under målet.
+      preconditions: Den senaste undersökningsrapporten, de avtalade målen per aspekt och åtgärdsplanerna.
+      expected: Undersökningen är aktuell och omfattar 5 aspekter, och varje aspekt under målet har en åtgärdsplan inom 30 dagar.
+      steps:
+        - action: Läs datum och aspekter för den senaste undersökningen.
+          expected: Den är mindre än 12 månader gammal och omfattar minst 5 namngivna aspekter.
+        - action: Jämför varje aspekts resultat med dess mål.
+          expected: Aspekterna under målet är identifierade.
+        - action: Slå upp åtgärdsplanen för varje aspekt under målet.
+          expected: Var och en har en plan daterad inom 30 dagar efter undersökningsrapporten.
