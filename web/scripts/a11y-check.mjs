@@ -332,6 +332,8 @@ async function discover(request) {
     { name: 'relations-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-sitemap)'], wait: '.p-dialog [role="status"]' },
     relReq && { name: 'requirement-relations', path: `${p}/requirements?item=${relReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-sitemap)', '.p-drawer [role="tabpanel"] .p-checkbox'], wait: '.p-drawer [role="tabpanel"] .p-button-danger' },
     { name: 'item-links-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-link)'], wait: '.p-dialog [role="status"]' },
+    // the issues of the selected requirements in the project's tracker (create, update, refresh)
+    { name: 'requirement-issues-bulk', path: `${p}/requirements`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-ticket)'], wait: '.p-dialog .p-message, .p-dialog input#bulk-issue-update' },
     { name: 'run-links-bulk', path: `${p}/runs`, open: ['.p-datatable-tbody tr .p-checkbox', '.bulkbar button:has(.pi-link)'], wait: '.p-dialog [role="status"]' },
     linkReq && { name: 'requirement-links', path: `${p}/requirements?item=${linkReq.id}`, open: ['.p-drawer [role="tab"]:has(.pi-link)', '.item-links .p-checkbox'], wait: '.item-links .p-button-danger' },
     { name: 'bulk-review', path: `${p}/requirements`, open: '.page-header .actions button:has(.pi-verified)', wait: '.p-dialog .preview' },

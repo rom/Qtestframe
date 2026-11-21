@@ -703,6 +703,36 @@ Dialogen visar hur många länkar som läggs till eller tas bort innan du bekrä
 
 **Nycklar och adresser i texter.** I kommentarer blir en objektnyckel som `SHOP-REQ-12` eller `SHOP-TC-3` en länk till objektet, och en webbadress blir en länk som öppnas i en ny flik. Adressen `/go/SHOP-TC-3` i verktyget öppnar alltid det objektet, vilket är praktiskt i e-post och chattar.
 
+## Ärenden i GitLab, GitHub eller Jira
+
+När projektet är anslutet till en ärendehanterare (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab)) kan ett krav lämnas över till utvecklarna som ett ärende. Kravets flik **Länkar** börjar då med **Ärende i GitLab** (eller GitHub, Jira):
+
+- **Skapa GitLab-ärende** visar en förhandsvisning av ärendet och skapar det. Ärendet får:
+  - titeln `[SHOP-REQ-12] <titel>`;
+  - en beskrivning med kravtexten, motiveringen, acceptanskriterierna, typ, prioritet, kravnivå, status, ägare, källa, taggar och version, de länkade testfallen med deras senaste resultat och länkar tillbaka till kravet och testfallen i Qtestframe (när serverns adress, `server.base_url`, är inställd);
+  - etiketter: ärendehanterarens standardetiketter plus etiketter från kravets fält (se nedan);
+  - milstolpen och den tilldelade från inställningarna, om de är angivna.
+
+  Ärendet läggs till bland kravets länkar som en webblänk, med sin nyckel och sitt läge (**Öppet** eller **Stängt**).
+- Ett krav har högst ett ärende i ärendehanteraren. Om det redan har ett erbjuder Qtestframe **Öppna ärendet** och **Uppdatera ärendet** i stället för att skapa ett till.
+- **Uppdatera ärendet** för in kravets aktuella titel och text i ärendet, till exempel efter att kravet ändrats eller testfallen körts. I GitLab och GitHub ersätts bara den del som Qtestframe skrivit (den är markerad med dolda kommentarer); anteckningar som utvecklarna lagt till ovanför eller nedanför behålls. I Jira ersätts hela beskrivningen.
+- **Läs om status** läser tillbaka ärendets läge. Läget läses inte om automatiskt: läs om det här eller med **Ärenden** i listan.
+
+Med **Kommentera ärendet när alla länkade tester har godkänts** i inställningarna lägger en omläsning av ett öppet ärende, vars länkade testfall alla har godkänts, till en kommentar om det med en länk till kravet. Om testerna slutar godkännas och sedan godkänns igen kommenterar nästa omläsning på nytt.
+
+**Etiketter från kravets fält** i inställningarna översätter fält till etiketter: mallar separerade med komma, där `{type}`, `{priority}`, `{obligation}`, `{status}` och `{tags}` (en etikett per tagg) ersätts med kravets värden. Standard är `requirement, type::{type}, priority::{priority}, {tags}`, vilket ger till exempel `requirement`, `type::functional`, `priority::high` och `login`; GitLab visar `type::functional` som en etikett med omfång (scoped label). Ange `none` för inga sådana etiketter. I Jira blir mellanslag i etiketter `_`, och ärendetypen för krav anges med **Ärendetyp för krav** (standard *Task*).
+
+### Ärenden för många krav på en gång
+
+Markera krav i listan och välj **Ärenden** i verktygsfältet:
+
+- **Skapa ärenden** skapar ett ärende för varje markerat krav som saknar ett. Krav som har ett hoppas över, så inget får två; kryssa i **Uppdatera de ärenden som finns** för att uppdatera dem i stället.
+- **Läs om status** läser läget för de markerade kravens ärenden.
+
+Resultatet listar varje krav med sitt ärende, och de krav som ärendehanteraren avvisade med orsaken. Upp till 100 krav kan hanteras åt gången.
+
+Att skapa, uppdatera och läsa om ärenden kräver behörigheten att redigera krav (`requirement.write`, som standard Ansvarig); alla som kan läsa krav ser ärendet och dess läge. Varje skapande, uppdatering och omläsning registreras i [händelseloggen](#händelselogg). Ärendehanterarens token visas aldrig.
+
 ## Bilagor
 
 Fliken **Bilagor** i redigeraren innehåller filer som hör till kravet: ritningar, specifikationer, e-post, skärmbilder. Dra filer till fliken eller välj dem för att ladda upp (upp till 25 MB per fil om administratören inte har angett en annan gräns); flera filer laddas upp efter varandra med förloppsvisning. Bilder, PDF-filer och vanlig text kan förhandsvisas; andra filer laddas ned.
@@ -1496,7 +1526,7 @@ Utgångskriteriet **Risker hanterade** med nivån *Hög* blockerar en release s�
 
 En **defekt** (bugg) är ett problem som hittats vid testning. Varje defekt har en nyckel som `SHOP-BUG-3`, en titel, en beskrivning, en status, en allvarlighetsgrad, en prioritet och en tilldelad person, och den kopplas till de krav, testfall och exekveringar den gäller. Defekterna finns under **Defekter** i projektets sidomeny.
 
-Defekter kan speglas i **Jira** eller **GitHub Issues**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
+Defekter kan speglas i **Jira**, **GitHub Issues** eller **GitLab**: Qtestframe skapar ärendet åt dig och läser tillbaka dess status, så att utvecklarna arbetar i sin ärendehanterare medan testteamet ser varje defekts läge bredvid testfallen.
 
 | Åtgärd | Roll som krävs |
 |---|---|
@@ -1517,7 +1547,7 @@ Välj en defekt för att öppna och redigera den. Välj **Ny defekt** för att r
 Kryssa i defekter i listan (rubrikens kryssruta markerar hela sidan). Verktygsfältet ändrar alla på en gång:
 
 - **Ange status** och **Ange allvarlighetsgrad**, samt **Tilldela…** för att ge dem till någon (tomt tar bort tilldelningen). Den nya ansvariga får en notis. Kräver behörighet att spara utfall (`run.execute`).
-- **Skicka till Jira/GitHub** skapar ett ärende för varje markerad defekt som saknar ett; defekter som redan har ett ärende lämnas orörda. **Synkronisera** läser status för de markerade defekternas ärenden. Båda visas när en ärendehanterare är ansluten.
+- **Skicka till Jira/GitHub/GitLab** skapar ett ärende för varje markerad defekt som saknar ett; defekter som redan har ett ärende lämnas orörda. **Synkronisera** läser status för de markerade defekternas ärenden. Båda visas när en ärendehanterare är ansluten.
 - **Ta bort** (behörighet att ändra projektet), efter bekräftelse.
 
 Alla defekter kontrolleras innan någon ändras, så ett felaktigt värde ändrar ingenting. Ändringar av status, allvarlighetsgrad och tilldelning kan ångras med ångra-knappen i övre fältet.
@@ -1568,9 +1598,9 @@ När ett testfall misslyckas i [exekveringsvyn](#exekveringsvyn) visas en notis 
 
 Justera texten, ange allvarlighetsgrad och välj **Rapportera defekt**. Den nya defekten visas på fliken **Defekter** i exekveringsvyn, och testfallet och dess krav visar den också. Fliken har även **Koppla befintlig** för en defekt som redan är känd.
 
-## Anslut Jira eller GitHub
+## Anslut Jira, GitHub eller GitLab
 
-En användare med rollen **Ansvarig** ansluter projektet till en ärendehanterare under **Kategorier & inställningar**, fliken **Projekt**, kortet **Ärendehanterare för defekter**. Välj **Ärendehanterare** och fyll i fälten; **Testa anslutningen** sparar inställningarna och kontrollerar adressen, projektet eller repot och token.
+En användare med rollen **Ansvarig** ansluter projektet till en ärendehanterare under **Kategorier & inställningar**, fliken **Projekt**, kortet **Ärendehanterare**. Samma anslutning används för defekter och för [ärenden som skapas från krav](#ärenden-i-gitlab-github-eller-jira). Välj **Ärendehanterare** och fyll i fälten; **Testa anslutningen** sparar inställningarna och kontrollerar adressen, projektet eller repot och token.
 
 ### Jira
 
@@ -1586,6 +1616,23 @@ Kontot behöver behörighet att bläddra i projektet och skapa ärenden i det.
 - **API-adress**: tom för github.com; för GitHub Enterprise Server t.ex. `https://github.example.com/api/v3`.
 - **Etiketter** som läggs till på nya ärenden, separerade med komma, t.ex. `bug, qtestframe`.
 - **Token**: en **finkornig personlig åtkomsttoken** (fine-grained) med åtkomst till repot och repobehörigheten **Issues: Read and write** (*Metadata: Read* ingår automatiskt).
+- **Milstolpe** och **Tilldelad** (valfria): sätts på nya ärenden; milstolpen med nummer eller titel, den tilldelade med sitt användarnamn.
+
+### GitLab
+
+- **GitLab-adress**: tom för gitlab.com; för en egen installation (self-managed) dess adress, t.ex. `https://gitlab.example.com`. Bara `https`-adresser godtas.
+- **Projekt**: projektets numeriska id (visas på projektets översiktssida) eller dess sökväg, t.ex. `grupp/undergrupp/projekt`. Du kan också klistra in projektets adress; den kortas till sökvägen.
+- **Etiketter** som läggs till på nya ärenden, separerade med komma. GitLab skapar etiketter som inte finns än.
+- **Milstolpe** (valfri): numret som GitLab visar som `%3`, eller titeln. Milstolpar i projektets grupper fungerar också.
+- **Tilldelad** (valfri): GitLab-användarnamnet för den som ska få nya ärenden.
+- **Token**: en åtkomsttoken med behörigheten (scope) **`api`**, den minsta som kan skapa och ändra ärenden. Skapa en av dessa:
+  - en **projekttoken** (project access token, rekommenderas eftersom den bara når det här projektet): i GitLab-projektet **Settings → Access tokens → Add new token**, ge den ett namn och ett utgångsdatum, rollen **Reporter** (eller högre) och behörigheten **api**;
+  - en **grupptoken** (group access token), på samma sätt under gruppens **Settings → Access tokens**, när flera projekt i gruppen delar den;
+  - en **personlig token** (personal access token): **Edit profile → Access tokens → Add new token** med behörigheten **api**; den agerar som du i alla projekt du når, så välj hellre en av de andra.
+
+  Kopiera token när GitLab visar den (den visas bara en gång) och klistra in den i **Token**. Med Reporter kan ärenden skapas med etiketter, milstolpe och tilldelad; med Guest behålls bara titel och beskrivning. Qtestframe skickar token i huvudet `PRIVATE-TOKEN`.
+
+Ett GitLab-ärendes status är *opened* eller *closed*; se tabellen under [Skicka, synkronisera och importera](#skicka-synkronisera-och-importera).
 
 ### Token
 
@@ -1598,18 +1645,20 @@ När en ärendehanterare är ansluten har listan över defekter tre åtgärder t
 - **Skicka till ärendehanteraren** (uppladdningsknappen för en defekt) skapar ett ärende från defekten: titeln med defektens nyckel, beskrivningen, allvarlighetsgraden och prioriteten samt nycklarna för de kopplade objekten. Defekten visar sedan ärendets nyckel, en länk till det och dess status i ärendehanteraren. En defekt som redan har ett ärende kan inte skickas igen.
 - **Synkronisera** (synkknappen för en defekt) läser ärendets status och uppdaterar defektens status; **Synkronisera alla** gör det för varje defekt med ett ärende i den anslutna ärendehanteraren och visar hur många som ändrades. Statusarna översätts så här:
 
-  | Jira | GitHub | Defektens status |
-  |---|---|---|
-  | statuskategori *To Do* | open | Öppen |
-  | statuskategori *In Progress* | | Pågår |
-  | *Done* | closed (completed) | Stängd |
-  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | Avvisad |
+  | Jira | GitHub | GitLab | Defektens status |
+  |---|---|---|---|
+  | statuskategori *To Do* | open | opened | Öppen |
+  | statuskategori *In Progress* | | | Pågår |
+  | *Done* | closed (completed) | closed | Stängd |
+  | *Done* med lösningen *Won't Do*, *Duplicate* eller liknande | closed (not planned) | | Avvisad |
 
-- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub) och allvarlighetsgraden. Titel och status hämtas från ärendet.
+- **Importera ärende** skapar en defekt från ett ärende som redan finns i ärendehanteraren: ange dess nyckel (`SHOP-123` i Jira, `#123` eller `ägare/repo#123` i GitHub, `#123` eller `grupp/projekt#123` i GitLab) och allvarlighetsgraden. Titel och status hämtas från ärendet.
 
 Synkronisering läser bara; den ändrar aldrig ärendet. Ändringar du gör i en defekt i Qtestframe skrivs inte till ärendehanteraren.
 
-Om ärendehanteraren inte kan nås eller avvisar en begäran, till exempel för att token har gått ut eller saknar en behörighet, visar en röd notis överst i listan ärendehanterarens eget svar. Kontrollera inställningarna med **Testa anslutningen**.
+Om ärendehanteraren inte kan nås eller avvisar en begäran, till exempel för att token har gått ut eller saknar en behörighet, visar en röd notis överst i listan ärendehanterarens eget svar. Kontrollera inställningarna med **Testa anslutningen**. Notisen förklarar de vanliga svaren: **401** token avvisades (fel, utgången eller återkallad), **403** token saknar en behörighet eller roll, **404** projektet, repot eller ärendet finns inte eller syns inte för token, **422** ärendehanteraren avvisade innehållet (till exempel en okänd etikett eller milstolpe). När ärendehanteraren begränsar antalet anrop väntar Qtestframe och försöker igen om den ber om en kort väntan, och säger annars hur länge du ska vänta.
+
+Qtestframe når ärendehanteraren från servern, via serverns utgående proxy (`HTTPS_PROXY`, `NO_PROXY`) om en sådan är inställd, och litar på de certifikat som serverns system litar på. För en egen GitLab- eller Jira-installation med ett certifikat från er egen CA installerar du den CA:n på servern.
 
 ## Öppna defekter och releaser
 
@@ -2460,6 +2509,8 @@ Standardmatrisen med behörigheter:
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
 
 **Granskningsbeslut.** Att sätta ett krav till *Godkänt* eller *Avvisat* kräver `requirement.review`; att sätta ett testfall till *Klart* kräver `test.review`. Detsamma gäller massändringar, att skapa ett objekt med den statusen och att återställa en version som har den. En granskare utan skrivbehörighet får bara ändra statusen; att redigera något annat kräver fortfarande `requirement.write` eller `test.write`. Varje beslut registreras i händelseloggen som `requirement.review` eller `test.review`. Ett kopierat krav eller testfall börjar som *Utkast* och granskas alltså på nytt.
+
+**Ärendehanterare.** Att ansluta ett projekt till Jira, GitHub eller GitLab kräver `project.update`; token anges där en gång och visas aldrig igen (se [Anslut Jira, GitHub eller GitLab](#anslut-jira-github-eller-gitlab), som också beskriver hur du skapar en GitLab-token med den minsta behörigheten, `api`). Att skicka och synkronisera defekter kräver `run.execute`; att skapa, uppdatera och läsa om [ärenden från krav](#ärenden-i-gitlab-github-eller-jira) kräver `requirement.write`. De registreras i händelseloggen (`defect.push`, `defect.sync` när en status ändras, `requirement.issue.create`, `requirement.issue.update`, `requirement.issue.sync`).
 
 ### Ändra roller och skapa egna
 

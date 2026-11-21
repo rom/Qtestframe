@@ -29,6 +29,7 @@ import RequirementImportDialog from './RequirementImportDialog.vue'
 import BulkReviewDialog from './BulkReviewDialog.vue'
 import BulkRelationsDialog from './BulkRelationsDialog.vue'
 import BulkItemLinksDialog from './BulkItemLinksDialog.vue'
+import BulkRequirementIssuesDialog from './BulkRequirementIssuesDialog.vue'
 import type { ImportResult } from '@/lib/reqImport'
 import { api, ApiError, asItems } from '@/lib/api'
 import { activeFilterCount, composeQuery, type QuickFilters } from '@/lib/query'
@@ -89,6 +90,7 @@ const canReview = computed(() => auth.can(isReq.value ? P.requirementReview : P.
 const bulkReviewOpen = ref(false)
 const bulkRelationsOpen = ref(false)
 const bulkLinksOpen = ref(false)
+const bulkIssuesOpen = ref(false)
 const shownIds = computed(() => items.value.map((i) => i.id))
 const canLink = computed(() => auth.can(P.requirementWrite) || auth.can(P.testWrite))
 const folders = computed(() => proj.folders[props.kind])
@@ -572,6 +574,7 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
         <Button :label="t('common.move')" icon="pi pi-folder" size="small" severity="secondary" outlined @click="moveDialog = true" />
         <Button :label="t('links.title')" icon="pi pi-link" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkLinksOpen = true" />
         <Button v-if="isReq" :label="t('relations.bulk.button')" icon="pi pi-sitemap" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkRelationsOpen = true" />
+        <Button v-if="isReq && canWrite" :label="t('reqIssue.bulk.button')" icon="pi pi-ticket" size="small" severity="secondary" outlined aria-haspopup="dialog" @click="bulkIssuesOpen = true" />
         <Button
           v-if="isSoftware(proj.project)"
           :label="t('prompts.forSelection')"
@@ -767,4 +770,5 @@ const folderLabel = computed(() => (selectedFolder.value ? folderPath(folders.va
   />
   <BulkItemLinksDialog v-if="canWrite" v-model:visible="bulkLinksOpen" :source-type="isReq ? 'requirement' : 'test'" :project-id="pid" :selected="selectedIds" />
   <BulkRelationsDialog v-if="isReq && canWrite" v-model:visible="bulkRelationsOpen" :project-id="pid" :selected="selectedIds" @done="load" />
+  <BulkRequirementIssuesDialog v-if="isReq && canWrite" v-model:visible="bulkIssuesOpen" :project-id="pid" :selected="selectedIds" />
 </template>

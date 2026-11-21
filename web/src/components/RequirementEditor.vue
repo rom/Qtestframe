@@ -4,6 +4,7 @@ import SuspectLink from './SuspectLink.vue'
 import ConfigurationCoverage from './ConfigurationCoverage.vue'
 import ObligationHelp from './ObligationHelp.vue'
 import ItemLinksPanel from '@/components/ItemLinksPanel.vue'
+import RequirementIssuePanel from '@/components/RequirementIssuePanel.vue'
 import RequirementRisks from './RequirementRisks.vue'
 import DefectsPanel from '@/components/DefectsPanel.vue'
 import { isSoftware } from '@/lib/projectTypes'
@@ -74,6 +75,8 @@ const prefs = usePrefsStore()
 const { t, te } = useI18n()
 const tabsId = uid('req-tabs')
 const linkCount = ref<number | null>(null)
+/** bumped when an issue link changed (reloads the links panel) */
+const linksVersion = ref(0)
 watch(
   () => props.itemId,
   () => (linkCount.value = null),
@@ -537,7 +540,10 @@ function criterionLabel(id: string | null) {
   </Tabs>
   <div v-if="item && tab === 'defects'" v-bind="panel('defects')"><DefectsPanel entity-type="requirement" :entity-id="item.id" :project-id="projectId" @count="(n) => (openDefects = n)" /></div>
   <div v-if="item && tab === 'relations'" v-bind="panel('relations')"><RelationsPanel :project-id="projectId" :requirement-id="item.id" :can-write="canWrite" @count="(n) => (relationCount = n)" /></div>
-  <div v-if="item && tab === 'links'" v-bind="panel('links')"><ItemLinksPanel item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" /></div>
+  <div v-if="item && tab === 'links'" v-bind="panel('links')">
+    <RequirementIssuePanel :requirement-id="item.id" :can-write="canWrite" @changed="linksVersion++" />
+    <ItemLinksPanel :key="linksVersion" item-type="requirement" :item-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (linkCount = n)" />
+  </div>
   <div v-if="item && tab === 'comments'" v-bind="panel('comments')"><CommentsPanel entity="requirement" :entity-id="item.id" @count="(n) => (commentCount = n)" /></div>
   <div v-if="item && tab === 'attachments'" v-bind="panel('attachments')"><AttachmentsPanel type="requirement" :entity-id="item.id" :project-id="projectId" :can-write="canWrite" @count="(n) => (attachmentCount = n)" /></div>
   <div v-if="item && tab === 'history'" v-bind="panel('history')">

@@ -12,6 +12,8 @@ import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
+import Tag from 'primevue/tag'
+import { issueStateTag } from '@/lib/requirementIssues'
 import ItemPickerDialog from './ItemPickerDialog.vue'
 import { api, asItems, errorMessage } from '@/lib/api'
 import { linkTarget, LINK_ICONS, LINK_TYPES, type LinkType } from '@/lib/itemLinks'
@@ -219,6 +221,7 @@ const target = (l: ItemLink, incomingSide = false) => linkTarget(l, props.projec
           <a :href="target(l).href" target="_blank" rel="noopener noreferrer" class="grow ellipsis link-text" :title="l.url"
             >{{ l.label || l.url }} <i class="pi pi-external-link small" aria-hidden="true" /><span class="sr-only"> ({{ t('links.newTab') }})</span></a
           >
+          <Tag v-if="l.issue" :value="t(`reqIssue.state.${l.issue.state || 'unknown'}`)" :severity="issueStateTag(l.issue.state)" class="small" />
         </template>
         <a v-else-if="target(l).href" :href="target(l).href" target="_blank" rel="noopener" class="grow ellipsis link-text">
           <b v-if="l.label">{{ l.label + ': ' }}</b>{{ l.target_key || t('links.missing') }}

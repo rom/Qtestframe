@@ -684,6 +684,36 @@ The dialog says how many links will be added or removed before you confirm; item
 
 **Keys and addresses in texts.** In comments, an item key such as `SHOP-REQ-12` or `SHOP-TC-3` becomes a link to that item, and a web address becomes a link that opens in a new tab. The address `/go/SHOP-TC-3` in the tool always opens that item, which is handy in e-mails and chats.
 
+## Issues in GitLab, GitHub or Jira
+
+When the project is connected to an issue tracker (see [Connect Jira, GitHub or GitLab](#connect-jira-github-or-gitlab)), a requirement can be handed to the developers as an issue. The **Links** tab of the requirement then starts with **Issue in GitLab** (or GitHub, Jira):
+
+- **Create GitLab issue** shows a preview of the issue and creates it. The issue gets:
+  - the title `[SHOP-REQ-12] <title>`;
+  - a description with the requirement text, the rationale, the acceptance criteria, the type, priority, obligation, status, owner, source, tags and version, the linked tests with their latest results, and links back to the requirement and its tests in Qtestframe (when the server's address, `server.base_url`, is set);
+  - labels: the tracker's default labels plus labels mapped from the requirement (see below);
+  - the milestone and assignee of the tracker settings, if set.
+
+  The issue is added to the requirement's links as a web link, with its key and its state (**Open** or **Closed**).
+- A requirement has at most one issue in the tracker. If it already has one, Qtestframe offers **Open issue** and **Update issue** instead of creating another one.
+- **Update issue** puts the current title and text of the requirement into the issue, for example after the requirement was changed or its tests were run. In GitLab and GitHub only the part written by Qtestframe is replaced (it is marked with hidden comments); notes the developers added below or above it are kept. In Jira the whole description is replaced.
+- **Refresh state** reads the issue's state back. The state is not refreshed automatically: refresh it here or with **Issues** in the list.
+
+With **Comment on the issue when all linked tests passed** in the tracker settings, refreshing the state of an open issue whose linked tests all passed adds one comment saying so, with a link to the requirement. If the tests stop passing and pass again later, the next refresh comments again.
+
+**Labels from requirement fields** in the tracker settings maps fields to labels: templates separated by commas, where `{type}`, `{priority}`, `{obligation}`, `{status}` and `{tags}` (one label per tag) are replaced by the requirement's values. The default is `requirement, type::{type}, priority::{priority}, {tags}`, which gives for example `requirement`, `type::functional`, `priority::high` and `login`; GitLab shows `type::functional` as a scoped label. Enter `none` for no mapped labels. In Jira, spaces in labels become `_`, and the issue type of requirement issues is set by **Issue type for requirements** (default *Task*).
+
+### Issues of many requirements at once
+
+Select requirements in the list and choose **Issues** in the toolbar:
+
+- **Create issues** creates an issue for each selected requirement that has none. Requirements that have one are skipped, so none gets two; tick **Update the issues that exist** to update them instead.
+- **Refresh states** reads the state of the selected requirements' issues.
+
+The result lists each requirement with its issue, and the requirements the tracker refused with its reason. Up to 100 requirements can be handled at a time.
+
+Creating, updating and refreshing issues needs the permission to edit requirements (`requirement.write`, by default Manager); everyone who can read requirements sees the issue and its state. Every create, update and refresh is recorded in the [audit log](#audit-log). The tracker's token is never shown.
+
 ## Attachments
 
 The **Attachments** tab of the editor holds files that belong to the requirement: drawings, specifications, mails, screenshots. Drag files onto the tab or choose them to upload (up to 25 MB per file unless your administrator set another limit); several files upload one after another, with progress. Images, PDF files and plain text can be previewed; other files are downloaded.
@@ -1475,7 +1505,7 @@ The **Risk report** under **Reports** summarises the register for a review meeti
 
 A **defect** (bug) is a problem found while testing. Every defect has a key such as `SHOP-BUG-3`, a title, a description, a status, a severity, a priority and an assignee, and it is linked to the requirements, tests and executions it concerns. Defects are under **Defects** in the project sidebar.
 
-Defects can be mirrored in **Jira** or **GitHub Issues**: Qtestframe creates the issue for you and reads its status back, so the developers work in their tracker while the test team sees the state of each defect next to its tests.
+Defects can be mirrored in **Jira**, **GitHub Issues** or **GitLab**: Qtestframe creates the issue for you and reads its status back, so the developers work in their tracker while the test team sees the state of each defect next to its tests.
 
 | Action | Role needed |
 |---|---|
@@ -1496,7 +1526,7 @@ Select a defect to open and edit it. Select **New defect** to report one.
 Tick defects in the list (the header checkbox ticks the whole page). The toolbar changes all of them at once:
 
 - **Set status** and **Set severity**, and **Assign…** to give them to someone (empty removes the assignee). The new assignee is notified. This needs permission to record results (`run.execute`).
-- **Push to Jira/GitHub** creates an issue for each ticked defect that has none yet; defects that already have an issue are left alone. **Sync** reads the status of the ticked defects' issues. Both are shown when a tracker is connected.
+- **Push to Jira/GitHub/GitLab** creates an issue for each ticked defect that has none yet; defects that already have an issue are left alone. **Sync** reads the status of the ticked defects' issues. Both are shown when a tracker is connected.
 - **Delete** (permission to change the project), after confirmation.
 
 Every defect is checked before any is changed, so one wrong value changes nothing. Status, severity and assignee changes can be undone with the undo button in the top bar.
@@ -1547,9 +1577,9 @@ When a test fails in the [execution runner](#the-execution-runner), a notice wit
 
 Adjust the text, set the severity and select **Report defect**. The new defect appears in the **Defects** tab of the runner, and the test and its requirements show it too. The tab also has **Link existing** for a defect that is already known.
 
-## Connect Jira or GitHub
+## Connect Jira, GitHub or GitLab
 
-A manager connects the project to a tracker in **Categories & settings**, tab **Project**, card **Defect tracker**. Choose the **Tracker** and fill in the fields; **Check connection** saves the settings and checks the address, the project or repository and the token.
+A manager connects the project to a tracker in **Categories & settings**, tab **Project**, card **Issue tracker**. The same connection is used for defects and for [issues created from requirements](#issues-in-gitlab-github-or-jira). Choose the **Tracker** and fill in the fields; **Check connection** saves the settings and checks the address, the project or repository and the token.
 
 ### Jira
 
@@ -1565,6 +1595,23 @@ The account needs permission to browse the project and to create issues in it.
 - **API address**: empty for github.com; for GitHub Enterprise Server e.g. `https://github.example.com/api/v3`.
 - **Labels** added to new issues, separated by commas, e.g. `bug, qtestframe`.
 - **Token**: a **fine-grained personal access token** with access to the repository and the repository permission **Issues: Read and write** (*Metadata: Read* is included automatically).
+- **Milestone** and **Assignee** (optional): given to new issues; the milestone by number or title, the assignee by login.
+
+### GitLab
+
+- **GitLab address**: empty for gitlab.com; for a self-managed instance its address, e.g. `https://gitlab.example.com`. Only `https` addresses are accepted.
+- **Project**: the numeric project ID (shown on the project's overview page) or its path, e.g. `group/subgroup/project`. You can also paste the project's address; it is reduced to the path.
+- **Labels** added to new issues, separated by commas. GitLab creates labels that do not exist yet.
+- **Milestone** (optional): the number GitLab shows as `%3`, or the title. Milestones of the project's groups work too.
+- **Assignee** (optional): the GitLab username of whoever gets new issues.
+- **Token**: an access token with the scope **`api`** (the smallest scope that can create and edit issues). Make one of these:
+  - a **project access token** (recommended, as it can only reach this project): in the GitLab project, **Settings → Access tokens → Add new token**, give it a name and an expiry date, the role **Reporter** (or higher) and the scope **api**;
+  - a **group access token**, in the same way under the group's **Settings → Access tokens**, when several projects of the group share it;
+  - a **personal access token**: **Edit profile → Access tokens → Add new token** with the scope **api**; it acts as you in every project you can reach, so prefer one of the others.
+
+  Copy the token when GitLab shows it (it is shown only once) and paste it into **Token**. Reporter can create issues and set labels, milestones and assignees; with Guest only the title and description are kept. Qtestframe sends the token in the `PRIVATE-TOKEN` header.
+
+The status of a GitLab issue is *opened* or *closed*; see the table under [Push, sync and import](#push-sync-and-import).
 
 ### The token
 
@@ -1577,18 +1624,20 @@ With a tracker connected, the defect list has three more actions:
 - **Push to tracker** (the upload button of a defect) creates an issue from the defect: the title with the defect key, the description, the severity and priority, and the keys of the linked items. The defect then shows the issue key, a link to it and its status in the tracker. A defect that already has an issue cannot be pushed again.
 - **Sync** (the sync button of a defect) reads the issue's status and updates the defect's status; **Sync all** does this for every defect with an issue in the connected tracker and reports how many changed. Statuses are mapped as follows:
 
-  | Jira | GitHub | Defect status |
-  |---|---|---|
-  | status category *To Do* | open | Open |
-  | status category *In Progress* | | In progress |
-  | *Done* | closed (completed) | Closed |
-  | *Done* with resolution *Won't Do*, *Duplicate* or similar | closed (not planned) | Rejected |
+  | Jira | GitHub | GitLab | Defect status |
+  |---|---|---|---|
+  | status category *To Do* | open | opened | Open |
+  | status category *In Progress* | | | In progress |
+  | *Done* | closed (completed) | closed | Closed |
+  | *Done* with resolution *Won't Do*, *Duplicate* or similar | closed (not planned) | | Rejected |
 
-- **Import issue** creates a defect from an issue that already exists in the tracker: enter its key (`SHOP-123` in Jira, `#123` or `owner/repo#123` in GitHub) and the severity. Title and status come from the issue.
+- **Import issue** creates a defect from an issue that already exists in the tracker: enter its key (`SHOP-123` in Jira, `#123` or `owner/repo#123` in GitHub, `#123` or `group/project#123` in GitLab) and the severity. Title and status come from the issue.
 
 Sync reads only; it never changes the issue. Changes you make to a defect in Qtestframe are not written to the tracker.
 
-If the tracker cannot be reached or refuses a request, for example because the token expired or lacks a permission, a red notice at the top of the list shows the tracker's own answer. Check the settings with **Check connection**.
+If the tracker cannot be reached or refuses a request, for example because the token expired or lacks a permission, a red notice at the top of the list shows the tracker's own answer. Check the settings with **Check connection**. The notice explains the common answers: **401** the token was rejected (wrong, expired or revoked), **403** the token lacks a scope or role, **404** the project, repository or issue does not exist or the token cannot see it, **422** the tracker refused the content (for example an unknown label or milestone). When the tracker limits the rate, Qtestframe waits and tries again if the tracker asks for a short wait, and otherwise says how long to wait.
+
+Qtestframe reaches the tracker from the server, through the server's outbound proxy (`HTTPS_PROXY`, `NO_PROXY`) if one is set, and trusts the certificates the server's system trusts. For a self-managed GitLab or Jira with a certificate from your own CA, install that CA on the server.
 
 ## Open defects and releases
 
@@ -2435,6 +2484,8 @@ The default matrix of permissions:
 | `project.delete`, `member.manage`, `role.manage`, `tenant.manage` | | | | | | ✔ |
 
 **Review decisions.** Setting a requirement to *Approved* or *Rejected* needs `requirement.review`; setting a test to *Ready* needs `test.review`. The same applies to bulk edits, to creating an item with that status and to restoring a version that has it. A reviewer without the write permission may change only the status; editing anything else still needs `requirement.write` or `test.write`. Each decision is recorded in the audit log as `requirement.review` or `test.review`. A copied requirement or test starts as *Draft*, so it is reviewed again.
+
+**Issue trackers.** Connecting a project to Jira, GitHub or GitLab needs `project.update`; the token is entered there once and is never shown again (see [Connect Jira, GitHub or GitLab](#connect-jira-github-or-gitlab), which also explains how to make a GitLab token with the smallest scope, `api`). Pushing and syncing defects needs `run.execute`; creating, updating and refreshing [issues from requirements](#issues-in-gitlab-github-or-jira) needs `requirement.write`. They are recorded in the audit log (`defect.push`, `defect.sync` when a status changes, `requirement.issue.create`, `requirement.issue.update`, `requirement.issue.sync`).
 
 ### Change roles and create your own
 

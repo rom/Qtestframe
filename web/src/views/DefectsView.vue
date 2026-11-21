@@ -34,6 +34,7 @@ import {
   statusRank,
   syncResult,
   trackerError,
+  trackerName as trackerNameOf,
   validIssueKey,
   type SyncResult,
 } from '@/lib/defectTracker'
@@ -84,7 +85,7 @@ async function load() {
 // ---------- tracker ----------
 const tracker = ref<DefectTracker | null>(null)
 const trackerType = computed(() => tracker.value?.type ?? '')
-const trackerName = computed(() => (trackerType.value === 'jira' ? 'Jira' : trackerType.value === 'github' ? 'GitHub' : ''))
+const trackerName = computed(() => trackerNameOf(trackerType.value))
 async function loadTracker() {
   try {
     tracker.value = await api.get<DefectTracker>(`/projects/${proj.pid}/defect-tracker`)
