@@ -1,0 +1,596 @@
+area: cm-radio
+prefix: CMRAD
+group: domain
+catalogue: communications
+name: {en: Radio and wireless links, sv: Radio och trådlösa länkar}
+description:
+  en: Wireless LAN coverage, roaming overlap and signal quality, site surveys, permitted channels and radar detection, conformity of radio equipment, authentication and guest separation, rogue access points, and the planning and monitoring of point-to-point radio links.
+  sv: Täckning, överlapp för roaming och signalkvalitet i trådlösa nät, radiomätningar på plats, tillåtna kanaler och radardetektering, radioutrustningens överensstämmelse, autentisering och separering av gäster, falska accesspunkter samt planering och övervakning av radiolänkar mellan två punkter.
+
+requirements:
+  - id: CMRAD-01
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [wlan, coverage, signal-strength]
+    refs: []
+    tests: [CMRAD-T01]
+    en:
+      title: Signal of at least −67 dBm over 95 % of the covered area
+      description: The wireless network MUST give a received signal strength of at least −67 dBm from at least one access point over 95 % of the floor area marked as covered, measured at a height of 1 m.
+      rationale: Below this level, voice and video over the wireless network start to suffer from retransmissions and lower data rates.
+      criteria:
+        - method: test
+          text: A validation survey with a calibrated adapter shows at least −67 dBm over at least 95 % of the covered floor area on each floor.
+          threshold: ≥ −67 dBm over ≥ 95 % of the area
+    sv:
+      title: Signal på minst −67 dBm över 95 % av den täckta ytan
+      description: Det trådlösa nätet SKA ge en mottagen signalstyrka på minst −67 dBm från minst en accesspunkt över 95 % av den golvyta som är markerad som täckt, mätt på 1 meters höjd.
+      rationale: Under den nivån börjar röst och video över det trådlösa nätet påverkas av omsändningar och lägre datahastigheter.
+      criteria:
+        - method: test
+          text: En verifierande radiomätning med en kalibrerad adapter visar minst −67 dBm över minst 95 % av den täckta golvytan på varje våningsplan.
+          threshold: ≥ −67 dBm över ≥ 95 % av ytan
+
+  - id: CMRAD-02
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [wlan, roaming, voice]
+    refs: []
+    tests: [CMRAD-T01]
+    en:
+      title: Two access points heard in areas for wireless voice
+      description: In areas marked for wireless voice, the wireless network SHOULD give a signal of at least −75 dBm from a second access point over 90 % of the floor area.
+      rationale: A phone that already hears the next access point roams without dropping the call, and the second access point also covers for a failed one.
+      criteria:
+        - method: test
+          text: The validation survey shows the second strongest access point at −75 dBm or better over at least 90 % of the voice areas.
+          threshold: second AP ≥ −75 dBm over ≥ 90 % of the area
+    sv:
+      title: Två accesspunkter hörs i områden för trådlös röst
+      description: I områden som är markerade för trådlös röst BÖR det trådlösa nätet ge en signal på minst −75 dBm från en andra accesspunkt över 90 % av golvytan.
+      rationale: En telefon som redan hör nästa accesspunkt byter accesspunkt utan att samtalet bryts, och den andra accesspunkten täcker också upp för en som går sönder.
+      criteria:
+        - method: test
+          text: Den verifierande radiomätningen visar den näst starkaste accesspunkten på −75 dBm eller bättre över minst 90 % av röstområdena.
+          threshold: andra AP ≥ −75 dBm över ≥ 90 % av ytan
+
+  - id: CMRAD-03
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [wlan, interference, snr]
+    refs: []
+    tests: [CMRAD-T02]
+    en:
+      title: Signal-to-noise ratio of at least 25 dB
+      description: The wireless network MUST keep the signal-to-noise ratio of the strongest access point at 25 dB or more over 95 % of the covered floor area.
+      rationale: A strong signal is of little use when noise and interference are also strong, since the data rate depends on the difference between them.
+      criteria:
+        - method: test
+          text: The validation survey shows a signal-to-noise ratio of at least 25 dB over at least 95 % of the covered area.
+          threshold: SNR ≥ 25 dB over ≥ 95 % of the area
+    sv:
+      title: Signal-brusförhållande på minst 25 dB
+      description: Det trådlösa nätet SKA hålla signal-brusförhållandet för den starkaste accesspunkten på 25 dB eller mer över 95 % av den täckta golvytan.
+      rationale: En stark signal ger föga när brus och störningar också är starka, eftersom datahastigheten beror på skillnaden mellan dem.
+      criteria:
+        - method: test
+          text: Den verifierande radiomätningen visar ett signal-brusförhållande på minst 25 dB över minst 95 % av den täckta ytan.
+          threshold: SNR ≥ 25 dB över ≥ 95 % av ytan
+
+  - id: CMRAD-04
+    type: non_functional
+    obligation: should
+    priority: medium
+    tags: [site-survey, spectrum, interference]
+    refs: []
+    tests: [CMRAD-T03]
+    en:
+      title: Spectrum survey before installation
+      description: Before access points are installed, the installer SHOULD record a spectrum survey of the 2.4 GHz and 5 GHz bands at each planned location and list each interfering source above −85 dBm with its frequency and probable type.
+      rationale: Microwave ovens, video senders and neighbouring networks found before installation can be planned around instead of being chased after complaints.
+      criteria:
+        - method: review
+          text: The survey report covers each planned access point location in both bands and lists each source above −85 dBm with frequency and probable type.
+          threshold: sources above −85 dBm listed
+    sv:
+      title: Spektrummätning före installation
+      description: Innan accesspunkterna installeras BÖR installatören göra en spektrummätning i banden 2,4 GHz och 5 GHz på varje planerad plats och lista varje störkälla över −85 dBm med frekvens och trolig typ.
+      rationale: Mikrovågsugnar, videosändare och grannars nät som hittas före installationen går att planera runt i stället för att jagas efter klagomål.
+      criteria:
+        - method: review
+          text: Mätrapporten täcker varje planerad plats för accesspunkter i båda banden och listar varje källa över −85 dBm med frekvens och trolig typ.
+          threshold: källor över −85 dBm listade
+
+  - id: CMRAD-05
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [radio-equipment, red, conformity]
+    refs: ["Directive 2014/53/EU (RED) Art. 18 (EU declaration of conformity)", "Directive 2014/53/EU (RED) Art. 3(3)(d) (EN 18031-1 AUM)"]
+    tests: [CMRAD-T04]
+    en:
+      title: Radio equipment bought with an EU declaration of conformity
+      description: The buyer MUST accept access points, wireless bridges and radio link units only with the CE marking and an EU declaration of conformity under Directive 2014/53/EU that also covers its Article 3(3)(d) for internet-connected equipment.
+      rationale: Equipment without a valid declaration cannot legally be put into service in the EU, and since August 2025 the declaration of internet-connected radio equipment also covers network protection.
+      criteria:
+        - method: inspection
+          text: Each radio equipment model in the delivery has the CE marking and a declaration of conformity that names Directive 2014/53/EU and, for internet-connected models, Article 3(3)(d).
+    sv:
+      title: Radioutrustning köps med EU-försäkran om överensstämmelse
+      description: Beställaren SKA ta emot accesspunkter, trådlösa bryggor och radiolänkenheter bara med CE-märkning och en EU-försäkran om överensstämmelse enligt direktiv 2014/53/EU som för internetansluten utrustning också omfattar dess artikel 3.3 d.
+      rationale: Utrustning utan giltig försäkran får inte tas i bruk i EU, och sedan augusti 2025 omfattar försäkran för internetansluten radioutrustning även skydd av nätet.
+      criteria:
+        - method: inspection
+          text: Varje modell av radioutrustning i leveransen har CE-märkning och en försäkran om överensstämmelse som anger direktiv 2014/53/EU och, för internetanslutna modeller, artikel 3.3 d.
+
+  - id: CMRAD-06
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [spectrum, regulatory-domain, transmit-power]
+    refs: ["Directive 2014/53/EU (RED) Art. 3(2)", "ETSI EN 300 328", "ETSI EN 301 893"]
+    tests: [CMRAD-T05]
+    en:
+      title: Channels and transmit power within the national limits
+      description: Each access point MUST be set to the regulatory domain of the country where it is installed, so that it uses only the channels and the transmit power permitted there.
+      rationale: Transmitting outside the permitted channels or above the permitted power disturbs other spectrum users and breaks the conditions of use.
+      criteria:
+        - method: inspection
+          text: The controller shows the country of installation as the regulatory domain for each access point, and no access point uses a channel or power outside the national table.
+    sv:
+      title: Kanaler och sändareffekt inom de nationella gränserna
+      description: Varje accesspunkt SKA vara inställd på regelområdet för det land där den är installerad, så att den bara använder de kanaler och den sändareffekt som är tillåtna där.
+      rationale: Sändning utanför de tillåtna kanalerna eller över den tillåtna effekten stör andra användare av spektrumet och bryter mot villkoren för användningen.
+      criteria:
+        - method: inspection
+          text: Styrenheten visar installationslandet som regelområde för varje accesspunkt, och ingen accesspunkt använder en kanal eller effekt utanför den nationella tabellen.
+
+  - id: CMRAD-07
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [dfs, radar, 5ghz]
+    refs: ["ETSI EN 301 893"]
+    tests: [CMRAD-T05]
+    en:
+      title: Radar detection on 5 GHz channels shared with radar
+      description: An access point that uses a 5 GHz channel shared with radar MUST run dynamic frequency selection and leave the channel within 10 seconds after it detects a radar signal.
+      rationale: Weather and military radars have priority in these channels, and interference with them is a serious breach of the radio rules.
+      criteria:
+        - method: test
+          text: With a radar test signal injected on the access point's channel, the access point moves to another channel within 10 seconds and logs the radar event.
+          threshold: ≤ 10 s
+    sv:
+      title: Radardetektering på 5 GHz-kanaler som delas med radar
+      description: En accesspunkt som använder en 5 GHz-kanal som delas med radar SKA använda dynamiskt frekvensval och lämna kanalen inom 10 sekunder efter att den upptäckt en radarsignal.
+      rationale: Väder- och militärradar har företräde i de kanalerna, och störningar mot dem är ett allvarligt brott mot radioreglerna.
+      criteria:
+        - method: test
+          text: När en radarsignal för test matas in på accesspunktens kanal byter accesspunkten till en annan kanal inom 10 sekunder och loggar radarhändelsen.
+          threshold: ≤ 10 s
+
+  - id: CMRAD-08
+    type: security
+    obligation: must
+    priority: critical
+    tags: [wlan, 802-1x, wpa3, authentication]
+    refs: ["IEEE 802.1X-2020", "ISO/IEC 27033-6:2016", "ISO/IEC 27001:2022 A.8.20"]
+    tests: [CMRAD-T06]
+    en:
+      title: Staff wireless network with WPA3-Enterprise and 802.1X
+      description: The wireless network for staff MUST authenticate each device and user with IEEE 802.1X under WPA3-Enterprise and refuse open access, WEP, WPA and shared keys.
+      rationale: A shared key leaks with every former employee and lost device, while 802.1X ties each connection to an account that can be disabled.
+      criteria:
+        - method: test
+          text: A device with valid credentials connects, a device with a disabled account is refused, and attempts with WPA2 personal or open authentication on the staff network fail.
+    sv:
+      title: Trådlöst nät för personal med WPA3-Enterprise och 802.1X
+      description: Det trådlösa nätet för personal SKA autentisera varje enhet och användare med IEEE 802.1X under WPA3-Enterprise och vägra öppen anslutning, WEP, WPA och delade nycklar.
+      rationale: En delad nyckel läcker med varje tidigare anställd och borttappad enhet, medan 802.1X knyter varje anslutning till ett konto som går att spärra.
+      criteria:
+        - method: test
+          text: En enhet med giltiga inloggningsuppgifter ansluter, en enhet med ett spärrat konto nekas, och försök med WPA2 personal eller öppen autentisering mot personalnätet misslyckas.
+
+  - id: CMRAD-09
+    type: security
+    obligation: must
+    priority: high
+    tags: [guest-network, segmentation, wlan]
+    refs: ["ISO/IEC 27001:2022 A.8.22", "ISO/IEC 27033-6:2016"]
+    tests: [CMRAD-T07]
+    en:
+      title: Guest wireless network reaches only the internet
+      description: The guest wireless network MUST be separated from internal networks so that a guest device reaches the internet and the guest portal but no internal address.
+      rationale: Guests bring unmanaged devices, and a guest network that leads into the internal network bypasses the perimeter.
+      criteria:
+        - method: test
+          text: From a guest device, connections to a sample of 20 internal addresses and services fail, while web pages on the internet load.
+    sv:
+      title: Det trådlösa gästnätet når bara internet
+      description: Det trådlösa gästnätet SKA vara åtskilt från interna nät så att en gästenhet når internet och gästportalen men ingen intern adress.
+      rationale: Gäster tar med sig enheter som ingen förvaltar, och ett gästnät som leder in i det interna nätet kringgår skalskyddet.
+      criteria:
+        - method: test
+          text: Från en gästenhet misslyckas anslutningar mot ett urval av 20 interna adresser och tjänster, medan webbsidor på internet laddas.
+
+  - id: CMRAD-10
+    type: security
+    obligation: should
+    priority: medium
+    tags: [rogue-ap, wireless-ids, monitoring]
+    refs: ["ISO/IEC 27033-6:2016", "ISO/IEC 27001:2022 A.8.16"]
+    tests: [CMRAD-T08]
+    en:
+      title: Alarm for a rogue access point within 15 minutes
+      description: The wireless system SHOULD raise an alarm within 15 minutes when an unknown access point inside the premises broadcasts one of the organisation's network names or is connected to the wired network.
+      rationale: A rogue access point with a familiar name lures devices into giving away credentials, and one plugged into the wired network opens it to outsiders.
+      criteria:
+        - method: test
+          text: An unregistered access point that broadcasts the staff network name inside the premises is reported with its location within 15 minutes.
+          threshold: ≤ 15 min
+    sv:
+      title: Larm för en falsk accesspunkt inom 15 minuter
+      description: Det trådlösa systemet BÖR larma inom 15 minuter när en okänd accesspunkt i lokalerna sänder ett av organisationens nätnamn eller är ansluten till det fasta nätet.
+      rationale: En falsk accesspunkt med ett välbekant namn lockar enheter att lämna ut inloggningsuppgifter, och en som är inkopplad i det fasta nätet öppnar det för utomstående.
+      criteria:
+        - method: test
+          text: En oregistrerad accesspunkt som sänder personalnätets namn i lokalerna rapporteras med sin placering inom 15 minuter.
+          threshold: ≤ 15 min
+
+  - id: CMRAD-11
+    type: performance
+    obligation: must
+    priority: high
+    tags: [radio-link, microwave, availability, rain-fade]
+    refs: ["ITU-R P.530", "ITU-R P.837"]
+    tests: [CMRAD-T09]
+    en:
+      title: Point-to-point radio link planned for 99.99 % availability
+      description: The link plan for each point-to-point radio link MUST give an availability of at least 99.99 % per year, with a fade margin calculated for the rain rate of the region and a first Fresnel zone that is at least 60 % free of obstacles.
+      rationale: Rain and obstacles in the path are the main causes of radio link outages, and both can be calculated before the link is built.
+      criteria:
+        - method: analysis
+          text: The link budget shows a calculated availability of at least 99.99 % per year using the regional rain rate, and the path profile shows at least 60 % clearance of the first Fresnel zone.
+          threshold: ≥ 99.99 % per year, ≥ 60 % Fresnel clearance
+    sv:
+      title: Radiolänk mellan två punkter planerad för 99,99 % tillgänglighet
+      description: Länkplanen för varje radiolänk mellan två punkter SKA ge en tillgänglighet på minst 99,99 % per år, med en fädningsmarginal beräknad för regionens regnintensitet och en första Fresnelzon som är minst 60 % fri från hinder.
+      rationale: Regn och hinder i länkvägen är de vanligaste orsakerna till avbrott på radiolänkar, och båda går att beräkna innan länken byggs.
+      criteria:
+        - method: analysis
+          text: Länkbudgeten visar en beräknad tillgänglighet på minst 99,99 % per år med regionens regnintensitet, och terrängprofilen visar att minst 60 % av den första Fresnelzonen är fri.
+          threshold: ≥ 99,99 % per år, ≥ 60 % fri Fresnelzon
+
+  - id: CMRAD-12
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [radio-link, monitoring, received-signal-level]
+    refs: ["ITIL 4 Monitoring and event management"]
+    tests: [CMRAD-T10]
+    en:
+      title: Alarm when a radio link's received level drops 10 dB
+      description: The monitoring system SHOULD record the received signal level of each radio link every 15 minutes and raise an alarm when it stays 10 dB below the planned level for 30 minutes.
+      rationale: A slow drop in level points to a misaligned antenna, a damaged cable or new obstacles, and finding it early prevents an outage in the next heavy rain.
+      criteria:
+        - method: test
+          text: Inserting a 12 dB attenuator in a test link raises an alarm within 45 minutes, and the level history shows values every 15 minutes.
+          threshold: alarm at 10 dB below plan for 30 min
+    sv:
+      title: Larm när en radiolänks mottagna nivå sjunker 10 dB
+      description: Övervakningssystemet BÖR registrera den mottagna signalnivån för varje radiolänk var 15:e minut och larma när den legat 10 dB under den planerade nivån i 30 minuter.
+      rationale: En långsam nivåsänkning tyder på en felriktad antenn, en skadad kabel eller nya hinder, och att hitta den tidigt förhindrar ett avbrott vid nästa kraftiga regn.
+      criteria:
+        - method: test
+          text: När en dämpsats på 12 dB kopplas in i en testlänk larmar systemet inom 45 minuter, och nivåhistoriken visar värden var 15:e minut.
+          threshold: larm vid 10 dB under plan i 30 min
+
+tests:
+  - id: CMRAD-T01
+    priority: high
+    execution: manual
+    tags: [wlan, coverage, site-survey]
+    refs: []
+    en:
+      title: Validation survey of signal strength and roaming overlap
+      description: Walks the covered area with a survey tool after installation and evaluates the coverage maps.
+      preconditions: The installed wireless network, floor plans marking the covered and voice areas, and a survey tool with a calibrated adapter.
+      expected: At least 95 % of the covered area has −67 dBm or better, and at least 90 % of the voice areas hear a second access point at −75 dBm or better.
+      steps:
+        - action: Walk each floor at 1 m height along a grid of at most 5 m, recording each access point heard.
+          expected: The survey covers the full marked area of each floor.
+          data: Grid ≤ 5 m
+        - action: Produce the map of the strongest signal and compute the share of the covered area at −67 dBm or better.
+          expected: The share is at least 95 % on each floor.
+        - action: Produce the map of the second strongest signal for the voice areas.
+          expected: At least 90 % of the voice areas show −75 dBm or better.
+    sv:
+      title: Verifierande radiomätning av signalstyrka och överlapp för roaming
+      description: Går igenom den täckta ytan med ett mätverktyg efter installationen och utvärderar täckningskartorna.
+      preconditions: Det installerade trådlösa nätet, planritningar med täckta områden och röstområden markerade, och ett mätverktyg med en kalibrerad adapter.
+      expected: Minst 95 % av den täckta ytan har −67 dBm eller bättre, och minst 90 % av röstområdena hör en andra accesspunkt på −75 dBm eller bättre.
+      steps:
+        - action: Gå igenom varje våningsplan på 1 meters höjd längs ett rutnät på högst 5 m och registrera varje accesspunkt som hörs.
+          expected: Mätningen täcker hela den markerade ytan på varje plan.
+          data: Rutnät ≤ 5 m
+        - action: Ta fram kartan över den starkaste signalen och beräkna andelen av den täckta ytan med −67 dBm eller bättre.
+          expected: Andelen är minst 95 % på varje plan.
+        - action: Ta fram kartan över den näst starkaste signalen för röstområdena.
+          expected: Minst 90 % av röstområdena visar −75 dBm eller bättre.
+
+  - id: CMRAD-T02
+    priority: high
+    execution: manual
+    tags: [wlan, snr]
+    refs: []
+    en:
+      title: Signal-to-noise map from the validation survey
+      description: Uses the noise readings of the validation survey to compute the signal-to-noise ratio over the covered area.
+      preconditions: A validation survey with noise floor readings at each measurement point.
+      expected: At least 95 % of the covered area has a signal-to-noise ratio of 25 dB or more.
+      steps:
+        - action: Produce the map of the signal-to-noise ratio of the strongest access point.
+          expected: The map covers each floor.
+        - action: Compute the share of the covered area at 25 dB or more.
+          expected: The share is at least 95 %.
+          data: Limit 25 dB
+        - action: List the spots below 25 dB with their noise level.
+          expected: Each spot below the limit has a recorded cause or an action.
+    sv:
+      title: Karta över signal-brusförhållandet från den verifierande mätningen
+      description: Använder brusvärdena från den verifierande radiomätningen för att beräkna signal-brusförhållandet över den täckta ytan.
+      preconditions: En verifierande radiomätning med mätt brusgolv i varje mätpunkt.
+      expected: Minst 95 % av den täckta ytan har ett signal-brusförhållande på 25 dB eller mer.
+      steps:
+        - action: Ta fram kartan över signal-brusförhållandet för den starkaste accesspunkten.
+          expected: Kartan täcker varje våningsplan.
+        - action: Beräkna andelen av den täckta ytan med 25 dB eller mer.
+          expected: Andelen är minst 95 %.
+          data: Gräns 25 dB
+        - action: Lista punkterna under 25 dB med deras brusnivå.
+          expected: Varje punkt under gränsen har en noterad orsak eller åtgärd.
+
+  - id: CMRAD-T03
+    priority: medium
+    execution: manual
+    tags: [site-survey, spectrum]
+    refs: []
+    en:
+      title: Review of the pre-installation spectrum survey
+      description: Checks the spectrum survey report against the plan of access point locations.
+      preconditions: The access point plan and the spectrum survey report.
+      expected: Each planned location is surveyed in both bands, and each source above −85 dBm is listed with frequency and type.
+      steps:
+        - action: Match each planned access point location with a measurement in the report.
+          expected: Each location has measurements in the 2.4 GHz and 5 GHz bands.
+        - action: Check the listed interference sources against the spectrum plots.
+          expected: Each peak above −85 dBm in the plots is listed with frequency and probable type.
+    sv:
+      title: Granskning av spektrummätningen före installation
+      description: Kontrollerar rapporten från spektrummätningen mot planen över accesspunkternas placering.
+      preconditions: Planen över accesspunkter och rapporten från spektrummätningen.
+      expected: Varje planerad plats är mätt i båda banden, och varje källa över −85 dBm är listad med frekvens och typ.
+      steps:
+        - action: Para ihop varje planerad plats för en accesspunkt med en mätning i rapporten.
+          expected: Varje plats har mätningar i banden 2,4 GHz och 5 GHz.
+        - action: Jämför de listade störkällorna med spektrumdiagrammen.
+          expected: Varje topp över −85 dBm i diagrammen är listad med frekvens och trolig typ.
+
+  - id: CMRAD-T04
+    priority: high
+    execution: manual
+    tags: [radio-equipment, red, conformity]
+    refs: ["Directive 2014/53/EU (RED) Art. 18 (EU declaration of conformity)"]
+    en:
+      title: Conformity documents of delivered radio equipment
+      description: Inspects the delivered radio equipment and the declarations of conformity for each model.
+      preconditions: The delivery note listing each radio equipment model, the units and the declarations from the supplier.
+      expected: Each model has the CE marking and a declaration naming the directive, with Article 3(3)(d) for internet-connected models.
+      steps:
+        - action: Inspect one unit of each model for the CE marking.
+          expected: The CE marking is on the unit or its label.
+        - action: Read the declaration of conformity of each model.
+          expected: The declaration names Directive 2014/53/EU, the model and the manufacturer.
+        - action: For each model that connects to the internet, look for Article 3(3)(d) in the declaration.
+          expected: The article is covered, with the harmonised standard used.
+          data: EN 18031-1
+    sv:
+      title: Dokument om överensstämmelse för levererad radioutrustning
+      description: Granskar den levererade radioutrustningen och försäkran om överensstämmelse för varje modell.
+      preconditions: Följesedeln med varje modell av radioutrustning, enheterna och försäkringarna från leverantören.
+      expected: Varje modell har CE-märkning och en försäkran som anger direktivet, med artikel 3.3 d för internetanslutna modeller.
+      steps:
+        - action: Granska en enhet av varje modell med avseende på CE-märkning.
+          expected: CE-märkningen finns på enheten eller dess etikett.
+        - action: Läs försäkran om överensstämmelse för varje modell.
+          expected: Försäkran anger direktiv 2014/53/EU, modellen och tillverkaren.
+        - action: Leta efter artikel 3.3 d i försäkran för varje modell som ansluter till internet.
+          expected: Artikeln omfattas, med den harmoniserade standard som använts.
+          data: EN 18031-1
+
+  - id: CMRAD-T05
+    priority: high
+    execution: manual
+    tags: [spectrum, dfs, radar]
+    refs: ["ETSI EN 301 893"]
+    en:
+      title: Regulatory domain and radar detection on an access point
+      description: Checks the regulatory settings in the controller and injects a radar test signal on one access point in a shielded test setup.
+      preconditions: Read access to the wireless controller, a test access point on a 5 GHz channel shared with radar, and a radar signal generator in a shielded enclosure.
+      expected: Each access point uses the national regulatory domain, and the test access point leaves the channel within 10 seconds of the radar signal.
+      steps:
+        - action: List the regulatory domain, channel and transmit power of each access point.
+          expected: Each shows the country of installation, and each channel and power is in the national table.
+        - action: Inject the radar test pattern on the test access point's channel and note the time.
+          expected: The access point moves to another channel within 10 seconds.
+          data: A radar test pattern from the standard
+        - action: Read the access point log.
+          expected: The radar event is logged with time and channel.
+    sv:
+      title: Regelområde och radardetektering i en accesspunkt
+      description: Kontrollerar regelinställningarna i styrenheten och matar in en radarsignal för test i en accesspunkt i en skärmad testuppställning.
+      preconditions: Läsbehörighet till styrenheten för det trådlösa nätet, en testaccesspunkt på en 5 GHz-kanal som delas med radar, och en radarsignalgenerator i en skärmad box.
+      expected: Varje accesspunkt använder det nationella regelområdet, och testaccesspunkten lämnar kanalen inom 10 sekunder efter radarsignalen.
+      steps:
+        - action: Lista regelområde, kanal och sändareffekt för varje accesspunkt.
+          expected: Var och en visar installationslandet, och varje kanal och effekt finns i den nationella tabellen.
+        - action: Mata in radarmönstret för test på testaccesspunktens kanal och anteckna tiden.
+          expected: Accesspunkten byter till en annan kanal inom 10 sekunder.
+          data: Ett radarmönster för test från standarden
+        - action: Läs accesspunktens logg.
+          expected: Radarhändelsen är loggad med tid och kanal.
+
+  - id: CMRAD-T06
+    priority: critical
+    execution: manual
+    tags: [wlan, 802-1x, authentication]
+    refs: ["IEEE 802.1X-2020"]
+    en:
+      title: Staff network accepts only 802.1X under WPA3-Enterprise
+      description: Connects test devices to the staff network with valid, disabled and missing credentials and with weaker security modes.
+      preconditions: A test account that can be enabled and disabled, a test laptop and a test phone.
+      expected: Only a device with an enabled account connects, and weaker modes are refused.
+      steps:
+        - action: Connect the test laptop with the enabled account.
+          expected: The laptop connects and the authentication log shows 802.1X under WPA3-Enterprise.
+        - action: Disable the account and reconnect.
+          expected: The connection is refused.
+        - action: Try to connect the test phone with a shared key and with open authentication to the staff network name.
+          expected: Both attempts fail.
+    sv:
+      title: Personalnätet godtar bara 802.1X under WPA3-Enterprise
+      description: Ansluter testenheter till personalnätet med giltiga, spärrade och saknade inloggningsuppgifter och med svagare säkerhetslägen.
+      preconditions: Ett testkonto som går att aktivera och spärra, en testdator och en testtelefon.
+      expected: Bara en enhet med ett aktivt konto ansluter, och svagare lägen nekas.
+      steps:
+        - action: Anslut testdatorn med det aktiva kontot.
+          expected: Datorn ansluter och autentiseringsloggen visar 802.1X under WPA3-Enterprise.
+        - action: Spärra kontot och anslut igen.
+          expected: Anslutningen nekas.
+        - action: Försök ansluta testtelefonen till personalnätets namn med en delad nyckel och med öppen autentisering.
+          expected: Båda försöken misslyckas.
+
+  - id: CMRAD-T07
+    priority: high
+    execution: automated
+    tags: [guest-network, segmentation]
+    refs: ["ISO/IEC 27001:2022 A.8.22"]
+    en:
+      title: Guest device tries to reach internal addresses
+      description: A script on a device in the guest network connects to internal addresses and to the internet.
+      preconditions: A test device signed in to the guest network and a list of 20 internal addresses and services from different networks.
+      expected: No internal address is reached, and the internet is.
+      steps:
+        - action: Try TCP connections to each of the 20 internal addresses and services.
+          expected: Each connection fails or times out.
+          data: 20 internal addresses, including printers, servers and the management network
+        - action: Load 3 public web pages.
+          expected: Each page loads.
+    sv:
+      title: Gästenhet försöker nå interna adresser
+      description: Ett skript på en enhet i gästnätet ansluter till interna adresser och till internet.
+      preconditions: En testenhet inloggad i gästnätet och en lista med 20 interna adresser och tjänster från olika nät.
+      expected: Ingen intern adress nås, och internet nås.
+      steps:
+        - action: Försök göra TCP-anslutningar till var och en av de 20 interna adresserna och tjänsterna.
+          expected: Varje anslutning misslyckas eller får tidsgräns.
+          data: 20 interna adresser, bland dem skrivare, servrar och förvaltningsnätet
+        - action: Ladda 3 publika webbsidor.
+          expected: Varje sida laddas.
+
+  - id: CMRAD-T08
+    priority: medium
+    execution: manual
+    tags: [rogue-ap, wireless-ids]
+    refs: []
+    en:
+      title: Rogue access point with the staff network name
+      description: Powers on an unregistered access point inside the premises that broadcasts the staff network name.
+      preconditions: An unregistered test access point and permission from the security manager for the test.
+      expected: An alarm with the access point's location is raised within 15 minutes.
+      steps:
+        - action: Power on the test access point with the staff network name and note the time.
+          expected: The access point broadcasts the name.
+        - action: Watch the alarms of the wireless system.
+          expected: A rogue access point alarm with a location on the floor plan appears within 15 minutes.
+        - action: Power off the test access point.
+          expected: The alarm is cleared or marked as resolved.
+    sv:
+      title: Falsk accesspunkt med personalnätets namn
+      description: Startar en oregistrerad accesspunkt i lokalerna som sänder personalnätets namn.
+      preconditions: En oregistrerad testaccesspunkt och tillstånd från säkerhetsansvarig för testet.
+      expected: Ett larm med accesspunktens placering visas inom 15 minuter.
+      steps:
+        - action: Starta testaccesspunkten med personalnätets namn och anteckna tiden.
+          expected: Accesspunkten sänder namnet.
+        - action: Följ larmen i det trådlösa systemet.
+          expected: Ett larm om falsk accesspunkt med en placering på planritningen visas inom 15 minuter.
+        - action: Stäng av testaccesspunkten.
+          expected: Larmet upphör eller markeras som åtgärdat.
+
+  - id: CMRAD-T09
+    priority: high
+    execution: manual
+    tags: [radio-link, link-budget]
+    refs: ["ITU-R P.530"]
+    en:
+      title: Review of a radio link budget and path profile
+      description: Checks the link budget and the path profile of each planned point-to-point radio link.
+      preconditions: The link plans with link budgets, the rain rate used and the path profiles.
+      expected: Each link has a calculated availability of at least 99.99 % per year and at least 60 % first Fresnel zone clearance.
+      steps:
+        - action: Check that the rain rate in each budget is the one for the region of the link.
+          expected: The rain rate matches the regional value.
+        - action: Read the calculated yearly availability of each link.
+          expected: Each value is at least 99.99 %.
+          data: Limit 99.99 % per year
+        - action: Read the lowest Fresnel zone clearance on each path profile.
+          expected: Each value is at least 60 %.
+    sv:
+      title: Granskning av länkbudget och terrängprofil för en radiolänk
+      description: Kontrollerar länkbudgeten och terrängprofilen för varje planerad radiolänk mellan två punkter.
+      preconditions: Länkplanerna med länkbudgetar, den regnintensitet som använts och terrängprofilerna.
+      expected: Varje länk har en beräknad tillgänglighet på minst 99,99 % per år och minst 60 % fri första Fresnelzon.
+      steps:
+        - action: Kontrollera att regnintensiteten i varje budget är den som gäller för länkens region.
+          expected: Regnintensiteten stämmer med det regionala värdet.
+        - action: Läs den beräknade årliga tillgängligheten för varje länk.
+          expected: Varje värde är minst 99,99 %.
+          data: Gräns 99,99 % per år
+        - action: Läs den lägsta fria andelen av Fresnelzonen i varje terrängprofil.
+          expected: Varje värde är minst 60 %.
+
+  - id: CMRAD-T10
+    priority: medium
+    execution: manual
+    tags: [radio-link, monitoring]
+    refs: []
+    en:
+      title: Alarm on a degraded radio link
+      description: Lowers the received level of a test radio link with an attenuator and checks the level history and the alarm.
+      preconditions: A monitored test radio link with a planned received level and a 12 dB attenuator.
+      expected: The history has values every 15 minutes, and the alarm is raised within 45 minutes.
+      steps:
+        - action: Read the level history of the link for the last 24 hours.
+          expected: There is a value every 15 minutes.
+        - action: Insert the attenuator and note the time.
+          expected: The received level drops by about 12 dB in the next sample.
+          data: 12 dB attenuator
+        - action: Wait and watch the alarms.
+          expected: A low-level alarm for the link appears within 45 minutes.
+    sv:
+      title: Larm för en försämrad radiolänk
+      description: Sänker den mottagna nivån på en testradiolänk med en dämpsats och kontrollerar nivåhistoriken och larmet.
+      preconditions: En övervakad testradiolänk med en planerad mottagen nivå och en dämpsats på 12 dB.
+      expected: Historiken har värden var 15:e minut, och larmet kommer inom 45 minuter.
+      steps:
+        - action: Läs länkens nivåhistorik för de senaste 24 timmarna.
+          expected: Det finns ett värde var 15:e minut.
+        - action: Koppla in dämpsatsen och anteckna tiden.
+          expected: Den mottagna nivån sjunker med runt 12 dB i nästa mätvärde.
+          data: Dämpsats 12 dB
+        - action: Vänta och följ larmen.
+          expected: Ett larm om låg nivå för länken visas inom 45 minuter.
