@@ -2,7 +2,9 @@
 
 The standard requirement and test library lives in `data/*.yaml`, one file
 per **area** (a topic such as authentication or performance). Every file is
-embedded into the binary and checked by `go test ./internal/catalog`.
+embedded into the binary and checked when the catalogue loads (run
+`go test ./internal/catalog` after each change): the format above and the
+keyword, analysis, traceability and language rules below are enforced.
 
 ```yaml
 area: authentication            # unique area id: lower case, a-z 0-9 and "-"
@@ -18,7 +20,7 @@ requirements:
     priority: high              # critical | high | medium | low
     tags: [password, login]     # lower case, a-z 0-9 and "-"
     refs: ["NIST SP 800-63B §5.1.1.2"]   # standards it is based on: cited, never copied
-    tests: [AUTH-T01, AUTH-T02] # catalogue tests that verify it (same or other area)
+    tests: [AUTH-T01, AUTH-T02] # at least one catalogue test that verifies it (same or other area)
     en:
       title: Minimum password length          # short, no final full stop
       description: The system MUST reject a new password shorter than 12 characters.
@@ -70,11 +72,31 @@ tests:
   `obligation` must match the keyword (SKA counts as must). The requirement
   analysis (internal/reqlang) must find no errors or warnings: avoid vague
   words such as "fast", "user-friendly", "etc.", "and/or", "as appropriate",
-  "snabbt", "användarvänlig", "osv", "vid behov".
+  "snabbt", "användarvänlig", "osv", "vid behov". In the description,
+  ordinary words that are also keywords count as a second obligation:
+  "required", "optional", "recommended", "will" in English and "får",
+  "måste", "kommer att", "valfri" in Swedish (write "ges", "tillåts",
+  "mandatory" instead). Escape clauses ("unless", "except", "om inte",
+  "utom") and vague sizes ("significant", "large", "betydande", "stora",
+  "flera", "några") are warnings too.
 - **Tests** are concrete and executable: preconditions, numbered actions with
-  an expected result each, test data where it helps. A requirement's `tests`
-  lists the catalogue tests that verify it; every test should verify at
-  least one requirement.
+  an expected result each, test data where it helps. Aim for roughly one
+  test per requirement; a test may verify several requirements.
+- **Traceability** (checked): every requirement lists at least one existing
+  test in `tests`, and every test is listed by at least one requirement.
+- **Both languages complete** (checked): every area has `name` and
+  `description` in English and Swedish. Every requirement has title,
+  description, rationale and criteria in both; the Swedish criteria have
+  the same count and the same `method` in the same order as the English
+  ones, and a `threshold` wherever English has one. Every test has title,
+  description, preconditions, expected and steps in both; Swedish has the
+  same number of steps, each with action and expected, and `data` wherever
+  English has it. The browser and the import fall back to English for a
+  missing text, but the data must never rely on it.
+- **No secrets.** Never put anything that looks like a real key, token,
+  password or card number in the data, not even a published example
+  value: describe such test data in words ("a test card from the payment
+  provider", "a known test secret").
 - **Swedish** is natural, idiomatic Swedish (not word-for-word), using the
   terms of the Swedish user interface: krav, testfall, körning, organisation,
   administratör, inloggning.

@@ -198,7 +198,7 @@ func TestLibraryCoverage(t *testing.T) {
 			t.Errorf("group %s has no areas", g.ID)
 		}
 	}
-	if len(c.Requirements) < 350 || len(c.Tests) < 300 {
+	if len(c.Requirements) < 500 || len(c.Tests) < 400 {
 		t.Errorf("the library shrank: %d requirements, %d tests", len(c.Requirements), len(c.Tests))
 	}
 }
