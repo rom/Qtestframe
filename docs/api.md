@@ -1725,10 +1725,84 @@ with `kind` = `attachment` | `document` | `report` | `avatar` | `icon`.
 | POST | `/projects/{pid}/documents/bulk` | project.read + uploader or project.update per file | `{"ids":[...], "add_tags"?, "remove_tags"?, "description"?}` → `{"updated":[{id,name}], "skipped":[{id,name,reason:"not_allowed"}]}` |
 | DELETE | `/projects/{pid}/documents/bulk` | as above | `{"ids":[...]}` → `{"deleted": n, "skipped"}` |
 | POST | `/projects/{pid}/documents/zip` | project.read | `{"ids":[...]}` → `application/zip` with the files (unique names; at most 512 MB together, else 400) |
+| POST | `/projects/{pid}/documents/generate` | export + requirement.read (+ test.read for a test plan) + `requirement.write` or `test.write` | generate a requirements specification or test plan into the archive → 201 File, see [Generated documents](#generated-documents) |
 
 Archive query fields: `name`, `description`, `tag`, `kind`, `type`
 (content type), `uploaded_by`, `created_at`, `size`, `linked` (keys of
 linked items).
+
+### Generated documents
+
+`POST /projects/{pid}/documents/generate` builds a complete document from the
+project's requirements and tests and saves it in the document archive. It
+needs `export` and `requirement.read` (router), `test.read` for a test plan,
+and the archive's upload permission (`requirement.write` or `test.write`).
+Every generation is audit-logged (`document.generate`, with the kind,
+format, file name, item counts and duration).
+
+```json
+{
+  "kind": "requirements_spec",          // or "test_plan"
+  "format": "pdf",                      // pdf (default) | docx | md
+  "name": "optional file name",
+  "description": "optional file description",
+  "options": {
+    "title": "Shop SRS", "version": "2.0", "author": "Ann",
+    "query": "status:approved",         // requirements (spec) or tests (plan)
+    "include_inactive": false,          // rejected/obsolete requirements, deprecated tests
+    "baseline_id": "…",                 // generate from a baseline instead of the current data
+    "group_by": "folder",               // folder | category | type (spec only)
+    "dimension": "Level",               // category dimension for group_by category
+    "fields": ["description", "tests"], // default: all but "results"
+    "traceability": true, "glossary": true,
+    "lang": "sv"                        // default: the user's language
+  }
+}
+```
+
+→ `201` with the `File` (`kind: document`). Its name defaults to
+`<KEY>-requirements-specification-v<version>.<ext>` or
+`<KEY>-test-plan-v<version>.<ext>`, its tags are `generated`, the kind's
+tag (`requirements-specification` | `test-plan`) and the version
+(`v2.0`), its description the title and version (and the baseline).
+Download it with `GET /files/{id}/content`. 400 for an unknown kind,
+format, field or grouping, an invalid query or a baseline of another
+project.
+
+* **Version** defaults to one more than the highest major version of the
+  earlier generated documents of the same kind in the archive (`1.0`
+  first); those earlier documents make up the revision history.
+* **Fields** of a specification: `description` (obligation keywords found
+  by the requirement analysis are emphasised), `rationale`, `criteria`,
+  `type`, `priority`, `obligation`, `status`, `source` (and the catalogue
+  reference), `owner`, `tags`, `categories`, `relations`, `tests` (keys of
+  the linked tests), `results` (their latest results), `version`. Of a test
+  plan: `description`, `preconditions`, `steps`, `expected`, `priority`,
+  `execution_type`, `status`, `estimate`, `tags`, `categories`,
+  `dependencies`, `requirements`, `data` (data-driven rows), `results`,
+  `version`.
+* **Requirements specification** (ISO/IEC/IEEE 29148): title page,
+  document control (metadata, revision history, approvals = the signatures
+  of the baseline), contents, 1 Introduction (purpose, scope = the project
+  description, the BCP 14 key words – in Swedish the SKA/BÖR/FÅR
+  convention –, overview), 2 Requirements grouped by folder, category or
+  type, Appendix A traceability matrix, Appendix B glossary and references.
+* **Test plan** (ISO/IEC/IEEE 29119-3): title page, document control,
+  contents, introduction, test items and features (the requirements the
+  plan's tests verify, and how many are not verified), test approach with
+  the entry criteria (the organisation's execution-readiness settings) and
+  exit criteria (of the releases, or the defaults), test environment
+  (configurations, run environments), roles and project members, schedule
+  (releases, the 50 most recent runs), the test specification by folder,
+  Appendix A coverage (requirements → tests, requirements without tests),
+  Appendix B glossary and references.
+* With `baseline_id` the requirements and tests are the baseline's frozen
+  snapshots; trace links, folders, results and the planning data are the
+  current ones (links only between items of the baseline).
+* PDF and DOCX are portrait A4 with a title page, page numbers, page breaks
+  between chapters and a table of contents (PDF: with page numbers, links
+  and bookmarks; DOCX: a Word TOC field, updated when Word opens the file).
+  Markdown has a linked list of contents.
 
 ### Avatars and project icons
 

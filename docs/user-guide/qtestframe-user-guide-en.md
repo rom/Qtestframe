@@ -26,7 +26,7 @@ This guide is for everyone who works in Qtestframe: requirement authors, testers
 | [Baselines](#baselines) | Freezing a release and comparing versions |
 | [Search and filters](#search-and-filters) | The query language with many examples |
 | [Reports and export](#reports-and-export) | Standard reports, the custom report builder, export formats and the document archive |
-| [Documents](#documents) | The project's document archive: uploads, previews and links |
+| [Documents](#documents-1) | The project's document archive: uploads, previews and links |
 | [Administration](#administration) | Organisations, users, members and roles, project sharing, password resets, API tokens, the audit log, backup and restore |
 | [Accessibility and languages](#accessibility-and-languages) | Keyboard use, screen readers, themes, English and Swedish, phones and tablets |
 | [FAQ](#faq) | Answers to common questions |
@@ -719,7 +719,7 @@ The **Links** tab of a requirement, a test and a run lists links to other things
 |---|---|
 | **Requirement**, **Test** | one or more items of the project with the item picker |
 | **Run** | a test run of the project |
-| **Archive file** | a document or saved report of the project's [document archive](#documents) |
+| **Archive file** | a document or saved report of the project's [document archive](#documents-1) |
 | **Report** | a saved report definition; the link opens it under **Reports** |
 | **Web address** | an `https://`, `http://` or `mailto:` address, for example a design specification, a ticket or a wiki page |
 
@@ -772,7 +772,7 @@ Creating, updating and refreshing issues needs the permission to edit requiremen
 
 The **Attachments** tab of the editor holds files that belong to the requirement: drawings, specifications, mails, screenshots. Drag files onto the tab or choose them to upload (up to 25 MB per file unless your administrator set another limit); several files upload one after another, with progress. Images, PDF files and plain text can be previewed; other files are downloaded.
 
-You can also select **Attach from archive**: a file that is already in the project's [document archive](#documents) is linked rather than copied, so one specification can be attached to many requirements. Removing an attachment only unlinks it; an uploaded attachment that is no longer linked anywhere is deleted.
+You can also select **Attach from archive**: a file that is already in the project's [document archive](#documents-1) is linked rather than copied, so one specification can be attached to many requirements. Removing an attachment only unlinks it; an uploaded attachment that is no longer linked anywhere is deleted.
 
 Uploading and removing attachments needs the **Manager** role (the same as editing the requirement); reading them needs **Viewer**.
 
@@ -1408,7 +1408,7 @@ The **Links** tab of the run page links the run to requirements, tests, other ru
 
 ## Attachments on runs and executions
 
-Runs and executions have **Attachments** too: log files, screenshots of a failure, test reports from other tools. In the runner, open the **Attachments** tab next to **Result** and drag files onto it or select **Choose files**; on the run page, attachments belong to the run as a whole. You can also attach a file from the project's [document archive](#documents). Uploading and removing attachments on runs and executions needs **Tester** (the right to record results).
+Runs and executions have **Attachments** too: log files, screenshots of a failure, test reports from other tools. In the runner, open the **Attachments** tab next to **Result** and drag files onto it or select **Choose files**; on the run page, attachments belong to the run as a whole. You can also attach a file from the project's [document archive](#documents-1). Uploading and removing attachments on runs and executions needs **Tester** (the right to record results).
 
 # Releases and risks
 
@@ -2252,7 +2252,7 @@ A `-` only negates when it is directly followed by the term: `-status:obsolete`,
 Qtestframe gets data out in two ways (a whole project can also be [saved as a file and loaded again](#save-and-load-projects)):
 
 - **Export** downloads the raw project data (requirements, criteria, tests, traceability, runs) as spreadsheets, documents or Markdown, for reviews, audits, offline work or other tools.
-- **Reports** produce formatted documents for people: a project status report, a coverage report, a run summary, a defect list or a report you design yourself. Reports can be downloaded or stored in the project's [document archive](#documents).
+- **Reports** produce formatted documents for people: a project status report, a coverage report, a run summary, a defect list or a report you design yourself. Reports can be downloaded or stored in the project's [document archive](#documents-1).
 
 Everyone with the **Viewer** role or higher may export and generate reports. Saving a custom report definition needs **Tester** (tests) or **Manager** (requirements); storing a generated report in the archive is open to everyone who may generate it.
 
@@ -2343,6 +2343,10 @@ The **mitigation state** of a risk comes from the requirements that address it: 
 
 Reports are produced in the language you currently use in Qtestframe (**User menu → Language**, see [Languages](#languages)). With the Swedish interface, the report's title, section names, column headers, key figures and values such as statuses, results, coverage and obligation (for example *Godkänt*, *Underkänd*, *MUST (SKA)*) are in Swedish, with the same words as in the app. Your own content, such as titles, names, descriptions, tags and notes, is never translated. This applies to downloads, reports saved to the archive, custom reports, several reports at once and reports sent by e-mail.
 
+### Documents
+
+Below the standard reports, **Documents** offers two complete documents: a **requirements specification** and a **test plan** with its test specification. **Create…** opens the generator in the [document archive](#create-a-requirements-specification-or-a-test-plan), where the document is saved.
+
 ## Custom reports
 
 Under **Custom report** you design a report yourself:
@@ -2371,7 +2375,7 @@ Generate the report in any format, as above. To reuse it, select **Save report d
 
 - choose the **format** (only formats that every ticked report supports are offered),
 - for *Run summary*, choose the **run**,
-- **Download as ZIP** to get all of them in one file, or **Save to archive** to store each of them in the [document archive](#documents) (tagged *report*). When saving, a report that cannot be created is listed with the reason and the others are still saved.
+- **Download as ZIP** to get all of them in one file, or **Save to archive** to store each of them in the [document archive](#documents-1) (tagged *report*). When saving, a report that cannot be created is listed with the reason and the others are still saved.
 
 **Delete saved reports** removes the ticked saved custom reports (standard reports cannot be deleted). Saving to the archive and deleting need permission to edit requirements or tests; downloading needs the export permission.
 
@@ -2424,7 +2428,8 @@ The file contains the project data in plain form. Store it as carefully as the p
 | Work with the data in Excel or another tool | **Export**, XLSX or CSV |
 | Put the data or a report into a wiki, a pull request or a Git repository | **Export** or **Reports**, Markdown |
 | Hand requirements over to a requirements tool (DOORS, Polarion …) or another Qtestframe | **Export**, ReqIF |
-| A specification document to review or sign | **Export**, DOCX, aspects requirements and criteria |
+| A specification document to review or sign | **Documents → Create document → Requirements specification** (PDF or Word, from a baseline if it is to be signed); for a plain table **Export**, DOCX |
+| A test plan with the test specification | **Documents → Create document → Test plan** |
 | A status report for a steering meeting | **Reports → Project status**, PDF |
 | Evidence for an audit or a release | **Reports → Requirements coverage** or **Run summary**, saved to the archive, together with a [baseline](#baselines) |
 | A recurring list with your own columns | A saved **custom report** |
@@ -2437,7 +2442,8 @@ Every project has a **document archive**: one place for all files of the project
 
 - **documents** that you upload directly to the archive, such as specifications, contracts, test plans or meeting notes;
 - **attachments** that were uploaded to a requirement, test, run or execution;
-- **reports** that were generated and saved to the archive (see [Reports](#standard-reports)).
+- **reports** that were generated and saved to the archive (see [Reports](#standard-reports));
+- **generated documents**: a requirements specification or a test plan that Qtestframe writes for you (see [below](#create-a-requirements-specification-or-a-test-plan)).
 
 Select **Documents** in the project sidebar. Everyone who can read the project can see and download its files.
 
@@ -2463,6 +2469,29 @@ size>5000000                                   files larger than about 5 MB
 3. Add a description and tags, comma-separated, to make the files easier to find. You can change them later with **Edit**.
 
 The maximum size is 25 MB per file unless your administrator configured another limit. Uploading documents to the archive needs the **Tester** or **Manager** role (the right to edit tests or requirements).
+
+## Create a requirements specification or a test plan
+
+Qtestframe can write two complete documents for you and save them in the archive:
+
+- a **requirements specification**, modelled on ISO/IEC/IEEE 29148: title page, document control with the revision history, contents, an introduction (purpose, the project description as scope, and the meaning of the key words MUST, SHOULD and MAY), the requirements grouped by folder, category or type, a traceability matrix and a glossary with references;
+- a **test plan** with its **test specification**, modelled on ISO/IEC/IEEE 29119-3: the features to be tested (the requirements the tests verify), the test approach with entry criteria (the [execution rules](#when-can-a-test-be-executed) of your organisation) and exit criteria (those of your [releases](#releases-and-risks)), the test environment (configurations and the environments of the runs), roles, the schedule (releases and runs), then every test with its steps, and a coverage appendix with the requirements that have no test.
+
+1. Select **Create document** and choose **Requirements specification** or **Test plan**. (The **Reports** page has the same two documents under **Documents**.)
+2. In the dialog, choose:
+   - **Title**, **Version** and **Author**. Left empty, the title is the name of the document, the version is one more than the latest version of the same kind in the archive (*1.0*, *2.0* …) and the author is you.
+   - **Language of the document**: English or Swedish, your language by default. A Swedish specification explains the Swedish key words **SKA**, **BÖR** and **FÅR**.
+   - **Format**: PDF, Word (DOCX) or Markdown. PDF and Word have a title page, page numbers and a table of contents; in Word, the contents get their page numbers when Word updates the field (it asks when the file is opened).
+   - **Content**: the current requirements and tests, or a [baseline](#baselines). With a baseline the document shows the frozen texts, and its signatures are listed as approvals.
+   - **Filter**: a [query](#search-and-filters) on the requirements (specification) or the tests (test plan), for example `status:approved` or `folder:Checkout`.
+   - **Include rejected and obsolete requirements** (and, for a test plan, deprecated tests). They are left out by default.
+   - **Group the requirements by** folder, category (one dimension) or type (specification only; a test plan is always grouped by folder).
+   - The **fields** shown for each requirement or test, and the **appendices**. *Latest results* is off by default: a specification describes, it does not report.
+3. Select **Create**. A progress bar shows while the document is being written; a project with thousands of requirements takes a few seconds.
+
+The new document appears at the top of the archive, highlighted, with **Open** (PDF) and **Download**. It is a *document* with the tags `generated`, `requirements-specification` or `test-plan` and the version (for example `v2.0`); the earlier versions of the same kind make up its revision history. Obligation keywords in requirement texts (MUST, SHALL, SKA …) are printed in bold.
+
+Creating documents needs the right to export, to read requirements (and tests for a test plan) and to upload documents (**Tester** or **Manager**).
 
 ## Preview and download
 

@@ -96,6 +96,10 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 
 Rapporter tas fram på det språk du just nu använder i Qtestframe (**Användarmeny → Språk**, se [Språk](accessibility-and-languages.md#språk)). Med det svenska gränssnittet är rapportens rubrik, avsnitt, kolumnrubriker, nyckeltal och värden som status, utfall, täckning och kravnivå (till exempel *Godkänt*, *Underkänd*, *MUST (SKA)*) på svenska, med samma ord som i appen. Ditt eget innehåll, som titlar, namn, beskrivningar, taggar och anteckningar, översätts aldrig. Det gäller nedladdningar, rapporter som sparas i arkivet, egna rapporter, flera rapporter på en gång och rapporter som skickas med e-post.
 
+### Dokument
+
+Under standardrapporterna finns **Dokument** med två kompletta dokument: en **kravspecifikation** och en **testplan** med testspecifikation. **Skapa …** öppnar verktyget i [dokumentarkivet](documents.md#skapa-en-kravspecifikation-eller-en-testplan), där dokumentet sparas.
+
 ## Egna rapporter
 
 Under **Anpassad rapport** utformar du en rapport själv:
@@ -177,7 +181,8 @@ Filen innehåller projektets data i klartext. Förvara den lika omsorgsfullt som
 | Arbeta med data i Excel eller ett annat verktyg | **Export**, XLSX eller CSV |
 | Lägga in data eller en rapport i en wiki, en pull request eller ett Git-förråd | **Export** eller **Rapporter**, Markdown |
 | Lämna över krav till ett kravverktyg (DOORS, Polarion …) eller en annan Qtestframe | **Export**, ReqIF |
-| Ett specifikationsdokument för granskning eller underskrift | **Export**, DOCX, delarna krav och kriterier |
+| Ett specifikationsdokument för granskning eller underskrift | **Dokument → Skapa dokument → Kravspecifikation** (PDF eller Word, från en baslinje om den ska signeras); för en enkel tabell **Export**, DOCX |
+| En testplan med testspecifikation | **Dokument → Skapa dokument → Testplan** |
 | En statusrapport till ett styrgruppsmöte | **Rapporter → Projektstatus**, PDF |
 | Underlag för en revision eller en release | **Rapporter → Kravtäckning** eller **Sammanfattning av körning**, sparad i arkivet, tillsammans med en [baslinje](baselines.md) |
 | En återkommande lista med egna kolumner | En sparad **anpassad rapport** |

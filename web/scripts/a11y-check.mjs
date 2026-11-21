@@ -198,7 +198,10 @@ async function discover(request) {
   const hasReleases = items(await api(request, 'GET', `/projects/${pid}/releases`)).length > 0
   const hasBaselines = items(await api(request, 'GET', `/projects/${pid}/baselines`)).length > 0
   const firstBaseline = hasBaselines ? items(await api(request, 'GET', `/projects/${pid}/baselines`))[0] : null
-  const hasDocuments = items(await api(request, 'GET', `/projects/${pid}/documents`)).length > 0
+  const documents = items(await api(request, 'GET', `/projects/${pid}/documents`))
+  const hasDocuments = documents.length > 0
+  // a generated document (requirements specification, test plan), shown highlighted with its actions
+  const generatedDoc = documents.find((d) => (d.tags ?? []).includes('generated'))
   const hasWebhooks = items(await api(request, 'GET', `/projects/${pid}/webhooks`).catch(() => [])).length > 0
   const hasRequested = items(await api(request, 'GET', '/reviews?requested_by=me').catch(() => [])).length > 0
   const hasNotifications = items(await api(request, 'GET', '/notifications').catch(() => [])).length > 0
@@ -328,6 +331,11 @@ async function discover(request) {
     // ReqIF selected: the aspects are disabled and a hint is shown
     { name: 'export-reqif', path: `${p}/export`, open: '.format-grid button:has(.pi-sitemap)', wait: 'fieldset.plain-fieldset[disabled]' },
     { name: 'documents', path: `${p}/documents` },
+    // document generators: the "Create document" menu, the dialog for both kinds, a new document highlighted
+    { name: 'documents-generate-menu', path: `${p}/documents`, open: 'button.doc-generate', wait: '#doc-generate-menu' },
+    { name: 'documents-generate-spec', path: `${p}/documents?create=requirements_spec`, wait: '.generate-doc-dialog form' },
+    { name: 'documents-generate-plan', path: `${p}/documents?create=test_plan`, wait: '.generate-doc-dialog form' },
+    generatedDoc && { name: 'documents-generated', path: `${p}/documents?file=${generatedDoc.id}`, wait: '.created-banner' },
     { name: 'reports', path: `${p}/reports` },
     emailOn && { name: 'reports-email', path: `${p}/reports`, open: '.report-card button:has(.pi-envelope)', wait: '.report-mail-dialog' },
     emailOn && { name: 'reports-subscriptions', path: `${p}/reports`, wait: 'section.subscriptions' },
@@ -441,6 +449,29 @@ async function keyboardChecks(browser, state, routes) {
       await page.waitForTimeout(500)
       const back = await active(page)
       check('closing the editor drawer returns focus to its opener', back?.cls.includes('item-title'), JSON.stringify(back))
+    }
+    // document generator: menu and dialog with the keyboard, focus stays inside, Escape returns focus
+    if (route('documents-generate-menu')) {
+      await page.goto(BASE + route('documents-generate-menu').path)
+      await settle(page)
+      await page.locator('button.doc-generate').focus()
+      await page.keyboard.press('Enter')
+      await page.waitForSelector('#doc-generate-menu', { timeout: 5000 })
+      await page.keyboard.press('ArrowDown')
+      await page.keyboard.press('Enter')
+      await page.waitForSelector('.generate-doc-dialog form', { timeout: 5000 })
+      await page.waitForTimeout(400)
+      check('the document generator opens from its menu with the keyboard', await page.evaluate(() => !!document.activeElement?.closest('.generate-doc-dialog')))
+      let inside = true
+      for (let i = 0; i < 45; i++) {
+        await page.keyboard.press('Tab')
+        if (!(await page.evaluate(() => !!document.activeElement?.closest('.generate-doc-dialog')))) inside = false
+      }
+      check('the document generator dialog traps focus', inside)
+      await page.locator('.generate-doc-dialog input[type="text"]').first().focus()
+      await page.keyboard.press('Escape')
+      await page.waitForTimeout(500)
+      check('Escape closes the document generator', !(await page.locator('.generate-doc-dialog').isVisible()))
     }
     // spreadsheet: the grid keeps focus, arrows move the active cell, F2 edits, Escape returns to the grid
     if (route('requirements-sheet')) {
