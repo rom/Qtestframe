@@ -1,0 +1,1121 @@
+area: telecom
+prefix: TEL
+group: domain
+name: {en: Telecommunications, sv: Telekommunikation}
+description:
+  en: Network management (fault, configuration, accounting, performance and security), alarm correlation, SLAs, provisioning through TM Forum Open APIs, number portability, lawful interception, emergency calls, data retention, 5G and signalling security, network slicing, NFV, outage reporting, geo-redundancy, time synchronisation and radio equipment.
+  sv: Nätövervakning och nätförvaltning (fel, konfiguration, debitering, prestanda och säkerhet), larmkorrelering, SLA, aktivering via TM Forums Open API, nummerportabilitet, laglig avlyssning, nödsamtal, datalagring, säkerhet i 5G och signalering, nätskivor, NFV, rapportering av avbrott, georedundans, tidssynkronisering och radioutrustning.
+
+requirements:
+  - id: TEL-01
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [fault-management, alarms, fcaps]
+    refs: ["ITU-T M.3400 fault management", "ITU-T X.733", "TM Forum TMF642 Alarm Management API"]
+    tests: [TEL-T01]
+    en:
+      title: Network alarms shown within 10 seconds
+      description: The network management system MUST show a new alarm from a network element in the alarm list within 10 seconds after the element sends it, with severity, probable cause, affected resource and event time.
+      rationale: Operators in the network operations centre start fault handling from the alarm list, and a delayed or incomplete alarm prolongs the outage for every affected subscriber.
+      criteria:
+        - method: test
+          text: An alarm raised on a simulated network element appears in the alarm list within 10 seconds with the four listed fields, and its clearing changes the alarm to cleared within 10 seconds.
+          threshold: ≤ 10 s
+    sv:
+      title: Nätlarm visas inom 10 sekunder
+      description: Systemet för nätövervakning SKA visa ett nytt larm från ett nätelement i larmlistan inom 10 sekunder efter att elementet skickat det, med allvarlighetsgrad, trolig orsak, berörd resurs och händelsetid.
+      rationale: Operatörerna i driftcentralen börjar felhanteringen i larmlistan, och ett försenat eller ofullständigt larm förlänger avbrottet för varje berörd abonnent.
+      criteria:
+        - method: test
+          text: Ett larm från ett simulerat nätelement visas i larmlistan inom 10 sekunder med de fyra uppräknade fälten, och när larmet upphör markeras det som avklarat inom 10 sekunder.
+          threshold: ≤ 10 s
+
+  - id: TEL-02
+    type: functional
+    obligation: should
+    priority: high
+    tags: [alarm-correlation, root-cause, fault-management]
+    refs: ["ITU-T M.3400 fault management", "TM Forum TMF642 Alarm Management API"]
+    tests: [TEL-T02]
+    en:
+      title: Alarms correlated to a root cause
+      description: The network management system SHOULD group the alarms caused by one failed link or node under one root-cause alarm within 30 seconds, using the network topology, and show the number of child alarms.
+      rationale: A single fibre cut can raise hundreds of alarms, and operators who see only the root cause restore service sooner.
+      criteria:
+        - method: test
+          text: Taking down a link that carries 3 downstream nodes produces one root-cause alarm with the downstream alarms listed as its children within 30 seconds.
+          threshold: ≤ 30 s
+    sv:
+      title: Larm korreleras till en grundorsak
+      description: Systemet för nätövervakning BÖR inom 30 sekunder samla larmen från en trasig länk eller nod under ett grundorsakslarm, utifrån nättopologin, och visa antalet underliggande larm.
+      rationale: Ett enda fiberbrott kan ge hundratals larm, och operatörer som bara ser grundorsaken återställer tjänsten tidigare.
+      criteria:
+        - method: test
+          text: När en länk som försörjer 3 noder längre ut i nätet tas ner visas inom 30 sekunder ett grundorsakslarm med larmen från de 3 noderna som underliggande larm.
+          threshold: ≤ 30 s
+
+  - id: TEL-03
+    type: functional
+    obligation: must
+    priority: high
+    tags: [configuration-management, rollback, fcaps]
+    refs: ["ITU-T M.3400 configuration management", "ISO/IEC 27001:2022 A.8.9"]
+    tests: [TEL-T03]
+    en:
+      title: Versioned network element configuration with rollback
+      description: The system MUST store each configuration change to a network element as a new version with the user, time and change ticket, and MUST restore a chosen earlier version on the element within 5 minutes on request.
+      rationale: Configuration errors are a leading cause of network outages, and a known-good version that can be restored shortens them.
+      criteria:
+        - method: test
+          text: After 2 changes to a test router, the history shows 3 versions with user, time and ticket, and restoring the first version brings the router's running configuration back to it within 5 minutes.
+          threshold: ≤ 5 min
+    sv:
+      title: Versionshanterad konfiguration av nätelement med återställning
+      description: Systemet SKA spara varje konfigurationsändring i ett nätelement som en ny version med användare, tid och ändringsärende, och på begäran återställa en vald tidigare version i elementet inom 5 minuter.
+      rationale: Konfigurationsfel är en av de vanligaste orsakerna till nätavbrott, och en känd fungerande version som går att återställa kortar avbrotten.
+      criteria:
+        - method: test
+          text: Efter 2 ändringar i en testrouter visar historiken 3 versioner med användare, tid och ärende, och när den första versionen återställs har routerns aktiva konfiguration återgått till den inom 5 minuter.
+          threshold: ≤ 5 min
+
+  - id: TEL-04
+    type: performance
+    obligation: should
+    priority: medium
+    tags: [performance-management, kpi, counters, fcaps]
+    refs: ["ITU-T M.3400 performance management", "3GPP TS 32.401", "3GPP TS 28.552"]
+    tests: [TEL-T04]
+    en:
+      title: Performance counters every 15 minutes kept for 13 months
+      description: The system SHOULD collect the performance counters of each network element in periods of 15 minutes and keep them for 13 months, so that a year can be compared with the same month the year before.
+      rationale: Capacity planning and trend analysis need fine-grained counters over more than one full year.
+      criteria:
+        - method: test
+          text: A network element has 96 counter periods for a full day, and counters from 13 months back can be retrieved.
+          threshold: 15 min periods, 13 months
+    sv:
+      title: Prestandaräknare var 15:e minut sparas i 13 månader
+      description: Systemet BÖR samla in prestandaräknarna för varje nätelement i perioder om 15 minuter och spara dem i 13 månader, så att ett år kan jämföras med samma månad året innan.
+      rationale: Kapacitetsplanering och trendanalys behöver detaljerade räknare för mer än ett helt år.
+      criteria:
+        - method: test
+          text: Ett nätelement har 96 räknarperioder för ett helt dygn, och räknare från 13 månader bakåt går att hämta.
+          threshold: perioder om 15 min, 13 månader
+
+  - id: TEL-05
+    type: functional
+    obligation: must
+    priority: critical
+    tags: [accounting, usage-records, cdr, fcaps]
+    refs: ["ITU-T M.3400 accounting management", "3GPP TS 32.240", "3GPP TS 32.298"]
+    tests: [TEL-T05]
+    en:
+      title: No usage record lost between network and billing
+      description: The mediation function MUST account for each usage record received from the network as billed, rejected with a reason or held for correction, and MUST report a daily reconciliation where the three counts add up to the number received.
+      rationale: Lost usage records are lost revenue, and records billed twice harm subscribers and the operator's reputation.
+      criteria:
+        - method: test
+          text: Of 10 000 test usage records with 25 malformed and 10 duplicates, the reconciliation shows 9 965 billed, 35 rejected or held with reasons, and a total of 10 000.
+    sv:
+      title: Ingen användningspost försvinner mellan nät och debitering
+      description: Medieringsfunktionen SKA redovisa varje användningspost som tagits emot från nätet som debiterad, avvisad med orsak eller vilande för rättning, och varje dygn rapportera en avstämning där de tre antalen tillsammans är lika med antalet mottagna.
+      rationale: Förlorade användningsposter är förlorade intäkter, och poster som debiteras två gånger skadar abonnenterna och operatörens anseende.
+      criteria:
+        - method: test
+          text: Av 10 000 användningsposter för test, varav 25 felformaterade och 10 dubbletter, visar avstämningen 9 965 debiterade, 35 avvisade eller vilande med orsak och totalt 10 000.
+
+  - id: TEL-06
+    type: business
+    obligation: must
+    priority: high
+    tags: [service-assurance, sla, notification]
+    refs: ["TM Forum TMF623 SLA Management API", "ITU-T E.800"]
+    tests: [TEL-T06]
+    en:
+      title: SLA breach detected and notified within 5 minutes
+      description: The service assurance function MUST calculate the availability of each customer service against its SLA target and MUST notify the account manager and the customer contact within 5 minutes after the measured value falls below the target.
+      rationale: Enterprise contracts carry penalties per breach, and an early warning lets the operator act and inform the customer before the customer notices.
+      criteria:
+        - method: test
+          text: For a service with a 99.95 % monthly target, an outage that brings the month below the target produces both notifications within 5 minutes with the measured value and the target.
+          threshold: ≤ 5 min
+    sv:
+      title: Brott mot SLA upptäcks och meddelas inom 5 minuter
+      description: Funktionen för tjänsteövervakning SKA beräkna tillgängligheten för varje kundtjänst mot dess mål i SLA och meddela kundansvarig och kundens kontaktperson inom 5 minuter efter att det uppmätta värdet hamnat under målet.
+      rationale: Företagsavtal har vite för varje brott, och en tidig varning låter operatören agera och informera kunden innan kunden märker något.
+      criteria:
+        - method: test
+          text: För en tjänst med målet 99,95 % per månad ger ett avbrott som tar månaden under målet båda meddelandena inom 5 minuter med uppmätt värde och mål.
+          threshold: ≤ 5 min
+
+  - id: TEL-07
+    type: interface
+    obligation: must
+    priority: high
+    tags: [provisioning, activation, open-api, tm-forum]
+    refs: ["TM Forum TMF641 Service Ordering API", "TM Forum TMF638 Service Inventory API", "TM Forum TMF622 Product Ordering API"]
+    tests: [TEL-T07]
+    en:
+      title: Service ordering through TM Forum Open APIs
+      description: The provisioning system MUST accept service orders through the TM Forum TMF641 Service Ordering API and MUST record each activated service in the service inventory exposed through the TMF638 Service Inventory API.
+      rationale: Standard northbound APIs let business systems order and check services without custom integration for each vendor.
+      criteria:
+        - method: test
+          text: A TMF641 service order for a broadband service reaches the state completed, and a TMF638 query returns the service as active with the ordered characteristics.
+        - method: inspection
+          text: The published API description matches the TMF641 and TMF638 resource models for the fields the system supports.
+    sv:
+      title: Beställning av tjänster via TM Forums Open API
+      description: Aktiveringssystemet SKA ta emot tjänstebeställningar via TM Forums TMF641 Service Ordering API och registrera varje aktiverad tjänst i tjänsteregistret som exponeras via TMF638 Service Inventory API.
+      rationale: Standardiserade norrgående gränssnitt låter affärssystem beställa och kontrollera tjänster utan en särskild integration för varje leverantör.
+      criteria:
+        - method: test
+          text: En TMF641-beställning av en bredbandstjänst når tillståndet completed, och en TMF638-fråga returnerar tjänsten som aktiv med de beställda egenskaperna.
+        - method: inspection
+          text: Den publicerade API-beskrivningen stämmer med resursmodellerna i TMF641 och TMF638 för de fält som systemet stöder.
+
+  - id: TEL-08
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [number-portability, porting]
+    refs: ["Directive (EU) 2018/1972 Art. 106"]
+    tests: [TEL-T08]
+    en:
+      title: Number ported within one working day
+      description: The system MUST complete the porting of a subscriber's number to the new provider within one working day after the agreed porting date starts, and MUST keep the number reachable during the porting with an interruption of at most 4 hours.
+      rationale: The European Electronic Communications Code gives subscribers the right to keep their number with short interruption, and delays block competition.
+      criteria:
+        - method: test
+          text: A porting request with an agreed date is executed on that date, calls to the number reach the new provider the same working day, and the measured interruption is 4 hours or less.
+          threshold: ≤ 1 working day, ≤ 4 h interruption
+    sv:
+      title: Nummer flyttas inom en arbetsdag
+      description: Systemet SKA slutföra flytten av en abonnents nummer till den nya operatören inom en arbetsdag från början av det överenskomna flyttdatumet och hålla numret nåbart under flytten med ett avbrott på högst 4 timmar.
+      rationale: Europeiska kodexen för elektronisk kommunikation ger abonnenter rätt att behålla sitt nummer med kort avbrott, och förseningar hindrar konkurrensen.
+      criteria:
+        - method: test
+          text: En begäran om nummerflytt med överenskommet datum genomförs det datumet, samtal till numret når den nya operatören samma arbetsdag och det uppmätta avbrottet är högst 4 timmar.
+          threshold: ≤ 1 arbetsdag, ≤ 4 h avbrott
+
+  - id: TEL-09
+    type: security
+    obligation: must
+    priority: critical
+    tags: [lawful-interception, handover-interface, x1]
+    refs: ["ETSI TS 103 221-1", "ETSI TS 103 221-2", "ETSI TS 102 232-1", "3GPP TS 33.127"]
+    tests: [TEL-T09]
+    en:
+      title: Lawful interception only through the standardised interface
+      description: The network MUST activate, change and deactivate interception of a target only through the dedicated X1 interface of ETSI TS 103 221-1 and MUST deliver the intercepted data only through the X2 and X3 and handover interfaces of ETSI TS 103 221-2 and ETSI TS 102 232-1.
+      rationale: An interception path outside the standardised interface escapes the controls of the authorised mediation function and can be abused for unlawful surveillance.
+      criteria:
+        - method: test
+          text: A warrant activated over X1 produces intercept data only on the configured handover interface, and attempts to create a task through the element's management interface, command line or another API are rejected and logged.
+        - method: inspection
+          text: The element's documentation and configuration show no other function that copies a target's traffic or events.
+    sv:
+      title: Laglig avlyssning endast via det standardiserade gränssnittet
+      description: Nätet SKA aktivera, ändra och avsluta avlyssning av ett mål endast via det särskilda X1-gränssnittet i ETSI TS 103 221-1 och lämna ut avlyssnade uppgifter endast via X2, X3 och överlämningsgränssnitten i ETSI TS 103 221-2 och ETSI TS 102 232-1.
+      rationale: En avlyssningsväg utanför det standardiserade gränssnittet undgår kontrollerna i den behöriga medieringsfunktionen och kan missbrukas för olaglig övervakning.
+      criteria:
+        - method: test
+          text: Ett beslut som aktiveras via X1 ger avlyssnade uppgifter endast på det konfigurerade överlämningsgränssnittet, och försök att skapa ett uppdrag via elementets förvaltningsgränssnitt, kommandorad eller ett annat API avvisas och loggas.
+        - method: inspection
+          text: Elementets dokumentation och konfiguration visar ingen annan funktion som kopierar ett måls trafik eller händelser.
+
+  - id: TEL-10
+    type: security
+    obligation: must
+    priority: critical
+    tags: [lawful-interception, access-control, audit]
+    refs: ["ETSI TS 103 221-1", "ETSI TS 102 232-1", "3GPP TS 33.126", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [TEL-T09, TEL-T10]
+    en:
+      title: Restricted and audited access to lawful interception
+      description: The lawful interception function MUST be accessible only to named administrators with multi-factor authentication and MUST record each of their actions in a separate tamper-evident log that other administrators of the network cannot read.
+      rationale: Knowledge of who is intercepted is highly sensitive, and only a closed and audited group can be held accountable for its use.
+      criteria:
+        - method: test
+          text: A network administrator without the interception role cannot see targets or the interception log, and every task change by an authorised administrator appears in the separate log with user, time and warrant reference.
+        - method: inspection
+          text: Changing or deleting an entry in the interception log is detected by its integrity check.
+    sv:
+      title: Begränsad och granskad åtkomst till laglig avlyssning
+      description: Funktionen för laglig avlyssning SKA bara vara åtkomlig för namngivna administratörer med flerfaktorsautentisering och registrera varje åtgärd de gör i en separat manipuleringsskyddad logg som nätets övriga administratörer inte kan läsa.
+      rationale: Uppgiften om vem som avlyssnas är mycket känslig, och bara en sluten grupp med granskade åtgärder kan hållas ansvarig för hur den används.
+      criteria:
+        - method: test
+          text: En nätadministratör utan avlyssningsrollen ser inga mål och inte avlyssningsloggen, och varje ändring av ett uppdrag som en behörig administratör gör finns i den separata loggen med användare, tid och beslutsreferens.
+        - method: inspection
+          text: En ändring eller borttagning av en post i avlyssningsloggen upptäcks av dess integritetskontroll.
+
+  - id: TEL-11
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [emergency-calls, 112, caller-location]
+    refs: ["Directive (EU) 2018/1972 Art. 109", "Commission Delegated Regulation (EU) 2023/444", "3GPP TS 23.167", "ETSI TS 103 625"]
+    tests: [TEL-T11]
+    en:
+      title: Calls to 112 connected with caller location
+      description: The network MUST connect a call to 112 to the emergency call centre even when the subscription is barred, has no credit or has no SIM, and MUST send the caller location to the emergency call centre within 30 seconds after the call is answered.
+      rationale: Emergency calls save lives, and the location lets the emergency services send help when the caller cannot say where they are.
+      criteria:
+        - method: test
+          text: Test calls to 112 from a barred subscription, a prepaid subscription with zero balance and a phone without SIM all reach the test emergency call centre, and each call's location arrives there within 30 seconds.
+          threshold: ≤ 30 s
+    sv:
+      title: Samtal till 112 kopplas fram med uppringarens position
+      description: Nätet SKA koppla fram ett samtal till 112 till larmcentralen även när abonnemanget är spärrat, saknar saldo eller saknar SIM-kort, och skicka uppringarens position till larmcentralen inom 30 sekunder efter att samtalet besvarats.
+      rationale: Nödsamtal räddar liv, och positionen gör att räddningstjänsten kan skicka hjälp när den som ringer inte kan säga var hen är.
+      criteria:
+        - method: test
+          text: Testsamtal till 112 från ett spärrat abonnemang, ett kontantkort utan saldo och en telefon utan SIM-kort når alla testlarmcentralen, och positionen för varje samtal kommer fram inom 30 sekunder.
+          threshold: ≤ 30 s
+
+  - id: TEL-12
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [data-retention, traffic-data, eprivacy, gdpr]
+    refs: ["Directive 2002/58/EC Art. 6", "Directive 2002/58/EC Art. 15", "GDPR Art. 5(1)(e)", "ETSI TS 102 657"]
+    tests: [TEL-T12]
+    en:
+      title: Traffic data erased after the retention period
+      description: The system MUST erase or anonymise each subscriber's traffic and location data within 24 hours after the end of the retention period that the administrator has set per data category, and MUST hand over retained data to authorities only through the interface of ETSI TS 102 657.
+      rationale: Traffic data reveal private life, so they are kept only as long as billing or national law demands and disclosed only through a controlled path.
+      criteria:
+        - method: test
+          text: With a retention period of 6 months for call records, a record that is 6 months and 1 day old is gone or anonymised, and one that is 5 months old is still there.
+          threshold: ≤ 24 h after the period
+        - method: inspection
+          text: The only export of retained data to authorities is the ETSI TS 102 657 handover interface, and each request is logged.
+    sv:
+      title: Trafikuppgifter raderas efter lagringstiden
+      description: Systemet SKA radera eller anonymisera varje abonnents trafik- och lokaliseringsuppgifter inom 24 timmar efter slutet av den lagringstid som administratören har angett för uppgiftskategorin, och lämna ut lagrade uppgifter till myndigheter endast via gränssnittet i ETSI TS 102 657.
+      rationale: Trafikuppgifter avslöjar privatlivet, så de sparas bara så länge som debiteringen eller nationell lag kräver och lämnas bara ut på en kontrollerad väg.
+      criteria:
+        - method: test
+          text: Med lagringstiden 6 månader för samtalsposter är en post som är 6 månader och 1 dag gammal borta eller anonymiserad, och en som är 5 månader gammal finns kvar.
+          threshold: ≤ 24 h efter lagringstiden
+        - method: inspection
+          text: Den enda exporten av lagrade uppgifter till myndigheter är överlämningsgränssnittet i ETSI TS 102 657, och varje begäran loggas.
+
+  - id: TEL-13
+    type: security
+    obligation: must
+    priority: critical
+    tags: [5g, service-based-architecture, mutual-tls, oauth]
+    refs: ["3GPP TS 33.501 §13.1", "3GPP TS 33.501 §13.4", "3GPP TS 33.501 §6.12"]
+    tests: [TEL-T13]
+    en:
+      title: Authenticated and authorised 5G core service calls
+      description: Each network function in the 5G core MUST reject a service request from another network function that does not use mutual TLS with a certificate from the operator's trusted authority or does not carry a valid OAuth 2.0 access token for the requested service.
+      rationale: The service-based core is an IP network of APIs, and an unauthenticated call lets an attacker read subscriber data or change sessions.
+      criteria:
+        - method: test
+          text: Requests to the UDM without a client certificate, with a self-signed certificate, without a token and with a token for another service are rejected, and a correct request is answered.
+    sv:
+      title: Autentiserade och behöriga tjänsteanrop i 5G-kärnan
+      description: Varje nätfunktion i 5G-kärnan SKA avvisa en tjänstebegäran från en annan nätfunktion som inte använder ömsesidig TLS med ett certifikat från operatörens betrodda utfärdare eller inte har en giltig åtkomsttoken enligt OAuth 2.0 för den begärda tjänsten.
+      rationale: Den tjänstebaserade kärnan är ett IP-nät av API:er, och ett oautentiserat anrop låter en angripare läsa abonnentuppgifter eller ändra sessioner.
+      criteria:
+        - method: test
+          text: Begäranden till UDM utan klientcertifikat, med ett självsignerat certifikat, utan token och med en token för en annan tjänst avvisas, och en korrekt begäran besvaras.
+
+  - id: TEL-14
+    type: security
+    obligation: must
+    priority: critical
+    tags: [signalling, ss7, diameter, firewall]
+    refs: ["GSMA FS.11", "GSMA FS.19"]
+    tests: [TEL-T14]
+    en:
+      title: Signalling firewall blocks unauthorised interconnect messages
+      description: The signalling firewall MUST block SS7 and Diameter messages from interconnect partners that are not allowed on the interconnect, such as location or subscriber data requests for the operator's own subscribers, and MUST log each blocked message with source and message type.
+      rationale: Unfiltered SS7 and Diameter interconnects let third parties track subscribers' location, intercept SMS and commit fraud.
+      criteria:
+        - method: test
+          text: Test messages of each category in GSMA FS.11 and FS.19 sent from a simulated foreign network are blocked or passed according to the category, and each blocked message is logged.
+    sv:
+      title: Signaleringsbrandvägg stoppar otillåtna meddelanden från samtrafik
+      description: Signaleringsbrandväggen SKA stoppa SS7- och Diameter-meddelanden från samtrafikpartner som inte är tillåtna i samtrafiken, till exempel begäranden om position eller abonnentuppgifter för operatörens egna abonnenter, och logga varje stoppat meddelande med källa och meddelandetyp.
+      rationale: Ofiltrerad SS7- och Diameter-samtrafik låter utomstående spåra abonnenters position, avlyssna sms och begå bedrägerier.
+      criteria:
+        - method: test
+          text: Testmeddelanden i varje kategori i GSMA FS.11 och FS.19 som skickas från ett simulerat utländskt nät stoppas eller släpps igenom enligt kategorin, och varje stoppat meddelande loggas.
+
+  - id: TEL-15
+    type: security
+    obligation: must
+    priority: high
+    tags: [network-slicing, isolation, 5g]
+    refs: ["3GPP TS 23.501 §5.15", "3GPP TS 33.501 §16", "GSMA NG.116"]
+    tests: [TEL-T15]
+    en:
+      title: Network slices isolated from each other
+      description: The network MUST prevent user-plane traffic and management access from one network slice from reaching the network functions or data of another slice, and MUST keep a slice's agreed throughput when another slice is overloaded.
+      rationale: Slices sold to different customers, such as a public safety slice and a consumer slice, carry promises of isolation and capacity.
+      criteria:
+        - method: test
+          text: A device in slice A cannot reach any address in slice B, a tenant administrator of slice A cannot see slice B, and slice A keeps 95 % of its agreed throughput while slice B is loaded to 150 % of its capacity.
+          threshold: ≥ 95 % throughput
+    sv:
+      title: Nätskivor isoleras från varandra
+      description: Nätet SKA hindra trafik i användarplanet och förvaltningsåtkomst från en nätskiva att nå nätfunktioner eller uppgifter i en annan nätskiva, och behålla en nätskivas avtalade kapacitet när en annan nätskiva är överbelastad.
+      rationale: Nätskivor som säljs till olika kunder, till exempel en skiva för blåljusverksamhet och en för konsumenter, har löften om isolering och kapacitet.
+      criteria:
+        - method: test
+          text: En enhet i nätskiva A når ingen adress i nätskiva B, en administratör för nätskiva A ser inte nätskiva B, och nätskiva A behåller 95 % av sin avtalade kapacitet medan nätskiva B belastas till 150 % av sin kapacitet.
+          threshold: ≥ 95 % kapacitet
+
+  - id: TEL-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [nfv, cloud-native, package-signing]
+    refs: ["ETSI GS NFV-SEC 021", "ETSI GS NFV-SOL 004", "ETSI GS NFV-SEC 001"]
+    tests: [TEL-T16]
+    en:
+      title: Only signed network function packages instantiated
+      description: The NFV orchestrator MUST verify the signature of a virtualised or containerised network function package and its images against the vendor certificates in its trust store before instantiation, and MUST refuse a package whose signature is missing or invalid.
+      rationale: A tampered network function image gives an attacker a foothold inside the core network.
+      criteria:
+        - method: test
+          text: A correctly signed package is instantiated, and the same package with one changed byte in an image or without a signature is refused with a logged reason.
+    sv:
+      title: Bara signerade paket för nätfunktioner startas
+      description: NFV-orkestreraren SKA verifiera signaturen för ett paket med en virtualiserad eller containerbaserad nätfunktion och dess avbilder mot leverantörscertifikaten i sitt förtroendelager innan funktionen startas, och vägra ett paket vars signatur saknas eller är ogiltig.
+      rationale: En manipulerad avbild av en nätfunktion ger en angripare fotfäste inne i kärnnätet.
+      criteria:
+        - method: test
+          text: Ett korrekt signerat paket startas, och samma paket med en ändrad byte i en avbild eller utan signatur vägras med en loggad orsak.
+
+  - id: TEL-17
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [outage-reporting, incident, regulator]
+    refs: ["Directive (EU) 2018/1972 Art. 40", "Directive (EU) 2022/2555 Art. 23", "Lag (2022:482) om elektronisk kommunikation"]
+    tests: [TEL-T17]
+    en:
+      title: Outage data for the report to the regulator
+      description: The system MUST produce, within 1 hour after an outage is registered, a report draft with start time, services affected, geographic area, number of affected subscribers and the cause, for the operator's notification to the national regulator.
+      rationale: Providers of electronic communications report significant security incidents and outages to the regulator within short deadlines, and manual collection of the figures delays the report.
+      criteria:
+        - method: test
+          text: A simulated outage of 3 base stations produces a draft within 1 hour that lists the 3 sites, the services, the area and a subscriber count that matches the test data.
+          threshold: ≤ 1 h
+    sv:
+      title: Uppgifter om avbrott för rapporten till tillsynsmyndigheten
+      description: Systemet SKA inom 1 timme efter att ett avbrott registrerats ta fram ett utkast till rapport med starttid, berörda tjänster, geografiskt område, antal berörda abonnenter och orsak, för operatörens anmälan till tillsynsmyndigheten.
+      rationale: Den som tillhandahåller elektronisk kommunikation rapporterar betydelsefulla säkerhetsincidenter och avbrott till tillsynsmyndigheten inom korta tidsfrister, och manuell insamling av siffrorna fördröjer rapporten.
+      criteria:
+        - method: test
+          text: Ett simulerat avbrott i 3 basstationer ger inom 1 timme ett utkast som anger de 3 platserna, tjänsterna, området och ett antal abonnenter som stämmer med testdata.
+          threshold: ≤ 1 h
+
+  - id: TEL-18
+    type: non_functional
+    obligation: must
+    priority: critical
+    tags: [redundancy, geo-redundancy, failover]
+    refs: ["Directive (EU) 2018/1972 Art. 40", "ISO/IEC 27001:2022 A.8.14", "ISO 22301:2019 §8.4"]
+    tests: [TEL-T18]
+    en:
+      title: Core service continues after the loss of one site
+      description: The core network functions MUST run in at least 2 geographically separate sites at least 50 km apart, and MUST continue to set up calls and data sessions within 60 seconds after one site is lost.
+      rationale: Fire, flooding or a power failure at a single site must not take down the national network.
+      criteria:
+        - method: test
+          text: When site 1 is isolated during a load test, new calls and sessions succeed through site 2 within 60 seconds and registered subscribers do not have to re-register.
+          threshold: ≤ 60 s
+        - method: inspection
+          text: The site addresses show a distance of at least 50 km.
+    sv:
+      title: Kärntjänsten fortsätter när en plats faller bort
+      description: Kärnnätets funktioner SKA köras på minst 2 geografiskt åtskilda platser med minst 50 km avstånd, och fortsätta att koppla upp samtal och datasessioner inom 60 sekunder efter att en plats har fallit bort.
+      rationale: Brand, översvämning eller strömavbrott på en enskild plats ska inte slå ut det nationella nätet.
+      criteria:
+        - method: test
+          text: När plats 1 isoleras under ett lasttest lyckas nya samtal och sessioner via plats 2 inom 60 sekunder, och registrerade abonnenter behöver inte registrera sig på nytt.
+          threshold: ≤ 60 s
+        - method: inspection
+          text: Platsernas adresser visar ett avstånd på minst 50 km.
+
+  - id: TEL-19
+    type: non_functional
+    obligation: must
+    priority: high
+    tags: [time-synchronisation, ptp, ntp]
+    refs: ["ITU-T G.8271", "ITU-T G.8275.1", "RFC 5905"]
+    tests: [TEL-T19]
+    en:
+      title: Network time within the synchronisation limit
+      description: The system MUST keep the time of each radio base station within 1.5 microseconds of UTC through the telecom PTP profile, and MUST raise an alarm within 60 seconds when a station exceeds the limit or loses its time source.
+      rationale: Time-division radio fails with interference when stations drift apart, and logs from different elements can only be compared with a common time.
+      criteria:
+        - method: test
+          text: Disconnecting the time source of a test base station or adding an offset of 2 microseconds raises an alarm within 60 seconds, and a station within the limit raises none.
+          threshold: ≤ 1.5 µs, alarm ≤ 60 s
+    sv:
+      title: Nättiden håller sig inom gränsen för synkronisering
+      description: Systemet SKA hålla tiden i varje radiobasstation inom 1,5 mikrosekunder från UTC med telekomprofilen för PTP och larma inom 60 sekunder när en station överskrider gränsen eller förlorar sin tidskälla.
+      rationale: Tidsduplexad radio störs när stationerna glider isär, och loggar från olika element går bara att jämföra med en gemensam tid.
+      criteria:
+        - method: test
+          text: När tidskällan för en testbasstation kopplas bort eller en avvikelse på 2 mikrosekunder läggs till larmar systemet inom 60 sekunder, och en station inom gränsen ger inget larm.
+          threshold: ≤ 1,5 µs, larm ≤ 60 s
+
+  - id: TEL-20
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [radio-equipment, red, customer-premises-equipment]
+    refs: ["Directive 2014/53/EU Art. 3(3)(d)(e)(f)", "Commission Delegated Regulation (EU) 2022/30", "EN 18031-1"]
+    tests: [TEL-T20]
+    en:
+      title: Customer radio equipment meets the RED cybersecurity requirements
+      description: Each internet-connected radio device that the operator places on the market, such as a home router or a mobile broadband modem, MUST meet the requirements of Commission Delegated Regulation (EU) 2022/30 shown through the harmonised standard EN 18031-1, with a unique password per device and signed software updates.
+      rationale: Since August 2025 such devices cannot be placed on the EU market without these protections, and default passwords are a frequent cause of botnets.
+      criteria:
+        - method: inspection
+          text: The technical file of the device contains an EN 18031-1 assessment, 2 sampled devices have different initial passwords, and an unsigned firmware image is refused.
+    sv:
+      title: Radioutrustning hos kunden uppfyller cybersäkerhetskraven i RED
+      description: Varje internetansluten radioutrustning som operatören släpper ut på marknaden, till exempel en hemrouter eller ett modem för mobilt bredband, SKA uppfylla kraven i kommissionens delegerade förordning (EU) 2022/30, visat med den harmoniserade standarden EN 18031-1, med ett unikt lösenord per enhet och signerade programuppdateringar.
+      rationale: Sedan augusti 2025 får sådan utrustning inte släppas ut på EU-marknaden utan dessa skydd, och standardlösenord är en vanlig orsak till botnät.
+      criteria:
+        - method: inspection
+          text: Utrustningens tekniska dokumentation innehåller en bedömning enligt EN 18031-1, 2 enheter som tas som stickprov har olika initiala lösenord, och en osignerad firmwareavbild vägras.
+
+tests:
+  - id: TEL-T01
+    priority: critical
+    execution: automated
+    tags: [fault-management, alarms]
+    refs: ["ITU-T X.733"]
+    en:
+      title: Alarm raised and cleared on a simulated network element
+      description: A script raises and clears an alarm on a network element simulator and measures when the alarm list changes.
+      preconditions: A network element simulator connected to the network management system and a reading of the alarm list through its API.
+      expected: The alarm appears and is cleared within 10 seconds each, with all four fields filled in.
+      steps:
+        - action: Raise a link down alarm with severity major on the simulator and note the time.
+          expected: The alarm list shows the alarm within 10 seconds.
+          data: "linkDown, major, port 1/1/1"
+        - action: Read the alarm's fields.
+          expected: Severity, probable cause, affected resource and event time are filled in, and the event time equals the simulator's time.
+        - action: Clear the alarm on the simulator.
+          expected: The alarm is shown as cleared within 10 seconds.
+    sv:
+      title: Larm som uppstår och upphör i ett simulerat nätelement
+      description: Ett skript skapar och avslutar ett larm i en simulator för nätelement och mäter när larmlistan ändras.
+      preconditions: En simulator för nätelement ansluten till systemet för nätövervakning och läsning av larmlistan via dess API.
+      expected: Larmet visas och markeras som avklarat inom 10 sekunder vardera, med alla fyra fälten ifyllda.
+      steps:
+        - action: Skapa ett larm för nere länk med allvarlighetsgraden major i simulatorn och anteckna tiden.
+          expected: Larmlistan visar larmet inom 10 sekunder.
+          data: "linkDown, major, port 1/1/1"
+        - action: Läs larmets fält.
+          expected: Allvarlighetsgrad, trolig orsak, berörd resurs och händelsetid är ifyllda, och händelsetiden är lika med simulatorns tid.
+        - action: Avsluta larmet i simulatorn.
+          expected: Larmet visas som avklarat inom 10 sekunder.
+
+  - id: TEL-T02
+    priority: high
+    execution: manual
+    tags: [alarm-correlation, root-cause]
+    refs: []
+    en:
+      title: Root-cause alarm after a link failure
+      description: Takes down a link in a test network and checks how the resulting alarms are grouped.
+      preconditions: A test network where one aggregation link carries 3 access nodes, and the topology loaded into the network management system.
+      expected: One root-cause alarm holds the downstream alarms as children within 30 seconds.
+      steps:
+        - action: Take down the aggregation link and note the time.
+          expected: Alarms arrive from the link ends and the 3 access nodes.
+        - action: Look at the alarm list after 30 seconds.
+          expected: One root-cause alarm for the link is shown with 3 child alarms, and the child alarms are not shown as separate top-level alarms.
+        - action: Restore the link.
+          expected: The root-cause alarm and its children are cleared.
+    sv:
+      title: Grundorsakslarm efter ett länkfel
+      description: Tar ner en länk i ett testnät och kontrollerar hur de larm som uppstår grupperas.
+      preconditions: Ett testnät där en aggregeringslänk försörjer 3 accessnoder, och topologin inläst i systemet för nätövervakning.
+      expected: Ett grundorsakslarm har larmen längre ut i nätet som underliggande larm inom 30 sekunder.
+      steps:
+        - action: Ta ner aggregeringslänken och anteckna tiden.
+          expected: Larm kommer från länkens ändar och de 3 accessnoderna.
+        - action: Titta på larmlistan efter 30 sekunder.
+          expected: Ett grundorsakslarm för länken visas med 3 underliggande larm, och de underliggande larmen visas inte som egna larm på översta nivån.
+        - action: Återställ länken.
+          expected: Grundorsakslarmet och dess underliggande larm markeras som avklarade.
+
+  - id: TEL-T03
+    priority: high
+    execution: manual
+    tags: [configuration-management, rollback]
+    refs: []
+    en:
+      title: Configuration history and rollback on a test router
+      description: Makes two configuration changes to a router through the system and restores the original version.
+      preconditions: A test router managed by the system and 2 change tickets.
+      expected: Each change becomes a version with user, time and ticket, and the rollback restores the original configuration within 5 minutes.
+      steps:
+        - action: Change the description of an interface with ticket 1, then add a static route with ticket 2.
+          expected: The history shows 3 versions, each with user, time and ticket number.
+          data: CHG-1001, CHG-1002
+        - action: Compare version 1 with version 3.
+          expected: The difference shows exactly the two changes.
+        - action: Restore version 1 and read the router's running configuration.
+          expected: The running configuration equals version 1 within 5 minutes, and the restore is recorded as version 4.
+    sv:
+      title: Konfigurationshistorik och återställning i en testrouter
+      description: Gör två konfigurationsändringar i en router via systemet och återställer den ursprungliga versionen.
+      preconditions: En testrouter som förvaltas av systemet och 2 ändringsärenden.
+      expected: Varje ändring blir en version med användare, tid och ärende, och återställningen ger tillbaka den ursprungliga konfigurationen inom 5 minuter.
+      steps:
+        - action: Ändra beskrivningen för ett gränssnitt med ärende 1 och lägg sedan till en statisk väg med ärende 2.
+          expected: Historiken visar 3 versioner, var och en med användare, tid och ärendenummer.
+          data: CHG-1001, CHG-1002
+        - action: Jämför version 1 med version 3.
+          expected: Skillnaden visar exakt de två ändringarna.
+        - action: Återställ version 1 och läs routerns aktiva konfiguration.
+          expected: Den aktiva konfigurationen är lika med version 1 inom 5 minuter, och återställningen registreras som version 4.
+
+  - id: TEL-T04
+    priority: medium
+    execution: automated
+    tags: [performance-management, counters]
+    refs: ["3GPP TS 32.401"]
+    en:
+      title: Counter periods and retention of performance data
+      description: A script counts the stored counter periods of a network element and retrieves old data.
+      preconditions: A system that has collected counters for at least 13 months, or a test database loaded with 13 months of counters.
+      expected: Each day has 96 periods and the oldest data are 13 months old.
+      steps:
+        - action: Query the counter periods of one network element for yesterday.
+          expected: 96 periods of 15 minutes are returned without gaps.
+          data: 96 × 15 min
+        - action: Query the counters for the same element 13 months back.
+          expected: The data are returned.
+        - action: Query the counters for 14 months back.
+          expected: No data are returned, as they have passed the retention period.
+    sv:
+      title: Räknarperioder och lagring av prestandadata
+      description: Ett skript räknar de lagrade räknarperioderna för ett nätelement och hämtar gamla data.
+      preconditions: Ett system som har samlat in räknare i minst 13 månader, eller en testdatabas med räknare för 13 månader.
+      expected: Varje dygn har 96 perioder och de äldsta data är 13 månader gamla.
+      steps:
+        - action: Fråga efter räknarperioderna för ett nätelement för i går.
+          expected: 96 perioder om 15 minuter returneras utan luckor.
+          data: 96 × 15 min
+        - action: Fråga efter räknarna för samma element 13 månader bakåt.
+          expected: Data returneras.
+        - action: Fråga efter räknarna för 14 månader bakåt.
+          expected: Inga data returneras, eftersom de har passerat lagringstiden.
+
+  - id: TEL-T05
+    priority: critical
+    execution: automated
+    tags: [accounting, usage-records, reconciliation]
+    refs: ["3GPP TS 32.298"]
+    en:
+      title: Reconciliation of usage records through mediation
+      description: Feeds a test file of usage records with known faults through mediation and checks the daily reconciliation.
+      preconditions: A test file of 10 000 usage records with 25 malformed records and 10 exact duplicates, and a mediation function in test mode.
+      expected: Every record is accounted for and the counts add up to 10 000.
+      steps:
+        - action: Load the test file into mediation.
+          expected: Processing finishes without stopping on the malformed records.
+          data: 10 000 records, 25 malformed, 10 duplicates
+        - action: Run the daily reconciliation.
+          expected: It shows 9 965 billed, 35 rejected or held, and 10 000 received.
+        - action: Open the list of rejected and held records.
+          expected: Each of the 35 has a reason, and the duplicates are marked as duplicates.
+    sv:
+      title: Avstämning av användningsposter genom medieringen
+      description: Kör en testfil med användningsposter med kända fel genom medieringen och kontrollerar den dagliga avstämningen.
+      preconditions: En testfil med 10 000 användningsposter med 25 felformaterade poster och 10 exakta dubbletter, och en medieringsfunktion i testläge.
+      expected: Varje post redovisas och antalen blir tillsammans 10 000.
+      steps:
+        - action: Läs in testfilen i medieringen.
+          expected: Bearbetningen blir klar utan att stanna på de felformaterade posterna.
+          data: 10 000 poster, 25 felformaterade, 10 dubbletter
+        - action: Kör den dagliga avstämningen.
+          expected: Den visar 9 965 debiterade, 35 avvisade eller vilande och 10 000 mottagna.
+        - action: Öppna listan med avvisade och vilande poster.
+          expected: Var och en av de 35 har en orsak, och dubbletterna är markerade som dubbletter.
+
+  - id: TEL-T06
+    priority: high
+    execution: manual
+    tags: [sla, service-assurance]
+    refs: ["TM Forum TMF623 SLA Management API"]
+    en:
+      title: SLA breach notification after an outage
+      description: Simulates an outage of a customer service until its monthly availability falls below target and checks the notifications.
+      preconditions: A test customer service with a 99.95 % monthly availability target, an account manager and a customer contact with test e-mail addresses, and a mail catcher.
+      expected: Both notifications arrive within 5 minutes with measured value and target.
+      steps:
+        - action: Simulate an outage of the service of 25 minutes in a 30-day month.
+          expected: The measured availability falls to 99.94 %, below the target of 99.95 %.
+          data: 25 min of 43 200 min
+        - action: Wait for the notifications in the mail catcher.
+          expected: The account manager and the customer contact each get a notification within 5 minutes after the value fell below the target.
+        - action: Read the notification.
+          expected: It names the service, the measured value 99.94 % and the target 99.95 %.
+    sv:
+      title: Meddelande om brott mot SLA efter ett avbrott
+      description: Simulerar ett avbrott i en kundtjänst tills tillgängligheten för månaden hamnar under målet och kontrollerar meddelandena.
+      preconditions: En kundtjänst för test med målet 99,95 % tillgänglighet per månad, en kundansvarig och en kontaktperson hos kunden med e-postadresser för test, och en e-postfångare.
+      expected: Båda meddelandena kommer inom 5 minuter med uppmätt värde och mål.
+      steps:
+        - action: Simulera ett avbrott i tjänsten på 25 minuter under en månad med 30 dagar.
+          expected: Den uppmätta tillgängligheten sjunker till 99,94 %, under målet 99,95 %.
+          data: 25 min av 43 200 min
+        - action: Vänta på meddelandena i e-postfångaren.
+          expected: Kundansvarig och kundens kontaktperson får var sitt meddelande inom 5 minuter efter att värdet hamnat under målet.
+        - action: Läs meddelandet.
+          expected: Det anger tjänsten, det uppmätta värdet 99,94 % och målet 99,95 %.
+
+  - id: TEL-T07
+    priority: high
+    execution: automated
+    tags: [provisioning, tm-forum, api]
+    refs: ["TM Forum TMF641 Service Ordering API", "TM Forum TMF638 Service Inventory API"]
+    en:
+      title: Service order through TMF641 and check in TMF638
+      description: An API test orders a broadband service through TMF641 and checks the result in the TMF638 service inventory.
+      preconditions: API credentials for a test client, a test address with network coverage and a service specification for broadband 100/100 Mbit/s.
+      expected: The order completes and the inventory shows the active service with the ordered characteristics.
+      steps:
+        - action: POST a service order with one order item for the broadband service to the TMF641 serviceOrder resource.
+          expected: The response is 201 with the order in the state acknowledged.
+          data: "broadband, 100/100 Mbit/s"
+        - action: Poll the order until it leaves the state inProgress.
+          expected: The order reaches the state completed.
+        - action: GET the service from the TMF638 service resource.
+          expected: The service has the state active and the characteristic 100/100 Mbit/s.
+    sv:
+      title: Tjänstebeställning via TMF641 och kontroll i TMF638
+      description: Ett API-test beställer en bredbandstjänst via TMF641 och kontrollerar resultatet i tjänsteregistret i TMF638.
+      preconditions: API-behörighet för en testklient, en testadress med nättäckning och en tjänstespecifikation för bredband 100/100 Mbit/s.
+      expected: Beställningen slutförs och registret visar den aktiva tjänsten med de beställda egenskaperna.
+      steps:
+        - action: Skicka med POST en tjänstebeställning med en orderrad för bredbandstjänsten till resursen serviceOrder i TMF641.
+          expected: Svaret är 201 med beställningen i tillståndet acknowledged.
+          data: "bredband, 100/100 Mbit/s"
+        - action: Fråga efter beställningen tills den lämnar tillståndet inProgress.
+          expected: Beställningen når tillståndet completed.
+        - action: Hämta tjänsten med GET från resursen service i TMF638.
+          expected: Tjänsten har tillståndet active och egenskapen 100/100 Mbit/s.
+
+  - id: TEL-T08
+    priority: high
+    execution: manual
+    tags: [number-portability]
+    refs: ["Directive (EU) 2018/1972 Art. 106"]
+    en:
+      title: Number porting on the agreed date
+      description: Ports a test number from a donor network to the system's network and measures the interruption.
+      preconditions: A test number in a donor test network, a porting request with an agreed date that is a working day, and a call generator that calls the number every minute.
+      expected: The number reaches the new network the same working day with an interruption of at most 4 hours.
+      steps:
+        - action: Submit the porting request with the agreed date and wait until the date.
+          expected: The request is confirmed and the porting starts on the agreed date.
+        - action: Follow the call generator's results during the porting.
+          expected: Failed calls last 4 hours or less in total.
+          data: 1 call per minute
+        - action: Call the number at the end of the working day.
+          expected: The call is answered in the new network.
+    sv:
+      title: Nummerflytt på det överenskomna datumet
+      description: Flyttar ett testnummer från ett avlämnande nät till systemets nät och mäter avbrottet.
+      preconditions: Ett testnummer i ett avlämnande testnät, en begäran om nummerflytt med ett överenskommet datum som är en arbetsdag, och en samtalsgenerator som ringer numret varje minut.
+      expected: Numret når det nya nätet samma arbetsdag med ett avbrott på högst 4 timmar.
+      steps:
+        - action: Skicka begäran om nummerflytt med det överenskomna datumet och vänta till datumet.
+          expected: Begäran bekräftas och flytten börjar det överenskomna datumet.
+        - action: Följ samtalsgeneratorns resultat under flytten.
+          expected: Misslyckade samtal pågår sammanlagt högst 4 timmar.
+          data: 1 samtal per minut
+        - action: Ring numret i slutet av arbetsdagen.
+          expected: Samtalet besvaras i det nya nätet.
+
+  - id: TEL-T09
+    priority: critical
+    execution: manual
+    tags: [lawful-interception, x1, access-control]
+    refs: ["ETSI TS 103 221-1", "ETSI TS 102 232-1"]
+    en:
+      title: Interception tasks only over X1 and only by authorised administrators
+      description: Activates an interception task over X1 in a closed test environment and tries other paths and other users.
+      preconditions: A closed test environment with a test mediation function, a test target subscription, an administrator with the interception role, a network administrator without it and a test warrant reference.
+      expected: Only the X1 task produces intercept data, other paths are rejected and logged, and the network administrator sees nothing.
+      steps:
+        - action: As the authorised administrator, activate a task for the test target over X1 and make a test call from the target.
+          expected: Intercept related information and content arrive only on the configured handover interface.
+          data: test warrant LI-TEST-01
+        - action: Try to create a task for the same target through the element's management interface and its command line.
+          expected: Both attempts are rejected and recorded in the interception log.
+        - action: Sign in as the network administrator without the interception role and look for tasks, targets and the interception log.
+          expected: None of them is visible or reachable.
+    sv:
+      title: Avlyssningsuppdrag bara via X1 och bara av behöriga administratörer
+      description: Aktiverar ett avlyssningsuppdrag via X1 i en sluten testmiljö och prövar andra vägar och andra användare.
+      preconditions: En sluten testmiljö med en medieringsfunktion för test, ett testabonnemang som mål, en administratör med avlyssningsrollen, en nätadministratör utan den och en beslutsreferens för test.
+      expected: Bara uppdraget via X1 ger avlyssnade uppgifter, andra vägar avvisas och loggas, och nätadministratören ser ingenting.
+      steps:
+        - action: Aktivera som behörig administratör ett uppdrag för testmålet via X1 och ring ett testsamtal från målet.
+          expected: Samtalsuppgifter och samtalsinnehåll kommer bara på det konfigurerade överlämningsgränssnittet.
+          data: testbeslut LI-TEST-01
+        - action: Försök skapa ett uppdrag för samma mål via elementets förvaltningsgränssnitt och via dess kommandorad.
+          expected: Båda försöken avvisas och registreras i avlyssningsloggen.
+        - action: Logga in som nätadministratören utan avlyssningsrollen och leta efter uppdrag, mål och avlyssningsloggen.
+          expected: Inget av dem syns eller går att nå.
+
+  - id: TEL-T10
+    priority: critical
+    execution: manual
+    tags: [lawful-interception, audit, integrity]
+    refs: ["ISO/IEC 27001:2022 A.8.15"]
+    en:
+      title: Interception log content and integrity check
+      description: Inspects the interception log after task changes and tampers with a copy of it.
+      preconditions: The test environment of TEL-T09 after a task was activated, changed and deactivated, and a copy of the log storage in an isolated environment.
+      expected: Each action is logged with user, time and warrant reference, and tampering is detected.
+      steps:
+        - action: As the authorised administrator, read the interception log.
+          expected: Activation, change and deactivation are listed, each with user, time and warrant reference, and the administrator signed in with multi-factor authentication.
+        - action: In the isolated copy, change one character in an entry and run the log integrity check.
+          expected: The check reports the changed entry.
+        - action: Delete one entry in the isolated copy and run the check again.
+          expected: The check reports the missing entry.
+    sv:
+      title: Avlyssningsloggens innehåll och integritetskontroll
+      description: Granskar avlyssningsloggen efter ändringar av uppdrag och manipulerar en kopia av den.
+      preconditions: Testmiljön från TEL-T09 efter att ett uppdrag aktiverats, ändrats och avslutats, och en kopia av loggens lagring i en isolerad miljö.
+      expected: Varje åtgärd loggas med användare, tid och beslutsreferens, och manipulering upptäcks.
+      steps:
+        - action: Läs avlyssningsloggen som behörig administratör.
+          expected: Aktivering, ändring och avslut finns med, var och en med användare, tid och beslutsreferens, och administratören loggade in med flerfaktorsautentisering.
+        - action: Ändra ett tecken i en post i den isolerade kopian och kör loggens integritetskontroll.
+          expected: Kontrollen rapporterar den ändrade posten.
+        - action: Ta bort en post i den isolerade kopian och kör kontrollen igen.
+          expected: Kontrollen rapporterar den saknade posten.
+
+  - id: TEL-T11
+    priority: critical
+    execution: manual
+    tags: [emergency-calls, 112, caller-location]
+    refs: ["Directive (EU) 2018/1972 Art. 109", "ETSI TS 103 625"]
+    en:
+      title: Calls to 112 from restricted subscriptions with location
+      description: Makes test emergency calls in a test network connected to a test emergency call centre, never to the real 112 service.
+      preconditions: A test network whose emergency number routes to a test emergency call centre, a barred subscription, a prepaid subscription with zero balance and a phone without SIM.
+      expected: All three calls are connected and their locations arrive within 30 seconds.
+      steps:
+        - action: Call the emergency number from the barred subscription.
+          expected: The test emergency call centre answers and receives the caller's location within 30 seconds.
+        - action: Call from the prepaid subscription with zero balance.
+          expected: The call is connected and the location arrives within 30 seconds.
+        - action: Call from the phone without SIM.
+          expected: The call is connected and the location arrives within 30 seconds.
+    sv:
+      title: Samtal till 112 från begränsade abonnemang med position
+      description: Ringer nödsamtal för test i ett testnät som är anslutet till en testlarmcentral, aldrig till den riktiga 112-tjänsten.
+      preconditions: Ett testnät där nödnumret leds till en testlarmcentral, ett spärrat abonnemang, ett kontantkort utan saldo och en telefon utan SIM-kort.
+      expected: Alla tre samtalen kopplas fram och deras positioner kommer fram inom 30 sekunder.
+      steps:
+        - action: Ring nödnumret från det spärrade abonnemanget.
+          expected: Testlarmcentralen svarar och tar emot uppringarens position inom 30 sekunder.
+        - action: Ring från kontantkortet utan saldo.
+          expected: Samtalet kopplas fram och positionen kommer inom 30 sekunder.
+        - action: Ring från telefonen utan SIM-kort.
+          expected: Samtalet kopplas fram och positionen kommer inom 30 sekunder.
+
+  - id: TEL-T12
+    priority: high
+    execution: automated
+    tags: [data-retention, traffic-data]
+    refs: ["Directive 2002/58/EC Art. 6"]
+    en:
+      title: Traffic data removed at the end of the retention period
+      description: Loads call records of different ages and runs the retention job with a controllable clock.
+      preconditions: A retention period of 6 months for call records, a controllable clock and test call records aged 5 months and 6 months and 1 day.
+      expected: Only the record past the period is erased or anonymised.
+      steps:
+        - action: Run the retention job.
+          expected: The job finishes and reports the number of erased or anonymised records.
+          data: 6 months
+        - action: Search for the record that is 6 months and 1 day old.
+          expected: It is gone, or the subscriber identity and location in it are replaced so that the subscriber cannot be identified.
+        - action: Search for the record that is 5 months old.
+          expected: It is still there unchanged.
+    sv:
+      title: Trafikuppgifter tas bort när lagringstiden har gått ut
+      description: Läser in samtalsposter av olika ålder och kör lagringsjobbet med en styrbar klocka.
+      preconditions: Lagringstiden 6 månader för samtalsposter, en styrbar klocka och samtalsposter för test som är 5 månader respektive 6 månader och 1 dag gamla.
+      expected: Bara posten som passerat lagringstiden raderas eller anonymiseras.
+      steps:
+        - action: Kör lagringsjobbet.
+          expected: Jobbet blir klart och rapporterar antalet raderade eller anonymiserade poster.
+          data: 6 månader
+        - action: Sök efter posten som är 6 månader och 1 dag gammal.
+          expected: Den är borta, eller så har abonnentidentitet och position i den ersatts så att abonnenten inte går att identifiera.
+        - action: Sök efter posten som är 5 månader gammal.
+          expected: Den finns kvar oförändrad.
+
+  - id: TEL-T13
+    priority: critical
+    execution: automated
+    tags: [5g, mutual-tls, oauth]
+    refs: ["3GPP TS 33.501 §13.1", "3GPP TS 33.501 §13.4"]
+    en:
+      title: 5G core rejects unauthenticated service requests
+      description: A test client sends service requests to the UDM of a test 5G core with different credentials.
+      preconditions: A test 5G core, a client certificate from the operator's test authority, a self-signed certificate, and access tokens from the NRF for the requested service and for another service.
+      expected: Only the request with a trusted certificate and a token for the service is answered.
+      steps:
+        - action: Send a request without a client certificate, then with the self-signed certificate.
+          expected: The TLS handshake is refused in both cases.
+        - action: Send a request with the trusted certificate but without a token, then with the token for another service.
+          expected: Both requests are rejected with 401 or 403.
+        - action: Send a request with the trusted certificate and the token for the service.
+          expected: The request is answered with 200.
+    sv:
+      title: 5G-kärnan avvisar oautentiserade tjänstebegäranden
+      description: En testklient skickar tjänstebegäranden till UDM i en 5G-kärna för test med olika behörighetsuppgifter.
+      preconditions: En 5G-kärna för test, ett klientcertifikat från operatörens testutfärdare, ett självsignerat certifikat och åtkomsttoken från NRF för den begärda tjänsten och för en annan tjänst.
+      expected: Bara begäran med betrott certifikat och token för tjänsten besvaras.
+      steps:
+        - action: Skicka en begäran utan klientcertifikat och sedan med det självsignerade certifikatet.
+          expected: TLS-handskakningen vägras i båda fallen.
+        - action: Skicka en begäran med det betrodda certifikatet men utan token, och sedan med token för en annan tjänst.
+          expected: Båda begärandena avvisas med 401 eller 403.
+        - action: Skicka en begäran med det betrodda certifikatet och token för tjänsten.
+          expected: Begäran besvaras med 200.
+
+  - id: TEL-T14
+    priority: critical
+    execution: automated
+    tags: [signalling, ss7, diameter, firewall]
+    refs: ["GSMA FS.11", "GSMA FS.19"]
+    en:
+      title: Signalling firewall against interconnect message categories
+      description: A signalling test tool sends SS7 and Diameter messages from a simulated foreign network to the firewall.
+      preconditions: A signalling test tool connected as a roaming partner, a test subscriber at home and a test subscriber roaming in the partner network.
+      expected: Messages are blocked or passed according to their category, and each blocked message is logged.
+      steps:
+        - action: Send a location request (SS7 provide subscriber information) for the subscriber at home.
+          expected: The message is blocked and logged with the partner's address and the message type.
+        - action: Send a Diameter insert subscriber data request for the subscriber at home.
+          expected: The message is blocked and logged.
+        - action: Send a normal location update for the subscriber roaming in the partner network.
+          expected: The message is passed and the roaming subscriber stays in service.
+    sv:
+      title: Signaleringsbrandvägg mot kategorier av samtrafikmeddelanden
+      description: Ett testverktyg för signalering skickar SS7- och Diameter-meddelanden från ett simulerat utländskt nät till brandväggen.
+      preconditions: Ett testverktyg för signalering anslutet som roamingpartner, en testabonnent i hemmanätet och en testabonnent som roamar i partnerns nät.
+      expected: Meddelandena stoppas eller släpps igenom enligt sin kategori, och varje stoppat meddelande loggas.
+      steps:
+        - action: Skicka en begäran om position (SS7 provide subscriber information) för abonnenten i hemmanätet.
+          expected: Meddelandet stoppas och loggas med partnerns adress och meddelandetypen.
+        - action: Skicka en Diameter-begäran om att lägga in abonnentdata för abonnenten i hemmanätet.
+          expected: Meddelandet stoppas och loggas.
+        - action: Skicka en vanlig positionsuppdatering för abonnenten som roamar i partnerns nät.
+          expected: Meddelandet släpps igenom och den roamande abonnenten har kvar sin tjänst.
+
+  - id: TEL-T15
+    priority: high
+    execution: manual
+    tags: [network-slicing, isolation]
+    refs: ["3GPP TS 23.501 §5.15"]
+    en:
+      title: Isolation and capacity of two network slices
+      description: Tries to reach one slice from another and overloads one slice while measuring the other.
+      preconditions: A test network with slices A and B, a test device in each, a tenant administrator for slice A and a traffic generator.
+      expected: Nothing in slice B can be reached from slice A, and slice A keeps 95 % of its agreed throughput.
+      steps:
+        - action: From the device in slice A, try to reach the device and the network functions of slice B.
+          expected: Every attempt fails.
+        - action: Sign in as the tenant administrator of slice A and look for slice B.
+          expected: Slice B and its data are not visible.
+        - action: Load slice B to 150 % of its capacity and measure the throughput of slice A.
+          expected: Slice A keeps at least 95 % of its agreed throughput.
+          data: 150 % load
+    sv:
+      title: Isolering och kapacitet för två nätskivor
+      description: Försöker nå en nätskiva från en annan och överbelastar en nätskiva medan den andra mäts.
+      preconditions: Ett testnät med nätskivorna A och B, en testenhet i var och en, en administratör för nätskiva A och en trafikgenerator.
+      expected: Inget i nätskiva B går att nå från nätskiva A, och nätskiva A behåller 95 % av sin avtalade kapacitet.
+      steps:
+        - action: Försök nå enheten och nätfunktionerna i nätskiva B från enheten i nätskiva A.
+          expected: Varje försök misslyckas.
+        - action: Logga in som administratör för nätskiva A och leta efter nätskiva B.
+          expected: Nätskiva B och dess uppgifter syns inte.
+        - action: Belasta nätskiva B till 150 % av dess kapacitet och mät kapaciteten i nätskiva A.
+          expected: Nätskiva A behåller minst 95 % av sin avtalade kapacitet.
+          data: 150 % belastning
+
+  - id: TEL-T16
+    priority: high
+    execution: automated
+    tags: [nfv, package-signing]
+    refs: ["ETSI GS NFV-SOL 004"]
+    en:
+      title: Signed, tampered and unsigned network function packages
+      description: Onboards three versions of a test network function package to the orchestrator.
+      preconditions: A test orchestrator with the vendor's test certificate in its trust store and a correctly signed test package.
+      expected: Only the correctly signed package is instantiated.
+      steps:
+        - action: Onboard and instantiate the correctly signed package.
+          expected: The network function starts.
+        - action: Change one byte in an image of a copy of the package and onboard it.
+          expected: The package is refused with a signature error in the log.
+        - action: Remove the signature from another copy and onboard it.
+          expected: The package is refused with a missing signature in the log.
+    sv:
+      title: Signerade, manipulerade och osignerade paket för nätfunktioner
+      description: Läser in tre versioner av ett testpaket för en nätfunktion i orkestreraren.
+      preconditions: En orkestrerare för test med leverantörens testcertifikat i förtroendelagret och ett korrekt signerat testpaket.
+      expected: Bara det korrekt signerade paketet startas.
+      steps:
+        - action: Läs in och starta det korrekt signerade paketet.
+          expected: Nätfunktionen startar.
+        - action: Ändra en byte i en avbild i en kopia av paketet och läs in den.
+          expected: Paketet vägras med ett signaturfel i loggen.
+        - action: Ta bort signaturen från en annan kopia och läs in den.
+          expected: Paketet vägras med en saknad signatur i loggen.
+
+  - id: TEL-T17
+    priority: high
+    execution: manual
+    tags: [outage-reporting, regulator]
+    refs: ["Directive (EU) 2018/1972 Art. 40"]
+    en:
+      title: Report draft after a simulated outage
+      description: Simulates an outage of 3 base stations and checks the generated report draft.
+      preconditions: A test network inventory with 3 base stations whose coverage areas and subscriber counts are known.
+      expected: A complete draft with figures that match the test data is ready within 1 hour.
+      steps:
+        - action: Take the 3 base stations out of service and register the outage.
+          expected: The outage is registered with its start time.
+        - action: Open the report draft within 1 hour.
+          expected: The draft lists the 3 sites, voice and data services, the area and the cause field.
+        - action: Compare the subscriber count with the test data.
+          expected: The count equals the number of subscribers registered in the 3 coverage areas.
+          data: 3 base stations
+    sv:
+      title: Utkast till rapport efter ett simulerat avbrott
+      description: Simulerar ett avbrott i 3 basstationer och kontrollerar det utkast till rapport som tas fram.
+      preconditions: Ett testregister över nätet med 3 basstationer vars täckningsområden och antal abonnenter är kända.
+      expected: Ett komplett utkast med siffror som stämmer med testdata finns inom 1 timme.
+      steps:
+        - action: Ta de 3 basstationerna ur drift och registrera avbrottet.
+          expected: Avbrottet registreras med starttid.
+        - action: Öppna utkastet till rapport inom 1 timme.
+          expected: Utkastet anger de 3 platserna, tjänsterna tal och data, området och fältet för orsak.
+        - action: Jämför antalet abonnenter med testdata.
+          expected: Antalet är lika med antalet abonnenter som är registrerade i de 3 täckningsområdena.
+          data: 3 basstationer
+
+  - id: TEL-T18
+    priority: critical
+    execution: manual
+    tags: [geo-redundancy, failover]
+    refs: ["ISO 22301:2019 §8.4"]
+    en:
+      title: Loss of one core site during load
+      description: Isolates one core site during a load test and measures the switchover to the other site.
+      preconditions: Core network functions in site 1 and site 2, a load generator with registered test subscribers and a scheduled maintenance window.
+      expected: Calls and sessions continue through site 2 within 60 seconds without re-registration.
+      steps:
+        - action: Start a load of new calls and data sessions and note the success rate.
+          expected: The success rate is stable.
+          data: 50 call attempts per second
+        - action: Isolate site 1 from the network and note the time.
+          expected: New calls and sessions succeed through site 2 within 60 seconds.
+        - action: Check the registration state of the test subscribers.
+          expected: The subscribers are still registered and did not have to register again.
+    sv:
+      title: Bortfall av en plats för kärnnätet under last
+      description: Isolerar en plats för kärnnätet under ett lasttest och mäter omkopplingen till den andra platsen.
+      preconditions: Kärnnätets funktioner på plats 1 och plats 2, en lastgenerator med registrerade testabonnenter och ett planerat servicefönster.
+      expected: Samtal och sessioner fortsätter via plats 2 inom 60 sekunder utan ny registrering.
+      steps:
+        - action: Starta en last med nya samtal och datasessioner och anteckna andelen lyckade försök.
+          expected: Andelen lyckade försök är stabil.
+          data: 50 samtalsförsök per sekund
+        - action: Isolera plats 1 från nätet och anteckna tiden.
+          expected: Nya samtal och sessioner lyckas via plats 2 inom 60 sekunder.
+        - action: Kontrollera testabonnenternas registreringsstatus.
+          expected: Abonnenterna är fortfarande registrerade och behövde inte registrera sig på nytt.
+
+  - id: TEL-T19
+    priority: high
+    execution: manual
+    tags: [time-synchronisation, ptp]
+    refs: ["ITU-T G.8275.1"]
+    en:
+      title: Time alarms for a base station out of synchronisation
+      description: Disturbs the time of a test base station in two ways and checks the alarms.
+      preconditions: A test base station synchronised through PTP, a test grandmaster clock whose offset can be set and the alarm list of the network management system.
+      expected: Each disturbance raises an alarm within 60 seconds, and an offset within the limit raises none.
+      steps:
+        - action: Add an offset of 1 microsecond on the grandmaster for 5 minutes.
+          expected: No alarm is raised.
+          data: 1 µs
+        - action: Add an offset of 2 microseconds.
+          expected: A time offset alarm for the station is raised within 60 seconds.
+          data: 2 µs
+        - action: Remove the offset, then disconnect the station's time source.
+          expected: The offset alarm is cleared, and an alarm for loss of the time source is raised within 60 seconds.
+    sv:
+      title: Tidslarm för en basstation som inte är synkroniserad
+      description: Stör tiden i en testbasstation på två sätt och kontrollerar larmen.
+      preconditions: En testbasstation som synkroniseras med PTP, en huvudklocka för test vars avvikelse går att ställa in och larmlistan i systemet för nätövervakning.
+      expected: Varje störning ger ett larm inom 60 sekunder, och en avvikelse inom gränsen ger inget larm.
+      steps:
+        - action: Lägg till en avvikelse på 1 mikrosekund i huvudklockan i 5 minuter.
+          expected: Inget larm uppstår.
+          data: 1 µs
+        - action: Lägg till en avvikelse på 2 mikrosekunder.
+          expected: Ett larm för tidsavvikelse för stationen uppstår inom 60 sekunder.
+          data: 2 µs
+        - action: Ta bort avvikelsen och koppla sedan bort stationens tidskälla.
+          expected: Larmet för avvikelse upphör, och ett larm för förlorad tidskälla uppstår inom 60 sekunder.
+
+  - id: TEL-T20
+    priority: high
+    execution: manual
+    tags: [radio-equipment, red]
+    refs: ["EN 18031-1"]
+    en:
+      title: Inspection of a home router against EN 18031-1
+      description: Inspects the technical file and two samples of a home router that the operator places on the market.
+      preconditions: The router's technical file, 2 new routers from different production batches and an unsigned test firmware image.
+      expected: The file has an EN 18031-1 assessment, the passwords differ and the unsigned image is refused.
+      steps:
+        - action: Look for the EN 18031-1 assessment and the EU declaration of conformity in the technical file.
+          expected: Both are present and name Delegated Regulation (EU) 2022/30.
+        - action: Compare the initial administrator passwords of the 2 routers.
+          expected: The passwords differ and none of them is a known default password.
+        - action: Try to install the unsigned firmware image on one router.
+          expected: The router refuses the image and keeps the current firmware.
+    sv:
+      title: Granskning av en hemrouter mot EN 18031-1
+      description: Granskar den tekniska dokumentationen och två exemplar av en hemrouter som operatören släpper ut på marknaden.
+      preconditions: Routerns tekniska dokumentation, 2 nya routrar från olika tillverkningsomgångar och en osignerad firmwareavbild för test.
+      expected: Dokumentationen har en bedömning enligt EN 18031-1, lösenorden skiljer sig och den osignerade avbilden vägras.
+      steps:
+        - action: Leta efter bedömningen enligt EN 18031-1 och EU-försäkran om överensstämmelse i den tekniska dokumentationen.
+          expected: Båda finns och anger delegerade förordningen (EU) 2022/30.
+        - action: Jämför de initiala administratörslösenorden i de 2 routrarna.
+          expected: Lösenorden skiljer sig och inget av dem är ett känt standardlösenord.
+        - action: Försök installera den osignerade firmwareavbilden i en router.
+          expected: Routern vägrar avbilden och behåller den nuvarande firmwaren.
