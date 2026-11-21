@@ -17,6 +17,7 @@ import (
 func (s *Server) routesMetrics(h routeFunc) {
 	h("GET /api/v1/projects/{pid}/metrics/trends", s.handleTrends, "project.read")
 	h("GET /api/v1/projects/{pid}/flaky-tests", s.handleFlakyTests, "project.read")
+	h("GET /api/v1/projects/{pid}/dashboard/insights", s.handleDashboardInsights, "project.read")
 	h("GET /api/v1/releases/{id}/burnup", s.handleReleaseBurnup, "project.read")
 }
 

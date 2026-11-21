@@ -70,6 +70,21 @@ Välj **Rapporter** i projektets sidopanel. Standardrapporterna är färdiga upp
 | **Sammanfattning av körning** | en körning: summor, exekveringar, defekter och tidsåtgång | körningen (obligatorisk) |
 | **Defekter** | alla defekter som registrerats på exekveringar, grupperade per defekt | – |
 | **Testförteckning** | testfall per mapp, typ, status och kategori | valfritt filter |
+| **Riskrapport** | [riskerna](releases-and-risks.md) med nyckeltal, värmekarta, riskregister, spårbarhet till krav och testfall, otestade åtgärder och de största riskerna | – |
+
+**Riskrapporten** innehåller:
+
+- **Nyckeltal**: alla risker; öppna risker (*Identifierad* eller *Åtgärdas*); åtgärdade, accepterade och stängda risker; öppna risker per nivå; öppna risker utan krav, med otestad åtgärd och med verifierad åtgärd; och öppna risker som inte har ändrats på 90 dagar eller mer.
+- **Risker per nivå och status**: en tabell med en rad per nivå och en kolumn per status.
+- **Öppna risker per åtgärdsstatus** (se nedan).
+- **Värmekarta**: sannolikhet (rader, 5 överst) × konsekvens (kolumner). Varje ruta anger antalet risker som inte är stängda och rutans nivå, till exempel *2 · Hög*, så att tabellen kan läsas utan färger.
+- **Största öppna risker**: de tio öppna riskerna med högst poäng.
+- **Riskregister**: varje risk med nyckel, titel, kategori, ägare, sannolikhet, konsekvens, poäng, nivå, status, åtgärd, kraven som hanterar den, åtgärdens status och när den senast ändrades.
+- **Spårbarhet**: en rad per risk, krav och länkat testfall, med kravets täckning och testfallets senaste utfall.
+- **Öppna risker med otestad åtgärd**: öppna risker utan krav, eller med krav som saknar testfall, och vilka av deras krav som saknar testfall eller inte är godkända.
+- **Öppna risker som inte uppdaterats på 90 dagar eller mer**: en påminnelse om att se över dem.
+
+**Åtgärdens status** för en risk kommer från kraven som hanterar den: *Inga krav*, *Otestad* (inget av dem har länkade testfall), *Delvis testad* (några har), *Testad, inte alla godkända* (alla har testfall, men alla testfall är inte godkända) eller *Verifierad* (alla länkade testfall för alla dess krav är godkända). En risk har en poäng för sannolikhet × konsekvens; rapporten visar poängen och nivån, och hur långt åtgärden är verifierad av tester.
 
 ![Rapportsidan med standardrapporterna och rapportbyggaren](../images/sv-reports.png)
 

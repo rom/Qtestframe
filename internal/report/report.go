@@ -58,6 +58,7 @@ const (
 	RunSummary           = "run_summary"
 	Defects              = "defects"
 	TestInventory        = "test_inventory"
+	Risks                = "risks"
 )
 
 var (
@@ -77,6 +78,8 @@ var (
 			Params: []Param{}, build: buildDefects},
 		{ID: TestInventory, Name: "Test inventory", Description: "Test cases by folder, execution type, status and category, with the full list.",
 			Params: []Param{queryParam("tests")}, build: buildTestInventory},
+		{ID: Risks, Name: "Risk report", Description: "Risks by level and status, a likelihood × impact heat map, the risk register, traceability to requirements, tests and their latest results, untested mitigations and the top risks.",
+			Params: []Param{}, build: buildRisks},
 	}
 )
 
@@ -118,6 +121,8 @@ type Data struct {
 	// TraceRules are the evaluated traceability rules (traceability report;
 	// evaluated on the requirements and tests above).
 	TraceRules []tracerules.Result
+	// Risks of the project with their requirement IDs (risk report).
+	Risks []model.Risk
 	// Query is the filter applied by the caller (shown in the subtitle).
 	Query string
 	Now   time.Time

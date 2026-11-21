@@ -38,6 +38,23 @@ import {
   type Trends,
 } from '@/lib/metrics'
 import type { Dashboard, Release } from '@/lib/types'
+import {
+  LEVELS_DESC,
+  MITIGATION_ORDER,
+  REVIEW_ORDER,
+  RISK_LEVEL_COLORS,
+  activityChart,
+  anyData,
+  countChart,
+  defectAgeChart,
+  heatRows,
+  share,
+  testTypeChart,
+  type DashboardInsights,
+  type MiniHeatCell,
+} from '@/lib/insights'
+import { P } from '@/lib/permissions'
+import { useAuthStore } from '@/stores/auth'
 import { useProjectStore } from '@/stores/project'
 import { useMetaStore } from '@/stores/meta'
 import { useChartTheme } from '@/composables/chartTheme'
@@ -66,8 +83,19 @@ watch(section, (v) => {
   if (v === 'trends') loadTrends()
 })
 
+// further key figures, loaded next to the dashboard (GET /dashboard/insights)
+const insights = ref<DashboardInsights | null>(null)
+async function loadInsights() {
+  try {
+    insights.value = await api.get<DashboardInsights>(`/projects/${proj.pid}/dashboard/insights`)
+  } catch (e) {
+    notify.fail(e, t('dashboard.insightsFailed'))
+  }
+}
+
 async function load() {
   loading.value = true
+  void loadInsights()
   try {
     data.value = await api.get<Dashboard>(`/projects/${proj.pid}/dashboard`)
   } catch (e) {
@@ -97,6 +125,47 @@ const kpis = computed(() => {
     },
     { label: t('dashboard.kpiRuns'), value: formatNumber(d?.runs.total ?? 0), sub: t('dashboard.kpiInProgress', { count: d?.runs.by_status?.in_progress ?? 0 }), icon: 'pi pi-play-circle', color: '#f59e0b' },
     { label: t('dashboard.kpiPassRate'), value: formatNumber(results.value.passRate / 100, undefined, { style: 'percent' }), sub: t('dashboard.kpiExecutions', results.value.executed), icon: 'pi pi-chart-line', color: '#ec4899' },
+    ...insightKpis.value,
+  ]
+})
+
+/** Key figures from the insights (shown once they are loaded). */
+const insightKpis = computed(() => {
+  const x = insights.value
+  if (!x) return []
+  const pct = (n: number, total: number) => formatNumber(share(n, total) / 100, undefined, { style: 'percent' })
+  const rel = x.release
+  return [
+    { label: t('dashboard.kpiVerified'), value: pct(x.requirements.passing, x.requirements.total), sub: t('dashboard.kpiVerifiedSub', { count: x.requirements.passing }, x.requirements.passing), icon: 'pi pi-verified', color: '#16a34a' },
+    {
+      label: t('dashboard.kpiOpenRisks'),
+      value: formatNumber(x.risks.open),
+      sub: t('dashboard.kpiOpenRisksSub', { critical: x.risks.by_level.critical ?? 0, high: x.risks.by_level.high ?? 0 }),
+      icon: 'pi pi-exclamation-triangle',
+      color: '#dc2626',
+    },
+    {
+      label: t('dashboard.kpiOpenDefects'),
+      value: formatNumber(x.defects.open),
+      sub: x.defects.open ? t('dashboard.kpiDefectAge', { days: formatNumber(x.defects.average_days) }) : t('dashboard.kpiNoOpenDefects'),
+      icon: 'pi pi-bug',
+      color: '#ea580c',
+    },
+    { label: t('dashboard.kpiSuspect'), value: formatNumber(x.suspect.links), sub: t('dashboard.kpiSuspectSub', { count: x.suspect.requirements }, x.suspect.requirements), icon: 'pi pi-link', color: '#d97706' },
+    {
+      label: t('dashboard.kpiRuleViolations'),
+      value: formatNumber(x.trace_rules.violations),
+      sub: x.trace_rules.rules ? t('dashboard.kpiRulesSub', { failed: x.trace_rules.failed, rules: x.trace_rules.rules }) : t('dashboard.kpiNoRules'),
+      icon: 'pi pi-sitemap',
+      color: '#8b5cf6',
+    },
+    {
+      label: t('dashboard.kpiRelease'),
+      value: rel ? pct(rel.executed, rel.total) : '–',
+      sub: rel ? t('dashboard.kpiReleaseSub', { name: rel.name, executed: rel.executed, total: rel.total }) : t('dashboard.kpiNoRelease'),
+      icon: 'pi pi-flag',
+      color: '#0ea5e9',
+    },
   ]
 })
 
@@ -161,7 +230,7 @@ function doughnut(group: EnumGroup, rec: Record<string, number> | undefined, col
   }
 }
 /** Text alternative of a chart for screen readers. */
-function describe(title: string, c: { labels: string[]; datasets: { data: number[] }[] }) {
+function describe(title: string, c: { labels: string[]; datasets: { data: (number | null)[] }[] }) {
   const parts = c.labels.map((l, i) => `${l}: ${formatNumber(c.datasets[0].data[i] ?? 0)}`)
   return parts.length ? `${title}. ${parts.join(', ')}` : title
 }
@@ -183,6 +252,72 @@ const progressChart = computed(() => {
   return c
 })
 const progressHeight = computed(() => `${Math.max(160, 60 + activeRuns.value.length * 38)}px`)
+
+// ---------- insights: charts ----------
+const auth = useAuthStore()
+const canReadRisks = computed(() => auth.can(P.requirementRead))
+const testTypeData = computed(() => {
+  const c = testTypeChart(insights.value?.tests.by_type, (ty) => enumLabel('executionType', ty), (s) => enumLabel('result', s))
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 4, maxBarThickness: 34 }))
+  return c
+})
+const reviewChart = computed(() => {
+  const c = countChart(insights.value?.requirements.review, REVIEW_ORDER, (k) => t(`dashboard.review.${k}`), (_, i) => seriesColor(theme.value, i))
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 6, maxBarThickness: 34 }))
+  return c
+})
+const riskLevelChart = computed(() => {
+  const c = countChart(insights.value?.risks.by_level, LEVELS_DESC, (k) => t(`risksView.level.${k}`), (k) => RISK_LEVEL_COLORS[k])
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 6, maxBarThickness: 34 }))
+  return c
+})
+const mitigationChart = computed(() => {
+  const c = countChart(insights.value?.risks.mitigation, MITIGATION_ORDER, (k) => t(`dashboard.mitigation.${k}`), (_, i) => seriesColor(theme.value, i))
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 6, maxBarThickness: 26 }))
+  return c
+})
+const defectAgeData = computed(() => {
+  const c = defectAgeChart(insights.value?.defects, (s) => t(`defectsView.severity.${s}`), (b) => t(`dashboard.ageBucket.${b}`))
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 4, maxBarThickness: 34 }))
+  return c
+})
+const ageSummary = computed(() => {
+  const d = insights.value?.defects
+  return d?.open ? t('dashboard.defectAgeSummary', { avg: formatNumber(d.average_days), oldest: formatNumber(d.oldest_days) }) : ''
+})
+const heat = computed(() => heatRows(insights.value?.risks.heat))
+const heatCellLabel = (c: MiniHeatCell) =>
+  t('dashboard.heatCell', { likelihood: c.likelihood, impact: c.impact, level: t(`risksView.level.${c.level}`), count: t('risksView.riskCount', { count: c.count }, c.count) })
+const heatTotal = computed(() => heat.value.reduce((n, r) => n + r.cells.reduce((m, c) => m + c.count, 0), 0))
+const ruleRows = computed(() => {
+  const r = insights.value?.trace_rules
+  if (!r) return []
+  return (['rules', 'errors', 'warnings', 'violations'] as const).map((k) => ({ key: k, label: t(`dashboard.ruleCounts.${k}`), value: r[k] }))
+})
+const activityData = computed(() => {
+  const c = activityChart(insights.value?.activity.days, formatDate, (s) => t(`dashboard.activitySeries.${s}`), (i) => seriesColor(theme.value, i))
+  c.datasets = c.datasets.map((d) => ({ ...d, borderRadius: 3, maxBarThickness: 14 }))
+  return c
+})
+const activityDescription = computed(() => {
+  const tot = insights.value?.activity.total
+  if (!tot) return t('dashboard.activity')
+  return `${t('dashboard.activity')}. ${t('dashboard.activityTotal', { changes: tot.changes, executions: tot.executions, defects: tot.defects })}. ${describeMulti('', activityData.value, formatNumber, 30).replace(/^\.\s*/, '')}`
+})
+const activityOptions = computed(() => {
+  const c = theme.value
+  return {
+    ...baseOptions(true, 'x', true),
+    scales: {
+      x: { stacked: true, ticks: { color: c.text, font: font(), maxRotation: 0, autoSkip: true, maxTicksLimit: narrow.value ? 4 : 8 }, grid: { display: false }, border: { color: c.grid } },
+      y: axis({ stacked: true, beginAtZero: true }),
+    },
+  }
+})
+const releaseSummary = computed(() => {
+  const r = insights.value?.release
+  return r ? { ...r.executions, total: r.total } : null
+})
 
 // ---------- quality ----------
 const SEVERITY_COLORS: Record<string, string> = { critical: '#dc2626', major: '#ea580c', minor: '#d97706', trivial: '#64748b' }
@@ -416,6 +551,44 @@ const burnupChart = computed<ChartData>(() => {
           <Chart type="bar" :data="testStatusChart" :options="baseOptions()" style="height: 100%" />
         </div>
       </section>
+      <template v-if="insights">
+        <section class="card" aria-labelledby="ch-types">
+          <h2 id="ch-types">{{ t('dashboard.testTypes') }}</h2>
+          <div class="chart-box">
+            <div v-if="anyData(testTypeData)" role="img" :aria-label="describeMulti(t('dashboard.testTypes'), testTypeData, formatNumber)" class="chart-fill">
+              <Chart type="bar" :data="testTypeData" :options="baseOptions(true, 'x', true)" style="height: 100%" />
+            </div>
+            <div v-else class="empty">{{ t('dashboard.noTests') }}</div>
+          </div>
+        </section>
+        <section class="card" aria-labelledby="ch-review">
+          <h2 id="ch-review">{{ t('dashboard.reviewState') }}</h2>
+          <div class="chart-box">
+            <div v-if="anyData(reviewChart)" role="img" :aria-label="describe(t('dashboard.reviewState'), reviewChart)" class="chart-fill">
+              <Chart type="bar" :data="reviewChart" :options="baseOptions(false, 'y')" style="height: 100%" />
+            </div>
+            <div v-else class="empty">{{ t('dashboard.noRequirements') }}</div>
+          </div>
+        </section>
+        <section class="card" aria-labelledby="ch-release">
+          <h2 id="ch-release">{{ t('dashboard.releaseProgress') }}</h2>
+          <div v-if="!insights.release" class="empty">{{ t('dashboard.noActiveRelease') }}</div>
+          <template v-else>
+            <div class="row" style="justify-content: space-between">
+              <RouterLink :to="{ name: 'releases', params: { projectId: proj.pid }, query: { r: insights.release.id } }" class="release-name">{{ insights.release.name }}</RouterLink>
+              <span class="small muted">{{ t(`releasesView.status.${insights.release.status}`) }}</span>
+            </div>
+            <div v-if="insights.release.target_date" class="small muted">{{ t('dashboard.burnupTarget', { date: formatDate(insights.release.target_date) }) }}</div>
+            <div v-if="!insights.release.total" class="empty">{{ t('dashboard.noReleaseRuns') }}</div>
+            <template v-else>
+              <SummaryBar :summary="releaseSummary" class="release-bar" />
+              <p class="small">
+                {{ t('dashboard.releaseSummary', { runs: insights.release.runs, executed: insights.release.executed, total: insights.release.total, passed: insights.release.passed }) }}
+              </p>
+            </template>
+          </template>
+        </section>
+      </template>
     </div>
   </div>
 
@@ -433,6 +606,16 @@ const burnupChart = computed<ChartData>(() => {
           <Chart type="line" :data="trendChart" :options="lineOptions(true)" style="height: 100%" />
         </div>
         <div v-else class="empty">{{ t('dashboard.noTrend') }}</div>
+      </div>
+    </section>
+    <section v-if="insights" class="card" aria-labelledby="ch-activity">
+      <h2 id="ch-activity">{{ t('dashboard.activity') }}</h2>
+      <p class="small muted" style="margin-top: 0">{{ t('dashboard.activityTotal', { changes: insights.activity.total.changes, executions: insights.activity.total.executions, defects: insights.activity.total.defects }) }}</p>
+      <div class="chart-box">
+        <div v-if="anyData(activityData)" role="img" :aria-label="activityDescription" class="chart-fill">
+          <Chart type="bar" :data="activityData" :options="activityOptions" style="height: 100%" />
+        </div>
+        <div v-else class="empty">{{ t('dashboard.noActivity') }}</div>
       </div>
     </section>
     <div class="charts">
@@ -513,6 +696,87 @@ const burnupChart = computed<ChartData>(() => {
         <div v-else class="empty">{{ t('dashboard.noRequirements') }}</div>
       </section>
     </div>
+    <div v-if="insights" class="charts">
+      <section class="card" aria-labelledby="ch-risk-levels">
+        <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+          <h2 id="ch-risk-levels" style="margin: 0">{{ t('dashboard.risksByLevel') }}</h2>
+          <RouterLink v-if="canReadRisks" :to="{ name: 'risks', params: { projectId: proj.pid } }" class="small">{{ t('dashboard.riskRegister') }}</RouterLink>
+        </div>
+        <div class="chart-box">
+          <div v-if="insights.risks.open" role="img" :aria-label="describe(t('dashboard.risksByLevel'), riskLevelChart)" class="chart-fill">
+            <Chart type="bar" :data="riskLevelChart" :options="baseOptions()" style="height: 100%" />
+          </div>
+          <div v-else class="empty">{{ t('dashboard.noOpenRisks') }}</div>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ch-heat">
+        <h2 id="ch-heat">{{ t('dashboard.riskHeat') }}</h2>
+        <div v-if="!heatTotal" class="empty">{{ t('dashboard.noRisks') }}</div>
+        <template v-else>
+          <div class="heat-wrap">
+            <table class="mini-heat">
+              <caption class="sr-only">{{ t('dashboard.riskHeatCaption') }}</caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="corner"><span class="small">{{ t('risksView.likelihood') }} ↓ / {{ t('risksView.impact') }} →</span></th>
+                  <th v-for="i in 5" :key="i" scope="col">{{ i }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in heat" :key="row.likelihood">
+                  <th scope="row">{{ row.likelihood }}</th>
+                  <td v-for="c in row.cells" :key="c.impact" :class="['mh-cell', 'mh-' + c.level, { empty: !c.count }]" :title="heatCellLabel(c)">
+                    <span aria-hidden="true">{{ c.count || '' }}</span>
+                    <span class="sr-only">{{ heatCellLabel(c) }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ul class="plain-list mh-legend" :aria-label="t('dashboard.riskLevels')">
+            <li v-for="l in LEVELS_DESC" :key="l"><span :class="['mh-swatch', 'mh-' + l]" aria-hidden="true" /> {{ t(`risksView.level.${l}`) }}</li>
+          </ul>
+        </template>
+      </section>
+      <section class="card" aria-labelledby="ch-mitigation">
+        <h2 id="ch-mitigation">{{ t('dashboard.mitigationTitle') }}</h2>
+        <div class="chart-box">
+          <div v-if="insights.risks.open" role="img" :aria-label="describe(t('dashboard.mitigationTitle'), mitigationChart)" class="chart-fill">
+            <Chart type="bar" :data="mitigationChart" :options="baseOptions(false, 'y')" style="height: 100%" />
+          </div>
+          <div v-else class="empty">{{ t('dashboard.noOpenRisks') }}</div>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ch-age">
+        <h2 id="ch-age">{{ t('dashboard.defectAge') }}</h2>
+        <p v-if="ageSummary" class="small muted" style="margin-top: 0">{{ ageSummary }}</p>
+        <div class="chart-box">
+          <div v-if="anyData(defectAgeData)" role="img" :aria-label="describeMulti(t('dashboard.defectAge'), defectAgeData, formatNumber)" class="chart-fill">
+            <Chart type="bar" :data="defectAgeData" :options="baseOptions(true, 'x', true)" style="height: 100%" />
+          </div>
+          <div v-else class="empty">{{ t('dashboard.noOpenDefects') }}</div>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="ch-rules">
+        <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+          <h2 id="ch-rules" style="margin: 0">{{ t('dashboard.traceRules') }}</h2>
+          <RouterLink :to="{ name: 'traceability', params: { projectId: proj.pid } }" class="small">{{ t('dashboard.allRules') }}</RouterLink>
+        </div>
+        <div v-if="!insights.trace_rules.rules" class="empty">{{ t('dashboard.noTraceRules') }}</div>
+        <template v-else>
+          <p class="rule-verdict" :class="insights.trace_rules.passed ? 'ok' : 'bad'">
+            <i :class="insights.trace_rules.passed ? 'pi pi-check-circle' : 'pi pi-times-circle'" aria-hidden="true" />
+            {{ insights.trace_rules.passed ? t('dashboard.rulesPassed') : t('dashboard.rulesFailed') }}
+          </p>
+          <dl class="rule-stats">
+            <div v-for="r in ruleRows" :key="r.key">
+              <dt>{{ r.label }}</dt>
+              <dd>{{ formatNumber(r.value) }}</dd>
+            </div>
+          </dl>
+        </template>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -532,6 +796,33 @@ const burnupChart = computed<ChartData>(() => {
 .dot.failed { background: #b91c1c; border-radius: 3px; }
 .dot.flip { outline: 2px solid var(--qtf-text); outline-offset: 1px; }
 .flaky-score { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.release-name { font-weight: 600; }
+.release-bar { margin: 12px 0 4px; }
+/* mini risk heat map: the level is told by colour, border style and the
+   legend (and the cell text for screen readers), never by colour alone */
+.heat-wrap { overflow-x: auto; }
+.mini-heat { border-collapse: separate; border-spacing: 3px; margin: 0 auto; }
+.mini-heat th { font-size: 12px; font-weight: 600; color: var(--qtf-muted); padding: 2px 4px; text-align: center; }
+.mini-heat .corner { text-align: left; max-width: 90px; font-weight: 500; }
+.mh-cell { width: 40px; height: 32px; text-align: center; font-weight: 700; color: #111; border-radius: 5px; border: 2px solid transparent; }
+.mh-cell.empty { opacity: 0.5; }
+.mh-low { background: #bbf7d0; }
+.mh-medium { background: #fde68a; border: 2px dotted #92400e; }
+.mh-high { background: #fdba74; border: 2px dashed #9a3412; }
+.mh-critical { background: repeating-linear-gradient(135deg, #fca5a5 0 6px, #f87171 6px 9px); border: 2px solid #7f1d1d; }
+.mh-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; }
+.mh-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.mh-swatch { display: inline-block; width: 18px; height: 14px; border-radius: 3px; }
+.rule-verdict { display: flex; align-items: center; gap: 8px; font-weight: 600; margin: 0 0 12px; }
+.rule-verdict.ok i { color: var(--p-green-600, #16a34a); }
+.rule-verdict.bad i { color: var(--p-red-600, #dc2626); }
+.rule-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.rule-stats div { border: 1px solid var(--qtf-border); border-radius: 8px; padding: 8px 10px; }
+.rule-stats dt { color: var(--qtf-muted); font-size: 12px; }
+.rule-stats dd { margin: 0; font-size: 22px; font-weight: 700; }
+@media (forced-colors: active) {
+  .mh-cell, .mh-swatch { forced-color-adjust: none; }
+}
 @media (max-width: 640px) {
   .flaky-row { grid-template-columns: minmax(0, 1fr) auto; }
   .flaky-seq { grid-column: 1 / -1; }
