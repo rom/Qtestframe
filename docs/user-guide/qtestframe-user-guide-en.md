@@ -2078,7 +2078,7 @@ A `-` only negates when it is directly followed by the term: `-status:obsolete`,
 
 Qtestframe gets data out in two ways (a whole project can also be [saved as a file and loaded again](#save-and-load-projects)):
 
-- **Export** downloads the raw project data (requirements, criteria, tests, traceability, runs) as spreadsheets or documents, for reviews, audits, offline work or other tools.
+- **Export** downloads the raw project data (requirements, criteria, tests, traceability, runs) as spreadsheets, documents or Markdown, for reviews, audits, offline work or other tools.
 - **Reports** produce formatted documents for people: a project status report, a coverage report, a run summary, a defect list or a report you design yourself. Reports can be downloaded or stored in the project's [document archive](#documents).
 
 Everyone with the **Viewer** role or higher may export and generate reports. Saving a custom report definition needs **Tester** (tests) or **Manager** (requirements); storing a generated report in the archive is open to everyone who may generate it.
@@ -2093,10 +2093,11 @@ Select **Export** in the project sidebar.
 
    | Format | Result |
    |---|---|
-   | **XLSX** | An Excel workbook with a *Summary* sheet and one sheet per aspect; bold header row, frozen first row, auto-filter and sensible column widths. |
-   | **CSV** | One `.csv` file for one aspect; a `.zip` with one CSV per aspect when you choose several. UTF-8, comma-separated. |
    | **PDF** | A printable landscape report with one table per aspect and page numbers. |
    | **DOCX** | An editable Word document with a heading and a table per aspect, for example as the base of a specification document. |
+   | **XLSX** | An Excel workbook with a *Summary* sheet and one sheet per aspect; bold header row, frozen first row, auto-filter and sensible column widths. |
+   | **CSV** | One `.csv` file for one aspect; a `.zip` with one CSV per aspect when you choose several. UTF-8, comma-separated. |
+   | **Markdown** | One `.md` file with every aspect: a heading, the project, filter and time, and a table per aspect. Plain text that reads well in a wiki, a Git repository or any text editor; keys link to Qtestframe when the server address is configured. |
    | **ReqIF** | The requirements as a ReqIF 1.2 file (`.reqif`) for requirements tools such as IBM DOORS, Polarion, Jama or ProR. See [ReqIF for requirements tools](#reqif-for-requirements-tools). |
    | **ReqIF (with attachments)** | A `.reqifz` archive: the ReqIF file and the requirements' attachments and images. |
 
@@ -2148,7 +2149,7 @@ Select **Reports** in the project sidebar. The standard reports are ready-made l
 
 1. Choose a report.
 2. Fill in its parameters, for example the run for **Run summary**.
-3. Choose the **Format**: **PDF**, **Word** (DOCX), **Excel** (XLSX) or **CSV**.
+3. Choose the **Format**: **PDF**, **Word** (DOCX), **Excel** (XLSX), **CSV** or **Markdown** (`.md`, text with tables for wikis, Git repositories and chat tools; several sections are one document).
 4. Select **Download**, or **Save to archive**. A saved report becomes a document of kind *report* in **Documents**, where the whole team can find, preview and download it later.
 
 Reports are produced in the language you currently use in Qtestframe (**User menu → Language**, see [Languages](#languages)). With the Swedish interface, the report's title, section names, column headers, key figures and values such as statuses, results, coverage and obligation (for example *Godkänt*, *Underkänd*, *MUST (SKA)*) are in Swedish, with the same words as in the app. Your own content, such as titles, names, descriptions, tags and notes, is never translated. This applies to downloads, reports saved to the archive, custom reports, several reports at once and reports sent by e-mail.
@@ -2232,6 +2233,7 @@ The file contains the project data in plain form. Store it as carefully as the p
 | Need | Use |
 |---|---|
 | Work with the data in Excel or another tool | **Export**, XLSX or CSV |
+| Put the data or a report into a wiki, a pull request or a Git repository | **Export** or **Reports**, Markdown |
 | Hand requirements over to a requirements tool (DOORS, Polarion …) or another Qtestframe | **Export**, ReqIF |
 | A specification document to review or sign | **Export**, DOCX, aspects requirements and criteria |
 | A status report for a steering meeting | **Reports → Project status**, PDF |
@@ -2510,7 +2512,7 @@ How it works:
 - Filter by user, action, entity or details with a query, for example `user:anna action:delete` or `entity:requirement created_at>=2026-09-01`.
 - Limit the time range with **From date** and **To date**.
 - **Number of entries** sets how many are shown (up to 5000).
-- **Export CSV** downloads the filtered log for an auditor.
+- **Export CSV** downloads the filtered log for an auditor; **Export Markdown** downloads it as a Markdown document with the date range and filter.
 
 ## Organisations
 
