@@ -1,0 +1,604 @@
+area: ed-training-records
+prefix: EDTR
+group: security
+catalogue: education
+name: {en: Training records and security awareness, sv: Utbildningsregister och säkerhetsmedvetenhet}
+description:
+  en: Training records and competence evidence (ISO 9001 and ISO/IEC 27001 clause 7.2), competence matrices, access tied to training, expiring competence, security awareness training (clause 7.3) and training of management bodies per NIS2 Art. 20(2).
+  sv: Utbildningsregister och belägg för kompetens (ISO 9001 och ISO/IEC 27001 avsnitt 7.2), kompetensmatriser, behörighet kopplad till utbildning, kompetens som löper ut, utbildning i säkerhetsmedvetenhet (avsnitt 7.3) och utbildning av ledningsorgan enligt artikel 20.2 i NIS2.
+
+requirements:
+  - id: EDTR-01
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [training-records, competence-evidence]
+    refs: ["ISO 9001:2015 §7.2", "ISO/IEC 27001:2022 §7.2"]
+    tests: [EDTR-T01]
+    en:
+      title: Training record for each person
+      description: The training record MUST store for each completed course the person, the course and its version, the date, the result and the trainer.
+      rationale: Records are the evidence of competence that audits, authorities and incident investigations ask for.
+      criteria:
+        - method: inspection
+          text: In a sample of 20 records each one has the six fields, and the course version exists in the material library.
+          threshold: "6 fields"
+    sv:
+      title: Utbildningsregister för varje person
+      description: Utbildningsregistret SKA för varje genomförd kurs lagra person, kurs och kursversion, datum, resultat och utbildare.
+      rationale: Registret är det belägg för kompetens som revisioner, myndigheter och incidentutredningar frågar efter.
+      criteria:
+        - method: inspection
+          text: I ett urval av 20 poster har varje post de sex fälten, och kursversionen finns i materialbiblioteket.
+          threshold: "6 fält"
+
+  - id: EDTR-02
+    type: regulatory
+    obligation: should
+    priority: medium
+    tags: [training-records, retention]
+    refs: ["ISO 9001:2015 §7.5.3.2", "GDPR Art. 5(1)(e)"]
+    tests: [EDTR-T01]
+    en:
+      title: Retention of training records
+      description: The organisation SHOULD keep each training record for the time of employment plus 2 years and then delete it.
+      rationale: Records are needed as evidence during and shortly after employment, while keeping personal data longer than that has no purpose.
+      criteria:
+        - method: inspection
+          text: The records of persons who left more than 2 years ago have been deleted, and the records of persons who left within the last 2 years can still be retrieved.
+          threshold: "employment + 2 years"
+    sv:
+      title: Bevarande av utbildningsregister
+      description: Organisationen BÖR spara varje post i utbildningsregistret under anställningstiden och 2 år därefter och sedan radera den.
+      rationale: Posterna behövs som belägg under och strax efter anställningen, medan det saknar syfte att spara personuppgifter längre än så.
+      criteria:
+        - method: inspection
+          text: Posterna för personer som slutade för mer än 2 år sedan är raderade, och posterna för personer som slutade under de senaste 2 åren kan fortfarande hämtas.
+          threshold: "anställningstid + 2 år"
+
+  - id: EDTR-03
+    type: business
+    obligation: must
+    priority: high
+    tags: [competence-matrix]
+    refs: ["ISO 9001:2015 §7.2", "ISO 10015:2019"]
+    tests: [EDTR-T02]
+    en:
+      title: Competence matrix per role
+      description: The organisation MUST keep a competence matrix that shows for each person in each role the courses the role calls for, the courses completed and the gaps.
+      rationale: A matrix makes gaps visible at a glance and shows managers whom to send to which course.
+      criteria:
+        - method: inspection
+          text: The matrix lists each person in the staff list with their role, and its completed courses match the training records for 10 sampled persons.
+    sv:
+      title: Kompetensmatris per roll
+      description: Organisationen SKA ha en kompetensmatris som för varje person i varje roll visar de kurser som rollen kräver, de kurser som är genomförda och luckorna.
+      rationale: En matris gör luckorna synliga med en blick och visar cheferna vem som ska gå vilken kurs.
+      criteria:
+        - method: inspection
+          text: Matrisen anger varje person i personalförteckningen med sin roll, och dess genomförda kurser stämmer med utbildningsregistret för 10 personer i ett urval.
+
+  - id: EDTR-04
+    type: business
+    obligation: should
+    priority: medium
+    tags: [competence-matrix, audit-evidence, export]
+    refs: ["ISO 9001:2015 §7.2"]
+    tests: [EDTR-T02]
+    en:
+      title: Completion report per role for audits
+      description: The training system SHOULD produce a report of the completion rate of each course per role and per organisational unit for a chosen date.
+      rationale: Auditors and managers ask for a snapshot of competence on a given date; producing it by hand is slow and error-prone.
+      criteria:
+        - method: test
+          text: A report for a chosen date shows the completion rate per course, role and unit, and the figures for one unit match a manual count from the records.
+    sv:
+      title: Rapport om genomförande per roll för revisioner
+      description: Utbildningssystemet BÖR ta fram en rapport över andelen som har genomfört varje kurs per roll och per organisatorisk enhet för ett valt datum.
+      rationale: Revisorer och chefer frågar efter en ögonblicksbild av kompetensen vid ett visst datum; att ta fram den för hand tar tid och leder till fel.
+      criteria:
+        - method: test
+          text: En rapport för ett valt datum visar andelen genomförda kurser per kurs, roll och enhet, och siffrorna för en enhet stämmer med en manuell räkning i registret.
+
+  - id: EDTR-05
+    type: security
+    obligation: must
+    priority: high
+    tags: [access, training-prerequisite]
+    refs: ["ISO/IEC 27001:2022 §7.2", "ISO/IEC 27001:2022 A.5.18"]
+    tests: [EDTR-T03]
+    en:
+      title: Role access granted only after recorded training
+      description: The access management process MUST grant a system role to a person only after the training that the role calls for is recorded as passed.
+      rationale: Tying access to training ensures that nobody operates or administers the system before they are competent to do so.
+      criteria:
+        - method: test
+          text: A request to grant an operator role to a test person without the passed operator course is refused, and the same request is granted once the course is recorded as passed.
+    sv:
+      title: Behörighet till roll ges först efter registrerad utbildning
+      description: Processen för behörighetshantering SKA ge en person en systemroll först efter att den utbildning som rollen kräver är registrerad som godkänd.
+      rationale: Att koppla behörighet till utbildning säkerställer att ingen driver eller administrerar systemet innan personen har kompetens för det.
+      criteria:
+        - method: test
+          text: En begäran om att ge en testperson rollen operatör utan godkänd operatörskurs avvisas, och samma begäran beviljas när kursen är registrerad som godkänd.
+
+  - id: EDTR-06
+    type: security
+    obligation: must
+    priority: high
+    tags: [training-records, integrity]
+    refs: ["ISO/IEC 27001:2022 A.5.33", "ISO/IEC 27001:2022 A.8.15"]
+    tests: [EDTR-T04]
+    en:
+      title: Protected training records
+      description: The training system MUST restrict changes to training records to the training administrator role and log each change with the user, the time and the old and new values.
+      rationale: Competence evidence that anyone can change is worthless as evidence, and unlogged changes hide errors and fraud.
+      criteria:
+        - method: test
+          text: A user without the training administrator role is refused when changing a record, and a change by a training administrator appears in the log with user, time and both values.
+    sv:
+      title: Skyddat utbildningsregister
+      description: Utbildningssystemet SKA begränsa ändringar i utbildningsregistret till rollen utbildningsadministratör och logga varje ändring med användare, tidpunkt och gamla och nya värden.
+      rationale: Belägg för kompetens som vem som helst kan ändra är värdelösa som belägg, och ändringar som inte loggas döljer fel och fusk.
+      criteria:
+        - method: test
+          text: En användare utan rollen utbildningsadministratör avvisas vid ändring av en post, och en ändring som en utbildningsadministratör gör syns i loggen med användare, tidpunkt och båda värdena.
+
+  - id: EDTR-07
+    type: functional
+    obligation: should
+    priority: medium
+    tags: [expiry, reminder]
+    refs: ["ISO 9001:2015 §7.2"]
+    tests: [EDTR-T05]
+    en:
+      title: Notice 60 days before a competence expires
+      description: The training system SHOULD notify the person and their manager 60 days before a course result with a validity period expires.
+      rationale: A notice in advance gives time to book a refresher before the person loses the right to do the work.
+      criteria:
+        - method: test
+          text: A test record that expires in 60 days triggers a notice to the test person and the test manager on the same day.
+          threshold: "60 days ahead"
+    sv:
+      title: Påminnelse 60 dagar innan en kompetens löper ut
+      description: Utbildningssystemet BÖR meddela personen och personens chef 60 dagar innan ett kursresultat med giltighetstid löper ut.
+      rationale: En påminnelse i förväg ger tid att boka en repetition innan personen förlorar rätten att utföra arbetet.
+      criteria:
+        - method: test
+          text: En testpost som löper ut om 60 dagar utlöser samma dag ett meddelande till testpersonen och testchefen.
+          threshold: "60 dagar i förväg"
+
+  - id: EDTR-08
+    type: security
+    obligation: must
+    priority: high
+    tags: [security-awareness, onboarding]
+    refs: ["ISO/IEC 27001:2022 §7.3", "ISO/IEC 27001:2022 A.6.3"]
+    tests: [EDTR-T06]
+    en:
+      title: Security awareness training at start and every 12 months
+      description: Each employee MUST complete security awareness training within 30 days of starting and then at least once every 12 months.
+      rationale: People are the target of most attacks, and awareness fades without regular repetition.
+      criteria:
+        - method: analysis
+          text: The records show that each employee who started in the last 12 months completed the training within 30 days, and no employee's last completion is older than 12 months.
+          threshold: "≤ 30 days after start; ≤ 12 months between"
+    sv:
+      title: Utbildning i säkerhetsmedvetenhet vid start och var 12:e månad
+      description: Varje anställd SKA genomgå utbildning i säkerhetsmedvetenhet inom 30 dagar från anställningens början och därefter minst en gång var 12:e månad.
+      rationale: Människor är målet för de flesta angrepp, och medvetenheten avtar utan regelbunden repetition.
+      criteria:
+        - method: analysis
+          text: Registret visar att varje anställd som har börjat under de senaste 12 månaderna genomgick utbildningen inom 30 dagar, och ingen anställds senaste genomförande är äldre än 12 månader.
+          threshold: "≤ 30 dagar efter start; ≤ 12 månader mellan"
+
+  - id: EDTR-09
+    type: security
+    obligation: should
+    priority: medium
+    tags: [security-awareness, content-update]
+    refs: ["ISO/IEC 27001:2022 A.6.3"]
+    tests: [EDTR-T06]
+    en:
+      title: Awareness content updated from incidents every 12 months
+      description: The security function SHOULD update the awareness training content every 12 months with the incident types and threats seen in the organisation during that period.
+      rationale: Training based on the organisation's own incidents is more relevant and more convincing than generic examples.
+      criteria:
+        - method: review
+          text: The current content is less than 12 months old, and its change notes refer to incident types from the incident register of the previous 12 months.
+          threshold: "≤ 12 months"
+    sv:
+      title: Innehållet i medvetenhetsutbildningen uppdateras utifrån incidenter var 12:e månad
+      description: Säkerhetsfunktionen BÖR var 12:e månad uppdatera innehållet i utbildningen i säkerhetsmedvetenhet med de typer av incidenter och hot som organisationen har sett under perioden.
+      rationale: Utbildning som bygger på organisationens egna incidenter är mer relevant och mer övertygande än allmänna exempel.
+      criteria:
+        - method: review
+          text: Det gällande innehållet är yngre än 12 månader, och dess ändringsanteckningar hänvisar till typer av incidenter i incidentregistret för de föregående 12 månaderna.
+          threshold: "≤ 12 månader"
+
+  - id: EDTR-10
+    type: security
+    obligation: should
+    priority: medium
+    tags: [security-awareness, phishing-simulation]
+    refs: ["ISO/IEC 27001:2022 A.6.3"]
+    tests: [EDTR-T07]
+    en:
+      title: Quarterly phishing simulation with reported results
+      description: The security function SHOULD run a phishing simulation once per quarter and report the click rate and the reporting rate per organisational unit.
+      rationale: Simulations measure whether awareness training changes behaviour, and the results show where more training is needed.
+      criteria:
+        - method: review
+          text: Four simulation reports exist for the last 12 months, each with the click rate and reporting rate per unit.
+          threshold: "1 simulation per quarter"
+    sv:
+      title: Kvartalsvis nätfiskeövning med rapporterade resultat
+      description: Säkerhetsfunktionen BÖR genomföra en nätfiskeövning en gång per kvartal och rapportera andelen som klickade och andelen som rapporterade per organisatorisk enhet.
+      rationale: Övningarna mäter om utbildningen i medvetenhet ändrar beteendet, och resultaten visar var mer utbildning behövs.
+      criteria:
+        - method: review
+          text: Det finns fyra rapporter från övningar under de senaste 12 månaderna, var och en med andelen som klickade och andelen som rapporterade per enhet.
+          threshold: "1 övning per kvartal"
+
+  - id: EDTR-11
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [nis2, management-body]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(2)"]
+    tests: [EDTR-T08]
+    en:
+      title: Cybersecurity training of the management body
+      description: Each member of the management body MUST complete training in identifying and assessing cybersecurity risks and their management practices within 3 months of appointment and then at least once every 12 months.
+      rationale: NIS2 holds management bodies accountable for cybersecurity risk measures, which they can only approve and oversee with sufficient understanding.
+      criteria:
+        - method: review
+          text: The records show the training for each current member of the management body within 3 months of appointment and within the last 12 months.
+          threshold: "≤ 3 months after appointment; ≤ 12 months between"
+    sv:
+      title: Utbildning i cybersäkerhet för ledningsorganet
+      description: Varje ledamot i ledningsorganet SKA genomgå utbildning i att identifiera och bedöma cybersäkerhetsrisker och arbetssätten för att hantera dem inom 3 månader från tillträdet och därefter minst en gång var 12:e månad.
+      rationale: NIS2 gör ledningsorganen ansvariga för åtgärderna mot cybersäkerhetsrisker, och dem kan de bara godkänna och övervaka med tillräcklig förståelse.
+      criteria:
+        - method: review
+          text: Registret visar utbildningen för varje nuvarande ledamot i ledningsorganet inom 3 månader från tillträdet och inom de senaste 12 månaderna.
+          threshold: "≤ 3 månader efter tillträdet; ≤ 12 månader mellan"
+
+  - id: EDTR-12
+    type: security
+    obligation: should
+    priority: medium
+    tags: [role-based-security-training]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "IEC 62443-2-1:2024 (security awareness and training)"]
+    tests: [EDTR-T09]
+    en:
+      title: Role-based security training for privileged roles
+      description: Administrators, operators of industrial control systems and developers SHOULD complete role-based security training for their role at least once every 24 months.
+      rationale: Privileged roles face threats and duties that general awareness training does not cover.
+      criteria:
+        - method: analysis
+          text: Each person in the three roles has a completed role-based security course in the last 24 months in the training records.
+          threshold: "≤ 24 months between"
+    sv:
+      title: Rollbaserad säkerhetsutbildning för privilegierade roller
+      description: Administratörer, operatörer av industriella styrsystem och utvecklare BÖR genomgå rollbaserad säkerhetsutbildning för sin roll minst en gång var 24:e månad.
+      rationale: Privilegierade roller möter hot och har uppgifter som den allmänna utbildningen i medvetenhet inte täcker.
+      criteria:
+        - method: analysis
+          text: Varje person i de tre rollerna har en genomförd rollbaserad säkerhetskurs under de senaste 24 månaderna i utbildningsregistret.
+          threshold: "≤ 24 månader mellan"
+
+  - id: EDTR-13
+    type: security
+    obligation: must
+    priority: high
+    tags: [contractors, security-awareness]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "ISO/IEC 27001:2022 A.5.20"]
+    tests: [EDTR-T10]
+    en:
+      title: Awareness training for contractors before access
+      description: Contractors and consultants MUST complete the organisation's security awareness training before they are given access to its systems.
+      rationale: External staff often have the same access as employees and are an equally likely target.
+      criteria:
+        - method: analysis
+          text: For each contractor account created in the last 6 months the awareness training completion date is earlier than the account's first access date.
+    sv:
+      title: Utbildning i säkerhetsmedvetenhet för konsulter före behörighet
+      description: Entreprenörer och konsulter SKA genomgå organisationens utbildning i säkerhetsmedvetenhet innan de tilldelas behörighet till dess system.
+      rationale: Extern personal har ofta samma behörighet som anställda och är lika troliga mål.
+      criteria:
+        - method: analysis
+          text: För varje konto för extern personal som har skapats under de senaste 6 månaderna ligger datumet för genomförd utbildning före kontots första inloggning.
+
+tests:
+  - id: EDTR-T01
+    priority: high
+    execution: manual
+    tags: [training-records, retention]
+    refs: ["ISO 9001:2015 §7.2", "GDPR Art. 5(1)(e)"]
+    en:
+      title: Inspection of training records and their retention
+      description: Checks the content of a sample of training records and the deletion of records after the retention period.
+      preconditions: Read access to the training records, the material library and the list of persons who have left with their leaving dates.
+      expected: Each sampled record is complete with an existing course version, records older than employment plus 2 years are deleted, and newer ones remain.
+      steps:
+        - action: Pick 20 records and check the person, course, course version, date, result and trainer.
+          expected: Each record has the six fields, and each course version exists in the material library.
+          data: "Sample of 20 records"
+        - action: Search for the records of 3 persons who left more than 2 years ago.
+          expected: No records are found.
+        - action: Search for the records of 3 persons who left within the last 2 years.
+          expected: Their records are found.
+    sv:
+      title: Inspektion av utbildningsregistret och bevarandet
+      description: Kontrollerar innehållet i ett urval av poster i utbildningsregistret och att poster raderas efter bevarandetiden.
+      preconditions: Läsbehörighet till utbildningsregistret, materialbiblioteket och förteckningen över personer som har slutat med datum för när de slutade.
+      expected: Varje post i urvalet är fullständig med en befintlig kursversion, poster äldre än anställningstid plus 2 år är raderade, och nyare finns kvar.
+      steps:
+        - action: Välj 20 poster och kontrollera person, kurs, kursversion, datum, resultat och utbildare.
+          expected: Varje post har de sex fälten, och varje kursversion finns i materialbiblioteket.
+          data: "Urval av 20 poster"
+        - action: Sök efter posterna för 3 personer som slutade för mer än 2 år sedan.
+          expected: Inga poster hittas.
+        - action: Sök efter posterna för 3 personer som slutade under de senaste 2 åren.
+          expected: Deras poster hittas.
+
+  - id: EDTR-T02
+    priority: high
+    execution: manual
+    tags: [competence-matrix, audit-evidence]
+    refs: ["ISO 9001:2015 §7.2"]
+    en:
+      title: Competence matrix and completion report
+      description: Compares the competence matrix with the staff list and the training records, and checks the completion report.
+      preconditions: The staff list, the competence matrix, the training records and access to the report function.
+      expected: The matrix lists each person with role and matches the records, and the report figures for one unit match a manual count.
+      steps:
+        - action: Compare the staff list with the persons in the matrix.
+          expected: Each person in the staff list is in the matrix with their role.
+        - action: For 10 sampled persons, compare the completed courses in the matrix with the training records.
+          expected: The completed courses match.
+          data: "Sample of 10 persons"
+        - action: Produce the completion report for today and count the completions of one unit manually in the records.
+          expected: The report figures for the unit match the manual count.
+    sv:
+      title: Kompetensmatris och rapport om genomförande
+      description: Jämför kompetensmatrisen med personalförteckningen och utbildningsregistret och kontrollerar rapporten om genomförande.
+      preconditions: Personalförteckningen, kompetensmatrisen, utbildningsregistret och tillgång till rapportfunktionen.
+      expected: Matrisen anger varje person med roll och stämmer med registret, och rapportens siffror för en enhet stämmer med en manuell räkning.
+      steps:
+        - action: Jämför personalförteckningen med personerna i matrisen.
+          expected: Varje person i personalförteckningen finns i matrisen med sin roll.
+        - action: Jämför för 10 personer i ett urval de genomförda kurserna i matrisen med utbildningsregistret.
+          expected: De genomförda kurserna stämmer.
+          data: "Urval av 10 personer"
+        - action: Ta fram rapporten om genomförande för dagens datum och räkna genomförandena för en enhet manuellt i registret.
+          expected: Rapportens siffror för enheten stämmer med den manuella räkningen.
+
+  - id: EDTR-T03
+    priority: high
+    execution: manual
+    tags: [access, training-prerequisite]
+    refs: ["ISO/IEC 27001:2022 §7.2", "ISO/IEC 27001:2022 A.5.18"]
+    en:
+      title: Role access depends on passed training
+      description: Tests that a system role is granted only after the training it calls for is recorded as passed.
+      preconditions: A test person without the operator course, a training administrator account and an access administrator account.
+      expected: The role request is refused without the course and granted after the course is recorded as passed.
+      steps:
+        - action: As access administrator, request the operator role for the test person.
+          expected: The request is refused with a message naming the missing course.
+        - action: As training administrator, record the operator course as passed for the test person.
+          expected: The training record shows the passed course.
+        - action: Repeat the role request.
+          expected: The operator role is granted.
+    sv:
+      title: Behörighet till roll beror på godkänd utbildning
+      description: Testar att en systemroll ges först efter att den utbildning som rollen kräver är registrerad som godkänd.
+      preconditions: En testperson utan operatörskurs, ett konto för utbildningsadministratör och ett konto för behörighetsadministratör.
+      expected: Begäran om rollen avvisas utan kursen och beviljas när kursen är registrerad som godkänd.
+      steps:
+        - action: Begär som behörighetsadministratör rollen operatör för testpersonen.
+          expected: Begäran avvisas med ett meddelande som anger den kurs som saknas.
+        - action: Registrera som utbildningsadministratör operatörskursen som godkänd för testpersonen.
+          expected: Utbildningsregistret visar den godkända kursen.
+        - action: Upprepa begäran om rollen.
+          expected: Rollen operatör beviljas.
+
+  - id: EDTR-T04
+    priority: high
+    execution: manual
+    tags: [integrity]
+    refs: ["ISO/IEC 27001:2022 A.5.33", "ISO/IEC 27001:2022 A.8.15"]
+    en:
+      title: Changes to training records are restricted and logged
+      description: Tests that only training administrators can change records and that changes are logged.
+      preconditions: A test record, an ordinary user account and a training administrator account.
+      expected: The ordinary user is refused, and the administrator's change is logged with user, time and both values.
+      steps:
+        - action: As the ordinary user, try to change the result of the test record.
+          expected: The change is refused.
+        - action: As the training administrator, change the result of the test record from passed to not passed.
+          expected: The change is saved.
+          data: "Result: passed → not passed"
+        - action: Open the change log of the test record.
+          expected: The log shows the administrator, the time and the old and new values.
+    sv:
+      title: Ändringar i utbildningsregistret är begränsade och loggas
+      description: Testar att bara utbildningsadministratörer kan ändra poster och att ändringarna loggas.
+      preconditions: En testpost, ett vanligt användarkonto och ett konto för utbildningsadministratör.
+      expected: Den vanliga användaren avvisas, och administratörens ändring loggas med användare, tidpunkt och båda värdena.
+      steps:
+        - action: Försök som vanlig användare ändra resultatet i testposten.
+          expected: Ändringen avvisas.
+        - action: Ändra som utbildningsadministratör resultatet i testposten från godkänd till ej godkänd.
+          expected: Ändringen sparas.
+          data: "Resultat: godkänd → ej godkänd"
+        - action: Öppna ändringsloggen för testposten.
+          expected: Loggen visar administratören, tidpunkten och de gamla och nya värdena.
+
+  - id: EDTR-T05
+    priority: medium
+    execution: manual
+    tags: [expiry]
+    refs: ["ISO 9001:2015 §7.2"]
+    en:
+      title: Notice before a competence expires
+      description: Tests the notice to the person and the manager 60 days before a course result expires.
+      preconditions: A test person with a test manager and a course with a validity period.
+      expected: A notice reaches both the person and the manager when the result is 60 days from expiry.
+      steps:
+        - action: Record a course result for the test person that expires in 60 days.
+          expected: The record is saved with its expiry date.
+          data: "Expiry = today + 60 days"
+        - action: Wait for the daily notice job to run and check the notices of the test person and the test manager.
+          expected: Both have received a notice naming the course and the expiry date.
+    sv:
+      title: Påminnelse innan en kompetens löper ut
+      description: Testar meddelandet till personen och chefen 60 dagar innan ett kursresultat löper ut.
+      preconditions: En testperson med en testchef och en kurs med giltighetstid.
+      expected: Ett meddelande når både personen och chefen när resultatet har 60 dagar kvar till utgången.
+      steps:
+        - action: Registrera ett kursresultat för testpersonen som löper ut om 60 dagar.
+          expected: Posten sparas med sitt utgångsdatum.
+          data: "Utgångsdatum = i dag + 60 dagar"
+        - action: Vänta tills det dagliga jobbet för påminnelser har körts och kontrollera meddelandena till testpersonen och testchefen.
+          expected: Båda har fått ett meddelande som anger kursen och utgångsdatumet.
+
+  - id: EDTR-T06
+    priority: high
+    execution: manual
+    tags: [security-awareness]
+    refs: ["ISO/IEC 27001:2022 §7.3", "ISO/IEC 27001:2022 A.6.3"]
+    en:
+      title: Awareness training coverage and content
+      description: Checks that employees complete awareness training on time and that the content reflects recent incidents.
+      preconditions: The staff list with start dates, the training records, the current awareness content with change notes and the incident register of the last 12 months.
+      expected: New employees completed the training within 30 days, nobody is overdue, and the content is current and refers to recent incident types.
+      steps:
+        - action: For each employee who started in the last 12 months, compare the start date with the training completion date.
+          expected: Each completion is within 30 days of the start.
+        - action: Filter the records for employees whose last completion is older than 12 months.
+          expected: The filter returns no employees.
+        - action: Compare the change notes of the content with the incident types in the register.
+          expected: The content is less than 12 months old and its notes refer to incident types from the register.
+    sv:
+      title: Täckning och innehåll i utbildningen i säkerhetsmedvetenhet
+      description: Kontrollerar att anställda genomgår utbildningen i tid och att innehållet speglar de senaste incidenterna.
+      preconditions: Personalförteckningen med startdatum, utbildningsregistret, det gällande innehållet med ändringsanteckningar och incidentregistret för de senaste 12 månaderna.
+      expected: Nyanställda genomgick utbildningen inom 30 dagar, ingen är försenad, och innehållet är aktuellt och hänvisar till de senaste typerna av incidenter.
+      steps:
+        - action: Jämför för varje anställd som har börjat under de senaste 12 månaderna startdatumet med datumet för genomförd utbildning.
+          expected: Varje genomförande ligger inom 30 dagar från starten.
+        - action: Filtrera registret på anställda vars senaste genomförande är äldre än 12 månader.
+          expected: Filtret ger inga anställda.
+        - action: Jämför innehållets ändringsanteckningar med typerna av incidenter i registret.
+          expected: Innehållet är yngre än 12 månader och dess anteckningar hänvisar till typer av incidenter i registret.
+
+  - id: EDTR-T07
+    priority: medium
+    execution: manual
+    tags: [phishing-simulation]
+    refs: ["ISO/IEC 27001:2022 A.6.3"]
+    en:
+      title: Review of phishing simulation reports
+      description: Checks that phishing simulations were run every quarter with results per unit.
+      preconditions: The phishing simulation reports of the last 12 months and the list of organisational units.
+      expected: There is one report per quarter, each with click and reporting rates for every unit.
+      steps:
+        - action: Count the simulation reports of the last 12 months.
+          expected: There is one report for each of the last four quarters.
+        - action: Check each report for the click rate and reporting rate of each unit.
+          expected: Each report has both rates for every unit in the list.
+    sv:
+      title: Granskning av rapporter från nätfiskeövningar
+      description: Kontrollerar att nätfiskeövningar har genomförts varje kvartal med resultat per enhet.
+      preconditions: Rapporterna från nätfiskeövningar under de senaste 12 månaderna och förteckningen över organisatoriska enheter.
+      expected: Det finns en rapport per kvartal, var och en med andelen som klickade och andelen som rapporterade för varje enhet.
+      steps:
+        - action: Räkna rapporterna från övningar under de senaste 12 månaderna.
+          expected: Det finns en rapport för vart och ett av de fyra senaste kvartalen.
+        - action: Kontrollera att varje rapport anger andelen som klickade och andelen som rapporterade för varje enhet.
+          expected: Varje rapport har båda andelarna för varje enhet i förteckningen.
+
+  - id: EDTR-T08
+    priority: critical
+    execution: manual
+    tags: [nis2, management-body]
+    refs: ["Directive (EU) 2022/2555 (NIS2) Art. 20(2)"]
+    en:
+      title: Training records of the management body
+      description: Checks the cybersecurity training of each current member of the management body.
+      preconditions: The list of current members of the management body with their appointment dates, the training records and the course description.
+      expected: Each member completed the training within 3 months of appointment and within the last 12 months, and the course covers risk identification, risk assessment and management practices.
+      steps:
+        - action: Check the course description of the management training.
+          expected: It covers identifying and assessing cybersecurity risks and the practices for managing them.
+        - action: For each member, compare the appointment date with the first training date.
+          expected: The first training is within 3 months of the appointment.
+        - action: Check the latest training date of each member.
+          expected: Each member's latest training is less than 12 months old.
+    sv:
+      title: Utbildningsregister för ledningsorganet
+      description: Kontrollerar utbildningen i cybersäkerhet för varje nuvarande ledamot i ledningsorganet.
+      preconditions: Förteckningen över nuvarande ledamöter i ledningsorganet med datum för tillträde, utbildningsregistret och kursbeskrivningen.
+      expected: Varje ledamot genomgick utbildningen inom 3 månader från tillträdet och under de senaste 12 månaderna, och kursen omfattar identifiering av risker, riskbedömning och arbetssätt för riskhantering.
+      steps:
+        - action: Kontrollera kursbeskrivningen för ledningsutbildningen.
+          expected: Den omfattar att identifiera och bedöma cybersäkerhetsrisker och arbetssätten för att hantera dem.
+        - action: Jämför för varje ledamot datumet för tillträdet med datumet för den första utbildningen.
+          expected: Den första utbildningen ligger inom 3 månader från tillträdet.
+        - action: Kontrollera datumet för varje ledamots senaste utbildning.
+          expected: Varje ledamots senaste utbildning är yngre än 12 månader.
+
+  - id: EDTR-T09
+    priority: medium
+    execution: manual
+    tags: [role-based-security-training]
+    refs: ["ISO/IEC 27001:2022 A.6.3", "IEC 62443-2-1:2024 (security awareness and training)"]
+    en:
+      title: Role-based security training of privileged roles
+      description: Checks that administrators, control system operators and developers have current role-based security training.
+      preconditions: The lists of persons in the three roles and the training records.
+      expected: Each person has completed the role-based course for their role within the last 24 months.
+      steps:
+        - action: For each person in the three roles, find the latest role-based security course in the training records.
+          expected: Each person has a course for their own role.
+        - action: Check the date of each course.
+          expected: Each course was completed within the last 24 months.
+    sv:
+      title: Rollbaserad säkerhetsutbildning för privilegierade roller
+      description: Kontrollerar att administratörer, operatörer av styrsystem och utvecklare har aktuell rollbaserad säkerhetsutbildning.
+      preconditions: Förteckningarna över personerna i de tre rollerna och utbildningsregistret.
+      expected: Varje person har genomgått den rollbaserade kursen för sin roll under de senaste 24 månaderna.
+      steps:
+        - action: Leta för varje person i de tre rollerna upp den senaste rollbaserade säkerhetskursen i utbildningsregistret.
+          expected: Varje person har en kurs för sin egen roll.
+        - action: Kontrollera datumet för varje kurs.
+          expected: Varje kurs genomfördes under de senaste 24 månaderna.
+
+  - id: EDTR-T10
+    priority: high
+    execution: manual
+    tags: [contractors]
+    refs: ["ISO/IEC 27001:2022 A.6.3"]
+    en:
+      title: Contractors trained before first access
+      description: Compares the awareness training dates of contractors with the first access dates of their accounts.
+      preconditions: The contractor accounts created in the last 6 months with their first sign-in dates, and the training records.
+      expected: Each contractor completed the awareness training before the first sign-in.
+      steps:
+        - action: List the contractor accounts created in the last 6 months with their first sign-in date.
+          expected: A list of accounts and dates exists.
+        - action: Find the awareness training completion date of each contractor and compare it with the first sign-in.
+          expected: Each completion date is earlier than the first sign-in.
+    sv:
+      title: Extern personal utbildad före första inloggningen
+      description: Jämför datumen för extern personals utbildning i säkerhetsmedvetenhet med datumen för kontonas första inloggning.
+      preconditions: Kontona för extern personal som har skapats under de senaste 6 månaderna med datum för första inloggning och utbildningsregistret.
+      expected: Varje person i den externa personalen genomgick utbildningen i säkerhetsmedvetenhet före den första inloggningen.
+      steps:
+        - action: Lista kontona för extern personal som har skapats under de senaste 6 månaderna med datum för första inloggning.
+          expected: Det finns en lista över konton och datum.
+        - action: Leta upp datumet för genomförd utbildning i säkerhetsmedvetenhet för varje person och jämför det med den första inloggningen.
+          expected: Varje datum för genomförande ligger före den första inloggningen.

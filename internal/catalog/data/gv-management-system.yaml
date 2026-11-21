@@ -219,7 +219,7 @@ requirements:
     obligation: must_not
     priority: high
     tags: [internal-audit, independence]
-    refs: ["ISO 19011:2018 §4", "ISO 19011:2018 §7", "ISO/IEC 27001:2022 §9.2.2"]
+    refs: ["ISO 19011:2018 §4", "ISO/IEC 27001:2022 §9.2.2"]
     tests: [GVMS-T07]
     en:
       title: Auditors do not audit their own work
