@@ -328,6 +328,124 @@ requirements:
           text: Uppdateringsloggen visar en kvartalsvis bedömning för varje typ av styrenhet, och varje uppdatering som bedömts relevant installerades inom 3 månader från att den släppts.
           threshold: bedömning var 3:e månad, installation ≤ 3 månader
 
+  - id: FCSEC-15
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [critical-entity, risk-assessment, physical-security]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 12"]
+    tests: [FCSEC-T11]
+    en:
+      title: Risk assessment of physical threats to a critical entity every 4 years
+      description: A critical entity MUST assess the physical risks that could disrupt its essential services, including sabotage, intrusion, natural hazards and loss of supply, at least every 4 years and after each change of site or of the threat level.
+      rationale: The physical protection measures of a critical entity are only proportionate when they are based on an assessment of its own risks.
+      criteria:
+        - method: review
+          text: The latest assessment is less than 4 years old, covers the 4 listed threat types for each site and is dated after the latest change of site.
+          threshold: "≤ 4 years"
+    sv:
+      title: Riskbedömning av fysiska hot mot en kritisk entitet vart 4:e år
+      description: En kritisk entitet SKA bedöma de fysiska risker som kan störa dess samhällsviktiga tjänster, inklusive sabotage, intrång, naturolyckor och avbrott i försörjningen, minst vart 4:e år och efter varje ändring av anläggningen eller av hotnivån.
+      rationale: De fysiska skyddsåtgärderna hos en kritisk entitet står bara i proportion till riskerna när de bygger på en bedömning av de egna riskerna.
+      criteria:
+        - method: review
+          text: Den senaste bedömningen är mindre än 4 år gammal, omfattar de 4 angivna hottyperna för varje anläggning och är daterad efter den senaste ändringen av anläggningen.
+          threshold: "≤ 4 år"
+
+  - id: FCSEC-16
+    type: security
+    obligation: must
+    priority: high
+    tags: [critical-entity, perimeter, detection]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 13(1)(b)", "EN 50131-1:2006+A3:2020"]
+    tests: [FCSEC-T11]
+    en:
+      title: Perimeter protection with detection at critical infrastructure sites
+      description: Each site of a critical entity that hosts critical infrastructure MUST have a perimeter barrier with intrusion detection that raises an alarm at a staffed centre within 60 seconds of a breach.
+      rationale: Detection at the perimeter gives the response force time to act before an intruder reaches the critical equipment.
+      criteria:
+        - method: test
+          text: A walk test of 3 sampled perimeter zones per site raises an alarm at the centre within 60 seconds for each zone.
+          threshold: "≤ 60 s"
+    sv:
+      title: Skydd av yttre gräns med detektering vid anläggningar med kritisk infrastruktur
+      description: Varje anläggning hos en kritisk entitet som har kritisk infrastruktur SKA ha ett yttre skalskydd med intrångsdetektering som larmar till en bemannad central inom 60 sekunder från ett intrång.
+      rationale: Detektering vid den yttre gränsen ger insatsstyrkan tid att agera innan en inkräktare når den kritiska utrustningen.
+      criteria:
+        - method: test
+          text: Ett gångtest av 3 utvalda zoner i det yttre skalskyddet per anläggning larmar till centralen inom 60 sekunder för varje zon.
+          threshold: "≤ 60 s"
+
+  - id: FCSEC-17
+    type: regulatory
+    obligation: must
+    priority: high
+    tags: [critical-entity, background-check, personnel]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 14", "ISO/IEC 27001:2022 A.6.1"]
+    tests: [FCSEC-T12]
+    en:
+      title: Background checks for staff in sensitive roles at a critical entity
+      description: A critical entity MUST list the roles with unescorted access to critical infrastructure or its control systems, and complete a background check of each person before that person takes up such a role.
+      rationale: Insiders with unescorted access can do the most damage, and the check reduces the risk that someone is placed there with hostile intent.
+      criteria:
+        - method: review
+          text: The list of sensitive roles exists, and for 10 sampled holders the background check is dated before the start in the role.
+    sv:
+      title: Bakgrundskontroller av personal i känsliga roller hos en kritisk entitet
+      description: En kritisk entitet SKA förteckna de roller som har tillträde utan följe till kritisk infrastruktur eller dess styrsystem, och genomföra en bakgrundskontroll av varje person innan personen tillträder en sådan roll.
+      rationale: Insiders med tillträde utan följe kan göra mest skada, och kontrollen minskar risken att någon med fientliga avsikter placeras där.
+      criteria:
+        - method: review
+          text: Förteckningen över känsliga roller finns, och för 10 utvalda innehavare är bakgrundskontrollen daterad innan personen tillträdde rollen.
+
+  - id: FCSEC-18
+    type: regulatory
+    obligation: must
+    priority: critical
+    tags: [critical-entity, incident-notification]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 15(1)"]
+    tests: [FCSEC-T12]
+    en:
+      title: Initial notice of a significant disruptive incident within 24 hours
+      description: A critical entity MUST send an initial notice to the competent authority within 24 hours of becoming aware of an incident that significantly disrupts or could significantly disrupt its essential services.
+      rationale: Early notice lets the authority warn other entities and coordinate a response across sectors.
+      criteria:
+        - method: review
+          text: For each significant incident in the incident log of the last 12 months, the notice to the authority is time-stamped within 24 hours of the time of awareness.
+          threshold: "≤ 24 hours"
+    sv:
+      title: Första anmälan av en betydande störning inom 24 timmar
+      description: En kritisk entitet SKA skicka en första anmälan till den behöriga myndigheten inom 24 timmar från att den fått kännedom om en incident som avsevärt stör eller kan störa dess samhällsviktiga tjänster.
+      rationale: En tidig anmälan gör att myndigheten kan varna andra entiteter och samordna åtgärder mellan sektorer.
+      criteria:
+        - method: review
+          text: För varje anmälningspliktig incident i incidentloggen under de senaste 12 månaderna är anmälan till myndigheten tidsstämplad inom 24 timmar från tidpunkten för kännedom.
+          threshold: "≤ 24 timmar"
+
+  - id: FCSEC-19
+    type: security
+    obligation: must
+    priority: high
+    tags: [alarm-response, guard, alarm-receiving-centre]
+    refs: ["EN 50518:2019 (monitoring and alarm receiving centre)"]
+    tests: [FCSEC-T13]
+    en:
+      title: Intrusion alarms verified and a guard on site within 20 minutes
+      description: The alarm receiving centre MUST verify each intrusion alarm from a restricted zone and, if it is not cancelled as false, have a security guard on site within 20 minutes of the alarm.
+      rationale: An alarm without a timely response only records the intrusion, and the response time is what decides whether the intruder is stopped.
+      criteria:
+        - method: review
+          text: For the intrusion alarms of the last 6 months that were not cancelled, the guard's arrival time is within 20 minutes of the alarm in at least 95 % of cases.
+          threshold: "≤ 20 minutes in ≥ 95 % of cases"
+    sv:
+      title: Inbrottslarm verifieras och en väktare är på plats inom 20 minuter
+      description: Larmcentralen SKA verifiera varje inbrottslarm från en skyddad zon och, när larmet inte avskrivs som falsklarm, ha en väktare på plats inom 20 minuter från larmet.
+      rationale: Ett larm utan en insats i tid dokumenterar bara intrånget, och insatstiden avgör om inkräktaren stoppas.
+      criteria:
+        - method: review
+          text: För de inbrottslarm under de senaste 6 månaderna som inte avskrevs ligger väktarens ankomsttid inom 20 minuter från larmet i minst 95 % av fallen.
+          threshold: "≤ 20 minuter i ≥ 95 % av fallen"
+
 tests:
   - id: FCSEC-T01
     priority: critical
@@ -626,3 +744,93 @@ tests:
           expected: Varje inloggning misslyckas, och varje lista visar bara personliga konton.
         - action: Läs uppdateringsloggen för de senaste 4 kvartalen.
           expected: Varje kvartal har en bedömning per typ av styrenhet, och varje relevant uppdatering installerades inom 3 månader.
+
+  - id: FCSEC-T11
+    priority: critical
+    execution: manual
+    tags: [critical-entity, risk-assessment, perimeter]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 12", "Directive (EU) 2022/2557 (CER) Art. 13(1)(b)"]
+    en:
+      title: Physical risk assessment and perimeter walk test
+      description: Reviews the risk assessment of the critical entity and walk-tests zones of the perimeter detection.
+      preconditions: The latest risk assessment, the list of site changes, the alarm centre informed of the test and access to 3 perimeter zones per site.
+      expected: The assessment is current and complete, and each tested zone raises an alarm within 60 seconds.
+      steps:
+        - action: Read the date and scope of the latest risk assessment.
+          expected: It is less than 4 years old and covers sabotage, intrusion, natural hazards and loss of supply for each site.
+        - action: Compare the assessment date with the latest change of site.
+          expected: The assessment is later.
+        - action: Cross each of 3 perimeter zones per site and note the time.
+          expected: The centre registers an alarm for each zone within 60 seconds.
+    sv:
+      title: Bedömning av fysiska risker och gångtest av det yttre skalskyddet
+      description: Granskar den kritiska entitetens riskbedömning och gångtestar zoner i detekteringen vid den yttre gränsen.
+      preconditions: Den senaste riskbedömningen, listan över ändringar av anläggningar, larmcentralen informerad om provet och tillgång till 3 zoner i det yttre skalskyddet per anläggning.
+      expected: Bedömningen är aktuell och fullständig, och varje provad zon larmar inom 60 sekunder.
+      steps:
+        - action: Läs datum och omfattning för den senaste riskbedömningen.
+          expected: Den är mindre än 4 år gammal och omfattar sabotage, intrång, naturolyckor och avbrott i försörjningen för varje anläggning.
+        - action: Jämför bedömningens datum med den senaste ändringen av anläggningen.
+          expected: Bedömningen är senare.
+        - action: Passera var och en av 3 zoner per anläggning och notera tiden.
+          expected: Centralen registrerar ett larm för varje zon inom 60 sekunder.
+
+  - id: FCSEC-T12
+    priority: high
+    execution: manual
+    tags: [critical-entity, background-check, notification]
+    refs: ["Directive (EU) 2022/2557 (CER) Art. 14", "Directive (EU) 2022/2557 (CER) Art. 15(1)"]
+    en:
+      title: Background checks of sensitive roles and incident notification times
+      description: Samples holders of sensitive roles for background checks and checks the notification times of significant incidents.
+      preconditions: The list of sensitive roles with holders and start dates, the background check records and the incident log with notices.
+      expected: Each sampled holder was checked before starting, and each significant incident was notified within 24 hours.
+      steps:
+        - action: Pick 10 holders of sensitive roles.
+          expected: Each has a background check record.
+        - action: Compare the date of each check with the start in the role.
+          expected: The check is earlier.
+        - action: For each significant incident, compare the time of awareness with the time stamp of the notice.
+          expected: The notice was sent within 24 hours.
+    sv:
+      title: Bakgrundskontroller av känsliga roller och tider för anmälan av incidenter
+      description: Gör ett urval av innehavare av känsliga roller med avseende på bakgrundskontroll och kontrollerar tiderna för anmälan av betydande incidenter.
+      preconditions: Förteckningen över känsliga roller med innehavare och startdatum, underlagen om bakgrundskontroller och incidentloggen med anmälningar.
+      expected: Varje innehavare i urvalet kontrollerades före start, och varje betydande incident anmäldes inom 24 timmar.
+      steps:
+        - action: Välj 10 innehavare av känsliga roller.
+          expected: Var och en har ett underlag om bakgrundskontroll.
+        - action: Jämför datumet för varje kontroll med starten i rollen.
+          expected: Kontrollen är tidigare.
+        - action: Jämför för varje betydande incident tidpunkten för kännedom med tidsstämpeln på anmälan.
+          expected: Anmälan skickades inom 24 timmar.
+
+  - id: FCSEC-T13
+    priority: high
+    execution: manual
+    tags: [alarm-response]
+    refs: ["EN 50518:2019 (monitoring and alarm receiving centre)"]
+    en:
+      title: Guard response times to intrusion alarms
+      description: Computes the guard response times from the alarm receiving centre's log.
+      preconditions: The alarm receiving centre's log of intrusion alarms from restricted zones for the last 6 months, with the guards' arrival times.
+      expected: At least 95 % of the alarms that were not cancelled had a guard on site within 20 minutes.
+      steps:
+        - action: Filter the log on intrusion alarms that were not cancelled as false.
+          expected: Each has a verification record and an arrival time.
+        - action: Compute the time from each alarm to the guard's arrival.
+          expected: A response time per alarm.
+        - action: Compute the share of response times of at most 20 minutes.
+          expected: The share is at least 95 %.
+    sv:
+      title: Väktarnas insatstider vid inbrottslarm
+      description: Beräknar väktarnas insatstider ur larmcentralens logg.
+      preconditions: Larmcentralens logg över inbrottslarm från skyddade zoner för de senaste 6 månaderna, med väktarnas ankomsttider.
+      expected: Minst 95 % av de larm som inte avskrevs hade en väktare på plats inom 20 minuter.
+      steps:
+        - action: Filtrera loggen på inbrottslarm som inte avskrevs som falsklarm.
+          expected: Varje larm har en verifiering och en ankomsttid.
+        - action: Beräkna tiden från varje larm till väktarens ankomst.
+          expected: En insatstid per larm.
+        - action: Beräkna andelen insatstider på högst 20 minuter.
+          expected: Andelen är minst 95 %.

@@ -1865,3 +1865,92 @@ sources:
     name: {en: "ISO 21504 Project, programme and portfolio management: guidance on portfolio management", sv: "ISO 21504 Projekt-, program- och portföljstyrning: vägledning för portföljstyrning"}
     match: ["ISO 21504"]
     url: https://www.iso.org/search.html?q=ISO%2021504
+  - id: se-elsakerhetslag
+    kind: law
+    jurisdiction: SE
+    name: {en: "Electrical Safety Act (Elsäkerhetslag 2016:732)", sv: "Elsäkerhetslag (2016:732)"}
+    match: ["Elsäkerhetslag"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/elsakerhetslag-2016732_sfs-2016-732/
+  - id: ss-436-40-00
+    kind: standard
+    jurisdiction: SE
+    short: SS 436 40 00
+    name: {en: "SS 436 40 00 Electrical low-voltage installations: rules for design and erection", sv: "SS 436 40 00 Elinstallationer för lågspänning: utförande av elinstallationer"}
+    match: ["SS 436 40 00"]
+    url: https://www.elstandard.se/
+  - id: en-16798
+    kind: standard
+    jurisdiction: EU
+    short: EN 16798-1
+    name: {en: "EN 16798-1 Energy performance of buildings: indoor environmental input parameters", sv: "EN 16798-1 Byggnaders energiprestanda: indata för inomhusmiljön"}
+    match: ["EN 16798"]
+    url: https://standards.cencenelec.eu/
+  - id: cen-tr-16355
+    kind: guideline
+    jurisdiction: EU
+    short: CEN/TR 16355
+    name: {en: "CEN/TR 16355 Recommendations for prevention of Legionella growth in installations inside buildings conveying water for human consumption", sv: "CEN/TR 16355 Rekommendationer för att förhindra tillväxt av legionella i dricksvatteninstallationer i byggnader"}
+    match: ["CEN/TR 16355"]
+    url: https://standards.cencenelec.eu/
+  - id: en-1717
+    kind: standard
+    jurisdiction: EU
+    short: EN 1717
+    name: {en: "EN 1717 Protection against pollution of potable water in water installations (backflow)", sv: "EN 1717 Skydd mot förorening av dricksvatten i vatteninstallationer (återströmning)"}
+    match: ["EN 1717"]
+    url: https://standards.cencenelec.eu/
+  - id: lift-escalator-safety
+    kind: standard
+    jurisdiction: EU
+    name: {en: "Safety rules for lifts and escalators (EN 81-20, EN 81-28, EN 115-1)", sv: "Säkerhetsregler för hissar och rulltrappor (EN 81-20, EN 81-28, EN 115-1)"}
+    match: ["EN 81-20", "EN 81-28", "EN 115-"]
+    url: https://standards.cencenelec.eu/
+  - id: se-afs
+    kind: law
+    jurisdiction: SE
+    short: AFS
+    name: {en: "Swedish Work Environment Authority regulations (AFS 2023:1–2023:15)", sv: "Arbetsmiljöverkets föreskrifter (AFS 2023:1–2023:15)"}
+    match: ["AFS 2023:"]
+    clause: '^(AFS \d{4}:\d+)'
+    url: https://www.av.se/arbetsmiljoarbete-och-inspektioner/publikationer/foreskrifter/
+  - id: en-12464
+    kind: standard
+    jurisdiction: EU
+    short: EN 12464-1
+    name: {en: "EN 12464-1 Light and lighting: lighting of indoor work places", sv: "EN 12464-1 Ljus och belysning: belysning av arbetsplatser inomhus"}
+    match: ["EN 12464"]
+    url: https://standards.cencenelec.eu/
+  - id: iso-3382
+    kind: standard
+    jurisdiction: international
+    short: ISO 3382-3
+    name: {en: "ISO 3382-3 Acoustics: measurement of room acoustic parameters in open plan offices", sv: "ISO 3382-3 Akustik: mätning av rumsakustiska parametrar i kontorslandskap"}
+    match: ["ISO 3382"]
+    url: https://www.iso.org/search.html?q=ISO%203382-3
+  - id: en-12845
+    kind: standard
+    jurisdiction: EU
+    short: EN 12845
+    name: {en: "EN 12845 Fixed firefighting systems: automatic sprinkler systems", sv: "EN 12845 Fasta släcksystem: automatiska sprinklersystem"}
+    match: ["EN 12845"]
+    url: https://standards.cencenelec.eu/
+  - id: en-3
+    kind: standard
+    jurisdiction: EU
+    short: EN 3
+    name: {en: "EN 3 Portable fire extinguishers", sv: "EN 3 Handbrandsläckare"}
+    match: ["EN 3-"]
+    url: https://standards.cencenelec.eu/
+  - id: en-50518
+    kind: standard
+    jurisdiction: EU
+    short: EN 50518
+    name: {en: "EN 50518 Monitoring and alarm receiving centre", sv: "EN 50518 Larmcentraler för övervakning och larmmottagning"}
+    match: ["EN 50518"]
+    url: https://standards.cencenelec.eu/
+  - id: se-flammable-goods
+    kind: law
+    jurisdiction: SE
+    name: {en: "Act on flammable and explosive goods (Lag 2010:1011)", sv: "Lag (2010:1011) om brandfarliga och explosiva varor"}
+    match: ["Lag (2010:1011)"]
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-20101011-om-brandfarliga-och-explosiva_sfs-2010-1011/
