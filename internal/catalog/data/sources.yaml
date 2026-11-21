@@ -1917,3 +1917,38 @@ sources:
     name: {en: "ISO 13485 Medical devices – Quality management systems", sv: "ISO 13485 Medicintekniska produkter – Ledningssystem för kvalitet"}
     match: ["ISO 13485"]
     url: https://www.iso.org/standard/59752.html
+  - id: iso-26262
+    kind: standard
+    jurisdiction: international
+    short: ISO 26262
+    name: {en: "ISO 26262 Road vehicles – Functional safety", sv: "ISO 26262 Vägfordon – Funktionssäkerhet"}
+    match: ["ISO 26262"]
+    url: https://www.iso.org/standard/68383.html
+  - id: iso-sae-21434
+    kind: standard
+    jurisdiction: international
+    short: ISO/SAE 21434
+    name: {en: "ISO/SAE 21434 Road vehicles – Cybersecurity engineering", sv: "ISO/SAE 21434 Vägfordon – Cybersäkerhetsteknik"}
+    match: ["ISO/SAE 21434"]
+    url: https://www.iso.org/standard/70918.html
+  - id: iso-24089
+    kind: standard
+    jurisdiction: international
+    short: ISO 24089
+    name: {en: "ISO 24089 Road vehicles – Software update engineering", sv: "ISO 24089 Vägfordon – Teknik för programuppdateringar"}
+    match: ["ISO 24089"]
+    url: https://www.iso.org/standard/77796.html
+  - id: unece-r155
+    kind: law
+    jurisdiction: international
+    short: UN R155
+    name: {en: "UN Regulation No. 155 – Cyber security and cyber security management system", sv: "FN-föreskrift nr 155 – Cybersäkerhet och ledningssystem för cybersäkerhet"}
+    match: ["UN Regulation No. 155"]
+    url: https://unece.org/transport/documents/2021/03/standards/un-regulation-no-155-cyber-security-and-cyber-security
+  - id: unece-r156
+    kind: law
+    jurisdiction: international
+    short: UN R156
+    name: {en: "UN Regulation No. 156 – Software update and software update management system", sv: "FN-föreskrift nr 156 – Programuppdateringar och ledningssystem för programuppdateringar"}
+    match: ["UN Regulation No. 156"]
+    url: https://unece.org/transport/documents/2021/03/standards/un-regulation-no-156-software-update-and-software-update
