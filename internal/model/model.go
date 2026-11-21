@@ -221,6 +221,10 @@ type Preferences struct {
 	IntroDone        bool   `json:"intro_done,omitempty"` // first-login intro tour finished or skipped // personal default for the editor checkbox
 	// EmailNotifications: off (default) | immediate | digest (see EmailModes).
 	EmailNotifications string `json:"email_notifications,omitempty"`
+	// Autocomplete: suggestions in free-text fields (see AutocompleteModes):
+	// "" = on (my history and project values) | history | project | off.
+	// Only "" and history record what the user saves.
+	Autocomplete string `json:"autocomplete,omitempty"`
 }
 
 // Preference value sets.
@@ -234,6 +238,9 @@ var (
 	StartPages  = []string{"projects", "last_project", "default_project", "search"}
 	PageSizes   = []int{10, 25, 50, 100}
 	DateFormats = []string{"locale", "iso", "relative"}
+	// AutocompleteModes: the values of Preferences.Autocomplete besides ""
+	// (on: both sources).
+	AutocompleteModes = []string{"history", "project", "off"}
 )
 
 // SessionInfo describes an active login session (profile page).

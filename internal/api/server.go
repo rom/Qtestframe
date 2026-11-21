@@ -76,6 +76,8 @@ type Server struct {
 	// mails tracks e-mails in flight (see WaitMail).
 	mails       sync.WaitGroup
 	mailLimiter *rateLimiter
+	// suggestLimiter bounds the autocomplete queries of one user (suggest.go).
+	suggestLimiter *rateLimiter
 
 	// jobs runs automated tests in the background (scriptjobs.go);
 	// JobHeartbeat is its heartbeat interval (tests; 0 = 15s).
@@ -107,7 +109,9 @@ func New(st *store.Store, cfg config.Config, log *slog.Logger, r *runner.Runner,
 		scimAuthLimiter: newRateLimiter(20, 5*time.Minute),
 		// report e-mails per user (no open relay)
 		mailLimiter: newRateLimiter(30, 10*time.Minute),
-		jobs:        newJobManager(),
+		// autocomplete queries per user (typing is debounced in the client)
+		suggestLimiter: newRateLimiter(300, time.Minute),
+		jobs:           newJobManager(),
 	}
 	// e-mail, OIDC providers and login limits follow the system settings
 	s.initSettings(context.Background())
@@ -340,6 +344,8 @@ func (s *Server) routes() {
 	s.routesProjectArchive(h)
 	s.routesMFA(h)
 	s.routesSharing(h)
+	// autocomplete suggestions and history (suggest.go)
+	s.routesSuggest(h)
 	// Administration → System settings (systemsettings.go)
 	s.routesSystemSettings(h)
 

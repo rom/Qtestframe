@@ -268,6 +268,11 @@ func (s *Store) RemoveMembership(ctx context.Context, tenantID, userID string) e
 	}
 	// the user's project memberships in the tenant go with it
 	_, err = s.c(ctx).exec(ctx, `DELETE FROM project_members WHERE tenant_id = ? AND member_type = 'user' AND member_id = ?`, tenantID, userID)
+	if err != nil {
+		return err
+	}
+	// and so does the user's autocomplete history there
+	_, err = s.ClearSuggestHistory(ctx, tenantID, userID)
 	return err
 }
 
